@@ -117,6 +117,8 @@ export type StudyDetails = Pick<
     'name' | 'description' | 'publication' | 'authors' | 'doi' | 'pmid' | 'pmcid' | 'year'
 >;
 
+export type IStudyVersion = Pick<StudyReturn, 'user' | 'id'>;
+
 export const studyPointsToStorePoints = (
     points: PointReturn[]
 ): {

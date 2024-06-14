@@ -12,30 +12,17 @@ describe('NavDrawer component', () => {
 
     const mockOnLogin = jest.fn();
     const mockOnLogout = jest.fn();
-    const mockOnCreateProject = jest.fn();
 
     beforeEach(() => {
         useAuth0().isAuthenticated = false;
 
-        renderResult = render(
-            <NavDrawer
-                onCreateProject={mockOnCreateProject}
-                onLogin={mockOnLogin}
-                onLogout={mockOnLogout}
-            />
-        );
+        renderResult = render(<NavDrawer onLogin={mockOnLogin} onLogout={mockOnLogout} />);
 
         userEvent.click(screen.getByTestId('MenuIcon'));
     });
 
     it('should render', () => {
-        render(
-            <NavDrawer
-                onCreateProject={mockOnCreateProject}
-                onLogin={mockOnLogin}
-                onLogout={mockOnLogout}
-            />
-        );
+        render(<NavDrawer onLogin={mockOnLogin} onLogout={mockOnLogout} />);
     });
 
     it('should open the drawer', () => {
@@ -55,13 +42,7 @@ describe('NavDrawer component', () => {
     it('should show the full range of options when authenticated', () => {
         useAuth0().isAuthenticated = true;
 
-        renderResult.rerender(
-            <NavDrawer
-                onCreateProject={mockOnCreateProject}
-                onLogin={mockOnLogin}
-                onLogout={mockOnLogout}
-            />
-        );
+        renderResult.rerender(<NavDrawer onLogin={mockOnLogin} onLogout={mockOnLogout} />);
 
         expect(screen.queryByText('NEW PROJECT')).toBeInTheDocument();
         expect(screen.queryByText('MY PROJECTS')).toBeInTheDocument();
@@ -80,60 +61,14 @@ describe('NavDrawer component', () => {
     it('should logout', () => {
         useAuth0().isAuthenticated = true;
 
-        renderResult.rerender(
-            <NavDrawer
-                onCreateProject={mockOnCreateProject}
-                onLogin={mockOnLogin}
-                onLogout={mockOnLogout}
-            />
-        );
+        renderResult.rerender(<NavDrawer onLogin={mockOnLogin} onLogout={mockOnLogout} />);
 
         userEvent.click(screen.getByText('LOGOUT'));
         expect(mockOnLogout).toHaveBeenCalled();
     });
 
-    it('should open the dialog when creating a new project', () => {
-        useAuth0().isAuthenticated = true;
-
-        renderResult.rerender(
-            <NavDrawer
-                onCreateProject={mockOnCreateProject}
-                onLogin={mockOnLogin}
-                onLogout={mockOnLogout}
-            />
-        );
-
-        userEvent.click(screen.getByText('NEW PROJECT'));
-
-        expect(screen.getByTestId('mock-create-details-dialog')).toBeInTheDocument();
-    });
-
-    it('should create a new project', () => {
-        useAuth0().isAuthenticated = true;
-
-        renderResult.rerender(
-            <NavDrawer
-                onCreateProject={mockOnCreateProject}
-                onLogin={mockOnLogin}
-                onLogout={mockOnLogout}
-            />
-        );
-
-        userEvent.click(screen.getByText('NEW PROJECT'));
-        expect(screen.getByTestId('mock-create-details-dialog')).toBeInTheDocument();
-        userEvent.click(screen.getByTestId('mock-create-button'));
-
-        expect(mockOnCreateProject).toHaveBeenCalledWith('test name', 'test description');
-    });
-
     it('should show the menu with the given menu items', () => {
-        render(
-            <NavDrawer
-                onCreateProject={mockOnCreateProject}
-                onLogin={mockOnLogin}
-                onLogout={mockOnLogout}
-            />
-        );
+        render(<NavDrawer onLogin={mockOnLogin} onLogout={mockOnLogout} />);
 
         expect(screen.queryByText('STUDIES')).not.toBeInTheDocument();
         expect(screen.queryByText('META-ANALYSES')).not.toBeInTheDocument();
@@ -143,13 +78,7 @@ describe('NavDrawer component', () => {
     });
 
     it('should hide the menu with the given menu items', () => {
-        render(
-            <NavDrawer
-                onCreateProject={mockOnCreateProject}
-                onLogin={mockOnLogin}
-                onLogout={mockOnLogout}
-            />
-        );
+        render(<NavDrawer onLogin={mockOnLogin} onLogout={mockOnLogout} />);
 
         expect(screen.queryByText('STUDIES')).not.toBeInTheDocument();
         expect(screen.queryByText('META-ANALYSES')).not.toBeInTheDocument();

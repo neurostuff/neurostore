@@ -26,7 +26,7 @@ const CreateMetaAnalysisSpecificationDetailsStep: React.FC<{
                 .filter((id): id is string => id !== undefined);
         }
     }
-    const { data } = useGetMetaAnalysesByIds(metaAnalysisIds);
+    const { data = [] } = useGetMetaAnalysesByIds(metaAnalysisIds);
     const { details, selectionKey, algorithmName, correctorName, onUpdateDetails, onNavigate } =
         props;
     const projectName = useProjectName();

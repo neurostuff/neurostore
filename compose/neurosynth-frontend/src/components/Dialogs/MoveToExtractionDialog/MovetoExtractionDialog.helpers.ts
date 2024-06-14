@@ -25,25 +25,14 @@ export const lastUpdatedAtSortFn = (
     }
 };
 
+export const selectBestBaseStudyVersion = (baseStudyVersions: Array<StudyReturn>) => {
+    const sortedVersion = [...baseStudyVersions.sort(lastUpdatedAtSortFn)];
+    return sortedVersion[sortedVersion.length - 1];
+};
+
 export const selectBestVersionsForStudyset = (baseStudies: Array<BaseStudy>): string[] => {
     const selectedVersions = baseStudies.map((baseStudy) => {
-        const sortedVersions = [
-            ...((baseStudy.versions || []) as Array<
-                Pick<
-                    StudyReturn,
-                    | 'id'
-                    | 'created_at'
-                    | 'updated_at'
-                    | 'has_coordinates'
-                    | 'has_images'
-                    | 'source'
-                    | 'studysets'
-                    | 'user'
-                >
-            >),
-        ].sort(lastUpdatedAtSortFn);
-
-        return sortedVersions[sortedVersions.length - 1].id as string;
+        return (selectBestBaseStudyVersion as StudyReturn)?.id as string;
     });
 
     return selectedVersions;

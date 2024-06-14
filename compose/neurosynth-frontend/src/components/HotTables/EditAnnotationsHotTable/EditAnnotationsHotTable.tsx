@@ -222,6 +222,8 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
         });
     };
 
+    console.log({ hotData });
+
     return (
         <Box>
             {theUserOwnsThisAnnotation && !canEdit && (

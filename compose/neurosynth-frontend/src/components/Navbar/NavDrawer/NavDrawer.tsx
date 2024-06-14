@@ -1,31 +1,29 @@
+import { useAuth0 } from '@auth0/auth0-react';
+import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import MenuIcon from '@mui/icons-material/Menu';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import {
     Box,
-    Typography,
-    Toolbar,
-    IconButton,
+    Button,
     Drawer,
+    IconButton,
     List,
     ListItem,
     ListItemButton,
     ListItemIcon,
     ListItemText,
-    Button,
+    Toolbar,
+    Typography,
 } from '@mui/material';
-import MenuIcon from '@mui/icons-material/Menu';
 import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import NavbarStyles from '../Navbar.styles';
-import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
-import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import DrawerToggleMenu from '../NavSubMenu/DrawerToggleSubMenu';
-import { useAuth0 } from '@auth0/auth0-react';
-import CreateDetailsDialog from 'components/Dialogs/CreateDetailsDialog/CreateDetailsDialog';
 import { INav } from '../Navbar';
+import NavbarStyles from '../Navbar.styles';
 
 const NavDrawer: React.FC<INav> = (props) => {
     const { isAuthenticated } = useAuth0();
     const [isOpen, setIsOpen] = useState(false);
-    const [createDetailsDialogIsOpen, setCreateDetailsDialogIsOpen] = useState(false);
     const navigate = useNavigate();
 
     const handleOpenDrawer = (_event: React.MouseEvent<HTMLElement>) => {
@@ -57,18 +55,10 @@ const NavDrawer: React.FC<INav> = (props) => {
             </Box>
             <Drawer anchor="right" open={isOpen} onClose={handleCloseDrawer}>
                 <List>
-                    <CreateDetailsDialog
-                        titleText="Create new project"
-                        nameLabel="Project Name"
-                        descriptionLabel="Project Description"
-                        isOpen={createDetailsDialogIsOpen}
-                        onCreate={props.onCreateProject}
-                        onCloseDialog={() => setCreateDetailsDialogIsOpen(false)}
-                    />
                     {isAuthenticated && (
                         <>
                             <ListItem>
-                                <ListItemButton onClick={() => setCreateDetailsDialogIsOpen(true)}>
+                                <ListItemButton>
                                     <ListItemIcon>
                                         <AddCircleOutlineIcon color="secondary" />
                                     </ListItemIcon>

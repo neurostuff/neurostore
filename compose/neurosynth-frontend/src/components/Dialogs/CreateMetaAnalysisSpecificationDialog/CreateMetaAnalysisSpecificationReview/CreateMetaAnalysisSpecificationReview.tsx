@@ -19,7 +19,10 @@ import {
 } from 'pages/Projects/ProjectPage/ProjectStore';
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { IAnalysesSelection } from '../CreateMetaAnalysisSpecificationDialogBase.types';
+import {
+    IAlgorithmSelection,
+    IAnalysesSelection,
+} from '../CreateMetaAnalysisSpecificationDialogBase.types';
 import { getFilteredAnnotationNotes } from '../CreateMetaAnalysisSpecificationSelectionStep/SelectAnalysesComponent/SelectAnalysesComponent.helpers';
 import { getWeightAndConditionsForSpecification } from './CreateMetaAnalysisSpecificationReview.helpers';
 
@@ -36,12 +39,7 @@ const CreateMetaAnalysisSpecificationReview: React.FC<{
     onNavigate: (button: ENavigationButton) => void;
     onClose: () => void;
     selection: IAnalysesSelection;
-    algorithm: {
-        estimator: IAutocompleteObject | null;
-        estimatorArgs: IDynamicValueType;
-        corrector: IAutocompleteObject | null;
-        correctorArgs: IDynamicValueType;
-    };
+    algorithm: IAlgorithmSelection;
     details: {
         name: string;
         description: string;

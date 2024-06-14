@@ -22,7 +22,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import BaseDialog, { IDialog } from 'components/Dialogs/BaseDialog';
 import SelectSpecificationComponent from 'components/Dialogs/CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationAlgorithmStep/SelectSpecificationComponent/SelectSpecificationComponent';
-import { IAnalysesSelection } from 'components/Dialogs/CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationDialogBase.types';
+import {
+    IAlgorithmSelection,
+    IAnalysesSelection,
+} from 'components/Dialogs/CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationDialogBase.types';
 import SelectAnalysesComponent from 'components/Dialogs/CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationSelectionStep/SelectAnalysesComponent/SelectAnalysesComponent';
 import { isMultiGroupAlgorithm } from 'components/Dialogs/CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationSelectionStep/SelectAnalysesComponent/SelectAnalysesComponent.helpers';
 import { getWeightAndConditionsForSpecification } from 'components/Dialogs/CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationReview/CreateMetaAnalysisSpecificationReview.helpers';
@@ -46,12 +49,7 @@ const EditSpecificationDialog: React.FC<IDialog> = (props) => {
         referenceDataset: specification?.database_studyset || undefined,
     });
 
-    const [algorithmSpec, setAlgorithmSpec] = useState<{
-        estimator: IAutocompleteObject | null;
-        corrector: IAutocompleteObject | null;
-        estimatorArgs: IDynamicValueType;
-        correctorArgs: IDynamicValueType;
-    }>({
+    const [algorithmSpec, setAlgorithmSpec] = useState<IAlgorithmSelection>({
         estimator: null,
         corrector: null,
         estimatorArgs: {},

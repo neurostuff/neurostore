@@ -14,8 +14,8 @@ describe('ImportStudiesDialog', () => {
         cy.visit('/projects/abc123/curation').wait('@projectFixture').wait('@studysetFixture');
     });
 
-    it.only('should open the import studies dialog', () => {
-        cy.login('mocked', { sub: 'github|26612023' })
+    it('should open the import studies dialog', () => {
+        cy.login('mocked')
             .visit('/projects/abc123/curation')
             .wait('@projectFixture')
             .wait('@studysetFixture');
@@ -26,6 +26,7 @@ describe('ImportStudiesDialog', () => {
 
     describe('Import via Neurostore', () => {
         beforeEach(() => {
+            cy.login('mocked').visit('/projects/abc123/curation');
             cy.intercept('GET', '**/api/base-studies/**', {
                 fixture: 'baseStudies/baseStudiesWithResults',
             }).as('baseStudiesFixture');
@@ -67,7 +68,10 @@ describe('ImportStudiesDialog', () => {
 
     describe('Import via Pubmed IDs', () => {
         beforeEach(() => {
-            cy.visit('/projects/abc123/curation').wait('@projectFixture').wait('@studysetFixture');
+            cy.login('mocked')
+                .visit('/projects/abc123/curation')
+                .wait('@projectFixture')
+                .wait('@studysetFixture');
             cy.intercept('PUT', '**/api/projects/abc123').as('updateProjectFixture');
             // not going to mock this for now as cypress does not seem to support XML fixtures
             // cy.intercept('POST', 'https://eutils.ncbi.nlm.nih.gov/**', {
@@ -123,7 +127,10 @@ describe('ImportStudiesDialog', () => {
 
     describe('Manually create a new study', () => {
         beforeEach(() => {
-            cy.visit('/projects/abc123/curation').wait('@projectFixture').wait('@studysetFixture');
+            cy.login('mocked')
+                .visit('/projects/abc123/curation')
+                .wait('@projectFixture')
+                .wait('@studysetFixture');
             cy.intercept('PUT', '**/api/projects/abc123').as('updateProjectFixture');
             cy.contains('button', 'import studies').click();
             cy.contains('Manually create a new study').click();
@@ -169,7 +176,10 @@ describe('ImportStudiesDialog', () => {
 
     describe('Import via File Format', () => {
         beforeEach(() => {
-            cy.visit('/projects/abc123/curation').wait('@projectFixture').wait('@studysetFixture');
+            cy.login('mocked')
+                .visit('/projects/abc123/curation')
+                .wait('@projectFixture')
+                .wait('@studysetFixture');
             cy.intercept('PUT', '**/api/projects/abc123').as('updateProjectFixture');
             cy.contains('button', 'import studies').click();
             cy.contains('Import via File Format').click();
@@ -253,7 +263,10 @@ describe('ImportStudiesDialog', () => {
 
     describe('IMPORT DUPLICATES', () => {
         beforeEach(() => {
-            cy.visit('/projects/abc123/curation').wait('@projectFixture').wait('@studysetFixture');
+            cy.login('mocked')
+                .visit('/projects/abc123/curation')
+                .wait('@projectFixture')
+                .wait('@studysetFixture');
             cy.intercept('PUT', '**/api/projects/abc123').as('updateProjectFixture');
             cy.contains('button', 'import studies').click();
             cy.contains('Import via File Format').click();
@@ -296,8 +309,14 @@ describe('ImportStudiesDialog', () => {
             cy.intercept('GET', `**/api/projects/*`, {
                 fixture: 'projects/projectWithStub',
             }).as('projectFixture');
-            cy.visit('/projects/abc123/curation').wait('@projectFixture').wait('@studysetFixture');
-            cy.intercept('PUT', '**/api/projects/**').as('updateProjectFixture');
+            // not a very good mocked update, but we need to provide a fixture so that it doesnt send a real request to the BE
+            cy.intercept('PUT', '**/api/projects/**', { fixture: 'projects/projectWithStub' }).as(
+                'updateProjectFixture'
+            );
+            cy.login('mocked')
+                .visit('/projects/abc123/curation')
+                .wait('@projectFixture')
+                .wait('@studysetFixture');
             cy.contains('button', 'import studies').click();
             cy.contains('Import via File Format').click();
             cy.contains('button', 'next').click();
@@ -337,7 +356,10 @@ describe('ImportStudiesDialog', () => {
                 fixture: 'baseStudies/baseStudiesWithResults',
             }).as('baseStudiesFixture');
             cy.intercept('PUT', '**/api/projects/abc123').as('updateProjectFixture');
-            cy.visit('/projects/abc123/curation').wait('@projectFixture').wait('@studysetFixture');
+            cy.login('mocked')
+                .visit('/projects/abc123/curation')
+                .wait('@projectFixture')
+                .wait('@studysetFixture');
             cy.contains('button', 'import studies').click();
             cy.contains('button', 'next').click();
         });

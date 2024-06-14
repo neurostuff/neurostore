@@ -9,8 +9,9 @@ const useDeleteProject = () => {
     return useMutation<AxiosResponse, AxiosError, string, unknown>(
         (id) => API.NeurosynthServices.ProjectsService.projectsIdDelete(id),
         {
-            onSuccess: () => {
-                queryClient.invalidateQueries('projects');
+            onSuccess: (data, variables) => {
+                queryClient.removeQueries({ queryKey: ['projects', variables] });
+                return queryClient.invalidateQueries({ queryKey: ['projects'] });
             },
             onError: () => {
                 enqueueSnackbar('There was an error deleting the project', { variant: 'error' });
