@@ -29,7 +29,7 @@ from neurostore.models import (
 )
 from neurostore.models.data import StudysetStudy, _check_type
 
-META_ANALYSIS_WORDS = ['meta analysis', 'meta-analysis', 'systematic review']
+META_ANALYSIS_WORDS = ["meta analysis", "meta-analysis", "systematic review"]
 
 
 def ingest_neurovault(verbose=False, limit=20, overwrite=False, max_images=None):
@@ -458,9 +458,9 @@ def load_ace_files(coordinates_file, metadata_file, text_file):
     metadata_df = pd.read_table(metadata_file, sep=",", dtype=str)
     text_df = pd.read_table(text_file, sep=",", dtype=str)
 
-    for col in ['x', 'y', 'z']:
+    for col in ["x", "y", "z"]:
         if col in coordinates_df.columns:
-            coordinates_df[col] = pd.to_numeric(coordinates_df[col], errors='coerce')
+            coordinates_df[col] = pd.to_numeric(coordinates_df[col], errors="coerce")
 
     text_df.fillna("", inplace=True)
     metadata_df.fillna("", inplace=True)
@@ -481,24 +481,41 @@ def load_ace_files(coordinates_file, metadata_file, text_file):
 
 def ace_ingestion_logic(coordinates_df, metadata_df, text_df, skip_existing=False):
     def get_base_study(metadata_row):
-        doi = None if isinstance(metadata_row.doi, float) or metadata_row.doi == '' else metadata_row.doi
+        doi = (
+            None
+            if isinstance(metadata_row.doi, float) or metadata_row.doi == ""
+            else metadata_row.doi
+        )
         pmid = metadata_row.Index
-        base_studies = BaseStudy.query.filter(or_(BaseStudy.doi == doi, BaseStudy.pmid == pmid)).all()
+        base_studies = BaseStudy.query.filter(
+            or_(BaseStudy.doi == doi, BaseStudy.pmid == pmid)
+        ).all()
 
         if len(base_studies) == 1:
             return base_studies[0]
         elif len(base_studies) > 1:
             return merge_base_studies(base_studies)
         else:
-            created_bs = [bs for bs in all_base_studies if bs.doi == doi and bs.pmid == pmid]
+            created_bs = [
+                bs for bs in all_base_studies if bs.doi == doi and bs.pmid == pmid
+            ]
             if created_bs:
                 return created_bs[0]
             return BaseStudy.query.filter_by(pmid=pmid).one_or_none()
 
     def merge_base_studies(base_studies):
-        source_base_study = next(filter(lambda bs: bs.pmid == pmid and bs.doi == doi, base_studies), base_studies[0])
-        other_base_studies = [bs for bs in base_studies if bs.id != source_base_study.id]
-        columns = [c.name for c in source_base_study.__table__.columns if c.name not in ("versions", "__ts_vector__")]
+        source_base_study = next(
+            filter(lambda bs: bs.pmid == pmid and bs.doi == doi, base_studies),
+            base_studies[0],
+        )
+        other_base_studies = [
+            bs for bs in base_studies if bs.id != source_base_study.id
+        ]
+        columns = [
+            c.name
+            for c in source_base_study.__table__.columns
+            if c.name not in ("versions", "__ts_vector__")
+        ]
         for ab in other_base_studies:
             for col in columns:
                 source_attr = getattr(source_base_study, col)
@@ -521,7 +538,9 @@ def ace_ingestion_logic(coordinates_df, metadata_df, text_df, skip_existing=Fals
             "level": level,
         }
         if isinstance(study, Study):
-            study_info["source"] = "neurosynth" if "ace" in metadata_row.source else "pubget",
+            study_info["source"] = (
+                "neurosynth" if "ace" in metadata_row.source else "pubget",
+            )
         for col, value in study_info.items():
             source_attr = getattr(study, col)
             setattr(study, col, source_attr or value)
@@ -535,22 +554,35 @@ def ace_ingestion_logic(coordinates_df, metadata_df, text_df, skip_existing=Fals
             print(f"pmid: {id_} has no coordinates")
             return analyses, points
         for order, (t_id, df) in enumerate(study_coord_data.groupby("table_id")):
-            a = Analysis.query.filter_by(table_id=str(t_id), study_id=s.id).one_or_none() or Analysis()
+            a = (
+                Analysis.query.filter_by(
+                    table_id=str(t_id), study_id=s.id
+                ).one_or_none()
+                or Analysis()
+            )
             a.name = df["table_label"][0] or str(t_id)
             a.table_id = str(t_id)
             a.order = a.order or order
-            a.description = df["table_caption"][0] if not df["table_caption"].isna()[0] else None
+            a.description = (
+                df["table_caption"][0] if not df["table_caption"].isna()[0] else None
+            )
             if not a.study:
                 a.study = s
             analyses.append(a)
             point_idx = 0
             for _, p in df.iterrows():
                 point = Point(
-                    x=p["x"], y=p["y"], z=p["z"],
+                    x=p["x"],
+                    y=p["y"],
+                    z=p["z"],
                     space=metadata_row.coordinate_space,
-                    kind=df["statistic"][0] if not df["statistic"].isna()[0] else "unknown",
+                    kind=(
+                        df["statistic"][0]
+                        if not df["statistic"].isna()[0]
+                        else "unknown"
+                    ),
                     analysis=a,
-                    order=point_idx
+                    order=point_idx,
                 )
                 points.append(point)
                 point_idx += 1
@@ -560,16 +592,43 @@ def ace_ingestion_logic(coordinates_df, metadata_df, text_df, skip_existing=Fals
     all_base_studies = []
 
     with db.session.no_autoflush:
-        all_studies = {s.pmid: s for s in Study.query.filter_by(source="neurosynth").all()}
-        for metadata_row, text_row in zip(metadata_df.itertuples(), text_df.itertuples()):
-            level = 'meta' if any(word in metadata_row.title.lower() for word in META_ANALYSIS_WORDS) else 'group'
+        all_studies = {
+            s.pmid: s for s in Study.query.filter_by(source="neurosynth").all()
+        }
+        for metadata_row, text_row in zip(
+            metadata_df.itertuples(), text_df.itertuples()
+        ):
+            level = (
+                "meta"
+                if any(
+                    word in metadata_row.title.lower() for word in META_ANALYSIS_WORDS
+                )
+                else "group"
+            )
             base_study = get_base_study(metadata_row)
             pmid = metadata_row.Index
-            pmcid = None if isinstance(metadata_row.pmcid, float) or metadata_row.pmcid == '' else metadata_row.pmcid
-            doi = None if isinstance(metadata_row.doi, float) or metadata_row.doi == '' else metadata_row.doi
-            year = None if isinstance(metadata_row.publication_year, float) or metadata_row.publication_year == '' else int(float(metadata_row.publication_year))
+            pmcid = (
+                None
+                if isinstance(metadata_row.pmcid, float) or metadata_row.pmcid == ""
+                else metadata_row.pmcid
+            )
+            doi = (
+                None
+                if isinstance(metadata_row.doi, float) or metadata_row.doi == ""
+                else metadata_row.doi
+            )
+            year = (
+                None
+                if isinstance(metadata_row.publication_year, float)
+                or metadata_row.publication_year == ""
+                else int(float(metadata_row.publication_year))
+            )
 
-            if skip_existing and base_study is not None and any(s.source == "neurosynth" for s in base_study.versions):
+            if (
+                skip_existing
+                and base_study is not None
+                and any(s.source == "neurosynth" for s in base_study.versions)
+            ):
                 continue
 
             if base_study is None:
@@ -586,7 +645,9 @@ def ace_ingestion_logic(coordinates_df, metadata_df, text_df, skip_existing=Fals
                     level=level,
                 )
             else:
-                update_study_info(base_study, metadata_row, text_row, doi, pmcid, year, level)
+                update_study_info(
+                    base_study, metadata_row, text_row, doi, pmcid, year, level
+                )
 
             to_commit.append(base_study)
 
