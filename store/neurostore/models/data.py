@@ -82,7 +82,8 @@ class Studyset(BaseMixin, db.Model):
         passive_deletes=True,
         cascade="all, delete-orphan",
     )
-    __ts_vector__ = db.Column(
+    _ts_vector = db.Column(
+        "__ts_vector__",
         TSVector(),
         db.Computed(
             "to_tsvector('english', coalesce(name, '') || ' ' || coalesce(description, ''))",
