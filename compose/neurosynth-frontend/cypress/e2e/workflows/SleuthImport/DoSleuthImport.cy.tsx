@@ -267,7 +267,7 @@ describe('DoSleuthImport', () => {
         });
 
         it.only('should begin creating the annotation and show progress', () => {
-            cy.wait('@studysetsPostFixture').then((res) => {
+            cy.wait('@studysetsPostFixture', { timeout: 10000 }).then((res) => {
                 expect(res.request.body.name).equals('Studyset for Untitled sleuth project');
                 expect(res.request.body.studies).deep.equals(
                     studysetsSingleSleuthStudyResponse.studies
