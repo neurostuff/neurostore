@@ -266,7 +266,7 @@ describe('DoSleuthImport', () => {
             cy.get('[aria-valuenow="85"]').should('exist');
         });
 
-        it.only('should begin creating the annotation and show progress', () => {
+        it('should begin creating the annotation and show progress', () => {
             cy.wait('@studysetsPostFixture', { timeout: 10000 }).then((res) => {
                 expect(res.request.body.name).equals('Studyset for Untitled sleuth project');
                 expect(res.request.body.studies).deep.equals(
@@ -395,7 +395,7 @@ describe('DoSleuthImport', () => {
             cy.contains('button', 'next').click();
         });
 
-        it('should go to the meta analysis page', () => {
+        it.only('should go to the meta analysis page', () => {
             cy.contains('Would you like to create a meta-analysis').should('be.visible');
         });
 
