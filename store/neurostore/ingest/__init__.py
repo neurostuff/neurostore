@@ -504,7 +504,6 @@ def ace_ingestion_logic(coordinates_df, metadata_df, text_df, skip_existing=Fals
                 return created_bs[0]
             return BaseStudy.query.filter_by(pmid=pmid).one_or_none()
 
-
     def merge_base_studies(base_studies, doi, pmid):
         if doi is None:
             source_base_study = next(
