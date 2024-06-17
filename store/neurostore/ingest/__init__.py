@@ -495,6 +495,7 @@ def ace_ingestion_logic(coordinates_df, metadata_df, text_df, skip_existing=Fals
             return base_studies[0]
         elif len(base_studies) > 1:
             return merge_base_studies(base_studies, doi, pmid)
+
         else:
             created_bs = [
                 bs for bs in all_base_studies if bs.doi == doi and bs.pmid == pmid
@@ -502,6 +503,7 @@ def ace_ingestion_logic(coordinates_df, metadata_df, text_df, skip_existing=Fals
             if created_bs:
                 return created_bs[0]
             return BaseStudy.query.filter_by(pmid=pmid).one_or_none()
+
 
     def merge_base_studies(base_studies, doi, pmid):
         if doi is None:
@@ -514,6 +516,7 @@ def ace_ingestion_logic(coordinates_df, metadata_df, text_df, skip_existing=Fals
                 filter(lambda bs: bs.pmid == pmid and bs.doi == doi, base_studies),
                 base_studies[0],
             )
+
         other_base_studies = [
             bs for bs in base_studies if bs.id != source_base_study.id
         ]
