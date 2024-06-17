@@ -1,10 +1,8 @@
 import { Box, Button, Typography } from '@mui/material';
 import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons/NavigationButtons';
-import { IDynamicValueType } from 'components/MetaAnalysisConfigComponents';
 import DynamicInputDisplay from 'components/MetaAnalysisConfigComponents/DynamicInputDisplay/DynamicInputDisplay';
 import MetaAnalysisSummaryRow from 'components/MetaAnalysisConfigComponents/MetaAnalysisSummaryRow/MetaAnalysisSummaryRow';
-import { IAutocompleteObject } from 'components/NeurosynthAutocomplete/NeurosynthAutocomplete';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { useCreateAlgorithmSpecification, useGetAnnotationById } from 'hooks';
 import { EAnalysisType } from 'hooks/metaAnalyses/useCreateAlgorithmSpecification';

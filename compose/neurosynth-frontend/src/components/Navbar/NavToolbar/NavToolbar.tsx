@@ -4,12 +4,11 @@ import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { Box, Button, Toolbar, Typography } from '@mui/material';
 import CreateProjectButton from 'components/Buttons/CreateProjectButton/CreateProjectButton';
 import NeurosynthAvatar from 'components/Navbar/NeurosynthAvatar/NeurosynthAvatar';
-import NeurosynthPopupMenu from 'components/NeurosynthPopupMenu/NeurosynthPopupMenu';
 import { NavLink, useNavigate } from 'react-router-dom';
+import NavToolbarPopupSubMenu from '../NavSubMenu/NavToolbarPopupSubMenu';
 import { INav } from '../Navbar';
 import NavbarStyles from '../Navbar.styles';
 import NavToolbarStyles from './NavToolbar.styles';
-import NavToolbarPopupSubMenu from '../NavSubMenu/NavToolbarPopupSubMenu';
 
 const NavToolbar: React.FC<INav> = (props) => {
     const { isAuthenticated } = useAuth0();

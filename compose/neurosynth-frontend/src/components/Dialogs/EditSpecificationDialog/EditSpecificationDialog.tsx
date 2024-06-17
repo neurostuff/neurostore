@@ -1,13 +1,19 @@
 import { Box, Typography } from '@mui/material';
 import metaAnalysisSpec from 'assets/config/meta_analysis_params.json';
 import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
+import BaseDialog, { IDialog } from 'components/Dialogs/BaseDialog';
+import SelectSpecificationComponent from 'components/Dialogs/CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationAlgorithmStep/SelectSpecificationComponent/SelectSpecificationComponent';
+import {
+    IAlgorithmSelection,
+    IAnalysesSelection,
+} from 'components/Dialogs/CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationDialogBase.types';
+import { getWeightAndConditionsForSpecification } from 'components/Dialogs/CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationReview/CreateMetaAnalysisSpecificationReview.helpers';
+import CreateMetaAnalysisSpecificationSelectionStepMultiGroup from 'components/Dialogs/CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationSelectionStep/CreateMetaAnalysisSpecificationSelectionStepMultiGroup';
+import SelectAnalysesComponent from 'components/Dialogs/CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationSelectionStep/SelectAnalysesComponent/SelectAnalysesComponent';
+import { isMultiGroupAlgorithm } from 'components/Dialogs/CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationSelectionStep/SelectAnalysesComponent/SelectAnalysesComponent.helpers';
 import SelectAnalysesSummaryComponent from 'components/Dialogs/CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationSelectionStep/SelectAnalysesComponent/SelectAnalysesSummaryComponent';
 import { getType } from 'components/EditMetadata';
-import {
-    IDynamicValueType,
-    IMetaAnalysisParamsSpecification,
-} from 'components/MetaAnalysisConfigComponents';
-import { IAutocompleteObject } from 'components/NeurosynthAutocomplete/NeurosynthAutocomplete';
+import { IMetaAnalysisParamsSpecification } from 'components/MetaAnalysisConfigComponents';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { useGetMetaAnalysisById } from 'hooks';
 import { EAnalysisType } from 'hooks/metaAnalyses/useCreateAlgorithmSpecification';
@@ -20,16 +26,6 @@ import {
 } from 'neurosynth-compose-typescript-sdk';
 import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import BaseDialog, { IDialog } from 'components/Dialogs/BaseDialog';
-import SelectSpecificationComponent from 'components/Dialogs/CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationAlgorithmStep/SelectSpecificationComponent/SelectSpecificationComponent';
-import {
-    IAlgorithmSelection,
-    IAnalysesSelection,
-} from 'components/Dialogs/CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationDialogBase.types';
-import SelectAnalysesComponent from 'components/Dialogs/CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationSelectionStep/SelectAnalysesComponent/SelectAnalysesComponent';
-import { isMultiGroupAlgorithm } from 'components/Dialogs/CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationSelectionStep/SelectAnalysesComponent/SelectAnalysesComponent.helpers';
-import { getWeightAndConditionsForSpecification } from 'components/Dialogs/CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationReview/CreateMetaAnalysisSpecificationReview.helpers';
-import CreateMetaAnalysisSpecificationSelectionStepMultiGroup from 'components/Dialogs/CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationSelectionStep/CreateMetaAnalysisSpecificationSelectionStepMultiGroup';
 
 const metaAnalysisSpecification: IMetaAnalysisParamsSpecification = metaAnalysisSpec;
 
