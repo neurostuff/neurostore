@@ -395,7 +395,7 @@ describe('DoSleuthImport', () => {
             cy.contains('button', 'next').click();
         });
 
-        it.only('should go to the meta analysis page', () => {
+        it('should go to the meta analysis page', () => {
             cy.contains('Would you like to create a meta-analysis').should('be.visible');
         });
 
