@@ -1,12 +1,12 @@
+import ReportProblemIcon from '@mui/icons-material/ReportProblem';
 import { Box, Button, Typography } from '@mui/material';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog/ConfirmationDialog';
 import useDeleteProject from 'hooks/projects/useDeleteProject';
+import useUserCanEdit from 'hooks/useUserCanEdit';
+import { useSnackbar } from 'notistack';
 import { useClearProvenance, useProjectUser } from 'pages/Projects/ProjectPage/ProjectStore';
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import ReportProblemIcon from '@mui/icons-material/ReportProblem';
-import { useSnackbar } from 'notistack';
-import useUserCanEdit from 'hooks/useUserCanEdit';
 
 const env = process.env.REACT_APP_ENV as 'DEV' | 'STAGING' | 'PROD';
 

@@ -20,7 +20,7 @@ const CodeSnippet: React.FC<{ linesOfCode: string[] }> = (props) => {
         <Box sx={[CodeSnippetStyles.codeBlock, { display: 'flex' }]}>
             <Box sx={{ flexGrow: 1 }}>
                 {props.linesOfCode.map((code, index) => (
-                    <Box key={index} sx={{ marginBottom: '3px' }}>
+                    <Box key={index} sx={{ marginBottom: '3px', minHeight: '15px' }}>
                         {code}
                     </Box>
                 ))}

@@ -11,7 +11,7 @@ import {
     StudysetPostBody,
     StudysetReturn,
 } from 'neurosynth-compose-typescript-sdk';
-import { useMutation } from 'react-query';
+import { useMutation, useQueryClient } from 'react-query';
 import API, { NeurostoreAnnotation } from 'utils/api';
 
 export enum EAnalysisType {
@@ -20,6 +20,7 @@ export enum EAnalysisType {
 }
 
 const useCreateAlgorithmSpecification = () => {
+    const queryClient = useQueryClient();
     const createSpecificationMutation = useMutation<
         AxiosResponse<SpecificationReturn>,
         AxiosError,
@@ -110,6 +111,10 @@ const useCreateAlgorithmSpecification = () => {
                 cached_annotation_id: createdSynthAnnotation.data.id,
                 specification: createdSpec.data.id,
                 project: projectId,
+            });
+
+            await queryClient.invalidateQueries({
+                queryKey: ['meta-analyses'],
             });
 
             return createdMetaAnalysis;

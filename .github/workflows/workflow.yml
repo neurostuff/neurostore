@@ -484,6 +484,8 @@ jobs:
         REACT_APP_AUTH0_DOMAIN: ${{ secrets.REACT_APP_AUTH0_DOMAIN }}
         REACT_APP_AUTH0_CLIENT_SECRET: ${{ secrets.REACT_APP_AUTH0_CLIENT_SECRET }}
         REACT_APP_ENV: DEV
+        REACT_APP_NEUROSTORE_API_DOMAIN: ${{ secrets.REACT_APP_NEUROSTORE_API_DOMAIN }}
+        REACT_APP_NEUROSYNTH_API_DOMAIN: ${{ secrets.REACT_APP_NEUROSYNTH_API_DOMAIN }}
       with:
         build: npm run build:dev
         start: npm run start-ci:dev

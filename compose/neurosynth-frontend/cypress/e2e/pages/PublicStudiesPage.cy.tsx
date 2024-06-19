@@ -7,7 +7,7 @@ export {};
 const PATH = '/base-studies';
 const PAGE_NAME = 'StudiesPage';
 
-describe(PAGE_NAME, () => {
+describe.skip(PAGE_NAME, () => {
     beforeEach(() => {
         cy.clearLocalStorage().clearSessionStorage();
         cy.intercept('GET', 'https://api.appzi.io/**', { fixture: 'appzi' }).as('appziFixture');

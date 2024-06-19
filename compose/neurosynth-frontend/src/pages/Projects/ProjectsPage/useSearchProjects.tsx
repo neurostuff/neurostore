@@ -25,6 +25,7 @@ const useSearchProjects = (userId?: string) => {
     const {
         data,
         isLoading: debouncedProjectIsLoading,
+        isRefetching,
         isError,
     } = useGetDebouncedProjects({ ...searchCriteria }, userId, !isLoading);
 
@@ -70,7 +71,7 @@ const useSearchProjects = (userId?: string) => {
 
     return {
         projectsResponse,
-        isLoading: isLoading || debouncedProjectIsLoading,
+        isLoading: isLoading || debouncedProjectIsLoading || isRefetching,
         isError,
         handleSearch,
         handlePageChange,
