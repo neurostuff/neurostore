@@ -57,11 +57,21 @@ const SleuthImportWizardCreateMetaAnalyses: React.FC<{
         } else {
             setButtonIsLoading(true);
             for (const sleuthImport of sleuthImports) {
+                // Later on, the library HandsOnTable will be used to render the annotaiton in a spreadsheet like UI.
+                // We want to use the filename as a key, but we cannot include periods due to this issue:
+                // https://github.com/handsontable/handsontable/issues/5439
+                //
+                // As a result, we should remove the period from the filename
+                const filenameReplacePeriodsWithUnderscores = sleuthImport.fileName.replaceAll(
+                    '.',
+                    '_'
+                );
+
                 const { weights, conditions, databaseStudyset } =
                     getWeightAndConditionsForSpecification(
                         selectedMetaAnalysisAlgorithm.estimator,
                         {
-                            selectionKey: sleuthImport.fileName,
+                            selectionKey: filenameReplacePeriodsWithUnderscores,
                             type: EPropertyType.BOOLEAN,
                             selectionValue: true,
                             referenceDataset: undefined,
@@ -75,7 +85,7 @@ const SleuthImportWizardCreateMetaAnalyses: React.FC<{
                     selectedMetaAnalysisAlgorithm!.corrector,
                     studysetId,
                     annotationId,
-                    sleuthImport.fileName,
+                    filenameReplacePeriodsWithUnderscores,
                     `Untitled sleuth project: ${
                         selectedMetaAnalysisAlgorithm!.estimator?.label
                     } Meta Analysis: ${sleuthImport.fileName}`,
