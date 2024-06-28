@@ -82,7 +82,7 @@ const useEditAnnotationsHotTable = (annotationId?: string, disableEdit?: boolean
     }, [annotationsHotState.noteKeys]);
 
     const colWidths = useMemo(() => {
-        return createColWidths(annotationsHotState.noteKeys, 200, 150, 200);
+        return createColWidths(annotationsHotState.noteKeys, 300, 150, 200);
     }, [annotationsHotState.noteKeys]);
 
     return {

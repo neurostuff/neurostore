@@ -17,8 +17,8 @@ export const hotSettings: HotTableProps = {
     viewportColumnRenderingOffset: 4, // we do not want column virtualization as it screws up the spreadsheet
     width: '100%',
     fixedColumnsStart: 2,
-    wordWrap: true,
-    autoRowSize: true,
+    wordWrap: false,
+    autoRowSize: false,
     afterGetRowHeaderRenderers: (headerRenderers) => {
         headerRenderers.push((row, TH) => {
             TH.className = styles['no-top-bottom-borders'];
@@ -150,7 +150,7 @@ export const createColumnHeader = (
 export const createColumns = (noteKeys: NoteKeyType[], disable?: boolean) =>
     [
         {
-            className: `${styles['study-col']} ${styles['read-only-col']} truncate`,
+            className: `${styles['study-col']} ${styles['read-only-col']} ${styles.truncate}`,
             readOnly: true,
         },
         {
