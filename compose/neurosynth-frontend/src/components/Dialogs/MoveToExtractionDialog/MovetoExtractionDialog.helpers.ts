@@ -32,7 +32,10 @@ export const selectBestBaseStudyVersion = (baseStudyVersions: Array<StudyReturn>
 
 export const selectBestVersionsForStudyset = (baseStudies: Array<BaseStudy>): string[] => {
     const selectedVersions = baseStudies.map((baseStudy) => {
-        return (selectBestBaseStudyVersion as StudyReturn)?.id as string;
+        const studyVersion = selectBestBaseStudyVersion(
+            (baseStudy?.versions || []) as StudyReturn[]
+        );
+        return studyVersion.id as string;
     });
 
     return selectedVersions;
