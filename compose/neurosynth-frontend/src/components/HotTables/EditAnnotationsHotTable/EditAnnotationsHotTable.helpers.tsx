@@ -241,6 +241,8 @@ export const getRowHeights = (
 
     mergeCells.forEach(({ row, col, rowspan, colspan }) => {
         while (currIndex < row) {
+            // sometimes the merge cells skip a few rows as they do not need to be merged.
+            // we therefore need to account for that by calculting those row heights (which have rowspan = 1)
             const currIndexTitle = hotData[currIndex][0] as string;
             rowHeights.push(getCalculatedRowHeight(currIndexTitle, maxWidthInPx));
             currIndex++;
@@ -263,6 +265,5 @@ export const getRowHeights = (
         }
         currIndex = currIndex + rowspan;
     });
-    console.log({ hotData, rowHeights });
     return rowHeights;
 };
