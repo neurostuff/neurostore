@@ -43,6 +43,7 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
         noteKeys,
         hotDataToStudyMapping,
         isEdited,
+        rowHeights,
     } = useEditAnnotationsHotTable(props.annotationId, !canEdit);
 
     useEffect(() => {
@@ -57,7 +58,6 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
                 '25px', // ADD_METADATA_INPUT_MARGIN_BOTTOM
                 '75px', // BOTTOM_BUTTON_CONTAINER
                 '1rem', // EXTRA SPACE
-                '30px', // TOP TOOLTIP
             ];
             const sizeStr = sizes.reduce((acc, curr, index, list) => {
                 if (index === 0) {
@@ -241,18 +241,6 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
                 </Box>
             )}
             <Box className="hot-container" style={{ width: '100%', marginBottom: '1rem' }}>
-                <div
-                    id="tooltip"
-                    style={{
-                        height: '20px',
-                        color: '#bfa73f',
-                        background: '#fff',
-                        fontSize: '1rem',
-                        padding: '5px',
-                    }}
-                >
-                    Hover over a Study to see the study name
-                </div>
                 {hotData.length > 0 ? (
                     <HotTable
                         {...hotSettings}
@@ -262,23 +250,11 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
                         disableVisualSelection={!canEdit}
                         colHeaders={hotColumnHeaders}
                         colWidths={colWidths}
+                        rowHeights={rowHeights}
                         columns={hotColumns}
                         data={JSON.parse(JSON.stringify(hotData))}
                         afterOnCellMouseUp={handleCellMouseUp}
                         beforeOnCellMouseDown={handleCellMouseDown}
-                        // afterOnCellMouseOver={(event, coords, TD) => {
-                        afterOnCellMouseOver={(event, coords, TD) => {
-                            if (coords.col === 0) {
-                                const tooltip = document.querySelector(
-                                    '#tooltip'
-                                ) as HTMLDivElement;
-                                if (!tooltip) return;
-                                tooltip.innerText = `${TD.innerText}`;
-                                tooltip.style.color = 'gray';
-
-                                TD.title = TD.innerText;
-                            }
-                        }}
                     />
                 ) : (
                     <Typography sx={{ color: 'warning.dark' }}>
