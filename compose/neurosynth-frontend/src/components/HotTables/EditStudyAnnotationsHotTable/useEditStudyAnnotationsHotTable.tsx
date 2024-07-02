@@ -77,7 +77,7 @@ const useEditStudyAnnotationsHotTable = (readonly?: boolean) => {
         const MIN_HEIGHT_PX = 100;
         const MAX_HEIGHT_PX = 500;
         const HEADER_HEIGHT_PX = 26;
-        const ROW_HEIGHT_PX = 24 + 24; // +24 to padd row height a little bit
+        const ROW_HEIGHT_PX = 24; // +24 to padd row height a little bit
 
         const visibleNotes = (notes || []).filter((x) => x.study === studyId);
 

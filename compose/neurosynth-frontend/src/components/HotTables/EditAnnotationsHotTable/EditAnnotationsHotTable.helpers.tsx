@@ -18,7 +18,7 @@ export const hotSettings: HotTableProps = {
     width: '100%',
     fixedColumnsStart: 2,
     wordWrap: true,
-    autoRowSize: true,
+    autoRowSize: false,
     afterGetRowHeaderRenderers: (headerRenderers) => {
         headerRenderers.push((row, TH) => {
             TH.className = styles['no-top-bottom-borders'];
@@ -150,12 +150,13 @@ export const createColumnHeader = (
 export const createColumns = (noteKeys: NoteKeyType[], disable?: boolean) =>
     [
         {
-            className: `${styles['study-col']} ${styles['read-only-col']} truncate`,
+            className: `${styles['study-col']} ${styles['read-only-col']}`,
             readOnly: true,
         },
         {
-            className: styles['read-only-col'],
+            className: `${styles['read-only-col']} ${styles['truncate']}`,
             readOnly: true,
+            wordWrap: false,
         },
         ...noteKeys.map((x) => {
             return {
@@ -173,7 +174,8 @@ export const createColumns = (noteKeys: NoteKeyType[], disable?: boolean) =>
         }),
     ] as ColumnSettings[];
 
-// we can assume that the input is already sorted
+// we can assume that the hashmap maintains order and is sorted by key
+// this function gets all merge cells and only merge cells. If a cell does not need to be merged, a mergeCellObj is not creatd
 export const getMergeCells = (
     hotDataToStudyMapping: Map<number, { studyId: string; analysisId: string }>
 ) => {
@@ -205,4 +207,63 @@ export const getMergeCells = (
     });
 
     return mergeCells;
+};
+
+const getCalculatedRowHeight = (title: string, maxWidthInPx: number) => {
+    const container = document.createElement('td');
+    container.style.maxWidth = `${maxWidthInPx - 10}px`; // account for padding and borders
+    container.style.width = `${maxWidthInPx - 10}px`; // account for padding and borders
+
+    container.style.fontSize = '13px'; // handsontable default font size
+    container.style.fontFamily =
+        '-apple-system, system-ui, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Helvetica Neue", Arial, sans-serif';
+    container.style.lineHeight = '21px'; // handsontable default line height
+    container.style.border = '1px solid black';
+    container.style.padding = '0px 4px';
+    container.style.fontWeight = '400';
+    container.style.display = 'table-cell';
+    container.style.textAlign = 'center';
+
+    container.innerText = title;
+    document.body.appendChild(container);
+    const height = container.offsetHeight;
+    container.parentNode?.removeChild(container);
+    return height;
+};
+
+export const getRowHeights = (
+    hotData: AnnotationNoteValue[][],
+    mergeCells: MergeCellsSettings[],
+    maxWidthInPx: number
+) => {
+    const rowHeights: number[] = [];
+    let currIndex = 0;
+
+    mergeCells.forEach(({ row, col, rowspan, colspan }) => {
+        while (currIndex < row) {
+            // sometimes the merge cells skip a few rows as they do not need to be merged.
+            // we therefore need to account for that by calculting those row heights (which have rowspan = 1)
+            const currIndexTitle = hotData[currIndex][0] as string;
+            rowHeights.push(getCalculatedRowHeight(currIndexTitle, maxWidthInPx));
+            currIndex++;
+        }
+        const title = hotData[row][0] as string;
+        const height = getCalculatedRowHeight(title, maxWidthInPx);
+
+        const potentialRowHeight = Math.ceil(height / rowspan);
+        if (rowspan * 23 >= height) {
+            // the title is smaller than the space taken up by the analyses
+            for (let i = 0; i < rowspan; i++) {
+                rowHeights.push(potentialRowHeight < 23 ? 23 : potentialRowHeight);
+            }
+        } else {
+            // the title is bigger than the space taken up by the analyses
+            // we want to split that space evenly
+            for (let i = 0; i < rowspan; i++) {
+                rowHeights.push(potentialRowHeight);
+            }
+        }
+        currIndex = currIndex + rowspan;
+    });
+    return rowHeights;
 };

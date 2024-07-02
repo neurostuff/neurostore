@@ -43,6 +43,7 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
         noteKeys,
         hotDataToStudyMapping,
         isEdited,
+        rowHeights,
     } = useEditAnnotationsHotTable(props.annotationId, !canEdit);
 
     useEffect(() => {
@@ -166,7 +167,7 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
         TD: HTMLTableCellElement,
         controller: SelectionController
     ): void => {
-        const isRowHeader = coords.col === -1;
+        const isRowHeader = coords.col === -1 || coords.col === 0;
         if (isRowHeader) {
             event.stopImmediatePropagation();
             return;
@@ -224,7 +225,7 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
 
     return (
         <Box>
-            {theUserOwnsThisAnnotation && !canEdit && (
+            {theUserOwnsThisAnnotation && canEdit && (
                 <Box
                     className="neurosynth-annotation-component"
                     sx={[AnnotationsHotTableStyles.addMetadataRow]}
@@ -235,7 +236,7 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
                         showMetadataValueInput={false}
                         allowNumber={false}
                         allowNone={false}
-                        errorMessage="cannot add annotation - this key may already exist"
+                        errorMessage="can't add column (key already exists)"
                     />
                 </Box>
             )}
@@ -249,6 +250,7 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
                         disableVisualSelection={!canEdit}
                         colHeaders={hotColumnHeaders}
                         colWidths={colWidths}
+                        rowHeights={rowHeights}
                         columns={hotColumns}
                         data={JSON.parse(JSON.stringify(hotData))}
                         afterOnCellMouseUp={handleCellMouseUp}

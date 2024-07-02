@@ -50,7 +50,9 @@ const EditAnalyses: React.FC<{ disabled: boolean }> = React.memo(({ disabled }) 
     };
 
     useEffect(() => {
-        if (!selectedAnalysisId && analyses.length > 0) {
+        const exists = analyses.find((analysis) => analysis.id === selectedAnalysisId);
+
+        if ((analyses.length > 0 && !selectedAnalysisId) || (!exists && analyses.length > 0)) {
             // select the first analysis on first render
             setSelectedAnalysisId(analyses[0].id);
         }
