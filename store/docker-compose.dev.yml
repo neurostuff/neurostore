@@ -23,4 +23,4 @@ services:
       - '5432'
     env_file:
       - .env
-    command: postgres -c config_file=/etc/postgresql/postgresql.conf  # Use the custom config
+    command: postgres -c config_file=/etc/postgresql/small_postgresql.conf  # Use the custom config
