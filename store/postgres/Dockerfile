@@ -10,7 +10,7 @@ RUN service cron start
 RUN dos2unix /home/pg_dump-to-s3.sh
 RUN dos2unix /home/s3-autodelete.sh
 
-# COPY postgresql.conf /etc/postgresql/postgresql.conf
+COPY postgresql.conf /etc/postgresql/postgresql.conf
 
 # Set PostgreSQL to use the custom configuration file
-# CMD ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"]
+CMD ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"]
