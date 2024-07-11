@@ -14,4 +14,3 @@ COPY postgresql.conf /etc/postgresql/postgresql.conf
 
 # Set PostgreSQL to use the custom configuration file
 # CMD ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"]
-CMD ["postgres"]
