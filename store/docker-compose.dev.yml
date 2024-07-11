@@ -12,15 +12,15 @@ services:
     stdin_open: true # docker run -i
     tty: true        # docker run -t
 
-  store_pgsql:
-    image: store_pgsql
-    restart: always
-    build: ./postgres  # Increase shared memory size
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./postgres/small_postgresql.conf:/etc/postgresql/small_postgresql.conf  # Mount the custom config
-    expose:
-      - '5432'
-    env_file:
-      - .env
-    command: postgres -c config_file=/etc/postgresql/small_postgresql.conf  # Use the custom config
+  # store_pgsql:
+  #   image: store_pgsql
+  #   restart: always
+  #   build: ./postgres  # Increase shared memory size
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #     - ./postgres/small_postgresql.conf:/etc/postgresql/small_postgresql.conf  # Mount the custom config
+  #   expose:
+  #     - '5432'
+  #   env_file:
+  #     - .env
+  #   command: postgres -c config_file=/etc/postgresql/small_postgresql.conf  # Use the custom config
