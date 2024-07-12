@@ -51,7 +51,7 @@ describe('DynamicFormSelectInput Component', () => {
             />
         );
 
-        const select = screen.getByRole('button', { name: 'approximate' });
+        const select = screen.getByRole('combobox');
         userEvent.click(select);
 
         expect(screen.getAllByRole('option').length).toEqual(3);
@@ -71,7 +71,7 @@ describe('DynamicFormSelectInput Component', () => {
             />
         );
 
-        const select = screen.getByRole('button', { name: 'approximate' });
+        const select = screen.getByRole('combobox');
         userEvent.click(select);
 
         const option = screen.getByRole('option', { name: 'montecarlo' });

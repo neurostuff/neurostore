@@ -29,8 +29,6 @@ export interface IProjectPageLocationState {
     };
 }
 
-// TODO: for now, we will only be supporting a single meta-analysis, so we only assume there is one. This will change later.
-// const metaAnalysisId = (project?.meta_analyses as MetaAnalysis[]).
 const ProjectPage: React.FC = (props) => {
     const { projectId } = useParams<{ projectId: string }>();
     const location = useLocation();
