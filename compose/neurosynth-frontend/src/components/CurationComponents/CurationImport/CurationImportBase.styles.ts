@@ -15,7 +15,7 @@ const CurationImportBaseStyles: Style = {
         width: '80%',
         display: 'flex',
         justifyContent: 'space-between',
-        padding: '10px',
+        padding: '15px',
     },
     nextButton: {
         width: '220px',

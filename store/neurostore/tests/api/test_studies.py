@@ -286,3 +286,9 @@ def test_studies_flat(auth_client, ingest_neurosynth, session):
 
     assert "analyses" not in flat_resp.json()["results"][0]
     assert "analyses" in reg_resp.json()["results"][0]
+
+
+def test_create_study_new_user(new_user_client, mock_auth0_auth, session):
+
+    study_resp = new_user_client.post("/api/studies/", data={"name": "test"})
+    assert study_resp.status_code == 200

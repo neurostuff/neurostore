@@ -7,6 +7,9 @@ describe('CreateSpecificationDialog', () => {
         cy.intercept('GET', `**/api/meta-analyses*`, { fixture: 'metaAnalyses' }).as(
             'metaAnalysesFixture'
         );
+        cy.intercept('GET', '**/api/meta-analysis-results/**', {
+            fixture: 'metaAnalysisResults',
+        }).as('metaAnalysisResultsFixture');
         cy.intercept('GET', `**/api/projects/*`, {
             fixture: 'projects/projectCanCreateSpecification',
         }).as('projectFixture');

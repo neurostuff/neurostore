@@ -10,6 +10,8 @@ import ProjectPageCardSummaryCuration from './ProjectPageCardSummaryCuration';
 import ProjectPageCardExtractionSummary from './ProjectPageCardSummaryExtraction';
 import ProjectPageCardSummaryMetaAnalyses from './ProjectPageCardSummaryMetaAnalyses';
 import { MetaAnalysis } from 'neurosynth-compose-typescript-sdk';
+import LockIcon from '@mui/icons-material/Lock';
+import PublicIcon from '@mui/icons-material/Public';
 
 const isToday = (date: Date) => {
     const today = new Date();
@@ -21,13 +23,22 @@ const isToday = (date: Date) => {
 };
 
 const ProjectsPageCard: React.FC<INeurosynthProjectReturn> = (props) => {
-    const { name, description, provenance, updated_at, created_at, id, meta_analyses = [] } = props;
+    const {
+        name,
+        description,
+        provenance,
+        updated_at,
+        created_at,
+        id,
+        public: isPublic, // public is a reserved keyword
+        meta_analyses = [],
+    } = props;
 
     const { data: studyset } = useGetStudysetById(
         provenance?.extractionMetadata?.studysetId,
         false
     );
-    const { data: metaAnalyses } = useGetMetaAnalysesByIds(meta_analyses as string[]);
+    const { data: metaAnalyses = [] } = useGetMetaAnalysesByIds(meta_analyses as string[]);
 
     const lastUpdateDate = useMemo(() => {
         const lastUpdated = new Date(updated_at || '');
@@ -140,6 +151,13 @@ const ProjectsPageCard: React.FC<INeurosynthProjectReturn> = (props) => {
             </Box>
             <Box sx={{ flexGrow: 1 }}>
                 <Box mb="0.5rem" sx={{ width: '100%' }}>
+                    <Chip
+                        label={isPublic ? 'Public' : 'Private'}
+                        icon={isPublic ? <PublicIcon /> : <LockIcon />}
+                        variant="outlined"
+                        size="small"
+                        sx={{ mr: '6px' }}
+                    />
                     {updated_at && (
                         <Chip
                             label={`Last updated: ${lastUpdateDate}`}

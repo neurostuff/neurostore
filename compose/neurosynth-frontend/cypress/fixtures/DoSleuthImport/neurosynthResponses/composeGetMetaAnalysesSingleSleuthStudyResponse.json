@@ -1,0 +1,36 @@
+{
+    "metadata": {
+      "total_count": 1
+    },
+    "results": [
+      {
+        "annotation": "ScF6zqfUb5E9",
+        "cached_annotation": "xSEk9vPXqtrq",
+        "cached_studyset": "tg4mwupccq86",
+        "created_at": "2024-06-14T14:35:03.190376+00:00",
+        "description": "ALE Meta Analysis",
+        "id": "mHQxyne2cYnL",
+        "name": "Untitled sleuth project: ALE Meta Analysis: test1_new.txt",
+        "neurostore_analysis": {
+          "created_at": "2024-06-14T14:35:03.198506+00:00",
+          "exception": null,
+          "id": "e6jjPciECoL3",
+          "neurostore_id": null,
+          "status": "PENDING",
+          "traceback": null,
+          "updated_at": null
+        },
+        "neurostore_url": null,
+        "project": "WKTKwzTJcX5g",
+        "provenance": null,
+        "results": [],
+        "run_key": "8_DZnIji8ctcx3e2VujjeA",
+        "specification": "AFtwv58xMjL2",
+        "studyset": "LZ4ngCuAhtqb",
+        "updated_at": null,
+        "user": "auth0|666c3bb1fcdc91471b06bfb2",
+        "username": "test user 6"
+      }
+    ]
+  }
+  

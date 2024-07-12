@@ -1,133 +1,124 @@
-groups,p_value,y,region,table_number,table_id,activation_id,table_caption,statistic,table_label,x,pmid,z,size
-,,16.0,,2,5576,83479,. Comparison of measurement points with activation,,Table 2,15.0,10585521,19.0,
-,,16.0,,2,5576,83480,. Comparison of measurement points with activation,,Table 2,15.0,10585521,19.0,
-,,19.0,,2,5576,83481,. Comparison of measurement points with activation,,Table 2,15.0,10585521,20.0,
-,,-28.0,Superior temporal gyrus or Wernicke's area,1,7680,110059,. Main brain regions differentially activated by theory of mind task between control (C) and autism (A) groups. BA=Brodmann area,,Table 1,-55.0,10781695,15.0,12
-,,-28.0,Superior temporal gyrus,1,7680,110060,. Main brain regions differentially activated by theory of mind task between control (C) and autism (A) groups. BA=Brodmann area,,Table 1,40.0,10781695,15.0,8
-,,22.0,Inferior frontal gyrus or Broca's area,1,7680,110061,. Main brain regions differentially activated by theory of mind task between control (C) and autism (A) groups. BA=Brodmann area,,Table 1,-46.0,10781695,9.0,5
-fMRI experiment 1: self versus novel,,-3.0,-,2,5575,83461,. Areas of significant activation during recognition of own (minus unknown) and partner's (minus unknown) face,,Table 2,49.0,11062324,4.0,50
-fMRI experiment 1: self versus novel,,-3.0,-,2,5575,83462,. Areas of significant activation during recognition of own (minus unknown) and partner's (minus unknown) face,,Table 2,46.0,11062324,-2.0,23
-fMRI experiment 1: self versus novel,,-45.0,27/30,2,5575,83463,. Areas of significant activation during recognition of own (minus unknown) and partner's (minus unknown) face,,Table 2,11.0,11062324,4.0,7
-fMRI experiment 1: self versus novel,,-36.0,,2,5575,83464,. Areas of significant activation during recognition of own (minus unknown) and partner's (minus unknown) face,,Table 2,12.0,11062324,-2.0,6
-fMRI experiment 1: self versus novel,,36.0,24/32,2,5575,83465,. Areas of significant activation during recognition of own (minus unknown) and partner's (minus unknown) face,,Table 2,3.0,11062324,4.0,12
-fMRI experiment 1: self versus novel,,42.0,,2,5575,83466,. Areas of significant activation during recognition of own (minus unknown) and partner's (minus unknown) face,,Table 2,6.0,11062324,-2.0,8
-fMRI experiment 1: self versus novel,,6.0,,2,5575,83467,. Areas of significant activation during recognition of own (minus unknown) and partner's (minus unknown) face,,Table 2,0.0,11062324,37.0,14
-fMRI experiment 1: self versus novel,,-64.0,31,2,5575,83468,. Areas of significant activation during recognition of own (minus unknown) and partner's (minus unknown) face,,Table 2,6.0,11062324,20.0,9
-fMRI experiment 1: self versus novel,,-61.0,,2,5575,83469,. Areas of significant activation during recognition of own (minus unknown) and partner's (minus unknown) face,,Table 2,9.0,11062324,26.0,8
-fMRI experiment 1: self versus novel,,31.0,45/46,2,5575,83470,. Areas of significant activation during recognition of own (minus unknown) and partner's (minus unknown) face,,Table 2,-38.0,11062324,4.0,11
-fMRI experiment 1: self versus novel,,31.0,,2,5575,83471,. Areas of significant activation during recognition of own (minus unknown) and partner's (minus unknown) face,,Table 2,-32.0,11062324,20.0,18
-fMRI experiment 1: self versus novel,,31.0,8/9,2,5575,83472,. Areas of significant activation during recognition of own (minus unknown) and partner's (minus unknown) face,,Table 2,-26.0,11062324,37.0,9
-fMRI experiment 1: self versus novel,,-14.0,42,2,5575,83473,. Areas of significant activation during recognition of own (minus unknown) and partner's (minus unknown) face,,Table 2,-43.0,11062324,9.0,16
-fMRI experiment 1: self versus novel,,-42.0,40,2,5575,83474,. Areas of significant activation during recognition of own (minus unknown) and partner's (minus unknown) face,,Table 2,-49.0,11062324,31.0,11
-fMRI experiment 1: self versus novel,,-11.0,-,2,5575,83475,. Areas of significant activation during recognition of own (minus unknown) and partner's (minus unknown) face,,Table 2,12.0,11062324,-2.0,23
-fMRI experiment 1: self versus novel,,-47.0,-,2,5575,83476,. Areas of significant activation during recognition of own (minus unknown) and partner's (minus unknown) face,,Table 2,9.0,11062324,-18.0,18
-fMRI experiment 1: self versus novel,,-83.0,,2,5575,83477,. Areas of significant activation during recognition of own (minus unknown) and partner's (minus unknown) face,,Table 2,-20.0,11062324,-13.0,34
-fMRI experiment 2: partner versus novel,,14.0,-,2,5575,83478,. Areas of significant activation during recognition of own (minus unknown) and partner's (minus unknown) face,,Table 2,26.0,11062324,15.0,5
-,,10.0,Authors,I,682,10051,. Normal subjects (Nociception - Capsaicin allodynia).,,Table I,9.0,11126640,32.0,
-,,10.0,Disease / Authors,III,683,10052,. Patients with chronic pain.,,Table III,9.0,11126640,32.0,
-,,10.0,Disease / Authors,IV,684,10053,. Analgesic procedures studied with PET.,,Table IV,9.0,11126640,32.0,
-,,11.0,,1,681,10050,. Observations,,Tableau 1,5.0,12909390,13.0,
-Main effect of reasoning,,-93.0,,1,5574,83422,.,3.95,Table 1,12.0,15178381,-9.0,
-Main effect of reasoning,,-90.0,,1,5574,83423,.,3.52,Table 1,-6.0,15178381,-9.0,
-Main effect of reasoning,,-81.0,,1,5574,83424,.,4.72,Table 1,33.0,15178381,12.0,
-Main effect of reasoning,,-93.0,,1,5574,83425,.,4.57,Table 1,36.0,15178381,-3.0,
-Main effect of reasoning,,-66.0,,1,5574,83426,.,4.43,Table 1,-48.0,15178381,-12.0,
-Main effect of reasoning,,-57.0,,1,5574,83427,.,4.48,Table 1,-24.0,15178381,60.0,
-Main effect of reasoning,,-60.0,,1,5574,83428,.,4.45,Table 1,21.0,15178381,60.0,
-Main effect of reasoning,,-36.0,,1,5574,83429,.,4.20,Table 1,-45.0,15178381,54.0,
-Main effect of reasoning,,0.0,,1,5574,83430,.,5.36,Table 1,36.0,15178381,60.0,
-Main effect of reasoning,,6.0,,1,5574,83431,.,3.59,Table 1,9.0,15178381,-12.0,
-Main effect of reasoning,,18.0,,1,5574,83432,.,3.70,Table 1,-15.0,15178381,-9.0,
-Main effect of reasoning,,15.0,,1,5574,83433,.,3.79,Table 1,0.0,15178381,66.0,
-Main effect of reasoning,,24.0,,1,5574,83434,.,4.35,Table 1,-54.0,15178381,12.0,
-Deductive reasoning−baseline,,-54.0,,1,5574,83435,.,4.43,Table 1,-45.0,15178381,-36.0,
-Deductive reasoning−baseline,,-90.0,,1,5574,83436,.,4.45,Table 1,36.0,15178381,-6.0,
-Deductive reasoning−baseline,,-96.0,,1,5574,83437,.,3.93,Table 1,-33.0,15178381,-3.0,
-Deductive reasoning−baseline,,-69.0,,1,5574,83438,.,4.08,Table 1,-54.0,15178381,-9.0,
-Deductive reasoning−baseline,,-63.0,,1,5574,83439,.,4.22,Table 1,-48.0,15178381,27.0,
-Deductive reasoning−baseline,,-60.0,,1,5574,83440,.,3.57,Table 1,24.0,15178381,57.0,
-Deductive reasoning−baseline,,3.0,,1,5574,83441,.,4.81,Table 1,36.0,15178381,63.0,
-Deductive reasoning−baseline,,12.0,,1,5574,83442,.,"3,64",Table 1,-27.0,15178381,63.0,
-Deductive reasoning−baseline,,6.0,,1,5574,83443,.,3.68,Table 1,-42.0,15178381,45.0,
-Deductive reasoning−baseline,,6.0,,1,5574,83444,.,3.60,Table 1,12.0,15178381,-12.0,
-Deductive reasoning−baseline,,3.0,,1,5574,83445,.,3.46,Table 1,-15.0,15178381,3.0,
-Deductive reasoning−baseline,,21.0,,1,5574,83446,.,4.79,Table 1,-54.0,15178381,6.0,
-Inductive reasoning−baseline,,-84.0,,1,5574,83447,.,4.61,Table 1,27.0,15178381,-18.0,
-Inductive reasoning−baseline,,-90.0,,1,5574,83448,.,4.44,Table 1,9.0,15178381,-9.0,
-Inductive reasoning−baseline,,-87.0,,1,5574,83449,.,3.95,Table 1,30.0,15178381,12.0,
-Inductive reasoning−baseline,,-66.0,,1,5574,83450,.,4.12,Table 1,-27.0,15178381,42.0,
-Inductive reasoning−baseline,,-60.0,,1,5574,83451,.,3.87,Table 1,30.0,15178381,60.0,
-Inductive reasoning−baseline,,-33.0,,1,5574,83452,.,4.37,Table 1,-45.0,15178381,51.0,
-Inductive reasoning−baseline,,0.0,,1,5574,83453,.,4.59,Table 1,33.0,15178381,60.0,
-Inductive reasoning−baseline,,6.0,,1,5574,83454,.,3.77,Table 1,-6.0,15178381,48.0,
-Inductive reasoning−baseline,,6.0,,1,5574,83455,.,3.71,Table 1,-6.0,15178381,-12.0,
-Inductive reasoning−baseline,,24.0,,1,5574,83456,.,4.00,Table 1,-48.0,15178381,27.0,
-Inductive reasoning−baseline,,12.0,,1,5574,83457,.,3.31,Table 1,-42.0,15178381,36.0,
-Interaction (modulating to deduction; masked inclusively by main effect of reasoning),,12.0,,1,5574,83458,.,3.79,Table 1,-54.0,15178381,12.0,
-Interaction (modulating to induction masked inclusively by main effect of reasoning),,-84.0,,1,5574,83459,.,3.58,Table 1,27.0,15178381,12.0,
-Interaction (modulating to induction masked inclusively by main effect of reasoning),,21.0,,1,5574,83460,.,3.08,Table 1,-36.0,15178381,30.0,
-PTSD vs. healthy controls (no trauma),,3.0,,2,7570,108212,. Meta-analysis of studies comparing hippocampal volume (PTSD vs. controls): homogenuos clusters and sociodemographical and clinical moderators,,Table 2,1.0,16730374,15.0,2
-,,10.0,,3,7571,108213,. Metaanalyses volume of other brain structures,,Table 3,0.7,16730374,24.0,3
-Cingulate Gyrus,,29.0,Anterior,2,115,1524,. Interaction Effect of Group by Time in Mean Overall Activity,,Table 2,-12.0,18550030,8.0,439
-Cingulate Gyrus,,26.0,,2,115,1525,. Interaction Effect of Group by Time in Mean Overall Activity,,Table 2,-11.0,18550030,40.0,
-Cingulate Gyrus,,-2.0,Middle,2,115,1526,. Interaction Effect of Group by Time in Mean Overall Activity,,Table 2,-14.0,18550030,24.0,125
-Cingulate Gyrus,,-1.0,,2,115,1527,. Interaction Effect of Group by Time in Mean Overall Activity,,Table 2,-13.0,18550030,28.0,
-Cingulate Gyrus,,-9.0,,2,115,1528,. Interaction Effect of Group by Time in Mean Overall Activity,,Table 2,22.0,18550030,35.0,22
-Cingulate Gyrus,,-13.0,,2,115,1529,. Interaction Effect of Group by Time in Mean Overall Activity,,Table 2,21.0,18550030,45.0,
-Cingulate Gyrus,,-34.0,Posterior,2,115,1530,. Interaction Effect of Group by Time in Mean Overall Activity,,Table 2,17.0,18550030,40.0,33
-Cingulate Gyrus,,26.0,Middle Frontal Gyrus,2,115,1531,. Interaction Effect of Group by Time in Mean Overall Activity,,Table 2,-25.0,18550030,40.0,13
-Cingulate Gyrus,,26.0,,2,115,1532,. Interaction Effect of Group by Time in Mean Overall Activity,,Table 2,-25.0,18550030,45.0,
-Cingulate Gyrus,,30.0,Superior Frontal Gyrus,2,115,1533,. Interaction Effect of Group by Time in Mean Overall Activity,,Table 2,3.0,18550030,45.0,37
-Cingulate Gyrus,,29.0,,2,115,1534,. Interaction Effect of Group by Time in Mean Overall Activity,,Table 2,0.0,18550030,50.0,
-Cingulate Gyrus,,28.0,,2,115,1535,. Interaction Effect of Group by Time in Mean Overall Activity,,Table 2,-11.0,18550030,45.0,46
-Cingulate Gyrus,,28.0,,2,115,1536,. Interaction Effect of Group by Time in Mean Overall Activity,,Table 2,-16.0,18550030,50.0,
-Cingulate Gyrus,,-48.0,Inferior Parietal Cortex,2,115,1537,. Interaction Effect of Group by Time in Mean Overall Activity,,Table 2,29.0,18550030,40.0,116
-Cingulate Gyrus,,-39.0,,2,115,1538,. Interaction Effect of Group by Time in Mean Overall Activity,,Table 2,23.0,18550030,45.0,
-Cingulate Gyrus,,-53.0,Precuneus,2,115,1539,. Interaction Effect of Group by Time in Mean Overall Activity,,Table 2,10.0,18550030,40.0,171
-Cingulate Gyrus,,-36.0,,2,115,1540,. Interaction Effect of Group by Time in Mean Overall Activity,,Table 2,17.0,18550030,50.0,
-,,-59.0,Posterior Cingulate Gyrus,3,116,1541,. Interaction Effect of Group by Time in Linear Load-Response,,Table 3,-9.0,18550030,8.0,956
-,,-63.0,,3,116,1542,. Interaction Effect of Group by Time in Linear Load-Response,,Table 3,-2.0,18550030,28.0,
-,,-27.0,,3,116,1543,. Interaction Effect of Group by Time in Linear Load-Response,,Table 3,-4.0,18550030,24.0,31
-,,29.0,,3,116,1544,. Interaction Effect of Group by Time in Linear Load-Response,,Table 3,-5.0,18550030,28.0,
-,,-54.0,Middle Temporal Gyrus,3,116,1545,. Interaction Effect of Group by Time in Linear Load-Response,,Table 3,-56.0,18550030,-4.0,30
-,,-55.0,,3,116,1546,. Interaction Effect of Group by Time in Linear Load-Response,,Table 3,-56.0,18550030,1.0,
-,,-54.0,,3,116,1547,. Interaction Effect of Group by Time in Linear Load-Response,,Table 3,-48.0,18550030,8.0,71
-,,-25.0,Superior Temporal Gyrus,3,116,1548,. Interaction Effect of Group by Time in Linear Load-Response,,Table 3,-49.0,18550030,8.0,177
-,,-38.0,,3,116,1549,. Interaction Effect of Group by Time in Linear Load-Response,,Table 3,-50.0,18550030,20.0,
-,,-37.0,Inferior Parietal Cortex,3,116,1550,. Interaction Effect of Group by Time in Linear Load-Response,,Table 3,-44.0,18550030,24.0,938
-,,-45.0,,3,116,1551,. Interaction Effect of Group by Time in Linear Load-Response,,Table 3,-37.0,18550030,50.0,
-,,-55.0,Precuneus,3,116,1552,. Interaction Effect of Group by Time in Linear Load-Response,,Table 3,-1.0,18550030,32.0,983
-,,-55.0,,3,116,1553,. Interaction Effect of Group by Time in Linear Load-Response,,Table 3,5.0,18550030,45.0,
-,,-84.0,Fusiform Gyrus,3,116,1554,. Interaction Effect of Group by Time in Linear Load-Response,,Table 3,-29.0,18550030,-16.0,235
-,,-85.0,,3,116,1555,. Interaction Effect of Group by Time in Linear Load-Response,,Table 3,-31.0,18550030,-12.0,
-,,-82.0,,3,116,1556,. Interaction Effect of Group by Time in Linear Load-Response,,Table 3,32.0,18550030,-16.0,134
-,,-87.0,,3,116,1557,. Interaction Effect of Group by Time in Linear Load-Response,,Table 3,33.0,18550030,-12.0,
-,,-90.0,Inferior Occipital Gyrus,3,116,1558,. Interaction Effect of Group by Time in Linear Load-Response,,Table 3,-26.0,18550030,-8.0,98
-,,-89.0,,3,116,1559,. Interaction Effect of Group by Time in Linear Load-Response,,Table 3,-36.0,18550030,-1.0,
-,,-92.0,,3,116,1560,. Interaction Effect of Group by Time in Linear Load-Response,,Table 3,27.0,18550030,-8.0,139
-,,-89.0,,3,116,1561,. Interaction Effect of Group by Time in Linear Load-Response,,Table 3,27.0,18550030,4.0,
-,,-58.0,Lingual Gyrus,3,116,1562,. Interaction Effect of Group by Time in Linear Load-Response,,Table 3,-15.0,18550030,1.0,128
-,,-57.0,,3,116,1563,. Interaction Effect of Group by Time in Linear Load-Response,,Table 3,-10.0,18550030,4.0,
-,,-57.0,Cerebellum,3,116,1564,. Interaction Effect of Group by Time in Linear Load-Response,,Table 3,-33.0,18550030,-37.0,506
-,,-77.0,,3,116,1565,. Interaction Effect of Group by Time in Linear Load-Response,,Table 3,-37.0,18550030,-20.0,
-,,-52.0,,3,116,1566,. Interaction Effect of Group by Time in Linear Load-Response,,Table 3,34.0,18550030,-36.0,855
-,,-59.0,,3,116,1567,. Interaction Effect of Group by Time in Linear Load-Response,,Table 3,35.0,18550030,-16.0,
-,,-91.0,,3,116,1568,. Interaction Effect of Group by Time in Linear Load-Response,,Table 3,-8.0,18550030,-28.0,158
-,,-92.0,,3,116,1569,. Interaction Effect of Group by Time in Linear Load-Response,,Table 3,-10.0,18550030,-20.0,
-,,-59.0,,3,116,1570,. Interaction Effect of Group by Time in Linear Load-Response,,Table 3,12.0,18550030,-16.0,102
-,,-63.0,,3,116,1571,. Interaction Effect of Group by Time in Linear Load-Response,,Table 3,14.0,18550030,-12.0,
-RGD < Control Subjects,,-19.0,Right superior frontal gyrus,2,128,1769,. Results of Optimized VBM Analysis Comparing RGD Subjects with Healthy Control Subjects,3.62,Table 2,8.0,18550031,70.0,396
-RGD < Control Subjects,,-24.0,Left postcentral gyrus,2,128,1770,. Results of Optimized VBM Analysis Comparing RGD Subjects with Healthy Control Subjects,3.38,Table 2,-32.0,18550031,49.0,274
-RGD < Control Subjects,,-12.0,Right middle temporal gyrus,2,128,1771,. Results of Optimized VBM Analysis Comparing RGD Subjects with Healthy Control Subjects,3.06,Table 2,41.0,18550031,-12.0,150
-RGD > Control Subjects,,15.0,Left cingulate gyrus,2,128,1772,. Results of Optimized VBM Analysis Comparing RGD Subjects with Healthy Control Subjects,3.26,Table 2,-3.0,18550031,29.0,191
-,,-9.0,Amygdala,2,3054,45868,,,Table 2,-24.0,18550597,-13.0,
-,,-33.0,Hippocampus,2,3054,45869,,,Table 2,13.0,18550597,9.0,
-,,-34.0,Hippocampus,2,3054,45870,,,Table 2,-12.0,18550597,8.0,
-,,-13.0,Pallidum,2,3054,45871,,,Table 2,28.0,18550597,-1.0,
-,,24.0,Caudate,2,3054,45872,,,Table 2,15.0,18550597,-9.0,
-,,-16.0,Putamen,2,3054,45873,,,Table 2,30.0,18550597,-1.0,
-,,0.0,"Uncal cortex, parahippocampal gyrus",3,3055,45874,,4.18,Table 3,12.0,18550597,-30.0,1114
-,,-6.0,,3,3055,45875,,4.14,Table 3,-18.0,18550597,-36.0,653
-,,-7.0,,3,3055,45876,,3.78,Table 3,-18.0,18550597,-30.0,1714
-,,-11.0,Diencephalon,3,3055,45877,,4.57,Table 3,6.0,18550597,-4.0,5980
-,,-53.0,"Precuneus, superior parietal gyrus",3,3055,45878,,5.05,Table 3,-9.0,18550597,47.0,37727
+pmcid,table_id,table_label,x,y,z,pmid,table_caption,table_number,p_value,region,size,statistic,groups,source
+9001100.0,tab2,Table 2,21.0,39.0,51.0,35419051.0,,,,,,,,pubget
+9001100.0,tab2,Table 2,30.0,42.0,-18.0,35419051.0,,,,,,,,pubget
+5789340.0,brainsci-08-00009-t002,Table 2,-40.1,25.8,21.3,29300304.0,,,,,,,,pubget
+5789340.0,brainsci-08-00009-t002,Table 2,-11.6,20.6,5.2,29300304.0,,,,,,,,pubget
+5789340.0,brainsci-08-00009-t002,Table 2,-5.5,4.7,49.2,29300304.0,,,,,,,,pubget
+5789340.0,brainsci-08-00009-t002,Table 2,-50.6,0.6,31.0,29300304.0,,,,,,,,pubget
+5789340.0,brainsci-08-00009-t002,Table 2,-37.5,-49.3,45.5,29300304.0,,,,,,,,pubget
+5789340.0,brainsci-08-00009-t002,Table 2,-28.7,16.6,9.9,29300304.0,,,,,,,,pubget
+5789340.0,brainsci-08-00009-t002,Table 2,42.1,28.7,19.4,29300304.0,,,,,,,,pubget
+5789340.0,brainsci-08-00009-t002,Table 2,12.6,-22.2,6.1,29300304.0,,,,,,,,pubget
+5789340.0,brainsci-08-00009-t002,Table 2,40.0,5.4,11.2,29300304.0,,,,,,,,pubget
+5789340.0,brainsci-08-00009-t002,Table 2,37.3,-26.4,54.5,29300304.0,,,,,,,,pubget
+5789340.0,brainsci-08-00009-t002,Table 2,37.1,-21.0,56.1,29300304.0,,,,,,,,pubget
+3242169.0,T1,Table 1,4.0,30.0,36.0,22194728.0,,,,,,,,pubget
+3242169.0,T1,Table 1,-4.0,18.0,44.0,22194728.0,,,,,,,,pubget
+3242169.0,T1,Table 1,30.0,6.0,60.0,22194728.0,,,,,,,,pubget
+3242169.0,T1,Table 1,-42.0,28.0,32.0,22194728.0,,,,,,,,pubget
+3242169.0,T1,Table 1,-44.0,26.0,26.0,22194728.0,,,,,,,,pubget
+3242169.0,T1,Table 1,30.0,10.0,58.0,22194728.0,,,,,,,,pubget
+3242169.0,T1,Table 1,-44.0,-64.0,44.0,22194728.0,,,,,,,,pubget
+3242169.0,T1,Table 1,-46.0,-42.0,50.0,22194728.0,,,,,,,,pubget
+3242169.0,T1,Table 1,-38.0,-58.0,46.0,22194728.0,,,,,,,,pubget
+3242169.0,T1,Table 1,-46.0,-44.0,54.0,22194728.0,,,,,,,,pubget
+3242169.0,T1,Table 1,-38.0,-60.0,54.0,22194728.0,,,,,,,,pubget
+3242169.0,T1,Table 1,-36.0,-50.0,46.0,22194728.0,,,,,,,,pubget
+3242169.0,T1,Table 1,50.0,-56.0,46.0,22194728.0,,,,,,,,pubget
+3242169.0,T1,Table 1,46.0,-50.0,54.0,22194728.0,,,,,,,,pubget
+3242169.0,T1,Table 1,44.0,-54.0,48.0,22194728.0,,,,,,,,pubget
+3242169.0,T1,Table 1,44.0,-60.0,44.0,22194728.0,,,,,,,,pubget
+3242169.0,T1,Table 1,42.0,-48.0,46.0,22194728.0,,,,,,,,pubget
+3242169.0,T1,Table 1,42.0,-38.0,44.0,22194728.0,,,,,,,,pubget
+3242169.0,T1,Table 1,-10.0,-68.0,38.0,22194728.0,,,,,,,,pubget
+3242169.0,T1,Table 1,2.0,-64.0,48.0,22194728.0,,,,,,,,pubget
+3242169.0,T1,Table 1,-2.0,-62.0,48.0,22194728.0,,,,,,,,pubget
+3242169.0,T1,Table 1,-8.0,-64.0,46.0,22194728.0,,,,,,,,pubget
+3242169.0,T1,Table 1,14.0,-64.0,58.0,22194728.0,,,,,,,,pubget
+3242169.0,T1,Table 1,-38.0,68.0,-4.0,22194728.0,,,,,,,,pubget
+3242169.0,T1,Table 1,-32.0,64.0,6.0,22194728.0,,,,,,,,pubget
+3242169.0,T1,Table 1,-38.0,60.0,0.0,22194728.0,,,,,,,,pubget
+3242169.0,T1,Table 1,-42.0,62.0,-4.0,22194728.0,,,,,,,,pubget
+3242169.0,T1,Table 1,-28.0,56.0,4.0,22194728.0,,,,,,,,pubget
+3242169.0,T1,Table 1,-30.0,56.0,8.0,22194728.0,,,,,,,,pubget
+3242169.0,T1,Table 1,-32.0,18.0,2.0,22194728.0,,,,,,,,pubget
+3242169.0,T1,Table 1,-30.0,22.0,-2.0,22194728.0,,,,,,,,pubget
+3242169.0,T1,Table 1,34.0,20.0,-4.0,22194728.0,,,,,,,,pubget
+3242169.0,T1,Table 1,30.0,62.0,-6.0,22194728.0,,,,,,,,pubget
+3242169.0,T1,Table 1,34.0,64.0,10.0,22194728.0,,,,,,,,pubget
+3242169.0,T1,Table 1,30.0,60.0,-2.0,22194728.0,,,,,,,,pubget
+3242169.0,T1,Table 1,32.0,64.0,2.0,22194728.0,,,,,,,,pubget
+3242169.0,T1,Table 1,28.0,58.0,4.0,22194728.0,,,,,,,,pubget
+3242169.0,T1,Table 1,38.0,58.0,-10.0,22194728.0,,,,,,,,pubget
+3242169.0,T2,Table 2,46.0,6.0,30.0,22194728.0,,,,,,,,pubget
+3242169.0,T2,Table 2,48.0,36.0,14.0,22194728.0,,,,,,,,pubget
+3242169.0,T2,Table 2,50.0,4.0,24.0,22194728.0,,,,,,,,pubget
+3242169.0,T2,Table 2,50.0,44.0,16.0,22194728.0,,,,,,,,pubget
+3242169.0,T2,Table 2,0.0,-32.0,42.0,22194728.0,,,,,,,,pubget
+3242169.0,T2,Table 2,0.0,-36.0,42.0,22194728.0,,,,,,,,pubget
+3242169.0,T2,Table 2,52.0,36.0,20.0,22194728.0,,,,,,,,pubget
+3242169.0,T2,Table 2,-8.0,10.0,0.0,22194728.0,,,,,,,,pubget
+3242169.0,T2,Table 2,-12.0,12.0,2.0,22194728.0,,,,,,,,pubget
+3242169.0,T2,Table 2,9.0,17.0,-7.0,22194728.0,,,,,,,,pubget
+3242169.0,T2,Table 2,15.0,9.0,-8.0,22194728.0,,,,,,,,pubget
+3242169.0,T2,Table 2,-22.0,9.0,-3.0,22194728.0,,,,,,,,pubget
+3242169.0,T2,Table 2,24.0,8.0,-1.0,22194728.0,,,,,,,,pubget
+3242169.0,T2,Table 2,-24.0,9.0,-2.0,22194728.0,,,,,,,,pubget
+3242169.0,T2,Table 2,40.0,2.0,18.0,22194728.0,,,,,,,,pubget
+3242169.0,T2,Table 2,0.0,-36.0,34.0,22194728.0,,,,,,,,pubget
+3242169.0,T2,Table 2,0.0,-32.0,30.0,22194728.0,,,,,,,,pubget
+3242169.0,T2,Table 2,8.0,-40.0,40.0,22194728.0,,,,,,,,pubget
+3242169.0,T2,Table 2,12.0,-38.0,30.0,22194728.0,,,,,,,,pubget
+3242169.0,T2,Table 2,32.0,-68.0,36.0,22194728.0,,,,,,,,pubget
+3242169.0,T2,Table 2,28.0,-66.0,40.0,22194728.0,,,,,,,,pubget
+3242169.0,T2,Table 2,32.0,-92.0,2.0,22194728.0,,,,,,,,pubget
+3242169.0,T2,Table 2,24.0,-92.0,-4.0,22194728.0,,,,,,,,pubget
+3242169.0,T2,Table 2,-24.0,-94.0,-8.0,22194728.0,,,,,,,,pubget
+3242169.0,T2,Table 2,-52.0,-58.0,-8.0,22194728.0,,,,,,,,pubget
+7821103.0,ejp1680-tbl-0004,TABLE 4,46.0,-28.0,20.0,33064887.0,,,,,,,,pubget
+7821103.0,ejp1680-tbl-0004,TABLE 4,58.0,-24.0,22.0,33064887.0,,,,,,,,pubget
+7821103.0,ejp1680-tbl-0004,TABLE 4,54.0,4.0,4.0,33064887.0,,,,,,,,pubget
+7821103.0,ejp1680-tbl-0004,TABLE 4,16.0,-38.0,70.0,33064887.0,,,,,,,,pubget
+7821103.0,ejp1680-tbl-0004,TABLE 4,8.0,-38.0,64.0,33064887.0,,,,,,,,pubget
+7821103.0,ejp1680-tbl-0004,TABLE 4,6.0,-22.0,64.0,33064887.0,,,,,,,,pubget
+7821103.0,ejp1680-tbl-0004,TABLE 4,-52.0,-34.0,20.0,33064887.0,,,,,,,,pubget
+7821103.0,ejp1680-tbl-0004,TABLE 4,-38.0,0.0,10.0,33064887.0,,,,,,,,pubget
+7821103.0,ejp1680-tbl-0004,TABLE 4,-34.0,16.0,8.0,33064887.0,,,,,,,,pubget
+7821103.0,ejp1680-tbl-0004,TABLE 4,18.0,14.0,-6.0,33064887.0,,,,,,,,pubget
+7821103.0,ejp1680-tbl-0004,TABLE 4,44.0,42.0,2.0,33064887.0,,,,,,,,pubget
+7821103.0,ejp1680-tbl-0004,TABLE 4,44.0,38.0,18.0,33064887.0,,,,,,,,pubget
+7821103.0,ejp1680-tbl-0004,TABLE 4,60.0,0.0,6.0,33064887.0,,,,,,,,pubget
+7821103.0,ejp1680-tbl-0004,TABLE 4,60.0,8.0,-2.0,33064887.0,,,,,,,,pubget
+7821103.0,ejp1680-tbl-0004,TABLE 4,-60.0,-4.0,4.0,33064887.0,,,,,,,,pubget
+7821103.0,ejp1680-tbl-0004,TABLE 4,-56.0,2.0,-2.0,33064887.0,,,,,,,,pubget
+7821103.0,ejp1680-tbl-0004,TABLE 4,-44.0,-14.0,30.0,33064887.0,,,,,,,,pubget
+7821103.0,ejp1680-tbl-0004,TABLE 4,4.0,-2.0,46.0,33064887.0,,,,,,,,pubget
+7821103.0,ejp1680-tbl-0004,TABLE 4,-2.0,-10.0,64.0,33064887.0,,,,,,,,pubget
+7821103.0,ejp1680-tbl-0004,TABLE 4,2.0,-4.0,58.0,33064887.0,,,,,,,,pubget
+7821103.0,ejp1680-tbl-0004,TABLE 4,-14.0,-22.0,4.0,33064887.0,,,,,,,,pubget
+7821103.0,ejp1680-tbl-0004,TABLE 4,-12.0,-14.0,0.0,33064887.0,,,,,,,,pubget
+7821103.0,ejp1680-tbl-0004,TABLE 4,20.0,-22.0,6.0,33064887.0,,,,,,,,pubget
+7821103.0,ejp1680-tbl-0005,TABLE 5,-2.0,-28.0,46.0,33064887.0,,,,,,,,pubget
+7821103.0,ejp1680-tbl-0005,TABLE 5,2.0,-26.0,66.0,33064887.0,,,,,,,,pubget
+7821103.0,ejp1680-tbl-0005,TABLE 5,-2.0,-28.0,46.0,33064887.0,,,,,,,,pubget
+7821103.0,ejp1680-tbl-0005,TABLE 5,0.0,-24.0,36.0,33064887.0,,,,,,,,pubget
+7821103.0,ejp1680-tbl-0005,TABLE 5,2.0,-28.0,64.0,33064887.0,,,,,,,,pubget
+7821103.0,ejp1680-tbl-0006,TABLE 6,-2.0,-28.0,48.0,33064887.0,,,,,,,,pubget
+7821103.0,ejp1680-tbl-0006,TABLE 6,-2.0,-26.0,66.0,33064887.0,,,,,,,,pubget
+7821103.0,ejp1680-tbl-0006,TABLE 6,-2.0,-32.0,58.0,33064887.0,,,,,,,,pubget
+7821103.0,ejp1680-tbl-0006,TABLE 6,-2.0,-28.0,48.0,33064887.0,,,,,,,,pubget
+7821103.0,ejp1680-tbl-0006,TABLE 6,2.0,-26.0,66.0,33064887.0,,,,,,,,pubget
+7821103.0,ejp1680-tbl-0006,TABLE 6,-2.0,-32.0,58.0,33064887.0,,,,,,,,pubget
+7821103.0,ejp1680-tbl-0007,TABLE 7,-34.0,2.0,60.0,33064887.0,,,,,,,,pubget
+7821103.0,ejp1680-tbl-0007,TABLE 7,-46.0,22.0,38.0,33064887.0,,,,,,,,pubget
+7821103.0,ejp1680-tbl-0007,TABLE 7,-28.0,-8.0,58.0,33064887.0,,,,,,,,pubget
+7821103.0,ejp1680-tbl-0007,TABLE 7,-58.0,-54.0,30.0,33064887.0,,,,,,,,pubget
+7821103.0,ejp1680-tbl-0007,TABLE 7,-48.0,-50.0,40.0,33064887.0,,,,,,,,pubget
+7821103.0,ejp1680-tbl-0007,TABLE 7,-54.0,-58.0,40.0,33064887.0,,,,,,,,pubget
+3960334.0,tbl0005,Table 1,-18.0,56.0,30.0,24397999.0,,,,,,,,pubget
+3960334.0,tbl0005,Table 1,10.0,6.0,16.0,24397999.0,,,,,,,,pubget
+3960334.0,tbl0005,Table 1,32.0,-2.0,-22.0,24397999.0,,,,,,,,pubget
+3960334.0,tbl0005,Table 1,0.0,50.0,10.0,24397999.0,,,,,,,,pubget
+3960334.0,tbl0005,Table 1,4.0,26.0,40.0,24397999.0,,,,,,,,pubget
+3960334.0,tbl0010,Table 2,-10.0,2.0,12.0,24397999.0,,,,,,,,pubget
+3960334.0,tbl0010,Table 2,16.0,54.0,28.0,24397999.0,,,,,,,,pubget

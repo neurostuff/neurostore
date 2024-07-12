@@ -40,19 +40,25 @@ const ProjectsPage: React.FC = (props) => {
                 pageOfResults={(projectsResponse?.results || []).length === 0 ? 1 : pageOfResults}
             >
                 <StateHandlerComponent isLoading={isLoading} isError={isError}>
-                    {(projectsResponse?.results || []).map((project) => (
-                        <Box
-                            key={project?.id || ''}
-                            sx={{
-                                ':nth-of-type(2n)': {
-                                    backgroundColor: '#f7f7f7',
-                                    borderRadius: '4px',
-                                },
-                            }}
-                        >
-                            <ProjectsPageCard {...(project as INeurosynthProjectReturn)} />
-                        </Box>
-                    ))}
+                    {(projectsResponse?.results || []).length > 0 ? (
+                        (projectsResponse?.results || []).map((project) => (
+                            <Box
+                                key={project?.id || ''}
+                                sx={{
+                                    ':nth-of-type(2n)': {
+                                        backgroundColor: '#f7f7f7',
+                                        borderRadius: '4px',
+                                    },
+                                }}
+                            >
+                                <ProjectsPageCard {...(project as INeurosynthProjectReturn)} />
+                            </Box>
+                        ))
+                    ) : (
+                        <Typography sx={{ margin: '0 10px' }} color="warning.dark">
+                            No projects
+                        </Typography>
+                    )}
                 </StateHandlerComponent>
             </SearchContainer>
         </StateHandlerComponent>

@@ -31,6 +31,7 @@ const useGetDebouncedProjects = (
                 const projectsList = res.data;
                 return projectsList;
             },
+            refetchOnWindowFocus: false,
         }
     );
 };

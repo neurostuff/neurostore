@@ -122,7 +122,7 @@ const AddMetadataRow: React.FC<IAddMetadataRowModel> = (props) => {
                     variant="outlined"
                     placeholder={keyPlaceholderText || 'New metadata key'}
                     fullWidth
-                    helperText={!isValid ? errorMessage || 'All metadata keys must be unique' : ''}
+                    helperText={!isValid ? errorMessage || 'All keys must be unique' : ''}
                     error={!isValid}
                     value={metadataRow.metadataKey}
                 />

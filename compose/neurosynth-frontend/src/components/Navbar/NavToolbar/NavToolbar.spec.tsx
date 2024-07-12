@@ -16,25 +16,12 @@ describe('NavToolbar Component', () => {
 
     const mockLogin = jest.fn();
     const mockLogout = jest.fn();
-    const mockOnCreateProject = jest.fn();
     it('should render', () => {
-        render(
-            <NavToolbar
-                onCreateProject={mockOnCreateProject}
-                onLogin={mockLogin}
-                onLogout={mockLogout}
-            />
-        );
+        render(<NavToolbar onLogin={mockLogin} onLogout={mockLogout} />);
     });
 
     it('should show limited options when not authenticated', () => {
-        render(
-            <NavToolbar
-                onCreateProject={mockOnCreateProject}
-                onLogin={mockLogin}
-                onLogout={mockLogout}
-            />
-        );
+        render(<NavToolbar onLogin={mockLogin} onLogout={mockLogout} />);
 
         expect(screen.queryByText('NEW PROJECT')).not.toBeInTheDocument();
         expect(screen.queryByText('my projects')).not.toBeInTheDocument();
@@ -48,13 +35,7 @@ describe('NavToolbar Component', () => {
     it('should show the full list of options when authenticated', () => {
         useAuth0().isAuthenticated = true;
 
-        render(
-            <NavToolbar
-                onCreateProject={mockOnCreateProject}
-                onLogin={mockLogin}
-                onLogout={mockLogout}
-            />
-        );
+        render(<NavToolbar onLogin={mockLogin} onLogout={mockLogout} />);
 
         expect(screen.queryByText('NEW PROJECT')).toBeInTheDocument();
         expect(screen.queryByText('my projects')).toBeInTheDocument();
@@ -64,13 +45,7 @@ describe('NavToolbar Component', () => {
     });
 
     it('should login', () => {
-        render(
-            <NavToolbar
-                onCreateProject={mockOnCreateProject}
-                onLogin={mockLogin}
-                onLogout={mockLogout}
-            />
-        );
+        render(<NavToolbar onLogin={mockLogin} onLogout={mockLogout} />);
 
         userEvent.click(screen.getByText('SIGN IN/SIGN UP'));
         expect(mockLogin).toHaveBeenCalled();
@@ -79,13 +54,7 @@ describe('NavToolbar Component', () => {
     it('should logout', () => {
         useAuth0().isAuthenticated = true;
 
-        render(
-            <NavToolbar
-                onCreateProject={mockOnCreateProject}
-                onLogin={mockLogin}
-                onLogout={mockLogout}
-            />
-        );
+        render(<NavToolbar onLogin={mockLogin} onLogout={mockLogout} />);
 
         // open popup
         userEvent.click(screen.getByTestId('PersonIcon'));
@@ -93,61 +62,11 @@ describe('NavToolbar Component', () => {
         expect(mockLogout).toHaveBeenCalled();
     });
 
-    it('should create a new project on click', () => {
-        useAuth0().isAuthenticated = true;
-
-        render(
-            <NavToolbar
-                onCreateProject={mockOnCreateProject}
-                onLogin={mockLogin}
-                onLogout={mockLogout}
-            />
-        );
-
-        userEvent.click(screen.getByText('NEW PROJECT'));
-        expect(mockOnCreateProject).toHaveBeenCalledWith('Untitled', '');
-    });
-
-    it('should show the loading icon', () => {
-        useAuth0().isAuthenticated = true;
-
-        render(
-            <NavToolbar
-                createProjectIsLoading={true}
-                onCreateProject={mockOnCreateProject}
-                onLogin={mockLogin}
-                onLogout={mockLogout}
-            />
-        );
-
-        expect(screen.getByRole('progressbar')).toBeInTheDocument();
-    });
-
-    it('should not show the loading icon', () => {
-        useAuth0().isAuthenticated = true;
-
-        render(
-            <NavToolbar
-                onCreateProject={mockOnCreateProject}
-                onLogin={mockLogin}
-                onLogout={mockLogout}
-            />
-        );
-
-        expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
-    });
-
     it('should open the navpopup menu with the given menu items', () => {
-        render(
-            <NavToolbar
-                onCreateProject={mockOnCreateProject}
-                onLogin={mockLogin}
-                onLogout={mockLogout}
-            />
-        );
+        render(<NavToolbar onLogin={mockLogin} onLogout={mockLogout} />);
 
         userEvent.click(screen.getByTestId('mock-trigger-show-popup'));
-        expect(screen.getByText('STUDIES')).toBeInTheDocument();
-        expect(screen.getByText('META-ANALYSES')).toBeInTheDocument();
+        expect(screen.getByText('Studies')).toBeInTheDocument();
+        expect(screen.getByText('Meta-Analyses')).toBeInTheDocument();
     });
 });

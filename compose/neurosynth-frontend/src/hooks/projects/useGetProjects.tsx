@@ -121,6 +121,7 @@ const useGetProjects = (projectSearchCriteria: ProjectSearchCriteria) => {
         {
             select: (axiosResponse) =>
                 (axiosResponse.data.results as INeurosynthProjectReturn[]) || [],
+            refetchOnWindowFocus: false,
         }
     );
 };

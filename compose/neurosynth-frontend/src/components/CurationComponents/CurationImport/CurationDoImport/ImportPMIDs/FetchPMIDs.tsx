@@ -11,11 +11,7 @@ const FetchPMIDs: React.FC<{
     pubmedIds: string[];
     onStubsUploaded: (stubs: ICurationStubStudy[], unimportedStubs?: string[]) => void;
 }> = React.memo((props) => {
-    const results = useGetPubmedIDs(props.pubmedIds);
-    const isLoading = results.some((x) => x.isLoading);
-    const isError = results.some((x) => x.isError);
-    const isSuccess = results.every((x) => x.isSuccess);
-    const data = results.map((x) => x.data || []);
+    const { data, isLoading, isError, isSuccess } = useGetPubmedIDs(props.pubmedIds, true);
 
     useEffect(() => {
         if (data.length === 0 || isLoading || !isSuccess) return;

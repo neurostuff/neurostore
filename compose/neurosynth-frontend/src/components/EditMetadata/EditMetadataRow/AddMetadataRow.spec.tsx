@@ -170,7 +170,7 @@ describe('AddMetadataRow Component', () => {
         const addButton = screen.getByText('ADD').closest('button') as HTMLElement;
         userEvent.click(addButton);
 
-        const errorMessage = screen.getByText('All metadata keys must be unique');
+        const errorMessage = screen.getByText('All keys must be unique');
         expect(errorMessage).toBeInTheDocument();
     });
 

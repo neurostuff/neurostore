@@ -1,0 +1,203 @@
+[
+  {
+    "id": "RZPC3rzypsQo",
+    "user": "auth0|62e0e6c9dd47048572613b4d",
+    "username": "test-user",
+    "created_at": "2024-06-13T15:49:51.295335+00:00",
+    "updated_at": "2024-06-13T15:49:51.479823+00:00",
+    "metadata": null,
+    "versions": [
+      {
+        "id": "abc123",
+        "user": "auth0|62e0e6c9dd47048572613b4d",
+        "username": "test-user",
+        "created_at": "2024-06-13T15:49:51.295335+00:00",
+        "updated_at": null,
+        "source": null
+      },
+      {
+        "id": "t4crTQbZGBWc",
+        "user": "github|26612023",
+        "username": "Nicholas Lee",
+        "created_at": "2024-06-13T16:05:39.596136+00:00",
+        "updated_at": null,
+        "source": "neurostore"
+      },
+      {
+        "id": "vgeWexdR7zYB",
+        "user": "auth0|666b1ada2d79c145cb2ac2ca",
+        "username": "Test User 2",
+        "created_at": "2024-06-13T16:14:40.526157+00:00",
+        "updated_at": null,
+        "source": "neurostore"
+      },
+      {
+        "id": "w86rfNDYuHFr",
+        "user": "auth0|666b1a314164b827f8a348fb",
+        "username": "Test User 1",
+        "created_at": "2024-06-13T16:13:42.932844+00:00",
+        "updated_at": null,
+        "source": "neurostore"
+      },
+      {
+        "id": "NDrK4GyqkoAC",
+        "user": "auth0|666c39a8b281fda9ff9699e9",
+        "username": "test user 5",
+        "created_at": "2024-06-14T12:38:14.290378+00:00",
+        "updated_at": null,
+        "source": "neurostore"
+      },
+      {
+        "id": "duH7pUbTCPac",
+        "user": "auth0|666c3bb1fcdc91471b06bfb2",
+        "username": "test user 6",
+        "created_at": "2024-06-14T12:47:01.772700+00:00",
+        "updated_at": null,
+        "source": "neurostore"
+      }
+    ],
+    "name": "The Science Underlying Giant Panda Conservation Translocations.",
+    "description": "\nThe giant panda (Ailuropoda melanoleuca) is the flagship species of animal conservation worldwide, and the number of captive pandas reached 673 in 2021. According to the Fourth National Survey Report on the Giant Panda, there are 1864 wild pandas, segregated into 33 local populations, and 25 of these populations are too small to be self-sustaining. In addition to the conservation and restoration of panda habitats, conservation translocations, an approach that has been shown to be effective in slowing or reversing biodiversity loss, are highly desirable for panda conservation. The captive-bred panda population has grown rapidly, laying the foundation for releasing captive-bred pandas into the wild. This paper reviews the scientific advances in conservation translocations of pandas. Studies have shown that before translocation conservation programs are implemented, we should determine what factors are causing the depletion of the original population at the release site. The selection of suitable release sites and individuals will help to improve the survival rate of released individuals in the wild. Pre-release training and post-release monitoring are essential to ensure successful releases. We also see the great potential for increasing applications of Adaptive Management to improve the success of giant panda conservation translocation programs. This review provides theoretical guidance for improvement of the success rate in conservation translocations for captive pandas, and uses the panda as a model species to provide a global reference for the conservation translocations of rare and endangered species.",
+    "publication": "Animals : an open access journal from MDPI",
+    "doi": "some-doi.org",
+    "pmid": "37958087",
+    "pmcid": "PMC10649174",
+    "authors": "Henrich J,",
+    "year": 1996,
+    "level": null
+  },
+  {
+    "id": "RZPC3rzypsQo",
+    "user": "auth0|62e0e6c9dd47048572613b4d",
+    "username": "test-user",
+    "created_at": "2024-06-13T15:49:51.295335+00:00",
+    "updated_at": "2024-06-13T15:49:51.479823+00:00",
+    "metadata": null,
+    "versions": [
+      {
+        "id": "LSu5fYVXv9XY",
+        "user": "auth0|62e0e6c9dd47048572613b4d",
+        "username": "test-user",
+        "created_at": "2024-06-13T15:49:51.295335+00:00",
+        "updated_at": null,
+        "source": null
+      },
+      {
+        "id": "t4crTQbZGBWc",
+        "user": "github|26612023",
+        "username": "Nicholas Lee",
+        "created_at": "2024-06-13T16:05:39.596136+00:00",
+        "updated_at": null,
+        "source": "neurostore"
+      },
+      {
+        "id": "vgeWexdR7zYB",
+        "user": "auth0|666b1ada2d79c145cb2ac2ca",
+        "username": "Test User 2",
+        "created_at": "2024-06-13T16:14:40.526157+00:00",
+        "updated_at": null,
+        "source": "neurostore"
+      },
+      {
+        "id": "w86rfNDYuHFr",
+        "user": "auth0|666b1a314164b827f8a348fb",
+        "username": "Test User 1",
+        "created_at": "2024-06-13T16:13:42.932844+00:00",
+        "updated_at": null,
+        "source": "neurostore"
+      },
+      {
+        "id": "NDrK4GyqkoAC",
+        "user": "auth0|666c39a8b281fda9ff9699e9",
+        "username": "test user 5",
+        "created_at": "2024-06-14T12:38:14.290378+00:00",
+        "updated_at": null,
+        "source": "neurostore"
+      },
+      {
+        "id": "duH7pUbTCPac",
+        "user": "auth0|666c3bb1fcdc91471b06bfb2",
+        "username": "test user 6",
+        "created_at": "2024-06-14T12:47:01.772700+00:00",
+        "updated_at": null,
+        "source": "neurostore"
+      }
+    ],
+    "name": "Another panda study.",
+    "description": "Smth smth smth panda",
+    "publication": "Nature",
+    "doi": "some-other.org",
+    "pmid": "11053230",
+    "pmcid": "PMC10649174",
+    "authors": "Henrich J The second",
+    "year": 1997,
+    "level": null
+  },
+  {
+    "id": "RZPC3rzypsQo",
+    "user": "auth0|62e0e6c9dd47048572613b4d",
+    "username": "test-user",
+    "created_at": "2024-06-13T15:49:51.295335+00:00",
+    "updated_at": "2024-06-13T15:49:51.479823+00:00",
+    "metadata": null,
+    "versions": [
+      {
+        "id": "LSu5fYVXv9XY",
+        "user": "auth0|62e0e6c9dd47048572613b4d",
+        "username": "test-user",
+        "created_at": "2024-06-13T15:49:51.295335+00:00",
+        "updated_at": null,
+        "source": null
+      },
+      {
+        "id": "t4crTQbZGBWc",
+        "user": "github|26612023",
+        "username": "Nicholas Lee",
+        "created_at": "2024-06-13T16:05:39.596136+00:00",
+        "updated_at": null,
+        "source": "neurostore"
+      },
+      {
+        "id": "vgeWexdR7zYB",
+        "user": "auth0|666b1ada2d79c145cb2ac2ca",
+        "username": "Test User 2",
+        "created_at": "2024-06-13T16:14:40.526157+00:00",
+        "updated_at": null,
+        "source": "neurostore"
+      },
+      {
+        "id": "w86rfNDYuHFr",
+        "user": "auth0|666b1a314164b827f8a348fb",
+        "username": "Test User 1",
+        "created_at": "2024-06-13T16:13:42.932844+00:00",
+        "updated_at": null,
+        "source": "neurostore"
+      },
+      {
+        "id": "NDrK4GyqkoAC",
+        "user": "auth0|666c39a8b281fda9ff9699e9",
+        "username": "test user 5",
+        "created_at": "2024-06-14T12:38:14.290378+00:00",
+        "updated_at": null,
+        "source": "neurostore"
+      },
+      {
+        "id": "duH7pUbTCPac",
+        "user": "auth0|666c3bb1fcdc91471b06bfb2",
+        "username": "test user 6",
+        "created_at": "2024-06-14T12:47:01.772700+00:00",
+        "updated_at": null,
+        "source": "neurostore"
+      }
+    ],
+    "name": "Study",
+    "description": "lorem ipsum",
+    "publication": "Nature",
+    "doi": "10.1097/00006534-200110000-00005",
+    "pmid": "11053230",
+    "pmcid": "PMC10649174",
+    "authors": "Henrich J The third",
+    "year": 1997,
+    "level": null
+  }
+]

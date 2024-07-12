@@ -2,7 +2,7 @@ import { Popper, Grow, Paper, ClickAwayListener, PopperPlacementType } from '@mu
 
 export interface INeurosynthPopper {
     open: boolean;
-    anchorElement: HTMLButtonElement | null;
+    anchorElement: HTMLElement | null;
     placement?: PopperPlacementType;
     onClickAway: (event: MouseEvent | TouchEvent) => void;
 }

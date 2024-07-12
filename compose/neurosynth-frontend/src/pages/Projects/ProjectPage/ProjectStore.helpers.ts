@@ -19,6 +19,7 @@ export enum ENeurosynthSourceIds {
     SCOPUS = 'neurosynth_scopus_id_source',
     WEBOFSCIENCE = 'neurosynth_web_of_science_id_source',
     PSYCINFO = 'neurosynth_psycinfo_id_source',
+    SLEUTH = 'neurosynth_sleuth_id_source',
 }
 
 export enum ENeurosynthTagIds {
@@ -55,6 +56,10 @@ export const defaultIdentificationSources = {
     psycInfo: {
         id: ENeurosynthSourceIds.PSYCINFO,
         label: 'PsycInfo',
+    },
+    sleuth: {
+        id: ENeurosynthSourceIds.SLEUTH,
+        label: 'Sleuth',
     },
 };
 
@@ -154,7 +159,7 @@ export const handleDragEndHelper = (
 };
 
 export const initCurationHelper = (cols: string[], isPrisma: boolean): ICurationMetadata => {
-    const columns: ICurationColumn[] = cols.map((col, index) => ({
+    const columns: ICurationColumn[] = cols.map((col) => ({
         id: uuidv4(),
         name: col,
         stubStudies: [],

@@ -102,3 +102,24 @@ def test_delete_points(auth_client, session):
     auth_client.delete(f"/api/points/{point_id}")
 
     assert Point.query.filter_by(id=point_id).first() is None
+
+
+def test_post_point_without_order(auth_client, ingest_neurosynth, session):
+    # Get an existing analysis from the database
+    point_db = Point.query.first()
+    point = PointSchema().dump(point_db)
+
+    # Remove the 'order' field from the analysis
+    point.pop("order", None)
+
+    # Submit a POST request without the 'order' field
+    resp = auth_client.post("/api/points/", data=point)
+
+    # Check if the response status code is 200 (OK)
+    assert resp.status_code == 200
+
+    # Check if the 'order' field is in the response
+    assert "order" in resp.json()
+
+    # Check if the 'order' field is not None
+    assert resp.json()["order"] is not None

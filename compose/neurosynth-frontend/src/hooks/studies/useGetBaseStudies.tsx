@@ -3,7 +3,7 @@ import { useQuery } from 'react-query';
 import API from 'utils/api';
 
 export const baseStudiesSearchHelper = (searchCriteria: Partial<SearchCriteria>) => {
-    return API.NeurostoreServices.BaseStudiesService.baseStudiesGet(
+    return API.NeurostoreServices.StudiesService.baseStudiesGet(
         searchCriteria.genericSearchStr || undefined,
         searchCriteria.sortBy === SortBy.RELEVANCE ? undefined : searchCriteria.sortBy,
         searchCriteria.pageOfResults,

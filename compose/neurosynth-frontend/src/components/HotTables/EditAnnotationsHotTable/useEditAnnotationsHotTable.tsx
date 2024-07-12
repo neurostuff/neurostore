@@ -11,6 +11,7 @@ import {
     createColumnHeader,
     getMergeCells,
     createColumns,
+    getRowHeights,
 } from 'components/HotTables/EditAnnotationsHotTable/EditAnnotationsHotTable.helpers';
 
 const useEditAnnotationsHotTable = (annotationId?: string, disableEdit?: boolean) => {
@@ -82,8 +83,12 @@ const useEditAnnotationsHotTable = (annotationId?: string, disableEdit?: boolean
     }, [annotationsHotState.noteKeys]);
 
     const colWidths = useMemo(() => {
-        return createColWidths(annotationsHotState.noteKeys, 200, 150, 200);
+        return createColWidths(annotationsHotState.noteKeys, 300, 150, 200);
     }, [annotationsHotState.noteKeys]);
+
+    const rowHeights = useMemo(() => {
+        return getRowHeights(annotationsHotState.hotData, annotationsHotState.mergeCells, 300);
+    }, [annotationsHotState.hotData, annotationsHotState.mergeCells]);
 
     return {
         theUserOwnsThisAnnotation,
@@ -92,6 +97,7 @@ const useEditAnnotationsHotTable = (annotationId?: string, disableEdit?: boolean
         hotColumnHeaders,
         setAnnotationsHotState,
         colWidths,
+        rowHeights,
         ...annotationsHotState,
     };
 };

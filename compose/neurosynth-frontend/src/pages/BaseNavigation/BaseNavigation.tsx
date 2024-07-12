@@ -16,6 +16,7 @@ import ViewMetaAnalyses from 'components/ProjectComponents/ViewMetaAnalyses/View
 import ForbiddenPage from 'pages/Forbidden/Forbidden';
 import ProtectedProjectRoute from 'pages/Projects/ProjectPage/ProtectedRoute';
 
+const ImportSleuthPage = React.lazy(() => import('pages/ImportSleuthPage/ImportSleuthPage'));
 const EditStudyPage = React.lazy(() => import('../Studies/EditStudyPage/EditStudyPage'));
 const StudiesPage = React.lazy(() => import('../Studies/StudiesPage/StudiesPage'));
 
@@ -54,6 +55,14 @@ const BaseNavigation: React.FC = (_props) => {
                     element={
                         <Box sx={BaseNavigationStyles.pagesContainer}>
                             <ProjectsPage />
+                        </Box>
+                    }
+                />
+                <Route
+                    path="/projects/new/sleuth"
+                    element={
+                        <Box sx={BaseNavigationStyles.pagesContainer}>
+                            <ImportSleuthPage />
                         </Box>
                     }
                 />
