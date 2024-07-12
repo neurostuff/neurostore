@@ -15,6 +15,7 @@ import EditMetaAnalyses from 'components/ProjectComponents/EditMetaAnalyses/Edit
 import ViewMetaAnalyses from 'components/ProjectComponents/ViewMetaAnalyses/ViewMetaAnalyses';
 import ForbiddenPage from 'pages/Forbidden/Forbidden';
 import ProtectedProjectRoute from 'pages/Projects/ProjectPage/ProtectedRoute';
+import TermsAndConditions from 'pages/TermsAndConditions/TermsAndConditions';
 
 const ImportSleuthPage = React.lazy(() => import('pages/ImportSleuthPage/ImportSleuthPage'));
 const EditStudyPage = React.lazy(() => import('../Studies/EditStudyPage/EditStudyPage'));
@@ -190,6 +191,14 @@ const BaseNavigation: React.FC = (_props) => {
                     element={
                         <Box sx={BaseNavigationStyles.pagesContainer}>
                             <ForbiddenPage />
+                        </Box>
+                    }
+                />
+                <Route
+                    path="/termsandconditions"
+                    element={
+                        <Box sx={BaseNavigationStyles.pagesContainer}>
+                            <TermsAndConditions />
                         </Box>
                     }
                 />

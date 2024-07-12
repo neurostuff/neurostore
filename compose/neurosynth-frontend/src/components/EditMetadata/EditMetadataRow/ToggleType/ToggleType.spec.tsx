@@ -39,8 +39,8 @@ describe('ToggleType Component', () => {
         render(<ToggleType onToggle={mockOnToggle} type={EPropertyType.STRING} />);
 
         // setup
-        let option = screen.getByRole('button', { name: 'STRING' });
-        userEvent.click(option);
+        let input = screen.getByRole('combobox');
+        userEvent.click(input);
         const booleanOption = screen.getByText('BOOLEAN');
 
         userEvent.click(booleanOption);
@@ -54,8 +54,8 @@ describe('ToggleType Component', () => {
         render(<ToggleType onToggle={mockOnToggle} type={EPropertyType.BOOLEAN} />);
 
         // setup
-        let option = screen.getByRole('button', { name: 'BOOLEAN' });
-        userEvent.click(option);
+        let input = screen.getByRole('combobox');
+        userEvent.click(input);
         const stringOption = screen.getByText('STRING');
 
         userEvent.click(stringOption);
@@ -69,8 +69,8 @@ describe('ToggleType Component', () => {
         render(<ToggleType onToggle={mockOnToggle} type={EPropertyType.STRING} />);
 
         // setup
-        let option = screen.getByRole('button', { name: 'STRING' });
-        userEvent.click(option);
+        let input = screen.getByRole('combobox');
+        userEvent.click(input);
         const numberOption = screen.getByText('NUMBER');
 
         userEvent.click(numberOption);
@@ -84,8 +84,8 @@ describe('ToggleType Component', () => {
         render(<ToggleType onToggle={mockOnToggle} type={EPropertyType.STRING} />);
 
         // setup
-        let option = screen.getByRole('button', { name: 'STRING' });
-        userEvent.click(option);
+        let input = screen.getByRole('combobox');
+        userEvent.click(input);
         const noneOption = screen.getByText('NONE');
 
         userEvent.click(noneOption);
@@ -96,8 +96,8 @@ describe('ToggleType Component', () => {
 
     it('should show all types by default', () => {
         render(<ToggleType onToggle={mockOnToggle} type={EPropertyType.STRING} />);
-        const option = screen.getByRole('button', { name: 'STRING' });
-        userEvent.click(option);
+        let input = screen.getByRole('combobox');
+        userEvent.click(input);
 
         expect(screen.queryByRole('option', { name: 'NONE' })).toBeTruthy();
         expect(screen.queryByRole('option', { name: 'STRING' })).toBeTruthy();
@@ -109,8 +109,8 @@ describe('ToggleType Component', () => {
         render(
             <ToggleType onToggle={mockOnToggle} type={EPropertyType.STRING} allowNone={false} />
         );
-        const option = screen.getByRole('button', { name: 'STRING' });
-        userEvent.click(option);
+        let input = screen.getByRole('combobox');
+        userEvent.click(input);
 
         expect(screen.queryByRole('option', { name: 'NONE' })).toBeFalsy();
         expect(screen.queryByRole('option', { name: 'STRING' })).toBeTruthy();
@@ -122,8 +122,8 @@ describe('ToggleType Component', () => {
         render(
             <ToggleType onToggle={mockOnToggle} type={EPropertyType.NUMBER} allowString={false} />
         );
-        const option = screen.getByRole('button', { name: 'NUMBER' });
-        userEvent.click(option);
+        let input = screen.getByRole('combobox');
+        userEvent.click(input);
 
         expect(screen.queryByRole('option', { name: 'NONE' })).toBeTruthy();
         expect(screen.queryByRole('option', { name: 'STRING' })).toBeFalsy();
@@ -135,8 +135,8 @@ describe('ToggleType Component', () => {
         render(
             <ToggleType onToggle={mockOnToggle} type={EPropertyType.STRING} allowBoolean={false} />
         );
-        const option = screen.getByRole('button', { name: 'STRING' });
-        userEvent.click(option);
+        let input = screen.getByRole('combobox');
+        userEvent.click(input);
 
         expect(screen.queryByRole('option', { name: 'NONE' })).toBeTruthy();
         expect(screen.queryByRole('option', { name: 'STRING' })).toBeTruthy();
@@ -148,8 +148,8 @@ describe('ToggleType Component', () => {
         render(
             <ToggleType onToggle={mockOnToggle} type={EPropertyType.STRING} allowNumber={false} />
         );
-        const option = screen.getByRole('button', { name: 'STRING' });
-        userEvent.click(option);
+        let input = screen.getByRole('combobox');
+        userEvent.click(input);
 
         expect(screen.queryByRole('option', { name: 'NONE' })).toBeTruthy();
         expect(screen.queryByRole('option', { name: 'STRING' })).toBeTruthy();

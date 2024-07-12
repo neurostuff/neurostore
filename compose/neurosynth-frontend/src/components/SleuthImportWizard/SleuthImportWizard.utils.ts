@@ -660,6 +660,7 @@ export const applyPubmedStudyDetailsToBaseStudiesAndRemoveDuplicates = (
                     ? baseStudy.publication
                     : associatedPubmedStudy.journal.title,
                 year: baseStudy.year ? baseStudy.year : isValid ? value : undefined,
+                level: 'group',
             };
         }
 

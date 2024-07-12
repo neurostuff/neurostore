@@ -46,6 +46,7 @@ const ExtractionOutOfSync: React.FC = (props) => {
                 | 'description'
                 | 'publication'
                 | 'authors'
+                | 'level'
             >
         > = curationIncludedStudies.stubStudies.map((stub) => ({
             name: stub.title,
@@ -56,6 +57,7 @@ const ExtractionOutOfSync: React.FC = (props) => {
             description: stub.abstractText,
             publication: stub.journal,
             authors: stub.authors,
+            level: 'group',
         }));
 
         const studiesInStudyset = new Set<string>();
