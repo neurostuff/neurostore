@@ -148,6 +148,7 @@ const MoveToExtractionDialog: React.FC<IDialog> = (props) => {
                 | 'description'
                 | 'publication'
                 | 'authors'
+                | 'level'
             >
         > = includedStubs.map((stub) => ({
             name: stub.title,
@@ -158,6 +159,7 @@ const MoveToExtractionDialog: React.FC<IDialog> = (props) => {
             description: stub.abstractText,
             publication: stub.journal,
             authors: stub.authors,
+            level: 'group',
         }));
 
         try {

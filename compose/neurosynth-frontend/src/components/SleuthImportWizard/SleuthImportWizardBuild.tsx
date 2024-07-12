@@ -4,17 +4,12 @@ import { Box, Button, CircularProgress, LinearProgress, Typography } from '@mui/
 import CurationImportBaseStyles from 'components/CurationComponents/CurationImport/CurationImportBase.styles';
 import { EPropertyType } from 'components/EditMetadata';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
-import {
-    useCreateAnnotation,
-    useCreateProject,
-    useCreateStudy,
-    useCreateStudyset,
-    useUpdateStudy,
-} from 'hooks';
+import { useCreateAnnotation, useCreateProject, useCreateStudyset, useUpdateStudy } from 'hooks';
 import useGetPubMedIdFromDOI from 'hooks/external/useGetPubMedIdFromDOI';
 import useGetPubmedIDs from 'hooks/external/useGetPubMedIds';
 import useIngest from 'hooks/studies/useIngest';
 import { BaseStudy, NoteCollectionReturn } from 'neurostore-typescript-sdk';
+import { EExtractionStatus } from 'pages/ExtractionPage/ExtractionPage';
 import { useEffect, useRef, useState } from 'react';
 import {
     ISleuthFileUploadStubs,
@@ -26,7 +21,6 @@ import {
     sleuthStubsToBaseStudies,
     updateUploadSummary,
 } from './SleuthImportWizard.utils';
-import { EExtractionStatus } from 'pages/ExtractionPage/ExtractionPage';
 
 const SleuthImportWizardBuild: React.FC<{
     sleuthUploads: ISleuthFileUploadStubs[];
@@ -38,7 +32,6 @@ const SleuthImportWizardBuild: React.FC<{
     const [progressValue, setProgressValue] = useState(0);
     const [progressText, setProgressText] = useState('');
     const { mutateAsync: ingestAsync } = useIngest();
-    const { mutateAsync: createStudyVersion } = useCreateStudy();
     const { mutateAsync: updateStudy } = useUpdateStudy();
     const { mutateAsync: createStudyset } = useCreateStudyset();
     const { mutateAsync: createAnnotation } = useCreateAnnotation();
@@ -229,7 +222,6 @@ const SleuthImportWizardBuild: React.FC<{
         build(sleuthUploads);
     }, [
         createProject,
-        createStudyVersion,
         createStudyset,
         ingestAsync,
         onNext,
