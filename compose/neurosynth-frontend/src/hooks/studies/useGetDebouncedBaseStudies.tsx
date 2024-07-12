@@ -1,6 +1,6 @@
 import { AxiosResponse } from 'axios';
 import { BaseStudyList } from 'neurostore-typescript-sdk';
-import { SearchCriteria } from 'pages/Studies/StudiesPage/models';
+import { SearchCriteria } from 'pages/Study/Study.types';
 import { useQuery } from 'react-query';
 import { baseStudiesSearchHelper } from './useGetBaseStudies';
 

@@ -2,7 +2,7 @@ import { useAuth0 } from '@auth0/auth0-react';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { Box, Button, Toolbar, Typography } from '@mui/material';
-import CreateProjectButton from 'components/Buttons/CreateProjectButton/CreateProjectButton';
+import CreateProjectButton from 'components/Buttons/CreateProjectButton';
 import NeurosynthAvatar from 'components/Navbar/NeurosynthAvatar/NeurosynthAvatar';
 import { NavLink, useNavigate } from 'react-router-dom';
 import NavToolbarPopupSubMenu from '../NavSubMenu/NavToolbarPopupSubMenu';

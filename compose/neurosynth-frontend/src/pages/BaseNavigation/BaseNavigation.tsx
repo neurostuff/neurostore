@@ -1,35 +1,32 @@
 import { Box } from '@mui/material';
-import ProgressLoader from 'components/ProgressLoader/ProgressLoader';
-import AnnotationsPage from 'pages/Annotations/AnnotationsPage/AnnotationsPage';
-import CurationImportPage from 'pages/CurationPage/CurationImportPage';
-import ExtractionPage from 'pages/ExtractionPage/ExtractionPage';
+import ProgressLoader from 'components/ProgressLoader';
+import AnnotationsPage from 'pages/Annotations/AnnotationsPage';
+import CurationImportPage from 'pages/CurationImport/CurationImportPage';
+import ExtractionPage from 'pages/Extraction/ExtractionPage';
 import NotFoundPage from 'pages/NotFound/NotFoundPage';
-import ProjectPage from 'pages/Projects/ProjectPage/ProjectPage';
-import BaseStudyPage from 'pages/Studies/BaseStudyPage/BaseStudyPage';
-import UserProfilePage from 'pages/UserProfilePage/UserProfilePage';
+import ProjectPage from 'pages/Project/ProjectPage';
+import BaseStudyPage from 'pages/Study/StudyPage';
+import UserProfilePage from 'pages/UserProfile/UserProfilePage';
 import React, { Suspense } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import LandingPage from '../LandingPage/LandingPage';
 import BaseNavigationStyles from './BaseNavigation.styles';
-import EditMetaAnalyses from 'components/ProjectComponents/EditMetaAnalyses/EditMetaAnalyses';
-import ViewMetaAnalyses from 'components/ProjectComponents/ViewMetaAnalyses/ViewMetaAnalyses';
 import ForbiddenPage from 'pages/Forbidden/Forbidden';
 import ProtectedProjectRoute from 'pages/Projects/ProjectPage/ProtectedRoute';
+import TermsAndConditions from 'pages/TermsAndConditions/TermsAndConditions';
+import ProjectEditMetaAnalyses from 'pages/Project/components/ProjectEditMetaAnalyses';
+import ProjectViewMetaAnalyses from 'pages/Project/components/ProjectViewMetaAnalyses';
 
-const ImportSleuthPage = React.lazy(() => import('pages/ImportSleuthPage/ImportSleuthPage'));
-const EditStudyPage = React.lazy(() => import('../Studies/EditStudyPage/EditStudyPage'));
-const StudiesPage = React.lazy(() => import('../Studies/StudiesPage/StudiesPage'));
+const ImportSleuthPage = React.lazy(() => import('pages/SleuthImport/SleuthImportPage'));
+const EditStudyPage = React.lazy(() => import('../Study/EditStudyPage'));
+const StudiesPage = React.lazy(() => import('../Studies/StudiesPage'));
 
-const MetaAnalysesPage = React.lazy(
-    () => import('../MetaAnalyses/MetaAnalysesPage/MetaAnalysesPage')
-);
-const MetaAnalysisPage = React.lazy(
-    () => import('../MetaAnalyses/MetaAnalysisPage/MetaAnalysisPage')
-);
+const MetaAnalysesPage = React.lazy(() => import('../MetaAnalyses/MetaAnalysesPage'));
+const MetaAnalysisPage = React.lazy(() => import('../MetaAnalysis/MetaAnalysisPage'));
 
-const ProjectsPage = React.lazy(() => import('../Projects/ProjectsPage/ProjectsPage'));
+const ProjectsPage = React.lazy(() => import('../Projects/ProjectsPage'));
 
-const CurationPage = React.lazy(() => import('../CurationPage/CurationPage'));
+const CurationPage = React.lazy(() => import('../Curation/CurationPage'));
 
 const BaseNavigation: React.FC = (_props) => {
     return (
@@ -77,12 +74,12 @@ const BaseNavigation: React.FC = (_props) => {
                         <Route
                             key="project-id-project"
                             path="project"
-                            element={<EditMetaAnalyses />}
+                            element={<ProjectEditMetaAnalyses />}
                         />,
                         <Route
                             key="project-id-meta-analyses"
                             path="meta-analyses"
-                            element={<ViewMetaAnalyses />}
+                            element={<ProjectViewMetaAnalyses />}
                         />,
                         <Route
                             key="project-id-index"
@@ -193,6 +190,7 @@ const BaseNavigation: React.FC = (_props) => {
                         </Box>
                     }
                 />
+                <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
                 <Route
                     path="*"
                     element={

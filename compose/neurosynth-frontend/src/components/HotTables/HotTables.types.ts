@@ -1,4 +1,4 @@
-import { EPropertyType } from 'components/EditMetadata';
+import { EPropertyType } from 'components/EditMetadata/EditMetadata.types';
 
 export interface NoteKeyType {
     key: string;

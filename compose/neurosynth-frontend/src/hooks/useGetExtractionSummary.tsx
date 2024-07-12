@@ -1,8 +1,8 @@
-import { EExtractionStatus } from 'pages/ExtractionPage/ExtractionPage';
+import { EExtractionStatus } from 'pages/Extraction/ExtractionPage';
 import {
     useProjectExtractionStudysetId,
     useProjectExtractionStudyStatusList,
-} from 'pages/Projects/ProjectPage/ProjectStore';
+} from 'pages/Project/store/ProjectStore';
 import { useEffect, useState } from 'react';
 import { IStudyExtractionStatus } from './projects/useGetProjects';
 import useGetStudysetById from './studysets/useGetStudysetById';

@@ -1,5 +1,5 @@
 import { Box, Typography } from '@mui/material';
-import BackButton from 'components/Buttons/BackButton/BackButton';
+import BackButton from 'components/Buttons/BackButton';
 
 const ForbiddenPage: React.FC = (props) => {
     return (

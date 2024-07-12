@@ -1,12 +1,12 @@
 import { Box, Link, Paper, Typography } from '@mui/material';
-import { getResultStatus } from 'components/ProjectComponents/ViewMetaAnalyses/ViewMetaAnalysis';
 import { MetaAnalysisReturn, ResultReturn } from 'neurosynth-compose-typescript-sdk';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import useGetAnalysisById from 'hooks/analyses/useGetAnalysisById';
-import DisplayPoints from 'components/DisplayStudy/DisplayAnalyses/DisplayAnalysis/DisplayPoints/DisplayPoints';
+import StudyPoints from 'pages/Study/components/StudyPoints';
 import { PointReturn } from 'neurostore-typescript-sdk';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
-import { studyPointsToStorePoints } from 'pages/Studies/StudyStore.helpers';
+import { studyPointsToStorePoints } from 'pages/Study/store/StudyStore.helpers';
+import { getResultStatus } from 'helpers/MetaAnalysis.helpers';
 
 const DisplayMetaAnalysisResult: React.FC<{
     metaAnalysis: MetaAnalysisReturn | undefined;
@@ -58,7 +58,7 @@ const DisplayMetaAnalysisResult: React.FC<{
                 </Link>
             </Box>
             <StateHandlerComponent isLoading={isLoading} isError={isError}>
-                <DisplayPoints
+                <StudyPoints
                     statistic={analysisMap}
                     space={analysisSpace}
                     height="200px"

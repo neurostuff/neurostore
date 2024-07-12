@@ -1,5 +1,5 @@
 import Box from '@mui/material/Box';
-import ProgressLoader from 'components/ProgressLoader/ProgressLoader';
+import ProgressLoader from 'components/ProgressLoader';
 
 export interface INeurosynthLoader {
     loaded: boolean;

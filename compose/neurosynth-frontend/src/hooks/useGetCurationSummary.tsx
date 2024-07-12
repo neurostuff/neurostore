@@ -1,5 +1,5 @@
-import { ICurationColumn } from 'components/CurationComponents/CurationColumn/CurationColumn';
-import { useProjectCurationColumns } from 'pages/Projects/ProjectPage/ProjectStore';
+import { ICurationColumn } from 'pages/Curation/Curation.types';
+import { useProjectCurationColumns } from 'pages/Project/store/ProjectStore';
 import { useEffect, useState } from 'react';
 
 export interface ICurationSummary {

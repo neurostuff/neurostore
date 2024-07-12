@@ -1,5 +1,5 @@
 import { AxiosError, AxiosResponse } from 'axios';
-import { IDynamicValueType } from 'components/MetaAnalysisConfigComponents';
+import { IDynamicValueType } from 'pages/MetaAnalysis/components/DynamicForm.types';
 import { IAutocompleteObject } from 'components/NeurosynthAutocomplete/NeurosynthAutocomplete';
 import {
     AnnotationPostBody,

@@ -1,7 +1,7 @@
-import { ICurationColumn } from 'components/CurationComponents/CurationColumn/CurationColumn';
 import { Project, ProjectReturn } from 'neurosynth-compose-typescript-sdk';
-import { EExtractionStatus } from 'pages/ExtractionPage/ExtractionPage';
-import { SortBy } from 'pages/Studies/StudiesPage/models';
+import { ICurationColumn } from 'pages/Curation/Curation.types';
+import { EExtractionStatus } from 'pages/Extraction/ExtractionPage';
+import { SortBy } from 'pages/Study/Study.types';
 import { useQuery } from 'react-query';
 import API from 'utils/api';
 

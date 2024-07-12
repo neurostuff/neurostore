@@ -1,8 +1,8 @@
 import React from 'react';
 import EditMetadataStyles from './EditMetadata.styles';
-import EditMetadataRow from './EditMetadataRow/EditMetadataRow';
-import AddMetadataRow from './EditMetadataRow/AddMetadataRow';
-import { IEditMetadataModel, getType } from '.';
+import EditMetadataRow from './EditMetadataRow';
+import AddMetadataRow from './AddMetadataRow';
+import { IEditMetadataModel, getType } from './EditMetadata.types';
 import { Box, Divider } from '@mui/material';
 
 const EditMetadata: React.FC<IEditMetadataModel> = React.memo((props) => {
