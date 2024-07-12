@@ -601,7 +601,7 @@ class ListView(BaseView):
         if s is not None and s.isdigit():
             q = q.filter_by(pmid=s)
         elif s is not None and self._fulltext_fields:
-            tsquery = sa.func.websearch_to_tsquery(s, postgresql_regconfig="english")
+            tsquery = sa.func.websearch_to_tsquery("english", s)
             q = q.filter(m._ts_vector.op("@@")(tsquery))
 
         # Alternatively (or in addition), search on individual fields.
