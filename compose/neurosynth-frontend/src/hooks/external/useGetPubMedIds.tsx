@@ -1,6 +1,6 @@
 import axios, { AxiosError, AxiosResponse } from 'axios';
-import { useQueries, UseQueryOptions } from 'react-query';
 import * as fxparser from 'fast-xml-parser';
+import { UseQueryOptions, useQueries, useQueryClient } from 'react-query';
 const { XMLParser } = fxparser;
 
 type PubMedYN = 'Y' | 'N';
@@ -282,8 +282,8 @@ const hexCodeToHTMLEntity = (hexCode: string): string => {
 };
 
 // Documentation: https://dataguide.nlm.nih.gov/eutilities/utilities.html#efetch
-const EFETCH_URL = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi';
-
+export const EFETCH_URL = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi';
+const PUBMED_API_KEY = process.env.REACT_APP_PUBMED_KEY as string;
 export const PUBMED_ARTICLE_URL_PREFIX = 'https://pubmed.ncbi.nlm.nih.gov/';
 export const PUBMED_CENTRAL_ARTICLE_URL_PREFIX = 'https://ncbi.nlm.nih.gov/pmc/articles/';
 
@@ -319,7 +319,9 @@ const parser = new XMLParser({
 const getQueryFn = (ids: string, startIndex: number) =>
     axios.post(
         `${EFETCH_URL}`,
-        `db=pubmed&rettype=abstract&retmode=xml&retmax=500&retstart=${startIndex}&id=${ids}`,
+        `db=pubmed&rettype=abstract&retmode=xml&retmax=500&retstart=${startIndex}&id=${ids}${
+            PUBMED_API_KEY ? `&api_key=${PUBMED_API_KEY}` : ''
+        }`,
         {
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
@@ -327,8 +329,51 @@ const getQueryFn = (ids: string, startIndex: number) =>
         }
     );
 
+const parseXMLPubmedArticle = (article: IPubMedArticle) => {
+    const pubmedArticleRef = article?.MedlineCitation?.Article;
+    const pubmedArticleIdRef = article?.PubmedData?.ArticleIdList;
+
+    const title = extractTitleHelper(pubmedArticleRef?.ArticleTitle);
+    const authors = extractAuthorsHelper(pubmedArticleRef?.AuthorList?.Author);
+    const doi = extractDOIHelper(pubmedArticleIdRef?.ArticleId);
+    const pmid = extractPMIDHelper(
+        article?.MedlineCitation?.PMID?.['#text'],
+        pubmedArticleIdRef?.ArticleId
+    );
+    const pmicid = extractPMCIDHelper(pubmedArticleIdRef?.ArticleId);
+    const abstract = extractAbstractHelper(pubmedArticleRef?.Abstract?.AbstractText);
+    const year = (
+        pubmedArticleRef?.Journal?.JournalIssue?.PubDate?.Year ||
+        pubmedArticleRef?.ArticleDate?.Year ||
+        0
+    )?.toString();
+    const keywords = extractKeywordsHelper(article?.MedlineCitation?.KeywordList?.Keyword);
+
+    return {
+        title: title,
+        authors: authors,
+        abstractText: abstract,
+        DOI: doi,
+        keywords: keywords,
+        PMID: pmid,
+        PMCID: pmicid,
+        articleYear: year,
+        journal: {
+            title: pubmedArticleRef?.Journal?.Title || '',
+            volume: pubmedArticleRef?.Journal?.JournalIssue?.Volume || 0,
+            issue: pubmedArticleRef?.Journal?.JournalIssue?.Issue || 0,
+            date: {
+                year: (pubmedArticleRef?.Journal?.JournalIssue?.PubDate?.Year || 0).toString(),
+                month: pubmedArticleRef?.Journal?.JournalIssue?.PubDate?.Month || '',
+            },
+        },
+        articleLink: `${PUBMED_ARTICLE_URL_PREFIX}${pmid}`,
+    } as INeurosynthParsedPubmedArticle;
+};
+
 const splitIdsIntoSeparateRequests = (
-    pubmedIds: string[]
+    pubmedIds: string[],
+    enabled: boolean
 ): UseQueryOptions<
     AxiosResponse<any>,
     AxiosError<any>,
@@ -354,7 +399,7 @@ const splitIdsIntoSeparateRequests = (
         queries.push({
             queryKey: ['pubmed', appendedIdStr, i],
             queryFn: ({ queryKey }) => getQueryFn(queryKey[1], queryKey[2]),
-            enabled: pubmedIds.length > 0,
+            enabled: enabled && pubmedIds.length > 0 && pubmedIds.length <= 1500,
             select: (res) => {
                 if (!res.data) return [];
                 const withoutItalics = (res.data as string).replaceAll(/<\/?i>/g, '');
@@ -363,55 +408,7 @@ const splitIdsIntoSeparateRequests = (
                 const articleList = parsedJSON?.PubmedArticleSet?.PubmedArticle;
                 if (!articleList) return [];
 
-                return articleList.map((article) => {
-                    console.log({ article });
-                    const pubmedArticleRef = article?.MedlineCitation?.Article;
-                    const pubmedArticleIdRef = article?.PubmedData?.ArticleIdList;
-
-                    const title = extractTitleHelper(pubmedArticleRef?.ArticleTitle);
-                    const authors = extractAuthorsHelper(pubmedArticleRef?.AuthorList?.Author);
-                    const doi = extractDOIHelper(pubmedArticleIdRef?.ArticleId);
-                    const pmid = extractPMIDHelper(
-                        article?.MedlineCitation?.PMID?.['#text'],
-                        pubmedArticleIdRef?.ArticleId
-                    );
-                    const pmicid = extractPMCIDHelper(pubmedArticleIdRef?.ArticleId);
-                    const abstract = extractAbstractHelper(
-                        pubmedArticleRef?.Abstract?.AbstractText
-                    );
-                    const year = (
-                        pubmedArticleRef?.Journal?.JournalIssue?.PubDate?.Year ||
-                        pubmedArticleRef?.ArticleDate?.Year ||
-                        0
-                    )?.toString();
-                    const keywords = extractKeywordsHelper(
-                        article?.MedlineCitation?.KeywordList?.Keyword
-                    );
-
-                    return {
-                        title: title,
-                        authors: authors,
-                        abstractText: abstract,
-                        DOI: doi,
-                        keywords: keywords,
-                        PMID: pmid,
-                        PMCID: pmicid,
-                        articleYear: year,
-                        journal: {
-                            title: pubmedArticleRef?.Journal?.Title || '',
-                            volume: pubmedArticleRef?.Journal?.JournalIssue?.Volume || 0,
-                            issue: pubmedArticleRef?.Journal?.JournalIssue?.Issue || 0,
-                            date: {
-                                year: (
-                                    pubmedArticleRef?.Journal?.JournalIssue?.PubDate?.Year || 0
-                                ).toString(),
-                                month:
-                                    pubmedArticleRef?.Journal?.JournalIssue?.PubDate?.Month || '',
-                            },
-                        },
-                        articleLink: `${PUBMED_ARTICLE_URL_PREFIX}${pmid}`,
-                    } as INeurosynthParsedPubmedArticle;
-                });
+                return articleList.map((pubmedArticle) => parseXMLPubmedArticle(pubmedArticle));
             },
         });
     }
@@ -419,13 +416,44 @@ const splitIdsIntoSeparateRequests = (
     return queries;
 };
 
-const useGetPubmedIDs = (pubmedIds: string[]) => {
+// for a regular query using react-query, pass in the pubmedIds and set enabled appropriately.
+// to imperatively query, set pubmedIds to be an empty array, and enabled to be false. This query is triggered manually.
+const useGetPubmedIDs = (pubmedIds: string[], enabled: boolean) => {
     // the pubmed API only supports 500 ids per request and only 3 requests per second.
     // TODO: for those with a valid API key, this increases to 10 requests per second. We should
     // allow the user to optionally include an API key.
-    const requests = splitIdsIntoSeparateRequests(pubmedIds);
+    const requests = splitIdsIntoSeparateRequests(pubmedIds, enabled);
+    const queryClient = useQueryClient();
 
-    return useQueries(requests);
+    const queries = useQueries(requests);
+
+    const queryImperatively = async (pubmedIds: string[]) => {
+        const requests = splitIdsIntoSeparateRequests(pubmedIds, true);
+        const responses = await Promise.all(requests.map((x) => queryClient.fetchQuery(x)));
+        return responses.map((res) => {
+            if (!res.data) return [];
+            const withoutItalics = (res.data as string).replaceAll(/<\/?i>/g, '');
+            const parsedJSON = parser.parse(withoutItalics) as IArticleListFromPubmed;
+
+            const articleList = parsedJSON?.PubmedArticleSet?.PubmedArticle;
+            if (!articleList) return [];
+
+            return articleList.map((pubmedArticle) => parseXMLPubmedArticle(pubmedArticle));
+        });
+    };
+
+    const isLoading = queries.some((x) => x.isLoading);
+    const isError = queries.some((x) => x.isError);
+    const isSuccess = queries.every((x) => x.isSuccess);
+    const data = queries.map((x) => x.data || []);
+
+    return {
+        isLoading,
+        isError,
+        isSuccess,
+        data,
+        queryImperatively,
+    };
 };
 
 export default useGetPubmedIDs;

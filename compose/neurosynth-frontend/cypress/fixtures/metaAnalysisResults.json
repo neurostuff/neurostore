@@ -1,0 +1,17 @@
+{
+    "cli_args": null,
+    "cli_version": null,
+    "created_at": "2023-07-03T22:18:06.482201+00:00",
+    "diagnostic_table": null,
+    "id": "46wv7aoMMbky",
+    "meta_analysis_id": "PEbidCmm3SLS",
+    "neurovault_collection": {
+      "collection_id": "14743",
+      "created_at": "2023-07-03T22:18:06.493099+00:00",
+      "files": [],
+      "updated_at": null,
+      "url": "https://neurovault.org/api/collections/14743"
+    },
+    "updated_at": null
+  }
+  

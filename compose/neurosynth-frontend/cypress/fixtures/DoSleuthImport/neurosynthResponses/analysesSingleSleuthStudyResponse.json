@@ -1,0 +1,22 @@
+{
+    "id": "MknEVA957VYr",
+    "user": "auth0|666c3bb1fcdc91471b06bfb2",
+    "username": "test user 6",
+    "created_at": "2024-06-14T14:01:51.332453+00:00",
+    "updated_at": null,
+    "study": "duH7pUbTCPac",
+    "metadata": {
+        "subjects": 9
+    },
+    "order": 1,
+    "images": [],
+    "points": [
+        "5oDQkSwyWFGv",
+        "sajo7xUhYQsA",
+        "jwTARUb8FkBY"
+    ],
+    "weights": [],
+    "name": "my new analysis made for testing",
+    "description": null,
+    "conditions": []
+}

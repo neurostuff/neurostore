@@ -21,6 +21,12 @@ const NavToolbarStyles: Style = {
             lg: '1rem',
         },
     },
+    createProjectButton: {
+        width: {
+            sm: '136px',
+            lg: '170px',
+        },
+    },
 };
 
 export default NavToolbarStyles;

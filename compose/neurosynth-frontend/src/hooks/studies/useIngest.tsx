@@ -14,7 +14,7 @@ const useIngest = () => {
         AxiosError,
         BaseStudiesPostRequest,
         unknown
-    >((stubs) => API.NeurostoreServices.BaseStudiesService.baseStudiesPost(stubs), {
+    >((stubs) => API.NeurostoreServices.StudiesService.baseStudiesPost(stubs), {
         onSuccess: () => {
             queryClient.invalidateQueries('studies');
         },

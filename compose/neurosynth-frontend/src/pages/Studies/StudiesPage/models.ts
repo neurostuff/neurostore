@@ -5,7 +5,7 @@ export enum SortBy {
     DESCRIPTION = 'description',
     CREATEDAT = 'created_at',
     SOURCE = 'source',
-    JOURNAL = 'journal',
+    JOURNAL = 'publication',
     LASTUPDATED = 'last_updated',
 }
 

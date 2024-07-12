@@ -6,6 +6,7 @@ import { IDynamicValueType } from 'components/MetaAnalysisConfigComponents';
 import { IAutocompleteObject } from 'components/NeurosynthAutocomplete/NeurosynthAutocomplete';
 import { useState } from 'react';
 import SelectSpecificationComponent from './SelectSpecificationComponent/SelectSpecificationComponent';
+import { IAlgorithmSelection } from '../CreateMetaAnalysisSpecificationDialogBase.types';
 
 const CreateMetaAnalysisSpecificationAlgorithmStep: React.FC<{
     onChooseAlgorithm: (
@@ -14,20 +15,10 @@ const CreateMetaAnalysisSpecificationAlgorithmStep: React.FC<{
         corrector: IAutocompleteObject | null,
         correctorArgs: IDynamicValueType
     ) => void;
-    algorithm: {
-        estimator: IAutocompleteObject | null;
-        estimatorArgs: IDynamicValueType;
-        corrector: IAutocompleteObject | null;
-        correctorArgs: IDynamicValueType;
-    };
+    algorithm: IAlgorithmSelection;
     onNavigate: (button: ENavigationButton) => void;
 }> = (props) => {
-    const [algorithmSpec, setAlgorithmSpec] = useState<{
-        estimator: IAutocompleteObject | null;
-        corrector: IAutocompleteObject | null;
-        estimatorArgs: IDynamicValueType;
-        correctorArgs: IDynamicValueType;
-    }>(props.algorithm);
+    const [algorithmSpec, setAlgorithmSpec] = useState<IAlgorithmSelection>(props.algorithm);
 
     const handleNavigate = (button: ENavigationButton) => {
         if (button === ENavigationButton.NEXT && algorithmSpec.estimator?.label) {
