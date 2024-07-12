@@ -1,8 +1,6 @@
 import Close from '@mui/icons-material/Close';
 import { IconButton } from '@mui/material';
-import { TourProvider } from '@reactour/tour';
 import { AxiosError } from 'axios';
-import { disableBodyScroll, enableBodyScroll } from 'body-scroll-lock';
 import { SnackbarKey, SnackbarProvider } from 'notistack';
 import { useRef } from 'react';
 import { QueryCache, QueryClient, QueryClientProvider } from 'react-query';
@@ -47,21 +45,8 @@ function App() {
                     </IconButton>
                 )}
             >
-                <TourProvider
-                    steps={[]}
-                    disableInteraction
-                    afterOpen={(target) => {
-                        if (target) disableBodyScroll(target);
-                        sessionStorage.setItem('isTour', 'true');
-                    }}
-                    beforeClose={(target) => {
-                        if (target) enableBodyScroll(target);
-                        sessionStorage.setItem('isTour', 'false');
-                    }}
-                >
-                    <Navbar />
-                    <BaseNavigation />
-                </TourProvider>
+                <Navbar />
+                <BaseNavigation />
             </SnackbarProvider>
         </QueryClientProvider>
     );

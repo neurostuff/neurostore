@@ -29,7 +29,7 @@ describe('NavToolbar Component', () => {
 
         expect(screen.queryByText('explore')).toBeInTheDocument();
         expect(screen.queryByText('DOCS')).toBeInTheDocument();
-        expect(screen.queryByText('SIGN IN/SIGN UP')).toBeInTheDocument();
+        expect(screen.queryByText('Sign In/Sign Up')).toBeInTheDocument();
     });
 
     it('should show the full list of options when authenticated', () => {
@@ -47,7 +47,7 @@ describe('NavToolbar Component', () => {
     it('should login', () => {
         render(<NavToolbar onLogin={mockLogin} onLogout={mockLogout} />);
 
-        userEvent.click(screen.getByText('SIGN IN/SIGN UP'));
+        userEvent.click(screen.getByText('Sign In/Sign Up'));
         expect(mockLogin).toHaveBeenCalled();
     });
 
@@ -58,7 +58,7 @@ describe('NavToolbar Component', () => {
 
         // open popup
         userEvent.click(screen.getByTestId('PersonIcon'));
-        userEvent.click(screen.getByText('LOGOUT'));
+        userEvent.click(screen.getByText('Logout'));
         expect(mockLogout).toHaveBeenCalled();
     });
 
