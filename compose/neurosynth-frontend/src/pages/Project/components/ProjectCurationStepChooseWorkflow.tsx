@@ -1,5 +1,5 @@
 import { KeyboardArrowDown } from '@mui/icons-material';
-import NavToolbarPopupSubMenu from 'components/Navbar/NavSubMenu/NavToolbarPopupSubMenu';
+import NavToolbarPopupSubMenu from 'components/Navbar/NavToolbarPopupSubMenu';
 import ProjectComponentsStyles from 'pages/Project/components/Project.styles';
 import { ECurationBoardTypes } from './ProjectCurationStep';
 import { Box, Button } from '@mui/material';

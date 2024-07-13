@@ -1,7 +1,7 @@
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import { ButtonGroup } from '@mui/material';
-import NavToolbarStyles from 'components/Navbar/NavToolbar/NavToolbar.styles';
+import NavToolbarStyles from 'components/Navbar/NavToolbar.styles';
 import NeurosynthPopupMenu from 'components/NeurosynthPopupMenu';
 import { useRef } from 'react';
 import LoadingButton from 'components/Buttons/LoadingButton';

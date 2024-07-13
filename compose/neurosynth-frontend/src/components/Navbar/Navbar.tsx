@@ -1,9 +1,9 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import { AppBar, Box } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import NavDrawer from './NavDrawer/NavDrawer';
-import NavToolbar from './NavToolbar/NavToolbar';
-import NavbarStyles from './Navbar.styles';
+import NavDrawer from 'components/Navbar/NavDrawer';
+import NavToolbar from 'components/Navbar/NavToolbar';
+import NavbarStyles from 'components/Navbar/Navbar.styles';
 
 export interface INav {
     onLogin: () => Promise<void>;

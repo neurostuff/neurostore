@@ -10,7 +10,7 @@ import {
 } from '@mui/material';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import NavToolbarStyles from 'components/Navbar/NavToolbar/NavToolbar.styles';
+import NavToolbarStyles from 'components/Navbar/NavToolbar.styles';
 
 const NeurosynthAvatar: React.FC<{ onLogin: () => void; onLogout: () => void }> = (props) => {
     const navigate = useNavigate();
@@ -44,12 +44,12 @@ const NeurosynthAvatar: React.FC<{ onLogin: () => void; onLogout: () => void }> 
                     >
                         <ListItem>
                             <ListItemButton onClick={handleDirectToUserProfile}>
-                                <ListItemText>PROFILE</ListItemText>
+                                <ListItemText>Profile</ListItemText>
                             </ListItemButton>
                         </ListItem>
                         <ListItem>
                             <ListItemButton onClick={props.onLogout}>
-                                <ListItemText>LOGOUT</ListItemText>
+                                <ListItemText>Logout</ListItemText>
                             </ListItemButton>
                         </ListItem>
                     </Menu>
@@ -63,7 +63,7 @@ const NeurosynthAvatar: React.FC<{ onLogin: () => void; onLogout: () => void }> 
                     ]}
                     onClick={props.onLogin}
                 >
-                    SIGN IN/SIGN UP
+                    Sign In/Sign Up
                 </Button>
             )}
         </>

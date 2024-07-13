@@ -12,10 +12,10 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import LandingPage from '../LandingPage/LandingPage';
 import BaseNavigationStyles from './BaseNavigation.styles';
 import ForbiddenPage from 'pages/Forbidden/Forbidden';
-import ProtectedProjectRoute from 'pages/Projects/ProjectPage/ProtectedRoute';
 import TermsAndConditions from 'pages/TermsAndConditions/TermsAndConditions';
 import ProjectEditMetaAnalyses from 'pages/Project/components/ProjectEditMetaAnalyses';
 import ProjectViewMetaAnalyses from 'pages/Project/components/ProjectViewMetaAnalyses';
+import ProtectedProjectRoute from 'components/ProjectedProjectRoute';
 
 const ImportSleuthPage = React.lazy(() => import('pages/SleuthImport/SleuthImportPage'));
 const EditStudyPage = React.lazy(() => import('../Study/EditStudyPage'));
@@ -191,6 +191,14 @@ const BaseNavigation: React.FC = (_props) => {
                     }
                 />
                 <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
+                <Route
+                    path="/termsandconditions"
+                    element={
+                        <Box sx={BaseNavigationStyles.pagesContainer}>
+                            <TermsAndConditions />
+                        </Box>
+                    }
+                />
                 <Route
                     path="*"
                     element={

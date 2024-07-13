@@ -1,7 +1,5 @@
 import { Box } from '@mui/material';
-import NavigationButtons, {
-    ENavigationButton,
-} from 'components/Buttons/NavigationButtons';
+import NavigationButtons, { ENavigationButton } from 'components/Buttons/NavigationButtons';
 import { IDynamicValueType } from 'pages/MetaAnalysis/components/DynamicForm.types';
 import { IAutocompleteObject } from 'components/NeurosynthAutocomplete/NeurosynthAutocomplete';
 import { useState } from 'react';

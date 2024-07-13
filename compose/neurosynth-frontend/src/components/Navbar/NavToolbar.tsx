@@ -3,11 +3,11 @@ import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { Box, Button, Toolbar, Typography } from '@mui/material';
 import CreateProjectButton from 'components/Buttons/CreateProjectButton';
-import NeurosynthAvatar from 'components/Navbar/NeurosynthAvatar/NeurosynthAvatar';
+import NeurosynthAvatar from 'components/Navbar/NeurosynthAvatar';
 import { NavLink, useNavigate } from 'react-router-dom';
-import NavToolbarPopupSubMenu from '../NavSubMenu/NavToolbarPopupSubMenu';
-import { INav } from '../Navbar';
-import NavbarStyles from '../Navbar.styles';
+import NavToolbarPopupSubMenu from './NavToolbarPopupSubMenu';
+import { INav } from './Navbar';
+import NavbarStyles from './Navbar.styles';
 import NavToolbarStyles from './NavToolbar.styles';
 
 const NavToolbar: React.FC<INav> = (props) => {

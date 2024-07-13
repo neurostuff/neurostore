@@ -3,7 +3,6 @@ import { Alert, Box, Button, Chip, Link, Paper, Typography } from '@mui/material
 import metaAnalysisSpec from 'assets/config/meta_analysis_params.json';
 import CodeSnippet from 'components/CodeSnippet/CodeSnippet';
 import EditSpecificationDialog from 'pages/MetaAnalysis/components/EditSpecificationDialog';
-import DisplayMetaAnalysisResult from 'components/DisplayMetaAnalysisResult/DisplayMetaAnalysisResult';
 import { getType } from 'components/EditMetadata/EditMetadata.types';
 import {
     IDynamicValueType,
@@ -42,6 +41,7 @@ import { getResultStatus } from 'helpers/MetaAnalysis.helpers';
 import DynamicInputDisplay from 'pages/MetaAnalysis/components/DynamicInputDisplay';
 import { isMultiGroupAlgorithm } from 'pages/MetaAnalysis/components/SelectAnalysesComponent.helpers';
 import SelectAnalysesSummaryComponent from 'pages/MetaAnalysis/components/SelectAnalysesSummaryComponent';
+import DisplayMetaAnalysisResult from 'pages/MetaAnalysis/components/DisplayMetaAnalysisResult';
 
 const metaAnalysisSpecification: IMetaAnalysisParamsSpecification = metaAnalysisSpec;
 

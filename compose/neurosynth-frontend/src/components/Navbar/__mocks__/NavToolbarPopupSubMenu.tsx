@@ -1,4 +1,4 @@
-import { INavToolbarPopupSubMenu } from 'components/Navbar/NavSubMenu/NavToolbarPopupSubMenu';
+import { INavToolbarPopupSubMenu } from 'components/Navbar/NavToolbarPopupSubMenu';
 import React from 'react';
 import { useState } from 'react';
 

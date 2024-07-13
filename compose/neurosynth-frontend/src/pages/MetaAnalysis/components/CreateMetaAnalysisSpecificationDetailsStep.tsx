@@ -1,7 +1,5 @@
 import { Box, TextField } from '@mui/material';
-import NavigationButtons, {
-    ENavigationButton,
-} from 'components/Buttons/NavigationButtons';
+import NavigationButtons, { ENavigationButton } from 'components/Buttons/NavigationButtons';
 import { useGetMetaAnalysesByIds } from 'hooks';
 import { useProjectName, useProjectMetaAnalyses } from 'pages/Project/store/ProjectStore';
 import { MetaAnalysisReturn } from 'neurosynth-compose-typescript-sdk';

@@ -17,9 +17,9 @@ import {
 } from '@mui/material';
 import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import DrawerToggleMenu from '../NavSubMenu/DrawerToggleSubMenu';
-import { INav } from '../Navbar';
-import NavbarStyles from '../Navbar.styles';
+import DrawerToggleMenu from './DrawerToggleSubMenu';
+import { INav } from './Navbar';
+import NavbarStyles from './Navbar.styles';
 
 const NavDrawer: React.FC<INav> = (props) => {
     const { isAuthenticated } = useAuth0();
