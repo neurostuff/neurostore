@@ -24,9 +24,9 @@ import useEditAnalysisPointsHotTable from '../hooks/useEditAnalysisPointsHotTabl
 
 registerAllModules();
 
-const EditStudyAnalysisPointsHotTable: React.FC<{ analysisId?: string; disabled: boolean }> =
-    React.memo((props) => {
-        const points = useStudyAnalysisPoints(props.analysisId) as IStorePoint[] | null;
+const EditStudyAnalysisPointsHotTable: React.FC<{ analysisId?: string; readOnly?: boolean }> =
+    React.memo(({ analysisId, readOnly = false }) => {
+        const points = useStudyAnalysisPoints(analysisId) as IStorePoint[] | null;
         const updatePoints = useUpdateAnalysisPoints();
         const createPoint = useCreateAnalysisPoints();
         const deletePoints = useDeleteAnalysisPoints();
@@ -39,7 +39,7 @@ const EditStudyAnalysisPointsHotTable: React.FC<{ analysisId?: string; disabled:
             insertedRowsViaPaste: [],
         });
         const { height, insertRowsDialogIsOpen, closeInsertRowsDialog } =
-            useEditAnalysisPointsHotTable(props.analysisId, hotTableRef, hotTableMetadata);
+            useEditAnalysisPointsHotTable(analysisId, hotTableRef, hotTableMetadata);
 
         // handsontable binds and updates to the data references themselves which means the original data is being mutated.
         // as we use zustand, this may not be a good idea, so we implement handleAfterChange to
@@ -48,7 +48,7 @@ const EditStudyAnalysisPointsHotTable: React.FC<{ analysisId?: string; disabled:
         //      (3) utilize handsontable's native validation (which does not get fired if we use beforeChange)
         //      (4) replace null or '' values with undefined as hot treats '' and null as valid (isNaN(null) === false)
         const handleAfterChange = (changes: CellChange[] | null, source: ChangeSource) => {
-            if (!props.analysisId) return;
+            if (!analysisId) return;
             if (!changes) return;
             if (!points) return;
 
@@ -66,7 +66,7 @@ const EditStudyAnalysisPointsHotTable: React.FC<{ analysisId?: string; disabled:
                     [colName]: newVal,
                 };
             });
-            updatePoints(props.analysisId, updatedPoints);
+            updatePoints(analysisId, updatedPoints);
         };
 
         // for all pasted data, remove any copied HTML tags and replace minus sign lookalikes with the expected minus sign.
@@ -109,8 +109,7 @@ const EditStudyAnalysisPointsHotTable: React.FC<{ analysisId?: string; disabled:
             amount: number,
             source?: ChangeSource | undefined
         ) => {
-            if (props.analysisId && source === 'CopyPaste.paste') {
-                const analysisId = props.analysisId;
+            if (analysisId && source === 'CopyPaste.paste') {
                 createPoint(
                     analysisId,
                     hotTableMetadata.current.insertedRowsViaPaste.map((row) => ({
@@ -130,11 +129,11 @@ const EditStudyAnalysisPointsHotTable: React.FC<{ analysisId?: string; disabled:
             physicalColumns: number[],
             source?: ChangeSource | undefined
         ) => {
-            if (!props.analysisId) return false;
+            if (!analysisId) return false;
             if (!points || points.length <= 1) return false;
 
             const idsRemoved = physicalColumns.map((index) => points[index].id || '');
-            deletePoints(props.analysisId, idsRemoved);
+            deletePoints(analysisId, idsRemoved);
             return false;
         };
 
@@ -151,14 +150,14 @@ const EditStudyAnalysisPointsHotTable: React.FC<{ analysisId?: string; disabled:
         };
 
         const handleInsertRows = (numRows: number) => {
-            if (hotTableRef.current?.hotInstance && props.analysisId) {
+            if (hotTableRef.current?.hotInstance && analysisId) {
                 const selectedCoords = hotTableRef.current.hotInstance.getSelected();
                 if (!selectedCoords) return;
 
                 const { insertAboveIndex, insertBelowIndex } =
                     getHotTableInsertionIndices(selectedCoords);
                 createPoint(
-                    props.analysisId,
+                    analysisId,
                     [...Array(numRows).keys()].map((num) => ({
                         value: undefined,
                         isNew: true,
@@ -172,8 +171,8 @@ const EditStudyAnalysisPointsHotTable: React.FC<{ analysisId?: string; disabled:
         };
 
         const hotTableColumnSettings = useMemo(() => {
-            return getHotTableColumnSettings(props.disabled);
-        }, [props.disabled]);
+            return getHotTableColumnSettings(readOnly);
+        }, [readOnly]);
 
         /**
          * Hook Order:
@@ -205,14 +204,14 @@ const EditStudyAnalysisPointsHotTable: React.FC<{ analysisId?: string; disabled:
                     colHeaders={hotTableColHeaders}
                     data={[...(points || [])]}
                 />
-                {(points?.length || 0) === 0 && !props.disabled ? (
+                {(points?.length || 0) === 0 && !readOnly ? (
                     <Typography sx={{ color: 'warning.dark', marginTop: '0.5rem' }}>
                         No coordinate data.{' '}
                         <Link
                             onClick={() => {
-                                if (!props.analysisId) return;
+                                if (!analysisId) return;
                                 createPoint(
-                                    props.analysisId,
+                                    analysisId,
                                     [
                                         {
                                             value: undefined,
@@ -231,11 +230,11 @@ const EditStudyAnalysisPointsHotTable: React.FC<{ analysisId?: string; disabled:
                 ) : (
                     <Button
                         endIcon={<Add />}
-                        disabled={props.disabled}
+                        disabled={readOnly}
                         onClick={() => {
-                            if (!props.analysisId) return;
+                            if (!analysisId) return;
                             createPoint(
-                                props.analysisId,
+                                analysisId,
                                 [
                                     {
                                         value: undefined,

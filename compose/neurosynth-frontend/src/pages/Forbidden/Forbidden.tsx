@@ -1,28 +1,33 @@
 import { Box, Typography } from '@mui/material';
 import BackButton from 'components/Buttons/BackButton';
+import { useLocation } from 'react-router-dom';
 
 const ForbiddenPage: React.FC = (props) => {
+    const { state } = useLocation();
+
     return (
         <Box
             sx={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexDirection: 'column',
-                marginTop: '4rem',
+                top: '50%',
+                position: 'absolute',
+                left: '50%',
+                transform: `translate(-50%, -50%)`,
             }}
         >
-            <Typography color="secondary" variant="h1">
-                401
+            <Typography variant="h4" color="secondary">
+                Forbidden
             </Typography>
-            <Typography variant="h3" color="secondary">
-                You can't access this page!
-            </Typography>
+            {state?.errorMessage && (
+                <Typography mt="1rem" variant="h6" color="muted.main">
+                    {state?.errorMessage}
+                </Typography>
+            )}
             <BackButton
-                sx={{ marginTop: '2rem', fontSize: '1.5rem' }}
+                sx={{ marginTop: '1.5rem', fontSize: '1rem' }}
                 path="/"
+                disableElevation
                 variant="contained"
-                text="Return Home"
+                text="Return to the homepage"
             />
         </Box>
     );

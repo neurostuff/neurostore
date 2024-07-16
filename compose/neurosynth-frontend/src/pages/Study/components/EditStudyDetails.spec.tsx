@@ -12,7 +12,7 @@ describe('EditStudyDetails Component', () => {
 
     it('should be truthy', () => {
         // placeholder test
-        render(<EditStudyDetails disabled={false} />);
+        render(<EditStudyDetails />);
         expect(true).toBeTruthy();
     });
 

@@ -5,7 +5,11 @@ import CheckIcon from '@mui/icons-material/Check';
 import BookmarkIcon from '@mui/icons-material/Bookmark';
 import { useNavigate, useParams } from 'react-router-dom';
 import { EExtractionStatus } from 'pages/Extraction/ExtractionPage';
-import { useProjectExtractionAddOrUpdateStudyListStatus } from 'pages/Project/store/ProjectStore';
+import {
+    useProjectExtractionAddOrUpdateStudyListStatus,
+    useProjectUser,
+} from 'pages/Project/store/ProjectStore';
+import useUserCanEdit from 'hooks/useUserCanEdit';
 
 const ReadOnlyStudySummaryVirtualizedItem: React.FC<
     StudyReturn & {
@@ -17,11 +21,15 @@ const ReadOnlyStudySummaryVirtualizedItem: React.FC<
     const { projectId } = useParams<{ projectId: string }>();
     const navigate = useNavigate();
     const addOrUpdateStudyListStatus = useProjectExtractionAddOrUpdateStudyListStatus();
+    const projectUser = useProjectUser();
+    const userCanEdit = useUserCanEdit(projectUser ?? undefined);
 
     const handleClick = (_event: React.MouseEvent) => {
-        if (props?.id) {
-            navigate(`/projects/${projectId}/extraction/studies/${props.id}`);
-        }
+        if (!props?.id) return;
+
+        userCanEdit
+            ? navigate(`/projects/${projectId}/extraction/studies/${props.id}/edit`)
+            : navigate(`/projects/${projectId}/extraction/studies/${props.id}`);
     };
 
     const handleUpdateStatus = (studyId: string, status: EExtractionStatus) => {

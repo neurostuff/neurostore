@@ -4,7 +4,7 @@ import EditStudyAnnotationsHotTable from 'pages/Study/components/EditStudyAnnota
 import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
 import { useNumStudyAnalyses } from 'pages/Study/store/StudyStore';
 
-const EditStudyAnnotations: React.FC<{ disabled: boolean }> = ({ disabled }) => {
+const EditStudyAnnotations: React.FC = () => {
     const numAnalyses = useNumStudyAnalyses();
     return (
         <NeurosynthAccordion
@@ -34,7 +34,7 @@ const EditStudyAnnotations: React.FC<{ disabled: boolean }> = ({ disabled }) => 
                         below
                     </Typography>
                 ) : (
-                    <EditStudyAnnotationsHotTable readonly={disabled} />
+                    <EditStudyAnnotationsHotTable />
                 )}
             </Box>
         </NeurosynthAccordion>

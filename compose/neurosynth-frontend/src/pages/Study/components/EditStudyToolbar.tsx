@@ -14,12 +14,14 @@ import {
     useProjectExtractionStudysetId,
     useProjectId,
     useProjectMetaAnalysisCanEdit,
+    useProjectUser,
 } from 'pages/Project/store/ProjectStore';
 import { useStudyId } from 'pages/Study/store/StudyStore';
 import { useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import EditStudyToolbarStyles from './EditStudyToolbar.styles';
 import { IProjectPageLocationState } from 'pages/Project/ProjectPage';
+import useUserCanEdit from 'hooks/useUserCanEdit';
 
 const getCurrSelectedChipText = (selectedChip: EExtractionStatus) => {
     switch (selectedChip) {
@@ -41,7 +43,7 @@ const getCurrSelectedChip = (projectId: string | undefined) => {
     );
 };
 
-const EditStudyToolbar: React.FC<{ disabled?: boolean }> = ({ disabled = false }) => {
+const EditStudyToolbar: React.FC<{ isViewOnly?: boolean }> = ({ isViewOnly = false }) => {
     const projectId = useProjectId();
     const studyId = useStudyId();
     const extractionStatus = useProjectExtractionStudyStatus(studyId || '');
@@ -53,6 +55,8 @@ const EditStudyToolbar: React.FC<{ disabled?: boolean }> = ({ disabled = false }
     const studyStatusList = useProjectExtractionStudyStatusList();
     const navigate = useNavigate();
     const canEditMetaAnalyses = useProjectMetaAnalysisCanEdit();
+    const user = useProjectUser();
+    const canEdit = useUserCanEdit(user ?? undefined);
 
     const updateStudyListStatus = useProjectExtractionAddOrUpdateStudyListStatus();
 
@@ -113,7 +117,9 @@ const EditStudyToolbar: React.FC<{ disabled?: boolean }> = ({ disabled = false }
     const handleMoveToPreviousStudy = () => {
         const prevId = getValidPrevStudyId();
         if (prevId) {
-            navigate(`/projects/${projectId}/extraction/studies/${prevId}`);
+            canEdit
+                ? navigate(`/projects/${projectId}/extraction/studies/${prevId}/edit`)
+                : navigate(`/projects/${projectId}/extraction/studies/${prevId}`);
         } else {
             throw new Error('no studies before this one');
         }
@@ -122,7 +128,9 @@ const EditStudyToolbar: React.FC<{ disabled?: boolean }> = ({ disabled = false }
     const handleMoveToNextStudy = () => {
         const nextId = getValidNextStudyId();
         if (nextId) {
-            navigate(`/projects/${projectId}/extraction/studies/${nextId}`);
+            canEdit
+                ? navigate(`/projects/${projectId}/extraction/studies/${nextId}/edit`)
+                : navigate(`/projects/${projectId}/extraction/studies/${nextId}`);
         } else {
             throw new Error('no studies after this one');
         }
@@ -197,80 +205,85 @@ const EditStudyToolbar: React.FC<{ disabled?: boolean }> = ({ disabled = false }
                         padding: '10px',
                     }}
                 >
-                    <Box sx={{ marginBottom: '1rem' }}>
-                        {isComplete ? (
-                            <Tooltip
-                                placement="right"
-                                title="You're done! Click this button to continue to the next phase"
-                            >
-                                <Box>
-                                    <IconButton
-                                        onClick={handleContinueToMetaAnalysisCreation}
-                                        sx={EditStudyToolbarStyles.colorPulseAnimation}
+                    {!isViewOnly && (
+                        <>
+                            <Box sx={{ marginBottom: '1rem' }}>
+                                {isComplete ? (
+                                    <Tooltip
+                                        placement="right"
+                                        title="You're done! Click this button to continue to the next phase"
                                     >
-                                        <DoneAllIcon color="success" />
-                                    </IconButton>
-                                </Box>
-                            </Tooltip>
-                        ) : (
-                            <Tooltip
-                                placement="right"
-                                title={`${percentageCompleteString} studies marked as complete`}
-                            >
-                                <Box>
-                                    <Box sx={EditStudyToolbarStyles.showProgress}>
-                                        {percentageComplete}%
-                                    </Box>
+                                        <Box>
+                                            <IconButton
+                                                onClick={handleContinueToMetaAnalysisCreation}
+                                                sx={EditStudyToolbarStyles.colorPulseAnimation}
+                                            >
+                                                <DoneAllIcon color="success" />
+                                            </IconButton>
+                                        </Box>
+                                    </Tooltip>
+                                ) : (
+                                    <Tooltip
+                                        placement="right"
+                                        title={`${percentageCompleteString} studies marked as complete`}
+                                    >
+                                        <Box>
+                                            <Box sx={EditStudyToolbarStyles.showProgress}>
+                                                {percentageComplete}%
+                                            </Box>
 
-                                    <CircularProgress
-                                        sx={{ backgroundColor: '#ededed', borderRadius: '50%' }}
-                                        variant="determinate"
-                                        value={percentageComplete}
-                                    />
-                                </Box>
-                            </Tooltip>
-                        )}
-                    </Box>
-                    <Box sx={{ marginBottom: '1rem' }}>
-                        <Tooltip placement="right" title="move to completed">
-                            <IconButton
-                                disabled={disabled}
-                                sx={{
-                                    backgroundColor:
-                                        extractionStatus?.status === EExtractionStatus.COMPLETED
-                                            ? 'lightgray'
-                                            : '',
-                                }}
-                                onClick={() =>
-                                    handleClickStudyListStatus(EExtractionStatus.COMPLETED)
-                                }
-                            >
-                                <CheckIcon
-                                    sx={{ color: disabled ? 'muted.main' : 'success.main' }}
-                                />
-                            </IconButton>
-                        </Tooltip>
-                    </Box>
-                    <Box sx={{ marginBottom: '1rem' }}>
-                        <Tooltip placement="right" title="move to save for later">
-                            <IconButton
-                                disabled={disabled}
-                                sx={{
-                                    backgroundColor:
-                                        extractionStatus?.status === EExtractionStatus.SAVEDFORLATER
-                                            ? 'lightgray'
-                                            : '',
-                                }}
-                                onClick={() =>
-                                    handleClickStudyListStatus(EExtractionStatus.SAVEDFORLATER)
-                                }
-                            >
-                                <BookmarkIcon
-                                    sx={{ color: disabled ? 'muted.main' : 'info.main' }}
-                                />
-                            </IconButton>
-                        </Tooltip>
-                    </Box>
+                                            <CircularProgress
+                                                sx={{
+                                                    backgroundColor: '#ededed',
+                                                    borderRadius: '50%',
+                                                }}
+                                                variant="determinate"
+                                                value={percentageComplete}
+                                            />
+                                        </Box>
+                                    </Tooltip>
+                                )}
+                            </Box>
+                            <Box sx={{ marginBottom: '1rem' }}>
+                                <Tooltip placement="right" title="move to completed">
+                                    <IconButton
+                                        sx={{
+                                            backgroundColor:
+                                                extractionStatus?.status ===
+                                                EExtractionStatus.COMPLETED
+                                                    ? 'lightgray'
+                                                    : '',
+                                        }}
+                                        onClick={() =>
+                                            handleClickStudyListStatus(EExtractionStatus.COMPLETED)
+                                        }
+                                    >
+                                        <CheckIcon />
+                                    </IconButton>
+                                </Tooltip>
+                            </Box>
+                            <Box sx={{ marginBottom: '1rem' }}>
+                                <Tooltip placement="right" title="move to save for later">
+                                    <IconButton
+                                        sx={{
+                                            backgroundColor:
+                                                extractionStatus?.status ===
+                                                EExtractionStatus.SAVEDFORLATER
+                                                    ? 'lightgray'
+                                                    : '',
+                                        }}
+                                        onClick={() =>
+                                            handleClickStudyListStatus(
+                                                EExtractionStatus.SAVEDFORLATER
+                                            )
+                                        }
+                                    >
+                                        <BookmarkIcon />
+                                    </IconButton>
+                                </Tooltip>
+                            </Box>
+                        </>
+                    )}
                     <Box sx={{ marginBottom: '1rem' }}>
                         <Tooltip
                             placement="right"

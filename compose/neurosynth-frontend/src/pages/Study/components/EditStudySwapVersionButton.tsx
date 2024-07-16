@@ -90,7 +90,7 @@ const EditStudySwapVersionButton: React.FC = (props) => {
             updateStudyListStatusWithNewStudyId(studyId, versionToSwapTo);
             await setAnalysesInAnnotationAsIncluded(annotationId);
 
-            navigate(`/projects/${projectId}/extraction/studies/${versionToSwapTo}`);
+            navigate(`/projects/${projectId}/extraction/studies/${versionToSwapTo}/edit`);
 
             enqueueSnackbar('Updated version', { variant: 'success' });
         } catch (e) {

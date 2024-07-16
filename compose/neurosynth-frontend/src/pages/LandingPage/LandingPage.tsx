@@ -17,7 +17,7 @@ const AUTH0_AUDIENCE = process.env.REACT_APP_AUTH0_AUDIENCE;
 const LandingPage = () => {
     const { isAuthenticated, loginWithPopup } = useAuth0();
     const navigate = useNavigate();
-    useGuard('/projects', '', isAuthenticated);
+    useGuard('/projects', '', isAuthenticated, true);
 
     const handleLogin = async () => {
         await loginWithPopup({

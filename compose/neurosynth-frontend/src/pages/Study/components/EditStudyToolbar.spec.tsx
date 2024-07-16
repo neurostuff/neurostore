@@ -114,7 +114,7 @@ describe('EditStudyToolbar Component', () => {
         userEvent.click(screen.getByTestId('ArrowBackIcon'));
         // ASSERT
         expect(useNavigate()).toHaveBeenCalledWith(
-            '/projects/project-id/extraction/studies/study-0'
+            '/projects/project-id/extraction/studies/study-0/edit'
         );
     });
 
@@ -188,7 +188,7 @@ describe('EditStudyToolbar Component', () => {
         userEvent.click(screen.getByTestId('ArrowForwardIcon'));
         // ASSERT
         expect(useNavigate()).toHaveBeenCalledWith(
-            '/projects/project-id/extraction/studies/study-5'
+            '/projects/project-id/extraction/studies/study-5/edit'
         );
     });
 

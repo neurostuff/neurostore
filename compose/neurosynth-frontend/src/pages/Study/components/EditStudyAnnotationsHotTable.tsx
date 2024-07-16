@@ -7,7 +7,7 @@ import { sanitizePaste } from 'components/HotTables/HotTables.utils';
 import useEditStudyAnnotationsHotTable from 'pages/Study/components/useEditStudyAnnotationsHotTable';
 import { HotSettings } from 'pages/Study/components/EditStudyAnnotationsHotTable.helpers';
 
-const EditStudyAnnotationsHotTable: React.FC<{ readonly: boolean }> = ({ readonly }) => {
+const EditStudyAnnotationsHotTable: React.FC<{ readonly?: boolean }> = ({ readonly = false }) => {
     const hotTableRef = useRef<HotTable>(null);
     const noteKeys = useAnnotationNoteKeys();
     const updateNotes = useUpdateAnnotationNotes();

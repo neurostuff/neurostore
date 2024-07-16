@@ -21,6 +21,7 @@ import { useMemo } from 'react';
 import { Outlet, useLocation, useNavigate, useParams } from 'react-router-dom';
 import ProjectComponentsEditPrivacyToggle from 'pages/Project/components/ProjectEditPrivacyToggle';
 import ProjectIsLoadingText from 'components/ProjectIsLoadingText';
+import { useAuth0 } from '@auth0/auth0-react';
 
 export interface IProjectPageLocationState {
     projectPage?: {
@@ -31,6 +32,7 @@ export interface IProjectPageLocationState {
 
 const ProjectPage: React.FC = (props) => {
     const { projectId } = useParams<{ projectId: string }>();
+    const { isAuthenticated } = useAuth0();
     const location = useLocation();
     const navigate = useNavigate();
 
@@ -60,23 +62,25 @@ const ProjectPage: React.FC = (props) => {
     );
 
     return (
-        <StateHandlerComponent isLoading={getProjectIsLoading} isError={false}>
+        <StateHandlerComponent isLoading={getProjectIsLoading} isError={getProjectIsError}>
             <Box sx={{ marginBottom: '5rem' }}>
                 <Box sx={{ marginBottom: '0.5rem', display: 'flex' }}>
-                    <NeurosynthBreadcrumbs
-                        breadcrumbItems={[
-                            {
-                                text: 'Projects',
-                                link: '/projects',
-                                isCurrentPage: false,
-                            },
-                            {
-                                text: projectName || '',
-                                link: '',
-                                isCurrentPage: true,
-                            },
-                        ]}
-                    />
+                    {isAuthenticated && (
+                        <NeurosynthBreadcrumbs
+                            breadcrumbItems={[
+                                {
+                                    text: 'Projects',
+                                    link: '/projects',
+                                    isCurrentPage: false,
+                                },
+                                {
+                                    text: projectName || '',
+                                    link: '',
+                                    isCurrentPage: true,
+                                },
+                            ]}
+                        />
+                    )}
                     <ProjectIsLoadingText />
                 </Box>
 

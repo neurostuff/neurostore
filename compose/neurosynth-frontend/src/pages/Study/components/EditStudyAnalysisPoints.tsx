@@ -3,7 +3,7 @@ import { Box, Tooltip, Typography } from '@mui/material';
 import HelpIcon from '@mui/icons-material/Help';
 import EditStudyAnalysisPointSpaceAndStatistic from 'pages/Study/components/EditStudyAnalysisPointSpaceAndStatistic';
 
-const EditStudyAnalysisPoints: React.FC<{ analysisId?: string; disabled: boolean }> = (props) => {
+const EditStudyAnalysisPoints: React.FC<{ analysisId?: string }> = (props) => {
     return (
         <Box sx={{ marginTop: '2rem', width: '100%' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', margin: '0.5rem 0' }}>
@@ -17,14 +17,8 @@ const EditStudyAnalysisPoints: React.FC<{ analysisId?: string; disabled: boolean
                     <HelpIcon color="primary" />
                 </Tooltip>
             </Box>
-            <EditStudyAnalysisPointSpaceAndStatistic
-                disabled={props.disabled}
-                analysisId={props.analysisId}
-            />
-            <EditStudyAnalysisPointsHotTable
-                disabled={props.disabled}
-                analysisId={props.analysisId}
-            />
+            <EditStudyAnalysisPointSpaceAndStatistic analysisId={props.analysisId} />
+            <EditStudyAnalysisPointsHotTable analysisId={props.analysisId} />
         </Box>
     );
 };

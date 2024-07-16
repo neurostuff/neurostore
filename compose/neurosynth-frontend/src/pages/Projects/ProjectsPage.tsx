@@ -2,14 +2,12 @@ import { useAuth0 } from '@auth0/auth0-react';
 import { Box, Typography } from '@mui/material';
 import SearchContainer from 'components/Search/SearchContainer';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
-import { useGuard } from 'hooks';
 import { INeurosynthProjectReturn } from 'hooks/projects/useGetProjects';
-import ProjectsPageCard from './components/ProjectsPageCard';
 import useSearchProjects from 'pages/Projects/hooks/useSearchProjects';
+import ProjectsPageCard from './components/ProjectsPageCard';
 
 const ProjectsPage: React.FC = (props) => {
-    const { isAuthenticated, isLoading: authIsLoading, user } = useAuth0();
-    useGuard('/', 'Please log in', !authIsLoading && !isAuthenticated);
+    const { user } = useAuth0();
 
     const {
         handlePageChange,

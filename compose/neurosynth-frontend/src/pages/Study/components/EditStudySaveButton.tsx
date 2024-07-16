@@ -227,7 +227,7 @@ const EditStudySaveButton: React.FC = React.memo((props) => {
                 },
             });
 
-            navigate(`/projects/${projectId}/extraction/studies/${clonedStudyId}`);
+            navigate(`/projects/${projectId}/extraction/studies/${clonedStudyId}/edit`);
             enqueueSnackbar('Saved successfully. You are now the owner of this study', {
                 variant: 'success',
             });

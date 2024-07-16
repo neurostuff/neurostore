@@ -15,7 +15,7 @@ import {
 import { StudyDetails } from 'pages/Study/store/StudyStore.helpers';
 import React from 'react';
 
-const EditStudyDetails: React.FC<{ disabled: boolean }> = React.memo(({ disabled }) => {
+const EditStudyDetails: React.FC = React.memo(() => {
     const name = useStudyName();
     const description = useStudyDescription();
     const authors = useStudyAuthors();
@@ -55,7 +55,6 @@ const EditStudyDetails: React.FC<{ disabled: boolean }> = React.memo(({ disabled
         >
             <Box sx={EditStudyComponentsStyles.accordionContentContainer}>
                 <TextField
-                    disabled={disabled}
                     label="name"
                     size="small"
                     sx={{ width: '100%', marginBottom: '0.75rem' }}
@@ -63,7 +62,6 @@ const EditStudyDetails: React.FC<{ disabled: boolean }> = React.memo(({ disabled
                     onChange={(event) => handleUpdate(event.target.value, 'name')}
                 />
                 <TextField
-                    disabled={disabled}
                     label="authors"
                     size="small"
                     sx={{ width: '100%', marginBottom: '0.75rem' }}
@@ -72,7 +70,6 @@ const EditStudyDetails: React.FC<{ disabled: boolean }> = React.memo(({ disabled
                 />
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                     <TextField
-                        disabled={disabled}
                         label="journal"
                         size="small"
                         sx={{ width: '49%', marginBottom: '0.75rem' }}
@@ -80,7 +77,6 @@ const EditStudyDetails: React.FC<{ disabled: boolean }> = React.memo(({ disabled
                         onChange={(event) => handleUpdate(event.target.value, 'publication')}
                     />
                     <TextField
-                        disabled={disabled}
                         label="doi"
                         size="small"
                         sx={{ width: '49%', marginBottom: '0.75rem' }}
@@ -90,7 +86,6 @@ const EditStudyDetails: React.FC<{ disabled: boolean }> = React.memo(({ disabled
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                     <TextField
-                        disabled={disabled}
                         label="pmid"
                         size="small"
                         sx={{ width: '33%', marginBottom: '0.75rem' }}
@@ -98,7 +93,6 @@ const EditStudyDetails: React.FC<{ disabled: boolean }> = React.memo(({ disabled
                         onChange={(event) => handleUpdate(event.target.value, 'pmid')}
                     />
                     <TextField
-                        disabled={disabled}
                         label="pmcid"
                         size="small"
                         sx={{ width: '33%', marginBottom: '0.75rem' }}
@@ -106,7 +100,6 @@ const EditStudyDetails: React.FC<{ disabled: boolean }> = React.memo(({ disabled
                         onChange={(event) => handleUpdate(event.target.value, 'pmcid')}
                     />
                     <TextField
-                        disabled={disabled}
                         onWheel={(event) => {
                             event.preventDefault();
                         }}
@@ -119,7 +112,6 @@ const EditStudyDetails: React.FC<{ disabled: boolean }> = React.memo(({ disabled
                     />
                 </Box>
                 <TextField
-                    disabled={disabled}
                     label="description or abstract"
                     size="small"
                     sx={{ width: '100%' }}

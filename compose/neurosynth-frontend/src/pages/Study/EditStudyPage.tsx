@@ -1,29 +1,27 @@
 import { Box } from '@mui/material';
-import EditStudyAnalyses from 'pages/Study/components/EditStudyAnalyses';
-import EditStudyDetails from 'pages/Study/components/EditStudyDetails';
-import EditStudyMetadata from 'pages/Study/components/EditStudyMetadata';
-import EditStudySaveButton from 'pages/Study/components/EditStudySaveButton';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import {
     useInitProjectStoreIfRequired,
     useProjectExtractionAnnotationId,
-    useProjectUser,
 } from 'pages/Project/store/ProjectStore';
-import { useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import { useClearAnnotationStore, useInitAnnotationStore } from 'stores/AnnotationStore.actions';
-import { useAnnotationId, useGetAnnotationIsLoading } from 'stores/AnnotationStore.getters';
+import EditStudyAnalyses from 'pages/Study/components/EditStudyAnalyses';
+import EditStudyAnnotations from 'pages/Study/components/EditStudyAnnotations';
+import EditStudyDetails from 'pages/Study/components/EditStudyDetails';
+import EditStudyMetadata from 'pages/Study/components/EditStudyMetadata';
+import EditStudyPageHeader from 'pages/Study/components/EditStudyPageHeader';
+import EditStudySaveButton from 'pages/Study/components/EditStudySaveButton';
+import EditStudySwapVersionButton from 'pages/Study/components/EditStudySwapVersionButton';
+import EditStudyPageStyles from 'pages/Study/EditStudyPage.styles';
 import {
     useClearStudyStore,
     useGetStudyIsLoading,
     useInitStudyStore,
     useStudyId,
 } from 'pages/Study/store/StudyStore';
-import EditStudyPageStyles from 'pages/Study/EditStudyPage.styles';
-import useUserCanEdit from 'hooks/useUserCanEdit';
-import EditStudyAnnotations from 'pages/Study/components/EditStudyAnnotations';
-import EditStudyPageHeader from 'pages/Study/components/EditStudyPageHeader';
-import EditStudySwapVersionButton from 'pages/Study/components/EditStudySwapVersionButton';
+import { useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import { useClearAnnotationStore, useInitAnnotationStore } from 'stores/AnnotationStore.actions';
+import { useAnnotationId, useGetAnnotationIsLoading } from 'stores/AnnotationStore.getters';
 
 const EditStudyPage: React.FC = (props) => {
     const { studyId } = useParams<{ studyId: string }>();
@@ -39,8 +37,6 @@ const EditStudyPage: React.FC = (props) => {
     const clearAnnotationStore = useClearAnnotationStore();
     const initAnnotationStore = useInitAnnotationStore();
     const getAnnotationIsLoading = useGetAnnotationIsLoading();
-    const projectUser = useProjectUser();
-    const canEdit = useUserCanEdit(projectUser || undefined);
 
     useInitProjectStoreIfRequired();
     // instead of the useInitStudyStoreIfRequired hook,
@@ -67,19 +63,17 @@ const EditStudyPage: React.FC = (props) => {
                 !studyStoreId || !annotationStoreId || getStudyIsLoading || getAnnotationIsLoading
             }
         >
-            <EditStudyPageHeader disabled={!canEdit} />
-            <EditStudyAnnotations disabled={!canEdit} />
-            <EditStudyAnalyses disabled={!canEdit} />
-            <EditStudyDetails disabled={!canEdit} />
+            <EditStudyPageHeader />
+            <EditStudyAnnotations />
+            <EditStudyAnalyses />
+            <EditStudyDetails />
             <Box sx={{ marginBottom: '5rem' }}>
-                <EditStudyMetadata disabled={!canEdit} />
+                <EditStudyMetadata />
             </Box>
-            {canEdit && (
-                <Box sx={EditStudyPageStyles.loadingButtonContainer}>
-                    <EditStudySwapVersionButton />
-                    <EditStudySaveButton />
-                </Box>
-            )}
+            <Box sx={EditStudyPageStyles.loadingButtonContainer}>
+                <EditStudySwapVersionButton />
+                <EditStudySaveButton />
+            </Box>
         </StateHandlerComponent>
     );
 };

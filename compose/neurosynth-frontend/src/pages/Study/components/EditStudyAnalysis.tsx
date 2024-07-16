@@ -10,7 +10,6 @@ import EditStudyAnalysisDetails from 'pages/Study/components/EditStudyAnalysisDe
 const EditStudyAnalysis: React.FC<{
     analysisId?: string;
     onDeleteAnalysis: () => void;
-    disabled: boolean;
 }> = (props) => {
     const deleteAnalysis = useDeleteAnalysis();
     const deleteAnnotationNote = useDeleteAnnotationNote();
@@ -33,8 +32,8 @@ const EditStudyAnalysis: React.FC<{
     return (
         <Box sx={{ marginBottom: '2rem', width: '100%' }}>
             <StudyAnalysisWarnings analysisId={props.analysisId} />
-            <EditStudyAnalysisDetails disabled={props.disabled} analysisId={props.analysisId} />
-            <EditStudyAnalysisPoints disabled={props.disabled} analysisId={props.analysisId} />
+            <EditStudyAnalysisDetails analysisId={props.analysisId} />
+            <EditStudyAnalysisPoints analysisId={props.analysisId} />
             {/* TODO: This can be added back later when we have a better understanding of where it fits in as currently, all meta-analysis algorithms do not use this */}
             {/* <Box sx={{ marginTop: '2rem' }}>
                 <Typography sx={{ marginBottom: '1rem', fontWeight: 'bold' }}>
@@ -55,7 +54,6 @@ const EditStudyAnalysis: React.FC<{
                     onClick={() => setDialogIsOpen(true)}
                     disableElevation
                     color="error"
-                    disabled={props.disabled}
                 >
                     Delete Analysis
                 </Button>

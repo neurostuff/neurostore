@@ -5,21 +5,22 @@ import { useNavigate } from 'react-router-dom';
 const useGuard = (
     navigationLink: string,
     snackbarMessage = 'you must be authenticated to view this page',
-    shouldNotSeePage = false
+    shouldNotSeePage = false,
+    replace?: boolean
 ) => {
     const navigate = useNavigate();
     const { enqueueSnackbar } = useSnackbar();
 
     useEffect(() => {
         if (shouldNotSeePage) {
-            navigate(navigationLink || '/');
+            navigate(navigationLink || '/', { replace: replace || false });
             if (snackbarMessage && snackbarMessage.length > 0) {
                 enqueueSnackbar(snackbarMessage, {
                     variant: 'warning',
                 });
             }
         }
-    }, [enqueueSnackbar, navigate, navigationLink, shouldNotSeePage, snackbarMessage]);
+    }, [enqueueSnackbar, navigate, navigationLink, replace, shouldNotSeePage, snackbarMessage]);
 
     return;
 };
