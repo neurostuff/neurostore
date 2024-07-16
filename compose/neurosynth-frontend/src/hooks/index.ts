@@ -35,6 +35,7 @@ import useUpdateAnnotationById from './analyses/useUpdateAnnotationById';
 import useGetExtractionSummary from './useGetExtractionSummary';
 import useGetCurationSummary from './useGetCurationSummary';
 import useGetFullText from './external/useGetFullText';
+import useUserCanEdit from './useUserCanEdit';
 
 export {
     useGetCurationSummary,
@@ -46,6 +47,7 @@ export {
     useGetTour,
     useGetWindowHeight,
     useGetFullText,
+    useUserCanEdit,
     // STUDIES
     useGetBaseStudies,
     useGetStudyById,

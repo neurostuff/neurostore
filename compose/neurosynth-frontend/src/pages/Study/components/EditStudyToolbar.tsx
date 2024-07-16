@@ -21,7 +21,7 @@ import { useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import EditStudyToolbarStyles from './EditStudyToolbar.styles';
 import { IProjectPageLocationState } from 'pages/Project/ProjectPage';
-import useUserCanEdit from 'hooks/useUserCanEdit';
+import { useUserCanEdit } from 'hooks';
 
 const getCurrSelectedChipText = (selectedChip: EExtractionStatus) => {
     switch (selectedChip) {

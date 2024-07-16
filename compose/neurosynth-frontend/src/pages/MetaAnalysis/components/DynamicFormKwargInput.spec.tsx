@@ -2,8 +2,8 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import DynamicFormKwargInput from './DynamicFormKwargInput';
 
-jest.mock('components/Tables/NeurosynthTable/NeurosynthTable');
-jest.mock('components/EditMetadata/EditMetadataRow/AddMetadataRow');
+jest.mock('components/NeurosynthTable/NeurosynthTable');
+jest.mock('components/EditMetadata/AddMetadataRow');
 
 describe('DynamicFormKwargInput Component', () => {
     const mockOnUpdate = jest.fn();

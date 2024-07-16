@@ -9,16 +9,10 @@ import {
 import CreateMetaAnalysisSpecificationSelectionStep from 'pages/MetaAnalysis/components/CreateMetaAnalysisSpecificationSelectionStep';
 import { MULTIGROUP_ALGORITHMS } from 'pages/MetaAnalysis/components/SelectAnalysesComponent.types';
 
-jest.mock('pages/Projects/ProjectPage/ProjectStore');
-jest.mock(
-    'components/Dialogs/CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationSelectionStep/SelectAnalysesComponent/SelectAnalysesComponent'
-);
-jest.mock(
-    'components/Dialogs/CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationSelectionStep/SelectAnalysesComponent/SelectAnalysesSummaryComponent'
-);
-jest.mock(
-    'components/Dialogs/CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationSelectionStep/CreateMetaAnalysisSpecificationSelectionStepMultiGroup'
-);
+jest.mock('pages/Project/store/ProjectStore');
+jest.mock('pages/MetaAnalysis/components/SelectAnalysesComponent');
+jest.mock('pages/MetaAnalysis/components/SelectAnalysesSummaryComponent');
+jest.mock('pages/MetaAnalysis/components/CreateMetaAnalysisSpecificationSelectionStepMultiGroup');
 
 describe('CreateMetaAnalysisSpecificationSelectionStep', () => {
     let algorithmMock: IAlgorithmSelection = {

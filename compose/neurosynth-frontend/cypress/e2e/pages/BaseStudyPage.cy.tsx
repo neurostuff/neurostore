@@ -3,7 +3,7 @@
 export {};
 
 const PATH = '/base-studies/mock-study-id';
-const PAGE_NAME = 'StudyPage';
+const PAGE_NAME = 'BaseStudyPage';
 
 describe(PAGE_NAME, () => {
     beforeEach(() => {

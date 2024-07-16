@@ -11,7 +11,7 @@ import {
     IMultiGroupOption,
     DEFAULT_REFERENCE_DATASETS,
 } from 'pages/MetaAnalysis/components/SelectAnalysesComponent.types';
-import useInclusionColumnOptions from 'pages/MetaAnalysis/components/useInclusionColumnOptions';
+import useInclusionColumnOptions from 'pages/MetaAnalysis/hooks/useInclusionColumnOptions';
 
 const CreateMetaAnalysisSpecificationSelectionStepMultiGroup: React.FC<{
     algorithm: IAlgorithmSelection;

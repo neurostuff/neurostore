@@ -1,7 +1,7 @@
 import { AnalysisReturn } from 'neurostore-typescript-sdk';
 import { IStoreAnalysis } from 'pages/Study/store/StudyStore.helpers';
 
-const MockEditAnalysesListItem: React.FC<{
+const MockEditStudyAnalysesListItem: React.FC<{
     analysis: AnalysisReturn | IStoreAnalysis;
     selected: boolean;
     index: number;
@@ -19,4 +19,4 @@ const MockEditAnalysesListItem: React.FC<{
     );
 };
 
-export default MockEditAnalysesListItem;
+export default MockEditStudyAnalysesListItem;

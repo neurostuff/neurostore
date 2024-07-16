@@ -8,9 +8,7 @@ import {
 import CreateMetaAnalysisSpecificationSelectionStepMultiGroup from 'pages/MetaAnalysis/components/CreateMetaAnalysisSpecificationSelectionStepMultiGroup';
 import { DEFAULT_REFERENCE_DATASETS } from 'pages/MetaAnalysis/components/SelectAnalysesComponent.types';
 
-jest.mock(
-    'components/Dialogs/CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationSelectionStep/SelectAnalysesComponent/useInclusionColumnOptions'
-);
+jest.mock('pages/MetaAnalysis/hooks/useInclusionColumnOptions');
 jest.mock('components/NeurosynthAutocomplete/NeurosynthAutocomplete');
 
 describe('CreateMetaAnalysisSpecificationSelectionStepMultiGroup', () => {

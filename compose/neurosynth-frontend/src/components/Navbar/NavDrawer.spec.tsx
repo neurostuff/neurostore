@@ -5,7 +5,7 @@ import NavDrawer from './NavDrawer';
 
 jest.mock('@auth0/auth0-react');
 jest.mock('react-router-dom');
-jest.mock('components/Dialogs/CreateDetailsDialog/CreateDetailsDialog');
+jest.mock('components/Dialogs/CreateDetailsDialog');
 
 describe('NavDrawer component', () => {
     let renderResult: RenderResult;

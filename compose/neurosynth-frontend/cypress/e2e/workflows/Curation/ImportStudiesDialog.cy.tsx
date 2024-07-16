@@ -11,7 +11,10 @@ describe('ImportStudiesDialog', () => {
     });
 
     it('should load the page', () => {
-        cy.visit('/projects/abc123/curation').wait('@projectFixture').wait('@studysetFixture');
+        cy.login('mocked')
+            .visit('/projects/abc123/curation')
+            .wait('@projectFixture')
+            .wait('@studysetFixture');
     });
 
     it('should open the import studies dialog', () => {

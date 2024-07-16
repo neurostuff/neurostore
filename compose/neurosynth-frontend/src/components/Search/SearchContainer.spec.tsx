@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import SearchContainer from './SearchContainer';
 
-jest.mock('components/Search/SearchBar/SearchBar.tsx');
+jest.mock('components/Search/SearchBar.tsx');
 
 jest.mock('@mui/material/Pagination', () => {
     return {

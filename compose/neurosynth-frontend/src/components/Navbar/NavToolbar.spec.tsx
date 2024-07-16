@@ -6,8 +6,8 @@ import NavToolbar from './NavToolbar';
 jest.mock('@auth0/auth0-react');
 jest.mock('hooks');
 jest.mock('react-router-dom');
-jest.mock('components/Dialogs/CreateDetailsDialog/CreateDetailsDialog');
-jest.mock('components/Navbar/NavSubMenu/NavToolbarPopupSubMenu');
+jest.mock('components/Dialogs/CreateDetailsDialog');
+jest.mock('components/Navbar/NavToolbarPopupSubMenu');
 
 describe('NavToolbar Component', () => {
     beforeEach(() => {

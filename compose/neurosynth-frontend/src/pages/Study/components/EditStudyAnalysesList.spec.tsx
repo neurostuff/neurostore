@@ -3,7 +3,7 @@ import EditStudyAnalysesList from './EditStudyAnalysesList';
 import { IStoreAnalysis } from 'pages/Study/store/StudyStore.helpers';
 import userEvent from '@testing-library/user-event';
 
-jest.mock('pages/Study/components/EditAnalysesListItem.tsx');
+jest.mock('pages/Study/components/StudyAnalysesListItem.tsx');
 
 describe('EditStudyAnalysesList Component', () => {
     it('should render', () => {

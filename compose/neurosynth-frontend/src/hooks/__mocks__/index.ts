@@ -141,6 +141,8 @@ const useIsMounted = () => {
     };
 };
 
+const useUserCanEdit = jest.fn().mockReturnValue(true);
+
 export {
     useCreateMetaAnalysis,
     useDeleteAnalysis,
@@ -164,4 +166,5 @@ export {
     useGetExtractionSummary,
     useGetStudysetById,
     useGetFullText,
+    useUserCanEdit,
 };

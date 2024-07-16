@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import useDisplayWarnings from 'pages/Study/hooks/useDisplayWarnings';
 
 jest.mock('pages/Study/hooks/useDisplayWarnings.tsx');
-describe('EditStudyAnalysesListItem Component', () => {
+describe('StudyAnalysesListItem Component', () => {
     it('should render', () => {
         render(
             <StudyAnalysesListItem analysis={{}} selected={false} onSelectAnalysis={() => {}} />

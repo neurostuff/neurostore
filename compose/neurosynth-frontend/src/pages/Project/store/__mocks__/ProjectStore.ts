@@ -12,6 +12,8 @@ const useProjectMetaAnalysisCanEdit = jest.fn().mockReturnValue(true);
 
 const useProjectExtractionAddOrUpdateStudyListStatus = jest.fn().mockReturnValue(jest.fn());
 
+const useProjectUser = jest.fn().mockReturnValue('user-id');
+
 export {
     useProjectExtractionAnnotationId,
     useProjectExtractionStudysetId,
@@ -20,4 +22,5 @@ export {
     useProjectExtractionStudyStatusList,
     useProjectMetaAnalysisCanEdit,
     useProjectExtractionAddOrUpdateStudyListStatus,
+    useProjectUser,
 };

@@ -10,6 +10,7 @@ import {
 import { useStudyId } from 'pages/Study/store/StudyStore';
 import { useNavigate } from 'react-router-dom';
 import EditStudyToolbar from './EditStudyToolbar';
+import { useUserCanEdit } from 'hooks';
 
 jest.mock('hooks');
 jest.mock('react-router-dom');
@@ -83,6 +84,7 @@ describe('EditStudyToolbar Component', () => {
         // ARRANGE
         Storage.prototype.getItem = jest.fn().mockReturnValue(EExtractionStatus.SAVEDFORLATER); // mock localStorage
         (useStudyId as jest.Mock).mockReturnValue('study-2');
+        (useUserCanEdit as jest.Mock).mockReturnValue(true);
         useGetStudysetById().data = {
             studies: [{ id: 'study-0' }, { id: 'study-0.5' }, { id: 'study-2' }, { id: 'study-3' }],
         };

@@ -1,10 +1,10 @@
 import { IParameter } from 'pages/MetaAnalysis/components/DynamicForm.types';
 
-jest.mock('pages/MetaAnalysis/components/MetaAnalysisDynamicFormBoolInput');
-jest.mock('pages/MetaAnalysis/components/MetaAnalysisDynamicFormKwargInput');
-jest.mock('pages/MetaAnalysis/components/MetaAnalysisDynamicFormNumericInput');
-jest.mock('pages/MetaAnalysis/components/MetaAnalysisDynamicFormSelectInput');
-jest.mock('pages/MetaAnalysis/components/MetaAnalysisDynamicFormStringInput');
+jest.mock('pages/MetaAnalysis/components/DynamicFormBoolInput');
+jest.mock('pages/MetaAnalysis/components/DynamicFormKwargInput');
+jest.mock('pages/MetaAnalysis/components/DynamicFormNumericInput');
+jest.mock('pages/MetaAnalysis/components/DynamicFormSelectInput');
+jest.mock('pages/MetaAnalysis/components/DynamicFormStringInput');
 
 describe('MetaAnalysisDynamicForm', () => {
     const mockOnUpdate = jest.fn();

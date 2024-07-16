@@ -4,7 +4,7 @@ import { AnnotationNoteValue } from 'components/HotTables/HotTables.types';
 import NeurosynthAutocomplete from 'components/NeurosynthAutocomplete/NeurosynthAutocomplete';
 import NeurosynthTableStyles from 'components/NeurosynthTable/NeurosynthTable.styles';
 import { IAnalysesSelection } from 'pages/MetaAnalysis/components/CreateMetaAnalysisSpecificationDialogBase.types';
-import useInclusionColumnOptions from './useInclusionColumnOptions';
+import useInclusionColumnOptions from '../hooks/useInclusionColumnOptions';
 
 const SelectAnalysesStringValue: React.FC<{
     selectedValue: IAnalysesSelection | undefined;
