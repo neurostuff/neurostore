@@ -1,4 +1,4 @@
-import { EPropertyType } from 'components/EditMetadata';
+import { EPropertyType } from 'components/EditMetadata/EditMetadata.types';
 import { NoteKeyType } from 'components/HotTables/HotTables.types';
 import { CellValue } from 'handsontable/common';
 

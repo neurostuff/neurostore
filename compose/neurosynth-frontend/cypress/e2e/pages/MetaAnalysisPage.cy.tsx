@@ -2,7 +2,7 @@
 
 export {};
 
-const PATH = '/projects/abc123/meta-analyses/mock-meta-analysis-id';
+const PATH = '/meta-analyses/mock-meta-analysis-id';
 const PAGE_NAME = 'MetaAnalysisPage';
 
 describe(PAGE_NAME, () => {
@@ -15,9 +15,10 @@ describe(PAGE_NAME, () => {
         cy.intercept('GET', `**/api/meta-analyses/**`, { fixture: 'metaAnalysis' }).as(
             'metaAnalysisFixture'
         );
-        cy.intercept('GET', `**/api/projects/*`, { fixture: 'projects/project' }).as(
-            'projectFixture'
-        );
+        cy.fixture('projects/project').then((project) => {
+            project.public = true;
+            cy.intercept('GET', `**/api/projects/*`, project).as('projectFixture');
+        });
         cy.intercept('GET', `**/api/annotations/*`, { fixture: 'annotation' }).as(
             'annotationFixture'
         );
@@ -26,9 +27,9 @@ describe(PAGE_NAME, () => {
 
     it('should load successfully', () => {
         cy.visit(PATH)
-            .wait('@specificationFixture')
             .wait('@metaAnalysisFixture')
             .wait('@projectFixture')
+            .wait('@specificationFixture')
             .wait('@annotationFixture')
             .wait('@studysetFixture');
     });

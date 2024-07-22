@@ -1,8 +1,11 @@
 import { Typography } from '@mui/material';
 import Box from '@mui/material/Box';
-import BackButton from 'components/Buttons/BackButton/BackButton';
+import BackButton from 'components/Buttons/BackButton';
+import { useLocation } from 'react-router-dom';
 
 const NotFoundPage = () => {
+    const { state } = useLocation();
+
     return (
         <Box
             sx={{
@@ -13,17 +16,20 @@ const NotFoundPage = () => {
                 marginTop: '4rem',
             }}
         >
-            <Typography color="secondary" variant="h1">
-                404
+            <Typography color="secondary" variant="h4">
+                Not found
             </Typography>
-            <Typography variant="h3" color="secondary">
-                Requested resource not found
-            </Typography>
+            {state?.errorMessage && (
+                <Typography mt="1rem" variant="h6" color="muted.main">
+                    {state?.errorMessage}
+                </Typography>
+            )}
             <BackButton
-                sx={{ marginTop: '2rem', fontSize: '1.5rem' }}
+                sx={{ marginTop: '1.5rem', fontSize: '1rem' }}
                 path="/"
+                disableElevation
                 variant="contained"
-                text="Return Home"
+                text="Return to the homepage"
             />
         </Box>
     );

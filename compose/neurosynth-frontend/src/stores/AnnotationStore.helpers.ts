@@ -1,5 +1,5 @@
 import { NoteKeyType } from 'components/HotTables/HotTables.types';
-import { EPropertyType } from 'components/EditMetadata';
+import { EPropertyType } from 'components/EditMetadata/EditMetadata.types';
 import { AnnotationNoteType, IStoreNoteCollectionReturn } from 'stores/AnnotationStore.types';
 import { NoteCollectionRequest } from 'neurostore-typescript-sdk';
 

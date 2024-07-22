@@ -6,8 +6,8 @@ import Navbar from './Navbar';
 
 jest.mock('@auth0/auth0-react');
 jest.mock('react-router-dom');
-jest.mock('components/Navbar/NavDrawer/NavDrawer.tsx');
-jest.mock('components/Navbar/NavToolbar/NavToolbar.tsx');
+jest.mock('components/Navbar/NavDrawer.tsx');
+jest.mock('components/Navbar/NavToolbar.tsx');
 jest.mock('hooks');
 
 describe('Navbar', () => {

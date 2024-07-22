@@ -1,5 +1,5 @@
 import { Typography, Box } from '@mui/material';
-import ProgressLoader from 'components/ProgressLoader/ProgressLoader';
+import ProgressLoader from 'components/ProgressLoader';
 
 export interface IStateHandlerComponent {
     isError: boolean;

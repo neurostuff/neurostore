@@ -2,7 +2,7 @@
 
 export {};
 
-const PATH = '/projects/abc123/extraction/studies/mock-study-id';
+const PATH = '/projects/abc123/extraction/studies/mock-study-id/edit';
 const PAGE_NAME = 'EditStudyPage';
 
 describe(PAGE_NAME, () => {

@@ -5,11 +5,11 @@ import OpenInNew from '@mui/icons-material/OpenInNew';
 import SearchIcon from '@mui/icons-material/Search';
 import SettingsIcon from '@mui/icons-material/Settings';
 import { Box, Button, Card, CardContent, Typography } from '@mui/material';
-import NeurosynthActivitySummary from 'components/NeurosynthActivitySummary/NeurosynthActivitySummary';
+import NeurosynthActivitySummary from 'components/NeurosynthActivitySummary';
 import { useGuard } from 'hooks';
 import { LOGOS } from 'pages/LandingPage/LandingPage.helpers';
 import LandingPageStyles from './LandingPage.styles';
-import PlatformComparisonTable from './PlatformComparisonTable';
+import PlatformComparisonTable from 'pages/LandingPage/components/PlatformComparisonTable';
 import { useNavigate } from 'react-router';
 
 const AUTH0_AUDIENCE = process.env.REACT_APP_AUTH0_AUDIENCE;
@@ -17,7 +17,7 @@ const AUTH0_AUDIENCE = process.env.REACT_APP_AUTH0_AUDIENCE;
 const LandingPage = () => {
     const { isAuthenticated, loginWithPopup } = useAuth0();
     const navigate = useNavigate();
-    useGuard('/projects', '', isAuthenticated);
+    useGuard('/projects', '', isAuthenticated, true);
 
     const handleLogin = async () => {
         await loginWithPopup({

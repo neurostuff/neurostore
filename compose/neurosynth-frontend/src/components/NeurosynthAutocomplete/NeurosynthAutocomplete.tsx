@@ -7,7 +7,7 @@ import {
     TextField,
 } from '@mui/material';
 import { SystemStyleObject } from '@mui/system';
-import ProgressLoader from 'components/ProgressLoader/ProgressLoader';
+import ProgressLoader from 'components/ProgressLoader';
 import { useInputValidation } from '../../hooks';
 
 export interface IAutocompleteObject {

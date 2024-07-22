@@ -1,4 +1,4 @@
-import { lastUpdatedAtSortFn } from 'components/Dialogs/MoveToExtractionDialog/MovetoExtractionDialog.helpers';
+import { lastUpdatedAtSortFn } from 'helpers/utils';
 import { useQuery } from 'react-query';
 import API from 'utils/api';
 

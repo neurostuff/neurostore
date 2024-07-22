@@ -1,36 +1,35 @@
 import { Box } from '@mui/material';
-import ProgressLoader from 'components/ProgressLoader/ProgressLoader';
-import AnnotationsPage from 'pages/Annotations/AnnotationsPage/AnnotationsPage';
-import CurationImportPage from 'pages/CurationPage/CurationImportPage';
-import ExtractionPage from 'pages/ExtractionPage/ExtractionPage';
+import ProgressLoader from 'components/ProgressLoader';
+import AnnotationsPage from 'pages/Annotations/AnnotationsPage';
+import CurationImportPage from 'pages/CurationImport/CurationImportPage';
+import ExtractionPage from 'pages/Extraction/ExtractionPage';
 import NotFoundPage from 'pages/NotFound/NotFoundPage';
-import ProjectPage from 'pages/Projects/ProjectPage/ProjectPage';
-import BaseStudyPage from 'pages/Studies/BaseStudyPage/BaseStudyPage';
-import UserProfilePage from 'pages/UserProfilePage/UserProfilePage';
+import ProjectPage from 'pages/Project/ProjectPage';
+import BaseStudyPage from 'pages/Study/BaseStudyPage';
+import UserProfilePage from 'pages/UserProfile/UserProfilePage';
 import React, { Suspense } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import LandingPage from '../LandingPage/LandingPage';
 import BaseNavigationStyles from './BaseNavigation.styles';
-import EditMetaAnalyses from 'components/ProjectComponents/EditMetaAnalyses/EditMetaAnalyses';
-import ViewMetaAnalyses from 'components/ProjectComponents/ViewMetaAnalyses/ViewMetaAnalyses';
 import ForbiddenPage from 'pages/Forbidden/Forbidden';
-import ProtectedProjectRoute from 'pages/Projects/ProjectPage/ProtectedRoute';
 import TermsAndConditions from 'pages/TermsAndConditions/TermsAndConditions';
+import ProjectEditMetaAnalyses from 'pages/Project/components/ProjectEditMetaAnalyses';
+import ProjectViewMetaAnalyses from 'pages/Project/components/ProjectViewMetaAnalyses';
+import ProtectedProjectRoute from 'pages/BaseNavigation/components/ProjectedProjectRoute';
+import ProtectedRoute from './components/ProtectedRoute';
+import ProtectedMetaAnalysesRoute from 'pages/BaseNavigation/components/ProtectedMetaAnalysesRoute';
 
-const ImportSleuthPage = React.lazy(() => import('pages/ImportSleuthPage/ImportSleuthPage'));
-const EditStudyPage = React.lazy(() => import('../Studies/EditStudyPage/EditStudyPage'));
-const StudiesPage = React.lazy(() => import('../Studies/StudiesPage/StudiesPage'));
+const ImportSleuthPage = React.lazy(() => import('pages/SleuthImport/SleuthImportPage'));
+const EditStudyPage = React.lazy(() => import('pages/Study/EditStudyPage'));
+const ProjectStudyPage = React.lazy(() => import('pages/Study/ProjectStudyPage'));
+const StudiesPage = React.lazy(() => import('pages/Studies/StudiesPage'));
 
-const MetaAnalysesPage = React.lazy(
-    () => import('../MetaAnalyses/MetaAnalysesPage/MetaAnalysesPage')
-);
-const MetaAnalysisPage = React.lazy(
-    () => import('../MetaAnalyses/MetaAnalysisPage/MetaAnalysisPage')
-);
+const MetaAnalysesPage = React.lazy(() => import('pages/MetaAnalyses/MetaAnalysesPage'));
+const MetaAnalysisPage = React.lazy(() => import('pages/MetaAnalysis/MetaAnalysisPage'));
 
-const ProjectsPage = React.lazy(() => import('../Projects/ProjectsPage/ProjectsPage'));
+const ProjectsPage = React.lazy(() => import('pages/Projects/ProjectsPage'));
 
-const CurationPage = React.lazy(() => import('../CurationPage/CurationPage'));
+const CurationPage = React.lazy(() => import('pages/Curation/CurationPage'));
 
 const BaseNavigation: React.FC = (_props) => {
     return (
@@ -54,36 +53,42 @@ const BaseNavigation: React.FC = (_props) => {
                 <Route
                     path="/projects"
                     element={
-                        <Box sx={BaseNavigationStyles.pagesContainer}>
-                            <ProjectsPage />
-                        </Box>
+                        <ProtectedRoute errorMessage="Please log in or sign up to access your projects">
+                            <Box sx={BaseNavigationStyles.pagesContainer}>
+                                <ProjectsPage />
+                            </Box>
+                        </ProtectedRoute>
                     }
                 />
                 <Route
                     path="/projects/new/sleuth"
                     element={
-                        <Box sx={BaseNavigationStyles.pagesContainer}>
-                            <ImportSleuthPage />
-                        </Box>
+                        <ProtectedRoute errorMessage="Please log in or sign up to begin importing a sleuth file into your project.">
+                            <Box sx={BaseNavigationStyles.pagesContainer}>
+                                <ImportSleuthPage />
+                            </Box>
+                        </ProtectedRoute>
                     }
                 />
                 <Route
                     path="/projects/:projectId"
                     element={
-                        <Box sx={BaseNavigationStyles.pagesContainer}>
-                            <ProjectPage />
-                        </Box>
+                        <ProtectedProjectRoute errorMessage="You do not have access to this project">
+                            <Box sx={BaseNavigationStyles.pagesContainer}>
+                                <ProjectPage />
+                            </Box>
+                        </ProtectedProjectRoute>
                     }
                     children={[
                         <Route
                             key="project-id-project"
                             path="project"
-                            element={<EditMetaAnalyses />}
+                            element={<ProjectEditMetaAnalyses />}
                         />,
                         <Route
                             key="project-id-meta-analyses"
                             path="meta-analyses"
-                            element={<ViewMetaAnalyses />}
+                            element={<ProjectViewMetaAnalyses />}
                         />,
                         <Route
                             key="project-id-index"
@@ -100,15 +105,20 @@ const BaseNavigation: React.FC = (_props) => {
                 <Route
                     path="/projects/:projectId/curation"
                     element={
-                        <Box sx={BaseNavigationStyles.curationPageContainer}>
-                            <CurationPage />
-                        </Box>
+                        <ProtectedProjectRoute errorMessage="You do not have access to this project">
+                            <Box sx={BaseNavigationStyles.curationPageContainer}>
+                                <CurationPage />
+                            </Box>
+                        </ProtectedProjectRoute>
                     }
                 />
                 <Route
                     path="/projects/:projectId/curation/import"
                     element={
-                        <ProtectedProjectRoute>
+                        <ProtectedProjectRoute
+                            onlyOwnerCanAccess
+                            errorMessage="You do not own this project, so you cannot import studies into it."
+                        >
                             <Box sx={BaseNavigationStyles.pagesContainer}>
                                 <CurationImportPage />
                             </Box>
@@ -118,35 +128,64 @@ const BaseNavigation: React.FC = (_props) => {
                 <Route
                     path="/projects/:projectId/extraction"
                     element={
-                        <Box sx={BaseNavigationStyles.pagesContainer}>
-                            <ExtractionPage />
-                        </Box>
+                        <ProtectedProjectRoute errorMessage="You do not have access to this project">
+                            <Box sx={BaseNavigationStyles.pagesContainer}>
+                                <ExtractionPage />
+                            </Box>
+                        </ProtectedProjectRoute>
+                    }
+                />
+                <Route
+                    path="/projects/:projectId/extraction/studies/:studyId/edit"
+                    element={
+                        <ProtectedProjectRoute
+                            onlyOwnerCanAccess
+                            errorMessage="You do not have access to this project"
+                        >
+                            <Box sx={BaseNavigationStyles.pagesContainer}>
+                                <EditStudyPage />
+                            </Box>
+                        </ProtectedProjectRoute>
                     }
                 />
                 <Route
                     path="/projects/:projectId/extraction/studies/:studyId"
                     element={
-                        <Box sx={BaseNavigationStyles.pagesContainer}>
-                            <EditStudyPage />
-                        </Box>
+                        <ProtectedProjectRoute errorMessage="You do not have access to this project">
+                            <Box sx={BaseNavigationStyles.pagesContainer}>
+                                <ProjectStudyPage />
+                            </Box>
+                        </ProtectedProjectRoute>
                     }
                 />
-                {/* ENSURE THAT PEOPLE CANNOT SEE ANNOTATIONS OUTSIDE OF THE CONTEXT OF A PROJECT */}
                 <Route
                     path="/projects/:projectId/extraction/annotations"
                     element={
-                        <Box sx={BaseNavigationStyles.pagesContainer}>
-                            <AnnotationsPage />
-                        </Box>
+                        <ProtectedProjectRoute errorMessage="You do not have access to this project">
+                            <Box sx={BaseNavigationStyles.pagesContainer}>
+                                <AnnotationsPage />
+                            </Box>
+                        </ProtectedProjectRoute>
                     }
                 />
-                {/* ENSURE THAT PEOPLE CANNOT SEE META ANALYSES OUTSIDE OF THE CONTEXT OF A PROJECT */}
                 <Route
                     path="/projects/:projectId/meta-analyses/:metaAnalysisId"
                     element={
-                        <Box sx={BaseNavigationStyles.pagesContainer}>
-                            <MetaAnalysisPage />
-                        </Box>
+                        <ProtectedProjectRoute errorMessage="You do not have access to this project">
+                            <Box sx={BaseNavigationStyles.pagesContainer}>
+                                <MetaAnalysisPage />
+                            </Box>
+                        </ProtectedProjectRoute>
+                    }
+                />
+                <Route
+                    path="/meta-analyses/:metaAnalysisId"
+                    element={
+                        <ProtectedMetaAnalysesRoute errorMessage="You do not have access to this project">
+                            <Box sx={BaseNavigationStyles.pagesContainer}>
+                                <MetaAnalysisPage />
+                            </Box>
+                        </ProtectedMetaAnalysesRoute>
                     }
                 />
                 <Route
@@ -181,9 +220,11 @@ const BaseNavigation: React.FC = (_props) => {
                 <Route
                     path="/user-profile"
                     element={
-                        <Box sx={BaseNavigationStyles.pagesContainer}>
-                            <UserProfilePage />
-                        </Box>
+                        <ProtectedRoute errorMessage="Please log in to view your user profile">
+                            <Box sx={BaseNavigationStyles.pagesContainer}>
+                                <UserProfilePage />
+                            </Box>
+                        </ProtectedRoute>
                     }
                 />
                 <Route
