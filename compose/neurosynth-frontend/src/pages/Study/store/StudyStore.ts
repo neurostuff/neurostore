@@ -158,9 +158,9 @@ const useStudyStore = create<
                         await API.NeurostoreServices.StudiesService.studiesIdPut(state.study.id, {
                             name: state.study.name,
                             description: state.study.description,
-                            doi: state.study.doi,
-                            pmid: state.study.pmid,
-                            pmcid: state.study.pmcid,
+                            doi: state.study.doi ? state.study.doi : undefined,
+                            pmid: state.study.pmid ? state.study.pmid : undefined,
+                            pmcid: state.study.pmcid ? state.study.pmcid : undefined,
                             authors: state.study.authors,
                             year: state.study.year,
                             publication: state.study.publication,

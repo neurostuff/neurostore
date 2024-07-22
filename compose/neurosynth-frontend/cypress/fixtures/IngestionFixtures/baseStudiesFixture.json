@@ -1,0 +1,29 @@
+[
+    {
+        "id": "CtGJ5aaN5AeK",
+        "user": "auth0|666c39a8b281fda9ff9699e9",
+        "username": "test user 5",
+        "created_at": "2024-07-22T17:09:51.627184+00:00",
+        "updated_at": null,
+        "metadata": null,
+        "versions": [
+            {
+                "id": "ZR6H8F6c2aKX",
+                "user": "auth0|666c39a8b281fda9ff9699e9",
+                "username": "test user 5",
+                "created_at": "2024-07-22T17:09:51.627184+00:00",
+                "updated_at": null,
+                "source": null
+            }
+        ],
+        "name": "New study",
+        "description": "",
+        "publication": "",
+        "doi": null,
+        "pmid": null,
+        "pmcid": null,
+        "authors": "",
+        "year": 0,
+        "level": "group"
+    }
+]

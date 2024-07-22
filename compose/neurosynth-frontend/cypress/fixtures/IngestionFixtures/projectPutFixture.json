@@ -1,0 +1,150 @@
+{
+    "created_at": "2024-07-22T17:06:27.161543+00:00",
+    "description": "",
+    "draft": true,
+    "id": "5uEqnaad4Hfe",
+    "meta_analyses": [],
+    "name": "Untitled",
+    "neurostore_study": {
+        "created_at": "2024-07-22T17:06:27.172187+00:00",
+        "exception": null,
+        "neurostore_id": "teTeQPRAe7E5",
+        "status": "PENDING",
+        "traceback": null,
+        "updated_at": "2024-07-22T17:06:27.177339+00:00"
+    },
+    "neurostore_url": "https://neurostore.org/api/studies/teTeQPRAe7E5",
+    "provenance": {
+        "curationMetadata": {
+            "columns": [
+                {
+                    "id": "0ac133d9-f994-434e-9d93-352f40e7d266",
+                    "name": "not included",
+                    "stubStudies": []
+                },
+                {
+                    "id": "38eec6d4-4c07-4a11-aff9-afe2de91116e",
+                    "name": "included",
+                    "stubStudies": [
+                        {
+                            "abstractText": "",
+                            "articleLink": "",
+                            "articleYear": "",
+                            "authors": "",
+                            "doi": "",
+                            "exclusionTag": null,
+                            "id": "c70a3df6-dd10-4789-b3f3-41743061fb6f",
+                            "identificationSource": {
+                                "id": "neurosynth_pubmed_id_source",
+                                "label": "PubMed"
+                            },
+                            "journal": "",
+                            "keywords": "",
+                            "pmcid": "",
+                            "pmid": "",
+                            "tags": [
+                                {
+                                    "id": "a71d283c-fb05-496d-a005-551cdfe3cd8e",
+                                    "isAssignable": true,
+                                    "isExclusionTag": false,
+                                    "label": "MANUAL_CREATE-2024-07-22T17:09:16.238Z"
+                                }
+                            ],
+                            "title": "New study"
+                        }
+                    ]
+                }
+            ],
+            "exclusionTags": [
+                {
+                    "id": "neurosynth_exclude_exclusion",
+                    "isAssignable": true,
+                    "isExclusionTag": true,
+                    "label": "Exclude"
+                },
+                {
+                    "id": "neurosynth_duplicate_exclusion",
+                    "isAssignable": true,
+                    "isExclusionTag": true,
+                    "label": "Duplicate"
+                }
+            ],
+            "identificationSources": [
+                {
+                    "id": "neurosynth_neurostore_id_source",
+                    "label": "Neurostore"
+                },
+                {
+                    "id": "neurosynth_pubmed_id_source",
+                    "label": "PubMed"
+                },
+                {
+                    "id": "neurosynth_scopus_id_source",
+                    "label": "Scopus"
+                },
+                {
+                    "id": "neurosynth_web_of_science_id_source",
+                    "label": "Web of Science"
+                },
+                {
+                    "id": "neurosynth_psycinfo_id_source",
+                    "label": "PsycInfo"
+                },
+                {
+                    "id": "neurosynth_sleuth_id_source",
+                    "label": "Sleuth"
+                }
+            ],
+            "infoTags": [
+                {
+                    "id": "neurosynth_untagged_tag",
+                    "isAssignable": false,
+                    "isExclusionTag": false,
+                    "label": "Untagged studies"
+                },
+                {
+                    "id": "neurosynth_uncategorized_tag",
+                    "isAssignable": false,
+                    "isExclusionTag": false,
+                    "label": "Uncategorized Studies"
+                },
+                {
+                    "id": "neurosynth_needs_review_tag",
+                    "isAssignable": false,
+                    "isExclusionTag": false,
+                    "label": "Needs Review"
+                },
+                {
+                    "id": "a71d283c-fb05-496d-a005-551cdfe3cd8e",
+                    "isAssignable": true,
+                    "isExclusionTag": false,
+                    "label": "MANUAL_CREATE-2024-07-22T17:09:16.238Z"
+                }
+            ],
+            "prismaConfig": {
+                "eligibility": {
+                    "exclusionTags": []
+                },
+                "identification": {
+                    "exclusionTags": []
+                },
+                "isPrisma": false,
+                "screening": {
+                    "exclusionTags": []
+                }
+            }
+        },
+        "extractionMetadata": {
+            "annotationId": "DVwyM6Qg5iaw",
+            "studyStatusList": [],
+            "studysetId": "hQFjozWL9v8Q"
+        },
+        "metaAnalysisMetadata": {
+            "canEditMetaAnalyses": false
+        }
+    },
+    "public": true,
+    "updated_at": "2024-07-22T17:09:54.662105+00:00",
+    "user": "auth0|666c39a8b281fda9ff9699e9",
+    "username": "test user 5"
+}

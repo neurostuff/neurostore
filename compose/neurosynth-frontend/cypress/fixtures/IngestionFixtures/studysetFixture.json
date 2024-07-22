@@ -1,0 +1,31 @@
+{
+    "id": "hQFjozWL9v8Q",
+    "name": "Studyset for Untitled",
+    "user": "auth0|666c39a8b281fda9ff9699e9",
+    "description": "",
+    "publication": null,
+    "doi": null,
+    "pmid": null,
+    "created_at": "2024-07-22T17:09:51.333150+00:00",
+    "updated_at": null,
+    "studies": [
+        {
+            "id": "ZR6H8F6c2aKX",
+            "created_at": "2024-07-22T17:09:51.627184+00:00",
+            "updated_at": null,
+            "user": "auth0|666c39a8b281fda9ff9699e9",
+            "name": "New study",
+            "description": "",
+            "publication": "",
+            "doi": null,
+            "pmid": null,
+            "authors": "",
+            "year": 0,
+            "metadata": null,
+            "source": null,
+            "source_id": null,
+            "source_updated_at": null,
+            "analyses": []
+        }
+    ]
+}
