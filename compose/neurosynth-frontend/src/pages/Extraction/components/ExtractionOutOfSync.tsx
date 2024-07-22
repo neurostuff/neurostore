@@ -50,9 +50,9 @@ const ExtractionOutOfSync: React.FC = (props) => {
             >
         > = curationIncludedStudies.stubStudies.map((stub) => ({
             name: stub.title,
-            doi: stub.doi,
-            pmid: stub.pmid,
-            pmcid: stub.pmcid,
+            doi: stub.doi ? stub.doi : undefined,
+            pmid: stub.pmid ? stub.pmid : undefined,
+            pmcid: stub.pmcid ? stub.pmcid : undefined,
             year: Number(stub.articleYear),
             description: stub.abstractText,
             publication: stub.journal,
