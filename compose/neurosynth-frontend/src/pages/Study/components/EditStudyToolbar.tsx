@@ -22,6 +22,7 @@ import { useNavigate } from 'react-router-dom';
 import EditStudyToolbarStyles from './EditStudyToolbar.styles';
 import { IProjectPageLocationState } from 'pages/Project/ProjectPage';
 import { useUserCanEdit } from 'hooks';
+import GlobalStyles from 'global.styles';
 
 const getCurrSelectedChipText = (selectedChip: EExtractionStatus) => {
     switch (selectedChip) {
@@ -216,7 +217,7 @@ const EditStudyToolbar: React.FC<{ isViewOnly?: boolean }> = ({ isViewOnly = fal
                                         <Box>
                                             <IconButton
                                                 onClick={handleContinueToMetaAnalysisCreation}
-                                                sx={EditStudyToolbarStyles.colorPulseAnimation}
+                                                sx={GlobalStyles.colorPulseAnimation}
                                             >
                                                 <DoneAllIcon color="success" />
                                             </IconButton>

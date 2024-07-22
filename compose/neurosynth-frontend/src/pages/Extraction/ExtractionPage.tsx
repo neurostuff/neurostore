@@ -15,8 +15,10 @@ import useUserCanEdit from 'hooks/useUserCanEdit';
 import { StudyReturn } from 'neurostore-typescript-sdk';
 import { IProjectPageLocationState } from 'pages/Project/ProjectPage';
 import {
+    useGetProjectIsLoading,
     useInitProjectStoreIfRequired,
     useProjectCurationColumn,
+    useProjectCurationColumns,
     useProjectExtractionStudyStatusList,
     useProjectExtractionStudysetId,
     useProjectMetaAnalysisCanEdit,
@@ -66,8 +68,8 @@ const ExtractionPage: React.FC = (props) => {
     const projectName = useProjectName();
     const studysetId = useProjectExtractionStudysetId();
     const studyStatusList = useProjectExtractionStudyStatusList();
-    const numColumns = useProjectNumCurationColumns();
-    const curationIncludedStudies = useProjectCurationColumn(numColumns - 1);
+    const columns = useProjectCurationColumns();
+    const loading = useGetProjectIsLoading();
     const extractionSummary = useGetExtractionSummary(projectId || '');
     const canEditMetaAnalyses = useProjectMetaAnalysisCanEdit();
     const projectUser = useProjectUser();
@@ -99,18 +101,15 @@ const ExtractionPage: React.FC = (props) => {
     const [showReconcilePrompt, setShowReconcilePrompt] = useState(false);
 
     useEffect(() => {
-        if (
-            !getStudysetIsLoading &&
-            (curationIncludedStudies?.stubStudies?.length || 0) > 0 &&
-            studyset?.studies
-        ) {
+        if (!loading && !getStudysetIsLoading && columns.length > 0 && studyset?.studies) {
+            const includedStudies = columns[columns.length - 1].stubStudies;
             const isDifferent = resolveStudysetAndCurationDifferences(
-                curationIncludedStudies.stubStudies,
+                includedStudies,
                 studyset.studies as StudyReturn[]
             );
             setShowReconcilePrompt(isDifferent);
         }
-    }, [curationIncludedStudies, getStudysetIsLoading, studyset?.studies]);
+    }, [columns, getStudysetIsLoading, studyset?.studies, loading]);
 
     useEffect(() => {
         if (studyStatusList && studyset?.studies) {
