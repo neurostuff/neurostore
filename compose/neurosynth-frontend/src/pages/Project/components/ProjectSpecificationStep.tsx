@@ -53,10 +53,20 @@ const ProjectSpecificationStep: React.FC<ISpecificationStep & StepProps> = (prop
                     <Typography gutterBottom sx={{ color: 'muted.main' }}>
                         Click the button below to move on to create and run your meta-analysis.
                     </Typography>
-                    <Box sx={[ProjectComponentsStyles.stepCard, { height: '230px' }]}>
+                    <Box
+                        sx={{
+                            width: '450px',
+                            margin: '2rem 0',
+                            display: 'flex',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                        }}
+                    >
                         <Button
                             endIcon={
-                                canEditMetaAnalyses ? undefined : <KeyboardDoubleArrowRightIcon />
+                                disabled ? undefined : canEditMetaAnalyses ? undefined : (
+                                    <KeyboardDoubleArrowRightIcon />
+                                )
                             }
                             color="primary"
                             onClick={handleClickProceed}
@@ -67,7 +77,9 @@ const ProjectSpecificationStep: React.FC<ISpecificationStep & StepProps> = (prop
                             disableElevation
                             sx={{ width: '100%', height: '100%' }}
                         >
-                            {canEditMetaAnalyses
+                            {disabled
+                                ? 'Complete Curation and Extraction to continue'
+                                : canEditMetaAnalyses
                                 ? 'View meta-analyses'
                                 : 'Proceed to Meta-Analyses Page'}
                         </Button>

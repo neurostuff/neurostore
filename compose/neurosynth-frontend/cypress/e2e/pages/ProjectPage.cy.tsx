@@ -9,24 +9,24 @@ describe(PAGE_NAME, () => {
     beforeEach(() => {
         cy.clearLocalStorage().clearSessionStorage();
         cy.intercept('GET', 'https://api.appzi.io/**', { fixture: 'appzi' }).as('appziFixture');
+        cy.intercept('POST', `https://www.google-analytics.com/*/**`, {}).as(
+            'googleAnalyticsFixture'
+        );
         cy.intercept('GET', `**/api/studysets/*`, { fixture: 'studyset' }).as('studysetFixture');
         cy.intercept('PUT', `**/api/projects/*`, { fixture: 'projects/projectPut' }).as(
             'updateProjectFixture'
         );
+        cy.intercept('GET', `**/api/projects/*`, {
+            fixture: 'ProjectPage/projectAtExtraction',
+        }).as('projectFixture');
     });
 
     it('should load successfully', () => {
-        cy.intercept('GET', `**/api/projects/*`, { fixture: 'projects/projectExtractionStep' }).as(
-            'projectFixture'
-        );
         cy.visit(PATH).wait('@projectFixture');
     });
 
-    it.only('should set the project from private to public when logged in and you own the project', () => {
+    it('should set the project from private to public when logged in and you own the project', () => {
         cy.login('mocked');
-        cy.intercept('GET', `**/api/projects/*`, {
-            fixture: 'projects/projectExtractionStep',
-        }).as('projectFixture');
         cy.visit(PATH).wait('@projectFixture');
         cy.contains('button', 'Public').click();
         cy.wait('@updateProjectFixture').then((res) => {
@@ -37,7 +37,7 @@ describe(PAGE_NAME, () => {
 
     it('should set the project from public to private when logged in and you own the project', () => {
         cy.login('mocked');
-        cy.fixture('projects/projectExtractionStep').then((projectFixture) => {
+        cy.fixture('ProjectPage/projectWithMetaAnalyses').then((projectFixture) => {
             projectFixture.public = true;
             cy.intercept('GET', `**/api/projects/*`, projectFixture).as('projectFixturePublic');
         });
@@ -47,5 +47,22 @@ describe(PAGE_NAME, () => {
             assert.exists(res.request.body.public);
             assert.isFalse(res.request.body.public);
         });
+    });
+
+    it('should show both tabs for projects that can access meta-analyses', () => {
+        cy.intercept('GET', `**/api/projects/*`, {
+            fixture: 'ProjectPage/projectWithMetaAnalyses',
+        }).as('projectFixture');
+        cy.login('mocked');
+        cy.visit(PATH).wait('@projectFixture');
+        cy.get('button').contains('Project');
+        cy.get('button').contains('Meta-Analyses');
+    });
+
+    it('should not show the meta-analyses tab if the project has not reached that step', () => {
+        cy.login('mocked');
+        cy.visit(PATH).wait('@projectFixture');
+        cy.get('button').contains('Project');
+        cy.get('button').should('not.contain', 'Meta-Analyses');
     });
 });
