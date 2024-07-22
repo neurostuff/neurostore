@@ -1,0 +1,245 @@
+{
+    "created_at": "2024-07-12T17:28:15.808817+00:00",
+    "description": "",
+    "draft": true,
+    "id": "tqPbTjtKqa7F",
+    "meta_analyses": ["yRPXZgxkNiHr"],
+    "name": "Untitled",
+    "neurostore_study": {
+        "created_at": "2024-07-12T17:28:15.816067+00:00",
+        "exception": null,
+        "neurostore_id": "hTVWEjBo36gX",
+        "status": "PENDING",
+        "traceback": null,
+        "updated_at": "2024-07-12T17:28:15.824428+00:00"
+    },
+    "neurostore_url": "https://neurostore.org/api/studies/hTVWEjBo36gX",
+    "provenance": {
+        "curationMetadata": {
+            "columns": [
+                {
+                    "id": "4998c31e-f84e-4ca7-a7aa-16a1e37253d2",
+                    "name": "not included",
+                    "stubStudies": []
+                },
+                {
+                    "id": "10b9e10b-1675-4ea5-b6c1-74c7fd3263de",
+                    "name": "included",
+                    "stubStudies": [
+                        {
+                            "abstractText": "\nMultivariate variance and discriminance-analytic investigations on the value of evidence of clinico-chemical tests in the diagnostics of diseases of the liver and the biliary tract gave the following results: 1. By means of clinico-chemical methods and discriminance-analytic functions we succeed in 50% of the cases in formulating a correct diagnosis, in more than 75% of the cases a correct probability diagnosis (3 first places in the rank of diagnoses). Sensitivity and specificity of discrimination were established for 15 classes of diagnoses. 2. Due to the intercorrelations of test results biochemical maximum programmes contain numerous redundant parameters measured on diagnostic information values. With the help of a test for indispensability (redundance test) among 20 parameters owy 5-6 were characterized as indispensable. An optimal combination of parameters should not transgress an extent of 14 tests. 3. Results of reclassifications with discriminance analytic functions confirmed that the discriminance analysis is an extraordinarily suitable method for the computer-supported finding of a decision, on which basis aimed additional investigations might be performed.",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/324153",
+                            "articleYear": "1977",
+                            "authors": "R Nilius",
+                            "doi": "",
+                            "exclusionTag": null,
+                            "id": "42585725-16a8-49ea-9cb6-0919d437fef3",
+                            "identificationSource": {
+                                "id": "neurosynth_pubmed_id_source",
+                                "label": "PubMed"
+                            },
+                            "journal": "Zeitschrift fur die gesamte innere Medizin und ihre Grenzgebiete",
+                            "keywords": "",
+                            "pmcid": "",
+                            "pmid": "324153",
+                            "tags": [
+                                {
+                                    "id": "dad7659c-c9da-47ce-8ab6-604805f980a1",
+                                    "isAssignable": true,
+                                    "isExclusionTag": false,
+                                    "label": "PUBMED_IMPORT-2024-07-12T21:43:43.257Z"
+                                }
+                            ],
+                            "title": "[Multivariant discriminance analytical computation methods for the evaluation of clinico-chemical parameters in liver and biliary tract diseases]."
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/245",
+                            "articleYear": "1975",
+                            "authors": "I Furuno, H Matsudaira",
+                            "doi": "10.1016/0014-4827(75)90509-1",
+                            "exclusionTag": null,
+                            "id": "b2d7125b-6665-43b9-882e-652d0f1f0060",
+                            "identificationSource": {
+                                "id": "neurosynth_pubmed_id_source",
+                                "label": "PubMed"
+                            },
+                            "journal": "Experimental cell research",
+                            "keywords": "",
+                            "pmcid": "",
+                            "pmid": "245",
+                            "tags": [
+                                {
+                                    "id": "dad7659c-c9da-47ce-8ab6-604805f980a1",
+                                    "isAssignable": true,
+                                    "isExclusionTag": false,
+                                    "label": "PUBMED_IMPORT-2024-07-12T21:43:43.257Z"
+                                }
+                            ],
+                            "title": "Induction of DNA synthesis by dichloroisoproterenol without initial rise of the cAMP level in the parotid gland of mouse."
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/2456",
+                            "articleYear": "1976",
+                            "authors": "W Bleifeld",
+                            "doi": "",
+                            "exclusionTag": null,
+                            "id": "aadf6f13-8f83-4787-ad34-a6a4bfadfbd2",
+                            "identificationSource": {
+                                "id": "neurosynth_pubmed_id_source",
+                                "label": "PubMed"
+                            },
+                            "journal": "Deutsche medizinische Wochenschrift (1946)",
+                            "keywords": "",
+                            "pmcid": "",
+                            "pmid": "2456",
+                            "tags": [
+                                {
+                                    "id": "dad7659c-c9da-47ce-8ab6-604805f980a1",
+                                    "isAssignable": true,
+                                    "isExclusionTag": false,
+                                    "label": "PUBMED_IMPORT-2024-07-12T21:43:43.257Z"
+                                }
+                            ],
+                            "title": "[Letter: Beta-receptor blockaders in intraventricular conduction disorders?]."
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/3425",
+                            "articleYear": "1976",
+                            "authors": "W J van der Gulden, A J van Aspert-van Erp",
+                            "doi": "10.1016/0014-4894(76)90008-4",
+                            "exclusionTag": null,
+                            "id": "be4f6821-7467-4d6e-ab86-ef9a2390d32c",
+                            "identificationSource": {
+                                "id": "neurosynth_pubmed_id_source",
+                                "label": "PubMed"
+                            },
+                            "journal": "Experimental parasitology",
+                            "keywords": "",
+                            "pmcid": "",
+                            "pmid": "3425",
+                            "tags": [
+                                {
+                                    "id": "dad7659c-c9da-47ce-8ab6-604805f980a1",
+                                    "isAssignable": true,
+                                    "isExclusionTag": false,
+                                    "label": "PUBMED_IMPORT-2024-07-12T21:43:43.257Z"
+                                }
+                            ],
+                            "title": "Syphacia muris: response to environmental stimuli when hatching in vitro."
+                        }
+                    ]
+                }
+            ],
+            "exclusionTags": [
+                {
+                    "id": "neurosynth_exclude_exclusion",
+                    "isAssignable": true,
+                    "isExclusionTag": true,
+                    "label": "Exclude"
+                },
+                {
+                    "id": "neurosynth_duplicate_exclusion",
+                    "isAssignable": true,
+                    "isExclusionTag": true,
+                    "label": "Duplicate"
+                }
+            ],
+            "identificationSources": [
+                {
+                    "id": "neurosynth_neurostore_id_source",
+                    "label": "Neurostore"
+                },
+                {
+                    "id": "neurosynth_pubmed_id_source",
+                    "label": "PubMed"
+                },
+                {
+                    "id": "neurosynth_scopus_id_source",
+                    "label": "Scopus"
+                },
+                {
+                    "id": "neurosynth_web_of_science_id_source",
+                    "label": "Web of Science"
+                },
+                {
+                    "id": "neurosynth_psycinfo_id_source",
+                    "label": "PsycInfo"
+                },
+                {
+                    "id": "neurosynth_sleuth_id_source",
+                    "label": "Sleuth"
+                }
+            ],
+            "infoTags": [
+                {
+                    "id": "neurosynth_untagged_tag",
+                    "isAssignable": false,
+                    "isExclusionTag": false,
+                    "label": "Untagged studies"
+                },
+                {
+                    "id": "neurosynth_uncategorized_tag",
+                    "isAssignable": false,
+                    "isExclusionTag": false,
+                    "label": "Uncategorized Studies"
+                },
+                {
+                    "id": "neurosynth_needs_review_tag",
+                    "isAssignable": false,
+                    "isExclusionTag": false,
+                    "label": "Needs Review"
+                },
+                {
+                    "id": "dad7659c-c9da-47ce-8ab6-604805f980a1",
+                    "isAssignable": true,
+                    "isExclusionTag": false,
+                    "label": "PUBMED_IMPORT-2024-07-12T21:43:43.257Z"
+                }
+            ],
+            "prismaConfig": {
+                "eligibility": {
+                    "exclusionTags": []
+                },
+                "identification": {
+                    "exclusionTags": []
+                },
+                "isPrisma": false,
+                "screening": {
+                    "exclusionTags": []
+                }
+            }
+        },
+        "extractionMetadata": {
+            "annotationId": "43ejLtnsYMWM",
+            "studyStatusList": [
+                {
+                    "id": "2XUTghaBEGFQ",
+                    "status": "completed"
+                },
+                {
+                    "id": "EYbscSfoW3gE",
+                    "status": "completed"
+                },
+                {
+                    "id": "FzzQvEJq48Wo",
+                    "status": "completed"
+                },
+                {
+                    "id": "JZnjWE6BX4TP",
+                    "status": "completed"
+                }
+            ],
+            "studysetId": "28ZKqpapcWvj"
+        },
+        "metaAnalysisMetadata": {
+            "canEditMetaAnalyses": true
+        }
+    },
+    "public": false,
+    "updated_at": "2024-07-16T22:31:30.772590+00:00",
+    "user": "auth0|62e0e6c9dd47048572613b4d",
+    "username": "test user 5"
+}
