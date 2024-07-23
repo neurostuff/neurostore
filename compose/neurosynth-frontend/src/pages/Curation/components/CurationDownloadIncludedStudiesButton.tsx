@@ -10,7 +10,7 @@ import { useProjectCurationColumns, useProjectName } from 'pages/Project/store/P
 import { executeHTTPRequestsAsBatches } from 'pages/SleuthImport/SleuthImport.helpers';
 import { useRef, useState } from 'react';
 import { ICurationStubStudy } from '../Curation.types';
-const { Cite, plugins } = require('@citation-js/core');
+const { Cite } = require('@citation-js/core');
 require('@citation-js/plugin-bibtex');
 require('@citation-js/plugin-doi');
 
@@ -19,9 +19,9 @@ const downloadFile = (filename: string, fileContents: BlobPart, contentType: str
     const element = window.document.createElement('a');
     element.href = window.URL.createObjectURL(blob);
     element.download = filename;
-    document.body.appendChild(element);
+    window.document.body.appendChild(element);
     element.click();
-    document.body.removeChild(element);
+    window.document.body.removeChild(element);
 };
 
 const CurationDownloadIncludedStudiesButton: React.FC = () => {
