@@ -45,3 +45,22 @@ export const stringToColor = (stringArg: string) => {
     }
     return color;
 };
+
+export const stringToNumber = (s: string): { value: number; isValid: boolean } => {
+    if (s === '')
+        return {
+            value: 0,
+            isValid: false,
+        };
+    const parsedNum = Number(s);
+    if (isNaN(parsedNum)) {
+        return {
+            value: 0,
+            isValid: false,
+        };
+    }
+    return {
+        value: parsedNum,
+        isValid: true,
+    };
+};
