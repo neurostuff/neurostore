@@ -48,7 +48,7 @@ describe('Ingestion', () => {
 
     it('should show the dialog', () => {
         cy.login('mocked').visit(PATH);
-        cy.contains('button', 'Move To Extraction Phase').click();
+        cy.contains('button', 'go to extraction').click();
 
         cy.contains('button', 'extraction: get started').click();
         cy.contains('button', 'NEXT').click();
