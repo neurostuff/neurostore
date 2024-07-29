@@ -9,20 +9,11 @@ import useGetBibtexCitations, {
 import { useProjectCurationColumns, useProjectName } from 'pages/Project/store/ProjectStore';
 import { executeHTTPRequestsAsBatches } from 'pages/SleuthImport/SleuthImport.helpers';
 import { useRef, useState } from 'react';
-import { ICurationStubStudy } from '../Curation.types';
+import { downloadFile } from '../Curation.helpers';
+import { ICurationStubStudy } from 'pages/Curation/Curation.types';
 const { Cite } = require('@citation-js/core');
 require('@citation-js/plugin-bibtex');
 require('@citation-js/plugin-doi');
-
-const downloadFile = (filename: string, fileContents: BlobPart, contentType: string) => {
-    const blob = new Blob([fileContents], { type: contentType });
-    const element = window.document.createElement('a');
-    element.href = window.URL.createObjectURL(blob);
-    element.download = filename;
-    window.document.body.appendChild(element);
-    element.click();
-    window.document.body.removeChild(element);
-};
 
 const CurationDownloadIncludedStudiesButton: React.FC = () => {
     const { mutateAsync } = useGetBibtexCitations();
@@ -132,14 +123,14 @@ const CurationDownloadIncludedStudiesButton: React.FC = () => {
                             onClick={() => handleDownloadIncludedStudies('bibtex')}
                             value="PNG"
                         >
-                            Download included as BibTeX
+                            Download INCLUDED as BibTeX
                         </MenuItem>
                     </MenuList>
                 </Box>
             </NeurosynthPopper>
             <ButtonGroup color="info" ref={anchorRef} sx={{ height: '100%' }} size="small">
                 <Button onClick={() => handleDownloadIncludedStudies('csv')}>
-                    Download included as CSV
+                    Download INCLUDED as CSV
                 </Button>
                 <Button onClick={() => setOptionsIsOpen(true)} sx={{ width: '44px' }}>
                     {isLoading ? (

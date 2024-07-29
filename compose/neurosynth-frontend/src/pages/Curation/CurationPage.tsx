@@ -119,15 +119,17 @@ const CurationPage: React.FC = (props) => {
                         {canMoveToExtractionPhase && (
                             <Button
                                 onClick={handleMoveToExtractionPhase}
-                                variant={extractionStepInitialized ? 'outlined' : 'contained'}
+                                variant="contained"
                                 color="success"
                                 sx={{
                                     width: '180px',
-                                    color: 'success.dark',
                                     ml: '0.5rem',
                                     ...(extractionStepInitialized
-                                        ? {}
-                                        : GlobalStyles.colorPulseAnimation),
+                                        ? { color: 'white' }
+                                        : {
+                                              ...GlobalStyles.colorPulseAnimation,
+                                              color: 'success.dark',
+                                          }),
                                 }}
                                 disableElevation
                                 disabled={!canEdit}
