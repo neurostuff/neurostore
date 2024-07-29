@@ -2,8 +2,6 @@ import BookmarkIcon from '@mui/icons-material/Bookmark';
 import CheckIcon from '@mui/icons-material/Check';
 import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
 import { Box, Button, Chip, Typography } from '@mui/material';
-import ExtractionOutOfSync from 'pages/Extraction/components/ExtractionOutOfSync';
-import ReadOnlyStudySummaryVirtualizedItem from 'pages/Extraction/components/ReadOnlyStudySummary';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs';
 import ProjectIsLoadingText from 'components/ProjectIsLoadingText';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
@@ -13,23 +11,23 @@ import useGetExtractionSummary from 'hooks/useGetExtractionSummary';
 import useGetWindowHeight from 'hooks/useGetWindowHeight';
 import useUserCanEdit from 'hooks/useUserCanEdit';
 import { StudyReturn } from 'neurostore-typescript-sdk';
+import ExtractionOutOfSync from 'pages/Extraction/components/ExtractionOutOfSync';
+import ReadOnlyStudySummaryVirtualizedItem from 'pages/Extraction/components/ReadOnlyStudySummary';
+import { resolveStudysetAndCurationDifferences } from 'pages/Extraction/Extraction.helpers';
 import { IProjectPageLocationState } from 'pages/Project/ProjectPage';
 import {
     useGetProjectIsLoading,
     useInitProjectStoreIfRequired,
-    useProjectCurationColumn,
     useProjectCurationColumns,
     useProjectExtractionStudyStatusList,
     useProjectExtractionStudysetId,
     useProjectMetaAnalysisCanEdit,
     useProjectName,
-    useProjectNumCurationColumns,
     useProjectUser,
 } from 'pages/Project/store/ProjectStore';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { FixedSizeList, ListChildComponentProps } from 'react-window';
-import { resolveStudysetAndCurationDifferences } from 'pages/Extraction/Extraction.helpers';
 
 export enum EExtractionStatus {
     'COMPLETED' = 'completed',
