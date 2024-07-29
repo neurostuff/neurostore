@@ -1,8 +1,13 @@
 import SchemaIcon from '@mui/icons-material/Schema';
 import { Box, Button } from '@mui/material';
-import PrismaDialog from 'pages/Curation/components/PrismaDialog';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs';
+import ProjectIsLoadingText from 'components/ProjectIsLoadingText';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
+import GlobalStyles from 'global.styles';
+import { useGetCurationSummary, useGetStudysetById } from 'hooks';
+import useUserCanEdit from 'hooks/useUserCanEdit';
+import CurationBoard from 'pages/Curation/components/CurationBoard';
+import PrismaDialog from 'pages/Curation/components/PrismaDialog';
 import { IProjectPageLocationState } from 'pages/Project/ProjectPage';
 import {
     useInitProjectStoreIfRequired,
@@ -14,10 +19,7 @@ import {
 } from 'pages/Project/store/ProjectStore';
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useGetStudysetById, useGetCurationSummary } from 'hooks';
-import useUserCanEdit from 'hooks/useUserCanEdit';
-import ProjectIsLoadingText from 'components/ProjectIsLoadingText';
-import CurationBoard from 'pages/Curation/components/CurationBoard';
+import CurationDownloadIncludedStudiesButton from './components/CurationDownloadIncludedStudiesButton';
 
 const CurationPage: React.FC = (props) => {
     const [prismaIsOpen, setPrismaIsOpen] = useState(false);
@@ -36,8 +38,11 @@ const CurationPage: React.FC = (props) => {
     const { included, uncategorized } = useGetCurationSummary();
     const { data: studyset } = useGetStudysetById(studysetId || '', false);
 
+    const extractionStepInitialized =
+        studysetId && annotationId && (studyset?.studies?.length || 0) > 0;
+
     const handleMoveToExtractionPhase = () => {
-        if (studysetId && annotationId && (studyset?.studies?.length || 0) > 0) {
+        if (extractionStepInitialized) {
             navigate(`/projects/${projectId}/extraction`);
         } else {
             navigate(`/projects/${projectId}`, {
@@ -85,6 +90,7 @@ const CurationPage: React.FC = (props) => {
                         <ProjectIsLoadingText />
                     </Box>
                     <Box sx={{ marginRight: '1rem' }}>
+                        <CurationDownloadIncludedStudiesButton />
                         {isPrisma && (
                             <>
                                 <PrismaDialog
@@ -94,8 +100,8 @@ const CurationPage: React.FC = (props) => {
                                 <Button
                                     onClick={() => setPrismaIsOpen(true)}
                                     variant="outlined"
-                                    sx={{ marginRight: '1rem', width: '234px' }}
-                                    endIcon={<SchemaIcon />}
+                                    sx={{ marginLeft: '0.5rem', width: '180px' }}
+                                    startIcon={<SchemaIcon />}
                                 >
                                     PRISMA diagram
                                 </Button>
@@ -104,7 +110,7 @@ const CurationPage: React.FC = (props) => {
                         <Button
                             variant="contained"
                             disableElevation
-                            sx={{ marginRight: '1rem', width: '234px' }}
+                            sx={{ marginLeft: '0.5rem', width: '180px' }}
                             onClick={() => navigate(`/projects/${projectId}/curation/import`)}
                             disabled={!canEdit}
                         >
@@ -115,11 +121,20 @@ const CurationPage: React.FC = (props) => {
                                 onClick={handleMoveToExtractionPhase}
                                 variant="contained"
                                 color="success"
-                                sx={{ width: '234px' }}
+                                sx={{
+                                    width: '180px',
+                                    ml: '0.5rem',
+                                    ...(extractionStepInitialized
+                                        ? { color: 'white' }
+                                        : {
+                                              ...GlobalStyles.colorPulseAnimation,
+                                              color: 'success.dark',
+                                          }),
+                                }}
                                 disableElevation
                                 disabled={!canEdit}
                             >
-                                Move To Extraction Phase
+                                {extractionStepInitialized ? 'view extraction' : 'go to extraction'}
                             </Button>
                         )}
                     </Box>

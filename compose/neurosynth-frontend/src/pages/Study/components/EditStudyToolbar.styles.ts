@@ -30,20 +30,6 @@ const EditStudyToolbarStyles: Style = {
         width: '42px',
         height: '42px',
     },
-    colorPulseAnimation: {
-        animation: 'pulse 2s infinite',
-        '@keyframes pulse': {
-            '0%': {
-                backgroundColor: 'success.light',
-            },
-            '50%': {
-                backgroundColor: 'white',
-            },
-            '100%': {
-                backgroundColor: 'success.light',
-            },
-        },
-    },
 };
 
 export default EditStudyToolbarStyles;

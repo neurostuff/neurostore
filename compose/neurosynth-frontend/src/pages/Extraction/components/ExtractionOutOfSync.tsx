@@ -6,6 +6,7 @@ import useIngest from 'hooks/studies/useIngest';
 import { BaseStudy, BaseStudyReturn, StudyReturn } from 'neurostore-typescript-sdk';
 import { useSnackbar } from 'notistack';
 import {
+    useAllowEditMetaAnalyses,
     useProjectCurationColumn,
     useProjectExtractionAnnotationId,
     useProjectExtractionStudysetId,
@@ -22,6 +23,7 @@ const ExtractionOutOfSync: React.FC = (props) => {
     const annotationId = useProjectExtractionAnnotationId();
     const { data: studyset } = useGetStudysetById(studysetId, true); // set this to true as it is already cached in extractionPage
     const numColumns = useProjectNumCurationColumns();
+    const setAllowEditMetaAnalyses = useAllowEditMetaAnalyses();
     const curationIncludedStudies = useProjectCurationColumn(numColumns - 1);
     const { mutateAsync: ingest } = useIngest();
     const { mutateAsync: updateStudyset } = useUpdateStudyset();
@@ -84,7 +86,7 @@ const ExtractionOutOfSync: React.FC = (props) => {
             });
 
             const selectedVersions = selectBestVersionsForStudyset(newBaseStudiesToAdd);
-            await updateStudyset({
+            const updatedStudyset = await updateStudyset({
                 studysetId: studysetId,
                 studyset: {
                     studies: [...existingStudies, ...selectedVersions],
@@ -96,6 +98,10 @@ const ExtractionOutOfSync: React.FC = (props) => {
             await setAnalysesInAnnotationAsIncluded(annotationId);
 
             enqueueSnackbar('synced curation and studyset successfully', { variant: 'success' });
+
+            if (updatedStudyset.data.studies && updatedStudyset.data.studies.length === 0) {
+                setAllowEditMetaAnalyses(false);
+            }
         } catch (e) {
             console.error(e);
         } finally {

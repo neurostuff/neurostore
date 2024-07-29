@@ -2,8 +2,6 @@ import BookmarkIcon from '@mui/icons-material/Bookmark';
 import CheckIcon from '@mui/icons-material/Check';
 import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
 import { Box, Button, Chip, Typography } from '@mui/material';
-import ExtractionOutOfSync from 'pages/Extraction/components/ExtractionOutOfSync';
-import ReadOnlyStudySummaryVirtualizedItem from 'pages/Extraction/components/ReadOnlyStudySummary';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs';
 import ProjectIsLoadingText from 'components/ProjectIsLoadingText';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
@@ -13,21 +11,23 @@ import useGetExtractionSummary from 'hooks/useGetExtractionSummary';
 import useGetWindowHeight from 'hooks/useGetWindowHeight';
 import useUserCanEdit from 'hooks/useUserCanEdit';
 import { StudyReturn } from 'neurostore-typescript-sdk';
+import ExtractionOutOfSync from 'pages/Extraction/components/ExtractionOutOfSync';
+import ReadOnlyStudySummaryVirtualizedItem from 'pages/Extraction/components/ReadOnlyStudySummary';
+import { resolveStudysetAndCurationDifferences } from 'pages/Extraction/Extraction.helpers';
 import { IProjectPageLocationState } from 'pages/Project/ProjectPage';
 import {
+    useGetProjectIsLoading,
     useInitProjectStoreIfRequired,
-    useProjectCurationColumn,
+    useProjectCurationColumns,
     useProjectExtractionStudyStatusList,
     useProjectExtractionStudysetId,
     useProjectMetaAnalysisCanEdit,
     useProjectName,
-    useProjectNumCurationColumns,
     useProjectUser,
 } from 'pages/Project/store/ProjectStore';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { FixedSizeList, ListChildComponentProps } from 'react-window';
-import { resolveStudysetAndCurationDifferences } from 'pages/Extraction/Extraction.helpers';
 
 export enum EExtractionStatus {
     'COMPLETED' = 'completed',
@@ -66,8 +66,8 @@ const ExtractionPage: React.FC = (props) => {
     const projectName = useProjectName();
     const studysetId = useProjectExtractionStudysetId();
     const studyStatusList = useProjectExtractionStudyStatusList();
-    const numColumns = useProjectNumCurationColumns();
-    const curationIncludedStudies = useProjectCurationColumn(numColumns - 1);
+    const columns = useProjectCurationColumns();
+    const loading = useGetProjectIsLoading();
     const extractionSummary = useGetExtractionSummary(projectId || '');
     const canEditMetaAnalyses = useProjectMetaAnalysisCanEdit();
     const projectUser = useProjectUser();
@@ -99,18 +99,15 @@ const ExtractionPage: React.FC = (props) => {
     const [showReconcilePrompt, setShowReconcilePrompt] = useState(false);
 
     useEffect(() => {
-        if (
-            !getStudysetIsLoading &&
-            (curationIncludedStudies?.stubStudies?.length || 0) > 0 &&
-            studyset?.studies
-        ) {
+        if (!loading && !getStudysetIsLoading && columns.length > 0 && studyset?.studies) {
+            const includedStudies = columns[columns.length - 1].stubStudies;
             const isDifferent = resolveStudysetAndCurationDifferences(
-                curationIncludedStudies.stubStudies,
+                includedStudies,
                 studyset.studies as StudyReturn[]
             );
             setShowReconcilePrompt(isDifferent);
         }
-    }, [curationIncludedStudies, getStudysetIsLoading, studyset?.studies]);
+    }, [columns, getStudysetIsLoading, studyset?.studies, loading]);
 
     useEffect(() => {
         if (studyStatusList && studyset?.studies) {

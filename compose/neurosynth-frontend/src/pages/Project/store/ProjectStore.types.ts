@@ -159,7 +159,7 @@ export type ProjectStoreActions = {
     replaceStudyListStatusId: (idToFindAndReplace: string, replaceWithId: string) => void;
     setGivenStudyStatusesAsComplete: (studyIdList: string[]) => void;
     deleteStub: (columnIndex: number, stubId: string) => void;
-    allowEditMetaAnalyses: () => void;
+    allowEditMetaAnalyses: (allowEditMetaAnalysis: boolean) => void;
 };
 
 export type TProjectStore = INeurosynthProjectReturn &

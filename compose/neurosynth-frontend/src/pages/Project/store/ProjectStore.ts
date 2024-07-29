@@ -370,14 +370,14 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
 
             get().updateProjectInDBDebounced();
         },
-        allowEditMetaAnalyses: () => {
+        allowEditMetaAnalyses: (allowed: boolean) => {
             set((state) => ({
                 ...state,
                 provenance: {
                     ...state.provenance,
                     metaAnalysisMetadata: {
                         ...state.provenance.metaAnalysisMetadata,
-                        canEditMetaAnalyses: true,
+                        canEditMetaAnalyses: allowed,
                     },
                 },
             }));

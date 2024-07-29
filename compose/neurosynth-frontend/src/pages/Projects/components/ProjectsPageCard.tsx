@@ -12,6 +12,7 @@ import ProjectsPageCardSummaryMetaAnalyses from './ProjectsPageCardSummaryMetaAn
 import { MetaAnalysis } from 'neurosynth-compose-typescript-sdk';
 import LockIcon from '@mui/icons-material/Lock';
 import PublicIcon from '@mui/icons-material/Public';
+import ChangeHistoryIcon from '@mui/icons-material/ChangeHistory';
 
 const isToday = (date: Date) => {
     const today = new Date();
@@ -172,6 +173,15 @@ const ProjectsPageCard: React.FC<INeurosynthProjectReturn> = (props) => {
                             variant="outlined"
                             size="small"
                             sx={{ mr: '6px' }}
+                        />
+                    )}
+                    {provenance?.curationMetadata?.prismaConfig?.isPrisma && (
+                        <Chip
+                            label="PRISMA"
+                            icon={<ChangeHistoryIcon />}
+                            variant="outlined"
+                            size="small"
+                            sx={{ mr: '6px', pl: '2px' }}
                         />
                     )}
                     {studyset && (

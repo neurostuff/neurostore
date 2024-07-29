@@ -1,0 +1,178 @@
+import { act, render, screen } from '@testing-library/react';
+import CurationDownloadIncludedStudiesButton from 'pages/Curation/components/CurationDownloadIncludedStudiesButton';
+import QueryClientTestingWrapper from 'testing/QueryClientTestingWrapper';
+import userEvent from '@testing-library/user-event';
+import { useProjectCurationColumns } from 'pages/Project/store/ProjectStore';
+import { ICurationColumn } from '../Curation.types';
+import { defaultIdentificationSources } from 'pages/Project/store/ProjectStore.types';
+import { downloadFile } from '../Curation.helpers';
+import useGetBibtexCitations, { IBibtex } from 'hooks/external/useGetBibtexCitations';
+
+jest.mock('react-query', () => {
+    return {
+        ...jest.requireActual('react-query'),
+        useMutation: jest.fn().mockReturnValue({
+            mutateAsync: jest.fn(),
+        }),
+    };
+});
+jest.mock('pages/Curation/Curation.helpers.ts', () => {
+    return {
+        downloadFile: jest.fn(),
+    };
+});
+jest.mock('pages/Project/store/ProjectStore');
+
+const mockCurationColumns: ICurationColumn[] = [
+    {
+        name: 'excluded',
+        id: '1',
+        stubStudies: [],
+    },
+    {
+        name: 'included',
+        id: '2',
+        stubStudies: [
+            {
+                id: 'included_1',
+                title: 'included_1',
+                authors: 'John Smith',
+                pmid: 'included_pmid_1',
+                pmcid: 'included_pmcid_1',
+                doi: 'included_doi_1',
+                articleYear: 'included_articleyear_1',
+                journal: 'included_journal_1',
+                articleLink: 'included_articlelink_1',
+                tags: [],
+                identificationSource: defaultIdentificationSources.neurostore,
+                keywords: '',
+                abstractText: 'included_abstract_1',
+                exclusionTag: null,
+                neurostoreId: 'included_neurostoreid_1',
+                searchTerm: '',
+            },
+            {
+                id: 'included_2',
+                title: 'included_2',
+                authors: 'included_authors_2',
+                pmid: 'included_pmid_2',
+                pmcid: 'included_pmcid_2',
+                doi: '',
+                articleYear: 'included_articleyear_2',
+                journal: 'included_journal_2',
+                articleLink: 'included_articlelink_2',
+                tags: [
+                    {
+                        id: 'tag_1',
+                        label: 'tag_1_label',
+                        isExclusionTag: false,
+                        isAssignable: true,
+                    },
+                    {
+                        id: 'tag_2',
+                        label: 'tag_2_label',
+                        isExclusionTag: false,
+                        isAssignable: true,
+                    },
+                ],
+                identificationSource: defaultIdentificationSources.neurostore,
+                keywords: '',
+                abstractText: 'included_abstract_2',
+                exclusionTag: null,
+                neurostoreId: 'included_neurostoreid_2',
+                searchTerm: '',
+            },
+        ],
+    },
+];
+
+describe('CurationDownloadIncludedStudiesButton', () => {
+    it('should render', () => {
+        render(<CurationDownloadIncludedStudiesButton />, { wrapper: QueryClientTestingWrapper });
+    });
+
+    it('renders the button group and opens the dropdown menu when clicked', () => {
+        render(<CurationDownloadIncludedStudiesButton />, { wrapper: QueryClientTestingWrapper });
+        const dropdownButton = screen.getByTestId('ArrowDropDownIcon');
+        expect(dropdownButton).toBeInTheDocument();
+        expect(screen.getByText('Download INCLUDED as CSV')).toBeInTheDocument();
+        userEvent.click(dropdownButton);
+        expect(
+            screen.getByRole('menuitem', { name: 'Download INCLUDED as BibTeX' })
+        ).toBeInTheDocument();
+    });
+
+    it('downloads CSVs when the download CSV button is clicked', () => {
+        const csvStudies =
+            `"Title","Authors","PMID","PMCID","DOI","Year","Journal","Link","Source","Tags","Neurosynth ID","Search Term"\r\n` +
+            `"included_1","John Smith","included_pmid_1","included_pmcid_1","included_doi_1","included_articleyear_1","included_journal_1","included_articlelink_1","Neurostore","","included_neurostoreid_1",""\r\n` +
+            `"included_2","included_authors_2","included_pmid_2","included_pmcid_2","","included_articleyear_2","included_journal_2","included_articlelink_2","Neurostore","tag_1_label,tag_2_label","included_neurostoreid_2",""`;
+
+        (useProjectCurationColumns as jest.Mock).mockReturnValue(mockCurationColumns);
+
+        render(<CurationDownloadIncludedStudiesButton />, { wrapper: QueryClientTestingWrapper });
+        userEvent.click(screen.getByText('Download INCLUDED as CSV'));
+        expect(downloadFile).toHaveBeenCalledTimes(1);
+        expect(downloadFile).toHaveBeenCalledWith(
+            `project-name:Curation:${new Date().toLocaleDateString()}.csv`,
+            csvStudies,
+            'text/csv;charset=utf-8'
+        );
+    });
+
+    it('downloads BibTeX citations when the download BibTeX button is clicked', async () => {
+        const mutateAsyncMock = useGetBibtexCitations().mutateAsync as jest.Mock;
+        mutateAsyncMock.mockReturnValue({
+            author: [{ given: 'John', family: 'Smith' }],
+            title: 'included_1',
+            DOI: 'included_doi_1',
+            note: '',
+            URL: 'included_articlelink_1',
+            abstract: 'included_abstract_1',
+            issued: [{ 'date-parts': [2020, 0, 0] }],
+            'container-title': 'included_journal_1',
+            type: 'article-journal',
+        } as IBibtex);
+
+        const expectedBibtex =
+            `@article{Smith2020included_1,\n` +
+            `\tauthor = {Smith, John},\n` +
+            `\tjournal = {included\\textunderscore{}journal\\textunderscore{}1},\n` +
+            `\tdoi = {included_doi_1},\n` +
+            `\tyear = {2020},\n` +
+            `\tnote = {},\n` +
+            `\ttitle = {included\\textunderscore{}1},\n` +
+            `\turl = {included_articlelink_1},\n` +
+            `\thowpublished = {included\\textunderscore{}articlelink\\textunderscore{}1},\n` +
+            `}\n` +
+            `@article{included_2,\n` +
+            `\tauthor = {, included\\textunderscore{}authors\\textunderscore{}2},\n` +
+            `\tjournal = {included\\textunderscore{}journal\\textunderscore{}2},\n` +
+            `\tdoi = {},\n` +
+            `\tnote = {PMID: included\\textunderscore{}pmid\\textunderscore{}2; PMCID: included\\textunderscore{}pmcid\\textunderscore{}2; Neurosynth ID: included\\textunderscore{}neurostoreid\\textunderscore{}2; Source: Neurostore; Tags: tag\\textunderscore{}1\\textunderscore{}label,tag\\textunderscore{}2\\textunderscore{}label},\n` +
+            `\ttitle = {included\\textunderscore{}2},\n` +
+            `\turl = {included_articlelink_2},\n` +
+            `\thowpublished = {included\\textunderscore{}articlelink\\textunderscore{}2},\n` +
+            `}\n\n`;
+
+        (useProjectCurationColumns as jest.Mock).mockReturnValue(mockCurationColumns);
+
+        await act(async () => {
+            render(<CurationDownloadIncludedStudiesButton />, {
+                wrapper: QueryClientTestingWrapper,
+            });
+            const dropdownButton = screen.getByTestId('ArrowDropDownIcon');
+            expect(dropdownButton).toBeInTheDocument();
+            userEvent.click(dropdownButton);
+        });
+        await act(async () => {
+            userEvent.click(screen.getByText('Download INCLUDED as BibTeX'));
+        });
+        expect(mutateAsyncMock).toHaveBeenCalledWith(mockCurationColumns[1].stubStudies[0]); // second should not be called as it does not have DOI
+        expect(downloadFile).toHaveBeenCalledWith(
+            `project-name:Curation:${new Date().toLocaleDateString()}.bib`,
+            expectedBibtex,
+            'text/plain'
+        );
+    });
+});

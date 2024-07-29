@@ -31,7 +31,7 @@ const ProjectSpecificationStep: React.FC<ISpecificationStep & StepProps> = (prop
     }, [disabled, location?.state]);
 
     const handleClickProceed = () => {
-        allowEditMetaAnalyses();
+        allowEditMetaAnalyses(true);
         navigate(`/projects/${projectId}/meta-analyses`);
     };
 

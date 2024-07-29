@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { AxiosError, AxiosResponse } from 'axios';
-import { ICurationStubStudy } from 'pages/Curation/Curation.types';
 import { EPropertyType } from 'components/EditMetadata/EditMetadata.types';
+import { selectBestBaseStudyVersion } from 'helpers/Extraction.helpers';
+import { stringToNumber } from 'helpers/utils';
 import { IESearchResult } from 'hooks/external/useGetPubMedIdFromDOI';
 import { INeurosynthParsedPubmedArticle } from 'hooks/external/useGetPubMedIds';
 import { ICurationMetadata, IProvenance, ITag } from 'hooks/projects/useGetProjects';
@@ -17,6 +18,7 @@ import {
     StudyReturn,
 } from 'neurostore-typescript-sdk';
 import { Project, ProjectReturn } from 'neurosynth-compose-typescript-sdk';
+import { ICurationStubStudy } from 'pages/Curation/Curation.types';
 import { EExtractionStatus } from 'pages/Extraction/ExtractionPage';
 import {
     generateNewProjectData,
@@ -27,7 +29,6 @@ import { DefaultSpaceTypes, IStudyVersion } from 'pages/Study/store/StudyStore.h
 import { MutateOptions } from 'react-query';
 import API from 'utils/api';
 import { v4 as uuidv4 } from 'uuid';
-import { selectBestBaseStudyVersion } from 'helpers/Extraction.helpers';
 
 const PUBMED_API_KEY = process.env.REACT_APP_PUBMED_API_KEY as string;
 
@@ -58,20 +59,6 @@ export const extractYearFromString = (s: string): { isValid: boolean; value: num
 export const extractAuthorsFromString = (s: string): string => {
     const splitStr = s.replaceAll(/[0-9]/g, '');
     return splitStr.trim();
-};
-
-export const stringToNumber = (s: string): { value: number; isValid: boolean } => {
-    const parsedNum = Number(s);
-    if (isNaN(parsedNum)) {
-        return {
-            value: 0,
-            isValid: false,
-        };
-    }
-    return {
-        value: parsedNum,
-        isValid: true,
-    };
 };
 
 // [x, y, z]
@@ -458,7 +445,7 @@ export const organizeSleuthStubsIntoHTTPRequests = (
 
 export const executeHTTPRequestsAsBatches = async <T, Y>(
     requestList: T[],
-    mapFunc: (request: T) => Promise<AxiosResponse<Y>>,
+    mapFunc: (request: T) => Promise<Y>,
     rateLimit: number,
     delayInMS?: number,
     progressCallbackFunc?: (progress: number) => void
@@ -468,7 +455,7 @@ export const executeHTTPRequestsAsBatches = async <T, Y>(
         arrayOfRequestArrays.push(requestList.slice(i, i + rateLimit));
     }
 
-    const batchedResList: AxiosResponse<Y>[] = [];
+    const batchedResList: Y[] = [];
     for (const requests of arrayOfRequestArrays) {
         /**
          * I have to do the mapping from object to HTTP request here because
@@ -582,10 +569,6 @@ export const lookForPMIDsAndFetchStudyDetails = async (
                             esearchresult: {
                                 count: '1',
                                 idlist: [baseStudy.pmid],
-                            },
-                            header: {
-                                type: 'NEUROSTORE_MOCK',
-                                version: 'NA',
                             },
                         },
                         status: 200,

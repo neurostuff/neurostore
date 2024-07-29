@@ -8,7 +8,7 @@ import { v4 as uuidv4 } from 'uuid';
 import CurationImportBaseStyles from 'pages/CurationImport/components/CurationImport.styles';
 import { ICurationStubStudy } from 'pages/Curation/Curation.types';
 import CurationPopupIdentificationSourceSelector from 'pages/Curation/components/CurationPopupIdentificationSourceSelector';
-const Cite = require('citation-js');
+const { Cite } = require('@citation-js/core');
 require('@citation-js/plugin-enw');
 require('@citation-js/plugin-bibtex');
 require('@citation-js/plugin-ris');
