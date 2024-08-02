@@ -88,10 +88,22 @@ const mockCurationColumns: ICurationColumn[] = [
 
 describe('CurationDownloadIncludedStudiesButton', () => {
     it('should render', () => {
+        (useProjectCurationColumns as jest.Mock).mockReturnValue(mockCurationColumns);
         render(<CurationDownloadIncludedStudiesButton />, { wrapper: QueryClientTestingWrapper });
     });
 
+    it('should be disabled if there are no included studies', () => {
+        (useProjectCurationColumns as jest.Mock).mockReturnValue([
+            { name: 'excluded', id: '1', stubStudies: [] },
+            { name: 'included', id: '1', stubStudies: [] },
+        ]);
+        render(<CurationDownloadIncludedStudiesButton />, { wrapper: QueryClientTestingWrapper });
+        const downloadButton = screen.getByText('Download INCLUDED as CSV');
+        expect(downloadButton).toBeDisabled();
+    });
+
     it('renders the button group and opens the dropdown menu when clicked', () => {
+        (useProjectCurationColumns as jest.Mock).mockReturnValue(mockCurationColumns);
         render(<CurationDownloadIncludedStudiesButton />, { wrapper: QueryClientTestingWrapper });
         const dropdownButton = screen.getByTestId('ArrowDropDownIcon');
         expect(dropdownButton).toBeInTheDocument();
@@ -121,26 +133,12 @@ describe('CurationDownloadIncludedStudiesButton', () => {
     });
 
     it('downloads BibTeX citations when the download BibTeX button is clicked', async () => {
-        const mutateAsyncMock = useGetBibtexCitations().mutateAsync as jest.Mock;
-        mutateAsyncMock.mockReturnValue({
-            author: [{ given: 'John', family: 'Smith' }],
-            title: 'included_1',
-            DOI: 'included_doi_1',
-            note: '',
-            URL: 'included_articlelink_1',
-            abstract: 'included_abstract_1',
-            issued: [{ 'date-parts': [2020, 0, 0] }],
-            'container-title': 'included_journal_1',
-            type: 'article-journal',
-        } as IBibtex);
-
         const expectedBibtex =
-            `@article{Smith2020included_1,\n` +
+            `@article{Smithincluded_1,\n` +
             `\tauthor = {Smith, John},\n` +
             `\tjournal = {included\\textunderscore{}journal\\textunderscore{}1},\n` +
             `\tdoi = {included_doi_1},\n` +
-            `\tyear = {2020},\n` +
-            `\tnote = {},\n` +
+            `\tnote = {PMID: included\\textunderscore{}pmid\\textunderscore{}1; PMCID: included\\textunderscore{}pmcid\\textunderscore{}1; Neurosynth ID: included\\textunderscore{}neurostoreid\\textunderscore{}1; Source: Neurostore},\n` +
             `\ttitle = {included\\textunderscore{}1},\n` +
             `\turl = {included_articlelink_1},\n` +
             `\thowpublished = {included\\textunderscore{}articlelink\\textunderscore{}1},\n` +
@@ -168,7 +166,6 @@ describe('CurationDownloadIncludedStudiesButton', () => {
         await act(async () => {
             userEvent.click(screen.getByText('Download INCLUDED as BibTeX'));
         });
-        expect(mutateAsyncMock).toHaveBeenCalledWith(mockCurationColumns[1].stubStudies[0]); // second should not be called as it does not have DOI
         expect(downloadFile).toHaveBeenCalledWith(
             `project-name:Curation:${new Date().toLocaleDateString()}.bib`,
             expectedBibtex,
