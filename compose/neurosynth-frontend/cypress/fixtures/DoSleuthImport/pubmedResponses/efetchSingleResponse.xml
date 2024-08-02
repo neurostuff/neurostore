@@ -124,6 +124,7 @@
             <PublicationStatus>ppublish</PublicationStatus>
             <ArticleIdList>
                 <ArticleId IdType="pubmed">25938726</ArticleId>
+                <ArticleId IdType="pmc">PMCTEST</ArticleId>
                 <ArticleId IdType="doi">some-doi.org</ArticleId>
             </ArticleIdList>
         </PubmedData>
