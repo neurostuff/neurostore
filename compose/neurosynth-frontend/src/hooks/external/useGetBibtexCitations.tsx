@@ -3,6 +3,10 @@ import { stringToNumber } from 'helpers/utils';
 import { ICurationStubStudy } from 'pages/Curation/Curation.types';
 import { useMutation } from 'react-query';
 
+/**
+ * I'll leave this file here for now because it may be useful later and I worked hard on it
+ */
+
 const stringAsAuthorArray = (authors: string): IBibtex['author'] => {
     const authorsStringToArray = authors.split(', ').map((author) => {
         const nameAsArray = author.split(' ');
