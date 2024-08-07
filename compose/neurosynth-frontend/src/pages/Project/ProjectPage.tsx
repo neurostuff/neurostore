@@ -56,10 +56,10 @@ const ProjectPage: React.FC = (props) => {
         !getProjectIsLoading && getProjectIsError
     );
 
-    const tab = useMemo(
-        () => (location.pathname.includes('meta-analyses') ? 1 : 0),
-        [location.pathname]
-    );
+    const tab = useMemo(() => {
+        if (!metaAnalysesTabEnabled) return 0;
+        return location.pathname.includes('meta-analyses') ? 1 : 0;
+    }, [location.pathname, metaAnalysesTabEnabled]);
 
     return (
         <StateHandlerComponent isLoading={getProjectIsLoading} isError={getProjectIsError}>

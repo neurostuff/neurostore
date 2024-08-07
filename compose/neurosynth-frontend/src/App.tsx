@@ -1,13 +1,13 @@
 import Close from '@mui/icons-material/Close';
 import { IconButton } from '@mui/material';
 import { AxiosError } from 'axios';
+import useGoogleAnalytics from 'hooks/useGoogleAnalytics';
 import { SnackbarKey, SnackbarProvider } from 'notistack';
-import { useEffect, useRef } from 'react';
+import { useRef } from 'react';
 import { QueryCache, QueryClient, QueryClientProvider } from 'react-query';
 import Navbar from './components/Navbar/Navbar';
 import useGetToken from './hooks/useGetToken';
 import BaseNavigation from './pages/BaseNavigation/BaseNavigation';
-import { useLocation } from 'react-router-dom';
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -40,15 +40,7 @@ declare global {
 function App() {
     const notistackRef = useRef<SnackbarProvider>(null);
     useGetToken();
-
-    const location = useLocation();
-    useEffect(() => {
-        if (window.gtag) {
-            window.gtag('event', 'page_view', {
-                page_path: `${location.pathname}${location.search}`,
-            });
-        }
-    }, [location]);
+    useGoogleAnalytics();
 
     const handleCloseSnackbar = (key: SnackbarKey) => (_event: React.MouseEvent) => {
         if (notistackRef?.current?.closeSnackbar) notistackRef.current?.closeSnackbar(key);

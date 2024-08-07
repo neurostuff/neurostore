@@ -24,15 +24,18 @@
             href="https://fonts.googleapis.com/css2?family=Roboto:wght@300&display=swap"
             crossorigin="anonymous"
         />
+
         <!-- Google tag (gtag.js) -->
         <script async src="https://www.googletagmanager.com/gtag/js?id=G-0L9Y0HT9NR"></script>
         <script type="text/javascript">
-            if (document.location.hostname === "compose.neurosynth.org") {
+            // if (document.location.hostname === "compose.neurosynth.org") {
                 window.dataLayer = window.dataLayer || [];
                 function gtag(){dataLayer.push(arguments);}
                 gtag('js', new Date());
-                gtag('config', 'G-0L9Y0HT9NR');
-            }
+                gtag('config', 'G-0L9Y0HT9NR', {
+                    'send_page_view': false
+                });
+            // }
         </script>
 
         <!-- Appzi: Capture Insightful Feedback -->
