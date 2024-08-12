@@ -406,6 +406,8 @@ export const organizeSleuthStubsIntoHTTPRequests = (
             (correspondingBaseStudy.versions as IStudyVersion[]) || []
         ).find((version) => version.user === currUserId);
         if (loggedInUsersExistingStudyVersion && loggedInUsersExistingStudyVersion.id) {
+            // HERE IS WHERE I NEED TO MKAE THE CHECK TO SEE IF THE ANALYSIS ALREADY EXISTS (WITH SAME COORDINATES AND STUFF)
+
             allRequests.push(() =>
                 API.NeurostoreServices.AnalysesService.analysesPost({
                     ...newAnalysis,
@@ -611,11 +613,6 @@ export const applyPubmedStudyDetailsToBaseStudiesAndRemoveDuplicates = (
     pubmedStudies.forEach((pubmedStudy) => {
         if (pubmedStudy.PMID) idToPubmedStudyMap.set(pubmedStudy.PMID, pubmedStudy);
         if (pubmedStudy.DOI) idToPubmedStudyMap.set(pubmedStudy.DOI, pubmedStudy);
-    });
-
-    console.log({
-        baseStudySleuthStubs,
-        pubmedStudies,
     });
 
     const deduplicatedBaseStudiesWithDetails: BaseStudy[] = [];

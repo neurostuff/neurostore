@@ -280,7 +280,18 @@ const useStudyStore = create<
                             isNew: true,
                             conditions: [],
                             weights: [],
-                            points: [],
+                            points: [
+                                {
+                                    cluster_size: undefined,
+                                    id: uuid(),
+                                    isNew: true,
+                                    value: undefined,
+                                    subpeak: undefined,
+                                    x: undefined,
+                                    y: undefined,
+                                    z: undefined,
+                                },
+                            ],
                             pointSpace: undefined,
                             pointStatistic: undefined,
                             id: uuid(), // this is a temporary ID until one is assigned via neurostore
