@@ -1,6 +1,7 @@
 import Close from '@mui/icons-material/Close';
 import { IconButton } from '@mui/material';
 import { AxiosError } from 'axios';
+import useGoogleAnalytics from 'hooks/useGoogleAnalytics';
 import { SnackbarKey, SnackbarProvider } from 'notistack';
 import { useEffect, useRef } from 'react';
 import { QueryCache, QueryClient, QueryClientProvider } from 'react-query';
@@ -40,6 +41,7 @@ declare global {
 function App() {
     const notistackRef = useRef<SnackbarProvider>(null);
     useGetToken();
+    useGoogleAnalytics();
 
     const location = useLocation();
     useEffect(() => {
