@@ -931,6 +931,57 @@ class AnalysesView(ObjectView, ListView):
             )
         return super().join_tables(q, args)
 
+    @classmethod
+    def check_duplicate(cls, data, record):
+        study_id = data.get("study_id")
+
+        if hasattr(record, "id") and record.id and record.id == data.get("id"):
+            # not a duplicate, same record
+            return False
+
+        if hasattr(record, "study") and record.study:
+            study = record.study
+        else:
+            study = Study.query.filter_by(id=study_id).first()
+
+        if not study:
+            return False
+
+        name = data.get("name")
+        user_id = data.get("user_id")
+        coordinates = data.get("points")
+
+        for analysis in study.analyses:
+            if (
+                analysis.name == name
+                and analysis.user_id == user_id
+                and cls._compare_coordinates(analysis.points, coordinates)
+            ):
+                return analysis
+
+        return False
+
+    @staticmethod
+    def _compare_coordinates(existing_points, new_points):
+        # Create a dictionary to map point IDs to their coordinates
+        existing_points_dict = {
+            point.id: (point.x, point.y, point.z) for point in existing_points
+        }
+
+        # Create sets for comparison
+        existing_points_set = {(point.x, point.y, point.z) for point in existing_points}
+        new_points_set = set()
+
+        for point in new_points:
+            if "x" in point and "y" in point and "z" in point:
+                new_points_set.add((point["x"], point["y"], point["z"]))
+            elif "id" in point and point["id"] in existing_points_dict:
+                new_points_set.add(existing_points_dict[point["id"]])
+            else:
+                return False  # If the point doesn't have coordinates or a valid ID, return False
+
+        return existing_points_set == new_points_set
+
 
 @view_maker
 class ConditionsView(ObjectView, ListView):
