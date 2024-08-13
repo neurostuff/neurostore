@@ -296,6 +296,8 @@ class BaseView(MethodView):
             return record
 
         data["user_id"] = current_user.external_id
+        if hasattr(record, "id"):
+            data["id"] = record.id
         # check to see if duplicate
         duplicate = cls.check_duplicate(data, record)
         if duplicate:

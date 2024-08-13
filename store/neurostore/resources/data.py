@@ -935,10 +935,15 @@ class AnalysesView(ObjectView, ListView):
     def check_duplicate(cls, data, record):
         study_id = data.get("study_id")
 
+        if hasattr(record, "id") and record.id == data.get("id"):
+            # not a duplicate, same record
+            return False
+
         if hasattr(record, "study") and record.study:
             study = record.study
         else:
             study = Study.query.filter_by(id=study_id).first()
+
         if not study:
             return False
 
