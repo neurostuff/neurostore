@@ -69,6 +69,10 @@ class BaseView(MethodView):
     _view_fields = {}
     # _default_exclude = None
 
+    @classmethod
+    def check_duplicate(cls, data, record):
+        return False
+
     def get_affected_ids(self, ids):
         """
         Get all the ids that are affected by a change to a record..
@@ -223,16 +227,16 @@ class BaseView(MethodView):
     @classmethod
     def update_or_create(cls, data, id=None, user=None, record=None, flush=True):
         """
-        scenerios:
-        1. cloning a study
-          a. clone everything, a study is an object
-        2. cloning a studyset
-          a. studies are linked to a studyset, so create a new studyset with same links
-        3. cloning an annotation
-          a. annotations are linked to studysets, update when studyset updates
-        4. creating an analysis
+        Scenarios:
+        1. Cloning a study
+          a. Clone everything, a study is an object
+        2. Cloning a studyset
+          a. Studies are linked to a studyset, so create a new studyset with same links
+        3. Cloning an annotation
+          a. Annotations are linked to studysets, update when studyset updates
+        4. Creating an analysis
           a. I should have to own all (relevant) parent objects
-        5. creating an annotation
+        5. Creating an annotation
             a. I should not have to own the studyset to create an annotation
         """
 
@@ -290,6 +294,12 @@ class BaseView(MethodView):
                     abort(400)
 
             return record
+
+        data["user_id"] = current_user.external_id
+        # check to see if duplicate
+        duplicate = cls.check_duplicate(data, record)
+        if duplicate:
+            return duplicate
 
         # Update all non-nested attributes
         for k, v in data.items():
