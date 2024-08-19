@@ -202,6 +202,7 @@ const EditStudyAnalysisPointsHotTable: React.FC<{ analysisId?: string; readOnly?
             if (!selected) return;
             if (selected.length !== 1) return;
 
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const [startRow, startCol, endRow, endCol] = selected[0];
 
             const selectedRowIndices: number[] = [];
