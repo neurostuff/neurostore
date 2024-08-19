@@ -205,7 +205,7 @@ const EditStudyAnalysisPointsHotTable: React.FC<{ analysisId?: string; readOnly?
             const [startRow, startCol, endRow, endCol] = selected[0];
 
             const selectedRowIndices: number[] = [];
-            for (let i = startRow; i < endRow; i++) {
+            for (let i = startRow; i <= endRow; i++) {
                 selectedRowIndices.push(i);
             }
             handleBeforeRemoveRow(0, selectedRowIndices.length || 0, selectedRowIndices, undefined);

@@ -21,7 +21,7 @@ const EditStudyAnalysisPointsHotTableToolbar: React.FC<{
                         <TableRows sx={{ fontSize: '12px' }} />
                     </Button>
                 </Tooltip>
-                <Tooltip title="Delete row" placement="right">
+                <Tooltip title="Delete row(s)" placement="right">
                     <Button onClick={onDeleteRows} sx={{ height: '40px' }} color="error">
                         <Delete sx={{ fontSize: '20px' }} />
                     </Button>

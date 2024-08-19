@@ -252,14 +252,14 @@ const EditStudyToolbar: React.FC<{ isViewOnly?: boolean }> = ({ isViewOnly = fal
                                             backgroundColor:
                                                 extractionStatus?.status ===
                                                 EExtractionStatus.COMPLETED
-                                                    ? 'lightgray'
+                                                    ? '#ebebeb'
                                                     : '',
                                         }}
                                         onClick={() =>
                                             handleClickStudyListStatus(EExtractionStatus.COMPLETED)
                                         }
                                     >
-                                        <CheckIcon />
+                                        <CheckIcon color="success" />
                                     </IconButton>
                                 </Tooltip>
                             </Box>
@@ -270,7 +270,7 @@ const EditStudyToolbar: React.FC<{ isViewOnly?: boolean }> = ({ isViewOnly = fal
                                             backgroundColor:
                                                 extractionStatus?.status ===
                                                 EExtractionStatus.SAVEDFORLATER
-                                                    ? 'lightgray'
+                                                    ? '#ebebeb'
                                                     : '',
                                         }}
                                         onClick={() =>
@@ -279,7 +279,7 @@ const EditStudyToolbar: React.FC<{ isViewOnly?: boolean }> = ({ isViewOnly = fal
                                             )
                                         }
                                     >
-                                        <BookmarkIcon />
+                                        <BookmarkIcon color="info" />
                                     </IconButton>
                                 </Tooltip>
                             </Box>
