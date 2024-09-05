@@ -1,7 +1,7 @@
-import { Box, Icon, IconButton } from '@mui/material';
-import BaseNavigationStyles from 'pages/BaseNavigation/BaseNavigation.styles';
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import { Cancel } from '@mui/icons-material';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import { Box, IconButton } from '@mui/material';
+import BaseNavigationStyles from 'pages/BaseNavigation/BaseNavigation.styles';
 import { useState } from 'react';
 
 const Downbanner: React.FC = () => {
