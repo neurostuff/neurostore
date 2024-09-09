@@ -2,44 +2,24 @@ import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import { Box, Button, ButtonGroup, MenuItem, MenuList } from '@mui/material';
 import NeurosynthPopper from 'components/NeurosynthPopper/NeurosynthPopper';
 import ProgressLoader from 'components/ProgressLoader';
-import useGetBibtexCitations, {
-    generateBibtex,
-    IBibtex,
-} from 'hooks/external/useGetBibtexCitations';
+import { generateBibtex } from 'hooks/external/useGetBibtexCitations';
+import { ICurationStubStudy } from 'pages/Curation/Curation.types';
 import { useProjectCurationColumns, useProjectName } from 'pages/Project/store/ProjectStore';
-import { executeHTTPRequestsAsBatches } from 'pages/SleuthImport/SleuthImport.helpers';
 import { useRef, useState } from 'react';
 import { downloadFile } from '../Curation.helpers';
-import { ICurationStubStudy } from 'pages/Curation/Curation.types';
 const { Cite } = require('@citation-js/core');
 require('@citation-js/plugin-bibtex');
 require('@citation-js/plugin-doi');
 
 const CurationDownloadIncludedStudiesButton: React.FC = () => {
-    const { mutateAsync } = useGetBibtexCitations();
     const [optionsIsOpen, setOptionsIsOpen] = useState(false);
     const anchorRef = useRef(null);
-    const includedStudies = useProjectCurationColumns();
+    const curationColumns = useProjectCurationColumns();
     const projectName = useProjectName();
     const [isLoading, setIsLoading] = useState(false);
 
-    const retrieveBibtex = async (includedStudies: ICurationStubStudy[]) => {
-        const responses = await executeHTTPRequestsAsBatches(
-            includedStudies,
-            (study) => {
-                if (!study.doi) {
-                    return new Promise<IBibtex>((res) => {
-                        const fakeResponse: IBibtex = {
-                            ...generateBibtex(study),
-                        };
-                        res(fakeResponse);
-                    });
-                } else {
-                    return mutateAsync(study);
-                }
-            },
-            30
-        );
+    const retrieveBibtex = (includedStudies: ICurationStubStudy[]) => {
+        const responses = includedStudies.map((study) => generateBibtex(study));
         const citeObj = new Cite(responses);
         return citeObj.format('bibtex', { format: 'text' }) as string;
     };
@@ -94,10 +74,10 @@ const CurationDownloadIncludedStudiesButton: React.FC = () => {
 
     const handleDownloadIncludedStudies = async (format: 'bibtex' | 'csv') => {
         setIsLoading(true);
-        const allIncludedStudies = includedStudies[includedStudies.length - 1];
+        const allIncludedStudies = curationColumns[curationColumns.length - 1];
         const date = new Date().toLocaleDateString();
         if (format === 'bibtex') {
-            const bibtexStudies = await retrieveBibtex(allIncludedStudies.stubStudies);
+            const bibtexStudies = retrieveBibtex(allIncludedStudies.stubStudies);
             downloadFile(`${projectName}:Curation:${date}.bib`, bibtexStudies, 'text/plain');
         } else {
             const csvStudies = retrieveCSV(allIncludedStudies.stubStudies);
@@ -109,6 +89,10 @@ const CurationDownloadIncludedStudiesButton: React.FC = () => {
         }
         setIsLoading(false);
     };
+
+    const disable =
+        curationColumns.length === 0 ||
+        curationColumns[curationColumns.length - 1].stubStudies.length === 0;
 
     return (
         <>
@@ -128,7 +112,13 @@ const CurationDownloadIncludedStudiesButton: React.FC = () => {
                     </MenuList>
                 </Box>
             </NeurosynthPopper>
-            <ButtonGroup color="info" ref={anchorRef} sx={{ height: '100%' }} size="small">
+            <ButtonGroup
+                disabled={disable}
+                color="info"
+                ref={anchorRef}
+                sx={{ height: '100%' }}
+                size="small"
+            >
                 <Button onClick={() => handleDownloadIncludedStudies('csv')}>
                     Download INCLUDED as CSV
                 </Button>

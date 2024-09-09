@@ -21,6 +21,11 @@ const Navbar: React.FC = (_props) => {
             audience: AUTH0_AUDIENCE,
             scope: 'openid profile email offline_access',
         });
+
+        if (window.gtag) {
+            window.gtag('event', 'login');
+        }
+
         navigate('/');
     };
 

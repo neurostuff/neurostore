@@ -17,9 +17,6 @@ const ProtectedMetaAnalysesRoute: React.FC<{
     const { pathname } = useLocation();
     const userCanEdit = useUserCanEdit(project?.user ?? undefined);
 
-    console.log('HELLOOooooooo');
-    console.log(project?.public);
-
     const isOk = userCanEdit || project?.public;
 
     if (getProjectIsLoading || getMetaAnalysisIsLoading || getAuthIsLoading) {

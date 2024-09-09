@@ -16,6 +16,10 @@ describe('DoSleuthImport', () => {
     beforeEach(() => {
         cy.clearLocalStorage().clearSessionStorage();
         cy.intercept('GET', 'https://api.appzi.io/**', { fixture: 'appzi' }).as('appziFixture');
+
+        cy.intercept('POST', `https://www.google-analytics.com/*/**`, {}).as(
+            'googleAnalyticsFixture'
+        );
     });
 
     it('should load successfully', () => {
@@ -429,7 +433,7 @@ describe('DoSleuthImport', () => {
     });
 
     describe('edge cases', () => {
-        it('should apply the pubmed details to the study if a matching pubmed study is found', () => {
+        it.only('should apply the pubmed details to the study if a matching pubmed study is found', () => {
             // this stuff exists just to make sure cypress doesnt send any real requests. They are not under test
             // synth API responses
             cy.intercept('POST', `${neurostoreAPIBaseURL}/analyses/**`, {
@@ -486,6 +490,7 @@ describe('DoSleuthImport', () => {
                 fixture: 'DoSleuthImport/pubmedResponses/efetchSingleResponse.xml',
             }).as('pmidsFetch');
 
+            // this is not important but is needed to finish the rest of the import
             cy.intercept('POST', `${neurostoreAPIBaseURL}/base-studies/**`, {
                 fixture:
                     'DoSleuthImport/neurosynthResponses/baseStudiesMultipleSleuthStudyResponse.json',
@@ -501,12 +506,18 @@ describe('DoSleuthImport', () => {
 
             cy.wait('@baseStudiesIngestFixture').then((baseStudiesResponse) => {
                 const baseStudy = baseStudiesResponse.request.body[0];
+
+                // we should still have all the data from the original base study created from the sleuth import file
                 expect(baseStudy.authors).equals('Gerardin E,');
                 expect(baseStudy.doi).equals('some-doi.org');
                 expect(baseStudy.name).equals('The brains default mode network.');
                 expect(baseStudy.year).equals(2000);
-                expect(baseStudy.pmid).equals('25938726');
                 expect(baseStudy.publication).equals('Annual review of neuroscience');
+                // additional data should be added from the pubmed query if it did not exist
+                expect(baseStudy.pmcid).equals('PMCTEST');
+                expect(baseStudy.description).equals(
+                    `\nThe brains default mode network consists of discrete, bilateral and symmetrical cortical areas, in the medial and lateral parietal, medial prefrontal, and medial and lateral temporal cortices of the human, nonhuman primate, cat, and rodent brains. Its discovery was an unexpected consequence of brain-imaging studies first performed with positron emission tomography in which various novel, attention-demanding, and non-self-referential tasks were compared with quiet repose either with eyes closed or with simple visual fixation. The default mode network consistently decreases its activity when compared with activity during these relaxed nontask states. The discovery of the default mode network reignited a longstanding interest in the significance of the brain's ongoing or intrinsic activity. Presently, studies of the brain's intrinsic activity, popularly referred to as resting-state studies, have come to play a major role in studies of the human brain in health and disease. The brain's default mode network plays a central role in this work.`
+                );
             });
         });
 

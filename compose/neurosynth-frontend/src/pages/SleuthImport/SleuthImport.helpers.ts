@@ -613,6 +613,11 @@ export const applyPubmedStudyDetailsToBaseStudiesAndRemoveDuplicates = (
         if (pubmedStudy.DOI) idToPubmedStudyMap.set(pubmedStudy.DOI, pubmedStudy);
     });
 
+    console.log({
+        baseStudySleuthStubs,
+        pubmedStudies,
+    });
+
     const deduplicatedBaseStudiesWithDetails: BaseStudy[] = [];
     baseStudySleuthStubs.forEach((baseStudy) => {
         const associatedPubmedStudy =
@@ -621,6 +626,7 @@ export const applyPubmedStudyDetailsToBaseStudiesAndRemoveDuplicates = (
 
         let updatedBaseStudyWithDetails: BaseStudy = {};
         if (!associatedPubmedStudy) {
+            // there is no corresponding pubmed study
             updatedBaseStudyWithDetails = { ...baseStudy };
         } else {
             const authorString = (associatedPubmedStudy?.authors || []).reduce(
