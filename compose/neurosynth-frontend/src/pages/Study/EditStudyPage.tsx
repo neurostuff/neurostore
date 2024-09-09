@@ -1,4 +1,5 @@
-import { Box } from '@mui/material';
+import { ArrowLeft, ArrowRight } from '@mui/icons-material';
+import { Box, Button, Typography } from '@mui/material';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import {
     useInitProjectStoreIfRequired,
@@ -10,7 +11,6 @@ import EditStudyDetails from 'pages/Study/components/EditStudyDetails';
 import EditStudyMetadata from 'pages/Study/components/EditStudyMetadata';
 import EditStudyPageHeader from 'pages/Study/components/EditStudyPageHeader';
 import EditStudySaveButton from 'pages/Study/components/EditStudySaveButton';
-import EditStudySwapVersionButton from 'pages/Study/components/EditStudySwapVersionButton';
 import EditStudyPageStyles from 'pages/Study/EditStudyPage.styles';
 import {
     useClearStudyStore,
@@ -71,7 +71,69 @@ const EditStudyPage: React.FC = (props) => {
                 <EditStudyMetadata />
             </Box>
             <Box sx={EditStudyPageStyles.loadingButtonContainer}>
-                <EditStudySwapVersionButton />
+                {/* <EditStudySwapVersionButton /> */}
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Button
+                        startIcon={<ArrowLeft />}
+                        disableElevation
+                        sx={{
+                            backgroundColor: '#f5f5f5',
+                            color: 'black',
+                            ':hover': { backgroundColor: 'lightblue' },
+                        }}
+                    >
+                        <Box>
+                            <Typography
+                                sx={{
+                                    textOverflow: 'ellipsis',
+                                    maxWidth: '200px',
+                                    width: '200px',
+                                    whiteSpace: 'nowrap',
+                                    overflow: 'hidden',
+                                    textAlign: 'start',
+                                }}
+                                fontSize="0.6rem"
+                            >
+                                Giant Panda Identification
+                            </Typography>
+                            <Typography textAlign="start" fontSize="0.6rem">
+                                Back
+                            </Typography>
+                        </Box>
+                    </Button>
+                    <Typography variant="body2" sx={{ marginX: '1rem' }}>
+                        2 of 3
+                    </Typography>
+                    <Button
+                        endIcon={<ArrowRight />}
+                        disableElevation
+                        sx={{
+                            backgroundColor: '#f5f5f5',
+                            color: 'black',
+                            ':hover': { backgroundColor: 'lightblue' },
+                        }}
+                    >
+                        <Box>
+                            <Typography
+                                sx={{
+                                    textOverflow: 'ellipsis',
+                                    maxWidth: '200px',
+                                    width: '200px',
+                                    whiteSpace: 'nowrap',
+                                    overflow: 'hidden',
+                                    textAlign: 'end',
+                                }}
+                                fontSize="0.6rem"
+                            >
+                                Reproducibility of fMRI results across four institutions using a
+                                spatial workign memory task
+                            </Typography>
+                            <Typography textAlign="end" fontSize="0.6rem">
+                                Next
+                            </Typography>
+                        </Box>
+                    </Button>
+                </Box>
                 <EditStudySaveButton />
             </Box>
         </StateHandlerComponent>

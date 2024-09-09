@@ -1,4 +1,4 @@
-import { Box, Typography } from '@mui/material';
+import { Box, Button, Typography } from '@mui/material';
 import DisplayStudyChipLinks from 'components/DisplayStudyChipLinks/DisplayStudyChipLinks';
 import EditStudyToolbar from 'pages/Study/components/EditStudyToolbar';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs';
@@ -32,7 +32,7 @@ const EditStudyPageHeader: React.FC = () => {
     return (
         <>
             <EditStudyToolbar />
-            <Box sx={{ marginBottom: '0.5rem' }}>
+            <Box>
                 <Box sx={{ display: 'flex' }}>
                     <NeurosynthBreadcrumbs
                         breadcrumbItems={[
@@ -60,7 +60,7 @@ const EditStudyPageHeader: React.FC = () => {
                     />
                     <ProjectIsLoadingText />
                 </Box>
-                <Box sx={{ marginTop: '1rem', display: 'flex', flexDirection: 'column' }}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', margin: '0.5rem 0' }}>
                     <Typography variant="h5">
                         {studyYear && `(${studyYear}).`} {studyName}
                     </Typography>
