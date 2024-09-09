@@ -39,7 +39,7 @@ const EditStudyPage: React.FC = (props) => {
     const getAnnotationIsLoading = useGetAnnotationIsLoading();
 
     useInitProjectStoreIfRequired();
-    // instead of the useInitStudyStoreIfRequired hook,
+    // instead of the useInitStudyStoreIfRequired hook we call these funcitons in a useEffect as
     // we want to clear and init the study store every time in case the user wants to refresh the page and cancel their edits
     useEffect(() => {
         clearStudyStore();

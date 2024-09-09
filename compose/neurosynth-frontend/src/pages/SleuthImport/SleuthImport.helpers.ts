@@ -406,6 +406,7 @@ export const organizeSleuthStubsIntoHTTPRequests = (
             (correspondingBaseStudy.versions as IStudyVersion[]) || []
         ).find((version) => version.user === currUserId);
         if (loggedInUsersExistingStudyVersion && loggedInUsersExistingStudyVersion.id) {
+            // if there is a duplicate, then this analyses POST request will just return the existing analysis. If not, it will create the analysis and return that instead
             allRequests.push(() =>
                 API.NeurostoreServices.AnalysesService.analysesPost({
                     ...newAnalysis,
@@ -611,11 +612,6 @@ export const applyPubmedStudyDetailsToBaseStudiesAndRemoveDuplicates = (
     pubmedStudies.forEach((pubmedStudy) => {
         if (pubmedStudy.PMID) idToPubmedStudyMap.set(pubmedStudy.PMID, pubmedStudy);
         if (pubmedStudy.DOI) idToPubmedStudyMap.set(pubmedStudy.DOI, pubmedStudy);
-    });
-
-    console.log({
-        baseStudySleuthStubs,
-        pubmedStudies,
     });
 
     const deduplicatedBaseStudiesWithDetails: BaseStudy[] = [];

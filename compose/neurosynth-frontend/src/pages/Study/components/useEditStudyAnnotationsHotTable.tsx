@@ -11,6 +11,8 @@ import {
     EditStudyAnnotationsNoteCollectionReturn,
     IEditStudyAnnotationsDataRef,
 } from './EditStudyAnnotationsHotTable.types';
+import { IStoreNoteCollectionReturn } from 'stores/AnnotationStore.types';
+import { IStoreAnalysis } from '../store/StudyStore.helpers';
 
 const useEditStudyAnnotationsHotTable = (readonly?: boolean) => {
     const studyId = useStudyId();
@@ -22,42 +24,37 @@ const useEditStudyAnnotationsHotTable = (readonly?: boolean) => {
 
     useEffect(() => {
         if (!notes) return;
-
         setData((prev) => {
             if (!prev) return [...notes];
+            const update: { note: IStoreNoteCollectionReturn; analysis?: IStoreAnalysis }[] =
+                notes.map((note) => {
+                    const analysisId = note.analysis;
+                    if (!analysisId) return { note, analysis: undefined };
+                    const foundIndex = debouncedAnalyses.findIndex(
+                        (debouncedAnalysis) => debouncedAnalysis.id === analysisId
+                    );
+                    if (foundIndex < 0) return { note, analysis: undefined };
 
-            const update = [...prev].map((updateItem, index) => ({
-                ...updateItem,
-                ...notes[index],
-            }));
-            return update;
+                    const updatedNote = {
+                        ...note,
+                        analysis_name: debouncedAnalyses[foundIndex].name,
+                        analysisDescription: debouncedAnalyses[foundIndex].description,
+                    };
+
+                    return { note: updatedNote, analysis: debouncedAnalyses[foundIndex] };
+                });
+
+            return update
+                .sort((a, b) => {
+                    if (!a.analysis?.order || !b.analysis?.order) return 0;
+                    return (
+                        new Date(a.analysis.created_at || '').valueOf() -
+                        new Date(b.analysis.created_at || '').valueOf()
+                    );
+                })
+                .map((x) => x.note);
         });
-    }, [notes]);
-
-    /**
-     * this hook runs everytime (AND ONLY WHEN) the analyses change (i.e. when someone is updating the analysis name or description).
-     * From an annotation perspective, the analysis name and description is purely decorative so we debounce the updates here
-     */
-    useEffect(() => {
-        setData((prev) => {
-            if (!prev) return prev;
-            const update: EditStudyAnnotationsNoteCollectionReturn[] = [...(notes || [])];
-            debouncedAnalyses.forEach((analysis) => {
-                const foundNoteIndex = update.findIndex(
-                    (updateNote) => updateNote.analysis === analysis.id
-                );
-                if (foundNoteIndex < 0) return;
-
-                update[foundNoteIndex] = {
-                    ...update[foundNoteIndex],
-                    analysis_name: analysis.name || '',
-                    analysisDescription: analysis.description || '',
-                };
-            });
-            return update;
-        });
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [debouncedAnalyses]);
+    }, [debouncedAnalyses, notes]);
 
     const hiddenRows = useMemo(() => {
         return (notes || [])

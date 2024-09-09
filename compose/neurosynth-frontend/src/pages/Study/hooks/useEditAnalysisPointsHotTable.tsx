@@ -16,10 +16,12 @@ const useAnalysisPointsHotTable = (
 
     const closeInsertRowsDialog = () => {
         setInsertRowsDialogIsOpen(false);
+        hotTableRef.current?.hotInstance?.validateCells();
     };
 
     const openInsertRowsDialog = () => {
         setInsertRowsDialogIsOpen(true);
+        hotTableRef.current?.hotInstance?.validateCells();
     };
 
     // run every time points are updated to validate (in charge of highlighting the cells that are invalid)
@@ -27,6 +29,11 @@ const useAnalysisPointsHotTable = (
         hotTableRef.current?.hotInstance?.validateCells();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [points]);
+
+    useEffect(() => {
+        hotTableRef.current?.hotInstance?.validateCells();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [insertRowsDialogIsOpen]);
 
     // run once initially to set the custom context menu
     useEffect(() => {
@@ -73,6 +80,7 @@ const useAnalysisPointsHotTable = (
     return {
         height,
         insertRowsDialogIsOpen,
+        openInsertRowsDialog,
         closeInsertRowsDialog,
     };
 };

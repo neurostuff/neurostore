@@ -27,12 +27,22 @@ export const hasEmptyStudyPoints = (
 ): { errorMessage: string; isError: boolean } => {
     for (let i = 0; i < analyses.length; i++) {
         const analysis = analyses[i];
+        const isDefaultSinglePoint =
+            analysis.points.length === 1 &&
+            analysis.points.every(
+                ({ x, y, z, subpeak, value, cluster_size }) =>
+                    x === undefined &&
+                    y === undefined &&
+                    z === undefined &&
+                    subpeak === undefined &&
+                    cluster_size === undefined
+            );
 
         const hasEmptyPoint = analysis.points.some(
             (xyz) => xyz.x === undefined || xyz.y === undefined || xyz.z === undefined
         );
 
-        if (hasEmptyPoint)
+        if (!isDefaultSinglePoint && hasEmptyPoint)
             return {
                 errorMessage: `Analysis ${analysis.name} has empty coordinates. Please add coordinatesa and try again.`,
                 isError: true,
