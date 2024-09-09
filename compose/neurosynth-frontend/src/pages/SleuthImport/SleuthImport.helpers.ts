@@ -406,8 +406,7 @@ export const organizeSleuthStubsIntoHTTPRequests = (
             (correspondingBaseStudy.versions as IStudyVersion[]) || []
         ).find((version) => version.user === currUserId);
         if (loggedInUsersExistingStudyVersion && loggedInUsersExistingStudyVersion.id) {
-            // HERE IS WHERE I NEED TO MKAE THE CHECK TO SEE IF THE ANALYSIS ALREADY EXISTS (WITH SAME COORDINATES AND STUFF)
-
+            // if there is a duplicate, then this analyses POST request will just return the existing analysis. If not, it will create the analysis and return that instead
             allRequests.push(() =>
                 API.NeurostoreServices.AnalysesService.analysesPost({
                     ...newAnalysis,
