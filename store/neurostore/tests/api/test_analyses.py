@@ -151,3 +151,34 @@ def test_post_analysis_without_order(auth_client, ingest_neurosynth, session):
 
     # Check if the 'order' field is not None
     assert resp.json()["order"] is not None
+
+
+def test_create_duplicate_analysis(auth_client, ingest_neurosynth, session):
+    # Get an existing analysis from the database
+    analysis_db = Analysis.query.first()
+    analysis = AnalysisSchema().dump(analysis_db)
+    id_ = auth_client.username
+    user = User.query.filter_by(external_id=id_).first()
+    analysis_db.study.user = user
+    for a in analysis_db.study.analyses:
+        a.user = user
+        session.add(a)
+    session.add(analysis_db.study)
+    session.commit()
+
+    # Remove fields that are auto-generated
+    for k in ["user", "id", "created_at", "updated_at", "entities"]:
+        analysis.pop(k, None)
+
+    # Create the first analysis
+    resp = auth_client.post("/api/analyses/", data=analysis)
+    assert resp.status_code == 200
+
+    # Attempt to create a duplicate analysis
+    resp_duplicate = auth_client.post("/api/analyses/", data=analysis)
+    assert resp_duplicate.status_code == 200
+
+    # Check if the duplicate analysis is the same as the original
+    original_analysis = resp.json()
+    duplicate_analysis = resp_duplicate.json()
+    assert original_analysis["id"] == duplicate_analysis["id"]
