@@ -91,7 +91,14 @@ const useStudyStore = create<
                                 ...studyRes.data,
                                 analyses: studyAnalysesToStoreAnalyses(
                                     studyRes.data.analyses as AnalysisReturn[]
-                                ),
+                                ).sort((a, b) => {
+                                    if (!a.order || !b.order)
+                                        return (
+                                            new Date(a.created_at || '').valueOf() -
+                                            new Date(b.created_at || '').valueOf()
+                                        );
+                                    return a.order - b.order;
+                                }),
                                 metadata: metadataToArray(studyRes?.data?.metadata || {}),
                             },
                             // conditions: conditionsRes.data.results?.map((x) => ({
@@ -280,7 +287,18 @@ const useStudyStore = create<
                             isNew: true,
                             conditions: [],
                             weights: [],
-                            points: [],
+                            points: [
+                                {
+                                    cluster_size: undefined,
+                                    id: uuid(),
+                                    isNew: true,
+                                    value: undefined,
+                                    subpeak: undefined,
+                                    x: undefined,
+                                    y: undefined,
+                                    z: undefined,
+                                },
+                            ],
                             pointSpace: undefined,
                             pointStatistic: undefined,
                             id: uuid(), // this is a temporary ID until one is assigned via neurostore
@@ -496,6 +514,19 @@ const useStudyStore = create<
                         const updatedPoints = [
                             ...state.study.analyses[foundAnalysisIndex].points,
                         ].filter((point) => !ids.includes(point.id as string));
+
+                        if (updatedPoints.length === 0) {
+                            updatedPoints.push({
+                                x: undefined,
+                                y: undefined,
+                                z: undefined,
+                                cluster_size: undefined,
+                                subpeak: undefined,
+                                id: uuid(), // temporary ID until one is assigned by neurostore
+                                value: undefined,
+                                isNew: true,
+                            });
+                        }
 
                         updatedAnalyses[foundAnalysisIndex] = {
                             ...updatedAnalyses[foundAnalysisIndex],

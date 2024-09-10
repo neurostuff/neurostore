@@ -5,7 +5,7 @@ import BaseNavigationStyles from 'pages/BaseNavigation/BaseNavigation.styles';
 import { useState } from 'react';
 
 const Downbanner: React.FC = () => {
-    const shouldHide = !!localStorage.getItem('hide-dwonbanner');
+    const shouldHide = !!localStorage.getItem('hide-downbanner-sep-13-2024');
     const [hideBanner, setHideBanner] = useState(shouldHide);
 
     if (hideBanner) return <></>;
@@ -33,11 +33,11 @@ const Downbanner: React.FC = () => {
                 <Box display="flex" alignItems="center">
                     <ErrorOutlineIcon sx={{ mr: '1rem' }} />
                     Neurosynth-compose will be undergoing planned maintenance and will be offline on
-                    friday (Sep/06/2024)
+                    friday (Sep/13/2024)
                 </Box>
                 <IconButton
                     onClick={() => {
-                        localStorage.setItem('hide-dwonbanner', 'true');
+                        localStorage.setItem('hide-downbanner-sep-13-2024', 'true');
                         setHideBanner(true);
                     }}
                     sx={{ padding: 0, ':hover': { backgroundColor: 'secondary.light' } }}

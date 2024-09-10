@@ -1,10 +1,9 @@
 import { HotTable } from '@handsontable/react';
-import Add from '@mui/icons-material/Add';
-import { Box, Button, Link, Typography } from '@mui/material';
-import InputNumberDialog from 'pages/Study/components/EditStudyAnalysisInputNumberDialog';
+import { Box } from '@mui/material';
 import { CellRange } from 'handsontable';
 import { CellChange, ChangeSource, RangeType } from 'handsontable/common';
 import { registerAllModules } from 'handsontable/registry';
+import InputNumberDialog from 'pages/Study/components/EditStudyAnalysisInputNumberDialog';
 import {
     useCreateAnalysisPoints,
     useDeleteAnalysisPoints,
@@ -14,13 +13,14 @@ import {
 import { IStorePoint } from 'pages/Study/store/StudyStore.helpers';
 import React, { useMemo, useRef } from 'react';
 import { sanitizePaste } from '../../../components/HotTables/HotTables.utils';
+import useEditAnalysisPointsHotTable from '../hooks/useEditAnalysisPointsHotTable';
 import {
     EditStudyAnalysisPointsDefaultConfig,
+    getHotTableColumnSettings,
     getHotTableInsertionIndices,
     hotTableColHeaders,
-    getHotTableColumnSettings,
 } from './EditStudyAnalysisPointsHotTable.helpers';
-import useEditAnalysisPointsHotTable from '../hooks/useEditAnalysisPointsHotTable';
+import EditStudyAnalysisPointsHotTableToolbar from './EditStudyAnalysisPointsHotTableToolbar';
 
 registerAllModules();
 
@@ -35,10 +35,10 @@ const EditStudyAnalysisPointsHotTable: React.FC<{ analysisId?: string; readOnly?
             insertRowsAbove: boolean;
             insertedRowsViaPaste: any[][];
         }>({
-            insertRowsAbove: true,
+            insertRowsAbove: false,
             insertedRowsViaPaste: [],
         });
-        const { height, insertRowsDialogIsOpen, closeInsertRowsDialog } =
+        const { height, insertRowsDialogIsOpen, openInsertRowsDialog, closeInsertRowsDialog } =
             useEditAnalysisPointsHotTable(analysisId, hotTableRef, hotTableMetadata);
 
         // handsontable binds and updates to the data references themselves which means the original data is being mutated.
@@ -151,8 +151,11 @@ const EditStudyAnalysisPointsHotTable: React.FC<{ analysisId?: string; readOnly?
 
         const handleInsertRows = (numRows: number) => {
             if (hotTableRef.current?.hotInstance && analysisId) {
-                const selectedCoords = hotTableRef.current.hotInstance.getSelected();
-                if (!selectedCoords) return;
+                let selectedCoords = hotTableRef.current.hotInstance.getSelected();
+
+                if (!selectedCoords) {
+                    selectedCoords = [[0, 0, (points || []).length - 1, 2]];
+                }
 
                 const { insertAboveIndex, insertBelowIndex } =
                     getHotTableInsertionIndices(selectedCoords);
@@ -174,6 +177,41 @@ const EditStudyAnalysisPointsHotTable: React.FC<{ analysisId?: string; readOnly?
             return getHotTableColumnSettings(readOnly);
         }, [readOnly]);
 
+        const handleAddRow = () => {
+            if (!analysisId) return;
+            createPoint(
+                analysisId,
+                [
+                    {
+                        value: undefined,
+                        isNew: true,
+                    },
+                ],
+                points?.length || 0
+            );
+        };
+
+        const handleAddRows = () => {
+            openInsertRowsDialog();
+        };
+
+        // we do not allow multiple selections, so we can assume that the selected rows will have 1 size
+        const handleDeleteRows = () => {
+            if (!hotTableRef.current?.hotInstance) return;
+            const selected = hotTableRef.current.hotInstance.getSelected() || [];
+            if (!selected) return;
+            if (selected.length !== 1) return;
+
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const [startRow, startCol, endRow, endCol] = selected[0];
+
+            const selectedRowIndices: number[] = [];
+            for (let i = startRow; i <= endRow; i++) {
+                selectedRowIndices.push(i);
+            }
+            handleBeforeRemoveRow(0, selectedRowIndices.length || 0, selectedRowIndices, undefined);
+        };
+
         /**
          * Hook Order:
          * 1) handleBeforePaste
@@ -188,66 +226,39 @@ const EditStudyAnalysisPointsHotTable: React.FC<{ analysisId?: string; readOnly?
                     isOpen={insertRowsDialogIsOpen}
                     dialogTitle="Enter number of rows to insert"
                     onCloseDialog={() => closeInsertRowsDialog()}
-                    onInputNumber={(val) => handleInsertRows(val)}
+                    onSubmit={(val) => handleInsertRows(val)}
                     dialogDescription=""
                 />
-                <HotTable
-                    {...EditStudyAnalysisPointsDefaultConfig}
-                    ref={hotTableRef}
-                    afterChange={handleAfterChange} // beforeChange results in weird update issues so we use afterChange
-                    beforePaste={handleBeforePaste}
-                    beforeCreateRow={handleBeforeCreateRow}
-                    beforeRemoveRow={handleBeforeRemoveRow}
-                    afterAutofill={handleAfterAutofill}
-                    height={height}
-                    columns={hotTableColumnSettings}
-                    colHeaders={hotTableColHeaders}
-                    data={[...(points || [])]}
-                />
-                {(points?.length || 0) === 0 && !readOnly ? (
-                    <Typography sx={{ color: 'warning.dark', marginTop: '0.5rem' }}>
-                        No coordinate data.{' '}
-                        <Link
-                            onClick={() => {
-                                if (!analysisId) return;
-                                createPoint(
-                                    analysisId,
-                                    [
-                                        {
-                                            value: undefined,
-                                            isNew: true,
-                                        },
-                                    ],
-                                    0
-                                );
-                            }}
-                            underline="hover"
-                            sx={{ cursor: 'pointer' }}
-                        >
-                            Click here to get started
-                        </Link>
-                    </Typography>
-                ) : (
-                    <Button
-                        endIcon={<Add />}
-                        disabled={readOnly}
-                        onClick={() => {
-                            if (!analysisId) return;
-                            createPoint(
-                                analysisId,
-                                [
-                                    {
-                                        value: undefined,
-                                        isNew: true,
-                                    },
-                                ],
-                                points?.length || 0
-                            );
+                <Box sx={{ display: 'flex' }}>
+                    <Box
+                        sx={{
+                            width: '40px',
+                            height: '120px',
+                            marginRight: '0.5rem',
                         }}
                     >
-                        Add Row
-                    </Button>
-                )}
+                        <EditStudyAnalysisPointsHotTableToolbar
+                            onAddRow={handleAddRow}
+                            onAddRows={handleAddRows}
+                            onDeleteRows={handleDeleteRows}
+                        />
+                    </Box>
+                    <Box sx={{ height: height, width: '100%' }}>
+                        <HotTable
+                            {...EditStudyAnalysisPointsDefaultConfig}
+                            ref={hotTableRef}
+                            afterChange={handleAfterChange} // beforeChange results in weird update issues so we use afterChange
+                            beforePaste={handleBeforePaste}
+                            beforeCreateRow={handleBeforeCreateRow}
+                            beforeRemoveRow={handleBeforeRemoveRow}
+                            afterAutofill={handleAfterAutofill}
+                            height={height}
+                            columns={hotTableColumnSettings}
+                            colHeaders={hotTableColHeaders}
+                            data={[...(points || [])]}
+                        />
+                    </Box>
+                </Box>
             </Box>
         );
     });
