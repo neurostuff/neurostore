@@ -18,7 +18,7 @@ export interface ISearchContainer {
     searchMode?: 'study-search' | 'project-search';
 }
 
-const getNumTotalPages = (totalCount: number | undefined, pageSize: number | undefined) => {
+export const getNumTotalPages = (totalCount: number | undefined, pageSize: number | undefined) => {
     if (!totalCount || !pageSize) {
         return 0;
     }

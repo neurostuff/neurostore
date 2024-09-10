@@ -1,22 +1,9 @@
-import { ArrowDropDown } from '@mui/icons-material';
 import BookmarkIcon from '@mui/icons-material/Bookmark';
 import CheckIcon from '@mui/icons-material/Check';
 import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
-import {
-    Box,
-    Button,
-    Chip,
-    MenuItem,
-    MenuList,
-    Tab,
-    Tabs,
-    TextField,
-    Typography,
-} from '@mui/material';
+import { Box, Button, Chip, Tab, Tabs, Typography } from '@mui/material';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs';
-import NeurosynthPopper from 'components/NeurosynthPopper/NeurosynthPopper';
 import ProjectIsLoadingText from 'components/ProjectIsLoadingText';
-import SearchSelectSortChip from 'components/Search/SearchSelectSortChip';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import TextEdit from 'components/TextEdit/TextEdit';
 import { useGetStudysetById, useUpdateStudyset } from 'hooks';
@@ -372,8 +359,7 @@ const ExtractionPage: React.FC = (props) => {
                     onChange={(_, val) => setDesignOptions(val)}
                 >
                     <Tab value={0} label="Original design" />
-                    <Tab value={1} label="Option 1 (simple)" />
-                    <Tab value={2} label="Option 2 (tabular)" />
+                    <Tab value={1} label="Option 2 (tabular)" />
                 </Tabs>
 
                 {designOptions === 0 && (
@@ -468,91 +454,7 @@ const ExtractionPage: React.FC = (props) => {
                     </>
                 )}
 
-                {designOptions === 1 && (
-                    <Box>
-                        <Box
-                            sx={{
-                                marginBottom: '1rem',
-                            }}
-                        >
-                            {studiesDisplayed.length === 0 && (
-                                <Typography sx={{ color: 'warning.dark' }}>
-                                    No studies marked as {text}
-                                </Typography>
-                            )}
-                            <Box>
-                                <Box>
-                                    <TextField
-                                        variant="outlined"
-                                        sx={{ width: '100%' }}
-                                        placeholder="Search"
-                                    />
-                                </Box>
-                                <Box
-                                    my="1rem"
-                                    sx={{ display: 'flex', justifyContent: 'space-between' }}
-                                >
-                                    <Box>
-                                        <NeurosynthPopper
-                                            anchorElement={ref?.current}
-                                            onClickAway={() => setPopperIsOpen(false)}
-                                            open={popperIsOpen}
-                                        >
-                                            <Box>
-                                                <MenuList sx={{ width: '170px' }}>
-                                                    <MenuItem>None</MenuItem>
-                                                    <MenuItem>Uncategorized</MenuItem>
-                                                    <MenuItem>Saved for later</MenuItem>
-                                                    <MenuItem>Completed</MenuItem>
-                                                </MenuList>
-                                            </Box>
-                                        </NeurosynthPopper>
-                                        <Chip
-                                            ref={ref}
-                                            variant="filled"
-                                            clickable
-                                            onClick={() => setPopperIsOpen(true)}
-                                            icon={<ArrowDropDown />}
-                                            sx={{
-                                                width: '170px',
-                                                marginLeft: '5px',
-                                            }}
-                                            label="Select Filter"
-                                        />
-                                    </Box>
-                                    <Box>
-                                        <SearchSelectSortChip
-                                            onSelectDescOrder={() => null}
-                                            onSelectSort={() => null}
-                                            descOrderChipLabel="DESC"
-                                            searchMode="study-search"
-                                            chipLabel="Sort By"
-                                        />
-                                    </Box>
-                                </Box>
-                                <FixedSizeList
-                                    height={600}
-                                    itemCount={(studyset?.studies || []).length}
-                                    width="100%"
-                                    itemSize={140}
-                                    itemKey={(index, data) => data.studies[index]?.id || index}
-                                    itemData={{
-                                        studies: (studyset?.studies || []) as StudyReturn[],
-                                        currentSelectedChip: currentChip,
-                                        canEdit: canEdit,
-                                        studyStatusList: studyStatusList,
-                                    }}
-                                    layout="vertical"
-                                    overscanCount={3}
-                                >
-                                    {ReadOnlyStudySummaryFixedSizeListRow2}
-                                </FixedSizeList>
-                            </Box>
-                        </Box>
-                    </Box>
-                )}
-
-                {designOptions === 2 && <ExtractionTable />}
+                {designOptions === 1 && <ExtractionTable />}
             </Box>
         </StateHandlerComponent>
     );
