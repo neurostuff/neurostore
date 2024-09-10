@@ -1,9 +1,7 @@
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import BookmarkIcon from '@mui/icons-material/Bookmark';
 import CheckIcon from '@mui/icons-material/Check';
-import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
 import DoneAllIcon from '@mui/icons-material/DoneAll';
+import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
 import {
     Box,
     Button,
@@ -13,9 +11,11 @@ import {
     IconButton,
     Tooltip,
 } from '@mui/material';
-import { useGetExtractionSummary, useGetStudysetById } from 'hooks';
+import GlobalStyles from 'global.styles';
+import { useGetExtractionSummary, useGetStudysetById, useUserCanEdit } from 'hooks';
 import { StudyReturn } from 'neurostore-typescript-sdk';
 import { EExtractionStatus } from 'pages/Extraction/ExtractionPage';
+import { IProjectPageLocationState } from 'pages/Project/ProjectPage';
 import {
     useProjectExtractionAddOrUpdateStudyListStatus,
     useProjectExtractionStudyStatus,
@@ -29,9 +29,6 @@ import { useStudyId } from 'pages/Study/store/StudyStore';
 import { useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import EditStudyToolbarStyles from './EditStudyToolbar.styles';
-import { IProjectPageLocationState } from 'pages/Project/ProjectPage';
-import { useUserCanEdit } from 'hooks';
-import GlobalStyles from 'global.styles';
 
 const getCurrSelectedChipText = (selectedChip: EExtractionStatus) => {
     switch (selectedChip) {
