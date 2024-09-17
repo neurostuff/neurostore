@@ -1,28 +1,49 @@
-import { CheckCircle, QuestionMark } from '@mui/icons-material';
+import { ArrowDownward, CheckCircle, QuestionMark } from '@mui/icons-material';
 import BookmarkIcon from '@mui/icons-material/Bookmark';
-import { Box, Button, ButtonGroup, Typography } from '@mui/material';
+import { Box, Button, ButtonGroup, IconButton, Link, Tooltip, Typography } from '@mui/material';
 import { CellContext, HeaderContext } from '@tanstack/react-table';
-import { IStudyExtractionStatus } from 'hooks/projects/useGetProjects';
-import { StudyReturn } from 'neurostore-typescript-sdk';
+import { useProjectExtractionAddOrUpdateStudyListStatus } from 'pages/Project/store/ProjectStore';
 import { EExtractionStatus } from '../ExtractionPage';
+import { IExtractionTableStudy } from './ExtractionTable';
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 
 export const ExtractionTableStatusCell: React.FC<
-    CellContext<StudyReturn, IStudyExtractionStatus | undefined>
+    CellContext<IExtractionTableStudy, EExtractionStatus | undefined>
 > = (props) => {
-    const value = props.getValue();
-    const status = value?.status;
+    const status = props.getValue();
+
+    const updateStudyListStatus = useProjectExtractionAddOrUpdateStudyListStatus();
+
     return (
         <Box>
             <ButtonGroup>
                 <Button
+                    onClick={(event) => {
+                        event.stopPropagation();
+                        updateStudyListStatus(
+                            props.row.original.id || '',
+                            EExtractionStatus.UNCATEGORIZED
+                        );
+                    }}
                     disableElevation
                     sx={{ paddingX: '0' }}
                     color="warning"
-                    variant={!status ? 'contained' : 'outlined'}
+                    variant={
+                        status === undefined || status === EExtractionStatus.UNCATEGORIZED
+                            ? 'contained'
+                            : 'outlined'
+                    }
                 >
                     <QuestionMark />
                 </Button>
                 <Button
+                    onClick={(event) => {
+                        event.stopPropagation();
+                        updateStudyListStatus(
+                            props.row.original.id || '',
+                            EExtractionStatus.SAVEDFORLATER
+                        );
+                    }}
                     disableElevation
                     sx={{ paddingX: '0' }}
                     color="info"
@@ -31,6 +52,13 @@ export const ExtractionTableStatusCell: React.FC<
                     <BookmarkIcon />
                 </Button>
                 <Button
+                    onClick={(event) => {
+                        event.stopPropagation();
+                        updateStudyListStatus(
+                            props.row.original.id || '',
+                            EExtractionStatus.COMPLETED
+                        );
+                    }}
                     disableElevation
                     sx={{ paddingX: '0' }}
                     color="success"
@@ -43,8 +71,48 @@ export const ExtractionTableStatusCell: React.FC<
     );
 };
 
-export const ExtractionTableStatusHeader: React.FC<HeaderContext<StudyReturn, unknown>> = (
-    props
-) => {
-    return <Typography>Status</Typography>;
+export const ExtractionTableStatusHeader: React.FC<
+    HeaderContext<IExtractionTableStudy, unknown>
+> = ({ table, column }) => {
+    const isSorted = column.getIsSorted();
+    return (
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <Tooltip title="Sort by status" placement="top">
+                <Typography
+                    sx={{ ':hover': { cursor: 'pointer' } }}
+                    underline="hover"
+                    variant="h6"
+                    component={Link}
+                    onClick={() => {
+                        if (!!isSorted) {
+                            table.resetSorting();
+                        } else {
+                            table.setSorting([{ id: 'status', desc: true }]);
+                        }
+                    }}
+                >
+                    Status
+                </Typography>
+            </Tooltip>
+            {!!isSorted && (
+                <>
+                    {isSorted === 'asc' ? (
+                        <IconButton
+                            size="small"
+                            onClick={() => table.setSorting([{ id: 'status', desc: true }])}
+                        >
+                            <ArrowUpwardIcon />
+                        </IconButton>
+                    ) : (
+                        <IconButton
+                            size="small"
+                            onClick={() => table.setSorting([{ id: 'status', desc: false }])}
+                        >
+                            <ArrowDownward />
+                        </IconButton>
+                    )}
+                </>
+            )}
+        </Box>
+    );
 };

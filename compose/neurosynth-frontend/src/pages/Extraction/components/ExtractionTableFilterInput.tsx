@@ -1,39 +1,56 @@
-import { Autocomplete, Box, Input, TextField } from '@mui/material';
+import { Box, TextField } from '@mui/material';
 import { Column } from '@tanstack/react-table';
-import { StudyReturn } from 'neurostore-typescript-sdk';
-import { useCallback } from 'react';
+import { ChangeEvent, useCallback } from 'react';
+import { EExtractionStatus } from '../ExtractionPage';
+import { IExtractionTableStudy } from './ExtractionTable';
+import ExtractionTableJournalAutocomplete from './ExtractionTableJournalAutocomplete';
+import ExtractionTableStatusFilter from './ExtractionTableStatusFilter';
+import DebouncedTextField from 'components/DebouncedTextField';
 
-const ExtractionTableFilterInput: React.FC<{ column: Column<StudyReturn, unknown> }> = ({
+const ExtractionTableFilterInput: React.FC<{ column: Column<IExtractionTableStudy, unknown> }> = ({
     column,
 }) => {
     const columnFilterValue = column.getFilterValue();
     const { filterVariant } = column.columnDef.meta ?? {};
 
-    const handleChange = useCallback(
-        (_event: any, newVal: string | null, _reason: any) => {
-            // column.setFilterValue()
+    const handleChangeText = useCallback(
+        (event: ChangeEvent<HTMLInputElement>) => {
+            column.setFilterValue(event.target.value);
+        },
+        [column]
+    );
+
+    const handleChangeAutocomplete = useCallback(
+        (event: string | null | undefined) => {
+            column.setFilterValue(event ?? null);
         },
         [column]
     );
 
     if (filterVariant === 'status-select') {
-        return <Box>Status Select</Box>;
+        return (
+            <ExtractionTableStatusFilter
+                value={columnFilterValue as EExtractionStatus}
+                onChange={handleChangeAutocomplete}
+            />
+        );
     } else if (filterVariant === 'journal-autocomplete') {
         return (
-            <Box>
-                <Autocomplete
-                    size="small"
-                    renderInput={(params) => <TextField {...params} />}
-                    onChange={handleChange}
-                    value={String(columnFilterValue)}
-                    options={[]}
-                />
-            </Box>
+            <ExtractionTableJournalAutocomplete
+                value={columnFilterValue as string}
+                onChange={handleChangeAutocomplete}
+            />
         );
     } else {
         return (
-            <Box>
-                <TextField size="small" sx={{ width: '100%' }} />
+            <Box sx={{ marginTop: '4px' }}>
+                <DebouncedTextField
+                    size="small"
+                    placeholder="filter by..."
+                    sx={{ width: '100%' }}
+                    onChange={handleChangeAutocomplete}
+                    value={columnFilterValue as string}
+                />
             </Box>
         );
     }

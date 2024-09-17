@@ -1,34 +1,26 @@
-import BookmarkIcon from '@mui/icons-material/Bookmark';
-import CheckIcon from '@mui/icons-material/Check';
-import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
-import { Box, Button, Chip, Tab, Tabs, Typography } from '@mui/material';
+import { Box, Button, Typography } from '@mui/material';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs';
 import ProjectIsLoadingText from 'components/ProjectIsLoadingText';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import TextEdit from 'components/TextEdit/TextEdit';
 import { useGetStudysetById, useUpdateStudyset } from 'hooks';
-import { IStudyExtractionStatus } from 'hooks/projects/useGetProjects';
 import useGetExtractionSummary from 'hooks/useGetExtractionSummary';
-import useGetWindowHeight from 'hooks/useGetWindowHeight';
 import useUserCanEdit from 'hooks/useUserCanEdit';
 import { StudyReturn } from 'neurostore-typescript-sdk';
 import ExtractionOutOfSync from 'pages/Extraction/components/ExtractionOutOfSync';
-import ReadOnlyStudySummaryVirtualizedItem from 'pages/Extraction/components/ReadOnlyStudySummary';
 import { resolveStudysetAndCurationDifferences } from 'pages/Extraction/Extraction.helpers';
 import { IProjectPageLocationState } from 'pages/Project/ProjectPage';
 import {
     useGetProjectIsLoading,
     useInitProjectStoreIfRequired,
     useProjectCurationColumns,
-    useProjectExtractionStudyStatusList,
     useProjectExtractionStudysetId,
     useProjectMetaAnalysisCanEdit,
     useProjectName,
     useProjectUser,
 } from 'pages/Project/store/ProjectStore';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { FixedSizeList, ListChildComponentProps } from 'react-window';
 import ExtractionTable from './components/ExtractionTable';
 
 export enum EExtractionStatus {
@@ -37,76 +29,14 @@ export enum EExtractionStatus {
     'UNCATEGORIZED' = 'uncategorized',
 }
 
-const ReadOnlyStudySummaryFixedSizeListRow: React.FC<
-    ListChildComponentProps<{
-        studies: StudyReturn[];
-        currentSelectedChip: EExtractionStatus;
-        canEdit: boolean;
-        studyStatusList?: IStudyExtractionStatus[];
-    }>
-> = (props) => {
-    const study = props.data.studies[props.index];
-    const currentSelectedChip = props.data.currentSelectedChip;
-    const canEdit = props.data.canEdit;
-
-    return (
-        <ReadOnlyStudySummaryVirtualizedItem
-            {...study}
-            canEdit={canEdit}
-            currentStatus={currentSelectedChip}
-            style={{ ...props.style, backgroundColor: 'white' }}
-        />
-    );
-};
-
-const ReadOnlyStudySummaryFixedSizeListRow2: React.FC<
-    ListChildComponentProps<{
-        studies: StudyReturn[];
-        currentSelectedChip: EExtractionStatus;
-        canEdit: boolean;
-        studyStatusList?: IStudyExtractionStatus[];
-    }>
-> = (props) => {
-    const study = props.data.studies[props.index];
-    const canEdit = props.data.canEdit;
-
-    const styles: React.CSSProperties = {};
-    let studyStatus: EExtractionStatus;
-    const foundStudyStatus = (props.data.studyStatusList || []).find((x) => x.id === study.id);
-    if (!foundStudyStatus) {
-        studyStatus = EExtractionStatus.UNCATEGORIZED;
-    } else {
-        studyStatus = foundStudyStatus.status;
-    }
-
-    if (studyStatus === EExtractionStatus.UNCATEGORIZED) {
-        styles.backgroundColor = 'white';
-    } else if (studyStatus === EExtractionStatus.SAVEDFORLATER) {
-        styles.backgroundColor = '#8cc3ff4a';
-    } else {
-        styles.backgroundColor = '#6bff1b33';
-    }
-
-    return (
-        <ReadOnlyStudySummaryVirtualizedItem
-            {...study}
-            canEdit={canEdit}
-            currentStatus={studyStatus}
-            style={{ ...props.style, ...styles }}
-        />
-    );
-};
-
 const ExtractionPage: React.FC = (props) => {
     const { projectId } = useParams<{ projectId: string | undefined }>();
     const navigate = useNavigate();
-    const windowHeight = useGetWindowHeight();
 
     useInitProjectStoreIfRequired();
 
     const projectName = useProjectName();
     const studysetId = useProjectExtractionStudysetId();
-    const studyStatusList = useProjectExtractionStudyStatusList();
     const columns = useProjectCurationColumns();
     const loading = useGetProjectIsLoading();
     const extractionSummary = useGetExtractionSummary(projectId || '');
@@ -123,20 +53,6 @@ const ExtractionPage: React.FC = (props) => {
     const { mutate } = useUpdateStudyset();
 
     const [fieldBeingUpdated, setFieldBeingUpdated] = useState('');
-    const selectedChipLocalStorageKey = `SELECTED_CHIP-${projectId}`;
-    const selectedChipInLocalStorage =
-        (localStorage.getItem(selectedChipLocalStorageKey) as EExtractionStatus) ||
-        EExtractionStatus.UNCATEGORIZED;
-    const [currentChip, setCurrentChip] = useState<EExtractionStatus>(selectedChipInLocalStorage);
-    const [studiesDisplayedState, setStudiesDisplayedState] = useState<{
-        uncategorized: StudyReturn[];
-        saveForLater: StudyReturn[];
-        completed: StudyReturn[];
-    }>({
-        uncategorized: [],
-        saveForLater: [],
-        completed: [],
-    });
     const [showReconcilePrompt, setShowReconcilePrompt] = useState(false);
 
     useEffect(() => {
@@ -149,52 +65,6 @@ const ExtractionPage: React.FC = (props) => {
             setShowReconcilePrompt(isDifferent);
         }
     }, [columns, getStudysetIsLoading, studyset?.studies, loading]);
-
-    useEffect(() => {
-        if (studyStatusList && studyset?.studies) {
-            const map = new Map<string, EExtractionStatus>();
-
-            studyStatusList.forEach((studyStatus) => {
-                map.set(studyStatus.id, studyStatus.status);
-            });
-
-            setStudiesDisplayedState((prev) => {
-                if (!prev) return prev;
-
-                const allStudies = studyset.studies as StudyReturn[];
-
-                const completed: StudyReturn[] = [];
-                const saveForLater: StudyReturn[] = [];
-                const uncategorized: StudyReturn[] = [];
-
-                allStudies.forEach((study) => {
-                    if (!study?.id) return;
-
-                    if (map.has(study.id)) {
-                        const status = map.get(study.id);
-                        status === EExtractionStatus.COMPLETED
-                            ? completed.push(study)
-                            : saveForLater.push(study);
-                    } else {
-                        uncategorized.push(study);
-                    }
-                });
-
-                return {
-                    completed,
-                    saveForLater,
-                    uncategorized,
-                };
-            });
-        }
-    }, [studyStatusList, studyset?.studies]);
-
-    const handleSelectChip = (arg: EExtractionStatus) => {
-        if (projectId) {
-            setCurrentChip(arg);
-            localStorage.setItem(selectedChipLocalStorageKey, arg);
-        }
-    };
 
     const handleUpdateStudyset = (updatedText: string, fieldName: string) => {
         if (studysetId) {
@@ -229,31 +99,11 @@ const ExtractionPage: React.FC = (props) => {
         }
     };
 
-    const studiesDisplayed =
-        currentChip === EExtractionStatus.COMPLETED
-            ? studiesDisplayedState.completed
-            : currentChip === EExtractionStatus.SAVEDFORLATER
-            ? studiesDisplayedState.saveForLater
-            : studiesDisplayedState.uncategorized;
-
-    const text =
-        currentChip === EExtractionStatus.COMPLETED
-            ? 'completed'
-            : currentChip === EExtractionStatus.SAVEDFORLATER
-            ? 'saved for later'
-            : 'uncategorized';
-
-    const pxInVh = useMemo(() => Math.round((windowHeight * 60) / 100), [windowHeight]);
-
     const isReadyToMoveToNextStep = useMemo(
         () =>
             extractionSummary.total === extractionSummary.completed && extractionSummary.total > 0,
         [extractionSummary]
     );
-
-    const [designOptions, setDesignOptions] = useState(0);
-    const [popperIsOpen, setPopperIsOpen] = useState(false);
-    const ref = useRef(null);
 
     return (
         <StateHandlerComponent isError={getStudysetIsError} isLoading={getStudysetIsLoading}>
@@ -353,108 +203,9 @@ const ExtractionPage: React.FC = (props) => {
                     </Box>
                 </Box>
 
-                <Tabs
-                    sx={{ mb: '2rem' }}
-                    value={designOptions}
-                    onChange={(_, val) => setDesignOptions(val)}
-                >
-                    <Tab value={0} label="Original design" />
-                    <Tab value={1} label="Option 2 (tabular)" />
-                </Tabs>
-
-                {designOptions === 0 && (
-                    <>
-                        <Box
-                            sx={{
-                                margin: '1rem 0',
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                            }}
-                        >
-                            <Box>
-                                <Chip
-                                    size="medium"
-                                    onClick={() =>
-                                        handleSelectChip(EExtractionStatus.UNCATEGORIZED)
-                                    }
-                                    color="warning"
-                                    sx={{ marginRight: '8px' }}
-                                    variant={
-                                        currentChip === EExtractionStatus.UNCATEGORIZED
-                                            ? 'filled'
-                                            : 'outlined'
-                                    }
-                                    icon={<QuestionMarkIcon />}
-                                    label={`Uncategorized (${studiesDisplayedState.uncategorized.length})`}
-                                />
-                                <Chip
-                                    size="medium"
-                                    onClick={() =>
-                                        handleSelectChip(EExtractionStatus.SAVEDFORLATER)
-                                    }
-                                    variant={
-                                        currentChip === EExtractionStatus.SAVEDFORLATER
-                                            ? 'filled'
-                                            : 'outlined'
-                                    }
-                                    color="info"
-                                    sx={{ marginRight: '8px' }}
-                                    icon={<BookmarkIcon />}
-                                    label={`Save for later (${studiesDisplayedState.saveForLater.length})`}
-                                />
-                                <Chip
-                                    size="medium"
-                                    onClick={() => handleSelectChip(EExtractionStatus.COMPLETED)}
-                                    variant={
-                                        currentChip === EExtractionStatus.COMPLETED
-                                            ? 'filled'
-                                            : 'outlined'
-                                    }
-                                    color="success"
-                                    sx={{ marginRight: '8px' }}
-                                    icon={<CheckIcon />}
-                                    label={`Completed (${studiesDisplayedState.completed.length})`}
-                                />
-                            </Box>
-                            <Box>
-                                <Typography sx={{ textAlign: 'end' }} variant="h6">
-                                    {studiesDisplayed.length} studies
-                                </Typography>
-                            </Box>
-                        </Box>
-                        <Box
-                            sx={{
-                                marginBottom: '1rem',
-                            }}
-                        >
-                            {studiesDisplayed.length === 0 && (
-                                <Typography sx={{ color: 'warning.dark' }}>
-                                    No studies marked as {text}
-                                </Typography>
-                            )}
-                            <Box>
-                                <FixedSizeList
-                                    height={pxInVh}
-                                    itemCount={studiesDisplayed.length}
-                                    width="100%"
-                                    itemSize={140}
-                                    itemKey={(index, data) => data.studies[index]?.id || index}
-                                    itemData={{
-                                        studies: studiesDisplayed,
-                                        currentSelectedChip: currentChip,
-                                        canEdit: canEdit,
-                                    }}
-                                    layout="vertical"
-                                    overscanCount={3}
-                                >
-                                    {ReadOnlyStudySummaryFixedSizeListRow}
-                                </FixedSizeList>
-                            </Box>
-                        </Box>
-                    </>
-                )}
-
-                {designOptions === 1 && <ExtractionTable />}
+                <Box sx={{ marginTop: '0.5rem' }}>
+                    <ExtractionTable />
+                </Box>
             </Box>
         </StateHandlerComponent>
     );
