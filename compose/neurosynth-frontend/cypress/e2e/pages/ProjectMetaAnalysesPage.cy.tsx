@@ -7,7 +7,7 @@ const PAGE_NAME = 'ProjectMetaAnalysesPage';
 
 describe(PAGE_NAME, () => {
     beforeEach(() => {
-        cy.clearLocalStorage().clearSessionStorage();
+        cy.clearLocalStorage();
         cy.intercept('GET', 'https://api.appzi.io/**', { fixture: 'appzi' }).as('appziFixture');
         cy.intercept('GET', `**/api/specifications/**`, { fixture: 'specification' }).as(
             'specificationFixture'

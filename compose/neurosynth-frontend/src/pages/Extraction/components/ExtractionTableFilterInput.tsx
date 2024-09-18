@@ -1,24 +1,17 @@
-import { Box, TextField } from '@mui/material';
+import { Box } from '@mui/material';
 import { Column } from '@tanstack/react-table';
-import { ChangeEvent, useCallback } from 'react';
+import DebouncedTextField from 'components/DebouncedTextField';
+import { useCallback } from 'react';
 import { EExtractionStatus } from '../ExtractionPage';
 import { IExtractionTableStudy } from './ExtractionTable';
 import ExtractionTableJournalAutocomplete from './ExtractionTableJournalAutocomplete';
 import ExtractionTableStatusFilter from './ExtractionTableStatusFilter';
-import DebouncedTextField from 'components/DebouncedTextField';
 
 const ExtractionTableFilterInput: React.FC<{ column: Column<IExtractionTableStudy, unknown> }> = ({
     column,
 }) => {
     const columnFilterValue = column.getFilterValue();
     const { filterVariant } = column.columnDef.meta ?? {};
-
-    const handleChangeText = useCallback(
-        (event: ChangeEvent<HTMLInputElement>) => {
-            column.setFilterValue(event.target.value);
-        },
-        [column]
-    );
 
     const handleChangeAutocomplete = useCallback(
         (event: string | null | undefined) => {

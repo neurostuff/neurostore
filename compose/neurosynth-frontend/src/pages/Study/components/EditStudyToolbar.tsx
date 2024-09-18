@@ -4,7 +4,7 @@ import BookmarkIcon from '@mui/icons-material/Bookmark';
 import CheckIcon from '@mui/icons-material/Check';
 import DoneAllIcon from '@mui/icons-material/DoneAll';
 import { Box, CircularProgress, IconButton, Tooltip, Typography } from '@mui/material';
-import { ColumnFiltersState } from '@tanstack/react-table';
+import { ColumnFiltersState, SortingState } from '@tanstack/react-table';
 import ProgressLoader from 'components/ProgressLoader';
 import GlobalStyles from 'global.styles';
 import { useGetExtractionSummary, useGetStudysetById, useUserCanEdit } from 'hooks';
@@ -25,23 +25,29 @@ import { useNavigate } from 'react-router-dom';
 import EditStudyToolbarStyles from './EditStudyToolbar.styles';
 
 const EditStudyToolbar: React.FC<{ isViewOnly?: boolean }> = ({ isViewOnly = false }) => {
-    const projectId = useProjectId();
-    const studyId = useStudyId();
-    const studysetId = useProjectExtractionStudysetId();
-    const extractionStatus = useProjectExtractionStudyStatus(studyId || '');
-    const extractionSummary = useGetExtractionSummary(projectId || '');
     const navigate = useNavigate();
     const canEditMetaAnalyses = useProjectMetaAnalysisCanEdit();
+
+    const projectId = useProjectId();
+    const extractionSummary = useGetExtractionSummary(projectId || '');
+
+    const studyId = useStudyId();
+    const extractionStatus = useProjectExtractionStudyStatus(studyId || '');
+
     const user = useProjectUser();
     const canEdit = useUserCanEdit(user ?? undefined);
+
+    const studysetId = useProjectExtractionStudysetId();
     const { data, isLoading, isError } = useGetStudysetById(studysetId || '', true);
 
     // derived from the extraction table
     const [studiesState, setStudiesState] = useState<{
-        filters: ColumnFiltersState[];
+        columnFilters: ColumnFiltersState;
+        sorting: SortingState;
         studies: string[];
     }>({
-        filters: [],
+        columnFilters: [],
+        sorting: [],
         studies: [],
     });
 
@@ -53,11 +59,16 @@ const EditStudyToolbar: React.FC<{ isViewOnly?: boolean }> = ({ isViewOnly = fal
                 studies: (data?.studies || []).map((study) => (study as StudyReturn).id as string),
             }));
         } else {
-            const parsedState = JSON.parse(stateFromSessionStorage) as {
-                filters: ColumnFiltersState[];
-                studies: string[];
-            };
-            setStudiesState(parsedState);
+            try {
+                const parsedState = JSON.parse(stateFromSessionStorage) as {
+                    columnFilters: ColumnFiltersState;
+                    sorting: SortingState;
+                    studies: string[];
+                };
+                setStudiesState(parsedState);
+            } catch (e) {
+                throw new Error('couldnt parse table state from session storage');
+            }
         }
     }, [data?.studies, projectId]);
 

@@ -14,7 +14,7 @@ describe('DoSleuthImport', () => {
     const neurosynthAPIBaseURL = Cypress.env('neurosynthAPIBaseURL');
 
     beforeEach(() => {
-        cy.clearLocalStorage().clearSessionStorage();
+        cy.clearLocalStorage();
         cy.intercept('GET', 'https://api.appzi.io/**', { fixture: 'appzi' }).as('appziFixture');
 
         cy.intercept('POST', `https://www.google-analytics.com/*/**`, {}).as(

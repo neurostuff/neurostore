@@ -16,11 +16,16 @@ const DebouncedTextField: React.FC<EDebouncedTextFieldProps> = ({
     useEffect(() => {
         const debounce = setTimeout(() => {
             onChange && onChange(debouncedValue);
-        }, 500);
+        }, 400);
         return () => {
             clearTimeout(debounce);
         };
     }, [debouncedValue, onChange]);
+
+    // when an update occurs from outside the component, we want to reflect that new value (like if a filter is cleard)
+    useEffect(() => {
+        setDebouncedValue(value || '');
+    }, [value]);
 
     const handleOnChange = (event: ChangeEvent<HTMLInputElement>) => {
         setDebouncedValue(event.target.value);

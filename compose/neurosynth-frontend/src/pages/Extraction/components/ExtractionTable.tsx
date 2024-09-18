@@ -32,7 +32,7 @@ import {
     useProjectExtractionStudyStatusList,
     useProjectId,
 } from 'pages/Project/store/ProjectStore';
-import { ChangeEvent, useCallback, useMemo, useState } from 'react';
+import { ChangeEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { EExtractionStatus } from '../ExtractionPage';
 import styles from './ExtractionTable.module.css';
@@ -68,6 +68,21 @@ const ExtractionTable: React.FC = () => {
         pageIndex: 0,
         pageSize: 25,
     });
+
+    useEffect(() => {
+        const state = sessionStorage.getItem(`${projectId}-extraction-table`);
+        if (!state) return;
+
+        const parsedState = JSON.parse(state) as {
+            columnFilters: ColumnFiltersState;
+            sorting: SortingState;
+            studies: string[];
+        };
+
+        if (parsedState.columnFilters) setColumnFilters(parsedState.columnFilters);
+        if (parsedState.sorting) setSorting(parsedState.sorting);
+    }, [projectId]);
+
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
     const [sorting, setSorting] = useState<SortingState>([]);
 
@@ -301,7 +316,8 @@ const ExtractionTable: React.FC = () => {
                                     sessionStorage.setItem(
                                         `${projectId}-extraction-table`,
                                         JSON.stringify({
-                                            filters: table.getState().columnFilters,
+                                            columnFilters: table.getState().columnFilters,
+                                            sorting: table.getState().sorting,
                                             studies: table
                                                 .getSortedRowModel()
                                                 .rows.map((r) => r.original.id),
@@ -364,6 +380,11 @@ const ExtractionTable: React.FC = () => {
                             .filter((filter) => !!filter.value)
                             .map((filter) => (
                                 <Chip
+                                    onDelete={() =>
+                                        table.setColumnFilters((prev) =>
+                                            prev.filter((f) => f.id !== filter.id)
+                                        )
+                                    }
                                     key={filter.id}
                                     color="primary"
                                     variant="outlined"
@@ -375,6 +396,11 @@ const ExtractionTable: React.FC = () => {
                         {sorting.map((sort) => (
                             <Chip
                                 key={sort.id}
+                                onDelete={() => {
+                                    table.setSorting((prev) =>
+                                        prev.filter((f) => f.id !== sort.id)
+                                    );
+                                }}
                                 color="secondary"
                                 variant="outlined"
                                 sx={{ margin: '1px', fontSize: '12px', maxWidth: '200px' }}
