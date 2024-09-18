@@ -165,6 +165,7 @@ const ExtractionTable: React.FC = () => {
                 size: 15,
                 minSize: 15,
                 maxSize: 15,
+                sortingFn: 'alphanumeric',
                 enableSorting: true,
                 enableColumnFilter: true,
                 filterFn: 'includesString',
@@ -274,7 +275,10 @@ const ExtractionTable: React.FC = () => {
                 <Typography variant="h5">Total: {data.length} studies</Typography>
             </Box>
             <TableContainer sx={{ marginBottom: '2rem' }}>
-                <Table size="small" sx={{ tableLayout: 'fixed', width: '100%' }}>
+                <Table
+                    size="small"
+                    sx={{ tableLayout: 'fixed', width: '100%', minWidth: '1300px' }}
+                >
                     <TableHead>
                         {table.getHeaderGroups().map((headerGroup) => (
                             <TableRow key={headerGroup.id}>
@@ -371,7 +375,7 @@ const ExtractionTable: React.FC = () => {
                         sx={{
                             maxWidth: '40vw',
                             display: 'flex',
-                            justifyContent: 'flex-start',
+                            justifyContent: 'flex-end',
                             flexWrap: 'wrap',
                             marginRight: '1rem',
                         }}
@@ -412,7 +416,7 @@ const ExtractionTable: React.FC = () => {
                         ))}
                     </Box>
                     <Box>
-                        <Typography>
+                        <Typography sx={{ whiteSpace: 'nowrap' }}>
                             Viewing {table.getFilteredRowModel().rows.length} / {data.length}
                         </Typography>
                     </Box>
