@@ -27,20 +27,20 @@ jobs:
       run: |
         ssh git@deepdream.psy.utexas.edu 'cd /var/www/neurostore && git fetch origin && git reset --hard origin/staging && git clean -fd'
 
-    - name: Detect changes in specific directories
+    - name: Detect changes in specific directories from the previous commit
       id: changes
       run: |
         git fetch origin staging
-        changes_in_store=$(git diff --name-only origin/staging HEAD | grep '^store/' || echo "")
-        changes_in_compose=$(git diff --name-only origin/staging HEAD | grep '^compose/' || echo "")
-        changes_in_frontend=$(git diff --name-only origin/staging HEAD | grep '^compose/neurosynth-frontend/' || echo "")
+        changes_in_store=$(git diff --name-only HEAD~1 HEAD | grep '^store/' || echo "")
+        changes_in_compose=$(git diff --name-only HEAD~1 HEAD | grep '^compose/' || echo "")
+        changes_in_frontend=$(git diff --name-only HEAD~1 HEAD | grep '^compose/neurosynth-frontend/' || echo "")
 
-        echo "::set-output name=store::$changes_in_store"
-        echo "::set-output name=compose::$changes_in_compose"
-        echo "::set-output name=frontend::$changes_in_frontend"
+        echo "store=$changes_in_store" >> $GITHUB_ENV
+        echo "compose=$changes_in_compose" >> $GITHUB_ENV
+        echo "frontend=$changes_in_frontend" >> $GITHUB_ENV
 
     - name: Run Docker commands in store directory if changes detected
-      if: ${{ steps.changes.outputs.store }}
+      if: ${{ env.store }}
       run: |
         ssh git@deepdream.psy.utexas.edu '
           cd /var/www/neurostore/store && 
@@ -56,7 +56,7 @@ jobs:
         '
 
     - name: Run Docker commands in compose directory if changes detected
-      if: ${{ steps.changes.outputs.compose && !steps.changes.outputs.frontend }}
+      if: ${{ env.compose && !env.frontend }}
       run: |
         ssh git@deepdream.psy.utexas.edu '
           cd /var/www/neurostore/compose && 
@@ -72,7 +72,7 @@ jobs:
         '
 
     - name: Skip Docker commands and run frontend build if only frontend changes detected
-      if: ${{ steps.changes.outputs.frontend }}
+      if: ${{ env.frontend }}
       run: |
         ssh git@deepdream.psy.utexas.edu '
           cd /var/www/neurostore/compose/neurosynth-frontend && 
