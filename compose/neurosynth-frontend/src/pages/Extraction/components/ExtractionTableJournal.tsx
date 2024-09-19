@@ -1,8 +1,8 @@
-import { Box, IconButton, Link, Tooltip, Typography } from '@mui/material';
-import { CellContext, HeaderContext } from '@tanstack/react-table';
-import { IExtractionTableStudy } from './ExtractionTable';
 import { ArrowDownward } from '@mui/icons-material';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
+import { Box, IconButton, Tooltip, Typography } from '@mui/material';
+import { CellContext, HeaderContext } from '@tanstack/react-table';
+import { IExtractionTableStudy } from './ExtractionTable';
 
 export const ExtractionTableJournalCell: React.FC<CellContext<IExtractionTableStudy, string>> = (
     props
@@ -17,41 +17,35 @@ export const ExtractionTableJournalHeader: React.FC<
     const isSorted = column.getIsSorted();
     return (
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <Tooltip title="Sort by journal" placement="top">
-                <Typography
-                    sx={{ ':hover': { cursor: 'pointer' } }}
-                    underline="hover"
-                    variant="h6"
-                    component={Link}
-                    onClick={() => {
-                        if (!!isSorted) {
-                            table.resetSorting();
-                        } else {
-                            table.setSorting([{ id: 'journal', desc: true }]);
-                        }
-                    }}
+            <Typography variant="h6" sx={{ marginRight: '4px' }}>
+                Journal
+            </Typography>
+            {!isSorted ? (
+                <Tooltip title="Sort by Journal" placement="top">
+                    <IconButton
+                        size="small"
+                        onClick={() => {
+                            if (!!isSorted) {
+                                table.resetSorting();
+                            } else {
+                                table.setSorting([{ id: 'journal', desc: true }]);
+                            }
+                        }}
+                    >
+                        <ArrowDownward sx={{ color: 'lightgray' }} />
+                    </IconButton>
+                </Tooltip>
+            ) : isSorted === 'asc' ? (
+                <IconButton size="small" onClick={() => table.resetSorting()}>
+                    <ArrowUpwardIcon sx={{ color: 'secondary.main' }} />
+                </IconButton>
+            ) : (
+                <IconButton
+                    size="small"
+                    onClick={() => table.setSorting([{ id: 'journal', desc: false }])}
                 >
-                    Journal
-                </Typography>
-            </Tooltip>
-            {!!isSorted && (
-                <>
-                    {isSorted === 'asc' ? (
-                        <IconButton
-                            size="small"
-                            onClick={() => table.setSorting([{ id: 'journal', desc: true }])}
-                        >
-                            <ArrowUpwardIcon />
-                        </IconButton>
-                    ) : (
-                        <IconButton
-                            size="small"
-                            onClick={() => table.setSorting([{ id: 'journal', desc: false }])}
-                        >
-                            <ArrowDownward />
-                        </IconButton>
-                    )}
-                </>
+                    <ArrowDownward sx={{ color: 'secondary.main' }} />
+                </IconButton>
             )}
         </Box>
     );
