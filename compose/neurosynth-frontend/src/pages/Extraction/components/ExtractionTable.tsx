@@ -227,13 +227,11 @@ const ExtractionTable: React.FC = () => {
         getPaginationRowModel: getPaginationRowModel(),
         getFilteredRowModel: getFilteredRowModel(),
         onColumnFiltersChange: setColumnFilters,
+        autoResetPageIndex: false,
         state: {
             pagination: pagination,
             columnFilters: columnFilters,
             sorting: sorting,
-        },
-        meta: {
-            studyStatusMap,
         },
     });
 
@@ -294,6 +292,7 @@ const ExtractionTable: React.FC = () => {
                                             )}
                                             {header.column.getCanFilter() ? (
                                                 <ExtractionTableFilterInput
+                                                    table={table}
                                                     column={header.column}
                                                 />
                                             ) : (
