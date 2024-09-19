@@ -27,7 +27,7 @@ jobs:
       run: |
         ssh git@deepdream.psy.utexas.edu '
           cd /var/www/neurostore && 
-          git fetch origin --unshallow && # Fetch full history if shallow clone
+          git fetch origin && # Fetch full history
           git fetch --all && # Fetch all branches and their histories
           git reset --hard origin/staging && 
           git clean -fd
