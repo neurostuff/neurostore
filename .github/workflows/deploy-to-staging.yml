@@ -36,20 +36,27 @@ jobs:
     - name: Detect changes in specific directories from the previous commit
       id: changes
       run: |
-        # Fetch full commit history and compare with the previous commit
-        ssh git@deepdream.psy.utexas.edu '
+        # Capture the output of the SSH session and process it locally
+        ssh_output=$(ssh git@deepdream.psy.utexas.edu '
           cd /var/www/neurostore &&
-          git fetch origin && # Ensure we have the latest changes
-          git log -n 2 && # Log last two commits to ensure previous commit exists
-          changes_in_store=$(git diff --name-only HEAD~1 -- | grep '^store/' || echo "") &&
-          changes_in_compose=$(git diff --name-only HEAD~1 -- | grep '^compose/' || echo "") &&
-          changes_in_frontend=$(git diff --name-only HEAD~1 -- | grep '^compose/neurosynth-frontend/' || echo "")
+          git fetch origin &&
+          git log -n 2 &&
+          changes_in_store=$(git diff --name-only HEAD~1 -- | grep "^store/" || echo "") &&
+          changes_in_compose=$(git diff --name-only HEAD~1 -- | grep "^compose/" || echo "") &&
+          changes_in_frontend=$(git diff --name-only HEAD~1 -- | grep "^compose/neurosynth-frontend/" || echo "") &&
+          
+          # Print results for local parsing
+          echo "store:$changes_in_store" &&
+          echo "compose:$changes_in_compose" &&
+          echo "frontend:$changes_in_frontend"
+        ')
 
-          # Save the outputs for the next steps
-          echo "store=$changes_in_store" >> $GITHUB_OUTPUT
-          echo "compose=$changes_in_compose" >> $GITHUB_OUTPUT
-          echo "frontend=$changes_in_frontend" >> $GITHUB_OUTPUT
-        '
+        # Parse the results locally and set outputs
+        echo "$ssh_output" | while IFS=':' read -r key value; do
+          if [ -n "$value" ]; then
+            echo "$key=$value" >> $GITHUB_OUTPUT
+          fi
+        done
 
     - name: Run Docker commands in store directory if changes detected
       if: ${{ steps.changes.outputs.store }}
