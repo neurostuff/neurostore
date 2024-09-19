@@ -2,7 +2,7 @@
 
 describe('ImportStudiesDialog', () => {
     beforeEach(() => {
-        cy.clearLocalStorage().clearSessionStorage();
+        cy.clearLocalStorage();
         cy.intercept('GET', 'https://api.appzi.io/**', { fixture: 'appzi' }).as('appziFixture');
         cy.intercept('GET', `**/api/projects/*`, {
             fixture: 'projects/projectExtractionStep',
@@ -198,14 +198,14 @@ describe('ImportStudiesDialog', () => {
         });
 
         it('should set the source and show the input', () => {
-            cy.get('input[role="combobox"').click();
+            cy.get('input[role="combobox"]').click();
             cy.contains('li', 'Scopus').click();
             cy.get('textarea').should('be.visible');
             cy.contains(/Input is empty/).should('be.visible');
         });
 
         it('should set the sources and enable the next button', () => {
-            cy.get('input[role="combobox"').click();
+            cy.get('input[role="combobox"]').click();
             cy.contains('li', 'Scopus').click();
             cy.get('textarea[placeholder="paste in valid endnote, bibtex, or RIS syntax"]')
                 .click()
@@ -220,7 +220,7 @@ describe('ImportStudiesDialog', () => {
         });
 
         it('should show an error message', () => {
-            cy.get('input[role="combobox"').click();
+            cy.get('input[role="combobox"]').click();
             cy.contains('li', 'Scopus').click();
             cy.get('textarea[placeholder="paste in valid endnote, bibtex, or RIS syntax"]').type(
                 'INVALID FORMAT'
@@ -229,7 +229,7 @@ describe('ImportStudiesDialog', () => {
         });
 
         it('should import studies', () => {
-            cy.get('input[role="combobox"').click();
+            cy.get('input[role="combobox"]').click();
             cy.contains('li', 'Scopus').click();
             cy.get('textarea[placeholder="paste in valid endnote, bibtex, or RIS syntax"]')
                 .click()
@@ -249,7 +249,7 @@ describe('ImportStudiesDialog', () => {
         });
 
         it('should upload a onenote (ENW) file', () => {
-            cy.get('input[role="combobox"').click();
+            cy.get('input[role="combobox"]').click();
             cy.contains('li', 'Scopus').click();
             cy.get('label[role="button"]').selectFile(
                 'cypress/fixtures/standardFiles/onenoteStudies.txt'

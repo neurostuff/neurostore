@@ -1,7 +1,7 @@
 import { HotTable } from '@handsontable/react';
 import { Box } from '@mui/material';
 import { CellChange, ChangeSource, RangeType } from 'handsontable/common';
-import { useRef } from 'react';
+import { useMemo, useRef } from 'react';
 import { useAnnotationNoteKeys, useUpdateAnnotationNotes } from 'stores/AnnotationStore.actions';
 import { sanitizePaste } from 'components/HotTables/HotTables.utils';
 import useEditStudyAnnotationsHotTable from 'pages/Study/components/useEditStudyAnnotationsHotTable';
@@ -44,6 +44,10 @@ const EditStudyAnnotationsHotTable: React.FC<{ readonly?: boolean }> = ({ readon
         return true;
     };
 
+    const memoizedData = useMemo(() => {
+        return JSON.parse(JSON.stringify(data || []));
+    }, [data]);
+
     return (
         <Box sx={{ width: '100%' }}>
             <HotTable
@@ -58,7 +62,7 @@ const EditStudyAnnotationsHotTable: React.FC<{ readonly?: boolean }> = ({ readon
                 colWidths={colWidths}
                 columns={columns}
                 colHeaders={colHeaders}
-                data={JSON.parse(JSON.stringify(data || []))}
+                data={memoizedData}
                 ref={hotTableRef}
             />
         </Box>

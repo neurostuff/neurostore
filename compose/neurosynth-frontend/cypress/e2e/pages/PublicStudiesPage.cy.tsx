@@ -9,7 +9,7 @@ const PAGE_NAME = 'StudiesPage';
 
 describe.skip(PAGE_NAME, () => {
     beforeEach(() => {
-        cy.clearLocalStorage().clearSessionStorage();
+        cy.clearLocalStorage();
         cy.intercept('GET', 'https://api.appzi.io/**', { fixture: 'appzi' }).as('appziFixture');
     });
 
