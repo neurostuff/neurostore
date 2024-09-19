@@ -25,7 +25,7 @@ jobs:
 
     - name: Force sync staging branch to remote server
       run: |
-        ssh jdkent@deepdream.psy.utexas.edu 'cd /var/www/neurostore && git fetch origin && git reset --hard origin/staging && git clean -fd'
+        ssh git@deepdream.psy.utexas.edu 'cd /var/www/neurostore && git fetch origin && git reset --hard origin/staging && git clean -fd'
 
     - name: Detect changes in specific directories
       id: changes
@@ -42,7 +42,7 @@ jobs:
     - name: Run Docker commands in store directory if changes detected
       if: ${{ steps.changes.outputs.store }}
       run: |
-        ssh jdkent@deepdream.psy.utexas.edu '
+        ssh git@deepdream.psy.utexas.edu '
           cd /var/www/neurostore/store && 
           docker compose down && 
           docker compose build && 
@@ -58,7 +58,7 @@ jobs:
     - name: Run Docker commands in compose directory if changes detected
       if: ${{ steps.changes.outputs.compose && !steps.changes.outputs.frontend }}
       run: |
-        ssh jdkent@deepdream.psy.utexas.edu '
+        ssh git@deepdream.psy.utexas.edu '
           cd /var/www/neurostore/compose && 
           docker compose down && 
           docker compose build && 
@@ -74,7 +74,7 @@ jobs:
     - name: Skip Docker commands and run frontend build if only frontend changes detected
       if: ${{ steps.changes.outputs.frontend }}
       run: |
-        ssh jdkent@deepdream.psy.utexas.edu '
+        ssh git@deepdream.psy.utexas.edu '
           cd /var/www/neurostore/compose/neurosynth-frontend && 
           npm install && 
           npm run build:staging
