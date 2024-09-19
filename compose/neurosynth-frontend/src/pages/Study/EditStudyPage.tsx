@@ -22,6 +22,7 @@ import { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useClearAnnotationStore, useInitAnnotationStore } from 'stores/AnnotationStore.actions';
 import { useAnnotationId, useGetAnnotationIsLoading } from 'stores/AnnotationStore.getters';
+import DisplayExtractionTableState from './components/DisplayExtractionTableState';
 
 const EditStudyPage: React.FC = (props) => {
     const { studyId } = useParams<{ studyId: string }>();
@@ -72,6 +73,7 @@ const EditStudyPage: React.FC = (props) => {
             </Box>
             <Box sx={EditStudyPageStyles.loadingButtonContainer}>
                 <EditStudySwapVersionButton />
+                <DisplayExtractionTableState />
                 <EditStudySaveButton />
             </Box>
         </StateHandlerComponent>

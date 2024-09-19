@@ -205,8 +205,7 @@ describe('ExtractionTable', () => {
         });
 
         it('should sort by year desc', () => {
-            cy.contains('Year').click();
-            cy.get('[data-testid="ArrowDownwardIcon"]').should('exist');
+            cy.get('[data-testid="ArrowDownwardIcon"]').eq(0).click();
 
             cy.wait('@studysetFixture').then((studysetFixture) => {
                 const studyset = studysetFixture.response?.body as StudysetReturn;
@@ -227,8 +226,8 @@ describe('ExtractionTable', () => {
         });
 
         it('should sort by year asc', () => {
-            cy.contains('Year').click();
-            cy.get('[data-testid="ArrowDownwardIcon"]').click();
+            cy.get('[data-testid="ArrowDownwardIcon"]').eq(0).click();
+            cy.get('[data-testid="ArrowDownwardIcon"]').eq(0).click();
             cy.get('[data-testid="ArrowUpwardIcon"]').should('exist');
 
             cy.wait('@studysetFixture').then((studysetFixture) => {
@@ -250,8 +249,7 @@ describe('ExtractionTable', () => {
         });
 
         it('should sort by name asc', () => {
-            cy.contains('Name').click();
-            cy.get('[data-testid="ArrowDownwardIcon"]').should('exist');
+            cy.get('[data-testid="ArrowDownwardIcon"]').eq(1).click();
 
             cy.wait('@studysetFixture').then((studysetFixture) => {
                 const studyset = studysetFixture.response?.body as StudysetReturn;
@@ -272,8 +270,8 @@ describe('ExtractionTable', () => {
         });
 
         it('should sort by name desc', () => {
-            cy.contains('Name').click();
-            cy.get('[data-testid="ArrowDownwardIcon"]').click();
+            cy.get('[data-testid="ArrowDownwardIcon"]').eq(1).click();
+            cy.get('[data-testid="ArrowDownwardIcon"]').eq(1).click();
             cy.get('[data-testid="ArrowUpwardIcon"]').should('exist');
 
             cy.wait('@studysetFixture').then((studysetFixture) => {
@@ -293,8 +291,7 @@ describe('ExtractionTable', () => {
         });
 
         it('should sort by authors desc', () => {
-            cy.contains('Authors').click();
-            cy.get('[data-testid="ArrowDownwardIcon"]').should('exist');
+            cy.get('[data-testid="ArrowDownwardIcon"]').eq(2).click();
 
             cy.wait('@studysetFixture').then((studysetFixture) => {
                 const studyset = studysetFixture.response?.body as StudysetReturn;
@@ -313,8 +310,8 @@ describe('ExtractionTable', () => {
         });
 
         it('should sort by authors asc', () => {
-            cy.contains('Authors').click();
-            cy.get('[data-testid="ArrowDownwardIcon"]').click();
+            cy.get('[data-testid="ArrowDownwardIcon"]').eq(2).click();
+            cy.get('[data-testid="ArrowDownwardIcon"]').eq(2).click();
             cy.get('[data-testid="ArrowUpwardIcon"]').should('exist');
 
             cy.wait('@studysetFixture').then((studysetFixture) => {
@@ -334,8 +331,7 @@ describe('ExtractionTable', () => {
         });
 
         it('should sort by journal desc', () => {
-            cy.contains('Journal').click();
-            cy.get('[data-testid="ArrowDownwardIcon"]').should('exist');
+            cy.get('[data-testid="ArrowDownwardIcon"]').eq(3).click();
 
             cy.wait('@studysetFixture').then((studysetFixture) => {
                 const studyset = studysetFixture.response?.body as StudysetReturn;
@@ -354,8 +350,8 @@ describe('ExtractionTable', () => {
         });
 
         it('should sort by journal desc', () => {
-            cy.contains('Journal').click();
-            cy.get('[data-testid="ArrowDownwardIcon"]').click();
+            cy.get('[data-testid="ArrowDownwardIcon"]').eq(3).click();
+            cy.get('[data-testid="ArrowDownwardIcon"]').eq(3).click();
             cy.get('[data-testid="ArrowUpwardIcon"]').should('exist');
 
             cy.wait('@studysetFixture').then((studysetFixture) => {
@@ -375,8 +371,7 @@ describe('ExtractionTable', () => {
         });
 
         it('should sort by doi desc', () => {
-            cy.contains('DOI').click();
-            cy.get('[data-testid="ArrowDownwardIcon"]').should('exist');
+            cy.get('[data-testid="ArrowDownwardIcon"]').eq(4).click();
 
             cy.wait('@studysetFixture').then((studysetFixture) => {
                 const studyset = studysetFixture.response?.body as StudysetReturn;
@@ -396,8 +391,8 @@ describe('ExtractionTable', () => {
             });
         });
         it('should sort by doi asc', () => {
-            cy.contains('DOI').click();
-            cy.get('[data-testid="ArrowDownwardIcon"]').click();
+            cy.get('[data-testid="ArrowDownwardIcon"]').eq(4).click();
+            cy.get('[data-testid="ArrowDownwardIcon"]').eq(4).click();
             cy.get('[data-testid="ArrowUpwardIcon"]').should('exist');
 
             cy.wait('@studysetFixture').then((studysetFixture) => {
@@ -417,8 +412,7 @@ describe('ExtractionTable', () => {
         });
 
         it('should sort by pmid desc', () => {
-            cy.contains('PMID').click();
-            cy.get('[data-testid="ArrowDownwardIcon"]').should('exist');
+            cy.get('[data-testid="ArrowDownwardIcon"]').eq(5).click();
 
             cy.wait('@studysetFixture').then((studysetFixture) => {
                 const studyset = studysetFixture.response?.body as StudysetReturn;
@@ -443,8 +437,8 @@ describe('ExtractionTable', () => {
         });
 
         it('should sort by pmid asc', () => {
-            cy.contains('PMID').click();
-            cy.get('[data-testid="ArrowDownwardIcon"]').click();
+            cy.get('[data-testid="ArrowDownwardIcon"]').eq(5).click();
+            cy.get('[data-testid="ArrowDownwardIcon"]').eq(5).click();
             cy.get('[data-testid="ArrowUpwardIcon"]').should('exist');
 
             cy.wait('@studysetFixture').then((studysetFixture) => {
@@ -468,8 +462,7 @@ describe('ExtractionTable', () => {
         });
 
         it('should sort by status desc', () => {
-            cy.contains('Status').click();
-            cy.get('[data-testid="ArrowDownwardIcon"]').should('exist');
+            cy.get('[data-testid="ArrowDownwardIcon"]').eq(6).click();
 
             cy.wait('@projectFixture').then((projectFixture) => {
                 const project = projectFixture?.response?.body as INeurosynthProjectReturn;
@@ -525,8 +518,8 @@ describe('ExtractionTable', () => {
         });
 
         it('should sort by status asc', () => {
-            cy.contains('Status').click();
-            cy.get('[data-testid="ArrowDownwardIcon"]').click();
+            cy.get('[data-testid="ArrowDownwardIcon"]').eq(6).click();
+            cy.get('[data-testid="ArrowDownwardIcon"]').eq(6).click();
             cy.get('[data-testid="ArrowUpwardIcon"]').should('exist');
 
             cy.wait('@projectFixture').then((projectFixture) => {
@@ -583,7 +576,7 @@ describe('ExtractionTable', () => {
         });
     });
 
-    describe.only('pagination', () => {
+    describe('pagination', () => {
         beforeEach(() => {
             cy.fixture('studyset').then((studyset) => {
                 // as we are artificially creating new studies below, the out of sync popup wil appear. That's expected and
