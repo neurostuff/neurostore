@@ -94,7 +94,6 @@ jobs:
       if: ${{ steps.changes.outputs.frontend }}
       run: |
         ssh git@deepdream.psy.utexas.edu '
-          cd /var/www/neurostore/compose/neurosynth-frontend && 
-          npm install && 
-          npm run build:staging
+          cd /var/www/neurostore/compose &&
+          docker compose exec -T compose bash -c "cd /compose/neurosynth-frontend/ && npm install && npm run build:staging" 
         '
