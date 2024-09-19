@@ -1,0 +1,77 @@
+# .github/workflows/deploy-to-staging.yml
+name: Deploy to Staging
+
+on:
+  push:
+    branches:
+      - staging
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout the repository
+      uses: actions/checkout@v3
+
+    - name: Set up SSH agent
+      uses: webfactory/ssh-agent@v0.5.4
+      with:
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+    - name: Force sync staging branch to remote server
+      run: |
+        ssh jdkent@deepdream.psy.utexas.edu 'cd /var/www/neurostore && git fetch origin && git reset --hard origin/staging && git clean -fd'
+
+    - name: Detect changes in specific directories
+      id: changes
+      run: |
+        git fetch origin staging
+        changes_in_store=$(git diff --name-only origin/staging HEAD | grep '^store/' || echo "")
+        changes_in_compose=$(git diff --name-only origin/staging HEAD | grep '^compose/' || echo "")
+        changes_in_frontend=$(git diff --name-only origin/staging HEAD | grep '^compose/neurosynth-frontend/' || echo "")
+
+        echo "::set-output name=store::$changes_in_store"
+        echo "::set-output name=compose::$changes_in_compose"
+        echo "::set-output name=frontend::$changes_in_frontend"
+
+    - name: Run Docker commands in store directory if changes detected
+      if: ${{ steps.changes.outputs.store }}
+      run: |
+        ssh jdkent@deepdream.psy.utexas.edu '
+          cd /var/www/neurostore/store && 
+          docker compose down && 
+          docker compose build && 
+          docker compose up -d
+
+          # Wait for PostgreSQL to be ready
+          until docker-compose exec store pg_isready; do sleep 5; done
+
+          docker-compose exec store flask db migrate
+          docker-compose exec store flask db upgrade
+        '
+
+    - name: Run Docker commands in compose directory if changes detected
+      if: ${{ steps.changes.outputs.compose && !steps.changes.outputs.frontend }}
+      run: |
+        ssh jdkent@deepdream.psy.utexas.edu '
+          cd /var/www/neurostore/compose && 
+          docker compose down && 
+          docker compose build && 
+          docker compose up -d
+
+          # Wait for PostgreSQL to be ready
+          until docker-compose exec compose pg_isready; do sleep 5; done
+
+          docker-compose exec compose flask db migrate
+          docker-compose exec compose flask db upgrade
+        '
+
+    - name: Skip Docker commands and run frontend build if only frontend changes detected
+      if: ${{ steps.changes.outputs.frontend }}
+      run: |
+        ssh jdkent@deepdream.psy.utexas.edu '
+          cd /var/www/neurostore/compose/neurosynth-frontend && 
+          npm install && 
+          npm run build:staging
+        '
