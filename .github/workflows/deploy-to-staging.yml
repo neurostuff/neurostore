@@ -19,6 +19,10 @@ jobs:
       with:
         ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
+    - name: Add remote SSH server to known hosts
+      run: |
+        ssh-keyscan -H deepdream.psy.utexas.edu >> ~/.ssh/known_hosts
+
     - name: Force sync staging branch to remote server
       run: |
         ssh jdkent@deepdream.psy.utexas.edu 'cd /var/www/neurostore && git fetch origin && git reset --hard origin/staging && git clean -fd'
