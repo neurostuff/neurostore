@@ -25,22 +25,34 @@ jobs:
 
     - name: Force sync staging branch to remote server
       run: |
-        ssh git@deepdream.psy.utexas.edu 'cd /var/www/neurostore && git fetch origin && git reset --hard origin/staging && git clean -fd'
+        ssh git@deepdream.psy.utexas.edu '
+          cd /var/www/neurostore && 
+          git fetch origin --unshallow && # Fetch full history if shallow clone
+          git fetch --all && # Fetch all branches and their histories
+          git reset --hard origin/staging && 
+          git clean -fd
+        '
 
     - name: Detect changes in specific directories from the previous commit
       id: changes
       run: |
-        git fetch origin staging
-        changes_in_store=$(git diff --name-only HEAD~1 HEAD | grep '^store/' || echo "")
-        changes_in_compose=$(git diff --name-only HEAD~1 HEAD | grep '^compose/' || echo "")
-        changes_in_frontend=$(git diff --name-only HEAD~1 HEAD | grep '^compose/neurosynth-frontend/' || echo "")
+        # Fetch full commit history and compare with the previous commit
+        ssh git@deepdream.psy.utexas.edu '
+          cd /var/www/neurostore &&
+          git fetch origin && # Ensure we have the latest changes
+          git log -n 2 && # Log last two commits to ensure previous commit exists
+          changes_in_store=$(git diff --name-only HEAD~1 -- | grep '^store/' || echo "") &&
+          changes_in_compose=$(git diff --name-only HEAD~1 -- | grep '^compose/' || echo "") &&
+          changes_in_frontend=$(git diff --name-only HEAD~1 -- | grep '^compose/neurosynth-frontend/' || echo "")
 
-        echo "store=$changes_in_store" >> $GITHUB_ENV
-        echo "compose=$changes_in_compose" >> $GITHUB_ENV
-        echo "frontend=$changes_in_frontend" >> $GITHUB_ENV
+          # Save the outputs for the next steps
+          echo "store=$changes_in_store" >> $GITHUB_OUTPUT
+          echo "compose=$changes_in_compose" >> $GITHUB_OUTPUT
+          echo "frontend=$changes_in_frontend" >> $GITHUB_OUTPUT
+        '
 
     - name: Run Docker commands in store directory if changes detected
-      if: ${{ env.store }}
+      if: ${{ steps.changes.outputs.store }}
       run: |
         ssh git@deepdream.psy.utexas.edu '
           cd /var/www/neurostore/store && 
@@ -56,7 +68,7 @@ jobs:
         '
 
     - name: Run Docker commands in compose directory if changes detected
-      if: ${{ env.compose && !env.frontend }}
+      if: ${{ steps.changes.outputs.compose }}
       run: |
         ssh git@deepdream.psy.utexas.edu '
           cd /var/www/neurostore/compose && 
@@ -72,7 +84,7 @@ jobs:
         '
 
     - name: Skip Docker commands and run frontend build if only frontend changes detected
-      if: ${{ env.frontend }}
+      if: ${{ steps.changes.outputs.frontend }}
       run: |
         ssh git@deepdream.psy.utexas.edu '
           cd /var/www/neurostore/compose/neurosynth-frontend && 
