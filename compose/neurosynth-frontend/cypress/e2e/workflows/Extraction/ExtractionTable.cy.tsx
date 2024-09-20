@@ -661,7 +661,7 @@ describe('ExtractionTable', () => {
         });
 
         it('should save the filter and sorting to the table state', () => {
-            cy.contains('Year').click();
+            cy.get('[data-testid="ArrowDownwardIcon"]').eq(0).click(); // click on year sort
             cy.get('input').eq(1).click();
             cy.get(`input`).eq(1).type('Activation');
 
@@ -674,7 +674,7 @@ describe('ExtractionTable', () => {
             cy.window().then((window) => {
                 const state = window.sessionStorage.getItem(`abc123-extraction-table`);
                 const parsedState = JSON.parse(state || '{}');
-                console.log(parsedState);
+
                 cy.wrap(parsedState).should('deep.equal', {
                     columnFilters: [{ id: 'name', value: 'Activation' }],
                     sorting: [{ id: 'year', desc: true }],
