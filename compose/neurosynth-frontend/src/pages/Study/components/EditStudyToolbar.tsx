@@ -41,7 +41,7 @@ const EditStudyToolbar: React.FC<{ isViewOnly?: boolean }> = ({ isViewOnly = fal
     const { data, isLoading, isError } = useGetStudysetById(studysetId || '', true);
 
     // derived from the extraction table
-    const [studiesState, setStudiesState] = useState<{
+    const [extractionTableState, setExtractionTableState] = useState<{
         columnFilters: ColumnFiltersState;
         sorting: SortingState;
         studies: string[];
@@ -54,7 +54,7 @@ const EditStudyToolbar: React.FC<{ isViewOnly?: boolean }> = ({ isViewOnly = fal
     useEffect(() => {
         const stateFromSessionStorage = sessionStorage.getItem(`${projectId}-extraction-table`);
         if (!stateFromSessionStorage) {
-            setStudiesState((prev) => ({
+            setExtractionTableState((prev) => ({
                 ...prev,
                 studies: (data?.studies || []).map((study) => (study as StudyReturn).id as string),
             }));
@@ -65,7 +65,7 @@ const EditStudyToolbar: React.FC<{ isViewOnly?: boolean }> = ({ isViewOnly = fal
                     sorting: SortingState;
                     studies: string[];
                 };
-                setStudiesState(parsedState);
+                setExtractionTableState(parsedState);
             } catch (e) {
                 throw new Error('couldnt parse table state from session storage');
             }
@@ -81,8 +81,8 @@ const EditStudyToolbar: React.FC<{ isViewOnly?: boolean }> = ({ isViewOnly = fal
     };
 
     const handleMoveToPreviousStudy = () => {
-        const index = studiesState.studies.indexOf(studyId || '');
-        const prevId = studiesState.studies[index - 1];
+        const index = extractionTableState.studies.indexOf(studyId || '');
+        const prevId = extractionTableState.studies[index - 1];
         if (!prevId) throw new Error('no previous study');
         canEdit
             ? navigate(`/projects/${projectId}/extraction/studies/${prevId}/edit`)
@@ -90,8 +90,8 @@ const EditStudyToolbar: React.FC<{ isViewOnly?: boolean }> = ({ isViewOnly = fal
     };
 
     const handleMoveToNextStudy = () => {
-        const index = studiesState.studies.indexOf(studyId || '');
-        const nextId = studiesState.studies[index + 1];
+        const index = extractionTableState.studies.indexOf(studyId || '');
+        const nextId = extractionTableState.studies[index + 1];
         if (!nextId) throw new Error('no next study');
         canEdit
             ? navigate(`/projects/${projectId}/extraction/studies/${nextId}/edit`)
@@ -130,16 +130,16 @@ const EditStudyToolbar: React.FC<{ isViewOnly?: boolean }> = ({ isViewOnly = fal
     }, [extractionSummary.completed, extractionSummary.total]);
 
     const hasPrevStudies = useMemo(() => {
-        const studies = studiesState.studies;
+        const studies = extractionTableState.studies;
         const index = studies.indexOf(studyId || '');
         return index - 1 >= 0;
-    }, [studiesState.studies, studyId]);
+    }, [extractionTableState.studies, studyId]);
 
     const hasNextStudies = useMemo(() => {
-        const studies = studiesState.studies;
+        const studies = extractionTableState.studies;
         const index = studies.indexOf(studyId || '');
         return index + 1 < studies.length;
-    }, [studiesState.studies, studyId]);
+    }, [extractionTableState.studies, studyId]);
 
     return (
         <Box sx={EditStudyToolbarStyles.stickyContainer}>
