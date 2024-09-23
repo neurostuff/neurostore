@@ -370,46 +370,46 @@ describe('ExtractionTable', () => {
             });
         });
 
-        it('should sort by doi desc', () => {
-            cy.get('[data-testid="ArrowDownwardIcon"]').eq(4).click();
+        // it('should sort by doi desc', () => {
+        //     cy.get('[data-testid="ArrowDownwardIcon"]').eq(4).click();
 
-            cy.wait('@studysetFixture').then((studysetFixture) => {
-                const studyset = studysetFixture.response?.body as StudysetReturn;
-                const studies = [...(studyset.studies || [])] as StudyReturn[];
+        //     cy.wait('@studysetFixture').then((studysetFixture) => {
+        //         const studyset = studysetFixture.response?.body as StudysetReturn;
+        //         const studies = [...(studyset.studies || [])] as StudyReturn[];
 
-                const sortedStudies = studies.sort((a, b) =>
-                    (b.doi as string).localeCompare(a.doi as string)
-                );
+        //         const sortedStudies = studies.sort((a, b) =>
+        //             (b.doi as string).localeCompare(a.doi as string)
+        //         );
 
-                console.log(sortedStudies);
+        //         console.log(sortedStudies);
 
-                cy.get('tbody > tr').each((tr, index) => {
-                    cy.wrap(tr).within(() => {
-                        cy.get('td').eq(4).should('have.text', sortedStudies[index].doi);
-                    });
-                });
-            });
-        });
-        it('should sort by doi asc', () => {
-            cy.get('[data-testid="ArrowDownwardIcon"]').eq(4).click();
-            cy.get('[data-testid="ArrowDownwardIcon"]').eq(4).click();
-            cy.get('[data-testid="ArrowUpwardIcon"]').should('exist');
+        //         cy.get('tbody > tr').each((tr, index) => {
+        //             cy.wrap(tr).within(() => {
+        //                 cy.get('td').eq(4).should('have.text', sortedStudies[index].doi);
+        //             });
+        //         });
+        //     });
+        // });
+        // it('should sort by doi asc', () => {
+        //     cy.get('[data-testid="ArrowDownwardIcon"]').eq(4).click();
+        //     cy.get('[data-testid="ArrowDownwardIcon"]').eq(4).click();
+        //     cy.get('[data-testid="ArrowUpwardIcon"]').should('exist');
 
-            cy.wait('@studysetFixture').then((studysetFixture) => {
-                const studyset = studysetFixture.response?.body as StudysetReturn;
-                const studies = [...(studyset.studies || [])] as StudyReturn[];
+        //     cy.wait('@studysetFixture').then((studysetFixture) => {
+        //         const studyset = studysetFixture.response?.body as StudysetReturn;
+        //         const studies = [...(studyset.studies || [])] as StudyReturn[];
 
-                const sortedStudies = studies.sort((a, b) =>
-                    (a.doi as string).localeCompare(b.doi as string)
-                );
+        //         const sortedStudies = studies.sort((a, b) =>
+        //             (a.doi as string).localeCompare(b.doi as string)
+        //         );
 
-                cy.get('tbody > tr').each((tr, index) => {
-                    cy.wrap(tr).within(() => {
-                        cy.get('td').eq(4).should('have.text', sortedStudies[index].doi);
-                    });
-                });
-            });
-        });
+        //         cy.get('tbody > tr').each((tr, index) => {
+        //             cy.wrap(tr).within(() => {
+        //                 cy.get('td').eq(4).should('have.text', sortedStudies[index].doi);
+        //             });
+        //         });
+        //     });
+        // });
 
         it('should sort by pmid desc', () => {
             cy.get('[data-testid="ArrowDownwardIcon"]').eq(5).click();
@@ -424,12 +424,10 @@ describe('ExtractionTable', () => {
                     })
                 );
 
-                console.log(sortedStudies);
-
                 cy.get('tbody > tr').each((tr, index) => {
                     cy.wrap(tr).within(() => {
                         cy.get('td')
-                            .eq(5)
+                            .eq(4)
                             .should('have.text', sortedStudies[index].pmid ?? '');
                     });
                 });
@@ -437,8 +435,8 @@ describe('ExtractionTable', () => {
         });
 
         it('should sort by pmid asc', () => {
-            cy.get('[data-testid="ArrowDownwardIcon"]').eq(5).click();
-            cy.get('[data-testid="ArrowDownwardIcon"]').eq(5).click();
+            cy.get('[data-testid="ArrowDownwardIcon"]').eq(4).click();
+            cy.get('[data-testid="ArrowDownwardIcon"]').eq(4).click();
             cy.get('[data-testid="ArrowUpwardIcon"]').should('exist');
 
             cy.wait('@studysetFixture').then((studysetFixture) => {
@@ -487,7 +485,7 @@ describe('ExtractionTable', () => {
                     cy.get('tbody > tr').each((tr, index) => {
                         cy.wrap(tr).within(() => {
                             cy.get('td')
-                                .eq(6)
+                                .eq(5)
                                 .within(() => {
                                     const studyStatus = sortedStudies[index].status;
                                     const buttonIndex =
@@ -545,7 +543,7 @@ describe('ExtractionTable', () => {
                     cy.get('tbody > tr').each((tr, index) => {
                         cy.wrap(tr).within(() => {
                             cy.get('td')
-                                .eq(6)
+                                .eq(5)
                                 .within(() => {
                                     const studyStatus = sortedStudies[index].status;
                                     const buttonIndex =
