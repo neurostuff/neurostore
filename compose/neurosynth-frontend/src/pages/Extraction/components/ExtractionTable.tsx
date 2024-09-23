@@ -37,7 +37,6 @@ import { useNavigate } from 'react-router-dom';
 import { EExtractionStatus } from '../ExtractionPage';
 import styles from './ExtractionTable.module.css';
 import { ExtractionTableAuthorCell, ExtractionTableAuthorHeader } from './ExtractionTableAuthor';
-import { ExtractionTableDOICell, ExtractionTableDOIHeader } from './ExtractionTableDOI';
 import ExtractionTableFilterInput from './ExtractionTableFilterInput';
 import { ExtractionTableJournalCell, ExtractionTableJournalHeader } from './ExtractionTableJournal';
 import { ExtractionTableNameCell, ExtractionTableNameHeader } from './ExtractionTableName';
@@ -106,9 +105,9 @@ const ExtractionTable: React.FC = () => {
         return [
             columnHelper.accessor(({ year }) => (year ? String(year) : ''), {
                 id: 'year',
-                size: 5,
-                minSize: 5,
-                maxSize: 5,
+                size: 70,
+                minSize: 70,
+                maxSize: 70,
                 cell: ExtractionTableYearCell,
                 header: ExtractionTableYearHeader,
                 enableSorting: true,
@@ -121,9 +120,9 @@ const ExtractionTable: React.FC = () => {
             columnHelper.accessor('name', {
                 id: 'name',
                 cell: ExtractionTableNameCell,
-                size: 25,
-                minSize: 25,
-                maxSize: 25,
+                size: 500,
+                minSize: 500,
+                maxSize: 500,
                 header: ExtractionTableNameHeader,
                 enableSorting: true,
                 sortingFn: 'text',
@@ -134,9 +133,9 @@ const ExtractionTable: React.FC = () => {
             }),
             columnHelper.accessor('authors', {
                 id: 'authors',
-                size: 20,
-                minSize: 20,
-                maxSize: 20,
+                size: 300,
+                minSize: 300,
+                maxSize: 300,
                 enableSorting: true,
                 enableColumnFilter: true,
                 sortingFn: 'text',
@@ -149,9 +148,9 @@ const ExtractionTable: React.FC = () => {
             }),
             columnHelper.accessor('publication', {
                 id: 'journal',
-                size: 15,
-                minSize: 15,
-                maxSize: 15,
+                size: 100,
+                minSize: 100,
+                maxSize: 100,
                 enableSorting: true,
                 enableColumnFilter: true,
                 cell: ExtractionTableJournalCell,
@@ -160,26 +159,26 @@ const ExtractionTable: React.FC = () => {
                     filterVariant: 'journal-autocomplete',
                 },
             }),
-            columnHelper.accessor('doi', {
-                id: 'doi',
-                size: 15,
-                minSize: 15,
-                maxSize: 15,
-                sortingFn: 'alphanumeric',
-                enableSorting: true,
-                enableColumnFilter: true,
-                filterFn: 'includesString',
-                cell: ExtractionTableDOICell,
-                header: ExtractionTableDOIHeader,
-                meta: {
-                    filterVariant: 'text',
-                },
-            }),
+            // columnHelper.accessor('doi', {
+            //     id: 'doi',
+            //     size: 10,
+            //     minSize: 10,
+            //     maxSize: 10,
+            //     sortingFn: 'alphanumeric',
+            //     enableSorting: true,
+            //     enableColumnFilter: true,
+            //     filterFn: 'includesString',
+            //     cell: ExtractionTableDOICell,
+            //     header: ExtractionTableDOIHeader,
+            //     meta: {
+            //         filterVariant: 'text',
+            //     },
+            // }),
             columnHelper.accessor('pmid', {
                 id: 'pmid',
-                size: 10,
-                minSize: 10,
-                maxSize: 10,
+                size: 100,
+                minSize: 100,
+                maxSize: 100,
                 enableColumnFilter: true,
                 filterFn: 'includesString',
                 cell: ExtractionTablePMIDCell,
@@ -192,9 +191,9 @@ const ExtractionTable: React.FC = () => {
             }),
             columnHelper.accessor('status', {
                 id: 'status',
-                size: 10,
-                minSize: 10,
-                maxSize: 10,
+                size: 120,
+                minSize: 120,
+                maxSize: 120,
                 enableSorting: true,
                 cell: ExtractionTableStatusCell,
                 filterFn: (row, columnId, filterValue: EExtractionStatus | null) => {
@@ -270,12 +269,11 @@ const ExtractionTable: React.FC = () => {
                     onChange={handlePaginationChangeMuiPaginator}
                     page={pagination.pageIndex + 1}
                 />
-                <Typography variant="h5">Total: {data.length} studies</Typography>
             </Box>
             <TableContainer sx={{ marginBottom: '2rem' }}>
                 <Table
                     size="small"
-                    sx={{ tableLayout: 'fixed', width: '100%', minWidth: '1300px' }}
+                    sx={{ tableLayout: 'fixed', width: 'fit-content', minWidth: '1200px' }}
                 >
                     <TableHead>
                         {table.getHeaderGroups().map((headerGroup) => (
@@ -283,7 +281,13 @@ const ExtractionTable: React.FC = () => {
                                 {headerGroup.headers.map((header) => (
                                     <TableCell
                                         key={header.id}
-                                        sx={{ width: `${header.column.getSize()}%` }}
+                                        sx={{
+                                            width:
+                                                header.column.id === 'name'
+                                                    ? '100%'
+                                                    : `${header.column.getSize()}px`,
+                                            verticalAlign: 'bottom',
+                                        }}
                                     >
                                         <Box>
                                             {flexRender(
@@ -416,7 +420,14 @@ const ExtractionTable: React.FC = () => {
                     </Box>
                     <Box>
                         <Typography sx={{ whiteSpace: 'nowrap' }}>
-                            Viewing {table.getFilteredRowModel().rows.length} / {data.length}
+                            {columnFilters.length > 0 ? (
+                                <Typography>
+                                    Viewing {table.getFilteredRowModel().rows.length} /{' '}
+                                    {data.length}
+                                </Typography>
+                            ) : (
+                                <Typography>Total: {data.length} studies</Typography>
+                            )}
                         </Typography>
                     </Box>
                 </Box>

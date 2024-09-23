@@ -34,19 +34,25 @@ export const ExtractionTableYearHeader: React.FC<HeaderContext<IExtractionTableS
                             }
                         }}
                     >
-                        <ArrowDownward sx={{ color: 'lightgray' }} />
+                        <ArrowDownward
+                            sx={{ height: '0.9em', width: '0.9em', color: 'lightgray' }}
+                        />
                     </IconButton>
                 </Tooltip>
             ) : isSorted === 'asc' ? (
                 <IconButton size="small" onClick={() => table.resetSorting()}>
-                    <ArrowUpwardIcon sx={{ color: 'secondary.main' }} />
+                    <ArrowUpwardIcon
+                        sx={{ height: '0.9em', width: '0.9em', color: 'secondary.main' }}
+                    />
                 </IconButton>
             ) : (
                 <IconButton
                     size="small"
                     onClick={() => table.setSorting([{ id: 'year', desc: false }])}
                 >
-                    <ArrowDownward sx={{ color: 'secondary.main' }} />
+                    <ArrowDownward
+                        sx={{ height: '0.9em', width: '0.9em', color: 'secondary.main' }}
+                    />
                 </IconButton>
             )}
         </Box>
