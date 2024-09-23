@@ -33,19 +33,27 @@ export const ExtractionTableAuthorHeader: React.FC<
                             }
                         }}
                     >
-                        <ArrowDownward sx={{ color: 'lightgray' }} />
+                        <ArrowDownward
+                            sx={{ width: '0.9em', height: '0.9em', color: 'lightgray' }}
+                        />
                     </IconButton>
                 </Tooltip>
             ) : isSorted === 'asc' ? (
                 <IconButton size="small" onClick={() => table.resetSorting()}>
-                    <ArrowUpwardIcon sx={{ color: 'secondary.main' }} />
+                    sx={{ width: '' }}
+                    <ArrowUpwardIcon
+                        sx={{ width: '0.9em', height: '0.9em', color: 'secondary.main' }}
+                    />
                 </IconButton>
             ) : (
                 <IconButton
                     size="small"
+                    sx={{ width: '' }}
                     onClick={() => table.setSorting([{ id: 'authors', desc: false }])}
                 >
-                    <ArrowDownward sx={{ color: 'secondary.main' }} />
+                    <ArrowDownward
+                        sx={{ width: '0.9em', height: '0.9em', color: 'secondary.main' }}
+                    />
                 </IconButton>
             )}
         </Box>

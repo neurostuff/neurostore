@@ -31,7 +31,7 @@ const ExtractionTableJournalAutocomplete: React.FC<{
         <Box sx={{ marginTop: '4px' }}>
             <Autocomplete
                 size="small"
-                renderInput={(params) => <TextField {...params} placeholder="filter by..." />}
+                renderInput={(params) => <TextField {...params} placeholder="filter" />}
                 onChange={handleChange}
                 value={value || null}
                 options={options}

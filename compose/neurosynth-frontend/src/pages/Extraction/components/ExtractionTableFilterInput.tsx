@@ -41,7 +41,7 @@ const ExtractionTableFilterInput: React.FC<{
             <Box sx={{ marginTop: '4px' }}>
                 <DebouncedTextField
                     size="small"
-                    placeholder="filter by..."
+                    placeholder="filter"
                     sx={{ width: '100%' }}
                     onChange={handleChangeAutocomplete}
                     value={columnFilterValue as string}
