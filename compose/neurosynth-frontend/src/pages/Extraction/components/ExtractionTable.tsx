@@ -271,14 +271,23 @@ const ExtractionTable: React.FC = () => {
                 />
             </Box>
             <TableContainer sx={{ marginBottom: '2rem' }}>
-                <Table size="small">
+                <Table
+                    size="small"
+                    sx={{ tableLayout: 'fixed', width: 'fit-content', minWidth: '1200px' }}
+                >
                     <TableHead>
                         {table.getHeaderGroups().map((headerGroup) => (
                             <TableRow key={headerGroup.id}>
                                 {headerGroup.headers.map((header) => (
                                     <TableCell
                                         key={header.id}
-                                        sx={{ maxWidth: `${header.column.getSize()}px` }}
+                                        sx={{
+                                            width:
+                                                header.column.id === 'name'
+                                                    ? '100%'
+                                                    : `${header.column.getSize()}px`,
+                                            verticalAlign: 'bottom',
+                                        }}
                                     >
                                         <Box>
                                             {flexRender(
