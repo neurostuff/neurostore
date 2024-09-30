@@ -1,11 +1,11 @@
 import { ArrowDownward, CheckCircle, QuestionMark } from '@mui/icons-material';
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import BookmarkIcon from '@mui/icons-material/Bookmark';
-import { Box, Button, ButtonGroup, IconButton, Link, Tooltip, Typography } from '@mui/material';
+import { Box, Button, ButtonGroup, IconButton, Tooltip, Typography } from '@mui/material';
 import { CellContext, HeaderContext } from '@tanstack/react-table';
 import { useProjectExtractionAddOrUpdateStudyListStatus } from 'pages/Project/store/ProjectStore';
 import { EExtractionStatus } from '../ExtractionPage';
 import { IExtractionTableStudy } from './ExtractionTable';
-import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 
 export const ExtractionTableStatusCell: React.FC<
     CellContext<IExtractionTableStudy, EExtractionStatus | undefined>
@@ -28,6 +28,7 @@ export const ExtractionTableStatusCell: React.FC<
                     disableElevation
                     sx={{ paddingX: '0' }}
                     color="warning"
+                    size="small"
                     variant={
                         status === undefined || status === EExtractionStatus.UNCATEGORIZED
                             ? 'contained'
@@ -47,6 +48,7 @@ export const ExtractionTableStatusCell: React.FC<
                     disableElevation
                     sx={{ paddingX: '0' }}
                     color="info"
+                    size="small"
                     variant={status === EExtractionStatus.SAVEDFORLATER ? 'contained' : 'outlined'}
                 >
                     <BookmarkIcon />
@@ -62,6 +64,7 @@ export const ExtractionTableStatusCell: React.FC<
                     disableElevation
                     sx={{ paddingX: '0' }}
                     color="success"
+                    size="small"
                     variant={status === EExtractionStatus.COMPLETED ? 'contained' : 'outlined'}
                 >
                     <CheckCircle />
@@ -77,41 +80,41 @@ export const ExtractionTableStatusHeader: React.FC<
     const isSorted = column.getIsSorted();
     return (
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <Tooltip title="Sort by status" placement="top">
-                <Typography
-                    sx={{ ':hover': { cursor: 'pointer' } }}
-                    underline="hover"
-                    variant="h6"
-                    component={Link}
-                    onClick={() => {
-                        if (!!isSorted) {
-                            table.resetSorting();
-                        } else {
-                            table.setSorting([{ id: 'status', desc: true }]);
-                        }
-                    }}
+            <Typography variant="h6" sx={{ marginRight: '4px' }}>
+                Status
+            </Typography>
+            {!isSorted ? (
+                <Tooltip title="Sort by Status" placement="top">
+                    <IconButton
+                        size="small"
+                        onClick={() => {
+                            if (!!isSorted) {
+                                table.resetSorting();
+                            } else {
+                                table.setSorting([{ id: 'status', desc: true }]);
+                            }
+                        }}
+                    >
+                        <ArrowDownward
+                            sx={{ height: '0.9em', width: '0.9em', color: 'lightgray' }}
+                        />
+                    </IconButton>
+                </Tooltip>
+            ) : isSorted === 'asc' ? (
+                <IconButton size="small" onClick={() => table.resetSorting()}>
+                    <ArrowUpwardIcon
+                        sx={{ height: '0.9em', width: '0.9em', color: 'secondary.main' }}
+                    />
+                </IconButton>
+            ) : (
+                <IconButton
+                    size="small"
+                    onClick={() => table.setSorting([{ id: 'status', desc: false }])}
                 >
-                    Status
-                </Typography>
-            </Tooltip>
-            {!!isSorted && (
-                <>
-                    {isSorted === 'asc' ? (
-                        <IconButton
-                            size="small"
-                            onClick={() => table.setSorting([{ id: 'status', desc: true }])}
-                        >
-                            <ArrowUpwardIcon />
-                        </IconButton>
-                    ) : (
-                        <IconButton
-                            size="small"
-                            onClick={() => table.setSorting([{ id: 'status', desc: false }])}
-                        >
-                            <ArrowDownward />
-                        </IconButton>
-                    )}
-                </>
+                    <ArrowDownward
+                        sx={{ height: '0.9em', width: '0.9em', color: 'secondary.main' }}
+                    />
+                </IconButton>
             )}
         </Box>
     );

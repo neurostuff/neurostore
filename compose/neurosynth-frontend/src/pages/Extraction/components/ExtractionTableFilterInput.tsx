@@ -1,5 +1,5 @@
 import { Box } from '@mui/material';
-import { Column } from '@tanstack/react-table';
+import { Column, Table } from '@tanstack/react-table';
 import DebouncedTextField from 'components/DebouncedTextField';
 import { useCallback } from 'react';
 import { EExtractionStatus } from '../ExtractionPage';
@@ -7,17 +7,19 @@ import { IExtractionTableStudy } from './ExtractionTable';
 import ExtractionTableJournalAutocomplete from './ExtractionTableJournalAutocomplete';
 import ExtractionTableStatusFilter from './ExtractionTableStatusFilter';
 
-const ExtractionTableFilterInput: React.FC<{ column: Column<IExtractionTableStudy, unknown> }> = ({
-    column,
-}) => {
+const ExtractionTableFilterInput: React.FC<{
+    table: Table<IExtractionTableStudy>;
+    column: Column<IExtractionTableStudy, unknown>;
+}> = ({ table, column }) => {
     const columnFilterValue = column.getFilterValue();
     const { filterVariant } = column.columnDef.meta ?? {};
 
     const handleChangeAutocomplete = useCallback(
         (event: string | null | undefined) => {
+            table.resetPageIndex();
             column.setFilterValue(event ?? null);
         },
-        [column]
+        [column, table]
     );
 
     if (filterVariant === 'status-select') {
@@ -39,7 +41,7 @@ const ExtractionTableFilterInput: React.FC<{ column: Column<IExtractionTableStud
             <Box sx={{ marginTop: '4px' }}>
                 <DebouncedTextField
                     size="small"
-                    placeholder="filter by..."
+                    placeholder="filter"
                     sx={{ width: '100%' }}
                     onChange={handleChangeAutocomplete}
                     value={columnFilterValue as string}

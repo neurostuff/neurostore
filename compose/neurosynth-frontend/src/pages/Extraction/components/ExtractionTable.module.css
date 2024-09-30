@@ -1,12 +1,11 @@
 .completed {
-    background-color: #e5ffe5;
+    background-color: #f8fff8;
 }
 
 .savedforlater {
-    background-color: #effbff;
+    background-color: #f1fbff;
 }
 
 .uncategorized {
-    /* background-color: #ffffeb; */
     background-color: white;
 }
