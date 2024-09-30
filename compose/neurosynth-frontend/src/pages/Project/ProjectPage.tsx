@@ -167,7 +167,7 @@ const ProjectPage: React.FC = (props) => {
                                 borderTopLeftRadius: '6px',
                                 borderTopRightRadius: '6px',
                                 borderColor: 'lightgray',
-                                borderBottom: '0px',
+                                borderBottomColor: 'white',
                                 marginBottom: '-1px',
                             },
                             '.MuibuttonBase-root': {},

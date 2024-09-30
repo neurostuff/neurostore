@@ -7,7 +7,7 @@ const PAGE_NAME = 'EditStudyPage';
 
 describe(PAGE_NAME, () => {
     beforeEach(() => {
-        cy.clearLocalStorage().clearSessionStorage();
+        cy.clearLocalStorage();
         cy.intercept('GET', 'https://api.appzi.io/**', { fixture: 'appzi' }).as('appziFixture');
         cy.intercept('GET', `https://api.semanticscholar.org/**`, {
             fixture: 'semanticScholar',

@@ -9,7 +9,6 @@ import Navbar from './components/Navbar/Navbar';
 import useGetToken from './hooks/useGetToken';
 import BaseNavigation from './pages/BaseNavigation/BaseNavigation';
 import { useLocation } from 'react-router-dom';
-import Downbanner from 'components/Downbanner';
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -68,7 +67,6 @@ function App() {
                     </IconButton>
                 )}
             >
-                <Downbanner />
                 <Navbar />
                 <BaseNavigation />
             </SnackbarProvider>

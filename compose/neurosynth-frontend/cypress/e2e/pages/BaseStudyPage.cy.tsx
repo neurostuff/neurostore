@@ -7,7 +7,7 @@ const PAGE_NAME = 'BaseStudyPage';
 
 describe(PAGE_NAME, () => {
     beforeEach(() => {
-        cy.clearLocalStorage().clearSessionStorage();
+        cy.clearLocalStorage();
         cy.intercept('GET', `https://api.semanticscholar.org/**`, {
             fixture: 'semanticScholar',
         }).as('semanticScholarFixture');
