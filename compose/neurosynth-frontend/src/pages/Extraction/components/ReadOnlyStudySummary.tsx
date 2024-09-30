@@ -13,7 +13,7 @@ import useUserCanEdit from 'hooks/useUserCanEdit';
 
 const ReadOnlyStudySummaryVirtualizedItem: React.FC<
     StudyReturn & {
-        currentSelectedChip: EExtractionStatus;
+        currentStatus: EExtractionStatus;
         canEdit: boolean;
         style: React.CSSProperties;
     }
@@ -39,16 +39,19 @@ const ReadOnlyStudySummaryVirtualizedItem: React.FC<
     };
 
     const showMarkAsCompleteButton =
-        props.currentSelectedChip === EExtractionStatus.UNCATEGORIZED ||
-        props.currentSelectedChip === EExtractionStatus.SAVEDFORLATER;
+        props.currentStatus === EExtractionStatus.UNCATEGORIZED ||
+        props.currentStatus === EExtractionStatus.SAVEDFORLATER;
 
     const showMarkAsSaveForLaterButton =
-        props.currentSelectedChip === EExtractionStatus.UNCATEGORIZED ||
-        props.currentSelectedChip === EExtractionStatus.COMPLETED;
+        props.currentStatus === EExtractionStatus.UNCATEGORIZED ||
+        props.currentStatus === EExtractionStatus.COMPLETED;
 
     return (
-        <Box style={props.style}>
-            <Box onClick={handleClick} sx={StudyListItemStyles.listItem}>
+        <Box
+            style={props.style}
+            sx={{ ':hover': { filter: 'brightness(0.9)', cursor: 'pointer' } }}
+        >
+            <Box onClick={handleClick} sx={{ ...StudyListItemStyles.listItem }}>
                 <Box sx={{ width: 'calc(100% - 70px)' }}>
                     <Typography noWrap sx={{ fontWeight: 'bold' }}>
                         {`${props.year ? `(${props.year}) ` : ''}${props.name}`}

@@ -59,7 +59,8 @@ const ConfirmationDialog: React.FC<IConfirmationDialog> = (props) => {
                         sx={{ width: '250px' }}
                         onClick={() => props.onCloseDialog(true, props.data)}
                         variant="contained"
-                        color="success"
+                        color="primary"
+                        disableElevation
                     >
                         {props.confirmText ? props.confirmText : 'Confirm'}
                     </Button>

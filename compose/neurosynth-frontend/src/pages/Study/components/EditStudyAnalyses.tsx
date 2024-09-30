@@ -23,6 +23,7 @@ const EditStudyAnalyses: React.FC = React.memo(() => {
             description: '',
             isNew: true,
             conditions: [],
+            order: analyses.length + 1, // not 0 indexed in the BE
         });
 
         if (!createdAnalysis.id) return;

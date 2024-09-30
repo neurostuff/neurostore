@@ -1,0 +1,99 @@
+# .github/workflows/deploy-to-staging.yml
+name: Deploy to Staging
+
+on:
+  push:
+    branches:
+      - staging
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout the repository
+      uses: actions/checkout@v3
+
+    - name: Set up SSH agent
+      uses: webfactory/ssh-agent@v0.5.4
+      with:
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+    - name: Add remote SSH server to known hosts
+      run: |
+        ssh-keyscan -H deepdream.psy.utexas.edu >> ~/.ssh/known_hosts
+
+    - name: Force sync staging branch to remote server
+      run: |
+        ssh git@deepdream.psy.utexas.edu '
+          cd /var/www/neurostore && 
+          git fetch origin && # Fetch full history
+          git fetch --all && # Fetch all branches and their histories
+          git reset --hard origin/staging && 
+          git clean -fd
+        '
+
+    - name: Detect changes in specific directories from the previous commit
+      id: changes
+      run: |
+        # Capture the output of the SSH session and process it locally
+        ssh_output=$(ssh git@deepdream.psy.utexas.edu '
+          cd /var/www/neurostore &&
+          git fetch origin &&
+          git log -n 2 &&
+          changes_in_store=$(git diff --name-only HEAD~1 -- | grep "^store/" || echo "") &&
+          changes_in_compose=$(git diff --name-only HEAD~1 -- | grep "^compose/" || echo "") &&
+          changes_in_frontend=$(git diff --name-only HEAD~1 -- | grep "^compose/neurosynth-frontend/" || echo "") &&
+          
+          # Print results for local parsing
+          echo "store:$changes_in_store" &&
+          echo "compose:$changes_in_compose" &&
+          echo "frontend:$changes_in_frontend"
+        ')
+
+        # Parse the results locally and set outputs
+        echo "$ssh_output" | while IFS=':' read -r key value; do
+          if [ -n "$value" ]; then
+            echo "$key=$value" >> $GITHUB_OUTPUT
+          fi
+        done
+
+    - name: Run Docker commands in store directory if changes detected
+      if: ${{ steps.changes.outputs.store }}
+      run: |
+        ssh git@deepdream.psy.utexas.edu '
+          cd /var/www/neurostore/store && 
+          docker compose down && 
+          docker compose build && 
+          docker compose up -d
+
+          # Wait for PostgreSQL to be ready
+          until docker compose exec store_pgsql pg_isready; do sleep 5; done
+
+          docker compose exec store flask db migrate
+          docker compose exec store flask db upgrade
+        '
+
+    - name: Run Docker commands in compose directory if changes detected
+      if: ${{ steps.changes.outputs.compose }}
+      run: |
+        ssh git@deepdream.psy.utexas.edu '
+          cd /var/www/neurostore/compose && 
+          docker compose down && 
+          docker compose build && 
+          docker compose up -d
+
+          # Wait for PostgreSQL to be ready
+          until docker compose exec compose_pgsql pg_isready; do sleep 5; done
+
+          docker compose exec compose flask db migrate
+          docker compose exec compose flask db upgrade
+        '
+
+    - name: Skip Docker commands and run frontend build if only frontend changes detected
+      if: ${{ steps.changes.outputs.frontend }}
+      run: |
+        ssh git@deepdream.psy.utexas.edu '
+          cd /var/www/neurostore/compose &&
+          docker compose exec -T compose bash -c "cd /compose/neurosynth-frontend/ && npm install && npm run build:staging" 
+        '

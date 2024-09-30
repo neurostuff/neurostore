@@ -7,7 +7,7 @@ import {
     PointReturn,
     PointValue,
 } from 'neurostore-typescript-sdk';
-
+import { v4 as uuid } from 'uuid';
 import { IMetadataRowModel } from 'components/EditMetadata/EditMetadata.types';
 import { StudyReturn } from 'neurostore-typescript-sdk';
 
@@ -128,45 +128,60 @@ export const studyPointsToStorePoints = (
 } => {
     let analysisSpace: MapOrSpaceType | undefined;
     let analysisMap: MapOrSpaceType | undefined;
-    const parsedPoints: IStorePoint[] = ((points || []) as Array<PointReturn>)
-        .map(({ entities, space, subpeak, cluster_size, values, kind, label_id, ...args }) => {
-            const typedValues = values as Array<PointValue> | undefined;
-            if (!analysisSpace && !!space) {
-                analysisSpace = {
-                    ...(DefaultSpaceTypes[space]
-                        ? DefaultSpaceTypes[space]
-                        : DefaultSpaceTypes.OTHER),
-                };
-            }
-            if (!analysisMap && typedValues && typedValues.length > 0 && typedValues[0].kind) {
-                const kind = typedValues[0].kind || '';
-                analysisMap = {
-                    ...(DefaultMapTypes[kind] ? DefaultMapTypes[kind] : DefaultMapTypes.OTHER),
-                };
-            }
 
-            return {
-                ...args,
-                subpeak: subpeak === null ? undefined : subpeak,
-                cluster_size: cluster_size === null ? undefined : cluster_size,
-                value:
-                    typedValues && typedValues[0] && typedValues.length > 0
-                        ? typedValues[0].value === null // have to add this check instead of checking if falsy as the value could be 0
-                            ? undefined
-                            : typedValues[0].value
-                        : undefined,
-                x: (args.coordinates || [])[0],
-                y: (args.coordinates || [])[1],
-                z: (args.coordinates || [])[2],
-                isNew: false,
-            };
-        })
-        .sort((a, b) => {
-            return (a.order as number) - (b.order as number);
-        });
+    let storePoints: IStorePoint[] = [];
+    if (points.length > 0) {
+        storePoints = ((points || []) as Array<PointReturn>)
+            .map(({ entities, space, subpeak, cluster_size, values, kind, label_id, ...args }) => {
+                const typedValues = values as Array<PointValue> | undefined;
+                if (!analysisSpace && !!space) {
+                    analysisSpace = DefaultSpaceTypes[space]
+                        ? DefaultSpaceTypes[space]
+                        : DefaultSpaceTypes.OTHER;
+                }
+                if (!analysisMap && typedValues && typedValues.length > 0 && typedValues[0].kind) {
+                    const kind = typedValues[0].kind || '';
+                    analysisMap = DefaultMapTypes[kind]
+                        ? DefaultMapTypes[kind]
+                        : DefaultMapTypes.OTHER;
+                }
+
+                let value = undefined;
+                if (typedValues && typedValues.length > 0 && typedValues[0].value) {
+                    value = typedValues[0].value;
+                }
+
+                return {
+                    ...args,
+                    subpeak: subpeak === null ? undefined : subpeak,
+                    cluster_size: cluster_size === null ? undefined : cluster_size,
+                    value: value,
+                    x: (args.coordinates || [])[0],
+                    y: (args.coordinates || [])[1],
+                    z: (args.coordinates || [])[2],
+                    isNew: false,
+                };
+            })
+            .sort((a, b) => {
+                return (a.order as number) - (b.order as number);
+            });
+    } else {
+        storePoints = [
+            {
+                cluster_size: undefined,
+                id: uuid(),
+                isNew: true,
+                value: undefined,
+                subpeak: undefined,
+                x: undefined,
+                y: undefined,
+                z: undefined,
+            },
+        ];
+    }
 
     return {
-        points: parsedPoints,
+        points: storePoints,
         analysisMap,
         analysisSpace,
     };
@@ -223,8 +238,24 @@ export const storeAnalysesToStudyAnalyses = (analyses?: IStoreAnalysis[]): Analy
                 id: isNew ? undefined : args.id, // if the condition was created by us in the FE, make undefined so the BE gives it an ID
             }));
 
-            const scrubbedPoints: PointRequest[] = points.map(
-                ({ isNew, value, ...pointArgs }, index) => ({
+            let studyPoints: PointRequest[] = [];
+            if (
+                points.length <= 1 &&
+                points.every(
+                    ({ isNew, x, y, z, value, cluster_size, subpeak }) =>
+                        isNew &&
+                        x === undefined &&
+                        y === undefined &&
+                        z === undefined &&
+                        value === undefined &&
+                        cluster_size === undefined &&
+                        subpeak === undefined
+                )
+            ) {
+                // if we only have one point and it is new AND undefined, then we discard it
+                studyPoints = [];
+            } else {
+                studyPoints = points.map(({ isNew, value, ...pointArgs }, index) => ({
                     analysis: pointArgs.analysis,
                     id: isNew ? undefined : pointArgs.id, // if the point was created by us in the FE, make undefined so the BE gives it an ID
                     image: pointArgs.image,
@@ -241,8 +272,9 @@ export const storeAnalysesToStudyAnalyses = (analyses?: IStoreAnalysis[]): Analy
                         },
                     ],
                     cluster_size: pointArgs.cluster_size || null,
-                })
-            );
+                }));
+            }
+
             return {
                 name: analysisArgs.name,
                 images: analysisArgs.images,
@@ -250,7 +282,7 @@ export const storeAnalysesToStudyAnalyses = (analyses?: IStoreAnalysis[]): Analy
                 study: analysisArgs.study,
                 weights: analysisArgs.weights,
                 conditions: scrubbedConditions,
-                points: scrubbedPoints,
+                points: studyPoints,
                 id: isNew ? undefined : analysisArgs.id,
                 order: index + 1, // order is not 0 indexed in the BE
             };

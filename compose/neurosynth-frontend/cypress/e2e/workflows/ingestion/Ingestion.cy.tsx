@@ -4,7 +4,7 @@ const PATH = '/projects/mock-project-id/curation';
 
 describe('Ingestion', () => {
     beforeEach(() => {
-        cy.clearLocalStorage().clearSessionStorage();
+        cy.clearLocalStorage();
         cy.intercept('GET', 'https://api.appzi.io/**', { fixture: 'appzi' }).as('appziFixture');
         cy.intercept('GET', `**/api/meta-analyses*`, { fixture: 'metaAnalyses' }).as(
             'metaAnalysesFixture'

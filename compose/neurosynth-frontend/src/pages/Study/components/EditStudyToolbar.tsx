@@ -3,61 +3,74 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import BookmarkIcon from '@mui/icons-material/Bookmark';
 import CheckIcon from '@mui/icons-material/Check';
 import DoneAllIcon from '@mui/icons-material/DoneAll';
-import { Box, CircularProgress, IconButton, Tooltip } from '@mui/material';
-import { useGetExtractionSummary, useGetStudysetById } from 'hooks';
+import { Box, CircularProgress, IconButton, Tooltip, Typography } from '@mui/material';
+import { ColumnFiltersState, SortingState } from '@tanstack/react-table';
+import ProgressLoader from 'components/ProgressLoader';
+import GlobalStyles from 'global.styles';
+import { useGetExtractionSummary, useGetStudysetById, useUserCanEdit } from 'hooks';
 import { StudyReturn } from 'neurostore-typescript-sdk';
 import { EExtractionStatus } from 'pages/Extraction/ExtractionPage';
+import { IProjectPageLocationState } from 'pages/Project/ProjectPage';
 import {
     useProjectExtractionAddOrUpdateStudyListStatus,
-    useProjectExtractionStudyStatus,
-    useProjectExtractionStudyStatusList,
     useProjectExtractionStudysetId,
+    useProjectExtractionStudyStatus,
     useProjectId,
     useProjectMetaAnalysisCanEdit,
     useProjectUser,
 } from 'pages/Project/store/ProjectStore';
 import { useStudyId } from 'pages/Study/store/StudyStore';
-import { useCallback, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import EditStudyToolbarStyles from './EditStudyToolbar.styles';
-import { IProjectPageLocationState } from 'pages/Project/ProjectPage';
-import { useUserCanEdit } from 'hooks';
-import GlobalStyles from 'global.styles';
-
-const getCurrSelectedChipText = (selectedChip: EExtractionStatus) => {
-    switch (selectedChip) {
-        case EExtractionStatus.UNCATEGORIZED:
-            return 'uncategorized';
-        case EExtractionStatus.COMPLETED:
-            return 'completed';
-        case EExtractionStatus.SAVEDFORLATER:
-            return 'saved for later';
-        default:
-            return 'uncategorized';
-    }
-};
-
-const getCurrSelectedChip = (projectId: string | undefined) => {
-    return (
-        (localStorage.getItem(`SELECTED_CHIP-${projectId}`) as EExtractionStatus) ||
-        EExtractionStatus.UNCATEGORIZED
-    );
-};
 
 const EditStudyToolbar: React.FC<{ isViewOnly?: boolean }> = ({ isViewOnly = false }) => {
-    const projectId = useProjectId();
-    const studyId = useStudyId();
-    const extractionStatus = useProjectExtractionStudyStatus(studyId || '');
-    const extractionSummary = useGetExtractionSummary(projectId || '');
-    const studysetId = useProjectExtractionStudysetId();
-    // nested msut be true so that we maintain to alphabetical study order
-    // if nested is false, we do not have access to study names and so will be given study Ids in random order
-    const { data: studyset } = useGetStudysetById(studysetId, true);
-    const studyStatusList = useProjectExtractionStudyStatusList();
     const navigate = useNavigate();
     const canEditMetaAnalyses = useProjectMetaAnalysisCanEdit();
+
+    const projectId = useProjectId();
+    const extractionSummary = useGetExtractionSummary(projectId || '');
+
+    const studyId = useStudyId();
+    const extractionStatus = useProjectExtractionStudyStatus(studyId || '');
+
     const user = useProjectUser();
     const canEdit = useUserCanEdit(user ?? undefined);
+
+    const studysetId = useProjectExtractionStudysetId();
+    const { data, isLoading, isError } = useGetStudysetById(studysetId || '', true);
+
+    // derived from the extraction table
+    const [extractionTableState, setExtractionTableState] = useState<{
+        columnFilters: ColumnFiltersState;
+        sorting: SortingState;
+        studies: string[];
+    }>({
+        columnFilters: [],
+        sorting: [],
+        studies: [],
+    });
+
+    useEffect(() => {
+        const stateFromSessionStorage = sessionStorage.getItem(`${projectId}-extraction-table`);
+        if (!stateFromSessionStorage) {
+            setExtractionTableState((prev) => ({
+                ...prev,
+                studies: (data?.studies || []).map((study) => (study as StudyReturn).id as string),
+            }));
+        } else {
+            try {
+                const parsedState = JSON.parse(stateFromSessionStorage) as {
+                    columnFilters: ColumnFiltersState;
+                    sorting: SortingState;
+                    studies: string[];
+                };
+                setExtractionTableState(parsedState);
+            } catch (e) {
+                throw new Error('couldnt parse table state from session storage');
+            }
+        }
+    }, [data?.studies, projectId]);
 
     const updateStudyListStatus = useProjectExtractionAddOrUpdateStudyListStatus();
 
@@ -67,74 +80,22 @@ const EditStudyToolbar: React.FC<{ isViewOnly?: boolean }> = ({ isViewOnly = fal
         }
     };
 
-    const getValidPrevStudyId = useCallback((): string | undefined => {
-        if (!studyset?.studies) return undefined;
-
-        const CURR_SELECTED_CHIP_STATUS = getCurrSelectedChip(projectId);
-        const currStudyIndex = (studyset.studies || []).findIndex(
-            (study) => (study as StudyReturn)?.id === studyId
-        );
-        if (currStudyIndex < 0) return undefined;
-        const map = new Map<string, EExtractionStatus>();
-        studyStatusList.forEach((studyStatus) => {
-            map.set(studyStatus.id, studyStatus.status);
-        });
-
-        // go through all previous studies to find the next one before this current selected study that has the current selected chip status.
-        // This will also take care of the case where the current study selected is the first one
-        for (let i = currStudyIndex - 1; i >= 0; i--) {
-            const aStudy = studyset.studies[i] as StudyReturn;
-            if (!aStudy?.id) return undefined;
-            const aStudyStatus = map.get(aStudy.id) || EExtractionStatus.UNCATEGORIZED;
-
-            if (aStudyStatus === CURR_SELECTED_CHIP_STATUS) return aStudy.id;
-        }
-        return undefined;
-    }, [projectId, studyId, studyStatusList, studyset]);
-
-    const getValidNextStudyId = useCallback((): string | undefined => {
-        if (!studyset?.studies) return undefined;
-
-        const CURR_SELECTED_CHIP_STATUS = getCurrSelectedChip(projectId);
-        const currStudyIndex = (studyset.studies || []).findIndex(
-            (study) => (study as StudyReturn)?.id === studyId
-        );
-        if (currStudyIndex < 0) return undefined;
-        const map = new Map<string, EExtractionStatus>();
-        studyStatusList.forEach((studyStatus) => {
-            map.set(studyStatus.id, studyStatus.status);
-        });
-
-        for (let i = currStudyIndex + 1; i <= studyset.studies.length; i++) {
-            const aStudy = studyset.studies[i] as StudyReturn;
-            if (!aStudy?.id) return undefined;
-            const aStudyStatus = map.get(aStudy.id) || EExtractionStatus.UNCATEGORIZED;
-
-            if (aStudyStatus === CURR_SELECTED_CHIP_STATUS) return aStudy.id;
-        }
-        return undefined;
-    }, [projectId, studyId, studyStatusList, studyset]);
-
     const handleMoveToPreviousStudy = () => {
-        const prevId = getValidPrevStudyId();
-        if (prevId) {
-            canEdit
-                ? navigate(`/projects/${projectId}/extraction/studies/${prevId}/edit`)
-                : navigate(`/projects/${projectId}/extraction/studies/${prevId}`);
-        } else {
-            throw new Error('no studies before this one');
-        }
+        const index = extractionTableState.studies.indexOf(studyId || '');
+        const prevId = extractionTableState.studies[index - 1];
+        if (!prevId) throw new Error('no previous study');
+        canEdit
+            ? navigate(`/projects/${projectId}/extraction/studies/${prevId}/edit`)
+            : navigate(`/projects/${projectId}/extraction/studies/${prevId}`);
     };
 
     const handleMoveToNextStudy = () => {
-        const nextId = getValidNextStudyId();
-        if (nextId) {
-            canEdit
-                ? navigate(`/projects/${projectId}/extraction/studies/${nextId}/edit`)
-                : navigate(`/projects/${projectId}/extraction/studies/${nextId}`);
-        } else {
-            throw new Error('no studies after this one');
-        }
+        const index = extractionTableState.studies.indexOf(studyId || '');
+        const nextId = extractionTableState.studies[index + 1];
+        if (!nextId) throw new Error('no next study');
+        canEdit
+            ? navigate(`/projects/${projectId}/extraction/studies/${nextId}/edit`)
+            : navigate(`/projects/${projectId}/extraction/studies/${nextId}`);
     };
 
     const handleContinueToMetaAnalysisCreation = () => {
@@ -169,33 +130,16 @@ const EditStudyToolbar: React.FC<{ isViewOnly?: boolean }> = ({ isViewOnly = fal
     }, [extractionSummary.completed, extractionSummary.total]);
 
     const hasPrevStudies = useMemo(() => {
-        return getValidPrevStudyId() !== undefined;
-    }, [getValidPrevStudyId]);
+        const studies = extractionTableState.studies;
+        const index = studies.indexOf(studyId || '');
+        return index - 1 >= 0;
+    }, [extractionTableState.studies, studyId]);
 
     const hasNextStudies = useMemo(() => {
-        return getValidNextStudyId() !== undefined;
-    }, [getValidNextStudyId]);
-
-    const currSelectedChipText = useMemo(() => {
-        const currSelectedChip = (localStorage.getItem(`SELECTED_CHIP-${projectId}`) ||
-            EExtractionStatus.UNCATEGORIZED) as EExtractionStatus;
-        return getCurrSelectedChipText(currSelectedChip);
-    }, [projectId]);
-
-    const prevNextArrowColor = useMemo(() => {
-        const currSelectedChip = (localStorage.getItem(`SELECTED_CHIP-${projectId}`) ||
-            EExtractionStatus.UNCATEGORIZED) as EExtractionStatus;
-        switch (currSelectedChip) {
-            case EExtractionStatus.UNCATEGORIZED:
-                return 'warning.main';
-            case EExtractionStatus.SAVEDFORLATER:
-                return 'info.main';
-            case EExtractionStatus.COMPLETED:
-                return 'success.main';
-            default:
-                return 'warning.main';
-        }
-    }, [projectId]);
+        const studies = extractionTableState.studies;
+        const index = studies.indexOf(studyId || '');
+        return index + 1 < studies.length;
+    }, [extractionTableState.studies, studyId]);
 
     return (
         <Box sx={EditStudyToolbarStyles.stickyContainer}>
@@ -252,14 +196,14 @@ const EditStudyToolbar: React.FC<{ isViewOnly?: boolean }> = ({ isViewOnly = fal
                                             backgroundColor:
                                                 extractionStatus?.status ===
                                                 EExtractionStatus.COMPLETED
-                                                    ? 'lightgray'
+                                                    ? '#ebebeb'
                                                     : '',
                                         }}
                                         onClick={() =>
                                             handleClickStudyListStatus(EExtractionStatus.COMPLETED)
                                         }
                                     >
-                                        <CheckIcon />
+                                        <CheckIcon color="success" />
                                     </IconButton>
                                 </Tooltip>
                             </Box>
@@ -270,7 +214,7 @@ const EditStudyToolbar: React.FC<{ isViewOnly?: boolean }> = ({ isViewOnly = fal
                                             backgroundColor:
                                                 extractionStatus?.status ===
                                                 EExtractionStatus.SAVEDFORLATER
-                                                    ? 'lightgray'
+                                                    ? '#ebebeb'
                                                     : '',
                                         }}
                                         onClick={() =>
@@ -279,64 +223,71 @@ const EditStudyToolbar: React.FC<{ isViewOnly?: boolean }> = ({ isViewOnly = fal
                                             )
                                         }
                                     >
-                                        <BookmarkIcon />
+                                        <BookmarkIcon color="info" />
                                     </IconButton>
                                 </Tooltip>
                             </Box>
                         </>
                     )}
-                    <Box sx={{ marginBottom: '1rem' }}>
-                        <Tooltip
-                            placement="right"
-                            title={
-                                hasPrevStudies
-                                    ? `go to previous ${currSelectedChipText} study`
-                                    : `no previous ${currSelectedChipText} study`
-                            }
-                        >
-                            {/* tooltip cannot act on a disabled element so we need to add a span here */}
-                            <span>
-                                <IconButton
-                                    disabled={!hasPrevStudies}
-                                    onClick={handleMoveToPreviousStudy}
+
+                    {isLoading ? (
+                        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                            <ProgressLoader
+                                sx={{ width: '30px !important', height: '30px !important' }}
+                            />
+                        </Box>
+                    ) : isError ? (
+                        <Typography sx={{ width: '42px' }} variant="body2" color="error">
+                            There was an error
+                        </Typography>
+                    ) : (
+                        <>
+                            <Box sx={{ marginBottom: '1rem' }}>
+                                <Tooltip
+                                    placement="right"
+                                    title={
+                                        hasPrevStudies
+                                            ? 'Go to previous study'
+                                            : 'No previous study'
+                                    }
                                 >
-                                    <ArrowBackIcon
-                                        sx={{
-                                            color: hasPrevStudies
-                                                ? prevNextArrowColor
-                                                : 'muted.dark',
-                                        }}
-                                    />
-                                </IconButton>
-                            </span>
-                        </Tooltip>
-                    </Box>
-                    <Box>
-                        <Tooltip
-                            placement="right"
-                            title={
-                                hasNextStudies
-                                    ? `go to next ${currSelectedChipText} study`
-                                    : `no next ${currSelectedChipText} study`
-                            }
-                        >
-                            {/* tooltip cannot act on a disabled element so we need to add a span here */}
-                            <span>
-                                <IconButton
-                                    disabled={!hasNextStudies}
-                                    onClick={handleMoveToNextStudy}
+                                    {/* tooltip cannot act on a disabled element so we need to add a span here */}
+                                    <span>
+                                        <IconButton
+                                            disabled={!hasPrevStudies}
+                                            onClick={handleMoveToPreviousStudy}
+                                        >
+                                            <ArrowBackIcon
+                                                sx={{
+                                                    color: hasPrevStudies ? 'primary.main' : 'gray',
+                                                }}
+                                            />
+                                        </IconButton>
+                                    </span>
+                                </Tooltip>
+                            </Box>
+                            <Box>
+                                <Tooltip
+                                    placement="right"
+                                    title={hasNextStudies ? 'Go to next study' : 'No next study'}
                                 >
-                                    <ArrowForwardIcon
-                                        sx={{
-                                            color: hasNextStudies
-                                                ? prevNextArrowColor
-                                                : 'muted.dark',
-                                        }}
-                                    />
-                                </IconButton>
-                            </span>
-                        </Tooltip>
-                    </Box>
+                                    {/* tooltip cannot act on a disabled element so we need to add a span here */}
+                                    <span>
+                                        <IconButton
+                                            disabled={!hasNextStudies}
+                                            onClick={handleMoveToNextStudy}
+                                        >
+                                            <ArrowForwardIcon
+                                                sx={{
+                                                    color: hasNextStudies ? 'primary.main' : 'gray',
+                                                }}
+                                            />
+                                        </IconButton>
+                                    </span>
+                                </Tooltip>
+                            </Box>
+                        </>
+                    )}
                 </Box>
             </Box>
         </Box>

@@ -5,7 +5,7 @@ import { useState } from 'react';
 
 const InputNumberDialog: React.FC<
     IDialog & {
-        onInputNumber: (value: number) => void;
+        onSubmit: (value: number) => void;
         dialogTitle: string;
         dialogDescription: string;
     }
@@ -17,8 +17,9 @@ const InputNumberDialog: React.FC<
             props.onCloseDialog();
         } else {
             if (!val) return;
-            props.onInputNumber(val);
+            props.onSubmit(val);
         }
+        setVal(4);
     };
 
     return (
@@ -27,7 +28,10 @@ const InputNumberDialog: React.FC<
             maxWidth="xs"
             dialogTitle={props.dialogTitle}
             isOpen={props.isOpen}
-            onCloseDialog={props.onCloseDialog}
+            onCloseDialog={() => {
+                setVal(4);
+                props.onCloseDialog();
+            }}
         >
             <Box>
                 <Typography>{props.dialogDescription}</Typography>

@@ -1,0 +1,184 @@
+{
+    "created_at": "2023-11-02T15:48:04.630172+00:00",
+    "description": "this is a bulk import test",
+    "id": "abc123",
+    "meta_analyses": ["3xHJJQWFURob"],
+    "name": "Bulk import test",
+    "neurostore_study": {
+        "created_at": "2023-11-02T15:48:04.640598+00:00",
+        "exception": null,
+        "neurostore_id": "7BrAuwJ2tjPW",
+        "status": "PENDING",
+        "traceback": null,
+        "updated_at": "2023-11-02T15:48:04.653465+00:00"
+    },
+    "neurostore_url": "https://neurostore.org/api/studies/7BrAuwJ2tjPW",
+    "provenance": {
+        "curationMetadata": {
+            "columns": [
+                {
+                    "id": "370ba40c-91e8-47e7-9b4d-926bc8f31d10",
+                    "name": "not included",
+                    "stubStudies": []
+                },
+                {
+                    "id": "1f15d9a7-968e-44a6-8574-caa3794e050e",
+                    "name": "included",
+                    "stubStudies": [
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/9808463",
+                            "articleYear": "1998",
+                            "authors": "Corbetta M, Akbudak E, Conturo TE, Snyder AZ, Ollinger JM, Drury HA, Linenweber MR, Petersen SE, Raichle ME, Van Essen DC, Shulman GL",
+                            "doi": "10.1016/S0896-6273(00)80593-0",
+                            "exclusionTag": null,
+                            "id": "1",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "journal": "Neuron",
+                            "keywords": "",
+                            "neurostoreId": "3Jvrv4Pct3hb",
+                            "pmcid": "",
+                            "pmid": "9808463",
+                            "searchTerm": "?genericSearchStr=psychosis&dataType=all&source=all&sortBy=relevance&descOrder=true",
+                            "tags": [],
+                            "title": "A common network of functional areas for attention and eye movements."
+                        },
+                        {
+                            "abstractText": "Important decisions are often made under stressful\r\ncircumstances thatmight compromise self-regulatory\r\nbehavior. Yet the neural mechanisms by which\r\nstress influences self-control choices are unclear.\r\nWe investigated these mechanisms in human participants\r\nwho faced self-control dilemmas over food\r\nreward while undergoing fMRI following stress.\r\nWe found that stress increased the influence of\r\nimmediately rewarding taste attributes on choice\r\nand reduced self-control. This choice pattern was\r\naccompanied by increased functional connectivity\r\nbetween ventromedial prefrontal cortex (vmPFC)\r\nand amygdala and striatal regions encoding tastiness.\r\nFurthermore, stress was associated with\r\nreduced connectivity between the vmPFC and\r\ndorsolateral prefrontal cortex regions linked to selfcontrol\r\nsuccess. Notably, alterations in connectivity\r\npathways could be dissociated by their differential\r\nrelationships with cortisol and perceived stress.\r\nOur results indicate that stress may compromise\r\nself-control decisions by both enhancing the impact\r\nof immediately rewarding attributes and reducing the\r\nefficacy of regions promoting behaviors that are\r\nconsistent with long-term goals.\r\n\r\nThis collection contains second level correlations of stress induced differences in the influence of taste based decisions on vStr,Amyg and vmPFC and their connectivity.\r\n\r\nKey words: food choice, decision making, self-regulation",
+                            "articleLink": "",
+                            "articleYear": "",
+                            "authors": "Silvia U. Maier, Aidan B. Makwana and Todd A. Hare",
+                            "doi": "10.1016/j.neuron.2015.07.005",
+                            "exclusionTag": null,
+                            "id": "2",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "journal": "Neuron",
+                            "keywords": "",
+                            "neurostoreId": "36nHEsLLPwBB",
+                            "pmcid": "",
+                            "pmid": "26247866",
+                            "searchTerm": "?genericSearchStr=psychosis&dataType=all&source=all&sortBy=relevance&descOrder=true",
+                            "tags": [],
+                            "title": "Acute Stress Impairs Self-Control in Goal-Directed Choice by Altering Multiple Functional Connections within the Brain’s Decision Circuits"
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "",
+                            "articleYear": "",
+                            "authors": "Ethan M. McCormick, Yang Qu and Eva H. Telzer",
+                            "doi": "10.3389/fnhum.2017.00141",
+                            "exclusionTag": null,
+                            "id": "3",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "journal": "Frontiers in Human Neuroscience",
+                            "keywords": "",
+                            "neurostoreId": "3zutS8kyg2sy",
+                            "pmcid": "",
+                            "pmid": "",
+                            "searchTerm": "?genericSearchStr=psychosis&dataType=all&source=all&sortBy=relevance&descOrder=true",
+                            "tags": [],
+                            "title": "Activation in Context: Differential Conclusions Drawn from Cross-Sectional and Longitudinal Analyses of Adolescents’ Cognitive Control-Related Neural Activity"
+                        }
+                    ]
+                }
+            ],
+            "exclusionTags": [
+                {
+                    "id": "neurosynth_exclude_exclusion",
+                    "isAssignable": true,
+                    "isExclusionTag": true,
+                    "label": "Exclude"
+                },
+                {
+                    "id": "neurosynth_duplicate_exclusion",
+                    "isAssignable": true,
+                    "isExclusionTag": true,
+                    "label": "Duplicate"
+                }
+            ],
+            "identificationSources": [
+                {
+                    "id": "neurosynth_neurostore_id_source",
+                    "label": "Neurostore"
+                },
+                {
+                    "id": "neurosynth_pubmed_id_source",
+                    "label": "PubMed"
+                },
+                {
+                    "id": "neurosynth_scopus_id_source",
+                    "label": "Scopus"
+                },
+                {
+                    "id": "neurosynth_web_of_science_id_source",
+                    "label": "Web of Science"
+                },
+                {
+                    "id": "neurosynth_psycinfo_id_source",
+                    "label": "PsycInfo"
+                }
+            ],
+            "infoTags": [
+                {
+                    "id": "neurosynth_untagged_tag",
+                    "isAssignable": false,
+                    "isExclusionTag": false,
+                    "label": "Untagged studies"
+                },
+                {
+                    "id": "neurosynth_uncategorized_tag",
+                    "isAssignable": false,
+                    "isExclusionTag": false,
+                    "label": "Uncategorized Studies"
+                },
+                {
+                    "id": "neurosynth_needs_review_tag",
+                    "isAssignable": false,
+                    "isExclusionTag": false,
+                    "label": "Needs Review"
+                },
+                {
+                    "id": "6f299c47-766c-48bd-a56b-9c77019ea9de",
+                    "isAssignable": true,
+                    "isExclusionTag": false,
+                    "label": "marijuana"
+                }
+            ],
+            "prismaConfig": {
+                "eligibility": {
+                    "exclusionTags": []
+                },
+                "identification": {
+                    "exclusionTags": []
+                },
+                "isPrisma": false,
+                "screening": {
+                    "exclusionTags": []
+                }
+            }
+        },
+        "extractionMetadata": {
+            "annotationId": "5LSBDTGqA6RF",
+            "studyStatusList": [
+                { "id": "3zutS8kyg2sy", "status": "completed" }
+            ],
+            "studysetId": "73HRs8HaJbR8"
+        },
+        "metaAnalysisMetadata": {
+            "canEditMetaAnalyses": false
+        }
+    },
+    "public": false,
+    "updated_at": "2023-11-02T19:42:04.265234+00:00",
+    "user": "auth0|62e0e6c9dd47048572613b4d",
+    "username": "Test User"
+}
