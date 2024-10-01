@@ -118,7 +118,7 @@ describe('CreateMetaAnalysisSpecificationSelectionStep', () => {
                 />
             );
 
-            const backButton = screen.getByRole('button', { name: 'back' });
+            const backButton = screen.getByRole('button', { name: 'Back' });
             userEvent.click(backButton);
 
             expect(mockOnNavigate).toHaveBeenCalledWith(ENavigationButton.PREV);
@@ -134,7 +134,7 @@ describe('CreateMetaAnalysisSpecificationSelectionStep', () => {
                 />
             );
 
-            const nextButton = screen.getByRole('button', { name: 'next' });
+            const nextButton = screen.getByRole('button', { name: 'Next' });
             userEvent.click(nextButton);
 
             expect(mockOnNavigate).toHaveBeenCalledWith(ENavigationButton.NEXT);
@@ -156,7 +156,7 @@ describe('CreateMetaAnalysisSpecificationSelectionStep', () => {
                 />
             );
 
-            const nextButton = screen.getByRole('button', { name: 'next' });
+            const nextButton = screen.getByRole('button', { name: 'Next' });
             expect(nextButton).toBeDisabled();
         });
 
@@ -176,7 +176,7 @@ describe('CreateMetaAnalysisSpecificationSelectionStep', () => {
                 />
             );
 
-            const nextButton = screen.getByRole('button', { name: 'next' });
+            const nextButton = screen.getByRole('button', { name: 'Next' });
             expect(nextButton).toBeDisabled();
         });
 
@@ -207,7 +207,7 @@ describe('CreateMetaAnalysisSpecificationSelectionStep', () => {
                 />
             );
 
-            const nextButton = screen.getByRole('button', { name: 'next' });
+            const nextButton = screen.getByRole('button', { name: 'Next' });
             expect(nextButton).toBeDisabled();
         });
     });

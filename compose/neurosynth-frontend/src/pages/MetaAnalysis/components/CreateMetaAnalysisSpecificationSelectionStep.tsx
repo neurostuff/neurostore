@@ -28,10 +28,11 @@ const CreateMetaAnalysisSpecificationSelectionStep: React.FC<{
     const [selectedValue, setSelectedValue] = useState<IAnalysesSelection>(props.selection);
 
     const handleNavigate = (button: ENavigationButton) => {
-        if (selectedValue?.selectionKey && selectedValue?.type !== EPropertyType.NONE)
+        if (selectedValue?.selectionKey && selectedValue?.type !== EPropertyType.NONE) {
             props.onChooseSelection({
                 ...selectedValue,
             });
+        }
         props.onNavigate(button);
     };
 
@@ -97,7 +98,7 @@ const CreateMetaAnalysisSpecificationSelectionStep: React.FC<{
                         onClick={() => handleNavigate(ENavigationButton.PREV)}
                         variant="outlined"
                     >
-                        back
+                        Back
                     </Button>
                     <SelectAnalysesSummaryComponent
                         annotationdId={annotationId || ''}
@@ -113,7 +114,7 @@ const CreateMetaAnalysisSpecificationSelectionStep: React.FC<{
                         }
                         onClick={() => handleNavigate(ENavigationButton.NEXT)}
                     >
-                        next
+                        Next
                     </Button>
                 </Box>
             </Box>

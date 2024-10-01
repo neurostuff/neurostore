@@ -36,11 +36,12 @@ const CreateMetaAnalysisSpecificationAlgorithmStep: React.FC<{
                 algorithm={algorithmSpec}
                 onSelectSpecification={(update) => setAlgorithmSpec(update)}
             />
-            <Box sx={{ width: '100$%', marginTop: '1rem' }}>
+            <Box sx={{ marginTop: '1rem' }}>
                 <NavigationButtons
                     nextButtonDisabled={!algorithmSpec.estimator}
                     nextButtonStyle="contained"
                     onButtonClick={handleNavigate}
+                    prevButtonDisabled
                 />
             </Box>
         </Box>
