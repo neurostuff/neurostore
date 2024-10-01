@@ -31,6 +31,7 @@ import { useStudyId } from 'pages/Study/store/StudyStore';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import EditStudyToolbarStyles from './EditStudyToolbar.styles';
+import SaveIcon from '@mui/icons-material/Save';
 
 const EditStudyToolbar: React.FC<{ isViewOnly?: boolean }> = ({ isViewOnly = false }) => {
     const navigate = useNavigate();
@@ -201,7 +202,7 @@ const EditStudyToolbar: React.FC<{ isViewOnly?: boolean }> = ({ isViewOnly = fal
                                 <SwapHorizIcon />
                             </Fab>
                         </Box>
-                        <Box>
+                        <Box sx={{ marginBottom: '1rem' }}>
                             <ButtonGroup orientation="vertical">
                                 <Button
                                     onClick={() =>
@@ -232,6 +233,11 @@ const EditStudyToolbar: React.FC<{ isViewOnly?: boolean }> = ({ isViewOnly = fal
                                     <BookmarkIcon />
                                 </Button>
                             </ButtonGroup>
+                        </Box>
+                        <Box sx={{ marginBottom: '1rem' }}>
+                            <Fab color="success" size="small" sx={{ boxShadow: 'none' }}>
+                                <SaveIcon />
+                            </Fab>
                         </Box>
 
                         {/* <Box sx={{ marginBottom: '1rem' }}>

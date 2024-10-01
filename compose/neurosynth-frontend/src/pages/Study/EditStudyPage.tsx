@@ -97,9 +97,6 @@ const EditStudyPage: React.FC = (props) => {
                             >
                                 Giant Panda Identification
                             </Typography>
-                            <Typography textAlign="start" fontSize="0.6rem">
-                                Back
-                            </Typography>
                         </Box>
                     </Button>
                     <Typography variant="body2" sx={{ marginX: '1rem' }}>
@@ -128,9 +125,6 @@ const EditStudyPage: React.FC = (props) => {
                             >
                                 Reproducibility of fMRI results across four institutions using a
                                 spatial workign memory task
-                            </Typography>
-                            <Typography textAlign="end" fontSize="0.6rem">
-                                Next
                             </Typography>
                         </Box>
                     </Button>
