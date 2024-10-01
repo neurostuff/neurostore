@@ -98,7 +98,7 @@ const CreateMetaAnalysisSpecificationSelectionStep: React.FC<{
                         onClick={() => handleNavigate(ENavigationButton.PREV)}
                         variant="outlined"
                     >
-                        back
+                        Back
                     </Button>
                     <SelectAnalysesSummaryComponent
                         annotationdId={annotationId || ''}
@@ -114,7 +114,7 @@ const CreateMetaAnalysisSpecificationSelectionStep: React.FC<{
                         }
                         onClick={() => handleNavigate(ENavigationButton.NEXT)}
                     >
-                        next
+                        Next
                     </Button>
                 </Box>
             </Box>

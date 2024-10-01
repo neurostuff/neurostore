@@ -63,15 +63,16 @@ const correctorOptions: IAutocompleteObject[] = Object.keys(
     description: metaAnalysisSpecification.CORRECTOR[corrector]?.summary,
 }));
 
-const correctorOpt =
+const correctorDefaultOption =
     correctorOptions.find((corrector) => corrector.label === 'FDRCorrector') || null;
-const algorithmOpt = metaAnalyticAlgorithms.find((algo) => algo.label === 'MKDADensity') || null;
+const algorithmDefaultOption =
+    metaAnalyticAlgorithms.find((algo) => algo.label === 'MKDADensity') || null;
 
 export {
     getDefaultValuesForTypeAndParameter,
     metaAnalysisSpecification,
     metaAnalyticAlgorithms,
     correctorOptions,
-    correctorOpt,
-    algorithmOpt,
+    correctorDefaultOption,
+    algorithmDefaultOption,
 };

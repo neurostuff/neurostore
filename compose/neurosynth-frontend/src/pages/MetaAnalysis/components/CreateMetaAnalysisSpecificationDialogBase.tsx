@@ -16,8 +16,8 @@ import CreateMetaAnalysisSpecificationReview from 'pages/MetaAnalysis/components
 import CreateMetaAnalysisSpecificationSelectionStep from 'pages/MetaAnalysis/components/CreateMetaAnalysisSpecificationSelectionStep';
 import {
     getDefaultValuesForTypeAndParameter,
-    correctorOpt,
-    algorithmOpt,
+    correctorDefaultOption,
+    algorithmDefaultOption,
 } from './CreateMetaAnalysisSpecificationDialogConstants';
 
 const CreateMetaAnalysisSpecificationDialogBase: React.FC<IDialog> = (props) => {
@@ -35,10 +35,16 @@ const CreateMetaAnalysisSpecificationDialogBase: React.FC<IDialog> = (props) => 
         referenceDataset: undefined,
     });
     const [algorithm, setAlgorithm] = useState<IAlgorithmSelection>({
-        estimator: algorithmOpt,
-        estimatorArgs: getDefaultValuesForTypeAndParameter(EAnalysisType.CBMA, algorithmOpt?.label),
-        corrector: correctorOpt,
-        correctorArgs: getDefaultValuesForTypeAndParameter('CORRECTOR', correctorOpt?.label),
+        estimator: algorithmDefaultOption,
+        estimatorArgs: getDefaultValuesForTypeAndParameter(
+            EAnalysisType.CBMA,
+            algorithmDefaultOption?.label
+        ),
+        corrector: correctorDefaultOption,
+        correctorArgs: getDefaultValuesForTypeAndParameter(
+            'CORRECTOR',
+            correctorDefaultOption?.label
+        ),
     });
 
     useEffect(() => {
@@ -52,13 +58,16 @@ const CreateMetaAnalysisSpecificationDialogBase: React.FC<IDialog> = (props) => 
         props.onCloseDialog();
         setActiveStep(0);
         setAlgorithm({
-            estimator: algorithmOpt,
+            estimator: algorithmDefaultOption,
             estimatorArgs: getDefaultValuesForTypeAndParameter(
                 EAnalysisType.CBMA,
-                algorithmOpt?.label
+                algorithmDefaultOption?.label
             ),
-            corrector: correctorOpt,
-            correctorArgs: getDefaultValuesForTypeAndParameter('CORRECTOR', correctorOpt?.label),
+            corrector: correctorDefaultOption,
+            correctorArgs: getDefaultValuesForTypeAndParameter(
+                'CORRECTOR',
+                correctorDefaultOption?.label
+            ),
         });
         setSelection({
             selectionKey: undefined,
