@@ -71,10 +71,10 @@ const CreateMetaAnalysisSpecificationDialogBase: React.FC<IDialog> = (props) => 
     const handleNavigate = (button: ENavigationButton) => {
         setActiveStep((prev) => {
             if (button === ENavigationButton.NEXT) {
-                if (activeStep < 3) return prev + 1;
+                if (prev < 3) return prev + 1;
                 return prev;
             } else {
-                if (activeStep > 0) return prev - 1;
+                if (prev > 0) return prev - 1;
                 return prev;
             }
         });

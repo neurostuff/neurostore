@@ -30,12 +30,7 @@ const ProjectViewMetaAnalyses: React.FC = () => {
                 .filter((id): id is string => id !== undefined);
         }
     }
-    const {
-        data = [],
-        isLoading,
-        isError,
-        isRefetching,
-    } = useGetMetaAnalysesByIds(metaAnalysisIds);
+    const { data = [], isLoading, isError } = useGetMetaAnalysesByIds(metaAnalysisIds);
     const canEditMetaAnalyses = useProjectMetaAnalysisCanEdit();
     const projectIdFromProject = useProjectId();
     const [createMetaAnalysisDialogIsOpen, setCreateMetaAnalysisDialogIsOpen] = useState(false);
@@ -49,7 +44,7 @@ const ProjectViewMetaAnalyses: React.FC = () => {
     );
 
     return (
-        <StateHandlerComponent isLoading={isLoading || isRefetching} isError={isError}>
+        <StateHandlerComponent isLoading={isLoading} isError={isError}>
             <CreateMetaAnalysisSpecificationDialogBase
                 isOpen={createMetaAnalysisDialogIsOpen}
                 onCloseDialog={() => setCreateMetaAnalysisDialogIsOpen(false)}

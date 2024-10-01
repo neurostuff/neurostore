@@ -41,6 +41,7 @@ const CreateMetaAnalysisSpecificationAlgorithmStep: React.FC<{
                     nextButtonDisabled={!algorithmSpec.estimator}
                     nextButtonStyle="contained"
                     onButtonClick={handleNavigate}
+                    prevButtonDisabled
                 />
             </Box>
         </Box>
