@@ -73,7 +73,19 @@ const EditStudyPage: React.FC = (props) => {
             </Box>
             <Box sx={EditStudyPageStyles.loadingButtonContainer}>
                 {/* <EditStudySwapVersionButton /> */}
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <Box sx={{ width: '33%', justifyContent: 'flex-start' }}>
+                    <Button color="error" variant="outlined">
+                        Back
+                    </Button>
+                </Box>
+                <Box
+                    sx={{
+                        width: '33%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'flex-start',
+                    }}
+                >
                     <Button
                         startIcon={<ArrowLeft />}
                         disableElevation
@@ -129,8 +141,12 @@ const EditStudyPage: React.FC = (props) => {
                         </Box>
                     </Button>
                 </Box>
-                <DisplayExtractionTableState />
-                <EditStudySaveButton />
+                {/* <Box sx={{ width: '33%', display: 'flex', justifyContent: 'center' }}>
+                    <DisplayExtractionTableState />
+                </Box> */}
+                <Box sx={{ width: '33%', display: 'flex', justifyContent: 'flex-end' }}>
+                    <EditStudySaveButton />
+                </Box>
             </Box>
         </StateHandlerComponent>
     );

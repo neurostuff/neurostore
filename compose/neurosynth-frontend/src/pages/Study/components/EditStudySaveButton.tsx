@@ -38,6 +38,7 @@ import { storeNotesToDBNotes } from 'stores/AnnotationStore.helpers';
 import API from 'utils/api';
 import { arrayToMetadata } from './EditStudyMetadata';
 import { hasDuplicateStudyAnalysisNames, hasEmptyStudyPoints } from './EditStudySaveButton.helpers';
+import { unsetUnloadHandler } from 'helpers/BeforeUnload.helpers';
 
 const EditStudySaveButton: React.FC = React.memo((props) => {
     const { user } = useAuth0();
@@ -91,6 +92,8 @@ const EditStudySaveButton: React.FC = React.memo((props) => {
             });
             updateAnnotationNotes(updatedNotes);
             await updateAnnotationInDB();
+            unsetUnloadHandler('study');
+            unsetUnloadHandler('annotation');
 
             queryClient.invalidateQueries('studies');
             queryClient.invalidateQueries('annotations');
@@ -105,6 +108,8 @@ const EditStudySaveButton: React.FC = React.memo((props) => {
     const handleUpdateStudyInDB = async () => {
         try {
             await updateStudyInDB(annotationId as string);
+            unsetUnloadHandler('study');
+            unsetUnloadHandler('annotation');
             queryClient.invalidateQueries('studies');
             queryClient.invalidateQueries('annotations');
 
@@ -118,6 +123,8 @@ const EditStudySaveButton: React.FC = React.memo((props) => {
     const handleUpdateAnnotationInDB = async () => {
         try {
             await updateAnnotationInDB();
+            unsetUnloadHandler('study');
+            unsetUnloadHandler('annotation');
             queryClient.invalidateQueries('annotations');
             enqueueSnackbar('Annotation saved', { variant: 'success' });
         } catch (e) {
@@ -227,6 +234,9 @@ const EditStudySaveButton: React.FC = React.memo((props) => {
                 },
             });
 
+            unsetUnloadHandler('study');
+            unsetUnloadHandler('annotation');
+
             navigate(`/projects/${projectId}/extraction/studies/${clonedStudyId}/edit`);
             enqueueSnackbar('Saved successfully. You are now the owner of this study', {
                 variant: 'success',
@@ -271,13 +281,13 @@ const EditStudySaveButton: React.FC = React.memo((props) => {
 
     return (
         <LoadingButton
-            text="save"
+            text="complete"
             isLoading={updateStudyIsLoading || updateAnnotationIsLoading || isCloning}
             variant="contained"
+            color="success"
             loaderColor="secondary"
-            disabled={!studyHasBeenEdited && !annotationHasBeenEdited}
             disableElevation
-            sx={{ width: '280px', height: '36px' }}
+            sx={{ width: '200px', height: '36px' }}
             onClick={handleSave}
         />
     );

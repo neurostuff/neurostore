@@ -7,7 +7,8 @@ const EditStudyToolbarStyles: Style = {
     },
     toolbarContainer: {
         position: 'absolute',
-        right: 'calc(-10%)',
+        right: '-9%',
+        transform: 'translateX(-8px)',
         borderRadius: '4px',
         border: '1px solid',
         borderColor: 'primary.main',

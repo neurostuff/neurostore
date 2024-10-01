@@ -1,14 +1,9 @@
 import { AxiosResponse } from 'axios';
 import { IMetadataRowModel } from 'components/EditMetadata/EditMetadata.types';
-import { arrayToMetadata, metadataToArray } from 'pages/Study/components/EditStudyMetadata';
-import { AnalysisReturn, StudyReturn } from 'neurostore-typescript-sdk';
 import { setAnalysesInAnnotationAsIncluded } from 'helpers/Annotation.helpers';
-import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import API from 'utils/api';
-import { v4 as uuid } from 'uuid';
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { setUnloadHandler } from 'helpers/BeforeUnload.helpers';
+import { AnalysisReturn, StudyReturn } from 'neurostore-typescript-sdk';
+import { arrayToMetadata, metadataToArray } from 'pages/Study/components/EditStudyMetadata';
 import {
     IStoreAnalysis,
     IStoreCondition,
@@ -19,6 +14,12 @@ import {
     storeAnalysesToStudyAnalyses,
     studyAnalysesToStoreAnalyses,
 } from 'pages/Study/store/StudyStore.helpers';
+import { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
+import API from 'utils/api';
+import { v4 as uuid } from 'uuid';
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
 export type StudyStoreActions = {
     initStudyStore: (studyId?: string) => void;
@@ -138,6 +139,7 @@ const useStudyStore = create<
                     }));
                 },
                 updateStudy: (fieldName, value) => {
+                    setUnloadHandler('study');
                     set((state) => ({
                         ...state,
                         study: {
@@ -222,6 +224,7 @@ const useStudyStore = create<
                     }
                 },
                 addOrUpdateStudyMetadataRow: (row) => {
+                    setUnloadHandler('study');
                     set((state) => {
                         const metadataUpdate = [...state.study.metadata];
                         const foundRowIndex = metadataUpdate.findIndex(
@@ -252,6 +255,7 @@ const useStudyStore = create<
                     });
                 },
                 deleteStudyMetadataRow: (id) => {
+                    setUnloadHandler('study');
                     set((state) => {
                         const metadataUpdate = [...state.study.metadata];
                         const foundRowIndex = metadataUpdate.findIndex((x) => x.metadataKey === id);
@@ -273,6 +277,7 @@ const useStudyStore = create<
                     });
                 },
                 addOrUpdateAnalysis: (analysis) => {
+                    setUnloadHandler('study');
                     let createdOrUpdatedAnalysis: IStoreAnalysis;
 
                     // we do this outside the set func here so that we can return the updated or created analysis
@@ -330,6 +335,7 @@ const useStudyStore = create<
                     return createdOrUpdatedAnalysis;
                 },
                 deleteAnalysis: (analysisId) => {
+                    setUnloadHandler('study');
                     set((state) => {
                         const updatedAnalyses = [
                             ...state.study.analyses.filter((x) => x.id !== analysisId),
@@ -464,6 +470,7 @@ const useStudyStore = create<
                     });
                 },
                 createAnalysisPoints: (analysisId, points, index) => {
+                    setUnloadHandler('study');
                     set((state) => {
                         const updatedAnalyses = [...state.study.analyses];
                         const foundAnalysisIndex = updatedAnalyses.findIndex(
@@ -505,6 +512,7 @@ const useStudyStore = create<
                     });
                 },
                 deleteAnalysisPoints: (analysisId, ids) => {
+                    setUnloadHandler('study');
                     set((state) => {
                         const updatedAnalyses = [...state.study.analyses];
                         const foundAnalysisIndex = updatedAnalyses.findIndex(
@@ -547,6 +555,7 @@ const useStudyStore = create<
                     });
                 },
                 updateAnalysisPoints: (analysisId, pointsToUpdate) => {
+                    setUnloadHandler('study');
                     set((state) => {
                         const updatedAnalyses = [...state.study.analyses];
                         const foundAnalysisIndex = updatedAnalyses.findIndex(

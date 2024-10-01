@@ -419,7 +419,7 @@ const ExtractionTable: React.FC = () => {
                         ))}
                     </Box>
                     <Box>
-                        <Typography sx={{ whiteSpace: 'nowrap' }}>
+                        <Box sx={{ whiteSpace: 'nowrap' }}>
                             {columnFilters.length > 0 ? (
                                 <Typography>
                                     Viewing {table.getFilteredRowModel().rows.length} /{' '}
@@ -428,7 +428,7 @@ const ExtractionTable: React.FC = () => {
                             ) : (
                                 <Typography>Total: {data.length} studies</Typography>
                             )}
-                        </Typography>
+                        </Box>
                     </Box>
                 </Box>
             </Box>

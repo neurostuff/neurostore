@@ -32,6 +32,12 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import EditStudyToolbarStyles from './EditStudyToolbar.styles';
 import SaveIcon from '@mui/icons-material/Save';
+import {
+    ArrowBack,
+    ArrowForward,
+    KeyboardArrowLeft,
+    KeyboardArrowRight,
+} from '@mui/icons-material';
 
 const EditStudyToolbar: React.FC<{ isViewOnly?: boolean }> = ({ isViewOnly = false }) => {
     const navigate = useNavigate();
@@ -197,47 +203,81 @@ const EditStudyToolbar: React.FC<{ isViewOnly?: boolean }> = ({ isViewOnly = fal
                                 </Tooltip>
                             )}
                         </Box>
-                        <Box sx={{ marginBottom: '1rem' }}>
-                            <Fab color="secondary" size="small" sx={{ boxShadow: 'none' }}>
+                        <Box sx={{ marginBottom: '0.5rem' }}>
+                            <Button
+                                color="secondary"
+                                variant="contained"
+                                disableElevation
+                                size="small"
+                                sx={{ minWidth: '0', width: '40px', height: '40px' }}
+                            >
                                 <SwapHorizIcon />
-                            </Fab>
+                            </Button>
+                        </Box>
+                        <Box sx={{ marginBottom: '0.5rem' }}>
+                            <Button
+                                onClick={() =>
+                                    handleClickStudyListStatus(EExtractionStatus.SAVEDFORLATER)
+                                }
+                                sx={{ minWidth: '0', width: '40px', height: '40px' }}
+                                disableElevation
+                                variant={
+                                    extractionStatus?.status === EExtractionStatus.SAVEDFORLATER
+                                        ? 'contained'
+                                        : 'outlined'
+                                }
+                            >
+                                <BookmarkIcon />
+                            </Button>
+                            {/* <Fab color="success" size="small" sx={{ boxShadow: 'none' }}>
+                            </Fab> */}
                         </Box>
                         <Box sx={{ marginBottom: '1rem' }}>
-                            <ButtonGroup orientation="vertical">
+                            <Button
+                                variant="contained"
+                                disableElevation
+                                sx={{ minWidth: '0', width: '40px', height: '40px' }}
+                            >
+                                <SaveIcon />
+                            </Button>
+                            {/* <Fab color="success" size="small" sx={{ boxShadow: 'none' }}>
+                            </Fab> */}
+                        </Box>
+                        <Box>
+                            <ButtonGroup
+                                color="info"
+                                orientation="vertical"
+                                sx={{ minWidth: '0px' }}
+                            >
                                 <Button
-                                    onClick={() =>
-                                        handleClickStudyListStatus(EExtractionStatus.COMPLETED)
-                                    }
-                                    sx={{ padding: '0.5rem 0', height: '40px' }}
-                                    disableElevation
-                                    variant={
-                                        extractionStatus?.status === EExtractionStatus.COMPLETED
-                                            ? 'contained'
-                                            : 'outlined'
-                                    }
+                                    // onClick={() =>
+                                    //     handleClickStudyListStatus(EExtractionStatus.COMPLETED)
+                                    // }
+                                    sx={{ height: '40px', width: '40px', minWidth: '0' }}
+                                    // disableElevation
+                                    // variant={
+                                    //     extractionStatus?.status === EExtractionStatus.COMPLETED
+                                    //         ? 'contained'
+                                    //         : 'outlined'
+                                    // }
                                 >
-                                    <CheckIcon />
+                                    <KeyboardArrowLeft />
                                 </Button>
                                 <Button
-                                    onClick={() =>
-                                        handleClickStudyListStatus(EExtractionStatus.SAVEDFORLATER)
-                                    }
-                                    sx={{ padding: '0.5rem 0', height: '40px' }}
-                                    disableElevation
-                                    variant={
-                                        extractionStatus?.status === EExtractionStatus.SAVEDFORLATER
-                                            ? 'contained'
-                                            : 'outlined'
-                                    }
+                                    // onClick={() =>
+                                    //     handleClickStudyListStatus(EExtractionStatus.SAVEDFORLATER)
+                                    // }
+                                    sx={{ height: '40px', width: '40px', minWidth: '0' }}
+                                    // disableElevation
+                                    // variant={
+                                    //     extractionStatus?.status === EExtractionStatus.SAVEDFORLATER
+                                    //         ? 'contained'
+                                    //         : 'outlined'
+                                    // }
                                 >
-                                    <BookmarkIcon />
+                                    <KeyboardArrowRight />
                                 </Button>
                             </ButtonGroup>
-                        </Box>
-                        <Box sx={{ marginBottom: '1rem' }}>
-                            <Fab color="success" size="small" sx={{ boxShadow: 'none' }}>
-                                <SaveIcon />
-                            </Fab>
                         </Box>
 
                         {/* <Box sx={{ marginBottom: '1rem' }}>
