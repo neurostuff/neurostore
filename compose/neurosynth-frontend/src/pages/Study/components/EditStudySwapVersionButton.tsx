@@ -1,7 +1,16 @@
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
-import { Button, ButtonGroup, ListItem, ListItemButton, Menu, Typography } from '@mui/material';
-import LoadingButton from 'components/Buttons/LoadingButton';
+import {
+    Box,
+    Button,
+    ButtonGroup,
+    CircularProgress,
+    ListItem,
+    ListItemButton,
+    Menu,
+    Tooltip,
+    Typography,
+} from '@mui/material';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import { setAnalysesInAnnotationAsIncluded } from 'helpers/Annotation.helpers';
 import { lastUpdatedAtSortFn } from 'helpers/utils';
@@ -9,6 +18,7 @@ import { useGetStudysetById, useUpdateStudyset } from 'hooks';
 import useGetBaseStudyById from 'hooks/studies/useGetBaseStudyById';
 import { StudyReturn } from 'neurostore-typescript-sdk';
 import { useSnackbar } from 'notistack';
+import { updateExtractionTableStateInStorage } from 'pages/Extraction/components/ExtractionTable.helpers';
 import {
     useProjectExtractionReplaceStudyListStatusId,
     useProjectExtractionStudysetId,
@@ -88,6 +98,7 @@ const EditStudySwapVersionButton: React.FC = (props) => {
                 },
             });
             updateStudyListStatusWithNewStudyId(studyId, versionToSwapTo);
+            updateExtractionTableStateInStorage(projectId, studyId, versionToSwapTo);
             await setAnalysesInAnnotationAsIncluded(annotationId);
 
             navigate(`/projects/${projectId}/extraction/studies/${versionToSwapTo}/edit`);
@@ -122,16 +133,20 @@ const EditStudySwapVersionButton: React.FC = (props) => {
 
     return (
         <>
-            <LoadingButton
-                isLoading={isSwapping}
-                sx={{ width: '280px', height: '36px' }}
-                variant="contained"
-                disableElevation
-                color="secondary"
-                onClick={handleButtonPress}
-                startIcon={<SwapHorizIcon />}
-                text="Switch study version"
-            ></LoadingButton>
+            <Box>
+                <Tooltip title="Swap study version" placement="left">
+                    <Button
+                        color="secondary"
+                        variant="contained"
+                        disableElevation
+                        onClick={handleButtonPress}
+                        size="small"
+                        sx={{ width: '40px', minWidth: '40px', height: '40px' }}
+                    >
+                        {isSwapping ? <CircularProgress size={20} /> : <SwapHorizIcon />}
+                    </Button>
+                </Tooltip>
+            </Box>
             <ConfirmationDialog
                 dialogTitle="Are you sure you want to switch the study version?"
                 dialogMessage={
@@ -154,8 +169,8 @@ const EditStudySwapVersionButton: React.FC = (props) => {
                 open={open}
                 onClose={handleCloseNavMenu}
                 anchorEl={anchorEl}
-                anchorOrigin={{ vertical: 'top', horizontal: 'left' }}
-                transformOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+                transformOrigin={{ vertical: 'bottom', horizontal: 'right' }}
             >
                 {baseStudyVersions.map((baseStudyVersion) => {
                     const isCurrentlySelected = baseStudyVersion.id === studyId;
@@ -165,7 +180,10 @@ const EditStudySwapVersionButton: React.FC = (props) => {
 
                     return (
                         <ListItem key={baseStudyVersion.id} sx={{ padding: '0.2rem 1rem' }}>
-                            <ListItemButton selected={isCurrentlySelected}>
+                            <ListItemButton
+                                selected={isCurrentlySelected}
+                                sx={{ ':hover': { backgroundColor: 'transparent' }, py: '0' }}
+                            >
                                 <ButtonGroup variant="text">
                                     <Button
                                         onClick={() => handleSelectVersion(baseStudyVersion.id)}

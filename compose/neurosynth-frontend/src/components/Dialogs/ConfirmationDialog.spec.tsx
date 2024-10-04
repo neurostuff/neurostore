@@ -103,7 +103,6 @@ describe('ConfirmationDialog', () => {
                 onCloseDialog={mockOnClose}
                 confirmText="confirm"
                 rejectText="reject"
-                data={{ data: 'test-data' }}
             />
         );
 

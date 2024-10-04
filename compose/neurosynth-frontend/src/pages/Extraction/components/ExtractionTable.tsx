@@ -43,6 +43,7 @@ import { ExtractionTableNameCell, ExtractionTableNameHeader } from './Extraction
 import { ExtractionTablePMIDCell, ExtractionTablePMIDHeader } from './ExtractionTablePMID';
 import { ExtractionTableStatusCell, ExtractionTableStatusHeader } from './ExtractionTableStatus';
 import { ExtractionTableYearCell, ExtractionTableYearHeader } from './ExtractionTableYear';
+import { retrieveExtractionTableState } from './ExtractionTable.helpers';
 
 //allows us to define custom properties for our columns
 declare module '@tanstack/react-table' {
@@ -69,17 +70,11 @@ const ExtractionTable: React.FC = () => {
     });
 
     useEffect(() => {
-        const state = sessionStorage.getItem(`${projectId}-extraction-table`);
+        const state = retrieveExtractionTableState(projectId);
         if (!state) return;
 
-        const parsedState = JSON.parse(state) as {
-            columnFilters: ColumnFiltersState;
-            sorting: SortingState;
-            studies: string[];
-        };
-
-        if (parsedState.columnFilters) setColumnFilters(parsedState.columnFilters);
-        if (parsedState.sorting) setSorting(parsedState.sorting);
+        if (state.columnFilters) setColumnFilters(state.columnFilters);
+        if (state.sorting) setSorting(state.sorting);
     }, [projectId]);
 
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -159,21 +154,6 @@ const ExtractionTable: React.FC = () => {
                     filterVariant: 'journal-autocomplete',
                 },
             }),
-            // columnHelper.accessor('doi', {
-            //     id: 'doi',
-            //     size: 10,
-            //     minSize: 10,
-            //     maxSize: 10,
-            //     sortingFn: 'alphanumeric',
-            //     enableSorting: true,
-            //     enableColumnFilter: true,
-            //     filterFn: 'includesString',
-            //     cell: ExtractionTableDOICell,
-            //     header: ExtractionTableDOIHeader,
-            //     meta: {
-            //         filterVariant: 'text',
-            //     },
-            // }),
             columnHelper.accessor('pmid', {
                 id: 'pmid',
                 size: 100,

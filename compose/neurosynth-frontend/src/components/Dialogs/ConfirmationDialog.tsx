@@ -13,12 +13,11 @@ import React, { useMemo } from 'react';
 
 export interface IConfirmationDialog {
     isOpen: boolean;
-    onCloseDialog: (confirm: boolean | undefined, data?: any) => void;
+    onCloseDialog: (confirm: boolean | undefined) => void;
     dialogTitle: string;
     dialogMessage?: JSX.Element | string;
     confirmText?: string;
     rejectText?: string;
-    data?: any;
 }
 
 const ConfirmationDialog: React.FC<IConfirmationDialog> = (props) => {
@@ -33,13 +32,13 @@ const ConfirmationDialog: React.FC<IConfirmationDialog> = (props) => {
     }, [props.dialogMessage]);
 
     return (
-        <Dialog open={props.isOpen} onClose={() => props.onCloseDialog(undefined, props.data)}>
+        <Dialog open={props.isOpen} onClose={() => props.onCloseDialog(undefined)}>
             <DialogTitle sx={{ display: 'flex' }}>
                 <Box sx={{ display: 'flex', flexGrow: 1, alignItems: 'center' }}>
                     <Typography variant="h6">{props.dialogTitle}</Typography>
                 </Box>
                 <Box>
-                    <IconButton onClick={() => props.onCloseDialog(undefined, props.data)}>
+                    <IconButton onClick={() => props.onCloseDialog(undefined)}>
                         <CloseIcon sx={{ fontSize: '2rem' }} />
                     </IconButton>
                 </Box>
@@ -49,7 +48,7 @@ const ConfirmationDialog: React.FC<IConfirmationDialog> = (props) => {
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', marginTop: '1rem' }}>
                     <Button
                         sx={{ width: '250px', marginRight: '15px' }}
-                        onClick={() => props.onCloseDialog(false, props.data)}
+                        onClick={() => props.onCloseDialog(false)}
                         variant="text"
                         color="error"
                     >
@@ -57,7 +56,7 @@ const ConfirmationDialog: React.FC<IConfirmationDialog> = (props) => {
                     </Button>
                     <Button
                         sx={{ width: '250px' }}
-                        onClick={() => props.onCloseDialog(true, props.data)}
+                        onClick={() => props.onCloseDialog(true)}
                         variant="contained"
                         color="primary"
                         disableElevation

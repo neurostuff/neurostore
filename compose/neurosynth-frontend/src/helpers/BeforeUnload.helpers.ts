@@ -4,8 +4,18 @@ enum EUnloadStatus {
     ANNOTATIONSTORE = 'annotation-store-unsaved-changes',
 }
 
-const onUnloadHandler = (event: BeforeUnloadEvent) => {
-    return (event.returnValue = 'Are you sure you want to leave?');
+let eventListenerSet = false;
+
+const onBeforeUnloadHandler = (event: BeforeUnloadEvent) => {
+    event.preventDefault();
+    return 'Are you sure you want to leave?';
+};
+
+const onUnloadHandler = (event: any) => {
+    event.preventDefault();
+    window.sessionStorage.removeItem(EUnloadStatus.PROJECTSTORE);
+    window.sessionStorage.removeItem(EUnloadStatus.STUDYSTORE);
+    window.sessionStorage.removeItem(EUnloadStatus.ANNOTATIONSTORE);
 };
 
 export const setUnloadHandler = (store: 'project' | 'study' | 'annotation') => {
@@ -16,7 +26,11 @@ export const setUnloadHandler = (store: 'project' | 'study' | 'annotation') => {
     } else if (store === 'annotation') {
         window.sessionStorage.setItem(EUnloadStatus.ANNOTATIONSTORE, 'true');
     }
-    if (!window.onbeforeunload) window.onbeforeunload = onUnloadHandler;
+    if (!eventListenerSet) {
+        window.addEventListener('beforeunload', onBeforeUnloadHandler);
+        window.addEventListener('unload', onUnloadHandler);
+        eventListenerSet = true;
+    }
 };
 
 export const unsetUnloadHandler = (store: 'project' | 'study' | 'annotation') => {
@@ -33,6 +47,23 @@ export const unsetUnloadHandler = (store: 'project' | 'study' | 'annotation') =>
         window.sessionStorage.getItem(EUnloadStatus.STUDYSTORE) === null &&
         window.sessionStorage.getItem(EUnloadStatus.ANNOTATIONSTORE) === null
     ) {
-        window.onbeforeunload = null;
+        window.removeEventListener('beforeunload', onBeforeUnloadHandler);
+        window.removeEventListener('unload', onUnloadHandler);
+        eventListenerSet = false;
     }
+};
+
+export const hasUnsavedChanges = () => {
+    return (
+        window.sessionStorage.getItem(EUnloadStatus.PROJECTSTORE) === 'true' ||
+        window.sessionStorage.getItem(EUnloadStatus.STUDYSTORE) === 'true' ||
+        window.sessionStorage.getItem(EUnloadStatus.ANNOTATIONSTORE) === 'true'
+    );
+};
+
+export const hasUnsavedStudyChanges = () => {
+    return (
+        window.sessionStorage.getItem(EUnloadStatus.STUDYSTORE) === 'true' ||
+        window.sessionStorage.getItem(EUnloadStatus.ANNOTATIONSTORE) === 'true' // you can edit annotations via study annotations which counts as a study edit
+    );
 };

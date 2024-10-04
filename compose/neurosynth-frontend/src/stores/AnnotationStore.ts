@@ -152,7 +152,6 @@ export const useAnnotationStore = create<
             }));
         },
         updateAnnotationNoteName: (note) => {
-            setUnloadHandler('annotation');
             set((state) => ({
                 ...state,
                 annotation: {

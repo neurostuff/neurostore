@@ -1,5 +1,4 @@
-import { ArrowLeft, ArrowRight } from '@mui/icons-material';
-import { Box, Button, Typography } from '@mui/material';
+import { Box, Button } from '@mui/material';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import {
     useInitProjectStoreIfRequired,
@@ -10,7 +9,6 @@ import EditStudyAnnotations from 'pages/Study/components/EditStudyAnnotations';
 import EditStudyDetails from 'pages/Study/components/EditStudyDetails';
 import EditStudyMetadata from 'pages/Study/components/EditStudyMetadata';
 import EditStudyPageHeader from 'pages/Study/components/EditStudyPageHeader';
-import EditStudySaveButton from 'pages/Study/components/EditStudySaveButton';
 import EditStudyPageStyles from 'pages/Study/EditStudyPage.styles';
 import {
     useClearStudyStore,
@@ -18,15 +16,19 @@ import {
     useInitStudyStore,
     useStudyId,
 } from 'pages/Study/store/StudyStore';
-import { useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useClearAnnotationStore, useInitAnnotationStore } from 'stores/AnnotationStore.actions';
 import { useAnnotationId, useGetAnnotationIsLoading } from 'stores/AnnotationStore.getters';
 import DisplayExtractionTableState from './components/DisplayExtractionTableState';
+import EditStudyCompleteButton from './components/EditStudyCompleteButton';
+import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
+import { hasUnsavedStudyChanges, unsetUnloadHandler } from 'helpers/BeforeUnload.helpers';
 
 const EditStudyPage: React.FC = (props) => {
-    const { studyId } = useParams<{ studyId: string }>();
+    const { projectId, studyId } = useParams<{ projectId: string; studyId: string }>();
 
+    const navigate = useNavigate();
     const annotationId = useProjectExtractionAnnotationId();
     // study stuff
     const getStudyIsLoading = useGetStudyIsLoading();
@@ -56,6 +58,27 @@ const EditStudyPage: React.FC = (props) => {
         studyId,
     ]);
 
+    const [confirmationDialogIsOpen, setConfirmationDialogIsOpen] = useState(false);
+
+    const handleBackToExtraction = () => {
+        const hasUnsavedChanges = hasUnsavedStudyChanges();
+        if (hasUnsavedChanges) {
+            setConfirmationDialogIsOpen(true);
+            return;
+        }
+
+        navigate(`/projects/${projectId}/extraction`);
+    };
+
+    const handleCloseConfirmationDialog = (ok: boolean | undefined) => {
+        setConfirmationDialogIsOpen(false);
+        if (!ok) return;
+
+        unsetUnloadHandler('study');
+        unsetUnloadHandler('annotation');
+        handleBackToExtraction();
+    };
+
     return (
         <StateHandlerComponent
             disableShrink={false}
@@ -72,80 +95,36 @@ const EditStudyPage: React.FC = (props) => {
                 <EditStudyMetadata />
             </Box>
             <Box sx={EditStudyPageStyles.loadingButtonContainer}>
-                {/* <EditStudySwapVersionButton /> */}
-                <Box sx={{ width: '33%', justifyContent: 'flex-start' }}>
-                    <Button color="error" variant="outlined">
-                        Back
+                <Box sx={{ width: '20%', justifyContent: 'flex-start' }}>
+                    <ConfirmationDialog
+                        isOpen={confirmationDialogIsOpen}
+                        dialogTitle="You have unsaved changes"
+                        dialogMessage="Are you sure you want to continue? You'll lose your unsaved changes"
+                        onCloseDialog={handleCloseConfirmationDialog}
+                        rejectText="Cancel"
+                        confirmText="Continue"
+                    />
+                    <Button
+                        color="secondary"
+                        disableElevation
+                        sx={{ width: '200px' }}
+                        variant="contained"
+                        onClick={handleBackToExtraction}
+                    >
+                        Back to extraction
                     </Button>
                 </Box>
                 <Box
                     sx={{
-                        width: '33%',
+                        width: '60%',
                         display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'flex-start',
+                        justifyContent: 'center',
                     }}
                 >
-                    <Button
-                        startIcon={<ArrowLeft />}
-                        disableElevation
-                        sx={{
-                            backgroundColor: '#f5f5f5',
-                            color: 'black',
-                            ':hover': { backgroundColor: 'lightblue' },
-                        }}
-                    >
-                        <Box>
-                            <Typography
-                                sx={{
-                                    textOverflow: 'ellipsis',
-                                    maxWidth: '200px',
-                                    width: '200px',
-                                    whiteSpace: 'nowrap',
-                                    overflow: 'hidden',
-                                    textAlign: 'start',
-                                }}
-                                fontSize="0.6rem"
-                            >
-                                Giant Panda Identification
-                            </Typography>
-                        </Box>
-                    </Button>
-                    <Typography variant="body2" sx={{ marginX: '1rem' }}>
-                        2 of 3
-                    </Typography>
-                    <Button
-                        endIcon={<ArrowRight />}
-                        disableElevation
-                        sx={{
-                            backgroundColor: '#f5f5f5',
-                            color: 'black',
-                            ':hover': { backgroundColor: 'lightblue' },
-                        }}
-                    >
-                        <Box>
-                            <Typography
-                                sx={{
-                                    textOverflow: 'ellipsis',
-                                    maxWidth: '200px',
-                                    width: '200px',
-                                    whiteSpace: 'nowrap',
-                                    overflow: 'hidden',
-                                    textAlign: 'end',
-                                }}
-                                fontSize="0.6rem"
-                            >
-                                Reproducibility of fMRI results across four institutions using a
-                                spatial workign memory task
-                            </Typography>
-                        </Box>
-                    </Button>
-                </Box>
-                {/* <Box sx={{ width: '33%', display: 'flex', justifyContent: 'center' }}>
                     <DisplayExtractionTableState />
-                </Box> */}
-                <Box sx={{ width: '33%', display: 'flex', justifyContent: 'flex-end' }}>
-                    <EditStudySaveButton />
+                </Box>
+                <Box sx={{ width: '20%', display: 'flex', justifyContent: 'flex-end' }}>
+                    <EditStudyCompleteButton />
                 </Box>
             </Box>
         </StateHandlerComponent>

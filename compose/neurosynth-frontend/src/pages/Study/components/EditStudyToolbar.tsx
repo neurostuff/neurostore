@@ -1,22 +1,19 @@
+import { KeyboardArrowLeft, KeyboardArrowRight } from '@mui/icons-material';
 import BookmarkIcon from '@mui/icons-material/Bookmark';
-import CheckIcon from '@mui/icons-material/Check';
 import DoneAllIcon from '@mui/icons-material/DoneAll';
-import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
-import {
-    Box,
-    Button,
-    ButtonGroup,
-    CircularProgress,
-    Fab,
-    IconButton,
-    Tooltip,
-    Typography,
-} from '@mui/material';
-import { ColumnFiltersState, SortingState } from '@tanstack/react-table';
+import QuestionMark from '@mui/icons-material/QuestionMark';
+import SaveIcon from '@mui/icons-material/Save';
+import { Box, Button, ButtonGroup, CircularProgress, IconButton, Tooltip } from '@mui/material';
+import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import ProgressLoader from 'components/ProgressLoader';
 import GlobalStyles from 'global.styles';
+import { hasUnsavedStudyChanges, unsetUnloadHandler } from 'helpers/BeforeUnload.helpers';
 import { useGetExtractionSummary, useGetStudysetById, useUserCanEdit } from 'hooks';
 import { StudyReturn } from 'neurostore-typescript-sdk';
+import {
+    IExtractionTableState,
+    retrieveExtractionTableState,
+} from 'pages/Extraction/components/ExtractionTable.helpers';
 import { EExtractionStatus } from 'pages/Extraction/ExtractionPage';
 import { IProjectPageLocationState } from 'pages/Project/ProjectPage';
 import {
@@ -30,16 +27,19 @@ import {
 import { useStudyId } from 'pages/Study/store/StudyStore';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import useSaveStudy from '../hooks/useSaveStudy';
+import EditStudySwapVersionButton from './EditStudySwapVersionButton';
 import EditStudyToolbarStyles from './EditStudyToolbar.styles';
-import SaveIcon from '@mui/icons-material/Save';
-import {
-    ArrowBack,
-    ArrowForward,
-    KeyboardArrowLeft,
-    KeyboardArrowRight,
-} from '@mui/icons-material';
 
 const EditStudyToolbar: React.FC<{ isViewOnly?: boolean }> = ({ isViewOnly = false }) => {
+    const [confirmationDialogState, setConfirmationDialogState] = useState<{
+        isOpen: boolean;
+        action: 'SWAP' | 'PREV' | 'NEXT' | 'BACK' | undefined;
+    }>({
+        isOpen: false,
+        action: undefined,
+    });
+    const { isLoading: saveStudyIsLoading, hasEdits, handleSave } = useSaveStudy();
     const navigate = useNavigate();
     const canEditMetaAnalyses = useProjectMetaAnalysisCanEdit();
 
@@ -56,40 +56,28 @@ const EditStudyToolbar: React.FC<{ isViewOnly?: boolean }> = ({ isViewOnly = fal
     const { data, isLoading, isError } = useGetStudysetById(studysetId || '', true);
 
     // derived from the extraction table
-    const [extractionTableState, setExtractionTableState] = useState<{
-        columnFilters: ColumnFiltersState;
-        sorting: SortingState;
-        studies: string[];
-    }>({
+    const [extractionTableState, setExtractionTableState] = useState<IExtractionTableState>({
         columnFilters: [],
         sorting: [],
         studies: [],
     });
 
     useEffect(() => {
-        const stateFromSessionStorage = sessionStorage.getItem(`${projectId}-extraction-table`);
+        if (isLoading || isError) return;
+        const stateFromSessionStorage = retrieveExtractionTableState(projectId);
         if (!stateFromSessionStorage) {
             setExtractionTableState((prev) => ({
                 ...prev,
                 studies: (data?.studies || []).map((study) => (study as StudyReturn).id as string),
             }));
         } else {
-            try {
-                const parsedState = JSON.parse(stateFromSessionStorage) as {
-                    columnFilters: ColumnFiltersState;
-                    sorting: SortingState;
-                    studies: string[];
-                };
-                setExtractionTableState(parsedState);
-            } catch (e) {
-                throw new Error('couldnt parse table state from session storage');
-            }
+            setExtractionTableState(stateFromSessionStorage);
         }
-    }, [data?.studies, projectId]);
+    }, [data?.studies, isError, isLoading, projectId]);
 
     const updateStudyListStatus = useProjectExtractionAddOrUpdateStudyListStatus();
 
-    const handleClickStudyListStatus = (status: EExtractionStatus) => {
+    const handleUpdateExtractionStatus = (status: EExtractionStatus) => {
         if (studyId) {
             updateStudyListStatus(studyId, status);
         }
@@ -99,6 +87,16 @@ const EditStudyToolbar: React.FC<{ isViewOnly?: boolean }> = ({ isViewOnly = fal
         const index = extractionTableState.studies.indexOf(studyId || '');
         const prevId = extractionTableState.studies[index - 1];
         if (!prevId) throw new Error('no previous study');
+
+        const hasUnsavedChanges = hasUnsavedStudyChanges();
+        if (hasUnsavedChanges) {
+            setConfirmationDialogState({
+                isOpen: true,
+                action: 'PREV',
+            });
+            return;
+        }
+
         canEdit
             ? navigate(`/projects/${projectId}/extraction/studies/${prevId}/edit`)
             : navigate(`/projects/${projectId}/extraction/studies/${prevId}`);
@@ -108,9 +106,49 @@ const EditStudyToolbar: React.FC<{ isViewOnly?: boolean }> = ({ isViewOnly = fal
         const index = extractionTableState.studies.indexOf(studyId || '');
         const nextId = extractionTableState.studies[index + 1];
         if (!nextId) throw new Error('no next study');
+
+        const hasUnsavedChanges = hasUnsavedStudyChanges();
+        if (hasUnsavedChanges) {
+            setConfirmationDialogState({
+                isOpen: true,
+                action: 'NEXT',
+            });
+            return;
+        }
+
         canEdit
             ? navigate(`/projects/${projectId}/extraction/studies/${nextId}/edit`)
             : navigate(`/projects/${projectId}/extraction/studies/${nextId}`);
+    };
+
+    const handleConfirmationDialogClose = (ok: boolean | undefined) => {
+        if (!ok) {
+            setConfirmationDialogState({
+                isOpen: false,
+                action: undefined,
+            });
+        } else {
+            unsetUnloadHandler('study');
+            unsetUnloadHandler('annotation');
+            switch (confirmationDialogState.action) {
+                case 'SWAP':
+                    // handle swap
+                    break;
+                case 'PREV':
+                    handleMoveToPreviousStudy();
+                    break;
+                case 'NEXT':
+                    handleMoveToNextStudy();
+                    break;
+                case 'BACK':
+                    // handle back
+                    break;
+            }
+            setConfirmationDialogState({
+                isOpen: false,
+                action: undefined,
+            });
+        }
     };
 
     const handleContinueToMetaAnalysisCreation = () => {
@@ -158,6 +196,14 @@ const EditStudyToolbar: React.FC<{ isViewOnly?: boolean }> = ({ isViewOnly = fal
 
     return (
         <Box sx={EditStudyToolbarStyles.stickyContainer}>
+            <ConfirmationDialog
+                isOpen={confirmationDialogState.isOpen}
+                dialogTitle="You have unsaved changes"
+                dialogMessage="Are you sure you want to continue? You'll lose your unsaved changes"
+                onCloseDialog={handleConfirmationDialogClose}
+                rejectText="Cancel"
+                confirmText="Continue"
+            />
             {!isViewOnly && (
                 <Box sx={EditStudyToolbarStyles.toolbarContainer}>
                     <Box sx={EditStudyToolbarStyles.header}>Toolbar</Box>
@@ -169,7 +215,7 @@ const EditStudyToolbar: React.FC<{ isViewOnly?: boolean }> = ({ isViewOnly = fal
                         <Box sx={{ marginBottom: '1rem' }}>
                             {isComplete ? (
                                 <Tooltip
-                                    placement="right"
+                                    placement="left"
                                     title="You're done! Click this button to continue to the next phase"
                                 >
                                     <Box>
@@ -183,7 +229,7 @@ const EditStudyToolbar: React.FC<{ isViewOnly?: boolean }> = ({ isViewOnly = fal
                                 </Tooltip>
                             ) : (
                                 <Tooltip
-                                    placement="right"
+                                    placement="left"
                                     title={`${percentageCompleteString} studies marked as complete`}
                                 >
                                     <Box>
@@ -204,44 +250,83 @@ const EditStudyToolbar: React.FC<{ isViewOnly?: boolean }> = ({ isViewOnly = fal
                             )}
                         </Box>
                         <Box sx={{ marginBottom: '0.5rem' }}>
-                            <Button
-                                color="secondary"
-                                variant="contained"
-                                disableElevation
-                                size="small"
-                                sx={{ minWidth: '0', width: '40px', height: '40px' }}
-                            >
-                                <SwapHorizIcon />
-                            </Button>
-                        </Box>
-                        <Box sx={{ marginBottom: '0.5rem' }}>
-                            <Button
-                                onClick={() =>
-                                    handleClickStudyListStatus(EExtractionStatus.SAVEDFORLATER)
-                                }
-                                sx={{ minWidth: '0', width: '40px', height: '40px' }}
-                                disableElevation
-                                variant={
-                                    extractionStatus?.status === EExtractionStatus.SAVEDFORLATER
-                                        ? 'contained'
-                                        : 'outlined'
-                                }
-                            >
-                                <BookmarkIcon />
-                            </Button>
-                            {/* <Fab color="success" size="small" sx={{ boxShadow: 'none' }}>
-                            </Fab> */}
+                            <EditStudySwapVersionButton />
                         </Box>
                         <Box sx={{ marginBottom: '1rem' }}>
-                            <Button
-                                variant="contained"
-                                disableElevation
-                                sx={{ minWidth: '0', width: '40px', height: '40px' }}
+                            <Tooltip
+                                title={!hasEdits ? 'No edits to save' : 'Save'}
+                                placement="left"
                             >
-                                <SaveIcon />
-                            </Button>
-                            {/* <Fab color="success" size="small" sx={{ boxShadow: 'none' }}>
-                            </Fab> */}
+                                <Box>
+                                    <Button
+                                        variant="contained"
+                                        color="success"
+                                        disabled={!hasEdits}
+                                        disableElevation
+                                        onClick={handleSave}
+                                        sx={{
+                                            width: '40px',
+                                            maxWidth: '40px',
+                                            minWidth: '40px',
+                                            height: '40px',
+                                            padding: 0,
+                                        }}
+                                    >
+                                        {saveStudyIsLoading ? (
+                                            <ProgressLoader color="secondary" size={20} />
+                                        ) : (
+                                            <SaveIcon />
+                                        )}
+                                    </Button>
+                                </Box>
+                            </Tooltip>
+                        </Box>
+                        <Box>
+                            <ButtonGroup
+                                color="info"
+                                orientation="vertical"
+                                sx={{ minWidth: '0px', marginBottom: '1rem' }}
+                            >
+                                <Tooltip title="Set as uncategorized" placement="left">
+                                    <Button
+                                        onClick={() =>
+                                            handleUpdateExtractionStatus(
+                                                EExtractionStatus.UNCATEGORIZED
+                                            )
+                                        }
+                                        sx={{ minWidth: '0', width: '40px', height: '40px' }}
+                                        disableElevation
+                                        color="warning"
+                                        variant={
+                                            extractionStatus?.status ===
+                                            EExtractionStatus.UNCATEGORIZED
+                                                ? 'contained'
+                                                : 'outlined'
+                                        }
+                                    >
+                                        <QuestionMark />
+                                    </Button>
+                                </Tooltip>
+                                <Tooltip title="Save for later" placement="left">
+                                    <Button
+                                        onClick={() =>
+                                            handleUpdateExtractionStatus(
+                                                EExtractionStatus.SAVEDFORLATER
+                                            )
+                                        }
+                                        sx={{ minWidth: '0', width: '40px', height: '40px' }}
+                                        disableElevation
+                                        variant={
+                                            extractionStatus?.status ===
+                                            EExtractionStatus.SAVEDFORLATER
+                                                ? 'contained'
+                                                : 'outlined'
+                                        }
+                                    >
+                                        <BookmarkIcon />
+                                    </Button>
+                                </Tooltip>
+                            </ButtonGroup>
                         </Box>
                         <Box>
                             <ButtonGroup
@@ -249,125 +334,42 @@ const EditStudyToolbar: React.FC<{ isViewOnly?: boolean }> = ({ isViewOnly = fal
                                 orientation="vertical"
                                 sx={{ minWidth: '0px' }}
                             >
-                                <Button
-                                    // onClick={() =>
-                                    //     handleClickStudyListStatus(EExtractionStatus.COMPLETED)
-                                    // }
-                                    sx={{ height: '40px', width: '40px', minWidth: '0' }}
-                                    // disableElevation
-                                    // variant={
-                                    //     extractionStatus?.status === EExtractionStatus.COMPLETED
-                                    //         ? 'contained'
-                                    //         : 'outlined'
-                                    // }
+                                <Tooltip
+                                    placement="right"
+                                    title={
+                                        hasPrevStudies ? `go to previous study` : `no more studies`
+                                    }
                                 >
-                                    <KeyboardArrowLeft />
-                                </Button>
-                                <Button
-                                    // onClick={() =>
-                                    //     handleClickStudyListStatus(EExtractionStatus.SAVEDFORLATER)
-                                    // }
-                                    sx={{ height: '40px', width: '40px', minWidth: '0' }}
-                                    // disableElevation
-                                    // variant={
-                                    //     extractionStatus?.status === EExtractionStatus.SAVEDFORLATER
-                                    //         ? 'contained'
-                                    //         : 'outlined'
-                                    // }
+                                    {/* need this box as a wrapper because tooltip will not act on a disabled element */}
+                                    <Box>
+                                        <Button
+                                            onClick={handleMoveToPreviousStudy}
+                                            disableElevation
+                                            disabled={!hasPrevStudies}
+                                            sx={{ height: '40px', width: '40px', minWidth: '0' }}
+                                        >
+                                            <KeyboardArrowLeft />
+                                        </Button>
+                                    </Box>
+                                </Tooltip>
+                                <Tooltip
+                                    placement="right"
+                                    title={hasNextStudies ? `go to next study` : `no more studies`}
                                 >
-                                    <KeyboardArrowRight />
-                                </Button>
+                                    {/* need this box as a wrapper because tooltip will not act on a disabled element */}
+                                    <Box>
+                                        <Button
+                                            onClick={handleMoveToNextStudy}
+                                            disableElevation
+                                            disabled={!hasNextStudies}
+                                            sx={{ height: '40px', width: '40px', minWidth: '0' }}
+                                        >
+                                            <KeyboardArrowRight />
+                                        </Button>
+                                    </Box>
+                                </Tooltip>
                             </ButtonGroup>
                         </Box>
-
-                        {/* <Box sx={{ marginBottom: '1rem' }}>
-                                <Tooltip placement="right" title="move to completed">
-                                    <IconButton
-                                        sx={{
-                                            backgroundColor:
-                                                extractionStatus?.status ===
-                                                EExtractionStatus.COMPLETED
-                                                    ? '#ebebeb'
-                                                    : '',
-                                        }}
-                                        onClick={() =>
-                                            handleClickStudyListStatus(EExtractionStatus.COMPLETED)
-                                        }
-                                    >
-                                        <CheckIcon color="success" />
-                                    </IconButton>
-                                </Tooltip>
-                            </Box>
-                            <Box sx={{ marginBottom: '1rem' }}>
-                                <Tooltip placement="right" title="move to save for later">
-                                    <IconButton
-                                        sx={{
-                                            backgroundColor:
-                                                extractionStatus?.status ===
-                                                EExtractionStatus.SAVEDFORLATER
-                                                    ? '#ebebeb'
-                                                    : '',
-                                        }}
-                                        onClick={() =>
-                                            handleClickStudyListStatus(
-                                                EExtractionStatus.SAVEDFORLATER
-                                            )
-                                        }
-                                    >
-                                        <BookmarkIcon color="info" />
-                                    </IconButton>
-                                </Tooltip>
-                            </Box> */}
-                        {/* <Box sx={{ marginBottom: '1rem' }}>
-                        <Tooltip
-                            placement="right"
-                            title={
-                                hasPrevStudies
-                                    ? `go to previous ${currSelectedChipText} study`
-                                    : `no previous ${currSelectedChipText} study`
-                            }
-                        >
-                            <span>
-                                <IconButton
-                                    disabled={!hasPrevStudies}
-                                    onClick={handleMoveToPreviousStudy}
-                                >
-                                    <ArrowBackIcon
-                                        sx={{
-                                            color: hasPrevStudies
-                                                ? prevNextArrowColor
-                                                : 'muted.dark',
-                                        }}
-                                    />
-                                </IconButton>
-                            </span>
-                        </Tooltip>
-                    </Box>
-                    <Box>
-                        <Tooltip
-                            placement="right"
-                            title={
-                                hasNextStudies
-                                    ? `go to next ${currSelectedChipText} study`
-                                    : `no next ${currSelectedChipText} study`
-                            }
-                        >
-                            <span>
-                                <IconButton
-                                    disabled={!hasNextStudies}
-                                    onClick={handleMoveToNextStudy}
-                                >
-                                    <ArrowForwardIcon
-                                        sx={{
-                                            color: hasNextStudies
-                                                ? prevNextArrowColor
-                                                : 'muted.dark',
-                                        }}
-                                    />
-                                </IconButton>
-                            </span>
-                        </Tooltip>
-                    </Box> */}
                     </Box>
                 </Box>
             )}

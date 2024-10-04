@@ -1,22 +1,21 @@
 import { Add } from '@mui/icons-material';
 import { Box, Button, Typography } from '@mui/material';
-import CreateMetaAnalysisSpecificationDialogBase from 'pages/MetaAnalysis/components/CreateMetaAnalysisSpecificationDialogBase';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { useGetMetaAnalysesByIds, useGuard } from 'hooks';
+import useUserCanEdit from 'hooks/useUserCanEdit';
+import { MetaAnalysisReturn } from 'neurosynth-compose-typescript-sdk';
+import CreateMetaAnalysisSpecificationDialogBase from 'pages/MetaAnalysis/components/CreateMetaAnalysisSpecificationDialogBase';
+import ProjectViewMetaAnalysis from 'pages/Project/components/ProjectViewMetaAnalysis';
 import {
     useProjectId,
     useProjectMetaAnalyses,
     useProjectMetaAnalysisCanEdit,
     useProjectUser,
 } from 'pages/Project/store/ProjectStore';
-import { MetaAnalysisReturn } from 'neurosynth-compose-typescript-sdk';
 import { useState } from 'react';
-import { useParams } from 'react-router-dom';
-import ProjectViewMetaAnalysis from 'pages/Project/components/ProjectViewMetaAnalysis';
-import useUserCanEdit from 'hooks/useUserCanEdit';
 
 const ProjectViewMetaAnalyses: React.FC = () => {
-    const { projectId } = useParams<{ projectId: string }>();
+    const projectId = useProjectId();
     const projectUser = useProjectUser();
     const canEdit = useUserCanEdit(projectUser || undefined);
     const projectMetaAnalyses = useProjectMetaAnalyses() || [];
