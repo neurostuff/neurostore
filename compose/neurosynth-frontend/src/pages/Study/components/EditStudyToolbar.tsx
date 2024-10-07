@@ -1,4 +1,4 @@
-import { KeyboardArrowLeft, KeyboardArrowRight } from '@mui/icons-material';
+import { Check, KeyboardArrowLeft, KeyboardArrowRight } from '@mui/icons-material';
 import BookmarkIcon from '@mui/icons-material/Bookmark';
 import DoneAllIcon from '@mui/icons-material/DoneAll';
 import QuestionMark from '@mui/icons-material/QuestionMark';
@@ -259,11 +259,11 @@ const EditStudyToolbar: React.FC<{ isViewOnly?: boolean }> = ({ isViewOnly = fal
                             >
                                 <Box>
                                     <Button
-                                        variant="contained"
-                                        color="success"
                                         disabled={!hasEdits}
                                         disableElevation
                                         onClick={handleSave}
+                                        variant="outlined"
+                                        color="primary"
                                         sx={{
                                             width: '40px',
                                             maxWidth: '40px',
@@ -324,6 +324,25 @@ const EditStudyToolbar: React.FC<{ isViewOnly?: boolean }> = ({ isViewOnly = fal
                                         }
                                     >
                                         <BookmarkIcon />
+                                    </Button>
+                                </Tooltip>
+                                <Tooltip title="Complete" placement="left">
+                                    <Button
+                                        onClick={() =>
+                                            handleUpdateExtractionStatus(
+                                                EExtractionStatus.COMPLETED
+                                            )
+                                        }
+                                        sx={{ minWidth: '0', width: '40px', height: '40px' }}
+                                        disableElevation
+                                        color="success"
+                                        variant={
+                                            extractionStatus?.status === EExtractionStatus.COMPLETED
+                                                ? 'contained'
+                                                : 'outlined'
+                                        }
+                                    >
+                                        <Check />
                                     </Button>
                                 </Tooltip>
                             </ButtonGroup>

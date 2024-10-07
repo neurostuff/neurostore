@@ -1,4 +1,5 @@
-import { Box, Button } from '@mui/material';
+import { Box } from '@mui/material';
+import LoadingButton from 'components/Buttons/LoadingButton';
 import { EExtractionStatus } from 'pages/Extraction/ExtractionPage';
 import {
     useProjectExtractionAddOrUpdateStudyListStatus,
@@ -7,7 +8,6 @@ import {
 import React from 'react';
 import { useParams } from 'react-router-dom';
 import useSaveStudy from '../hooks/useSaveStudy';
-import LoadingButton from 'components/Buttons/LoadingButton';
 
 const EditStudyCompleteButton: React.FC = React.memo((props) => {
     const { studyId } = useParams<{ studyId: string }>();
@@ -28,23 +28,18 @@ const EditStudyCompleteButton: React.FC = React.memo((props) => {
     return (
         <Box>
             <LoadingButton
-                sx={{ width: '180px' }}
-                variant={
-                    extractionStatus?.status === EExtractionStatus.COMPLETED
-                        ? 'contained'
-                        : 'outlined'
-                }
+                sx={{ width: '200px' }}
+                variant="contained"
                 color="success"
+                disabled={extractionStatus?.status === EExtractionStatus.COMPLETED}
                 disableElevation
                 loaderColor="secondary"
                 isLoading={isLoading}
                 onClick={handleSaveAndComplete}
                 text={
                     extractionStatus?.status === EExtractionStatus.COMPLETED
-                        ? 'Complete'
-                        : hasEdits
-                        ? 'Save and complete'
-                        : 'Set as complete'
+                        ? 'Completed'
+                        : 'Set as Complete'
                 }
             />
         </Box>

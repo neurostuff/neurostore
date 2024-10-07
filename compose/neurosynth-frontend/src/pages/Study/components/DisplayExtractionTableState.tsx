@@ -98,10 +98,8 @@ const DisplayExtractionTableState: React.FC = (props) => {
     };
 
     const filterStr = (extractionTableState?.columnFilters || []).reduce((acc, curr, index) => {
-        if (index === 0) {
-            return `Filtering by: ${curr.id}: ${curr.value}`;
-        }
-        return `${acc}, ${curr.id}: ${curr.value}`;
+        if (index === 0) return `Filtering by: ${curr.id}: ${curr.value || 'All'}`;
+        return `${acc}, ${curr.id}: ${curr.value || 'All'}`;
     }, '');
 
     const sortingStr = (extractionTableState?.sorting || []).reduce((acc, curr, index) => {

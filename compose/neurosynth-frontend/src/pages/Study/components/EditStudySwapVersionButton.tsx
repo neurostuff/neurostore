@@ -137,13 +137,13 @@ const EditStudySwapVersionButton: React.FC = (props) => {
                 <Tooltip title="Swap study version" placement="left">
                     <Button
                         color="secondary"
-                        variant="contained"
                         disableElevation
                         onClick={handleButtonPress}
                         size="small"
+                        variant="outlined"
                         sx={{ width: '40px', minWidth: '40px', height: '40px' }}
                     >
-                        {isSwapping ? <CircularProgress size={20} /> : <SwapHorizIcon />}
+                        {isSwapping ? <CircularProgress size={40} /> : <SwapHorizIcon />}
                     </Button>
                 </Tooltip>
             </Box>
