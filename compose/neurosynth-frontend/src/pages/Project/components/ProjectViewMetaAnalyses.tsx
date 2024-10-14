@@ -29,26 +29,18 @@ const ProjectViewMetaAnalyses: React.FC = () => {
                 .filter((id): id is string => id !== undefined);
         }
     }
-    const {
-        data = [],
-        isLoading,
-        isError,
-        isRefetching,
-    } = useGetMetaAnalysesByIds(metaAnalysisIds);
+    const { data = [], isLoading, isError } = useGetMetaAnalysesByIds(metaAnalysisIds);
     const canEditMetaAnalyses = useProjectMetaAnalysisCanEdit();
-    const projectIdFromProject = useProjectId();
     const [createMetaAnalysisDialogIsOpen, setCreateMetaAnalysisDialogIsOpen] = useState(false);
 
     useGuard(
         `/projects/${projectId}/edit`,
         'you must finish the meta-analysis creation process to view this page',
-        projectIdFromProject === undefined || projectId !== projectIdFromProject
-            ? false
-            : !canEditMetaAnalyses
+        projectId !== undefined ? false : !canEditMetaAnalyses
     );
 
     return (
-        <StateHandlerComponent isLoading={isLoading || isRefetching} isError={isError}>
+        <StateHandlerComponent isLoading={isLoading} isError={isError}>
             <CreateMetaAnalysisSpecificationDialogBase
                 isOpen={createMetaAnalysisDialogIsOpen}
                 onCloseDialog={() => setCreateMetaAnalysisDialogIsOpen(false)}
