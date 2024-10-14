@@ -1,6 +1,8 @@
 import { Box, Breadcrumbs, Link, Typography } from '@mui/material';
-import React from 'react';
-import { NavLink } from 'react-router-dom';
+import React, { useState } from 'react';
+import { NavLink, useNavigate } from 'react-router-dom';
+import ConfirmationDialog from './Dialogs/ConfirmationDialog';
+import { hasUnsavedChanges, hasUnsavedStudyChanges } from 'helpers/BeforeUnload.helpers';
 
 interface INeurosynthBreadcrumbs {
     link: string;
@@ -10,8 +12,46 @@ interface INeurosynthBreadcrumbs {
 
 const NeurosynthBreadcrumbs: React.FC<{ breadcrumbItems: INeurosynthBreadcrumbs[] }> = React.memo(
     (props) => {
+        const [confirmationDialogState, setConfirmationDialogState] = useState({
+            isOpen: false,
+            navigationLink: '',
+        });
+        const navigate = useNavigate();
+
+        const handleNavigate = (link: string) => {
+            const hasUnsavedChanges = hasUnsavedStudyChanges();
+            if (hasUnsavedChanges) {
+                setConfirmationDialogState({
+                    isOpen: true,
+                    navigationLink: link,
+                });
+            } else {
+                navigate(link);
+            }
+        };
+
+        const handleCloseConfirmationDialog = (ok: boolean | undefined) => {
+            if (ok) {
+                navigate(confirmationDialogState.navigationLink);
+            }
+
+            setConfirmationDialogState({
+                isOpen: false,
+                navigationLink: '',
+            });
+        };
+
         return (
             <Box sx={{ display: 'flex' }}>
+                <ConfirmationDialog
+                    isOpen={confirmationDialogState.isOpen}
+                    dialogTitle="You have unsaved changes"
+                    dialogMessage="Are you sure you want to continue? You'll lose your unsaved changes"
+                    onCloseDialog={handleCloseConfirmationDialog}
+                    rejectText="Cancel"
+                    confirmText="Continue"
+                />
+
                 <Breadcrumbs>
                     {props.breadcrumbItems.map((breadcrumb, index) =>
                         breadcrumb.isCurrentPage ? (
@@ -34,6 +74,10 @@ const NeurosynthBreadcrumbs: React.FC<{ breadcrumbItems: INeurosynthBreadcrumbs[
                                 key={index}
                                 component={NavLink}
                                 to={breadcrumb.link}
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    handleNavigate(breadcrumb.link);
+                                }}
                                 sx={{
                                     fontSize: '1.25rem',
                                     cursor: 'pointer',

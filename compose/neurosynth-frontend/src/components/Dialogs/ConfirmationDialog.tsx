@@ -9,13 +9,13 @@ import {
     IconButton,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import React, { useMemo } from 'react';
+import React, { ReactNode, useMemo } from 'react';
 
 export interface IConfirmationDialog {
     isOpen: boolean;
     onCloseDialog: (confirm: boolean | undefined) => void;
     dialogTitle: string;
-    dialogMessage?: JSX.Element | string;
+    dialogMessage?: ReactNode | string;
     confirmText?: string;
     rejectText?: string;
 }

@@ -21,7 +21,6 @@ import {
     useProjectExtractionStudysetId,
     useProjectExtractionStudyStatus,
     useProjectId,
-    useProjectMetaAnalysisCanEdit,
     useProjectUser,
 } from 'pages/Project/store/ProjectStore';
 import { useStudyId } from 'pages/Study/store/StudyStore';
@@ -34,14 +33,13 @@ import EditStudyToolbarStyles from './EditStudyToolbar.styles';
 const EditStudyToolbar: React.FC<{ isViewOnly?: boolean }> = ({ isViewOnly = false }) => {
     const [confirmationDialogState, setConfirmationDialogState] = useState<{
         isOpen: boolean;
-        action: 'SWAP' | 'PREV' | 'NEXT' | 'BACK' | undefined;
+        action: 'PREV' | 'NEXT' | 'COMPLETE' | undefined;
     }>({
         isOpen: false,
         action: undefined,
     });
     const { isLoading: saveStudyIsLoading, hasEdits, handleSave } = useSaveStudy();
     const navigate = useNavigate();
-    const canEditMetaAnalyses = useProjectMetaAnalysisCanEdit();
 
     const projectId = useProjectId();
     const extractionSummary = useGetExtractionSummary(projectId || '');
@@ -121,6 +119,25 @@ const EditStudyToolbar: React.FC<{ isViewOnly?: boolean }> = ({ isViewOnly = fal
             : navigate(`/projects/${projectId}/extraction/studies/${nextId}`);
     };
 
+    const handleMoveToComplete = () => {
+        const hasUnsavedChanges = hasUnsavedStudyChanges();
+        if (hasUnsavedChanges) {
+            setConfirmationDialogState({
+                isOpen: true,
+                action: 'COMPLETE',
+            });
+            return;
+        }
+
+        navigate(`/projects/${projectId}/project`, {
+            state: {
+                projectPage: {
+                    scrollToMetaAnalysisProceed: true,
+                },
+            } as IProjectPageLocationState,
+        });
+    };
+
     const handleConfirmationDialogClose = (ok: boolean | undefined) => {
         if (!ok) {
             setConfirmationDialogState({
@@ -131,36 +148,21 @@ const EditStudyToolbar: React.FC<{ isViewOnly?: boolean }> = ({ isViewOnly = fal
             unsetUnloadHandler('study');
             unsetUnloadHandler('annotation');
             switch (confirmationDialogState.action) {
-                case 'SWAP':
-                    // handle swap
-                    break;
                 case 'PREV':
                     handleMoveToPreviousStudy();
                     break;
                 case 'NEXT':
                     handleMoveToNextStudy();
                     break;
-                case 'BACK':
-                    // handle back
+                case 'COMPLETE':
+                    handleMoveToComplete();
                     break;
+                default:
+                    return;
             }
             setConfirmationDialogState({
                 isOpen: false,
                 action: undefined,
-            });
-        }
-    };
-
-    const handleContinueToMetaAnalysisCreation = () => {
-        if (canEditMetaAnalyses) {
-            navigate(`/projects/${projectId}/meta-analyses`);
-        } else {
-            navigate(`/projects/${projectId}/edit`, {
-                state: {
-                    projectPage: {
-                        scrollToMetaAnalysisProceed: true,
-                    },
-                } as IProjectPageLocationState,
             });
         }
     };
@@ -220,7 +222,7 @@ const EditStudyToolbar: React.FC<{ isViewOnly?: boolean }> = ({ isViewOnly = fal
                                 >
                                     <Box>
                                         <IconButton
-                                            onClick={handleContinueToMetaAnalysisCreation}
+                                            onClick={handleMoveToComplete}
                                             sx={GlobalStyles.colorPulseAnimation}
                                         >
                                             <DoneAllIcon color="success" />

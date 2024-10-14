@@ -1,4 +1,4 @@
-import { Box, Button, Typography } from '@mui/material';
+import { Box, Button, Tooltip, Typography } from '@mui/material';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs';
 import ProjectIsLoadingText from 'components/ProjectIsLoadingText';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
@@ -86,17 +86,13 @@ const ExtractionPage: React.FC = (props) => {
     };
 
     const handleMoveToSpecificationPhase = () => {
-        if (canEditMetaAnalyses) {
-            navigate(`/projects/${projectId}/meta-analyses`);
-        } else {
-            navigate(`/projects/${projectId}/project`, {
-                state: {
-                    projectPage: {
-                        scrollToMetaAnalysisProceed: true,
-                    },
-                } as IProjectPageLocationState,
-            });
-        }
+        navigate(`/projects/${projectId}/project`, {
+            state: {
+                projectPage: {
+                    scrollToMetaAnalysisProceed: true,
+                },
+            } as IProjectPageLocationState,
+        });
     };
 
     const isReadyToMoveToNextStep = useMemo(
@@ -104,6 +100,17 @@ const ExtractionPage: React.FC = (props) => {
             extractionSummary.total === extractionSummary.completed && extractionSummary.total > 0,
         [extractionSummary]
     );
+
+    const percentageCompleteString = useMemo((): string => {
+        if (extractionSummary.total === 0) return '0 / 0';
+        return `${extractionSummary.completed} / ${extractionSummary.total}`;
+    }, [extractionSummary.completed, extractionSummary.total]);
+
+    const percentageComplete = useMemo((): number => {
+        if (extractionSummary.total === 0) return 0;
+        const percentageComplete = (extractionSummary.completed / extractionSummary.total) * 100;
+        return Math.floor(percentageComplete);
+    }, [extractionSummary.completed, extractionSummary.total]);
 
     return (
         <StateHandlerComponent isError={getStudysetIsError} isLoading={getStudysetIsLoading}>
@@ -133,28 +140,43 @@ const ExtractionPage: React.FC = (props) => {
                     </Box>
                     <Box>
                         <Button
-                            sx={{ width: '220px' }}
+                            sx={{ fontSize: '0.7rem' }}
                             color="secondary"
                             variant="contained"
                             disableElevation
+                            size="small"
                             onClick={() =>
                                 navigate(`/projects/${projectId}/extraction/annotations`)
                             }
                         >
                             View Annotations
                         </Button>
-                        {isReadyToMoveToNextStep && (
-                            <Button
-                                sx={{ marginLeft: '1rem' }}
-                                onClick={handleMoveToSpecificationPhase}
-                                color="success"
-                                variant="contained"
-                                disableElevation
-                                disabled={!canEdit}
-                            >
-                                Move to Specification Phase
-                            </Button>
-                        )}
+                        <Button
+                            sx={{ marginLeft: '4px', fontSize: '0.7rem' }}
+                            size="small"
+                            color="info"
+                            variant="contained"
+                            disableElevation
+                        >
+                            Mark all as complete
+                        </Button>
+                        <Tooltip title={`${percentageCompleteString} marked as complete`}>
+                            <span style={{ width: '100%' }}>
+                                <Button
+                                    size="small"
+                                    sx={{ marginLeft: '4px', fontSize: '0.7rem' }}
+                                    onClick={handleMoveToSpecificationPhase}
+                                    color="success"
+                                    variant="contained"
+                                    disableElevation
+                                    disabled={!canEdit || !isReadyToMoveToNextStep}
+                                >
+                                    {isReadyToMoveToNextStep
+                                        ? 'Advance'
+                                        : `${percentageComplete}% complete`}
+                                </Button>
+                            </span>
+                        </Tooltip>
                     </Box>
                 </Box>
                 {showReconcilePrompt && <ExtractionOutOfSync />}

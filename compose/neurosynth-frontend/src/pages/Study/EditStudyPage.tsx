@@ -1,5 +1,7 @@
 import { Box, Button } from '@mui/material';
+import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
+import { hasUnsavedStudyChanges, unsetUnloadHandler } from 'helpers/BeforeUnload.helpers';
 import {
     useInitProjectStoreIfRequired,
     useProjectExtractionAnnotationId,
@@ -17,13 +19,11 @@ import {
     useStudyId,
 } from 'pages/Study/store/StudyStore';
 import { useEffect, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useClearAnnotationStore, useInitAnnotationStore } from 'stores/AnnotationStore.actions';
 import { useAnnotationId, useGetAnnotationIsLoading } from 'stores/AnnotationStore.getters';
 import DisplayExtractionTableState from './components/DisplayExtractionTableState';
 import EditStudyCompleteButton from './components/EditStudyCompleteButton';
-import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
-import { hasUnsavedStudyChanges, unsetUnloadHandler } from 'helpers/BeforeUnload.helpers';
 
 const EditStudyPage: React.FC = (props) => {
     const { projectId, studyId } = useParams<{ projectId: string; studyId: string }>();
