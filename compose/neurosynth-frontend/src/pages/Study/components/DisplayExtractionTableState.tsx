@@ -135,8 +135,9 @@ const DisplayExtractionTableState: React.FC = (props) => {
                         <Typography
                             sx={{
                                 textOverflow: 'ellipsis',
-                                maxWidth: '200px',
-                                width: '200px',
+                                maxWidth: '100px',
+                                width: '100px',
+                                fontSize: '8px',
                                 whiteSpace: 'nowrap',
                                 overflow: 'hidden',
                                 textAlign: 'start',
@@ -148,7 +149,7 @@ const DisplayExtractionTableState: React.FC = (props) => {
                     </Button>
                 </Tooltip>
             ) : (
-                <Box sx={{ width: '200px' }}></Box>
+                <Box sx={{ width: '100px' }}></Box>
             )}
             <Tooltip
                 title={
@@ -176,13 +177,13 @@ const DisplayExtractionTableState: React.FC = (props) => {
                         alignItems: 'center',
                     }}
                 >
-                    <Typography sx={{ display: 'block' }} variant="caption">
+                    <Typography sx={{ display: 'block', fontSize: '10px' }}>
                         {thisStudyIndex + 1} of {(extractionTableState?.studies || []).length}
                         <span style={{ color: 'gray', marginLeft: '4px' }}>
                             ({data?.studies?.length || 0} total)
                         </span>
                     </Typography>
-                    <Typography sx={{ display: 'block' }} variant="caption">
+                    <Typography sx={{ display: 'block', fontSize: '10px' }}>
                         {(extractionTableState?.columnFilters || []).length > 0 && (
                             <>{(extractionTableState?.columnFilters || []).length} filters</>
                         )}
@@ -211,8 +212,9 @@ const DisplayExtractionTableState: React.FC = (props) => {
                         <Typography
                             sx={{
                                 textOverflow: 'ellipsis',
-                                maxWidth: '200px',
-                                width: '200px',
+                                maxWidth: '100px',
+                                width: '100px',
+                                fontSize: '8px',
                                 whiteSpace: 'nowrap',
                                 overflow: 'hidden',
                                 textAlign: 'end',
@@ -224,7 +226,7 @@ const DisplayExtractionTableState: React.FC = (props) => {
                     </Button>
                 </Tooltip>
             ) : (
-                <Box sx={{ width: '200px' }}></Box>
+                <Box sx={{ width: '100px' }}></Box>
             )}
         </Box>
     );

@@ -8,7 +8,16 @@ export const ExtractionTableAuthorCell: React.FC<CellContext<IExtractionTableStu
     props
 ) => {
     const value = props.getValue();
-    return <Typography variant="body2">{value}</Typography>;
+    let shortName = value;
+    const authorsList = (value || '').split(',');
+    if (authorsList.length > 1) {
+        shortName = `${authorsList[0]}., et al.`;
+    }
+    return (
+        <Tooltip title={value ? <Typography variant="body2">{value}</Typography> : null}>
+            <Typography variant="body2">{shortName}</Typography>
+        </Tooltip>
+    );
 };
 
 export const ExtractionTableAuthorHeader: React.FC<

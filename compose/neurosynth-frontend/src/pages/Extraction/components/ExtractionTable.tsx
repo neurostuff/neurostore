@@ -1,5 +1,6 @@
 import {
     Box,
+    Button,
     Chip,
     Pagination,
     Table,
@@ -28,6 +29,7 @@ import { useGetStudysetById } from 'hooks';
 import { IStudyExtractionStatus } from 'hooks/projects/useGetProjects';
 import { StudyReturn } from 'neurostore-typescript-sdk';
 import {
+    useProjectExtractionSetGivenStudyStatusesAsComplete,
     useProjectExtractionStudysetId,
     useProjectExtractionStudyStatusList,
     useProjectId,
@@ -44,6 +46,7 @@ import { ExtractionTablePMIDCell, ExtractionTablePMIDHeader } from './Extraction
 import { ExtractionTableStatusCell, ExtractionTableStatusHeader } from './ExtractionTableStatus';
 import { ExtractionTableYearCell, ExtractionTableYearHeader } from './ExtractionTableYear';
 import { retrieveExtractionTableState } from './ExtractionTable.helpers';
+import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 
 //allows us to define custom properties for our columns
 declare module '@tanstack/react-table' {
@@ -63,11 +66,13 @@ const ExtractionTable: React.FC = () => {
     const navigate = useNavigate();
     const studyStatusList = useProjectExtractionStudyStatusList();
     const { data: studyset } = useGetStudysetById(studysetId, true); // this should already be loaded in the cache from the parent component
+    const setGivenStudyStatusesAsComplete = useProjectExtractionSetGivenStudyStatusesAsComplete();
 
     const [pagination, setPagination] = useState<PaginationState>({
         pageIndex: 0,
         pageSize: 25,
     });
+    const [confirmationDialogIsOpen, setConfirmationDialogIsOpen] = useState(false);
 
     useEffect(() => {
         const state = retrieveExtractionTableState(projectId);
@@ -100,9 +105,9 @@ const ExtractionTable: React.FC = () => {
         return [
             columnHelper.accessor(({ year }) => (year ? String(year) : ''), {
                 id: 'year',
-                size: 70,
-                minSize: 70,
-                maxSize: 70,
+                size: 60,
+                minSize: 60,
+                maxSize: 60,
                 cell: ExtractionTableYearCell,
                 header: ExtractionTableYearHeader,
                 enableSorting: true,
@@ -128,9 +133,9 @@ const ExtractionTable: React.FC = () => {
             }),
             columnHelper.accessor('authors', {
                 id: 'authors',
-                size: 300,
-                minSize: 300,
-                maxSize: 300,
+                size: 100,
+                minSize: 100,
+                maxSize: 100,
                 enableSorting: true,
                 enableColumnFilter: true,
                 sortingFn: 'text',
@@ -156,9 +161,9 @@ const ExtractionTable: React.FC = () => {
             }),
             columnHelper.accessor('pmid', {
                 id: 'pmid',
-                size: 100,
-                minSize: 100,
-                maxSize: 100,
+                size: 80,
+                minSize: 80,
+                maxSize: 80,
                 enableColumnFilter: true,
                 filterFn: 'includesString',
                 cell: ExtractionTablePMIDCell,
@@ -222,6 +227,18 @@ const ExtractionTable: React.FC = () => {
         []
     );
 
+    const handleMarkAllAsComplete = useCallback(
+        (ok: boolean | undefined) => {
+            if (ok) {
+                const studies = (studyset?.studies || []) as Array<StudyReturn>;
+                setGivenStudyStatusesAsComplete(studies.map((x) => x.id) as string[]);
+            }
+
+            setConfirmationDialogIsOpen(false);
+        },
+        [setGivenStudyStatusesAsComplete, studyset?.studies]
+    );
+
     const handlePaginationChange = useCallback((_event: any, page: number) => {
         // page is 0 indexed
         setPagination((prev) => ({
@@ -249,11 +266,29 @@ const ExtractionTable: React.FC = () => {
                     onChange={handlePaginationChangeMuiPaginator}
                     page={pagination.pageIndex + 1}
                 />
+                <Box sx={{ width: '271px', display: 'flex', justifyContent: 'flex-end' }}>
+                    <ConfirmationDialog
+                        onCloseDialog={handleMarkAllAsComplete}
+                        rejectText="Cancel"
+                        confirmText="Mark all as complete"
+                        isOpen={confirmationDialogIsOpen}
+                        dialogTitle="Are you sure you want to mark all the studies as complete?"
+                        dialogMessage="You can skip reviewing to expedite the process, but any studies you have not reviewed may have incomplete or inaccurate metadata or coordinates."
+                    />
+                    <Button
+                        sx={{ marginLeft: '4px' }}
+                        color="success"
+                        disableElevation
+                        onClick={() => setConfirmationDialogIsOpen(true)}
+                    >
+                        Mark all as complete
+                    </Button>
+                </Box>
             </Box>
             <TableContainer sx={{ marginBottom: '2rem' }}>
                 <Table
                     size="small"
-                    sx={{ tableLayout: 'fixed', width: 'fit-content', minWidth: '1200px' }}
+                    sx={{ tableLayout: 'fixed', width: 'fit-content', minWidth: '800px' }}
                 >
                     <TableHead>
                         {table.getHeaderGroups().map((headerGroup) => (

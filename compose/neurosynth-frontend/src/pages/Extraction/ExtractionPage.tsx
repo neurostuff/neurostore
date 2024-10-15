@@ -15,7 +15,6 @@ import {
     useInitProjectStoreIfRequired,
     useProjectCurationColumns,
     useProjectExtractionStudysetId,
-    useProjectMetaAnalysisCanEdit,
     useProjectName,
     useProjectUser,
 } from 'pages/Project/store/ProjectStore';
@@ -40,7 +39,6 @@ const ExtractionPage: React.FC = (props) => {
     const columns = useProjectCurationColumns();
     const loading = useGetProjectIsLoading();
     const extractionSummary = useGetExtractionSummary(projectId || '');
-    const canEditMetaAnalyses = useProjectMetaAnalysisCanEdit();
     const projectUser = useProjectUser();
     const canEdit = useUserCanEdit(projectUser || undefined);
 
@@ -140,31 +138,19 @@ const ExtractionPage: React.FC = (props) => {
                     </Box>
                     <Box>
                         <Button
-                            sx={{ fontSize: '0.7rem' }}
                             color="secondary"
                             variant="contained"
                             disableElevation
-                            size="small"
                             onClick={() =>
                                 navigate(`/projects/${projectId}/extraction/annotations`)
                             }
                         >
-                            View Annotations
-                        </Button>
-                        <Button
-                            sx={{ marginLeft: '4px', fontSize: '0.7rem' }}
-                            size="small"
-                            color="info"
-                            variant="contained"
-                            disableElevation
-                        >
-                            Mark all as complete
+                            Annotations
                         </Button>
                         <Tooltip title={`${percentageCompleteString} marked as complete`}>
                             <span style={{ width: '100%' }}>
                                 <Button
-                                    size="small"
-                                    sx={{ marginLeft: '4px', fontSize: '0.7rem' }}
+                                    sx={{ marginLeft: '4px' }}
                                     onClick={handleMoveToSpecificationPhase}
                                     color="success"
                                     variant="contained"
@@ -180,7 +166,7 @@ const ExtractionPage: React.FC = (props) => {
                     </Box>
                 </Box>
                 {showReconcilePrompt && <ExtractionOutOfSync />}
-                <Box>
+                <Box sx={{ flexGrow: 1 }}>
                     <Box>
                         <TextEdit
                             editIconIsVisible={canEdit}

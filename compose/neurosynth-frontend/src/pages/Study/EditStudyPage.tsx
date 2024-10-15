@@ -87,44 +87,47 @@ const EditStudyPage: React.FC = (props) => {
                 !studyStoreId || !annotationStoreId || getStudyIsLoading || getAnnotationIsLoading
             }
         >
-            <EditStudyPageHeader />
-            <EditStudyAnnotations />
-            <EditStudyAnalyses />
-            <EditStudyDetails />
-            <Box sx={{ marginBottom: '5rem' }}>
-                <EditStudyMetadata />
-            </Box>
-            <Box sx={EditStudyPageStyles.loadingButtonContainer}>
-                <Box sx={{ width: '20%', justifyContent: 'flex-start' }}>
-                    <ConfirmationDialog
-                        isOpen={confirmationDialogIsOpen}
-                        dialogTitle="You have unsaved changes"
-                        dialogMessage="Are you sure you want to continue? You'll lose your unsaved changes"
-                        onCloseDialog={handleCloseConfirmationDialog}
-                        rejectText="Cancel"
-                        confirmText="Continue"
-                    />
-                    <Button
-                        color="secondary"
-                        disableElevation
-                        sx={{ width: '200px' }}
-                        variant="contained"
-                        onClick={handleBackToExtraction}
+            <Box>
+                <EditStudyPageHeader />
+                <EditStudyAnnotations />
+                <EditStudyAnalyses />
+                <EditStudyDetails />
+                <Box sx={{ marginBottom: '5rem' }}>
+                    <EditStudyMetadata />
+                </Box>
+                <Box sx={[EditStudyPageStyles.loadingButtonContainer]}>
+                    <Box sx={{ width: '20%', justifyContent: 'flex-start' }}>
+                        <ConfirmationDialog
+                            isOpen={confirmationDialogIsOpen}
+                            dialogTitle="You have unsaved changes"
+                            dialogMessage="Are you sure you want to continue? You'll lose your unsaved changes"
+                            onCloseDialog={handleCloseConfirmationDialog}
+                            rejectText="Cancel"
+                            confirmText="Continue"
+                        />
+                        <Button
+                            color="secondary"
+                            disableElevation
+                            size="small"
+                            sx={{ width: '160px' }}
+                            variant="contained"
+                            onClick={handleBackToExtraction}
+                        >
+                            Back to extraction
+                        </Button>
+                    </Box>
+                    <Box
+                        sx={{
+                            width: '60%',
+                            display: 'flex',
+                            justifyContent: 'center',
+                        }}
                     >
-                        Back to extraction
-                    </Button>
-                </Box>
-                <Box
-                    sx={{
-                        width: '60%',
-                        display: 'flex',
-                        justifyContent: 'center',
-                    }}
-                >
-                    <DisplayExtractionTableState />
-                </Box>
-                <Box sx={{ width: '20%', display: 'flex', justifyContent: 'flex-end' }}>
-                    <EditStudyCompleteButton />
+                        <DisplayExtractionTableState />
+                    </Box>
+                    <Box sx={{ width: '20%', display: 'flex', justifyContent: 'flex-end' }}>
+                        <EditStudyCompleteButton />
+                    </Box>
                 </Box>
             </Box>
         </StateHandlerComponent>

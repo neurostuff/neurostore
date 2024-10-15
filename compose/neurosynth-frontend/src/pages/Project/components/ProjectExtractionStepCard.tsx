@@ -141,7 +141,7 @@ const ProjectExtractionStepCard: React.FC<{ disabled: boolean }> = ({ disabled }
                                 display: allStudiesAreComplete ? 'none' : 'block',
                             }}
                             onClick={() => setMarkAllAsCompleteConfirmationDialogIsOpen(true)}
-                            color="info"
+                            color="success"
                             disabled={disabled}
                         >
                             Mark all as complete

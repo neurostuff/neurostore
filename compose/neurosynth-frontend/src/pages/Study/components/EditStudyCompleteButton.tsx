@@ -28,9 +28,10 @@ const EditStudyCompleteButton: React.FC = React.memo((props) => {
     return (
         <Box>
             <LoadingButton
-                sx={{ width: '200px' }}
+                sx={{ width: '175px' }}
                 variant="contained"
                 color="success"
+                size="small"
                 disabled={extractionStatus?.status === EExtractionStatus.COMPLETED}
                 disableElevation
                 loaderColor="secondary"

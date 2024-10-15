@@ -237,7 +237,7 @@ const useSaveStudy = () => {
             unsetUnloadHandler('annotation');
 
             navigate(`/projects/${projectId}/extraction/studies/${clonedStudyId}/edit`);
-            enqueueSnackbar('Saved successfully. You are now the owner of this study', {
+            enqueueSnackbar('Made a new a copy and saved succesfully', {
                 variant: 'success',
             });
 

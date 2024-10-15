@@ -60,7 +60,7 @@ const NeurosynthBreadcrumbs: React.FC<{ breadcrumbItems: INeurosynthBreadcrumbs[
                                 color="secondary"
                                 variant="h6"
                                 sx={{
-                                    maxWidth: '300px',
+                                    maxWidth: '200px',
                                     textOverflow: 'ellipsis',
                                     display: 'block',
                                     overflow: 'hidden',
@@ -81,7 +81,7 @@ const NeurosynthBreadcrumbs: React.FC<{ breadcrumbItems: INeurosynthBreadcrumbs[
                                 sx={{
                                     fontSize: '1.25rem',
                                     cursor: 'pointer',
-                                    maxWidth: '300px',
+                                    maxWidth: '200px',
                                     textOverflow: 'ellipsis',
                                     display: 'block',
                                     overflow: 'hidden',

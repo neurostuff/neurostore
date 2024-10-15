@@ -15,7 +15,7 @@ import ProgressLoader from 'components/ProgressLoader';
 import { setAnalysesInAnnotationAsIncluded } from 'helpers/Annotation.helpers';
 import { hasUnsavedStudyChanges, unsetUnloadHandler } from 'helpers/BeforeUnload.helpers';
 import { lastUpdatedAtSortFn } from 'helpers/utils';
-import { useGetStudysetById, useUpdateStudyset } from 'hooks';
+import { useGetStudysetById, useUpdateStudy, useUpdateStudyset } from 'hooks';
 import useGetBaseStudyById from 'hooks/studies/useGetBaseStudyById';
 import { StudyReturn } from 'neurostore-typescript-sdk';
 import { useSnackbar } from 'notistack';
@@ -25,7 +25,11 @@ import {
     useProjectExtractionStudysetId,
     useProjectId,
 } from 'pages/Project/store/ProjectStore';
-import { useStudyBaseStudyId, useStudyId } from 'pages/Study/store/StudyStore';
+import {
+    useStudyBaseStudyId,
+    useStudyId,
+    useUpdateStudyDetails,
+} from 'pages/Study/store/StudyStore';
 import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAnnotationId } from 'stores/AnnotationStore.getters';
@@ -41,6 +45,7 @@ const EditStudySwapVersionButton: React.FC = (props) => {
     const updateStudyListStatusWithNewStudyId = useProjectExtractionReplaceStudyListStatusId();
     const studysetId = useProjectExtractionStudysetId();
     const { data: studyset } = useGetStudysetById(studysetId, false);
+    const updateStudyByField = useUpdateStudyDetails();
     const navigate = useNavigate();
     const { enqueueSnackbar } = useSnackbar();
 
@@ -109,6 +114,8 @@ const EditStudySwapVersionButton: React.FC = (props) => {
                 },
             });
             updateStudyListStatusWithNewStudyId(studyId, versionToSwapTo);
+            updateStudyByField('id', versionToSwapTo);
+            unsetUnloadHandler('study');
             updateExtractionTableStateInStorage(projectId, studyId, versionToSwapTo);
             await setAnalysesInAnnotationAsIncluded(annotationId);
 
@@ -230,24 +237,27 @@ const EditStudySwapVersionButton: React.FC = (props) => {
                         <ListItem key={version.id} sx={{ padding: '0.2rem 1rem' }}>
                             <ListItemButton
                                 selected={isCurrentlySelected}
-                                sx={{ ':hover': { backgroundColor: 'transparent' }, py: '0' }}
+                                sx={{ ':hover': { backgroundColor: 'transparent' }, p: '0' }}
                             >
                                 <ButtonGroup variant="text">
                                     <Button
                                         onClick={() => handleSwitchVersion(version.id)}
                                         sx={{
-                                            width: '450px',
+                                            width: '300px',
                                             textTransform: 'none',
                                             display: 'flex',
                                             alignItems: 'flex-start',
                                             flexDirection: 'column',
                                         }}
                                     >
-                                        <Typography variant="body2" textAlign="left">
+                                        <Typography variant="caption" textAlign="left">
                                             Switch to version: {version.id}
                                         </Typography>
                                         <Typography variant="caption" color="gray" textAlign="left">
-                                            Last Modified: {lastUpdated} | Owner: {username}
+                                            Last Modified: {lastUpdated}
+                                        </Typography>
+                                        <Typography variant="caption" color="gray" textAlign="left">
+                                            Owner: {username}
                                         </Typography>
                                     </Button>
                                     <Button
