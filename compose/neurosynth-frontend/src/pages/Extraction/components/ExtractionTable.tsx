@@ -25,7 +25,7 @@ import {
     SortingState,
     useReactTable,
 } from '@tanstack/react-table';
-import { useGetStudysetById } from 'hooks';
+import { useGetStudysetById, useUserCanEdit } from 'hooks';
 import { IStudyExtractionStatus } from 'hooks/projects/useGetProjects';
 import { StudyReturn } from 'neurostore-typescript-sdk';
 import {
@@ -33,6 +33,7 @@ import {
     useProjectExtractionStudysetId,
     useProjectExtractionStudyStatusList,
     useProjectId,
+    useProjectUser,
 } from 'pages/Project/store/ProjectStore';
 import { ChangeEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -67,6 +68,8 @@ const ExtractionTable: React.FC = () => {
     const studyStatusList = useProjectExtractionStudyStatusList();
     const { data: studyset } = useGetStudysetById(studysetId, true); // this should already be loaded in the cache from the parent component
     const setGivenStudyStatusesAsComplete = useProjectExtractionSetGivenStudyStatusesAsComplete();
+    const projectUser = useProjectUser();
+    const usercanEdit = useUserCanEdit(projectUser || undefined);
 
     const [pagination, setPagination] = useState<PaginationState>({
         pageIndex: 0,
@@ -345,9 +348,16 @@ const ExtractionTable: React.FC = () => {
                                                 .rows.map((r) => r.original.id),
                                         })
                                     );
-                                    navigate(
-                                        `/projects/${projectId}/extraction/studies/${row.original.id}/edit`
-                                    );
+
+                                    if (usercanEdit) {
+                                        navigate(
+                                            `/projects/${projectId}/extraction/studies/${row.original.id}/edit`
+                                        );
+                                    } else {
+                                        navigate(
+                                            `/projects/${projectId}/extraction/studies/${row.original.id}`
+                                        );
+                                    }
                                 }}
                                 sx={{
                                     '&:hover': { filter: 'brightness(0.9)', cursor: 'pointer' },

@@ -26,8 +26,8 @@ import {
 import { useStudyId } from 'pages/Study/store/StudyStore';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import useSaveStudy from '../hooks/useSaveStudy';
-import EditStudySwapVersionButton from './EditStudySwapVersionButton';
+import useSaveStudy from 'pages/Study/hooks/useSaveStudy';
+import EditStudySwapVersionButton from 'pages/Study/components/EditStudySwapVersionButton';
 import EditStudyToolbarStyles from './EditStudyToolbar.styles';
 
 const EditStudyToolbar: React.FC<{ isViewOnly?: boolean }> = ({ isViewOnly = false }) => {
@@ -198,16 +198,16 @@ const EditStudyToolbar: React.FC<{ isViewOnly?: boolean }> = ({ isViewOnly = fal
 
     return (
         <Box sx={EditStudyToolbarStyles.stickyContainer}>
-            <ConfirmationDialog
-                isOpen={confirmationDialogState.isOpen}
-                dialogTitle="You have unsaved changes"
-                dialogMessage="Are you sure you want to continue? You'll lose your unsaved changes"
-                onCloseDialog={handleConfirmationDialogClose}
-                rejectText="Cancel"
-                confirmText="Continue"
-            />
             {!isViewOnly && (
                 <Box sx={EditStudyToolbarStyles.toolbarContainer}>
+                    <ConfirmationDialog
+                        isOpen={confirmationDialogState.isOpen}
+                        dialogTitle="You have unsaved changes"
+                        dialogMessage="Are you sure you want to continue? You'll lose your unsaved changes"
+                        onCloseDialog={handleConfirmationDialogClose}
+                        rejectText="Cancel"
+                        confirmText="Continue"
+                    />
                     <Box sx={EditStudyToolbarStyles.header}>Toolbar</Box>
                     <Box
                         sx={{

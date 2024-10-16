@@ -36,6 +36,7 @@ import useGetExtractionSummary from './useGetExtractionSummary';
 import useGetCurationSummary from './useGetCurationSummary';
 import useGetFullText from './external/useGetFullText';
 import useUserCanEdit from './useUserCanEdit';
+import useGetBaseStudyById from './studies/useGetBaseStudyById';
 
 export {
     useGetCurationSummary,
@@ -48,6 +49,7 @@ export {
     useGetWindowHeight,
     useGetFullText,
     useUserCanEdit,
+    useGetBaseStudyById,
     // STUDIES
     useGetBaseStudies,
     useGetStudyById,

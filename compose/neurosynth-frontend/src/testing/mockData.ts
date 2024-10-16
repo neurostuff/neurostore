@@ -5,6 +5,7 @@ import {
     PointReturn,
     ConditionReturn,
     AnalysisReturn,
+    BaseStudyReturn,
 } from 'neurostore-typescript-sdk';
 import { NeurostoreAnnotation } from 'utils/api';
 
@@ -455,6 +456,34 @@ const mockStudies: () => StudyReturn[] = () => [
     },
 ];
 
+const mockBaseStudy: () => BaseStudyReturn = () => ({
+    id: '3V8TUXsUAMna',
+    user: null,
+    username: null,
+    created_at: '2023-06-21T22:17:27.973390+00:00',
+    updated_at: '2023-08-24T14:30:22.320233+00:00',
+    metadata: null,
+    versions: [
+        {
+            id: 'LhVcFRWQnYnm',
+            user: null,
+            username: null,
+            created_at: '2023-05-20T00:26:49.948975+00:00',
+            updated_at: '2023-06-21T22:17:27.973390+00:00',
+            source: 'neuroquery',
+        },
+    ],
+    name: 'Abnormal regional homogeneity as potential imaging biomarker for psychosis risk syndrome: a resting-state fMRI study and support vector machine analysis',
+    description: null,
+    publication: null,
+    doi: null,
+    pmid: '27272341',
+    pmcid: null,
+    authors: null,
+    year: null,
+    level: 'group',
+});
+
 export {
     mockConditions,
     mockWeights,
@@ -467,4 +496,5 @@ export {
     mockStudies,
     mockStudysetNested,
     mockStudysetNotNested,
+    mockBaseStudy,
 };

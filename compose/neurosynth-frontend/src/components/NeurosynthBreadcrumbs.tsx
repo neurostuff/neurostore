@@ -1,8 +1,8 @@
 import { Box, Breadcrumbs, Link, Typography } from '@mui/material';
+import { hasUnsavedStudyChanges } from 'helpers/BeforeUnload.helpers';
 import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import ConfirmationDialog from './Dialogs/ConfirmationDialog';
-import { hasUnsavedChanges, hasUnsavedStudyChanges } from 'helpers/BeforeUnload.helpers';
 
 interface INeurosynthBreadcrumbs {
     link: string;

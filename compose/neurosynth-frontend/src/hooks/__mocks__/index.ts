@@ -6,6 +6,7 @@ import {
     mockStudysets,
 } from 'testing/mockData';
 import useInputValidation from 'hooks/useInputValidation'; // don't need to mock this as it isn't making any api calls
+import { isError } from 'cypress/types/lodash';
 
 const useUpdateAnalysis = jest.fn().mockReturnValue({
     isLoading: false,
@@ -125,6 +126,12 @@ const useGetStudysetById = jest.fn().mockReturnValue({
     data: mockStudysetNested(),
 });
 
+const useGetBaseStudyById = jest.fn().mockReturnValue({
+    isLoading: false,
+    isError: false,
+    data: mockStudy(),
+});
+
 const useGetFullText = jest.fn().mockReturnValue({
     isLoading: false,
     isError: false,
@@ -167,4 +174,5 @@ export {
     useGetStudysetById,
     useGetFullText,
     useUserCanEdit,
+    useGetBaseStudyById,
 };
