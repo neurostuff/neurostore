@@ -1,0 +1,100 @@
+import { act, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { useUpdateStudyset } from 'hooks';
+import { StudyReturn } from 'neurostore-typescript-sdk';
+import { useProjectExtractionReplaceStudyListStatusId } from 'pages/Project/store/ProjectStore';
+import EditStudySwapVersionButton from 'pages/Study/components/EditStudySwapVersionButton';
+import { useNavigate } from 'react-router-dom';
+import { mockBaseStudy, mockStudysetNotNested } from 'testing/mockData';
+import { useStudyId } from 'pages/Study/store/StudyStore';
+import { setUnloadHandler, unsetUnloadHandler } from 'helpers/BeforeUnload.helpers';
+
+jest.mock('react-router-dom');
+jest.mock('hooks');
+jest.mock('pages/Project/store/ProjectStore');
+jest.mock('pages/Study/store/StudyStore');
+jest.mock('components/Dialogs/ConfirmationDialog');
+jest.mock('notistack');
+jest.mock('helpers/Annotation.helpers');
+jest.mock('stores/AnnotationStore.getters');
+
+describe('EditStudySwapVersionButton Component', () => {
+    it('should render', () => {
+        render(<EditStudySwapVersionButton />);
+    });
+
+    it('should open the menu when clicked', () => {
+        render(<EditStudySwapVersionButton />);
+        const button = screen.getByRole('button');
+        userEvent.click(button);
+
+        expect(screen.getByRole('menu')).toBeInTheDocument();
+    });
+
+    it('should show the base study versions', () => {
+        render(<EditStudySwapVersionButton />);
+        const baseStudy = mockBaseStudy();
+        const button = screen.getByRole('button');
+        userEvent.click(button);
+
+        baseStudy.versions?.forEach((version) => {
+            expect(
+                screen.getByText(`Switch to version: ${(version as StudyReturn).id as string}`)
+            ).toBeInTheDocument();
+        });
+    });
+
+    it('should switch the study version', async () => {
+        const studyset = mockStudysetNotNested();
+        (useStudyId as jest.Mock).mockReturnValue(studyset.studies?.[0]);
+        const baseStudy = mockBaseStudy();
+        render(<EditStudySwapVersionButton />);
+        const button = screen.getByRole('button');
+        await act(async () => {
+            userEvent.click(button);
+        });
+        const swapButton = screen.getByText(
+            `Switch to version: ${(baseStudy.versions as StudyReturn[])[0].id}`
+        );
+        await act(async () => {
+            userEvent.click(swapButton);
+        });
+        expect(screen.getByText('Are you sure you want to switch the study version?'));
+
+        const confirmButton = screen.getByTestId('accept-close-confirmation');
+        await act(async () => {
+            userEvent.click(confirmButton);
+        });
+
+        expect(useUpdateStudyset().mutateAsync).toHaveBeenCalled();
+        expect(useProjectExtractionReplaceStudyListStatusId()).toHaveBeenCalled();
+        expect(useNavigate()).toHaveBeenCalledWith(
+            `/projects/project-id/extraction/studies/${
+                (baseStudy.versions as StudyReturn[])[0].id
+            }/edit`
+        );
+    });
+
+    it('should show the dialog if there are unsaved changes', async () => {
+        const baseStudy = mockBaseStudy();
+        setUnloadHandler('study');
+        render(<EditStudySwapVersionButton />);
+        const button = screen.getByRole('button');
+        await act(async () => {
+            userEvent.click(button);
+        });
+        const swapButton = screen.getByText(
+            `Switch to version: ${(baseStudy.versions as StudyReturn[])[0].id}`
+        );
+        await act(async () => {
+            userEvent.click(swapButton);
+        });
+
+        const confirmButton = screen.getByTestId('accept-close-confirmation');
+        await act(async () => {
+            userEvent.click(confirmButton);
+        });
+
+        expect(screen.getByText('Unsaved Changes')).toBeInTheDocument();
+    });
+});

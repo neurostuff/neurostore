@@ -1,21 +1,35 @@
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
-import { Button, ButtonGroup, ListItem, ListItemButton, Menu, Typography } from '@mui/material';
-import LoadingButton from 'components/Buttons/LoadingButton';
+import {
+    Box,
+    Button,
+    ButtonGroup,
+    ListItem,
+    ListItemButton,
+    Menu,
+    Tooltip,
+    Typography,
+} from '@mui/material';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
+import ProgressLoader from 'components/ProgressLoader';
 import { setAnalysesInAnnotationAsIncluded } from 'helpers/Annotation.helpers';
+import { hasUnsavedStudyChanges, unsetUnloadHandler } from 'helpers/BeforeUnload.helpers';
 import { lastUpdatedAtSortFn } from 'helpers/utils';
-import { useGetStudysetById, useUpdateStudyset } from 'hooks';
-import useGetBaseStudyById from 'hooks/studies/useGetBaseStudyById';
+import { useGetStudysetById, useUpdateStudyset, useGetBaseStudyById } from 'hooks';
 import { StudyReturn } from 'neurostore-typescript-sdk';
 import { useSnackbar } from 'notistack';
+import { updateExtractionTableStateInStorage } from 'pages/Extraction/components/ExtractionTable.helpers';
 import {
     useProjectExtractionReplaceStudyListStatusId,
     useProjectExtractionStudysetId,
     useProjectId,
 } from 'pages/Project/store/ProjectStore';
-import { useStudyBaseStudyId, useStudyId } from 'pages/Study/store/StudyStore';
-import { useMemo, useState } from 'react';
+import {
+    useStudyBaseStudyId,
+    useStudyId,
+    useUpdateStudyDetails,
+} from 'pages/Study/store/StudyStore';
+import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAnnotationId } from 'stores/AnnotationStore.getters';
 
@@ -23,19 +37,21 @@ const EditStudySwapVersionButton: React.FC = (props) => {
     const [anchorEl, setAnchorEl] = useState<null | HTMLButtonElement>(null);
     const open = Boolean(anchorEl);
     const baseStudyId = useStudyBaseStudyId();
+    const { data: baseStudy } = useGetBaseStudyById(baseStudyId || '');
     const projectId = useProjectId();
     const studyId = useStudyId();
-    const { data: baseStudy } = useGetBaseStudyById(baseStudyId || '');
     const { mutateAsync: updateStudyset } = useUpdateStudyset();
     const updateStudyListStatusWithNewStudyId = useProjectExtractionReplaceStudyListStatusId();
     const studysetId = useProjectExtractionStudysetId();
     const { data: studyset } = useGetStudysetById(studysetId, false);
+    const updateStudyByField = useUpdateStudyDetails();
     const navigate = useNavigate();
     const { enqueueSnackbar } = useSnackbar();
 
     const annotationId = useAnnotationId();
 
     const [isSwapping, setIsSwapping] = useState(false);
+    const [unsavedChangesConfirmationDialog, setUnsavedChangesConfirmationDialog] = useState(false);
     const [confirmationDialogState, setConfirmationDialogState] = useState<{
         isOpen: boolean;
         selectedVersion?: string;
@@ -56,13 +72,22 @@ const EditStudySwapVersionButton: React.FC = (props) => {
         if (confirm) {
             handleSwapStudy(confirmationDialogState.selectedVersion);
         }
-        setConfirmationDialogState((prev) => ({
-            ...prev,
+        setConfirmationDialogState({
             isOpen: false,
             selectedVersion: undefined,
-        }));
+        });
     };
 
+    /**
+     * Handle swapping the current study being edited with another version.
+     * The selected version is confirmed by the user in a confirmation dialog.
+     * If confirmed, the studyset is updated to replace the current study with the selected version.
+     * The studylist status is updated to reflect the new study version.
+     * The extraction table state in storage is updated to point to the new study version.
+     * The analyses in the annotation are set to be included.
+     * The user is redirected to the edit page of the new study version.
+     * @param {string} versionToSwapTo - the id of the version to swap to
+     */
     const handleSwapStudy = async (versionToSwapTo?: string) => {
         if (!annotationId || !studyId || !studysetId || !versionToSwapTo || !studyset?.studies)
             return;
@@ -88,6 +113,9 @@ const EditStudySwapVersionButton: React.FC = (props) => {
                 },
             });
             updateStudyListStatusWithNewStudyId(studyId, versionToSwapTo);
+            updateStudyByField('id', versionToSwapTo);
+            unsetUnloadHandler('study');
+            updateExtractionTableStateInStorage(projectId, studyId, versionToSwapTo);
             await setAnalysesInAnnotationAsIncluded(annotationId);
 
             navigate(`/projects/${projectId}/extraction/studies/${versionToSwapTo}/edit`);
@@ -103,16 +131,35 @@ const EditStudySwapVersionButton: React.FC = (props) => {
         }
     };
 
-    const handleSelectVersion = (versionId: string | undefined) => {
+    const handleCloseUnsavedChangesDialog = (ok: boolean | undefined) => {
+        if (ok) {
+            unsetUnloadHandler('study');
+            unsetUnloadHandler('annotation');
+        }
+        setUnsavedChangesConfirmationDialog(false);
+        handleCloseConfirmationDialog(ok);
+    };
+
+    const handleUnsavedChanges = (ok: boolean | undefined) => {
+        if (ok) {
+            const hasUnsavedChanges = hasUnsavedStudyChanges();
+            if (hasUnsavedChanges) {
+                setConfirmationDialogState((prev) => ({ ...prev, isOpen: false }));
+                setUnsavedChangesConfirmationDialog(true);
+                return;
+            }
+        }
+        handleCloseConfirmationDialog(ok);
+    };
+
+    const handleSwitchVersion = (versionId: string | undefined) => {
         if (!versionId) return;
         if (versionId === studyId) {
             handleCloseNavMenu();
             return;
         }
-        setConfirmationDialogState({
-            isOpen: true,
-            selectedVersion: versionId,
-        });
+
+        setConfirmationDialogState({ isOpen: true, selectedVersion: versionId });
     };
 
     const baseStudyVersions = useMemo(() => {
@@ -122,22 +169,36 @@ const EditStudySwapVersionButton: React.FC = (props) => {
 
     return (
         <>
-            <LoadingButton
-                isLoading={isSwapping}
-                sx={{ width: '280px', height: '36px' }}
-                variant="contained"
-                disableElevation
-                color="secondary"
-                onClick={handleButtonPress}
-                startIcon={<SwapHorizIcon />}
-                text="Switch study version"
-            ></LoadingButton>
+            <Box>
+                <Tooltip title="Swap study version" placement="left">
+                    <Button
+                        color="secondary"
+                        disableElevation
+                        onClick={handleButtonPress}
+                        size="small"
+                        variant="outlined"
+                        sx={{
+                            width: '40px',
+                            maxWidth: '40px',
+                            minWidth: '40px',
+                            height: '40px',
+                            padding: 0,
+                        }}
+                    >
+                        {isSwapping ? (
+                            <ProgressLoader color="secondary" size={20} />
+                        ) : (
+                            <SwapHorizIcon />
+                        )}
+                    </Button>
+                </Tooltip>
+            </Box>
             <ConfirmationDialog
                 dialogTitle="Are you sure you want to switch the study version?"
                 dialogMessage={
                     <>
                         <Typography>
-                            You are switching from version {studyId} to version
+                            You are switching from version {studyId} to version{' '}
                             {confirmationDialogState.selectedVersion || ''}
                         </Typography>
                         <Typography gutterBottom sx={{ color: 'error.main', marginBottom: '1rem' }}>
@@ -146,37 +207,63 @@ const EditStudySwapVersionButton: React.FC = (props) => {
                         </Typography>
                     </>
                 }
-                onCloseDialog={handleCloseConfirmationDialog}
+                onCloseDialog={handleUnsavedChanges}
                 isOpen={confirmationDialogState.isOpen}
+                rejectText="Cancel"
+            />
+            <ConfirmationDialog
+                dialogTitle="Unsaved Changes"
+                dialogMessage="You have unsaved changes. Are you sure you want to switch the study version? Switching the study version will remove any changes you have made"
+                onCloseDialog={handleCloseUnsavedChangesDialog}
+                isOpen={unsavedChangesConfirmationDialog}
                 rejectText="Cancel"
             />
             <Menu
                 open={open}
                 onClose={handleCloseNavMenu}
                 anchorEl={anchorEl}
-                anchorOrigin={{ vertical: 'top', horizontal: 'left' }}
-                transformOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+                transformOrigin={{ vertical: 'bottom', horizontal: 'right' }}
             >
-                {baseStudyVersions.map((baseStudyVersion) => {
-                    const isCurrentlySelected = baseStudyVersion.id === studyId;
-                    const username = baseStudyVersion.username
-                        ? baseStudyVersion.username
-                        : 'neurosynth';
+                {baseStudyVersions.map((version) => {
+                    const isCurrentlySelected = version.id === studyId;
+                    const username = version.username ? version.username : 'neurosynth';
+                    const lastUpdated = new Date(
+                        version.updated_at || version.created_at || ''
+                    ).toLocaleString();
 
                     return (
-                        <ListItem key={baseStudyVersion.id} sx={{ padding: '0.2rem 1rem' }}>
-                            <ListItemButton selected={isCurrentlySelected}>
+                        <ListItem key={version.id} sx={{ padding: '0.2rem 1rem' }}>
+                            <ListItemButton
+                                selected={isCurrentlySelected}
+                                sx={{ ':hover': { backgroundColor: 'transparent' }, p: '0' }}
+                            >
                                 <ButtonGroup variant="text">
                                     <Button
-                                        onClick={() => handleSelectVersion(baseStudyVersion.id)}
-                                        sx={{ width: '450px' }}
+                                        onClick={() => handleSwitchVersion(version.id)}
+                                        sx={{
+                                            width: '300px',
+                                            textTransform: 'none',
+                                            display: 'flex',
+                                            alignItems: 'flex-start',
+                                            flexDirection: 'column',
+                                        }}
                                     >
-                                        Switch to version {baseStudyVersion.id} | Owner: {username}
+                                        <Typography variant="caption" textAlign="left">
+                                            Switch to version: {version.id}
+                                        </Typography>
+                                        <Typography variant="caption" color="gray" textAlign="left">
+                                            Last Modified: {lastUpdated}
+                                        </Typography>
+                                        <Typography variant="caption" color="gray" textAlign="left">
+                                            Owner: {username}
+                                        </Typography>
                                     </Button>
                                     <Button
                                         href={`/base-studies/${baseStudyId}/${studyId}`}
                                         target="_blank"
                                         rel="noreferrer"
+                                        sx={{ fontSize: '0.8rem' }}
                                         endIcon={<OpenInNewIcon />}
                                     >
                                         View version

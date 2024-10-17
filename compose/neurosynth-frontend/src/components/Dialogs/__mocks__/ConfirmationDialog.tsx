@@ -5,10 +5,14 @@ const mockConfirmationDialog: React.FC<IConfirmationDialog> = (props) => {
         <>
             {props.isOpen && (
                 <div data-testid="mock-confirmation-dialog">
+                    <h1>{props.dialogTitle}</h1>
+                    <div>{props.dialogMessage}</div>
                     <button
                         data-testid="accept-close-confirmation"
                         onClick={(_event) => props.onCloseDialog(true)}
-                    ></button>
+                    >
+                        {props.confirmText}
+                    </button>
                     <button
                         data-testid="deny-close-confirmation"
                         onClick={(_event) => props.onCloseDialog(false)}
@@ -16,7 +20,9 @@ const mockConfirmationDialog: React.FC<IConfirmationDialog> = (props) => {
                     <button
                         data-testid="undecided-close-confirmation"
                         onClick={(_event) => props.onCloseDialog(undefined)}
-                    ></button>
+                    >
+                        {props.rejectText}
+                    </button>
                 </div>
             )}
         </>

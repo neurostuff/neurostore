@@ -5,7 +5,7 @@ const MockAPI = {
     NeurostoreServices: {
         StudiesService: {
             studiesGet: jest.fn(),
-            studiesIdGet: jest.fn(),
+            studiesIdGet: jest.fn().mockReturnValue(Promise.resolve({ data: mockStudy() })),
             studiesIdPut: jest.fn().mockReturnValue(Promise.resolve(mockStudy())),
             studiesPost: jest.fn(),
             studiesIdDelete: jest.fn(),

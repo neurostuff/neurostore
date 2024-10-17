@@ -5,6 +5,7 @@ const useAuth0 = jest.fn().mockReturnValue({
     loginWithPopup: jest.fn(),
     logout: jest.fn(),
     isAuthenticated: false,
+    isLoading: false,
     user: {
         sub: 'some-github-user',
     },

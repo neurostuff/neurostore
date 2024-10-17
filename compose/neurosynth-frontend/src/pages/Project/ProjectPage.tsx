@@ -167,6 +167,7 @@ const ProjectPage: React.FC = (props) => {
                                 borderTopLeftRadius: '6px',
                                 borderTopRightRadius: '6px',
                                 borderColor: 'lightgray',
+                                // borderBottomColor: 'white',
                                 borderBottom: '0px',
                                 marginBottom: '-2px',
                             },

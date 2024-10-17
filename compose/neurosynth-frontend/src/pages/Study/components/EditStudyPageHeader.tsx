@@ -1,21 +1,19 @@
 import { Box, Typography } from '@mui/material';
 import DisplayStudyChipLinks from 'components/DisplayStudyChipLinks/DisplayStudyChipLinks';
-import EditStudyToolbar from 'pages/Study/components/EditStudyToolbar';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs';
 import ProjectIsLoadingText from 'components/ProjectIsLoadingText';
 import { useProjectId, useProjectName } from 'pages/Project/store/ProjectStore';
+import EditStudyToolbar from 'pages/Study/components/EditStudyToolbar';
 import {
-    useStudyId,
+    useStudyAuthors,
     useStudyLastUpdated,
     useStudyName,
-    useStudyYear,
-    useStudyAuthors,
     useStudyUsername,
+    useStudyYear,
 } from 'pages/Study/store/StudyStore';
 import { useMemo } from 'react';
 
 const EditStudyPageHeader: React.FC = () => {
-    const studyId = useStudyId();
     const projectId = useProjectId();
     const studyName = useStudyName();
     const studyYear = useStudyYear();
@@ -32,7 +30,7 @@ const EditStudyPageHeader: React.FC = () => {
     return (
         <>
             <EditStudyToolbar />
-            <Box sx={{ marginBottom: '0.5rem' }}>
+            <Box>
                 <Box sx={{ display: 'flex' }}>
                     <NeurosynthBreadcrumbs
                         breadcrumbItems={[
@@ -53,14 +51,14 @@ const EditStudyPageHeader: React.FC = () => {
                             },
                             {
                                 text: studyName || '',
-                                link: `/projects/${projectId}/extraction/studies/${studyId}/edit`,
+                                link: '',
                                 isCurrentPage: true,
                             },
                         ]}
                     />
                     <ProjectIsLoadingText />
                 </Box>
-                <Box sx={{ marginTop: '1rem', display: 'flex', flexDirection: 'column' }}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', margin: '0.5rem 0' }}>
                     <Typography variant="h5">
                         {studyYear && `(${studyYear}).`} {studyName}
                     </Typography>

@@ -2,6 +2,8 @@ import axios from 'axios';
 import { AxiosResponse } from 'axios';
 import { useQuery } from 'react-query';
 
+const env = process.env.REACT_APP_ENV as 'DEV' | 'STAGING' | 'PROD';
+
 interface ISemanticScholarResponse {
     data: {
         externalIds: {
@@ -41,7 +43,7 @@ const useGetFullText = (paperTitle?: string | null) => {
                     return paperList[0].openAccessPdf.url;
                 }
             },
-            enabled: !!paperTitle,
+            enabled: !!paperTitle && env !== 'DEV' && env !== 'STAGING',
         }
     );
 };

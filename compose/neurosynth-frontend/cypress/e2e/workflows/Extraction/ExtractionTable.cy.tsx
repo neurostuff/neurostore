@@ -3,6 +3,7 @@
 import { INeurosynthProjectReturn } from 'hooks/projects/useGetProjects';
 import { StudyReturn, StudysetReturn } from 'neurostore-typescript-sdk';
 import { IExtractionTableStudy } from 'pages/Extraction/components/ExtractionTable';
+import { getAuthorShortName } from 'pages/Extraction/components/ExtractionTable.helpers';
 
 describe('ExtractionTable', () => {
     beforeEach(() => {
@@ -303,7 +304,12 @@ describe('ExtractionTable', () => {
 
                 cy.get('tbody > tr').each((tr, index) => {
                     cy.wrap(tr).within(() => {
-                        cy.get('td').eq(2).should('have.text', sortedStudies[index].authors);
+                        cy.get('td')
+                            .eq(2)
+                            .should(
+                                'have.text',
+                                getAuthorShortName(sortedStudies?.[index]?.authors || '')
+                            );
                     });
                 });
             });
@@ -324,7 +330,12 @@ describe('ExtractionTable', () => {
 
                 cy.get('tbody > tr').each((tr, index) => {
                     cy.wrap(tr).within(() => {
-                        cy.get('td').eq(2).should('have.text', sortedStudies[index].authors);
+                        cy.get('td')
+                            .eq(2)
+                            .should(
+                                'have.text',
+                                getAuthorShortName(sortedStudies?.[index]?.authors || '')
+                            );
                     });
                 });
             });

@@ -243,7 +243,7 @@ const EditStudyAnalysisPointsHotTable: React.FC<{ analysisId?: string; readOnly?
                             onDeleteRows={handleDeleteRows}
                         />
                     </Box>
-                    <Box sx={{ height: height, width: '100%' }}>
+                    <Box sx={{ height: height, width: '567px' }}>
                         <HotTable
                             {...EditStudyAnalysisPointsDefaultConfig}
                             ref={hotTableRef}

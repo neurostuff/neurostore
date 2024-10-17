@@ -13,6 +13,7 @@ import {
     IStoreAnnotation,
     IStoreNoteCollectionReturn,
 } from 'stores/AnnotationStore.types';
+import { setUnloadHandler } from 'helpers/BeforeUnload.helpers';
 
 export const useAnnotationStore = create<
     {
@@ -137,6 +138,7 @@ export const useAnnotationStore = create<
             }));
         },
         updateNotes: (updatedNotes) => {
+            setUnloadHandler('annotation');
             set((state) => ({
                 ...state,
                 annotation: {
@@ -159,6 +161,7 @@ export const useAnnotationStore = create<
             }));
         },
         createAnnotationNote: (analysisId, studyId, analysisName) => {
+            setUnloadHandler('annotation');
             set((state) => {
                 if (!state.annotation.notes || !state.annotation.note_keys) return state;
 
@@ -189,6 +192,7 @@ export const useAnnotationStore = create<
             });
         },
         deleteAnnotationNote: (analysisId) => {
+            setUnloadHandler('annotation');
             set((state) => ({
                 ...state,
                 annotation: {

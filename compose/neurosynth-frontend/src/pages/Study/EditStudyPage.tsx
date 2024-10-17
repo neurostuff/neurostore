@@ -1,5 +1,7 @@
-import { Box } from '@mui/material';
+import { Box, Button } from '@mui/material';
+import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
+import { hasUnsavedStudyChanges, unsetUnloadHandler } from 'helpers/BeforeUnload.helpers';
 import {
     useInitProjectStoreIfRequired,
     useProjectExtractionAnnotationId,
@@ -9,8 +11,6 @@ import EditStudyAnnotations from 'pages/Study/components/EditStudyAnnotations';
 import EditStudyDetails from 'pages/Study/components/EditStudyDetails';
 import EditStudyMetadata from 'pages/Study/components/EditStudyMetadata';
 import EditStudyPageHeader from 'pages/Study/components/EditStudyPageHeader';
-import EditStudySaveButton from 'pages/Study/components/EditStudySaveButton';
-import EditStudySwapVersionButton from 'pages/Study/components/EditStudySwapVersionButton';
 import EditStudyPageStyles from 'pages/Study/EditStudyPage.styles';
 import {
     useClearStudyStore,
@@ -18,15 +18,17 @@ import {
     useInitStudyStore,
     useStudyId,
 } from 'pages/Study/store/StudyStore';
-import { useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useClearAnnotationStore, useInitAnnotationStore } from 'stores/AnnotationStore.actions';
 import { useAnnotationId, useGetAnnotationIsLoading } from 'stores/AnnotationStore.getters';
 import DisplayExtractionTableState from './components/DisplayExtractionTableState';
+import EditStudyCompleteButton from './components/EditStudyCompleteButton';
 
 const EditStudyPage: React.FC = (props) => {
-    const { studyId } = useParams<{ studyId: string }>();
+    const { projectId, studyId } = useParams<{ projectId: string; studyId: string }>();
 
+    const navigate = useNavigate();
     const annotationId = useProjectExtractionAnnotationId();
     // study stuff
     const getStudyIsLoading = useGetStudyIsLoading();
@@ -56,6 +58,27 @@ const EditStudyPage: React.FC = (props) => {
         studyId,
     ]);
 
+    const [confirmationDialogIsOpen, setConfirmationDialogIsOpen] = useState(false);
+
+    const handleBackToExtraction = () => {
+        const hasUnsavedChanges = hasUnsavedStudyChanges();
+        if (hasUnsavedChanges) {
+            setConfirmationDialogIsOpen(true);
+            return;
+        }
+
+        navigate(`/projects/${projectId}/extraction`);
+    };
+
+    const handleCloseConfirmationDialog = (ok: boolean | undefined) => {
+        setConfirmationDialogIsOpen(false);
+        if (!ok) return;
+
+        unsetUnloadHandler('study');
+        unsetUnloadHandler('annotation');
+        handleBackToExtraction();
+    };
+
     return (
         <StateHandlerComponent
             disableShrink={false}
@@ -64,17 +87,48 @@ const EditStudyPage: React.FC = (props) => {
                 !studyStoreId || !annotationStoreId || getStudyIsLoading || getAnnotationIsLoading
             }
         >
-            <EditStudyPageHeader />
-            <EditStudyAnnotations />
-            <EditStudyAnalyses />
-            <EditStudyDetails />
-            <Box sx={{ marginBottom: '5rem' }}>
-                <EditStudyMetadata />
-            </Box>
-            <Box sx={EditStudyPageStyles.loadingButtonContainer}>
-                <EditStudySwapVersionButton />
-                <DisplayExtractionTableState />
-                <EditStudySaveButton />
+            <Box>
+                <EditStudyPageHeader />
+                <EditStudyAnnotations />
+                <EditStudyAnalyses />
+                <EditStudyDetails />
+                <Box sx={{ marginBottom: '5rem' }}>
+                    <EditStudyMetadata />
+                </Box>
+                <Box sx={[EditStudyPageStyles.loadingButtonContainer]}>
+                    <Box sx={{ width: '20%', justifyContent: 'flex-start' }}>
+                        <ConfirmationDialog
+                            isOpen={confirmationDialogIsOpen}
+                            dialogTitle="You have unsaved changes"
+                            dialogMessage="Are you sure you want to continue? You'll lose your unsaved changes"
+                            onCloseDialog={handleCloseConfirmationDialog}
+                            rejectText="Cancel"
+                            confirmText="Continue"
+                        />
+                        <Button
+                            color="secondary"
+                            disableElevation
+                            size="small"
+                            sx={{ width: '160px' }}
+                            variant="contained"
+                            onClick={handleBackToExtraction}
+                        >
+                            Back to extraction
+                        </Button>
+                    </Box>
+                    <Box
+                        sx={{
+                            width: '60%',
+                            display: 'flex',
+                            justifyContent: 'center',
+                        }}
+                    >
+                        <DisplayExtractionTableState />
+                    </Box>
+                    <Box sx={{ width: '20%', display: 'flex', justifyContent: 'flex-end' }}>
+                        <EditStudyCompleteButton />
+                    </Box>
+                </Box>
             </Box>
         </StateHandlerComponent>
     );

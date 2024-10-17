@@ -114,7 +114,7 @@ export interface IStoreStudy extends Omit<StudyReturn, 'metadata' | 'analyses'> 
 
 export type StudyDetails = Pick<
     StudyReturn,
-    'name' | 'description' | 'publication' | 'authors' | 'doi' | 'pmid' | 'pmcid' | 'year'
+    'id' | 'name' | 'description' | 'publication' | 'authors' | 'doi' | 'pmid' | 'pmcid' | 'year'
 >;
 
 export type IStudyVersion = Pick<StudyReturn, 'user' | 'id'>;
