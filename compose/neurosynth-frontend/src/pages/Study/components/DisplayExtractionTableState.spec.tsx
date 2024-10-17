@@ -8,7 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { setUnloadHandler } from 'helpers/BeforeUnload.helpers';
 
 jest.mock('pages/Project/store/ProjectStore');
-jest.mock('pages/study/store/StudyStore');
+jest.mock('pages/Study/store/StudyStore');
 jest.mock('components/Dialogs/ConfirmationDialog');
 jest.mock('hooks');
 jest.mock('pages/Extraction/components/ExtractionTable.helpers');
