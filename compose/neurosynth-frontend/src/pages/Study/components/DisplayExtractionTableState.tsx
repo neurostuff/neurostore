@@ -7,7 +7,7 @@ import {
     useProjectId,
     useProjectUser,
 } from 'pages/Project/store/ProjectStore';
-import { useStudyId } from '../store/StudyStore';
+import { useStudyId } from 'pages/Study/store/StudyStore';
 import { hasUnsavedStudyChanges, unsetUnloadHandler } from 'helpers/BeforeUnload.helpers';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';

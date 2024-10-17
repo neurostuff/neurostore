@@ -1,7 +1,5 @@
-const useSnackbar = () => {
-    return {
-        enqueueSnackbar: jest.fn(),
-    };
-};
+const useSnackbar = jest.fn().mockReturnValue({
+    enqueueSnackbar: jest.fn(),
+});
 
 export { useSnackbar };

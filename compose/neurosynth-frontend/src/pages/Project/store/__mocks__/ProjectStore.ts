@@ -18,7 +18,7 @@ const useProjectName = jest.fn().mockReturnValue('project-name');
 
 const useProjectCurationColumns = jest.fn();
 
-const useProjectExtractionReplaceStudyListStatusId = jest.fn();
+const useProjectExtractionReplaceStudyListStatusId = jest.fn().mockReturnValue(jest.fn());
 
 export {
     useProjectExtractionAnnotationId,

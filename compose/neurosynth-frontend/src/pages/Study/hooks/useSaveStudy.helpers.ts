@@ -37,12 +37,12 @@ export const hasEmptyStudyPoints = (
                     subpeak === undefined &&
                     cluster_size === undefined
             );
+        if (isDefaultSinglePoint) continue;
 
         const hasEmptyPoint = analysis.points.some(
             (xyz) => xyz.x === undefined || xyz.y === undefined || xyz.z === undefined
         );
-
-        if (!isDefaultSinglePoint && hasEmptyPoint)
+        if (hasEmptyPoint)
             return {
                 errorMessage: `Analysis ${analysis.name} has empty coordinates. Please add coordinatesa and try again.`,
                 isError: true,

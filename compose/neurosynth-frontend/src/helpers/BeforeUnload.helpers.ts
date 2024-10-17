@@ -1,4 +1,4 @@
-enum EUnloadStatus {
+export enum EUnloadStatus {
     STUDYSTORE = 'study-store-unsaved-changes',
     PROJECTSTORE = 'project-store-unsaved-changes',
     ANNOTATIONSTORE = 'annotation-store-unsaved-changes',

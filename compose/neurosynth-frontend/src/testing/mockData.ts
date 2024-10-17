@@ -8,6 +8,7 @@ import {
     BaseStudyReturn,
 } from 'neurostore-typescript-sdk';
 import { NeurostoreAnnotation } from 'utils/api';
+import { IStoreStudy } from 'pages/Study/store/StudyStore.helpers';
 
 const mockConditions: () => ConditionReturn[] = () => [
     {
@@ -67,6 +68,56 @@ const mockPoints: () => PointReturn[] = () => [
         user: 'some-user',
         value: '',
         entities: [],
+    },
+];
+
+const mockStorePoints: () => PointReturn[] = () => [
+    {
+        analysis: '3MXg8tfRq2sh',
+        created_at: '2021-11-10T19:46:43.510565+00:00',
+        id: '7vVqmHtGtnkQ',
+        image: null,
+        kind: 'unknown',
+        label_id: null,
+        space: 'MNI',
+        user: 'some-user',
+        value: '',
+        entities: [],
+        x: 12,
+        y: -18,
+        z: 22,
+    },
+    {
+        analysis: '3MXg8tfRq2sh',
+        coordinates: [-40.0, -68.0, -20.0],
+        created_at: '2021-11-10T19:46:43.510565+00:00',
+        id: '3fZJuzbqti5v',
+        image: null,
+        kind: 'unknown',
+        label_id: null,
+        space: 'MNI',
+        user: 'some-user',
+        value: '',
+        entities: [],
+        x: -40,
+        y: -68,
+        z: -20,
+    },
+    {
+        analysis: '3MXg8tfRq2sh',
+        coordinates: [-10.0, -60.0, 18.0],
+        created_at: '2021-11-10T19:46:43.510565+00:00',
+        id: '47aqyStcBEsC',
+        image: null,
+        kind: 'unknown',
+        label_id: null,
+        space: 'MNI',
+        user: 'some-user',
+        value: '',
+        entities: [],
+        x: -10,
+        y: -60,
+        z: 18,
     },
 ];
 
@@ -276,6 +327,30 @@ const mockStudy: (studyPropOverride?: Partial<StudyReturn>) => StudyReturn = (
     description: null,
     year: 1999,
     metadata: null,
+    pmid: '10594068',
+    studysets: [],
+    ...(studyPropOverride || {}),
+});
+
+const mockStoreStudy: (studyPropOverride?: Partial<IStoreStudy>) => IStoreStudy = (
+    studyPropOverride
+) => ({
+    source: 'neurostore',
+    source_id: '7f66YLxzjPKk',
+    doi: 'NaN',
+    name: 'Amygdala-hippocampal involvement in human aversive trace conditioning revealed through event-related functional magnetic resonance imaging.',
+    authors: 'Buchel C, Dolan RJ, Armony JL, Friston KJ',
+    id: '4ZhkLTH8k2P6',
+    user: 'github|26612023',
+    updated_at: null,
+    source_updated_at: '2022-04-28T16:23:11.548030+00:00',
+    publication:
+        'The Journal of neuroscience : the official journal of the Society for Neuroscience',
+    created_at: '2022-05-18T19:38:15.262996+00:00',
+    analyses: [],
+    description: null,
+    year: 1999,
+    metadata: [],
     pmid: '10594068',
     studysets: [],
     ...(studyPropOverride || {}),
@@ -497,4 +572,6 @@ export {
     mockStudysetNested,
     mockStudysetNotNested,
     mockBaseStudy,
+    mockStorePoints,
+    mockStoreStudy,
 };

@@ -34,7 +34,7 @@ import {
     useStudyUser,
     useUpdateStudyInDB,
     useUpdateStudyIsLoading,
-} from '../store/StudyStore';
+} from 'pages/Study/store/StudyStore';
 import { storeAnalysesToStudyAnalyses } from '../store/StudyStore.helpers';
 import { hasDuplicateStudyAnalysisNames, hasEmptyStudyPoints } from './useSaveStudy.helpers';
 import { updateExtractionTableStateInStorage } from 'pages/Extraction/components/ExtractionTable.helpers';
