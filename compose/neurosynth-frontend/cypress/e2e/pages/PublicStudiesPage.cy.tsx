@@ -7,7 +7,7 @@ export {};
 const PATH = '/base-studies';
 const PAGE_NAME = 'StudiesPage';
 
-describe.skip(PAGE_NAME, () => {
+describe(PAGE_NAME, () => {
     beforeEach(() => {
         cy.clearLocalStorage();
         cy.intercept('GET', 'https://api.appzi.io/**', { fixture: 'appzi' }).as('appziFixture');
@@ -16,7 +16,7 @@ describe.skip(PAGE_NAME, () => {
     it('should load successfully', () => {
         cy.intercept('GET', `**/api/projects*`).as('realProjectsRequest');
         cy.intercept('GET', `**/api/base-studies/**`).as('realStudiesRequest');
-        cy.visit(PATH).wait('@realStudiesRequest');
+        cy.visit(PATH);
     });
 
     // describe('Search', () => {

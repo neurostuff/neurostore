@@ -37,6 +37,7 @@ import useGetCurationSummary from './useGetCurationSummary';
 import useGetFullText from './external/useGetFullText';
 import useUserCanEdit from './useUserCanEdit';
 import useGetBaseStudyById from './studies/useGetBaseStudyById';
+import useGetProjectById from './projects/useGetProjectById';
 
 export {
     useGetCurationSummary,
@@ -85,4 +86,5 @@ export {
     useCreateCondition,
     // project
     useCreateProject,
+    useGetProjectById,
 };

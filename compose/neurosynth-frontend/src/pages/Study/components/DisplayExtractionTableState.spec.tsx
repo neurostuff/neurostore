@@ -16,6 +16,7 @@ jest.mock('react-router-dom');
 
 describe('DisplayExtractionTableState Component', () => {
     beforeEach(() => {
+        jest.clearAllMocks();
         (retrieveExtractionTableState as jest.Mock).mockReturnValue({
             columnFilters: [],
             studies: ['study-1', 'study-2', 'study-3'],

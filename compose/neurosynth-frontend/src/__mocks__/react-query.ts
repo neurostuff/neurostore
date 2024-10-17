@@ -2,4 +2,10 @@ const useQueryClient = jest.fn().mockReturnValue({
     invalidateQueries: jest.fn(),
 });
 
-export { useQueryClient };
+const useQuery = jest.fn().mockReturnValue({
+    data: null,
+    isLoading: false,
+    isError: false,
+});
+
+export { useQueryClient, useQuery };

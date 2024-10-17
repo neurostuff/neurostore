@@ -5,9 +5,9 @@ import useGoogleAnalytics from 'hooks/useGoogleAnalytics';
 import { SnackbarKey, SnackbarProvider } from 'notistack';
 import { useEffect, useRef } from 'react';
 import { QueryCache, QueryClient, QueryClientProvider } from 'react-query';
-import Navbar from './components/Navbar/Navbar';
+import Navbar from 'components/Navbar/Navbar';
 import useGetToken from './hooks/useGetToken';
-import BaseNavigation from './pages/BaseNavigation/BaseNavigation';
+import BaseNavigation from 'pages/BaseNavigation/BaseNavigation';
 import { useLocation } from 'react-router-dom';
 
 const queryClient = new QueryClient({

@@ -42,3 +42,12 @@ export interface IExtractionTableState {
     sorting: SortingState;
     studies: string[];
 }
+
+export const getAuthorShortName = (authors: string) => {
+    let shortName = authors;
+    const authorsList = (authors || '').split(',');
+    if (authorsList.length > 1) {
+        shortName = `${authorsList[0]}., et al.`;
+    }
+    return shortName;
+};

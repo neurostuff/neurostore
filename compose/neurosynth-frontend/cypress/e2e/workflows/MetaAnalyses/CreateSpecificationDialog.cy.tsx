@@ -40,7 +40,7 @@ describe('CreateSpecificationDialog', () => {
         cy.contains('FDRCorrector').should('exist');
     });
 
-    it.only('should step through the wizard', () => {
+    it('should step through the wizard', () => {
         cy.intercept('POST', '**/api/specifications', {
             id: 'mockedSpecificationId',
         }).as('createSpecificationFixture');

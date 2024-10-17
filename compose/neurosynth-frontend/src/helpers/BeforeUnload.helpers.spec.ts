@@ -18,6 +18,9 @@ describe('BeforeUnload helpers', () => {
         expect(window.sessionStorage.getItem(EUnloadStatus.PROJECTSTORE)).toBe('true');
         expect(spy).toHaveBeenCalledWith('beforeunload', expect.any(Function));
         expect(spy).toHaveBeenCalledWith('unload', expect.any(Function));
+
+        // cleanup
+        unsetUnloadHandler('project');
     });
 
     it('should set the unload handler for the study store', () => {
@@ -27,6 +30,9 @@ describe('BeforeUnload helpers', () => {
         expect(window.sessionStorage.getItem(EUnloadStatus.STUDYSTORE)).toBe('true');
         expect(spy).toHaveBeenCalledWith('beforeunload', expect.any(Function));
         expect(spy).toHaveBeenCalledWith('unload', expect.any(Function));
+
+        // cleanup
+        unsetUnloadHandler('study');
     });
 
     it('should set the unload handler for the annotation store', () => {
@@ -36,6 +42,9 @@ describe('BeforeUnload helpers', () => {
         expect(window.sessionStorage.getItem(EUnloadStatus.ANNOTATIONSTORE)).toBe('true');
         expect(spy).toHaveBeenCalledWith('beforeunload', expect.any(Function));
         expect(spy).toHaveBeenCalledWith('unload', expect.any(Function));
+
+        // cleanup
+        unsetUnloadHandler('annotation');
     });
 
     it('should remove the unload handler when all stores are cleared', () => {

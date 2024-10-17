@@ -1,6 +1,6 @@
 const useSaveStudy = jest.fn().mockReturnValue({
     isLoading: false,
-    hasEditse: false,
+    hasEdits: false,
     handleSave: jest.fn(),
 });
 

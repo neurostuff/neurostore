@@ -16,7 +16,6 @@ import {
     mockAnnotations,
     mockStorePoints,
     mockStoreStudy,
-    mockStudy,
     mockStudysetNotNested,
 } from 'testing/mockData';
 import useSaveStudy from './useSaveStudy';
@@ -45,6 +44,9 @@ const DummyComponent = () => {
 };
 
 describe('useSaveStudy hook', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
     it('should render', () => {
         render(<DummyComponent />);
     });

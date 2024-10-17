@@ -1,4 +1,4 @@
-import { MetaAnalysisReturn } from 'neurosynth-compose-typescript-sdk';
+import { MetaAnalysisReturn, ProjectReturn } from 'neurosynth-compose-typescript-sdk';
 import {
     StudysetReturn,
     StudyReturn,
@@ -559,6 +559,254 @@ const mockBaseStudy: () => BaseStudyReturn = () => ({
     level: 'group',
 });
 
+const mockProject: () => ProjectReturn = () => ({
+    created_at: '2024-05-17T17:32:41.215440+00:00',
+    description: 'New project generated from files: nback-Owen-ALL-Updated copy.txt',
+    draft: true,
+    id: '5WSN3nu6hMjj',
+    meta_analyses: [],
+    name: 'Untitled sleuth project',
+    neurostore_study: {
+        created_at: '2024-05-17T17:32:41.224351+00:00',
+        exception: null,
+        neurostore_id: 'RZAu78WPLgay',
+        status: 'PENDING',
+        traceback: null,
+        updated_at: '2024-05-17T17:32:41.229632+00:00',
+    },
+    neurostore_url: 'https://neurostore.org/api/studies/RZAu78WPLgay',
+    provenance: {
+        curationMetadata: {
+            columns: [
+                {
+                    id: 'ad1cbff6-d95d-4576-ac99-8ea2f7e1b395',
+                    name: 'not included',
+                    stubStudies: [],
+                },
+                {
+                    id: '8525c03a-f47b-4ee0-9a59-9cbde5ab0690',
+                    name: 'included',
+                    stubStudies: [
+                        {
+                            abstractText: '',
+                            articleLink: '',
+                            articleYear: '2',
+                            authors: 'Ragland J D,',
+                            doi: '10.1037/0894-4105.16.3.370',
+                            exclusionTag: null,
+                            id: '277d4844-60e1-48c8-9a42-3b46ff4c9e64',
+                            identificationSource: {
+                                id: 'neurosynth_sleuth_id_source',
+                                label: 'Sleuth',
+                            },
+                            journal: '',
+                            keywords: '',
+                            neurostoreId: '6Lz4BqniENMA',
+                            pmcid: '',
+                            pmid: '',
+                            searchTerm: '',
+                            tags: [
+                                {
+                                    id: 'd82a9992-640f-45f7-b81b-ce2d7b7a49ee',
+                                    isAssignable: true,
+                                    isExclusionTag: false,
+                                    label: 'nback-Owen-ALL-Updated copy.txt',
+                                },
+                            ],
+                            title: '',
+                        },
+                        {
+                            abstractText: '',
+                            articleLink: '',
+                            articleYear: '2',
+                            authors: 'Rama P,',
+                            doi: '10.1006/nimg.2001.0777',
+                            exclusionTag: null,
+                            id: 'b9f6b007-65c2-46f4-8f54-b59c759de152',
+                            identificationSource: {
+                                id: 'neurosynth_sleuth_id_source',
+                                label: 'Sleuth',
+                            },
+                            journal: '',
+                            keywords: '',
+                            neurostoreId: '4QC9ff3c4seH',
+                            pmcid: '',
+                            pmid: '',
+                            searchTerm: '',
+                            tags: [
+                                {
+                                    id: 'd82a9992-640f-45f7-b81b-ce2d7b7a49ee',
+                                    isAssignable: true,
+                                    isExclusionTag: false,
+                                    label: 'nback-Owen-ALL-Updated copy.txt',
+                                },
+                            ],
+                            title: '',
+                        },
+                        {
+                            abstractText: '',
+                            articleLink: '',
+                            articleYear: '1',
+                            authors: 'Schumacher E H,',
+                            doi: '10.1006/nimg.1996.0009',
+                            exclusionTag: null,
+                            id: 'e10e6c55-095b-4a90-9032-ea86ccf93fb1',
+                            identificationSource: {
+                                id: 'neurosynth_sleuth_id_source',
+                                label: 'Sleuth',
+                            },
+                            journal: '',
+                            keywords: '',
+                            neurostoreId: '7VhHUNpiyvxN',
+                            pmcid: '',
+                            pmid: '',
+                            searchTerm: '',
+                            tags: [
+                                {
+                                    id: 'd82a9992-640f-45f7-b81b-ce2d7b7a49ee',
+                                    isAssignable: true,
+                                    isExclusionTag: false,
+                                    label: 'nback-Owen-ALL-Updated copy.txt',
+                                },
+                            ],
+                            title: '',
+                        },
+                        {
+                            abstractText: '',
+                            articleLink: '',
+                            articleYear: '1',
+                            authors: 'Smith E E,',
+                            doi: '10.1093/cercor/6.1.11',
+                            exclusionTag: null,
+                            id: 'a4c7e222-9b0e-49a9-aca1-8fe70dc50645',
+                            identificationSource: {
+                                id: 'neurosynth_sleuth_id_source',
+                                label: 'Sleuth',
+                            },
+                            journal: '',
+                            keywords: '',
+                            neurostoreId: '4puK5CWhPf3n',
+                            pmcid: '',
+                            pmid: '',
+                            searchTerm: '',
+                            tags: [
+                                {
+                                    id: 'd82a9992-640f-45f7-b81b-ce2d7b7a49ee',
+                                    isAssignable: true,
+                                    isExclusionTag: false,
+                                    label: 'nback-Owen-ALL-Updated copy.txt',
+                                },
+                            ],
+                            title: '',
+                        },
+                    ],
+                },
+            ],
+            exclusionTags: [
+                {
+                    id: 'neurosynth_exclude_exclusion',
+                    isAssignable: true,
+                    isExclusionTag: true,
+                    label: 'Exclude',
+                },
+                {
+                    id: 'neurosynth_duplicate_exclusion',
+                    isAssignable: true,
+                    isExclusionTag: true,
+                    label: 'Duplicate',
+                },
+            ],
+            identificationSources: [
+                {
+                    id: 'neurosynth_neurostore_id_source',
+                    label: 'Neurostore',
+                },
+                {
+                    id: 'neurosynth_pubmed_id_source',
+                    label: 'PubMed',
+                },
+                {
+                    id: 'neurosynth_scopus_id_source',
+                    label: 'Scopus',
+                },
+                {
+                    id: 'neurosynth_web_of_science_id_source',
+                    label: 'Web of Science',
+                },
+                {
+                    id: 'neurosynth_psycinfo_id_source',
+                    label: 'PsycInfo',
+                },
+                {
+                    id: 'neurosynth_sleuth_id_source',
+                    label: 'Sleuth',
+                },
+            ],
+            infoTags: [
+                {
+                    id: 'neurosynth_untagged_tag',
+                    isAssignable: false,
+                    isExclusionTag: false,
+                    label: 'Untagged studies',
+                },
+                {
+                    id: 'neurosynth_uncategorized_tag',
+                    isAssignable: false,
+                    isExclusionTag: false,
+                    label: 'Uncategorized Studies',
+                },
+                {
+                    id: 'neurosynth_needs_review_tag',
+                    isAssignable: false,
+                    isExclusionTag: false,
+                    label: 'Needs Review',
+                },
+            ],
+            prismaConfig: {
+                eligibility: {
+                    exclusionTags: [],
+                },
+                identification: {
+                    exclusionTags: [],
+                },
+                isPrisma: false,
+                screening: {
+                    exclusionTags: [],
+                },
+            },
+        },
+        extractionMetadata: {
+            annotationId: '3EkUXiRFc7sL',
+            studyStatusList: [
+                {
+                    id: '6YFH5BnHRDeR',
+                    status: 'completed',
+                },
+                {
+                    id: '5U3FRksVuHZ8',
+                    status: 'completed',
+                },
+                {
+                    id: '6yiES7GyNLH3',
+                    status: 'completed',
+                },
+                {
+                    id: '4XqQxkeQ8bH7',
+                    status: 'completed',
+                },
+            ],
+            studysetId: '3jTnjw8EiJMs',
+        },
+        metaAnalysisMetadata: {
+            canEditMetaAnalyses: true,
+        },
+    },
+    public: true,
+    updated_at: null,
+    user: 'some-github-user',
+    username: 'Nicholas Lee',
+});
+
 export {
     mockConditions,
     mockWeights,
@@ -574,4 +822,5 @@ export {
     mockBaseStudy,
     mockStorePoints,
     mockStoreStudy,
+    mockProject,
 };

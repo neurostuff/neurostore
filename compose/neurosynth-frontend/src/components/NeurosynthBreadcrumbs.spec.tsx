@@ -8,6 +8,9 @@ jest.mock('react-router-dom');
 jest.mock('components/Dialogs/ConfirmationDialog');
 
 describe('NeurosynthBreadcrumbs Component', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
     it('should render', () => {
         render(<NeurosynthBreadcrumbs breadcrumbItems={[]} />);
     });

@@ -164,9 +164,9 @@ describe('EditStudyToolbar Component', () => {
             (useProjectId as jest.Mock).mockReturnValue('projectid');
             (useUserCanEdit as jest.Mock).mockReturnValue(true);
 
-            useGetStudysetById().data = {
-                studies: [{ id: 'study-2' }, { id: 'study-3' }, { id: 'study-4' }],
-            };
+            (useGetStudysetById as jest.Mock).mockReturnValue({
+                data: { studies: [{ id: 'study-2' }, { id: 'study-3' }, { id: 'study-4' }] },
+            });
 
             render(<EditStudyToolbar />);
             // ACT
@@ -184,9 +184,9 @@ describe('EditStudyToolbar Component', () => {
             (useProjectId as jest.Mock).mockReturnValue('projectid');
             (useUserCanEdit as jest.Mock).mockReturnValue(true);
 
-            useGetStudysetById().data = {
-                studies: [{ id: 'study-2' }, { id: 'study-3' }, { id: 'study-4' }],
-            };
+            (useGetStudysetById as jest.Mock).mockReturnValue({
+                data: { studies: [{ id: 'study-2' }, { id: 'study-3' }, { id: 'study-4' }] },
+            });
 
             render(<EditStudyToolbar />);
             // ACT
@@ -254,9 +254,9 @@ describe('EditStudyToolbar Component', () => {
             (useProjectId as jest.Mock).mockReturnValue('projectid');
             (useUserCanEdit as jest.Mock).mockReturnValue(true);
 
-            useGetStudysetById().data = {
-                studies: [{ id: 'study-2' }, { id: 'study-3' }, { id: 'study-4' }],
-            };
+            (useGetStudysetById as jest.Mock).mockReturnValue({
+                data: { studies: [{ id: 'study-2' }, { id: 'study-3' }, { id: 'study-4' }] },
+            });
 
             render(<EditStudyToolbar />);
             // ACT

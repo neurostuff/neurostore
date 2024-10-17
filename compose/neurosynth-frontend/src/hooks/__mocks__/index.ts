@@ -3,6 +3,7 @@ import {
     mockAnnotations,
     mockBaseStudy,
     mockConditions,
+    mockProject,
     mockStudy,
     mockStudysetNested,
     mockStudysetNotNested,
@@ -122,11 +123,14 @@ const useGetExtractionSummary = jest.fn().mockReturnValue({
     total: 0,
 });
 
+// need to do this to prevent an infinite loop
+const studysetNested = mockStudysetNested();
+const studysetNotNested = mockStudysetNotNested();
 const useGetStudysetById = jest.fn().mockImplementation((studysetId: string, isNested: boolean) => {
     return {
         isLoading: false,
         isError: false,
-        data: isNested ? mockStudysetNested() : mockStudysetNotNested(),
+        data: isNested ? studysetNested : studysetNotNested,
     };
 });
 
@@ -154,6 +158,12 @@ const useUpdateAnnotationById = jest.fn().mockReturnValue({
     isLoading: false,
     mutate: jest.fn(),
     mutateAsync: jest.fn(),
+});
+
+const useGetProjectById = jest.fn().mockReturnValue({
+    isLoading: false,
+    isError: false,
+    data: mockProject(),
 });
 
 const useIsMounted = () => {
@@ -195,4 +205,5 @@ export {
     useUpdateStudy,
     useUpdateStudyset,
     useUserCanEdit,
+    useGetProjectById,
 };
