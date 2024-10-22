@@ -289,7 +289,7 @@ const EditStudyToolbar: React.FC<{ isViewOnly?: boolean }> = ({ isViewOnly = fal
                                 orientation="vertical"
                                 sx={{ minWidth: '0px', marginBottom: '1rem' }}
                             >
-                                <Tooltip title="Set as uncategorized" placement="left">
+                                <Tooltip title="Mark as uncategorized" placement="left">
                                     <Button
                                         onClick={() =>
                                             handleUpdateExtractionStatus(

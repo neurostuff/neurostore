@@ -40,7 +40,7 @@ const EditStudyCompleteButton: React.FC = React.memo((props) => {
                 text={
                     extractionStatus?.status === EExtractionStatus.COMPLETED
                         ? 'Completed'
-                        : 'Set as Complete'
+                        : 'Mark as Complete'
                 }
             />
         </Box>
