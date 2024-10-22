@@ -1,11 +1,14 @@
+import useInputValidation from 'hooks/useInputValidation'; // don't need to mock this as it isn't making any api calls
 import {
     mockAnnotations,
+    mockBaseStudy,
     mockConditions,
+    mockProject,
     mockStudy,
     mockStudysetNested,
+    mockStudysetNotNested,
     mockStudysets,
 } from 'testing/mockData';
-import useInputValidation from 'hooks/useInputValidation'; // don't need to mock this as it isn't making any api calls
 
 const useUpdateAnalysis = jest.fn().mockReturnValue({
     isLoading: false,
@@ -87,6 +90,7 @@ const useUpdateStudyset = jest.fn().mockReturnValue({
     isLoading: false,
     isError: false,
     mutate: jest.fn(),
+    mutateAsync: jest.fn().mockReturnValue(mockStudysets()),
 });
 
 const useUpdateStudy = jest.fn().mockReturnValue({
@@ -119,16 +123,47 @@ const useGetExtractionSummary = jest.fn().mockReturnValue({
     total: 0,
 });
 
-const useGetStudysetById = jest.fn().mockReturnValue({
+// need to do this to prevent an infinite loop
+const studysetNested = mockStudysetNested();
+const studysetNotNested = mockStudysetNotNested();
+const useGetStudysetById = jest.fn().mockImplementation((studysetId: string, isNested: boolean) => {
+    return {
+        isLoading: false,
+        isError: false,
+        data: isNested ? studysetNested : studysetNotNested,
+    };
+});
+
+const useGetBaseStudyById = jest.fn().mockReturnValue({
     isLoading: false,
     isError: false,
-    data: mockStudysetNested(),
+    data: mockBaseStudy(),
 });
 
 const useGetFullText = jest.fn().mockReturnValue({
     isLoading: false,
     isError: false,
     data: '',
+});
+
+const useCreateStudy = jest.fn().mockReturnValue({
+    isLoading: false,
+    mutate: jest.fn(),
+    mutateAsync: jest.fn().mockReturnValue({
+        data: mockStudy(),
+    }),
+});
+
+const useUpdateAnnotationById = jest.fn().mockReturnValue({
+    isLoading: false,
+    mutate: jest.fn(),
+    mutateAsync: jest.fn(),
+});
+
+const useGetProjectById = jest.fn().mockReturnValue({
+    isLoading: false,
+    isError: false,
+    data: mockProject(),
 });
 
 const useIsMounted = () => {
@@ -144,27 +179,31 @@ const useIsMounted = () => {
 const useUserCanEdit = jest.fn().mockReturnValue(true);
 
 export {
-    useCreateMetaAnalysis,
-    useDeleteAnalysis,
-    useUpdateAnalysis,
-    useCreateCondition,
-    useGetConditions,
-    useGetStudyById,
-    useCreatePoint,
-    useUpdatePoint,
-    useDeletePoint,
     useCreateAnalysis,
+    useCreateCondition,
+    useCreateMetaAnalysis,
+    useCreatePoint,
+    useCreateProject,
+    useCreateStudy,
+    useCreateStudyset,
+    useDeleteAnalysis,
+    useDeletePoint,
+    useDeleteProject,
+    useGetAnnotationsByStudysetId,
+    useGetBaseStudyById,
+    useGetConditions,
+    useGetExtractionSummary,
+    useGetFullText,
+    useGetStudyById,
+    useGetStudysetById,
+    useGetStudysets,
     useInputValidation,
     useIsMounted,
-    useUpdateStudyset,
-    useCreateStudyset,
-    useGetStudysets,
+    useUpdateAnalysis,
+    useUpdateAnnotationById,
+    useUpdatePoint,
     useUpdateStudy,
-    useGetAnnotationsByStudysetId,
-    useCreateProject,
-    useDeleteProject,
-    useGetExtractionSummary,
-    useGetStudysetById,
-    useGetFullText,
+    useUpdateStudyset,
     useUserCanEdit,
+    useGetProjectById,
 };

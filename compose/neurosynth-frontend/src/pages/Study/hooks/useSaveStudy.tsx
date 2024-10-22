@@ -1,4 +1,12 @@
-import LoadingButton from 'components/Buttons/LoadingButton';
+import { useAuth0 } from '@auth0/auth0-react';
+import { unsetUnloadHandler } from 'helpers/BeforeUnload.helpers';
+import {
+    useCreateStudy,
+    useGetStudysetById,
+    useUpdateAnnotationById,
+    useUpdateStudyset,
+} from 'hooks';
+import { STUDYSET_QUERY_STRING } from 'hooks/studysets/useGetStudysets';
 import { AnalysisReturn, StudyRequest } from 'neurostore-typescript-sdk';
 import { useSnackbar } from 'notistack';
 import {
@@ -7,25 +15,7 @@ import {
     useProjectExtractionStudysetId,
     useProjectId,
 } from 'pages/Project/store/ProjectStore';
-
-import { useAuth0 } from '@auth0/auth0-react';
-import {
-    useCreateStudy,
-    useGetStudysetById,
-    useUpdateAnnotationById,
-    useUpdateStudyset,
-} from 'hooks';
-import { STUDYSET_QUERY_STRING } from 'hooks/studysets/useGetStudysets';
-import {
-    useStudy,
-    useStudyAnalyses,
-    useStudyHasBeenEdited,
-    useStudyUser,
-    useUpdateStudyInDB,
-    useUpdateStudyIsLoading,
-} from 'pages/Study/store/StudyStore';
-import { storeAnalysesToStudyAnalyses } from 'pages/Study/store/StudyStore.helpers';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useQueryClient } from 'react-query';
 import { useNavigate } from 'react-router-dom';
 import { useUpdateAnnotationInDB, useUpdateAnnotationNotes } from 'stores/AnnotationStore.actions';
@@ -36,10 +26,20 @@ import {
 } from 'stores/AnnotationStore.getters';
 import { storeNotesToDBNotes } from 'stores/AnnotationStore.helpers';
 import API from 'utils/api';
-import { arrayToMetadata } from './EditStudyMetadata';
-import { hasDuplicateStudyAnalysisNames, hasEmptyStudyPoints } from './EditStudySaveButton.helpers';
+import { arrayToMetadata } from '../components/EditStudyMetadata';
+import {
+    useStudy,
+    useStudyAnalyses,
+    useStudyHasBeenEdited,
+    useStudyUser,
+    useUpdateStudyInDB,
+    useUpdateStudyIsLoading,
+} from 'pages/Study/store/StudyStore';
+import { storeAnalysesToStudyAnalyses } from '../store/StudyStore.helpers';
+import { hasDuplicateStudyAnalysisNames, hasEmptyStudyPoints } from './useSaveStudy.helpers';
+import { updateExtractionTableStateInStorage } from 'pages/Extraction/components/ExtractionTable.helpers';
 
-const EditStudySaveButton: React.FC = React.memo((props) => {
+const useSaveStudy = () => {
     const { user } = useAuth0();
     const queryClient = useQueryClient();
     const { enqueueSnackbar } = useSnackbar();
@@ -59,7 +59,6 @@ const EditStudySaveButton: React.FC = React.memo((props) => {
     const updateStudyInDB = useUpdateStudyInDB();
     // annotation stuff
     const updateAnnotationIsLoading = useUpdateAnnotationIsLoading();
-    const annotationHasBeenEdited = useAnnotationIsEdited();
     const notes = useAnnotationNotes();
     const annotationIsEdited = useAnnotationIsEdited();
     const updateAnnotationNotes = useUpdateAnnotationNotes();
@@ -91,6 +90,8 @@ const EditStudySaveButton: React.FC = React.memo((props) => {
             });
             updateAnnotationNotes(updatedNotes);
             await updateAnnotationInDB();
+            unsetUnloadHandler('study');
+            unsetUnloadHandler('annotation');
 
             queryClient.invalidateQueries('studies');
             queryClient.invalidateQueries('annotations');
@@ -105,6 +106,8 @@ const EditStudySaveButton: React.FC = React.memo((props) => {
     const handleUpdateStudyInDB = async () => {
         try {
             await updateStudyInDB(annotationId as string);
+            unsetUnloadHandler('study');
+            unsetUnloadHandler('annotation');
             queryClient.invalidateQueries('studies');
             queryClient.invalidateQueries('annotations');
 
@@ -118,6 +121,8 @@ const EditStudySaveButton: React.FC = React.memo((props) => {
     const handleUpdateAnnotationInDB = async () => {
         try {
             await updateAnnotationInDB();
+            unsetUnloadHandler('study');
+            unsetUnloadHandler('annotation');
             queryClient.invalidateQueries('annotations');
             enqueueSnackbar('Annotation saved', { variant: 'success' });
         } catch (e) {
@@ -126,14 +131,14 @@ const EditStudySaveButton: React.FC = React.memo((props) => {
         }
     };
 
-    const handleUpdateDB = () => {
+    const handleUpdateDB = async () => {
         try {
             if (studyHasBeenEdited && annotationIsEdited) {
-                handleUpdateBothInDB();
+                await handleUpdateBothInDB();
             } else if (studyHasBeenEdited) {
-                handleUpdateStudyInDB();
+                await handleUpdateStudyInDB();
             } else if (annotationIsEdited) {
-                handleUpdateAnnotationInDB();
+                await handleUpdateAnnotationInDB();
             }
         } catch (e) {
             console.error(e);
@@ -201,6 +206,7 @@ const EditStudySaveButton: React.FC = React.memo((props) => {
 
             // 4. update the project as this keeps track of completion status of studies
             replaceStudyWithNewClonedStudy(storeStudy.id, clonedStudyId);
+            updateExtractionTableStateInStorage(projectId, storeStudy.id, clonedStudyId);
 
             // 5. as this is a completely new study, that we've just created, the annotations are cleared.
             // We need to update the annotations with our latest changes, and associate newly created analyses with their corresponding analysis changes.
@@ -227,10 +233,15 @@ const EditStudySaveButton: React.FC = React.memo((props) => {
                 },
             });
 
+            unsetUnloadHandler('study');
+            unsetUnloadHandler('annotation');
+
             navigate(`/projects/${projectId}/extraction/studies/${clonedStudyId}/edit`);
-            enqueueSnackbar('Saved successfully. You are now the owner of this study', {
+            enqueueSnackbar('Made a new a copy and saved succesfully', {
                 variant: 'success',
             });
+
+            return clonedStudyId;
         } catch (e) {
             enqueueSnackbar(
                 'We encountered an error saving your study. Please contact the neurosynth-compose team',
@@ -259,28 +270,20 @@ const EditStudySaveButton: React.FC = React.memo((props) => {
 
         const currentUserOwnsThisStudy = (studyOwnerUser || null) === (user?.sub || undefined);
         if (currentUserOwnsThisStudy) {
-            handleUpdateDB();
+            await handleUpdateDB();
         } else {
             if (studyHasBeenEdited) {
-                handleClone();
+                return await handleClone();
             } else {
-                handleUpdateDB();
+                await handleUpdateDB();
             }
         }
     };
 
-    return (
-        <LoadingButton
-            text="save"
-            isLoading={updateStudyIsLoading || updateAnnotationIsLoading || isCloning}
-            variant="contained"
-            loaderColor="secondary"
-            disabled={!studyHasBeenEdited && !annotationHasBeenEdited}
-            disableElevation
-            sx={{ width: '280px', height: '36px' }}
-            onClick={handleSave}
-        />
-    );
-});
+    const isLoading = updateStudyIsLoading || updateAnnotationIsLoading || isCloning;
+    const hasEdits = studyHasBeenEdited || annotationIsEdited;
 
-export default EditStudySaveButton;
+    return { isLoading, hasEdits, handleSave };
+};
+
+export default useSaveStudy;

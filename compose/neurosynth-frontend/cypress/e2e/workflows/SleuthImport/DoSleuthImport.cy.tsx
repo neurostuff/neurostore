@@ -433,7 +433,7 @@ describe('DoSleuthImport', () => {
     });
 
     describe('edge cases', () => {
-        it.only('should apply the pubmed details to the study if a matching pubmed study is found', () => {
+        it('should apply the pubmed details to the study if a matching pubmed study is found', () => {
             // this stuff exists just to make sure cypress doesnt send any real requests. They are not under test
             // synth API responses
             cy.intercept('POST', `${neurostoreAPIBaseURL}/analyses/**`, {

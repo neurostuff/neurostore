@@ -15,7 +15,7 @@ import ForbiddenPage from 'pages/Forbidden/Forbidden';
 import TermsAndConditions from 'pages/TermsAndConditions/TermsAndConditions';
 import ProjectEditMetaAnalyses from 'pages/Project/components/ProjectEditMetaAnalyses';
 import ProjectViewMetaAnalyses from 'pages/Project/components/ProjectViewMetaAnalyses';
-import ProtectedProjectRoute from 'pages/BaseNavigation/components/ProjectedProjectRoute';
+import ProtectedProjectRoute from 'pages/BaseNavigation/components/ProtectedProjectRoute';
 import ProtectedRoute from './components/ProtectedRoute';
 import ProtectedMetaAnalysesRoute from 'pages/BaseNavigation/components/ProtectedMetaAnalysesRoute';
 

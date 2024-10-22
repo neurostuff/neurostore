@@ -1,5 +1,6 @@
 import {
     Box,
+    Button,
     Chip,
     Pagination,
     Table,
@@ -24,13 +25,15 @@ import {
     SortingState,
     useReactTable,
 } from '@tanstack/react-table';
-import { useGetStudysetById } from 'hooks';
+import { useGetStudysetById, useUserCanEdit } from 'hooks';
 import { IStudyExtractionStatus } from 'hooks/projects/useGetProjects';
 import { StudyReturn } from 'neurostore-typescript-sdk';
 import {
+    useProjectExtractionSetGivenStudyStatusesAsComplete,
     useProjectExtractionStudysetId,
     useProjectExtractionStudyStatusList,
     useProjectId,
+    useProjectUser,
 } from 'pages/Project/store/ProjectStore';
 import { ChangeEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -43,6 +46,8 @@ import { ExtractionTableNameCell, ExtractionTableNameHeader } from './Extraction
 import { ExtractionTablePMIDCell, ExtractionTablePMIDHeader } from './ExtractionTablePMID';
 import { ExtractionTableStatusCell, ExtractionTableStatusHeader } from './ExtractionTableStatus';
 import { ExtractionTableYearCell, ExtractionTableYearHeader } from './ExtractionTableYear';
+import { retrieveExtractionTableState } from './ExtractionTable.helpers';
+import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 
 //allows us to define custom properties for our columns
 declare module '@tanstack/react-table' {
@@ -62,24 +67,22 @@ const ExtractionTable: React.FC = () => {
     const navigate = useNavigate();
     const studyStatusList = useProjectExtractionStudyStatusList();
     const { data: studyset } = useGetStudysetById(studysetId, true); // this should already be loaded in the cache from the parent component
+    const setGivenStudyStatusesAsComplete = useProjectExtractionSetGivenStudyStatusesAsComplete();
+    const projectUser = useProjectUser();
+    const usercanEdit = useUserCanEdit(projectUser || undefined);
 
     const [pagination, setPagination] = useState<PaginationState>({
         pageIndex: 0,
         pageSize: 25,
     });
+    const [confirmationDialogIsOpen, setConfirmationDialogIsOpen] = useState(false);
 
     useEffect(() => {
-        const state = sessionStorage.getItem(`${projectId}-extraction-table`);
+        const state = retrieveExtractionTableState(projectId);
         if (!state) return;
 
-        const parsedState = JSON.parse(state) as {
-            columnFilters: ColumnFiltersState;
-            sorting: SortingState;
-            studies: string[];
-        };
-
-        if (parsedState.columnFilters) setColumnFilters(parsedState.columnFilters);
-        if (parsedState.sorting) setSorting(parsedState.sorting);
+        if (state.columnFilters) setColumnFilters(state.columnFilters);
+        if (state.sorting) setSorting(state.sorting);
     }, [projectId]);
 
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -105,9 +108,9 @@ const ExtractionTable: React.FC = () => {
         return [
             columnHelper.accessor(({ year }) => (year ? String(year) : ''), {
                 id: 'year',
-                size: 70,
-                minSize: 70,
-                maxSize: 70,
+                size: 60,
+                minSize: 60,
+                maxSize: 60,
                 cell: ExtractionTableYearCell,
                 header: ExtractionTableYearHeader,
                 enableSorting: true,
@@ -133,9 +136,9 @@ const ExtractionTable: React.FC = () => {
             }),
             columnHelper.accessor('authors', {
                 id: 'authors',
-                size: 300,
-                minSize: 300,
-                maxSize: 300,
+                size: 100,
+                minSize: 100,
+                maxSize: 100,
                 enableSorting: true,
                 enableColumnFilter: true,
                 sortingFn: 'text',
@@ -159,26 +162,11 @@ const ExtractionTable: React.FC = () => {
                     filterVariant: 'journal-autocomplete',
                 },
             }),
-            // columnHelper.accessor('doi', {
-            //     id: 'doi',
-            //     size: 10,
-            //     minSize: 10,
-            //     maxSize: 10,
-            //     sortingFn: 'alphanumeric',
-            //     enableSorting: true,
-            //     enableColumnFilter: true,
-            //     filterFn: 'includesString',
-            //     cell: ExtractionTableDOICell,
-            //     header: ExtractionTableDOIHeader,
-            //     meta: {
-            //         filterVariant: 'text',
-            //     },
-            // }),
             columnHelper.accessor('pmid', {
                 id: 'pmid',
-                size: 100,
-                minSize: 100,
-                maxSize: 100,
+                size: 80,
+                minSize: 80,
+                maxSize: 80,
                 enableColumnFilter: true,
                 filterFn: 'includesString',
                 cell: ExtractionTablePMIDCell,
@@ -242,6 +230,18 @@ const ExtractionTable: React.FC = () => {
         []
     );
 
+    const handleMarkAllAsComplete = useCallback(
+        (ok: boolean | undefined) => {
+            if (ok) {
+                const studies = (studyset?.studies || []) as Array<StudyReturn>;
+                setGivenStudyStatusesAsComplete(studies.map((x) => x.id) as string[]);
+            }
+
+            setConfirmationDialogIsOpen(false);
+        },
+        [setGivenStudyStatusesAsComplete, studyset?.studies]
+    );
+
     const handlePaginationChange = useCallback((_event: any, page: number) => {
         // page is 0 indexed
         setPagination((prev) => ({
@@ -269,11 +269,29 @@ const ExtractionTable: React.FC = () => {
                     onChange={handlePaginationChangeMuiPaginator}
                     page={pagination.pageIndex + 1}
                 />
+                <Box sx={{ width: '271px', display: 'flex', justifyContent: 'flex-end' }}>
+                    <ConfirmationDialog
+                        onCloseDialog={handleMarkAllAsComplete}
+                        rejectText="Cancel"
+                        confirmText="Mark all as complete"
+                        isOpen={confirmationDialogIsOpen}
+                        dialogTitle="Are you sure you want to mark all the studies as complete?"
+                        dialogMessage="You can skip reviewing to expedite the process, but any studies you have not reviewed may have incomplete or inaccurate metadata or coordinates."
+                    />
+                    <Button
+                        sx={{ marginLeft: '4px' }}
+                        color="success"
+                        disableElevation
+                        onClick={() => setConfirmationDialogIsOpen(true)}
+                    >
+                        Mark all as complete
+                    </Button>
+                </Box>
             </Box>
             <TableContainer sx={{ marginBottom: '2rem' }}>
                 <Table
                     size="small"
-                    sx={{ tableLayout: 'fixed', width: 'fit-content', minWidth: '1200px' }}
+                    sx={{ tableLayout: 'fixed', width: 'fit-content', minWidth: '800px' }}
                 >
                     <TableHead>
                         {table.getHeaderGroups().map((headerGroup) => (
@@ -330,9 +348,16 @@ const ExtractionTable: React.FC = () => {
                                                 .rows.map((r) => r.original.id),
                                         })
                                     );
-                                    navigate(
-                                        `/projects/${projectId}/extraction/studies/${row.original.id}/edit`
-                                    );
+
+                                    if (usercanEdit) {
+                                        navigate(
+                                            `/projects/${projectId}/extraction/studies/${row.original.id}/edit`
+                                        );
+                                    } else {
+                                        navigate(
+                                            `/projects/${projectId}/extraction/studies/${row.original.id}`
+                                        );
+                                    }
                                 }}
                                 sx={{
                                     '&:hover': { filter: 'brightness(0.9)', cursor: 'pointer' },
@@ -419,7 +444,7 @@ const ExtractionTable: React.FC = () => {
                         ))}
                     </Box>
                     <Box>
-                        <Typography sx={{ whiteSpace: 'nowrap' }}>
+                        <Box sx={{ whiteSpace: 'nowrap' }}>
                             {columnFilters.length > 0 ? (
                                 <Typography>
                                     Viewing {table.getFilteredRowModel().rows.length} /{' '}
@@ -428,7 +453,7 @@ const ExtractionTable: React.FC = () => {
                             ) : (
                                 <Typography>Total: {data.length} studies</Typography>
                             )}
-                        </Typography>
+                        </Box>
                     </Box>
                 </Box>
             </Box>

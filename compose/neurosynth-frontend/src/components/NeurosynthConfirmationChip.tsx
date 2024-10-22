@@ -12,7 +12,7 @@ const NeurosynthConfirmationChip: React.FC<ChipProps & { isLoading?: boolean }> 
         setConfirmationDialogIsOpen(true);
     };
 
-    const handleCloseDialog = (confirm: boolean | undefined, _data: any) => {
+    const handleCloseDialog = (confirm: boolean | undefined) => {
         if (confirm && props.onDelete) {
             props.onDelete(undefined);
         }

@@ -36,8 +36,8 @@ const ProjectViewMetaAnalyses: React.FC = () => {
     const [createMetaAnalysisDialogIsOpen, setCreateMetaAnalysisDialogIsOpen] = useState(false);
 
     useGuard(
-        `/projects/${projectId}/edit`,
-        'you must finish the meta-analysis creation process to view this page',
+        `/projects/${projectId}/project`,
+        'You must finish the meta-analysis creation process to view this page',
         projectIdFromProject === undefined || projectId !== projectIdFromProject
             ? false
             : !canEditMetaAnalyses

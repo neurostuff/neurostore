@@ -36,7 +36,6 @@ describe(PAGE_NAME, () => {
             .wait('@studyFixture')
             .wait('@projectFixture')
             .wait('@annotationFixture')
-            .wait('@semanticScholarFixture')
             .wait('@studysetFixture');
     });
 
@@ -48,7 +47,6 @@ describe(PAGE_NAME, () => {
             .wait('@studyFixture')
             .wait('@projectFixture')
             .wait('@annotationFixture')
-            .wait('@semanticScholarFixture')
             .wait('@studysetFixture');
 
         // ACT
@@ -56,7 +54,7 @@ describe(PAGE_NAME, () => {
         cy.contains('label', 'doi').next().clear();
         cy.contains('label', 'pmid').next().clear();
         cy.contains('label', 'pmcid').next().clear();
-        cy.contains('button', 'save').click();
+        cy.get('[data-testid="SaveIcon"]').click();
 
         // ASSERT
         cy.get('@editStudy').its('request.body').should('not.have.a.property', 'doi');

@@ -1,6 +1,6 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import NeurosynthLoader from 'components/NeurosynthLoader/NeurosynthLoader';
-import useGetProjectById from 'hooks/projects/useGetProjectById';
+import { useGetProjectById } from 'hooks';
 import useUserCanEdit from 'hooks/useUserCanEdit';
 import { Navigate, useLocation, useParams } from 'react-router-dom';
 const ProtectedProjectRoute: React.FC<{ onlyOwnerCanAccess?: boolean; errorMessage?: string }> = ({

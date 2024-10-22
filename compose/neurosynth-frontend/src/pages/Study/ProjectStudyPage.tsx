@@ -15,7 +15,7 @@ import {
 } from 'pages/Project/store/ProjectStore';
 import EditStudyToolbar from './components/EditStudyToolbar';
 
-const ProjectPage: React.FC = (props) => {
+const ProjectStudyPage: React.FC = (props) => {
     const initStudyStore = useInitStudyStore();
     useInitProjectStoreIfRequired();
 
@@ -91,4 +91,4 @@ const ProjectPage: React.FC = (props) => {
     );
 };
 
-export default ProjectPage;
+export default ProjectStudyPage;

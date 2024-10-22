@@ -3,12 +3,18 @@ import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import { Box, IconButton, Tooltip, Typography } from '@mui/material';
 import { CellContext, HeaderContext } from '@tanstack/react-table';
 import { IExtractionTableStudy } from './ExtractionTable';
+import { getAuthorShortName } from './ExtractionTable.helpers';
 
 export const ExtractionTableAuthorCell: React.FC<CellContext<IExtractionTableStudy, string>> = (
     props
 ) => {
     const value = props.getValue();
-    return <Typography variant="body2">{value}</Typography>;
+    const shortName = getAuthorShortName(value);
+    return (
+        <Tooltip title={value ? <Typography variant="body2">{value}</Typography> : null}>
+            <Typography variant="body2">{shortName}</Typography>
+        </Tooltip>
+    );
 };
 
 export const ExtractionTableAuthorHeader: React.FC<

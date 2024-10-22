@@ -29,10 +29,7 @@ import { useParams } from 'react-router-dom';
 import API from 'utils/api';
 import { create } from 'zustand';
 import { TProjectStore } from './ProjectStore.types';
-
-const onUnloadHandler = (event: BeforeUnloadEvent) => {
-    return (event.returnValue = 'Are you sure you want to leave?');
-};
+import { setUnloadHandler, unsetUnloadHandler } from 'helpers/BeforeUnload.helpers';
 
 const useProjectStore = create<TProjectStore>()((set, get) => {
     return {
@@ -148,7 +145,7 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
 
             if (existingTimeout && oldDebouncedStoreData.id === prevId)
                 clearTimeout(existingTimeout);
-            window.addEventListener('beforeunload', onUnloadHandler);
+            setUnloadHandler('project');
 
             const newTimeout = setTimeout(async () => {
                 const { data } = await API.NeurosynthServices.ProjectsService.projectsIdGet(
@@ -177,7 +174,7 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
                             { variant: 'error', persist: true }
                         );
                     }
-                    window.removeEventListener('beforeunload', onUnloadHandler);
+                    unsetUnloadHandler('project');
                     return;
                 }
 
@@ -248,7 +245,7 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
                             }
                         },
                         onSettled: () => {
-                            window.removeEventListener('beforeunload', onUnloadHandler);
+                            unsetUnloadHandler('project');
                         },
                     }
                 );
