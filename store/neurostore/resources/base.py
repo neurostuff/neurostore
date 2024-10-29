@@ -21,7 +21,7 @@ from webargs import fields
 
 from ..core import cache
 from ..database import db
-from .utils import get_current_user
+from .utils import get_current_user, validate_search_query, search_to_tsquery
 from ..models import (
     StudysetStudy,
     AnnotationAnalysis,
@@ -613,7 +613,10 @@ class ListView(BaseView):
         if s is not None and s.isdigit():
             q = q.filter_by(pmid=s)
         elif s is not None and self._fulltext_fields:
-            tsquery = sa.func.websearch_to_tsquery("english", s)
+            valid = validate_search_query(s)
+            if not valid:
+                abort(400, description=valid)
+            tsquery = search_to_tsquery(s)
             q = q.filter(m._ts_vector.op("@@")(tsquery))
 
         # Alternatively (or in addition), search on individual fields.
