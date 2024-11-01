@@ -16,7 +16,7 @@
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
-    "types": ["cypress", "node", "jest", "vite/client"]
+    "types": ["cypress", "node", "vite/client", "vitest/globals"]
   },
-  "include": ["src", "cypress", "vite-env.d.ts", "*.config.ts"]
+  "include": ["src", "cypress", "vite-env.d.ts", "*.config.ts", "__mocks__"]
 }

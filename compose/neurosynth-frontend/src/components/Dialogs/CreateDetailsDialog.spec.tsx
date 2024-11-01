@@ -1,13 +1,14 @@
+import { vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import CreateDetailsDialog from './CreateDetailsDialog';
 
 describe('CreateDetailsDialog', () => {
-    const mockOnCreateStudyset = jest.fn();
-    const mockOnCloseDialog = jest.fn();
+    const mockOnCreateStudyset = vi.fn();
+    const mockOnCloseDialog = vi.fn();
 
     afterAll(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it('should render', () => {

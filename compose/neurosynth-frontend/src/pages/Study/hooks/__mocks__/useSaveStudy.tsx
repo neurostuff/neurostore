@@ -1,7 +1,9 @@
-const useSaveStudy = jest.fn().mockReturnValue({
+import { vi } from 'vitest';
+
+const useSaveStudy = vi.fn().mockReturnValue({
     isLoading: false,
     hasEdits: false,
-    handleSave: jest.fn(),
+    handleSave: vi.fn(),
 });
 
 export default useSaveStudy;

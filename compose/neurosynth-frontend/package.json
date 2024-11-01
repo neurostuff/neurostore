@@ -57,7 +57,7 @@
         "start:staging": "vite --mode staging",
         "build:staging": "vite build --mode staging",
         "build:prod": "vite build --mode production",
-        "test": "vite test --watchAll=false",
+        "test": "vitest run --mode dev",
         "test-with-coverage": "npm run test -- --coverage --watchAll=false",
         "cy:e2e-headless": "cypress run",
         "cy:e2e-headless-dev": "env-cmd -f .env.dev cypress run",
@@ -80,34 +80,24 @@
             "last 1 safari version"
         ]
     },
-    "//jestComments": {
-        "//resetMocks": "we need to set this flag because of this: https://github.com/facebook/create-react-app/issues/9935"
-    },
-    "jest": {
-        "moduleNameMapper": {
-            "\\.(css|less)$": "<rootDir>/src/testing/stylemock.js"
-        },
-        "resetMocks": false
-    },
     "devDependencies": {
         "@testing-library/dom": "^8.3.0",
         "@testing-library/jest-dom": "^5.14.1",
         "@testing-library/react": "^11.2.7",
         "@testing-library/react-hooks": "^8.0.1",
         "@testing-library/user-event": "^12.8.3",
-        "@types/jest": "^29.5.14",
         "@types/node": "^18.19.63",
         "cypress": "^13.2.0",
         "env-cmd": "^10.1.0",
         "eslint-config-prettier": "^8.3.0",
         "eslint-plugin-cypress": "^2.12.1",
         "eslint-plugin-prettier": "^4.0.0",
-        "jest": "^29.7.0",
-        "jest-environment-jsdom": "^29.7.0",
+        "jsdom": "^25.0.1",
         "prettier": "^2.4.0",
         "react-error-overlay": "^6.0.9",
         "serve": "^14.0.1",
         "start-server-and-test": "^1.14.0",
-        "ts-jest": "^29.2.5"
+        "ts-node": "^10.9.2",
+        "vitest": "^2.1.4"
     }
 }

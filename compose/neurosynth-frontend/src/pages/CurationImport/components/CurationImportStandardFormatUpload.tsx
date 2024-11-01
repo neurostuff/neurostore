@@ -8,7 +8,8 @@ import { v4 as uuidv4 } from 'uuid';
 import CurationImportBaseStyles from 'pages/CurationImport/components/CurationImport.styles';
 import { ICurationStubStudy } from 'pages/Curation/Curation.types';
 import CurationPopupIdentificationSourceSelector from 'pages/Curation/components/CurationPopupIdentificationSourceSelector';
-import * as Cite from '@citation-js/core';
+// @ts-ignore
+import { Cite } from '@citation-js/core';
 import '@citation-js/plugin-enw';
 import '@citation-js/plugin-bibtex';
 import '@citation-js/plugin-ris';

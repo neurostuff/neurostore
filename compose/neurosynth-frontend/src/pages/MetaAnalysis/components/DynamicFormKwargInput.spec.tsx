@@ -1,12 +1,13 @@
+import { vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import DynamicFormKwargInput from './DynamicFormKwargInput';
 
-jest.mock('components/NeurosynthTable/NeurosynthTable');
-jest.mock('components/EditMetadata/AddMetadataRow');
+vi.mock('components/NeurosynthTable/NeurosynthTable');
+vi.mock('components/EditMetadata/AddMetadataRow');
 
 describe('DynamicFormKwargInput Component', () => {
-    const mockOnUpdate = jest.fn();
+    const mockOnUpdate = vi.fn();
 
     it('should render', () => {
         render(

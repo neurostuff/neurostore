@@ -1,13 +1,14 @@
+import { vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { EPropertyType } from 'components/EditMetadata/EditMetadata.types';
 import ToggleType from './ToggleType';
 
 describe('ToggleType Component', () => {
-    const mockOnToggle = jest.fn();
+    const mockOnToggle = vi.fn();
 
     afterAll(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it('should render a string', () => {

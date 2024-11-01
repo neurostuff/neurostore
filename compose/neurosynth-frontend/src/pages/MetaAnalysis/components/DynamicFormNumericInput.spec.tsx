@@ -1,9 +1,10 @@
+import { vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import DynamicFormNumericInput from './DynamicFormNumericInput';
 
 describe('DynamicFormNumericInput', () => {
-    const mockOnUpdate = jest.fn();
+    const mockOnUpdate = vi.fn();
 
     it('should render', () => {
         render(

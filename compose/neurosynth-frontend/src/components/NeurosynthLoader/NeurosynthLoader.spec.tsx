@@ -3,7 +3,7 @@ import NeurosynthLoader from './NeurosynthLoader';
 
 describe('Neurosynth Loader', () => {
     afterAll(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
     it('should render', () => {
         render(<NeurosynthLoader loaded={false} loadingText="test-loading-text" />);

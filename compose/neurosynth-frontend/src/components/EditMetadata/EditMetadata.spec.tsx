@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { EPropertyType, IMetadataRowModel, getType } from 'components/EditMetadata/EditMetadata.types';
@@ -5,9 +6,9 @@ import EditMetadata from 'components/EditMetadata/EditMetadata';
 import { MockThemeProvider } from 'testing/helpers';
 
 describe('EditMetadata Component', () => {
-    const handleMetadataRowEdit = jest.fn();
-    const handleMetadataRowDelete = jest.fn();
-    const handleMetadataRowAdd = jest.fn();
+    const handleMetadataRowEdit = vi.fn();
+    const handleMetadataRowDelete = vi.fn();
+    const handleMetadataRowAdd = vi.fn();
 
     const mockMetadata: IMetadataRowModel[] = [
         {
@@ -29,7 +30,7 @@ describe('EditMetadata Component', () => {
     ];
 
     afterAll(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it('should render', () => {

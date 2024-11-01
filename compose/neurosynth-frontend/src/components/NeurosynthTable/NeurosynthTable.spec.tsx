@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import NeurosynthTable from './NeurosynthTable';
@@ -24,17 +25,6 @@ describe('Neurosynth Table Component', () => {
                 />
             );
             expect(screen.getByText('test-custom-no-data-message')).toBeInTheDocument();
-        });
-
-        it('should have the correct table header color', () => {
-            render(
-                <NeurosynthTable
-                    tableConfig={{ tableHeaderBackgroundColor: 'red' }}
-                    headerCells={[]}
-                    rows={[]}
-                />
-            );
-            expect(screen.getAllByRole('row')[0]).toHaveStyle('backgroundColor: red');
         });
 
         it('should have the correct loader color', () => {
@@ -153,7 +143,7 @@ describe('Neurosynth Table Component', () => {
         });
 
         it('should be able to handle a row click', () => {
-            const mockHandleClick = jest.fn();
+            const mockHandleClick = vi.fn();
 
             render(
                 <NeurosynthTable

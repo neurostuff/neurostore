@@ -1,13 +1,18 @@
+import { vi, Mock } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import ProtectedProjectRoute from './ProtectedProjectRoute';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useGetProjectById } from 'hooks';
 
-jest.mock('react-router-dom', () => ({
-    ...jest.requireActual('react-router-dom'),
-}));
-jest.mock('hooks');
+vi.mock('react-router-dom', async () => {
+    const actualReactRouterDom = await vi.importActual('react-router-dom');
+    return {
+        ...actualReactRouterDom
+    }
+})
+vi.mock('hooks');
+vi.mock('@auth0/auth0-react');
 
 describe('ProtectedProjectRoute Component', () => {
     it('should render', () => {
@@ -73,7 +78,7 @@ describe('ProtectedProjectRoute Component', () => {
     it('should allow access if public and the user is not the owner', () => {
         useAuth0().isAuthenticated = true;
         useAuth0().user = { sub: 'other-user' };
-        (useGetProjectById as jest.Mock).mockReturnValue({
+        (useGetProjectById as Mock).mockReturnValue({
             data: { public: true },
             isLoading: false,
         });
@@ -100,7 +105,7 @@ describe('ProtectedProjectRoute Component', () => {
     it('should allow access if public and the user is not authenticated', () => {
         useAuth0().isAuthenticated = false;
         useAuth0().user = undefined;
-        (useGetProjectById as jest.Mock).mockReturnValue({
+        (useGetProjectById as Mock).mockReturnValue({
             data: { public: true },
             isLoading: false,
         });
@@ -127,7 +132,7 @@ describe('ProtectedProjectRoute Component', () => {
     it('should not allow access if its not public and the user is not the owner', () => {
         useAuth0().isAuthenticated = true;
         useAuth0().user = { sub: 'other-user' };
-        (useGetProjectById as jest.Mock).mockReturnValue({
+        (useGetProjectById as Mock).mockReturnValue({
             data: { public: false },
             isLoading: false,
         });
@@ -154,7 +159,7 @@ describe('ProtectedProjectRoute Component', () => {
     it('should not allow access if its not public and the user is not authenticated', () => {
         useAuth0().isAuthenticated = false;
         useAuth0().user = undefined;
-        (useGetProjectById as jest.Mock).mockReturnValue({
+        (useGetProjectById as Mock).mockReturnValue({
             data: { public: false },
             isLoading: false,
         });
@@ -181,7 +186,7 @@ describe('ProtectedProjectRoute Component', () => {
     it('should not allow access if the onlyOwnerCanAccess flag is set and the user is not the owner', () => {
         useAuth0().isAuthenticated = true;
         useAuth0().user = { sub: 'other-user' };
-        (useGetProjectById as jest.Mock).mockReturnValue({
+        (useGetProjectById as Mock).mockReturnValue({
             data: { public: false },
             isLoading: false,
         });

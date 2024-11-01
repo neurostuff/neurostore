@@ -1,13 +1,14 @@
+import { vi } from 'vitest';
 import { useAuth0 } from '@auth0/auth0-react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import Navbar from './Navbar';
 
-jest.mock('@auth0/auth0-react');
-jest.mock('react-router-dom');
-jest.mock('components/Navbar/NavDrawer.tsx');
-jest.mock('components/Navbar/NavToolbar.tsx');
-jest.mock('hooks');
+vi.mock('@auth0/auth0-react');
+vi.mock('react-router-dom');
+vi.mock('components/Navbar/NavDrawer.tsx');
+vi.mock('components/Navbar/NavToolbar.tsx');
+vi.mock('hooks');
 
 describe('Navbar', () => {
     it('should render', () => {

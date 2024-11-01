@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons';
@@ -9,10 +10,10 @@ import {
 import CreateMetaAnalysisSpecificationSelectionStep from 'pages/MetaAnalysis/components/CreateMetaAnalysisSpecificationSelectionStep';
 import { MULTIGROUP_ALGORITHMS } from 'pages/MetaAnalysis/components/SelectAnalysesComponent.types';
 
-jest.mock('pages/Project/store/ProjectStore');
-jest.mock('pages/MetaAnalysis/components/SelectAnalysesComponent');
-jest.mock('pages/MetaAnalysis/components/SelectAnalysesSummaryComponent');
-jest.mock('pages/MetaAnalysis/components/CreateMetaAnalysisSpecificationSelectionStepMultiGroup');
+vi.mock('pages/Project/store/ProjectStore');
+vi.mock('pages/MetaAnalysis/components/SelectAnalysesComponent');
+vi.mock('pages/MetaAnalysis/components/SelectAnalysesSummaryComponent');
+vi.mock('pages/MetaAnalysis/components/CreateMetaAnalysisSpecificationSelectionStepMultiGroup');
 
 describe('CreateMetaAnalysisSpecificationSelectionStep', () => {
     let algorithmMock: IAlgorithmSelection = {
@@ -28,8 +29,8 @@ describe('CreateMetaAnalysisSpecificationSelectionStep', () => {
         selectionValue: 'selection-value',
     };
 
-    const mockOnChooseSelection = jest.fn();
-    const mockOnNavigate = jest.fn();
+    const mockOnChooseSelection = vi.fn();
+    const mockOnNavigate = vi.fn();
 
     beforeEach(() => {
         selectedValueMock = {

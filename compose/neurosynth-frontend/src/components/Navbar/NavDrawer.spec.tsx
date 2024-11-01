@@ -1,17 +1,18 @@
+import { vi } from 'vitest';
 import { useAuth0 } from '@auth0/auth0-react';
 import { render, RenderResult, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import NavDrawer from './NavDrawer';
 
-jest.mock('@auth0/auth0-react');
-jest.mock('react-router-dom');
-jest.mock('components/Dialogs/CreateDetailsDialog');
+vi.mock('@auth0/auth0-react');
+vi.mock('react-router-dom');
+vi.mock('components/Dialogs/CreateDetailsDialog');
 
 describe('NavDrawer component', () => {
     let renderResult: RenderResult;
 
-    const mockOnLogin = jest.fn();
-    const mockOnLogout = jest.fn();
+    const mockOnLogin = vi.fn();
+    const mockOnLogout = vi.fn();
 
     beforeEach(() => {
         useAuth0().isAuthenticated = false;

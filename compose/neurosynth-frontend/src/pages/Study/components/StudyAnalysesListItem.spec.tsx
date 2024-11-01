@@ -1,9 +1,10 @@
+import { vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import StudyAnalysesListItem from './StudyAnalysesListItem';
 import userEvent from '@testing-library/user-event';
 import useDisplayWarnings from 'pages/Study/hooks/useDisplayWarnings';
 
-jest.mock('pages/Study/hooks/useDisplayWarnings.tsx');
+vi.mock('pages/Study/hooks/useDisplayWarnings.tsx');
 describe('StudyAnalysesListItem Component', () => {
     it('should render', () => {
         render(
@@ -62,7 +63,7 @@ describe('StudyAnalysesListItem Component', () => {
     });
 
     it('calls onSelectAnalysis when clicked', () => {
-        const handleOnSelectAnalysisMock = jest.fn();
+        const handleOnSelectAnalysisMock = vi.fn();
         render(
             <StudyAnalysesListItem
                 analysis={{ id: 'test-id', name: 'test-name', description: 'test-description' }}

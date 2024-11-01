@@ -1,9 +1,10 @@
+import { vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import NavigationButtons, { ENavigationButton } from './NavigationButtons';
 
 describe('NavigationButtons Component', () => {
-    const mockOnButtonClick = jest.fn();
+    const mockOnButtonClick = vi.fn();
 
     it('should render', () => {
         render(<NavigationButtons onButtonClick={mockOnButtonClick} />);

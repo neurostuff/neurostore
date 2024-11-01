@@ -1,3 +1,4 @@
+import { vi, Mock } from 'vitest';
 import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useUpdateStudyset } from 'hooks';
@@ -9,14 +10,14 @@ import { mockBaseStudy, mockStudysetNotNested } from 'testing/mockData';
 import { useStudyId } from 'pages/Study/store/StudyStore';
 import { setUnloadHandler, unsetUnloadHandler } from 'helpers/BeforeUnload.helpers';
 
-jest.mock('react-router-dom');
-jest.mock('hooks');
-jest.mock('pages/Project/store/ProjectStore');
-jest.mock('pages/Study/store/StudyStore');
-jest.mock('components/Dialogs/ConfirmationDialog');
-jest.mock('notistack');
-jest.mock('helpers/Annotation.helpers');
-jest.mock('stores/AnnotationStore.getters');
+vi.mock('react-router-dom');
+vi.mock('hooks');
+vi.mock('pages/Project/store/ProjectStore');
+vi.mock('pages/Study/store/StudyStore');
+vi.mock('components/Dialogs/ConfirmationDialog');
+vi.mock('notistack');
+vi.mock('helpers/Annotation.helpers');
+vi.mock('stores/AnnotationStore.getters');
 
 describe('EditStudySwapVersionButton Component', () => {
     it('should render', () => {
@@ -46,7 +47,7 @@ describe('EditStudySwapVersionButton Component', () => {
 
     it('should switch the study version', async () => {
         const studyset = mockStudysetNotNested();
-        (useStudyId as jest.Mock).mockReturnValue(studyset.studies?.[0]);
+        (useStudyId as Mock).mockReturnValue(studyset.studies?.[0]);
         const baseStudy = mockBaseStudy();
         render(<EditStudySwapVersionButton />);
         const button = screen.getByRole('button');

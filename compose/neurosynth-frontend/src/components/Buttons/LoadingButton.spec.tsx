@@ -1,9 +1,10 @@
+import { vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import LoadingButton from './LoadingButton';
 
 describe('LoadingButton', () => {
-    const mockOnClick = jest.fn();
+    const mockOnClick = vi.fn();
     it('should render', () => {
         render(<LoadingButton text="test" variant="text" onClick={mockOnClick} />);
     });

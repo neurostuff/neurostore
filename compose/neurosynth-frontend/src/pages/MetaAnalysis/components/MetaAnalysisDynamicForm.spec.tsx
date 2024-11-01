@@ -1,13 +1,14 @@
+import { vi } from 'vitest';
 import { IParameter } from 'pages/MetaAnalysis/components/DynamicForm.types';
 
-jest.mock('pages/MetaAnalysis/components/DynamicFormBoolInput');
-jest.mock('pages/MetaAnalysis/components/DynamicFormKwargInput');
-jest.mock('pages/MetaAnalysis/components/DynamicFormNumericInput');
-jest.mock('pages/MetaAnalysis/components/DynamicFormSelectInput');
-jest.mock('pages/MetaAnalysis/components/DynamicFormStringInput');
+vi.mock('pages/MetaAnalysis/components/DynamicFormBoolInput');
+vi.mock('pages/MetaAnalysis/components/DynamicFormKwargInput');
+vi.mock('pages/MetaAnalysis/components/DynamicFormNumericInput');
+vi.mock('pages/MetaAnalysis/components/DynamicFormSelectInput');
+vi.mock('pages/MetaAnalysis/components/DynamicFormStringInput');
 
 describe('MetaAnalysisDynamicForm', () => {
-    const mockOnUpdate = jest.fn();
+    const mockOnUpdate = vi.fn();
 
     const mockSpecification: { [key: string]: IParameter } = {
         null_method: {

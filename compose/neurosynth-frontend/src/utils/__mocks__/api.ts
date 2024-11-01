@@ -1,31 +1,32 @@
+import { vi } from 'vitest';
 import { mockAnnotations, mockStudy, mockStudysets } from '../../testing/mockData';
 
 const MockAPI = {
     NeurosynthServices: {},
     NeurostoreServices: {
         StudiesService: {
-            studiesGet: jest.fn(),
-            studiesIdGet: jest.fn().mockReturnValue(Promise.resolve({ data: mockStudy() })),
-            studiesIdPut: jest.fn().mockReturnValue(Promise.resolve(mockStudy())),
-            studiesPost: jest.fn(),
-            studiesIdDelete: jest.fn(),
+            studiesGet: vi.fn(),
+            studiesIdGet: vi.fn().mockReturnValue(Promise.resolve({ data: mockStudy() })),
+            studiesIdPut: vi.fn().mockReturnValue(Promise.resolve(mockStudy())),
+            studiesPost: vi.fn(),
+            studiesIdDelete: vi.fn(),
         },
         AnalysesService: {
-            analysesGet: jest.fn(),
-            analysesIdGet: jest.fn(),
-            analysesIdPut: jest.fn(),
-            analysesPost: jest.fn(),
-            analysesIdDelete: jest.fn(),
+            analysesGet: vi.fn(),
+            analysesIdGet: vi.fn(),
+            analysesIdPut: vi.fn(),
+            analysesPost: vi.fn(),
+            analysesIdDelete: vi.fn(),
         },
         ConditionsService: {
-            conditionsGet: jest.fn(),
-            conditionsIdGet: jest.fn(),
-            conditionsIdPut: jest.fn(),
-            conditionsPost: jest.fn(),
-            conditionsIdDelete: jest.fn(),
+            conditionsGet: vi.fn(),
+            conditionsIdGet: vi.fn(),
+            conditionsIdPut: vi.fn(),
+            conditionsPost: vi.fn(),
+            conditionsIdDelete: vi.fn(),
         },
         StudySetsService: {
-            studysetsGet: jest.fn().mockReturnValue(
+            studysetsGet: vi.fn().mockReturnValue(
                 Promise.resolve({
                     data: {
                         metadata: {},
@@ -33,33 +34,33 @@ const MockAPI = {
                     },
                 })
             ),
-            studysetsIdGet: jest.fn(),
-            studysetsIdPut: jest.fn(),
-            studysetsPost: jest.fn(),
-            studysetsIdDelete: jest.fn(),
+            studysetsIdGet: vi.fn(),
+            studysetsIdPut: vi.fn(),
+            studysetsPost: vi.fn(),
+            studysetsIdDelete: vi.fn(),
         },
         ImagesService: {
-            studysetsGet: jest.fn(),
-            studysetsIdGet: jest.fn(),
-            studysetsIdPut: jest.fn(),
-            studysetsPost: jest.fn(),
-            studysetsIdDelete: jest.fn(),
+            studysetsGet: vi.fn(),
+            studysetsIdGet: vi.fn(),
+            studysetsIdPut: vi.fn(),
+            studysetsPost: vi.fn(),
+            studysetsIdDelete: vi.fn(),
         },
         PointsService: {
-            pointsGet: jest.fn(),
-            pointsIdGet: jest.fn(),
-            pointsIdPut: jest.fn(),
-            pointsPost: jest.fn(),
-            pointsIdDelete: jest.fn(),
+            pointsGet: vi.fn(),
+            pointsIdGet: vi.fn(),
+            pointsIdPut: vi.fn(),
+            pointsPost: vi.fn(),
+            pointsIdDelete: vi.fn(),
         },
         UsersService: {
-            usersGet: jest.fn(),
-            usersIdGet: jest.fn(),
-            usersIdPut: jest.fn(),
-            usersPost: jest.fn(),
+            usersGet: vi.fn(),
+            usersIdGet: vi.fn(),
+            usersIdPut: vi.fn(),
+            usersPost: vi.fn(),
         },
         AnnotationsService: {
-            annotationsGet: jest.fn().mockReturnValue(
+            annotationsGet: vi.fn().mockReturnValue(
                 Promise.resolve({
                     data: {
                         metadata: {},
@@ -67,13 +68,13 @@ const MockAPI = {
                     },
                 })
             ),
-            annotationsIdGet: jest.fn(),
-            annotationsIdPut: jest.fn(),
-            annotationsPost: jest.fn(),
-            annotationsIdDelete: jest.fn(),
+            annotationsIdGet: vi.fn(),
+            annotationsIdPut: vi.fn(),
+            annotationsPost: vi.fn(),
+            annotationsIdDelete: vi.fn(),
         },
     },
-    UpdateServicesWithToken: jest.fn(),
+    UpdateServicesWithToken: vi.fn(),
 };
 
 export default MockAPI;

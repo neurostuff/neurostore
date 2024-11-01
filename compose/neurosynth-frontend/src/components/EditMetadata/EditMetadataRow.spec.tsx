@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { EPropertyType, IMetadataRowModel } from 'components/EditMetadata/EditMetadata.types';
@@ -5,13 +6,13 @@ import { MockThemeProvider } from 'testing/helpers';
 import EditMetadataRow from './EditMetadataRow';
 
 describe('EditMetadataRow Component', () => {
-    const onMetadataRowDeleteMock = jest.fn();
-    const onMetadataRowEditMock = jest.fn();
+    const onMetadataRowDeleteMock = vi.fn();
+    const onMetadataRowEditMock = vi.fn();
 
     let mockMetadataRow: IMetadataRowModel;
 
     afterAll(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     beforeEach(() => {

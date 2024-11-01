@@ -1,27 +1,17 @@
+import { vi, Mock } from 'vitest';
 import { act, render, screen } from '@testing-library/react';
 import CurationDownloadIncludedStudiesButton from 'pages/Curation/components/CurationDownloadIncludedStudiesButton';
-import QueryClientTestingWrapper from 'testing/QueryClientTestingWrapper';
 import userEvent from '@testing-library/user-event';
 import { useProjectCurationColumns } from 'pages/Project/store/ProjectStore';
 import { ICurationColumn } from '../Curation.types';
 import { defaultIdentificationSources } from 'pages/Project/store/ProjectStore.types';
 import { downloadFile } from '../Curation.helpers';
-import useGetBibtexCitations, { IBibtex } from 'hooks/external/useGetBibtexCitations';
 
-jest.mock('react-query', () => {
-    return {
-        ...jest.requireActual('react-query'),
-        useMutation: jest.fn().mockReturnValue({
-            mutateAsync: jest.fn(),
-        }),
-    };
-});
-jest.mock('pages/Curation/Curation.helpers.ts', () => {
-    return {
-        downloadFile: jest.fn(),
-    };
-});
-jest.mock('pages/Project/store/ProjectStore');
+vi.mock('react-query');
+vi.mock('pages/Curation/Curation.helpers.ts', () => ({
+    downloadFile: vi.fn(),
+}));
+vi.mock('pages/Project/store/ProjectStore');
 
 const mockCurationColumns: ICurationColumn[] = [
     {
@@ -88,23 +78,23 @@ const mockCurationColumns: ICurationColumn[] = [
 
 describe('CurationDownloadIncludedStudiesButton', () => {
     it('should render', () => {
-        (useProjectCurationColumns as jest.Mock).mockReturnValue(mockCurationColumns);
-        render(<CurationDownloadIncludedStudiesButton />, { wrapper: QueryClientTestingWrapper });
+        (useProjectCurationColumns as Mock).mockReturnValue(mockCurationColumns);
+        render(<CurationDownloadIncludedStudiesButton />);
     });
 
     it('should be disabled if there are no included studies', () => {
-        (useProjectCurationColumns as jest.Mock).mockReturnValue([
+        (useProjectCurationColumns as Mock).mockReturnValue([
             { name: 'excluded', id: '1', stubStudies: [] },
             { name: 'included', id: '1', stubStudies: [] },
         ]);
-        render(<CurationDownloadIncludedStudiesButton />, { wrapper: QueryClientTestingWrapper });
+        render(<CurationDownloadIncludedStudiesButton />);
         const downloadButton = screen.getByText('Download INCLUDED as CSV');
         expect(downloadButton).toBeDisabled();
     });
 
     it('renders the button group and opens the dropdown menu when clicked', () => {
-        (useProjectCurationColumns as jest.Mock).mockReturnValue(mockCurationColumns);
-        render(<CurationDownloadIncludedStudiesButton />, { wrapper: QueryClientTestingWrapper });
+        (useProjectCurationColumns as Mock).mockReturnValue(mockCurationColumns);
+        render(<CurationDownloadIncludedStudiesButton />);
         const dropdownButton = screen.getByTestId('ArrowDropDownIcon');
         expect(dropdownButton).toBeInTheDocument();
         expect(screen.getByText('Download INCLUDED as CSV')).toBeInTheDocument();
@@ -120,9 +110,9 @@ describe('CurationDownloadIncludedStudiesButton', () => {
             `"included_1","John Smith","included_pmid_1","included_pmcid_1","included_doi_1","included_articleyear_1","included_journal_1","included_articlelink_1","Neurostore","","included_neurostoreid_1",""\r\n` +
             `"included_2","included_authors_2","included_pmid_2","included_pmcid_2","","included_articleyear_2","included_journal_2","included_articlelink_2","Neurostore","tag_1_label,tag_2_label","included_neurostoreid_2",""`;
 
-        (useProjectCurationColumns as jest.Mock).mockReturnValue(mockCurationColumns);
+        (useProjectCurationColumns as Mock).mockReturnValue(mockCurationColumns);
 
-        render(<CurationDownloadIncludedStudiesButton />, { wrapper: QueryClientTestingWrapper });
+        render(<CurationDownloadIncludedStudiesButton />);
         userEvent.click(screen.getByText('Download INCLUDED as CSV'));
         expect(downloadFile).toHaveBeenCalledTimes(1);
         expect(downloadFile).toHaveBeenCalledWith(
@@ -153,12 +143,10 @@ describe('CurationDownloadIncludedStudiesButton', () => {
             `\thowpublished = {included\\textunderscore{}articlelink\\textunderscore{}2},\n` +
             `}\n\n`;
 
-        (useProjectCurationColumns as jest.Mock).mockReturnValue(mockCurationColumns);
+        (useProjectCurationColumns as Mock).mockReturnValue(mockCurationColumns);
 
         await act(async () => {
-            render(<CurationDownloadIncludedStudiesButton />, {
-                wrapper: QueryClientTestingWrapper,
-            });
+            render(<CurationDownloadIncludedStudiesButton />);
             const dropdownButton = screen.getByTestId('ArrowDropDownIcon');
             expect(dropdownButton).toBeInTheDocument();
             userEvent.click(dropdownButton);
