@@ -8,7 +8,7 @@ import { useClearProvenance, useProjectUser } from 'pages/Project/store/ProjectS
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
-const env = process.env.REACT_APP_ENV as 'DEV' | 'STAGING' | 'PROD';
+const env = import.meta.env.VITE_APP_ENV as 'DEV' | 'STAGING' | 'PROD';
 
 const DangerZone: React.FC = (props) => {
     const { projectId } = useParams<{ projectId: string }>();
