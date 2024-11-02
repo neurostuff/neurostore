@@ -51,9 +51,7 @@
     },
     "scripts": {
         "start:dev": "vite --mode dev",
-        "build:dev-local": "vite build --mode dev",
-        "start-ci:dev": "serve -s -d -n -p 3000 build",
-        "start-ci:dev-local": "serve -s -d -n -p 3000 build",
+        "build:dev": "vite build --mode dev",
         "start:staging": "vite --mode staging",
         "build:staging": "vite build --mode staging",
         "build:prod": "vite build --mode production",
@@ -65,6 +63,7 @@
         "cy:e2e-browser-staging": "env-cmd -f .env.staging cypress open -b chrome --e2e",
         "cy:e2e-browser-dev": "env-cmd -f .env.dev cypress open -b chrome --e2e",
         "cy:install": "cypress install",
+        "start-build": "serve -s -d -n -p 3000 build",
         "cy:ci": "start-server-and-test start-ci:dev 3000 cy:e2e-headless"
     },
     "type": "module",

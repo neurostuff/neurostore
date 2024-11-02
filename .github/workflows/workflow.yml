@@ -487,8 +487,8 @@ jobs:
         VITE_APP_NEUROSTORE_API_DOMAIN: ${{ secrets.VITE_APP_NEUROSTORE_API_DOMAIN }}
         VITE_APP_NEUROSYNTH_API_DOMAIN: ${{ secrets.VITE_APP_NEUROSYNTH_API_DOMAIN }}
       with:
-        build: npm run build:dev
-        start: npm run start-ci:dev
+        build: npm run build:staging
+        start: npm run start-build
         browser: chrome
         wait-on: http://localhost:3000
         working-directory: /home/runner/work/neurostore/neurostore/compose/neurosynth-frontend
