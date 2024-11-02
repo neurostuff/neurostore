@@ -332,9 +332,9 @@ jobs:
         AUTH0_BASE_URL: ${{ secrets.AUTH0_BASE_URL }}
         AUTH0_ACCESS_TOKEN_URL: ${{ secrets.AUTH0_ACCESS_TOKEN_URL }}
         AUTH0_AUTH_URL: ${{ secrets.AUTH0_AUTH_URL }}
-        REACT_APP_AUTH0_CLIENT_ID: ${{ secrets.REACT_APP_AUTH0_CLIENT_ID }}
-        REACT_APP_AUTH0_DOMAIN: ${{ secrets.REACT_APP_AUTH0_DOMAIN }}
-        REACT_APP_AUTH0_CLIENT_SECRET: ${{ secrets.REACT_APP_AUTH0_CLIENT_SECRET }}
+        VITE_APP_AUTH0_CLIENT_ID: ${{ secrets.VITE_APP_AUTH0_CLIENT_ID }}
+        VITE_APP_AUTH0_DOMAIN: ${{ secrets.VITE_APP_AUTH0_DOMAIN }}
+        VITE_APP_AUTH0_CLIENT_SECRET: ${{ secrets.VITE_APP_AUTH0_CLIENT_SECRET }}
       run: |
         cp neurosynth-frontend/.env.example neurosynth-frontend/.env.dev && \
         docker compose run \
@@ -344,14 +344,14 @@ jobs:
           -e "AUTH0_BASE_URL=${AUTH0_BASE_URL}" \
           -e "AUTH0_ACCESS_TOKEN_URL=${AUTH0_ACCESS_TOKEN_URL}" \
           -e "AUTH0_AUTH_URL=${AUTH0_AUTH_URL}" \
-          -e "REACT_APP_AUTH0_DOMAIN=${REACT_APP_AUTH0_DOMAIN}" \
-          -e "REACT_APP_AUTH0_CLIENT_ID=${REACT_APP_AUTH0_CLIENT_ID}" \
-          -e "REACT_APP_AUTH0_AUDIENCE=localhost" \
-          -e "REACT_APP_AUTH0_CLIENT_SECRET=${REACT_APP_AUTH0_CLIENT_SECRET}" \
-          -e "REACT_APP_ENV=DEV" \
-          -e "REACT_APP_NEUROSTORE_API_DOMAIN=http://localhost/api" \
+          -e "VITE_APP_AUTH0_DOMAIN=${VITE_APP_AUTH0_DOMAIN}" \
+          -e "VITE_APP_AUTH0_CLIENT_ID=${VITE_APP_AUTH0_CLIENT_ID}" \
+          -e "VITE_APP_AUTH0_AUDIENCE=localhost" \
+          -e "VITE_APP_AUTH0_CLIENT_SECRET=${VITE_APP_AUTH0_CLIENT_SECRET}" \
+          -e "VITE_APP_ENV=DEV" \
+          -e "VITE_APP_NEUROSTORE_API_DOMAIN=http://localhost/api" \
           -e "CI=true" \
-          -e "REACT_APP_NEUROSYNTH_API_DOMAIN=http://localhost:81/api" \
+          -e "VITE_APP_NEUROSYNTH_API_DOMAIN=http://localhost:81/api" \
           --rm -w /compose/neurosynth-frontend \
           compose \
           bash -c "cd /compose/neurosynth-frontend && \
@@ -475,17 +475,17 @@ jobs:
       name: Frontend Cypress E2E Tests
       uses: cypress-io/github-action@v6
       env:
-        CYPRESS_auth0ClientId: ${{ secrets.REACT_APP_AUTH0_CLIENT_ID }}
-        CYPRESS_auth0ClientSecret: ${{ secrets.REACT_APP_AUTH0_CLIENT_SECRET }}
-        CYPRESS_auth0Domain: ${{ secrets.REACT_APP_AUTH0_DOMAIN }}
+        CYPRESS_auth0ClientId: ${{ secrets.VITE_APP_AUTH0_CLIENT_ID }}
+        CYPRESS_auth0ClientSecret: ${{ secrets.VITE_APP_AUTH0_CLIENT_SECRET }}
+        CYPRESS_auth0Domain: ${{ secrets.VITE_APP_AUTH0_DOMAIN }}
         CYPRESS_auth0Audience: localhost
-        REACT_APP_AUTH0_AUDIENCE: localhost
-        REACT_APP_AUTH0_CLIENT_ID: ${{ secrets.REACT_APP_AUTH0_CLIENT_ID }}
-        REACT_APP_AUTH0_DOMAIN: ${{ secrets.REACT_APP_AUTH0_DOMAIN }}
-        REACT_APP_AUTH0_CLIENT_SECRET: ${{ secrets.REACT_APP_AUTH0_CLIENT_SECRET }}
-        REACT_APP_ENV: DEV
-        REACT_APP_NEUROSTORE_API_DOMAIN: ${{ secrets.REACT_APP_NEUROSTORE_API_DOMAIN }}
-        REACT_APP_NEUROSYNTH_API_DOMAIN: ${{ secrets.REACT_APP_NEUROSYNTH_API_DOMAIN }}
+        VITE_APP_AUTH0_AUDIENCE: localhost
+        VITE_APP_AUTH0_CLIENT_ID: ${{ secrets.VITE_APP_AUTH0_CLIENT_ID }}
+        VITE_APP_AUTH0_DOMAIN: ${{ secrets.VITE_APP_AUTH0_DOMAIN }}
+        VITE_APP_AUTH0_CLIENT_SECRET: ${{ secrets.VITE_APP_AUTH0_CLIENT_SECRET }}
+        VITE_APP_ENV: DEV
+        VITE_APP_NEUROSTORE_API_DOMAIN: ${{ secrets.VITE_APP_NEUROSTORE_API_DOMAIN }}
+        VITE_APP_NEUROSYNTH_API_DOMAIN: ${{ secrets.VITE_APP_NEUROSYNTH_API_DOMAIN }}
       with:
         build: npm run build:dev
         start: npm run start-ci:dev
