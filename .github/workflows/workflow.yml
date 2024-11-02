@@ -487,7 +487,6 @@ jobs:
         VITE_APP_NEUROSTORE_API_DOMAIN: ${{ secrets.VITE_APP_NEUROSTORE_API_DOMAIN }}
         VITE_APP_NEUROSYNTH_API_DOMAIN: ${{ secrets.VITE_APP_NEUROSYNTH_API_DOMAIN }}
       with:
-        record: true
         build: npm run build:staging
         start: npm run start-build
         browser: chrome
