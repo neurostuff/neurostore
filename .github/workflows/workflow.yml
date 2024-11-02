@@ -479,6 +479,7 @@ jobs:
         CYPRESS_auth0ClientSecret: ${{ secrets.VITE_APP_AUTH0_CLIENT_SECRET }}
         CYPRESS_auth0Domain: ${{ secrets.VITE_APP_AUTH0_DOMAIN }}
         CYPRESS_auth0Audience: localhost
+        CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
         VITE_APP_AUTH0_AUDIENCE: localhost
         VITE_APP_AUTH0_CLIENT_ID: ${{ secrets.VITE_APP_AUTH0_CLIENT_ID }}
         VITE_APP_AUTH0_DOMAIN: ${{ secrets.VITE_APP_AUTH0_DOMAIN }}
@@ -488,6 +489,7 @@ jobs:
         VITE_APP_NEUROSYNTH_API_DOMAIN: ${{ secrets.VITE_APP_NEUROSYNTH_API_DOMAIN }}
       with:
         build: npm run build:staging
+        record: true
         start: npm run start-build
         browser: chrome
         wait-on: http://localhost:3000
