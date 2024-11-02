@@ -1,5 +1,5 @@
 name: Testing Workflow
-on: [workflow_dispatch,push]
+on: [workflow_dispatch,`sh]
 
 jobs:
   clean:
@@ -346,7 +346,7 @@ jobs:
           -e "AUTH0_AUTH_URL=${AUTH0_AUTH_URL}" \
           -e "VITE_APP_AUTH0_DOMAIN=${VITE_APP_AUTH0_DOMAIN}" \
           -e "VITE_APP_AUTH0_CLIENT_ID=${VITE_APP_AUTH0_CLIENT_ID}" \
-          -e "VITE_APP_AUTH0_AUDIENCE=localhost" \
+          -e "VITE_APP_AUTH0_AUDIENCE=https://neurostore.xyz/api/" \
           -e "VITE_APP_AUTH0_CLIENT_SECRET=${VITE_APP_AUTH0_CLIENT_SECRET}" \
           -e "VITE_APP_ENV=STAGING" \
           -e "VITE_APP_NEUROSTORE_API_DOMAIN=http://localhost/api" \
@@ -477,10 +477,10 @@ jobs:
       env:
         CYPRESS_auth0ClientId: ${{ secrets.VITE_APP_AUTH0_CLIENT_ID }}
         CYPRESS_auth0ClientSecret: ${{ secrets.VITE_APP_AUTH0_CLIENT_SECRET }}
-        CYPRESS_auth0Domain: ${{ secrets.VITE_APP_AUTH0_DOMAIN }}
-        CYPRESS_auth0Audience: localhost
+        CYPRESS_: ${{ secrets.VITE_APP_AUTH0_DOMAIN }}
+        CYPRESS_auth0Audience: https://neurostore.xyz/api/
         CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
-        VITE_APP_AUTH0_AUDIENCE: localhost
+        VITE_APP_AUTH0_AUDIENCE: https://neurostore.xyz/api/
         VITE_APP_AUTH0_CLIENT_ID: ${{ secrets.VITE_APP_AUTH0_CLIENT_ID }}
         VITE_APP_AUTH0_DOMAIN: ${{ secrets.VITE_APP_AUTH0_DOMAIN }}
         VITE_APP_AUTH0_CLIENT_SECRET: ${{ secrets.VITE_APP_AUTH0_CLIENT_SECRET }}
@@ -490,7 +490,7 @@ jobs:
       with:
         build: npm run build:staging
         record: true
-        start: npm run start-build
+        start: npm run serve-build
         browser: chrome
         wait-on: http://localhost:3000
         working-directory: /home/runner/work/neurostore/neurostore/compose/neurosynth-frontend
