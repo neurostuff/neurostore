@@ -94,8 +94,6 @@
         "jsdom": "^25.0.1",
         "prettier": "^2.4.0",
         "react-error-overlay": "^6.0.9",
-        "serve": "^14.0.1",
-        "http-server": "^14.1.1",
         "start-server-and-test": "^1.14.0",
         "ts-node": "^10.9.2",
         "vitest": "^2.1.4"
