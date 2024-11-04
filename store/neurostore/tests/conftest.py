@@ -1,4 +1,6 @@
 import pytest
+import random
+import json
 from os import environ
 from neurostore.models.data import Analysis, Condition
 from sqlalchemy.orm import scoped_session, sessionmaker
@@ -586,3 +588,28 @@ def simple_neurosynth_annotation(session, ingest_neurosynth):
     session.commit()
 
     return smol_annot
+
+
+@pytest.fixture(scope="function")
+def create_demographic_features(session, ingest_neurosynth, tmp_path):
+    output_dir = tmp_path / "output" / "demographics" / "v1.0.0"
+    output_dir.mkdir(exist_ok=True, parents=True)
+    studies = Study.query.all()
+    diseases = ["schizophrenia", "bipolar disorder", "depression", "healthy"]
+    studies_data = [
+        [
+            {
+                "age": random.randint(18, 100),
+                "group": group
+            } for group in random.sample(diseases, k=random.randint(1, 2))
+        ] for study in studies
+    ]
+
+    for study, study_data in zip(studies, studies_data):
+        study_dir = output_dir / study.id
+        with open(study_dir / "results.json", "w") as f:
+            for entry in study_data:
+                json.dump(entry, f)
+                f.write('\n')
+
+    return output_dir

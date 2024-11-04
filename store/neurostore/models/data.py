@@ -278,7 +278,7 @@ class Study(BaseMixin, db.Model):
     public = db.Column(db.Boolean, default=True)
     level = db.Column(db.String)
     metadata_ = db.Column(JSONB)
-    source = db.Column(db.String, index=True)
+    source = db.Column(db.String, index=True)base_study_id = db.Column(db.Text, db.ForeignKey("base_studies.id"), index=True)
     source_id = db.Column(db.String, index=True)
     source_updated_at = db.Column(db.DateTime(timezone=True))
     base_study_id = db.Column(db.Text, db.ForeignKey("base_studies.id"), index=True)
@@ -537,6 +537,55 @@ class PointValue(BaseMixin, db.Model):
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"), index=True)
     user = relationship("User", backref=backref("point_values", passive_deletes=True))
 
+
+class Pipeline(BaseMixin, db.Model):
+    __tablename__ = "pipelines"
+
+    name = db.Column(db.String)
+    description = db.Column(db.String)
+    version = db.Column(db.String)
+    study_depenedent = db.Column(db.Boolean, default=False)
+    ace_compatible = db.Column(db.Boolean, default=False)
+    pubget_compatible = db.Column(db.Boolean, default=False)
+    derived_from = db.Column(db.Text)
+
+
+class PipelineConfig(BaseMixin, db.Model):
+    __tablename__ = "pipeline_configs"
+
+    pipeline_id = db.Column(
+        db.Text, db.ForeignKey("pipelines.id", ondelete="CASCADE"), index=True
+    )
+    config = db.Column(JSONB)
+    config_hash = db.Column(db.String, index=True)
+    pipeline = relationship("Pipeline", backref=backref("configs", passive_deletes=True))
+
+
+class PipelineRun(BaseMixin, db.Model):
+    __tablename__ = "pipeline_runs"
+
+    pipeline_id = db.Column(
+        db.Text, db.ForeignKey("pipelines.id", ondelete="CASCADE"), index=True
+    )
+    config_id = db.Column(
+        db.Text, db.ForeignKey("pipeline_configs.id", ondelete="CASCADE"), index=True
+    )
+    config = relationship("PipelineConfig", backref=backref("runs", passive_deletes=True))
+    run_index = db.Column(db.Integer())
+
+
+class PipelineRunResult(BaseMixin, db.Model):
+    __tablename__ = "pipeline_run_results"
+
+    run_id = db.Column(
+        db.Text, db.ForeignKey("pipeline_runs.id", ondelete="CASCADE"), index=True
+    )
+    base_study_id = db.Column(db.Text, db.ForeignKey("base_studies.id"), index=True)
+    feature_index = db.Column(db.Integer)  # the same categories of information can be extracted multiple times from a single paper (e.g., multiple demographic groups, multiple software packages, etc)
+    feature_group = db.Column(db.String)  # task, disease, software, age
+    feature = db.Column(db.String)  # stroop task, schizophrenia, fsl
+    value = db.Column(db.Float)  # 0.67, 0.3, 0.5 (some measure of confidence for the result)
+    run = relationship("PipelineRun", backref=backref("results", passive_deletes=True))
 
 # from . import event_listeners  # noqa E402
 
