@@ -16,7 +16,7 @@ describe('EditStudyAnalyses Component', () => {
     // });
 
     // afterAll(() => {
-    //     jest.clearAllMocks();
+    //     vi.clearAllMocks();
     // });
 
     // it('should render', () => {

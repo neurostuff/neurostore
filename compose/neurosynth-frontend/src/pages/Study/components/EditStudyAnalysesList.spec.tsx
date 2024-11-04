@@ -1,9 +1,10 @@
+import { vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import EditStudyAnalysesList from './EditStudyAnalysesList';
 import { IStoreAnalysis } from 'pages/Study/store/StudyStore.helpers';
 import userEvent from '@testing-library/user-event';
 
-jest.mock('pages/Study/components/StudyAnalysesListItem.tsx');
+vi.mock('pages/Study/components/StudyAnalysesListItem.tsx');
 
 describe('EditStudyAnalysesList Component', () => {
     it('should render', () => {
@@ -66,7 +67,7 @@ describe('EditStudyAnalysesList Component', () => {
     });
 
     it('should call the onSelectAnalysis function when analysis is selected', () => {
-        const handleOnSelectAnalysisMock = jest.fn();
+        const handleOnSelectAnalysisMock = vi.fn();
         const mockAnalyses: IStoreAnalysis[] = [
             {
                 id: 'test-id-1',

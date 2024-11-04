@@ -1,2 +1,4 @@
-const setAnalysesInAnnotationAsIncluded = jest.fn();
+import { vi } from 'vitest';
+
+const setAnalysesInAnnotationAsIncluded = vi.fn();
 export { setAnalysesInAnnotationAsIncluded };

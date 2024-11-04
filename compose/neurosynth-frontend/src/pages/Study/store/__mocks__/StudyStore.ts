@@ -1,26 +1,27 @@
+import { vi } from 'vitest';
 import { mockAnalyses, mockStudy } from 'testing/mockData';
 
-const useStudyId = jest.fn().mockReturnValue('study-id');
+const useStudyId = vi.fn().mockReturnValue('study-id');
 
-const useStudyName = jest.fn().mockResolvedValue('test-study-name');
+const useStudyName = vi.fn().mockResolvedValue('test-study-name');
 
-const useProjectId = jest.fn().mockReturnValue('project-id');
+const useProjectId = vi.fn().mockReturnValue('project-id');
 
-const useStudyBaseStudyId = jest.fn().mockReturnValue('base-study-id');
+const useStudyBaseStudyId = vi.fn().mockReturnValue('base-study-id');
 
-const useUpdateStudyDetails = jest.fn().mockReturnValue(jest.fn());
+const useUpdateStudyDetails = vi.fn().mockReturnValue(vi.fn());
 
-const useStudy = jest.fn().mockReturnValue(mockStudy());
+const useStudy = vi.fn().mockReturnValue(mockStudy());
 
-const useStudyUser = jest.fn().mockReturnValue('some-github-user');
+const useStudyUser = vi.fn().mockReturnValue('some-github-user');
 
-const useUpdateStudyIsLoading = jest.fn().mockReturnValue(false);
+const useUpdateStudyIsLoading = vi.fn().mockReturnValue(false);
 
-const useStudyHasBeenEdited = jest.fn().mockReturnValue(false);
+const useStudyHasBeenEdited = vi.fn().mockReturnValue(false);
 
-const useStudyAnalyses = jest.fn().mockReturnValue(mockAnalyses());
+const useStudyAnalyses = vi.fn().mockReturnValue(mockAnalyses());
 
-const useUpdateStudyInDB = jest.fn().mockReturnValue(jest.fn());
+const useUpdateStudyInDB = vi.fn().mockReturnValue(vi.fn());
 
 export {
     useStudyId,

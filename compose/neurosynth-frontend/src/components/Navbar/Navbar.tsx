@@ -11,7 +11,7 @@ export interface INav {
 }
 
 export const NAVBAR_HEIGHT = 64;
-const AUTH0_AUDIENCE = process.env.REACT_APP_AUTH0_AUDIENCE;
+const AUTH0_AUDIENCE = import.meta.env.VITE_APP_AUTH0_AUDIENCE;
 
 const Navbar: React.FC = (_props) => {
     const navigate = useNavigate();

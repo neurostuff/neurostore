@@ -7,9 +7,12 @@ import { ICurationStubStudy } from 'pages/Curation/Curation.types';
 import { useProjectCurationColumns, useProjectName } from 'pages/Project/store/ProjectStore';
 import { useRef, useState } from 'react';
 import { downloadFile } from '../Curation.helpers';
-const { Cite } = require('@citation-js/core');
-require('@citation-js/plugin-bibtex');
-require('@citation-js/plugin-doi');
+// @ts-ignore
+import { Cite } from '@citation-js/core';
+import '@citation-js/plugin-bibtex';
+import '@citation-js/plugin-doi';
+// require('@citation-js/plugin-bibtex');
+// require('@citation-js/plugin-doi');
 
 const CurationDownloadIncludedStudiesButton: React.FC = () => {
     const [optionsIsOpen, setOptionsIsOpen] = useState(false);

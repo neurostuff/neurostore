@@ -9,17 +9,16 @@ describe('CodeSnippet', () => {
 
     it('should display the text', () => {
         render(<CodeSnippet linesOfCode={['example 1', 'example 2']} />);
-
         expect(screen.getByText('example 1')).toBeInTheDocument();
         expect(screen.getByText('example 2')).toBeInTheDocument();
     });
 
     describe('copy action', () => {
-        jest.useFakeTimers();
+        vi.useFakeTimers();
         beforeEach(() => {
             Object.assign(navigator, {
                 clipboard: {
-                    writeText: jest.fn(() => Promise.resolve()),
+                    writeText: vi.fn(() => Promise.resolve()),
                 },
             });
         });
@@ -35,7 +34,7 @@ describe('CodeSnippet', () => {
 
             act(() => {
                 // set text back to copy
-                jest.advanceTimersByTime(2500);
+                vi.advanceTimersByTime(2500);
             });
 
             copyText = screen.queryByText('copy');

@@ -1,13 +1,14 @@
+import { vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import SearchBar from './SearchBar';
 
-jest.mock('react-router-dom');
+vi.mock('react-router-dom');
 describe('SearchBar Component', () => {
-    const onSearchMock = jest.fn();
+    const onSearchMock = vi.fn();
 
     afterAll(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it('should render', () => {

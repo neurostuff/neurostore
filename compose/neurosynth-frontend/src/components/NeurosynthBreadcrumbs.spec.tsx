@@ -3,13 +3,14 @@ import NeurosynthBreadcrumbs from './NeurosynthBreadcrumbs';
 import userEvent from '@testing-library/user-event';
 import { useNavigate } from 'react-router-dom';
 import { setUnloadHandler } from 'helpers/BeforeUnload.helpers';
+import { vi } from 'vitest';
 
-jest.mock('react-router-dom');
-jest.mock('components/Dialogs/ConfirmationDialog');
+vi.mock('react-router-dom');
+vi.mock('components/Dialogs/ConfirmationDialog');
 
 describe('NeurosynthBreadcrumbs Component', () => {
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
     it('should render', () => {
         render(<NeurosynthBreadcrumbs breadcrumbItems={[]} />);

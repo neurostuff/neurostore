@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { EPropertyType, IMetadataRowModel } from 'components/EditMetadata/EditMetadata.types';
@@ -5,10 +6,10 @@ import { MockThemeProvider } from 'testing/helpers';
 import AddMetadataRow, { getStartValFromType } from './AddMetadataRow';
 
 describe('AddMetadataRow Component', () => {
-    const onAddMetadataRowMock = jest.fn();
+    const onAddMetadataRowMock = vi.fn();
 
     afterEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it('should render', () => {
@@ -155,7 +156,7 @@ describe('AddMetadataRow Component', () => {
     });
 
     it('should show an error message if the key is invalid', () => {
-        const onAddMetadataRowMock = jest.fn();
+        const onAddMetadataRowMock = vi.fn();
         onAddMetadataRowMock.mockReturnValue(false);
 
         render(
@@ -175,7 +176,7 @@ describe('AddMetadataRow Component', () => {
     });
 
     it('should set a new key placeholder text', () => {
-        const onAddMetadataRowMock = jest.fn();
+        const onAddMetadataRowMock = vi.fn();
         onAddMetadataRowMock.mockReturnValue(false);
 
         render(
@@ -192,7 +193,7 @@ describe('AddMetadataRow Component', () => {
     });
 
     it('should set a new value placeholder text', () => {
-        const onAddMetadataRowMock = jest.fn();
+        const onAddMetadataRowMock = vi.fn();
         onAddMetadataRowMock.mockReturnValue(false);
 
         render(

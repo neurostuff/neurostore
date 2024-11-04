@@ -1,21 +1,22 @@
+import { vi } from 'vitest';
 import { useAuth0 } from '@auth0/auth0-react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import NavToolbar from './NavToolbar';
 
-jest.mock('@auth0/auth0-react');
-jest.mock('hooks');
-jest.mock('react-router-dom');
-jest.mock('components/Dialogs/CreateDetailsDialog');
-jest.mock('components/Navbar/NavToolbarPopupSubMenu');
+vi.mock('@auth0/auth0-react');
+vi.mock('hooks');
+vi.mock('react-router-dom');
+vi.mock('components/Dialogs/CreateDetailsDialog');
+vi.mock('components/Navbar/NavToolbarPopupSubMenu');
 
 describe('NavToolbar Component', () => {
     beforeEach(() => {
         useAuth0().isAuthenticated = false;
     });
 
-    const mockLogin = jest.fn();
-    const mockLogout = jest.fn();
+    const mockLogin = vi.fn();
+    const mockLogout = vi.fn();
     it('should render', () => {
         render(<NavToolbar onLogin={mockLogin} onLogout={mockLogout} />);
     });

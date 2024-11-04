@@ -1,9 +1,10 @@
+import { vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useNavigate } from 'react-router-dom';
 import BackButton from './BackButton';
 
-jest.mock('react-router-dom');
+vi.mock('react-router-dom');
 describe('BackButton', () => {
     it('should render', () => {
         render(<BackButton text="test text" path="/some-path" />);

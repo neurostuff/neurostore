@@ -7,12 +7,12 @@ import {
 
 describe('BeforeUnload helpers', () => {
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         window.sessionStorage.clear();
     });
 
     it('should set the unload handler for the project store', () => {
-        const spy = jest.spyOn(window, 'addEventListener');
+        const spy = vi.spyOn(window, 'addEventListener');
         setUnloadHandler('project');
 
         expect(window.sessionStorage.getItem(EUnloadStatus.PROJECTSTORE)).toBe('true');
@@ -24,7 +24,7 @@ describe('BeforeUnload helpers', () => {
     });
 
     it('should set the unload handler for the study store', () => {
-        const spy = jest.spyOn(window, 'addEventListener');
+        const spy = vi.spyOn(window, 'addEventListener');
         setUnloadHandler('study');
 
         expect(window.sessionStorage.getItem(EUnloadStatus.STUDYSTORE)).toBe('true');
@@ -36,7 +36,7 @@ describe('BeforeUnload helpers', () => {
     });
 
     it('should set the unload handler for the annotation store', () => {
-        const spy = jest.spyOn(window, 'addEventListener');
+        const spy = vi.spyOn(window, 'addEventListener');
         setUnloadHandler('annotation');
 
         expect(window.sessionStorage.getItem(EUnloadStatus.ANNOTATIONSTORE)).toBe('true');
@@ -48,7 +48,7 @@ describe('BeforeUnload helpers', () => {
     });
 
     it('should remove the unload handler when all stores are cleared', () => {
-        const spy = jest.spyOn(window, 'removeEventListener');
+        const spy = vi.spyOn(window, 'removeEventListener');
         setUnloadHandler('project');
         setUnloadHandler('study');
         setUnloadHandler('annotation');
@@ -65,7 +65,7 @@ describe('BeforeUnload helpers', () => {
     });
 
     it('should not remove the unload handler if there are still unsaved changes', () => {
-        const spy = jest.spyOn(window, 'removeEventListener');
+        const spy = vi.spyOn(window, 'removeEventListener');
         setUnloadHandler('project');
         setUnloadHandler('study');
 

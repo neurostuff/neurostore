@@ -1,3 +1,4 @@
+import { vi, Mock } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useGetExtractionSummary, useGetStudysetById, useUserCanEdit } from 'hooks';
@@ -12,17 +13,17 @@ import { useNavigate } from 'react-router-dom';
 import EditStudyToolbar from './EditStudyToolbar';
 import { setUnloadHandler } from 'helpers/BeforeUnload.helpers';
 
-jest.mock('hooks');
-jest.mock('pages/Study/hooks/useSaveStudy.tsx');
-jest.mock('react-router-dom');
-jest.mock('pages/Project/store/ProjectStore.ts');
-jest.mock('pages/Study/store/StudyStore.ts');
-jest.mock('pages/Study/components/EditStudySwapVersionButton.tsx');
-jest.mock('components/Dialogs/ConfirmationDialog.tsx');
+vi.mock('hooks');
+vi.mock('pages/Study/hooks/useSaveStudy.tsx');
+vi.mock('react-router-dom');
+vi.mock('pages/Project/store/ProjectStore.ts');
+vi.mock('pages/Study/store/StudyStore.ts');
+vi.mock('pages/Study/components/EditStudySwapVersionButton.tsx');
+vi.mock('components/Dialogs/ConfirmationDialog.tsx');
 
 describe('EditStudyToolbar Component', () => {
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         window.sessionStorage.clear();
     });
 
@@ -117,10 +118,10 @@ describe('EditStudyToolbar Component', () => {
                     studies: ['study-1', 'study-2', 'study-3', 'study-4'],
                 })
             );
-            (useStudyId as jest.Mock).mockReturnValue('study-2');
-            (useProjectExtractionStudysetId as jest.Mock).mockReturnValue('studysetid');
-            (useProjectId as jest.Mock).mockReturnValue('projectid');
-            (useUserCanEdit as jest.Mock).mockReturnValue(true);
+            (useStudyId as Mock).mockReturnValue('study-2');
+            (useProjectExtractionStudysetId as Mock).mockReturnValue('studysetid');
+            (useProjectId as Mock).mockReturnValue('projectid');
+            (useUserCanEdit as Mock).mockReturnValue(true);
 
             render(<EditStudyToolbar />);
             // ACT
@@ -142,10 +143,10 @@ describe('EditStudyToolbar Component', () => {
                 })
             );
             setUnloadHandler('study'); // simulate an unsaved change
-            (useStudyId as jest.Mock).mockReturnValue('study-2');
-            (useProjectExtractionStudysetId as jest.Mock).mockReturnValue('studysetid');
-            (useProjectId as jest.Mock).mockReturnValue('projectid');
-            (useUserCanEdit as jest.Mock).mockReturnValue(true);
+            (useStudyId as Mock).mockReturnValue('study-2');
+            (useProjectExtractionStudysetId as Mock).mockReturnValue('studysetid');
+            (useProjectId as Mock).mockReturnValue('projectid');
+            (useUserCanEdit as Mock).mockReturnValue(true);
 
             render(<EditStudyToolbar />);
             // ACT
@@ -159,12 +160,12 @@ describe('EditStudyToolbar Component', () => {
 
         it('should move to previous study if there is no state received from the table', () => {
             // ARRANGE
-            (useStudyId as jest.Mock).mockReturnValue('study-3');
-            (useProjectExtractionStudysetId as jest.Mock).mockReturnValue('studysetid');
-            (useProjectId as jest.Mock).mockReturnValue('projectid');
-            (useUserCanEdit as jest.Mock).mockReturnValue(true);
+            (useStudyId as Mock).mockReturnValue('study-3');
+            (useProjectExtractionStudysetId as Mock).mockReturnValue('studysetid');
+            (useProjectId as Mock).mockReturnValue('projectid');
+            (useUserCanEdit as Mock).mockReturnValue(true);
 
-            (useGetStudysetById as jest.Mock).mockReturnValue({
+            (useGetStudysetById as Mock).mockReturnValue({
                 data: { studies: [{ id: 'study-2' }, { id: 'study-3' }, { id: 'study-4' }] },
             });
 
@@ -179,12 +180,12 @@ describe('EditStudyToolbar Component', () => {
 
         it('should disable the back button if on the first study', () => {
             // ARRANGE
-            (useStudyId as jest.Mock).mockReturnValue('study-2');
-            (useProjectExtractionStudysetId as jest.Mock).mockReturnValue('studysetid');
-            (useProjectId as jest.Mock).mockReturnValue('projectid');
-            (useUserCanEdit as jest.Mock).mockReturnValue(true);
+            (useStudyId as Mock).mockReturnValue('study-2');
+            (useProjectExtractionStudysetId as Mock).mockReturnValue('studysetid');
+            (useProjectId as Mock).mockReturnValue('projectid');
+            (useUserCanEdit as Mock).mockReturnValue(true);
 
-            (useGetStudysetById as jest.Mock).mockReturnValue({
+            (useGetStudysetById as Mock).mockReturnValue({
                 data: { studies: [{ id: 'study-2' }, { id: 'study-3' }, { id: 'study-4' }] },
             });
 
@@ -207,10 +208,10 @@ describe('EditStudyToolbar Component', () => {
                     studies: ['study-1', 'study-2', 'study-3', 'study-4'],
                 })
             );
-            (useStudyId as jest.Mock).mockReturnValue('study-2');
-            (useProjectExtractionStudysetId as jest.Mock).mockReturnValue('studysetid');
-            (useProjectId as jest.Mock).mockReturnValue('projectid');
-            (useUserCanEdit as jest.Mock).mockReturnValue(true);
+            (useStudyId as Mock).mockReturnValue('study-2');
+            (useProjectExtractionStudysetId as Mock).mockReturnValue('studysetid');
+            (useProjectId as Mock).mockReturnValue('projectid');
+            (useUserCanEdit as Mock).mockReturnValue(true);
 
             render(<EditStudyToolbar />);
             // ACT
@@ -232,10 +233,10 @@ describe('EditStudyToolbar Component', () => {
                 })
             );
             setUnloadHandler('study'); // simulate an unsaved change
-            (useStudyId as jest.Mock).mockReturnValue('study-2');
-            (useProjectExtractionStudysetId as jest.Mock).mockReturnValue('studysetid');
-            (useProjectId as jest.Mock).mockReturnValue('projectid');
-            (useUserCanEdit as jest.Mock).mockReturnValue(true);
+            (useStudyId as Mock).mockReturnValue('study-2');
+            (useProjectExtractionStudysetId as Mock).mockReturnValue('studysetid');
+            (useProjectId as Mock).mockReturnValue('projectid');
+            (useUserCanEdit as Mock).mockReturnValue(true);
 
             render(<EditStudyToolbar />);
             // ACT
@@ -249,12 +250,12 @@ describe('EditStudyToolbar Component', () => {
 
         it('should move to the next study if there is no state received from the table', () => {
             // ARRANGE
-            (useStudyId as jest.Mock).mockReturnValue('study-3');
-            (useProjectExtractionStudysetId as jest.Mock).mockReturnValue('studysetid');
-            (useProjectId as jest.Mock).mockReturnValue('projectid');
-            (useUserCanEdit as jest.Mock).mockReturnValue(true);
+            (useStudyId as Mock).mockReturnValue('study-3');
+            (useProjectExtractionStudysetId as Mock).mockReturnValue('studysetid');
+            (useProjectId as Mock).mockReturnValue('projectid');
+            (useUserCanEdit as Mock).mockReturnValue(true);
 
-            (useGetStudysetById as jest.Mock).mockReturnValue({
+            (useGetStudysetById as Mock).mockReturnValue({
                 data: { studies: [{ id: 'study-2' }, { id: 'study-3' }, { id: 'study-4' }] },
             });
 
@@ -277,10 +278,10 @@ describe('EditStudyToolbar Component', () => {
                     studies: ['study-1', 'study-2', 'study-3', 'study-4'],
                 })
             );
-            (useStudyId as jest.Mock).mockReturnValue('study-4');
-            (useProjectExtractionStudysetId as jest.Mock).mockReturnValue('studysetid');
-            (useProjectId as jest.Mock).mockReturnValue('projectid');
-            (useUserCanEdit as jest.Mock).mockReturnValue(true);
+            (useStudyId as Mock).mockReturnValue('study-4');
+            (useProjectExtractionStudysetId as Mock).mockReturnValue('studysetid');
+            (useProjectId as Mock).mockReturnValue('projectid');
+            (useUserCanEdit as Mock).mockReturnValue(true);
 
             render(<EditStudyToolbar />);
             // ACT

@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import useInputValidation from 'hooks/useInputValidation'; // don't need to mock this as it isn't making any api calls
 import {
     mockAnnotations,
@@ -10,61 +11,61 @@ import {
     mockStudysets,
 } from 'testing/mockData';
 
-const useUpdateAnalysis = jest.fn().mockReturnValue({
+const useUpdateAnalysis = vi.fn().mockReturnValue({
     isLoading: false,
     isError: false,
-    mutate: jest.fn(),
+    mutate: vi.fn(),
 });
 
-const useDeleteAnalysis = jest.fn().mockReturnValue({
+const useDeleteAnalysis = vi.fn().mockReturnValue({
     isLoading: false,
-    mutate: jest.fn(),
+    mutate: vi.fn(),
 });
 
-const useCreateCondition = jest.fn().mockReturnValue({
-    mutate: jest.fn(),
+const useCreateCondition = vi.fn().mockReturnValue({
+    mutate: vi.fn(),
     isLoading: false,
 });
 
-const useGetConditions = jest.fn().mockReturnValue({
+const useGetConditions = vi.fn().mockReturnValue({
     isLoading: false,
     data: mockConditions(),
     isError: false,
 });
 
-const useCreatePoint = jest.fn().mockReturnValue({
+const useCreatePoint = vi.fn().mockReturnValue({
     isLoading: false,
-    mutate: jest.fn(),
+    mutate: vi.fn(),
 });
 
-const useUpdatePoint = jest.fn().mockReturnValue({
+const useUpdatePoint = vi.fn().mockReturnValue({
     isLoading: false,
-    mutate: jest.fn(),
+    mutate: vi.fn(),
 });
 
-const useDeletePoint = jest.fn().mockReturnValue({
+const useDeletePoint = vi.fn().mockReturnValue({
     isLoading: false,
-    mutate: jest.fn(),
+    mutate: vi.fn(),
 });
 
-const useGetStudyById = jest.fn().mockReturnValue({
+const useGetStudyById = vi.fn().mockReturnValue({
     isLoading: false,
     data: mockStudy(),
 });
 
-const useCreateAnalysis = jest.fn().mockReturnValue({
+const useCreateAnalysis = vi.fn().mockReturnValue({
     isLoading: false,
-    mutate: jest.fn(),
+    mutate: vi.fn(),
 });
 
-const useCreateMetaAnalysis = jest.fn().mockReturnValue({
+const useCreateMetaAnalysis = vi.fn().mockReturnValue({
     error: undefined,
     isLoading: false,
     isError: false,
-    createMetaAnalysis: jest.fn().mockReturnValue(Promise.resolve()),
+    createMetaAnalysis: vi.fn().mockReturnValue(Promise.resolve()),
 });
 
-const useGetStudysets = jest.fn().mockReturnValue({
+const useGetStudysets = vi.fn().mockReturnValue({
     error: undefined,
     isLoading: false,
     isError: false,
@@ -77,46 +78,46 @@ const useGetStudysets = jest.fn().mockReturnValue({
     },
 });
 
-const useCreateStudyset = jest.fn().mockReturnValue({
+const useCreateStudyset = vi.fn().mockReturnValue({
     // isLoading: false,
     // isError: false,
-    // mutate: jest.fn(),
+    // mutate: vi.fn(),
     isLoading: false,
     isError: false,
-    mutate: jest.fn(),
+    mutate: vi.fn(),
 });
 
-const useUpdateStudyset = jest.fn().mockReturnValue({
+const useUpdateStudyset = vi.fn().mockReturnValue({
     isLoading: false,
     isError: false,
-    mutate: jest.fn(),
-    mutateAsync: jest.fn().mockReturnValue(mockStudysets()),
+    mutate: vi.fn(),
+    mutateAsync: vi.fn().mockReturnValue(mockStudysets()),
 });
 
-const useUpdateStudy = jest.fn().mockReturnValue({
+const useUpdateStudy = vi.fn().mockReturnValue({
     isLoading: false,
-    mutate: jest.fn(),
+    mutate: vi.fn(),
 });
 
-const useGetAnnotationsByStudysetId = jest.fn().mockReturnValue({
+const useGetAnnotationsByStudysetId = vi.fn().mockReturnValue({
     isLoading: false,
     isError: false,
     data: mockAnnotations(),
 });
 
-const useCreateProject = jest.fn().mockReturnValue({
+const useCreateProject = vi.fn().mockReturnValue({
     isLoading: false,
     isError: false,
-    mutate: jest.fn(),
+    mutate: vi.fn(),
 });
 
-const useDeleteProject = jest.fn().mockReturnValue({
+const useDeleteProject = vi.fn().mockReturnValue({
     isLoading: false,
     isError: false,
-    mutate: jest.fn(),
+    mutate: vi.fn(),
 });
 
-const useGetExtractionSummary = jest.fn().mockReturnValue({
+const useGetExtractionSummary = vi.fn().mockReturnValue({
     savedForLater: 0,
     uncategorized: 0,
     completed: 0,
@@ -126,7 +127,7 @@ const useGetExtractionSummary = jest.fn().mockReturnValue({
 // need to do this to prevent an infinite loop
 const studysetNested = mockStudysetNested();
 const studysetNotNested = mockStudysetNotNested();
-const useGetStudysetById = jest.fn().mockImplementation((studysetId: string, isNested: boolean) => {
+const useGetStudysetById = vi.fn().mockImplementation((studysetId: string, isNested: boolean) => {
     return {
         isLoading: false,
         isError: false,
@@ -134,33 +135,33 @@ const useGetStudysetById = jest.fn().mockImplementation((studysetId: string, isN
     };
 });
 
-const useGetBaseStudyById = jest.fn().mockReturnValue({
+const useGetBaseStudyById = vi.fn().mockReturnValue({
     isLoading: false,
     isError: false,
     data: mockBaseStudy(),
 });
 
-const useGetFullText = jest.fn().mockReturnValue({
+const useGetFullText = vi.fn().mockReturnValue({
     isLoading: false,
     isError: false,
     data: '',
 });
 
-const useCreateStudy = jest.fn().mockReturnValue({
+const useCreateStudy = vi.fn().mockReturnValue({
     isLoading: false,
-    mutate: jest.fn(),
-    mutateAsync: jest.fn().mockReturnValue({
+    mutate: vi.fn(),
+    mutateAsync: vi.fn().mockReturnValue({
         data: mockStudy(),
     }),
 });
 
-const useUpdateAnnotationById = jest.fn().mockReturnValue({
+const useUpdateAnnotationById = vi.fn().mockReturnValue({
     isLoading: false,
-    mutate: jest.fn(),
-    mutateAsync: jest.fn(),
+    mutate: vi.fn(),
+    mutateAsync: vi.fn(),
 });
 
-const useGetProjectById = jest.fn().mockReturnValue({
+const useGetProjectById = vi.fn().mockReturnValue({
     isLoading: false,
     isError: false,
     data: mockProject(),
@@ -176,7 +177,7 @@ const useIsMounted = () => {
     };
 };
 
-const useUserCanEdit = jest.fn().mockReturnValue(true);
+const useUserCanEdit = vi.fn().mockReturnValue(true);
 
 export {
     useCreateAnalysis,

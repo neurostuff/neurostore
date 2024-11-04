@@ -1,24 +1,26 @@
-const useProjectExtractionAnnotationId = jest.fn().mockReturnValue('annotation-id');
+import { vi } from 'vitest';
 
-const useProjectExtractionStudysetId = jest.fn().mockReturnValue('studyset-id');
+const useProjectExtractionAnnotationId = vi.fn().mockReturnValue('annotation-id');
 
-const useProjectId = jest.fn().mockReturnValue('project-id');
+const useProjectExtractionStudysetId = vi.fn().mockReturnValue('studyset-id');
 
-const useProjectExtractionStudyStatus = jest.fn();
+const useProjectId = vi.fn().mockReturnValue('project-id');
 
-const useProjectExtractionStudyStatusList = jest.fn();
+const useProjectExtractionStudyStatus = vi.fn();
 
-const useProjectMetaAnalysisCanEdit = jest.fn().mockReturnValue(true);
+const useProjectExtractionStudyStatusList = vi.fn();
 
-const useProjectExtractionAddOrUpdateStudyListStatus = jest.fn().mockReturnValue(jest.fn());
+const useProjectMetaAnalysisCanEdit = vi.fn().mockReturnValue(true);
 
-const useProjectUser = jest.fn().mockReturnValue('user-id');
+const useProjectExtractionAddOrUpdateStudyListStatus = vi.fn().mockReturnValue(vi.fn());
 
-const useProjectName = jest.fn().mockReturnValue('project-name');
+const useProjectUser = vi.fn().mockReturnValue('user-id');
 
-const useProjectCurationColumns = jest.fn();
+const useProjectName = vi.fn().mockReturnValue('project-name');
 
-const useProjectExtractionReplaceStudyListStatusId = jest.fn().mockReturnValue(jest.fn());
+const useProjectCurationColumns = vi.fn();
+
+const useProjectExtractionReplaceStudyListStatusId = vi.fn().mockReturnValue(vi.fn());
 
 export {
     useProjectExtractionAnnotationId,

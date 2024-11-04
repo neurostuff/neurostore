@@ -24,11 +24,11 @@ export default defineConfig({
     env: {
         auth0Username: 'test-user@gmail.com',
         auth0Password: 'password',
-        auth0ClientId: process.env.REACT_APP_AUTH0_CLIENT_ID,
-        auth0ClientSecret: process.env.REACT_APP_AUTH0_CLIENT_SECRET,
-        auth0Domain: process.env.REACT_APP_AUTH0_DOMAIN,
-        auth0Audience: process.env.REACT_APP_AUTH0_AUDIENCE,
-        neurostoreAPIBaseURL: process.env.REACT_APP_NEUROSTORE_API_DOMAIN,
-        neurosynthAPIBaseURL: process.env.REACT_APP_NEUROSYNTH_API_DOMAIN,
+        auth0ClientId: process.env.VITE_APP_AUTH0_CLIENT_ID,
+        auth0ClientSecret: process.env.VITE_APP_AUTH0_CLIENT_SECRET,
+        auth0Domain: process.env.VITE_APP_AUTH0_DOMAIN,
+        auth0Audience: process.env.VITE_APP_AUTH0_AUDIENCE,
+        neurostoreAPIBaseURL: process.env.VITE_APP_NEUROSTORE_API_DOMAIN,
+        neurosynthAPIBaseURL: process.env.VITE_APP_NEUROSYNTH_API_DOMAIN,
     },
 });

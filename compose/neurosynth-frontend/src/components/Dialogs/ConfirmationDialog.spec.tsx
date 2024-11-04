@@ -1,12 +1,13 @@
+import { vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import ConfirmationDialog from './ConfirmationDialog';
 
 describe('ConfirmationDialog', () => {
-    const mockOnClose = jest.fn();
+    const mockOnClose = vi.fn();
 
     afterAll(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it('should render', () => {

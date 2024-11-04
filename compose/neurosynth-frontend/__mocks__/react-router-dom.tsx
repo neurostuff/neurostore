@@ -1,12 +1,13 @@
+import { vi } from 'vitest';
 import { NavigateProps } from 'react-router-dom';
 
-const useParams = jest.fn().mockReturnValue({
+const useParams = vi.fn().mockReturnValue({
     projectId: 'test-project-id',
 });
 
-const useNavigate = jest.fn().mockReturnValue(jest.fn());
+const useNavigate = vi.fn().mockReturnValue(vi.fn());
 
-const useLocation = jest.fn().mockReturnValue({
+const useLocation = vi.fn().mockReturnValue({
     location: {
         search: '',
     },

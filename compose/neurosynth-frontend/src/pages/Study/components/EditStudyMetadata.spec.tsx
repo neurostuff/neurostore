@@ -1,7 +1,8 @@
+import { vi } from 'vitest';
 import { RenderResult } from '@testing-library/react';
 
-jest.mock('@auth0/auth0-react');
-jest.mock('hooks');
+vi.mock('@auth0/auth0-react');
+vi.mock('hooks');
 
 describe('EditStudyMetadata Component', () => {
     let renderResult: RenderResult;
@@ -32,7 +33,7 @@ describe('EditStudyMetadata Component', () => {
     });
 
     // afterEach(() => {
-    //     jest.clearAllMocks();
+    //     vi.clearAllMocks();
     // });
 
     // it('should render', () => {
@@ -253,7 +254,7 @@ describe('EditStudyMetadata Component', () => {
     //     });
 
     //     it('should be removed on save', async () => {
-    //         (useUpdateStudy().mutate as jest.Mock).mockImplementation(
+    //         (useUpdateStudy().mutate as vi.Mock).mockImplementation(
     //             (
     //                 _studyArg: { studyId: string; study: Partial<StudyRequest> },
     //                 optional: { onSuccess: () => void }

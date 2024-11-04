@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { EPropertyType } from './EditMetadata.types';
@@ -5,9 +6,9 @@ import { MockThemeProvider } from 'testing/helpers';
 import EditMetadataValue from './EditMetadataValue';
 
 describe('EditMetadataValue Component', () => {
-    const onEditMock = jest.fn();
+    const onEditMock = vi.fn();
     afterEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     describe('EditMetadataBoolean Component', () => {

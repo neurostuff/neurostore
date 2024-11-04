@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "baseUrl": "src",
-    "target": "es6",
+    "target": "ESNext",
     "lib": ["dom", "dom.iterable", "es6", "esnext"],
     "allowJs": true,
     "skipLibCheck": true,
@@ -16,7 +16,7 @@
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
-    "types": ["cypress", "node", "jest"]
+    "types": ["cypress", "node", "vite/client", "vitest/globals"]
   },
-  "include": ["src", "cypress"]
+  "include": ["src", "cypress", "vite-env.d.ts", "*.config.ts", "__mocks__"]
 }
