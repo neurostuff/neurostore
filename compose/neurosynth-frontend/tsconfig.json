@@ -1,22 +1,29 @@
 {
-  "compilerOptions": {
-    "baseUrl": "src",
-    "target": "ESNext",
-    "lib": ["dom", "dom.iterable", "es6", "esnext"],
-    "allowJs": true,
-    "skipLibCheck": true,
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "strict": true,
-    "forceConsistentCasingInFileNames": true,
-    "noFallthroughCasesInSwitch": true,
-    "module": "esnext",
-    "moduleResolution": "node",
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "noEmit": true,
-    "jsx": "react-jsx",
-    "types": ["cypress", "node", "vite/client", "vitest/globals"]
-  },
-  "include": ["src", "cypress", "vite-env.d.ts", "*.config.ts", "__mocks__"]
+    "compilerOptions": {
+        "baseUrl": "src",
+        "target": "ESNext",
+        "lib": ["dom", "dom.iterable", "es6", "esnext"],
+        "allowJs": true,
+        "skipLibCheck": true,
+        "esModuleInterop": true,
+        "allowSyntheticDefaultImports": true,
+        "strict": true,
+        "forceConsistentCasingInFileNames": true,
+        "noFallthroughCasesInSwitch": true,
+        "module": "esnext",
+        "moduleResolution": "node",
+        "resolveJsonModule": true,
+        "isolatedModules": true,
+        "noEmit": true,
+        "jsx": "react-jsx",
+        "types": ["cypress", "node", "vite/client", "vitest/globals"]
+    },
+    "include": [
+        "src",
+        "cypress",
+        "vite-env.d.ts",
+        "*.config.ts",
+        "__mocks__",
+        "eslint.config.js"
+    ]
 }
