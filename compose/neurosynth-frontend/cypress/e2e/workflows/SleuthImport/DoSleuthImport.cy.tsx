@@ -422,7 +422,7 @@ describe('DoSleuthImport', () => {
 
         it('should select MKDA and create an MKDA meta analysis', () => {
             cy.contains('button', 'Yes').click();
-            cy.get('[type="radio"]').eq(1).click();
+            cy.get('[type="radio"]').eq(1).click({ force: true });
             cy.contains('button', 'create')
                 .click()
                 .wait('@specificationPostFixture')

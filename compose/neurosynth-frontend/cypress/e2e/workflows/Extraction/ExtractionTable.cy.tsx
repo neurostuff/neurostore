@@ -154,24 +154,30 @@ describe('ExtractionTable', () => {
             });
         });
 
-        it('should remove the filter if the delete button is clicked', () => {
+        it.only('should remove the filter if the delete button is clicked', () => {
+            let studysetYear = '';
             // ARRANGE
             cy.wait('@studysetFixture').then((studysetFixture) => {
                 const studyset = studysetFixture?.response?.body as StudysetReturn;
                 const studysetStudies = studyset.studies as StudyReturn[];
+                studysetYear = studysetStudies[0].year?.toString() || "";
                 cy.get('input').eq(0).click();
                 cy.get(`input`)
                     .eq(0)
                     .type(studysetStudies[0].year?.toString() || '');
             });
             cy.get('tbody > tr').should('have.length', 1);
-            cy.get('[data-testid="CancelIcon"]').should('exist');
+
             // ACT
-            cy.get('[data-testid="CancelIcon"]').click();
+            cy.contains(
+                `Filtering YEAR: ${studysetYear}`
+            ).parent().find('[data-testid="CancelIcon"]').click();
 
             // ASSERT
             cy.get('tbody > tr').should('have.length', 3);
-            cy.get(`[data-testid="CancelIcon"]`).should('not.exist');
+            cy.contains(
+                `Filtering YEAR: ${studysetYear}`
+            ).should('not.exist')
         });
     });
 

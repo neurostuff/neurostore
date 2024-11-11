@@ -1,13 +1,14 @@
+import { vi } from 'vitest';
 import { render, RenderResult } from '@testing-library/react';
 import EditStudyDetails from './EditStudyDetails';
 
-jest.mock('hooks');
+vi.mock('hooks');
 
 describe('EditStudyDetails Component', () => {
     let renderResult: RenderResult;
 
     afterAll(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it('should be truthy', () => {
@@ -167,7 +168,7 @@ describe('EditStudyDetails Component', () => {
     // });
 
     // it('should not indicate save changes after we call the API and update', async () => {
-    //     (useUpdateStudy().mutate as jest.Mock).mockImplementation(
+    //     (useUpdateStudy().mutate as vi.Mock).mockImplementation(
     //         (
     //             _studyArg: { studyId: string; study: Partial<StudyRequest> },
     //             optional: { onSuccess: () => void }

@@ -89,10 +89,10 @@ theme.typography.h6 = {
     },
 };
 
-const domain = process.env.REACT_APP_AUTH0_DOMAIN as string;
-const clientId = process.env.REACT_APP_AUTH0_CLIENT_ID as string;
-const audience = process.env.REACT_APP_AUTH0_AUDIENCE as string;
-const env = process.env.REACT_APP_ENV as 'DEV' | 'STAGING' | 'PROD';
+const domain = import.meta.env.VITE_APP_AUTH0_DOMAIN as string;
+const clientId = import.meta.env.VITE_APP_AUTH0_CLIENT_ID as string;
+const audience = import.meta.env.VITE_APP_AUTH0_AUDIENCE as string;
+const env = import.meta.env.VITE_APP_ENV as 'DEV' | 'STAGING' | 'PROD';
 
 if (env === 'PROD') {
     Sentry.init({

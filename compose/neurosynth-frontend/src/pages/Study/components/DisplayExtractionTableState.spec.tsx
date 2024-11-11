@@ -1,3 +1,4 @@
+import { vi, Mock } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import DisplayExtractionTableState from './DisplayExtractionTableState';
 import { retrieveExtractionTableState } from 'pages/Extraction/components/ExtractionTable.helpers';
@@ -7,23 +8,23 @@ import userEvent from '@testing-library/user-event';
 import { useNavigate } from 'react-router-dom';
 import { setUnloadHandler } from 'helpers/BeforeUnload.helpers';
 
-jest.mock('pages/Project/store/ProjectStore');
-jest.mock('pages/Study/store/StudyStore');
-jest.mock('components/Dialogs/ConfirmationDialog');
-jest.mock('hooks');
-jest.mock('pages/Extraction/components/ExtractionTable.helpers');
-jest.mock('react-router-dom');
+vi.mock('pages/Project/store/ProjectStore');
+vi.mock('pages/Study/store/StudyStore');
+vi.mock('components/Dialogs/ConfirmationDialog');
+vi.mock('hooks');
+vi.mock('pages/Extraction/components/ExtractionTable.helpers');
+vi.mock('react-router-dom');
 
 describe('DisplayExtractionTableState Component', () => {
     beforeEach(() => {
-        jest.clearAllMocks();
-        (retrieveExtractionTableState as jest.Mock).mockReturnValue({
+        vi.clearAllMocks();
+        (retrieveExtractionTableState as Mock).mockReturnValue({
             columnFilters: [],
             studies: ['study-1', 'study-2', 'study-3'],
             sorting: [],
         });
 
-        (useGetStudyById as jest.Mock).mockImplementation((studyId: string) => ({
+        (useGetStudyById as Mock).mockImplementation((studyId: string) => ({
             isLoading: false,
             data: {
                 name: studyId,
@@ -36,7 +37,7 @@ describe('DisplayExtractionTableState Component', () => {
     });
 
     it('should render the previous navigation button', () => {
-        (useStudyId as jest.Mock).mockReturnValue('study-2');
+        (useStudyId as Mock).mockReturnValue('study-2');
 
         render(<DisplayExtractionTableState />);
 
@@ -44,7 +45,7 @@ describe('DisplayExtractionTableState Component', () => {
     });
 
     it('should render the next navigation button', () => {
-        (useStudyId as jest.Mock).mockReturnValue('study-2');
+        (useStudyId as Mock).mockReturnValue('study-2');
 
         render(<DisplayExtractionTableState />);
 
@@ -52,7 +53,7 @@ describe('DisplayExtractionTableState Component', () => {
     });
 
     it('navigates to the previous study', () => {
-        (useStudyId as jest.Mock).mockReturnValue('study-2');
+        (useStudyId as Mock).mockReturnValue('study-2');
 
         render(<DisplayExtractionTableState />);
 
@@ -65,7 +66,7 @@ describe('DisplayExtractionTableState Component', () => {
     });
 
     it('navigates to the next study', () => {
-        (useStudyId as jest.Mock).mockReturnValue('study-2');
+        (useStudyId as Mock).mockReturnValue('study-2');
 
         render(<DisplayExtractionTableState />);
 
@@ -78,7 +79,7 @@ describe('DisplayExtractionTableState Component', () => {
     });
 
     it('should not show the previous button if there is no previous study', () => {
-        (useStudyId as jest.Mock).mockReturnValue('study-1');
+        (useStudyId as Mock).mockReturnValue('study-1');
 
         render(<DisplayExtractionTableState />);
 
@@ -86,7 +87,7 @@ describe('DisplayExtractionTableState Component', () => {
     });
 
     it('should not show the next button if there is no previous study', () => {
-        (useStudyId as jest.Mock).mockReturnValue('study-3');
+        (useStudyId as Mock).mockReturnValue('study-3');
 
         render(<DisplayExtractionTableState />);
 
@@ -94,7 +95,7 @@ describe('DisplayExtractionTableState Component', () => {
     });
 
     it('shows the confirmation dialog', () => {
-        (useStudyId as jest.Mock).mockReturnValue('study-1');
+        (useStudyId as Mock).mockReturnValue('study-1');
         setUnloadHandler('study');
         render(<DisplayExtractionTableState />);
 
@@ -103,7 +104,7 @@ describe('DisplayExtractionTableState Component', () => {
     });
 
     it('should navigate after confirming the dialog', () => {
-        (useStudyId as jest.Mock).mockReturnValue('study-1');
+        (useStudyId as Mock).mockReturnValue('study-1');
         setUnloadHandler('study');
         render(<DisplayExtractionTableState />);
 
@@ -117,7 +118,7 @@ describe('DisplayExtractionTableState Component', () => {
     });
 
     it('should not navigate after cancelling the dialog', () => {
-        (useStudyId as jest.Mock).mockReturnValue('study-1');
+        (useStudyId as Mock).mockReturnValue('study-1');
         setUnloadHandler('annotation');
         render(<DisplayExtractionTableState />);
 

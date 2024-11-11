@@ -1,3 +1,4 @@
+import { vi, Mock} from 'vitest';
 import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useCreateStudy, useUpdateAnnotationById, useUpdateStudyset } from 'hooks';
@@ -20,16 +21,16 @@ import {
 } from 'testing/mockData';
 import useSaveStudy from './useSaveStudy';
 
-jest.mock('react-query');
-jest.mock('@auth0/auth0-react');
-jest.mock('notistack');
-jest.mock('react-router-dom');
-jest.mock('pages/Project/store/ProjectStore');
-jest.mock('pages/Study/store/StudyStore');
-jest.mock('stores/AnnotationStore.getters');
-jest.mock('stores/AnnotationStore.actions');
-jest.mock('hooks');
-jest.mock('utils/api');
+vi.mock('react-query');
+vi.mock('@auth0/auth0-react');
+vi.mock('notistack');
+vi.mock('react-router-dom');
+vi.mock('pages/Project/store/ProjectStore');
+vi.mock('pages/Study/store/StudyStore');
+vi.mock('stores/AnnotationStore.getters');
+vi.mock('stores/AnnotationStore.actions');
+vi.mock('hooks');
+vi.mock('utils/api');
 
 // Using a dummy component in order to test a custom hook
 const DummyComponent = () => {
@@ -45,7 +46,7 @@ const DummyComponent = () => {
 
 describe('useSaveStudy hook', () => {
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
     it('should render', () => {
         render(<DummyComponent />);
@@ -53,7 +54,7 @@ describe('useSaveStudy hook', () => {
 
     it('should throw an error for duplicate analyses', async () => {
         const mockAnalysesWithDuplicates = mockAnalyses();
-        (useStudyAnalyses as jest.Mock).mockReturnValue([
+        (useStudyAnalyses as Mock).mockReturnValue([
             ...mockAnalysesWithDuplicates,
             mockAnalysesWithDuplicates[0],
         ]);
@@ -84,7 +85,7 @@ describe('useSaveStudy hook', () => {
             },
         ];
 
-        (useStudyAnalyses as jest.Mock).mockReturnValue(mockAnalysesWithoutPoints);
+        (useStudyAnalyses as Mock).mockReturnValue(mockAnalysesWithoutPoints);
 
         render(<DummyComponent />);
 
@@ -100,9 +101,9 @@ describe('useSaveStudy hook', () => {
     it('should save the study and annotation when both have been edited', async () => {
         const mockAnalysesWithXYZ = mockAnalyses();
         mockAnalysesWithXYZ[0].points = mockStorePoints();
-        (useStudyAnalyses as jest.Mock).mockReturnValue(mockAnalysesWithXYZ);
-        (useStudyHasBeenEdited as jest.Mock).mockReturnValue(true);
-        (useAnnotationIsEdited as jest.Mock).mockReturnValue(true);
+        (useStudyAnalyses as Mock).mockReturnValue(mockAnalysesWithXYZ);
+        (useStudyHasBeenEdited as Mock).mockReturnValue(true);
+        (useAnnotationIsEdited as Mock).mockReturnValue(true);
 
         render(<DummyComponent />);
 
@@ -117,9 +118,9 @@ describe('useSaveStudy hook', () => {
     it('should only save the study if the annotation has not been edited', async () => {
         const mockAnalysesWithXYZ = mockAnalyses();
         mockAnalysesWithXYZ[0].points = mockStorePoints();
-        (useStudyAnalyses as jest.Mock).mockReturnValue(mockAnalysesWithXYZ);
-        (useStudyHasBeenEdited as jest.Mock).mockReturnValue(true);
-        (useAnnotationIsEdited as jest.Mock).mockReturnValue(false);
+        (useStudyAnalyses as Mock).mockReturnValue(mockAnalysesWithXYZ);
+        (useStudyHasBeenEdited as Mock).mockReturnValue(true);
+        (useAnnotationIsEdited as Mock).mockReturnValue(false);
 
         render(<DummyComponent />);
 
@@ -134,9 +135,9 @@ describe('useSaveStudy hook', () => {
     it('should only save the annotation if the study has not been edited', async () => {
         const mockAnalysesWithXYZ = mockAnalyses();
         mockAnalysesWithXYZ[0].points = mockStorePoints();
-        (useStudyAnalyses as jest.Mock).mockReturnValue(mockAnalysesWithXYZ);
-        (useStudyHasBeenEdited as jest.Mock).mockReturnValue(false);
-        (useAnnotationIsEdited as jest.Mock).mockReturnValue(true);
+        (useStudyAnalyses as Mock).mockReturnValue(mockAnalysesWithXYZ);
+        (useStudyHasBeenEdited as Mock).mockReturnValue(false);
+        (useAnnotationIsEdited as Mock).mockReturnValue(true);
 
         render(<DummyComponent />);
 
@@ -152,13 +153,13 @@ describe('useSaveStudy hook', () => {
         const nestedMockStudyset = mockStudysetNotNested();
         const mockStudyWithSameIdInStudyset = mockStoreStudy();
         mockStudyWithSameIdInStudyset.id = (nestedMockStudyset.studies as string[])[0];
-        (useStudy as jest.Mock).mockReturnValue(mockStudyWithSameIdInStudyset);
-        (useStudyHasBeenEdited as jest.Mock).mockReturnValue(true);
-        (useStudyUser as jest.Mock).mockReturnValue('different-user');
-        (useAnnotationNotes as jest.Mock).mockReturnValue(mockAnnotations()[0].notes);
+        (useStudy as Mock).mockReturnValue(mockStudyWithSameIdInStudyset);
+        (useStudyHasBeenEdited as Mock).mockReturnValue(true);
+        (useStudyUser as Mock).mockReturnValue('different-user');
+        (useAnnotationNotes as Mock).mockReturnValue(mockAnnotations()[0].notes);
         const mockAnalysesWithXYZ = mockAnalyses();
         mockAnalysesWithXYZ[0].points = mockStorePoints();
-        (useStudyAnalyses as jest.Mock).mockReturnValue(mockAnalysesWithXYZ);
+        (useStudyAnalyses as Mock).mockReturnValue(mockAnalysesWithXYZ);
 
         render(<DummyComponent />);
 

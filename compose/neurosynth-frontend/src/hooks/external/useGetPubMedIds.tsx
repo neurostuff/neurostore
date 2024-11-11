@@ -283,7 +283,7 @@ const hexCodeToHTMLEntity = (hexCode: string): string => {
 
 // Documentation: https://dataguide.nlm.nih.gov/eutilities/utilities.html#efetch
 export const EFETCH_URL = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi';
-const PUBMED_API_KEY = process.env.REACT_APP_PUBMED_KEY as string;
+const PUBMED_API_KEY = import.meta.env.VITE_APP_PUBMED_KEY as string;
 export const PUBMED_ARTICLE_URL_PREFIX = 'https://pubmed.ncbi.nlm.nih.gov/';
 export const PUBMED_CENTRAL_ARTICLE_URL_PREFIX = 'https://ncbi.nlm.nih.gov/pmc/articles/';
 

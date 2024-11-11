@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { fireEvent, render, screen, waitForElementToBeRemoved } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import NavToolbarPopupSubMenu from './NavToolbarPopupSubMenu';
@@ -7,12 +8,12 @@ describe('NavToolbarPopupSubMenu', () => {
         {
             label: 'test-primary-text-1',
             secondary: 'test-secondary-text-1',
-            onClick: jest.fn(),
+            onClick: vi.fn(),
         },
         {
             label: 'test-primary-text-2',
             secondary: 'test-secondary-text-2',
-            onClick: jest.fn(),
+            onClick: vi.fn(),
         },
     ];
 

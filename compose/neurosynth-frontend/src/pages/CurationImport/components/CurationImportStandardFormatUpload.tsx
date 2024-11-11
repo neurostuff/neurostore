@@ -8,10 +8,11 @@ import { v4 as uuidv4 } from 'uuid';
 import CurationImportBaseStyles from 'pages/CurationImport/components/CurationImport.styles';
 import { ICurationStubStudy } from 'pages/Curation/Curation.types';
 import CurationPopupIdentificationSourceSelector from 'pages/Curation/components/CurationPopupIdentificationSourceSelector';
-const { Cite } = require('@citation-js/core');
-require('@citation-js/plugin-enw');
-require('@citation-js/plugin-bibtex');
-require('@citation-js/plugin-ris');
+// @ts-ignore
+import { Cite } from '@citation-js/core';
+import '@citation-js/plugin-enw';
+import '@citation-js/plugin-bibtex';
+import '@citation-js/plugin-ris';
 
 enum EValidationReason {
     EMPTY = 'Input is empty',

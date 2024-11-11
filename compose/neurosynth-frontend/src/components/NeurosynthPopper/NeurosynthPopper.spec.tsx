@@ -1,9 +1,10 @@
+import { vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import NeurosynthPopper from './NeurosynthPopper';
 
 describe('NeurosynthPopper', () => {
-    const mockOnClickAway = jest.fn();
+    const mockOnClickAway = vi.fn();
 
     const MockParentComponent: React.FC<{ open: boolean }> = (props) => {
         const mockButton = document.createElement('button');
@@ -24,11 +25,11 @@ describe('NeurosynthPopper', () => {
     };
 
     beforeEach(() => {
-        jest.useFakeTimers();
+        vi.useFakeTimers();
     });
 
     afterEach(() => {
-        jest.useRealTimers();
+        vi.useRealTimers();
     });
 
     it('should call the onClickAway handler', () => {
@@ -36,7 +37,7 @@ describe('NeurosynthPopper', () => {
         /**
          * We must mock the timers due to a bug with react: https://github.com/mui-org/material-ui/issues/24783
          */
-        jest.runAllTimers();
+        vi.runAllTimers();
         userEvent.click(document.body);
         expect(mockOnClickAway).toHaveBeenCalled();
     });

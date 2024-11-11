@@ -30,7 +30,7 @@ import { MutateOptions } from 'react-query';
 import API from 'utils/api';
 import { v4 as uuidv4 } from 'uuid';
 
-const PUBMED_API_KEY = process.env.REACT_APP_PUBMED_API_KEY as string;
+const PUBMED_API_KEY = import.meta.env.VITE_APP_PUBMED_API_KEY as string;
 
 export interface ISleuthStub {
     doi?: string;

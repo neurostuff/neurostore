@@ -1,11 +1,12 @@
+import { vi } from 'vitest';
 import { render } from '@testing-library/react';
 import Visualizer from './Visualizer';
 
 describe('Visualizer Component', () => {
     const mockPapaya = {
         Container: {
-            startPapaya: jest.fn(),
-            resetViewer: jest.fn(),
+            startPapaya: vi.fn(),
+            resetViewer: vi.fn(),
         },
     };
     beforeAll(() => {
@@ -14,7 +15,7 @@ describe('Visualizer Component', () => {
     });
 
     afterAll(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it('should render', () => {

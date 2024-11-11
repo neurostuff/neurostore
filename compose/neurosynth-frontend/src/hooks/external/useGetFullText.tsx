@@ -2,7 +2,7 @@ import axios from 'axios';
 import { AxiosResponse } from 'axios';
 import { useQuery } from 'react-query';
 
-const env = process.env.REACT_APP_ENV as 'DEV' | 'STAGING' | 'PROD';
+const env = import.meta.env.VITE_APP_ENV as 'DEV' | 'STAGING' | 'PROD';
 
 interface ISemanticScholarResponse {
     data: {

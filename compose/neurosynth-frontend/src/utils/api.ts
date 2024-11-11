@@ -29,10 +29,10 @@ export type NeurostoreAnnotation = AnnotationBase &
     AnnotationReturnRelationships &
     AnnotationCommon;
 
-const env = process.env.REACT_APP_ENV as 'DEV' | 'STAGING' | 'PROD';
+const env = import.meta.env.VITE_APP_ENV as 'DEV' | 'STAGING' | 'PROD';
 
-const NEUROSTORE_API_DOMAIN = process.env.REACT_APP_NEUROSTORE_API_DOMAIN as string;
-const NEUROSYNTH_API_DOMAIN = process.env.REACT_APP_NEUROSYNTH_API_DOMAIN as string;
+const NEUROSTORE_API_DOMAIN = import.meta.env.VITE_APP_NEUROSTORE_API_DOMAIN as string;
+const NEUROSYNTH_API_DOMAIN = import.meta.env.VITE_APP_NEUROSYNTH_API_DOMAIN as string;
 
 let TOKEN = '';
 const neurostoreConfig: Configuration = new Configuration({

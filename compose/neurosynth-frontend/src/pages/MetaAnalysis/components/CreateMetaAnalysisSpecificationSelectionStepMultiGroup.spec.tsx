@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { EPropertyType } from 'components/EditMetadata/EditMetadata.types';
@@ -8,8 +9,8 @@ import {
 import CreateMetaAnalysisSpecificationSelectionStepMultiGroup from 'pages/MetaAnalysis/components/CreateMetaAnalysisSpecificationSelectionStepMultiGroup';
 import { DEFAULT_REFERENCE_DATASETS } from 'pages/MetaAnalysis/components/SelectAnalysesComponent.types';
 
-jest.mock('pages/MetaAnalysis/hooks/useInclusionColumnOptions');
-jest.mock('components/NeurosynthAutocomplete/NeurosynthAutocomplete');
+vi.mock('pages/MetaAnalysis/hooks/useInclusionColumnOptions');
+vi.mock('components/NeurosynthAutocomplete/NeurosynthAutocomplete');
 
 describe('CreateMetaAnalysisSpecificationSelectionStepMultiGroup', () => {
     const algorithmMock: IAlgorithmSelection = {
@@ -25,7 +26,7 @@ describe('CreateMetaAnalysisSpecificationSelectionStepMultiGroup', () => {
         selectionValue: 'selection-value',
     };
 
-    const mockSelectValue = jest.fn();
+    const mockSelectValue = vi.fn();
 
     it('should render', () => {
         render(

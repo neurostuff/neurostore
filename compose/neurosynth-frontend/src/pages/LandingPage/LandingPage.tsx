@@ -12,7 +12,7 @@ import LandingPageStyles from './LandingPage.styles';
 import PlatformComparisonTable from 'pages/LandingPage/components/PlatformComparisonTable';
 import { useNavigate } from 'react-router';
 
-const AUTH0_AUDIENCE = process.env.REACT_APP_AUTH0_AUDIENCE;
+const AUTH0_AUDIENCE = import.meta.env.VITE_APP_AUTH0_AUDIENCE;
 
 const LandingPage = () => {
     const { isAuthenticated, loginWithPopup } = useAuth0();

@@ -1,19 +1,20 @@
+import { vi } from 'vitest';
 import { useAuth0 } from '@auth0/auth0-react';
 import { render, screen, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import TextEdit from './TextEdit';
 
-jest.mock('@auth0/auth0-react');
+vi.mock('@auth0/auth0-react');
 
 describe('TextEdit', () => {
-    const mockOnSave = jest.fn();
+    const mockOnSave = vi.fn();
 
     beforeEach(() => {
         useAuth0().isAuthenticated = true;
     });
 
     afterAll(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it('should render', () => {

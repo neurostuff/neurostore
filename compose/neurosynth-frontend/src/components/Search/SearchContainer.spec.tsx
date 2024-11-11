@@ -1,55 +1,45 @@
+import { vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import SearchContainer from './SearchContainer';
 
-jest.mock('components/Search/SearchBar.tsx');
+vi.mock('components/Search/SearchBar.tsx');
 
-jest.mock('@mui/material/Pagination', () => {
-    return {
-        __esModule: true,
-        default: (props: any) => {
-            return (
-                <>
-                    <span>page: {props.page}</span>
-                    <span>count: {props.count}</span>
-                    <span data-testid="mock-pagination-styles">
-                        styles: {JSON.stringify(props.sx)}
-                    </span>
-                    <button
-                        data-testid="trigger-right-paginate"
-                        onClick={props.onChange(undefined, 2)}
-                    ></button>
-                    <button
-                        data-testid="trigger-set-page"
-                        onClick={props.onChange(undefined, 5)}
-                    ></button>
-                </>
-            );
-        },
-    };
-});
-
-jest.mock('@mui/material/TablePagination', () => {
-    return {
-        __esModule: true,
-        default: (props: any) => {
-            return (
-                <>
-                    <span>rows per page: {props.rowsPerPage}</span>
-                    <button
-                        data-testid="trigger-rows-per-page-change"
-                        onClick={props.onRowsPerPageChange({ target: { value: 25 } }, 25)}
-                    ></button>
-                </>
-            );
-        },
-    };
-});
+vi.mock('@mui/material', async (props: any) => ({
+    ...(await vi.importActual('@mui/material')),
+    Pagination: (props: any) => (
+        <>
+            <span>page: {props.page}</span>
+            <span>count: {props.count}</span>
+            <span data-testid="mock-pagination-styles">
+                styles: {JSON.stringify(props.sx)}
+            </span>
+            <button
+                data-testid="trigger-right-paginate"
+                onClick={props.onChange(undefined, 2)}
+            ></button>
+            <button
+                data-testid="trigger-set-page"
+                onClick={props.onChange(undefined, 5)}
+            ></button>
+        </>
+    ),
+    TablePagination: (props: any) => (
+        <>
+            <span>rows per page: {props.rowsPerPage}</span>
+            <button
+                data-testid="trigger-rows-per-page-change"
+                onClick={props.onRowsPerPageChange({ target: { value: 25 } }, 25)}
+            ></button>
+        </>
+        
+    )
+}));
 
 describe('SearchContainer Component', () => {
-    const mockOnPageChange = jest.fn();
-    const mockOnRowsPerPageChange = jest.fn();
-    const mockOnSearch = jest.fn();
+    const mockOnPageChange = vi.fn();
+    const mockOnRowsPerPageChange = vi.fn();
+    const mockOnSearch = vi.fn();
 
     it('should render', () => {
         render(
@@ -191,7 +181,7 @@ describe('SearchContainer Component', () => {
         );
 
         const searchButton = screen.getByTestId('trigger-search');
-        expect(searchButton).toHaveStyle('background-color: yellow');
+        expect(searchButton).toHaveStyle('background-color: rgb(255, 255, 0)');
     });
 
     it('should set the pagination selector styles', () => {
