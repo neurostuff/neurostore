@@ -7,8 +7,6 @@ import eslintPrettier from 'eslint-plugin-prettier/recommended';
 import globals from 'globals';
 import eslintReactRefresh from 'eslint-plugin-react-refresh';
 
-// export default [npm rueslint.configs.recommended, ...teslint.configs.recommended, abc.configs.recommended];
-
 export default [
     eslint.configs.recommended,
     ...teslint.configs.recommended,
@@ -38,29 +36,3 @@ export default [
         },
     },
 ];
-
-// export default teslint.config(
-//     eslint.configs.recommended,
-//     ...teslint.configs.recommended
-//     // ...reactHooksRecommended.configs.recommended
-// );
-// ...reactHooksRecommended.configs.recommended,
-// ...cypressRecommended.configs.recommended,
-// ...prettierRecommended.configs.recommended
-// {
-//     plugins: {
-//         'react-refresh': reactRefresh,
-//         prettier: prettierRecommended,
-//         'typescript-eslint': teslint,
-//     },
-//     rules: {
-//         'react-refresh/only-export-components': 'warn',
-//     },
-//     languageOptions: {
-//         ecmaVersion: 2022,
-//         globals: {
-//             ...globals.browser,
-//         },
-//     },
-//     parser: typescriptEslintParser,
-// },
