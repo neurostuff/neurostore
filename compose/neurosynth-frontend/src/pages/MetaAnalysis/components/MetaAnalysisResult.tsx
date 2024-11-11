@@ -5,10 +5,10 @@ import { ResultReturn } from 'neurosynth-compose-typescript-sdk';
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import DisplayMetaAnalysisResult from './DisplayMetaAnalysisResult';
-import DisplayMetaAnalysisSpecification from './MetaAnalysisSpecification';
 import MetaAnalysisResultStatusAlert from './MetaAnalysisResultStatusAlert';
+import DisplayMetaAnalysisSpecification from './MetaAnalysisSpecification';
 
-const MetaAnalysisResult: React.FC = (props) => {
+const MetaAnalysisResult: React.FC = () => {
     const { projectId, metaAnalysisId } = useParams<{
         projectId: string;
         metaAnalysisId: string;
