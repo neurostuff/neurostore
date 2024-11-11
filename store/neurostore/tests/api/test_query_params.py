@@ -1,6 +1,7 @@
 import pytest
 from ...models import Study
 from ...schemas.data import StudysetSchema, StudySchema, AnalysisSchema, StringOrNested
+from ..conftest import valid_queries, invalid_queries
 
 
 @pytest.mark.parametrize("nested", ["true", "false"])
@@ -99,3 +100,17 @@ def test_multiword_queries(auth_client, ingest_neurosynth, session):
 
     multi_word_search = auth_client.get(f"/api/studies/?search={multiple_words}")
     assert multi_word_search.status_code == 200
+
+
+@pytest.mark.parametrize("query, expected", valid_queries)
+def test_valid_pubmed_queries(query, expected, auth_client, ingest_neurosynth, session):
+    search = auth_client.get(f"/api/studies/?search={query}")
+    assert search.status_code == 200
+
+
+@pytest.mark.parametrize("query, expected", invalid_queries)
+def test_invalid_pubmed_queries(
+    query, expected, auth_client, ingest_neurosynth, session
+):
+    search = auth_client.get(f"/api/studies/?search={query}")
+    assert search.status_code == 400

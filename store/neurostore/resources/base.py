@@ -8,6 +8,8 @@ from connexion.context import context
 from flask import abort, request, current_app  # jsonify
 from flask.views import MethodView
 
+from psycopg2 import errors
+
 import sqlalchemy as sa
 import sqlalchemy.sql.expression as sae
 from sqlalchemy.orm import (
@@ -21,7 +23,7 @@ from webargs import fields
 
 from ..core import cache
 from ..database import db
-from .utils import get_current_user
+from .utils import get_current_user, validate_search_query, pubmed_to_tsquery
 from ..models import (
     StudysetStudy,
     AnnotationAnalysis,
@@ -613,7 +615,11 @@ class ListView(BaseView):
         if s is not None and s.isdigit():
             q = q.filter_by(pmid=s)
         elif s is not None and self._fulltext_fields:
-            tsquery = sa.func.websearch_to_tsquery("english", s)
+            try:
+                validate_search_query(s)
+            except errors.SyntaxError as e:
+                abort(400, description=e.args[0])
+            tsquery = pubmed_to_tsquery(s)
             q = q.filter(m._ts_vector.op("@@")(tsquery))
 
         # Alternatively (or in addition), search on individual fields.
