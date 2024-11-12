@@ -97,9 +97,11 @@ def test_multiword_queries(auth_client, ingest_neurosynth, session):
 
     single_word_search = auth_client.get(f"/api/studies/?search={single_word}")
     assert single_word_search.status_code == 200
+    assert len(single_word_search.json()["results"]) > 0
 
     multi_word_search = auth_client.get(f"/api/studies/?search={multiple_words}")
     assert multi_word_search.status_code == 200
+    assert len(multi_word_search.json()["results"]) > 0
 
 
 @pytest.mark.parametrize("query, expected", valid_queries)
