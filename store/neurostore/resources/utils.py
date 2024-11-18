@@ -57,6 +57,8 @@ def validate_search_query(query: str) -> bool:
     Returns:
         bool: True if the query is valid, False otherwise.
     """
+    query = query.upper()
+
     # Check for valid parentheses
     if not validate_parentheses(query):
         raise errors.SyntaxError("Unmatched parentheses")
@@ -64,6 +66,9 @@ def validate_search_query(query: str) -> bool:
     # Check for valid query end
     if not validate_query_end(query):
         raise errors.SyntaxError("Query cannot end with an operator")
+
+    if not validate_multiple_operators(query):
+        raise errors.SyntaxError("Consecutive operators are not allowed")
 
     return True
 
@@ -95,6 +100,16 @@ def validate_query_end(query: str) -> bool:
 
     if query.strip().split(" ")[-1] in operators:
         return False
+    return True
+
+
+def validate_multiple_operators(query: str) -> bool:
+    """Validate that there are no consecutive operators in a query."""
+    operators = ("AND", "OR", "NOT", "&", "|", "&!")
+    query = query.strip().split(" ")
+    for i in range(len(query) - 1):
+        if query[i] in operators and query[i + 1] in operators:
+            return False
     return True
 
 
