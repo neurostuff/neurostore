@@ -602,6 +602,9 @@ invalid_queries = [
         'OR ("ASD")) AND (("decision*" OR "Dec',
         "Unmatched parentheses",
     ),
+    (
+        'smoking AND NOT memory', "Consecutive operators are not allowed"
+    )
 ]
 
 valid_queries = [
