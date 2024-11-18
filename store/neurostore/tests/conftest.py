@@ -597,6 +597,7 @@ invalid_queries = [
         "Unmatched parentheses",
     ),
     ('"autism" OR "ASD" OR "autistic" OR ', "Query cannot end with an operator"),
+    ("memory and", "Query cannot end with an operator"),
     (
         '(("Autism Spectrum Disorder" OR "autism spectrum disorder") OR ("Autism" OR "autism") '
         'OR ("ASD")) AND (("decision*" OR "Dec',

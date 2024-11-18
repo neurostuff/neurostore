@@ -57,6 +57,8 @@ def validate_search_query(query: str) -> bool:
     Returns:
         bool: True if the query is valid, False otherwise.
     """
+    query = query.upper()
+
     # Check for valid parentheses
     if not validate_parentheses(query):
         raise errors.SyntaxError("Unmatched parentheses")
