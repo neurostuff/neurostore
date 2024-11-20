@@ -4,10 +4,10 @@ import { Box, IconButton, Link } from "@mui/material";
 import BaseNavigationStyles from "pages/BaseNavigation/BaseNavigation.styles";
 import { useState } from "react";
 
-const localStorageDownBannerKey = "hide-downbanner-nov-6-2024";
+const localStorageBannerKey = "hide-banner-nov-20-2024";
 
-const Downbanner: React.FC = () => {
-  const shouldHide = !!localStorage.getItem(localStorageDownBannerKey);
+const Banner: React.FC = () => {
+  const shouldHide = !!localStorage.getItem(localStorageBannerKey);
   const [hideBanner, setHideBanner] = useState(shouldHide);
 
   if (hideBanner) return <></>;
@@ -34,12 +34,12 @@ const Downbanner: React.FC = () => {
       >
         <Box display="flex" alignItems="center">
           <EmojiPeopleIcon sx={{ mr: "1rem" }} />
-          Join us next Wednesday, November 13th at 19:00 ET for the inaugural
+          Join us next Wednesday, December 4th 2024 at 10:00 ET for the
           Neurosynth Compose Virtual Town Hall!{" "}
           <Link
             color="primary.contrastText"
             sx={{ marginLeft: "4px" }}
-            href="https://smmo1.mjt.lu/lnk/AUUAAFUYj_MAAAAYAkQAAMQWKMIAAAABy9QAAd5pACejZgBnKVfVT2hXpDCyQC6H3aykCv_XyAAbJus/1/mr5Wo-0t0LWaATWN2bFHLA/aHR0cHM6Ly90YWxseS5zby9yLzN5cWIwNA"
+            href="https://tally.so/r/nWePVR"
             target="_blank"
           >
             Click here to register
@@ -47,7 +47,7 @@ const Downbanner: React.FC = () => {
         </Box>
         <IconButton
           onClick={() => {
-            localStorage.setItem(localStorageDownBannerKey, "true");
+            localStorage.setItem(localStorageBannerKey, "true");
             setHideBanner(true);
           }}
           sx={{
@@ -62,4 +62,4 @@ const Downbanner: React.FC = () => {
   );
 };
 
-export default Downbanner;
+export default Banner;
