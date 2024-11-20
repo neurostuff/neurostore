@@ -52,7 +52,7 @@ const Banner: React.FC = () => {
           }}
           sx={{
             padding: 0,
-            ":hover": { backgroundColor: "secondary.light" },
+            ":hover": { backgroundColor: "gray" },
           }}
         >
           <Cancel />
