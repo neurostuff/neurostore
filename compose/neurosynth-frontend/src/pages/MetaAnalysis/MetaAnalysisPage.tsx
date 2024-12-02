@@ -1,5 +1,4 @@
-import { Box, Button, Chip, Typography } from '@mui/material';
-import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
+import { Box, Chip, Typography } from '@mui/material';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import TextEdit from 'components/TextEdit/TextEdit';
@@ -9,18 +8,14 @@ import useGetSpecificationById from 'hooks/metaAnalyses/useGetSpecificationById'
 import useUpdateMetaAnalysis from 'hooks/metaAnalyses/useUpdateMetaAnalysis';
 import useUserCanEdit from 'hooks/useUserCanEdit';
 import { ResultReturn, SpecificationReturn, StudysetReturn } from 'neurosynth-compose-typescript-sdk';
-import EditSpecificationDialog from 'pages/MetaAnalysis/components/EditSpecificationDialog';
 import MetaAnalysisPageStyles from 'pages/MetaAnalysis/MetaAnalysisPage.styles';
 import { useInitProjectStoreIfRequired, useProjectName, useProjectUser } from 'pages/Project/store/ProjectStore';
-import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { NeurostoreAnnotation } from 'utils/api';
 import MetaAnalysisResult from './components/MetaAnalysisResult';
-import DisplayMetaAnalysisSpecification from './components/MetaAnalysisSpecification';
-import RunMetaAnalysisInstructions from './components/RunMetaAnalysisInstructions';
-import MetaAnalysisResultStatusAlert from './components/MetaAnalysisResultStatusAlert';
+import NoMetaAnalysisResultDisplay from './components/NoMetaAnalysisResultDisplay';
 
-const MetaAnalysisPage: React.FC = (props) => {
+const MetaAnalysisPage: React.FC = () => {
     // const { startTour } = useGetTour('MetaAnalysisPage');
     const { projectId, metaAnalysisId } = useParams<{
         projectId: string;
@@ -63,9 +58,7 @@ const MetaAnalysisPage: React.FC = (props) => {
 
     const viewingThisPageFromProject = !!projectId;
 
-    const [editSpecificationDialogIsOpen, setEditSpecificationDialogIsOpen] = useState(false);
-
-    const updateName = (updatedName: string, _label: string) => {
+    const updateName = (updatedName: string) => {
         if (metaAnalysis?.id && specification?.id && studyset?.id && annotation?.id) {
             updateMetaAnalysisName({
                 metaAnalysisId: metaAnalysis.id,
@@ -76,7 +69,7 @@ const MetaAnalysisPage: React.FC = (props) => {
         }
     };
 
-    const updateDescription = (updatedDescription: string, _label: string) => {
+    const updateDescription = (updatedDescription: string) => {
         if (metaAnalysis?.id && specification?.id && studyset?.id && annotation?.id) {
             updateMetaAnalysisDescription({
                 metaAnalysisId: metaAnalysis.id,
@@ -177,66 +170,7 @@ const MetaAnalysisPage: React.FC = (props) => {
                     </Box>
                 </Box>
 
-                {noMetaAnalysisResults ? (
-                    <>
-                        <MetaAnalysisResultStatusAlert
-                            metaAnalysis={metaAnalysis}
-                            metaAnalysisResult={metaAnalysisResult}
-                        />
-                        <NeurosynthAccordion
-                            elevation={0}
-                            expandIconColor={editsAllowed ? 'secondary.main' : 'primary.main'}
-                            sx={{
-                                border: '2px solid',
-                                borderColor: editsAllowed ? 'secondary.main' : 'primary.main',
-                            }}
-                            accordionSummarySx={{
-                                ':hover': {
-                                    backgroundColor: '#f2f2f2',
-                                },
-                            }}
-                            TitleElement={
-                                <Typography
-                                    sx={{
-                                        color: editsAllowed ? 'secondary.main' : 'primary.main',
-                                    }}
-                                >
-                                    {editsAllowed ? 'View/Edit' : 'View'} Meta-Analysis Specification
-                                </Typography>
-                            }
-                        >
-                            <Box>
-                                <EditSpecificationDialog
-                                    isOpen={editSpecificationDialogIsOpen}
-                                    onCloseDialog={() => setEditSpecificationDialogIsOpen(false)}
-                                />
-                                <Button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setEditSpecificationDialogIsOpen(true);
-                                    }}
-                                    color="secondary"
-                                    variant="contained"
-                                    size="small"
-                                    sx={{ marginBottom: '1rem' }}
-                                    disableElevation
-                                    disabled={!editsAllowed}
-                                >
-                                    Edit Specification
-                                </Button>
-                            </Box>
-                            <DisplayMetaAnalysisSpecification
-                                metaAnalysisId={metaAnalysis?.id || ''}
-                                projectId={projectId || ''}
-                            />
-                        </NeurosynthAccordion>
-                        <Box sx={{ marginTop: '1rem' }}>
-                            <RunMetaAnalysisInstructions metaAnalysisId={metaAnalysis?.id || ''} />
-                        </Box>
-                    </>
-                ) : (
-                    <MetaAnalysisResult />
-                )}
+                {noMetaAnalysisResults ? <NoMetaAnalysisResultDisplay /> : <MetaAnalysisResult />}
             </StateHandlerComponent>
         </>
     );

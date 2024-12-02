@@ -6,8 +6,8 @@ let niivue: Niivue;
 
 const NiiVueVisualizer: React.FC<{ imageURL: string }> = ({ imageURL }) => {
     const canvasRef = useRef(null);
-    const [thresholdPositive, setThresholdPositive] = useState(0);
-    const [thresholdNegative, setThresholdNegative] = useState(0);
+    const [thresholdPositive, setThresholdPositive] = useState(3);
+    const [thresholdNegative, setThresholdNegative] = useState(-3);
 
     const handleUpdateThresholdPositive = (event: Event, newValue: number | number[]) => {
         if (!niivue) return;
@@ -16,10 +16,10 @@ const NiiVueVisualizer: React.FC<{ imageURL: string }> = ({ imageURL }) => {
         niivue.updateGLVolume();
     };
 
-    const handkleUpdateThresholdNegative = (event: Event, newValue: number | number[]) => {
+    const handleUpdateThresholdNegative = (event: Event, newValue: number | number[]) => {
         if (!niivue) return;
         setThresholdNegative(newValue as number);
-        niivue.volumes[1].cal_minNeg = -2;
+        niivue.volumes[1].cal_minNeg = -6;
         niivue.volumes[1].cal_maxNeg = newValue as number;
         niivue.updateGLVolume();
     };
@@ -29,18 +29,21 @@ const NiiVueVisualizer: React.FC<{ imageURL: string }> = ({ imageURL }) => {
 
         const volumes = [
             {
+                // TODO: need to check if TAL vs MNI and set accordingly
                 url: 'https://neurovault.org/static/images/GenericMNI.nii.gz',
+                // url: 'https://niivue.github.io/niivue/images/fslmean.nii.gz',
                 colormap: 'gray',
                 opacity: 1,
             },
             {
                 url: imageURL,
+                // url: 'https://niivue.github.io/niivue/images/fslt.nii.gz',
                 colorMap: 'warm',
                 colormapNegative: 'winter',
-                cal_min: 0,
-                cal_max: 2,
-                cal_minNeg: -1,
-                cal_maxNeg: -2,
+                cal_min: 3,
+                cal_max: 6,
+                cal_minNeg: -6,
+                cal_maxNeg: -3,
                 opacity: 1,
             },
         ];
@@ -56,11 +59,10 @@ const NiiVueVisualizer: React.FC<{ imageURL: string }> = ({ imageURL }) => {
         niivue.addVolumesFromUrl(volumes).then(() => {
             niivue.volumes[1].alphaThreshold = 0;
             niivue.volumes[0].colorbarVisible = false;
-            niivue.volumes[1].cal_minNeg = -1.0;
-            niivue.volumes[1].cal_maxNeg = -2.0;
             niivue.opts.multiplanarShowRender = SHOW_RENDER.ALWAYS;
             niivue.setInterpolation(true);
             niivue.updateGLVolume();
+            console.log(niivue);
         });
     }, [imageURL]);
 
@@ -73,10 +75,10 @@ const NiiVueVisualizer: React.FC<{ imageURL: string }> = ({ imageURL }) => {
                     </Typography>
                     <Slider
                         valueLabelDisplay="auto"
-                        min={-2}
+                        min={-6}
                         step={0.01}
                         max={0}
-                        onChange={handkleUpdateThresholdNegative}
+                        onChange={handleUpdateThresholdNegative}
                         value={thresholdNegative}
                     ></Slider>
                 </Box>
@@ -88,7 +90,7 @@ const NiiVueVisualizer: React.FC<{ imageURL: string }> = ({ imageURL }) => {
                         valueLabelDisplay="auto"
                         min={0}
                         step={0.01}
-                        max={2}
+                        max={6}
                         onChange={handleUpdateThresholdPositive}
                         value={thresholdPositive}
                     ></Slider>
