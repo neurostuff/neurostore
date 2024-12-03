@@ -1,11 +1,13 @@
 import { Cancel } from '@mui/icons-material';
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
-import { Box, IconButton } from '@mui/material';
+import EmojiPeopleIcon from '@mui/icons-material/EmojiPeople';
+import { Box, IconButton, Link } from '@mui/material';
 import BaseNavigationStyles from 'pages/BaseNavigation/BaseNavigation.styles';
 import { useState } from 'react';
 
-const Downbanner: React.FC = () => {
-    const shouldHide = !!localStorage.getItem('hide-downbanner-sep-13-2024');
+const localStorageBannerKey = 'hide-banner-nov-20-2024';
+
+const Banner: React.FC = () => {
+    const shouldHide = !!localStorage.getItem(localStorageBannerKey);
     const [hideBanner, setHideBanner] = useState(shouldHide);
 
     if (hideBanner) return <></>;
@@ -13,7 +15,7 @@ const Downbanner: React.FC = () => {
     return (
         <Box
             sx={{
-                backgroundColor: 'secondary.main',
+                backgroundColor: 'primary.dark',
                 color: 'primary.contrastText',
                 width: '100%',
                 paddingY: '0.5rem',
@@ -31,16 +33,26 @@ const Downbanner: React.FC = () => {
                 ]}
             >
                 <Box display="flex" alignItems="center">
-                    <ErrorOutlineIcon sx={{ mr: '1rem' }} />
-                    Neurosynth-compose will be undergoing planned maintenance and will be offline on
-                    friday (Sep/13/2024)
+                    <EmojiPeopleIcon sx={{ mr: '1rem' }} />
+                    Join us next Wednesday, December 4th 2024 at 10:00 ET for the Neurosynth Compose Virtual Town Hall!{' '}
+                    <Link
+                        color="primary.contrastText"
+                        sx={{ marginLeft: '4px' }}
+                        href="https://tally.so/r/nWePVR"
+                        target="_blank"
+                    >
+                        Click here to register
+                    </Link>
                 </Box>
                 <IconButton
                     onClick={() => {
-                        localStorage.setItem('hide-downbanner-sep-13-2024', 'true');
+                        localStorage.setItem(localStorageBannerKey, 'true');
                         setHideBanner(true);
                     }}
-                    sx={{ padding: 0, ':hover': { backgroundColor: 'secondary.light' } }}
+                    sx={{
+                        padding: 0,
+                        ':hover': { backgroundColor: 'gray' },
+                    }}
                 >
                     <Cancel />
                 </IconButton>
@@ -49,4 +61,4 @@ const Downbanner: React.FC = () => {
     );
 };
 
-export default Downbanner;
+export default Banner;
