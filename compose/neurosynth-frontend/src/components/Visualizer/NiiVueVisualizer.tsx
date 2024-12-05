@@ -6,7 +6,7 @@ let niivue: Niivue;
 
 const NiiVueVisualizer: React.FC<{ imageURL: string }> = ({ imageURL }) => {
     const canvasRef = useRef(null);
-    const [softThreshold, setSoftThresold] = useState(false);
+    const [softThreshold, setSoftThresold] = useState(true);
     const [showNegatives, setShowNegatives] = useState(false);
     const [showCrosshairs, setShowCrosshairs] = useState(true);
     const [threshold, setThreshold] = useState<{
@@ -104,8 +104,8 @@ const NiiVueVisualizer: React.FC<{ imageURL: string }> = ({ imageURL }) => {
 
         niivue.attachToCanvas(canvasRef.current);
         niivue.addVolumesFromUrl(volumes).then(() => {
-            niivue.volumes[1].alphaThreshold = 0;
-            niivue.overlayOutlineWidth = 0;
+            niivue.overlayOutlineWidth = 2;
+            niivue.volumes[1].alphaThreshold = 5;
 
             niivue.volumes[0].colorbarVisible = false;
             niivue.volumes[1].colormapNegative = '';
@@ -119,7 +119,7 @@ const NiiVueVisualizer: React.FC<{ imageURL: string }> = ({ imageURL }) => {
 
             setThreshold({
                 min: 0,
-                max: largestAbsoluteValue + 0.1,
+                max: Math.round((largestAbsoluteValue + 0.1) * 100) / 100,
                 value: startingValue,
             });
             niivue.volumes[1].cal_min = startingValue;
