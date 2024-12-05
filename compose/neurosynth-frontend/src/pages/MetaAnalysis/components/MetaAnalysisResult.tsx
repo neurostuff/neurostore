@@ -1,11 +1,8 @@
 import { Box, Tab, Tabs, Typography } from '@mui/material';
 import { useGetMetaAnalysisById } from 'hooks';
-import useGetMetaAnalysisResultById from 'hooks/metaAnalyses/useGetMetaAnalysisResultById';
-import { ResultReturn } from 'neurosynth-compose-typescript-sdk';
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
-import DisplayMetaAnalysisResult from './DisplayMetaAnalysisResult';
-import MetaAnalysisResultStatusAlert from './MetaAnalysisResultStatusAlert';
+import DisplayMetaAnalysisResults from './DisplayMetaAnalysisResults';
 import DisplayMetaAnalysisSpecification from './MetaAnalysisSpecification';
 
 const MetaAnalysisResult: React.FC = () => {
@@ -14,12 +11,6 @@ const MetaAnalysisResult: React.FC = () => {
         metaAnalysisId: string;
     }>();
     const { data: metaAnalysis } = useGetMetaAnalysisById(metaAnalysisId);
-    const { data: metaAnalysisResult } = useGetMetaAnalysisResultById(
-        metaAnalysis?.results && metaAnalysis.results.length
-            ? (metaAnalysis.results[metaAnalysis.results.length - 1] as ResultReturn).id
-            : undefined
-    );
-
     const [tab, setTab] = useState(0);
 
     return (
@@ -54,13 +45,9 @@ const MetaAnalysisResult: React.FC = () => {
             </Tabs>
 
             {tab === 0 ? (
-                <>
-                    <MetaAnalysisResultStatusAlert
-                        metaAnalysis={metaAnalysis}
-                        metaAnalysisResult={metaAnalysisResult}
-                    />
-                    <DisplayMetaAnalysisResult metaAnalysis={metaAnalysis} metaAnalysisResult={metaAnalysisResult} />
-                </>
+                <Box>
+                    <DisplayMetaAnalysisResults metaAnalysis={metaAnalysis} />
+                </Box>
             ) : (
                 <Box data-tour="MetaAnalysisPage-1" sx={{ marginBottom: '4rem', marginTop: '1rem' }}>
                     <Typography variant="h6" sx={{ marginBottom: '1rem' }}>

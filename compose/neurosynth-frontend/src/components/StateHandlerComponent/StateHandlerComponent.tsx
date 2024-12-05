@@ -13,11 +13,7 @@ export interface IStateHandlerComponent {
 
 const StateHandlerComponent: React.FC<IStateHandlerComponent> = (props) => {
     if (props.isError) {
-        return (
-            <Typography sx={{ color: 'error.main' }}>
-                {props.errorMessage || 'There was an error'}
-            </Typography>
-        );
+        return <Typography sx={{ color: 'error.main' }}>{props.errorMessage || 'There was an error'}</Typography>;
     }
 
     if (props.isLoading) {
