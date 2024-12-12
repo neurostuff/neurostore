@@ -3,7 +3,7 @@ import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccord
 import DisplayMetaAnalysisSpecification from './MetaAnalysisSpecification';
 import EditSpecificationDialog from './EditSpecificationDialog';
 import MetaAnalysisResultStatusAlert from './MetaAnalysisResultStatusAlert';
-import { useUserCanEdit } from 'hooks';
+import { useGetMetaAnalysisById, useUserCanEdit } from 'hooks';
 import { useProjectUser } from 'pages/Project/store/ProjectStore';
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
@@ -14,17 +14,19 @@ function NoMetaAnalysisResultDisplay() {
         projectId: string;
         metaAnalysisId: string;
     }>();
+    const { data: metaAnalysis } = useGetMetaAnalysisById(metaAnalysisId);
     const projectUser = useProjectUser();
     const editsAllowed = useUserCanEdit(projectUser || undefined);
     const [editSpecificationDialogIsOpen, setEditSpecificationDialogIsOpen] = useState(false);
 
     return (
         <>
-            <MetaAnalysisResultStatusAlert metaAnalysis={undefined} metaAnalysisResult={undefined} />
+            <MetaAnalysisResultStatusAlert metaAnalysis={metaAnalysis} metaAnalysisResult={undefined} />
             <NeurosynthAccordion
                 elevation={0}
                 expandIconColor={editsAllowed ? 'secondary.main' : 'primary.main'}
                 sx={{
+                    marginTop: '1rem',
                     border: '2px solid',
                     borderColor: editsAllowed ? 'secondary.main' : 'primary.main',
                 }}
