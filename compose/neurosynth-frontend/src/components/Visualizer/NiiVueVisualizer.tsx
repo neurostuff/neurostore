@@ -1,11 +1,17 @@
-import { Box, Checkbox, Slider, Typography } from '@mui/material';
+import { Box, Button, Checkbox, Link, Slider, Typography } from '@mui/material';
 import { ChangeEvent, useEffect, useRef, useState } from 'react';
 import { Niivue, SHOW_RENDER } from '@niivue/niivue';
+import { Download, OpenInNew } from '@mui/icons-material';
+import ImageIcon from '@mui/icons-material/Image';
 
 let niivue: Niivue;
 
-const NiiVueVisualizer: React.FC<{ imageURL: string }> = ({ imageURL }) => {
-    const canvasRef = useRef(null);
+const NiiVueVisualizer: React.FC<{ file: string; filename: string; neurovaultLink?: string }> = ({
+    file,
+    filename,
+    neurovaultLink,
+}) => {
+    const canvasRef = useRef<HTMLCanvasElement>(null);
     const [softThreshold, setSoftThresold] = useState(true);
     const [showNegatives, setShowNegatives] = useState(false);
     const [showCrosshairs, setShowCrosshairs] = useState(true);
@@ -84,7 +90,7 @@ const NiiVueVisualizer: React.FC<{ imageURL: string }> = ({ imageURL }) => {
                 opacity: 1,
             },
             {
-                url: imageURL,
+                url: file,
                 // url: 'https://niivue.github.io/niivue/images/fslt.nii.gz',
                 colorMap: 'warm',
                 cal_min: 0, // default
@@ -128,12 +134,17 @@ const NiiVueVisualizer: React.FC<{ imageURL: string }> = ({ imageURL }) => {
             niivue.setInterpolation(true);
             niivue.updateGLVolume();
         });
-    }, [imageURL]);
+    }, [file]);
+
+    const handleDownloadImage = () => {
+        if (!niivue) return;
+        niivue.saveScene(filename + '.png');
+    };
 
     return (
         <Box>
             <Box sx={{ marginBottom: '10px', display: 'flex', justifyContent: 'space-between' }}>
-                <Box width="300px">
+                <Box width="250px">
                     <Typography gutterBottom={false}>Threshold</Typography>
                     <Slider
                         valueLabelDisplay="auto"
@@ -144,21 +155,63 @@ const NiiVueVisualizer: React.FC<{ imageURL: string }> = ({ imageURL }) => {
                         value={threshold.value}
                     ></Slider>
                 </Box>
-                <Box>
-                    <Typography gutterBottom={false}>Soft Threshold</Typography>
-                    <Checkbox checked={softThreshold} onChange={handleToggleSoftThreshold} />
-                </Box>
-                <Box>
-                    <Typography gutterBottom={false}>Show Negatives</Typography>
-                    <Checkbox checked={showNegatives} onChange={handleToggleNegatives} />
-                </Box>
-                <Box>
-                    <Typography gutterBottom={false}>Show Crosshairs</Typography>
-                    <Checkbox value={showCrosshairs} checked={showCrosshairs} onChange={handleToggleShowCrosshairs} />
+                <Box display="flex">
+                    <Box width="100px">
+                        <Typography gutterBottom={false}>Soft Threshold</Typography>
+                        <Checkbox checked={softThreshold} onChange={handleToggleSoftThreshold} />
+                    </Box>
+                    <Box width="100px">
+                        <Typography gutterBottom={false}>Show Negatives</Typography>
+                        <Checkbox checked={showNegatives} onChange={handleToggleNegatives} />
+                    </Box>
+                    <Box width="100px">
+                        <Typography gutterBottom={false}>Show Crosshairs</Typography>
+                        <Checkbox
+                            value={showCrosshairs}
+                            checked={showCrosshairs}
+                            onChange={handleToggleShowCrosshairs}
+                        />
+                    </Box>
                 </Box>
             </Box>
             <Box sx={{ height: '300px' }}>
                 <canvas ref={canvasRef} />
+            </Box>
+            <Box display="flex" alignItems="center" justifyContent="space-between">
+                <Box>
+                    <Button
+                        size="small"
+                        variant="contained"
+                        endIcon={<Download />}
+                        href={file}
+                        sx={{ marginTop: '0.5rem', marginRight: '0.5rem' }}
+                    >
+                        Download NIfTI
+                    </Button>
+                    <Button
+                        size="small"
+                        variant="contained"
+                        onClick={handleDownloadImage}
+                        endIcon={<ImageIcon />}
+                        sx={{ marginTop: '0.5rem' }}
+                    >
+                        Download image
+                    </Button>
+                </Box>
+                {neurovaultLink && (
+                    <Button
+                        component={Link}
+                        sx={{ marginTop: '0.5rem' }}
+                        href={neurovaultLink.includes('/api') ? neurovaultLink.replace(/\/api/, '') : neurovaultLink}
+                        rel="noreferrer"
+                        size="small"
+                        target="_blank"
+                        disableElevation
+                    >
+                        Open in neurovault
+                        <OpenInNew sx={{ marginLeft: '4px' }} fontSize="small" />
+                    </Button>
+                )}
             </Box>
         </Box>
     );

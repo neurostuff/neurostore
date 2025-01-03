@@ -1,20 +1,17 @@
-import { Download, OpenInNew } from '@mui/icons-material';
-import { Box, Button, Link, List, ListItemButton, ListItemText, Typography } from '@mui/material';
-import NiiVueVisualizer from 'components/Visualizer/NiiVueVisualizer';
-import { MetaAnalysisReturn, NeurovaultFile, ResultReturn } from 'neurosynth-compose-typescript-sdk';
-import MetaAnalysisResultStatusAlert from './MetaAnalysisResultStatusAlert';
-import useGetMetaAnalysisResultById from 'hooks/metaAnalyses/useGetMetaAnalysisResultById';
-import { useEffect, useMemo, useState } from 'react';
+import { Box, List, ListItemButton, ListItemText, Typography } from '@mui/material';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
-import useGetNeurovaultImages, { INeurovault } from 'hooks/metaAnalyses/useGetNeurovault';
-import DisplayParsedNiMareFile, { NimareOutputs, parseNimareFileName } from './DisplayParsedNiMareFile';
-import ImageIcon from '@mui/icons-material/Image';
+import NiiVueVisualizer from 'components/Visualizer/NiiVueVisualizer';
+import { useGetMetaAnalysisResultById, useGetNeurovaultImages } from 'hooks';
+import { INeurovault } from 'hooks/metaAnalyses/useGetNeurovaultImages';
+import { MetaAnalysisReturn, NeurovaultFile, ResultReturn } from 'neurosynth-compose-typescript-sdk';
+import { useEffect, useMemo, useState } from 'react';
+import { NimareOutputs, parseNimareFileName } from '../Nimare.helpers';
+import DisplayParsedNiMareFile from './DisplayParsedNiMareFile';
+import MetaAnalysisResultStatusAlert from './MetaAnalysisResultStatusAlert';
 
 const DisplayMetaAnalysisResults: React.FC<{
     metaAnalysis: MetaAnalysisReturn | undefined;
 }> = (props) => {
-    // const [] = useState();
-
     // Each result represents a run. We just need to get the last item to get the latest run
     const metaAnalysisResults = (props.metaAnalysis?.results || []) as ResultReturn[];
     const { data, isLoading, isError } = useGetMetaAnalysisResultById(
@@ -32,19 +29,21 @@ const DisplayMetaAnalysisResults: React.FC<{
     } = useGetNeurovaultImages(neurovaultFileURLs);
     const [selectedNeurovaultImage, setSelectedNeurovaultImage] = useState<INeurovault>();
 
-    useEffect(() => {
-        if (!neurovaultFiles) return;
-        setSelectedNeurovaultImage(neurovaultFiles[0]);
-    }, [neurovaultFiles]);
-
     const sortedNeurovaultFiles = useMemo(() => {
         const orderMap = new Map(NimareOutputs.map((output, index) => [output.type, index]));
-        const sorted = neurovaultFiles?.sort((a, b) => {
+        // We want the order of the files to be very specific:
+        // if algorithm is MKDAChi2, then set 1st image to be desc-associationMass
+        //                                set 2nd image to be desc-uniformityMass
+        // otherwise, sort all file names by value type as hardcoded in the NimareOutputs array
+        //                                if multiple of the same value type, prioritize corr-cluster, then corr-voxel
+        // note that generally, this is just alphabetical order
+
+        const sorted = (neurovaultFiles || []).sort((a, b) => {
             const filenameA = parseNimareFileName(a.name);
             const filenameB = parseNimareFileName(b.name);
 
-            const longerFilename = filenameA.length > filenameB.length ? filenameA : filenameB;
-            for (let i = 0; i < longerFilename.length; i++) {
+            const filenameWithMoreSegments = filenameA.length > filenameB.length ? filenameA : filenameB;
+            for (let i = 0; i < filenameWithMoreSegments.length; i++) {
                 if (!filenameA[i]) return -1;
                 if (!filenameB[i]) return 1;
 
@@ -64,8 +63,12 @@ const DisplayMetaAnalysisResults: React.FC<{
             return 0;
         });
         return sorted?.reverse();
-        // if (props.metaAnalysis?.specification) // check for meta analysis mkdachi2
     }, [neurovaultFiles]);
+
+    useEffect(() => {
+        if (!sortedNeurovaultFiles) return;
+        setSelectedNeurovaultImage(sortedNeurovaultFiles[0]);
+    }, [sortedNeurovaultFiles]);
 
     return (
         <StateHandlerComponent
@@ -90,7 +93,6 @@ const DisplayMetaAnalysisResults: React.FC<{
                 <Box
                     sx={{
                         width: '73%',
-                        // backgroundColor: '#0000000a',
                         padding: '1.5rem',
                         paddingTop: 0,
                         borderTopRightRadius: '0px',
@@ -102,44 +104,11 @@ const DisplayMetaAnalysisResults: React.FC<{
                     </Box>
                     {selectedNeurovaultImage?.file ? (
                         <>
-                            <NiiVueVisualizer imageURL={selectedNeurovaultImage.file} />
-                            <Box display="flex" alignItems="center" justifyContent="space-between">
-                                <Button
-                                    component={Link}
-                                    sx={{ marginTop: '0.5rem' }}
-                                    href={
-                                        neurovaultLink.includes('/api')
-                                            ? neurovaultLink.replace(/\/api/, '')
-                                            : neurovaultLink
-                                    }
-                                    variant="contained"
-                                    rel="noreferrer"
-                                    size="small"
-                                    target="_blank"
-                                    disableElevation
-                                >
-                                    Open in neurovault
-                                    <OpenInNew sx={{ marginLeft: '4px' }} fontSize="small" />
-                                </Button>
-                                <Box>
-                                    <Button
-                                        size="small"
-                                        variant="contained"
-                                        endIcon={<Download />}
-                                        sx={{ marginTop: '0.5rem', marginRight: '0.5rem' }}
-                                    >
-                                        Download nifti
-                                    </Button>
-                                    <Button
-                                        size="small"
-                                        variant="contained"
-                                        endIcon={<ImageIcon />}
-                                        sx={{ marginTop: '0.5rem' }}
-                                    >
-                                        Download image
-                                    </Button>
-                                </Box>
-                            </Box>
+                            <NiiVueVisualizer
+                                file={selectedNeurovaultImage.file}
+                                filename={selectedNeurovaultImage.name || ''}
+                                neurovaultLink={neurovaultLink}
+                            />
                         </>
                     ) : (
                         <Typography color="warning.dark">No image selected</Typography>

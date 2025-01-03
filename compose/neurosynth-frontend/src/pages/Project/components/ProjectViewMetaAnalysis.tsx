@@ -1,16 +1,7 @@
-import {
-    Alert,
-    Box,
-    Button,
-    Card,
-    CardActions,
-    CardContent,
-    Chip,
-    Typography,
-} from '@mui/material';
+import { Alert, Box, Button, Card, CardActions, CardContent, Chip, Typography } from '@mui/material';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { getResultStatus } from 'helpers/MetaAnalysis.helpers';
-import useGetMetaAnalysisResultById from 'hooks/metaAnalyses/useGetMetaAnalysisResultById';
+import { useGetMetaAnalysisResultById } from 'hooks';
 import useUserCanEdit from 'hooks/useUserCanEdit';
 import { MetaAnalysisReturn, ResultReturn } from 'neurosynth-compose-typescript-sdk';
 import { useProjectUser } from 'pages/Project/store/ProjectStore';
@@ -78,10 +69,7 @@ const ProjectViewMetaAnalysis: React.FC<MetaAnalysisReturn> = (props) => {
                         <Typography variant="h6" gutterBottom>
                             {name || ''}
                         </Typography>
-                        <Typography
-                            variant="body2"
-                            sx={{ color: 'muted.main', marginTop: '0.5rem' }}
-                        >
+                        <Typography variant="body2" sx={{ color: 'muted.main', marginTop: '0.5rem' }}>
                             {description || ''}
                         </Typography>
                     </Box>

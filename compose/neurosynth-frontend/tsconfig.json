@@ -18,5 +18,5 @@
         "jsx": "react-jsx",
         "types": ["cypress", "node", "vite/client", "vitest/globals"]
     },
-    "include": ["src", "cypress", "vite-env.d.ts", "*.config.ts", "__mocks__", "eslint.config.js"]
+    "include": ["src", "hooks", "cypress", "vite-env.d.ts", "*.config.ts", "__mocks__", "eslint.config.js"]
 }
