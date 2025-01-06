@@ -3,7 +3,7 @@ import StateHandlerComponent from 'components/StateHandlerComponent/StateHandler
 import NiiVueVisualizer from 'components/Visualizer/NiiVueVisualizer';
 import { useGetMetaAnalysisResultById, useGetNeurovaultImages } from 'hooks';
 import { INeurovault } from 'hooks/metaAnalyses/useGetNeurovaultImages';
-import { MetaAnalysisReturn, NeurovaultFile, ResultReturn } from 'neurosynth-compose-typescript-sdk';
+import { MetaAnalysisReturn, NeurovaultFile, ResultReturn, Specification } from 'neurosynth-compose-typescript-sdk';
 import { useEffect, useMemo, useState } from 'react';
 import { NimareOutputs, parseNimareFileName } from '../Nimare.helpers';
 import DisplayParsedNiMareFile from './DisplayParsedNiMareFile';
@@ -11,9 +11,9 @@ import MetaAnalysisResultStatusAlert from './MetaAnalysisResultStatusAlert';
 
 const DisplayMetaAnalysisResults: React.FC<{
     metaAnalysis: MetaAnalysisReturn | undefined;
-}> = (props) => {
+}> = ({ metaAnalysis }) => {
     // Each result represents a run. We just need to get the last item to get the latest run
-    const metaAnalysisResults = (props.metaAnalysis?.results || []) as ResultReturn[];
+    const metaAnalysisResults = (metaAnalysis?.results || []) as ResultReturn[];
     const { data, isLoading, isError } = useGetMetaAnalysisResultById(
         metaAnalysisResults[metaAnalysisResults.length - 1]?.id
     );
@@ -30,12 +30,15 @@ const DisplayMetaAnalysisResults: React.FC<{
     const [selectedNeurovaultImage, setSelectedNeurovaultImage] = useState<INeurovault>();
 
     const sortedNeurovaultFiles = useMemo(() => {
-        const orderMap = new Map(NimareOutputs.map((output, index) => [output.type, index]));
+        if (!neurovaultFiles || !metaAnalysis || !(metaAnalysis?.specification as Specification).estimator?.type)
+            return [];
+
+        const orderMap = new Map(NimareOutputs.map((output, index) => [output.key, index]));
         // We want the order of the files to be very specific:
-        // if algorithm is MKDAChi2, then set 1st image to be desc-associationMass
-        //                                set 2nd image to be desc-uniformityMass
+        // if algorithm is MKDAChi2, then set 1st image to be z_desc-associationMass
+        //                                set 2nd image to be z_desc-uniformityMass
         // otherwise, sort all file names by value type as hardcoded in the NimareOutputs array
-        //                                if multiple of the same value type, prioritize corr-cluster, then corr-voxel
+        //                                if multiple of the same value type, prioritize level-cluster, then level-voxel
         // note that generally, this is just alphabetical order
 
         const sorted = (neurovaultFiles || []).sort((a, b) => {
@@ -44,26 +47,46 @@ const DisplayMetaAnalysisResults: React.FC<{
 
             const filenameWithMoreSegments = filenameA.length > filenameB.length ? filenameA : filenameB;
             for (let i = 0; i < filenameWithMoreSegments.length; i++) {
-                if (!filenameA[i]) return -1;
-                if (!filenameB[i]) return 1;
+                const segmentA = filenameA[i];
+                const segmentB = filenameB[i];
 
-                const orderA =
-                    orderMap.get(filenameA[i].isValueType ? filenameA[i].value : filenameA[i].key) ?? Infinity;
-                const orderB =
-                    orderMap.get(filenameB[i].isValueType ? filenameB[i].value : filenameB[i].key) ?? Infinity;
+                if (!segmentA && !segmentB) return 0;
+                else if (!segmentA) return -1;
+                else if (!segmentB) return 1;
+
+                const orderA = orderMap.get(segmentA.key) ?? Infinity;
+                const orderB = orderMap.get(segmentB.key) ?? Infinity;
+
                 if (orderA === orderB) {
-                    if (filenameA[i].value === filenameB[i].value) {
-                        continue;
-                    }
-                    return filenameB[i].value.localeCompare(filenameA[i].value);
+                    if (segmentA.value === segmentB.value) continue;
+                    return segmentA.value.localeCompare(segmentB.value);
                 } else {
-                    return orderB - orderA;
+                    return orderA - orderB;
                 }
             }
             return 0;
         });
-        return sorted?.reverse();
-    }, [neurovaultFiles]);
+
+        // if MKDAChi2, move both z_desc-associationMass and z_desc-uniformityMass to the top respectively
+        if ((metaAnalysis.specification as Specification).estimator?.type === 'MKDAChi2') {
+            const uniformityMassIndex = sorted.findIndex((sortedElement) =>
+                sortedElement.name?.includes('z_desc-uniformityMass')
+            );
+            if (uniformityMassIndex >= 0) {
+                const [removedElement] = sorted.splice(uniformityMassIndex, 1);
+                sorted.unshift(removedElement);
+            }
+            const associationMassIndex = sorted.findIndex((sortedElement) =>
+                sortedElement.name?.includes('z_desc-associationMass')
+            );
+            if (associationMassIndex >= 0) {
+                const [removedElement] = sorted.splice(associationMassIndex, 1);
+                sorted.unshift(removedElement);
+            }
+        }
+
+        return sorted;
+    }, [neurovaultFiles, metaAnalysis]);
 
     useEffect(() => {
         if (!sortedNeurovaultFiles) return;
@@ -75,7 +98,7 @@ const DisplayMetaAnalysisResults: React.FC<{
             isLoading={isLoading || neurovaultFilesIsLoading}
             isError={isError || neurovaultFilesIsError}
         >
-            <MetaAnalysisResultStatusAlert metaAnalysis={props.metaAnalysis} metaAnalysisResult={data} />
+            <MetaAnalysisResultStatusAlert metaAnalysis={metaAnalysis} metaAnalysisResult={data} />
             <Box display="flex" sx={{ height: '100%', minHeight: '600px' }}>
                 <Box sx={{ width: '27%', maxHeight: '650px', overflowY: 'auto' }}>
                     <List sx={{ padding: 0 }}>

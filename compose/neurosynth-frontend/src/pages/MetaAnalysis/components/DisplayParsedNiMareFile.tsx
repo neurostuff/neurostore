@@ -25,9 +25,12 @@ const DisplayParsedNiMareFile: React.FC<{ nimareFileName: string | undefined | n
                 >
                     <Box display="flex" alignItems="center">
                         <Typography color="muted.main" gutterBottom={false} variant="caption" marginRight="4px">
-                            {segment.key}
+                            {segment.label}
                         </Typography>
-                        <Tooltip title={<Typography variant="caption">{segment.keyDesc}</Typography>} placement="top">
+                        <Tooltip
+                            title={<Typography variant="caption">{segment.description}</Typography>}
+                            placement="top"
+                        >
                             <Icon fontSize="small">
                                 <HelpOutline fontSize="small" sx={{ color: 'muted.main' }} />
                             </Icon>

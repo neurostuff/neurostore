@@ -3,7 +3,6 @@ import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import TextEdit from 'components/TextEdit/TextEdit';
 import { useGetMetaAnalysisById, useGetMetaAnalysisResultById } from 'hooks';
-import useGetSpecificationById from 'hooks/metaAnalyses/useGetSpecificationById';
 import useUpdateMetaAnalysis from 'hooks/metaAnalyses/useUpdateMetaAnalysis';
 import useUserCanEdit from 'hooks/useUserCanEdit';
 import { ResultReturn, SpecificationReturn, StudysetReturn } from 'neurosynth-compose-typescript-sdk';
@@ -47,11 +46,8 @@ const MetaAnalysisPage: React.FC = () => {
             : undefined
     );
 
-    const { data: specification } = useGetSpecificationById(
-        (metaAnalysis?.specification as SpecificationReturn | undefined)?.id
-    );
-
     // get request is set to nested: true so below casting is safe
+    const specification = metaAnalysis?.specification as SpecificationReturn;
     const studyset = metaAnalysis?.studyset as StudysetReturn;
     const annotation = metaAnalysis?.annotation as NeurostoreAnnotation;
 

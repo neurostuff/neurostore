@@ -979,6 +979,699 @@ const mockNeurovault: () => INeurovault[] = () => [
     },
 ];
 
+const mockMetaAnalysisReturn: () => MetaAnalysisReturn = () => ({
+    cached_annotation: 'Q7PGxaTr6Ke4',
+    cached_studyset: 'Ue5rb87H4nMi',
+    created_at: '2024-12-06T01:07:18.120143+00:00',
+    description: 'MKDAChi2 meta analysis with FDRCorrector',
+    id: 'WfCnGvpZxXi4',
+    name: 'My new test MKDAChi2 Meta Analysis: included',
+    neurostore_analysis: {
+        created_at: '2024-12-06T01:07:18.146325+00:00',
+        exception: null,
+        id: 'nBC95wqsJgYM',
+        neurostore_id: 'zyWsKHSiU3Y6',
+        status: 'OK',
+        traceback: null,
+        updated_at: '2024-12-06T01:14:42.206629+00:00',
+    },
+    neurostore_url: 'https://neurostore.org/api/analyses/zyWsKHSiU3Y6',
+    project: '5fuUb89eACzZ',
+    provenance: null,
+    results: [
+        {
+            created_at: '2024-12-06T01:14:37.069129+00:00',
+            id: 'PyftC25kGRm5',
+            updated_at: '2024-12-06T01:14:38.323194+00:00',
+        },
+    ],
+    run_key: 'oXsfHh0RyA0jFRzQdhwyLA',
+    specification: {
+        conditions: [true],
+        corrector: {
+            args: {
+                alpha: 0.05,
+                method: 'indep',
+            },
+            type: 'FDRCorrector',
+        },
+        created_at: '2024-12-06T01:07:17.495976+00:00',
+        database_studyset: 'neurostore',
+        estimator: {
+            args: {
+                '**kwargs': {},
+                kernel__r: 10,
+                kernel__value: 1,
+                prior: 0.5,
+            },
+            type: 'ALE',
+        },
+        filter: 'included',
+        id: 'h57xeSmdQcpj',
+        type: 'CBMA',
+        updated_at: null,
+        user: 'github|26612023',
+        username: 'Nicholas Lee',
+        weights: [1.0],
+    },
+    studyset: {
+        created_at: '2024-12-06T01:07:17.670624+00:00',
+        id: 'Ue5rb87H4nMi',
+        neurostore_id: '7WRDwR5YfnBg',
+        snapshot: {
+            snapshot: {
+                created_at: '2023-12-12T22:33:20.849705+00:00',
+                description: 'my test description',
+                doi: null,
+                id: '7WRDwR5YfnBg',
+                name: 'Studyset for My new test',
+                pmid: null,
+                publication: null,
+                studies: [
+                    {
+                        analyses: [
+                            {
+                                conditions: [],
+                                description: 'Table 2',
+                                id: '3GTqJytpC3p6',
+                                images: [],
+                                metadata: null,
+                                name: 'Linear Control > Linear Risk',
+                                points: [
+                                    {
+                                        coordinates: [-40.0, -26.0, 50.0],
+                                        id: '9Jzj2X5DxaiL',
+                                        image: null,
+                                        kind: null,
+                                        label_id: null,
+                                        space: 'MNI',
+                                        values: [
+                                            {
+                                                kind: 'Z',
+                                                value: 7.49,
+                                            },
+                                        ],
+                                    },
+                                    {
+                                        coordinates: [-4.0, 0.0, 54.0],
+                                        id: '44G9cjh3T9mY',
+                                        image: null,
+                                        kind: null,
+                                        label_id: null,
+                                        space: 'MNI',
+                                        values: [
+                                            {
+                                                kind: 'Z',
+                                                value: 4.93,
+                                            },
+                                        ],
+                                    },
+                                    {
+                                        coordinates: [-44.0, -34.0, 16.0],
+                                        id: '54rAqeX2Vp54',
+                                        image: null,
+                                        kind: null,
+                                        label_id: null,
+                                        space: 'MNI',
+                                        values: [
+                                            {
+                                                kind: 'Z',
+                                                value: 5.29,
+                                            },
+                                        ],
+                                    },
+                                    {
+                                        coordinates: [28.0, -88.0, -6.0],
+                                        id: '7dRbckNiNd35',
+                                        image: null,
+                                        kind: null,
+                                        label_id: null,
+                                        space: 'MNI',
+                                        values: [
+                                            {
+                                                kind: 'Z',
+                                                value: 4.59,
+                                            },
+                                        ],
+                                    },
+                                    {
+                                        coordinates: [58.0, -20.0, 38.0],
+                                        id: 'sDcbvTeisgcb',
+                                        image: null,
+                                        kind: null,
+                                        label_id: null,
+                                        space: 'MNI',
+                                        values: [
+                                            {
+                                                kind: 'Z',
+                                                value: 4.52,
+                                            },
+                                        ],
+                                    },
+                                ],
+                                user: 'github|26612023',
+                                weights: [],
+                            },
+                            {
+                                conditions: [],
+                                description: 'Table 2',
+                                id: '3GzSVjE8mrS3',
+                                images: [],
+                                metadata: null,
+                                name: 'Mean Control > Mean Risk',
+                                points: [
+                                    {
+                                        coordinates: [12.0, -76.0, -2.0],
+                                        id: '3iiUJ9Gjvzns',
+                                        image: null,
+                                        kind: null,
+                                        label_id: null,
+                                        space: 'MNI',
+                                        values: [
+                                            {
+                                                kind: 'Z',
+                                                value: 13.0,
+                                            },
+                                        ],
+                                    },
+                                    {
+                                        coordinates: [-48.0, -64.0, 40.0],
+                                        id: 'AXczqpqehb2a',
+                                        image: null,
+                                        kind: null,
+                                        label_id: null,
+                                        space: 'MNI',
+                                        values: [
+                                            {
+                                                kind: 'Z',
+                                                value: 14.4,
+                                            },
+                                        ],
+                                    },
+                                    {
+                                        coordinates: [56.0, -56.0, 24.0],
+                                        id: '3iVGLscyGBNf',
+                                        image: null,
+                                        kind: null,
+                                        label_id: null,
+                                        space: 'MNI',
+                                        values: [
+                                            {
+                                                kind: 'Z',
+                                                value: 15.2,
+                                            },
+                                        ],
+                                    },
+                                    {
+                                        coordinates: [-42.0, 14.0, 46.0],
+                                        id: '6sRLCc7AeMh7',
+                                        image: null,
+                                        kind: null,
+                                        label_id: null,
+                                        space: 'MNI',
+                                        values: [
+                                            {
+                                                kind: 'Z',
+                                                value: 12.7,
+                                            },
+                                        ],
+                                    },
+                                    {
+                                        coordinates: [-48.0, 34.0, -2.0],
+                                        id: '4CjUGeWd32fj',
+                                        image: null,
+                                        kind: null,
+                                        label_id: null,
+                                        space: 'MNI',
+                                        values: [
+                                            {
+                                                kind: 'Z',
+                                                value: 12.8,
+                                            },
+                                        ],
+                                    },
+                                    {
+                                        coordinates: [50.0, 38.0, -8.0],
+                                        id: '85VnuggANrMU',
+                                        image: null,
+                                        kind: null,
+                                        label_id: null,
+                                        space: 'MNI',
+                                        values: [
+                                            {
+                                                kind: 'Z',
+                                                value: 12.5,
+                                            },
+                                        ],
+                                    },
+                                    {
+                                        coordinates: [14.0, 56.0, 30.0],
+                                        id: '43NQ8JqFyPaS',
+                                        image: null,
+                                        kind: null,
+                                        label_id: null,
+                                        space: 'MNI',
+                                        values: [
+                                            {
+                                                kind: 'Z',
+                                                value: 11.8,
+                                            },
+                                        ],
+                                    },
+                                    {
+                                        coordinates: [6.0, -46.0, 34.0],
+                                        id: '5wT3cSjqjB5s',
+                                        image: null,
+                                        kind: null,
+                                        label_id: null,
+                                        space: 'MNI',
+                                        values: [
+                                            {
+                                                kind: 'Z',
+                                                value: 12.4,
+                                            },
+                                        ],
+                                    },
+                                    {
+                                        coordinates: [-6.0, -54.0, -46.0],
+                                        id: '8EmpBr8WEJue',
+                                        image: null,
+                                        kind: null,
+                                        label_id: null,
+                                        space: 'MNI',
+                                        values: [
+                                            {
+                                                kind: 'Z',
+                                                value: 15.0,
+                                            },
+                                        ],
+                                    },
+                                    {
+                                        coordinates: [-52.0, -8.0, -32.0],
+                                        id: '5URbwza34r3b',
+                                        image: null,
+                                        kind: null,
+                                        label_id: null,
+                                        space: 'MNI',
+                                        values: [
+                                            {
+                                                kind: 'Z',
+                                                value: 9.22,
+                                            },
+                                        ],
+                                    },
+                                    {
+                                        coordinates: [4.0, 44.0, 50.0],
+                                        id: '6k2FKbvTDzga',
+                                        image: null,
+                                        kind: null,
+                                        label_id: null,
+                                        space: 'MNI',
+                                        values: [
+                                            {
+                                                kind: 'Z',
+                                                value: 9.03,
+                                            },
+                                        ],
+                                    },
+                                    {
+                                        coordinates: [-64.0, -14.0, -22.0],
+                                        id: '7tTvbLAx9uLF',
+                                        image: null,
+                                        kind: null,
+                                        label_id: null,
+                                        space: 'MNI',
+                                        values: [
+                                            {
+                                                kind: 'Z',
+                                                value: 9.02,
+                                            },
+                                        ],
+                                    },
+                                ],
+                                user: 'github|26612023',
+                                weights: [],
+                            },
+                        ],
+                        authors: 'Claus ED, Feldstein Ewing SW, Magnan RE, Montanaro E, Hutchison KE, Bryan AD',
+                        created_at: '2023-11-02T18:11:08.811383+00:00',
+                        description: 'a',
+                        doi: '10.1007/s11682-017-9723-x',
+                        id: '5FYoyH8Z6spR',
+                        metadata: {
+                            sample_size: null,
+                        },
+                        name: 'Neural mechanisms of risky decision making in adolescents reporting frequent alcohol and/or marijuana use.',
+                        pmid: '28429160',
+                        publication: 'Brain imaging and behavior',
+                        source: 'neurostore',
+                        source_id: '3sCo5xAjxL56',
+                        source_updated_at: '2023-06-21T22:17:27.973390+00:00',
+                        updated_at: '2023-12-12T22:37:21.933193+00:00',
+                        user: 'github|26612023',
+                        year: 2018,
+                    },
+                    {
+                        analyses: [
+                            {
+                                conditions: [],
+                                description: null,
+                                id: '3CNaH5frhTpr',
+                                images: [],
+                                metadata: null,
+                                name: '21176',
+                                points: [
+                                    {
+                                        coordinates: [19.0, -69.0, -7.0],
+                                        id: '7NnSEQ6fug6e',
+                                        image: null,
+                                        kind: null,
+                                        label_id: null,
+                                        space: 'TAL',
+                                        values: [
+                                            {
+                                                kind: 'R',
+                                                value: null,
+                                            },
+                                        ],
+                                    },
+                                    {
+                                        coordinates: [-23.0, 53.0, 10.0],
+                                        id: '82N6ePiAWSRF',
+                                        image: null,
+                                        kind: null,
+                                        label_id: null,
+                                        space: 'TAL',
+                                        values: [
+                                            {
+                                                kind: 'R',
+                                                value: null,
+                                            },
+                                        ],
+                                    },
+                                    {
+                                        coordinates: [39.0, 30.0, 18.0],
+                                        id: '7yRw6zhEf68M',
+                                        image: null,
+                                        kind: null,
+                                        label_id: null,
+                                        space: 'TAL',
+                                        values: [
+                                            {
+                                                kind: 'R',
+                                                value: null,
+                                            },
+                                        ],
+                                    },
+                                    {
+                                        coordinates: [6.0, 47.0, -20.0],
+                                        id: '5wGDBHUMP5uA',
+                                        image: null,
+                                        kind: null,
+                                        label_id: null,
+                                        space: 'TAL',
+                                        values: [
+                                            {
+                                                kind: 'R',
+                                                value: null,
+                                            },
+                                        ],
+                                    },
+                                    {
+                                        coordinates: [-44.0, -62.0, 44.0],
+                                        id: '3LA2X7RYmoBE',
+                                        image: null,
+                                        kind: null,
+                                        label_id: null,
+                                        space: 'TAL',
+                                        values: [
+                                            {
+                                                kind: 'R',
+                                                value: null,
+                                            },
+                                        ],
+                                    },
+                                ],
+                                user: 'github|26612023',
+                                weights: [],
+                            },
+                            {
+                                conditions: [],
+                                description: '',
+                                id: 'CCKyTeh7jAef',
+                                images: [],
+                                metadata: null,
+                                name: 'my new analysis',
+                                points: [
+                                    {
+                                        coordinates: [39.0, 30.0, 18.0],
+                                        id: '62e887hWm5ZL',
+                                        image: null,
+                                        kind: null,
+                                        label_id: null,
+                                        space: 'MNI',
+                                        values: [
+                                            {
+                                                kind: 'Pa',
+                                                value: null,
+                                            },
+                                        ],
+                                    },
+                                    {
+                                        coordinates: [19.0, -69.0, -7.0],
+                                        id: '6C3CKPxUTYkz',
+                                        image: null,
+                                        kind: null,
+                                        label_id: null,
+                                        space: 'MNI',
+                                        values: [
+                                            {
+                                                kind: 'Pa',
+                                                value: null,
+                                            },
+                                        ],
+                                    },
+                                    {
+                                        coordinates: [-23.0, 53.0, 10.0],
+                                        id: 'btjdW4osrdzp',
+                                        image: null,
+                                        kind: null,
+                                        label_id: null,
+                                        space: 'MNI',
+                                        values: [
+                                            {
+                                                kind: 'Pa',
+                                                value: null,
+                                            },
+                                        ],
+                                    },
+                                ],
+                                user: 'github|26612023',
+                                weights: [],
+                            },
+                        ],
+                        authors: 'Filbey FM, McQueeny T, DeWitt SJ, Mishra V',
+                        created_at: '2023-10-28T19:46:16.482780+00:00',
+                        description: null,
+                        doi: '10.1016/j.dcn.2015.10.001',
+                        id: '7wPrisH4DHmk',
+                        metadata: {
+                            sample_size: null,
+                        },
+                        name: 'Preliminary findings demonstrating latent effects of early adolescent marijuana use onset on cortical architecture.',
+                        pmid: '26507433',
+                        publication: 'Developmental cognitive neuroscience',
+                        source: 'neurostore',
+                        source_id: 'nQGt73k3CGfk',
+                        source_updated_at: '2023-06-21T22:17:27.973390+00:00',
+                        updated_at: '2023-10-28T19:46:17.327351+00:00',
+                        user: 'github|26612023',
+                        year: 2015,
+                    },
+                    {
+                        analyses: [
+                            {
+                                conditions: [],
+                                description: null,
+                                id: '33KzpLpKDd95',
+                                images: [],
+                                metadata: null,
+                                name: '21242',
+                                points: [
+                                    {
+                                        coordinates: [2.0, -12.0, 0.0],
+                                        id: '6Sd3Vj9WV8JX',
+                                        image: null,
+                                        kind: null,
+                                        label_id: null,
+                                        space: 'MNI',
+                                        values: [
+                                            {
+                                                kind: null,
+                                                value: null,
+                                            },
+                                        ],
+                                    },
+                                    {
+                                        coordinates: [28.0, -30.0, 56.0],
+                                        id: 'gVJc4wYW2VR3',
+                                        image: null,
+                                        kind: null,
+                                        label_id: null,
+                                        space: 'MNI',
+                                        values: [
+                                            {
+                                                kind: null,
+                                                value: null,
+                                            },
+                                        ],
+                                    },
+                                    {
+                                        coordinates: [22.0, -18.0, -10.0],
+                                        id: '6oiQFsHc9ELB',
+                                        image: null,
+                                        kind: null,
+                                        label_id: null,
+                                        space: 'MNI',
+                                        values: [
+                                            {
+                                                kind: null,
+                                                value: null,
+                                            },
+                                        ],
+                                    },
+                                    {
+                                        coordinates: [-20.0, -48.0, 64.0],
+                                        id: '6VACn9idtiki',
+                                        image: null,
+                                        kind: null,
+                                        label_id: null,
+                                        space: 'MNI',
+                                        values: [
+                                            {
+                                                kind: null,
+                                                value: null,
+                                            },
+                                        ],
+                                    },
+                                ],
+                                user: 'github|26612023',
+                                weights: [],
+                            },
+                            {
+                                conditions: [],
+                                description: '',
+                                id: 't3kwfKCSnvyz',
+                                images: [],
+                                metadata: null,
+                                name: '21243',
+                                points: [
+                                    {
+                                        coordinates: [-46.0, -6.0, -30.0],
+                                        id: '4sWCWDJf9qAt',
+                                        image: null,
+                                        kind: null,
+                                        label_id: null,
+                                        space: null,
+                                        values: [
+                                            {
+                                                kind: null,
+                                                value: null,
+                                            },
+                                        ],
+                                    },
+                                    {
+                                        coordinates: [10.0, -20.0, -24.0],
+                                        id: 'NWRFLyMDWRHA',
+                                        image: null,
+                                        kind: null,
+                                        label_id: null,
+                                        space: null,
+                                        values: [
+                                            {
+                                                kind: null,
+                                                value: null,
+                                            },
+                                        ],
+                                    },
+                                    {
+                                        coordinates: [18.0, -8.0, -8.0],
+                                        id: '3VvqKwJiah35',
+                                        image: null,
+                                        kind: null,
+                                        label_id: null,
+                                        space: null,
+                                        values: [
+                                            {
+                                                kind: null,
+                                                value: null,
+                                            },
+                                        ],
+                                    },
+                                    {
+                                        coordinates: [-22.0, -24.0, -8.0],
+                                        id: '5wd4n7Tgs7G6',
+                                        image: null,
+                                        kind: null,
+                                        label_id: null,
+                                        space: null,
+                                        values: [
+                                            {
+                                                kind: null,
+                                                value: null,
+                                            },
+                                        ],
+                                    },
+                                    {
+                                        coordinates: [-32.0, -30.0, 58.0],
+                                        id: '5pkJZQKbinpp',
+                                        image: null,
+                                        kind: null,
+                                        label_id: null,
+                                        space: null,
+                                        values: [
+                                            {
+                                                kind: null,
+                                                value: null,
+                                            },
+                                        ],
+                                    },
+                                ],
+                                user: 'github|26612023',
+                                weights: [],
+                            },
+                        ],
+                        authors: 'Matochik JA, Eldreth DA, Cadet JL, Bolla KI',
+                        created_at: '2023-11-02T17:34:59.386691+00:00',
+                        description: null,
+                        doi: '10.1016/j.drugalcdep.2004.06.011',
+                        id: '5KPoXYmpNbwf',
+                        metadata: {
+                            sample_size: null,
+                        },
+                        name: 'Altered brain tissue composition in heavy marijuana users.',
+                        pmid: '15607838',
+                        publication: 'Drug and alcohol dependence',
+                        source: 'neurostore',
+                        source_id: '4taREaBkeuBY',
+                        source_updated_at: '2023-06-21T22:17:27.973390+00:00',
+                        updated_at: '2023-11-02T17:35:00.317618+00:00',
+                        user: 'github|26612023',
+                        year: 2005,
+                    },
+                ],
+                updated_at: null,
+                user: 'github|26612023',
+            },
+        },
+        updated_at: '2024-12-06T01:14:37.069129+00:00',
+        url: 'https://neurostore.org/api/studysets/7WRDwR5YfnBg',
+        user: 'github|26612023',
+        username: 'Nicholas Lee',
+        version: null,
+    },
+});
+
 export {
     mockConditions,
     mockWeights,
@@ -997,4 +1690,5 @@ export {
     mockProject,
     mockMetaAnalysisResult,
     mockNeurovault,
+    mockMetaAnalysisReturn,
 };

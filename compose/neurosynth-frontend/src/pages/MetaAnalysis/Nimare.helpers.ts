@@ -1,80 +1,88 @@
 // this is organized as an array to make it orderable. Order is obtained from: https://nimare.readthedocs.io/en/stable/outputs.html#file-names
 export const NimareOutputs = [
-    // possible value types
-    { type: 'z', isValueType: true, description: 'Z-statistic' },
-    { type: 't', isValueType: true, description: 'T-statistic' },
-    { type: 'p', isValueType: true, description: 'p-value' },
-    { type: 'logp', isValueType: true, description: 'Negative base-ten logarithm of p-value' },
-    { type: 'chi2', isValueType: true, description: 'Chi-squared value' },
-    { type: 'prob', isValueType: true, description: 'Probability value' },
+    // possible data types
+    { key: 'z', label: 'type', description: 'Z-statistic' },
+    { key: 't', label: 'type', description: 'T-statistic' },
+    { key: 'p', label: 'type', description: 'p-value' },
+    { key: 'logp', label: 'type', description: 'Negative base-ten logarithm of p-value' },
+    { key: 'chi2', label: 'type', description: 'Chi-squared value' },
+    { key: 'prob', label: 'type', description: 'Probability value' },
     {
-        type: 'stat',
-        isValueType: true,
+        key: 'stat',
+        label: 'type',
         description: 'Test value of meta-analytic algorithm (e.g., ALE values for ALE, OF values for MKDA)',
     },
-    { type: 'est', isValueType: true, description: 'Parameter estimate (IBMA only)' },
-    { type: 'se', isValueType: true, description: 'Standard error of the parameter estimate (IBMA only)' },
-    { type: 'tau2', isValueType: true, description: 'Estimated between-study variance (IBMA only)' },
-    { type: 'sigma2', isValueType: true, description: 'Estimated within-study variance (IBMA only)' },
-    { type: 'label', isValueType: true, description: 'Label map' },
+    { key: 'est', label: 'type', description: 'Parameter estimate (IBMA only)' },
+    { key: 'se', label: 'type', description: 'Standard error of the parameter estimate (IBMA only)' },
+    { key: 'tau2', label: 'type', description: 'Estimated between-study variance (IBMA only)' },
+    { key: 'sigma2', label: 'type', description: 'Estimated within-study variance (IBMA only)' },
+    { key: 'label', label: 'type', description: 'Label map' },
     // KVPs that describe the methods applied to generate the meta analysis
     {
-        type: 'desc',
-        isValueType: false,
+        key: 'desc',
+        label: 'description',
         description:
             'Description of the data type. Only used when multiple maps with the same data type are produced by the same method.',
     },
     {
-        type: 'level',
-        isValueType: false,
+        key: 'level',
+        label: 'level',
         description: 'Level of multiple comparisons correction. Either cluster or voxel.',
     },
     {
-        type: 'corr',
-        isValueType: false,
+        key: 'corr',
+        label: 'correction',
         description:
             'Type of multiple comparisons correction. Either FWE (familywise error rate) or FDR (false discovery rate).',
     },
     {
-        type: 'method',
-        isValueType: false,
+        key: 'method',
+        label: 'method',
         description:
             'Name of the method used for multiple comparisons correction (e.g., “montecarlo” for a Monte Carlo procedure).',
     },
     {
-        type: 'diag',
-        isValueType: false,
+        key: 'diag',
+        label: 'diagnostic',
         description:
             'Type of diagnostic. Either Jackknife (jackknife analysis) or FocusCounter (focus-count analysis).',
     },
     {
-        type: 'tab',
-        isValueType: false,
+        key: 'tab',
+        label: 'table',
         description: 'Type of table. Either clust (clusters table) or counts (contribution table).',
     },
-    { type: 'tail', isValueType: false, description: 'Sign of the tail for label maps. Either positive or negative.' },
+    { key: 'tail', label: 'tail', description: 'Sign of the tail for label maps. Either positive or negative.' },
 ];
 
-export const parseNimareFileName = (fileName: string | undefined | null) => {
+export const parseNimareFileName = (
+    fileName: string | undefined | null
+): { key: string; label: string; description: string; value: string }[] => {
     // we expect filenames of the form: z_desc-somedescription_level-voxel_corr-fwe_method-montecarlo.nii.gz
     if (!fileName) return [];
     const segments = fileName.replace('.nii.gz', '').split('_');
     return segments.map((segment) => {
         const [key, value] = segment.split('-');
-        const nimareOutput = NimareOutputs.find((output) => output.type === key);
-        if (value === undefined) {
-            // value type, not a meta analysis method or descriptor
-            return {
-                key: 'type',
-                isValueType: nimareOutput?.isValueType || false,
-                keyDesc: 'The type of data in the map.',
-                value: nimareOutput?.type || '',
-            };
-        } else {
+        const associatedNimareOutput = NimareOutputs.find((output) => output.key === key);
+
+        if (associatedNimareOutput === undefined) {
+            // unrecognized KVP in file name
             return {
                 key: key,
-                isValueType: nimareOutput?.isValueType || false,
-                keyDesc: nimareOutput?.description || '',
+                label: 'unknown field',
+                description: '',
+                value: key,
+            };
+        } else if (value === undefined) {
+            // data type, not a method. The key is also the value
+            return {
+                ...associatedNimareOutput,
+                value: key,
+            };
+        } else {
+            // KVPs describing methods applied to generate the map
+            return {
+                ...associatedNimareOutput,
                 value: value,
             };
         }
