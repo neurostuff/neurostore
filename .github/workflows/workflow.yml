@@ -43,12 +43,13 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       -
         name: Build and push
-        uses: docker/bake-action@master
+        uses: docker/bake-action@v6.0.0
         with:
           files: docker-compose.yml,docker-compose.dev.yml
           push: true
           load: false
           workdir: compose
+          source: "{{defaultContext}}:compose"
           set: |
               compose.tags=ghcr.io/${{ github.repository_owner }}/neurosynth_compose:${{ hashFiles('**/compose/neurosynth_compose/**') }}
               compose.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/neurosynth_compose:${{ hashFiles('**/compose/neurosynth_compose/**') }}
@@ -94,12 +95,13 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       -
         name: Build and push
-        uses: docker/bake-action@master
+        uses: docker/bake-action@v6.0.0
         with:
           files: docker-compose.yml,docker-compose.dev.yml
           push: true
           load: false
           workdir: store
+          source: "{{defaultContext}}:store"
           set: |
               neurostore.tags=ghcr.io/${{ github.repository_owner }}/neurostore:${{ hashFiles('**/store/neurostore/**') }}
               neurostore.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/neurostore:${{ hashFiles('**/store/neurostore/**') }}
@@ -136,12 +138,13 @@ jobs:
           cp .env.example .env
       -
         name: load images
-        uses: docker/bake-action@master
+        uses: docker/bake-action@v6.0.0
         with:
           files: docker-compose.yml,docker-compose.dev.yml
           push: false
           load: true
           workdir: store
+          source: "{{defaultContext}}:store"
           set: |
               neurostore.cache-from=type=gha,scope=cached-neurostore
               store_nginx.cache-from=type=gha,scope=cached-store-nginx
@@ -205,12 +208,13 @@ jobs:
         cp .env.example .env
     -
       name: load images
-      uses: docker/bake-action@master
+      uses: docker/bake-action@v6.0.0
       with:
         files: docker-compose.yml,docker-compose.dev.yml
         push: false
         load: true
         workdir: compose
+        source: "{{defaultContext}}:compose"
         set: |
             compose.cache-from=type=gha,scope=cached-compose
             compose_nginx.cache-from=type=gha,scope=cached-compose-nginx
@@ -295,12 +299,13 @@ jobs:
         cp .env.example .env
     -
       name: load images
-      uses: docker/bake-action@master
+      uses: docker/bake-action@v6.0.0
       with:
         files: docker-compose.yml,docker-compose.dev.yml
         push: false
         load: true
         workdir: compose
+        source: "{{defaultContext}}:compose"
         set: |
             compose.cache-from=type=gha,scope=cached-compose
             compose_nginx.cache-from=type=gha,scope=cached-compose-nginx
@@ -378,12 +383,13 @@ jobs:
         cp store/.env.example store/.env
     -
       name: load compose images
-      uses: docker/bake-action@master
+      uses: docker/bake-action@v6.0.0
       with:
         files: docker-compose.yml,docker-compose.dev.yml
         push: false
         load: true
         workdir: compose
+        source: "{{defaultContext}}:compose"
         set: |
             compose.cache-from=type=gha,scope=cached-compose
             compose_nginx.cache-from=type=gha,scope=cached-compose-nginx
@@ -391,12 +397,13 @@ jobs:
             compose_worker.cache-from=type=gha,scope=cached-compose-worker
     -
       name: load store images
-      uses: docker/bake-action@master
+      uses: docker/bake-action@v6.0.0
       with:
         files: docker-compose.yml,docker-compose.dev.yml
         push: false
         load: true
         workdir: store
+        source: "{{defaultContext}}:store"
         set: |
             neurostore.cache-from=type=gha,scope=cached-neurostore
             store_nginx.cache-from=type=gha,scope=cached-store-nginx
