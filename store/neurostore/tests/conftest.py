@@ -594,7 +594,20 @@ def simple_neurosynth_annotation(session, ingest_neurosynth):
 def create_demographic_features(session, ingest_neurosynth, tmp_path):
     output_dir = tmp_path / "output" / "demographics" / "v1.0.0"
     output_dir.mkdir(exist_ok=True, parents=True)
-    studies = Study.query.all()
+    pipeline_info = {
+        "name": "demographics",
+        "version": "v1.0.0",
+        "description": "demographic features",
+        "study_dependent": False,
+        "ace_compatible": True,
+        "pubget_compatible": True,
+        "derived_from": None,
+        "arguments": {"parallel": 1},
+    }
+    with open(output_dir / "pipeline_info.json", "w") as f:
+        json.dump(pipeline_info, f)
+    
+    studies = BaseStudy.query.all()
     diseases = ["schizophrenia", "bipolar disorder", "depression", "healthy"]
     studies_data = [
         [
@@ -607,6 +620,7 @@ def create_demographic_features(session, ingest_neurosynth, tmp_path):
 
     for study, study_data in zip(studies, studies_data):
         study_dir = output_dir / study.id
+        study_dir.mkdir(exist_ok=True, parents=True)
         with open(study_dir / "results.json", "w") as f:
             for entry in study_data:
                 json.dump(entry, f)

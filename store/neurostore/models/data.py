@@ -278,7 +278,8 @@ class Study(BaseMixin, db.Model):
     public = db.Column(db.Boolean, default=True)
     level = db.Column(db.String)
     metadata_ = db.Column(JSONB)
-    source = db.Column(db.String, index=True)base_study_id = db.Column(db.Text, db.ForeignKey("base_studies.id"), index=True)
+    source = db.Column(db.String, index=True)
+    base_study_id = db.Column(db.Text, db.ForeignKey("base_studies.id"), index=True)
     source_id = db.Column(db.String, index=True)
     source_updated_at = db.Column(db.DateTime(timezone=True))
     base_study_id = db.Column(db.Text, db.ForeignKey("base_studies.id"), index=True)
@@ -544,7 +545,7 @@ class Pipeline(BaseMixin, db.Model):
     name = db.Column(db.String)
     description = db.Column(db.String)
     version = db.Column(db.String)
-    study_depenedent = db.Column(db.Boolean, default=False)
+    study_dependent = db.Column(db.Boolean, default=False)
     ace_compatible = db.Column(db.Boolean, default=False)
     pubget_compatible = db.Column(db.Boolean, default=False)
     derived_from = db.Column(db.Text)
@@ -581,10 +582,12 @@ class PipelineRunResult(BaseMixin, db.Model):
         db.Text, db.ForeignKey("pipeline_runs.id", ondelete="CASCADE"), index=True
     )
     base_study_id = db.Column(db.Text, db.ForeignKey("base_studies.id"), index=True)
-    feature_index = db.Column(db.Integer)  # the same categories of information can be extracted multiple times from a single paper (e.g., multiple demographic groups, multiple software packages, etc)
-    feature_group = db.Column(db.String)  # task, disease, software, age
-    feature = db.Column(db.String)  # stroop task, schizophrenia, fsl
-    value = db.Column(db.Float)  # 0.67, 0.3, 0.5 (some measure of confidence for the result)
+    data = db.Column(JSONB)
+    file_inputs = db.Column(JSONB)
+    # feature_index = db.Column(db.Integer)  # the same categories of information can be extracted multiple times from a single paper (e.g., multiple demographic groups, multiple software packages, etc)
+    # feature_group = db.Column(db.String)  # task, disease, software, age
+    # feature = db.Column(db.String)  # stroop task, schizophrenia, fsl
+    # value = db.Column(db.Float)  # 0.67, 0.3, 0.5 (some measure of confidence for the result)
     run = relationship("PipelineRun", backref=backref("results", passive_deletes=True))
 
 # from . import event_listeners  # noqa E402

@@ -12,6 +12,10 @@ from .data import (
     AnnotationAnalysis,
     PointValue,
     AnalysisConditions,
+    Pipeline,
+    PipelineConfig,
+    PipelineRun,
+    PipelineRunResult,
 )
 from .auth import User, Role
 
@@ -31,4 +35,8 @@ __all__ = [
     "AnalysisConditions",
     "User",
     "Role",
+    "Pipeline",
+    "PipelineConfig",
+    "PipelineRun",
+    "PipelineRunResult",
 ]
