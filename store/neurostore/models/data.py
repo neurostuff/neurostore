@@ -589,10 +589,6 @@ class PipelineRunResult(BaseMixin, db.Model):
     date_executed = db.Column(db.DateTime(timezone=True))
     data = db.Column(JSONB)
     file_inputs = db.Column(JSONB)
-    # feature_index = db.Column(db.Integer)  # the same categories of information can be extracted multiple times from a single paper (e.g., multiple demographic groups, multiple software packages, etc)
-    # feature_group = db.Column(db.String)  # task, disease, software, age
-    # feature = db.Column(db.String)  # stroop task, schizophrenia, fsl
-    # value = db.Column(db.Float)  # 0.67, 0.3, 0.5 (some measure of confidence for the result)
     run = relationship("PipelineRun", backref=backref("results", passive_deletes=True))
 
 
