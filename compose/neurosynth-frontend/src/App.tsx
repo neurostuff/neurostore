@@ -9,7 +9,6 @@ import Navbar from 'components/Navbar/Navbar';
 import useGetToken from './hooks/useGetToken';
 import BaseNavigation from 'pages/BaseNavigation/BaseNavigation';
 import { useLocation } from 'react-router-dom';
-import Banner from 'components/Banner';
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -69,7 +68,7 @@ function App() {
                     </IconButton>
                 )}
             >
-                <Banner />
+                {/* <Banner /> */}
                 <Navbar />
                 <BaseNavigation />
             </SnackbarProvider>
