@@ -559,7 +559,9 @@ class PipelineConfig(BaseMixin, db.Model):
     )
     config = db.Column(JSONB)
     config_hash = db.Column(db.String, index=True)
-    pipeline = relationship("Pipeline", backref=backref("configs", passive_deletes=True))
+    pipeline = relationship(
+        "Pipeline", backref=backref("configs", passive_deletes=True)
+    )
 
 
 class PipelineRun(BaseMixin, db.Model):
@@ -571,7 +573,9 @@ class PipelineRun(BaseMixin, db.Model):
     config_id = db.Column(
         db.Text, db.ForeignKey("pipeline_configs.id", ondelete="CASCADE"), index=True
     )
-    config = relationship("PipelineConfig", backref=backref("runs", passive_deletes=True))
+    config = relationship(
+        "PipelineConfig", backref=backref("runs", passive_deletes=True)
+    )
     run_index = db.Column(db.Integer())
 
 
@@ -590,6 +594,7 @@ class PipelineRunResult(BaseMixin, db.Model):
     # feature = db.Column(db.String)  # stroop task, schizophrenia, fsl
     # value = db.Column(db.Float)  # 0.67, 0.3, 0.5 (some measure of confidence for the result)
     run = relationship("PipelineRun", backref=backref("results", passive_deletes=True))
+
 
 # from . import event_listeners  # noqa E402
 

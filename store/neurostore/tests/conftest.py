@@ -606,16 +606,15 @@ def create_demographic_features(session, ingest_neurosynth, tmp_path):
     }
     with open(output_dir / "pipeline_info.json", "w") as f:
         json.dump(pipeline_info, f)
-    
+
     studies = BaseStudy.query.all()
     diseases = ["schizophrenia", "bipolar disorder", "depression", "healthy"]
     studies_data = [
         [
-            {
-                "age": random.randint(18, 100),
-                "group": group
-            } for group in random.sample(diseases, k=random.randint(1, 2))
-        ] for study in studies
+            {"age": random.randint(18, 100), "group": group}
+            for group in random.sample(diseases, k=random.randint(1, 2))
+        ]
+        for study in studies
     ]
 
     for study, study_data in zip(studies, studies_data):
@@ -626,12 +625,16 @@ def create_demographic_features(session, ingest_neurosynth, tmp_path):
         with open(study_dir / "info.json", "w") as f:
             json.dump(
                 {
-                    "inputs": {f"/path/to/input/{study.id}.txt": f"md5{random.randint(0, 100)}"},
+                    "inputs": {
+                        f"/path/to/input/{study.id}.txt": f"md5{random.randint(0, 100)}"
+                    },
                     "date": f"2021-01-{random.randint(1, 30)}",
-                }, f
+                },
+                f,
             )
 
     return output_dir
+
 
 """
 Queries for testing
@@ -648,9 +651,7 @@ invalid_queries = [
         'OR ("ASD")) AND (("decision*" OR "Dec',
         "Unmatched parentheses",
     ),
-    (
-        'smoking AND NOT memory', "Consecutive operators are not allowed"
-    )
+    ("smoking AND NOT memory", "Consecutive operators are not allowed"),
 ]
 
 valid_queries = [
