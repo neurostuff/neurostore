@@ -582,6 +582,7 @@ class PipelineRunResult(BaseMixin, db.Model):
         db.Text, db.ForeignKey("pipeline_runs.id", ondelete="CASCADE"), index=True
     )
     base_study_id = db.Column(db.Text, db.ForeignKey("base_studies.id"), index=True)
+    date_executed = db.Column(db.DateTime(timezone=True))
     data = db.Column(JSONB)
     file_inputs = db.Column(JSONB)
     # feature_index = db.Column(db.Integer)  # the same categories of information can be extracted multiple times from a single paper (e.g., multiple demographic groups, multiple software packages, etc)

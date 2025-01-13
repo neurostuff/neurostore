@@ -622,9 +622,14 @@ def create_demographic_features(session, ingest_neurosynth, tmp_path):
         study_dir = output_dir / study.id
         study_dir.mkdir(exist_ok=True, parents=True)
         with open(study_dir / "results.json", "w") as f:
-            for entry in study_data:
-                json.dump(entry, f)
-                f.write('\n')
+            json.dump({"predictions": study_data}, f)
+        with open(study_dir / "info.json", "w") as f:
+            json.dump(
+                {
+                    "inputs": {f"/path/to/input/{study.id}.txt": f"md5{random.randint(0, 100)}"},
+                    "date": f"2021-01-{random.randint(1, 30)}",
+                }, f
+            )
 
     return output_dir
 
