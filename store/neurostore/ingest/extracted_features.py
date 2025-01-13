@@ -2,16 +2,9 @@
 
 import json
 import os.path as op
-import re
 from pathlib import Path
 import hashlib
-
-import numpy as np
-import pandas as pd
-import requests
-from scipy import sparse
 from dateutil.parser import parse as parse_date
-from sqlalchemy import or_
 
 from neurostore.database import db
 from neurostore.models import (
@@ -22,7 +15,7 @@ from neurostore.models import (
 )
 
 
-def ingest_feature(feature_directory, session):
+def ingest_feature(feature_directory):
     """Ingest demographics data into the database."""
     # read pipeline_info.json from the base feature directory
     with open(op.join(feature_directory, "pipeline_info.json")) as f:
@@ -30,7 +23,7 @@ def ingest_feature(feature_directory, session):
 
     # search if there is an existing pipeline with the same name and version
     pipeline = (
-        session.query(Pipeline)
+        db.session.query(Pipeline)
         .filter(
             Pipeline.name == pipeline_info["name"],
             Pipeline.version == pipeline_info["version"],
@@ -48,7 +41,7 @@ def ingest_feature(feature_directory, session):
             pubget_compatible=pipeline_info.get("pubget_compatible", False),
             derived_from=pipeline_info.get("derived_from", None),
         )
-        session.add(pipeline)
+        db.session.add(pipeline)
 
     # search within the pipeline and see if there are any existing pipeline configs
     # that match the "arguements" field in the pipeline_info.json
@@ -57,7 +50,7 @@ def ingest_feature(feature_directory, session):
         json.dumps(pipeline_info["arguments"]).encode()
     ).hexdigest()
     pipeline_config = (
-        session.query(PipelineConfig)
+        db.session.query(PipelineConfig)
         .filter(
             PipelineConfig.pipeline_id == pipeline.id,
             PipelineConfig.config_hash == config_hash,
@@ -71,7 +64,7 @@ def ingest_feature(feature_directory, session):
             config=pipeline_info["arguments"],
             config_hash=config_hash,
         )
-        session.add(pipeline_config)
+        db.session.add(pipeline_config)
 
     # create a new pipeline run
     pipeline_run = PipelineRun(
@@ -104,7 +97,7 @@ def ingest_feature(feature_directory, session):
             )
         )
 
-    session.add(pipeline_run)
-    session.add_all(pipeline_run_results)
+    db.session.add(pipeline_run)
+    db.session.add_all(pipeline_run_results)
 
-    session.commit()
+    db.session.commit()

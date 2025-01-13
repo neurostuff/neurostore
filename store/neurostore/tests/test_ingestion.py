@@ -16,4 +16,4 @@ def test_ingest_neuroquery(ingest_neuroquery, session):
 
 
 def test_ingest_features(create_demographic_features, session):
-    ingest_feature(create_demographic_features, session)
+    ingest_feature(create_demographic_features)
