@@ -1,12 +1,9 @@
-import { Box, Button, Checkbox, Link, Slider, TextField, Typography } from '@mui/material';
-import { ChangeEvent, useCallback, useEffect, useRef, useState } from 'react';
-import { Niivue, SHOW_RENDER } from '@niivue/niivue';
 import { Download, OpenInNew } from '@mui/icons-material';
 import ImageIcon from '@mui/icons-material/Image';
+import { Box, Button, Checkbox, Link, Typography } from '@mui/material';
+import { Niivue, SHOW_RENDER } from '@niivue/niivue';
+import { ChangeEvent, useCallback, useEffect, useRef, useState } from 'react';
 import ThresholdSlider from './ThresholdSlider';
-import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
-
-let thresholdDebounce: NodeJS.Timeout;
 
 const NiiVueVisualizer: React.FC<{ file: string; filename: string; neurovaultLink?: string }> = ({
     file,
@@ -20,7 +17,6 @@ const NiiVueVisualizer: React.FC<{ file: string; filename: string; neurovaultLin
     const [disableNegatives, setDisableNegatives] = useState(false);
     const [showCrosshairs, setShowCrosshairs] = useState(true);
     const [brainCoordinateString, setBrainCoordinateString] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
 
     const [threshold, setThreshold] = useState<{
         min: number;
@@ -219,7 +215,6 @@ const NiiVueVisualizer: React.FC<{ file: string; filename: string; neurovaultLin
 
     return (
         <Box>
-            {/* <StateHandlerComponent isLoading={isLoading} isError={false}> */}
             <Box sx={{ marginBottom: '10px', display: 'flex', justifyContent: 'space-between' }}>
                 <Box width="250px">
                     <ThresholdSlider
@@ -265,7 +260,6 @@ const NiiVueVisualizer: React.FC<{ file: string; filename: string; neurovaultLin
                     </Box>
                 </Box>
             </Box>
-            {/* </StateHandlerComponent> */}
             <Box sx={{ height: '32px' }}>
                 {brainCoordinateString && (
                     <Box
