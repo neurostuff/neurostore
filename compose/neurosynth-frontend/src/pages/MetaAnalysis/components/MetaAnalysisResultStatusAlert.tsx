@@ -20,7 +20,11 @@ const MetaAnalysisResultStatusAlert: React.FC<{
         const shouldHide = !!localStorage.getItem(
             `${localStorageResultAlertKey}-${resultStatus.severity}-${metaAnalysis?.id}`
         );
-        setHideAlert(shouldHide);
+        if (resultStatus.severity === 'success') {
+            setHideAlert(true);
+        } else {
+            setHideAlert(shouldHide);
+        }
     }, [metaAnalysis?.id, resultStatus]);
 
     if (hideAlert === undefined) return null;

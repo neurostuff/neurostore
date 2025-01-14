@@ -61,7 +61,7 @@ const DisplayMetaAnalysisResults: React.FC<{
                     if (segmentA.value === segmentB.value) continue;
                     return segmentA.value.localeCompare(segmentB.value);
                 } else {
-                    return orderA - orderB;
+                    return orderB - orderA;
                 }
             }
             return 0;
@@ -85,7 +85,7 @@ const DisplayMetaAnalysisResults: React.FC<{
             }
         }
 
-        return sorted;
+        return sorted.reverse();
     }, [neurovaultFiles, metaAnalysis]);
 
     useEffect(() => {
@@ -108,7 +108,7 @@ const DisplayMetaAnalysisResults: React.FC<{
                                 onClick={() => setSelectedNeurovaultImage(neurovaultFile)}
                                 selected={selectedNeurovaultImage?.id === neurovaultFile.id}
                             >
-                                <ListItemText primary={neurovaultFile.name} secondary={neurovaultFile.map_type} />
+                                <ListItemText primary={neurovaultFile.name} />
                             </ListItemButton>
                         ))}
                     </List>

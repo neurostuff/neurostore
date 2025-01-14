@@ -48,6 +48,11 @@ const caseMKDAChi2: Partial<INeurovault>[] = [
     { id: 5, name: 'z_desc-associationMass' },
 ];
 
+const caseMoreSegments: Partial<INeurovault>[] = [
+    { id: 2, name: 'z_desc-association_level-voxel_corr-FDR_method-indep.nii.gz' },
+    { id: 1, name: 'z_desc-association.nii.gz' },
+];
+
 describe('DisplayMetaAnalysisResults', () => {
     it('should render', () => {
         render(<DisplayMetaAnalysisResults metaAnalysis={undefined} />);
@@ -141,5 +146,19 @@ describe('DisplayMetaAnalysisResults', () => {
         expect(buttons[2].textContent).toBe('z_desc-AAA');
         expect(buttons[3].textContent).toBe('z_desc-CCC');
         expect(buttons[4].textContent).toBe('z_desc-ZZZ');
+    });
+
+    it('should show the correctly sorted list if one file name is larger than the other', () => {
+        (useGetNeurovaultImages as Mock).mockReturnValue({
+            data: caseMoreSegments,
+            isLoading: false,
+            isError: false,
+        });
+
+        render(<DisplayMetaAnalysisResults metaAnalysis={mockMetaAnalysisReturn()} />);
+        const buttons = screen.getAllByRole('button');
+        expect(buttons.length).toEqual(caseMoreSegments.length);
+        expect(buttons[0].textContent).toBe('z_desc-association_level-voxel_corr-FDR_method-indep.nii.gz');
+        expect(buttons[1].textContent).toBe('z_desc-association.nii.gz');
     });
 });
