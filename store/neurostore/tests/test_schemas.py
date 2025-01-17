@@ -2,7 +2,13 @@ import pytest
 
 from ..schemas import StudySchema, StudysetSchema, StudysetSnapshot
 from ..models import Study, Studyset
-
+from neurostore.schemas.pipeline import (
+    PipelineSchema,
+    PipelineConfigSchema,
+    PipelineRunSchema,
+    PipelineRunResultSchema,
+    PipelineRunResultVoteSchema,
+)
 # Things I the schemas to do:
 # 1. Cloning: I need a deep copy of the object, with new versions of all the sub-objects
 #      a. cloning a study, create new everything
@@ -40,23 +46,6 @@ def test_compare_dataset_with_snapshot(ingest_neurosynth):
     quick_ss = StudysetSnapshot().dump(studyset)
 
     assert marshmallow_ss == quick_ss
-
-
-import pytest
-from neurostore.schemas.pipeline import (
-    PipelineSchema,
-    PipelineConfigSchema,
-    PipelineRunSchema,
-    PipelineRunResultSchema,
-    PipelineRunResultVoteSchema,
-)
-from neurostore.models.data import (
-    Pipeline,
-    PipelineConfig,
-    PipelineRun,
-    PipelineRunResult,
-    PipelineRunResultVote,
-)
 
 
 def test_PipelineSchema():

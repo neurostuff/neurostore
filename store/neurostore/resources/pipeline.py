@@ -1,4 +1,4 @@
-from flask import request, jsonify
+from flask import request
 from neurostore.models.data import (
     Pipeline,
     PipelineConfig,
