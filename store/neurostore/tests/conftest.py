@@ -602,8 +602,8 @@ def create_demographic_features(session, ingest_neurosynth, tmp_path):
         "derived_from": None,
         "arguments": {
             "parallel": 1,
-            "inputs": ['text'],
-            "input_sources": ['pubget'],
+            "inputs": ["text"],
+            "input_sources": ["pubget"],
         },
     }
     with open(output_dir / "pipeline_info.json", "w") as f:

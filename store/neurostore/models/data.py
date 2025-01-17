@@ -596,7 +596,9 @@ class PipelineRunResultVote(BaseMixin, db.Model):
     __tablename__ = "pipeline_run_result_votes"
 
     run_result_id = db.Column(
-        db.Text, db.ForeignKey("pipeline_run_results.id", ondelete="CASCADE"), index=True
+        db.Text,
+        db.ForeignKey("pipeline_run_results.id", ondelete="CASCADE"),
+        index=True,
     )
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"), index=True)
     accurate = db.Column(db.Boolean)
@@ -604,6 +606,7 @@ class PipelineRunResultVote(BaseMixin, db.Model):
         "PipelineRunResult", backref=backref("votes", passive_deletes=True)
     )
     user = relationship("User", backref=backref("votes", passive_deletes=True))
+
 
 # from . import event_listeners  # noqa E402
 

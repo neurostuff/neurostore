@@ -1,5 +1,12 @@
 from marshmallow import Schema, fields, post_load
-from neurostore.models.data import Pipeline, PipelineConfig, PipelineRun, PipelineRunResult, PipelineRunResultVote
+from neurostore.models.data import (
+    Pipeline,
+    PipelineConfig,
+    PipelineRun,
+    PipelineRunResult,
+    PipelineRunResultVote,
+)
+
 
 class PipelineSchema(Schema):
     id = fields.String(dump_only=True)

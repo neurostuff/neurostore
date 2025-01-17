@@ -41,9 +41,23 @@ def test_compare_dataset_with_snapshot(ingest_neurosynth):
 
     assert marshmallow_ss == quick_ss
 
+
 import pytest
-from neurostore.schemas.pipeline import PipelineSchema, PipelineConfigSchema, PipelineRunSchema, PipelineRunResultSchema, PipelineRunResultVoteSchema
-from neurostore.models.data import Pipeline, PipelineConfig, PipelineRun, PipelineRunResult, PipelineRunResultVote
+from neurostore.schemas.pipeline import (
+    PipelineSchema,
+    PipelineConfigSchema,
+    PipelineRunSchema,
+    PipelineRunResultSchema,
+    PipelineRunResultVoteSchema,
+)
+from neurostore.models.data import (
+    Pipeline,
+    PipelineConfig,
+    PipelineRun,
+    PipelineRunResult,
+    PipelineRunResultVote,
+)
+
 
 def test_PipelineSchema():
     payload = {
@@ -53,7 +67,7 @@ def test_PipelineSchema():
         "study_dependent": True,
         "ace_compatible": False,
         "pubget_compatible": True,
-        "derived_from": "Base Pipeline"
+        "derived_from": "Base Pipeline",
     }
     schema = PipelineSchema()
     result = schema.load(payload)
@@ -65,11 +79,12 @@ def test_PipelineSchema():
     assert result.pubget_compatible is True
     assert result.derived_from == "Base Pipeline"
 
+
 def test_PipelineConfigSchema():
     payload = {
         "pipeline_id": "123",
         "config": {"param1": "value1", "param2": "value2"},
-        "config_hash": "abc123"
+        "config_hash": "abc123",
     }
     schema = PipelineConfigSchema()
     result = schema.load(payload)
@@ -77,17 +92,15 @@ def test_PipelineConfigSchema():
     assert result.config == {"param1": "value1", "param2": "value2"}
     assert result.config_hash == "abc123"
 
+
 def test_PipelineRunSchema():
-    payload = {
-        "pipeline_id": "123",
-        "config_id": "456",
-        "run_index": 1
-    }
+    payload = {"pipeline_id": "123", "config_id": "456", "run_index": 1}
     schema = PipelineRunSchema()
     result = schema.load(payload)
     assert result.pipeline_id == "123"
     assert result.config_id == "456"
     assert result.run_index == 1
+
 
 def test_PipelineRunResultSchema():
     payload = {
@@ -95,7 +108,7 @@ def test_PipelineRunResultSchema():
         "base_study_id": "456",
         "date_executed": "2023-01-01T00:00:00Z",
         "data": {"result": "success"},
-        "file_inputs": {"input1": "file1"}
+        "file_inputs": {"input1": "file1"},
     }
     schema = PipelineRunResultSchema()
     result = schema.load(payload)
@@ -105,12 +118,9 @@ def test_PipelineRunResultSchema():
     assert result.data == {"result": "success"}
     assert result.file_inputs == {"input1": "file1"}
 
+
 def test_PipelineRunResultVoteSchema():
-    payload = {
-        "run_result_id": "123",
-        "user_id": "456",
-        "accurate": True
-    }
+    payload = {"run_result_id": "123", "user_id": "456", "accurate": True}
     schema = PipelineRunResultVoteSchema()
     result = schema.load(payload)
     assert result.run_result_id == "123"

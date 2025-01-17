@@ -1,8 +1,21 @@
 from flask import request, jsonify
-from neurostore.models.data import Pipeline, PipelineConfig, PipelineRun, PipelineRunResult, PipelineRunResultVote
-from neurostore.schemas.pipeline import PipelineSchema, PipelineConfigSchema, PipelineRunSchema, PipelineRunResultSchema, PipelineRunResultVoteSchema
+from neurostore.models.data import (
+    Pipeline,
+    PipelineConfig,
+    PipelineRun,
+    PipelineRunResult,
+    PipelineRunResultVote,
+)
+from neurostore.schemas.pipeline import (
+    PipelineSchema,
+    PipelineConfigSchema,
+    PipelineRunSchema,
+    PipelineRunResultSchema,
+    PipelineRunResultVoteSchema,
+)
 from neurostore.database import db
 from .base import ObjectView, ListView
+
 
 class PipelinesView(ObjectView, ListView):
     model = Pipeline
@@ -34,7 +47,7 @@ class PipelinesView(ObjectView, ListView):
         pipeline = self.model.query.get(id)
         db.session.delete(pipeline)
         db.session.commit()
-        return '', 204
+        return "", 204
 
 
 class PipelineConfigsView(ObjectView, ListView):
@@ -67,7 +80,7 @@ class PipelineConfigsView(ObjectView, ListView):
         pipeline_config = self.model.query.get(id)
         db.session.delete(pipeline_config)
         db.session.commit()
-        return '', 204
+        return "", 204
 
 
 class PipelineRunsView(ObjectView, ListView):
@@ -100,7 +113,7 @@ class PipelineRunsView(ObjectView, ListView):
         pipeline_run = self.model.query.get(pipeline_run_id)
         db.session.delete(pipeline_run)
         db.session.commit()
-        return '', 204
+        return "", 204
 
 
 class PipelineRunResultsView(ObjectView, ListView):
@@ -133,7 +146,7 @@ class PipelineRunResultsView(ObjectView, ListView):
         pipeline_run_result = self.model.query.get(pipeline_run_result_id)
         db.session.delete(pipeline_run_result)
         db.session.commit()
-        return '', 204
+        return "", 204
 
 
 class PipelineRunResultVotesView(ObjectView, ListView):
@@ -166,4 +179,4 @@ class PipelineRunResultVotesView(ObjectView, ListView):
         pipeline_run_result_vote = self.model.query.get(pipeline_run_result_vote_id)
         db.session.delete(pipeline_run_result_vote)
         db.session.commit()
-        return '', 204
+        return "", 204
