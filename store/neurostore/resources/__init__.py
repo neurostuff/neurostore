@@ -15,6 +15,13 @@ from .users import (
     UsersView,
 )
 
+from .pipeline import (
+    PipelinesView,
+    PipelineConfigsView,
+    PipelineRunsView,
+    PipelineRunResultsView,
+    PipelineRunResultVotesView,
+)
 __all__ = [
     "StudysetsView",
     "AnnotationsView",
@@ -27,4 +34,9 @@ __all__ = [
     "PointsView",
     "PointValuesView",
     "UsersView",
+    "PipelinesView",
+    "PipelineConfigsView",
+    "PipelineRunsView",
+    "PipelineRunResultsView",
+    "PipelineRunResultVotesView",
 ]

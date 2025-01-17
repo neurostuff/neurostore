@@ -16,6 +16,7 @@ from .data import (
     PipelineConfig,
     PipelineRun,
     PipelineRunResult,
+    PipelineRunResultVote,
 )
 from .auth import User, Role
 
@@ -39,4 +40,5 @@ __all__ = [
     "PipelineConfig",
     "PipelineRun",
     "PipelineRunResult",
+    "PipelineRunResultVote",
 ]

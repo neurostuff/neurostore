@@ -598,11 +598,13 @@ def create_demographic_features(session, ingest_neurosynth, tmp_path):
         "name": "demographics",
         "version": "v1.0.0",
         "description": "demographic features",
-        "study_dependent": False,
-        "ace_compatible": True,
-        "pubget_compatible": True,
+        "type": "independent",
         "derived_from": None,
-        "arguments": {"parallel": 1},
+        "arguments": {
+            "parallel": 1,
+            "inputs": ['text'],
+            "input_sources": ['pubget'],
+        },
     }
     with open(output_dir / "pipeline_info.json", "w") as f:
         json.dump(pipeline_info, f)

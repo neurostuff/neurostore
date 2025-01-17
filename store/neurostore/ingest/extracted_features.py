@@ -36,9 +36,9 @@ def ingest_feature(feature_directory):
             name=pipeline_info["name"],
             version=pipeline_info["version"],
             description=pipeline_info.get("description"),
-            study_dependent=pipeline_info.get("study_dependent", False),
-            ace_compatible=pipeline_info.get("ace_compatible", False),
-            pubget_compatible=pipeline_info.get("pubget_compatible", False),
+            study_dependent=True if pipeline_info.get("type", False) == "dependent" else False,
+            ace_compatible="ace" in pipeline_info.get("arguments", {}).get("input_sources", []),
+            pubget_compatible="pubget" in pipeline_info.get("arguments", {}).get("input_sources", []),
             derived_from=pipeline_info.get("derived_from", None),
         )
         db.session.add(pipeline)
