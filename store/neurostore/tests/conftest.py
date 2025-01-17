@@ -1,4 +1,6 @@
 import pytest
+import random
+import json
 from os import environ
 from neurostore.models.data import Analysis, Condition
 from sqlalchemy.orm import scoped_session, sessionmaker
@@ -588,6 +590,54 @@ def simple_neurosynth_annotation(session, ingest_neurosynth):
     return smol_annot
 
 
+@pytest.fixture(scope="function")
+def create_demographic_features(session, ingest_neurosynth, tmp_path):
+    output_dir = tmp_path / "output" / "demographics" / "v1.0.0"
+    output_dir.mkdir(exist_ok=True, parents=True)
+    pipeline_info = {
+        "name": "demographics",
+        "version": "v1.0.0",
+        "description": "demographic features",
+        "type": "independent",
+        "derived_from": None,
+        "arguments": {
+            "parallel": 1,
+            "inputs": ["text"],
+            "input_sources": ["pubget"],
+        },
+    }
+    with open(output_dir / "pipeline_info.json", "w") as f:
+        json.dump(pipeline_info, f)
+
+    studies = BaseStudy.query.all()
+    diseases = ["schizophrenia", "bipolar disorder", "depression", "healthy"]
+    studies_data = [
+        [
+            {"age": random.randint(18, 100), "group": group}
+            for group in random.sample(diseases, k=random.randint(1, 2))
+        ]
+        for study in studies
+    ]
+
+    for study, study_data in zip(studies, studies_data):
+        study_dir = output_dir / study.id
+        study_dir.mkdir(exist_ok=True, parents=True)
+        with open(study_dir / "results.json", "w") as f:
+            json.dump({"predictions": study_data}, f)
+        with open(study_dir / "info.json", "w") as f:
+            json.dump(
+                {
+                    "inputs": {
+                        f"/path/to/input/{study.id}.txt": f"md5{random.randint(0, 100)}"
+                    },
+                    "date": f"2021-01-{random.randint(1, 30)}",
+                },
+                f,
+            )
+
+    return output_dir
+
+
 """
 Queries for testing
 """
@@ -603,9 +653,7 @@ invalid_queries = [
         'OR ("ASD")) AND (("decision*" OR "Dec',
         "Unmatched parentheses",
     ),
-    (
-        'smoking AND NOT memory', "Consecutive operators are not allowed"
-    )
+    ("smoking AND NOT memory", "Consecutive operators are not allowed"),
 ]
 
 valid_queries = [
