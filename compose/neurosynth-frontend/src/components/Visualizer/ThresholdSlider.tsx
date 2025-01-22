@@ -183,6 +183,7 @@ const ThresholdSlider: React.FC<{
                     }}
                 ></Slider>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    {/* no mechanism exists yet to allow for soft threshold AND adjustable cal_min. Uncomment this if we want to add an adjustable min in the future, the useEffect infrastructure to do so already exists above */}
                     {/* <TextField
                         sx={{
                             width: '60px',

@@ -48,6 +48,11 @@ const caseMKDAChi2: Partial<INeurovault>[] = [
     { id: 5, name: 'z_desc-associationMass' },
 ];
 
+const caseNotZAlphabetical: Partial<INeurovault>[] = [
+    { id: 2, name: 'p_desc-DEF' },
+    { id: 1, name: 'p_desc-ABC' },
+];
+
 const caseMoreSegments: Partial<INeurovault>[] = [
     { id: 2, name: 'z_desc-association_level-voxel_corr-FDR_method-indep.nii.gz' },
     { id: 1, name: 'z_desc-association.nii.gz' },
@@ -146,6 +151,20 @@ describe('DisplayMetaAnalysisResults', () => {
         expect(buttons[2].textContent).toBe('z_desc-AAA');
         expect(buttons[3].textContent).toBe('z_desc-CCC');
         expect(buttons[4].textContent).toBe('z_desc-ZZZ');
+    });
+
+    it('should show the correctly sorted list for non z maps', () => {
+        (useGetNeurovaultImages as Mock).mockReturnValue({
+            data: caseNotZAlphabetical,
+            isLoading: false,
+            isError: false,
+        });
+
+        render(<DisplayMetaAnalysisResults metaAnalysis={mockMetaAnalysisReturn()} />);
+        const buttons = screen.getAllByRole('button');
+        expect(buttons.length).toEqual(caseNotZAlphabetical.length);
+        expect(buttons[0].textContent).toBe('p_desc-ABC');
+        expect(buttons[1].textContent).toBe('p_desc-DEF');
     });
 
     it('should show the correctly sorted list if one file name is larger than the other', () => {

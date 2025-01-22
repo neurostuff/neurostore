@@ -33,7 +33,7 @@ const DisplayMetaAnalysisResults: React.FC<{
         if (!neurovaultFiles || !metaAnalysis || !(metaAnalysis?.specification as Specification).estimator?.type)
             return [];
 
-        const orderMap = new Map(NimareOutputs.map((output, index) => [output.key, index]));
+        const orderMap = new Map(NimareOutputs.reverse().map((output, index) => [output.key, index]));
         // We want the order of the files to be very specific:
         // if algorithm is MKDAChi2, then set 1st image to be z_desc-associationMass
         //                                set 2nd image to be z_desc-uniformityMass
@@ -51,8 +51,8 @@ const DisplayMetaAnalysisResults: React.FC<{
                 const segmentB = filenameB[i];
 
                 if (!segmentA && !segmentB) return 0;
-                else if (!segmentA) return -1;
-                else if (!segmentB) return 1;
+                else if (!segmentA) return 1;
+                else if (!segmentB) return -1;
 
                 const orderA = orderMap.get(segmentA.key) ?? Infinity;
                 const orderB = orderMap.get(segmentB.key) ?? Infinity;
@@ -61,7 +61,7 @@ const DisplayMetaAnalysisResults: React.FC<{
                     if (segmentA.value === segmentB.value) continue;
                     return segmentA.value.localeCompare(segmentB.value);
                 } else {
-                    return orderB - orderA;
+                    return orderA - orderB;
                 }
             }
             return 0;
@@ -85,7 +85,7 @@ const DisplayMetaAnalysisResults: React.FC<{
             }
         }
 
-        return sorted.reverse();
+        return sorted;
     }, [neurovaultFiles, metaAnalysis]);
 
     useEffect(() => {

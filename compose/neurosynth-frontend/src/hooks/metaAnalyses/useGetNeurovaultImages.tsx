@@ -60,8 +60,10 @@ export interface INeurovault {
 function useGetNeurovaultImages(neurovaultImages: string[]) {
     return useQuery({
         queryKey: ['neurovault-images', ...neurovaultImages],
+
         queryFn: async () => {
             const res = await Promise.all<AxiosResponse<INeurovault>>(neurovaultImages.map((url) => axios.get(url)));
+
             return res.map((x) => ({
                 ...x.data,
                 file: (x.data.file || '').replace(/http/, 'https'), // without this, link will redirect but result in an error
