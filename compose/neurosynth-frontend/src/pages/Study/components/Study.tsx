@@ -9,20 +9,10 @@ import { IStoreStudy } from 'pages/Study/store/StudyStore.helpers';
 import { Optional } from 'utils/utilitytypes';
 import StudyAnalyses from './StudyAnalyses';
 import StudyStyles from './Study.styles';
-import DisplayStudyChipLinks from '../../../components/DisplayStudyChipLinks/DisplayStudyChipLinks';
+import DisplayStudyChipLinks from 'components/DisplayStudyChipLinks/DisplayStudyChipLinks';
 
 const Study: React.FC<Optional<IStoreStudy, 'metadata'>> = (props) => {
-    const {
-        id,
-        name,
-        description,
-        doi,
-        pmid,
-        authors,
-        publication: journal,
-        metadata,
-        analyses = [],
-    } = props;
+    const { id, name, description, doi, pmid, authors, publication: journal, metadata, analyses = [] } = props;
     return (
         <Box>
             <Box data-tour="StudyPage-1">
@@ -33,7 +23,7 @@ const Study: React.FC<Optional<IStoreStudy, 'metadata'>> = (props) => {
                             color="primary"
                             sx={{ marginRight: '5px', borderRadius: '8px', marginBottom: '0.5rem' }}
                             size="medium"
-                            label={`Version: ${id}` || ''}
+                            label={id ? `Version: ${id}` : ''}
                         />
                     )}
                     <Typography variant="h6">
@@ -68,9 +58,7 @@ const Study: React.FC<Optional<IStoreStudy, 'metadata'>> = (props) => {
                                 backgroundColor: '#f2f2f2',
                             },
                         }}
-                        TitleElement={
-                            <Typography sx={{ color: 'primary.main' }}>Metadata</Typography>
-                        }
+                        TitleElement={<Typography sx={{ color: 'primary.main' }}>Metadata</Typography>}
                     >
                         <Box sx={StudyStyles.metadataContainer}>
                             <NeurosynthTable
@@ -88,17 +76,13 @@ const Study: React.FC<Optional<IStoreStudy, 'metadata'>> = (props) => {
                                     { text: 'Value', key: 'value', styles: { fontWeight: 'bold' } },
                                 ]}
                                 rows={metadata
-                                    .sort((a, b) =>
-                                        sortMetadataArrayFn(a.metadataKey, b.metadataKey)
-                                    )
+                                    .sort((a, b) => sortMetadataArrayFn(a.metadataKey, b.metadataKey))
                                     .map(({ metadataKey, metadataValue }) => (
                                         <TableRow key={metadataKey}>
                                             <TableCell>{metadataKey}</TableCell>
                                             <TableCell
                                                 sx={{
-                                                    color: NeurosynthTableStyles[
-                                                        getType(metadataValue)
-                                                    ],
+                                                    color: NeurosynthTableStyles[getType(metadataValue)],
                                                 }}
                                             >
                                                 {getValue(metadataValue)}

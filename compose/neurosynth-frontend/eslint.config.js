@@ -3,7 +3,8 @@ import eslint from '@eslint/js';
 import teslint from 'typescript-eslint';
 import eslintHooks from 'eslint-plugin-react-hooks';
 import eslintCypress from 'eslint-plugin-cypress/flat';
-import eslintPrettier from 'eslint-plugin-prettier/recommended';
+import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
+import eslintConfigPrettier from 'eslint-config-prettier';
 import globals from 'globals';
 import eslintReactRefresh from 'eslint-plugin-react-refresh';
 
@@ -11,7 +12,8 @@ export default [
     eslint.configs.recommended,
     ...teslint.configs.recommended,
     eslintCypress.configs.recommended,
-    eslintPrettier,
+    eslintConfigPrettier,
+    eslintPluginPrettierRecommended,
     {
         languageOptions: {
             globals: {
@@ -33,6 +35,8 @@ export default [
         rules: {
             ...eslintHooks.configs.recommended.rules,
             'react-refresh/only-export-components': 'warn',
+            // to override prettier settings, set it here
+            // "prettier/prettier": ["error", { printWidth: 20, tabWidth: 4, singleQuote: true }],
         },
     },
 ];

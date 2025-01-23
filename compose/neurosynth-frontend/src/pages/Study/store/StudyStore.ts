@@ -31,11 +31,7 @@ export type StudyStoreActions = {
     addOrUpdateAnalysis: (analysis: Partial<IStoreAnalysis>) => IStoreAnalysis;
     deleteAnalysis: (analysisId: string) => void;
     createCondition: (condition: IStoreCondition) => IStoreCondition;
-    addOrUpdateConditionWeightPairForAnalysis: (
-        analysisId: string,
-        condition: IStoreCondition,
-        weight: number
-    ) => void;
+    addOrUpdateConditionWeightPairForAnalysis: (analysisId: string, condition: IStoreCondition, weight: number) => void;
     deleteConditionFromAnalysis: (analysisId: string, conditionId: string) => void;
     createAnalysisPoints: (analysisId: string, points: IStorePoint[], index: number) => void;
     deleteAnalysisPoints: (analysisId: string, pointIds: string[]) => void;
@@ -78,10 +74,7 @@ const useStudyStore = create<
                         },
                     }));
                     try {
-                        const studyRes = await API.NeurostoreServices.StudiesService.studiesIdGet(
-                            studyId,
-                            true
-                        );
+                        const studyRes = await API.NeurostoreServices.StudiesService.studiesIdGet(studyId, true);
                         // const conditionsRes =
                         //     await API.NeurostoreServices.ConditionsService.conditionsGet();
 
@@ -91,7 +84,8 @@ const useStudyStore = create<
                                 ...state.study,
                                 ...studyRes.data,
                                 analyses: studyAnalysesToStoreAnalyses(
-                                    studyRes.data.analyses as AnalysisReturn[]
+                                    studyRes.data.analyses as AnalysisReturn[],
+                                    true
                                 ).sort((a, b) => {
                                     if (!a.order || !b.order)
                                         return (
@@ -177,9 +171,7 @@ const useStudyStore = create<
                             analyses: storeAnalysesToStudyAnalyses(state.study.analyses),
                         });
 
-                        const newAnalysesWereCreated = state.study.analyses.some(
-                            (analysis) => analysis.isNew
-                        );
+                        const newAnalysesWereCreated = state.study.analyses.some((analysis) => analysis.isNew);
                         if (newAnalysesWereCreated && annotationId) {
                             // new analyses created are not included by default and need to be manually set
                             await setAnalysesInAnnotationAsIncluded(annotationId);
@@ -198,9 +190,7 @@ const useStudyStore = create<
                             ...state,
                             study: {
                                 ...studyRes.data,
-                                analyses: studyAnalysesToStoreAnalyses(
-                                    studyRes.data.analyses as StudyReturn[]
-                                ),
+                                analyses: studyAnalysesToStoreAnalyses(studyRes.data.analyses as StudyReturn[], true),
                                 metadata: metadataToArray(studyRes?.data?.metadata || {}),
                             },
                             storeMetadata: {
@@ -227,9 +217,7 @@ const useStudyStore = create<
                     setUnloadHandler('study');
                     set((state) => {
                         const metadataUpdate = [...state.study.metadata];
-                        const foundRowIndex = metadataUpdate.findIndex(
-                            (x) => x.metadataKey === row.metadataKey
-                        );
+                        const foundRowIndex = metadataUpdate.findIndex((x) => x.metadataKey === row.metadataKey);
                         if (foundRowIndex < 0) {
                             metadataUpdate.unshift({
                                 ...row,
@@ -337,9 +325,7 @@ const useStudyStore = create<
                 deleteAnalysis: (analysisId) => {
                     setUnloadHandler('study');
                     set((state) => {
-                        const updatedAnalyses = [
-                            ...state.study.analyses.filter((x) => x.id !== analysisId),
-                        ];
+                        const updatedAnalyses = [...state.study.analyses.filter((x) => x.id !== analysisId)];
 
                         return {
                             ...state,
@@ -374,17 +360,11 @@ const useStudyStore = create<
                 addOrUpdateConditionWeightPairForAnalysis: (analysisId, condition, weight) => {
                     set((state) => {
                         const updatedAnalyses = [...state.study.analyses];
-                        const foundAnalysisIndex = updatedAnalyses.findIndex(
-                            (x) => x.id === analysisId
-                        );
+                        const foundAnalysisIndex = updatedAnalyses.findIndex((x) => x.id === analysisId);
                         if (foundAnalysisIndex < 0) return state;
 
-                        const updatedWeights = [
-                            ...(updatedAnalyses[foundAnalysisIndex].weights || []),
-                        ];
-                        const updatedConditions = [
-                            ...updatedAnalyses[foundAnalysisIndex].conditions,
-                        ];
+                        const updatedWeights = [...(updatedAnalyses[foundAnalysisIndex].weights || [])];
+                        const updatedConditions = [...updatedAnalyses[foundAnalysisIndex].conditions];
                         const foundConditionIndex = updatedConditions.findIndex(
                             (x) => (x.id || null) === (condition.id || undefined)
                         );
@@ -397,10 +377,7 @@ const useStudyStore = create<
                                     },
                                     ...updatedAnalyses[foundAnalysisIndex].conditions,
                                 ],
-                                weights: [
-                                    weight,
-                                    ...(updatedAnalyses[foundAnalysisIndex].weights as number[]),
-                                ],
+                                weights: [weight, ...(updatedAnalyses[foundAnalysisIndex].weights as number[])],
                             };
                         } else {
                             updatedConditions[foundConditionIndex] = {
@@ -432,21 +409,15 @@ const useStudyStore = create<
                 deleteConditionFromAnalysis: (analysisId, conditionId) => {
                     set((state) => {
                         const updatedAnalyses = [...state.study.analyses];
-                        const foundAnalysisIndex = updatedAnalyses.findIndex(
-                            (x) => x.id === analysisId
-                        );
+                        const foundAnalysisIndex = updatedAnalyses.findIndex((x) => x.id === analysisId);
                         if (foundAnalysisIndex < 0) return state;
 
-                        const foundConditionIndex = updatedAnalyses[
-                            foundAnalysisIndex
-                        ].conditions.findIndex((x) => x.id === conditionId);
+                        const foundConditionIndex = updatedAnalyses[foundAnalysisIndex].conditions.findIndex(
+                            (x) => x.id === conditionId
+                        );
                         if (foundConditionIndex < 0) return state;
-                        const updatedConditions = [
-                            ...updatedAnalyses[foundAnalysisIndex].conditions,
-                        ];
-                        const updatedWeights = [
-                            ...(updatedAnalyses[foundAnalysisIndex].weights as number[]),
-                        ];
+                        const updatedConditions = [...updatedAnalyses[foundAnalysisIndex].conditions];
+                        const updatedWeights = [...(updatedAnalyses[foundAnalysisIndex].weights as number[])];
                         updatedConditions.splice(foundConditionIndex, 1);
                         updatedWeights.splice(foundConditionIndex, 1);
 
@@ -473,9 +444,7 @@ const useStudyStore = create<
                     setUnloadHandler('study');
                     set((state) => {
                         const updatedAnalyses = [...state.study.analyses];
-                        const foundAnalysisIndex = updatedAnalyses.findIndex(
-                            (x) => x.id === analysisId
-                        );
+                        const foundAnalysisIndex = updatedAnalyses.findIndex((x) => x.id === analysisId);
                         if (foundAnalysisIndex < 0) return state;
                         const updatedPoints = [...state.study.analyses[foundAnalysisIndex].points];
 
@@ -515,13 +484,11 @@ const useStudyStore = create<
                     setUnloadHandler('study');
                     set((state) => {
                         const updatedAnalyses = [...state.study.analyses];
-                        const foundAnalysisIndex = updatedAnalyses.findIndex(
-                            (x) => x.id === analysisId
-                        );
+                        const foundAnalysisIndex = updatedAnalyses.findIndex((x) => x.id === analysisId);
                         if (foundAnalysisIndex < 0) return state;
-                        const updatedPoints = [
-                            ...state.study.analyses[foundAnalysisIndex].points,
-                        ].filter((point) => !ids.includes(point.id as string));
+                        const updatedPoints = [...state.study.analyses[foundAnalysisIndex].points].filter(
+                            (point) => !ids.includes(point.id as string)
+                        );
 
                         if (updatedPoints.length === 0) {
                             updatedPoints.push({
@@ -558,17 +525,13 @@ const useStudyStore = create<
                     setUnloadHandler('study');
                     set((state) => {
                         const updatedAnalyses = [...state.study.analyses];
-                        const foundAnalysisIndex = updatedAnalyses.findIndex(
-                            (x) => x.id === analysisId
-                        );
+                        const foundAnalysisIndex = updatedAnalyses.findIndex((x) => x.id === analysisId);
                         if (foundAnalysisIndex < 0) return state;
 
                         const updatedPoints = [...state.study.analyses[foundAnalysisIndex].points];
                         pointsToUpdate.forEach((pointToUpdate) => {
                             const pointToUpdateId = pointToUpdate.id as string;
-                            const foundPointIndex = updatedPoints.findIndex(
-                                (x) => x.id === pointToUpdateId
-                            );
+                            const foundPointIndex = updatedPoints.findIndex((x) => x.id === pointToUpdateId);
                             if (foundPointIndex < 0) return;
                             updatedPoints[foundPointIndex] = {
                                 ...updatedPoints[foundPointIndex],
@@ -604,12 +567,9 @@ const useStudyStore = create<
 // study retrieval hooks
 export const useStudy = () => useStudyStore((state) => state.study);
 export const useStudyId = () => useStudyStore((state) => state.study.id);
-export const useGetStudyIsLoading = () =>
-    useStudyStore((state) => state.storeMetadata.getStudyIsLoading);
-export const useUpdateStudyIsLoading = () =>
-    useStudyStore((state) => state.storeMetadata.updateStudyIsLoading);
-export const useStudyHasBeenEdited = () =>
-    useStudyStore((state) => state.storeMetadata.studyIsEdited);
+export const useGetStudyIsLoading = () => useStudyStore((state) => state.storeMetadata.getStudyIsLoading);
+export const useUpdateStudyIsLoading = () => useStudyStore((state) => state.storeMetadata.updateStudyIsLoading);
+export const useStudyHasBeenEdited = () => useStudyStore((state) => state.storeMetadata.studyIsEdited);
 
 export const useStudyBaseStudyId = () => useStudyStore((state) => state.study.base_study);
 export const useStudyName = () => useStudyStore((state) => state.study.name);
@@ -691,9 +651,7 @@ export const useStudyAnalysisPointStatistic = (analysisId?: string) =>
 export const useNumStudyAnalyses = () => useStudyStore((state) => state.study.analyses.length);
 export const useStudyAnalyses = () => useStudyStore((state) => state.study.analyses);
 export const useDebouncedStudyAnalyses = () => {
-    const [debouncedAnalyses, setDebouncedAnalyses] = useState(
-        useStudyStore.getState().study.analyses
-    );
+    const [debouncedAnalyses, setDebouncedAnalyses] = useState(useStudyStore.getState().study.analyses);
     useEffect(() => {
         let debounce: NodeJS.Timeout;
         const unsub = useStudyStore.subscribe((state) => {
@@ -715,24 +673,20 @@ export const useStudyStoreIsError = () => useStudyStore((state) => state.storeMe
 export const useStudyUser = () => useStudyStore((state) => state.study.user);
 export const useStudyUsername = () => useStudyStore((state) => state.study.username);
 export const useStudyLastUpdated = () =>
-    useStudyStore((state) =>
-        state.study.updated_at ? state.study.updated_at : state.study.created_at
-    );
+    useStudyStore((state) => (state.study.updated_at ? state.study.updated_at : state.study.created_at));
 
 // study action hooks
 export const useInitStudyStore = () => useStudyStore((state) => state.initStudyStore);
 export const useClearStudyStore = () => useStudyStore((state) => state.clearStudyStore);
 export const useUpdateStudyDetails = () => useStudyStore((state) => state.updateStudy);
 export const useUpdateStudyInDB = () => useStudyStore((state) => state.updateStudyInDB);
-export const useAddOrUpdateMetadata = () =>
-    useStudyStore((state) => state.addOrUpdateStudyMetadataRow);
+export const useAddOrUpdateMetadata = () => useStudyStore((state) => state.addOrUpdateStudyMetadataRow);
 export const useDeleteMetadataRow = () => useStudyStore((state) => state.deleteStudyMetadataRow);
 export const useAddOrUpdateAnalysis = () => useStudyStore((state) => state.addOrUpdateAnalysis);
 export const useCreateCondition = () => useStudyStore((state) => state.createCondition);
 export const useAddOrUpdateConditionWeightPairForAnalysis = () =>
     useStudyStore((state) => state.addOrUpdateConditionWeightPairForAnalysis);
-export const useDeleteConditionFromAnalysis = () =>
-    useStudyStore((state) => state.deleteConditionFromAnalysis);
+export const useDeleteConditionFromAnalysis = () => useStudyStore((state) => state.deleteConditionFromAnalysis);
 export const useUpdateAnalysisPoints = () => useStudyStore((state) => state.updateAnalysisPoints);
 export const useCreateAnalysisPoints = () => useStudyStore((state) => state.createAnalysisPoints);
 export const useDeleteAnalysisPoints = () => useStudyStore((state) => state.deleteAnalysisPoints);

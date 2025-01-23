@@ -25,11 +25,7 @@ const BaseStudyPage: React.FC = (props) => {
 
     // if studyVersionId doesnt exist, then it will not be queried.
     // In the second useEffect hook below, we keep trying to set the studyVersionId
-    const {
-        data: study,
-        isLoading: studyIsLoading,
-        isError: studyIsError,
-    } = useGetStudyById(studyVersionId || '');
+    const { data: study, isLoading: studyIsLoading, isError: studyIsError } = useGetStudyById(studyVersionId || '');
 
     // init the study store with the given version when a new one is set
     useEffect(() => {
@@ -42,10 +38,7 @@ const BaseStudyPage: React.FC = (props) => {
     // on initial load, we keep trying to set the URL with the study version until one is set
     useEffect(() => {
         if (baseStudy && baseStudy.versions && baseStudy.versions.length > 0 && !studyVersionId) {
-            navigate(
-                `/base-studies/${baseStudyId}/${(baseStudy.versions as StudyReturn[])[0].id}`,
-                { replace: true }
-            );
+            navigate(`/base-studies/${baseStudyId}/${(baseStudy.versions as StudyReturn[])[0].id}`, { replace: true });
         }
     }, [baseStudy, baseStudyId, navigate, studyVersionId]);
 
@@ -69,9 +62,7 @@ const BaseStudyPage: React.FC = (props) => {
                     >
                         {((baseStudy?.versions || []) as StudyReturn[]).map((version, index) => {
                             // we want the date last "touched", prefer updated_at over created_at
-                            const parsedDate = new Date(
-                                version?.updated_at || version?.created_at || ''
-                            );
+                            const parsedDate = new Date(version?.updated_at || version?.created_at || '');
 
                             const dateStr = `${
                                 parsedDate.getMonth() + 1

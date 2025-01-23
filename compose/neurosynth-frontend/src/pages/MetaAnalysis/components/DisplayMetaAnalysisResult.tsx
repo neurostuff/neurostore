@@ -19,7 +19,8 @@ const DisplayMetaAnalysisResult: React.FC<{
     );
 
     const { points, analysisSpace, analysisMap } = studyPointsToStorePoints(
-        (data?.points || []) as PointReturn[]
+        (data?.points || []) as PointReturn[],
+        false
     );
 
     const neurovaultLink = props.metaAnalysisResult?.neurovault_collection?.url || '';
@@ -33,9 +34,7 @@ const DisplayMetaAnalysisResult: React.FC<{
                 {resultStatus.color === 'error' && (
                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
                         <ErrorOutlineIcon color="error" sx={{ marginRight: '10px' }} />
-                        <Typography sx={{ color: 'error.main' }}>
-                            {resultStatus.statusText}
-                        </Typography>
+                        <Typography sx={{ color: 'error.main' }}>{resultStatus.statusText}</Typography>
                     </Box>
                 )}
             </Box>
@@ -48,11 +47,7 @@ const DisplayMetaAnalysisResult: React.FC<{
                     underline="hover"
                     target="_blank"
                     rel="noreferrer"
-                    href={
-                        neurovaultLink.includes('/api')
-                            ? neurovaultLink.replace(/\/api/, '')
-                            : neurovaultLink
-                    }
+                    href={neurovaultLink.includes('/api') ? neurovaultLink.replace(/\/api/, '') : neurovaultLink}
                 >
                     Neurovault Collection Link
                 </Link>

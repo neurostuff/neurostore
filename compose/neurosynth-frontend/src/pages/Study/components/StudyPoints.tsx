@@ -58,26 +58,20 @@ const StudyPoints: React.FC<{
             >
                 <Box>
                     <Typography sx={{ display: 'inline' }}>Statistic: </Typography>
-                    <Typography
-                        sx={{ color: props.statistic ? '' : 'warning.dark', display: 'inline' }}
-                    >
+                    <Typography sx={{ color: props.statistic ? '' : 'warning.dark', display: 'inline' }}>
                         {props.statistic?.label || 'No Statistic selected'}
                     </Typography>
                 </Box>
                 <Box>
                     <Typography sx={{ display: 'inline' }}>Space: </Typography>
-                    <Typography
-                        sx={{ color: props.space ? '' : 'warning.dark', display: 'inline' }}
-                    >
+                    <Typography sx={{ color: props.space ? '' : 'warning.dark', display: 'inline' }}>
                         {props.space?.label || 'No space selected'}
                     </Typography>
                 </Box>
             </Box>
             <Box sx={{ width: '100%' }}>
                 {hotData.length === 0 ? (
-                    <Typography sx={{ color: 'warning.dark' }}>
-                        No coordinates have been added yet
-                    </Typography>
+                    <Typography sx={{ color: 'warning.dark' }}>No coordinates have been added yet</Typography>
                 ) : (
                     <div style={{ width: '100%', height: '100%' }}>
                         <HotTable
