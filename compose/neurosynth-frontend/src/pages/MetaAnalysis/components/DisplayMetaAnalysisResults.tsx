@@ -64,7 +64,7 @@ const DisplayMetaAnalysisResults: React.FC<{
                     if (segmentA.value === segmentB.value) continue;
                     return segmentA.value.localeCompare(segmentB.value);
                 } else {
-                    return orderA - orderB;
+                    return orderB - orderA;
                 }
             }
             return 0;
