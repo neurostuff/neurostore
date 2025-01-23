@@ -619,7 +619,7 @@ class ListView(BaseView):
                 validate_search_query(s)
             except errors.SyntaxError as e:
                 abort(400, description=e.args[0])
-            tsquery = func.to_tsquery('english', pubmed_to_tsquery(s))
+            tsquery = func.to_tsquery("english", pubmed_to_tsquery(s))
             q = q.filter(m._ts_vector.op("@@")(tsquery))
 
         # Alternatively (or in addition), search on individual fields.

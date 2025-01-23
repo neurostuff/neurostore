@@ -7,6 +7,11 @@ from ..models import (
     PointValue,
     Image,
     Studyset,
+    Pipeline,
+    PipelineConfig,
+    PipelineRun,
+    PipelineRunResult,
+    PipelineRunResultVote,
 )
 
 
@@ -40,3 +45,23 @@ def test_Image():
 
 def test_Studyset():
     Studyset()
+
+
+def test_Pipeline():
+    Pipeline()
+
+
+def test_PipelineConfig():
+    PipelineConfig()
+
+
+def test_PipelineRun():
+    PipelineRun()
+
+
+def test_PipelineRunResult():
+    PipelineRunResult()
+
+
+def test_PipelineRunResultVote():
+    PipelineRunResultVote()

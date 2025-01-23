@@ -21,7 +21,7 @@
         "@mui/x-data-grid": "^5.10.0",
         "@niivue/niivue": "^0.46.0",
         "@reactour/tour": "^2.10.3",
-        "@sentry/react": "^7.48.0",
+        "@sentry/react": "^7.119.2",
         "@tanstack/react-table": "^8.20.5",
         "axios": "^0.28.0",
         "fast-xml-parser": "^4.4.1",
@@ -36,7 +36,7 @@
         "react-window": "^1.8.8",
         "reactflow": "^11.5.3",
         "uuid": "^9.0.0",
-        "vite": "^5.4.10",
+        "vite": "^5.4.14",
         "web-vitals": "^1.1.2",
         "zustand": "^4.3.3"
     },
