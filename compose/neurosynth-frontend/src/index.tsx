@@ -10,14 +10,7 @@ import App from './App';
 import './index.css';
 
 export type Style = Record<string, SystemStyleObject>;
-export type ColorOptions =
-    | 'inherit'
-    | 'primary'
-    | 'secondary'
-    | 'success'
-    | 'error'
-    | 'info'
-    | 'warning';
+export type ColorOptions = 'inherit' | 'primary' | 'secondary' | 'success' | 'error' | 'info' | 'warning';
 
 declare module '@mui/material/styles/createPalette' {
     interface Palette {
@@ -97,8 +90,15 @@ const env = import.meta.env.VITE_APP_ENV as 'DEV' | 'STAGING' | 'PROD';
 if (env === 'PROD') {
     Sentry.init({
         dsn: 'https://348a42291ed44c3baf7e2d94a0dfc08f@o4505036784992256.ingest.sentry.io/4505036786040832',
-        integrations: [new Sentry.BrowserTracing(), new Sentry.Replay()],
-        replaysSessionSampleRate: 0.5,
+        integrations: [
+            Sentry.browserTracingIntegration(),
+            Sentry.replayIntegration({
+                maskAllText: false,
+                blockAllMedia: false,
+                maskAllInputs: true,
+            }),
+        ],
+        replaysSessionSampleRate: 0.1,
         replaysOnErrorSampleRate: 1.0,
     });
 }
