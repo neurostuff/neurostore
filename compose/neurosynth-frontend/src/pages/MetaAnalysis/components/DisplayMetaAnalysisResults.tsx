@@ -33,7 +33,10 @@ const DisplayMetaAnalysisResults: React.FC<{
         if (!neurovaultFiles || !metaAnalysis || !(metaAnalysis?.specification as Specification).estimator?.type)
             return [];
 
-        const orderMap = new Map(NimareOutputs.reverse().map((output, index) => [output.key, index]));
+        // In the array, z is first. However, we want it to have more weight so we reverse the array and give it a higher index
+        // Note: This array must be cloned as reverse() will mutate the array
+        const orderMap = new Map([...NimareOutputs].reverse().map((output, index) => [output.key, index]));
+
         // We want the order of the files to be very specific:
         // if algorithm is MKDAChi2, then set 1st image to be z_desc-associationMass
         //                                set 2nd image to be z_desc-uniformityMass
