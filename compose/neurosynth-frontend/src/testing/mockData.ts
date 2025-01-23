@@ -1,4 +1,4 @@
-import { MetaAnalysisReturn, ProjectReturn } from 'neurosynth-compose-typescript-sdk';
+import { MetaAnalysisReturn, ProjectReturn, ResultReturn } from 'neurosynth-compose-typescript-sdk';
 import {
     StudysetReturn,
     StudyReturn,
@@ -9,6 +9,7 @@ import {
 } from 'neurostore-typescript-sdk';
 import { NeurostoreAnnotation } from 'utils/api';
 import { IStoreStudy } from 'pages/Study/store/StudyStore.helpers';
+import { INeurovault } from 'hooks/metaAnalyses/useGetNeurovaultImages';
 
 const mockConditions: () => ConditionReturn[] = () => [
     {
@@ -230,8 +231,7 @@ const mockAnnotations: () => NeurostoreAnnotation[] = () => [
         created_at: '2022-04-28T16:25:16.431054+00:00',
         notes: [
             {
-                authors:
-                    'Dierks T, Linden DE, Jandl M, Formisano E, Goebel R, Lanfermann H, Singer W',
+                authors: 'Dierks T, Linden DE, Jandl M, Formisano E, Goebel R, Lanfermann H, Singer W',
                 analysis: '7eEjbzRmX6wv',
                 study_name: "Activation of Heschl's gyrus during auditory hallucinations.",
                 note: {
@@ -245,8 +245,7 @@ const mockAnnotations: () => NeurostoreAnnotation[] = () => [
                 analysis_name: '35712',
             },
             {
-                authors:
-                    'Dierks T, Linden DE, Jandl M, Formisano E, Goebel R, Lanfermann H, Singer W',
+                authors: 'Dierks T, Linden DE, Jandl M, Formisano E, Goebel R, Lanfermann H, Singer W',
                 analysis: '5V3pSFxGqYFm',
                 study_name: "Activation of Heschl's gyrus during auditory hallucinations.",
                 note: {
@@ -260,8 +259,7 @@ const mockAnnotations: () => NeurostoreAnnotation[] = () => [
                 analysis_name: '35713',
             },
             {
-                authors:
-                    'Jueptner M, Stephan KM, Frith CD, Brooks DJ, Frackowiak RS, Passingham RE',
+                authors: 'Jueptner M, Stephan KM, Frith CD, Brooks DJ, Frackowiak RS, Passingham RE',
                 analysis: '5CUdzgAYKk5h',
                 study_name: 'Anatomy of motor learning. I. Frontal cortex and attention to action.',
                 note: {
@@ -275,8 +273,7 @@ const mockAnnotations: () => NeurostoreAnnotation[] = () => [
                 analysis_name: '26997',
             },
             {
-                authors:
-                    'Jueptner M, Stephan KM, Frith CD, Brooks DJ, Frackowiak RS, Passingham RE',
+                authors: 'Jueptner M, Stephan KM, Frith CD, Brooks DJ, Frackowiak RS, Passingham RE',
                 analysis: '3eoGBDLj43ih',
                 study_name: 'Anatomy of motor learning. I. Frontal cortex and attention to action.',
                 note: {
@@ -308,9 +305,7 @@ const mockAnnotations: () => NeurostoreAnnotation[] = () => [
     },
 ];
 
-const mockStudy: (studyPropOverride?: Partial<StudyReturn>) => StudyReturn = (
-    studyPropOverride
-) => ({
+const mockStudy: (studyPropOverride?: Partial<StudyReturn>) => StudyReturn = (studyPropOverride) => ({
     source: 'neurostore',
     source_id: '7f66YLxzjPKk',
     doi: 'NaN',
@@ -320,8 +315,7 @@ const mockStudy: (studyPropOverride?: Partial<StudyReturn>) => StudyReturn = (
     user: 'github|26612023',
     updated_at: null,
     source_updated_at: '2022-04-28T16:23:11.548030+00:00',
-    publication:
-        'The Journal of neuroscience : the official journal of the Society for Neuroscience',
+    publication: 'The Journal of neuroscience : the official journal of the Society for Neuroscience',
     created_at: '2022-05-18T19:38:15.262996+00:00',
     analyses: mockAnalyses(),
     description: null,
@@ -332,9 +326,7 @@ const mockStudy: (studyPropOverride?: Partial<StudyReturn>) => StudyReturn = (
     ...(studyPropOverride || {}),
 });
 
-const mockStoreStudy: (studyPropOverride?: Partial<IStoreStudy>) => IStoreStudy = (
-    studyPropOverride
-) => ({
+const mockStoreStudy: (studyPropOverride?: Partial<IStoreStudy>) => IStoreStudy = (studyPropOverride) => ({
     source: 'neurostore',
     source_id: '7f66YLxzjPKk',
     doi: 'NaN',
@@ -344,8 +336,7 @@ const mockStoreStudy: (studyPropOverride?: Partial<IStoreStudy>) => IStoreStudy 
     user: 'github|26612023',
     updated_at: null,
     source_updated_at: '2022-04-28T16:23:11.548030+00:00',
-    publication:
-        'The Journal of neuroscience : the official journal of the Society for Neuroscience',
+    publication: 'The Journal of neuroscience : the official journal of the Society for Neuroscience',
     created_at: '2022-05-18T19:38:15.262996+00:00',
     analyses: [],
     description: null,
@@ -807,6 +798,880 @@ const mockProject: () => ProjectReturn = () => ({
     username: 'Nicholas Lee',
 });
 
+const mockMetaAnalysisResult: () => ResultReturn = () => ({
+    cli_args: null,
+    cli_version: null,
+    created_at: '2024-12-06T01:14:37.069129+00:00',
+    diagnostic_table:
+        'id\tPositiveTail 1\tPositiveTail 2\tPositiveTail 3\tPositiveTail 4\tPositiveTail 5\tPositiveTail 6\tPositiveTail 7\tPositiveTail 8\tPositiveTail 9\tPositiveTail 10\tPositiveTail 11\tPositiveTail 12\tPositiveTail 13\tPositiveTail 14\tPositiveTail 15\tPositiveTail 16\tPositiveTail 17\tPositiveTail 18\tPositiveTail 19\tPositiveTail 20\tPositiveTail 21\tPositiveTail 22\tPositiveTail 23\tPositiveTail 24\tPositiveTail 25\tPositiveTail 26\tPositiveTail 27\tPositiveTail 28\nA_Preliminary_Study_of_Functional_Brain_Activation_among_Marijuana_Users_during_Performance_of_a_Virtual_Water_Maze_Task-tab3;_tab4\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\nAberrant_Orbitofrontal_Connectivity_in_Marijuana_Smoking_Youths-T4;_T2;_T3;_T5\t4\t1\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t1\t0\t0\t0\t0\t0\t0\t0\nAbnormal_brain_activity_in_prefrontal_brain_regions_in_abstinent_marijuana_users-tbl2\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\nAbstinent_adolescent_marijuana_users_show_altered_fMRI_response_during_spatial_working_memory-tbl2;_T2\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\nAge_of_onset_of_marijuana_use_impacts_inhibitory_processing.-37953;_111;_222;_333\t13\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\nAltered_affective_response_in_marijuana_smokers:_an_FMRI_study.-21259;_21262;_21260;_21261;_21263\t4\t0\t0\t0\t0\t0\t0\t4\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\nAltered_brain_tissue_composition_in_heavy_marijuana_users.-21242;_21243\t0\t0\t0\t0\t0\t1\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\nAltered_prefrontal_and_insular_cortical_thickness_in_adolescent_marijuana_users.-14325;_some_new_analysis\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\nBrain_activation_to_negative_stimuli_mediates_a_relationship_between_adolescent_marijuana_use_and_later_emotional_functioning.-POS:_Heavy_Users_>_Controls;_POS:_Controls_>_Heavy_Users;_NEG:_Controls_>_Heavy_Users\t0\t0\t0\t0\t0\t0\t0\t2\t0\t0\t0\t0\t0\t0\t1\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\nCiticoline_Treatment_Improves_Measures_of_Impulsivity_and_Task_Performance_in_Chronic_Marijuana_Smokers:_A_Pilot_BOLD_fMRI_Study-T3;_T2\t6\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t2\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\nCortico-cerebellar_abnormalities_in_adolescents_with_heavy_marijuana_use.-41239\t1\t0\t0\t0\t0\t1\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\nEffects_of_prenatal_marijuana_on_visuospatial_working_memory:_An_fMRI_study_in_young_adults-tbl3\t0\t0\t0\t1\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\nFunctional_Activation_and_Effective_Connectivity_Differences_in_Adolescent_Marijuana_Users_Performing_a_Simulated_Gambling_Task-tab3;_tab4\t3\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t1\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\nFunctional_imaging_of_implicit_marijuana_associations_during_performance_on_an_Implicit_Association_Test_(IAT).-14429;_14430\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t1\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\nIndividual_and_Additive_Effects_of_the_CNR1_and_FAAH_Genes_on_Brain_Response_to_Marijuana_Cues-tbl3;_tbl2\t1\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t1\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\nMarijuana_craving_in_the_brain.-40708;_40709\t3\t2\t0\t1\t0\t0\t0\t2\t0\t0\t2\t1\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\nMarijuana_use_is_associated_with_a_reorganized_visual-attention_network_and_cerebellar_hypoactivation.-15660;_15661\t2\t2\t0\t1\t1\t1\t0\t1\t0\t0\t0\t1\t0\t0\t1\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\nNeural_Correlates_of_Verbal_Learning_in_Adolescent_Alcohol_and_Marijuana_Users-T3;_T2\t1\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\nNeural_Effects_of_Positive_and_Negative_Incentives_during_Marijuana_Withdrawal-pone-0061470-t005;_pone-0061470-t004;_pone-0061470-t003;_pone-0061470-t002\t7\t2\t0\t1\t0\t0\t0\t0\t0\t0\t1\t0\t0\t0\t0\t1\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\nNeural_mechanisms_of_risky_decision_making_in_adolescents_reporting_frequent_alcohol_and/or_marijuana_use.-Linear_Control_>_Linear_Risk;_Mean_Control_>_Mean_Risk;_Linear_Risk_>_Linear_Control;_Mean_risk_>_Mean_control;_Mean_Risk_>_Mean_Control;_Linear_risk_>_Linear_control\t1\t2\t0\t1\t0\t1\t0\t0\t0\t0\t0\t0\t0\t0\t1\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\nNeural_substrates_of_faulty_decision-making_in_abstinent_marijuana_users-tbl4;_tbl3;_tbl5;_tbl2\t0\t1\t1\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\nNeuroimaging_of_marijuana_smokers_during_inhibitory_processing:_a_pilot_investigation.-20295;_111;_222;_333;_20294;_20293\t8\t0\t0\t0\t2\t0\t0\t0\t0\t0\t0\t0\t0\t0\t1\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\nPoor_decision-making_by_chronic_marijuana_users_is_associated_with_decreased_functional_responsiveness_to_negative_consequences-LOSS_EVALUATION;_ALL_EVALUATION\t2\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t1\t0\t0\t0\t0\t0\t0\t0\t0\t0\nPreliminary_findings_demonstrating_latent_effects_of_early_adolescent_marijuana_use_onset_on_cortical_architecture.-21176;_my_new_analysis\t0\t2\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\nThe_impact_of_initiation:_Early_onset_marijuana_smokers_demonstrate_altered_Stroop_performance_and_brain_activation-tbl0025;_T5\t2\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t2\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\nWhite_matter_characterization_of_adolescent_binge_drinking_with_and_without_co-occurring_marijuana_use:_A_3-year_investigation-t0010\t0\t0\t0\t0\t0\t0\t0\t0\t1\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\nfMRI_BOLD_Response_in_High-risk_College_Students_(Part_1):_During_Exposure_to_Alcohol,_Marijuana,_Polydrug_and_Emotional_Picture_Cues-AGQ042TB1;_AGQ042TB2\t3\t0\t2\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\nfMRI_BOLD_Response_of_High-risk_College_Students_(Part_2):_During_Memory_Priming_of_Alcohol,_Marijuana_and_Polydrug_Picture_Cues-Marijuana_non-studied_>_marijuana_studied;_Polydrug_non-studied_>_polydrug_studied;_Alcohol_non-studied_>_alcohol_studied\t0\t2\t0\t0\t1\t0\t1\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\nfMRI_response_to_spatial_working_memory_in_adolescents_with_comorbid_marijuana_and_alcohol_use_disorders.-21243\t1\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\t0\n',
+    id: 'PyftC25kGRm5',
+    meta_analysis_id: 'WfCnGvpZxXi4',
+    neurovault_collection: {
+        collection_id: '19125',
+        created_at: '2024-12-06T01:14:37.119322+00:00',
+        files: [
+            {
+                created_at: '2024-12-06T01:14:38.323194+00:00',
+                exception: null,
+                image_id: '894952',
+                status: 'OK',
+                updated_at: '2024-12-06T01:14:38.571618+00:00',
+                url: 'https://neurovault.org/api/images/894952',
+            },
+            {
+                created_at: '2024-12-06T01:14:38.323194+00:00',
+                exception: null,
+                image_id: '894953',
+                status: 'OK',
+                updated_at: '2024-12-06T01:14:38.560317+00:00',
+                url: 'https://neurovault.org/api/images/894953',
+            },
+            {
+                created_at: '2024-12-06T01:14:38.323194+00:00',
+                exception: null,
+                image_id: '894954',
+                status: 'OK',
+                updated_at: '2024-12-06T01:14:38.583886+00:00',
+                url: 'https://neurovault.org/api/images/894954',
+            },
+            {
+                created_at: '2024-12-06T01:14:38.323194+00:00',
+                exception: null,
+                image_id: '894955',
+                status: 'OK',
+                updated_at: '2024-12-06T01:14:38.572714+00:00',
+                url: 'https://neurovault.org/api/images/894955',
+            },
+            {
+                created_at: '2024-12-06T01:14:38.323194+00:00',
+                exception: null,
+                image_id: '894956',
+                status: 'OK',
+                updated_at: '2024-12-06T01:14:38.626910+00:00',
+                url: 'https://neurovault.org/api/images/894956',
+            },
+            {
+                created_at: '2024-12-06T01:14:38.323194+00:00',
+                exception: null,
+                image_id: '894959',
+                status: 'OK',
+                updated_at: '2024-12-06T01:14:38.572475+00:00',
+                url: 'https://neurovault.org/api/images/894959',
+            },
+            {
+                created_at: '2024-12-06T01:14:38.323194+00:00',
+                exception: null,
+                image_id: '894963',
+                status: 'OK',
+                updated_at: '2024-12-06T01:14:38.593230+00:00',
+                url: 'https://neurovault.org/api/images/894963',
+            },
+            {
+                created_at: '2024-12-06T01:14:38.323194+00:00',
+                exception: null,
+                image_id: '894964',
+                status: 'OK',
+                updated_at: '2024-12-06T01:14:38.616257+00:00',
+                url: 'https://neurovault.org/api/images/894964',
+            },
+            {
+                created_at: '2024-12-06T01:14:38.323194+00:00',
+                exception: null,
+                image_id: '894958',
+                status: 'OK',
+                updated_at: '2024-12-06T01:14:38.622045+00:00',
+                url: 'https://neurovault.org/api/images/894958',
+            },
+            {
+                created_at: '2024-12-06T01:14:38.323194+00:00',
+                exception: null,
+                image_id: '894957',
+                status: 'OK',
+                updated_at: '2024-12-06T01:14:38.593275+00:00',
+                url: 'https://neurovault.org/api/images/894957',
+            },
+            {
+                created_at: '2024-12-06T01:14:38.323194+00:00',
+                exception: null,
+                image_id: '894960',
+                status: 'OK',
+                updated_at: '2024-12-06T01:14:38.581951+00:00',
+                url: 'https://neurovault.org/api/images/894960',
+            },
+            {
+                created_at: '2024-12-06T01:14:38.323194+00:00',
+                exception: null,
+                image_id: '894962',
+                status: 'OK',
+                updated_at: '2024-12-06T01:14:38.614241+00:00',
+                url: 'https://neurovault.org/api/images/894962',
+            },
+            {
+                created_at: '2024-12-06T01:14:38.323194+00:00',
+                exception: null,
+                image_id: '894961',
+                status: 'OK',
+                updated_at: '2024-12-06T01:14:38.617741+00:00',
+                url: 'https://neurovault.org/api/images/894961',
+            },
+        ],
+        updated_at: null,
+        url: 'https://neurovault.org/api/collections/19125',
+    },
+    updated_at: '2024-12-06T01:14:38.323194+00:00',
+});
+
+const mockNeurovault: () => INeurovault[] = () => [
+    {
+        url: 'http://neurovault.org/images/894952/',
+        id: 894952,
+        file: 'http://neurovault.org/media/images/19125/p_desc-uniformity.nii.gz',
+        collection: 'http://neurovault.org/collections/19125/',
+        collection_id: 19125,
+        file_size: 177268,
+        cognitive_paradigm_cogatlas: null,
+        cognitive_paradigm_cogatlas_id: null,
+        cognitive_contrast_cogatlas: null,
+        cognitive_contrast_cogatlas_id: null,
+        map_type: 'P map (given null hypothesis)',
+        analysis_level: 'meta-analysis',
+        name: 'p_desc-uniformity.nii.gz',
+        description: '',
+        add_date: '2024-12-06T02:14:39.317726+01:00',
+        modify_date: '2024-12-06T02:14:43.836661+01:00',
+        is_valid: true,
+        surface_left_file: 'http://neurovault.org/media/images/19125/894952.L.func.gii',
+        surface_right_file: 'http://neurovault.org/media/images/19125/894952.R.func.gii',
+        data_origin: 'volume',
+        target_template_image: 'GenericMNI',
+        subject_species: 'homo sapiens',
+        figure: null,
+        handedness: null,
+        age: null,
+        gender: null,
+        race: null,
+        ethnicity: null,
+        BMI: null,
+        fat_percentage: null,
+        waist_hip_ratio: null,
+        mean_PDS_score: null,
+        tanner_stage: null,
+        days_since_menstruation: null,
+        hours_since_last_meal: null,
+        bis_bas_score: null,
+        spsrq_score: null,
+        bis11_score: null,
+        thumbnail: 'http://neurovault.org/media/images/19125/glass_brain_894952.jpg',
+        reduced_representation: null,
+        is_thresholded: false,
+        perc_bad_voxels: 74.68694225423734,
+        not_mni: false,
+        brain_coverage: 100.0,
+        perc_voxels_outside: 0.0,
+        number_of_subjects: null,
+        modality: 'Other',
+        statistic_parameters: null,
+        smoothness_fwhm: null,
+        contrast_definition: null,
+        contrast_definition_cogatlas: null,
+        cognitive_paradigm_description_url: null,
+        image_type: 'statistic_map',
+    },
+];
+
+const mockMetaAnalysisReturn: () => MetaAnalysisReturn = () => ({
+    cached_annotation: 'Q7PGxaTr6Ke4',
+    cached_studyset: 'Ue5rb87H4nMi',
+    created_at: '2024-12-06T01:07:18.120143+00:00',
+    description: 'MKDAChi2 meta analysis with FDRCorrector',
+    id: 'WfCnGvpZxXi4',
+    name: 'My new test MKDAChi2 Meta Analysis: included',
+    neurostore_analysis: {
+        created_at: '2024-12-06T01:07:18.146325+00:00',
+        exception: null,
+        id: 'nBC95wqsJgYM',
+        neurostore_id: 'zyWsKHSiU3Y6',
+        status: 'OK',
+        traceback: null,
+        updated_at: '2024-12-06T01:14:42.206629+00:00',
+    },
+    neurostore_url: 'https://neurostore.org/api/analyses/zyWsKHSiU3Y6',
+    project: '5fuUb89eACzZ',
+    provenance: null,
+    results: [
+        {
+            created_at: '2024-12-06T01:14:37.069129+00:00',
+            id: 'PyftC25kGRm5',
+            updated_at: '2024-12-06T01:14:38.323194+00:00',
+        },
+    ],
+    run_key: 'oXsfHh0RyA0jFRzQdhwyLA',
+    specification: {
+        conditions: [true],
+        corrector: {
+            args: {
+                alpha: 0.05,
+                method: 'indep',
+            },
+            type: 'FDRCorrector',
+        },
+        created_at: '2024-12-06T01:07:17.495976+00:00',
+        database_studyset: 'neurostore',
+        estimator: {
+            args: {
+                '**kwargs': {},
+                kernel__r: 10,
+                kernel__value: 1,
+                prior: 0.5,
+            },
+            type: 'ALE',
+        },
+        filter: 'included',
+        id: 'h57xeSmdQcpj',
+        type: 'CBMA',
+        updated_at: null,
+        user: 'github|26612023',
+        username: 'Nicholas Lee',
+        weights: [1.0],
+    },
+    studyset: {
+        created_at: '2024-12-06T01:07:17.670624+00:00',
+        id: 'Ue5rb87H4nMi',
+        neurostore_id: '7WRDwR5YfnBg',
+        snapshot: {
+            snapshot: {
+                created_at: '2023-12-12T22:33:20.849705+00:00',
+                description: 'my test description',
+                doi: null,
+                id: '7WRDwR5YfnBg',
+                name: 'Studyset for My new test',
+                pmid: null,
+                publication: null,
+                studies: [
+                    {
+                        analyses: [
+                            {
+                                conditions: [],
+                                description: 'Table 2',
+                                id: '3GTqJytpC3p6',
+                                images: [],
+                                metadata: null,
+                                name: 'Linear Control > Linear Risk',
+                                points: [
+                                    {
+                                        coordinates: [-40.0, -26.0, 50.0],
+                                        id: '9Jzj2X5DxaiL',
+                                        image: null,
+                                        kind: null,
+                                        label_id: null,
+                                        space: 'MNI',
+                                        values: [
+                                            {
+                                                kind: 'Z',
+                                                value: 7.49,
+                                            },
+                                        ],
+                                    },
+                                    {
+                                        coordinates: [-4.0, 0.0, 54.0],
+                                        id: '44G9cjh3T9mY',
+                                        image: null,
+                                        kind: null,
+                                        label_id: null,
+                                        space: 'MNI',
+                                        values: [
+                                            {
+                                                kind: 'Z',
+                                                value: 4.93,
+                                            },
+                                        ],
+                                    },
+                                    {
+                                        coordinates: [-44.0, -34.0, 16.0],
+                                        id: '54rAqeX2Vp54',
+                                        image: null,
+                                        kind: null,
+                                        label_id: null,
+                                        space: 'MNI',
+                                        values: [
+                                            {
+                                                kind: 'Z',
+                                                value: 5.29,
+                                            },
+                                        ],
+                                    },
+                                    {
+                                        coordinates: [28.0, -88.0, -6.0],
+                                        id: '7dRbckNiNd35',
+                                        image: null,
+                                        kind: null,
+                                        label_id: null,
+                                        space: 'MNI',
+                                        values: [
+                                            {
+                                                kind: 'Z',
+                                                value: 4.59,
+                                            },
+                                        ],
+                                    },
+                                    {
+                                        coordinates: [58.0, -20.0, 38.0],
+                                        id: 'sDcbvTeisgcb',
+                                        image: null,
+                                        kind: null,
+                                        label_id: null,
+                                        space: 'MNI',
+                                        values: [
+                                            {
+                                                kind: 'Z',
+                                                value: 4.52,
+                                            },
+                                        ],
+                                    },
+                                ],
+                                user: 'github|26612023',
+                                weights: [],
+                            },
+                            {
+                                conditions: [],
+                                description: 'Table 2',
+                                id: '3GzSVjE8mrS3',
+                                images: [],
+                                metadata: null,
+                                name: 'Mean Control > Mean Risk',
+                                points: [
+                                    {
+                                        coordinates: [12.0, -76.0, -2.0],
+                                        id: '3iiUJ9Gjvzns',
+                                        image: null,
+                                        kind: null,
+                                        label_id: null,
+                                        space: 'MNI',
+                                        values: [
+                                            {
+                                                kind: 'Z',
+                                                value: 13.0,
+                                            },
+                                        ],
+                                    },
+                                    {
+                                        coordinates: [-48.0, -64.0, 40.0],
+                                        id: 'AXczqpqehb2a',
+                                        image: null,
+                                        kind: null,
+                                        label_id: null,
+                                        space: 'MNI',
+                                        values: [
+                                            {
+                                                kind: 'Z',
+                                                value: 14.4,
+                                            },
+                                        ],
+                                    },
+                                    {
+                                        coordinates: [56.0, -56.0, 24.0],
+                                        id: '3iVGLscyGBNf',
+                                        image: null,
+                                        kind: null,
+                                        label_id: null,
+                                        space: 'MNI',
+                                        values: [
+                                            {
+                                                kind: 'Z',
+                                                value: 15.2,
+                                            },
+                                        ],
+                                    },
+                                    {
+                                        coordinates: [-42.0, 14.0, 46.0],
+                                        id: '6sRLCc7AeMh7',
+                                        image: null,
+                                        kind: null,
+                                        label_id: null,
+                                        space: 'MNI',
+                                        values: [
+                                            {
+                                                kind: 'Z',
+                                                value: 12.7,
+                                            },
+                                        ],
+                                    },
+                                    {
+                                        coordinates: [-48.0, 34.0, -2.0],
+                                        id: '4CjUGeWd32fj',
+                                        image: null,
+                                        kind: null,
+                                        label_id: null,
+                                        space: 'MNI',
+                                        values: [
+                                            {
+                                                kind: 'Z',
+                                                value: 12.8,
+                                            },
+                                        ],
+                                    },
+                                    {
+                                        coordinates: [50.0, 38.0, -8.0],
+                                        id: '85VnuggANrMU',
+                                        image: null,
+                                        kind: null,
+                                        label_id: null,
+                                        space: 'MNI',
+                                        values: [
+                                            {
+                                                kind: 'Z',
+                                                value: 12.5,
+                                            },
+                                        ],
+                                    },
+                                    {
+                                        coordinates: [14.0, 56.0, 30.0],
+                                        id: '43NQ8JqFyPaS',
+                                        image: null,
+                                        kind: null,
+                                        label_id: null,
+                                        space: 'MNI',
+                                        values: [
+                                            {
+                                                kind: 'Z',
+                                                value: 11.8,
+                                            },
+                                        ],
+                                    },
+                                    {
+                                        coordinates: [6.0, -46.0, 34.0],
+                                        id: '5wT3cSjqjB5s',
+                                        image: null,
+                                        kind: null,
+                                        label_id: null,
+                                        space: 'MNI',
+                                        values: [
+                                            {
+                                                kind: 'Z',
+                                                value: 12.4,
+                                            },
+                                        ],
+                                    },
+                                    {
+                                        coordinates: [-6.0, -54.0, -46.0],
+                                        id: '8EmpBr8WEJue',
+                                        image: null,
+                                        kind: null,
+                                        label_id: null,
+                                        space: 'MNI',
+                                        values: [
+                                            {
+                                                kind: 'Z',
+                                                value: 15.0,
+                                            },
+                                        ],
+                                    },
+                                    {
+                                        coordinates: [-52.0, -8.0, -32.0],
+                                        id: '5URbwza34r3b',
+                                        image: null,
+                                        kind: null,
+                                        label_id: null,
+                                        space: 'MNI',
+                                        values: [
+                                            {
+                                                kind: 'Z',
+                                                value: 9.22,
+                                            },
+                                        ],
+                                    },
+                                    {
+                                        coordinates: [4.0, 44.0, 50.0],
+                                        id: '6k2FKbvTDzga',
+                                        image: null,
+                                        kind: null,
+                                        label_id: null,
+                                        space: 'MNI',
+                                        values: [
+                                            {
+                                                kind: 'Z',
+                                                value: 9.03,
+                                            },
+                                        ],
+                                    },
+                                    {
+                                        coordinates: [-64.0, -14.0, -22.0],
+                                        id: '7tTvbLAx9uLF',
+                                        image: null,
+                                        kind: null,
+                                        label_id: null,
+                                        space: 'MNI',
+                                        values: [
+                                            {
+                                                kind: 'Z',
+                                                value: 9.02,
+                                            },
+                                        ],
+                                    },
+                                ],
+                                user: 'github|26612023',
+                                weights: [],
+                            },
+                        ],
+                        authors: 'Claus ED, Feldstein Ewing SW, Magnan RE, Montanaro E, Hutchison KE, Bryan AD',
+                        created_at: '2023-11-02T18:11:08.811383+00:00',
+                        description: 'a',
+                        doi: '10.1007/s11682-017-9723-x',
+                        id: '5FYoyH8Z6spR',
+                        metadata: {
+                            sample_size: null,
+                        },
+                        name: 'Neural mechanisms of risky decision making in adolescents reporting frequent alcohol and/or marijuana use.',
+                        pmid: '28429160',
+                        publication: 'Brain imaging and behavior',
+                        source: 'neurostore',
+                        source_id: '3sCo5xAjxL56',
+                        source_updated_at: '2023-06-21T22:17:27.973390+00:00',
+                        updated_at: '2023-12-12T22:37:21.933193+00:00',
+                        user: 'github|26612023',
+                        year: 2018,
+                    },
+                    {
+                        analyses: [
+                            {
+                                conditions: [],
+                                description: null,
+                                id: '3CNaH5frhTpr',
+                                images: [],
+                                metadata: null,
+                                name: '21176',
+                                points: [
+                                    {
+                                        coordinates: [19.0, -69.0, -7.0],
+                                        id: '7NnSEQ6fug6e',
+                                        image: null,
+                                        kind: null,
+                                        label_id: null,
+                                        space: 'TAL',
+                                        values: [
+                                            {
+                                                kind: 'R',
+                                                value: null,
+                                            },
+                                        ],
+                                    },
+                                    {
+                                        coordinates: [-23.0, 53.0, 10.0],
+                                        id: '82N6ePiAWSRF',
+                                        image: null,
+                                        kind: null,
+                                        label_id: null,
+                                        space: 'TAL',
+                                        values: [
+                                            {
+                                                kind: 'R',
+                                                value: null,
+                                            },
+                                        ],
+                                    },
+                                    {
+                                        coordinates: [39.0, 30.0, 18.0],
+                                        id: '7yRw6zhEf68M',
+                                        image: null,
+                                        kind: null,
+                                        label_id: null,
+                                        space: 'TAL',
+                                        values: [
+                                            {
+                                                kind: 'R',
+                                                value: null,
+                                            },
+                                        ],
+                                    },
+                                    {
+                                        coordinates: [6.0, 47.0, -20.0],
+                                        id: '5wGDBHUMP5uA',
+                                        image: null,
+                                        kind: null,
+                                        label_id: null,
+                                        space: 'TAL',
+                                        values: [
+                                            {
+                                                kind: 'R',
+                                                value: null,
+                                            },
+                                        ],
+                                    },
+                                    {
+                                        coordinates: [-44.0, -62.0, 44.0],
+                                        id: '3LA2X7RYmoBE',
+                                        image: null,
+                                        kind: null,
+                                        label_id: null,
+                                        space: 'TAL',
+                                        values: [
+                                            {
+                                                kind: 'R',
+                                                value: null,
+                                            },
+                                        ],
+                                    },
+                                ],
+                                user: 'github|26612023',
+                                weights: [],
+                            },
+                            {
+                                conditions: [],
+                                description: '',
+                                id: 'CCKyTeh7jAef',
+                                images: [],
+                                metadata: null,
+                                name: 'my new analysis',
+                                points: [
+                                    {
+                                        coordinates: [39.0, 30.0, 18.0],
+                                        id: '62e887hWm5ZL',
+                                        image: null,
+                                        kind: null,
+                                        label_id: null,
+                                        space: 'MNI',
+                                        values: [
+                                            {
+                                                kind: 'Pa',
+                                                value: null,
+                                            },
+                                        ],
+                                    },
+                                    {
+                                        coordinates: [19.0, -69.0, -7.0],
+                                        id: '6C3CKPxUTYkz',
+                                        image: null,
+                                        kind: null,
+                                        label_id: null,
+                                        space: 'MNI',
+                                        values: [
+                                            {
+                                                kind: 'Pa',
+                                                value: null,
+                                            },
+                                        ],
+                                    },
+                                    {
+                                        coordinates: [-23.0, 53.0, 10.0],
+                                        id: 'btjdW4osrdzp',
+                                        image: null,
+                                        kind: null,
+                                        label_id: null,
+                                        space: 'MNI',
+                                        values: [
+                                            {
+                                                kind: 'Pa',
+                                                value: null,
+                                            },
+                                        ],
+                                    },
+                                ],
+                                user: 'github|26612023',
+                                weights: [],
+                            },
+                        ],
+                        authors: 'Filbey FM, McQueeny T, DeWitt SJ, Mishra V',
+                        created_at: '2023-10-28T19:46:16.482780+00:00',
+                        description: null,
+                        doi: '10.1016/j.dcn.2015.10.001',
+                        id: '7wPrisH4DHmk',
+                        metadata: {
+                            sample_size: null,
+                        },
+                        name: 'Preliminary findings demonstrating latent effects of early adolescent marijuana use onset on cortical architecture.',
+                        pmid: '26507433',
+                        publication: 'Developmental cognitive neuroscience',
+                        source: 'neurostore',
+                        source_id: 'nQGt73k3CGfk',
+                        source_updated_at: '2023-06-21T22:17:27.973390+00:00',
+                        updated_at: '2023-10-28T19:46:17.327351+00:00',
+                        user: 'github|26612023',
+                        year: 2015,
+                    },
+                    {
+                        analyses: [
+                            {
+                                conditions: [],
+                                description: null,
+                                id: '33KzpLpKDd95',
+                                images: [],
+                                metadata: null,
+                                name: '21242',
+                                points: [
+                                    {
+                                        coordinates: [2.0, -12.0, 0.0],
+                                        id: '6Sd3Vj9WV8JX',
+                                        image: null,
+                                        kind: null,
+                                        label_id: null,
+                                        space: 'MNI',
+                                        values: [
+                                            {
+                                                kind: null,
+                                                value: null,
+                                            },
+                                        ],
+                                    },
+                                    {
+                                        coordinates: [28.0, -30.0, 56.0],
+                                        id: 'gVJc4wYW2VR3',
+                                        image: null,
+                                        kind: null,
+                                        label_id: null,
+                                        space: 'MNI',
+                                        values: [
+                                            {
+                                                kind: null,
+                                                value: null,
+                                            },
+                                        ],
+                                    },
+                                    {
+                                        coordinates: [22.0, -18.0, -10.0],
+                                        id: '6oiQFsHc9ELB',
+                                        image: null,
+                                        kind: null,
+                                        label_id: null,
+                                        space: 'MNI',
+                                        values: [
+                                            {
+                                                kind: null,
+                                                value: null,
+                                            },
+                                        ],
+                                    },
+                                    {
+                                        coordinates: [-20.0, -48.0, 64.0],
+                                        id: '6VACn9idtiki',
+                                        image: null,
+                                        kind: null,
+                                        label_id: null,
+                                        space: 'MNI',
+                                        values: [
+                                            {
+                                                kind: null,
+                                                value: null,
+                                            },
+                                        ],
+                                    },
+                                ],
+                                user: 'github|26612023',
+                                weights: [],
+                            },
+                            {
+                                conditions: [],
+                                description: '',
+                                id: 't3kwfKCSnvyz',
+                                images: [],
+                                metadata: null,
+                                name: '21243',
+                                points: [
+                                    {
+                                        coordinates: [-46.0, -6.0, -30.0],
+                                        id: '4sWCWDJf9qAt',
+                                        image: null,
+                                        kind: null,
+                                        label_id: null,
+                                        space: null,
+                                        values: [
+                                            {
+                                                kind: null,
+                                                value: null,
+                                            },
+                                        ],
+                                    },
+                                    {
+                                        coordinates: [10.0, -20.0, -24.0],
+                                        id: 'NWRFLyMDWRHA',
+                                        image: null,
+                                        kind: null,
+                                        label_id: null,
+                                        space: null,
+                                        values: [
+                                            {
+                                                kind: null,
+                                                value: null,
+                                            },
+                                        ],
+                                    },
+                                    {
+                                        coordinates: [18.0, -8.0, -8.0],
+                                        id: '3VvqKwJiah35',
+                                        image: null,
+                                        kind: null,
+                                        label_id: null,
+                                        space: null,
+                                        values: [
+                                            {
+                                                kind: null,
+                                                value: null,
+                                            },
+                                        ],
+                                    },
+                                    {
+                                        coordinates: [-22.0, -24.0, -8.0],
+                                        id: '5wd4n7Tgs7G6',
+                                        image: null,
+                                        kind: null,
+                                        label_id: null,
+                                        space: null,
+                                        values: [
+                                            {
+                                                kind: null,
+                                                value: null,
+                                            },
+                                        ],
+                                    },
+                                    {
+                                        coordinates: [-32.0, -30.0, 58.0],
+                                        id: '5pkJZQKbinpp',
+                                        image: null,
+                                        kind: null,
+                                        label_id: null,
+                                        space: null,
+                                        values: [
+                                            {
+                                                kind: null,
+                                                value: null,
+                                            },
+                                        ],
+                                    },
+                                ],
+                                user: 'github|26612023',
+                                weights: [],
+                            },
+                        ],
+                        authors: 'Matochik JA, Eldreth DA, Cadet JL, Bolla KI',
+                        created_at: '2023-11-02T17:34:59.386691+00:00',
+                        description: null,
+                        doi: '10.1016/j.drugalcdep.2004.06.011',
+                        id: '5KPoXYmpNbwf',
+                        metadata: {
+                            sample_size: null,
+                        },
+                        name: 'Altered brain tissue composition in heavy marijuana users.',
+                        pmid: '15607838',
+                        publication: 'Drug and alcohol dependence',
+                        source: 'neurostore',
+                        source_id: '4taREaBkeuBY',
+                        source_updated_at: '2023-06-21T22:17:27.973390+00:00',
+                        updated_at: '2023-11-02T17:35:00.317618+00:00',
+                        user: 'github|26612023',
+                        year: 2005,
+                    },
+                ],
+                updated_at: null,
+                user: 'github|26612023',
+            },
+        },
+        updated_at: '2024-12-06T01:14:37.069129+00:00',
+        url: 'https://neurostore.org/api/studysets/7WRDwR5YfnBg',
+        user: 'github|26612023',
+        username: 'Nicholas Lee',
+        version: null,
+    },
+});
+
 export {
     mockConditions,
     mockWeights,
@@ -823,4 +1688,7 @@ export {
     mockStorePoints,
     mockStoreStudy,
     mockProject,
+    mockMetaAnalysisResult,
+    mockNeurovault,
+    mockMetaAnalysisReturn,
 };

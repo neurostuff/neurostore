@@ -50,11 +50,7 @@ const ProjectPage: React.FC = (props) => {
     const userCanEdit = useUserCanEdit(projectUser || undefined);
     const getProjectIsError = useProjectIsError();
 
-    useGuard(
-        '/',
-        'No project found with id: ' + projectId,
-        !getProjectIsLoading && getProjectIsError
-    );
+    useGuard('/', 'No project found with id: ' + projectId, !getProjectIsLoading && getProjectIsError);
 
     const tab = useMemo(() => {
         if (!metaAnalysesTabEnabled) return 0;
@@ -108,9 +104,7 @@ const ProjectPage: React.FC = (props) => {
                         <ProjectComponentsEditPrivacyToggle />
                     </Box>
                     <TextEdit
-                        onSave={(updatedDescription, label) =>
-                            updateProjectDescription(updatedDescription)
-                        }
+                        onSave={(updatedDescription, label) => updateProjectDescription(updatedDescription)}
                         textFieldSx={{ input: { fontSize: '1.25rem' } }}
                         textToEdit={projectDescription || ''}
                         editIconIsVisible={userCanEdit}
@@ -186,8 +180,6 @@ const ProjectPage: React.FC = (props) => {
                         <Tab
                             onClick={() => navigate(`/projects/${projectId}/project`)}
                             sx={{
-                                padding: '1rem',
-                                fontSize: '1.2rem',
                                 color: tab === 0 ? '#ef8a24 !important' : 'primary.main',
                                 fontWeight: tab === 0 ? 'bold' : 'normal',
                             }}
@@ -197,8 +189,6 @@ const ProjectPage: React.FC = (props) => {
                             <Tab
                                 onClick={() => navigate(`/projects/${projectId}/meta-analyses`)}
                                 sx={{
-                                    padding: '1rem',
-                                    fontSize: '1.2rem',
                                     color: tab === 1 ? '#ef8a24 !important' : 'primary.main',
                                     fontWeight: tab === 1 ? 'bold' : 'normal',
                                 }}

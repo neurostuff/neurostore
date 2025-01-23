@@ -55,11 +55,10 @@ const CreateMetaAnalysisSpecificationSelectionStepMultiGroup: React.FC<{
     return (
         <Box sx={{ margin: '1rem 0' }}>
             <Typography sx={{ marginBottom: '1rem' }}>
-                You selected <b>{algorithm?.estimator?.label || ''}</b> in the previous step, which
-                is an estimator that requires a second dataset to use as a comparison. Select a
-                dataset using the dropdown below. You can either select our default reference
-                datasets (i.e. neurostore, neuroquery, etc) or choose another value from the
-                inclusion column you set above to use as your own dataset.
+                You selected <b>{algorithm?.estimator?.label || ''}</b> in the previous step, which is an estimator that
+                requires a second dataset to use as a comparison. Select a dataset using the dropdown below. You can
+                either select our default reference datasets (i.e. neurostore, neuroquery, etc) or choose another value
+                from the inclusion column you set above to use as your own dataset.
             </Typography>
             <Box
                 sx={{
@@ -74,6 +73,8 @@ const CreateMetaAnalysisSpecificationSelectionStepMultiGroup: React.FC<{
                     shouldDisable={false}
                     isOptionEqualToValue={(option, value) => option?.label === value?.label}
                     value={selectedOption}
+                    isError={!selectedOption}
+                    errorText="No option selected"
                     size="medium"
                     inputPropsSx={{
                         color: NeurosynthTableStyles[EPropertyType.NONE],
@@ -85,7 +86,7 @@ const CreateMetaAnalysisSpecificationSelectionStepMultiGroup: React.FC<{
                         </ListItem>
                     )}
                     getOptionLabel={(option) => `${option?.label}`}
-                    onChange={(_event, newVal, _reason) => handleSelect(newVal || undefined)}
+                    onChange={(_event, newVal) => handleSelect(newVal || undefined)}
                     options={multiGroupOptions}
                 />
             </Box>

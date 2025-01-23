@@ -34,14 +34,13 @@ const env = import.meta.env.VITE_APP_ENV as 'DEV' | 'STAGING' | 'PROD';
 const NEUROSTORE_API_DOMAIN = import.meta.env.VITE_APP_NEUROSTORE_API_DOMAIN as string;
 const NEUROSYNTH_API_DOMAIN = import.meta.env.VITE_APP_NEUROSYNTH_API_DOMAIN as string;
 
-let TOKEN = '';
 const neurostoreConfig: Configuration = new Configuration({
     basePath: NEUROSTORE_API_DOMAIN,
-    accessToken: TOKEN,
+    accessToken: '',
 });
 const neurosynthConfig: Configuration = new Configuration({
     basePath: NEUROSYNTH_API_DOMAIN,
-    accessToken: TOKEN,
+    accessToken: '',
 });
 
 const NeurostoreServices = {

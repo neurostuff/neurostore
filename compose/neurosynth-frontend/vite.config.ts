@@ -5,6 +5,7 @@ import viteTsconfigPaths from 'vite-tsconfig-paths';
 export default defineConfig({
     plugins: [react(), viteTsconfigPaths()],
     server: {
+        host: 'localhost',
         open: true,
         port: 3000,
     },
@@ -16,5 +17,5 @@ export default defineConfig({
     preview: {
         port: 3000,
         host: true,
-    }
+    },
 });

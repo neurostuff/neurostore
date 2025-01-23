@@ -6,10 +6,7 @@ const MockDynamicForm: React.FC<any> = (props) => {
             {specificationKeys.map((key) => (
                 <span key={key}>{key}</span>
             ))}
-            <button
-                onClick={() => props.onUpdate({ 'test-key': 'test-value' })}
-                data-testid="trigger-update"
-            >
+            <button onClick={() => props.onUpdate({ 'test-key': 'test-value' })} data-testid="trigger-update">
                 trigger update
             </button>
         </div>

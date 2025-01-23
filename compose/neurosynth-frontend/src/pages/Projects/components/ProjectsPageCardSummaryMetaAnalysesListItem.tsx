@@ -1,28 +1,20 @@
-import {
-    ListItem,
-    ListItemButton,
-    ListItemIcon,
-    ListItemProps,
-    ListItemText,
-    Skeleton,
-} from '@mui/material';
+import { ListItem, ListItemButton, ListItemIcon, ListItemProps, ListItemText, Skeleton } from '@mui/material';
 import { getResultStatus } from 'helpers/MetaAnalysis.helpers';
-import useGetMetaAnalysisResultById from 'hooks/metaAnalyses/useGetMetaAnalysisResultById';
+import { useGetMetaAnalysisResultById } from 'hooks';
 import { MetaAnalysisReturn, ResultReturn } from 'neurosynth-compose-typescript-sdk';
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 
-const ProjectsPageCardSummaryMetaAnalysesListItem: React.FC<
-    ListItemProps & { metaAnalysis: MetaAnalysisReturn }
-> = (props) => {
+const ProjectsPageCardSummaryMetaAnalysesListItem: React.FC<ListItemProps & { metaAnalysis: MetaAnalysisReturn }> = (
+    props
+) => {
     const { metaAnalysis, ...listItemProps } = props;
 
-    const { data: metaAnalysisResult, isLoading: getMetaAnalysisResultIsLoading } =
-        useGetMetaAnalysisResultById(
-            metaAnalysis?.results && metaAnalysis.results.length
-                ? (metaAnalysis.results[metaAnalysis.results.length - 1] as ResultReturn).id
-                : undefined
-        );
+    const { data: metaAnalysisResult, isLoading: getMetaAnalysisResultIsLoading } = useGetMetaAnalysisResultById(
+        metaAnalysis?.results && metaAnalysis.results.length
+            ? (metaAnalysis.results[metaAnalysis.results.length - 1] as ResultReturn).id
+            : undefined
+    );
 
     const resultStatus = useMemo(() => {
         return getResultStatus(metaAnalysis, metaAnalysisResult);

@@ -1,8 +1,4 @@
-import {
-    MetaAnalysisReturn,
-    NeurovaultFile,
-    ResultReturn,
-} from 'neurosynth-compose-typescript-sdk';
+import { MetaAnalysisReturn, NeurovaultFile, ResultReturn } from 'neurosynth-compose-typescript-sdk';
 
 export const getResultStatus = (
     metaAnalysisObj: MetaAnalysisReturn | undefined,
@@ -29,21 +25,17 @@ export const getResultStatus = (
             severity: 'error',
         };
 
-    if (
-        metaAnalysisResult.neurovault_collection?.files &&
-        metaAnalysisResult.neurovault_collection.files.length === 0
-    )
+    if (metaAnalysisResult.neurovault_collection?.files && metaAnalysisResult.neurovault_collection.files.length === 0)
         return {
             statusText: 'Detected run but no result found',
             color: 'warning',
             severity: 'warning',
         };
 
-    const allFilesAreValid = (
-        metaAnalysisResult.neurovault_collection.files as Array<NeurovaultFile>
-    ).every((file) => !!file.image_id);
-    if (!allFilesAreValid)
-        return { statusText: 'Latest Run Failed', color: 'error', severity: 'error' };
+    const allFilesAreValid = (metaAnalysisResult.neurovault_collection.files as Array<NeurovaultFile>).every(
+        (file) => !!file.image_id
+    );
+    if (!allFilesAreValid) return { statusText: 'Latest Run Failed', color: 'error', severity: 'error' };
 
     if (!metaAnalysisObj?.neurostore_analysis?.neurostore_id) {
         return {
