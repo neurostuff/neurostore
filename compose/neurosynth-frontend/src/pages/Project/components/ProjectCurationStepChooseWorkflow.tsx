@@ -62,7 +62,7 @@ const ProjectCurationStepChooseWorkflow: React.FC<{
                     {
                         label: 'Simple Workflow',
                         secondary:
-                            'Workflow involving only two columns for users looking to simply include/exclude studies for their meta-analysis',
+                            'Streamlined workflow for users that want to generate a quickly curated meta-analysis',
                         onClick: () => handleCreateCreationBoard(ECurationBoardTypes.SIMPLE),
                     },
                     // {

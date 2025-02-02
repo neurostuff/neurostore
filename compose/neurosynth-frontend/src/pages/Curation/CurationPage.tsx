@@ -6,7 +6,7 @@ import StateHandlerComponent from 'components/StateHandlerComponent/StateHandler
 import GlobalStyles from 'global.styles';
 import { useGetCurationSummary, useGetStudysetById } from 'hooks';
 import useUserCanEdit from 'hooks/useUserCanEdit';
-import CurationBoard from 'pages/Curation/components/CurationBoard';
+import CurationBoardBasic from 'pages/Curation/components/CurationBoardBasic';
 import PrismaDialog from 'pages/Curation/components/PrismaDialog';
 import { IProjectPageLocationState } from 'pages/Project/ProjectPage';
 import {
@@ -20,6 +20,7 @@ import {
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import CurationDownloadIncludedStudiesButton from './components/CurationDownloadIncludedStudiesButton';
+import CurationBoardAI from './components/CurationBoardAi';
 
 const CurationPage: React.FC = (props) => {
     const [prismaIsOpen, setPrismaIsOpen] = useState(false);
@@ -38,8 +39,7 @@ const CurationPage: React.FC = (props) => {
     const { included, uncategorized } = useGetCurationSummary();
     const { data: studyset } = useGetStudysetById(studysetId || '', false);
 
-    const extractionStepInitialized =
-        studysetId && annotationId && (studyset?.studies?.length || 0) > 0;
+    const extractionStepInitialized = studysetId && annotationId && (studyset?.studies?.length || 0) > 0;
 
     const handleMoveToExtractionPhase = () => {
         if (extractionStepInitialized) {
@@ -93,10 +93,7 @@ const CurationPage: React.FC = (props) => {
                         <CurationDownloadIncludedStudiesButton />
                         {isPrisma && (
                             <>
-                                <PrismaDialog
-                                    onCloseDialog={() => setPrismaIsOpen(false)}
-                                    isOpen={prismaIsOpen}
-                                />
+                                <PrismaDialog onCloseDialog={() => setPrismaIsOpen(false)} isOpen={prismaIsOpen} />
                                 <Button
                                     onClick={() => setPrismaIsOpen(true)}
                                     variant="outlined"
@@ -140,7 +137,7 @@ const CurationPage: React.FC = (props) => {
                     </Box>
                 </Box>
                 <Box sx={{ height: '100%', overflow: 'hidden' }}>
-                    <CurationBoard />
+                    {isPrisma ? <CurationBoardBasic /> : <CurationBoardAI />}
                 </Box>
             </Box>
         </StateHandlerComponent>
