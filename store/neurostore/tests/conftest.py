@@ -18,6 +18,7 @@ from ..models import (
     Image,
     Entity,
 )
+from ..ingest.extracted_features import ingest_feature
 from auth0.v3.authentication import GetToken
 from auth0.v3.authentication.users import Users
 from unittest.mock import patch
@@ -637,6 +638,10 @@ def create_demographic_features(session, ingest_neurosynth, tmp_path):
 
     return output_dir
 
+
+@pytest.fixture(scope="function")
+def ingest_demographic_features(session, create_demographic_features):
+    return ingest_feature(create_demographic_features)
 
 """
 Queries for testing

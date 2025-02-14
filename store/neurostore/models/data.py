@@ -193,6 +193,9 @@ class BaseStudy(BaseMixin, db.Model):
     versions = relationship(
         "Study", backref=backref("base_study"), passive_deletes=True
     )
+    pipeline_run_results = relationship(
+        "PipelineRunResult", backref=backref("base_study"), passive_deletes=True
+    )
 
     __table_args__ = (
         db.CheckConstraint(level.in_(["group", "meta"])),
@@ -262,6 +265,19 @@ class BaseStudy(BaseMixin, db.Model):
         # Calculate has_images and has_coordinates for the BaseStudy
         self.has_images = self.images_exist
         self.has_coordinates = self.points_exist
+
+
+    def extract_features(self):
+        features = {}
+        for result in self.pipeline_run_results:
+            data = result.data
+            if 'demographics' in data and 'predictions' in data['demographics']:
+                for prediction in data['demographics']['predictions']:
+                    for key, value in prediction.items():
+                        if key not in features:
+                            features[key] = []
+                        features[key].append(value)
+        return features
 
 
 class Study(BaseMixin, db.Model):

@@ -6,6 +6,8 @@ import re
 
 from connexion.context import context
 from psycopg2 import errors
+from sqlalchemy import cast, String, Integer, Float, Boolean, text, or_, and_
+
 
 from .. import models
 from .. import schemas
@@ -240,3 +242,91 @@ def pubmed_to_tsquery(query: str) -> str:
         last_token = stripped_token
 
     return " ".join(processed_tokens)
+
+
+def parse_filter_value(value):
+    """Parse filter values to detect operators and handle multiple conditions."""
+    operators = [">=", "<=", "!=", ">", "<", "~"]
+    
+    if "|" in value:  # OR condition
+        return "|", [parse_filter_value(v.strip())[1] for v in value.split("|")]
+    
+    if "&" in value:  # AND condition
+        return "&", [parse_filter_value(v.strip())[1] for v in value.split("&")]
+
+    for op in operators:
+        if value.startswith(op):
+            return op, value[len(op):]
+    
+    if "," in value:  # IN condition
+        return "IN", value.split(",")
+
+    if value.lower() in ["true", "false"]:  # Boolean
+        return "=", value.lower() == "true"
+
+    return "=", value  # Default case
+
+def determine_cast_type(value):
+    """Determine whether to cast as STRING, INTEGER, FLOAT, or BOOLEAN."""
+    if isinstance(value, bool):
+        return Boolean
+
+    if isinstance(value, list):  # For IN queries
+        value = value[0] if value else ""
+
+    if value.replace(".", "", 1).isdigit():
+        return Float if "." in value else Integer
+
+    return String
+
+def build_jsonb_filter(query, filters):
+    """
+    Converts deeply nested JSON filters into SQLAlchemy filter expressions.
+    Supports:
+      - Nested JSONB paths (info.user.name)
+      - Multiple OR values (info.user.name=John,Sally)
+      - Range queries (info.user.age>=30)
+      - LIKE queries (info.user.name~Jo for "LIKE 'Jo%'")
+      - Boolean filtering (info.user.active=true)
+      - AND (`&`) and OR (`|`) grouping
+    """
+    conditions = []
+
+    for key, value in filters.items():
+        keys = key.split(".")  # Split 'info.user.age' -> ['info', 'user', 'age']
+        jsonb_path = "->".join(f"'{k}'" for k in keys[:-1])  # info->'user'
+        last_key = keys[-1]  # 'age'
+        jsonb_query = f"({models.PipelineRunResult.data} -> {jsonb_path} ->> '{last_key}')"
+
+        op, parsed_value = parse_filter_value(value)
+        cast_type = determine_cast_type(parsed_value)
+        jsonb_expr = cast(text(jsonb_query), cast_type)
+
+        if op == "=":
+            condition = jsonb_expr == parsed_value
+        elif op == "!=":
+            condition = jsonb_expr != parsed_value
+        elif op == ">":
+            condition = jsonb_expr > parsed_value
+        elif op == "<":
+            condition = jsonb_expr < parsed_value
+        elif op == ">=":
+            condition = jsonb_expr >= parsed_value
+        elif op == "<=":
+            condition = jsonb_expr <= parsed_value
+        elif op == "~":  # LIKE query
+            condition = jsonb_expr.like(f"{parsed_value}%")
+        elif op == "IN":
+            condition = jsonb_expr.in_(parsed_value)
+        elif op == "|":  # OR grouping
+            condition = or_(*[jsonb_expr == v for v in parsed_value])
+        elif op == "&":  # AND grouping
+            condition = and_(*[jsonb_expr == v for v in parsed_value])
+        else:
+            continue
+
+        conditions.append(condition)
+
+    if conditions:
+        query = query.filter(and_(*conditions))  # Apply all conditions with AND logic
+    return query

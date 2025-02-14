@@ -13,7 +13,7 @@ from sqlalchemy.sql import func
 from sqlalchemy import select
 
 
-from .utils import view_maker, get_current_user
+from .utils import view_maker, get_current_user, build_jsonb_filter
 from .base import BaseView, ObjectView, ListView, clear_cache, create_user
 from ..database import db
 from ..models import (
@@ -388,6 +388,8 @@ class BaseStudiesView(ObjectView, ListView):
 
     def eager_load(self, q, args=None):
         args = args or {}
+        if args.get("features"):
+            q = q.options(joinedload(BaseStudy.pipeline_run_results))  # Add this line)
         if args.get("info"):
             q = q.options(
                 joinedload(BaseStudy.versions).options(
@@ -428,6 +430,10 @@ class BaseStudiesView(ObjectView, ListView):
         # filter by level of analysis (group or meta)
         if args.get("level"):
             q = q.filter(self._model.level == args.get("level"))
+
+        # return AI metadata (join with PipelineRunResult table)
+        if args.get("features"):
+            q = build_jsonb_filter(q, args.get("features"))
 
         return q
 

@@ -119,12 +119,22 @@ class PipelineRunsView(ObjectView, ListView):
 class PipelineRunResultsView(ObjectView, ListView):
     model = PipelineRunResult
     schema = PipelineRunResultSchema
+    def list(self):
+        """query function that searches for pipeline run results
+            based on the query parameters provided in the request.
+            I want to search for results from a specific pipeline run
+            and be able to return a select list of results from that pipeline
+            run looking into the json stored in the data column.
+            """
 
     def get(self, pipeline_run_result_id=None):
+        query_params = request.args
         if pipeline_run_result_id:
             pipeline_run_result = self.model.query.get(pipeline_run_result_id)
             return self.schema().dump(pipeline_run_result)
         pipeline_run_results = self.model.query.all()
+        # filter results based on query parameters
+
         return self.schema(many=True).dump(pipeline_run_results)
 
     def post(self):

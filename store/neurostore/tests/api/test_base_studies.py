@@ -3,6 +3,12 @@
 from neurostore.models import BaseStudy, Analysis
 from neurostore.schemas import StudySchema
 
+def test_features_query(auth_client, ingest_demographic_features):
+    result = auth_client.get("/api/base-studies/?features=demographics.predictions.age>10")
+    assert result.status_code == 200
+    assert "features" in result.json()["results"][0]
+    assert "age" in result.json()["results"][0]["features"]
+
 
 def test_post_list_of_studies(auth_client, ingest_neuroquery):
     base_studies = BaseStudy.query.all()

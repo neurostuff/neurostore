@@ -78,7 +78,20 @@ def pipeline_run_result_payload(pipeline_run):
         "run_id": pipeline_run.id,
         "base_study_id": base_study.id,
         "date_executed": "2023-01-01T00:00:00Z",
-        "data": {"result": "success"},
+        "data": {"result":
+                    [
+                        {
+                        "status": "success",
+                        "percent_female": 50,
+                        "percent_left_handed": 10,
+                        },
+                        {
+                        "status": "failure",
+                        "percent_female": None,
+                        "percent_left_handed": 5,
+                        },
+                    ],
+                },
         "file_inputs": {"input1": "file1"},
     }
 
