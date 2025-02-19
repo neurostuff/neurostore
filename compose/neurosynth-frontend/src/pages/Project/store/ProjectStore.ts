@@ -1,11 +1,6 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import useGetProjectById from 'hooks/projects/useGetProjectById';
-import {
-    INeurosynthProject,
-    INeurosynthProjectReturn,
-    ISource,
-    ITag,
-} from 'hooks/projects/useGetProjects';
+import { INeurosynthProject, INeurosynthProjectReturn, ISource, ITag } from 'hooks/projects/useGetProjects';
 import useUpdateProject from 'hooks/projects/useUpdateProject';
 import { OptionsObject, SnackbarKey, SnackbarMessage, useSnackbar } from 'notistack';
 import {
@@ -14,6 +9,7 @@ import {
     addTagToStubHelper,
     createNewExclusionHelper,
     deleteStubHelper,
+    demoteStubHelper,
     handleDragEndHelper,
     initCurationHelper,
     promoteAllUncategorizedHelper,
@@ -143,8 +139,7 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
             const existingTimeout = get().metadata.debounceTimeout;
             const prevId = get().metadata.prevUpdatedProjectId;
 
-            if (existingTimeout && oldDebouncedStoreData.id === prevId)
-                clearTimeout(existingTimeout);
+            if (existingTimeout && oldDebouncedStoreData.id === prevId) clearTimeout(existingTimeout);
             setUnloadHandler('project');
 
             const newTimeout = setTimeout(async () => {
@@ -164,8 +159,7 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
                 if (
                     serverLastUpdated &&
                     latestStoreDataLastUpdated &&
-                    new Date(latestStoreDataLastUpdated).getTime() !==
-                        new Date(serverLastUpdated).getTime()
+                    new Date(latestStoreDataLastUpdated).getTime() !== new Date(serverLastUpdated).getTime()
                 ) {
                     const enqueueSnackbar = oldDebouncedStoreData.metadata.enqueueSnackbar;
                     if (enqueueSnackbar) {
@@ -202,14 +196,10 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
                         },
                         onError: (err) => {
                             let enqueueSnackbarFunc:
-                                | ((
-                                      message: SnackbarMessage,
-                                      options?: OptionsObject | undefined
-                                  ) => SnackbarKey)
+                                | ((message: SnackbarMessage, options?: OptionsObject | undefined) => SnackbarKey)
                                 | undefined;
                             if (oldDebouncedStoreData.metadata.enqueueSnackbar) {
-                                enqueueSnackbarFunc =
-                                    oldDebouncedStoreData.metadata.enqueueSnackbar;
+                                enqueueSnackbarFunc = oldDebouncedStoreData.metadata.enqueueSnackbar;
                             } else {
                                 // set some noop if func does not exist
                                 // note: this should never happen - something has gone wrong!
@@ -217,27 +207,19 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
                                 console.error('no snackbar function defined!');
                             }
 
-                            if (
-                                err?.response?.data?.code &&
-                                err?.response?.data?.code === 'token_expired'
-                            ) {
-                                enqueueSnackbarFunc(
-                                    'Your login session has expired. We will now log you out.',
-                                    { variant: 'error' }
-                                );
+                            if (err?.response?.data?.code && err?.response?.data?.code === 'token_expired') {
+                                enqueueSnackbarFunc('Your login session has expired. We will now log you out.', {
+                                    variant: 'error',
+                                });
 
                                 setTimeout(() => {
                                     const logout = oldDebouncedStoreData.metadata.logout;
                                     if (logout) logout();
                                 }, 2000);
-                            } else if (
-                                err?.response?.data?.status &&
-                                err?.response?.data?.status === 401
-                            ) {
-                                enqueueSnackbarFunc(
-                                    'You must log in to make changes. Please log in and try again',
-                                    { variant: 'error' }
-                                );
+                            } else if (err?.response?.data?.status && err?.response?.data?.status === 401) {
+                                enqueueSnackbarFunc('You must log in to make changes. Please log in and try again', {
+                                    variant: 'error',
+                                });
                             } else {
                                 enqueueSnackbarFunc('There was an error updating the project.', {
                                     variant: 'error',
@@ -279,7 +261,7 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
             }));
         },
         clearProjectStore: () => {
-            set((state) => ({
+            set(() => ({
                 name: '',
                 id: undefined,
                 meta_analyses: [],
@@ -388,11 +370,7 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
                     ...state.provenance,
                     curationMetadata: {
                         ...state.provenance.curationMetadata,
-                        columns: handleDragEndHelper(
-                            state.provenance.curationMetadata.columns,
-                            result,
-                            provided
-                        ),
+                        columns: handleDragEndHelper(state.provenance.curationMetadata.columns, result, provided),
                     },
                 },
             }));
@@ -405,11 +383,7 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
                 provenance: {
                     ...state.provenance,
                     curationMetadata: {
-                        ...createNewExclusionHelper(
-                            state.provenance.curationMetadata,
-                            newExclusion,
-                            phase
-                        ),
+                        ...createNewExclusionHelper(state.provenance.curationMetadata, newExclusion, phase),
                     },
                 },
             }));
@@ -473,10 +447,7 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
                     ...state.provenance,
                     curationMetadata: {
                         ...state.provenance.curationMetadata,
-                        columns: addNewStubsHelper(
-                            state.provenance.curationMetadata.columns,
-                            stubs
-                        ),
+                        columns: addNewStubsHelper(state.provenance.curationMetadata.columns, stubs),
                     },
                 },
             }));
@@ -490,11 +461,7 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
                     ...state.provenance,
                     curationMetadata: {
                         ...state.provenance.curationMetadata,
-                        columns: deleteStubHelper(
-                            state.provenance.curationMetadata.columns,
-                            columnIndex,
-                            stubId
-                        ),
+                        columns: deleteStubHelper(state.provenance.curationMetadata.columns, columnIndex, stubId),
                     },
                 },
             }));
@@ -580,11 +547,21 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
                     ...state.provenance,
                     curationMetadata: {
                         ...state.provenance.curationMetadata,
-                        columns: promoteStubHelper(
-                            state.provenance.curationMetadata.columns,
-                            columnIndex,
-                            stubId
-                        ),
+                        columns: promoteStubHelper(state.provenance.curationMetadata.columns, columnIndex, stubId),
+                    },
+                },
+            }));
+
+            get().updateProjectInDBDebounced();
+        },
+        demoteStub: (columnIndex, stubId) => {
+            set((state) => ({
+                ...state,
+                provenance: {
+                    ...state.provenance,
+                    curationMetadata: {
+                        ...state.provenance.curationMetadata,
+                        columns: demoteStubHelper(state.provenance.curationMetadata.columns, columnIndex, stubId),
                     },
                 },
             }));
@@ -598,9 +575,7 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
                     ...state.provenance,
                     curationMetadata: {
                         ...state.provenance.curationMetadata,
-                        columns: promoteAllUncategorizedHelper(
-                            state.provenance.curationMetadata.columns
-                        ),
+                        columns: promoteAllUncategorizedHelper(state.provenance.curationMetadata.columns),
                     },
                 },
             }));
@@ -678,28 +653,23 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
 });
 
 // project metadata retrieval hooks
-export const useProjectMetadataHasUnsavedchanges = () =>
-    useProjectStore((state) => state.metadata.hasUnsavedChanges);
+export const useProjectMetadataHasUnsavedchanges = () => useProjectStore((state) => state.metadata.hasUnsavedChanges);
 
 // higher level project retrieval hooks
 export const useProjectIsPublic = () => useProjectStore((state) => state.public);
-export const useProjectCreatedAt = () =>
-    useProjectStore((state) => new Date(state.created_at || ''));
+export const useProjectCreatedAt = () => useProjectStore((state) => new Date(state.created_at || ''));
 export const useProjectName = () => useProjectStore((state) => state.name);
 export const useProjectDescription = () => useProjectStore((state) => state.description);
 export const useProjectProvenance = () => useProjectStore((state) => state.provenance);
-export const useGetProjectIsLoading = () =>
-    useProjectStore((state) => state.metadata.getProjectIsLoading);
-export const useUpdateProjectIsLoading = () =>
-    useProjectStore((state) => state.metadata.updateProjectIsLoading);
+export const useGetProjectIsLoading = () => useProjectStore((state) => state.metadata.getProjectIsLoading);
+export const useUpdateProjectIsLoading = () => useProjectStore((state) => state.metadata.updateProjectIsLoading);
 export const useProjectIsError = () => useProjectStore((state) => state.metadata.isError);
 export const useProjectUser = () => useProjectStore((state) => state.user);
 export const useProjectUsername = () => useProjectStore((state) => state.username);
 export const useProjectMetaAnalyses = () => useProjectStore((state) => state.meta_analyses);
 
 // curation retrieval hooks
-export const useProjectCurationColumns = () =>
-    useProjectStore((state) => state.provenance.curationMetadata.columns);
+export const useProjectCurationColumns = () => useProjectStore((state) => state.provenance.curationMetadata.columns);
 export const useProjectCurationIsLastColumn = (columnIndex: number) =>
     useProjectStore((state) => state.provenance.curationMetadata.columns.length <= columnIndex + 1);
 export const useProjectNumCurationColumns = () =>
@@ -708,46 +678,39 @@ export const useProjectCurationColumn = (columnIndex: number) =>
     useProjectStore((state) => state.provenance.curationMetadata.columns[columnIndex]);
 export const useProjectCurationSources = () =>
     useProjectStore((state) => state.provenance.curationMetadata.identificationSources);
-export const useProjectExtractionMetadata = () =>
-    useProjectStore((state) => state.provenance.extractionMetadata);
+export const useProjectExtractionMetadata = () => useProjectStore((state) => state.provenance.extractionMetadata);
 export const useProjectId = () => useProjectStore((state) => state.id);
 export const useProjectCurationIsPrisma = () =>
     useProjectStore((state) => state.provenance.curationMetadata.prismaConfig.isPrisma);
 export const useProjectCurationPrismaConfig = () =>
     useProjectStore((state) => state.provenance.curationMetadata.prismaConfig);
-export const useProjectCurationInfoTags = () =>
-    useProjectStore((state) => state.provenance.curationMetadata.infoTags);
+export const useProjectCurationInfoTags = () => useProjectStore((state) => state.provenance.curationMetadata.infoTags);
 export const useProjectCurationExclusionTags = () =>
     useProjectStore((state) => state.provenance.curationMetadata.exclusionTags);
 
 // curation updater hooks
-export const useUpdateProjectIsPublic = () =>
-    useProjectStore((state) => state.updateProjectIsPublic);
+export const useUpdateProjectIsPublic = () => useProjectStore((state) => state.updateProjectIsPublic);
 export const useUpdateProjectName = () => useProjectStore((state) => state.updateProjectName);
-export const useUpdateProjectDescription = () =>
-    useProjectStore((state) => state.updateProjectDescription);
+export const useUpdateProjectDescription = () => useProjectStore((state) => state.updateProjectDescription);
 export const useInitProjectStore = () => useProjectStore((state) => state.initProjectStore);
 export const useClearProjectStore = () => useProjectStore((state) => state.clearProjectStore);
 export const useClearProvenance = () => useProjectStore((state) => state.clearProvenance);
 export const useHandleCurationDrag = () => useProjectStore((state) => state.handleDrag);
 export const useCreateNewCurationInfoTag = () => useProjectStore((state) => state.createNewInfoTag);
-export const useUpdateCurationColumns = () =>
-    useProjectStore((state) => state.updateCurationColumns);
+export const useUpdateCurationColumns = () => useProjectStore((state) => state.updateCurationColumns);
 export const useAddNewCurationStubs = () => useProjectStore((state) => state.addNewStubs);
 export const useInitCuration = () => useProjectStore((state) => state.initCuration);
 export const useUpdateStubField = () => useProjectStore((state) => state.updateStubField);
 export const usePromoteStub = () => useProjectStore((state) => state.promoteStub);
-export const usePromoteAllUncategorized = () =>
-    useProjectStore((state) => state.promoteAllUncategorized);
-export const useCreateCurationSource = () =>
-    useProjectStore((state) => state.createNewIdentificationSource);
+export const useDemoteStub = () => useProjectStore((state) => state.demoteStub);
+export const usePromoteAllUncategorized = () => useProjectStore((state) => state.promoteAllUncategorized);
+export const useCreateCurationSource = () => useProjectStore((state) => state.createNewIdentificationSource);
 export const useAddTagToStub = () => useProjectStore((state) => state.addTagToStub);
 export const useRemoveTagFromStub = () => useProjectStore((state) => state.removeTagFromStub);
 export const useSetExclusionFromStub = () => useProjectStore((state) => state.setExclusionForStub);
 export const useCreateNewExclusion = () => useProjectStore((state) => state.createNewExclusion);
 export const useDeleteStub = () => useProjectStore((state) => state.deleteStub);
-export const useUpdateProjectMetadata = () =>
-    useProjectStore((state) => state.updateProjectMetadata);
+export const useUpdateProjectMetadata = () => useProjectStore((state) => state.updateProjectMetadata);
 
 export const useInitProjectStoreIfRequired = () => {
     const clearProjectStore = useClearProjectStore();
@@ -761,16 +724,8 @@ export const useInitProjectStoreIfRequired = () => {
 
     const { projectId } = useParams<{ projectId: string; studyId: string }>();
 
-    const {
-        mutate,
-        isLoading: useUpdateProjectIsLoading,
-        isError: useUpdateProjectIsError,
-    } = useUpdateProject();
-    const {
-        data,
-        isLoading: getProjectIsLoading,
-        isError: getProjectIsError,
-    } = useGetProjectById(projectId);
+    const { mutate, isLoading: useUpdateProjectIsLoading, isError: useUpdateProjectIsError } = useUpdateProject();
+    const { data, isLoading: getProjectIsLoading, isError: getProjectIsError } = useGetProjectById(projectId);
 
     const isError = useUpdateProjectIsError || getProjectIsError;
 
@@ -811,8 +766,7 @@ export const useInitProjectStoreIfRequired = () => {
 };
 
 // extraction updater hooks
-export const useUpdateExtractionMetadata = () =>
-    useProjectStore((state) => state.updateExtractionMetadata);
+export const useUpdateExtractionMetadata = () => useProjectStore((state) => state.updateExtractionMetadata);
 
 // extraction retrieval hooks
 export const useProjectExtractionStudysetId = () =>
@@ -822,9 +776,7 @@ export const useProjectExtractionAnnotationId = () =>
 export const useProjectExtractionStudyStatusList = () =>
     useProjectStore((state) => state.provenance.extractionMetadata.studyStatusList);
 export const useProjectExtractionStudyStatus = (studyId: string) =>
-    useProjectStore((state) =>
-        state.provenance.extractionMetadata.studyStatusList.find((x) => x.id === studyId)
-    );
+    useProjectStore((state) => state.provenance.extractionMetadata.studyStatusList.find((x) => x.id === studyId));
 export const useProjectExtractionAddOrUpdateStudyListStatus = () =>
     useProjectStore((state) => state.addOrUpdateStudyListStatus);
 export const useProjectExtractionReplaceStudyListStatusId = () =>
@@ -833,10 +785,8 @@ export const useProjectExtractionSetGivenStudyStatusesAsComplete = () =>
     useProjectStore((state) => state.setGivenStudyStatusesAsComplete);
 
 // metaAnalysisAlgorithm updater hooks
-export const useAllowEditMetaAnalyses = () =>
-    useProjectStore((state) => state.allowEditMetaAnalyses);
-export const useUpdateProjectMetaAnalyses = () =>
-    useProjectStore((state) => state.updateProjectMetaAnalyses);
+export const useAllowEditMetaAnalyses = () => useProjectStore((state) => state.allowEditMetaAnalyses);
+export const useUpdateProjectMetaAnalyses = () => useProjectStore((state) => state.updateProjectMetaAnalyses);
 
 // metaAnalysisAlgorithm retrieval hooks
 export const useProjectMetaAnalysisCanEdit = () =>

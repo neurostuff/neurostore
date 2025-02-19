@@ -23,4 +23,5 @@ export interface ICurationStubStudy {
     tags: ITag[];
     neurostoreId?: string;
     searchTerm?: string;
+    importId?: string;
 }

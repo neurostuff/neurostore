@@ -29,13 +29,13 @@ export enum ENeurosynthTagIds {
     NEEDS_REVIEW_TAG_ID = 'neurosynth_needs_review_tag', // default info tag
     UNCATEGORIZED_ID = 'neurosynth_uncategorized_tag', // default info tag
 
-    DUPLICATE_EXCLUSION_ID = 'neurosynth_duplicate_exclusion', // default exclusion
-    IRRELEVANT_EXCLUSION_ID = 'neurosynth_irrelevant_exclusion', // default exclusion
-    REPORTS_NOT_RETRIEVED_EXCLUSION_ID = 'neurosynth_reports_not_retrieved_exclusion', // default exclusion
+    DUPLICATE_EXCLUSION_ID = 'neurosynth_duplicate_exclusion', // default exclusion (prisma)
+    IRRELEVANT_EXCLUSION_ID = 'neurosynth_irrelevant_exclusion', // default exclusion (prisma)
+    REPORTS_NOT_RETRIEVED_EXCLUSION_ID = 'neurosynth_reports_not_retrieved_exclusion', // default exclusion (prisma)
+    OUT_OF_SCOPE_EXCLUSION_ID = 'neurosynth_out_of_scope_exclusion', // default exclusion (prisma)
+    INSUFFICIENT_DETAIL_EXCLUSION_ID = 'neurosynth_insufficient_detail_exclusion', // default exclusion (prisma)
+    LIMITED_RIGOR_EXCLUSION_ID = 'neurosynth_limited_rigor', // default exclusion (prisma)
     EXCLUDE_EXCLUSION_ID = 'neurosynth_exclude_exclusion', // default exclusion
-    OUT_OF_SCOPE_EXCLUSION_ID = 'neurosynth_out_of_scope_exclusion', // default exclusion
-    INSUFFICIENT_DETAIL_EXCLUSION_ID = 'neurosynth_insufficient_detail_exclusion', // default exclusion
-    LIMITED_RIGOR_EXCLUSION_ID = 'neurosynth_limited_rigor', // default exclusion
 }
 
 export const defaultIdentificationSources = {
@@ -102,9 +102,7 @@ export const defaultInfoTags = {
 };
 
 export type ProjectStoreMetadata = {
-    enqueueSnackbar:
-        | undefined
-        | ((message: SnackbarMessage, options?: OptionsObject | undefined) => SnackbarKey);
+    enqueueSnackbar: undefined | ((message: SnackbarMessage, options?: OptionsObject | undefined) => SnackbarKey);
     logout: undefined | ((options?: LogoutOptions | undefined) => void);
     debounceTimeout: undefined | NodeJS.Timeout;
     prevUpdatedProjectId: undefined | string;
@@ -134,10 +132,7 @@ export type ProjectStoreActions = {
     clearProjectStore: () => void;
     initCuration: (cols: string[], isPrisma: boolean) => void;
     handleDrag: (result: DropResult, provided: ResponderProvided) => void;
-    createNewExclusion: (
-        newExclusion: ITag,
-        arg: keyof Omit<IPRISMAConfig, 'isPrisma'> | undefined
-    ) => void;
+    createNewExclusion: (newExclusion: ITag, arg: keyof Omit<IPRISMAConfig, 'isPrisma'> | undefined) => void;
     createNewInfoTag: (newTag: ITag) => void;
     createNewIdentificationSource: (newSource: ISource) => void;
     addNewStubs: (stubs: ICurationStubStudy[]) => void;
@@ -153,6 +148,7 @@ export type ProjectStoreActions = {
     removeTagFromStub: (columnIndex: number, stubId: string, tagId: string) => void;
     setExclusionForStub: (columnIndex: number, stubId: string, exclusion: ITag | null) => void;
     promoteStub: (columnIndex: number, stubId: string) => void;
+    demoteStub: (columnIndex: number, stubId: string) => void;
     promoteAllUncategorized: () => void; // TODO: improve this
     updateExtractionMetadata: (metadata: Partial<IExtractionMetadata>) => void;
     addOrUpdateStudyListStatus: (id: string, status: EExtractionStatus) => void;
@@ -162,5 +158,4 @@ export type ProjectStoreActions = {
     allowEditMetaAnalyses: (allowEditMetaAnalysis: boolean) => void;
 };
 
-export type TProjectStore = INeurosynthProjectReturn &
-    ProjectStoreActions & { metadata: ProjectStoreMetadata };
+export type TProjectStore = INeurosynthProjectReturn & ProjectStoreActions & { metadata: ProjectStoreMetadata };

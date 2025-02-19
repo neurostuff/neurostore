@@ -8,7 +8,7 @@ import { v4 as uuidv4 } from 'uuid';
 import HighlightOffIcon from '@mui/icons-material/HighlightOff';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import NeurosynthPopper from 'components/NeurosynthPopper/NeurosynthPopper';
-import { ENeurosynthTagIds } from 'pages/Project/store/ProjectStore.types';
+import { defaultExclusionTags, ENeurosynthTagIds } from 'pages/Project/store/ProjectStore.types';
 import LoadingButton from 'components/Buttons/LoadingButton';
 import {
     useCreateNewExclusion,
@@ -41,7 +41,7 @@ const filterOptions = createFilterOptions<AutoSelectOption>({
 });
 
 const CurationPopupExclusionSelector: React.FC<IExclusionSelectorPopup> = (props) => {
-    const excludeButtonRef = useRef<any>(null);
+    const excludeButtonRef = useRef<HTMLDivElement>(null);
     const [selectedValue, setSelectedValue] = useState<AutoSelectOption | null>(null);
     const [exclusions, setExclusions] = useState<AutoSelectOption[]>([]);
     const [defaultExclusion, setDefaultExclusion] = useState<AutoSelectOption>();
@@ -81,6 +81,7 @@ const CurationPopupExclusionSelector: React.FC<IExclusionSelectorPopup> = (props
                 });
             }
         } else {
+            setDefaultExclusion(defaultExclusionTags.exclusion);
             setExclusions(genericExclusionTags);
         }
     }, [prismaConfig, genericExclusionTags, props.columnIndex]);
@@ -99,15 +100,10 @@ const CurationPopupExclusionSelector: React.FC<IExclusionSelectorPopup> = (props
         if (props.onCreateExclusion) props.onCreateExclusion(newExclusion);
     };
 
-    const handleChange = (
-        _event: React.SyntheticEvent<Element, Event>,
-        newValue: string | AutoSelectOption | null
-    ) => {
+    const handleChange = (_event: React.SyntheticEvent<Element, Event>, newValue: string | AutoSelectOption | null) => {
         // if user hits enter after typing input, we get a string and handle it here
         if (typeof newValue === 'string') {
-            const foundValue = exclusions.find(
-                (tag) => tag.label.toLocaleLowerCase() === newValue.toLocaleLowerCase()
-            );
+            const foundValue = exclusions.find((tag) => tag.label.toLocaleLowerCase() === newValue.toLocaleLowerCase());
             if (foundValue) {
                 // do not create a new tag if an identical label exists
                 setSelectedValue(foundValue);
@@ -173,9 +169,7 @@ const CurationPopupExclusionSelector: React.FC<IExclusionSelectorPopup> = (props
                                 return option?.id === value?.id;
                             }
                         }}
-                        getOptionLabel={(option) =>
-                            typeof option === 'string' ? option : option?.label || ''
-                        }
+                        getOptionLabel={(option) => (typeof option === 'string' ? option : option?.label || '')}
                         onChange={handleChange}
                         renderOption={(params, option) => (
                             <ListItem {...params} key={option?.id}>
@@ -194,8 +188,7 @@ const CurationPopupExclusionSelector: React.FC<IExclusionSelectorPopup> = (props
 
                             const optionExists = options.some(
                                 (option) =>
-                                    params.inputValue.toLocaleLowerCase() ===
-                                    (option?.label || '').toLocaleLowerCase()
+                                    params.inputValue.toLocaleLowerCase() === (option?.label || '').toLocaleLowerCase()
                             );
 
                             if (params.inputValue !== '' && !optionExists) {
@@ -210,12 +203,11 @@ const CurationPopupExclusionSelector: React.FC<IExclusionSelectorPopup> = (props
                     />
                 </Box>
             </NeurosynthPopper>
-            <ButtonGroup disabled={!!props.disabled} color="error" ref={excludeButtonRef}>
+            <ButtonGroup size="small" disabled={!!props.disabled} color="error" ref={excludeButtonRef}>
                 {defaultExclusion && (
                     <LoadingButton
                         variant="outlined"
                         startIcon={<HighlightOffIcon />}
-                        sx={{ width: '210px' }}
                         text={`Exclude: ${defaultExclusion?.label}`}
                         isLoading={props.isLoading && !props.popupIsOpen}
                         onClick={() => handleSelectDefaultExclusion(defaultExclusion)}
@@ -223,8 +215,7 @@ const CurationPopupExclusionSelector: React.FC<IExclusionSelectorPopup> = (props
                 )}
                 <Button
                     startIcon={defaultExclusion ? undefined : <HighlightOffIcon />}
-                    size="small"
-                    sx={{ width: defaultExclusion ? '44px' : '160px' }}
+                    sx={{ width: defaultExclusion ? '32px' : '140px' }}
                     onClick={() => props.onOpenPopup()}
                 >
                     {defaultExclusion ? <ArrowDropDownIcon /> : 'exclude'}

@@ -14,8 +14,8 @@ const CurationStubListItem: React.FC<ICurationStubListItem> = React.memo((props)
     const itemColor = props.stub.exclusionTag
         ? '#fff3f3'
         : props.stub.tags.some((x) => x.id === ENeurosynthTagIds.NEEDS_REVIEW_TAG_ID)
-        ? '#fff0b8'
-        : '';
+          ? '#fff0b8'
+          : '';
 
     return (
         <ListItem
@@ -45,9 +45,8 @@ const CurationStubListItem: React.FC<ICurationStubListItem> = React.memo((props)
                     </Typography>
                 )}
                 <Box sx={{ width: '100%' }}>
-                    <Typography noWrap variant="body1">
-                        {props.stub.articleYear ? `(${props.stub.articleYear}). ` : ''}{' '}
-                        {props.stub.title}
+                    <Typography noWrap variant="body2">
+                        {props.stub.articleYear ? `(${props.stub.articleYear}). ` : ''} {props.stub.title}
                     </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', width: '100%' }}>

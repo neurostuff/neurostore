@@ -1,13 +1,13 @@
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
-import { Chip, Tooltip } from '@mui/material';
+import { Chip, Link, Tooltip } from '@mui/material';
 import { useGetFullText } from 'hooks';
 import { useStudyName } from 'pages/Study/store/StudyStore';
 import { useEffect, useState } from 'react';
-import DisplayStudyChipLinksStyles from './DisplayStudyChipLinks.styles';
+import DisplayStudyLinksStyles from './DisplayStudyLinks.styles';
 
 let debounce: NodeJS.Timeout;
 
-const DisplayStudyChipLinksFullText: React.FC<{ name?: string | null }> = (props) => {
+const DisplayStudyLinksFullText: React.FC<{ name?: string | null }> = (props) => {
     const studyStoreName = useStudyName();
     const existingName = props.name || studyStoreName;
     useEffect(() => {
@@ -28,26 +28,31 @@ const DisplayStudyChipLinksFullText: React.FC<{ name?: string | null }> = (props
         isError: getFullTextIsError,
     } = useGetFullText(debouncedName);
 
-    if (getFullTextIsLoading || !debouncedName || getFullTextIsError || fullTextURL === '') {
+    if (
+        getFullTextIsLoading ||
+        !debouncedName ||
+        getFullTextIsError ||
+        fullTextURL === '' ||
+        fullTextURL === undefined
+    ) {
         return <></>;
     } else {
         return (
             <Tooltip placement="top" title="View the full article in PDF form via Semantic Scholar">
-                <Chip
-                    icon={<OpenInNewIcon />}
+                <Link
                     color="primary"
-                    label="full text (PDF)"
-                    component="a"
                     href={fullTextURL}
                     target="_blank"
                     rel="noreferrer"
-                    clickable
-                    sx={DisplayStudyChipLinksStyles.chip}
-                    variant="outlined"
-                />
+                    underline="hover"
+                    sx={DisplayStudyLinksStyles.link}
+                >
+                    full text (PDF)
+                    <OpenInNewIcon sx={{ marginLeft: '4px' }} fontSize="small" />
+                </Link>
             </Tooltip>
         );
     }
 };
 
-export default DisplayStudyChipLinksFullText;
+export default DisplayStudyLinksFullText;

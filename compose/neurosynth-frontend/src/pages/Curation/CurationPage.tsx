@@ -1,13 +1,11 @@
-import SchemaIcon from '@mui/icons-material/Schema';
-import { Box, Button } from '@mui/material';
+import ChangeHistoryIcon from '@mui/icons-material/ChangeHistory';
+import { Box, Button, Tooltip } from '@mui/material';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs';
 import ProjectIsLoadingText from 'components/ProjectIsLoadingText';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import GlobalStyles from 'global.styles';
-import { useGetCurationSummary, useGetStudysetById } from 'hooks';
-import useUserCanEdit from 'hooks/useUserCanEdit';
+import { useGetCurationSummary, useGetStudysetById, useUserCanEdit } from 'hooks';
 import CurationBoardBasic from 'pages/Curation/components/CurationBoardBasic';
-import PrismaDialog from 'pages/Curation/components/PrismaDialog';
 import { IProjectPageLocationState } from 'pages/Project/ProjectPage';
 import {
     useInitProjectStoreIfRequired,
@@ -19,27 +17,29 @@ import {
 } from 'pages/Project/store/ProjectStore';
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import CurationDownloadIncludedStudiesButton from './components/CurationDownloadIncludedStudiesButton';
 import CurationBoardAI from './components/CurationBoardAi';
+import PrismaDialog from './components/PrismaDialog';
 
-const CurationPage: React.FC = (props) => {
-    const [prismaIsOpen, setPrismaIsOpen] = useState(false);
+const CurationPage: React.FC = () => {
     const { projectId } = useParams<{ projectId: string | undefined }>();
+    const navigate = useNavigate();
+
     const projectUser = useProjectUser();
+    const studysetId = useProjectExtractionStudysetId();
     const canEdit = useUserCanEdit(projectUser || undefined);
+    const { included, uncategorized } = useGetCurationSummary();
+    const annotationId = useProjectExtractionAnnotationId();
+    const { data: studyset } = useGetStudysetById(studysetId || '', false);
+
+    const [prismaIsOpen, setPrismaIsOpen] = useState(false);
 
     useInitProjectStoreIfRequired();
 
-    const navigate = useNavigate();
-
     const isPrisma = useProjectCurationIsPrisma();
-    const studysetId = useProjectExtractionStudysetId();
-    const annotationId = useProjectExtractionAnnotationId();
     const projectName = useProjectName();
-    const { included, uncategorized } = useGetCurationSummary();
-    const { data: studyset } = useGetStudysetById(studysetId || '', false);
 
     const extractionStepInitialized = studysetId && annotationId && (studyset?.studies?.length || 0) > 0;
+    const canMoveToExtractionPhase = included > 0 && uncategorized === 0;
 
     const handleMoveToExtractionPhase = () => {
         if (extractionStepInitialized) {
@@ -55,18 +55,10 @@ const CurationPage: React.FC = (props) => {
         }
     };
 
-    const canMoveToExtractionPhase = included > 0 && uncategorized === 0;
-
     return (
         <StateHandlerComponent isError={false} isLoading={false}>
             <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-                <Box
-                    sx={{
-                        display: 'flex',
-                        marginBottom: '1rem',
-                        justifyContent: 'space-between',
-                    }}
-                >
+                <Box sx={{ display: 'flex', marginBottom: '0.5rem', justifyContent: 'space-between' }}>
                     <Box sx={{ display: 'flex' }}>
                         <NeurosynthBreadcrumbs
                             breadcrumbItems={[
@@ -89,8 +81,7 @@ const CurationPage: React.FC = (props) => {
                         />
                         <ProjectIsLoadingText />
                     </Box>
-                    <Box sx={{ marginRight: '1rem' }}>
-                        <CurationDownloadIncludedStudiesButton />
+                    <Box>
                         {isPrisma && (
                             <>
                                 <PrismaDialog onCloseDialog={() => setPrismaIsOpen(false)} isOpen={prismaIsOpen} />
@@ -98,42 +89,49 @@ const CurationPage: React.FC = (props) => {
                                     onClick={() => setPrismaIsOpen(true)}
                                     variant="outlined"
                                     sx={{ marginLeft: '0.5rem', width: '180px' }}
-                                    startIcon={<SchemaIcon />}
+                                    startIcon={<ChangeHistoryIcon />}
                                 >
                                     PRISMA diagram
                                 </Button>
                             </>
                         )}
-                        <Button
-                            variant="contained"
-                            disableElevation
-                            sx={{ marginLeft: '0.5rem', width: '180px' }}
-                            onClick={() => navigate(`/projects/${projectId}/curation/import`)}
-                            disabled={!canEdit}
-                        >
-                            import studies
-                        </Button>
-                        {canMoveToExtractionPhase && (
-                            <Button
-                                onClick={handleMoveToExtractionPhase}
-                                variant="contained"
-                                color="success"
-                                sx={{
-                                    width: '180px',
-                                    ml: '0.5rem',
-                                    ...(extractionStepInitialized
-                                        ? { color: 'white' }
-                                        : {
-                                              ...GlobalStyles.colorPulseAnimation,
-                                              color: 'success.dark',
-                                          }),
-                                }}
-                                disableElevation
-                                disabled={!canEdit}
+                        {!extractionStepInitialized && (
+                            <Tooltip
+                                title="Click this button to skip curation and automatically include all studies"
+                                placement="top"
                             >
-                                {extractionStepInitialized ? 'view extraction' : 'go to extraction'}
-                            </Button>
+                                <>
+                                    <Button
+                                        color="success"
+                                        variant="outlined"
+                                        size="small"
+                                        disabled={uncategorized === 0}
+                                    >
+                                        skip curation
+                                    </Button>
+                                </>
+                            </Tooltip>
                         )}
+                        <Button
+                            onClick={handleMoveToExtractionPhase}
+                            variant="contained"
+                            color="success"
+                            size="small"
+                            sx={{
+                                width: '180px',
+                                ml: '0.5rem',
+                                ...(extractionStepInitialized || !canMoveToExtractionPhase
+                                    ? { color: 'white' }
+                                    : {
+                                          ...GlobalStyles.colorPulseAnimation,
+                                          color: 'success.dark',
+                                      }),
+                            }}
+                            disableElevation
+                            disabled={!canEdit || !canMoveToExtractionPhase}
+                        >
+                            {extractionStepInitialized ? 'view extraction' : 'go to extraction'}
+                        </Button>
                     </Box>
                 </Box>
                 <Box sx={{ height: '100%', overflow: 'hidden' }}>

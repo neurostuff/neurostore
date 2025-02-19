@@ -3,13 +3,11 @@ import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import { Box, IconButton, Tooltip, Typography } from '@mui/material';
 import { CellContext, HeaderContext } from '@tanstack/react-table';
 import { IExtractionTableStudy } from './ExtractionTable';
-import { getAuthorShortName } from './ExtractionTable.helpers';
+import { getAuthorsShortName } from 'helpers/utils';
 
-export const ExtractionTableAuthorCell: React.FC<CellContext<IExtractionTableStudy, string>> = (
-    props
-) => {
+export const ExtractionTableAuthorCell: React.FC<CellContext<IExtractionTableStudy, string>> = (props) => {
     const value = props.getValue();
-    const shortName = getAuthorShortName(value);
+    const shortName = getAuthorsShortName(value);
     return (
         <Tooltip title={value ? <Typography variant="body2">{value}</Typography> : null}>
             <Typography variant="body2">{shortName}</Typography>
@@ -17,9 +15,10 @@ export const ExtractionTableAuthorCell: React.FC<CellContext<IExtractionTableStu
     );
 };
 
-export const ExtractionTableAuthorHeader: React.FC<
-    HeaderContext<IExtractionTableStudy, string>
-> = ({ table, column }) => {
+export const ExtractionTableAuthorHeader: React.FC<HeaderContext<IExtractionTableStudy, string>> = ({
+    table,
+    column,
+}) => {
     const isSorted = column.getIsSorted();
 
     return (
@@ -32,32 +31,23 @@ export const ExtractionTableAuthorHeader: React.FC<
                     <IconButton
                         size="small"
                         onClick={() => {
-                            if (!!isSorted) {
+                            if (isSorted) {
                                 table.resetSorting();
                             } else {
                                 table.setSorting([{ id: 'authors', desc: true }]);
                             }
                         }}
                     >
-                        <ArrowDownward
-                            sx={{ width: '0.9em', height: '0.9em', color: 'lightgray' }}
-                        />
+                        <ArrowDownward sx={{ width: '0.9em', height: '0.9em', color: 'lightgray' }} />
                     </IconButton>
                 </Tooltip>
             ) : isSorted === 'asc' ? (
                 <IconButton size="small" onClick={() => table.resetSorting()}>
-                    <ArrowUpwardIcon
-                        sx={{ width: '0.9em', height: '0.9em', color: 'secondary.main' }}
-                    />
+                    <ArrowUpwardIcon sx={{ width: '0.9em', height: '0.9em', color: 'secondary.main' }} />
                 </IconButton>
             ) : (
-                <IconButton
-                    size="small"
-                    onClick={() => table.setSorting([{ id: 'authors', desc: false }])}
-                >
-                    <ArrowDownward
-                        sx={{ width: '0.9em', height: '0.9em', color: 'secondary.main' }}
-                    />
+                <IconButton size="small" onClick={() => table.setSorting([{ id: 'authors', desc: false }])}>
+                    <ArrowDownward sx={{ width: '0.9em', height: '0.9em', color: 'secondary.main' }} />
                 </IconButton>
             )}
         </Box>

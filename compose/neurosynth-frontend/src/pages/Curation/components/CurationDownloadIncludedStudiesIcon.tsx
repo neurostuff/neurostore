@@ -1,13 +1,13 @@
-import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
-import { Box, Button, ButtonGroup, MenuItem, MenuList } from '@mui/material';
-import NeurosynthPopper from 'components/NeurosynthPopper/NeurosynthPopper';
-import ProgressLoader from 'components/ProgressLoader';
 import { useProjectCurationColumns, useProjectName } from 'pages/Project/store/ProjectStore';
 import { useRef, useState } from 'react';
-import { downloadFile } from '../Curation.helpers';
 import { stubsToBibtex, stubsToCSV } from './CurationDownloadIncludedStudies.helpers';
+import { downloadFile } from '../Curation.helpers';
+import { Box, IconButton, MenuItem, MenuList } from '@mui/material';
+import { Download } from '@mui/icons-material';
+import NeurosynthPopper from 'components/NeurosynthPopper/NeurosynthPopper';
+import ProgressLoader from 'components/ProgressLoader';
 
-const CurationDownloadIncludedStudiesButton: React.FC = () => {
+const CurationDownloadIncludedStudiesIcon: React.FC = () => {
     const [optionsIsOpen, setOptionsIsOpen] = useState(false);
     const anchorRef = useRef(null);
     const curationColumns = useProjectCurationColumns();
@@ -37,23 +37,35 @@ const CurationDownloadIncludedStudiesButton: React.FC = () => {
                 onClickAway={() => setOptionsIsOpen(false)}
                 anchorElement={anchorRef.current}
                 open={optionsIsOpen}
+                disablePortal={false}
             >
-                <Box sx={{ width: '252px' }}>
+                <Box>
                     <MenuList>
+                        <MenuItem onClick={() => handleDownloadIncludedStudies('csv')} value="PNG">
+                            Download as CSV
+                        </MenuItem>
                         <MenuItem onClick={() => handleDownloadIncludedStudies('bibtex')} value="PNG">
-                            Download INCLUDED as BibTeX
+                            Download as BibTeX
                         </MenuItem>
                     </MenuList>
                 </Box>
             </NeurosynthPopper>
-            <ButtonGroup disabled={disable} color="info" ref={anchorRef} sx={{ height: '100%' }} size="small">
-                <Button onClick={() => handleDownloadIncludedStudies('csv')}>Download INCLUDED as CSV</Button>
-                <Button onClick={() => setOptionsIsOpen(true)} sx={{ width: '44px' }}>
-                    {isLoading ? <ProgressLoader size={20} color="secondary" /> : <ArrowDropDownIcon />}
-                </Button>
-            </ButtonGroup>
+            {isLoading ? (
+                <ProgressLoader size={20} color="secondary" />
+            ) : (
+                <IconButton
+                    disabled={disable}
+                    onClick={(event) => {
+                        event.stopPropagation();
+                        setOptionsIsOpen(true);
+                    }}
+                    ref={anchorRef}
+                >
+                    <Download />
+                </IconButton>
+            )}
         </>
     );
 };
 
-export default CurationDownloadIncludedStudiesButton;
+export default CurationDownloadIncludedStudiesIcon;

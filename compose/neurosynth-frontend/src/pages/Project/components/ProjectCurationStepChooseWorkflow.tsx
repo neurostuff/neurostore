@@ -11,10 +11,10 @@ const ProjectCurationStepChooseWorkflow: React.FC<{
     const handleCreateCreationBoard = (curationBoardType: ECurationBoardTypes) => {
         switch (curationBoardType) {
             case ECurationBoardTypes.PRISMA:
-                onCreateCuration(['identification', 'screening', 'eligibility', 'included'], true);
+                onCreateCuration(['Identification', 'Screening', 'Eligibility', 'Included'], true);
                 break;
             case ECurationBoardTypes.SIMPLE:
-                onCreateCuration(['not included', 'included'], false);
+                onCreateCuration(['Not Included', 'Included'], false);
                 break;
             // case ECurationBoardTypes.CUSTOM:
             //     setDialogIsOpen(true);

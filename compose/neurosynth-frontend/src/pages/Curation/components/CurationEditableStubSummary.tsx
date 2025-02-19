@@ -13,7 +13,7 @@ import {
 } from 'pages/Project/store/ProjectStore';
 import React, { useState } from 'react';
 import CurationEditableStubSummaryHeader from './CurationEditableStubSummaryHeader';
-import DisplayStudyChipLinks from 'components/DisplayStudyChipLinks/DisplayStudyChipLinks';
+import DisplayStudyLinks from 'components/DisplayStudyLinks/DisplayStudyLinks';
 
 interface ICurationEditableStubSummary {
     stub: ICurationStubStudy | undefined;
@@ -64,44 +64,54 @@ const CurationEditableStubSummary: React.FC<ICurationEditableStubSummary> = (pro
     if (!props.stub) {
         return (
             <Box sx={{ padding: '2rem' }}>
-                <Typography sx={{ color: 'warning.dark' }}>No study</Typography>
+                <Typography sx={{ color: 'warning.dark' }}>No study selected</Typography>
             </Box>
         );
     }
 
     return (
-        <Box sx={{ padding: '0rem 2rem', minWidth: '585px' }}>
+        <Box sx={{ padding: '0rem 1rem 1rem 1rem' }}>
             <Box
                 sx={{
                     position: 'sticky',
                     top: 0,
                     backgroundColor: 'white',
-                    padding: '8px 0',
                     zIndex: 1000,
                 }}
             >
+                <DisplayStudyLinks
+                    doi={props.stub.doi}
+                    pmid={props.stub.pmid}
+                    studyName={props.stub.title}
+                    pmcid={props.stub.pmcid}
+                />
                 <CurationEditableStubSummaryHeader
-                    type={
-                        isLastColumn ? 'included' : props.stub.exclusionTag ? 'excluded' : 'default'
-                    }
+                    type={isLastColumn ? 'included' : props.stub.exclusionTag ? 'excluded' : 'default'}
                     stub={props.stub}
                     columnIndex={props.columnIndex}
                     onMoveToNextStub={props.onMoveToNextStub}
                 />
             </Box>
 
-            <DisplayStudyChipLinks
-                doi={props.stub.doi}
-                pmid={props.stub.pmid}
-                studyName={props.stub.title}
-                pmcid={props.stub.pmcid}
-            />
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <Typography sx={{ marginRight: '4px' }} variant="body2">
+                    Year:
+                </Typography>
+                <Typography
+                    gutterBottom={false}
+                    sx={{ color: props.stub.articleYear ? 'initial' : 'warning.dark' }}
+                    variant="body2"
+                >
+                    {props.stub.articleYear || 'No Year'}
+                </Typography>
+            </Box>
 
             <Box>
                 <TextEdit
                     textFieldSx={{ input: { fontSize: '1.25rem' } }}
                     onSave={handleUpdateStub}
                     label="title"
+                    multiline
                     textToEdit={props.stub.title}
                     editIconIsVisible={canEdit}
                 >
@@ -110,112 +120,108 @@ const CurationEditableStubSummary: React.FC<ICurationEditableStubSummary> = (pro
                             color: props.stub.title ? '' : 'warning.dark',
                             fontWeight: props.stub.title ? 'bold' : 'normal',
                         }}
-                        variant="h5"
+                        variant="h6"
                     >
                         {props.stub.title || 'No Title'}
                     </Typography>
                 </TextEdit>
             </Box>
 
-            <Typography sx={{ color: props.stub.authors ? '' : 'warning.dark' }} variant="h6">
-                {props.stub.authors || 'No Authors'}
-            </Typography>
-
-            <Typography
-                sx={{ color: props.stub.articleYear ? 'initial' : 'warning.dark' }}
-                variant="h6"
-            >
-                Year: {props.stub.articleYear || 'No Year'}
-            </Typography>
-
-            <Box sx={{ display: 'flex' }}>
-                <Typography
-                    sx={{ color: props.stub.journal ? 'initial' : 'warning.dark' }}
-                    variant="h6"
-                >
-                    {props.stub.journal || 'No Journal'}
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <Typography sx={{ marginRight: '4px' }} variant="body2">
+                    DOI:
                 </Typography>
+                <TextEdit
+                    textFieldSx={{
+                        input: {
+                            padding: 0,
+                            fontSize: '0.875rem',
+                        },
+                        minWidth: '300px !important',
+                    }}
+                    onSave={handleUpdateStub}
+                    placeholder="10.1038/nmeth.1635"
+                    textToEdit={props.stub.doi}
+                    editIconIsVisible={canEdit}
+                >
+                    <Typography sx={{ color: props.stub.doi ? 'initial' : 'warning.dark' }} variant="body2">
+                        {props.stub.doi || 'No DOI'}
+                    </Typography>
+                </TextEdit>
             </Box>
 
-            <Box sx={{ display: 'flex' }}>
-                <Typography sx={{ marginRight: '10px' }} variant="h6">
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <Typography sx={{ marginRight: '4px' }} variant="body2">
                     PMID:
                 </Typography>
                 <TextEdit
-                    textFieldSx={{ input: { padding: 0, fontSize: '1.25rem' } }}
+                    textFieldSx={{ input: { padding: 0, fontSize: '0.875rem' }, minWidth: '0px !important' }}
                     textToEdit={props.stub.pmid}
-                    label="pmid"
                     onSave={handleUpdateStub}
+                    placeholder="21706013"
                     editIconIsVisible={canEdit}
                 >
-                    <Typography
-                        sx={{ color: props.stub.pmid ? 'initial' : 'warning.dark' }}
-                        variant="h6"
-                    >
+                    <Typography sx={{ color: props.stub.pmid ? 'initial' : 'warning.dark' }} variant="body2">
                         {props.stub.pmid || 'No PMID'}
                     </Typography>
                 </TextEdit>
             </Box>
-            <Box sx={{ display: 'flex' }}>
-                <Typography sx={{ marginRight: '10px' }} variant="h6">
+
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <Typography sx={{ marginRight: '4px' }} variant="body2">
                     PMCID:
                 </Typography>
                 <TextEdit
-                    textFieldSx={{ input: { padding: 0, fontSize: '1.25rem' } }}
+                    textFieldSx={{ input: { padding: 0, fontSize: '0.875rem' }, minWidth: '0px !important' }}
                     textToEdit={props.stub.pmcid}
-                    label="pmcid"
                     onSave={handleUpdateStub}
+                    placeholder="PMC3146590"
                     editIconIsVisible={canEdit}
                 >
-                    <Typography
-                        sx={{ color: props.stub.pmid ? 'initial' : 'warning.dark' }}
-                        variant="h6"
-                    >
+                    <Typography sx={{ color: props.stub.pmcid ? 'initial' : 'warning.dark' }} variant="body2">
                         {props.stub.pmcid || 'No PMCID'}
                     </Typography>
                 </TextEdit>
             </Box>
-            <Box sx={{ display: 'flex' }}>
-                <Typography sx={{ marginRight: '10px' }} variant="h6">
-                    DOI:
-                </Typography>
-                <TextEdit
-                    textFieldSx={{ input: { padding: 0, fontSize: '1.25rem' } }}
-                    onSave={handleUpdateStub}
-                    label="doi"
-                    textToEdit={props.stub.doi}
-                    editIconIsVisible={canEdit}
-                >
-                    {props.stub.doi && (
-                        <Typography
-                            sx={{ color: props.stub.doi ? 'initial' : 'warning.dark' }}
-                            variant="h6"
-                        >
-                            {props.stub.doi || 'No DOI'}
-                        </Typography>
-                    )}
-                </TextEdit>
-            </Box>
 
             <Typography
+                sx={{ color: props.stub.authors ? '' : 'warning.dark', paddingBottom: '0.5rem' }}
+                variant="body2"
+            >
+                {props.stub.authors || 'No Authors'}
+            </Typography>
+
+            <Typography
+                sx={{ color: props.stub.journal ? 'initial' : 'warning.dark', paddingBottom: '0.5rem' }}
+                variant="body2"
+            >
+                {props.stub.journal || 'No Journal'}
+            </Typography>
+
+            <Typography
+                variant="body2"
                 sx={{
                     whiteSpace: 'break-spaces',
                     color: props.stub.identificationSource ? 'initial' : 'warning.dark',
+                    paddingBottom: '0.5rem',
                 }}
             >
                 Source: {props.stub.identificationSource?.label || 'No source'}
             </Typography>
 
             <Typography
+                variant="body2"
                 sx={{
                     color: props.stub.keywords ? 'initial' : 'warning.dark',
                     fontWeight: props.stub.keywords ? 'bold' : 'initial',
+                    paddingBottom: '0.5rem',
                 }}
             >
                 {props.stub.keywords || 'No Keywords'}
             </Typography>
 
             <Typography
+                variant="body2"
                 sx={{
                     whiteSpace: 'break-spaces',
                     color: props.stub.abstractText ? 'initial' : 'warning.dark',
@@ -224,7 +230,7 @@ const CurationEditableStubSummary: React.FC<ICurationEditableStubSummary> = (pro
                 {props.stub.abstractText || 'No Abstract'}
             </Typography>
 
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <Box sx={{ marginTop: '0.875rem' }}>
                 <ConfirmationDialog
                     isOpen={deleteStubConfirmationIsOpen}
                     onCloseDialog={handleCloseDialog}
@@ -238,6 +244,7 @@ const CurationEditableStubSummary: React.FC<ICurationEditableStubSummary> = (pro
                     disableElevation
                     disabled={!canEdit}
                     color="error"
+                    size="small"
                 >
                     Delete study
                 </Button>

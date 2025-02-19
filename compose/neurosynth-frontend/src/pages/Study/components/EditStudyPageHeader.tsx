@@ -1,5 +1,5 @@
 import { Box, Typography } from '@mui/material';
-import DisplayStudyChipLinks from 'components/DisplayStudyChipLinks/DisplayStudyChipLinks';
+import DisplayStudyLinks from 'components/DisplayStudyLinks/DisplayStudyLinks';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs';
 import ProjectIsLoadingText from 'components/ProjectIsLoadingText';
 import { useProjectId, useProjectName } from 'pages/Project/store/ProjectStore';
@@ -75,7 +75,7 @@ const EditStudyPageHeader: React.FC = () => {
                     </Typography>
                 </Box>
                 <Box sx={{ margin: '0.5rem 0 1rem 0' }}>
-                    <DisplayStudyChipLinks />
+                    <DisplayStudyLinks />
                 </Box>
             </Box>
         </>
