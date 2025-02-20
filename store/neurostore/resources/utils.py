@@ -6,8 +6,8 @@ import re
 
 from connexion.context import context
 from psycopg2 import errors
-from sqlalchemy import cast, String, Integer, Float, Boolean, text, or_, and_
-
+from sqlalchemy import cast, String, Integer, Float, Boolean, text, or_, and_, func, select
+from sqlalchemy.orm import aliased
 
 from .. import models
 from .. import schemas
@@ -279,6 +279,9 @@ def determine_cast_type(value):
 
     return String
 
+from sqlalchemy import func, cast, Integer, String, Float, Boolean, and_, or_
+from sqlalchemy.orm import aliased
+
 def build_jsonb_filter(query, filters):
     """
     Converts deeply nested JSON filters into SQLAlchemy filter expressions.
@@ -290,43 +293,77 @@ def build_jsonb_filter(query, filters):
       - Boolean filtering (info.user.active=true)
       - AND (`&`) and OR (`|`) grouping
     """
-    conditions = []
 
-    for key, value in filters.items():
-        keys = key.split(".")  # Split 'info.user.age' -> ['info', 'user', 'age']
-        jsonb_path = "->".join(f"'{k}'" for k in keys[:-1])  # info->'user'
-        last_key = keys[-1]  # 'age'
-        jsonb_query = f"({models.PipelineRunResult.data} -> {jsonb_path} ->> '{last_key}')"
+    parts = filters.split(".", 1)
+    pipeline_name = parts[0]
+    keys = parts[1].split(".") if len(parts) > 1 else []
 
-        op, parsed_value = parse_filter_value(value)
-        cast_type = determine_cast_type(parsed_value)
-        jsonb_expr = cast(text(jsonb_query), cast_type)
+    pattern = r"(<=|>=|<|>|=|~|!=)"
 
-        if op == "=":
-            condition = jsonb_expr == parsed_value
-        elif op == "!=":
-            condition = jsonb_expr != parsed_value
-        elif op == ">":
-            condition = jsonb_expr > parsed_value
-        elif op == "<":
-            condition = jsonb_expr < parsed_value
-        elif op == ">=":
-            condition = jsonb_expr >= parsed_value
-        elif op == "<=":
-            condition = jsonb_expr <= parsed_value
-        elif op == "~":  # LIKE query
-            condition = jsonb_expr.like(f"{parsed_value}%")
-        elif op == "IN":
-            condition = jsonb_expr.in_(parsed_value)
-        elif op == "|":  # OR grouping
-            condition = or_(*[jsonb_expr == v for v in parsed_value])
-        elif op == "&":  # AND grouping
-            condition = and_(*[jsonb_expr == v for v in parsed_value])
+    # Extract the last key
+    if keys:
+        last_key_value = keys[-1]
+        match = re.search(pattern, last_key_value)
+        if match:
+            operator = match.group(0)
+            last_key, value = last_key_value.split(operator, 1)
         else:
-            continue
+            operator = None
+            value = last_key_value
+    else:
+        operator = None
+        value = None
 
-        conditions.append(condition)
+    if len(keys) > 1:
+        keys[-1] = last_key
 
-    if conditions:
-        query = query.filter(and_(*conditions))  # Apply all conditions with AND logic
+    # create the aliases
+    PipelineRunResultAlias = aliased(models.PipelineRunResult)
+    PipelineRunAlias = aliased(models.PipelineRun)
+    PipelineAlias = aliased(models.Pipeline)
+
+    jsonb_path = "->".join(f"'{k}'" for k in keys[:-1])  # info->'user'
+    last_key = keys[-1]  # 'age'
+    jsonb_query = func.jsonb_extract_path(PipelineRunResultAlias.data, *keys[:-1]).op("->>")(last_key)
+
+    op, parsed_value = parse_filter_value(''.join([operator, value]))
+    cast_type = determine_cast_type(parsed_value)
+    jsonb_expr = cast(jsonb_query, cast_type)
+
+    if isinstance(parsed_value, (int, float)):
+        jsonpath_query = f"$.{keys[0]}[*] ? (@.{keys[-1]} {op} {parsed_value})"
+    else:
+        jsonpath_query = f"$.{keys[0]}[*] ? (@.{keys[-1]} {op} {parsed_value})"
+    condition = jsonpath_query
+    # if op == "=":
+    #     condition = jsonb_expr == parsed_value
+    # elif op == "!=":
+    #     condition = jsonb_expr != parsed_value
+    # elif op == ">":
+    #     condition = jsonb_expr > parsed_value
+    # elif op == "<":
+    #     condition = jsonb_expr < parsed_value
+    # elif op == ">=":
+    #     condition = jsonb_expr >= parsed_value
+    # elif op == "<=":
+    #     condition = jsonb_expr <= parsed_value
+    # elif op == "~":  # LIKE query
+    #     condition = jsonb_expr.like(f"{parsed_value}%")
+    # elif op == "IN":
+    #     condition = jsonb_expr.in_(parsed_value)
+    # elif op == "|":  # OR grouping
+    #     condition = or_(*[jsonb_expr == v for v in parsed_value])
+    # elif op == "&":  # AND grouping
+    #     condition = and_(*[jsonb_expr == v for v in parsed_value])
+
+    if condition is not None:
+        query = query.outerjoin(PipelineRunResultAlias, models.BaseStudy.id == PipelineRunResultAlias.base_study_id)
+        query = query.outerjoin(PipelineRunAlias, PipelineRunResultAlias.run_id == PipelineRunAlias.id)
+        query = query.outerjoin(PipelineAlias, PipelineRunAlias.pipeline_id == PipelineAlias.id)
+
+        query = query.filter(PipelineAlias.name == pipeline_name)
+        query = query.filter(
+            func.jsonb_path_exists(PipelineRunResultAlias.data, jsonpath_query)
+        )
+        # print(str(query.statement.compile(dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True})))
     return query

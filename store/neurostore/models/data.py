@@ -271,8 +271,8 @@ class BaseStudy(BaseMixin, db.Model):
         features = {}
         for result in self.pipeline_run_results:
             data = result.data
-            if 'demographics' in data and 'predictions' in data['demographics']:
-                for prediction in data['demographics']['predictions']:
+            if 'predictions' in data:
+                for prediction in data['predictions']:
                     for key, value in prediction.items():
                         if key not in features:
                             features[key] = []
