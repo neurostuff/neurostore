@@ -1,18 +1,19 @@
+import re
+
 import sqlalchemy as sa
 from sqlalchemy import exists
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy import ForeignKeyConstraint
+from sqlalchemy import ForeignKeyConstraint, func, Integer, ARRAY, desc
 from sqlalchemy.ext.associationproxy import association_proxy
-
 from sqlalchemy.ext.mutable import MutableDict
-from sqlalchemy.orm import relationship, backref
-from sqlalchemy.sql import func
+from sqlalchemy.orm import relationship, backref, validates, aliased
 import shortuuid
 
 from .migration_types import TSVector
 from ..database import db
 
+SEMVER_REGEX = r'^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$'
 
 def _check_type(x):
     """check annotation key type"""
@@ -267,16 +268,52 @@ class BaseStudy(BaseMixin, db.Model):
         self.has_coordinates = self.points_exist
 
 
-    def extract_features(self):
+    def extract_features(self, pipelines):
+        # Create a subquery to get the latest version for each pipeline
+        PipelineAlias = aliased(Pipeline)
+        PipelineRunAlias = aliased(PipelineRun)
+        PipelineRunResultAlias = aliased(PipelineRunResult)
+
+        latest_version_subquery = (
+            db.session.query(
+                PipelineAlias.id.label('pipeline_id'),
+                PipelineAlias.name.label('pipeline_name'),
+                func.max(
+                    func.string_to_array(PipelineAlias.version, '.').cast(ARRAY(Integer))
+                ).label('latest_version')
+            )
+            .group_by(PipelineAlias.id, PipelineAlias.name)
+            .subquery()
+        )
+    
+        # Create an alias for the subquery
+        LatestVersionAlias = aliased(PipelineAlias, latest_version_subquery)
+    
+        # Create the main query to get the most recent run for each pipeline version
+        query = (
+            db.session.query(
+                PipelineRunResultAlias.data,
+                PipelineAlias.name.label('pipeline_name')
+            )
+            .join(PipelineRunAlias, PipelineRunResultAlias.run_id == PipelineRunAlias.id)
+            .join(PipelineAlias, PipelineRunAlias.pipeline_id == PipelineAlias.id)
+            .join(LatestVersionAlias, PipelineAlias.id == LatestVersionAlias.c.pipeline_id)
+            .filter(PipelineRunResultAlias.base_study_id == self.id)
+            .filter(PipelineAlias.name.in_(pipelines))
+            .order_by(
+                PipelineAlias.name,
+                desc(PipelineRunAlias.created_at)
+            )
+        )
+    
+        # Execute the query and process the results
+        results = query.all()
         features = {}
-        for result in self.pipeline_run_results:
-            data = result.data
-            if 'predictions' in data:
-                for prediction in data['predictions']:
-                    for key, value in prediction.items():
-                        if key not in features:
-                            features[key] = []
-                        features[key].append(value)
+        for result in results:
+            pipeline_name = result.pipeline_name
+            if pipeline_name not in features:
+                features[pipeline_name] = result.data
+    
         return features
 
 
@@ -566,6 +603,11 @@ class Pipeline(BaseMixin, db.Model):
     pubget_compatible = db.Column(db.Boolean, default=False)
     derived_from = db.Column(db.Text)
 
+    @validates('version')
+    def validate_version(self, key, value):
+        if not re.match(SEMVER_REGEX, value):
+            raise ValueError(f"Invalid version format: {value}")
+        return value
 
 class PipelineConfig(BaseMixin, db.Model):
     __tablename__ = "pipeline_configs"
@@ -591,6 +633,9 @@ class PipelineRun(BaseMixin, db.Model):
     )
     config = relationship(
         "PipelineConfig", backref=backref("runs", passive_deletes=True)
+    )
+    pipeline = relationship(
+        "Pipeline", backref=backref("runs", passive_deletes=True)
     )
     run_index = db.Column(db.Integer())
 

@@ -593,11 +593,11 @@ def simple_neurosynth_annotation(session, ingest_neurosynth):
 
 @pytest.fixture(scope="function")
 def create_demographic_features(session, ingest_neurosynth, tmp_path):
-    output_dir = tmp_path / "output" / "demographics" / "v1.0.0"
+    output_dir = tmp_path / "output" / "demographics" / "1.0.0"
     output_dir.mkdir(exist_ok=True, parents=True)
     pipeline_info = {
         "name": "demographics",
-        "version": "v1.0.0",
+        "version": "1.0.0",
         "description": "demographic features",
         "type": "independent",
         "derived_from": None,

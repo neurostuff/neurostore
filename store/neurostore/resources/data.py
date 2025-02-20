@@ -29,6 +29,9 @@ from ..models import (
     AnnotationAnalysis,
     Condition,
     Entity,
+    PipelineRunResult,
+    PipelineRun,
+    Pipeline,
 )
 from ..models.data import StudysetStudy, BaseStudy
 
@@ -371,7 +374,8 @@ class BaseStudiesView(ObjectView, ListView):
         "flat": fields.Boolean(load_default=False),
         "info": fields.Boolean(load_default=False),
         "data_type": fields.String(load_default=None),
-        "features": fields.String(load_default=None),
+        "feature_filter": fields.List(fields.String(load_default=None)),
+        "feature_display": fields.List(fields.String(load_default=None)),
     }
 
     _multi_search = ("name", "description")
@@ -386,11 +390,22 @@ class BaseStudiesView(ObjectView, ListView):
         "doi",
         "pmid",
     )
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.context = {}
 
     def eager_load(self, q, args=None):
         args = args or {}
-        if args.get("features"):
-            q = q.options(joinedload(BaseStudy.pipeline_run_results))  # Add this line)
+        if args.get("feature_filter") or args.get("feature_display"):
+            q = q.options(
+                joinedload(BaseStudy.pipeline_run_results).options(
+                joinedload(PipelineRunResult.run).options(
+                    joinedload(PipelineRun.pipeline)
+                    .load_only(Pipeline.id, Pipeline.name)
+                  )
+                  )
+              )
+
         if args.get("info"):
             q = q.options(
                 joinedload(BaseStudy.versions).options(
@@ -432,10 +447,10 @@ class BaseStudiesView(ObjectView, ListView):
         if args.get("level"):
             q = q.filter(self._model.level == args.get("level"))
 
-        # return AI metadata (join with PipelineRunResult table)
-        if args.get("features"):
-            q = build_jsonb_filter(q, args.get("features"))
-
+        # filter results based on AI features
+        if args.get("feature_filter", None):
+            for ff in args.get("feature_filter"):
+                q = build_jsonb_filter(q, ff)
         return q
 
     def join_tables(self, q, args):
