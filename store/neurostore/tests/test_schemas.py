@@ -5,9 +5,7 @@ from ..models import Study, Studyset
 from neurostore.schemas.pipeline import (
     PipelineSchema,
     PipelineConfigSchema,
-    PipelineRunSchema,
-    PipelineRunResultSchema,
-    PipelineRunResultVoteSchema,
+    PipelineStudyResultSchema,
 )
 # Things I the schemas to do:
 # 1. Cloning: I need a deep copy of the object, with new versions of all the sub-objects
@@ -82,16 +80,7 @@ def test_PipelineConfigSchema():
     assert result.config_hash == "abc123"
 
 
-def test_PipelineRunSchema():
-    payload = {"pipeline_id": "123", "config_id": "456", "run_index": 1}
-    schema = PipelineRunSchema()
-    result = schema.load(payload)
-    assert result.pipeline_id == "123"
-    assert result.config_id == "456"
-    assert result.run_index == 1
-
-
-def test_PipelineRunResultSchema():
+def test_PipelineStudyResultSchema():
     payload = {
         "run_id": "123",
         "base_study_id": "456",
@@ -99,7 +88,7 @@ def test_PipelineRunResultSchema():
         "data": {"result": "success"},
         "file_inputs": {"input1": "file1"},
     }
-    schema = PipelineRunResultSchema()
+    schema = PipelineStudyResultSchema()
     result = schema.load(payload)
     assert result.run_id == "123"
     assert result.base_study_id == "456"
@@ -107,11 +96,3 @@ def test_PipelineRunResultSchema():
     assert result.data == {"result": "success"}
     assert result.file_inputs == {"input1": "file1"}
 
-
-def test_PipelineRunResultVoteSchema():
-    payload = {"run_result_id": "123", "user_id": "456", "accurate": True}
-    schema = PipelineRunResultVoteSchema()
-    result = schema.load(payload)
-    assert result.run_result_id == "123"
-    assert result.user_id == "456"
-    assert result.accurate is True

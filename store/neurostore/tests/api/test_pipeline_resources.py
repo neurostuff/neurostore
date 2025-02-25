@@ -2,8 +2,7 @@ import pytest
 from neurostore.models.data import (
     Pipeline,
     PipelineConfig,
-    PipelineRun,
-    PipelineRunResult,
+    PipelineStudyResult,
     BaseStudy,
 )
 
@@ -27,19 +26,11 @@ def pipeline_config(session, pipeline_config_payload):
 
 
 @pytest.fixture
-def pipeline_run(session, pipeline_run_payload):
-    pipeline_run = PipelineRun(**pipeline_run_payload)
-    session.add(pipeline_run)
+def pipeline_study_result(session, pipeline_study_result_payload):
+    pipeline_study_result = PipelineStudyResult(**pipeline_study_result_payload)
+    session.add(pipeline_study_result)
     session.commit()
-    return pipeline_run
-
-
-@pytest.fixture
-def pipeline_run_result(session, pipeline_run_result_payload):
-    pipeline_run_result = PipelineRunResult(**pipeline_run_result_payload)
-    session.add(pipeline_run_result)
-    session.commit()
-    return pipeline_run_result
+    return pipeline_study_result
 
 
 @pytest.fixture
@@ -47,7 +38,6 @@ def pipeline_payload():
     return {
         "name": "Test Pipeline",
         "description": "A test pipeline",
-        "version": "1.0",
         "study_dependent": True,
         "ace_compatible": False,
         "pubget_compatible": True,
@@ -59,26 +49,21 @@ def pipeline_payload():
 def pipeline_config_payload(pipeline):
     return {
         "pipeline_id": pipeline.id,
+        "version": "1.0.1",
         "config": {"param1": "value1", "param2": "value2"},
         "config_hash": "abc123",
     }
 
-
 @pytest.fixture
-def pipeline_run_payload(pipeline, pipeline_config):
-    return {"pipeline_id": pipeline.id, "config_id": pipeline_config.id, "run_index": 1}
-
-
-@pytest.fixture
-def pipeline_run_result_payload(pipeline_run):
+def pipeline_study_result_payload(pipeline_config):
     base_study = BaseStudy(name="Test Study")
     db.session.add(base_study)
     db.session.commit()
     return {
-        "run_id": pipeline_run.id,
         "base_study_id": base_study.id,
+        "config_id": pipeline_config.id,
         "date_executed": "2023-01-01T00:00:00Z",
-        "data": {"result":
+        "result_data": {"result":
                     [
                         {
                         "status": "success",
@@ -170,79 +155,41 @@ def test_delete_pipeline_config(auth_client, pipeline_config_payload, session):
     assert response.status_code == 204
 
 
-def test_create_pipeline_run(auth_client, pipeline_run_payload, session):
-    response = auth_client.post("/api/pipeline-runs/", data=pipeline_run_payload)
-    assert response.status_code == 201
-    data = response.json()
-    assert data["pipeline_id"] == pipeline_run_payload["pipeline_id"]
-
-
-def test_get_pipeline_run(auth_client, pipeline_run_payload, session):
-    pipeline_run = PipelineRun(**pipeline_run_payload)
-    db.session.add(pipeline_run)
-    db.session.commit()
-    response = auth_client.get(f"/api/pipeline-runs/{pipeline_run.id}")
-    assert response.status_code == 200
-    data = response.json()
-    assert data["pipeline_id"] == pipeline_run_payload["pipeline_id"]
-
-
-def test_update_pipeline_run(auth_client, pipeline_run_payload, session):
-    pipeline_run = PipelineRun(**pipeline_run_payload)
-    db.session.add(pipeline_run)
-    db.session.commit()
-    updated_payload = {"run_index": 2}
-    response = auth_client.put(
-        f"/api/pipeline-runs/{pipeline_run.id}", data=updated_payload
-    )
-    assert response.status_code == 200
-    data = response.json()
-    assert data["run_index"] == 2
-
-
-def test_delete_pipeline_run(auth_client, pipeline_run_payload, session):
-    pipeline_run = PipelineRun(**pipeline_run_payload)
-    db.session.add(pipeline_run)
-    db.session.commit()
-    response = auth_client.delete(f"/api/pipeline-runs/{pipeline_run.id}")
-    assert response.status_code == 204
-
-
-def test_create_pipeline_run_result(auth_client, pipeline_run_result_payload, session):
+def test_create_pipeline_study_result(auth_client, pipeline_study_result_payload, session):
     response = auth_client.post(
-        "/api/pipeline-run-results/", data=pipeline_run_result_payload
+        "/api/pipeline-study-results/", data=pipeline_study_result_payload
     )
     assert response.status_code == 201
     data = response.json()
-    assert data["run_id"] == pipeline_run_result_payload["run_id"]
+    assert data["config_id"] == pipeline_study_result_payload["config_id"]
 
 
-def test_get_pipeline_run_result(auth_client, pipeline_run_result_payload, session):
-    pipeline_run_result = PipelineRunResult(**pipeline_run_result_payload)
-    db.session.add(pipeline_run_result)
+def test_get_pipeline_study_result(auth_client, pipeline_study_result_payload, session):
+    pipeline_study_result = PipelineStudyResult(**pipeline_study_result_payload)
+    db.session.add(pipeline_study_result)
     db.session.commit()
-    response = auth_client.get(f"/api/pipeline-run-results/{pipeline_run_result.id}")
+    response = auth_client.get(f"/api/pipeline-study-results/{pipeline_study_result.id}")
     assert response.status_code == 200
     data = response.json()
-    assert data["run_id"] == pipeline_run_result_payload["run_id"]
+    assert data["config_id"] == pipeline_study_result_payload["config_id"]
 
 
-def test_update_pipeline_run_result(auth_client, pipeline_run_result_payload, session):
-    pipeline_run_result = PipelineRunResult(**pipeline_run_result_payload)
-    db.session.add(pipeline_run_result)
+def test_update_pipeline_study_result(auth_client, pipeline_study_result_payload, session):
+    pipeline_study_result = PipelineStudyResult(**pipeline_study_result_payload)
+    db.session.add(pipeline_study_result)
     db.session.commit()
-    updated_payload = {"data": {"result": "failure"}}
+    updated_payload = {"result_data": {"result": "failure"}}
     response = auth_client.put(
-        f"/api/pipeline-run-results/{pipeline_run_result.id}", data=updated_payload
+        f"/api/pipeline-study-results/{pipeline_study_result.id}", data=updated_payload
     )
     assert response.status_code == 200
     data = response.json()
-    assert data["data"] == {"result": "failure"}
+    assert data["result_data"] == {"result": "failure"}
 
 
-def test_delete_pipeline_run_result(auth_client, pipeline_run_result_payload, session):
-    pipeline_run_result = PipelineRunResult(**pipeline_run_result_payload)
-    db.session.add(pipeline_run_result)
+def test_delete_pipeline_study_result(auth_client, pipeline_study_result_payload, session):
+    pipeline_study_result = PipelineStudyResult(**pipeline_study_result_payload)
+    db.session.add(pipeline_study_result)
     db.session.commit()
-    response = auth_client.delete(f"/api/pipeline-run-results/{pipeline_run_result.id}")
+    response = auth_client.delete(f"/api/pipeline-study-results/{pipeline_study_result.id}")
     assert response.status_code == 204

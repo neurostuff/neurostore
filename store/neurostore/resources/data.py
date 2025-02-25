@@ -29,8 +29,8 @@ from ..models import (
     AnnotationAnalysis,
     Condition,
     Entity,
-    PipelineRunResult,
-    PipelineRun,
+    PipelineStudyResult,
+    PipelineConfig,
     Pipeline,
 )
 from ..models.data import StudysetStudy, BaseStudy
@@ -398,12 +398,9 @@ class BaseStudiesView(ObjectView, ListView):
         args = args or {}
         if args.get("feature_filter") or args.get("feature_display"):
             q = q.options(
-                joinedload(BaseStudy.pipeline_run_results).options(
-                joinedload(PipelineRunResult.run).options(
-                    joinedload(PipelineRun.pipeline)
-                    .load_only(Pipeline.id, Pipeline.name)
-                  )
-                  )
+                joinedload(BaseStudy.pipeline_study_results)
+                .joinedload(PipelineStudyResult.config)
+                .joinedload(PipelineConfig.pipeline)
               )
 
         if args.get("info"):

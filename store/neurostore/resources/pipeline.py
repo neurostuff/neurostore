@@ -2,16 +2,13 @@ from flask import request
 from neurostore.models.data import (
     Pipeline,
     PipelineConfig,
-    PipelineRun,
-    PipelineRunResult,
-    PipelineRunResultVote,
+    PipelineStudyResult,
 )
 from neurostore.schemas.pipeline import (
     PipelineSchema,
     PipelineConfigSchema,
-    PipelineRunSchema,
-    PipelineRunResultSchema,
-    PipelineRunResultVoteSchema,
+    PipelineStudyResultSchema,
+
 )
 from neurostore.database import db
 from .base import ObjectView, ListView
@@ -83,42 +80,10 @@ class PipelineConfigsView(ObjectView, ListView):
         return "", 204
 
 
-class PipelineRunsView(ObjectView, ListView):
-    model = PipelineRun
-    schema = PipelineRunSchema
 
-    def get(self, pipeline_run_id=None):
-        if pipeline_run_id:
-            pipeline_run = self.model.query.get(pipeline_run_id)
-            return self.schema().dump(pipeline_run)
-        pipeline_runs = self.model.query.all()
-        return self.schema(many=True).dump(pipeline_runs)
-
-    def post(self):
-        data = request.get_json()
-        pipeline_run = self.schema().load(data)
-        db.session.add(pipeline_run)
-        db.session.commit()
-        return self.schema().dump(pipeline_run), 201
-
-    def put(self, pipeline_run_id):
-        data = request.get_json()
-        pipeline_run = self.model.query.get(pipeline_run_id)
-        for key, value in data.items():
-            setattr(pipeline_run, key, value)
-        db.session.commit()
-        return self.schema().dump(pipeline_run)
-
-    def delete(self, pipeline_run_id):
-        pipeline_run = self.model.query.get(pipeline_run_id)
-        db.session.delete(pipeline_run)
-        db.session.commit()
-        return "", 204
-
-
-class PipelineRunResultsView(ObjectView, ListView):
-    model = PipelineRunResult
-    schema = PipelineRunResultSchema
+class PipelineStudyResultsView(ObjectView, ListView):
+    model = PipelineStudyResult
+    schema = PipelineStudyResultSchema
     def list(self):
         """query function that searches for pipeline run results
             based on the query parameters provided in the request.
@@ -127,66 +92,33 @@ class PipelineRunResultsView(ObjectView, ListView):
             run looking into the json stored in the data column.
             """
 
-    def get(self, pipeline_run_result_id=None):
+    def get(self, pipeline_study_result_id=None):
         query_params = request.args
-        if pipeline_run_result_id:
-            pipeline_run_result = self.model.query.get(pipeline_run_result_id)
-            return self.schema().dump(pipeline_run_result)
-        pipeline_run_results = self.model.query.all()
+        if pipeline_study_result_id:
+            pipeline_study_result = self.model.query.get(pipeline_study_result_id)
+            return self.schema().dump(pipeline_study_result)
+        pipeline_study_results = self.model.query.all()
         # filter results based on query parameters
 
-        return self.schema(many=True).dump(pipeline_run_results)
+        return self.schema(many=True).dump(pipeline_study_results)
 
     def post(self):
         data = request.get_json()
-        pipeline_run_result = self.schema().load(data)
-        db.session.add(pipeline_run_result)
+        pipeline_study_result = self.schema().load(data)
+        db.session.add(pipeline_study_result)
         db.session.commit()
-        return self.schema().dump(pipeline_run_result), 201
+        return self.schema().dump(pipeline_study_result), 201
 
-    def put(self, pipeline_run_result_id):
+    def put(self, pipeline_study_result_id):
         data = request.get_json()
-        pipeline_run_result = self.model.query.get(pipeline_run_result_id)
+        pipeline_study_result = self.model.query.get(pipeline_study_result_id)
         for key, value in data.items():
-            setattr(pipeline_run_result, key, value)
+            setattr(pipeline_study_result, key, value)
         db.session.commit()
-        return self.schema().dump(pipeline_run_result)
+        return self.schema().dump(pipeline_study_result)
 
-    def delete(self, pipeline_run_result_id):
-        pipeline_run_result = self.model.query.get(pipeline_run_result_id)
-        db.session.delete(pipeline_run_result)
-        db.session.commit()
-        return "", 204
-
-
-class PipelineRunResultVotesView(ObjectView, ListView):
-    model = PipelineRunResultVote
-    schema = PipelineRunResultVoteSchema
-
-    def get(self, pipeline_run_result_vote_id=None):
-        if pipeline_run_result_vote_id:
-            pipeline_run_result_vote = self.model.query.get(pipeline_run_result_vote_id)
-            return self.schema().dump(pipeline_run_result_vote)
-        pipeline_run_result_votes = self.model.query.all()
-        return self.schema(many=True).dump(pipeline_run_result_votes)
-
-    def post(self):
-        data = request.get_json()
-        pipeline_run_result_vote = self.schema().load(data)
-        db.session.add(pipeline_run_result_vote)
-        db.session.commit()
-        return self.schema().dump(pipeline_run_result_vote), 201
-
-    def put(self, pipeline_run_result_vote_id):
-        data = request.get_json()
-        pipeline_run_result_vote = self.model.query.get(pipeline_run_result_vote_id)
-        for key, value in data.items():
-            setattr(pipeline_run_result_vote, key, value)
-        db.session.commit()
-        return self.schema().dump(pipeline_run_result_vote)
-
-    def delete(self, pipeline_run_result_vote_id):
-        pipeline_run_result_vote = self.model.query.get(pipeline_run_result_vote_id)
-        db.session.delete(pipeline_run_result_vote)
+    def delete(self, pipeline_study_result_id):
+        pipeline_study_result = self.model.query.get(pipeline_study_result_id)
+        db.session.delete(pipeline_study_result)
         db.session.commit()
         return "", 204

@@ -194,8 +194,8 @@ class BaseStudy(BaseMixin, db.Model):
     versions = relationship(
         "Study", backref=backref("base_study"), passive_deletes=True
     )
-    pipeline_run_results = relationship(
-        "PipelineRunResult", backref=backref("base_study"), passive_deletes=True
+    pipeline_study_results = relationship(
+        "PipelineStudyResult", backref=backref("base_study"), passive_deletes=True
     )
 
     __table_args__ = (
@@ -268,52 +268,36 @@ class BaseStudy(BaseMixin, db.Model):
         self.has_coordinates = self.points_exist
 
 
-    def extract_features(self, pipelines):
-        # Create a subquery to get the latest version for each pipeline
+    def display_features(self, pipelines):
+        # Create aliases for the tables
         PipelineAlias = aliased(Pipeline)
-        PipelineRunAlias = aliased(PipelineRun)
-        PipelineRunResultAlias = aliased(PipelineRunResult)
-
-        latest_version_subquery = (
-            db.session.query(
-                PipelineAlias.id.label('pipeline_id'),
-                PipelineAlias.name.label('pipeline_name'),
-                func.max(
-                    func.string_to_array(PipelineAlias.version, '.').cast(ARRAY(Integer))
-                ).label('latest_version')
-            )
-            .group_by(PipelineAlias.id, PipelineAlias.name)
-            .subquery()
-        )
-    
-        # Create an alias for the subquery
-        LatestVersionAlias = aliased(PipelineAlias, latest_version_subquery)
-    
-        # Create the main query to get the most recent run for each pipeline version
+        PipelineConfigAlias = aliased(PipelineConfig)
+        PipelineStudyResultAlias = aliased(PipelineStudyResult)
+        
+        # Create the main query to get the most recent run for each pipeline
         query = (
             db.session.query(
-                PipelineRunResultAlias.data,
+                PipelineStudyResultAlias.result_data,
                 PipelineAlias.name.label('pipeline_name')
             )
-            .join(PipelineRunAlias, PipelineRunResultAlias.run_id == PipelineRunAlias.id)
-            .join(PipelineAlias, PipelineRunAlias.pipeline_id == PipelineAlias.id)
-            .join(LatestVersionAlias, PipelineAlias.id == LatestVersionAlias.c.pipeline_id)
-            .filter(PipelineRunResultAlias.base_study_id == self.id)
+            .join(PipelineConfigAlias, PipelineStudyResultAlias.config_id == PipelineConfigAlias.id)
+            .join(PipelineAlias, PipelineConfigAlias.pipeline_id == PipelineAlias.id)
+            .filter(PipelineStudyResultAlias.base_study_id == self.id)
             .filter(PipelineAlias.name.in_(pipelines))
             .order_by(
                 PipelineAlias.name,
-                desc(PipelineRunAlias.created_at)
+                desc(PipelineStudyResultAlias.date_executed)
             )
         )
-    
+        
         # Execute the query and process the results
         results = query.all()
         features = {}
         for result in results:
             pipeline_name = result.pipeline_name
             if pipeline_name not in features:
-                features[pipeline_name] = result.data
-    
+                features[pipeline_name] = result.result_data
+        
         return features
 
 
@@ -597,17 +581,11 @@ class Pipeline(BaseMixin, db.Model):
 
     name = db.Column(db.String)
     description = db.Column(db.String)
-    version = db.Column(db.String)
     study_dependent = db.Column(db.Boolean, default=False)
     ace_compatible = db.Column(db.Boolean, default=False)
     pubget_compatible = db.Column(db.Boolean, default=False)
     derived_from = db.Column(db.Text)
 
-    @validates('version')
-    def validate_version(self, key, value):
-        if not re.match(SEMVER_REGEX, value):
-            raise ValueError(f"Invalid version format: {value}")
-        return value
 
 class PipelineConfig(BaseMixin, db.Model):
     __tablename__ = "pipeline_configs"
@@ -615,58 +593,33 @@ class PipelineConfig(BaseMixin, db.Model):
     pipeline_id = db.Column(
         db.Text, db.ForeignKey("pipelines.id", ondelete="CASCADE"), index=True
     )
+    version = db.Column(db.String)
     config = db.Column(JSONB)
+    executed_at = db.Column(db.DateTime(timezone=True))  # when the pipeline was executed on the filesystem (not when it was ingested)
     config_hash = db.Column(db.String, index=True)
     pipeline = relationship(
         "Pipeline", backref=backref("configs", passive_deletes=True)
     )
 
+    @validates('version')
+    def validate_version(self, key, value):
+        if not re.match(SEMVER_REGEX, value):
+            raise ValueError(f"Invalid version format: {value}")
+        return value
 
-class PipelineRun(BaseMixin, db.Model):
-    __tablename__ = "pipeline_runs"
 
-    pipeline_id = db.Column(
-        db.Text, db.ForeignKey("pipelines.id", ondelete="CASCADE"), index=True
-    )
+class PipelineStudyResult(BaseMixin, db.Model):
+    __tablename__ = "pipeline_study_results"
+
     config_id = db.Column(
         db.Text, db.ForeignKey("pipeline_configs.id", ondelete="CASCADE"), index=True
     )
-    config = relationship(
-        "PipelineConfig", backref=backref("runs", passive_deletes=True)
-    )
-    pipeline = relationship(
-        "Pipeline", backref=backref("runs", passive_deletes=True)
-    )
-    run_index = db.Column(db.Integer())
-
-
-class PipelineRunResult(BaseMixin, db.Model):
-    __tablename__ = "pipeline_run_results"
-
-    run_id = db.Column(
-        db.Text, db.ForeignKey("pipeline_runs.id", ondelete="CASCADE"), index=True
-    )
     base_study_id = db.Column(db.Text, db.ForeignKey("base_studies.id"), index=True)
     date_executed = db.Column(db.DateTime(timezone=True))
-    data = db.Column(JSONB)
+    result_data = db.Column(JSONB)
     file_inputs = db.Column(JSONB)
-    run = relationship("PipelineRun", backref=backref("results", passive_deletes=True))
-
-
-class PipelineRunResultVote(BaseMixin, db.Model):
-    __tablename__ = "pipeline_run_result_votes"
-
-    run_result_id = db.Column(
-        db.Text,
-        db.ForeignKey("pipeline_run_results.id", ondelete="CASCADE"),
-        index=True,
-    )
-    user_id = db.Column(db.Text, db.ForeignKey("users.external_id"), index=True)
-    accurate = db.Column(db.Boolean)
-    run_result = relationship(
-        "PipelineRunResult", backref=backref("votes", passive_deletes=True)
-    )
-    user = relationship("User", backref=backref("votes", passive_deletes=True))
+    status = db.Column(db.Enum("SUCCESS", "FAILURE", "ERROR", "UNKNOWN", name="status_enum"))
+    config = relationship("PipelineConfig", backref=backref("results", passive_deletes=True))
 
 
 # from . import event_listeners  # noqa E402

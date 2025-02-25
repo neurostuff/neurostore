@@ -9,6 +9,7 @@ from psycopg2 import errors
 from sqlalchemy import cast, String, Integer, Float, Boolean, ARRAY, text, or_, and_, func, select
 from sqlalchemy.orm import aliased
 
+from ..database import db
 from .. import models
 from .. import schemas
 from .singular import singularize
@@ -318,8 +319,8 @@ def build_jsonb_filter(query, filters):
         keys[-1] = last_key
 
     # create the aliases
-    PipelineRunResultAlias = aliased(models.PipelineRunResult)
-    PipelineRunAlias = aliased(models.PipelineRun)
+    PipelineStudyResultAlias = aliased(models.PipelineStudyResult)
+    PipelineConfigAlias = aliased(models.PipelineConfig)
     PipelineAlias = aliased(models.Pipeline)
 
     jsonb_path = "->".join(f"'{k}'" for k in keys[:-1])  # info->'user'
@@ -328,37 +329,30 @@ def build_jsonb_filter(query, filters):
     jsonpath_query = f"$.{pipeline_name}.{jsonb_path}.{last_key}{operator}{value}"
 
     if jsonpath_query:
-        query = query.outerjoin(PipelineRunResultAlias, models.BaseStudy.id == PipelineRunResultAlias.base_study_id)
-        query = query.outerjoin(PipelineRunAlias, PipelineRunResultAlias.run_id == PipelineRunAlias.id)
-        query = query.outerjoin(PipelineAlias, PipelineRunAlias.pipeline_id == PipelineAlias.id)
-        # query = query.outerjoin(PipelineRunAlias, PipelineRunAlias.pipeline_id == PipelineAlias.id)
+        query = query.outerjoin(PipelineStudyResultAlias, models.BaseStudy.id == PipelineStudyResultAlias.base_study_id)
+        query = query.outerjoin(PipelineConfigAlias, PipelineStudyResultAlias.config_id == PipelineConfigAlias.id)
+        query = query.outerjoin(PipelineAlias, PipelineAlias.id == PipelineAlias.id)
 
         query = query.filter(PipelineAlias.name == pipeline_name)
-        # grab the latest version of the pipeline
-        # latest_pipeline = aliased(PipelineAlias)
-        # subquery = (
-        #         session.query(
-        #             latest_pipeline.base_study_id,
-        #             func.max(func.string_to_array(latest_pipeline.version, '.').cast(ARRAY(Integer))).label('max_version')
-        #         )
-        #         .group_by(latest_pipeline.base_study_id)
-        #         .subquery()
-        #     )
 
-        #     query = query.join(
-        #         subquery,
-        #         (PipelineAlias.base_study_id == subquery.c.base_study_id) &
-        #         (func.string_to_array(PipelineAlias.version, '.').cast(ARRAY(Integer)) == subquery.c.max_version)
-        #     )
-        query = query.order_by(
-            func.string_to_array(PipelineAlias.version, '.').cast(ARRAY(Integer)).desc()
-        ).limit(1)
+        # Subquery to get the most recent PipelineStudyResult for each base_study
+        subquery = (
+            db.session.query(
+                PipelineStudyResultAlias.base_study_id,
+                func.max(PipelineStudyResultAlias.date_executed).label('max_date_executed')
+            )
+            .group_by(PipelineStudyResultAlias.base_study_id)
+            .subquery()
+        )
 
-        # grab the latest run (created_at) of the latest version of the pipeline
-        query = query.order_by(PipelineRunAlias.created_at.desc()).limit(1)
+        query = query.join(
+            subquery,
+            (PipelineStudyResultAlias.base_study_id == subquery.c.base_study_id) &
+            (PipelineStudyResultAlias.date_executed == subquery.c.max_date_executed)
+        )
 
         query = query.filter(
-            func.jsonb_path_exists(PipelineRunResultAlias.data, jsonpath_query)
+            func.jsonb_path_exists(PipelineStudyResultAlias.result_data, jsonpath_query)
         )
-        # print(str(query.statement.compile(dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True})))
+
     return query

@@ -337,12 +337,12 @@ class BaseStudySchema(BaseDataSchema):
     features = fields.Method("get_features")
 
     def get_features(self, obj):
-        pipelines = self.context.get("pipeline_names", None)
+        pipelines = self.context.get("feature_display", None)
 
         if pipelines is None:
-            return None
+            return {}
 
-        return obj.extract_features(pipelines)
+        return obj.display_features(pipelines)
 
     class Meta:
         additional = (
