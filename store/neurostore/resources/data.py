@@ -390,6 +390,7 @@ class BaseStudiesView(ObjectView, ListView):
         "doi",
         "pmid",
     )
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.context = {}
@@ -401,7 +402,7 @@ class BaseStudiesView(ObjectView, ListView):
                 joinedload(BaseStudy.pipeline_study_results)
                 .joinedload(PipelineStudyResult.config)
                 .joinedload(PipelineConfig.pipeline)
-              )
+            )
 
         if args.get("info"):
             q = q.options(

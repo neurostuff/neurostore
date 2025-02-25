@@ -8,7 +8,6 @@ from neurostore.schemas.pipeline import (
     PipelineSchema,
     PipelineConfigSchema,
     PipelineStudyResultSchema,
-
 )
 from neurostore.database import db
 from .base import ObjectView, ListView
@@ -80,17 +79,17 @@ class PipelineConfigsView(ObjectView, ListView):
         return "", 204
 
 
-
 class PipelineStudyResultsView(ObjectView, ListView):
     model = PipelineStudyResult
     schema = PipelineStudyResultSchema
+
     def list(self):
         """query function that searches for pipeline run results
-            based on the query parameters provided in the request.
-            I want to search for results from a specific pipeline run
-            and be able to return a select list of results from that pipeline
-            run looking into the json stored in the data column.
-            """
+        based on the query parameters provided in the request.
+        I want to search for results from a specific pipeline run
+        and be able to return a select list of results from that pipeline
+        run looking into the json stored in the data column.
+        """
 
     def get(self, pipeline_study_result_id=None):
         query_params = request.args

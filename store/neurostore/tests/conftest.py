@@ -643,6 +643,7 @@ def create_demographic_features(session, ingest_neurosynth, tmp_path):
 def ingest_demographic_features(session, create_demographic_features):
     return ingest_feature(create_demographic_features)
 
+
 """
 Queries for testing
 """

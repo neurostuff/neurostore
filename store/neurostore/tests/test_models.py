@@ -55,4 +55,3 @@ def test_PipelineConfig():
 
 def test_PipelineStudyResult():
     PipelineStudyResult()
-

@@ -129,9 +129,7 @@ class BaseView(MethodView):
 
         new_has_coordinates_subquery = (
             sa.select(
-                sa.func.coalesce(
-                    sa.func.bool_and(Point.analysis_id != None), False
-                )
+                sa.func.coalesce(sa.func.bool_and(Point.analysis_id != None), False)
             )
             .where(Point.analysis_id == Analysis.id)
             .correlate(Study)
@@ -140,9 +138,7 @@ class BaseView(MethodView):
 
         new_has_images_subquery = (
             sa.select(
-                sa.func.coalesce(
-                    sa.func.bool_and(Image.analysis_id != None), False
-                )
+                sa.func.coalesce(sa.func.bool_and(Image.analysis_id != None), False)
             )
             .where(Image.analysis_id == Analysis.id)
             .correlate(Study)
@@ -172,7 +168,8 @@ class BaseView(MethodView):
                 "has_coordinates": bs.new_has_coordinates,
             }
             for bs in affected_base_studies
-            if bs.new_has_images != bs.has_images or bs.new_has_coordinates != bs.has_coordinates
+            if bs.new_has_images != bs.has_images
+            or bs.new_has_coordinates != bs.has_coordinates
         ]
 
         if update_base_studies:

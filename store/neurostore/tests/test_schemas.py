@@ -7,6 +7,7 @@ from neurostore.schemas.pipeline import (
     PipelineConfigSchema,
     PipelineStudyResultSchema,
 )
+
 # Things I the schemas to do:
 # 1. Cloning: I need a deep copy of the object, with new versions of all the sub-objects
 #      a. cloning a study, create new everything
@@ -95,4 +96,3 @@ def test_PipelineStudyResultSchema():
     assert result.date_executed.isoformat() == "2023-01-01T00:00:00+00:00"
     assert result.data == {"result": "success"}
     assert result.file_inputs == {"input1": "file1"}
-
