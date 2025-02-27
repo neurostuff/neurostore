@@ -73,8 +73,7 @@ const MoveToExtractionDialog: React.FC<IDialog> = (props) => {
                 });
 
                 const newStudysetId = newStudyset.data.id;
-                if (!newStudysetId)
-                    throw new Error('expected a studyset id but did not receive one');
+                if (!newStudysetId) throw new Error('expected a studyset id but did not receive one');
 
                 tempStudysetId = newStudysetId;
 
@@ -114,8 +113,7 @@ const MoveToExtractionDialog: React.FC<IDialog> = (props) => {
                 });
 
                 const newAnnotationId = newAnnotation.data.id;
-                if (!newAnnotationId)
-                    throw new Error('expected a studyset id but did not receive one');
+                if (!newAnnotationId) throw new Error('expected a studyset id but did not receive one');
 
                 tempAnnotationId = newAnnotationId;
                 updateExtractionMetadata({
@@ -140,15 +138,7 @@ const MoveToExtractionDialog: React.FC<IDialog> = (props) => {
         const stubsToBaseStudies: Array<
             Pick<
                 BaseStudy,
-                | 'name'
-                | 'doi'
-                | 'pmid'
-                | 'pmcid'
-                | 'year'
-                | 'description'
-                | 'publication'
-                | 'authors'
-                | 'level'
+                'name' | 'doi' | 'pmid' | 'pmcid' | 'year' | 'description' | 'publication' | 'authors' | 'level'
             >
         > = includedStubs.map((stub) => ({
             name: stub.title,
@@ -252,14 +242,10 @@ const MoveToExtractionDialog: React.FC<IDialog> = (props) => {
                                 value={progress}
                             />
                         </Box>
-                        <Box
-                            sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
-                        >
+                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                             <CircularProgress />
                             <Typography>{progressText}</Typography>
-                            <Typography sx={{ marginTop: '1rem' }}>
-                                (This may take a minute)
-                            </Typography>
+                            <Typography sx={{ marginTop: '1rem' }}>(This may take a minute)</Typography>
                         </Box>
                         {/* need this empty div to space out elements properly */}
                         <div></div>
