@@ -28,7 +28,7 @@ const EditStudyAnalysesList: React.FC<{
             <List
                 sx={{
                     width: '250px',
-                    maxHeight: '70vh',
+                    maxHeight: '946px',
                     overflow: 'auto',
                 }}
                 disablePadding
