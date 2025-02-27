@@ -95,6 +95,7 @@ export const initCurationHelper = (cols: string[], isPrisma: boolean): ICuration
         identificationSources: Object.entries(defaultIdentificationSources).map(([, value]) => ({
             ...value,
         })),
+        imports: [],
     };
 
     if (isPrisma) {
@@ -451,6 +452,7 @@ export const generateNewProjectData = (name?: string, description?: string): INe
                 infoTags: [],
                 exclusionTags: [],
                 identificationSources: [],
+                imports: [],
             },
             extractionMetadata: {
                 studysetId: undefined,

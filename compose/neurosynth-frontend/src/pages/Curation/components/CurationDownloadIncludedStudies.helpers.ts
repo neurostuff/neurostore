@@ -21,7 +21,6 @@ export const stubsToCSV = (stubs: ICurationStubStudy[]) => {
             ''
         ),
         neurostoreId: stub.neurostoreId || '',
-        searchTerm: stub.searchTerm || '',
     }));
 
     return [
@@ -37,7 +36,6 @@ export const stubsToCSV = (stubs: ICurationStubStudy[]) => {
             source: 'Source',
             tags: 'Tags',
             neurostoreId: 'Neurosynth ID',
-            searchTerm: 'Search Term',
         },
         ...mappedCSVStudyObjs,
     ]

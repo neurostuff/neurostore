@@ -14,6 +14,12 @@ const CurationBoardAIGroupsStyles: Style = {
         backgroundColor: 'rgb(242, 242, 242)',
         color: '#9d9d9d',
     },
+    lineClamp3: {
+        display: '-webkit-box',
+        WebkitLineClamp: 3,
+        WebkitBoxOrient: 'vertical',
+        overflow: 'hidden',
+    },
 };
 
 export default CurationBoardAIGroupsStyles;

@@ -17,7 +17,9 @@ import { IImportArgs } from './CurationImportDoImport';
 import CurationImportBaseStyles from './CurationImport.styles';
 import { studiesToStubs } from 'helpers/Curation.helpers';
 
-const CurationImportNeurostore: React.FC<IImportArgs> = (props) => {
+const CurationImportNeurostore: React.FC<
+    IImportArgs & { onSetSearchCriteria: (searchCriteria: SearchCriteria) => void }
+> = (props) => {
     const [importIsLoading, setImportIsLoading] = useState(false);
     const { enqueueSnackbar } = useSnackbar();
 
@@ -31,7 +33,7 @@ const CurationImportNeurostore: React.FC<IImportArgs> = (props) => {
     // cached data returned from the api
     const [studyData, setStudyData] = useState<BaseStudyList>();
 
-    const searchCriteria = useMemo(() => {
+    const searchCriteria: SearchCriteria = useMemo(() => {
         return {
             ...new SearchCriteria(),
             ...getSearchCriteriaFromURL(location?.search),
@@ -83,6 +85,8 @@ const CurationImportNeurostore: React.FC<IImportArgs> = (props) => {
     };
 
     const handleButtonClick = async (button: ENavigationButton) => {
+        if (isLoading) return;
+
         if (button === ENavigationButton.PREV) {
             props.onNavigate(button);
             return;
@@ -98,15 +102,24 @@ const CurationImportNeurostore: React.FC<IImportArgs> = (props) => {
             const dataResults = allDataForSearch?.data?.results || [];
             if (dataResults.length !== studyData?.metadata?.total_count)
                 throw new Error('search result and query result do not match');
-            const newStubs = studiesToStubs(location?.search, allDataForSearch?.data?.results || []);
+            const newStubs = studiesToStubs(allDataForSearch?.data?.results || []);
             setImportIsLoading(false);
             props.onImportStubs(newStubs);
+            props.onSetSearchCriteria(searchCriteria);
+            props.onNavigate(ENavigationButton.NEXT);
         } catch (e) {
             console.error(e);
             setImportIsLoading(false);
             enqueueSnackbar('There was an error importing studies', { variant: 'error' });
         }
     };
+
+    const hasSearch =
+        searchCriteria.authorSearch !== undefined ||
+        searchCriteria.descriptionSearch !== undefined ||
+        searchCriteria.genericSearchStr !== undefined ||
+        searchCriteria.journalSearch !== undefined ||
+        searchCriteria.nameSearch !== undefined;
 
     return (
         <StateHandlerComponent isLoading={false} isError={isError}>
@@ -188,7 +201,7 @@ const CurationImportNeurostore: React.FC<IImportArgs> = (props) => {
                         onClick={() => handleButtonClick(ENavigationButton.NEXT)}
                         disableElevation
                         sx={{ width: '400px' }}
-                        disabled={(studyData?.metadata?.total_count || 0) === 0}
+                        disabled={(studyData?.metadata?.total_count || 0) === 0 || !hasSearch || isLoading}
                         loaderColor="secondary"
                         isLoading={importIsLoading}
                     ></LoadingButton>

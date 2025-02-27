@@ -1,20 +1,17 @@
-import { ENeurosynthTagIds } from 'pages/Project/store/ProjectStore.types';
+import { defaultExclusionTags, ENeurosynthTagIds } from 'pages/Project/store/ProjectStore.types';
 import { IResolveProjectDuplicatesCurationStubStudy } from 'pages/CurationImport/CurationImport.types';
 
 import { ICurationColumn, ICurationStubStudy } from 'pages/Curation/Curation.types';
 
-export const flattenColumns = (
-    cols: ICurationColumn[]
-): IResolveProjectDuplicatesCurationStubStudy[] => {
+export const flattenColumns = (cols: ICurationColumn[]): IResolveProjectDuplicatesCurationStubStudy[] => {
     const allStubsInProject: IResolveProjectDuplicatesCurationStubStudy[] = (cols || []).reduce(
         (acc, curr, currIndex) => {
             const convertedStudies = curr.stubStudies.map((study, studyIndex) => {
-                const resolutionStr: 'duplicate' | 'not-duplicate' | 'resolved' | undefined =
-                    study.exclusionTag
-                        ? study.exclusionTag.id === ENeurosynthTagIds.DUPLICATE_EXCLUSION_ID
-                            ? 'duplicate'
-                            : 'resolved'
-                        : undefined;
+                const resolutionStr: 'duplicate' | 'not-duplicate' | 'resolved' | undefined = study.exclusionTag
+                    ? study.exclusionTag.id === ENeurosynthTagIds.DUPLICATE_EXCLUSION_ID
+                        ? 'duplicate'
+                        : 'resolved'
+                    : undefined;
 
                 return {
                     ...study,
@@ -73,4 +70,48 @@ export const createDuplicateMap = <T extends ICurationStubStudy>(stubs: T[]) => 
 export const hasDuplicates = (stubs: ICurationStubStudy[]): boolean => {
     const { duplicatesList } = createDuplicateMap(stubs);
     return duplicatesList.some((x) => x.length > 1);
+};
+
+export const scoreStub = (stub: ICurationStubStudy) => {
+    let score = 0;
+    const HUGE_SCORE = 100;
+    const BIG_SCORE = 10;
+    const SCORE = 1;
+
+    if (stub.neurostoreId !== undefined) score = score + HUGE_SCORE; // we always want to prefer neurostore studies
+    if (stub.title !== undefined) score = score + BIG_SCORE;
+    if (stub.doi !== undefined) score = score + BIG_SCORE;
+    if (stub.pmid !== undefined) score = score + BIG_SCORE;
+
+    if (stub.pmcid !== undefined) score = score + SCORE;
+    if (stub.authors !== undefined) score = score + SCORE;
+    if (stub.journal !== undefined) score = score + SCORE;
+    if (stub.keywords !== undefined) score = score + SCORE;
+    if (stub.abstractText !== undefined) score = score + SCORE;
+
+    return score;
+};
+
+// This function takes a list of stubs, and automatically outputs the same list of stubs with duplicate stubs marked as excluded.
+// It will prefer stubs that have more information, and will mark stubs with less information as duplicates.
+// It will not modify the original
+export const automaticallyResolveDuplicates = (stubs: ICurationStubStudy[]) => {
+    const updatedStubs: ICurationStubStudy[] = stubs.map((stub) => ({ ...stub })); // clone list
+    const { duplicatesList } = createDuplicateMap(stubs);
+    duplicatesList.forEach((duplicates) => {
+        if (duplicates.length <= 1) return;
+
+        const orderByRichness = duplicates.sort((a, b) => {
+            return scoreStub(b) - scoreStub(a); // biggest first
+        });
+
+        // iterate from 2nd stub to nth stub
+        for (let i = 1; i < orderByRichness.length; i++) {
+            const duplicate = orderByRichness[i];
+            const foundStub = updatedStubs.find((x) => x.id === duplicate.id);
+            if (!foundStub) return;
+            foundStub.exclusionTag = { ...defaultExclusionTags.duplicate };
+        }
+    });
+    return updatedStubs;
 };

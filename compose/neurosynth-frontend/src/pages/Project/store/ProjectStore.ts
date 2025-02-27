@@ -55,6 +55,7 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
                 infoTags: [],
                 exclusionTags: [],
                 identificationSources: [],
+                imports: [],
             },
             extractionMetadata: {
                 studysetId: undefined,
@@ -99,6 +100,7 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
                     infoTags: [],
                     exclusionTags: [],
                     identificationSources: [],
+                    imports: [],
                 },
                 extractionMetadata: {
                     studysetId: undefined,
@@ -287,6 +289,7 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
                         infoTags: [],
                         exclusionTags: [],
                         identificationSources: [],
+                        imports: [],
                     },
                     extractionMetadata: {
                         studysetId: undefined,
@@ -476,6 +479,20 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
                     curationMetadata: {
                         ...state.provenance.curationMetadata,
                         columns: columns,
+                    },
+                },
+            }));
+
+            get().updateProjectInDBDebounced();
+        },
+        createNewCurationImport(newCurationImport) {
+            set((state) => ({
+                ...state,
+                provenance: {
+                    ...state.provenance,
+                    curationMetadata: {
+                        ...state.provenance.curationMetadata,
+                        imports: [...(state.provenance.curationMetadata.imports || []), newCurationImport],
                     },
                 },
             }));
@@ -687,6 +704,8 @@ export const useProjectCurationPrismaConfig = () =>
 export const useProjectCurationInfoTags = () => useProjectStore((state) => state.provenance.curationMetadata.infoTags);
 export const useProjectCurationExclusionTags = () =>
     useProjectStore((state) => state.provenance.curationMetadata.exclusionTags);
+export const useProjectCurationImports = () =>
+    useProjectStore((state) => state.provenance.curationMetadata.imports || []);
 
 // curation updater hooks
 export const useUpdateProjectIsPublic = () => useProjectStore((state) => state.updateProjectIsPublic);
@@ -698,6 +717,7 @@ export const useClearProvenance = () => useProjectStore((state) => state.clearPr
 export const useHandleCurationDrag = () => useProjectStore((state) => state.handleDrag);
 export const useCreateNewCurationInfoTag = () => useProjectStore((state) => state.createNewInfoTag);
 export const useUpdateCurationColumns = () => useProjectStore((state) => state.updateCurationColumns);
+export const useCreateNewCurationImport = () => useProjectStore((state) => state.createNewCurationImport);
 export const useAddNewCurationStubs = () => useProjectStore((state) => state.addNewStubs);
 export const useInitCuration = () => useProjectStore((state) => state.initCuration);
 export const useUpdateStubField = () => useProjectStore((state) => state.updateStubField);

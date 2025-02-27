@@ -1,17 +1,20 @@
-import { Box, Step, StepLabel, Stepper, Typography } from '@mui/material';
+import { Box, Step, StepLabel, Stepper } from '@mui/material';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons';
+import { ICurationStubStudy } from 'pages/Curation/Curation.types';
+import { EImportMode } from 'pages/CurationImport/CurationImport.types';
+import CurationImportDoImport from 'pages/CurationImport/components/CurationImportDoImport';
+import { SearchCriteria } from 'pages/Study/Study.types';
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import CurationImportFinalize from './CurationImportFinalize';
 import CurationImportSelectMethod from './CurationImportSelectMethod';
-import { EImportMode } from 'pages/CurationImport/CurationImport.types';
-import CurationImportDoImport from 'pages/CurationImport/components/CurationImportDoImport';
-import { ICurationStubStudy } from 'pages/Curation/Curation.types';
 
 const CurationImport: React.FC = () => {
     const [activeStep, setActiveStep] = useState(0);
     const [importMode, setImportMode] = useState<EImportMode>(EImportMode.NEUROSTORE_IMPORT);
     const [stubs, setStubs] = useState<ICurationStubStudy[]>([]);
+    const [unimportedStubs, setUnimportedStubs] = useState<string[]>([]);
+    const [searchCriteria, setSearchCriteria] = useState<SearchCriteria>();
     const location = useLocation();
 
     useEffect(() => {
@@ -40,6 +43,11 @@ const CurationImport: React.FC = () => {
         });
     };
 
+    const handleImportStubs = (stubs: ICurationStubStudy[], unimportedStubs?: string[]) => {
+        setStubs(stubs);
+        if (unimportedStubs) setUnimportedStubs(unimportedStubs);
+    };
+
     return (
         <Box>
             <Stepper activeStep={activeStep}>
@@ -47,18 +55,10 @@ const CurationImport: React.FC = () => {
                     <StepLabel>Choose Method</StepLabel>
                 </Step>
                 <Step>
-                    <StepLabel>
-                        <Typography sx={{ display: 'inline' }} variant="body2">
-                            Import
-                        </Typography>
-                    </StepLabel>
+                    <StepLabel>Import</StepLabel>
                 </Step>
                 <Step>
-                    <StepLabel>
-                        <Typography sx={{ display: 'inline' }} variant="body2">
-                            Name and Review
-                        </Typography>
-                    </StepLabel>
+                    <StepLabel>Name and Review</StepLabel>
                 </Step>
             </Stepper>
             <Box>
@@ -72,13 +72,20 @@ const CurationImport: React.FC = () => {
                 {activeStep === 1 && (
                     <CurationImportDoImport
                         stubs={stubs}
-                        onImportStubs={setStubs}
+                        onImportStubs={handleImportStubs}
+                        onSetSearchCriteria={setSearchCriteria}
                         mode={importMode}
                         onNavigate={handleNavigate}
                     />
                 )}
                 {activeStep === 2 && (
-                    <CurationImportFinalize importMode={importMode} stubs={stubs} onNavigate={handleNavigate} />
+                    <CurationImportFinalize
+                        importMode={importMode}
+                        searchCriteria={searchCriteria}
+                        stubs={stubs}
+                        unimportedStubs={unimportedStubs}
+                        onNavigate={handleNavigate}
+                    />
                 )}
             </Box>
         </Box>

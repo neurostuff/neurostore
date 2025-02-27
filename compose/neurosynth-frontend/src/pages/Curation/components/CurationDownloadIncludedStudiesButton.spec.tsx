@@ -39,7 +39,6 @@ const mockCurationColumns: ICurationColumn[] = [
                 abstractText: 'included_abstract_1',
                 exclusionTag: null,
                 neurostoreId: 'included_neurostoreid_1',
-                searchTerm: '',
             },
             {
                 id: 'included_2',
@@ -70,7 +69,6 @@ const mockCurationColumns: ICurationColumn[] = [
                 abstractText: 'included_abstract_2',
                 exclusionTag: null,
                 neurostoreId: 'included_neurostoreid_2',
-                searchTerm: '',
             },
         ],
     },
@@ -99,9 +97,7 @@ describe('CurationDownloadIncludedStudiesButton', () => {
         expect(dropdownButton).toBeInTheDocument();
         expect(screen.getByText('Download INCLUDED as CSV')).toBeInTheDocument();
         userEvent.click(dropdownButton);
-        expect(
-            screen.getByRole('menuitem', { name: 'Download INCLUDED as BibTeX' })
-        ).toBeInTheDocument();
+        expect(screen.getByRole('menuitem', { name: 'Download INCLUDED as BibTeX' })).toBeInTheDocument();
     });
 
     it('downloads CSVs when the download CSV button is clicked', () => {

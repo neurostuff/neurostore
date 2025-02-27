@@ -8,6 +8,7 @@ import {
     IPRISMAConfig,
     ISource,
     IExtractionMetadata,
+    IImport,
 } from 'hooks/projects/useGetProjects';
 import { ProjectReturn } from 'neurosynth-compose-typescript-sdk';
 import { SnackbarMessage, OptionsObject, SnackbarKey } from 'notistack';
@@ -135,6 +136,7 @@ export type ProjectStoreActions = {
     createNewExclusion: (newExclusion: ITag, arg: keyof Omit<IPRISMAConfig, 'isPrisma'> | undefined) => void;
     createNewInfoTag: (newTag: ITag) => void;
     createNewIdentificationSource: (newSource: ISource) => void;
+    createNewCurationImport: (newImport: IImport) => void;
     addNewStubs: (stubs: ICurationStubStudy[]) => void;
     updateCurationColumns: (columns: ICurationColumn[]) => void;
     clearProvenance: () => void;

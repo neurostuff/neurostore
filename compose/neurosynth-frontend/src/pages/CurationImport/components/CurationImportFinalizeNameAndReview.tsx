@@ -35,7 +35,12 @@ const CurationImportFinalizeNameAndReview: React.FC<{
                 >
                     Give your import a name:
                 </Typography>
-                <TextField value={importName} onChange={(val) => setImportName(val.target.value)} />
+                <TextField
+                    sx={{ width: '100%', marginTop: '0.5rem' }}
+                    size="small"
+                    value={importName}
+                    onChange={(val) => setImportName(val.target.value)}
+                />
 
                 <CurationImportFinalizeReview stubs={stubs} unimportedStubs={unimportedStubs} />
             </Box>

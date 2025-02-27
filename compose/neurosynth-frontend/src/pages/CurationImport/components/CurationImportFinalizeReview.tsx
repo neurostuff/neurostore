@@ -5,6 +5,7 @@ import { useMemo } from 'react';
 import { FixedSizeList, ListChildComponentProps } from 'react-window';
 import CurationImportFinalizeReviewVirtualizedListItem from './CurationImportFinalizeReviewVirtualizedListItem';
 import { ICurationStubStudy } from 'pages/Curation/Curation.types';
+import React from 'react';
 
 const CuraitonImportFinalizeReviewFixedSizeListRow: React.FC<
     ListChildComponentProps<{
@@ -21,7 +22,7 @@ const LIST_HEIGHT = 140;
 const CurationImportFinalizeReview: React.FC<{
     stubs: ICurationStubStudy[];
     unimportedStubs: string[];
-}> = (props) => {
+}> = React.memo((props) => {
     const { stubs, unimportedStubs } = props;
     const nonExcludedStubs = useMemo(() => {
         return stubs.filter((x) => !x.exclusionTag);
@@ -35,8 +36,7 @@ const CurationImportFinalizeReview: React.FC<{
     const includedStudiesListHeight = useMemo(() => {
         const estimatedListHeight = LIST_HEIGHT * nonExcludedStubs.length;
         const defaultListHeight = windowHeight - 200;
-        const fixedListHeight =
-            defaultListHeight > estimatedListHeight ? estimatedListHeight : defaultListHeight;
+        const fixedListHeight = defaultListHeight > estimatedListHeight ? estimatedListHeight : defaultListHeight;
 
         return fixedListHeight;
     }, [nonExcludedStubs.length, windowHeight]);
@@ -44,8 +44,7 @@ const CurationImportFinalizeReview: React.FC<{
     const excludedStudiesListHeight = useMemo(() => {
         const estimatedListHeight = LIST_HEIGHT * excludedStubs.length;
         const defaultListHeight = windowHeight - 200;
-        const fixedListHeight =
-            defaultListHeight > estimatedListHeight ? estimatedListHeight : defaultListHeight;
+        const fixedListHeight = defaultListHeight > estimatedListHeight ? estimatedListHeight : defaultListHeight;
 
         return fixedListHeight;
     }, [excludedStubs.length, windowHeight]);
@@ -60,14 +59,12 @@ const CurationImportFinalizeReview: React.FC<{
                 {unimportedStubs.length > 0 && (
                     <>
                         <Typography color="error.main">
-                            We encountered issues importing {props.unimportedStubs.length} studies.
-                            You may have to create these studies manually:
+                            We encountered issues importing {props.unimportedStubs.length} studies. You may have to
+                            create these studies manually:
                         </Typography>
                         <Typography color="error.main" gutterBottom>
                             {props.unimportedStubs.reduce((acc, curr, currIndex, arr) => {
-                                return currIndex === arr.length - 1
-                                    ? `${acc}${curr}`
-                                    : `${acc}${curr}, `;
+                                return currIndex === arr.length - 1 ? `${acc}${curr}` : `${acc}${curr}, `;
                             }, '')}
                         </Typography>
                     </>
@@ -149,6 +146,6 @@ const CurationImportFinalizeReview: React.FC<{
             )}
         </Box>
     );
-};
+});
 
 export default CurationImportFinalizeReview;
