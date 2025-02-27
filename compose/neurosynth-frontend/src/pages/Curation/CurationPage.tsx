@@ -21,7 +21,7 @@ import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import CurationDownloadIncludedStudiesButton from './components/CurationDownloadIncludedStudiesButton';
 
-const CurationPage: React.FC = (props) => {
+const CurationPage: React.FC = () => {
     const [prismaIsOpen, setPrismaIsOpen] = useState(false);
     const { projectId } = useParams<{ projectId: string | undefined }>();
     const projectUser = useProjectUser();
@@ -38,14 +38,13 @@ const CurationPage: React.FC = (props) => {
     const { included, uncategorized } = useGetCurationSummary();
     const { data: studyset } = useGetStudysetById(studysetId || '', false);
 
-    const extractionStepInitialized =
-        studysetId && annotationId && (studyset?.studies?.length || 0) > 0;
+    const extractionStepInitialized = studysetId && annotationId && (studyset?.studies?.length || 0) > 0;
 
     const handleMoveToExtractionPhase = () => {
         if (extractionStepInitialized) {
             navigate(`/projects/${projectId}/extraction`);
         } else {
-            navigate(`/projects/${projectId}`, {
+            navigate(`/projects/${projectId}/project`, {
                 state: {
                     projectPage: {
                         openCurationDialog: true,
@@ -93,10 +92,7 @@ const CurationPage: React.FC = (props) => {
                         <CurationDownloadIncludedStudiesButton />
                         {isPrisma && (
                             <>
-                                <PrismaDialog
-                                    onCloseDialog={() => setPrismaIsOpen(false)}
-                                    isOpen={prismaIsOpen}
-                                />
+                                <PrismaDialog onCloseDialog={() => setPrismaIsOpen(false)} isOpen={prismaIsOpen} />
                                 <Button
                                     onClick={() => setPrismaIsOpen(true)}
                                     variant="outlined"

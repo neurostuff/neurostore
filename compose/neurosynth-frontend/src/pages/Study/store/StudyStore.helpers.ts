@@ -120,7 +120,8 @@ export type StudyDetails = Pick<
 export type IStudyVersion = Pick<StudyReturn, 'user' | 'id'>;
 
 export const studyPointsToStorePoints = (
-    points: PointReturn[]
+    points: PointReturn[],
+    initPointIfEmpty: boolean
 ): {
     analysisSpace: MapOrSpaceType | undefined;
     analysisMap: MapOrSpaceType | undefined;
@@ -130,20 +131,29 @@ export const studyPointsToStorePoints = (
     let analysisMap: MapOrSpaceType | undefined;
 
     let storePoints: IStorePoint[] = [];
-    if (points.length > 0) {
+    if (points.length === 0 && initPointIfEmpty) {
+        storePoints = [
+            {
+                cluster_size: undefined,
+                id: uuid(),
+                isNew: true,
+                value: undefined,
+                subpeak: undefined,
+                x: undefined,
+                y: undefined,
+                z: undefined,
+            },
+        ];
+    } else {
         storePoints = ((points || []) as Array<PointReturn>)
             .map(({ entities, space, subpeak, cluster_size, values, kind, label_id, ...args }) => {
                 const typedValues = values as Array<PointValue> | undefined;
                 if (!analysisSpace && !!space) {
-                    analysisSpace = DefaultSpaceTypes[space]
-                        ? DefaultSpaceTypes[space]
-                        : DefaultSpaceTypes.OTHER;
+                    analysisSpace = DefaultSpaceTypes[space] ? DefaultSpaceTypes[space] : DefaultSpaceTypes.OTHER;
                 }
                 if (!analysisMap && typedValues && typedValues.length > 0 && typedValues[0].kind) {
                     const kind = typedValues[0].kind || '';
-                    analysisMap = DefaultMapTypes[kind]
-                        ? DefaultMapTypes[kind]
-                        : DefaultMapTypes.OTHER;
+                    analysisMap = DefaultMapTypes[kind] ? DefaultMapTypes[kind] : DefaultMapTypes.OTHER;
                 }
 
                 let value = undefined;
@@ -165,19 +175,6 @@ export const studyPointsToStorePoints = (
             .sort((a, b) => {
                 return (a.order as number) - (b.order as number);
             });
-    } else {
-        storePoints = [
-            {
-                cluster_size: undefined,
-                id: uuid(),
-                isNew: true,
-                value: undefined,
-                subpeak: undefined,
-                x: undefined,
-                y: undefined,
-                z: undefined,
-            },
-        ];
     }
 
     return {
@@ -187,22 +184,26 @@ export const studyPointsToStorePoints = (
     };
 };
 
-export const studyAnalysesToStoreAnalyses = (analyses?: AnalysisReturn[]): IStoreAnalysis[] => {
+export const studyAnalysesToStoreAnalyses = (
+    analyses?: AnalysisReturn[],
+    initPointIfEmpty?: boolean = false
+): IStoreAnalysis[] => {
     const studyAnalyses: IStoreAnalysis[] = (analyses || []).map((analysis) => {
         const { entities, ...analysisProps } = analysis;
         const parsedAnalysis = {
             ...analysisProps,
         };
 
-        const parsedConditions: IStoreCondition[] = (
-            (parsedAnalysis.conditions || []) as ConditionReturn[]
-        ).map((condition) => ({
-            ...condition,
-            isNew: false,
-        }));
+        const parsedConditions: IStoreCondition[] = ((parsedAnalysis.conditions || []) as ConditionReturn[]).map(
+            (condition) => ({
+                ...condition,
+                isNew: false,
+            })
+        );
 
         const { analysisMap, analysisSpace, points } = studyPointsToStorePoints(
-            (analysis.points || []) as PointReturn[]
+            (analysis.points || []) as PointReturn[],
+            initPointIfEmpty
         );
 
         return {
