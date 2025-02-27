@@ -1,10 +1,7 @@
 import { Box, Button, Link, Typography } from '@mui/material';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons';
 import { EPropertyType } from 'components/EditMetadata/EditMetadata.types';
-import {
-    useProjectExtractionAnnotationId,
-    useProjectExtractionStudysetId,
-} from 'pages/Project/store/ProjectStore';
+import { useProjectExtractionAnnotationId, useProjectExtractionStudysetId } from 'pages/Project/store/ProjectStore';
 import { useState } from 'react';
 import {
     IAnalysesSelection,
@@ -40,8 +37,8 @@ const CreateMetaAnalysisSpecificationSelectionStep: React.FC<{
         <Box>
             <Box>
                 <Typography gutterBottom>
-                    At this time, all of the studies within your studyset should have all the
-                    relevant information (i.e. coordinates, annotations) needed for a meta-analysis
+                    At this time, all of the studies within your studyset should have all the relevant information (i.e.
+                    coordinates, annotations) needed for a meta-analysis
                 </Typography>
             </Box>
             <Box>
@@ -66,8 +63,8 @@ const CreateMetaAnalysisSpecificationSelectionStep: React.FC<{
                 </Typography>
 
                 <Typography gutterBottom sx={{ marginBottom: '1rem' }}>
-                    By default, the "included" column includes all studies & analyses. At the
-                    moment, only boolean and string annotations are supported.
+                    By default, the "included" column includes all studies & analyses. At the moment, only boolean and
+                    string annotations are supported.
                 </Typography>
 
                 <SelectAnalysesComponent
@@ -94,10 +91,7 @@ const CreateMetaAnalysisSpecificationSelectionStep: React.FC<{
                         marginTop: '1rem',
                     }}
                 >
-                    <Button
-                        onClick={() => handleNavigate(ENavigationButton.PREV)}
-                        variant="outlined"
-                    >
+                    <Button onClick={() => handleNavigate(ENavigationButton.PREV)} variant="outlined">
                         Back
                     </Button>
                     <SelectAnalysesSummaryComponent

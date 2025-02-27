@@ -1,11 +1,5 @@
 import ErrorIcon from '@mui/icons-material/Error';
-import {
-    Autocomplete,
-    AutocompleteRenderOptionState,
-    Box,
-    FilterOptionsState,
-    TextField,
-} from '@mui/material';
+import { Autocomplete, AutocompleteRenderOptionState, Box, FilterOptionsState, TextField } from '@mui/material';
 import { SystemStyleObject } from '@mui/system';
 import ProgressLoader from 'components/ProgressLoader';
 import { useInputValidation } from '../../hooks';
@@ -38,6 +32,7 @@ interface INeurosynthAutocomplete<T> {
     inputPropsSx?: SystemStyleObject;
     filterOptions?: (options: T[], state: FilterOptionsState<T>) => T[];
     groupBy?: (option: T) => string;
+    errorText?: string;
 }
 
 const NeurosynthAutocomplete = <T,>(props: INeurosynthAutocomplete<T>) => {
@@ -63,6 +58,7 @@ const NeurosynthAutocomplete = <T,>(props: INeurosynthAutocomplete<T>) => {
         size = 'small',
         inputPropsSx = {},
         groupBy = undefined,
+        errorText = 'There was an error',
     } = props;
 
     const handleOnChange = (_event: any, newVal: T | null, _reason: any) => {
@@ -96,7 +92,7 @@ const NeurosynthAutocomplete = <T,>(props: INeurosynthAutocomplete<T>) => {
                             <>
                                 {isError && (
                                     <Box sx={{ color: 'error.main', display: 'flex' }}>
-                                        There was an error
+                                        {errorText}
                                         <ErrorIcon sx={{ marginLeft: '5px' }} />
                                     </Box>
                                 )}

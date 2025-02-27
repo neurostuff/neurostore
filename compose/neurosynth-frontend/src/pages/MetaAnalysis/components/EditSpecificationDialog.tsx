@@ -9,11 +9,7 @@ import { useGetMetaAnalysisById } from 'hooks';
 import { EAnalysisType } from 'hooks/metaAnalyses/useCreateAlgorithmSpecification';
 import useGetSpecificationById from 'hooks/metaAnalyses/useGetSpecificationById';
 import useUpdateSpecification from 'hooks/metaAnalyses/useUpdateSpecification';
-import {
-    AnnotationReturn,
-    SpecificationReturn,
-    StudysetReturn,
-} from 'neurosynth-compose-typescript-sdk';
+import { AnnotationReturn, SpecificationReturn, StudysetReturn } from 'neurosynth-compose-typescript-sdk';
 import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { getType } from 'components/EditMetadata/EditMetadata.types';
@@ -69,24 +65,20 @@ const EditSpecificationDialog: React.FC<IDialog> = (props) => {
         const estimator = specification?.estimator?.type
             ? {
                   label: specification.estimator.type,
-                  description:
-                      metaAnalysisSpecification.CBMA[specification?.estimator?.type].summary,
+                  description: metaAnalysisSpecification.CBMA[specification?.estimator?.type].summary,
               }
             : null;
         const corrector = specification?.corrector?.type
             ? {
                   label: specification.corrector.type,
-                  description:
-                      metaAnalysisSpecification.CORRECTOR[specification.corrector.type].summary,
+                  description: metaAnalysisSpecification.CORRECTOR[specification.corrector.type].summary,
               }
             : null;
         setAlgorithmSpec({
             estimator: estimator,
             corrector: corrector,
-            estimatorArgs:
-                (specification?.estimator?.args as { [key: string]: any } | undefined) || {},
-            correctorArgs:
-                (specification?.corrector?.args as { [key: string]: any } | undefined) || {},
+            estimatorArgs: (specification?.estimator?.args as { [key: string]: any } | undefined) || {},
+            correctorArgs: (specification?.corrector?.args as { [key: string]: any } | undefined) || {},
         });
     }, [specification, props.isOpen]); // add isOpen so that on close/open, the selected val, estimator & corrector are reset
 
@@ -158,10 +150,7 @@ const EditSpecificationDialog: React.FC<IDialog> = (props) => {
             dialogContentSx={{ paddingBottom: '0' }}
             maxWidth="lg"
         >
-            <StateHandlerComponent
-                isLoading={getMetaAnalysisIsLoading}
-                isError={getMetaAnalysisIsError}
-            >
+            <StateHandlerComponent isLoading={getMetaAnalysisIsLoading} isError={getMetaAnalysisIsError}>
                 <Box
                     sx={{
                         margin: '1rem 2rem',
@@ -183,9 +172,7 @@ const EditSpecificationDialog: React.FC<IDialog> = (props) => {
                         Edit Analyses Selection:
                     </Typography>
                     <SelectAnalysesComponent
-                        annotationId={
-                            (metaAnalysis?.annotation as AnnotationReturn)?.neurostore_id || ''
-                        }
+                        annotationId={(metaAnalysis?.annotation as AnnotationReturn)?.neurostore_id || ''}
                         selectedValue={selectedValue}
                         onSelectValue={(update) => {
                             setSelectedValue(update);
@@ -195,9 +182,7 @@ const EditSpecificationDialog: React.FC<IDialog> = (props) => {
                     {isMultiGroup && (
                         <CreateMetaAnalysisSpecificationSelectionStepMultiGroup
                             onSelectValue={(newVal) => setSelectedValue(newVal)}
-                            annotationId={
-                                (metaAnalysis?.annotation as AnnotationReturn)?.neurostore_id || ''
-                            }
+                            annotationId={(metaAnalysis?.annotation as AnnotationReturn)?.neurostore_id || ''}
                             selectedValue={selectedValue}
                             algorithm={algorithmSpec}
                         />
@@ -220,12 +205,8 @@ const EditSpecificationDialog: React.FC<IDialog> = (props) => {
                     {/* empty div used for equally spacing and centering components */}
                     <Box>
                         <SelectAnalysesSummaryComponent
-                            studysetId={
-                                (metaAnalysis?.studyset as StudysetReturn)?.neurostore_id || ''
-                            }
-                            annotationdId={
-                                (metaAnalysis?.annotation as AnnotationReturn)?.neurostore_id || ''
-                            }
+                            studysetId={(metaAnalysis?.studyset as StudysetReturn)?.neurostore_id || ''}
+                            annotationdId={(metaAnalysis?.annotation as AnnotationReturn)?.neurostore_id || ''}
                             selectedValue={selectedValue}
                         />
                     </Box>
