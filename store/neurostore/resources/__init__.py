@@ -18,9 +18,7 @@ from .users import (
 from .pipeline import (
     PipelinesView,
     PipelineConfigsView,
-    PipelineRunsView,
-    PipelineRunResultsView,
-    PipelineRunResultVotesView,
+    PipelineStudyResultsView,
 )
 
 __all__ = [
@@ -37,7 +35,5 @@ __all__ = [
     "UsersView",
     "PipelinesView",
     "PipelineConfigsView",
-    "PipelineRunsView",
-    "PipelineRunResultsView",
-    "PipelineRunResultVotesView",
+    "PipelineStudyResultsView",
 ]

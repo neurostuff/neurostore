@@ -18,6 +18,7 @@ from ..models import (
     Image,
     Entity,
 )
+from ..ingest.extracted_features import ingest_feature
 from auth0.v3.authentication import GetToken
 from auth0.v3.authentication.users import Users
 from unittest.mock import patch
@@ -592,11 +593,11 @@ def simple_neurosynth_annotation(session, ingest_neurosynth):
 
 @pytest.fixture(scope="function")
 def create_demographic_features(session, ingest_neurosynth, tmp_path):
-    output_dir = tmp_path / "output" / "demographics" / "v1.0.0"
+    output_dir = tmp_path / "output" / "demographics" / "1.0.0"
     output_dir.mkdir(exist_ok=True, parents=True)
     pipeline_info = {
         "name": "demographics",
-        "version": "v1.0.0",
+        "version": "1.0.0",
         "description": "demographic features",
         "type": "independent",
         "derived_from": None,
@@ -636,6 +637,11 @@ def create_demographic_features(session, ingest_neurosynth, tmp_path):
             )
 
     return output_dir
+
+
+@pytest.fixture(scope="function")
+def ingest_demographic_features(session, create_demographic_features):
+    return ingest_feature(create_demographic_features)
 
 
 """

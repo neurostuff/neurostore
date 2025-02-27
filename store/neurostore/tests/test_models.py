@@ -9,9 +9,7 @@ from ..models import (
     Studyset,
     Pipeline,
     PipelineConfig,
-    PipelineRun,
-    PipelineRunResult,
-    PipelineRunResultVote,
+    PipelineStudyResult,
 )
 
 
@@ -55,13 +53,5 @@ def test_PipelineConfig():
     PipelineConfig()
 
 
-def test_PipelineRun():
-    PipelineRun()
-
-
-def test_PipelineRunResult():
-    PipelineRunResult()
-
-
-def test_PipelineRunResultVote():
-    PipelineRunResultVote()
+def test_PipelineStudyResult():
+    PipelineStudyResult()

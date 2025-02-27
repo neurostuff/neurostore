@@ -6,7 +6,22 @@ import re
 
 from connexion.context import context
 from psycopg2 import errors
+from sqlalchemy import (
+    cast,
+    String,
+    Integer,
+    Float,
+    Boolean,
+    ARRAY,
+    text,
+    or_,
+    and_,
+    func,
+    select,
+)
+from sqlalchemy.orm import aliased
 
+from ..database import db
 from .. import models
 from .. import schemas
 from .singular import singularize
@@ -240,3 +255,127 @@ def pubmed_to_tsquery(query: str) -> str:
         last_token = stripped_token
 
     return " ".join(processed_tokens)
+
+
+def parse_filter_value(value):
+    """Parse filter values to detect operators and handle multiple conditions."""
+    operators = [">=", "<=", "!=", ">", "<", "~"]
+
+    if "|" in value:  # OR condition
+        return "|", [parse_filter_value(v.strip())[1] for v in value.split("|")]
+
+    if "&" in value:  # AND condition
+        return "&", [parse_filter_value(v.strip())[1] for v in value.split("&")]
+
+    for op in operators:
+        if value.startswith(op):
+            return op, value[len(op) :]
+
+    if "," in value:  # IN condition
+        return "IN", value.split(",")
+
+    if value.lower() in ["true", "false"]:  # Boolean
+        return "=", value.lower() == "true"
+
+    return "=", value  # Default case
+
+
+def determine_cast_type(value):
+    """Determine whether to cast as STRING, INTEGER, FLOAT, or BOOLEAN."""
+    if isinstance(value, bool):
+        return Boolean
+
+    if isinstance(value, list):  # For IN queries
+        value = value[0] if value else ""
+
+    if value.replace(".", "", 1).isdigit():
+        return Float if "." in value else Integer
+
+    return String
+
+
+from sqlalchemy import func, cast, Integer, String, Float, Boolean, and_, or_
+from sqlalchemy.orm import aliased
+
+
+def build_jsonb_filter(query, filters):
+    """
+    Converts deeply nested JSON filters into SQLAlchemy filter expressions.
+    Supports:
+      - Nested JSONB paths (info.user.name)
+      - Multiple OR values (info.user.name=John,Sally)
+      - Range queries (info.user.age>=30)
+      - LIKE queries (info.user.name~Jo for "LIKE 'Jo%'")
+      - Boolean filtering (info.user.active=true)
+      - AND (`&`) and OR (`|`) grouping
+    """
+
+    parts = filters.split(".", 1)
+    pipeline_name = parts[0]
+    keys = parts[1].split(".") if len(parts) > 1 else []
+
+    pattern = r"(<=|>=|<|>|=|~|!=)"
+
+    # Extract the last key
+    if keys:
+        last_key_value = keys[-1]
+        match = re.search(pattern, last_key_value)
+        if match:
+            operator = match.group(0)
+            last_key, value = last_key_value.split(operator, 1)
+        else:
+            operator = None
+            value = last_key_value
+    else:
+        operator = None
+        value = None
+
+    if len(keys) > 1:
+        keys[-1] = last_key
+
+    # create the aliases
+    PipelineStudyResultAlias = aliased(models.PipelineStudyResult)
+    PipelineConfigAlias = aliased(models.PipelineConfig)
+    PipelineAlias = aliased(models.Pipeline)
+
+    jsonb_path = "->".join(f"'{k}'" for k in keys[:-1])  # info->'user'
+    last_key = keys[-1]  # 'age'
+
+    jsonpath_query = f"$.{pipeline_name}.{jsonb_path}.{last_key}{operator}{value}"
+
+    if jsonpath_query:
+        query = query.outerjoin(
+            PipelineStudyResultAlias,
+            models.BaseStudy.id == PipelineStudyResultAlias.base_study_id,
+        )
+        query = query.outerjoin(
+            PipelineConfigAlias,
+            PipelineStudyResultAlias.config_id == PipelineConfigAlias.id,
+        )
+        query = query.outerjoin(PipelineAlias, PipelineAlias.id == PipelineAlias.id)
+
+        query = query.filter(PipelineAlias.name == pipeline_name)
+
+        # Subquery to get the most recent PipelineStudyResult for each base_study
+        subquery = (
+            db.session.query(
+                PipelineStudyResultAlias.base_study_id,
+                func.max(PipelineStudyResultAlias.date_executed).label(
+                    "max_date_executed"
+                ),
+            )
+            .group_by(PipelineStudyResultAlias.base_study_id)
+            .subquery()
+        )
+
+        query = query.join(
+            subquery,
+            (PipelineStudyResultAlias.base_study_id == subquery.c.base_study_id)
+            & (PipelineStudyResultAlias.date_executed == subquery.c.max_date_executed),
+        )
+
+        query = query.filter(
+            func.jsonb_path_exists(PipelineStudyResultAlias.result_data, jsonpath_query)
+        )
+
+    return query

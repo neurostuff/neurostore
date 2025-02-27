@@ -13,7 +13,7 @@ from sqlalchemy.sql import func
 from sqlalchemy import select
 
 
-from .utils import view_maker, get_current_user
+from .utils import view_maker, get_current_user, build_jsonb_filter
 from .base import BaseView, ObjectView, ListView, clear_cache, create_user
 from ..database import db
 from ..models import (
@@ -29,6 +29,9 @@ from ..models import (
     AnnotationAnalysis,
     Condition,
     Entity,
+    PipelineStudyResult,
+    PipelineConfig,
+    Pipeline,
 )
 from ..models.data import StudysetStudy, BaseStudy
 
@@ -371,6 +374,8 @@ class BaseStudiesView(ObjectView, ListView):
         "flat": fields.Boolean(load_default=False),
         "info": fields.Boolean(load_default=False),
         "data_type": fields.String(load_default=None),
+        "feature_filter": fields.List(fields.String(load_default=None)),
+        "feature_display": fields.List(fields.String(load_default=None)),
     }
 
     _multi_search = ("name", "description")
@@ -386,8 +391,19 @@ class BaseStudiesView(ObjectView, ListView):
         "pmid",
     )
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.context = {}
+
     def eager_load(self, q, args=None):
         args = args or {}
+        if args.get("feature_filter") or args.get("feature_display"):
+            q = q.options(
+                joinedload(BaseStudy.pipeline_study_results)
+                .joinedload(PipelineStudyResult.config)
+                .joinedload(PipelineConfig.pipeline)
+            )
+
         if args.get("info"):
             q = q.options(
                 joinedload(BaseStudy.versions).options(
@@ -429,6 +445,10 @@ class BaseStudiesView(ObjectView, ListView):
         if args.get("level"):
             q = q.filter(self._model.level == args.get("level"))
 
+        # filter results based on AI features
+        if args.get("feature_filter", None):
+            for ff in args.get("feature_filter"):
+                q = build_jsonb_filter(q, ff)
         return q
 
     def join_tables(self, q, args):
