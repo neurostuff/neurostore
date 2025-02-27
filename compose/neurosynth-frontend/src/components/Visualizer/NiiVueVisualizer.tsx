@@ -1,6 +1,6 @@
-import { Download, OpenInNew } from '@mui/icons-material';
+import { Download, HelpOutline, OpenInNew } from '@mui/icons-material';
 import ImageIcon from '@mui/icons-material/Image';
-import { Box, Button, Checkbox, Link, Typography } from '@mui/material';
+import { Box, Button, Checkbox, Icon, Link, Tooltip, Typography } from '@mui/material';
 import { Niivue, SHOW_RENDER } from '@niivue/niivue';
 import { ChangeEvent, useCallback, useEffect, useRef, useState } from 'react';
 import ThresholdSlider from './ThresholdSlider';
@@ -224,11 +224,24 @@ const NiiVueVisualizer: React.FC<{ file: string; filename: string; neurovaultLin
                         onDebouncedThresholdChange={handleUpdateThreshold}
                     />
                 </Box>
-                <Box width="130px" display="flex" flexDirection="column">
+                <Box width="140px" display="flex" flexDirection="column">
                     <Box display="flex" justifyContent="space-between" alignItems="center">
                         <Typography variant="caption" gutterBottom={false}>
                             Soft Threshold
                         </Typography>
+                        <Tooltip
+                            title={
+                                <Typography variant="caption">
+                                    Checking this option will also highlight areas of activation below the current
+                                    selected threshold
+                                </Typography>
+                            }
+                            placement="top"
+                        >
+                            <Icon fontSize="small">
+                                <HelpOutline fontSize="small" sx={{ color: 'muted.main' }} />
+                            </Icon>
+                        </Tooltip>
                         <Checkbox sx={{ padding: 0 }} checked={softThreshold} onChange={handleToggleSoftThreshold} />
                     </Box>
                     <Box display="flex" justifyContent="space-between" alignItems="center">
