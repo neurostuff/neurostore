@@ -9,7 +9,7 @@ import { IStoreStudy } from 'pages/Study/store/StudyStore.helpers';
 import { Optional } from 'utils/utilitytypes';
 import StudyAnalyses from './StudyAnalyses';
 import StudyStyles from './Study.styles';
-import DisplayStudyLinks from '../../../components/DisplayStudyLinks/DisplayStudyLinks';
+import DisplayStudyLinks from 'components/DisplayStudyLinks/DisplayStudyLinks';
 
 const Study: React.FC<Optional<IStoreStudy, 'metadata'>> = (props) => {
     const { id, name, description, doi, pmid, authors, publication: journal, metadata, analyses = [] } = props;
@@ -23,7 +23,7 @@ const Study: React.FC<Optional<IStoreStudy, 'metadata'>> = (props) => {
                             color="primary"
                             sx={{ marginRight: '5px', borderRadius: '8px', marginBottom: '0.5rem' }}
                             size="medium"
-                            label={`Version: ${id}` || ''}
+                            label={id ? `Version: ${id}` : ''}
                         />
                     )}
                     <Typography variant="h6">

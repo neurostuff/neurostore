@@ -45,7 +45,7 @@ const CurationPage: React.FC = () => {
         if (extractionStepInitialized) {
             navigate(`/projects/${projectId}/extraction`);
         } else {
-            navigate(`/projects/${projectId}`, {
+            navigate(`/projects/${projectId}/project`, {
                 state: {
                     projectPage: {
                         openCurationDialog: true,

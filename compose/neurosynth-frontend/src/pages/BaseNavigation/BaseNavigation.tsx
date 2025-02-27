@@ -80,26 +80,13 @@ const BaseNavigation: React.FC = (_props) => {
                         </ProtectedProjectRoute>
                     }
                     children={[
-                        <Route
-                            key="project-id-project"
-                            path="project"
-                            element={<ProjectEditMetaAnalyses />}
-                        />,
+                        <Route key="project-id-project" path="project" element={<ProjectEditMetaAnalyses />} />,
                         <Route
                             key="project-id-meta-analyses"
                             path="meta-analyses"
                             element={<ProjectViewMetaAnalyses />}
                         />,
-                        <Route
-                            key="project-id-index"
-                            index
-                            element={<Navigate replace to="project" />}
-                        />,
-                        <Route
-                            key="project-id-*"
-                            path="*"
-                            element={<Navigate replace to="project" />}
-                        />,
+                        <Route key="project-id-index" index element={<Navigate replace to="project" />} />,
                     ]}
                 />
                 <Route
@@ -138,10 +125,7 @@ const BaseNavigation: React.FC = (_props) => {
                 <Route
                     path="/projects/:projectId/extraction/studies/:studyId/edit"
                     element={
-                        <ProtectedProjectRoute
-                            onlyOwnerCanAccess
-                            errorMessage="You do not have access to this project"
-                        >
+                        <ProtectedProjectRoute onlyOwnerCanAccess errorMessage="You do not have access to this project">
                             <Box sx={BaseNavigationStyles.pagesContainer}>
                                 <EditStudyPage />
                             </Box>
@@ -196,19 +180,17 @@ const BaseNavigation: React.FC = (_props) => {
                         </Box>
                     }
                 />
-                {['/base-studies/:baseStudyId', '/base-studies/:baseStudyId/:studyVersionId'].map(
-                    (path) => (
-                        <Route
-                            key={path}
-                            path={path}
-                            element={
-                                <Box sx={BaseNavigationStyles.pagesContainer}>
-                                    <BaseStudyPage />
-                                </Box>
-                            }
-                        />
-                    )
-                )}
+                {['/base-studies/:baseStudyId', '/base-studies/:baseStudyId/:studyVersionId'].map((path) => (
+                    <Route
+                        key={path}
+                        path={path}
+                        element={
+                            <Box sx={BaseNavigationStyles.pagesContainer}>
+                                <BaseStudyPage />
+                            </Box>
+                        }
+                    />
+                ))}
                 <Route
                     path="/meta-analyses"
                     element={
