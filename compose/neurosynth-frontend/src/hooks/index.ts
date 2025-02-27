@@ -9,6 +9,7 @@ import useCreateAlgorithmSpecification from './metaAnalyses/useCreateAlgorithmSp
 import useGetMetaAnalysesByIds from './metaAnalyses/useGetMetaAnalysesByIds';
 import useGetMetaAnalysisById from './metaAnalyses/useGetMetaAnalysisById';
 import useGetMetaAnalysesPublic from './metaAnalyses/useGetMetaAnalysesPublic';
+import useGetMetaAnalysisResultById from './metaAnalyses/useGetMetaAnalysisResultById';
 import useGetAnnotationsByStudysetId from './analyses/useGetAnnotationsByStudysetId';
 import useCreatePoint from './analyses/useCreatePoint';
 import useUpdateStudy from './studies/useUpdateStudy';
@@ -38,6 +39,7 @@ import useGetFullText from './external/useGetFullText';
 import useUserCanEdit from './useUserCanEdit';
 import useGetBaseStudyById from './studies/useGetBaseStudyById';
 import useGetProjectById from './projects/useGetProjectById';
+import useGetNeurovaultImages from './metaAnalyses/useGetNeurovaultImages';
 
 export {
     useGetCurationSummary,
@@ -51,6 +53,7 @@ export {
     useGetFullText,
     useUserCanEdit,
     useGetBaseStudyById,
+    useGetNeurovaultImages,
     // STUDIES
     useGetBaseStudies,
     useGetStudyById,
@@ -61,6 +64,8 @@ export {
     useGetMetaAnalysesByIds,
     useGetMetaAnalysisById,
     useGetMetaAnalysesPublic,
+    // META-ANALYSIS RESULTS
+    useGetMetaAnalysisResultById,
     // STUDYSETS
     useGetStudysets,
     useGetStudysetById,
