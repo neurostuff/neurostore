@@ -1,4 +1,4 @@
-import { ColumnFiltersState, SortingState } from '@tanstack/react-table';
+import { ColumnFiltersState, PaginationState, SortingState } from '@tanstack/react-table';
 
 export const retrieveExtractionTableState = (projectId: string | undefined) => {
     if (!projectId) return null;
@@ -7,7 +7,7 @@ export const retrieveExtractionTableState = (projectId: string | undefined) => {
             window.sessionStorage.getItem(`${projectId}-extraction-table`) || '{}'
         ) as IExtractionTableState | null;
 
-        if (!parsedState?.columnFilters || !parsedState?.sorting || !parsedState?.studies) {
+        if (!parsedState?.columnFilters || !parsedState?.pagination || !parsedState?.sorting || !parsedState?.studies) {
             return null;
         } else {
             return parsedState;
@@ -39,6 +39,7 @@ export const updateExtractionTableStateInStorage = (
 
 export interface IExtractionTableState {
     columnFilters: ColumnFiltersState;
+    pagination: PaginationState;
     sorting: SortingState;
     studies: string[];
 }

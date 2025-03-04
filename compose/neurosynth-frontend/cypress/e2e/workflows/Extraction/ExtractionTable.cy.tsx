@@ -692,6 +692,7 @@ describe('ExtractionTable', () => {
 
                 cy.wrap(parsedState).should('deep.equal', {
                     columnFilters: [{ id: 'name', value: 'Activation' }],
+                    pagination: { pageIndex: 0, pageSize: 25 },
                     sorting: [{ id: 'year', desc: true }],
                     studies: ['3zutS8kyg2sy'],
                 });

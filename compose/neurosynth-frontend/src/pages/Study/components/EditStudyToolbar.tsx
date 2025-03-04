@@ -56,6 +56,7 @@ const EditStudyToolbar: React.FC<{ isViewOnly?: boolean }> = ({ isViewOnly = fal
     // derived from the extraction table
     const [extractionTableState, setExtractionTableState] = useState<IExtractionTableState>({
         columnFilters: [],
+        pagination: { pageIndex: 0, pageSize: 25 },
         sorting: [],
         studies: [],
     });

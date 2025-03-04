@@ -20,6 +20,7 @@ import {
     getFilteredRowModel,
     getPaginationRowModel,
     getSortedRowModel,
+    OnChangeFn,
     PaginationState,
     RowData,
     SortingState,
@@ -46,7 +47,7 @@ import { ExtractionTableNameCell, ExtractionTableNameHeader } from './Extraction
 import { ExtractionTablePMIDCell, ExtractionTablePMIDHeader } from './ExtractionTablePMID';
 import { ExtractionTableStatusCell, ExtractionTableStatusHeader } from './ExtractionTableStatus';
 import { ExtractionTableYearCell, ExtractionTableYearHeader } from './ExtractionTableYear';
-import { retrieveExtractionTableState } from './ExtractionTable.helpers';
+import { IExtractionTableState, retrieveExtractionTableState } from './ExtractionTable.helpers';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 
 //allows us to define custom properties for our columns
@@ -71,21 +72,21 @@ const ExtractionTable: React.FC = () => {
     const projectUser = useProjectUser();
     const usercanEdit = useUserCanEdit(projectUser || undefined);
 
-    const [pagination, setPagination] = useState<PaginationState>({
-        pageIndex: 0,
-        pageSize: 25,
-    });
     const [confirmationDialogIsOpen, setConfirmationDialogIsOpen] = useState(false);
-
+    
     useEffect(() => {
         const state = retrieveExtractionTableState(projectId);
         if (!state) return;
-
+        
         if (state.columnFilters) setColumnFilters(state.columnFilters);
+        if (state.pagination) setPagination(state.pagination);
         if (state.sorting) setSorting(state.sorting);
     }, [projectId]);
-
+    
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+    const ppp = retrieveExtractionTableState(projectId)?.pagination;
+    const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 25 });
+
     const [sorting, setSorting] = useState<SortingState>([]);
 
     const studyStatusMap = useMemo(() => {
@@ -267,7 +268,7 @@ const ExtractionTable: React.FC = () => {
                     siblingCount={3}
                     boundaryCount={3}
                     onChange={handlePaginationChangeMuiPaginator}
-                    page={pagination.pageIndex + 1}
+                    page={(pagination.pageIndex || 0) + 1}
                 />
                 <Box sx={{ width: '271px', display: 'flex', justifyContent: 'flex-end' }}>
                     <ConfirmationDialog
@@ -342,11 +343,12 @@ const ExtractionTable: React.FC = () => {
                                         `${projectId}-extraction-table`,
                                         JSON.stringify({
                                             columnFilters: table.getState().columnFilters,
+                                            pagination: table.getState().pagination,
                                             sorting: table.getState().sorting,
                                             studies: table
                                                 .getSortedRowModel()
                                                 .rows.map((r) => r.original.id),
-                                        })
+                                        } as IExtractionTableState)
                                     );
 
                                     if (usercanEdit) {
@@ -390,12 +392,12 @@ const ExtractionTable: React.FC = () => {
                 }}
             >
                 <TablePagination
-                    rowsPerPage={pagination.pageSize}
+                    rowsPerPage={pagination.pageSize || 25}
                     onRowsPerPageChange={handleRowsPerPageChange}
                     onPageChange={handlePaginationChange}
                     component="div"
                     rowsPerPageOptions={[10, 25, 50, 100]}
-                    page={pagination.pageIndex}
+                    page={pagination.pageIndex || 0}
                     count={table.getFilteredRowModel().rows.length}
                 />
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>

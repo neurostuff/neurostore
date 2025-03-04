@@ -1,5 +1,5 @@
 import { TextField, TextFieldProps } from '@mui/material';
-import { ChangeEvent, useEffect, useState } from 'react';
+import { ChangeEvent, useEffect, useRef, useState } from 'react';
 
 type EDebouncedTextFieldProps = Omit<TextFieldProps, 'onChange' | 'value'> & {
     onChange?: (value: string | undefined) => void;
@@ -11,9 +11,11 @@ const DebouncedTextField: React.FC<EDebouncedTextFieldProps> = ({
     onChange,
     ...otherProps
 }) => {
+    const started = useRef(false);
     const [debouncedValue, setDebouncedValue] = useState(value || '');
 
     useEffect(() => {
+        if (!started.current) return;
         const debounce = setTimeout(() => {
             onChange && onChange(debouncedValue);
         }, 400);
@@ -28,6 +30,7 @@ const DebouncedTextField: React.FC<EDebouncedTextFieldProps> = ({
     }, [value]);
 
     const handleOnChange = (event: ChangeEvent<HTMLInputElement>) => {
+        started.current = true;
         setDebouncedValue(event.target.value);
     };
 

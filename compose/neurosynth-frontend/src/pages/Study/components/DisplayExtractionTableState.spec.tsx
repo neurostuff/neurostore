@@ -1,7 +1,7 @@
 import { vi, Mock } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import DisplayExtractionTableState from './DisplayExtractionTableState';
-import { retrieveExtractionTableState } from 'pages/Extraction/components/ExtractionTable.helpers';
+import { IExtractionTableState, retrieveExtractionTableState } from 'pages/Extraction/components/ExtractionTable.helpers';
 import { useStudyId } from 'pages/Study/store/StudyStore';
 import { useGetStudyById } from 'hooks';
 import userEvent from '@testing-library/user-event';
@@ -20,9 +20,10 @@ describe('DisplayExtractionTableState Component', () => {
         vi.clearAllMocks();
         (retrieveExtractionTableState as Mock).mockReturnValue({
             columnFilters: [],
+            pagination: {  pageIndex: 0, pageSize: 25 },
             studies: ['study-1', 'study-2', 'study-3'],
             sorting: [],
-        });
+        } as IExtractionTableState);
 
         (useGetStudyById as Mock).mockImplementation((studyId: string) => ({
             isLoading: false,
