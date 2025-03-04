@@ -137,6 +137,7 @@ export type ProjectStoreActions = {
     createNewInfoTag: (newTag: ITag) => void;
     createNewIdentificationSource: (newSource: ISource) => void;
     createNewCurationImport: (newImport: IImport) => void;
+    deleteCurationImport: (curationImportId: string) => void;
     addNewStubs: (stubs: ICurationStubStudy[]) => void;
     updateCurationColumns: (columns: ICurationColumn[]) => void;
     clearProvenance: () => void;
@@ -156,7 +157,6 @@ export type ProjectStoreActions = {
     addOrUpdateStudyListStatus: (id: string, status: EExtractionStatus) => void;
     replaceStudyListStatusId: (idToFindAndReplace: string, replaceWithId: string) => void;
     setGivenStudyStatusesAsComplete: (studyIdList: string[]) => void;
-    deleteStub: (columnIndex: number, stubId: string) => void;
     allowEditMetaAnalyses: (allowEditMetaAnalysis: boolean) => void;
 };
 

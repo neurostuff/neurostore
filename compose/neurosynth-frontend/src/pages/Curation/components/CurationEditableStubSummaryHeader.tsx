@@ -1,6 +1,5 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import { Box, Chip, Tooltip } from '@mui/material';
 import LoadingButton from 'components/Buttons/LoadingButton';
 import { ITag } from 'hooks/projects/useGetProjects';
@@ -12,7 +11,7 @@ import {
     usePromoteStub,
     useSetExclusionFromStub,
 } from 'pages/Project/store/ProjectStore';
-import { ENeurosynthTagIds, defaultInfoTags } from 'pages/Project/store/ProjectStore.types';
+import { defaultInfoTags } from 'pages/Project/store/ProjectStore.types';
 import React, { useState } from 'react';
 
 interface ICurationEditableStubSummaryHeader {
@@ -81,7 +80,7 @@ const CurationEditableStubSummaryHeader: React.FC<ICurationEditableStubSummaryHe
                 <Chip
                     sx={{ fontSize: '1.2rem', margin: '0.4rem 0', borderRadius: '4px' }}
                     onDelete={handleRemoveExclusion}
-                    label="Included"
+                    label={props.stub.exclusionTag?.label || 'Excluded'}
                     size="medium"
                     color="error"
                 />

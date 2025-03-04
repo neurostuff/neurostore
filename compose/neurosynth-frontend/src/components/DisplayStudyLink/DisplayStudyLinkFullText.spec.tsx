@@ -1,20 +1,20 @@
 import { vi, Mock } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import DisplayStudyLinksFullText from 'components/DisplayStudyLinks/DisplayStudyLinksFullText';
+import DisplayStudyLinkFullText from 'components/DisplayStudyLink/DisplayStudyLinkFullText';
 import { useStudyName } from 'pages/Study/store/StudyStore';
 import { useGetFullText } from 'hooks';
 
 vi.mock('pages/Study/store/StudyStore');
 vi.mock('hooks');
-describe('DisplayStudyLinksFullText Component', () => {
+describe('DisplayStudyLinkFullText Component', () => {
     it('should render', () => {
-        render(<DisplayStudyLinksFullText />);
+        render(<DisplayStudyLinkFullText studyName="" />);
     });
 
     it('should show the chip with the link', async () => {
         (useStudyName as Mock).mockReturnValue(undefined);
         useGetFullText().data = 'study-name';
-        render(<DisplayStudyLinksFullText name="study-name" />);
+        render(<DisplayStudyLinkFullText studyName="study-name" />);
         const element = await screen.findByRole('link');
         expect(element).toBeInTheDocument();
         expect(element.getAttribute('href')).toEqual('study-name');
@@ -23,7 +23,7 @@ describe('DisplayStudyLinksFullText Component', () => {
     it('should not show the chip with the link', () => {
         (useStudyName as Mock).mockReturnValue(undefined);
         useGetFullText().data = '';
-        render(<DisplayStudyLinksFullText name="study-name" />);
+        render(<DisplayStudyLinkFullText studyName="study-name" />);
         const element = screen.queryByRole('link');
         expect(element).not.toBeInTheDocument();
     });

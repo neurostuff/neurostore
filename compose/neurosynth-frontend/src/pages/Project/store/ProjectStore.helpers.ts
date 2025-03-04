@@ -147,17 +147,6 @@ export const addNewStubsHelper = (state: ICurationColumn[], newStubs: ICurationS
     return updatedState;
 };
 
-export const deleteStubHelper = (state: ICurationColumn[], columnIndex: number, stubId: string): ICurationColumn[] => {
-    const updatedState = [...state];
-
-    updatedState[columnIndex] = {
-        ...updatedState[columnIndex],
-        stubStudies: [...updatedState[columnIndex].stubStudies.filter((x) => x.id !== stubId)],
-    };
-
-    return updatedState;
-};
-
 export const updateStubFieldHelper = (
     state: ICurationColumn[],
     columnIndex: number,

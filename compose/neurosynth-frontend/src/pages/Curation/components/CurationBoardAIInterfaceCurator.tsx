@@ -65,6 +65,7 @@ const CurationBoardAIInterfaceCurator: React.FC<{ group: IGroupListItem }> = ({ 
     useEffect(() => {
         if (column === undefined || stubsInColumn.length === 0) return;
         setSelectedStubId(stubsInColumn[0]?.id);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [group.id]);
 
     if (!column || columnIndex < 0) {
@@ -73,7 +74,7 @@ const CurationBoardAIInterfaceCurator: React.FC<{ group: IGroupListItem }> = ({ 
 
     return (
         <Box sx={{ height: '100%' }}>
-            <Box sx={{ padding: '0.5rem', display: 'flex', justifyContent: 'space-between' }}>
+            <Box sx={{ padding: '1rem 2rem 0.5rem 2rem', display: 'flex', justifyContent: 'space-between' }}>
                 <Box>
                     {UIMode === 'FOCUSMODE' && (
                         <Button
@@ -91,7 +92,7 @@ const CurationBoardAIInterfaceCurator: React.FC<{ group: IGroupListItem }> = ({ 
                     <Button
                         variant="contained"
                         disableElevation
-                        sx={{ marginRight: '0.5rem', width: '180px' }}
+                        sx={{ width: '180px' }}
                         onClick={() => navigate(`/projects/${projectId}/curation/import`)}
                         disabled={!canEdit}
                         size="small"

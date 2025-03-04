@@ -6,7 +6,6 @@ import { ICurationStubStudy } from 'pages/Curation/Curation.types';
 import {
     automaticallyResolveDuplicates,
     createDuplicateMap,
-    flattenColumns,
     hasDuplicates,
 } from 'pages/CurationImport/CurationImport.helpers';
 import { EImportMode } from 'pages/CurationImport/CurationImport.types';
@@ -41,6 +40,10 @@ const CurationImportFinalize: React.FC<{
         const newImport: IImport = {
             id: uuid(),
             name: importName,
+            errorsDuringImport:
+                unimportedStubs.length > 0
+                    ? `Unable to import studies with the following IDs: ${unimportedStubs.join(', ')}`
+                    : undefined,
             importModeUsed: importMode,
             numImported: stubs.length,
             date: new Date().toISOString(),
@@ -58,7 +61,10 @@ const CurationImportFinalize: React.FC<{
         const deduplicatedStubs = duplicatesExist ? automaticallyResolveDuplicates(stubs) : stubs;
 
         // // 3. Label the stubs in the import as duplicates automatically if we find existing stubs IN THE PROJECT
-        const allStubsInProject = flattenColumns(columns);
+        const allStubsInProject = columns.reduce(
+            (acc, curr) => [...acc, ...curr.stubStudies],
+            [] as ICurationStubStudy[]
+        );
         const { duplicateMapping } = createDuplicateMap(allStubsInProject);
         deduplicatedStubs.forEach((importedStub) => {
             if (importedStub.exclusionTag !== null) return;

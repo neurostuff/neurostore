@@ -109,13 +109,13 @@ const CurationBoardAIInterfaceCuratorTable: React.FC<ICurationBoardAIInterfaceCu
     });
 
     return (
-        <Box sx={{ padding: '0 1rem 1rem 1rem', height: '100%' }}>
+        <Box sx={{ padding: '0 2rem 2rem 2rem', height: '100%' }}>
             <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
                 <Button sx={{ width: '180px' }} size="small" startIcon={<Add />} color="secondary">
                     Add Columns
                 </Button>
             </Box>
-            <TableContainer sx={{ maxHeight: 'calc(100% - 48px - 32px)' }}>
+            <TableContainer sx={{ maxHeight: 'calc(100% - 48px - 32px - 2rem)' }}>
                 <Table size="small">
                     <TableHead>
                         {table.getHeaderGroups().map((headerGroup) => (

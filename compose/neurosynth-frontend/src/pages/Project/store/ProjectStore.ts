@@ -8,7 +8,6 @@ import {
     addOrUpdateStudyListStatusHelper,
     addTagToStubHelper,
     createNewExclusionHelper,
-    deleteStubHelper,
     demoteStubHelper,
     handleDragEndHelper,
     initCurationHelper,
@@ -457,20 +456,6 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
 
             get().updateProjectInDBDebounced();
         },
-        deleteStub: (columnIndex, stubId) => {
-            set((state) => ({
-                ...state,
-                provenance: {
-                    ...state.provenance,
-                    curationMetadata: {
-                        ...state.provenance.curationMetadata,
-                        columns: deleteStubHelper(state.provenance.curationMetadata.columns, columnIndex, stubId),
-                    },
-                },
-            }));
-
-            get().updateProjectInDBDebounced();
-        },
         updateCurationColumns(columns) {
             set((state) => ({
                 ...state,
@@ -493,6 +478,26 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
                     curationMetadata: {
                         ...state.provenance.curationMetadata,
                         imports: [...(state.provenance.curationMetadata.imports || []), newCurationImport],
+                    },
+                },
+            }));
+
+            get().updateProjectInDBDebounced();
+        },
+        deleteCurationImport(importId) {
+            set((state) => ({
+                ...state,
+                provenance: {
+                    ...state.provenance,
+                    curationMetadata: {
+                        ...state.provenance.curationMetadata,
+                        columns: state.provenance.curationMetadata.columns.map((col) => {
+                            return {
+                                ...col,
+                                stubStudies: col.stubStudies.filter((stub) => stub.importId !== importId),
+                            };
+                        }),
+                        imports: state.provenance.curationMetadata.imports.filter((x) => x.id !== importId),
                     },
                 },
             }));
@@ -706,6 +711,10 @@ export const useProjectCurationExclusionTags = () =>
     useProjectStore((state) => state.provenance.curationMetadata.exclusionTags);
 export const useProjectCurationImports = () =>
     useProjectStore((state) => state.provenance.curationMetadata.imports || []);
+export const useProjectCurationImport = (importId: string) =>
+    useProjectStore((state) =>
+        state.provenance.curationMetadata.imports.find((curationImport) => curationImport.id === importId)
+    );
 
 // curation updater hooks
 export const useUpdateProjectIsPublic = () => useProjectStore((state) => state.updateProjectIsPublic);
@@ -718,6 +727,7 @@ export const useHandleCurationDrag = () => useProjectStore((state) => state.hand
 export const useCreateNewCurationInfoTag = () => useProjectStore((state) => state.createNewInfoTag);
 export const useUpdateCurationColumns = () => useProjectStore((state) => state.updateCurationColumns);
 export const useCreateNewCurationImport = () => useProjectStore((state) => state.createNewCurationImport);
+export const useDeleteCurationImport = () => useProjectStore((state) => state.deleteCurationImport);
 export const useAddNewCurationStubs = () => useProjectStore((state) => state.addNewStubs);
 export const useInitCuration = () => useProjectStore((state) => state.initCuration);
 export const useUpdateStubField = () => useProjectStore((state) => state.updateStubField);
@@ -729,7 +739,6 @@ export const useAddTagToStub = () => useProjectStore((state) => state.addTagToSt
 export const useRemoveTagFromStub = () => useProjectStore((state) => state.removeTagFromStub);
 export const useSetExclusionFromStub = () => useProjectStore((state) => state.setExclusionForStub);
 export const useCreateNewExclusion = () => useProjectStore((state) => state.createNewExclusion);
-export const useDeleteStub = () => useProjectStore((state) => state.deleteStub);
 export const useUpdateProjectMetadata = () => useProjectStore((state) => state.updateProjectMetadata);
 
 export const useInitProjectStoreIfRequired = () => {

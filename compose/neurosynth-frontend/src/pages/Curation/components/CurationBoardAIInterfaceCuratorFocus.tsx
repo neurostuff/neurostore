@@ -27,7 +27,7 @@ const CurationBoardAIInterfaceCuratorFocus: React.FC<ICurationBoardAIInterfaceCu
         onSetSelectedStub(nextStub.id);
     }, [onSetSelectedStub, selectedStub?.id, stubs]);
 
-    const pxInVh = Math.round(windowHeight - 260);
+    const pxInVh = Math.round(windowHeight - 280);
 
     // cant use useRef as the listRef does not exist due to it being rendered
     // later as a dialog. useEffect also does not keep track of useRef value changes
@@ -45,8 +45,8 @@ const CurationBoardAIInterfaceCuratorFocus: React.FC<ICurationBoardAIInterfaceCu
     useEffect(() => {
         if (!listRef.current) return;
         const selectedItemIndex = (stubs || []).findIndex((x) => x.id === selectedStub?.id);
-        listRef.current.scrollToItem(selectedItemIndex, 'start');
-    }, [selectedStub?.id, stubs]);
+        listRef.current.scrollToItem(selectedItemIndex, 'smart');
+    }, [selectedStub?.id, stubs, pxInVh]);
 
     useEffect(() => {
         if (scrollableBoxRef.current) {
@@ -55,7 +55,7 @@ const CurationBoardAIInterfaceCuratorFocus: React.FC<ICurationBoardAIInterfaceCu
     }, [selectedStub?.id]);
 
     return (
-        <Box sx={{ display: 'flex', padding: '0 1rem 1rem 1rem', height: 'calc(100% - 48px - 8px)' }}>
+        <Box sx={{ display: 'flex', padding: '0 1rem 1rem 1rem', height: 'calc(100% - 48px - 8px - 20px)' }}>
             {stubs.length === 0 && (
                 <Typography color="warning.dark">
                     No studies. To import studies, click the import button above.

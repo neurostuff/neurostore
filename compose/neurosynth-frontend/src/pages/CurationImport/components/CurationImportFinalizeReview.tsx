@@ -7,7 +7,7 @@ import CurationImportFinalizeReviewVirtualizedListItem from './CurationImportFin
 import { ICurationStubStudy } from 'pages/Curation/Curation.types';
 import React from 'react';
 
-const CuraitonImportFinalizeReviewFixedSizeListRow: React.FC<
+const CurationImportFinalizeReviewFixedSizeListRow: React.FC<
     ListChildComponentProps<{
         stubs: ICurationStubStudy[];
     }>
@@ -17,7 +17,7 @@ const CuraitonImportFinalizeReviewFixedSizeListRow: React.FC<
     return <CurationImportFinalizeReviewVirtualizedListItem {...stub} style={props.style} />;
 };
 
-const LIST_HEIGHT = 140;
+const LIST_HEIGHT = 95;
 
 const CurationImportFinalizeReview: React.FC<{
     stubs: ICurationStubStudy[];
@@ -102,7 +102,7 @@ const CurationImportFinalizeReview: React.FC<{
                             }}
                             overscanCount={3}
                         >
-                            {CuraitonImportFinalizeReviewFixedSizeListRow}
+                            {CurationImportFinalizeReviewFixedSizeListRow}
                         </FixedSizeList>
                     </NeurosynthAccordion>
                 </Box>
@@ -131,7 +131,7 @@ const CurationImportFinalizeReview: React.FC<{
                             height={excludedStudiesListHeight}
                             itemCount={excludedStubs.length}
                             width="100%"
-                            itemSize={150}
+                            itemSize={LIST_HEIGHT}
                             itemKey={(index, data) => data.stubs[index]?.id}
                             layout="vertical"
                             itemData={{
@@ -139,7 +139,7 @@ const CurationImportFinalizeReview: React.FC<{
                             }}
                             overscanCount={3}
                         >
-                            {CuraitonImportFinalizeReviewFixedSizeListRow}
+                            {CurationImportFinalizeReviewFixedSizeListRow}
                         </FixedSizeList>
                     </NeurosynthAccordion>
                 </Box>

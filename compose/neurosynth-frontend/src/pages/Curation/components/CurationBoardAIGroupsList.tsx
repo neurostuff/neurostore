@@ -1,10 +1,4 @@
 import { Box, Chip, List, ListItem, ListItemButton, ListItemText, ListSubheader } from '@mui/material';
-import {
-    useProjectCurationColumns,
-    useProjectCurationExclusionTags,
-    useProjectCurationImports,
-} from 'pages/Project/store/ProjectStore';
-import { useEffect, useMemo } from 'react';
 import { ECurationBoardAIInterface } from './CurationBoardAi';
 import CurationBoardAIGroupsStyles from './CurationBoardAIGroups.styles';
 
@@ -24,64 +18,9 @@ export interface IGroupListItem {
 
 const CurationBoardAIGroupsList: React.FC<{
     selectedGroup: IGroupListItem | undefined;
+    groups: IGroupListItem[];
     onSelectGroup: (selectedInterface: IGroupListItem) => void;
-}> = ({ selectedGroup, onSelectGroup }) => {
-    const excludedGroups = useProjectCurationExclusionTags();
-    const curationColumns = useProjectCurationColumns();
-    const curationImports = useProjectCurationImports();
-
-    const GROUPS: IGroupListItem[] = useMemo(() => {
-        const menuItems: IGroupListItem[] = [
-            ...curationColumns.map((curationColumn) => {
-                return {
-                    id: curationColumn.id,
-                    type: 'LISTITEM',
-                    label: curationColumn.name,
-                    count: curationColumn.stubStudies.filter((x) => x.exclusionTag === null).length,
-                    UI: ECurationBoardAIInterface.CURATOR,
-                } as IGroupListItem;
-            }),
-            { id: 'excluded_studies_header', type: 'SUBHEADER', label: 'Excluded Studies', count: null, UI: null },
-            ...excludedGroups.map((excludedGroup) => {
-                const numExcludedInGroup = curationColumns.reduce((acc, curr) => {
-                    return acc + curr.stubStudies.filter((study) => study.exclusionTag?.id === excludedGroup.id).length;
-                }, 0);
-
-                return {
-                    id: excludedGroup.id,
-                    type: 'LISTITEM',
-                    label: excludedGroup.label,
-                    count: numExcludedInGroup,
-                    UI: ECurationBoardAIInterface.EXCLUDE,
-                } as IGroupListItem;
-            }),
-        ];
-
-        if (curationImports.length > 0) {
-            menuItems.push(
-                { id: 'imports_header', type: 'SUBHEADER', label: 'Imports', count: null, UI: null },
-                ...curationImports.map(
-                    (curationImport) =>
-                        ({
-                            id: curationImport.id,
-                            type: 'LISTITEM',
-                            label: curationImport.name,
-                            count: curationImport.numImported,
-                            UI: ECurationBoardAIInterface.IMPORT_SUMMARY,
-                        }) as IGroupListItem
-                )
-            );
-        }
-
-        return menuItems;
-    }, [curationColumns, excludedGroups, curationImports]);
-
-    useEffect(() => {
-        if (selectedGroup === undefined && curationColumns.length > 0) {
-            onSelectGroup(GROUPS[0]);
-        }
-    }, [GROUPS, curationColumns.length, onSelectGroup, selectedGroup]);
-
+}> = ({ selectedGroup, onSelectGroup, groups }) => {
     const handleSelectGroup = (group: IGroupListItem) => {
         onSelectGroup(group);
     };
@@ -97,7 +36,7 @@ const CurationBoardAIGroupsList: React.FC<{
             }}
         >
             <Box sx={{ direction: 'ltr' }}>
-                {GROUPS.map((group) => {
+                {groups.map((group) => {
                     return group.type === 'LISTITEM' ? (
                         <ListItem
                             key={group.id}
@@ -118,7 +57,6 @@ const CurationBoardAIGroupsList: React.FC<{
                                             ...CurationBoardAIGroupsStyles.lineClamp3,
                                         },
                                     }}
-                                    // primaryTypographyProps={{ fontSize: '12px' }}
                                     primary={group.label}
                                 />
                                 <Chip label={group.count} sx={{ fontSize: '12px', height: '20px' }} />

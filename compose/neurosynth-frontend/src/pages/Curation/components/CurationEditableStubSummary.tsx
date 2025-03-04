@@ -1,19 +1,14 @@
-import { Box, Button, Typography } from '@mui/material';
-import { ICurationStubStudy } from 'pages/Curation/Curation.types';
-import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
+import { Box, Typography } from '@mui/material';
+import DisplayStudyLinkFullText from 'components/DisplayStudyLink/DisplayStudyLinkFullText';
+import EditableDisplayLink from 'components/DisplayStudyLink/EditableDisplayLink';
 import TextEdit from 'components/TextEdit/TextEdit';
 import { PUBMED_ARTICLE_URL_PREFIX } from 'hooks/external/useGetPubMedIds';
 import { ISource } from 'hooks/projects/useGetProjects';
 import useUserCanEdit from 'hooks/useUserCanEdit';
-import {
-    useDeleteStub,
-    useProjectCurationColumns,
-    useProjectUser,
-    useUpdateStubField,
-} from 'pages/Project/store/ProjectStore';
-import React, { useState } from 'react';
+import { ICurationStubStudy } from 'pages/Curation/Curation.types';
+import { useProjectCurationColumns, useProjectUser, useUpdateStubField } from 'pages/Project/store/ProjectStore';
+import React from 'react';
 import CurationEditableStubSummaryHeader from './CurationEditableStubSummaryHeader';
-import DisplayStudyLinks from 'components/DisplayStudyLinks/DisplayStudyLinks';
 
 interface ICurationEditableStubSummary {
     stub: ICurationStubStudy | undefined;
@@ -21,11 +16,13 @@ interface ICurationEditableStubSummary {
     onMoveToNextStub: () => void;
 }
 
-const CurationEditableStubSummary: React.FC<ICurationEditableStubSummary> = (props) => {
+const CurationEditableStubSummary: React.FC<ICurationEditableStubSummary> = ({
+    stub,
+    columnIndex,
+    onMoveToNextStub,
+}) => {
     const updateStubField = useUpdateStubField();
     const curationColumns = useProjectCurationColumns();
-    const deleteStub = useDeleteStub();
-    const [deleteStubConfirmationIsOpen, setDeleteStubConfirmationIsOpen] = useState(false);
     const projectUser = useProjectUser();
     const canEdit = useUserCanEdit(projectUser || undefined);
 
@@ -33,35 +30,19 @@ const CurationEditableStubSummary: React.FC<ICurationEditableStubSummary> = (pro
         if (!canEdit) return;
         const stubKey = label as unknown as keyof ICurationStubStudy;
 
-        if (props.stub?.id) {
+        if (stub?.id) {
             // update the article link if PMID is being updated
-            if (stubKey === 'pmid' && props.stub.articleLink.includes(PUBMED_ARTICLE_URL_PREFIX)) {
-                updateStubField(
-                    props.columnIndex,
-                    props.stub.id,
-                    'articleLink',
-                    `${PUBMED_ARTICLE_URL_PREFIX}${updatedText}`
-                );
+            if (stubKey === 'pmid' && stub.articleLink.includes(PUBMED_ARTICLE_URL_PREFIX)) {
+                updateStubField(columnIndex, stub.id, 'articleLink', `${PUBMED_ARTICLE_URL_PREFIX}${updatedText}`);
             }
 
-            updateStubField(props.columnIndex, props.stub.id, stubKey, updatedText);
+            updateStubField(columnIndex, stub.id, stubKey, updatedText);
         }
     };
 
-    const handleCloseDialog = (confirm?: boolean) => {
-        if (!props.stub?.id) return;
+    const isLastColumn = curationColumns.length - 1 === columnIndex;
 
-        setDeleteStubConfirmationIsOpen(false);
-
-        if (confirm) {
-            deleteStub(props.columnIndex, props.stub?.id);
-            props.onMoveToNextStub();
-        }
-    };
-
-    const isLastColumn = curationColumns.length - 1 === props.columnIndex;
-
-    if (!props.stub) {
+    if (!stub) {
         return (
             <Box sx={{ padding: '2rem' }}>
                 <Typography sx={{ color: 'warning.dark' }}>No study selected</Typography>
@@ -79,31 +60,65 @@ const CurationEditableStubSummary: React.FC<ICurationEditableStubSummary> = (pro
                     zIndex: 1000,
                 }}
             >
-                <DisplayStudyLinks
-                    doi={props.stub.doi}
-                    pmid={props.stub.pmid}
-                    studyName={props.stub.title}
-                    pmcid={props.stub.pmcid}
-                />
+                <Box sx={{ display: 'flex' }}>
+                    <EditableDisplayLink
+                        stubId={stub.id}
+                        linkProps={{ href: stub.doi }}
+                        label="DOI Link"
+                        noLabelText="No DOI"
+                        textEditProps={{
+                            editIconIsVisible: canEdit,
+                            onSave: handleUpdateStub,
+                            label: 'doi',
+                            textToEdit: stub.doi,
+                            placeholder: 'https://doi.org/10.1038/nmeth.1635',
+                        }}
+                    />
+                    <EditableDisplayLink
+                        stubId={stub.id}
+                        linkProps={{ href: stub.pmid }}
+                        label="Pubmed Study"
+                        noLabelText="No PMID"
+                        textEditProps={{
+                            editIconIsVisible: canEdit,
+                            onSave: handleUpdateStub,
+                            label: 'pmid',
+                            textToEdit: stub.pmid,
+                            placeholder: '21706013',
+                            textFieldSx: {
+                                minWidth: '130px !important',
+                                width: '130px !important',
+                                maxWidth: '130px !important',
+                            },
+                        }}
+                    />
+                    <EditableDisplayLink
+                        stubId={stub.id}
+                        linkProps={{ href: stub.pmcid }}
+                        label="PMCID"
+                        noLabelText="No PMCID"
+                        textEditProps={{
+                            editIconIsVisible: canEdit,
+                            onSave: handleUpdateStub,
+                            label: 'pmcid',
+                            textToEdit: stub.pmcid,
+                            placeholder: 'PMC3146590',
+                            textFieldSx: {
+                                minWidth: '130px !important',
+                                width: '130px !important',
+                                maxWidth: '130px !important',
+                            },
+                        }}
+                        tooltip="View the full article in HTML form via Pubmed Central"
+                    />
+                    {stub.title && <DisplayStudyLinkFullText studyName={stub.title} />}
+                </Box>
                 <CurationEditableStubSummaryHeader
-                    type={isLastColumn ? 'included' : props.stub.exclusionTag ? 'excluded' : 'default'}
-                    stub={props.stub}
-                    columnIndex={props.columnIndex}
-                    onMoveToNextStub={props.onMoveToNextStub}
+                    type={isLastColumn ? 'included' : stub.exclusionTag ? 'excluded' : 'default'}
+                    stub={stub}
+                    columnIndex={columnIndex}
+                    onMoveToNextStub={onMoveToNextStub}
                 />
-            </Box>
-
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <Typography sx={{ marginRight: '4px' }} variant="body2">
-                    Year:
-                </Typography>
-                <Typography
-                    gutterBottom={false}
-                    sx={{ color: props.stub.articleYear ? 'initial' : 'warning.dark' }}
-                    variant="body2"
-                >
-                    {props.stub.articleYear || 'No Year'}
-                </Typography>
             </Box>
 
             <Box>
@@ -112,143 +127,60 @@ const CurationEditableStubSummary: React.FC<ICurationEditableStubSummary> = (pro
                     onSave={handleUpdateStub}
                     label="title"
                     multiline
-                    textToEdit={props.stub.title}
+                    textToEdit={stub.title}
                     editIconIsVisible={canEdit}
                 >
                     <Typography
                         sx={{
-                            color: props.stub.title ? '' : 'warning.dark',
-                            fontWeight: props.stub.title ? 'bold' : 'normal',
+                            color: stub.title ? '' : 'warning.dark',
+                            fontWeight: stub.title ? 'bold' : 'normal',
                         }}
                         variant="h6"
                     >
-                        {props.stub.title || 'No Title'}
+                        {stub.articleYear ? `(${stub.articleYear}). ` : ''}
+                        {stub.title || 'No Title'}
                     </Typography>
                 </TextEdit>
             </Box>
 
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <Typography sx={{ marginRight: '4px' }} variant="body2">
-                    DOI:
-                </Typography>
-                <TextEdit
-                    textFieldSx={{
-                        input: {
-                            padding: 0,
-                            fontSize: '0.875rem',
-                        },
-                        minWidth: '300px !important',
-                    }}
-                    onSave={handleUpdateStub}
-                    placeholder="10.1038/nmeth.1635"
-                    textToEdit={props.stub.doi}
-                    editIconIsVisible={canEdit}
-                >
-                    <Typography sx={{ color: props.stub.doi ? 'initial' : 'warning.dark' }} variant="body2">
-                        {props.stub.doi || 'No DOI'}
-                    </Typography>
-                </TextEdit>
-            </Box>
-
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <Typography sx={{ marginRight: '4px' }} variant="body2">
-                    PMID:
-                </Typography>
-                <TextEdit
-                    textFieldSx={{ input: { padding: 0, fontSize: '0.875rem' }, minWidth: '0px !important' }}
-                    textToEdit={props.stub.pmid}
-                    onSave={handleUpdateStub}
-                    placeholder="21706013"
-                    editIconIsVisible={canEdit}
-                >
-                    <Typography sx={{ color: props.stub.pmid ? 'initial' : 'warning.dark' }} variant="body2">
-                        {props.stub.pmid || 'No PMID'}
-                    </Typography>
-                </TextEdit>
-            </Box>
-
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <Typography sx={{ marginRight: '4px' }} variant="body2">
-                    PMCID:
-                </Typography>
-                <TextEdit
-                    textFieldSx={{ input: { padding: 0, fontSize: '0.875rem' }, minWidth: '0px !important' }}
-                    textToEdit={props.stub.pmcid}
-                    onSave={handleUpdateStub}
-                    placeholder="PMC3146590"
-                    editIconIsVisible={canEdit}
-                >
-                    <Typography sx={{ color: props.stub.pmcid ? 'initial' : 'warning.dark' }} variant="body2">
-                        {props.stub.pmcid || 'No PMCID'}
-                    </Typography>
-                </TextEdit>
-            </Box>
-
-            <Typography
-                sx={{ color: props.stub.authors ? '' : 'warning.dark', paddingBottom: '0.5rem' }}
-                variant="body2"
-            >
-                {props.stub.authors || 'No Authors'}
+            <Typography sx={{ color: stub.authors ? 'muted.dark' : 'warning.dark' }} variant="body2">
+                {stub.authors || 'No Authors'}
             </Typography>
 
-            <Typography
-                sx={{ color: props.stub.journal ? 'initial' : 'warning.dark', paddingBottom: '0.5rem' }}
-                variant="body2"
-            >
-                {props.stub.journal || 'No Journal'}
+            <Typography sx={{ color: stub.journal ? 'muted.main' : 'warning.dark' }} variant="body2">
+                {stub.journal || 'No Journal'}
             </Typography>
 
             <Typography
                 variant="body2"
                 sx={{
                     whiteSpace: 'break-spaces',
-                    color: props.stub.identificationSource ? 'initial' : 'warning.dark',
-                    paddingBottom: '0.5rem',
+                    color: stub.identificationSource ? 'muted.main' : 'warning.dark',
                 }}
             >
-                Source: {props.stub.identificationSource?.label || 'No source'}
+                Source: {stub.identificationSource?.label || 'No source'}
             </Typography>
 
             <Typography
                 variant="body2"
                 sx={{
-                    color: props.stub.keywords ? 'initial' : 'warning.dark',
-                    fontWeight: props.stub.keywords ? 'bold' : 'initial',
+                    color: stub.keywords ? 'initial' : 'warning.dark',
+                    fontWeight: stub.keywords ? 'bold' : 'initial',
                     paddingBottom: '0.5rem',
                 }}
             >
-                {props.stub.keywords || 'No Keywords'}
+                {stub.keywords || 'No Keywords'}
             </Typography>
 
             <Typography
                 variant="body2"
                 sx={{
                     whiteSpace: 'break-spaces',
-                    color: props.stub.abstractText ? 'initial' : 'warning.dark',
+                    color: stub.abstractText ? 'initial' : 'warning.dark',
                 }}
             >
-                {props.stub.abstractText || 'No Abstract'}
+                {stub.abstractText || 'No Abstract'}
             </Typography>
-
-            <Box sx={{ marginTop: '0.875rem' }}>
-                <ConfirmationDialog
-                    isOpen={deleteStubConfirmationIsOpen}
-                    onCloseDialog={handleCloseDialog}
-                    dialogTitle="Are you sure you want to delete this study?"
-                    confirmText="Yes"
-                    rejectText="Cancel"
-                />
-                <Button
-                    onClick={() => setDeleteStubConfirmationIsOpen(true)}
-                    variant="contained"
-                    disableElevation
-                    disabled={!canEdit}
-                    color="error"
-                    size="small"
-                >
-                    Delete study
-                </Button>
-            </Box>
         </Box>
     );
 };

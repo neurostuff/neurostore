@@ -1,36 +1,5 @@
-import { defaultExclusionTags, ENeurosynthTagIds } from 'pages/Project/store/ProjectStore.types';
-import { IResolveProjectDuplicatesCurationStubStudy } from 'pages/CurationImport/CurationImport.types';
-
-import { ICurationColumn, ICurationStubStudy } from 'pages/Curation/Curation.types';
-
-export const flattenColumns = (cols: ICurationColumn[]): IResolveProjectDuplicatesCurationStubStudy[] => {
-    const allStubsInProject: IResolveProjectDuplicatesCurationStubStudy[] = (cols || []).reduce(
-        (acc, curr, currIndex) => {
-            const convertedStudies = curr.stubStudies.map((study, studyIndex) => {
-                const resolutionStr: 'duplicate' | 'not-duplicate' | 'resolved' | undefined = study.exclusionTag
-                    ? study.exclusionTag.id === ENeurosynthTagIds.DUPLICATE_EXCLUSION_ID
-                        ? 'duplicate'
-                        : 'resolved'
-                    : undefined;
-
-                return {
-                    ...study,
-                    columnIndex: currIndex,
-                    studyIndex: studyIndex,
-                    colName: curr.name,
-                    resolution: resolutionStr,
-                };
-            });
-
-            acc.push(...convertedStudies);
-
-            return acc;
-        },
-        [] as IResolveProjectDuplicatesCurationStubStudy[] // we need to typecast as typescript infers this type as never[]
-    );
-
-    return allStubsInProject;
-};
+import { defaultExclusionTags } from 'pages/Project/store/ProjectStore.types';
+import { ICurationStubStudy } from 'pages/Curation/Curation.types';
 
 // a study is defined as a duplicate if it has either a matching PMID, DOI, or title.
 // We must account for the case where a study has a missing PMID, DOI, or title as well.

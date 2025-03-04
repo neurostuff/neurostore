@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { IImportArgs } from './CurationImportDoImport';
 import CurationImportPMIDsFetch from './CurationImportPMIDsFetch';
 import CurationImportPMIDsUpload from './CurationImportPMIDsUpload';
+import { ICurationStubStudy } from 'pages/Curation/Curation.types';
+import { ENavigationButton } from 'components/Buttons/NavigationButtons';
 
 const CurationImportPMIDs: React.FC<IImportArgs> = (props) => {
     const { onNavigate, onImportStubs } = props;
@@ -14,11 +16,16 @@ const CurationImportPMIDs: React.FC<IImportArgs> = (props) => {
         setUploadIdsPhase(false);
     };
 
+    const handleOnStubsUploaded = (uploadedStubs: ICurationStubStudy[], unimportedStubs?: string[]) => {
+        onImportStubs(uploadedStubs, unimportedStubs);
+        onNavigate(ENavigationButton.NEXT);
+    };
+
     if (uploadIdsPhase) {
         return <CurationImportPMIDsUpload onNavigate={onNavigate} onPubmedIdsUploaded={handlePubmedIdsUploaded} />;
     }
 
-    return <CurationImportPMIDsFetch onStubsUploaded={onImportStubs} pubmedIds={parsedIds} />;
+    return <CurationImportPMIDsFetch onStubsUploaded={handleOnStubsUploaded} pubmedIds={parsedIds} />;
 };
 
 export default CurationImportPMIDs;
