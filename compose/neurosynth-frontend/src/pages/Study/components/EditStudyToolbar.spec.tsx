@@ -12,6 +12,7 @@ import { useStudyId } from 'pages/Study/store/StudyStore';
 import { useNavigate } from 'react-router-dom';
 import EditStudyToolbar from './EditStudyToolbar';
 import { setUnloadHandler } from 'helpers/BeforeUnload.helpers';
+import { IExtractionTableState } from 'pages/Extraction/components/ExtractionTable.helpers';
 
 vi.mock('hooks');
 vi.mock('pages/Study/hooks/useSaveStudy.tsx');
@@ -114,9 +115,10 @@ describe('EditStudyToolbar Component', () => {
                 `projectid-extraction-table`,
                 JSON.stringify({
                     columnFilters: [],
+                    pagination: { pageIndex: 0, pageSize: 25 },
                     sorting: [],
                     studies: ['study-1', 'study-2', 'study-3', 'study-4'],
-                })
+                } as IExtractionTableState)
             );
             (useStudyId as Mock).mockReturnValue('study-2');
             (useProjectExtractionStudysetId as Mock).mockReturnValue('studysetid');
@@ -138,9 +140,10 @@ describe('EditStudyToolbar Component', () => {
                 `projectid-extraction-table`,
                 JSON.stringify({
                     columnFilters: [],
+                    pagination: { pageIndex: 0, pageSize: 25 },
                     sorting: [],
                     studies: ['study-1', 'study-2', 'study-3', 'study-4'],
-                })
+                } as IExtractionTableState)
             );
             setUnloadHandler('study'); // simulate an unsaved change
             (useStudyId as Mock).mockReturnValue('study-2');
@@ -204,9 +207,10 @@ describe('EditStudyToolbar Component', () => {
                 `projectid-extraction-table`,
                 JSON.stringify({
                     columnFilters: [],
+                    pagination: { pageIndex: 0, pageSize: 25 },
                     sorting: [],
                     studies: ['study-1', 'study-2', 'study-3', 'study-4'],
-                })
+                } as IExtractionTableState)
             );
             (useStudyId as Mock).mockReturnValue('study-2');
             (useProjectExtractionStudysetId as Mock).mockReturnValue('studysetid');
@@ -228,9 +232,10 @@ describe('EditStudyToolbar Component', () => {
                 `projectid-extraction-table`,
                 JSON.stringify({
                     columnFilters: [],
+                    pagination: { pageIndex: 0, pageSize: 25 },
                     sorting: [],
                     studies: ['study-1', 'study-2', 'study-3', 'study-4'],
-                })
+                } as IExtractionTableState)
             );
             setUnloadHandler('study'); // simulate an unsaved change
             (useStudyId as Mock).mockReturnValue('study-2');
@@ -274,9 +279,10 @@ describe('EditStudyToolbar Component', () => {
                 `projectid-extraction-table`,
                 JSON.stringify({
                     columnFilters: [],
+                    pagination: { pageIndex: 0, pageSize: 25 },
                     sorting: [],
                     studies: ['study-1', 'study-2', 'study-3', 'study-4'],
-                })
+                } as IExtractionTableState)
             );
             (useStudyId as Mock).mockReturnValue('study-4');
             (useProjectExtractionStudysetId as Mock).mockReturnValue('studysetid');

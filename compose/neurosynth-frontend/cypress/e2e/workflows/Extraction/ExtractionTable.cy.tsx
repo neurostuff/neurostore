@@ -154,7 +154,7 @@ describe('ExtractionTable', () => {
             });
         });
 
-        it.only('should remove the filter if the delete button is clicked', () => {
+        it('should remove the filter if the delete button is clicked', () => {
             let studysetYear = '';
             // ARRANGE
             cy.wait('@studysetFixture').then((studysetFixture) => {
@@ -592,6 +592,7 @@ describe('ExtractionTable', () => {
     });
 
     describe('pagination', () => {
+        let studysetStudies = [];
         beforeEach(() => {
             cy.fixture('studyset').then((studyset) => {
                 // as we are artificially creating new studies below, the out of sync popup wil appear. That's expected and
@@ -601,8 +602,8 @@ describe('ExtractionTable', () => {
                 for (let i = 0; i < 100; i++) {
                     studies.push(...(studyset?.studies as StudyReturn[]));
                 }
-                studyset.studies = studies;
-                console.log(studyset);
+                studyset.studies = studies.map((study, index) => ({ ...study, id: index }));
+                studysetStudies = studyset.studies;
                 cy.intercept('GET', `**/api/studysets/*`, studyset).as('studysetFixture');
             });
         });
@@ -646,6 +647,31 @@ describe('ExtractionTable', () => {
             cy.get('tbody > tr').should('have.length', 100);
             cy.get('.MuiPaginationItem-root').contains('3');
         });
+
+        it('should select the correct page index', () => {
+            const thirdPage = cy.get('.MuiPaginationItem-circular').contains('3');
+            thirdPage.click();
+            thirdPage.should('have.class', 'Mui-selected');
+        })
+
+        it.only('should save the pagination to the table state', () => {
+            cy.get('[role="combobox"]').eq(2).click();
+            cy.get('div[role="presentation"]').within(() => {
+                cy.contains('10').click();
+            });
+
+            const thirdPage = cy.get('.MuiPaginationItem-circular').contains('3');
+            thirdPage.click();
+
+            cy.get('tbody > tr').eq(0).click();
+
+            cy.window().then((window) => {
+                const state = window.sessionStorage.getItem(`abc123-extraction-table`);
+                const parsedState = JSON.parse(state || '{}');
+                cy.wrap(parsedState).should('have.property', 'pagination');
+                cy.wrap(parsedState.pagination).should('deep.equal', { pageIndex: 2, pageSize: 10 });
+            })
+        })
     });
 
     describe('navigation', () => {
