@@ -737,7 +737,7 @@ export const usePromoteAllUncategorized = () => useProjectStore((state) => state
 export const useCreateCurationSource = () => useProjectStore((state) => state.createNewIdentificationSource);
 export const useAddTagToStub = () => useProjectStore((state) => state.addTagToStub);
 export const useRemoveTagFromStub = () => useProjectStore((state) => state.removeTagFromStub);
-export const useSetExclusionFromStub = () => useProjectStore((state) => state.setExclusionForStub);
+export const useSetExclusionForStub = () => useProjectStore((state) => state.setExclusionForStub);
 export const useCreateNewExclusion = () => useProjectStore((state) => state.createNewExclusion);
 export const useUpdateProjectMetadata = () => useProjectStore((state) => state.updateProjectMetadata);
 

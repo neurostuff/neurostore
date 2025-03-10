@@ -29,9 +29,12 @@ const CurationBoardAIInterfaceCuratorTableHeaderFilter: React.FC<{
         [column]
     );
 
-    const handleChangeNumericFilterMax = useCallback((value: string | undefined) => {
-        column.setFilterValue((old: [number, number]) => [old?.[0], value]);
-    }, []);
+    const handleChangeNumericFilterMax = useCallback(
+        (value: string | undefined) => {
+            column.setFilterValue((old: [number, number]) => [old?.[0], value]);
+        },
+        [column]
+    );
 
     switch (filterVariant) {
         case 'text':

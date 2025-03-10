@@ -1,29 +1,24 @@
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
+import HighlightOffIcon from '@mui/icons-material/HighlightOff';
 import { Box, Button, ButtonGroup, TextField } from '@mui/material';
 import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete';
 import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
-import { indexToPRISMAMapping, ITag } from 'hooks/projects/useGetProjects';
-import { useEffect, useRef, useState } from 'react';
-import { v4 as uuidv4 } from 'uuid';
-import HighlightOffIcon from '@mui/icons-material/HighlightOff';
-import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
-import NeurosynthPopper from 'components/NeurosynthPopper/NeurosynthPopper';
-import { defaultExclusionTags, ENeurosynthTagIds } from 'pages/Project/store/ProjectStore.types';
 import LoadingButton from 'components/Buttons/LoadingButton';
-import {
-    useCreateNewExclusion,
-    useProjectCurationExclusionTags,
-    useProjectCurationPrismaConfig,
-} from 'pages/Project/store/ProjectStore';
+import NeurosynthPopper from 'components/NeurosynthPopper/NeurosynthPopper';
+import { ITag } from 'hooks/projects/useGetProjects';
+import { useProjectCurationExclusionTags, useProjectCurationPrismaConfig } from 'pages/Project/store/ProjectStore';
+import { defaultExclusionTags, ENeurosynthTagIds } from 'pages/Project/store/ProjectStore.types';
+import { useEffect, useRef, useState } from 'react';
 
 interface IExclusionSelectorPopup {
     onAddExclusion: (tag: ITag) => void;
-    onCreateExclusion?: (tag: ITag) => void;
+    onCreateExclusion?: (tagName: string) => void;
     onClosePopup: () => void;
     onOpenPopup: () => void;
     isLoading?: boolean;
+    prismaPhase?: 'identification' | 'screening' | 'eligibility';
     disabled?: boolean;
-    columnIndex: number;
     popupIsOpen: boolean;
 }
 
@@ -48,7 +43,6 @@ const CurationPopupExclusionSelector: React.FC<IExclusionSelectorPopup> = (props
 
     const prismaConfig = useProjectCurationPrismaConfig();
     const genericExclusionTags = useProjectCurationExclusionTags();
-    const createExclusion = useCreateNewExclusion();
 
     useEffect(() => {
         if (!props.popupIsOpen) setSelectedValue(null);
@@ -56,8 +50,7 @@ const CurationPopupExclusionSelector: React.FC<IExclusionSelectorPopup> = (props
 
     useEffect(() => {
         if (prismaConfig.isPrisma) {
-            const phase = indexToPRISMAMapping(props.columnIndex);
-            const filteredExclusions = phase ? prismaConfig[phase].exclusionTags : [];
+            const filteredExclusions = props.prismaPhase ? prismaConfig[props.prismaPhase].exclusionTags : [];
 
             const exclusionOptions: AutoSelectOption[] = filteredExclusions.map((exclusion) => ({
                 id: exclusion.id,
@@ -67,13 +60,13 @@ const CurationPopupExclusionSelector: React.FC<IExclusionSelectorPopup> = (props
             setExclusions(exclusionOptions);
 
             // identification and screening phases only have a single exclusion
-            if (phase === 'identification') {
+            if (props.prismaPhase === 'identification') {
                 setDefaultExclusion({
                     id: ENeurosynthTagIds.DUPLICATE_EXCLUSION_ID,
                     label: 'Duplicate',
                     addOptionActualLabel: null,
                 });
-            } else if (phase === 'screening') {
+            } else if (props.prismaPhase === 'screening') {
                 setDefaultExclusion({
                     id: ENeurosynthTagIds.IRRELEVANT_EXCLUSION_ID,
                     label: 'Irrelevant',
@@ -84,21 +77,7 @@ const CurationPopupExclusionSelector: React.FC<IExclusionSelectorPopup> = (props
             setDefaultExclusion(defaultExclusionTags.exclusion);
             setExclusions(genericExclusionTags);
         }
-    }, [prismaConfig, genericExclusionTags, props.columnIndex]);
-
-    const handleCreateExclusion = (exclusionName: string) => {
-        const phase = prismaConfig.isPrisma ? indexToPRISMAMapping(props.columnIndex) : undefined;
-        const newExclusion = {
-            id: uuidv4(),
-            label: exclusionName,
-            isExclusionTag: true,
-            isAssignable: true,
-        };
-
-        createExclusion(newExclusion, phase);
-
-        if (props.onCreateExclusion) props.onCreateExclusion(newExclusion);
-    };
+    }, [prismaConfig, genericExclusionTags, props.prismaPhase]);
 
     const handleChange = (_event: React.SyntheticEvent<Element, Event>, newValue: string | AutoSelectOption | null) => {
         // if user hits enter after typing input, we get a string and handle it here
@@ -114,11 +93,11 @@ const CurationPopupExclusionSelector: React.FC<IExclusionSelectorPopup> = (props
                     isAssignable: true,
                 });
             } else {
-                handleCreateExclusion(newValue);
+                if (props.onCreateExclusion) props.onCreateExclusion(newValue);
             }
             // if user selects the "Add ..." option, we get an AutoSelectOption and handle it here
         } else if (newValue && newValue.addOptionActualLabel) {
-            handleCreateExclusion(newValue.addOptionActualLabel);
+            if (props.onCreateExclusion) props.onCreateExclusion(newValue.addOptionActualLabel);
             // if the user clicks an option, we get an AutoSelectOption and handle it here
         } else {
             setSelectedValue(newValue);
@@ -218,7 +197,7 @@ const CurationPopupExclusionSelector: React.FC<IExclusionSelectorPopup> = (props
                     sx={{ width: defaultExclusion ? '32px' : '140px' }}
                     onClick={() => props.onOpenPopup()}
                 >
-                    {defaultExclusion ? <ArrowDropDownIcon /> : 'exclude'}
+                    {defaultExclusion ? <ArrowDropDownIcon sx={{ fontSize: '22px' }} /> : 'exclude'}
                 </Button>
             </ButtonGroup>
         </>

@@ -2,17 +2,20 @@ import { useAuth0 } from '@auth0/auth0-react';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import { Box, Chip, Tooltip } from '@mui/material';
 import LoadingButton from 'components/Buttons/LoadingButton';
-import { ITag } from 'hooks/projects/useGetProjects';
+import { indexToPRISMAMapping, ITag } from 'hooks/projects/useGetProjects';
 import CurationPopupExclusionSelector from 'pages/Curation/components/CurationPopupExclusionSelector';
 import { ICurationStubStudy } from 'pages/Curation/Curation.types';
 import {
     useAddTagToStub,
+    useCreateNewExclusion,
     useDemoteStub,
+    useProjectCurationPrismaConfig,
     usePromoteStub,
-    useSetExclusionFromStub,
+    useSetExclusionForStub,
 } from 'pages/Project/store/ProjectStore';
 import { defaultInfoTags } from 'pages/Project/store/ProjectStore.types';
 import React, { useState } from 'react';
+import { v4 as uuid } from 'uuid';
 
 interface ICurationEditableStubSummaryHeader {
     type: 'excluded' | 'included' | 'default';
@@ -27,11 +30,14 @@ const CurationEditableStubSummaryHeader: React.FC<ICurationEditableStubSummaryHe
     const [exclusionTagSelectorIsOpen, setExclusionTagSelectorIsOpen] = useState(false);
 
     const addTagToStub = useAddTagToStub();
+    const prismaConfig = useProjectCurationPrismaConfig();
+    const prismaPhase = prismaConfig.isPrisma ? indexToPRISMAMapping(props.columnIndex) : undefined;
+    const createExclusion = useCreateNewExclusion();
     // const removeTagFromStub = useRemoveTagFromStub();
     const promoteStub = usePromoteStub();
     const demoteStub = useDemoteStub();
 
-    const setExclusionForStub = useSetExclusionFromStub();
+    const setExclusionForStub = useSetExclusionForStub();
 
     const handleAddTag = (tag: ITag) => {
         if (props.stub) {
@@ -44,13 +50,27 @@ const CurationEditableStubSummaryHeader: React.FC<ICurationEditableStubSummaryHe
     // };
 
     const handleRemoveExclusion = () => {
-        if (props.stub?.id) setExclusionForStub(props.columnIndex, props.stub.id, null);
+        if (!props.stub?.id) return;
+        setExclusionForStub(props.columnIndex, props.stub.id, null);
+        props.onMoveToNextStub();
     };
 
     const handleDemoteStub = () => {
         if (!props.stub.id) return;
         demoteStub(props.columnIndex, props.stub.id);
         props.onMoveToNextStub();
+    };
+
+    const handleCreateExclusion = (exclusionName: string) => {
+        const newExclusion = {
+            id: uuid(),
+            label: exclusionName,
+            isExclusionTag: true,
+            isAssignable: true,
+        };
+
+        createExclusion(newExclusion, prismaPhase);
+        handleAddExclusion(newExclusion);
     };
 
     const handleAddExclusion = (exclusionTag: ITag) => {
@@ -139,9 +159,9 @@ const CurationEditableStubSummaryHeader: React.FC<ICurationEditableStubSummaryHe
                         onOpenPopup={() => setExclusionTagSelectorIsOpen(true)}
                         onClosePopup={() => setExclusionTagSelectorIsOpen(false)}
                         onAddExclusion={handleAddExclusion}
-                        onCreateExclusion={handleAddExclusion}
+                        onCreateExclusion={handleCreateExclusion}
                         disabled={!isAuthenticated}
-                        columnIndex={props.columnIndex}
+                        prismaPhase={prismaPhase}
                     />
                 </Box>
             );

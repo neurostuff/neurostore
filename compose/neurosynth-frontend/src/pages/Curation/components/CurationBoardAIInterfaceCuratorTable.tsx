@@ -74,6 +74,7 @@ export const AI_INTERFACE_CURATOR_COLUMNS: ICurationBoardAIInterfaceCuratorTable
 const CurationBoardAIInterfaceCuratorTable: React.FC<ICurationBoardAIInterfaceCurator> = ({
     stubs,
     onSetSelectedStub,
+    columnIndex,
 }) => {
     // for virtualization
     // const sizeMap = useRef<{ [key: number]: number }>({});
@@ -100,6 +101,12 @@ const CurationBoardAIInterfaceCuratorTable: React.FC<ICurationBoardAIInterfaceCu
                     header: CuratorTableHeader,
                     enableSorting: foundColumn.canSort,
                     enableColumnFilter: foundColumn.filterVariant !== undefined,
+                    filterFn:
+                        foundColumn.filterVariant === 'text'
+                            ? 'arrIncludesSome'
+                            : foundColumn.filterVariant === 'numeric'
+                              ? 'inNumberRange'
+                              : undefined,
                     size: foundColumn.id === 'abstractText' ? 400 : 180,
                     sortingFn: foundColumn.sortingFn,
                     meta: {
@@ -178,7 +185,7 @@ const CurationBoardAIInterfaceCuratorTable: React.FC<ICurationBoardAIInterfaceCu
                 }}
             >
                 {Object.keys(rowSelection).length > 0 && (
-                    <CurationBoardAIInterfaceCuratorTableSelectedRowsActions table={table} />
+                    <CurationBoardAIInterfaceCuratorTableSelectedRowsActions table={table} columnIndex={columnIndex} />
                 )}
                 <CurationBoardAIInterfaceCuratorTableAddColumn
                     onAddColumn={handleAddColumn}
