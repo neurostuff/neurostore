@@ -164,9 +164,8 @@ const CurationEditableStubSummary: React.FC<ICurationEditableStubSummary> = ({
             <Typography
                 variant="body2"
                 sx={{
-                    color: stub.keywords ? 'initial' : 'warning.dark',
+                    color: stub.keywords ? 'primary.light' : 'warning.dark',
                     fontWeight: stub.keywords ? 'bold' : 'initial',
-                    paddingBottom: '0.5rem',
                 }}
             >
                 {stub.keywords || 'No Keywords'}

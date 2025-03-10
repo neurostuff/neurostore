@@ -19,12 +19,13 @@ export const ExtractionTableAuthorHeader: React.FC<HeaderContext<IExtractionTabl
     table,
     column,
 }) => {
+    const columnLabel = column.columnDef.meta?.columnLabel || '';
     const isSorted = column.getIsSorted();
 
     return (
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
             <Typography sx={{ marginRight: '4px' }} variant="h6">
-                Authors
+                {columnLabel}
             </Typography>
             {!isSorted ? (
                 <Tooltip title="Sort by author" placement="top">
