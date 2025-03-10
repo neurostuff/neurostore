@@ -103,6 +103,7 @@ const CurationBoardAIInterfaceCurator: React.FC<{ group: IGroupListItem }> = ({ 
             </Box>
             {UIMode === 'TABLEMODE' ? (
                 <CurationBoardAIInterfaceCuratorTable
+                    key={group.id} // reset table state when group is changed
                     selectedStub={selectedStub}
                     columnIndex={columnIndex}
                     stubs={stubsInColumn}

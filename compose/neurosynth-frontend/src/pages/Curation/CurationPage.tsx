@@ -1,5 +1,6 @@
 import ChangeHistoryIcon from '@mui/icons-material/ChangeHistory';
-import { Box, Button, Tooltip } from '@mui/material';
+import { Box, Button } from '@mui/material';
+import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs';
 import ProjectIsLoadingText from 'components/ProjectIsLoadingText';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
@@ -20,7 +21,6 @@ import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import CurationBoardAI from './components/CurationBoardAi';
 import PrismaDialog from './components/PrismaDialog';
-import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 
 const CurationPage: React.FC = () => {
     const { projectId } = useParams<{ projectId: string | undefined }>();
@@ -124,20 +124,15 @@ const CurationPage: React.FC = () => {
                                     confirmText="Continue"
                                     dialogMessage="All studies that have not been explicitly excluded will be included"
                                 />
-                                <Tooltip
-                                    title="Click this button to skip curation and automatically include all studies"
-                                    placement="top"
+                                <Button
+                                    onClick={() => setSkipCurationDialogIsOpen(true)}
+                                    color="success"
+                                    variant="outlined"
+                                    size="small"
+                                    disabled={uncategorized === 0}
                                 >
-                                    <Button
-                                        onClick={() => setSkipCurationDialogIsOpen(true)}
-                                        color="success"
-                                        variant="outlined"
-                                        size="small"
-                                        disabled={uncategorized === 0}
-                                    >
-                                        skip curation
-                                    </Button>
-                                </Tooltip>
+                                    skip curation
+                                </Button>
                             </>
                         )}
                         <Button
