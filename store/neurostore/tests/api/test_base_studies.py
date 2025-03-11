@@ -5,8 +5,11 @@ from neurostore.schemas import StudySchema
 
 
 def test_features_query(auth_client, ingest_demographic_features):
+    # Add OR functionality for multiple tasks (OR conditions)
+    # flatten the features (flatten json objects)
+    # test features organized like this: {top_key: ["list", "of", "values"]}
     result = auth_client.get(
-        "/api/base-studies/?feature_filter=demographics.predictions.age>10&feature_filter=demographics.predictions.age<=100&feature_display=demographics"
+        "/api/base-studies/?feature_filter=ParticipantInfo:predictions.groups[].age_mean>10&feature_filter=ParticipantInfo:predictions.groups[].age_mean<=100&feature_display=ParticipantInfo"
     )
     assert result.status_code == 200
     assert "features" in result.json()["results"][0]

@@ -11,6 +11,8 @@ from sqlalchemy.orm import (
 )
 from sqlalchemy.sql import func
 from sqlalchemy import select
+from sqlalchemy.orm import aliased
+
 
 
 from .utils import view_maker, get_current_user, build_jsonb_filter
@@ -445,10 +447,84 @@ class BaseStudiesView(ObjectView, ListView):
         if args.get("level"):
             q = q.filter(self._model.level == args.get("level"))
 
-        # filter results based on AI features
-        if args.get("feature_filter", None):
-            for ff in args.get("feature_filter"):
-                q = build_jsonb_filter(q, ff)
+        # Filter based on pipeline results
+        from flask import abort
+        from sqlalchemy import func, text
+        from ..models import Pipeline, PipelineConfig, PipelineStudyResult
+        from ..resources.pipeline import parse_json_filter, build_jsonpath
+    
+        feature_filters = args.get("feature_filter", [])
+        if isinstance(feature_filters, str):
+            feature_filters = [feature_filters]
+            
+        # Don't allow empty string filters
+        feature_filters = [f for f in feature_filters if f.strip()]
+        if not feature_filters:
+            return q
+            
+        invalid_filters = []
+        for feature_filter in feature_filters:
+            try:
+                pipeline_name, field_path, operator, value = parse_json_filter(feature_filter)
+                
+                # Build the path filter
+                jsonpath = build_jsonpath(field_path, operator, value)
+                
+                # Create aliases for joining
+                PipelineStudyResultAlias = aliased(PipelineStudyResult)
+                PipelineConfigAlias = aliased(PipelineConfig)
+                PipelineAlias = aliased(Pipeline)
+    
+                # Add joins to get from base study to pipeline results
+                q = q.outerjoin(
+                    PipelineStudyResultAlias,
+                    self._model.id == PipelineStudyResultAlias.base_study_id
+                )
+                q = q.outerjoin(
+                    PipelineConfigAlias,
+                    PipelineStudyResultAlias.config_id == PipelineConfigAlias.id
+                )
+                q = q.outerjoin(
+                    PipelineAlias,
+                    PipelineConfigAlias.pipeline_id == PipelineAlias.id
+                )
+                
+                # Get most recent pipeline results
+                subquery = (
+                    db.session.query(
+                        PipelineStudyResultAlias.base_study_id,
+                        func.max(PipelineStudyResultAlias.date_executed).label("max_date_executed")
+                    )
+                    .group_by(PipelineStudyResultAlias.base_study_id)
+                    .subquery()
+                )
+    
+                # Only use most recent results
+                q = q.join(
+                    subquery,
+                    (PipelineStudyResultAlias.base_study_id == subquery.c.base_study_id) &
+                    (PipelineStudyResultAlias.date_executed == subquery.c.max_date_executed)
+                )
+                
+                # Filter by pipeline name and jsonpath
+                q = q.filter(PipelineAlias.name == pipeline_name)
+                q = q.filter(
+                    text("jsonb_path_exists(result_data, :jsonpath)")
+                    .params(jsonpath=jsonpath)
+                )
+    
+            except ValueError as e:
+                invalid_filters.append({
+                    "filter": feature_filter,
+                    "error": str(e)
+                })
+                
+        # If any filters were invalid, return 400 with error details
+        if invalid_filters:
+            abort(400, {
+                "message": "Invalid feature filter(s)",
+                "errors": invalid_filters
+            })
         return q
 
     def join_tables(self, q, args):

@@ -257,6 +257,54 @@ def pubmed_to_tsquery(query: str) -> str:
     return " ".join(processed_tokens)
 
 
+def validate_pipeline_filter(filter_spec):
+    """Validate pipeline filter format and return components.
+    
+    Args:
+        filter_spec (str): Filter specification in format "PipelineName:path.to.field=value"
+        
+    Returns:
+        tuple: (pipeline_name, field_path, operator, value)
+        
+    Raises:
+        ValidationError: If filter format is invalid
+    """
+    from webargs import ValidationError
+    
+    if ":" not in filter_spec:
+        raise ValidationError("Missing pipeline name in filter")
+        
+    pipeline_name, rest = filter_spec.split(":", 1)
+    
+    if not pipeline_name:
+        raise ValidationError("Empty pipeline name in filter")
+        
+    if ".." in rest:
+        raise ValidationError("Contains consecutive dots")
+        
+    if "[[" in rest or "]]" in rest:
+        raise ValidationError("Invalid path segment")
+        
+    pattern = r"(<=|>=|<|>|=|~|!=|\[\])"
+    match = re.search(pattern, rest)
+    if not match:
+        raise ValidationError("Invalid filter format")
+        
+    operator = match.group(0)
+    path, value = rest.split(operator, 1)
+    
+    if not path or not value:
+        raise ValidationError("Empty path or value in filter")
+        
+    # Try to parse numeric values
+    if operator in ('>', '<', '>=', '<='):
+        try:
+            float(value)
+        except ValueError:
+            raise ValidationError(f"Invalid numeric value '{value}'")
+            
+    return pipeline_name, path, operator, value
+
 def parse_filter_value(value):
     """Parse filter values to detect operators and handle multiple conditions."""
     operators = [">=", "<=", "!=", ">", "<", "~"]
@@ -269,7 +317,7 @@ def parse_filter_value(value):
 
     for op in operators:
         if value.startswith(op):
-            return op, value[len(op) :]
+            return op, value[len(op):]
 
     if "," in value:  # IN condition
         return "IN", value.split(",")
@@ -294,10 +342,6 @@ def determine_cast_type(value):
     return String
 
 
-from sqlalchemy import func, cast, Integer, String, Float, Boolean, and_, or_
-from sqlalchemy.orm import aliased
-
-
 def build_jsonb_filter(query, filters):
     """
     Converts deeply nested JSON filters into SQLAlchemy filter expressions.
@@ -307,14 +351,16 @@ def build_jsonb_filter(query, filters):
       - Range queries (info.user.age>=30)
       - LIKE queries (info.user.name~Jo for "LIKE 'Jo%'")
       - Boolean filtering (info.user.active=true)
-      - AND (`&`) and OR (`|`) grouping
+      - Array containment (@?) for array fields
+      - OR conditions with array values (modality=[EEG|fMRI])
+      - Proper type casting for numeric comparisons
     """
 
     parts = filters.split(".", 1)
-    pipeline_name = parts[0]
+    pipeline_name = parts[0] 
     keys = parts[1].split(".") if len(parts) > 1 else []
 
-    pattern = r"(<=|>=|<|>|=|~|!=)"
+    pattern = r"(<=|>=|<|>|=|~|!=|\[\])"
 
     # Extract the last key
     if keys:
@@ -323,6 +369,9 @@ def build_jsonb_filter(query, filters):
         if match:
             operator = match.group(0)
             last_key, value = last_key_value.split(operator, 1)
+            # Handle array operator
+            if operator == "[]":
+                operator = "@?"
         else:
             operator = None
             value = last_key_value
@@ -333,17 +382,57 @@ def build_jsonb_filter(query, filters):
     if len(keys) > 1:
         keys[-1] = last_key
 
-    # create the aliases
+    # Create the aliases
     PipelineStudyResultAlias = aliased(models.PipelineStudyResult)
     PipelineConfigAlias = aliased(models.PipelineConfig)
     PipelineAlias = aliased(models.Pipeline)
 
-    jsonb_path = "->".join(f"'{k}'" for k in keys[:-1])  # info->'user'
-    last_key = keys[-1]  # 'age'
+    # Determine the type for casting
+    cast_type = determine_cast_type(value)
 
-    jsonpath_query = f"$.{pipeline_name}.{jsonb_path}.{last_key}{operator}{value}"
+    # Parse the value for possible OR conditions
+    op, parsed_value = parse_filter_value(value) if value else ("=", None)
+
+    # Build the jsonpath query based on operator type
+    if operator == "@?":
+        # Array containment - handle OR conditions
+        if isinstance(parsed_value, list):
+            # Multiple values with OR
+            conditions = []
+            for val in parsed_value:
+                if cast_type in (Integer, Float):
+                    conditions.append(f"@ == {val}")
+                else:
+                    conditions.append(f"@ == '{val}'")
+            array_condition = " || ".join(conditions)
+            jsonpath_query = f"strict $.{'.'.join(keys[:-1])}[*] ? ({array_condition})"
+        else:
+            # Single value
+            if cast_type in (Integer, Float):
+                jsonpath_query = f"strict $.{'.'.join(keys[:-1])}[*] ? (@ == {parsed_value})"
+            else:
+                jsonpath_query = f"strict $.{'.'.join(keys[:-1])}[*] ? (@ == '{parsed_value}')"
+    
+    elif operator == "~":
+        # Text search
+        jsonpath_query = f"strict $.{'.'.join(keys)} ? (@ like_regex '{parsed_value}')"
+    
+    elif operator == "=":
+        # Equality with type casting
+        if cast_type in (Integer, Float):
+            jsonpath_query = f"strict $.{'.'.join(keys)} ? (@ == {parsed_value})"
+        else:
+            jsonpath_query = f"strict $.{'.'.join(keys)} ? (@ == '{parsed_value}')"
+    
+    else:
+        # Other comparisons with type casting
+        if cast_type in (Integer, Float):
+            jsonpath_query = f"strict $.{'.'.join(keys)} ? (@ {operator} {parsed_value})"
+        else:
+            jsonpath_query = f"strict $.{'.'.join(keys)} ? (@ {operator} '{parsed_value}')"
 
     if jsonpath_query:
+        # Join the necessary tables
         query = query.outerjoin(
             PipelineStudyResultAlias,
             models.BaseStudy.id == PipelineStudyResultAlias.base_study_id,
@@ -352,7 +441,7 @@ def build_jsonb_filter(query, filters):
             PipelineConfigAlias,
             PipelineStudyResultAlias.config_id == PipelineConfigAlias.id,
         )
-        query = query.outerjoin(PipelineAlias, PipelineAlias.id == PipelineAlias.id)
+        query = query.outerjoin(PipelineAlias, PipelineAlias.id == PipelineConfigAlias.pipeline_id)
 
         query = query.filter(PipelineAlias.name == pipeline_name)
 
@@ -368,6 +457,7 @@ def build_jsonb_filter(query, filters):
             .subquery()
         )
 
+        # Only filter based on the most recently run results
         query = query.join(
             subquery,
             (PipelineStudyResultAlias.base_study_id == subquery.c.base_study_id)

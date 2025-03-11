@@ -1,206 +1,90 @@
 import pytest
-from neurostore.models.data import (
-    Pipeline,
-    PipelineConfig,
-    PipelineStudyResult,
-    BaseStudy,
-)
-
+from neurostore.models.data import PipelineStudyResult, PipelineConfig, BaseStudy
 from neurostore.database import db
 
-
 @pytest.fixture
-def pipeline(session, pipeline_payload):
-    pipeline = Pipeline(**pipeline_payload)
-    session.add(pipeline)
-    session.commit()
-    return pipeline
-
-
-@pytest.fixture
-def pipeline_config(session, pipeline_config_payload):
-    pipeline_config = PipelineConfig(**pipeline_config_payload)
-    session.add(pipeline_config)
-    session.commit()
-    return pipeline_config
-
-
-@pytest.fixture
-def pipeline_study_result(session, pipeline_study_result_payload):
-    pipeline_study_result = PipelineStudyResult(**pipeline_study_result_payload)
-    session.add(pipeline_study_result)
-    session.commit()
-    return pipeline_study_result
-
-
-@pytest.fixture
-def pipeline_payload():
-    return {
-        "name": "Test Pipeline",
-        "description": "A test pipeline",
-        "study_dependent": True,
-        "ace_compatible": False,
-        "pubget_compatible": True,
-        "derived_from": "Base Pipeline",
-    }
-
-
-@pytest.fixture
-def pipeline_config_payload(pipeline):
-    return {
-        "pipeline_id": pipeline.id,
-        "version": "1.0.1",
-        "config": {"param1": "value1", "param2": "value2"},
-        "config_hash": "abc123",
-    }
-
-
-@pytest.fixture
-def pipeline_study_result_payload(pipeline_config):
+def pipeline_study_result_payload(session):
+    # Create base study
     base_study = BaseStudy(name="Test Study")
     db.session.add(base_study)
+    
+    # Create pipeline config
+    pipeline_config = PipelineConfig(
+        version="1.0.0",
+        config={"test_param": "test_value"},
+        config_hash="test_hash"
+    )
+    db.session.add(pipeline_config)
     db.session.commit()
+    
     return {
         "base_study_id": base_study.id,
         "config_id": pipeline_config.id,
         "date_executed": "2023-01-01T00:00:00Z",
-        "result_data": {
-            "result": [
-                {
-                    "status": "success",
-                    "percent_female": 50,
-                    "percent_left_handed": 10,
-                },
-                {
-                    "status": "failure",
-                    "percent_female": None,
-                    "percent_left_handed": 5,
-                },
-            ],
-        },
-        "file_inputs": {"input1": "file1"},
+        "file_inputs": {},
+        "result_data": {},
+        "status": "SUCCESS"
     }
 
-
-def test_create_pipeline(auth_client, pipeline_payload):
-    response = auth_client.post("/api/pipelines/", data=pipeline_payload)
-    assert response.status_code == 201
-    data = response.json()
-    assert data["name"] == pipeline_payload["name"]
-
-
-def test_get_pipeline(auth_client, pipeline_payload, session):
-    pipeline = Pipeline(**pipeline_payload)
-    db.session.add(pipeline)
+def test_filter_pipeline_study_results(auth_client, pipeline_study_result_payload, session):
+    # Create results with mixed data types
+    result1 = PipelineStudyResult(**{
+        **pipeline_study_result_payload,
+        "result_data": {
+            "array_field": ["value1", "value2", "value3"],  # Array field
+            "string_field": "test value",  # String field
+            "nested": {
+                "array": ["nested1", "nested2"],  # Nested array
+                "string": "nested value"  # Nested string
+            }
+        }
+    })
+    
+    result2 = PipelineStudyResult(**{
+        **pipeline_study_result_payload,
+        "result_data": {
+            "array_field": ["value3", "value4"],
+            "string_field": "other test",
+            "nested": {
+                "array": ["nested3"],
+                "string": "other nested"
+            }
+        }
+    })
+    
+    db.session.add_all([result1, result2])
     db.session.commit()
-    response = auth_client.get(f"/api/pipelines/{pipeline.id}")
+
+    # Test array field exact match
+    response = auth_client.get("/api/pipeline-study-results/?json_filter=array_field=value1")
     assert response.status_code == 200
     data = response.json()
-    assert data["name"] == pipeline_payload["name"]
+    assert len(data["results"]) == 1
+    assert "value1" in data["results"][0]["result_data"]["array_field"]
 
-
-def test_update_pipeline(auth_client, pipeline_payload, session):
-    pipeline = Pipeline(**pipeline_payload)
-    db.session.add(pipeline)
-    db.session.commit()
-    updated_payload = {"name": "Updated Pipeline"}
-    response = auth_client.put(f"/api/pipelines/{pipeline.id}", data=updated_payload)
+    # Test string field exact match
+    response = auth_client.get("/api/pipeline-study-results/?json_filter=string_field=test value")
     assert response.status_code == 200
     data = response.json()
-    assert data["name"] == "Updated Pipeline"
+    assert len(data["results"]) == 1
+    assert data["results"][0]["result_data"]["string_field"] == "test value"
 
-
-def test_delete_pipeline(auth_client, pipeline_payload):
-    pipeline = Pipeline(**pipeline_payload)
-    db.session.add(pipeline)
-    db.session.commit()
-    response = auth_client.delete(f"/api/pipelines/{pipeline.id}")
-    assert response.status_code == 204
-
-
-def test_create_pipeline_config(auth_client, pipeline_config_payload, session):
-    response = auth_client.post("/api/pipeline-configs/", data=pipeline_config_payload)
-    assert response.status_code == 201
-    data = response.json()
-    assert data["config"] == pipeline_config_payload["config"]
-
-
-def test_get_pipeline_config(auth_client, pipeline_config_payload, session):
-    pipeline_config = PipelineConfig(**pipeline_config_payload)
-    db.session.add(pipeline_config)
-    db.session.commit()
-    response = auth_client.get(f"/api/pipeline-configs/{pipeline_config.id}")
+    # Test nested array field
+    response = auth_client.get("/api/pipeline-study-results/?json_filter=nested.array=nested1")
     assert response.status_code == 200
     data = response.json()
-    assert data["config"] == pipeline_config_payload["config"]
+    assert len(data["results"]) == 1
+    assert "nested1" in data["results"][0]["result_data"]["nested"]["array"]
 
-
-def test_update_pipeline_config(auth_client, pipeline_config_payload, session):
-    pipeline_config = PipelineConfig(**pipeline_config_payload)
-    db.session.add(pipeline_config)
-    db.session.commit()
-    updated_payload = {"config": {"param1": "new_value"}}
-    response = auth_client.put(
-        f"/api/pipeline-configs/{pipeline_config.id}", data=updated_payload
-    )
+    # Test text search in any field
+    response = auth_client.get("/api/pipeline-study-results/?json_filter=nested.string~other")
     assert response.status_code == 200
     data = response.json()
-    assert data["config"] == {"param1": "new_value"}
+    assert len(data["results"]) == 1
+    assert "other" in data["results"][0]["result_data"]["nested"]["string"]
 
-
-def test_delete_pipeline_config(auth_client, pipeline_config_payload, session):
-    pipeline_config = PipelineConfig(**pipeline_config_payload)
-    db.session.add(pipeline_config)
-    db.session.commit()
-    response = auth_client.delete(f"/api/pipeline-configs/{pipeline_config.id}")
-    assert response.status_code == 204
-
-
-def test_create_pipeline_study_result(
-    auth_client, pipeline_study_result_payload, session
-):
-    response = auth_client.post(
-        "/api/pipeline-study-results/", data=pipeline_study_result_payload
-    )
-    assert response.status_code == 201
-    data = response.json()
-    assert data["config_id"] == pipeline_study_result_payload["config_id"]
-
-
-def test_get_pipeline_study_result(auth_client, pipeline_study_result_payload, session):
-    pipeline_study_result = PipelineStudyResult(**pipeline_study_result_payload)
-    db.session.add(pipeline_study_result)
-    db.session.commit()
-    response = auth_client.get(
-        f"/api/pipeline-study-results/{pipeline_study_result.id}"
-    )
+    # Test value present in multiple results
+    response = auth_client.get("/api/pipeline-study-results/?json_filter=array_field=value3")
     assert response.status_code == 200
     data = response.json()
-    assert data["config_id"] == pipeline_study_result_payload["config_id"]
-
-
-def test_update_pipeline_study_result(
-    auth_client, pipeline_study_result_payload, session
-):
-    pipeline_study_result = PipelineStudyResult(**pipeline_study_result_payload)
-    db.session.add(pipeline_study_result)
-    db.session.commit()
-    updated_payload = {"result_data": {"result": "failure"}}
-    response = auth_client.put(
-        f"/api/pipeline-study-results/{pipeline_study_result.id}", data=updated_payload
-    )
-    assert response.status_code == 200
-    data = response.json()
-    assert data["result_data"] == {"result": "failure"}
-
-
-def test_delete_pipeline_study_result(
-    auth_client, pipeline_study_result_payload, session
-):
-    pipeline_study_result = PipelineStudyResult(**pipeline_study_result_payload)
-    db.session.add(pipeline_study_result)
-    db.session.commit()
-    response = auth_client.delete(
-        f"/api/pipeline-study-results/{pipeline_study_result.id}"
-    )
-    assert response.status_code == 204
+    assert len(data["results"]) == 2

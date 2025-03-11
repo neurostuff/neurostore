@@ -1,46 +1,54 @@
-from marshmallow import Schema, fields, post_load
-from neurostore.models.data import (
-    Pipeline,
-    PipelineConfig,
-    PipelineStudyResult,
-)
+"""Pipeline schemas"""
+from marshmallow import fields, post_dump
 
+from neurostore.models import PipelineStudyResult, Pipeline, PipelineConfig
+from neurostore.schemas.data import BaseStudySchema,  BaseSchema
 
-class PipelineSchema(Schema):
-    id = fields.String(dump_only=True)
-    name = fields.String(required=True)
-    description = fields.String()
-    study_dependent = fields.Boolean()
-    ace_compatible = fields.Boolean()
-    pubget_compatible = fields.Boolean()
-    derived_from = fields.String()
+class PipelineSchema(BaseSchema):
+    name = fields.Str(required=True)
+    description = fields.Str()
+    study_dependent = fields.Bool()
+    ace_compatible = fields.Bool()
+    pubget_compatible = fields.Bool()
+    derived_from = fields.Str()
 
-    @post_load
-    def make_pipeline(self, data, **kwargs):
-        return Pipeline(**data)
-
-
-class PipelineConfigSchema(Schema):
-    id = fields.String(dump_only=True)
-    version = fields.String(required=True)
-    pipeline_id = fields.String(required=True)
-    config = fields.Dict(required=True)
+    class Meta:
+        model = Pipeline
+        
+class PipelineConfigSchema(BaseSchema):
+    version = fields.Str(required=True)
+    config = fields.Dict()
     executed_at = fields.DateTime()
-    config_hash = fields.String()
+    config_hash = fields.Str()
+    pipeline = fields.Nested(PipelineSchema)
 
-    @post_load
-    def make_pipeline_config(self, data, **kwargs):
-        return PipelineConfig(**data)
+    class Meta:
+        model = PipelineConfig
 
-
-class PipelineStudyResultSchema(Schema):
-    id = fields.String(dump_only=True)
-    config_id = fields.String(required=True)
-    base_study_id = fields.String()
-    executed_at = fields.DateTime()
+class PipelineStudyResultSchema(BaseSchema):
+    """Schema for pipeline study results."""
+    config = fields.Nested(PipelineConfigSchema)
+    base_study = fields.Nested(BaseStudySchema)
+    date_executed = fields.DateTime()
     result_data = fields.Dict()
     file_inputs = fields.Dict()
+    status = fields.Str()
 
-    @post_load
-    def make_pipeline_study_result(self, data, **kwargs):
-        return PipelineStudyResult(**data)
+    class Meta:
+        model = PipelineStudyResult
+        
+    @post_dump
+    def remove_none(self, data, **kwargs):
+        """Remove null values from serialized output."""
+        return {
+            key: value for key, value in data.items() 
+            if value is not None
+        }
+
+# Register schemas
+pipeline_schema = PipelineSchema()
+pipeline_schemas = PipelineSchema(many=True)
+pipeline_config_schema = PipelineConfigSchema()
+pipeline_config_schemas = PipelineConfigSchema(many=True)
+pipeline_study_result_schema = PipelineStudyResultSchema()
+pipeline_study_result_schemas = PipelineStudyResultSchema(many=True)
