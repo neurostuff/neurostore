@@ -14,8 +14,8 @@ def test_features_query(auth_client, ingest_demographic_features):
     assert result.status_code == 200
     assert "features" in result.json()["results"][0]
     assert (
-        "age"
-        in result.json()["results"][0]["features"]["demographics"]["predictions"][0]
+        "age_mean"
+        in result.json()["results"][0]["features"]["ParticipantInfo"]["predictions"]["groups"][0]
     )
 
 

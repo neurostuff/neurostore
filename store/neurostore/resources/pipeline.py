@@ -147,7 +147,7 @@ def validate_field_path(field_path: str) -> None:
             segment = segment[:-2]
             
         # Validate segment format (they can contain other characters tho)
-        if not re.match(r'^[A-Za-z][A-Za-z0-9]*$', segment):
+        if not re.match(r'^[A-Za-z][A-Za-z0-9_\-]*$', segment):
             raise ValueError(f"Invalid path segment '{segment}'. Must start with letter and contain only alphanumeric characters.")
 
 def parse_json_filter(filter_str: str) -> tuple:

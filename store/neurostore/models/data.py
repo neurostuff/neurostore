@@ -268,13 +268,45 @@ class BaseStudy(BaseMixin, db.Model):
         self.has_images = self.images_exist
         self.has_coordinates = self.points_exist
 
-    def display_features(self, pipelines):
+    def display_features(self, pipelines=None):
+        """
+        Display pipeline features for the base study.
+        Only loads and returns features if pipelines are explicitly specified.
+        
+        Args:
+            pipelines (list, optional): List of pipeline names to display features from.
+                                      If None or empty, returns empty dict.
+        """
+        if not pipelines:
+            return {}
+
         # Create aliases for the tables
         PipelineAlias = aliased(Pipeline)
         PipelineConfigAlias = aliased(PipelineConfig)
         PipelineStudyResultAlias = aliased(PipelineStudyResult)
 
-        # Create the main query to get the most recent run for each pipeline
+        # Get latest results subquery
+        latest_results = (
+            db.session.query(
+                PipelineStudyResultAlias.base_study_id,
+                PipelineAlias.name.label("pipeline_name"),
+                func.max(PipelineStudyResultAlias.date_executed).label("max_date")
+            )
+            .join(
+                PipelineConfigAlias,
+                PipelineStudyResultAlias.config_id == PipelineConfigAlias.id,
+            )
+            .join(PipelineAlias, PipelineConfigAlias.pipeline_id == PipelineAlias.id)
+            .filter(PipelineStudyResultAlias.base_study_id == self.id)
+            .filter(PipelineAlias.name.in_(pipelines))
+            .group_by(
+                PipelineStudyResultAlias.base_study_id,
+                PipelineAlias.name
+            )
+            .subquery()
+        )
+
+        # Main query joining with latest results
         query = (
             db.session.query(
                 PipelineStudyResultAlias.result_data,
@@ -285,18 +317,19 @@ class BaseStudy(BaseMixin, db.Model):
                 PipelineStudyResultAlias.config_id == PipelineConfigAlias.id,
             )
             .join(PipelineAlias, PipelineConfigAlias.pipeline_id == PipelineAlias.id)
-            .filter(PipelineStudyResultAlias.base_study_id == self.id)
-            .filter(PipelineAlias.name.in_(pipelines))
-            .order_by(PipelineAlias.name, desc(PipelineStudyResultAlias.date_executed))
+            .join(
+                latest_results,
+                (PipelineStudyResultAlias.base_study_id == latest_results.c.base_study_id) &
+                (PipelineAlias.name == latest_results.c.pipeline_name) &
+                (PipelineStudyResultAlias.date_executed == latest_results.c.max_date)
+            )
         )
 
-        # Execute the query and process the results
+        # Execute query and build response
         results = query.all()
         features = {}
         for result in results:
-            pipeline_name = result.pipeline_name
-            if pipeline_name not in features:
-                features[pipeline_name] = result.result_data
+            features[result.pipeline_name] = result.result_data
 
         return features
 

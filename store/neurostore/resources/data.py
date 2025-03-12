@@ -399,13 +399,16 @@ class BaseStudiesView(ObjectView, ListView):
 
     def eager_load(self, q, args=None):
         args = args or {}
-        if args.get("feature_filter") or args.get("feature_display"):
+        
+        # Only join pipeline data if we're filtering
+        if args.get("feature_filter"):
             q = q.options(
                 joinedload(BaseStudy.pipeline_study_results)
                 .joinedload(PipelineStudyResult.config)
                 .joinedload(PipelineConfig.pipeline)
             )
 
+        # Handle version and user loading
         if args.get("info"):
             q = q.options(
                 joinedload(BaseStudy.versions).options(
@@ -463,61 +466,87 @@ class BaseStudiesView(ObjectView, ListView):
             return q
             
         invalid_filters = []
+
+        # Group filters by pipeline name
+        pipeline_filters = {}
         for feature_filter in feature_filters:
             try:
                 pipeline_name, field_path, operator, value = parse_json_filter(feature_filter)
-                
-                # Build the path filter
-                jsonpath = build_jsonpath(field_path, operator, value)
-                
-                # Create aliases for joining
-                PipelineStudyResultAlias = aliased(PipelineStudyResult)
-                PipelineConfigAlias = aliased(PipelineConfig)
-                PipelineAlias = aliased(Pipeline)
-    
-                # Add joins to get from base study to pipeline results
-                q = q.outerjoin(
-                    PipelineStudyResultAlias,
-                    self._model.id == PipelineStudyResultAlias.base_study_id
-                )
-                q = q.outerjoin(
-                    PipelineConfigAlias,
-                    PipelineStudyResultAlias.config_id == PipelineConfigAlias.id
-                )
-                q = q.outerjoin(
-                    PipelineAlias,
-                    PipelineConfigAlias.pipeline_id == PipelineAlias.id
-                )
-                
-                # Get most recent pipeline results
-                subquery = (
-                    db.session.query(
-                        PipelineStudyResultAlias.base_study_id,
-                        func.max(PipelineStudyResultAlias.date_executed).label("max_date_executed")
-                    )
-                    .group_by(PipelineStudyResultAlias.base_study_id)
-                    .subquery()
-                )
-    
-                # Only use most recent results
-                q = q.join(
-                    subquery,
-                    (PipelineStudyResultAlias.base_study_id == subquery.c.base_study_id) &
-                    (PipelineStudyResultAlias.date_executed == subquery.c.max_date_executed)
-                )
-                
-                # Filter by pipeline name and jsonpath
-                q = q.filter(PipelineAlias.name == pipeline_name)
-                q = q.filter(
-                    text("jsonb_path_exists(result_data, :jsonpath)")
-                    .params(jsonpath=jsonpath)
-                )
-    
+                if pipeline_name not in pipeline_filters:
+                    pipeline_filters[pipeline_name] = []
+                pipeline_filters[pipeline_name].append((field_path, operator, value))
             except ValueError as e:
                 invalid_filters.append({
                     "filter": feature_filter,
                     "error": str(e)
                 })
+        
+        if invalid_filters:
+            abort(400, {
+                "message": "Invalid feature filter(s)",
+                "errors": invalid_filters
+            })
+
+        # Process each pipeline's filters separately
+        pipeline_subqueries = []
+        for pipeline_name, filters in pipeline_filters.items():
+            PipelineStudyResultAlias = aliased(PipelineStudyResult)
+            PipelineConfigAlias = aliased(PipelineConfig)
+            PipelineAlias = aliased(Pipeline)
+
+            # Start with base query for this pipeline
+            pipeline_query = (
+                db.session.query(PipelineStudyResultAlias.base_study_id)
+                .join(
+                    PipelineConfigAlias,
+                    PipelineStudyResultAlias.config_id == PipelineConfigAlias.id
+                )
+                .join(
+                    PipelineAlias,
+                    PipelineConfigAlias.pipeline_id == PipelineAlias.id
+                )
+                .filter(PipelineAlias.name == pipeline_name)
+            )
+
+            # Get most recent results subquery
+            latest_results = (
+                db.session.query(
+                    PipelineStudyResultAlias.base_study_id,
+                    func.max(PipelineStudyResultAlias.date_executed).label("max_date_executed")
+                )
+                .group_by(PipelineStudyResultAlias.base_study_id)
+                .subquery()
+            )
+
+            pipeline_query = pipeline_query.join(
+                latest_results,
+                (PipelineStudyResultAlias.base_study_id == latest_results.c.base_study_id) &
+                (PipelineStudyResultAlias.date_executed == latest_results.c.max_date_executed)
+            )
+
+            # Apply all filters for this pipeline
+            for field_path, operator, value in filters:
+                jsonpath = build_jsonpath(field_path, operator, value)
+                pipeline_query = pipeline_query.filter(
+                    text("jsonb_path_exists(result_data, :jsonpath)")
+                    .params(jsonpath=jsonpath)
+                )
+
+            pipeline_subqueries.append(pipeline_query.subquery())
+
+        # Combine results from all pipelines using INNER JOIN
+        # This ensures we only get base studies that match ALL pipeline criteria
+        base_study_ids = None
+        for subquery in pipeline_subqueries:
+            if base_study_ids is None:
+                base_study_ids = db.session.query(subquery.c.base_study_id)
+            else:
+                base_study_ids = base_study_ids.intersect(
+                    db.session.query(subquery.c.base_study_id)
+                )
+
+        if base_study_ids is not None:
+            q = q.filter(self._model.id.in_(base_study_ids))
                 
         # If any filters were invalid, return 400 with error details
         if invalid_filters:
