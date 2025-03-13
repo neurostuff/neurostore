@@ -87,19 +87,32 @@ def test_PipelineConfigSchema():
 
 def test_PipelineStudyResultSchema():
     payload = {
-        "config": "123",
-        "base_study_id": "456",
+        "config": {
+            "version": "1.0.0",
+            "config": {"param1": "value1"},
+            "config_hash": "abc123",
+            "pipeline": {
+                "name": "Test Pipeline"
+            }
+        },
+        "base_study": {
+            "id": "456",
+            "name": "Test Study"
+        },
         "date_executed": "2023-01-01T00:00:00Z",
         "result_data": {"result": "success"},
         "file_inputs": {"input1": "file1"},
+        "status": "completed"
     }
     schema = PipelineStudyResultSchema()
     result = schema.load(payload)
     # Test dictionary output instead of model
     assert isinstance(result, dict)
-    assert result["config"] == "123"
-    assert result["base_study_id"] == "456"
-    # Date should still be parsed as datetime
+    assert isinstance(result["config"], dict)
+    assert result["config"]["version"] == "1.0.0"
+    assert isinstance(result["base_study"], dict)
+    assert result["base_study"]["id"] == "456"
     assert "date_executed" in result
     assert result["result_data"] == {"result": "success"}
     assert result["file_inputs"] == {"input1": "file1"}
+    assert result["status"] == "completed"
