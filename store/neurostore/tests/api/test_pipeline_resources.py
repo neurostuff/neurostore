@@ -1,5 +1,5 @@
 import pytest
-from neurostore.models.data import PipelineStudyResult, PipelineConfig, BaseStudy
+from neurostore.models.data import PipelineStudyResult, PipelineConfig, Pipeline, BaseStudy
 from neurostore.database import db
 
 @pytest.fixture
@@ -8,11 +8,15 @@ def pipeline_study_result_payload(session):
     base_study = BaseStudy(name="Test Study")
     db.session.add(base_study)
     
+    # create pipeline
+    pipeline = Pipeline(name="TestPipeline")
+
     # Create pipeline config
     pipeline_config = PipelineConfig(
         version="1.0.0",
         config={"test_param": "test_value"},
-        config_hash="test_hash"
+        config_hash="test_hash",
+        pipeline=pipeline,
     )
     db.session.add(pipeline_config)
     db.session.commit()
@@ -26,21 +30,26 @@ def pipeline_study_result_payload(session):
         "status": "SUCCESS"
     }
 
-def test_filter_pipeline_study_results(auth_client, pipeline_study_result_payload, session):
-    # Create results with mixed data types
-    result1 = PipelineStudyResult(**{
+@pytest.fixture
+def result1(pipeline_study_result_payload, session):
+    result = PipelineStudyResult(**{
         **pipeline_study_result_payload,
         "result_data": {
-            "array_field": ["value1", "value2", "value3"],  # Array field
-            "string_field": "test value",  # String field
+            "array_field": ["value1", "value2", "value3"],
+            "string_field": "test value",
             "nested": {
-                "array": ["nested1", "nested2"],  # Nested array
-                "string": "nested value"  # Nested string
+                "array": ["nested1", "nested2"],
+                "string": "nested value"
             }
         }
     })
-    
-    result2 = PipelineStudyResult(**{
+    db.session.add(result)
+    db.session.commit()
+    return result
+
+@pytest.fixture
+def result2(pipeline_study_result_payload, session):
+    result = PipelineStudyResult(**{
         **pipeline_study_result_payload,
         "result_data": {
             "array_field": ["value3", "value4"],
@@ -51,40 +60,60 @@ def test_filter_pipeline_study_results(auth_client, pipeline_study_result_payloa
             }
         }
     })
-    
-    db.session.add_all([result1, result2])
+    db.session.add(result)
     db.session.commit()
+    return result
 
-    # Test array field exact match
-    response = auth_client.get("/api/pipeline-study-results/?json_filter=array_field=value1")
+@pytest.mark.parametrize("feature_filter,expected_count,expected_value,check_field", [
+    (
+        "TestPipeline:array_field[]=value1",
+        1,
+        "value1",
+        lambda x: x["result_data"]["array_field"]
+    ),
+    (
+        "TestPipeline:string_field=test value",
+        1,
+        "test value",
+        lambda x: x["result_data"]["string_field"]
+    ),
+    (
+        "TestPipeline:nested.array[]=nested1",
+        1,
+        "nested1",
+        lambda x: x["result_data"]["nested"]["array"]
+    ),
+    (
+        "TestPipeline:nested.string~other",
+        1,
+        "other",
+        lambda x: x["result_data"]["nested"]["string"]
+    ),
+    (
+        "TestPipeline:array_field[]=value3",
+        2,
+        "value3",
+        lambda x: x["result_data"]["array_field"]
+    ),
+])
+def test_filter_pipeline_study_results(
+    auth_client,
+    result1,
+    result2,
+    feature_filter,
+    expected_count,
+    expected_value,
+    check_field
+):
+    response = auth_client.get(f"/api/pipeline-study-results/?feature_filter={feature_filter}")
     assert response.status_code == 200
     data = response.json()
-    assert len(data["results"]) == 1
-    assert "value1" in data["results"][0]["result_data"]["array_field"]
-
-    # Test string field exact match
-    response = auth_client.get("/api/pipeline-study-results/?json_filter=string_field=test value")
-    assert response.status_code == 200
-    data = response.json()
-    assert len(data["results"]) == 1
-    assert data["results"][0]["result_data"]["string_field"] == "test value"
-
-    # Test nested array field
-    response = auth_client.get("/api/pipeline-study-results/?json_filter=nested.array=nested1")
-    assert response.status_code == 200
-    data = response.json()
-    assert len(data["results"]) == 1
-    assert "nested1" in data["results"][0]["result_data"]["nested"]["array"]
-
-    # Test text search in any field
-    response = auth_client.get("/api/pipeline-study-results/?json_filter=nested.string~other")
-    assert response.status_code == 200
-    data = response.json()
-    assert len(data["results"]) == 1
-    assert "other" in data["results"][0]["result_data"]["nested"]["string"]
-
-    # Test value present in multiple results
-    response = auth_client.get("/api/pipeline-study-results/?json_filter=array_field=value3")
-    assert response.status_code == 200
-    data = response.json()
-    assert len(data["results"]) == 2
+    assert len(data["results"]) == expected_count
+    
+    # For array fields, check if value is in array
+    for result in data["results"]:
+        field_value = check_field(result)
+        if isinstance(field_value, list):
+            assert expected_value in field_value
+        else:
+            assert expected_value in field_value

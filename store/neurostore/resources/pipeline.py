@@ -102,14 +102,16 @@ def build_jsonpath(field_path: str, operator: str, value: str) -> str:
                 remaining_path = ".".join(path_parts[i+1:])
                 
                 if remaining_path:
-                    return f'$.{base_path}.{array_field}[*] ? ({raw_value})'.replace("@", f"@.{remaining_path}")
+                    full_path = f'{base_path}.{array_field}' if base_path else array_field
+                    return f'$.{full_path}[*] ? ({raw_value})'.replace("@", f"@.{remaining_path}")
                 else:
-                    return f'$.{base_path}.{array_field}[*] ? ({raw_value})'
+                    full_path = f'{base_path}.{array_field}' if base_path else array_field
+                    return f'$.{full_path}[*] ? ({raw_value})'
             else:
                 path_segments.append(part)
     else:
         # Regular field query
-        return f'strict $.{field_path} {sql_op} {raw_value}'
+        return f'$.{field_path} ? ({raw_value})'
 
 def validate_pipeline_name(pipeline_name: str) -> None:
     """Validate pipeline name format.

@@ -9,6 +9,7 @@ def test_create_study_as_user_and_analysis_as_bot(auth_clients, session):
     user_auth_client = next(ac for ac in auth_clients if ac.username == "user1-id")
 
     study_resp = user_auth_client.post("/api/studies/", data={"name": "test"})
+    assert study_resp.status_code == 200
     study_id = study_resp.json()["id"]
 
     bot_auth_client = next(ac for ac in auth_clients if "clients" in ac.username)
