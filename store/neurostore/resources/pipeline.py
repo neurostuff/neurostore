@@ -1,14 +1,12 @@
 """Pipeline related resources"""
 
-from flask import request
-from sqlalchemy import func, text
-from sqlalchemy.orm import raiseload, selectinload, aliased
+from sqlalchemy import text
+from sqlalchemy.orm import selectinload, aliased
 from webargs import fields
 import re
 
-from .utils import view_maker, get_current_user
-from .base import BaseView, ObjectView, ListView
-from ..database import db
+from .utils import view_maker
+from .base import ObjectView, ListView
 from ..models import Pipeline, PipelineConfig, PipelineStudyResult
 from ..schemas.pipeline import (
     pipeline_schema,
@@ -95,7 +93,7 @@ def build_jsonpath(field_path: str, operator: str, value: str) -> str:
                 # Convert path up to this point into the base path
                 base_path = ".".join(path_segments)
                 array_field = part[:-2]
-                remaining_path = ".".join(path_parts[i + 1 :])
+                remaining_path = ".".join(path_parts[i + 1:])
 
                 if remaining_path:
                     full_path = (
@@ -127,7 +125,8 @@ def validate_pipeline_name(pipeline_name: str) -> None:
     """
     if not re.match(r"^[A-Za-z][A-Za-z0-9]*$", pipeline_name):
         raise ValueError(
-            f"Invalid pipeline name '{pipeline_name}'. Must start with letter and contain only alphanumeric characters."
+            f"Invalid pipeline name '{pipeline_name}'. "
+            "Must start with letter and contain only alphanumeric characters."
         )
 
 
@@ -159,7 +158,10 @@ def validate_field_path(field_path: str) -> None:
         # Validate segment format (they can contain other characters tho)
         if not re.match(r"^[A-Za-z][A-Za-z0-9_\-]*$", segment):
             raise ValueError(
-                f"Invalid path segment '{segment}'. Must start with letter and contain only alphanumeric characters."
+                (
+                    f"Invalid path segment '{segment}'. "
+                    "Must start with letter and contain only alphanumeric characters."
+                )
             )
 
 
@@ -266,10 +268,9 @@ class PipelineStudyResultsView(ObjectView, ListView):
             Modified query with filters applied
 
         Raises:
-            webargs.ValidationError: If any filter is invalid, returns 400 with error details
+            ValueError: If any filter is invalid, returns 400 with error details
         """
         from flask import abort
-        from webargs import ValidationError
 
         q = super().view_search(q, args)
 

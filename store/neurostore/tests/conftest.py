@@ -690,7 +690,10 @@ def create_pipeline_results(session, ingest_neurosynth, tmp_path):
         # NeuroimagingMethod data
         method_data = {
             "Modality": random.sample(["EEG", "fMRI", "MEG"], k=random.randint(1, 2)),
-            "StudyObjective": f"To investigate {random.choice(['cognitive', 'sensory', 'motor'])} processing",
+            "StudyObjective": (
+                "To investigate "
+                f"{random.choice(['cognitive', 'sensory', 'motor'])} processing"
+            ),
             "SampleSize": random.randint(20, 100),
         }
 
@@ -699,7 +702,10 @@ def create_pipeline_results(session, ingest_neurosynth, tmp_path):
             "fMRITasks": [
                 {
                     "TaskName": random.choice(["oddball", "n-back", "rest"]),
-                    "TaskDescription": f"Participants performed a {random.choice(['visual', 'auditory'])} task",
+                    "TaskDescription": (
+                        "Participants performed a "
+                        f"{random.choice(['visual', 'auditory'])} task"
+                    ),
                     "TaskDuration": f"{random.randint(5, 15)} minutes",
                 }
             ],

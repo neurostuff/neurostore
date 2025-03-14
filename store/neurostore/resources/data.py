@@ -14,7 +14,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import aliased
 
 
-from .utils import view_maker, get_current_user, build_jsonb_filter
+from .utils import view_maker, get_current_user
 from .base import BaseView, ObjectView, ListView, clear_cache, create_user
 from ..database import db
 from ..models import (
@@ -32,7 +32,6 @@ from ..models import (
     Entity,
     PipelineStudyResult,
     PipelineConfig,
-    Pipeline,
 )
 from ..models.data import StudysetStudy, BaseStudy
 

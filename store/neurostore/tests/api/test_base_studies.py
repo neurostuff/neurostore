@@ -1,6 +1,17 @@
 """Test Base Study Endpoint"""
 
-from neurostore.models import BaseStudy, Analysis
+from sqlalchemy import text
+from sqlalchemy.orm import aliased
+from sqlalchemy.sql import func
+
+
+from neurostore.models import (
+    Pipeline,
+    PipelineConfig,
+    PipelineStudyResult,
+    BaseStudy,
+    Analysis,
+)
 from neurostore.schemas import StudySchema
 
 
@@ -9,7 +20,11 @@ def test_features_query(auth_client, ingest_demographic_features):
     # flatten the features (flatten json objects)
     # test features organized like this: {top_key: ["list", "of", "values"]}
     result = auth_client.get(
-        "/api/base-studies/?feature_filter=ParticipantInfo:predictions.groups[].age_mean>10&feature_filter=ParticipantInfo:predictions.groups[].age_mean<=100&feature_display=ParticipantInfo"
+        (
+            "/api/base-studies/?feature_filter=ParticipantInfo:predictions.groups[].age_mean>10&"
+            "feature_filter=ParticipantInfo:predictions.groups[].age_mean<=100&"
+            "feature_display=ParticipantInfo"
+        )
     )
     assert result.status_code == 200
     assert "features" in result.json()["results"][0]
@@ -23,15 +38,6 @@ def test_features_query(auth_client, ingest_demographic_features):
 
 def test_features_query_with_or(auth_client, ingest_demographic_features, session):
     # First check diagnoses directly from database
-    from neurostore.models import (
-        BaseStudy,
-        Pipeline,
-        PipelineConfig,
-        PipelineStudyResult,
-    )
-    from sqlalchemy import text
-    from sqlalchemy.orm import aliased
-    from sqlalchemy.sql import func
 
     PipelineStudyResultAlias = aliased(PipelineStudyResult)
     PipelineConfigAlias = aliased(PipelineConfig)
@@ -66,7 +72,8 @@ def test_features_query_with_or(auth_client, ingest_demographic_features, sessio
         .filter(PipelineAlias.name == "ParticipantInfo")
         .filter(
             text(
-                'jsonb_path_exists(result_data, \'$.predictions.groups[*].diagnosis ? (@ == "ADHD" || @ == "ASD")\')'
+                "jsonb_path_exists(result_data, '$.predictions.groups[*].diagnosis ?"
+                ' (@ == "ADHD" || @ == "ASD")\')'
             )
         )
     )
@@ -79,7 +86,11 @@ def test_features_query_with_or(auth_client, ingest_demographic_features, sessio
 
     # Now make the API request
     result = auth_client.get(
-        "/api/base-studies/?feature_filter=ParticipantInfo:predictions.groups[].diagnosis=ADHD|ASD&feature_display=ParticipantInfo"
+        (
+            "/api/base-studies/?feature_filter="
+            "ParticipantInfo:predictions.groups[].diagnosis=ADHD|ASD&"
+            "feature_display=ParticipantInfo"
+        )
     )
 
     assert result.status_code == 200
