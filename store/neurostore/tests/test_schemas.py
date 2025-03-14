@@ -91,18 +91,13 @@ def test_PipelineStudyResultSchema():
             "version": "1.0.0",
             "config": {"param1": "value1"},
             "config_hash": "abc123",
-            "pipeline": {
-                "name": "Test Pipeline"
-            }
+            "pipeline": {"name": "Test Pipeline"},
         },
-        "base_study": {
-            "id": "456",
-            "name": "Test Study"
-        },
+        "base_study": {"id": "456", "name": "Test Study"},
         "date_executed": "2023-01-01T00:00:00Z",
         "result_data": {"result": "success"},
         "file_inputs": {"input1": "file1"},
-        "status": "completed"
+        "status": "completed",
     }
     schema = PipelineStudyResultSchema()
     result = schema.load(payload)

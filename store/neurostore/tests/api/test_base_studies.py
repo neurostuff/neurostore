@@ -15,12 +15,20 @@ def test_features_query(auth_client, ingest_demographic_features):
     assert "features" in result.json()["results"][0]
     assert (
         "age_mean"
-        in result.json()["results"][0]["features"]["ParticipantInfo"]["predictions"]["groups"][0]
+        in result.json()["results"][0]["features"]["ParticipantInfo"]["predictions"][
+            "groups"
+        ][0]
     )
+
 
 def test_features_query_with_or(auth_client, ingest_demographic_features, session):
     # First check diagnoses directly from database
-    from neurostore.models import BaseStudy, Pipeline, PipelineConfig, PipelineStudyResult
+    from neurostore.models import (
+        BaseStudy,
+        Pipeline,
+        PipelineConfig,
+        PipelineStudyResult,
+    )
     from sqlalchemy import text
     from sqlalchemy.orm import aliased
     from sqlalchemy.sql import func
@@ -33,7 +41,7 @@ def test_features_query_with_or(auth_client, ingest_demographic_features, sessio
     latest_results = (
         session.query(
             PipelineStudyResultAlias.base_study_id,
-            func.max(PipelineStudyResultAlias.date_executed).label("max_date_executed")
+            func.max(PipelineStudyResultAlias.date_executed).label("max_date_executed"),
         )
         .group_by(PipelineStudyResultAlias.base_study_id)
         .subquery()
@@ -44,19 +52,23 @@ def test_features_query_with_or(auth_client, ingest_demographic_features, sessio
         session.query(PipelineStudyResultAlias)
         .join(
             PipelineConfigAlias,
-            PipelineStudyResultAlias.config_id == PipelineConfigAlias.id
+            PipelineStudyResultAlias.config_id == PipelineConfigAlias.id,
         )
-        .join(
-            PipelineAlias,
-            PipelineConfigAlias.pipeline_id == PipelineAlias.id
-        )
+        .join(PipelineAlias, PipelineConfigAlias.pipeline_id == PipelineAlias.id)
         .join(
             latest_results,
-            (PipelineStudyResultAlias.base_study_id == latest_results.c.base_study_id) &
-            (PipelineStudyResultAlias.date_executed == latest_results.c.max_date_executed)
+            (PipelineStudyResultAlias.base_study_id == latest_results.c.base_study_id)
+            & (
+                PipelineStudyResultAlias.date_executed
+                == latest_results.c.max_date_executed
+            ),
         )
         .filter(PipelineAlias.name == "ParticipantInfo")
-        .filter(text("jsonb_path_exists(result_data, '$.predictions.groups[*].diagnosis ? (@ == \"ADHD\" || @ == \"ASD\")')"))
+        .filter(
+            text(
+                'jsonb_path_exists(result_data, \'$.predictions.groups[*].diagnosis ? (@ == "ADHD" || @ == "ASD")\')'
+            )
+        )
     )
 
     db_diagnoses = set()
@@ -72,7 +84,7 @@ def test_features_query_with_or(auth_client, ingest_demographic_features, sessio
 
     assert result.status_code == 200
     assert "features" in result.json()["results"][0]
-    
+
     api_diagnoses = set()
     for res in result.json()["results"]:
         for group in res["features"]["ParticipantInfo"]["predictions"]["groups"]:
@@ -80,6 +92,7 @@ def test_features_query_with_or(auth_client, ingest_demographic_features, sessio
 
     # Compare database and API results
     assert db_diagnoses == api_diagnoses
+
 
 def test_post_list_of_studies(auth_client, ingest_neuroquery):
     base_studies = BaseStudy.query.all()

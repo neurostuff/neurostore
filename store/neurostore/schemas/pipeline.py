@@ -1,8 +1,10 @@
 """Pipeline schemas"""
+
 from marshmallow import fields, post_dump
 
 from neurostore.models import PipelineStudyResult, Pipeline, PipelineConfig
-from neurostore.schemas.data import BaseStudySchema,  BaseSchema
+from neurostore.schemas.data import BaseStudySchema, BaseSchema
+
 
 class PipelineSchema(BaseSchema):
     name = fields.Str(required=True)
@@ -14,7 +16,8 @@ class PipelineSchema(BaseSchema):
 
     class Meta:
         model = Pipeline
-        
+
+
 class PipelineConfigSchema(BaseSchema):
     version = fields.Str(required=True)
     config = fields.Dict()
@@ -25,8 +28,10 @@ class PipelineConfigSchema(BaseSchema):
     class Meta:
         model = PipelineConfig
 
+
 class PipelineStudyResultSchema(BaseSchema):
     """Schema for pipeline study results."""
+
     config = fields.Nested(PipelineConfigSchema)
     base_study = fields.Nested(BaseStudySchema)
     date_executed = fields.DateTime()
@@ -36,14 +41,12 @@ class PipelineStudyResultSchema(BaseSchema):
 
     class Meta:
         model = PipelineStudyResult
-        
+
     @post_dump
     def remove_none(self, data, **kwargs):
         """Remove null values from serialized output."""
-        return {
-            key: value for key, value in data.items() 
-            if value is not None
-        }
+        return {key: value for key, value in data.items() if value is not None}
+
 
 # Register schemas
 pipeline_schema = PipelineSchema()

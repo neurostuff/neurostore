@@ -594,18 +594,18 @@ def simple_neurosynth_annotation(session, ingest_neurosynth):
 @pytest.fixture(scope="function")
 def create_pipeline_results(session, ingest_neurosynth, tmp_path):
     studies = BaseStudy.query.all()
-    
+
     base_output_dir = tmp_path / "output"
-    
+
     # Create directories for different pipeline results
     demo_dir = base_output_dir / "ParticipantInfo" / "1.0.0"
     method_dir = base_output_dir / "NeuroimagingMethod" / "1.0.0"
     task_dir = base_output_dir / "TaskInfo" / "1.0.0"
-    
+
     pipeline_dirs = [demo_dir, method_dir, task_dir]
     for dir in pipeline_dirs:
         dir.mkdir(exist_ok=True, parents=True)
-        
+
     # Pipeline configurations
     pipeline_configs = {
         "ParticipantInfo": {
@@ -621,8 +621,8 @@ def create_pipeline_results(session, ingest_neurosynth, tmp_path):
                 "env_variable": "OPENAI_API_KEY",
                 "env_file": None,
                 "client_url": None,
-                "kwargs": {}
-            }
+                "kwargs": {},
+            },
         },
         "NeuroimagingMethod": {
             "name": "NeuroimagingMethod",
@@ -637,8 +637,8 @@ def create_pipeline_results(session, ingest_neurosynth, tmp_path):
                 "env_variable": "OPENAI_API_KEY",
                 "env_file": None,
                 "client_url": None,
-                "kwargs": {}
-            }
+                "kwargs": {},
+            },
         },
         "TaskInfo": {
             "name": "TaskInfo",
@@ -653,16 +653,16 @@ def create_pipeline_results(session, ingest_neurosynth, tmp_path):
                 "env_variable": "OPENAI_API_KEY",
                 "env_file": None,
                 "client_url": None,
-                "kwargs": {}
-            }
-        }
+                "kwargs": {},
+            },
+        },
     }
-    
+
     # Write pipeline configs
     for dir, (name, config) in zip(pipeline_dirs, pipeline_configs.items()):
         with open(dir / "pipeline_info.json", "w") as f:
             json.dump(config, f)
-    
+
     # Generate sample data for each study
     for study in studies:
         # ParticipantInfo data
@@ -674,7 +674,7 @@ def create_pipeline_results(session, ingest_neurosynth, tmp_path):
                     "count": 18,
                     "male_count": 9,
                     "female_count": 9,
-                    "age_mean": 25.4
+                    "age_mean": 25.4,
                 },
                 {
                     "group_name": "patient",
@@ -682,43 +682,52 @@ def create_pipeline_results(session, ingest_neurosynth, tmp_path):
                     "count": 15,
                     "male_count": 8,
                     "female_count": 7,
-                    "age_mean": 26.1
-                }
+                    "age_mean": 26.1,
+                },
             ]
         }
-        
+
         # NeuroimagingMethod data
         method_data = {
             "Modality": random.sample(["EEG", "fMRI", "MEG"], k=random.randint(1, 2)),
             "StudyObjective": f"To investigate {random.choice(['cognitive', 'sensory', 'motor'])} processing",
-            "SampleSize": random.randint(20, 100)
+            "SampleSize": random.randint(20, 100),
         }
-        
+
         # TaskInfo data
         task_data = {
             "fMRITasks": [
                 {
                     "TaskName": random.choice(["oddball", "n-back", "rest"]),
                     "TaskDescription": f"Participants performed a {random.choice(['visual', 'auditory'])} task",
-                    "TaskDuration": f"{random.randint(5, 15)} minutes"
+                    "TaskDuration": f"{random.randint(5, 15)} minutes",
                 }
             ],
-            "BehavioralTasks": None
+            "BehavioralTasks": None,
         }
-        
+
         # Write data for each pipeline
-        for dir, data in [(demo_dir, demo_data), (method_dir, method_data), (task_dir, task_data)]:
+        for dir, data in [
+            (demo_dir, demo_data),
+            (method_dir, method_data),
+            (task_dir, task_data),
+        ]:
             study_dir = dir / study.id
             study_dir.mkdir(exist_ok=True, parents=True)
-            
+
             with open(study_dir / "results.json", "w") as f:
                 json.dump({"predictions": data}, f)
             with open(study_dir / "info.json", "w") as f:
-                json.dump({
-                    "inputs": {f"/path/to/input/{study.id}.txt": f"md5{random.randint(0, 100)}"},
-                    "date": "2025-03-05"
-                }, f)
-    
+                json.dump(
+                    {
+                        "inputs": {
+                            f"/path/to/input/{study.id}.txt": f"md5{random.randint(0, 100)}"
+                        },
+                        "date": "2025-03-05",
+                    },
+                    f,
+                )
+
     return base_output_dir
 
 

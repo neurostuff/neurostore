@@ -272,7 +272,7 @@ class BaseStudy(BaseMixin, db.Model):
         """
         Display pipeline features for the base study.
         Only loads and returns features if pipelines are explicitly specified.
-        
+
         Args:
             pipelines (list, optional): List of pipeline names to display features from.
                                       If None or empty, returns empty dict.
@@ -290,7 +290,7 @@ class BaseStudy(BaseMixin, db.Model):
             db.session.query(
                 PipelineStudyResultAlias.base_study_id,
                 PipelineAlias.name.label("pipeline_name"),
-                func.max(PipelineStudyResultAlias.date_executed).label("max_date")
+                func.max(PipelineStudyResultAlias.date_executed).label("max_date"),
             )
             .join(
                 PipelineConfigAlias,
@@ -299,10 +299,7 @@ class BaseStudy(BaseMixin, db.Model):
             .join(PipelineAlias, PipelineConfigAlias.pipeline_id == PipelineAlias.id)
             .filter(PipelineStudyResultAlias.base_study_id == self.id)
             .filter(PipelineAlias.name.in_(pipelines))
-            .group_by(
-                PipelineStudyResultAlias.base_study_id,
-                PipelineAlias.name
-            )
+            .group_by(PipelineStudyResultAlias.base_study_id, PipelineAlias.name)
             .subquery()
         )
 
@@ -319,9 +316,12 @@ class BaseStudy(BaseMixin, db.Model):
             .join(PipelineAlias, PipelineConfigAlias.pipeline_id == PipelineAlias.id)
             .join(
                 latest_results,
-                (PipelineStudyResultAlias.base_study_id == latest_results.c.base_study_id) &
-                (PipelineAlias.name == latest_results.c.pipeline_name) &
-                (PipelineStudyResultAlias.date_executed == latest_results.c.max_date)
+                (
+                    PipelineStudyResultAlias.base_study_id
+                    == latest_results.c.base_study_id
+                )
+                & (PipelineAlias.name == latest_results.c.pipeline_name)
+                & (PipelineStudyResultAlias.date_executed == latest_results.c.max_date),
             )
         )
 
