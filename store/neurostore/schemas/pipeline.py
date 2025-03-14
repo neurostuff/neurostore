@@ -1,69 +1,57 @@
-from marshmallow import Schema, fields, post_load
-from neurostore.models.data import (
-    Pipeline,
-    PipelineConfig,
-    PipelineRun,
-    PipelineRunResult,
-    PipelineRunResultVote,
-)
+"""Pipeline schemas"""
+
+from marshmallow import fields, post_dump
+
+from neurostore.models import PipelineStudyResult, Pipeline, PipelineConfig
+from neurostore.schemas.data import BaseStudySchema, BaseSchema
 
 
-class PipelineSchema(Schema):
-    id = fields.String(dump_only=True)
-    name = fields.String(required=True)
-    description = fields.String()
-    version = fields.String()
-    study_dependent = fields.Boolean()
-    ace_compatible = fields.Boolean()
-    pubget_compatible = fields.Boolean()
-    derived_from = fields.String()
+class PipelineSchema(BaseSchema):
+    name = fields.Str(required=True)
+    description = fields.Str()
+    study_dependent = fields.Bool()
+    ace_compatible = fields.Bool()
+    pubget_compatible = fields.Bool()
+    derived_from = fields.Str()
 
-    @post_load
-    def make_pipeline(self, data, **kwargs):
-        return Pipeline(**data)
+    class Meta:
+        model = Pipeline
 
 
-class PipelineConfigSchema(Schema):
-    id = fields.String(dump_only=True)
-    pipeline_id = fields.String(required=True)
-    config = fields.Dict(required=True)
-    config_hash = fields.String()
+class PipelineConfigSchema(BaseSchema):
+    version = fields.Str(required=True)
+    config = fields.Dict()
+    executed_at = fields.DateTime()
+    config_hash = fields.Str()
+    pipeline = fields.Nested(PipelineSchema)
 
-    @post_load
-    def make_pipeline_config(self, data, **kwargs):
-        return PipelineConfig(**data)
-
-
-class PipelineRunSchema(Schema):
-    id = fields.String(dump_only=True)
-    pipeline_id = fields.String(required=True)
-    config_id = fields.String(required=True)
-    run_index = fields.Integer()
-
-    @post_load
-    def make_pipeline_run(self, data, **kwargs):
-        return PipelineRun(**data)
+    class Meta:
+        model = PipelineConfig
 
 
-class PipelineRunResultSchema(Schema):
-    id = fields.String(dump_only=True)
-    run_id = fields.String(required=True)
-    base_study_id = fields.String()
+class PipelineStudyResultSchema(BaseSchema):
+    """Schema for pipeline study results."""
+
+    config = fields.Nested(PipelineConfigSchema)
+    base_study = fields.Nested(BaseStudySchema)
     date_executed = fields.DateTime()
-    data = fields.Dict()
+    result_data = fields.Dict()
     file_inputs = fields.Dict()
+    status = fields.Str()
 
-    @post_load
-    def make_pipeline_run_result(self, data, **kwargs):
-        return PipelineRunResult(**data)
+    class Meta:
+        model = PipelineStudyResult
+
+    @post_dump
+    def remove_none(self, data, **kwargs):
+        """Remove null values from serialized output."""
+        return {key: value for key, value in data.items() if value is not None}
 
 
-class PipelineRunResultVoteSchema(Schema):
-    id = fields.String(dump_only=True)
-    run_result_id = fields.String(required=True)
-    user_id = fields.String(required=True)
-    accurate = fields.Boolean()
-
-    @post_load
-    def make_pipeline_run_result_vote(self, data, **kwargs):
-        return PipelineRunResultVote(**data)
+# Register schemas
+pipeline_schema = PipelineSchema()
+pipeline_schemas = PipelineSchema(many=True)
+pipeline_config_schema = PipelineConfigSchema()
+pipeline_config_schemas = PipelineConfigSchema(many=True)
+pipeline_study_result_schema = PipelineStudyResultSchema()
+pipeline_study_result_schemas = PipelineStudyResultSchema(many=True)

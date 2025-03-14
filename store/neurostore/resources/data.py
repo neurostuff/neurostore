@@ -11,6 +11,7 @@ from sqlalchemy.orm import (
 )
 from sqlalchemy.sql import func
 from sqlalchemy import select
+from sqlalchemy.orm import aliased
 
 
 from .utils import view_maker, get_current_user
@@ -29,6 +30,8 @@ from ..models import (
     AnnotationAnalysis,
     Condition,
     Entity,
+    PipelineStudyResult,
+    PipelineConfig,
 )
 from ..models.data import StudysetStudy, BaseStudy
 
@@ -371,6 +374,8 @@ class BaseStudiesView(ObjectView, ListView):
         "flat": fields.Boolean(load_default=False),
         "info": fields.Boolean(load_default=False),
         "data_type": fields.String(load_default=None),
+        "feature_filter": fields.List(fields.String(load_default=None)),
+        "feature_display": fields.List(fields.String(load_default=None)),
     }
 
     _multi_search = ("name", "description")
@@ -386,8 +391,22 @@ class BaseStudiesView(ObjectView, ListView):
         "pmid",
     )
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.context = {}
+
     def eager_load(self, q, args=None):
         args = args or {}
+
+        # Only join pipeline data if we're filtering
+        if args.get("feature_filter"):
+            q = q.options(
+                joinedload(BaseStudy.pipeline_study_results)
+                .joinedload(PipelineStudyResult.config)
+                .joinedload(PipelineConfig.pipeline)
+            )
+
+        # Handle version and user loading
         if args.get("info"):
             q = q.options(
                 joinedload(BaseStudy.versions).options(
@@ -429,6 +448,115 @@ class BaseStudiesView(ObjectView, ListView):
         if args.get("level"):
             q = q.filter(self._model.level == args.get("level"))
 
+        # Filter based on pipeline results
+        from flask import abort
+        from sqlalchemy import func, text
+        from ..models import Pipeline, PipelineConfig, PipelineStudyResult
+        from ..resources.pipeline import parse_json_filter, build_jsonpath
+
+        feature_filters = args.get("feature_filter", [])
+        if isinstance(feature_filters, str):
+            feature_filters = [feature_filters]
+
+        # Don't allow empty string filters
+        feature_filters = [f for f in feature_filters if f.strip()]
+        if not feature_filters:
+            return q
+
+        invalid_filters = []
+
+        # Group filters by pipeline name
+        pipeline_filters = {}
+        for feature_filter in feature_filters:
+            try:
+                pipeline_name, field_path, operator, value = parse_json_filter(
+                    feature_filter
+                )
+                if pipeline_name not in pipeline_filters:
+                    pipeline_filters[pipeline_name] = []
+                pipeline_filters[pipeline_name].append((field_path, operator, value))
+            except ValueError as e:
+                invalid_filters.append({"filter": feature_filter, "error": str(e)})
+
+        if invalid_filters:
+            abort(
+                400, {"message": "Invalid feature filter(s)", "errors": invalid_filters}
+            )
+
+        # Process each pipeline's filters separately
+        pipeline_subqueries = []
+        for pipeline_name, filters in pipeline_filters.items():
+            PipelineStudyResultAlias = aliased(PipelineStudyResult)
+            PipelineConfigAlias = aliased(PipelineConfig)
+            PipelineAlias = aliased(Pipeline)
+
+            # Start with base query for this pipeline
+            pipeline_query = (
+                db.session.query(PipelineStudyResultAlias.base_study_id)
+                .join(
+                    PipelineConfigAlias,
+                    PipelineStudyResultAlias.config_id == PipelineConfigAlias.id,
+                )
+                .join(
+                    PipelineAlias, PipelineConfigAlias.pipeline_id == PipelineAlias.id
+                )
+                .filter(PipelineAlias.name == pipeline_name)
+            )
+
+            # Get most recent results subquery
+            latest_results = (
+                db.session.query(
+                    PipelineStudyResultAlias.base_study_id,
+                    func.max(PipelineStudyResultAlias.date_executed).label(
+                        "max_date_executed"
+                    ),
+                )
+                .group_by(PipelineStudyResultAlias.base_study_id)
+                .subquery()
+            )
+
+            pipeline_query = pipeline_query.join(
+                latest_results,
+                (
+                    PipelineStudyResultAlias.base_study_id
+                    == latest_results.c.base_study_id
+                )
+                & (
+                    PipelineStudyResultAlias.date_executed
+                    == latest_results.c.max_date_executed
+                ),
+            )
+
+            # Apply all filters for this pipeline
+            for field_path, operator, value in filters:
+                jsonpath = build_jsonpath(field_path, operator, value)
+                pipeline_query = pipeline_query.filter(
+                    text("jsonb_path_exists(result_data, :jsonpath)").params(
+                        jsonpath=jsonpath
+                    )
+                )
+
+            pipeline_subqueries.append(pipeline_query.subquery())
+
+        # Combine results from all pipelines using INNER JOIN
+        # This ensures we only get base studies that match ALL pipeline criteria
+        base_study_ids = None
+        for subquery in pipeline_subqueries:
+            if base_study_ids is None:
+                base_study_ids = db.session.query(subquery.c.base_study_id)
+            else:
+                base_study_ids = base_study_ids.intersect(
+                    db.session.query(subquery.c.base_study_id)
+                )
+
+        if base_study_ids is not None:
+            q = q.filter(self._model.id.in_(base_study_ids))
+
+        # If any filters were invalid, return 400 with error details
+        if invalid_filters:
+            abort(
+                400, {"message": "Invalid feature filter(s)", "errors": invalid_filters}
+            )
         return q
 
     def join_tables(self, q, args):
