@@ -6,13 +6,9 @@ describe('Ingestion', () => {
     beforeEach(() => {
         cy.clearLocalStorage();
         cy.intercept('GET', 'https://api.appzi.io/**', { fixture: 'appzi' }).as('appziFixture');
-        cy.intercept('GET', `**/api/meta-analyses*`, { fixture: 'metaAnalyses' }).as(
-            'metaAnalysesFixture'
-        );
+        cy.intercept('GET', `**/api/meta-analyses*`, { fixture: 'metaAnalyses' }).as('metaAnalysesFixture');
 
-        cy.intercept('POST', `https://www.google-analytics.com/*/**`, {}).as(
-            'googleAnalyticsFixture'
-        );
+        cy.intercept('POST', `https://www.google-analytics.com/*/**`, {}).as('googleAnalyticsFixture');
 
         cy.intercept('GET', `**/api/projects/*`, {
             fixture: 'IngestionFixtures/projectFixture',
@@ -48,9 +44,7 @@ describe('Ingestion', () => {
 
     it('should show the dialog', () => {
         cy.login('mocked').visit(PATH);
-        cy.contains('button', 'go to extraction').click();
-
-        cy.contains('button', 'extraction: get started').click();
+        cy.contains('button', 'go to extraction').click(); // popup should open automatically as extraction has not been initialized in this mock
         cy.contains('button', 'NEXT').click();
 
         cy.get('@baseStudiesFixture').its('request.body').should('not.have.a.property', 'doi');
