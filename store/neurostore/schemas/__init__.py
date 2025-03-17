@@ -18,6 +18,12 @@ from .data import (
 
 from .auth import UserSchema
 
+from .pipeline import (
+    PipelineSchema,
+    PipelineConfigSchema,
+    PipelineStudyResultSchema,
+)
+
 __all__ = [
     "StudySchema",
     "AnalysisSchema",
@@ -35,4 +41,7 @@ __all__ = [
     "StudysetSnapshot",
     "EntitySchema",
     "BooleanOrString",
+    "PipelineSchema",
+    "PipelineConfigSchema",
+    "PipelineStudyResultSchema",
 ]

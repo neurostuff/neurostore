@@ -1,7 +1,108 @@
 """Test Base Study Endpoint"""
 
-from neurostore.models import BaseStudy, Analysis
+from sqlalchemy import text
+from sqlalchemy.orm import aliased
+from sqlalchemy.sql import func
+
+
+from neurostore.models import (
+    Pipeline,
+    PipelineConfig,
+    PipelineStudyResult,
+    BaseStudy,
+    Analysis,
+)
 from neurostore.schemas import StudySchema
+
+
+def test_features_query(auth_client, ingest_demographic_features):
+    # Add OR functionality for multiple tasks (OR conditions)
+    # flatten the features (flatten json objects)
+    # test features organized like this: {top_key: ["list", "of", "values"]}
+    result = auth_client.get(
+        (
+            "/api/base-studies/?feature_filter=ParticipantInfo:predictions.groups[].age_mean>10&"
+            "feature_filter=ParticipantInfo:predictions.groups[].age_mean<=100&"
+            "feature_display=ParticipantInfo"
+        )
+    )
+    assert result.status_code == 200
+    assert "features" in result.json()["results"][0]
+    assert (
+        "age_mean"
+        in result.json()["results"][0]["features"]["ParticipantInfo"]["predictions"][
+            "groups"
+        ][0]
+    )
+
+
+def test_features_query_with_or(auth_client, ingest_demographic_features, session):
+    # First check diagnoses directly from database
+
+    PipelineStudyResultAlias = aliased(PipelineStudyResult)
+    PipelineConfigAlias = aliased(PipelineConfig)
+    PipelineAlias = aliased(Pipeline)
+
+    # Get most recent results for each base study
+    latest_results = (
+        session.query(
+            PipelineStudyResultAlias.base_study_id,
+            func.max(PipelineStudyResultAlias.date_executed).label("max_date_executed"),
+        )
+        .group_by(PipelineStudyResultAlias.base_study_id)
+        .subquery()
+    )
+
+    # Query the database directly using jsonpath
+    db_query = (
+        session.query(PipelineStudyResultAlias)
+        .join(
+            PipelineConfigAlias,
+            PipelineStudyResultAlias.config_id == PipelineConfigAlias.id,
+        )
+        .join(PipelineAlias, PipelineConfigAlias.pipeline_id == PipelineAlias.id)
+        .join(
+            latest_results,
+            (PipelineStudyResultAlias.base_study_id == latest_results.c.base_study_id)
+            & (
+                PipelineStudyResultAlias.date_executed
+                == latest_results.c.max_date_executed
+            ),
+        )
+        .filter(PipelineAlias.name == "ParticipantInfo")
+        .filter(
+            text(
+                "jsonb_path_exists(result_data, '$.predictions.groups[*].diagnosis ?"
+                ' (@ == "ADHD" || @ == "ASD")\')'
+            )
+        )
+    )
+
+    db_diagnoses = set()
+    for result in db_query.all():
+        for group in result.result_data["predictions"]["groups"]:
+            if "diagnosis" in group:
+                db_diagnoses.add(group["diagnosis"])
+
+    # Now make the API request
+    result = auth_client.get(
+        (
+            "/api/base-studies/?feature_filter="
+            "ParticipantInfo:predictions.groups[].diagnosis=ADHD|ASD&"
+            "feature_display=ParticipantInfo"
+        )
+    )
+
+    assert result.status_code == 200
+    assert "features" in result.json()["results"][0]
+
+    api_diagnoses = set()
+    for res in result.json()["results"]:
+        for group in res["features"]["ParticipantInfo"]["predictions"]["groups"]:
+            api_diagnoses.add(group["diagnosis"])
+
+    # Compare database and API results
+    assert db_diagnoses == api_diagnoses
 
 
 def test_post_list_of_studies(auth_client, ingest_neuroquery):
