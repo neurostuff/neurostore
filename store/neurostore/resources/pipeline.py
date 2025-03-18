@@ -52,7 +52,6 @@ def build_jsonpath(field_path: str, operator: str, value: str) -> str:
     Returns:
         PostgreSQL jsonpath query string
     """
-
     # Handle regular field queries
     cast_val, is_numeric = determine_value_type(value)
 
@@ -83,35 +82,35 @@ def build_jsonpath(field_path: str, operator: str, value: str) -> str:
             raw_value = f'"{cast_val}"'
         raw_value = f"@ {sql_op} {raw_value}"
 
-    # Check if we're querying an array field
+    # Check if we're querying array fields
     path_parts = field_path.split(".")
     if any(p.endswith("[]") for p in path_parts):
-        # Handle array field queries
+        query = "$"
         path_segments = []
-        for i, part in enumerate(path_parts):
-            if part.endswith("[]"):
-                # Convert path up to this point into the base path
-                base_path = ".".join(path_segments)
-                array_field = part[:-2]
-                remaining_path = ".".join(path_parts[i + 1:])
 
-                if remaining_path:
-                    full_path = (
-                        f"{base_path}.{array_field}" if base_path else array_field
-                    )
-                    return f"$.{full_path}[*] ? ({raw_value})".replace(
-                        "@", f"@.{remaining_path}"
-                    )
-                else:
-                    full_path = (
-                        f"{base_path}.{array_field}" if base_path else array_field
-                    )
-                    return f"$.{full_path}[*] ? ({raw_value})"
+        for part in path_parts:
+            if part.endswith("[]"):
+                # When we hit an array, add previous path segments if any
+                if path_segments:
+                    query += "." + ".".join(path_segments)
+                    path_segments = []
+                # Add the array access
+                array_field = part[:-2]
+                query += f".{array_field}[*]"
             else:
                 path_segments.append(part)
-    else:
-        # Regular field query
-        return f"$.{field_path} ? ({raw_value})"
+
+        # Add any remaining path segments
+        if path_segments:
+            query += "." + ".".join(path_segments)
+
+        # Add the filter condition
+        query += f" ? ({raw_value})"
+
+        return query
+
+    # Regular field query
+    return f"$.{field_path} ? ({raw_value})"
 
 
 def validate_pipeline_name(pipeline_name: str) -> None:
@@ -184,11 +183,6 @@ def parse_json_filter(filter_str: str) -> tuple:
 
     pipeline_name, field_spec = parts
     validate_pipeline_name(pipeline_name)
-
-    # Match array queries first
-    # array_match = re.match(r"(.+?)\[\]=(.+)", field_spec)
-    # if array_match:
-    #     return pipeline_name, array_match.group(1), "[]", array_match.group(2)
 
     # Then match regular field queries
     match = re.match(r"(.+?)(~|=|>=|<=|>|<)(.+)", field_spec)

@@ -145,6 +145,20 @@ def test_pipeline_multiple_filters(auth_client, study_pipeline_data):
     assert resp.status_code == 200
 
 
+def test_search_list_of_lists(auth_client, study_pipeline_data):
+    """Test search queries on lists of lists."""
+    # Test searching for a specific task name in a list of lists
+    resp = auth_client.get(
+        (
+            "/api/pipeline-study-results?feature_filter="
+            "TaskInfo:predictions.fMRITasks[].Concepts[]~emotion"
+        )
+    )
+    assert resp.status_code == 200
+    results = resp.json()["results"]
+    assert len(results) > 0
+
+
 @pytest.mark.parametrize(
     "query,expected_error",
     [
