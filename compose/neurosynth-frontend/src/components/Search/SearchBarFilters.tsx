@@ -1,14 +1,5 @@
 import { Add } from '@mui/icons-material';
-import {
-    Box,
-    Button,
-    Chip,
-    FormControl,
-    InputLabel,
-    MenuItem,
-    Select,
-    TextField,
-} from '@mui/material';
+import { Box, Button, Chip, FormControl, InputLabel, MenuItem, Select, TextField } from '@mui/material';
 import NeurosynthPopper from 'components/NeurosynthPopper/NeurosynthPopper';
 import { SearchBy } from 'components/Search/search.types';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -49,9 +40,7 @@ const SearchBarFilters: React.FC<{
     const [selectIsOpen, setSelectIsOpen] = useState(false);
 
     // used to display the filters
-    const [existingFilters, setExistingFilters] = useState<{ filter: SearchBy; value: string }[]>(
-        []
-    );
+    const [existingFilters, setExistingFilters] = useState<{ filter: SearchBy; value: string }[]>([]);
 
     const filterOptions = useMemo(() => {
         let filterOptions;
@@ -81,14 +70,11 @@ const SearchBarFilters: React.FC<{
     useEffect(() => {
         setExistingFilters(() => {
             const filters = [];
-            if (nameSearch && nameSearchAllowed)
-                filters.push({ filter: SearchBy.TITLE, value: nameSearch });
-            if (journalSearch && journalSearchAllowed)
-                filters.push({ filter: SearchBy.JOURNAL, value: journalSearch });
+            if (nameSearch && nameSearchAllowed) filters.push({ filter: SearchBy.TITLE, value: nameSearch });
+            if (journalSearch && journalSearchAllowed) filters.push({ filter: SearchBy.JOURNAL, value: journalSearch });
             if (descriptionSearch && descriptionSearchAllowed)
                 filters.push({ filter: SearchBy.DESCRIPTION, value: descriptionSearch });
-            if (authorSearch && authorSearchAllowed)
-                filters.push({ filter: SearchBy.AUTHORS, value: authorSearch });
+            if (authorSearch && authorSearchAllowed) filters.push({ filter: SearchBy.AUTHORS, value: authorSearch });
             return filters;
         });
     }, [
@@ -134,6 +120,7 @@ const SearchBarFilters: React.FC<{
                     <NeurosynthPopper
                         anchorElement={buttonElRef.current}
                         open={addFilterPopupIsOpen}
+                        style={{ zIndex: 1 }}
                         onClickAway={() => {
                             if (selectIsOpen) return;
                             closePopper();

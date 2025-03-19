@@ -1,15 +1,6 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import { Draggable, Droppable } from '@hello-pangea/dnd';
-import {
-    Autocomplete,
-    Box,
-    Button,
-    Divider,
-    ListItem,
-    ListItemText,
-    Paper,
-    TextField,
-} from '@mui/material';
+import { Autocomplete, Box, Button, Divider, ListItem, ListItemText, Paper, TextField } from '@mui/material';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 
 import useGetWindowHeight from 'hooks/useGetWindowHeight';
@@ -225,8 +216,8 @@ const CurationColumn: React.FC<{ columnIndex: number }> = React.memo((props) => 
                         return option.isExclusionTag
                             ? 'Exclusion Tags'
                             : option.isAssignable
-                            ? 'Your Tags'
-                            : 'Default Tags';
+                              ? 'Your Tags'
+                              : 'Default Tags';
                     }}
                     renderInput={(params) => <TextField {...params} label="filter" />}
                     options={tags}

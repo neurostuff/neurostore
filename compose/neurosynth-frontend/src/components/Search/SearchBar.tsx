@@ -62,10 +62,7 @@ const SearchBar: React.FC<ISearchBar> = (props) => {
     // set new placeholder on reload
     useEffect(() => {
         if (searchMode === 'study-search') {
-            const placeholder =
-                searchPlaceholderExamples[
-                    Math.floor(Math.random() * searchPlaceholderExamples.length)
-                ];
+            const placeholder = searchPlaceholderExamples[Math.floor(Math.random() * searchPlaceholderExamples.length)];
             setPlaceholder(placeholder);
         } else {
             setPlaceholder('Enter a project name...');
@@ -215,26 +212,18 @@ const SearchBar: React.FC<ISearchBar> = (props) => {
                             <SearchSelectSortChip
                                 searchMode="study-search"
                                 chipLabel={`Sort By: ${
-                                    SortByEnumToString[
-                                        (searchState as SearchCriteria).sortBy as SortBy
-                                    ]
+                                    SortByEnumToString[(searchState as SearchCriteria).sortBy as SortBy]
                                 }`}
-                                descOrderChipLabel={
-                                    (searchState as SearchCriteria).descOrder ? 'DESC' : 'ASC'
-                                }
+                                descOrderChipLabel={(searchState as SearchCriteria).descOrder ? 'DESC' : 'ASC'}
                                 onSelectDescOrder={(descOrder) =>
                                     onSearch({ ...(searchState as SearchCriteria), descOrder })
                                 }
-                                onSelectSort={(sortBy) =>
-                                    onSearch({ ...(searchState as SearchCriteria), sortBy })
-                                }
+                                onSelectSort={(sortBy) => onSearch({ ...(searchState as SearchCriteria), sortBy })}
                             />
                             <SearchBarFilters
                                 searchMode="study-search"
                                 nameSearch={(searchState as SearchCriteria).nameSearch}
-                                descriptionSearch={
-                                    (searchState as SearchCriteria).descriptionSearch
-                                }
+                                descriptionSearch={(searchState as SearchCriteria).descriptionSearch}
                                 journalSearch={(searchState as SearchCriteria).journalSearch}
                                 authorSearch={(searchState as SearchCriteria).authorSearch}
                                 onAddFilter={handleAddFilter}
@@ -246,15 +235,9 @@ const SearchBar: React.FC<ISearchBar> = (props) => {
                             <SearchSelectSortChip
                                 searchMode="project-search"
                                 chipLabel={`Sort By: ${
-                                    SortByEnumToString[
-                                        (searchState as ProjectSearchCriteria).sortBy as SortBy
-                                    ]
+                                    SortByEnumToString[(searchState as ProjectSearchCriteria).sortBy as SortBy]
                                 }`}
-                                descOrderChipLabel={
-                                    (searchState as ProjectSearchCriteria).descOrder
-                                        ? 'DESC'
-                                        : 'ASC'
-                                }
+                                descOrderChipLabel={(searchState as ProjectSearchCriteria).descOrder ? 'DESC' : 'ASC'}
                                 onSelectDescOrder={(descOrder) =>
                                     onSearch({
                                         ...(searchState as ProjectSearchCriteria),
@@ -268,9 +251,7 @@ const SearchBar: React.FC<ISearchBar> = (props) => {
                             <SearchBarFilters
                                 searchMode="project-search"
                                 nameSearch={(searchState as ProjectSearchCriteria).nameSearch}
-                                descriptionSearch={
-                                    (searchState as ProjectSearchCriteria).descriptionSearch
-                                }
+                                descriptionSearch={(searchState as ProjectSearchCriteria).descriptionSearch}
                                 journalSearchAllowed={false}
                                 authorSearchAllowed={false}
                                 onAddFilter={handleAddFilter}

@@ -16,7 +16,7 @@ interface ICurationDialog {
     onSetSelectedStub: (stub: string) => void;
 }
 
-const CurationDialogFixedSizeListRow: React.FC<
+export const CurationDialogFixedSizeListRow: React.FC<
     ListChildComponentProps<{
         stubs: ICurationStubStudy[];
         selectedStubId: string | undefined;
@@ -39,9 +39,7 @@ const CurationDialogFixedSizeListRow: React.FC<
 const CurationDialog: React.FC<ICurationDialog & IDialog> = (props) => {
     const [stubs, setStubs] = useState<ICurationStubStudy[]>(props.stubs);
     const scrollableBoxRef = useRef<HTMLDivElement>(null);
-    const selectedStub: ICurationStubStudy | undefined = props.stubs.find(
-        (stub) => stub.id === props.selectedStubId
-    );
+    const selectedStub: ICurationStubStudy | undefined = props.stubs.find((stub) => stub.id === props.selectedStubId);
 
     const windowHeight = useGetWindowHeight();
 
@@ -72,9 +70,7 @@ const CurationDialog: React.FC<ICurationDialog & IDialog> = (props) => {
     const handleScrollTo = React.useCallback(
         (listRef: FixedSizeList) => {
             if (listRef) {
-                const selectedItemIndex = props.stubs.findIndex(
-                    (x) => x.id === props.selectedStubId
-                );
+                const selectedItemIndex = props.stubs.findIndex((x) => x.id === props.selectedStubId);
                 listRef.scrollToItem(selectedItemIndex, 'smart');
             }
         },
@@ -91,9 +87,7 @@ const CurationDialog: React.FC<ICurationDialog & IDialog> = (props) => {
                 fullWidth
                 onCloseDialog={props.onCloseDialog}
                 isOpen={props.isOpen}
-                dialogTitle={`Curation View ${
-                    props.selectedFilter ? `(Filtering for ${props.selectedFilter})` : ''
-                }`}
+                dialogTitle={`Curation View ${props.selectedFilter ? `(Filtering for ${props.selectedFilter})` : ''}`}
             >
                 <Typography sx={{ color: 'warning.dark' }}>No studies</Typography>
             </BaseDialog>
@@ -106,9 +100,7 @@ const CurationDialog: React.FC<ICurationDialog & IDialog> = (props) => {
             fullWidth
             onCloseDialog={props.onCloseDialog}
             isOpen={props.isOpen}
-            dialogTitle={`Curation View ${
-                props.selectedFilter ? `(Filtering for ${props.selectedFilter})` : ''
-            }`}
+            dialogTitle={`Curation View ${props.selectedFilter ? `(Filtering for ${props.selectedFilter})` : ''}`}
         >
             <Box sx={{ display: 'flex', height: '60vh' }}>
                 <Box>

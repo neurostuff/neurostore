@@ -31,10 +31,7 @@ export const updateExtractionTableStateInStorage = (
 
     extractionTableState.studies[foundIndex] = newStudyId;
 
-    window.sessionStorage.setItem(
-        `${projectId}-extraction-table`,
-        JSON.stringify(extractionTableState)
-    );
+    window.sessionStorage.setItem(`${projectId}-extraction-table`, JSON.stringify(extractionTableState));
 };
 
 export interface IExtractionTableState {
@@ -42,12 +39,3 @@ export interface IExtractionTableState {
     sorting: SortingState;
     studies: string[];
 }
-
-export const getAuthorShortName = (authors: string) => {
-    let shortName = authors;
-    const authorsList = (authors || '').split(',');
-    if (authorsList.length > 1) {
-        shortName = `${authorsList[0]}., et al.`;
-    }
-    return shortName;
-};
