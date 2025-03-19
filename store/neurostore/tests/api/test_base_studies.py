@@ -28,11 +28,9 @@ def test_features_query(auth_client, ingest_demographic_features):
     )
     assert result.status_code == 200
     assert "features" in result.json()["results"][0]
-    assert (
-        "age_mean"
-        in result.json()["results"][0]["features"]["ParticipantInfo"]["predictions"][
-            "groups"
-        ][0]
+    features = result.json()["results"][0]["features"]["ParticipantInfo"]
+    assert any(
+        key.startswith("predictions") and key.endswith("].age_mean") for key in features
     )
 
 
@@ -98,8 +96,10 @@ def test_features_query_with_or(auth_client, ingest_demographic_features, sessio
 
     api_diagnoses = set()
     for res in result.json()["results"]:
-        for group in res["features"]["ParticipantInfo"]["predictions"]["groups"]:
-            api_diagnoses.add(group["diagnosis"])
+        features = res["features"]["ParticipantInfo"]
+        # Get all diagnosis values from flattened structure
+        diagnoses = [v for k, v in features.items() if k.endswith(".diagnosis")]
+        api_diagnoses.update(diagnoses)
 
     # Compare database and API results
     assert db_diagnoses == api_diagnoses
