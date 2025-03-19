@@ -42,10 +42,43 @@ class PipelineStudyResultSchema(BaseSchema):
     class Meta:
         model = PipelineStudyResult
 
+    @classmethod
+    def flatten_dict(cls, d, parent_key="", sep="."):
+        """Flatten nested dictionaries and arrays containing dictionaries."""
+        items = []
+        for k, v in d.items():
+            new_key = f"{parent_key}{sep}{k}" if parent_key else k
+
+            if isinstance(v, dict):
+                items.extend(cls.flatten_dict(v, new_key, sep=sep).items())
+            elif isinstance(v, list):
+                if v and all(isinstance(item, dict) for item in v):
+                    # For arrays of dictionaries, include index in the key
+                    for idx, dict_item in enumerate(v):
+                        array_key = f"{new_key}[{idx}]"
+                        flattened = cls.flatten_dict(dict_item)
+                        for sub_key, sub_value in flattened.items():
+                            items.append((f"{array_key}.{sub_key}", sub_value))
+                else:
+                    # Keep non-dictionary arrays intact
+                    items.append((new_key, v))
+            else:
+                items.append((new_key, v))
+        return dict(items)
+
     @post_dump
-    def remove_none(self, data, **kwargs):
-        """Remove null values from serialized output."""
-        return {key: value for key, value in data.items() if value is not None}
+    def remove_none_and_flatten(self, data, **kwargs):
+        """Remove null values and flatten nested dictionaries in result_data."""
+        # Remove None values
+        data = {key: value for key, value in data.items() if value is not None}
+
+        # Flatten result_data if it exists
+        if "result_data" in data and isinstance(data["result_data"], dict):
+            # Get predictions section which contains our nested data
+            result_data = data["result_data"]
+            data["result_data"] = self.flatten_dict(result_data)
+
+        return data
 
 
 # Register schemas

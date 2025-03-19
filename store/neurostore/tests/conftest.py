@@ -702,6 +702,10 @@ def create_pipeline_results(session, ingest_neurosynth, tmp_path):
             "fMRITasks": [
                 {
                     "TaskName": random.choice(["oddball", "n-back", "rest"]),
+                    "Concepts": random.sample(
+                        ["emotion", "memory", "attention", "learning"],
+                        k=random.randint(1, 3),
+                    ),
                     "TaskDescription": (
                         "Participants performed a "
                         f"{random.choice(['visual', 'auditory'])} task"
