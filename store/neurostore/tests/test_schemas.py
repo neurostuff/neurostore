@@ -104,8 +104,8 @@ def test_PipelineStudyResultSchema():
     result = schema.load(payload)
     # Test dictionary output instead of model
     assert isinstance(result, dict)
-    assert result["_config"]['id'] == "123"
-    assert result["_base_study"]['id'] == "456"
+    assert result["_config"]["id"] == "123"
+    assert result["_base_study"]["id"] == "456"
     assert result["result_data"] == {"result": "success"}
     assert result["file_inputs"] == {"input1": "file1"}
     assert result["status"] == "completed"

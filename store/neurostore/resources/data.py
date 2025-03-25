@@ -376,6 +376,7 @@ class BaseStudiesView(ObjectView, ListView):
         "data_type": fields.String(load_default=None),
         "feature_filter": fields.List(fields.String(load_default=None)),
         "feature_display": fields.List(fields.String(load_default=None)),
+        "feature_flatten": fields.Boolean(load_default=False),
     }
 
     _multi_search = ("name", "description")
