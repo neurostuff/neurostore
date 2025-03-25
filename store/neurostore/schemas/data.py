@@ -346,7 +346,7 @@ class BaseStudySchema(BaseDataSchema):
 
         features = obj.display_features(pipelines)
         # Flatten each pipeline's predictions
-        if features:
+        if features and self.context.get("feature_flatten", False):
             flattened_features = {}
             for pipeline_name, feature_data in features.items():
                 if isinstance(feature_data, dict):

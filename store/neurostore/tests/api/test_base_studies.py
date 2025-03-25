@@ -16,6 +16,7 @@ from neurostore.schemas import StudySchema
 
 
 def test_features_query(auth_client, ingest_demographic_features):
+    """Test filtering features"""
     # Add OR functionality for multiple tasks (OR conditions)
     # flatten the features (flatten json objects)
     # test features organized like this: {top_key: ["list", "of", "values"]}
@@ -23,7 +24,8 @@ def test_features_query(auth_client, ingest_demographic_features):
         (
             "/api/base-studies/?feature_filter=ParticipantInfo:predictions.groups[].age_mean>10&"
             "feature_filter=ParticipantInfo:predictions.groups[].age_mean<=100&"
-            "feature_display=ParticipantInfo"
+            "feature_display=ParticipantInfo&"
+            "feature_flatten=true"
         )
     )
     assert result.status_code == 200
@@ -87,7 +89,8 @@ def test_features_query_with_or(auth_client, ingest_demographic_features, sessio
         (
             "/api/base-studies/?feature_filter="
             "ParticipantInfo:predictions.groups[].diagnosis=ADHD|ASD&"
-            "feature_display=ParticipantInfo"
+            "feature_display=ParticipantInfo&"
+            "feature_flatten=true"
         )
     )
 
@@ -352,3 +355,38 @@ def test_has_coordinates_images(auth_client, session):
     session.refresh(base_study_2)
     assert base_study_2.has_coordinates is False
     assert base_study_2.has_images is False
+
+
+def test_feature_flatten(auth_client, ingest_demographic_features):
+    """Test flattening nested feature objects into dot notation"""
+    # Get response without flattening
+    unflattened = auth_client.get("/api/base-studies/?feature_display=ParticipantInfo")
+    assert unflattened.status_code == 200
+
+    # Get response with flattening
+    flattened = auth_client.get(
+        "/api/base-studies/?feature_display=ParticipantInfo&feature_flatten=true"
+    )
+    assert flattened.status_code == 200
+
+    # Check that features exist in both responses
+    assert "features" in unflattened.json()["results"][0]
+    assert "features" in flattened.json()["results"][0]
+
+    # Get the feature dictionaries
+    unflattened_features = unflattened.json()["results"][0]["features"][
+        "ParticipantInfo"
+    ]
+    flattened_features = flattened.json()["results"][0]["features"]["ParticipantInfo"]
+
+    # Verify features are flattened in dot notation
+    # Check nested predictions.groups objects are flattened
+    assert any(
+        key.startswith("predictions.groups") for key in flattened_features.keys()
+    )
+
+    # Verify values are preserved after flattening
+    # Example: predictions.groups[0].age_mean should equal the nested value
+    nested_age = unflattened_features["predictions"]["groups"][0]["age_mean"]
+    flattened_age = flattened_features["predictions.groups[0].age_mean"]
+    assert nested_age == flattened_age
