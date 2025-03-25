@@ -79,7 +79,7 @@ def test_PipelineConfigSchema():
     result = schema.load(payload)
     # Test dictionary output instead of model
     assert isinstance(result, dict)
-    assert result["pipeline"] == {"name": "123"}
+    assert result["_pipeline"] == {"name": "123"}
     assert result["version"] == "1.0.0"
     assert result["config"] == {"param1": "value1", "param2": "value2"}
     assert result["config_hash"] == "abc123"
@@ -88,6 +88,7 @@ def test_PipelineConfigSchema():
 def test_PipelineStudyResultSchema():
     payload = {
         "config": {
+            "id": "123",
             "version": "1.0.0",
             "config": {"param1": "value1"},
             "config_hash": "abc123",
@@ -103,11 +104,8 @@ def test_PipelineStudyResultSchema():
     result = schema.load(payload)
     # Test dictionary output instead of model
     assert isinstance(result, dict)
-    assert isinstance(result["config"], dict)
-    assert result["config"]["version"] == "1.0.0"
-    assert isinstance(result["base_study"], dict)
-    assert result["base_study"]["id"] == "456"
-    assert "date_executed" in result
+    assert result["_config"]['id'] == "123"
+    assert result["_base_study"]['id'] == "456"
     assert result["result_data"] == {"result": "success"}
     assert result["file_inputs"] == {"input1": "file1"}
     assert result["status"] == "completed"

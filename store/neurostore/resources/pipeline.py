@@ -249,7 +249,10 @@ class PipelineStudyResultsView(ObjectView, ListView):
     schema = pipeline_study_result_schema
     schemas = pipeline_study_result_schemas
 
-    _view_fields = {"feature_filter": fields.List(fields.String(), load_default=[])}
+    _view_fields = {
+        "feature_filter": fields.List(fields.String(), load_default=[]),
+        "study_id": fields.List(fields.String(), load_default=[]),
+    }
 
     def view_search(self, q, args):
         """Apply feature path filtering to query.
@@ -267,6 +270,15 @@ class PipelineStudyResultsView(ObjectView, ListView):
         from flask import abort
 
         q = super().view_search(q, args)
+
+        # Handle study_id filtering
+        study_ids = args.get("study_id", [])
+        if isinstance(study_ids, str):
+            study_ids = [study_ids]
+
+        # Filter by study IDs if provided
+        if study_ids:
+            q = q.filter(self.model.base_study_id.in_(study_ids))
 
         feature_filters = args.get("feature_filter", [])
         if isinstance(feature_filters, str):
