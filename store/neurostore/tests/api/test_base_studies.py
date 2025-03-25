@@ -356,14 +356,13 @@ def test_has_coordinates_images(auth_client, session):
     assert base_study_2.has_coordinates is False
     assert base_study_2.has_images is False
 
+
 def test_feature_flatten(auth_client, ingest_demographic_features):
     """Test flattening nested feature objects into dot notation"""
     # Get response without flattening
-    unflattened = auth_client.get(
-        "/api/base-studies/?feature_display=ParticipantInfo"
-    )
+    unflattened = auth_client.get("/api/base-studies/?feature_display=ParticipantInfo")
     assert unflattened.status_code == 200
-    
+
     # Get response with flattening
     flattened = auth_client.get(
         "/api/base-studies/?feature_display=ParticipantInfo&feature_flatten=true"
@@ -375,7 +374,9 @@ def test_feature_flatten(auth_client, ingest_demographic_features):
     assert "features" in flattened.json()["results"][0]
 
     # Get the feature dictionaries
-    unflattened_features = unflattened.json()["results"][0]["features"]["ParticipantInfo"]
+    unflattened_features = unflattened.json()["results"][0]["features"][
+        "ParticipantInfo"
+    ]
     flattened_features = flattened.json()["results"][0]["features"]["ParticipantInfo"]
 
     # Verify features are flattened in dot notation
