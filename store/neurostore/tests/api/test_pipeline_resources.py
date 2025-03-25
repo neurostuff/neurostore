@@ -30,21 +30,24 @@ def pipeline_study_result_payload(session):
     db.session.commit()
 
     # Return template for both studies
-    return [{
-        "base_study_id": study1.id,
-        "config_id": pipeline_config.id,
-        "date_executed": "2023-01-01T00:00:00Z",
-        "file_inputs": {},
-        "result_data": {},
-        "status": "SUCCESS",
-    }, {
-        "base_study_id": study2.id,
-        "config_id": pipeline_config.id,
-        "date_executed": "2023-01-01T00:00:00Z",
-        "file_inputs": {},
-        "result_data": {},
-        "status": "SUCCESS",
-    }]
+    return [
+        {
+            "base_study_id": study1.id,
+            "config_id": pipeline_config.id,
+            "date_executed": "2023-01-01T00:00:00Z",
+            "file_inputs": {},
+            "result_data": {},
+            "status": "SUCCESS",
+        },
+        {
+            "base_study_id": study2.id,
+            "config_id": pipeline_config.id,
+            "date_executed": "2023-01-01T00:00:00Z",
+            "file_inputs": {},
+            "result_data": {},
+            "status": "SUCCESS",
+        },
+    ]
 
 
 @pytest.fixture
@@ -142,29 +145,21 @@ def test_filter_pipeline_study_results(
 
 
 def test_list_of_studies(
-    auth_client,
-    result1,
-    result2,
-    pipeline_study_result_payload,
-    session
-    ):
+    auth_client, result1, result2, pipeline_study_result_payload, session
+):
     # Get study IDs from payload
     study1_id = pipeline_study_result_payload[0]["base_study_id"]
     study2_id = pipeline_study_result_payload[1]["base_study_id"]
 
     # Test filtering by first study
-    response = auth_client.get(
-        f"/api/pipeline-study-results/?study_id={study1_id}"
-    )
+    response = auth_client.get(f"/api/pipeline-study-results/?study_id={study1_id}")
     assert response.status_code == 200
     data = response.json()
     assert len(data["results"]) == 1
     assert data["results"][0]["base_study_id"] == study1_id
 
     # Test filtering by second study
-    response = auth_client.get(
-        f"/api/pipeline-study-results/?study_id={study2_id}"
-    )
+    response = auth_client.get(f"/api/pipeline-study-results/?study_id={study2_id}")
     assert response.status_code == 200
     data = response.json()
     assert len(data["results"]) == 1

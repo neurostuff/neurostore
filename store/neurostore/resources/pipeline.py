@@ -251,7 +251,7 @@ class PipelineStudyResultsView(ObjectView, ListView):
 
     _view_fields = {
         "feature_filter": fields.List(fields.String(), load_default=[]),
-        "study_id": fields.List(fields.String(), load_default=[])
+        "study_id": fields.List(fields.String(), load_default=[]),
     }
 
     def view_search(self, q, args):
@@ -275,7 +275,7 @@ class PipelineStudyResultsView(ObjectView, ListView):
         study_ids = args.get("study_id", [])
         if isinstance(study_ids, str):
             study_ids = [study_ids]
-        
+
         # Filter by study IDs if provided
         if study_ids:
             q = q.filter(self.model.base_study_id.in_(study_ids))
