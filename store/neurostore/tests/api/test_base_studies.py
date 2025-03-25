@@ -24,7 +24,8 @@ def test_features_query(auth_client, ingest_demographic_features):
         (
             "/api/base-studies/?feature_filter=ParticipantInfo:predictions.groups[].age_mean>10&"
             "feature_filter=ParticipantInfo:predictions.groups[].age_mean<=100&"
-            "feature_display=ParticipantInfo"
+            "feature_display=ParticipantInfo&"
+            "feature_flatten=true"
         )
     )
     assert result.status_code == 200
@@ -89,6 +90,7 @@ def test_features_query_with_or(auth_client, ingest_demographic_features, sessio
             "/api/base-studies/?feature_filter="
             "ParticipantInfo:predictions.groups[].diagnosis=ADHD|ASD&"
             "feature_display=ParticipantInfo"
+            "feature_flatten=true"
         )
     )
 
