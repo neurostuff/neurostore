@@ -3,7 +3,7 @@
 from marshmallow import fields, post_dump
 
 from neurostore.models import PipelineStudyResult, Pipeline, PipelineConfig
-from neurostore.schemas.data import BaseStudySchema, BaseSchema, StringOrNested
+from neurostore.schemas.data import BaseStudySchema, BaseSchema
 
 
 class PipelineSchema(BaseSchema):
