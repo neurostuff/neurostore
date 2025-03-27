@@ -168,20 +168,27 @@ def parse_json_filter(filter_str: str) -> tuple:
     """Parse a json filter string into components.
 
     Args:
-        filter_str: Filter string (e.g. "NeuroimagingMethod:predictions.groups[].count=18")
+        filter_str: Filter string (e.g. "NeuroimagingMethod:v1.0.0:predictions.groups[].count=18")
 
     Returns:
-        Tuple of (pipeline_name, field_path, operator, value)
+        Tuple of (pipeline_name, version, field_path, operator, value)
 
     Raises:
         ValueError with descriptive message if filter is invalid
     """
-    # Split pipeline name from field path
-    parts = filter_str.split(":", 1)
-    if len(parts) != 2:
+    # Split into at most 3 parts - pipeline spec, (version spec, optional) and field spec
+    parts = filter_str.split(":", 2)
+    if len(parts) < 2:
         raise ValueError(f"Missing pipeline name in filter: {filter_str}")
 
-    pipeline_name, field_spec = parts
+    if len(parts) == 2:
+        pipeline_name, field_spec = parts
+        version = None
+    elif len(parts) == 3:
+        pipeline_name, version, field_spec = parts
+    else:
+        raise ValueError(f"Invalid filter format: {filter_str}")
+
     validate_pipeline_name(pipeline_name)
 
     # Then match regular field queries
@@ -206,7 +213,7 @@ def parse_json_filter(filter_str: str) -> tuple:
         except ValueError:
             raise ValueError(f"Invalid numeric value '{value}' for operator {operator}")
 
-    return pipeline_name, field_path, operator, value
+    return pipeline_name, version, field_path, operator, value
 
 
 @view_maker
@@ -251,6 +258,7 @@ class PipelineStudyResultsView(ObjectView, ListView):
 
     _view_fields = {
         "feature_filter": fields.List(fields.String(), load_default=[]),
+        "feature_config": fields.List(fields.String(), load_default=[]),
         "study_id": fields.List(fields.String(), load_default=[]),
     }
 
@@ -280,19 +288,37 @@ class PipelineStudyResultsView(ObjectView, ListView):
         if study_ids:
             q = q.filter(self.model.base_study_id.in_(study_ids))
 
+        # Create aliases for joining - only create once for both filters
+        ConfigAlias = aliased(PipelineConfig)
+        PipelineAlias = aliased(Pipeline)
+
+        # Add common joins
+        q = q.join(ConfigAlias, self.model.config_id == ConfigAlias.id)
+        q = q.join(PipelineAlias, ConfigAlias.pipeline_id == PipelineAlias.id)
+
+        # Process feature filters
         feature_filters = args.get("feature_filter", [])
         if isinstance(feature_filters, str):
             feature_filters = [feature_filters]
-
-        # Don't allow empty string filters
         feature_filters = [f for f in feature_filters if f.strip()]
-        if not feature_filters:
+
+        # Process config filters
+        config_filters = args.get("feature_config", [])
+        if isinstance(config_filters, str):
+            config_filters = [config_filters]
+        config_filters = [f for f in config_filters if f.strip()]
+
+        if not feature_filters and not config_filters:
             return q
 
         invalid_filters = []
-        for feature_filter in feature_filters:
+
+        from sqlalchemy import exists, select
+
+        # Process feature filters
+        for i, feature_filter in enumerate(feature_filters):
             try:
-                pipeline_name, field_path, operator, value = parse_json_filter(
+                pipeline_name, version, field_path, operator, value = parse_json_filter(
                     feature_filter
                 )
 
@@ -303,24 +329,57 @@ class PipelineStudyResultsView(ObjectView, ListView):
 
                 jsonpath = build_jsonpath(field_path, operator, value)
 
-                # Create aliases for joining
-                ConfigAlias = aliased(PipelineConfig)
-                PipelineAlias = aliased(Pipeline)
+                # Create unique parameter name for this filter
+                param_name = f"jsonpath_feature_{i}"
 
-                # Add joins to get pipeline name
-                q = q.join(ConfigAlias, self.model.config_id == ConfigAlias.id)
-                q = q.join(PipelineAlias, ConfigAlias.pipeline_id == PipelineAlias.id)
-
-                # Filter by pipeline name and apply jsonpath
-                q = q.filter(PipelineAlias.name == pipeline_name)
-                q = q.filter(
-                    text("jsonb_path_exists(result_data, :jsonpath)").params(
-                        jsonpath=jsonpath
+                # Build filter conditions for this specific pipeline
+                pipeline_conditions = [
+                    PipelineAlias.name == pipeline_name,
+                    text(f"jsonb_path_exists(result_data, :{param_name})").params(
+                        **{param_name: jsonpath}
                     )
-                )
+                ]
+                if version is not None:
+                    pipeline_conditions.append(ConfigAlias.version == version)
+
+                # Apply conditions directly to the query for proper scoping
+                q = q.filter(*pipeline_conditions)
 
             except ValueError as e:
                 invalid_filters.append({"filter": feature_filter, "error": str(e)})
+
+        # Process config filters
+        for i, config_filter in enumerate(config_filters):
+            try:
+                pipeline_name, version, field_path, operator, value = parse_json_filter(
+                    config_filter
+                )
+
+                # Verify pipeline exists
+                pipeline = Pipeline.query.filter_by(name=pipeline_name).first()
+                if not pipeline:
+                    raise ValueError(f"Pipeline '{pipeline_name}' does not exist")
+
+                jsonpath = build_jsonpath(field_path, operator, value)
+
+                # Create unique parameter name for this filter
+                param_name = f"jsonpathb_config_{i}"
+
+                # Build filter conditions for this specific pipeline
+                pipeline_conditions = [
+                    PipelineAlias.name == pipeline_name,
+                    text(f"jsonb_path_exists(config_args, :{param_name})").params(
+                        **{param_name: jsonpath}
+                    )
+                ]
+                if version is not None:
+                    pipeline_conditions.append(ConfigAlias.version == version)
+
+                # Apply conditions directly to the query for proper scoping
+                q = q.filter(*pipeline_conditions)
+
+            except ValueError as e:
+                invalid_filters.append({"filter": config_filter, "error": str(e)})
 
         # If any filters were invalid, return 400 with error details
         if invalid_filters:
