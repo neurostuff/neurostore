@@ -627,7 +627,7 @@ class PipelineConfig(BaseMixin, db.Model):
         db.Text, db.ForeignKey("pipelines.id", ondelete="CASCADE"), index=True
     )
     version = db.Column(db.String)
-    config = db.Column(JSONB)
+    config_args = db.Column(JSONB)
     executed_at = db.Column(
         db.DateTime(timezone=True)
     )  # when the pipeline was executed on the filesystem (not when it was ingested)
