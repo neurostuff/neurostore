@@ -26,26 +26,23 @@ def pipeline_study_result_payload(session):
             "text_extraction": {
                 "source": "abstract",
                 "min_words": 100,
-                "language": "en"
+                "language": "en",
             },
             "embeddings": {
                 "model": "bert-base-uncased",
                 "max_length": 512,
-                "batch_size": 32
+                "batch_size": 32,
             },
             "classification": {
                 "model_type": "transformer",
                 "architecture": "roberta-large",
-                "fine_tuning": {
-                    "epochs": 3,
-                    "learning_rate": 2e-5
-                }
+                "fine_tuning": {"epochs": 3, "learning_rate": 2e-5},
             },
             "topic_modeling": {
                 "method": "lda",
                 "num_topics": 20,
-                "min_topic_coherence": 0.7
-            }
+                "min_topic_coherence": 0.7,
+            },
         },
         config_hash="test_hash",
         pipeline=pipeline,
@@ -118,26 +115,23 @@ def result3(pipeline_study_result_payload, session):
             "text_extraction": {
                 "source": "full_text",
                 "min_words": 200,
-                "language": "en"
+                "language": "en",
             },
             "embeddings": {
                 "model": "roberta-base",
                 "max_length": 768,
-                "batch_size": 16
+                "batch_size": 16,
             },
             "classification": {
                 "model_type": "transformer",
                 "architecture": "bert-large",
-                "fine_tuning": {
-                    "epochs": 5,
-                    "learning_rate": 1e-5
-                }
+                "fine_tuning": {"epochs": 5, "learning_rate": 1e-5},
             },
             "topic_modeling": {
                 "method": "bertopic",
                 "num_topics": 30,
-                "min_topic_coherence": 0.8
-            }
+                "min_topic_coherence": 0.8,
+            },
         },
         config_hash="test_hash_v2",
         pipeline=pipeline,
@@ -162,6 +156,7 @@ def result3(pipeline_study_result_payload, session):
     db.session.add(result)
     db.session.commit()
     return result
+
 
 @pytest.mark.parametrize(
     "feature_filter,expected_count,expected_value,check_field",
@@ -248,83 +243,83 @@ def test_filter_pipeline_study_results(
             "TestPipeline:text_extraction.source=abstract",
             2,
             "abstract",
-            lambda x: x.config_args["text_extraction"]["source"]
+            lambda x: x.config_args["text_extraction"]["source"],
         ),
         (
             "TestPipeline:embeddings.model=bert-base-uncased",
             2,
             "bert-base-uncased",
-            lambda x: x.config_args["embeddings"]["model"]
+            lambda x: x.config_args["embeddings"]["model"],
         ),
         # Test numeric comparisons
         (
             "TestPipeline:1.0.0:text_extraction.min_words>=50",
             2,
             100,
-            lambda x: x.config_args["text_extraction"]["min_words"]
+            lambda x: x.config_args["text_extraction"]["min_words"],
         ),
         (
             "TestPipeline:1.0.0:embeddings.max_length>256",
             2,
             512,
-            lambda x: x.config_args["embeddings"]["max_length"]
+            lambda x: x.config_args["embeddings"]["max_length"],
         ),
         # Test nested config paths
         (
             "TestPipeline:1.0.0:classification.fine_tuning.epochs=3",
             2,
             3,
-            lambda x: x.config_args["classification"]["fine_tuning"]["epochs"]
+            lambda x: x.config_args["classification"]["fine_tuning"]["epochs"],
         ),
         # Test with version
         (
             "TestPipeline:1.0.0:topic_modeling.method=lda",
             2,
             "lda",
-            lambda x: x.config_args["topic_modeling"]["method"]
+            lambda x: x.config_args["topic_modeling"]["method"],
         ),
         # Test floating point values
         (
             "TestPipeline:1.0.0:topic_modeling.min_topic_coherence>=0.5",
             2,
             0.7,
-            lambda x: x.config_args["topic_modeling"]["min_topic_coherence"]
+            lambda x: x.config_args["topic_modeling"]["min_topic_coherence"],
         ),
         # Test version-specific filters for v2.0.0
         (
             "TestPipeline:2.0.0:topic_modeling.method=bertopic",
             1,
             "bertopic",
-            lambda x: x.config_args["topic_modeling"]["method"]
+            lambda x: x.config_args["topic_modeling"]["method"],
         ),
         (
             "TestPipeline:2.0.0:embeddings.model=roberta-base",
             1,
             "roberta-base",
-            lambda x: x.config_args["embeddings"]["model"]
+            lambda x: x.config_args["embeddings"]["model"],
         ),
         # Test filtering that should match both versions
         (
             "TestPipeline:1.0.0:classification.model_type=transformer",
             2,
             "transformer",
-            lambda x: x.config_args["classification"]["model_type"]
+            lambda x: x.config_args["classification"]["model_type"],
         ),
         # Test numeric comparisons across versions
         (
             "TestPipeline:1.0.0:embeddings.max_length>=512",
             2,
             None,
-            lambda x: x.config_args["embeddings"]["max_length"]
+            lambda x: x.config_args["embeddings"]["max_length"],
         ),
         # Test floating point values with version
         (
             "TestPipeline:2.0.0:topic_modeling.min_topic_coherence>0.75",
             1,
             0.8,
-            lambda x: x.config_args["topic_modeling"]["min_topic_coherence"]
-        )
-    ]
+            lambda x: x.config_args["topic_modeling"]["min_topic_coherence"],
+        ),
+    ],
 )
 def test_config_pipeline_study_results(
     auth_client,
@@ -334,7 +329,7 @@ def test_config_pipeline_study_results(
     feature_config,
     expected_count,
     expected_value,
-    check_field
+    check_field,
 ):
     """Test filtering pipeline study results by config parameters."""
     response = auth_client.get(
@@ -349,36 +344,38 @@ def test_config_pipeline_study_results(
         config_id = data["results"][0]["config_id"]
         pipeline_config = PipelineConfig.query.get(config_id)
         assert pipeline_config is not None
-        
+
         # Check the value using the config from database
         actual_value = check_field(pipeline_config)
-        
+
         # Compare with expected value, handling numeric comparisons specially
-        if isinstance(actual_value, (int, float)) and isinstance(expected_value, (int, float)):
+        if isinstance(actual_value, (int, float)) and isinstance(
+            expected_value, (int, float)
+        ):
             assert abs(actual_value - expected_value) < 1e-6
         elif expected_value is not None:  # Skip comparison if expected_value is None
             assert actual_value == expected_value
 
-def test_combined_filters(
-    auth_client, result1, result2, result3
-):
+
+def test_combined_filters(auth_client, result1, result2, result3):
     """Test combining feature_filter and feature_config filters."""
     response = auth_client.get(
         "/api/pipeline-study-results/?"
         "feature_filter=TestPipeline:string_field=test value&"
         "feature_config=TestPipeline:embeddings.model=bert-base-uncased"
     )
-    
+
     assert response.status_code == 200
     data = response.json()
     assert len(data["results"]) == 1
-    
+
     result = data["results"][0]
     assert result["result_data"]["string_field"] == "test value"
     # Validate against database config
     pipeline_config = PipelineConfig.query.get(result["config_id"])
     assert pipeline_config is not None
     assert pipeline_config.config_args["embeddings"]["model"] == "bert-base-uncased"
+
 
 def test_list_of_studies(
     auth_client, result1, result2, pipeline_study_result_payload, session

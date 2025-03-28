@@ -457,7 +457,9 @@ class BaseStudiesView(ObjectView, ListView):
         from ..resources.pipeline import parse_json_filter, build_jsonpath
 
         # Group all filters (feature and config) by pipeline name and version
-        pipeline_filters = {}  # Structure: {pipeline_name: {'version': version, 'result_filters': [], 'config_filters': []}}
+        pipeline_filters = (
+            {}
+        )  # Structure: {pipeline_name: {'version': version, 'result_filters': [], 'config_filters': []}}
         invalid_filters = []
 
         # Process feature filters
@@ -478,40 +480,58 @@ class BaseStudiesView(ObjectView, ListView):
         # Process feature filters
         for feature_filter in feature_filters:
             try:
-                pipeline_name, version, field_path, operator, value = parse_json_filter(feature_filter)
+                pipeline_name, version, field_path, operator, value = parse_json_filter(
+                    feature_filter
+                )
                 if pipeline_name not in pipeline_filters:
                     pipeline_filters[pipeline_name] = {
-                        'version': version,
-                        'result_filters': [],
-                        'config_filters': []
+                        "version": version,
+                        "result_filters": [],
+                        "config_filters": [],
                     }
-                elif version != pipeline_filters[pipeline_name]['version'] and not (version is None or pipeline_filters[pipeline_name]['version'] is None):
+                elif version != pipeline_filters[pipeline_name]["version"] and not (
+                    version is None
+                    or pipeline_filters[pipeline_name]["version"] is None
+                ):
                     # If versions conflict and neither is None (wildcard), create error
-                    raise ValueError(f"Conflicting versions for pipeline {pipeline_name}: {version} vs {pipeline_filters[pipeline_name]['version']}")
+                    raise ValueError(
+                        f"Conflicting versions for pipeline {pipeline_name}: {version} vs {pipeline_filters[pipeline_name]['version']}"
+                    )
                 # Use the more specific version if one is None
                 if version is not None:
-                    pipeline_filters[pipeline_name]['version'] = version
-                pipeline_filters[pipeline_name]['result_filters'].append((field_path, operator, value))
+                    pipeline_filters[pipeline_name]["version"] = version
+                pipeline_filters[pipeline_name]["result_filters"].append(
+                    (field_path, operator, value)
+                )
             except ValueError as e:
                 invalid_filters.append({"filter": feature_filter, "error": str(e)})
 
         # Process config filters
         for config_filter in config_filters:
             try:
-                pipeline_name, version, field_path, operator, value = parse_json_filter(config_filter)
+                pipeline_name, version, field_path, operator, value = parse_json_filter(
+                    config_filter
+                )
                 if pipeline_name not in pipeline_filters:
                     pipeline_filters[pipeline_name] = {
-                        'version': version,
-                        'result_filters': [],
-                        'config_filters': []
+                        "version": version,
+                        "result_filters": [],
+                        "config_filters": [],
                     }
-                elif version != pipeline_filters[pipeline_name]['version'] and not (version is None or pipeline_filters[pipeline_name]['version'] is None):
+                elif version != pipeline_filters[pipeline_name]["version"] and not (
+                    version is None
+                    or pipeline_filters[pipeline_name]["version"] is None
+                ):
                     # If versions conflict and neither is None (wildcard), create error
-                    raise ValueError(f"Conflicting versions for pipeline {pipeline_name}: {version} vs {pipeline_filters[pipeline_name]['version']}")
+                    raise ValueError(
+                        f"Conflicting versions for pipeline {pipeline_name}: {version} vs {pipeline_filters[pipeline_name]['version']}"
+                    )
                 # Use the more specific version if one is None
                 if version is not None:
-                    pipeline_filters[pipeline_name]['version'] = version
-                pipeline_filters[pipeline_name]['config_filters'].append((field_path, operator, value))
+                    pipeline_filters[pipeline_name]["version"] = version
+                pipeline_filters[pipeline_name]["config_filters"].append(
+                    (field_path, operator, value)
+                )
             except ValueError as e:
                 invalid_filters.append({"filter": config_filter, "error": str(e)})
 
@@ -546,11 +566,13 @@ class BaseStudiesView(ObjectView, ListView):
             )
 
             # Apply version filter if specified
-            if filters['version'] is not None:
-                pipeline_query = pipeline_query.filter(PipelineConfigAlias.version == filters['version'])
+            if filters["version"] is not None:
+                pipeline_query = pipeline_query.filter(
+                    PipelineConfigAlias.version == filters["version"]
+                )
 
             # Get most recent results subquery if we have result filters
-            if filters['result_filters']:
+            if filters["result_filters"]:
                 latest_results = (
                     db.session.query(
                         PipelineStudyResultAlias.base_study_id,
@@ -575,7 +597,9 @@ class BaseStudiesView(ObjectView, ListView):
                 )
 
             # Apply all result filters with unique parameter names for each filter
-            for idx, (field_path, operator, value) in enumerate(filters['result_filters']):
+            for idx, (field_path, operator, value) in enumerate(
+                filters["result_filters"]
+            ):
                 jsonpath = build_jsonpath(field_path, operator, value)
                 param_name = f"jsonpath_result_{pipeline_name}_{idx}"
                 pipeline_query = pipeline_query.filter(
@@ -585,7 +609,9 @@ class BaseStudiesView(ObjectView, ListView):
                 )
 
             # Apply all config filters with unique parameter names for each filter
-            for idx, (field_path, operator, value) in enumerate(filters['config_filters']):
+            for idx, (field_path, operator, value) in enumerate(
+                filters["config_filters"]
+            ):
                 jsonpath = build_jsonpath(field_path, operator, value)
                 param_name = f"jsonpath_config_{pipeline_name}_{idx}"
                 pipeline_query = pipeline_query.filter(

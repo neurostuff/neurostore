@@ -335,7 +335,7 @@ class PipelineStudyResultsView(ObjectView, ListView):
                     PipelineAlias.name == pipeline_name,
                     text(f"jsonb_path_exists(result_data, :{param_name})").params(
                         **{param_name: jsonpath}
-                    )
+                    ),
                 ]
                 if version is not None:
                     pipeline_conditions.append(ConfigAlias.version == version)
@@ -368,7 +368,7 @@ class PipelineStudyResultsView(ObjectView, ListView):
                     PipelineAlias.name == pipeline_name,
                     text(f"jsonb_path_exists(config_args, :{param_name})").params(
                         **{param_name: jsonpath}
-                    )
+                    ),
                 ]
                 if version is not None:
                     pipeline_conditions.append(ConfigAlias.version == version)
