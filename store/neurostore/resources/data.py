@@ -375,6 +375,7 @@ class BaseStudiesView(ObjectView, ListView):
         "info": fields.Boolean(load_default=False),
         "data_type": fields.String(load_default=None),
         "feature_filter": fields.List(fields.String(load_default=None)),
+        "feature_config": fields.List(fields.String(load_default=None)),
         "feature_display": fields.List(fields.String(load_default=None)),
         "feature_flatten": fields.Boolean(load_default=False),
     }
@@ -455,38 +456,78 @@ class BaseStudiesView(ObjectView, ListView):
         from ..models import Pipeline, PipelineConfig, PipelineStudyResult
         from ..resources.pipeline import parse_json_filter, build_jsonpath
 
+        # Group all filters (feature and config) by pipeline name and version
+        pipeline_filters = {}  # Structure: {pipeline_name: {'version': version, 'result_filters': [], 'config_filters': []}}
+        invalid_filters = []
+
+        # Process feature filters
         feature_filters = args.get("feature_filter", [])
         if isinstance(feature_filters, str):
             feature_filters = [feature_filters]
-
-        # Don't allow empty string filters
         feature_filters = [f for f in feature_filters if f.strip()]
-        if not feature_filters:
+
+        # Process config filters
+        config_filters = args.get("feature_config", [])
+        if isinstance(config_filters, str):
+            config_filters = [config_filters]
+        config_filters = [f for f in config_filters if f.strip()]
+
+        if not feature_filters and not config_filters:
             return q
 
-        invalid_filters = []
-
-        # Group filters by pipeline name
-        pipeline_filters = {}
+        # Process feature filters
         for feature_filter in feature_filters:
             try:
-                pipeline_name, field_path, operator, value = parse_json_filter(
-                    feature_filter
-                )
+                pipeline_name, version, field_path, operator, value = parse_json_filter(feature_filter)
                 if pipeline_name not in pipeline_filters:
-                    pipeline_filters[pipeline_name] = []
-                pipeline_filters[pipeline_name].append((field_path, operator, value))
+                    pipeline_filters[pipeline_name] = {
+                        'version': version,
+                        'result_filters': [],
+                        'config_filters': []
+                    }
+                elif version != pipeline_filters[pipeline_name]['version'] and not (version is None or pipeline_filters[pipeline_name]['version'] is None):
+                    # If versions conflict and neither is None (wildcard), create error
+                    raise ValueError(f"Conflicting versions for pipeline {pipeline_name}: {version} vs {pipeline_filters[pipeline_name]['version']}")
+                # Use the more specific version if one is None
+                if version is not None:
+                    pipeline_filters[pipeline_name]['version'] = version
+                pipeline_filters[pipeline_name]['result_filters'].append((field_path, operator, value))
             except ValueError as e:
                 invalid_filters.append({"filter": feature_filter, "error": str(e)})
+
+        # Process config filters
+        for config_filter in config_filters:
+            try:
+                pipeline_name, version, field_path, operator, value = parse_json_filter(config_filter)
+                if pipeline_name not in pipeline_filters:
+                    pipeline_filters[pipeline_name] = {
+                        'version': version,
+                        'result_filters': [],
+                        'config_filters': []
+                    }
+                elif version != pipeline_filters[pipeline_name]['version'] and not (version is None or pipeline_filters[pipeline_name]['version'] is None):
+                    # If versions conflict and neither is None (wildcard), create error
+                    raise ValueError(f"Conflicting versions for pipeline {pipeline_name}: {version} vs {pipeline_filters[pipeline_name]['version']}")
+                # Use the more specific version if one is None
+                if version is not None:
+                    pipeline_filters[pipeline_name]['version'] = version
+                pipeline_filters[pipeline_name]['config_filters'].append((field_path, operator, value))
+            except ValueError as e:
+                invalid_filters.append({"filter": config_filter, "error": str(e)})
 
         if invalid_filters:
             abort(
                 400, {"message": "Invalid feature filter(s)", "errors": invalid_filters}
             )
 
-        # Process each pipeline's filters separately
+        # Create subqueries for each pipeline
         pipeline_subqueries = []
         for pipeline_name, filters in pipeline_filters.items():
+            # Verify pipeline exists
+            pipeline = Pipeline.query.filter_by(name=pipeline_name).first()
+            if not pipeline:
+                raise ValueError(f"Pipeline '{pipeline_name}' does not exist")
+
             PipelineStudyResultAlias = aliased(PipelineStudyResult)
             PipelineConfigAlias = aliased(PipelineConfig)
             PipelineAlias = aliased(Pipeline)
@@ -504,36 +545,52 @@ class BaseStudiesView(ObjectView, ListView):
                 .filter(PipelineAlias.name == pipeline_name)
             )
 
-            # Get most recent results subquery
-            latest_results = (
-                db.session.query(
-                    PipelineStudyResultAlias.base_study_id,
-                    func.max(PipelineStudyResultAlias.date_executed).label(
-                        "max_date_executed"
+            # Apply version filter if specified
+            if filters['version'] is not None:
+                pipeline_query = pipeline_query.filter(PipelineConfigAlias.version == filters['version'])
+
+            # Get most recent results subquery if we have result filters
+            if filters['result_filters']:
+                latest_results = (
+                    db.session.query(
+                        PipelineStudyResultAlias.base_study_id,
+                        func.max(PipelineStudyResultAlias.date_executed).label(
+                            "max_date_executed"
+                        ),
+                    )
+                    .group_by(PipelineStudyResultAlias.base_study_id)
+                    .subquery()
+                )
+
+                pipeline_query = pipeline_query.join(
+                    latest_results,
+                    (
+                        PipelineStudyResultAlias.base_study_id
+                        == latest_results.c.base_study_id
+                    )
+                    & (
+                        PipelineStudyResultAlias.date_executed
+                        == latest_results.c.max_date_executed
                     ),
                 )
-                .group_by(PipelineStudyResultAlias.base_study_id)
-                .subquery()
-            )
 
-            pipeline_query = pipeline_query.join(
-                latest_results,
-                (
-                    PipelineStudyResultAlias.base_study_id
-                    == latest_results.c.base_study_id
-                )
-                & (
-                    PipelineStudyResultAlias.date_executed
-                    == latest_results.c.max_date_executed
-                ),
-            )
-
-            # Apply all filters for this pipeline
-            for field_path, operator, value in filters:
+            # Apply all result filters with unique parameter names for each filter
+            for idx, (field_path, operator, value) in enumerate(filters['result_filters']):
                 jsonpath = build_jsonpath(field_path, operator, value)
+                param_name = f"jsonpath_result_{pipeline_name}_{idx}"
                 pipeline_query = pipeline_query.filter(
-                    text("jsonb_path_exists(result_data, :jsonpath)").params(
-                        jsonpath=jsonpath
+                    text(f"jsonb_path_exists(result_data, :{param_name})").params(
+                        **{param_name: jsonpath}
+                    )
+                )
+
+            # Apply all config filters with unique parameter names for each filter
+            for idx, (field_path, operator, value) in enumerate(filters['config_filters']):
+                jsonpath = build_jsonpath(field_path, operator, value)
+                param_name = f"jsonpath_config_{pipeline_name}_{idx}"
+                pipeline_query = pipeline_query.filter(
+                    text(f"jsonb_path_exists(config_args, :{param_name})").params(
+                        **{param_name: jsonpath}
                     )
                 )
 

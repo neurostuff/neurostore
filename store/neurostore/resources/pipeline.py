@@ -313,8 +313,6 @@ class PipelineStudyResultsView(ObjectView, ListView):
 
         invalid_filters = []
 
-        from sqlalchemy import exists, select
-
         # Process feature filters
         for i, feature_filter in enumerate(feature_filters):
             try:
