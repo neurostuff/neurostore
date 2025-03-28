@@ -1,4 +1,6 @@
 import string
+from sqlalchemy import func, text
+
 from flask import request, abort
 from webargs.flaskparser import parser
 from webargs import fields
@@ -9,10 +11,8 @@ from sqlalchemy.orm import (
     raiseload,
     selectinload,
 )
-from sqlalchemy.sql import func
 from sqlalchemy import select
 from sqlalchemy.orm import aliased
-
 
 from .utils import view_maker, get_current_user
 from .base import BaseView, ObjectView, ListView, clear_cache, create_user
@@ -32,8 +32,11 @@ from ..models import (
     Entity,
     PipelineStudyResult,
     PipelineConfig,
+    Pipeline,
 )
 from ..models.data import StudysetStudy, BaseStudy
+from ..resources.pipeline import parse_json_filter, build_jsonpath
+
 
 from ..schemas import (
     BooleanOrString,
@@ -451,15 +454,12 @@ class BaseStudiesView(ObjectView, ListView):
             q = q.filter(self._model.level == args.get("level"))
 
         # Filter based on pipeline results
-        from flask import abort
-        from sqlalchemy import func, text
-        from ..models import Pipeline, PipelineConfig, PipelineStudyResult
-        from ..resources.pipeline import parse_json_filter, build_jsonpath
 
         # Group all filters (feature and config) by pipeline name and version
         pipeline_filters = (
             {}
-        )  # Structure: {pipeline_name: {'version': version, 'result_filters': [], 'config_filters': []}}
+        )  # Structure:
+        # {pipeline_name: {'version': version, 'result_filters': [], 'config_filters': []}}
         invalid_filters = []
 
         # Process feature filters
@@ -495,7 +495,10 @@ class BaseStudiesView(ObjectView, ListView):
                 ):
                     # If versions conflict and neither is None (wildcard), create error
                     raise ValueError(
-                        f"Conflicting versions for pipeline {pipeline_name}: {version} vs {pipeline_filters[pipeline_name]['version']}"
+                        (
+                            f"Conflicting versions for pipeline {pipeline_name}: "
+                            f"{version} vs {pipeline_filters[pipeline_name]['version']}"
+                        )
                     )
                 # Use the more specific version if one is None
                 if version is not None:
@@ -524,7 +527,10 @@ class BaseStudiesView(ObjectView, ListView):
                 ):
                     # If versions conflict and neither is None (wildcard), create error
                     raise ValueError(
-                        f"Conflicting versions for pipeline {pipeline_name}: {version} vs {pipeline_filters[pipeline_name]['version']}"
+                        (
+                            f"Conflicting versions for pipeline {pipeline_name}: "
+                            f"{version} vs {pipeline_filters[pipeline_name]['version']}"
+                        )
                     )
                 # Use the more specific version if one is None
                 if version is not None:
