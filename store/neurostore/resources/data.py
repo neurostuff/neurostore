@@ -35,7 +35,7 @@ from ..models import (
     Pipeline,
 )
 from ..models.data import StudysetStudy, BaseStudy
-from ..resources.pipeline import parse_json_filter, build_jsonpath
+from ..utils import parse_json_filter, build_jsonpath
 
 
 from ..schemas import (
@@ -456,9 +456,7 @@ class BaseStudiesView(ObjectView, ListView):
         # Filter based on pipeline results
 
         # Group all filters (feature and config) by pipeline name and version
-        pipeline_filters = (
-            {}
-        )  # Structure:
+        pipeline_filters = {}  # Structure:
         # {pipeline_name: {'version': version, 'result_filters': [], 'config_filters': []}}
         invalid_filters = []
 
