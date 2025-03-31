@@ -378,7 +378,7 @@ class BaseStudiesView(ObjectView, ListView):
         "info": fields.Boolean(load_default=False),
         "data_type": fields.String(load_default=None),
         "feature_filter": fields.List(fields.String(load_default=None)),
-        "feature_config": fields.List(fields.String(load_default=None)),
+        "pipeline_config": fields.List(fields.String(load_default=None)),
         "feature_display": fields.List(fields.String(load_default=None)),
         "feature_flatten": fields.Boolean(load_default=False),
     }
@@ -469,7 +469,7 @@ class BaseStudiesView(ObjectView, ListView):
         feature_filters = [f for f in feature_filters if f.strip()]
 
         # Process config filters
-        config_filters = args.get("feature_config", [])
+        config_filters = args.get("pipeline_config", [])
         if isinstance(config_filters, str):
             config_filters = [config_filters]
         config_filters = [f for f in config_filters if f.strip()]

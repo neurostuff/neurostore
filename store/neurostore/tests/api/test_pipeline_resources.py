@@ -236,7 +236,7 @@ def test_filter_pipeline_study_results(
 
 
 @pytest.mark.parametrize(
-    "feature_config,expected_count,expected_value,check_field",
+    "pipeline_config,expected_count,expected_value,check_field",
     [
         # Test basic NLP config queries
         (
@@ -326,14 +326,14 @@ def test_config_pipeline_study_results(
     result1,
     result2,
     result3,
-    feature_config,
+    pipeline_config,
     expected_count,
     expected_value,
     check_field,
 ):
     """Test filtering pipeline study results by config parameters."""
     response = auth_client.get(
-        f"/api/pipeline-study-results/?feature_config={feature_config}"
+        f"/api/pipeline-study-results/?pipeline_config={pipeline_config}"
     )
     assert response.status_code == 200
     data = response.json()
@@ -358,11 +358,11 @@ def test_config_pipeline_study_results(
 
 
 def test_combined_filters(auth_client, result1, result2, result3):
-    """Test combining feature_filter and feature_config filters."""
+    """Test combining feature_filter and pipeline_config filters."""
     response = auth_client.get(
         "/api/pipeline-study-results/?"
         "feature_filter=TestPipeline:string_field=test value&"
-        "feature_config=TestPipeline:embeddings.model=bert-base-uncased"
+        "pipeline_config=TestPipeline:embeddings.model=bert-base-uncased"
     )
 
     assert response.status_code == 200

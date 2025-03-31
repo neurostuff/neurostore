@@ -363,7 +363,7 @@ def test_config_and_feature_filters(auth_client, ingest_demographic_features, se
     response = auth_client.get(
         "/api/base-studies/?"
         "feature_filter=ParticipantInfo:1.0.0:predictions.groups[].age_mean>25&"
-        "feature_config=ParticipantInfo:1.0.0:extraction_model=gpt-4-turbo"
+        "pipeline_config=ParticipantInfo:1.0.0:extraction_model=gpt-4-turbo"
     )
 
     assert response.status_code == 200
@@ -373,7 +373,7 @@ def test_config_and_feature_filters(auth_client, ingest_demographic_features, se
     response = auth_client.get(
         "/api/base-studies/?"
         "feature_filter=ParticipantInfo:2.0.0:predictions.groups[].age_mean>30&"
-        "feature_config=ParticipantInfo:2.0.0:extraction_model=gpt-4-turbo"
+        "pipeline_config=ParticipantInfo:2.0.0:extraction_model=gpt-4-turbo"
     )
 
     assert response.status_code == 200
@@ -381,7 +381,7 @@ def test_config_and_feature_filters(auth_client, ingest_demographic_features, se
 
     # Test error handling for invalid filter format
     response = auth_client.get(
-        "/api/base-studies/?" "feature_config=ParticipantInfo:invalid:filter:format"
+        "/api/base-studies/?" "pipeline_config=ParticipantInfo:invalid:filter:format"
     )
 
     assert response.status_code == 400
