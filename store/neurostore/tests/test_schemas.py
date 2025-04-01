@@ -72,7 +72,7 @@ def test_PipelineConfigSchema():
     payload = {
         "pipeline": {"name": "123"},
         "version": "1.0.0",
-        "config": {"param1": "value1", "param2": "value2"},
+        "config_args": {"param1": "value1", "param2": "value2"},
         "config_hash": "abc123",
     }
     schema = PipelineConfigSchema()
@@ -81,7 +81,7 @@ def test_PipelineConfigSchema():
     assert isinstance(result, dict)
     assert result["_pipeline"] == {"name": "123"}
     assert result["version"] == "1.0.0"
-    assert result["config"] == {"param1": "value1", "param2": "value2"}
+    assert result["config_args"] == {"param1": "value1", "param2": "value2"}
     assert result["config_hash"] == "abc123"
 
 
@@ -90,7 +90,7 @@ def test_PipelineStudyResultSchema():
         "config": {
             "id": "123",
             "version": "1.0.0",
-            "config": {"param1": "value1"},
+            "config_args": {"param1": "value1"},
             "config_hash": "abc123",
             "pipeline": {"name": "Test Pipeline"},
         },

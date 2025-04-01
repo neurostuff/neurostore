@@ -108,7 +108,7 @@ def result2(pipeline_study_result_payload, session):
 @pytest.fixture
 def result3(pipeline_study_result_payload, session):
     # Create new pipeline config with different version
-    pipeline = Pipeline(name="TestPipeline")
+    pipeline = session.query(Pipeline).filter_by(name="TestPipeline").first()
     pipeline_config = PipelineConfig(
         version="2.0.0",
         config_args={
@@ -156,6 +156,117 @@ def result3(pipeline_study_result_payload, session):
     db.session.add(result)
     db.session.commit()
     return result
+
+
+@pytest.fixture
+def pipeline1(session):
+    # Create first pipeline
+    pipeline = Pipeline(name="Pipeline1", description="First test pipeline")
+    db.session.add(pipeline)
+    db.session.commit()
+    return pipeline
+
+
+@pytest.fixture
+def pipeline2(session):
+    # Create second pipeline
+    pipeline = Pipeline(name="Pipeline2", description="Second test pipeline")
+    db.session.add(pipeline)
+    db.session.commit()
+    return pipeline
+
+
+def test_read_pipelines(auth_client, pipeline1, pipeline2):
+    """Test reading list of pipelines."""
+    response = auth_client.get("/api/pipelines/")
+    assert response.status_code == 200
+
+    data = response.json()
+    assert len(data["results"]) >= 2  # At least our 2 test pipelines
+
+    # Find our test pipelines in results
+    pipelines = {p["name"]: p for p in data["results"]}
+    assert "Pipeline1" in pipelines
+    assert "Pipeline2" in pipelines
+
+    assert pipelines["Pipeline1"]["description"] == "First test pipeline"
+    assert pipelines["Pipeline2"]["description"] == "Second test pipeline"
+
+
+def test_read_single_pipeline(auth_client, pipeline1):
+    """Test reading a single pipeline by ID."""
+    response = auth_client.get(f"/api/pipelines/{pipeline1.id}")
+    assert response.status_code == 200
+
+    data = response.json()
+    assert data["name"] == "Pipeline1"
+    assert data["description"] == "First test pipeline"
+
+
+def test_read_nonexistent_pipeline(auth_client):
+    """Test reading a pipeline that doesn't exist."""
+    response = auth_client.get("/api/pipelines/99999")
+    assert response.status_code == 404
+
+
+def test_read_pipeline_configs(auth_client, result1, result2, result3):
+    """Test reading pipeline configurations with optional pipeline filter."""
+    response = auth_client.get("/api/pipeline-configs/")
+    assert response.status_code == 200
+
+    data = response.json()
+    # We should have at least 2 configs from the test setup
+    assert len(data["results"]) >= 2
+
+    # Check that we have both versions
+    versions = [config["version"] for config in data["results"]]
+    assert "1.0.0" in versions
+    assert "2.0.0" in versions
+
+    # Verify structure of returned configs
+    for config in data["results"]:
+        assert "version" in config
+        assert "config_args" in config
+        assert "config_hash" in config
+
+    # Test filtering by pipeline name
+    response = auth_client.get("/api/pipeline-configs/?pipeline=TestPipeline")
+    assert response.status_code == 200
+    data = response.json()
+
+    # Should only get configs from TestPipeline
+    assert all(
+        config["pipeline_id"] == result1.config.pipeline.id
+        for config in data["results"]
+    )
+
+    # Test filtering with non-existent pipeline
+    response = auth_client.get("/api/pipeline-configs/?pipeline=NonExistentPipeline")
+    assert response.status_code == 200
+    assert len(response.json()["results"]) == 0
+
+    # Test filtering with multiple pipelines
+    response = auth_client.get(
+        "/api/pipeline-configs/?pipeline=TestPipeline&pipeline=Pipeline1"
+    )
+    assert response.status_code == 200
+
+
+def test_read_single_pipeline_config(auth_client, pipeline_study_result_payload):
+    """Test reading a single pipeline config."""
+    # Get config ID from the payload
+    config_id = pipeline_study_result_payload[0]["config_id"]
+
+    response = auth_client.get(f"/api/pipeline-configs/{config_id}")
+    assert response.status_code == 200
+
+    data = response.json()
+    assert data["version"] == "1.0.0"
+    assert data["config_hash"] == "test_hash"
+    assert "text_extraction" in data["config_args"]
+    assert "embeddings" in data["config_args"]
+    assert "classification" in data["config_args"]
+    assert "topic_modeling" in data["config_args"]
 
 
 @pytest.mark.parametrize(
