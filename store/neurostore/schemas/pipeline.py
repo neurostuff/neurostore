@@ -23,7 +23,8 @@ class PipelineConfigSchema(BaseSchema):
     config = fields.Dict()
     executed_at = fields.DateTime()
     config_hash = fields.Str()
-    pipeline = fields.Nested(PipelineSchema)
+    pipeline_id = fields.String(attribute="pipeline.id")
+    _pipeline = fields.Nested(PipelineSchema, load_only=True, data_key="pipeline")
 
     class Meta:
         model = PipelineConfig
@@ -32,12 +33,31 @@ class PipelineConfigSchema(BaseSchema):
 class PipelineStudyResultSchema(BaseSchema):
     """Schema for pipeline study results."""
 
-    config = fields.Nested(PipelineConfigSchema)
-    base_study = fields.Nested(BaseStudySchema)
-    date_executed = fields.DateTime()
-    result_data = fields.Dict()
-    file_inputs = fields.Dict()
-    status = fields.Str()
+    # Configuration relationship
+    config_id = fields.String(attribute="config.id")
+    _config = fields.Nested(PipelineConfigSchema, load_only=True, data_key="config")
+
+    # Base study relationship
+    base_study_id = fields.String(attribute="base_study.id")
+    _base_study = fields.Nested(BaseStudySchema, load_only=True, data_key="base_study")
+
+    # Execution metadata
+    date_executed = fields.DateTime(
+        dump_only=True, description="Timestamp of pipeline execution", allow_none=True
+    )
+
+    # Result and input data
+    result_data = fields.Dict(description="Pipeline execution results", allow_none=True)
+    file_inputs = fields.Dict(
+        description="Files used as input for the pipeline", allow_none=True
+    )
+
+    # Pipeline execution status
+    status = fields.Str(
+        validate=lambda x: x in ["pending", "running", "completed", "failed"],
+        required=True,
+        description="Current status of the pipeline execution",
+    )
 
     class Meta:
         model = PipelineStudyResult

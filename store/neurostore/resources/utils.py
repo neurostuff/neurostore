@@ -1,5 +1,5 @@
 """
-Utilities for View construction and function
+Resource-specific utilities for View construction and function
 """
 
 import re
@@ -12,12 +12,13 @@ from .. import schemas
 from .singular import singularize
 
 
-# https://www.geeksforgeeks.org/python-split-camelcase-string-to-individual-strings/
 def camel_case_split(str):
+    """Split camel case string to individual strings"""
     return re.findall(r"[A-Z](?:[a-z]+|[A-Z]*(?=[A-Z]|$))", str)
 
 
 def get_current_user():
+    """Get the current user from the context"""
     if context.get("user_obj"):
         return context["user_obj"]
 
@@ -29,6 +30,7 @@ def get_current_user():
 
 
 def view_maker(cls):
+    """Create a View class with model and schema attributes"""
     proc_name = cls.__name__.removesuffix("View").removesuffix("Resource")
     basename = singularize(
         proc_name,

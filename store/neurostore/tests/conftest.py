@@ -2,7 +2,7 @@ import pytest
 import random
 import json
 from os import environ
-from neurostore.models.data import Analysis, Condition
+from neurostore.models import Analysis, Condition
 from sqlalchemy.orm import scoped_session, sessionmaker
 import sqlalchemy as sa
 from .. import ingest

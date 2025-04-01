@@ -340,13 +340,14 @@ class BaseStudySchema(BaseDataSchema):
         from .pipeline import PipelineStudyResultSchema
 
         pipelines = self.context.get("feature_display", None)
+        pipeline_configs = self.context.get("pipeline_config", None)
 
         if pipelines is None:
             return {}
 
-        features = obj.display_features(pipelines)
+        features = obj.display_features(pipelines, pipeline_configs)
         # Flatten each pipeline's predictions
-        if features:
+        if features and self.context.get("feature_flatten", False):
             flattened_features = {}
             for pipeline_name, feature_data in features.items():
                 if isinstance(feature_data, dict):
