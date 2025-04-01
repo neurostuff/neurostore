@@ -93,7 +93,11 @@ class PipelineStudyResultSchema(BaseSchema):
         data = {key: value for key, value in data.items() if value is not None}
 
         # Flatten result_data if it exists
-        if "result_data" in data and isinstance(data["result_data"], dict) and self.context.get("feature_flatten", False):
+        if (
+            "result_data" in data
+            and isinstance(data["result_data"], dict)
+            and self.context.get("feature_flatten", False)
+        ):
             # Get predictions section which contains our nested data
             result_data = data["result_data"]
             data["result_data"] = self.flatten_dict(result_data)
