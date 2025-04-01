@@ -39,15 +39,32 @@ class PipelineConfigsView(ObjectView, ListView):
     schema = pipeline_config_schema
     schemas = pipeline_config_schemas
 
+    _view_fields = {
+        "pipeline": fields.List(fields.String(), load_default=[]),
+    }
+
     _m2o = {"pipeline": "PipelinesView"}
     _o2m = {"study_results": "PipelineStudyResultsView"}
+
+    def view_search(self, q, args):
+        """Apply pipeline filtering to query."""
+        q = super().view_search(q, args)
+
+        # Handle pipeline name filtering
+        pipeline_names = args.get("pipeline", [])
+        if isinstance(pipeline_names, str):
+            pipeline_names = [pipeline_names]
+
+        if pipeline_names:
+            q = q.join(Pipeline).filter(Pipeline.name.in_(pipeline_names))
+
+        return q
 
     def eager_load(self, q, args=None):
         """Join related tables."""
         args = args or {}
         q = q.options(
             selectinload(PipelineConfig.pipeline),
-            selectinload(PipelineConfig.study_results),
         )
         return q
 
