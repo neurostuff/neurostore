@@ -488,6 +488,40 @@ def test_combined_filters(auth_client, result1, result2, result3):
     assert pipeline_config.config_args["embeddings"]["model"] == "bert-base-uncased"
 
 
+def test_feature_display_filter(auth_client, result1, result2, result3):
+    """Test filtering pipeline study results by feature_display parameter."""
+    # Test displaying results from a specific pipeline
+    response = auth_client.get("/api/pipeline-study-results/?feature_display=TestPipeline")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data["results"]) == 3  # All results from TestPipeline
+
+    # Test displaying results from specific pipeline version
+    response = auth_client.get("/api/pipeline-study-results/?feature_display=TestPipeline:1.0.0")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data["results"]) == 2  # Only results from version 1.0.0
+
+    # Test non-existent pipeline
+    response = auth_client.get("/api/pipeline-study-results/?feature_display=NonExistentPipeline")
+    assert response.status_code == 400
+    assert "Pipeline 'NonExistentPipeline' does not exist" in response.json()["message"]
+
+    # Test non-existent version
+    response = auth_client.get("/api/pipeline-study-results/?feature_display=TestPipeline:3.0.0")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data["results"]) == 0
+
+    # Test multiple pipeline filters
+    response = auth_client.get(
+        "/api/pipeline-study-results/?feature_display=TestPipeline:1.0.0&feature_display=TestPipeline:2.0.0"
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data["results"]) == 3  # All results from both versions
+
+
 def test_list_of_studies(
     auth_client, result1, result2, pipeline_study_result_payload, session
 ):
