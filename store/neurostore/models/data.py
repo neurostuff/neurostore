@@ -691,7 +691,7 @@ class PointValue(BaseMixin, db.Model):
 class Pipeline(BaseMixin, db.Model):
     __tablename__ = "pipelines"
 
-    name = db.Column(db.String)
+    name = db.Column(db.String, index=True, unique=True)
     description = db.Column(db.String)
     study_dependent = db.Column(db.Boolean, default=False)
     ace_compatible = db.Column(db.Boolean, default=False)

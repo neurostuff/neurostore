@@ -20,7 +20,7 @@ class PipelineSchema(BaseSchema):
 
 class PipelineConfigSchema(BaseSchema):
     version = fields.Str(required=True)
-    config = fields.Dict()
+    config_args = fields.Dict()
     executed_at = fields.DateTime()
     config_hash = fields.Str()
     pipeline_id = fields.String(attribute="pipeline.id")
