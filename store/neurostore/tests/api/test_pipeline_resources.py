@@ -198,14 +198,14 @@ def result3(pipeline_study_result_payload, session):
             "TestPipeline:1.0.0:nested.array[]=nested1",
             1,
             "nested1",
-            lambda x: x["result_data"]["nested.array"],
+            lambda x: x["result_data"]["nested"]["array"],
         ),
         # Test regex queries with version
         (
             "TestPipeline:1.0.0:nested.string~other",
             1,
             "other",
-            lambda x: x["result_data"]["nested.string"],
+            lambda x: x["result_data"]["nested"]["string"],
         ),
     ],
 )

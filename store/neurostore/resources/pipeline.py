@@ -64,6 +64,7 @@ class PipelineStudyResultsView(ObjectView, ListView):
         "feature_filter": fields.List(fields.String(), load_default=[]),
         "pipeline_config": fields.List(fields.String(), load_default=[]),
         "study_id": fields.List(fields.String(), load_default=[]),
+        "feature_flatten": fields.Bool(load_default=False),
     }
 
     def view_search(self, q, args):
