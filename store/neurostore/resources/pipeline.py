@@ -82,7 +82,11 @@ class PipelineStudyResultsView(ObjectView, ListView):
         "pipeline_config": fields.List(fields.String(), load_default=[]),
         "study_id": fields.List(fields.String(), load_default=[]),
         "feature_flatten": fields.Bool(load_default=False),
-        "feature_display": fields.List(fields.String(), description="List of pipelines to display results from, format: pipeline_name[:version]", load_default=[]),
+        "feature_display": fields.List(
+            fields.String(),
+            description="List of pipeline results. format: pipeline_name[:version]",
+            load_default=[],
+        ),
     }
 
     def view_search(self, q, args):
@@ -138,8 +142,8 @@ class PipelineStudyResultsView(ObjectView, ListView):
         # Handle display filters
         for display_filter in display_filters:
             # Parse pipeline name and optional version
-            if ':' in display_filter:
-                pipeline_name, version = display_filter.split(':')
+            if ":" in display_filter:
+                pipeline_name, version = display_filter.split(":")
             else:
                 pipeline_name, version = display_filter, None
 
