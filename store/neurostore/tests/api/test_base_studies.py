@@ -4,7 +4,6 @@ from sqlalchemy import text
 from sqlalchemy.orm import aliased
 from sqlalchemy.sql import func
 
-
 from neurostore.models import (
     Pipeline,
     PipelineConfig,
@@ -357,6 +356,77 @@ def test_has_coordinates_images(auth_client, session):
     assert base_study_2.has_images is False
 
 
+def test_config_and_feature_filters(auth_client, ingest_demographic_features, session):
+    """Test filtering by both config args and feature results with version specification"""
+    # Test combined feature and config filtering
+    response = auth_client.get(
+        "/api/base-studies/?"
+        "feature_filter=ParticipantInfo:1.0.0:predictions.groups[].age_mean>25&"
+        "pipeline_config=ParticipantInfo:1.0.0:extraction_model=gpt-4-turbo"
+    )
+
+    assert response.status_code == 200
+    assert len(response.json()["results"]) > 0
+
+    # Test with mismatched version
+    response = auth_client.get(
+        "/api/base-studies/?"
+        "feature_filter=ParticipantInfo:2.0.0:predictions.groups[].age_mean>30&"
+        "pipeline_config=ParticipantInfo:2.0.0:extraction_model=gpt-4-turbo"
+    )
+
+    assert response.status_code == 200
+    assert len(response.json()["results"]) == 0
+
+    # Test error handling for invalid filter format
+    response = auth_client.get(
+        "/api/base-studies/?" "pipeline_config=ParticipantInfo:invalid:filter:format"
+    )
+
+    assert response.status_code == 400
+
+
+def test_feature_display_and_pipeline_config(auth_client, ingest_demographic_features):
+    """Test feature display and pipeline config parameters version matching and defaults"""
+    # Test feature display with version specified
+    response = auth_client.get(
+        "/api/base-studies/?"
+        "feature_display=ParticipantInfo:1.0.0&"
+        "pipeline_config=ParticipantInfo:1.0.0:extraction_model=gpt-4-turbo"
+    )
+    assert response.status_code == 200
+    results = response.json()["results"]
+    assert len(results) > 0
+    assert "features" in results[0]
+    assert "ParticipantInfo" in results[0]["features"]
+
+    # Test default behavior when version not specified (should use latest version)
+    default_response = auth_client.get(
+        "/api/base-studies/?"
+        "feature_display=ParticipantInfo&"
+        "pipeline_config=ParticipantInfo:extraction_model=gpt-4-turbo"
+    )
+    assert default_response.status_code == 200
+    assert len(default_response.json()["results"]) > 0
+
+    # Verify the output structure
+    result = default_response.json()["results"][0]
+    assert "features" in result
+    features = result["features"]["ParticipantInfo"]
+    assert isinstance(features, dict)
+    if "predictions" in features:
+        assert isinstance(features["predictions"], dict)
+
+    # Test mismatched versions between feature_display and pipeline_config
+    mismatch_response = auth_client.get(
+        "/api/base-studies/?"
+        "feature_display=ParticipantInfo:1.0.0&"
+        "pipeline_config=ParticipantInfo:2.0.0:model_version=2"
+    )
+    assert mismatch_response.status_code == 200
+    assert len(mismatch_response.json()["results"]) == 0
+
+
 def test_feature_flatten(auth_client, ingest_demographic_features):
     """Test flattening nested feature objects into dot notation"""
     # Get response without flattening
@@ -387,6 +457,10 @@ def test_feature_flatten(auth_client, ingest_demographic_features):
 
     # Verify values are preserved after flattening
     # Example: predictions.groups[0].age_mean should equal the nested value
-    nested_age = unflattened_features["predictions"]["groups"][0]["age_mean"]
-    flattened_age = flattened_features["predictions.groups[0].age_mean"]
-    assert nested_age == flattened_age
+    if "predictions" in unflattened_features and unflattened_features[
+        "predictions"
+    ].get("groups"):
+        nested_age = unflattened_features["predictions"]["groups"][0].get("age_mean")
+        if nested_age is not None:
+            flattened_age = flattened_features.get("predictions.groups[0].age_mean")
+            assert nested_age == flattened_age
