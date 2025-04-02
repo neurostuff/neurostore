@@ -153,7 +153,9 @@ class PipelineStudyResultsView(ObjectView, ListView):
                 # Verify pipeline exists
                 pipeline = Pipeline.query.filter_by(name=pipeline_name).first()
                 if not pipeline:
-                    abort(400, {"message": f"Pipeline '{pipeline_name}' does not exist"})
+                    abort(
+                        400, {"message": f"Pipeline '{pipeline_name}' does not exist"}
+                    )
 
                 # Build filter conditions
                 pipeline_conditions = [PipelineAlias.name == pipeline_name]
@@ -164,7 +166,10 @@ class PipelineStudyResultsView(ObjectView, ListView):
                 display_conditions.append(
                     (PipelineAlias.name == pipeline_name)
                     if version is None
-                    else and_(PipelineAlias.name == pipeline_name, ConfigAlias.version == version)
+                    else and_(
+                        PipelineAlias.name == pipeline_name,
+                        ConfigAlias.version == version,
+                    )
                 )
 
             # Apply the combined OR conditions to the query
@@ -256,4 +261,3 @@ class PipelineStudyResultsView(ObjectView, ListView):
             )
         )
         return q
-

@@ -511,7 +511,10 @@ def test_feature_display_filter(auth_client, result1, result2, result3):
         "/api/pipeline-study-results/?feature_display=NonExistentPipeline"
     )
     assert response.status_code == 400
-    assert "Pipeline 'NonExistentPipeline' does not exist" in response.json()["detail"]["message"]
+    assert (
+        "Pipeline 'NonExistentPipeline' does not exist"
+        in response.json()["detail"]["message"]
+    )
 
     # Test non-existent version
     response = auth_client.get(
