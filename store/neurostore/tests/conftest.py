@@ -28,8 +28,10 @@ import shortuuid
 import vcr
 
 import logging
-
 LOGGER = logging.getLogger(__name__)
+
+# Set fixed seed for reproducible tests
+random.seed(42)
 
 
 """
