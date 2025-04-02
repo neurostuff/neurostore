@@ -1,6 +1,6 @@
 """Pipeline related resources"""
 
-from sqlalchemy import text
+from sqlalchemy import text, and_, or_
 from flask import abort
 
 from sqlalchemy.orm import selectinload, aliased
@@ -140,25 +140,35 @@ class PipelineStudyResultsView(ObjectView, ListView):
         config_filters = [f for f in config_filters if f.strip()]
 
         # Handle display filters
-        for display_filter in display_filters:
-            # Parse pipeline name and optional version
-            if ":" in display_filter:
-                pipeline_name, version = display_filter.split(":")
-            else:
-                pipeline_name, version = display_filter, None
+        if display_filters:
 
-            # Verify pipeline exists
-            pipeline = Pipeline.query.filter_by(name=pipeline_name).first()
-            if not pipeline:
-                abort(400, {"message": f"Pipeline '{pipeline_name}' does not exist"})
+            display_conditions = []
+            for display_filter in display_filters:
+                # Parse pipeline name and optional version
+                if ":" in display_filter:
+                    pipeline_name, version = display_filter.split(":")
+                else:
+                    pipeline_name, version = display_filter, None
 
-            # Build filter conditions
-            pipeline_conditions = [PipelineAlias.name == pipeline_name]
-            if version is not None:
-                pipeline_conditions.append(ConfigAlias.version == version)
+                # Verify pipeline exists
+                pipeline = Pipeline.query.filter_by(name=pipeline_name).first()
+                if not pipeline:
+                    abort(400, {"message": f"Pipeline '{pipeline_name}' does not exist"})
 
-            # Apply conditions to query
-            q = q.filter(*pipeline_conditions)
+                # Build filter conditions
+                pipeline_conditions = [PipelineAlias.name == pipeline_name]
+                if version is not None:
+                    pipeline_conditions.append(ConfigAlias.version == version)
+
+                # Add these conditions as a combined AND group
+                display_conditions.append(
+                    (PipelineAlias.name == pipeline_name)
+                    if version is None
+                    else and_(PipelineAlias.name == pipeline_name, ConfigAlias.version == version)
+                )
+
+            # Apply the combined OR conditions to the query
+            q = q.filter(or_(*display_conditions))
 
         if not feature_filters and not config_filters:
             return q
@@ -246,3 +256,4 @@ class PipelineStudyResultsView(ObjectView, ListView):
             )
         )
         return q
+
