@@ -67,7 +67,9 @@ def build_jsonpath(field_path: str, operator: str, value: str) -> str:
             raw_value = str(cast_val)
         else:
             raw_value = f'"{cast_val}"'
-        raw_value = f"@ {sql_op} {raw_value}"
+        raw_value = f"@ {sql_op} {raw_value}" + (
+            ' flag "i"' if sql_op == "like_regex" else ""
+        )
 
     # Check if we're querying array fields
     path_parts = field_path.split(".")
