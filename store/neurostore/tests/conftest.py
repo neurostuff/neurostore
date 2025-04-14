@@ -736,7 +736,11 @@ def create_pipeline_results(session, ingest_neurosynth, tmp_path):
                         "inputs": {
                             f"/path/to/input/{study.id}.txt": f"md5{random.randint(0, 100)}"
                         },
-                        "date": "2025-03-05",
+                        "date": (
+                            f"{random.randint(2024, 2030)}"
+                            f"-{random.randint(1, 12):02d}"
+                            f"-{random.randint(1, 28):02d}"
+                        ),
                     },
                     f,
                 )

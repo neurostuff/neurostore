@@ -48,6 +48,15 @@ def test_features_query_with_or(auth_client, ingest_demographic_features, sessio
             PipelineStudyResultAlias.base_study_id,
             func.max(PipelineStudyResultAlias.date_executed).label("max_date_executed"),
         )
+        .join(  # Join with PipelineConfig and Pipeline to filter by pipeline name
+            PipelineConfigAlias,
+            PipelineStudyResultAlias.config_id == PipelineConfigAlias.id,
+        )
+        .join(
+            PipelineAlias,
+            PipelineConfigAlias.pipeline_id == PipelineAlias.id,
+        )
+        .filter(PipelineAlias.name == "ParticipantInfo")  # Filter for specific pipeline
         .group_by(PipelineStudyResultAlias.base_study_id)
         .subquery()
     )
@@ -65,7 +74,7 @@ def test_features_query_with_or(auth_client, ingest_demographic_features, sessio
             (PipelineStudyResultAlias.base_study_id == latest_results.c.base_study_id)
             & (
                 PipelineStudyResultAlias.date_executed
-                == latest_results.c.max_date_executed
+                >= latest_results.c.max_date_executed
             ),
         )
         .filter(PipelineAlias.name == "ParticipantInfo")
