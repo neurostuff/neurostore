@@ -31,7 +31,6 @@ class PipelinesView(ObjectView, ListView):
     _o2m = {"configs": "PipelineConfigsView"}
 
 
-
 @view_maker
 class PipelineConfigsView(ObjectView, ListView):
     """Handle pipeline config operations."""
