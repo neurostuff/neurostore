@@ -584,6 +584,15 @@ class BaseStudiesView(ObjectView, ListView):
                             "max_date_executed"
                         ),
                     )
+                    .join(  # Join with PipelineConfig and Pipeline to filter by pipeline name
+                        PipelineConfigAlias,
+                        PipelineStudyResultAlias.config_id == PipelineConfigAlias.id,
+                    )
+                    .join(
+                        PipelineAlias,
+                        PipelineConfigAlias.pipeline_id == PipelineAlias.id
+                    )
+                    .filter(PipelineAlias.name == pipeline_name)  # Filter for specific pipeline
                     .group_by(PipelineStudyResultAlias.base_study_id)
                     .subquery()
                 )
@@ -596,7 +605,7 @@ class BaseStudiesView(ObjectView, ListView):
                     )
                     & (
                         PipelineStudyResultAlias.date_executed
-                        == latest_results.c.max_date_executed
+                        >= latest_results.c.max_date_executed
                     ),
                 )
 
@@ -611,6 +620,8 @@ class BaseStudiesView(ObjectView, ListView):
                         **{param_name: jsonpath}
                     )
                 )
+                pipeline_subqueries.append(pipeline_query.subquery())
+
 
             # Apply all config filters with unique parameter names for each filter
             for idx, (field_path, operator, value) in enumerate(
@@ -623,8 +634,7 @@ class BaseStudiesView(ObjectView, ListView):
                         **{param_name: jsonpath}
                     )
                 )
-
-            pipeline_subqueries.append(pipeline_query.subquery())
+                pipeline_subqueries.append(pipeline_query.subquery())
 
         # Combine results from all pipelines using INNER JOIN
         # This ensures we only get base studies that match ALL pipeline criteria
