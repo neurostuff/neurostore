@@ -590,9 +590,11 @@ class BaseStudiesView(ObjectView, ListView):
                     )
                     .join(
                         PipelineAlias,
-                        PipelineConfigAlias.pipeline_id == PipelineAlias.id
+                        PipelineConfigAlias.pipeline_id == PipelineAlias.id,
                     )
-                    .filter(PipelineAlias.name == pipeline_name)  # Filter for specific pipeline
+                    .filter(
+                        PipelineAlias.name == pipeline_name
+                    )  # Filter for specific pipeline
                     .group_by(PipelineStudyResultAlias.base_study_id)
                     .subquery()
                 )
@@ -621,7 +623,6 @@ class BaseStudiesView(ObjectView, ListView):
                     )
                 )
                 pipeline_subqueries.append(pipeline_query.subquery())
-
 
             # Apply all config filters with unique parameter names for each filter
             for idx, (field_path, operator, value) in enumerate(
