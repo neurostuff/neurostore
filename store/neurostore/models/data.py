@@ -208,6 +208,12 @@ class BaseStudy(BaseMixin, db.Model):
         sa.Index("ix_base_study___ts_vector__", _ts_vector, postgresql_using="gin"),
         sa.Index('idx_base_studies_public_level', 'public', 'level', 
                  'id', 'created_at', postgresql_include=['id', 'created_at']),
+        sa.Index('idx_base_studies_filter', 
+                public, 
+                level, 
+                postgresql_include=['id', 'created_at'],
+                postgresql_where=sa.or_(public == True, user_id.is_(None))),
+    )
     )
 
     @hybrid_property
@@ -700,6 +706,9 @@ class Pipeline(BaseMixin, db.Model):
     pubget_compatible = db.Column(db.Boolean, default=False)
     derived_from = db.Column(db.Text)
 
+    __table_args__ = (
+        sa.Index('idx_pipelines_name', 'name', unique=True),
+    )
 
 class PipelineConfig(BaseMixin, db.Model):
     __tablename__ = "pipeline_configs"
@@ -721,6 +730,10 @@ class PipelineConfig(BaseMixin, db.Model):
         sa.Index('idx_pipeline_configs_pipeline_version',
                 pipeline_id, version.desc(),
                 postgresql_include=['id']),
+        sa.Index('idx_pipeline_configs_lookup',
+                pipeline_id,
+                version.desc(),
+                postgresql_include=['id', 'config_args']),
     )
 
     @validates("version")
@@ -752,8 +765,11 @@ class PipelineStudyResult(BaseMixin, db.Model):
                     result_data, 
                     postgresql_using='gin',
                     postgresql_ops={'result_data': 'jsonb_path_ops'}),
-        sa.Index('idx_pipeline_study_results_pipeline', 
-                config_id, base_study_id, date_executed.desc()),
+        sa.Index('idx_pipeline_results_lookup',
+                config_id, 
+                base_study_id,
+                date_executed.desc(),
+                postgresql_include=['result_data']),
     )
 
 # from . import event_listeners  # noqa E402
