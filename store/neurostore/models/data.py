@@ -176,8 +176,8 @@ class BaseStudy(BaseMixin, db.Model):
     pmcid = db.Column(db.String, nullable=True, index=True)
     authors = db.Column(db.String, index=True)
     year = db.Column(db.Integer, index=True)
-    public = db.Column(db.Boolean, default=True)
-    level = db.Column(db.String)
+    public = db.Column(db.Boolean, default=True, index=True)
+    level = db.Column(db.String, index=True)
     metadata_ = db.Column(JSONB)
     has_coordinates = db.Column(db.Boolean, default=False, nullable=False)
     has_images = db.Column(db.Boolean, default=False, nullable=False)
@@ -206,6 +206,8 @@ class BaseStudy(BaseMixin, db.Model):
         db.CheckConstraint("pmid ~ '^(?=.*\\S).+$' OR name IS NULL"),
         db.CheckConstraint("doi ~ '^(?=.*\\S).+$' OR name IS NULL"),
         sa.Index("ix_base_study___ts_vector__", _ts_vector, postgresql_using="gin"),
+        sa.Index('idx_base_studies_public_level', 'public', 'level', 
+                 'id', 'created_at', postgresql_include=['id', 'created_at']),
     )
 
     @hybrid_property
@@ -715,6 +717,12 @@ class PipelineConfig(BaseMixin, db.Model):
         "Pipeline", backref=backref("configs", passive_deletes=True)
     )
 
+    __table_args__ = (
+        sa.Index('idx_pipeline_configs_pipeline_version',
+                pipeline_id, version.desc(),
+                postgresql_include=['id']),
+    )
+
     @validates("version")
     def validate_version(self, key, value):
         if not re.match(SEMVER_REGEX, value):
@@ -739,6 +747,14 @@ class PipelineStudyResult(BaseMixin, db.Model):
         "PipelineConfig", backref=backref("results", passive_deletes=True)
     )
 
+    __table_args__ = (
+        sa.Index('idx_pipeline_study_results_result_data', 
+                    result_data, 
+                    postgresql_using='gin',
+                    postgresql_ops={'result_data': 'jsonb_path_ops'}),
+        sa.Index('idx_pipeline_study_results_pipeline', 
+                config_id, base_study_id, date_executed.desc()),
+    )
 
 # from . import event_listeners  # noqa E402
 
