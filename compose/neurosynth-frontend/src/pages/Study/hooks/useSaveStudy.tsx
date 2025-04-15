@@ -1,11 +1,6 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import { unsetUnloadHandler } from 'helpers/BeforeUnload.helpers';
-import {
-    useCreateStudy,
-    useGetStudysetById,
-    useUpdateAnnotationById,
-    useUpdateStudyset,
-} from 'hooks';
+import { useCreateStudy, useGetStudysetById, useUpdateAnnotationById, useUpdateStudyset } from 'hooks';
 import { STUDYSET_QUERY_STRING } from 'hooks/studysets/useGetStudysets';
 import { AnalysisReturn, StudyRequest } from 'neurostore-typescript-sdk';
 import { useSnackbar } from 'notistack';
@@ -37,7 +32,7 @@ import {
 } from 'pages/Study/store/StudyStore';
 import { storeAnalysesToStudyAnalyses } from '../store/StudyStore.helpers';
 import { hasDuplicateStudyAnalysisNames, hasEmptyStudyPoints } from './useSaveStudy.helpers';
-import { updateExtractionTableStateInStorage } from 'pages/Extraction/components/ExtractionTable.helpers';
+import { updateExtractionTableStateStudySwapInStorage } from 'pages/Extraction/components/ExtractionTable.helpers';
 
 const useSaveStudy = () => {
     const { user } = useAuth0();
@@ -177,21 +172,16 @@ const useSaveStudy = () => {
         }
         setIsCloning(true);
         try {
-            const currentStudyBeingEditedIndex = studyset.studies.findIndex(
-                (study) => study === storeStudy.id
-            );
+            const currentStudyBeingEditedIndex = studyset.studies.findIndex((study) => study === storeStudy.id);
             if (currentStudyBeingEditedIndex < 0) throw new Error('study not found in studyset');
 
             // 1. clone the study
-            const clonedStudy = (
-                await createStudy({ sourceId: storeStudy.id, data: getNewScrubbedStudyFromStore() })
-            ).data;
+            const clonedStudy = (await createStudy({ sourceId: storeStudy.id, data: getNewScrubbedStudyFromStore() }))
+                .data;
             const clonedStudyId = clonedStudy.id;
             if (!clonedStudyId) throw new Error('study not cloned correctly');
 
-            const updatedClone = (
-                await API.NeurostoreServices.StudiesService.studiesIdGet(clonedStudyId, true)
-            ).data;
+            const updatedClone = (await API.NeurostoreServices.StudiesService.studiesIdGet(clonedStudyId, true)).data;
 
             // 3. update the studyset containing the study with our new clone
             const updatedStudies = [...(studyset.studies as string[])];
@@ -206,7 +196,7 @@ const useSaveStudy = () => {
 
             // 4. update the project as this keeps track of completion status of studies
             replaceStudyWithNewClonedStudy(storeStudy.id, clonedStudyId);
-            updateExtractionTableStateInStorage(projectId, storeStudy.id, clonedStudyId);
+            updateExtractionTableStateStudySwapInStorage(projectId, storeStudy.id, clonedStudyId);
 
             // 5. as this is a completely new study, that we've just created, the annotations are cleared.
             // We need to update the annotations with our latest changes, and associate newly created analyses with their corresponding analysis changes.
@@ -243,10 +233,9 @@ const useSaveStudy = () => {
 
             return clonedStudyId;
         } catch (e) {
-            enqueueSnackbar(
-                'We encountered an error saving your study. Please contact the neurosynth-compose team',
-                { variant: 'error' }
-            );
+            enqueueSnackbar('We encountered an error saving your study. Please contact the neurosynth-compose team', {
+                variant: 'error',
+            });
             console.error(e);
         } finally {
             setIsCloning(false);
@@ -261,8 +250,7 @@ const useSaveStudy = () => {
             return;
         }
 
-        const { isError: emptyPointError, errorMessage: emptyPointErrorMessage } =
-            hasEmptyStudyPoints(analyses);
+        const { isError: emptyPointError, errorMessage: emptyPointErrorMessage } = hasEmptyStudyPoints(analyses);
         if (emptyPointError) {
             enqueueSnackbar(emptyPointErrorMessage, { variant: 'warning' });
             return;

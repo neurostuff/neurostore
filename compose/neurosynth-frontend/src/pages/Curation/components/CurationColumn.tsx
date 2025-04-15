@@ -8,6 +8,7 @@ import {
     useProjectCurationColumn,
     useProjectCurationExclusionTags,
     useProjectCurationInfoTags,
+    useProjectCurationIsLastColumn,
     useProjectCurationPrismaConfig,
     useProjectUser,
     usePromoteAllUncategorized,
@@ -21,6 +22,7 @@ import useUserCanEdit from 'hooks/useUserCanEdit';
 import { ICurationStubStudy } from 'pages/Curation/Curation.types';
 import CurationStubStudyDraggableContainer from 'pages/Curation/components/CurationStubStudyDraggableContainer';
 import CurationDialog from 'pages/Curation/components/CurationDialog';
+import CurationDownloadIncludedStudiesButton from './CurationDownloadIncludedStudiesButton';
 
 const getVisibility = (stub: ICurationStubStudy, selectedTag: ITag | undefined): boolean => {
     let isVisible = false;
@@ -92,6 +94,7 @@ const CurationColumn: React.FC<{ columnIndex: number }> = React.memo((props) => 
         isOpen: false,
         stubId: undefined,
     });
+    const isLastColumn = useProjectCurationIsLastColumn(props.columnIndex);
 
     useEffect(() => {
         if (prismaConfig.isPrisma) {
@@ -183,8 +186,8 @@ const CurationColumn: React.FC<{ columnIndex: number }> = React.memo((props) => 
                         onCloseDialog={handlePromoteAllUnCategorized}
                     />
                     <Button
-                        variant="contained"
                         color="info"
+                        variant="outlined"
                         disableElevation
                         onClick={() => setWarningDialogIsOpen(true)}
                         sx={{
@@ -198,6 +201,15 @@ const CurationColumn: React.FC<{ columnIndex: number }> = React.memo((props) => 
                     </Button>
                 </>
             )}
+            {
+                // It's not possible for the column index to be 0, and also the last column
+                // therefore we can assume it will render this or the above, not both
+                isLastColumn && (
+                    <Box sx={{ marginBottom: '0.75rem' }}>
+                        <CurationDownloadIncludedStudiesButton buttonGroupProps={{ size: 'medium' }} />
+                    </Box>
+                )
+            }
 
             <Paper elevation={0} sx={{ width: '100%' }}>
                 <Autocomplete

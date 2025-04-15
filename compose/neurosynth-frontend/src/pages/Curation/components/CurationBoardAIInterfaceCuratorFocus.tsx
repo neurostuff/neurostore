@@ -1,31 +1,33 @@
 import { Box, Typography } from '@mui/material';
+import { useGetCurationSummary, useGetWindowHeight } from 'hooks';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import { FixedSizeList } from 'react-window';
-import { useCallback, useEffect, useRef } from 'react';
-import { useGetWindowHeight } from 'hooks';
-import React from 'react';
-import { CurationDialogFixedSizeListRow } from './CurationDialog';
-import CurationEditableStubSummary from './CurationEditableStubSummary';
 import { ICurationBoardAIInterfaceCurator } from './CurationBoardAIInterfaceCurator';
+import CurationEditableStubSummary from './CurationEditableStubSummary';
+import CurationStubListItemVirtualizedContainer from './CurationStubListItemVirtualizedContainer';
 
 const CurationBoardAIInterfaceCuratorFocus: React.FC<ICurationBoardAIInterfaceCurator> = ({
     selectedStub,
-    stubs,
+    table,
     onSetSelectedStub,
     columnIndex,
 }) => {
+    const rows = table.getRowModel().rows.map((row) => row.original);
     const windowHeight = useGetWindowHeight();
     const scrollableBoxRef = useRef<HTMLDivElement>(null);
     const listRef = useRef<FixedSizeList>(null);
+    const { included } = useGetCurationSummary();
 
     const handleMoveToNextStub = useCallback(() => {
         if (!selectedStub?.id) return;
-        const stubIndex = stubs.findIndex((x) => x.id === selectedStub.id);
+        const stubIndex = rows.findIndex((row) => row.id === selectedStub.id);
         if (stubIndex < 0) return;
 
-        const nextStub = stubs[stubIndex + 1];
-        if (!nextStub) return;
-        onSetSelectedStub(nextStub.id);
-    }, [onSetSelectedStub, selectedStub?.id, stubs]);
+        const nextStubId = rows[stubIndex + 1]?.id;
+
+        if (!nextStubId) return;
+        onSetSelectedStub(nextStubId);
+    }, [onSetSelectedStub, rows, selectedStub?.id]);
 
     const pxInVh = Math.round(windowHeight - 280);
 
@@ -44,9 +46,9 @@ const CurationBoardAIInterfaceCuratorFocus: React.FC<ICurationBoardAIInterfaceCu
 
     useEffect(() => {
         if (!listRef.current) return;
-        const selectedItemIndex = (stubs || []).findIndex((x) => x.id === selectedStub?.id);
+        const selectedItemIndex = (rows || []).findIndex((row) => row.id === selectedStub?.id);
         listRef.current.scrollToItem(selectedItemIndex, 'smart');
-    }, [selectedStub?.id, stubs, pxInVh]);
+    }, [selectedStub?.id, rows, pxInVh]);
 
     useEffect(() => {
         if (scrollableBoxRef.current) {
@@ -56,22 +58,24 @@ const CurationBoardAIInterfaceCuratorFocus: React.FC<ICurationBoardAIInterfaceCu
 
     return (
         <Box sx={{ display: 'flex', padding: '0 1rem 1rem 1rem', height: 'calc(100% - 48px - 8px - 20px)' }}>
-            {stubs.length === 0 && (
-                <Typography color="warning.dark">
-                    No studies. To import studies, click the import button above.
+            {rows.length === 0 && (
+                <Typography color={included > 0 ? 'success.main' : 'warning.dark'}>
+                    {included > 0
+                        ? "You're done! Go to extraction to continue"
+                        : 'No studies. To import studies, click the import button above.'}
                 </Typography>
             )}
-            {stubs.length > 0 && (
+            {rows.length > 0 && (
                 <>
                     <Box>
                         <FixedSizeList
                             height={pxInVh}
-                            itemCount={stubs.length || 0}
+                            itemCount={rows.length || 0}
                             width={260}
                             itemSize={90}
                             itemKey={(index, data) => data.stubs[index]?.id}
                             itemData={{
-                                stubs: stubs,
+                                stubs: rows,
                                 selectedStubId: selectedStub?.id,
                                 onSetSelectedStub: onSetSelectedStub,
                             }}
@@ -79,7 +83,7 @@ const CurationBoardAIInterfaceCuratorFocus: React.FC<ICurationBoardAIInterfaceCu
                             overscanCount={5}
                             ref={listRef}
                         >
-                            {CurationDialogFixedSizeListRow}
+                            {CurationStubListItemVirtualizedContainer}
                         </FixedSizeList>
                     </Box>
                     <Box ref={scrollableBoxRef} sx={{ overflowY: 'auto', width: '100%' }}>

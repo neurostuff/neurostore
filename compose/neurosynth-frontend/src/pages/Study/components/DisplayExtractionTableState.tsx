@@ -2,16 +2,13 @@ import { ArrowLeft, ArrowRight } from '@mui/icons-material';
 import { Box, Button, Tooltip, Typography } from '@mui/material';
 import { useGetStudyById, useGetStudysetById, useUserCanEdit } from 'hooks';
 import { retrieveExtractionTableState } from 'pages/Extraction/components/ExtractionTable.helpers';
-import {
-    useProjectExtractionStudysetId,
-    useProjectId,
-    useProjectUser,
-} from 'pages/Project/store/ProjectStore';
+import { useProjectExtractionStudysetId, useProjectId, useProjectUser } from 'pages/Project/store/ProjectStore';
 import { useStudyId } from 'pages/Study/store/StudyStore';
 import { hasUnsavedStudyChanges, unsetUnloadHandler } from 'helpers/BeforeUnload.helpers';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
+import React from 'react';
 
 const DisplayExtractionTableState: React.FC = (props) => {
     const projectId = useProjectId();
@@ -51,9 +48,11 @@ const DisplayExtractionTableState: React.FC = (props) => {
             return;
         }
 
-        canEdit
-            ? navigate(`/projects/${projectId}/extraction/studies/${prevStudyId}/edit`)
-            : navigate(`/projects/${projectId}/extraction/studies/${prevStudyId}`);
+        if (canEdit) {
+            navigate(`/projects/${projectId}/extraction/studies/${prevStudyId}/edit`);
+        } else {
+            navigate(`/projects/${projectId}/extraction/studies/${prevStudyId}`);
+        }
     };
 
     const handleMoveToNextStudy = () => {
@@ -68,9 +67,11 @@ const DisplayExtractionTableState: React.FC = (props) => {
             return;
         }
 
-        canEdit
-            ? navigate(`/projects/${projectId}/extraction/studies/${nextStudyId}/edit`)
-            : navigate(`/projects/${projectId}/extraction/studies/${nextStudyId}`);
+        if (canEdit) {
+            navigate(`/projects/${projectId}/extraction/studies/${nextStudyId}/edit`);
+        } else {
+            navigate(`/projects/${projectId}/extraction/studies/${nextStudyId}`);
+        }
     };
 
     const handleConfirmationDialogClose = (ok: boolean | undefined) => {
@@ -98,7 +99,7 @@ const DisplayExtractionTableState: React.FC = (props) => {
     };
 
     const filterStr = (extractionTableState?.columnFilters || []).reduce((acc, curr, index) => {
-        if (index === 0) return `Filtering by: ${curr.id}: ${curr.value || 'All'}`;
+        if (index === 0) return `Filtering by ${curr.id}: ${curr.value || 'All'}`;
         return `${acc}, ${curr.id}: ${curr.value || 'All'}`;
     }, '');
 
@@ -179,19 +180,17 @@ const DisplayExtractionTableState: React.FC = (props) => {
                 >
                     <Typography sx={{ display: 'block', fontSize: '10px' }}>
                         {thisStudyIndex + 1} of {(extractionTableState?.studies || []).length}
-                        <span style={{ color: 'gray', marginLeft: '4px' }}>
-                            ({data?.studies?.length || 0} total)
-                        </span>
+                        <span style={{ color: 'gray', marginLeft: '4px' }}>({data?.studies?.length || 0} total)</span>
                     </Typography>
                     <Typography sx={{ display: 'block', fontSize: '10px' }}>
                         {(extractionTableState?.columnFilters || []).length > 0 && (
                             <>{(extractionTableState?.columnFilters || []).length} filters</>
                         )}
                         {(extractionTableState?.sorting || []).map((sorting) => (
-                            <>
+                            <React.Fragment key={sorting.id}>
                                 {(extractionTableState?.columnFilters || []).length > 0 ? ', ' : ''}
                                 sorting by {sorting.id}
-                            </>
+                            </React.Fragment>
                         ))}
                     </Typography>
                 </Box>

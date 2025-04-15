@@ -1,4 +1,4 @@
-import { Box, TableBody, TableCell, TableRow } from '@mui/material';
+import { TableBody, TableCell, TableRow } from '@mui/material';
 import { flexRender, Table } from '@tanstack/react-table';
 import { ICurationStubStudy } from '../Curation.types';
 
@@ -15,8 +15,9 @@ const CurationBoardAIInterfaceCuratorTableBody: React.FC<{
                     onClick={() => onSelect(row.original.id)}
                     sx={{
                         transition: 'ease-in 150ms',
+                        height: '1px', // https://stackoverflow.com/questions/3215553/make-a-div-fill-an-entire-table-cell
                         '&:hover': {
-                            backgroundColor: '#ebebeb',
+                            backgroundColor: '#f6f6f6',
                             cursor: 'pointer',
                             transition: 'ease-in-out 150ms',
                         },
@@ -26,12 +27,13 @@ const CurationBoardAIInterfaceCuratorTableBody: React.FC<{
                         <TableCell
                             key={cell.id}
                             sx={{
-                                padding: cell.column.id === 'select' ? '0px' : '4px 8px',
+                                padding: '6px',
+                                height: 'inherit',
                                 lineHeight: 'normal',
                                 width: `${cell.column.getSize()}px`,
                             }}
                         >
-                            <Box>{flexRender(cell.column.columnDef.cell, cell.getContext())}</Box>
+                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
                         </TableCell>
                     ))}
                 </TableRow>

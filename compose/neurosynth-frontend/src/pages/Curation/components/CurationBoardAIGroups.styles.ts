@@ -19,6 +19,7 @@ const CurationBoardAIGroupsStyles: Style = {
         WebkitLineClamp: 3,
         WebkitBoxOrient: 'vertical',
         overflow: 'hidden',
+        wordBreak: 'break-all',
     },
 };
 

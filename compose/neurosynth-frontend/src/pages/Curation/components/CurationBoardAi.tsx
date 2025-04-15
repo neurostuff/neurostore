@@ -104,7 +104,7 @@ const CurationBoardAI: React.FC = () => {
                     onSelectGroup={setSelectedGroup}
                 />
             </Box>
-            <Box sx={{ width: '80%', height: '100%', backgroundColor: 'rgb(255, 255, 255)' }}>
+            <Box sx={{ width: '80%', overflow: 'hidden', height: '100%', backgroundColor: 'rgb(255, 255, 255)' }}>
                 {selectedGroup === undefined ? (
                     <>No Group Selected</>
                 ) : selectedGroup.UI === ECurationBoardAIInterface.CURATOR ? (

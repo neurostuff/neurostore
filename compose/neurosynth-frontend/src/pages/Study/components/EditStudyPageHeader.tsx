@@ -95,11 +95,13 @@ const EditStudyPageHeader: React.FC = () => {
                     )}
                     {pmcid && (
                         <Tooltip placement="top" title="View the full article in HTML form via PubMed Central">
-                            <DisplayLink
-                                sx={{ marginRight: '1rem' }}
-                                label="Full Text (web)"
-                                href={`${PUBMED_CENTRAL_ARTICLE_URL_PREFIX}${pmcid}`}
-                            />
+                            <>
+                                <DisplayLink
+                                    sx={{ marginRight: '1rem' }}
+                                    label="Full Text (web)"
+                                    href={`${PUBMED_CENTRAL_ARTICLE_URL_PREFIX}${pmcid}`}
+                                />
+                            </>
                         </Tooltip>
                     )}
                     {studyName && <DisplayStudyLinkFullText sx={{ marginRight: '1rem' }} studyName={studyName} />}

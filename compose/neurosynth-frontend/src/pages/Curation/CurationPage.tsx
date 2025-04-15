@@ -107,10 +107,21 @@ const CurationPage: React.FC = () => {
                                 <Button
                                     onClick={() => setPrismaIsOpen(true)}
                                     variant="outlined"
-                                    sx={{ marginLeft: '0.5rem', width: '180px' }}
+                                    size="small"
+                                    sx={{ marginLeft: '0.5rem' }}
                                     startIcon={<ChangeHistoryIcon />}
                                 >
                                     PRISMA diagram
+                                </Button>
+                                <Button
+                                    variant="contained"
+                                    disableElevation
+                                    sx={{ marginLeft: '0.5rem', fontSize: '12px' }}
+                                    onClick={() => navigate(`/projects/${projectId}/curation/import`)}
+                                    disabled={!canEdit}
+                                    size="small"
+                                >
+                                    import studies
                                 </Button>
                             </>
                         )}
@@ -125,8 +136,9 @@ const CurationPage: React.FC = () => {
                                     dialogMessage="All studies that have not been explicitly excluded will be included"
                                 />
                                 <Button
+                                    sx={{ ml: '0.5rem' }}
                                     onClick={() => setSkipCurationDialogIsOpen(true)}
-                                    color="success"
+                                    color="info"
                                     variant="outlined"
                                     size="small"
                                     disabled={uncategorized === 0}
@@ -141,7 +153,6 @@ const CurationPage: React.FC = () => {
                             color="success"
                             size="small"
                             sx={{
-                                width: '180px',
                                 ml: '0.5rem',
                                 ...(extractionStepInitialized || !canMoveToExtractionPhase
                                     ? { color: 'white' }

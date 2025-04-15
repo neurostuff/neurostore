@@ -98,7 +98,7 @@ const CurationEditableStubSummaryHeader: React.FC<ICurationEditableStubSummaryHe
         case 'excluded':
             categorizeHeader = (
                 <Chip
-                    sx={{ fontSize: '1.2rem', margin: '0.4rem 0', borderRadius: '4px' }}
+                    sx={{ fontSize: '1.2rem', borderRadius: '4px' }}
                     onDelete={handleRemoveExclusion}
                     label={props.stub.exclusionTag?.label || 'Excluded'}
                     size="medium"
@@ -109,7 +109,7 @@ const CurationEditableStubSummaryHeader: React.FC<ICurationEditableStubSummaryHe
         case 'included':
             categorizeHeader = (
                 <Chip
-                    sx={{ fontSize: '1.2rem', margin: '0.4rem 0', borderRadius: '4px' }}
+                    sx={{ fontSize: '1.2rem', borderRadius: '4px' }}
                     onDelete={handleDemoteStub}
                     label="Included"
                     size="medium"
@@ -119,7 +119,7 @@ const CurationEditableStubSummaryHeader: React.FC<ICurationEditableStubSummaryHe
             break;
         default:
             categorizeHeader = (
-                <Box sx={{ display: 'flex', padding: '6px 0' }}>
+                <Box sx={{ display: 'flex' }}>
                     <Tooltip placement="top" title="Clicking this button will promote the study to the next column">
                         {/* have to use fragments, otherwise we get a forwardref error */}
                         <>

@@ -1,5 +1,6 @@
-import { Delete } from '@mui/icons-material';
-import { Alert, Box, Button, Chip, Typography } from '@mui/material';
+import { Close, Delete } from '@mui/icons-material';
+import { Alert, Box, Button, Chip, IconButton, Typography } from '@mui/material';
+import DebouncedTextField from 'components/DebouncedTextField';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import { useGetWindowHeight } from 'hooks';
 import CurationImportFinalizeReviewVirtualizedListItem from 'pages/CurationImport/components/CurationImportFinalizeReviewVirtualizedListItem';
@@ -24,6 +25,7 @@ const CurationBoardAIInterfaceImportSummary: React.FC<{
     const descriptionTextContainerRef = useRef<HTMLDivElement>(null);
     const windowHeight = useGetWindowHeight();
     const [confirmationDialogIsOpen, setConfirmationDialogIsOpen] = useState(false);
+    const [searchText, setSearchText] = useState<string>();
 
     useEffect(() => {
         const totalHeight =
@@ -40,6 +42,19 @@ const CurationBoardAIInterfaceImportSummary: React.FC<{
         const allStudies = columns.reduce((acc, curr) => [...acc, ...curr.stubStudies], [] as ICurationStubStudy[]);
         return allStudies.filter((study) => study.importId === curationImport.id);
     }, [columns, curationImport]);
+
+    const filteredStudies = useMemo(() => {
+        if (!searchText) return studiesInImport;
+
+        const searchTextLower = searchText.toLocaleLowerCase();
+
+        return studiesInImport.filter(
+            (study) =>
+                study.title.toLocaleLowerCase()?.includes(searchTextLower) ||
+                study.authors.toLocaleLowerCase()?.includes(searchTextLower) ||
+                study.journal.toLocaleLowerCase()?.includes(searchTextLower)
+        );
+    }, [studiesInImport, searchText]);
 
     if (!curationImport) {
         return <Typography color="error.main">There was an error getting the import information</Typography>;
@@ -64,7 +79,7 @@ const CurationBoardAIInterfaceImportSummary: React.FC<{
             break;
     }
 
-    const listHeight = windowHeight - 320 - (errorContainerHeight || 0) - (descriptionContainerHeight || 0);
+    const listHeight = windowHeight - 356 - (errorContainerHeight || 0) - (descriptionContainerHeight || 0);
 
     return (
         <Box sx={{ padding: '1rem 2rem', overflowY: 'auto' }}>
@@ -139,15 +154,36 @@ const CurationBoardAIInterfaceImportSummary: React.FC<{
                 )}
             </Box>
             <Box sx={{ backgroundColor: '#fafafa', padding: '0.5rem', borderRadius: '4px', marginTop: '8px' }}>
+                <Box>
+                    <DebouncedTextField
+                        placeholder="Search by title, authors, or journal"
+                        size="small"
+                        onChange={setSearchText}
+                        value={searchText}
+                        InputProps={{
+                            endAdornment: (
+                                <IconButton size="small" onClick={() => setSearchText(undefined)}>
+                                    <Close />
+                                </IconButton>
+                            ),
+                        }}
+                        sx={{
+                            backgroundColor: 'white',
+                            width: '100%',
+                            marginBottom: '8px',
+                            input: { padding: '6px 12px', fontSize: '14px' },
+                        }}
+                    />
+                </Box>
                 <FixedSizeList
                     height={listHeight < 0 ? 0 : listHeight}
-                    itemCount={studiesInImport.length}
+                    itemCount={filteredStudies.length}
                     width="100%"
                     itemSize={LIST_HEIGHT}
                     itemKey={(index, data) => data.stubs[index]?.id}
                     layout="vertical"
                     itemData={{
-                        stubs: studiesInImport,
+                        stubs: filteredStudies,
                     }}
                     overscanCount={3}
                 >

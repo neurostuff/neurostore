@@ -1,13 +1,12 @@
 import { Box, Typography } from '@mui/material';
 import { useGetWindowHeight } from 'hooks';
 import { useProjectCurationColumns } from 'pages/Project/store/ProjectStore';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FixedSizeList } from 'react-window';
 import { ICurationStubStudy } from '../Curation.types';
 import { IGroupListItem } from './CurationBoardAIGroupsList';
-import { CurationDialogFixedSizeListRow } from './CurationDialog';
 import CurationEditableStubSummary from './CurationEditableStubSummary';
-import React from 'react';
+import CurationStubListItemVirtualizedContainer from './CurationStubListItemVirtualizedContainer';
 
 const CurationBoardAIInterfaceExclude: React.FC<{
     group: IGroupListItem;
@@ -68,11 +67,7 @@ const CurationBoardAIInterfaceExclude: React.FC<{
 
     return (
         <Box sx={{ display: 'flex', padding: '1rem', height: 'calc(100% - 48px - 8px - 20px)' }}>
-            {stubs.length === 0 && (
-                <Typography color="warning.dark">
-                    No studies. To import studies, click the import button above.
-                </Typography>
-            )}
+            {stubs.length === 0 && <Typography color="warning.dark">No studies for this exclusion.</Typography>}
             {stubs.length > 0 && (
                 <>
                     <Box>
@@ -91,7 +86,7 @@ const CurationBoardAIInterfaceExclude: React.FC<{
                             overscanCount={5}
                             ref={listRef}
                         >
-                            {CurationDialogFixedSizeListRow}
+                            {CurationStubListItemVirtualizedContainer}
                         </FixedSizeList>
                     </Box>
                     <Box ref={scrollableBoxRef} sx={{ overflowY: 'auto', width: '100%' }}>

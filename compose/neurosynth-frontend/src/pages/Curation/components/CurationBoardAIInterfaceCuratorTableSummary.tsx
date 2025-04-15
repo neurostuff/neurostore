@@ -1,18 +1,20 @@
 import { Box, Typography } from '@mui/material';
 import { CellContext, HeaderContext } from '@tanstack/react-table';
-import { ICurationTableStudy } from './CurationBoardAIInterfaceCuratorTable';
 import { getAuthorsShortName } from 'helpers/utils';
+import { ICurationTableStudy } from '../hooks/useCuratorTableState';
 
 export const CuratorTableSummaryCell: React.FC<CellContext<ICurationTableStudy, unknown>> = (props) => {
     const row = props.row.original;
     const authorsShortened = getAuthorsShortName(row.authors);
     return (
         <Box>
-            <Typography sx={{ fontSize: '10px', fontWeight: 'bold' }}>
+            <Typography sx={{ fontSize: '12px', fontWeight: 'bold' }}>
                 {row.articleYear && <>({row.articleYear}).</>} {row.title}
             </Typography>
-            <Typography sx={{ fontSize: '10px' }}>{authorsShortened}</Typography>
-            <Typography sx={{ fontSize: '10px' }} color="muted.main">
+            <Typography sx={{ fontSize: '12px' }} color="black">
+                {authorsShortened}
+            </Typography>
+            <Typography sx={{ fontSize: '12px' }} color="gray">
                 {row.journal}
             </Typography>
         </Box>

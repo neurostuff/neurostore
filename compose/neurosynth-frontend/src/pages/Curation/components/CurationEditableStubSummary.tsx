@@ -2,7 +2,7 @@ import { Box, Typography } from '@mui/material';
 import DisplayStudyLinkFullText from 'components/DisplayStudyLink/DisplayStudyLinkFullText';
 import EditableDisplayLink from 'components/DisplayStudyLink/EditableDisplayLink';
 import TextEdit from 'components/TextEdit/TextEdit';
-import { PUBMED_ARTICLE_URL_PREFIX } from 'hooks/external/useGetPubMedIds';
+import { PUBMED_ARTICLE_URL_PREFIX, PUBMED_CENTRAL_ARTICLE_URL_PREFIX } from 'hooks/external/useGetPubMedIds';
 import { ISource } from 'hooks/projects/useGetProjects';
 import useUserCanEdit from 'hooks/useUserCanEdit';
 import { ICurationStubStudy } from 'pages/Curation/Curation.types';
@@ -15,6 +15,8 @@ interface ICurationEditableStubSummary {
     columnIndex: number;
     onMoveToNextStub: () => void;
 }
+
+const DOI_PREFIX = 'https://doi.org/';
 
 const CurationEditableStubSummary: React.FC<ICurationEditableStubSummary> = ({
     stub,
@@ -63,7 +65,7 @@ const CurationEditableStubSummary: React.FC<ICurationEditableStubSummary> = ({
                 <Box sx={{ display: 'flex' }}>
                     <EditableDisplayLink
                         stubId={stub.id}
-                        linkProps={{ href: stub.doi }}
+                        linkProps={{ href: `${DOI_PREFIX}${stub.doi}` }}
                         label="DOI Link"
                         noLabelText="No DOI"
                         textEditProps={{
@@ -76,7 +78,7 @@ const CurationEditableStubSummary: React.FC<ICurationEditableStubSummary> = ({
                     />
                     <EditableDisplayLink
                         stubId={stub.id}
-                        linkProps={{ href: stub.pmid }}
+                        linkProps={{ href: `${PUBMED_ARTICLE_URL_PREFIX}${stub.pmid}` }}
                         label="Pubmed Study"
                         noLabelText="No PMID"
                         textEditProps={{
@@ -94,7 +96,7 @@ const CurationEditableStubSummary: React.FC<ICurationEditableStubSummary> = ({
                     />
                     <EditableDisplayLink
                         stubId={stub.id}
-                        linkProps={{ href: stub.pmcid }}
+                        linkProps={{ href: `${PUBMED_CENTRAL_ARTICLE_URL_PREFIX}${stub.pmcid}` }}
                         label="PMCID"
                         noLabelText="No PMCID"
                         textEditProps={{
@@ -147,7 +149,7 @@ const CurationEditableStubSummary: React.FC<ICurationEditableStubSummary> = ({
                 {stub.authors || 'No Authors'}
             </Typography>
 
-            <Typography sx={{ color: stub.journal ? 'muted.main' : 'warning.dark' }} variant="body2">
+            <Typography sx={{ color: stub.journal ? 'gray' : 'warning.dark' }} variant="body2">
                 {stub.journal || 'No Journal'}
             </Typography>
 
@@ -155,7 +157,7 @@ const CurationEditableStubSummary: React.FC<ICurationEditableStubSummary> = ({
                 variant="body2"
                 sx={{
                     whiteSpace: 'break-spaces',
-                    color: stub.identificationSource ? 'muted.main' : 'warning.dark',
+                    color: stub.identificationSource ? 'gray' : 'warning.dark',
                 }}
             >
                 Source: {stub.identificationSource?.label || 'No source'}

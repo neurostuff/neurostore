@@ -1,5 +1,5 @@
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
-import { Box, Button, ButtonGroup, MenuItem, MenuList } from '@mui/material';
+import { Box, Button, ButtonGroup, ButtonGroupProps, MenuItem, MenuList } from '@mui/material';
 import NeurosynthPopper from 'components/NeurosynthPopper/NeurosynthPopper';
 import ProgressLoader from 'components/ProgressLoader';
 import { useProjectCurationColumns, useProjectName } from 'pages/Project/store/ProjectStore';
@@ -7,7 +7,9 @@ import { useRef, useState } from 'react';
 import { downloadFile } from '../Curation.helpers';
 import { stubsToBibtex, stubsToCSV } from './CurationDownloadIncludedStudies.helpers';
 
-const CurationDownloadIncludedStudiesButton: React.FC = () => {
+const CurationDownloadIncludedStudiesButton: React.FC<{
+    buttonGroupProps?: ButtonGroupProps;
+}> = ({ buttonGroupProps = {} }) => {
     const [optionsIsOpen, setOptionsIsOpen] = useState(false);
     const anchorRef = useRef(null);
     const curationColumns = useProjectCurationColumns();
@@ -38,18 +40,28 @@ const CurationDownloadIncludedStudiesButton: React.FC = () => {
                 anchorElement={anchorRef.current}
                 open={optionsIsOpen}
             >
-                <Box sx={{ width: '252px' }}>
+                <Box sx={{ width: '175px' }}>
                     <MenuList>
-                        <MenuItem onClick={() => handleDownloadIncludedStudies('bibtex')} value="PNG">
-                            Download INCLUDED as BibTeX
+                        <MenuItem
+                            sx={{ fontSize: '12px' }}
+                            onClick={() => handleDownloadIncludedStudies('bibtex')}
+                            value="PNG"
+                        >
+                            Download as BibTeX
                         </MenuItem>
                     </MenuList>
                 </Box>
             </NeurosynthPopper>
-            <ButtonGroup disabled={disable} color="info" ref={anchorRef} sx={{ height: '100%' }} size="small">
-                <Button onClick={() => handleDownloadIncludedStudies('csv')}>Download INCLUDED as CSV</Button>
-                <Button onClick={() => setOptionsIsOpen(true)} sx={{ width: '44px' }}>
-                    {isLoading ? <ProgressLoader size={20} color="secondary" /> : <ArrowDropDownIcon />}
+            <ButtonGroup disabled={disable} color="info" ref={anchorRef} size="small" {...buttonGroupProps}>
+                <Button sx={{ fontSize: '12px' }} onClick={() => handleDownloadIncludedStudies('csv')}>
+                    Download as CSV
+                </Button>
+                <Button sx={{ fontSize: '12px', width: '44px' }} onClick={() => setOptionsIsOpen(true)}>
+                    {isLoading ? (
+                        <ProgressLoader size={14} color="secondary" />
+                    ) : (
+                        <ArrowDropDownIcon sx={{ fontSize: '20px' }} />
+                    )}
                 </Button>
             </ButtonGroup>
         </>

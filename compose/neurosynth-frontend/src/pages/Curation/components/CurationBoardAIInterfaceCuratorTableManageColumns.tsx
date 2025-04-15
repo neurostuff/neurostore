@@ -1,16 +1,16 @@
-import { Add, Remove } from '@mui/icons-material';
+import { Add, Remove, ViewColumnRounded } from '@mui/icons-material';
 import { Box, Button, List, ListItem, ListItemButton, ListItemIcon, ListItemText } from '@mui/material';
 import { AccessorFnColumnDef, DisplayColumnDef } from '@tanstack/react-table';
 import DebouncedTextField from 'components/DebouncedTextField';
 import NeurosynthPopper from 'components/NeurosynthPopper/NeurosynthPopper';
 import React, { useMemo, useState } from 'react';
-import { AI_INTERFACE_CURATOR_COLUMNS, ICurationTableStudy } from './CurationBoardAIInterfaceCuratorTable';
+import { AI_INTERFACE_CURATOR_COLUMNS, ICurationTableStudy } from '../hooks/useCuratorTableState';
 
-const CurationBoardAIInterfaceCuratorTableAddColumn: React.FC<{
-    onAddColumn: (column: string) => void;
-    onRemoveColumn: (column: string) => void;
+const CurationBoardAIInterfaceCuratorTableManageColumns: React.FC<{
     columns: (DisplayColumnDef<ICurationTableStudy, unknown> | AccessorFnColumnDef<ICurationTableStudy, string>)[];
-}> = ({ onAddColumn, onRemoveColumn, columns }) => {
+    onAddColumn?: (column: string) => void;
+    onRemoveColumn?: (column: string) => void;
+}> = ({ onAddColumn = () => {}, onRemoveColumn = () => {}, columns }) => {
     const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
     const [search, setSearch] = useState<string>();
 
@@ -42,9 +42,9 @@ const CurationBoardAIInterfaceCuratorTableAddColumn: React.FC<{
         <Box>
             <Button
                 onClick={(event: React.MouseEvent<HTMLButtonElement>) => setAnchorEl(event.currentTarget)}
-                sx={{ width: '180px' }}
+                sx={{ fontSize: '12px' }}
                 size="small"
-                startIcon={<Add />}
+                startIcon={<ViewColumnRounded />}
                 color="secondary"
             >
                 Update Columns
@@ -85,4 +85,4 @@ const CurationBoardAIInterfaceCuratorTableAddColumn: React.FC<{
     );
 };
 
-export default CurationBoardAIInterfaceCuratorTableAddColumn;
+export default CurationBoardAIInterfaceCuratorTableManageColumns;

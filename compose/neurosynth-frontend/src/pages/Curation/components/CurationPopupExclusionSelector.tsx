@@ -20,6 +20,7 @@ interface IExclusionSelectorPopup {
     prismaPhase?: 'identification' | 'screening' | 'eligibility';
     disabled?: boolean;
     popupIsOpen: boolean;
+    exclusionButtonEndText?: string;
 }
 
 interface AutoSelectOption {
@@ -70,6 +71,12 @@ const CurationPopupExclusionSelector: React.FC<IExclusionSelectorPopup> = (props
                 setDefaultExclusion({
                     id: ENeurosynthTagIds.IRRELEVANT_EXCLUSION_ID,
                     label: 'Irrelevant',
+                    addOptionActualLabel: null,
+                });
+            } else if (props.prismaPhase === 'eligibility') {
+                setDefaultExclusion({
+                    id: ENeurosynthTagIds.OUT_OF_SCOPE_EXCLUSION_ID,
+                    label: 'Out of scope',
                     addOptionActualLabel: null,
                 });
             }
@@ -135,9 +142,10 @@ const CurationPopupExclusionSelector: React.FC<IExclusionSelectorPopup> = (props
                 placement="bottom-start"
                 onClickAway={handleClosePopup}
             >
-                <Box sx={{ marginTop: '6px' }}>
+                <Box sx={{ marginTop: '7px' }}>
                     <Autocomplete
-                        sx={{ width: '250px' }}
+                        size="small"
+                        sx={{ width: excludeButtonRef.current?.clientWidth }}
                         value={selectedValue || null}
                         options={exclusions}
                         freeSolo
@@ -151,15 +159,27 @@ const CurationPopupExclusionSelector: React.FC<IExclusionSelectorPopup> = (props
                         getOptionLabel={(option) => (typeof option === 'string' ? option : option?.label || '')}
                         onChange={handleChange}
                         renderOption={(params, option) => (
-                            <ListItem {...params} key={option?.id}>
-                                <ListItemText primary={option?.label || ''} />
+                            <ListItem {...params} key={option?.id} sx={{ fontSize: '12px !important' }}>
+                                <ListItemText
+                                    primary={option?.label || ''}
+                                    primaryTypographyProps={{ fontSize: '12px', color: 'error.dark' }}
+                                />
                             </ListItem>
                         )}
                         renderInput={(params) => (
                             <TextField
                                 {...params}
-                                placeholder="start typing to create exclusion"
-                                label="select exclusion reason"
+                                InputLabelProps={{
+                                    ...params.InputLabelProps,
+                                    style: { ...params.InputLabelProps.style, fontSize: '12px' },
+                                }}
+                                InputProps={{
+                                    ...params.InputProps,
+                                    style: { ...(params.InputProps as any).style, fontSize: '12px' },
+                                }}
+                                size="small"
+                                placeholder="type to create new"
+                                label="reason to exclude"
                             />
                         )}
                         filterOptions={(options, params) => {
@@ -182,24 +202,26 @@ const CurationPopupExclusionSelector: React.FC<IExclusionSelectorPopup> = (props
                     />
                 </Box>
             </NeurosynthPopper>
-            <ButtonGroup size="small" disabled={!!props.disabled} color="error" ref={excludeButtonRef}>
-                {defaultExclusion && (
-                    <LoadingButton
-                        variant="outlined"
-                        startIcon={<HighlightOffIcon />}
-                        text={`Exclude: ${defaultExclusion?.label}`}
-                        isLoading={props.isLoading && !props.popupIsOpen}
-                        onClick={() => handleSelectDefaultExclusion(defaultExclusion)}
-                    />
-                )}
-                <Button
-                    startIcon={defaultExclusion ? undefined : <HighlightOffIcon />}
-                    sx={{ width: defaultExclusion ? '32px' : '140px' }}
-                    onClick={() => props.onOpenPopup()}
-                >
-                    {defaultExclusion ? <ArrowDropDownIcon sx={{ fontSize: '22px' }} /> : 'exclude'}
-                </Button>
-            </ButtonGroup>
+            <div ref={excludeButtonRef}>
+                <ButtonGroup size="small" disabled={!!props.disabled} color="error">
+                    {defaultExclusion && (
+                        <LoadingButton
+                            startIcon={<HighlightOffIcon />}
+                            text={defaultExclusion.label + (props.exclusionButtonEndText || '')}
+                            sx={{ fontSize: '12px' }}
+                            isLoading={props.isLoading && !props.popupIsOpen}
+                            onClick={() => handleSelectDefaultExclusion(defaultExclusion)}
+                        />
+                    )}
+                    <Button
+                        startIcon={defaultExclusion ? undefined : <HighlightOffIcon />}
+                        sx={{ width: defaultExclusion ? '32px' : '140px' }}
+                        onClick={() => props.onOpenPopup()}
+                    >
+                        {defaultExclusion ? <ArrowDropDownIcon sx={{ fontSize: '22px' }} /> : 'exclude'}
+                    </Button>
+                </ButtonGroup>
+            </div>
         </>
     );
 };

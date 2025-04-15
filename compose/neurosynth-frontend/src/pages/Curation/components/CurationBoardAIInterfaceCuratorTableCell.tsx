@@ -8,7 +8,7 @@ const CuratorTableCell: React.FC<CellContext<ICurationTableStudy, unknown>> = (p
     return (
         <Typography
             variant="caption"
-            sx={{ color: value ? 'inherit' : 'warning.dark', fontSize: '10px', wordBreak: 'break-all' }}
+            sx={{ color: value ? 'inherit' : 'warning.dark', fontSize: '12px', wordBreak: 'break-all' }}
         >
             {value || 'no data'}
         </Typography>

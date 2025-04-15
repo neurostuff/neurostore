@@ -9,7 +9,10 @@ export const CuratorTableSelectCell: React.FC<CellContext<ICurationTableStudy, u
     };
 
     return (
-        <Box onClick={(e) => e.stopPropagation()} sx={{ width: '100%', padding: '4px 8px' }}>
+        <Box
+            onClick={(e) => e.stopPropagation()}
+            sx={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center' }}
+        >
             <Checkbox size="small" checked={props.row.getIsSelected()} onChange={handleSelectCell} />
         </Box>
     );

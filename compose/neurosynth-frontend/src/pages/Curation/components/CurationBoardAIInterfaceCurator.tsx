@@ -1,17 +1,24 @@
 import { Box, Button, Typography } from '@mui/material';
+import { GridTableRowsIcon } from '@mui/x-data-grid';
 import { useUserCanEdit } from 'hooks';
-import { useProjectCurationColumns, useProjectUser } from 'pages/Project/store/ProjectStore';
+import {
+    useProjectCurationColumns,
+    useProjectCurationIsLastColumn,
+    useProjectUser,
+} from 'pages/Project/store/ProjectStore';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ICurationStubStudy } from '../Curation.types';
 import { IGroupListItem } from './CurationBoardAIGroupsList';
 import CurationBoardAIInterfaceCuratorFocus from './CurationBoardAIInterfaceCuratorFocus';
 import CurationBoardAIInterfaceCuratorTable from './CurationBoardAIInterfaceCuratorTable';
-import { GridTableRowsIcon } from '@mui/x-data-grid';
+import CurationDownloadIncludedStudiesButton from './CurationDownloadIncludedStudiesButton';
+import useCuratorTableState from '../hooks/useCuratorTableState';
+import { Table } from '@tanstack/react-table';
 
 export interface ICurationBoardAIInterfaceCurator {
     selectedStub: ICurationStubStudy | undefined;
-    stubs: ICurationStubStudy[];
+    table: Table<ICurationStubStudy>;
     columnIndex: number;
     onSetSelectedStub: (stubId: string) => void;
 }
@@ -19,15 +26,7 @@ export interface ICurationBoardAIInterfaceCurator {
 const CurationBoardAIInterfaceCurator: React.FC<{ group: IGroupListItem }> = ({ group }) => {
     const navigate = useNavigate();
     const { projectId } = useParams<{ projectId: string | undefined }>();
-
-    const [UIMode, setUIMode] = useState<'TABLEMODE' | 'FOCUSMODE'>('TABLEMODE');
-
-    const projectUser = useProjectUser();
-    const canEdit = useUserCanEdit(projectUser || undefined);
     const curationColumns = useProjectCurationColumns();
-
-    const [selectedStubId, setSelectedStubId] = useState<string>();
-
     const { column, columnIndex } = useMemo(() => {
         const columnIndex = curationColumns.findIndex((col) => col.id === group.id);
         if (columnIndex < 0)
@@ -40,11 +39,19 @@ const CurationBoardAIInterfaceCurator: React.FC<{ group: IGroupListItem }> = ({ 
             columnIndex: columnIndex,
         };
     }, [curationColumns, group.id]);
-
+    const isLastColumn = useProjectCurationIsLastColumn(columnIndex);
     const stubsInColumn = useMemo(() => {
         if (!column) return [];
         return column.stubStudies.filter((x) => x.exclusionTag === null);
     }, [column]);
+    const table = useCuratorTableState(projectId, stubsInColumn, !isLastColumn);
+
+    const [UIMode, setUIMode] = useState<'TABLEMODE' | 'FOCUSMODE'>('TABLEMODE');
+
+    const projectUser = useProjectUser();
+    const canEdit = useUserCanEdit(projectUser || undefined);
+
+    const [selectedStubId, setSelectedStubId] = useState<string>();
 
     const selectedStub: ICurationStubStudy | undefined = useMemo(
         () => (stubsInColumn || []).find((stub) => stub.id === selectedStubId),
@@ -63,8 +70,11 @@ const CurationBoardAIInterfaceCurator: React.FC<{ group: IGroupListItem }> = ({ 
     // we only want the first item to be selected the first time the user clicks on a group.
     // it is safe to only have group.id as a dependency as columns must be loaded by the time we reach here
     useEffect(() => {
-        if (column === undefined || stubsInColumn.length === 0) return;
-        setSelectedStubId(stubsInColumn[0]?.id);
+        if (stubsInColumn.length === 0) return;
+        if (UIMode === 'TABLEMODE') return;
+        const rows = table.getRowModel().rows;
+        if (rows.length === 0) return;
+        setSelectedStubId(rows[0].original.id);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [group.id]);
 
@@ -74,12 +84,12 @@ const CurationBoardAIInterfaceCurator: React.FC<{ group: IGroupListItem }> = ({ 
 
     return (
         <Box sx={{ height: '100%' }}>
-            <Box sx={{ padding: '1rem 2rem 0.5rem 2rem', display: 'flex', justifyContent: 'space-between' }}>
+            <Box sx={{ padding: '1rem 2rem 0.5rem 1rem', display: 'flex' }}>
                 <Box>
                     {UIMode === 'FOCUSMODE' && (
                         <Button
-                            endIcon={<GridTableRowsIcon />}
-                            sx={{ marginRight: '0.5rem' }}
+                            startIcon={<GridTableRowsIcon />}
+                            sx={{ marginRight: '0.5rem', fontSize: '12px' }}
                             size="small"
                             color="secondary"
                             onClick={handleToggleUIMode}
@@ -92,31 +102,35 @@ const CurationBoardAIInterfaceCurator: React.FC<{ group: IGroupListItem }> = ({ 
                     <Button
                         variant="contained"
                         disableElevation
-                        sx={{ width: '180px' }}
+                        sx={{ marginRight: '0.5rem', fontSize: '12px' }}
                         onClick={() => navigate(`/projects/${projectId}/curation/import`)}
                         disabled={!canEdit}
                         size="small"
                     >
                         import studies
                     </Button>
+                    {isLastColumn && <CurationDownloadIncludedStudiesButton />}
                 </Box>
             </Box>
-            {UIMode === 'TABLEMODE' ? (
-                <CurationBoardAIInterfaceCuratorTable
-                    key={group.id} // reset table state when group is changed
-                    selectedStub={selectedStub}
-                    columnIndex={columnIndex}
-                    stubs={stubsInColumn}
-                    onSetSelectedStub={setSelectedStubAndFocus}
-                />
-            ) : (
-                <CurationBoardAIInterfaceCuratorFocus
-                    selectedStub={selectedStub}
-                    columnIndex={columnIndex}
-                    stubs={stubsInColumn}
-                    onSetSelectedStub={setSelectedStubId}
-                />
-            )}
+            <Box sx={{ height: '100%' }}>
+                {UIMode === 'TABLEMODE' ? (
+                    <CurationBoardAIInterfaceCuratorTable
+                        key={group.id} // reset table state when group is changed
+                        columnIndex={columnIndex}
+                        selectedStub={selectedStub}
+                        table={table}
+                        onSetSelectedStub={setSelectedStubAndFocus}
+                    />
+                ) : (
+                    <CurationBoardAIInterfaceCuratorFocus
+                        key={group.id}
+                        selectedStub={selectedStub}
+                        columnIndex={columnIndex}
+                        table={table}
+                        onSetSelectedStub={setSelectedStubId}
+                    />
+                )}
+            </Box>
         </Box>
     );
 };

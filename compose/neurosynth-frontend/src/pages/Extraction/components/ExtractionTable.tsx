@@ -25,6 +25,7 @@ import {
     SortingState,
     useReactTable,
 } from '@tanstack/react-table';
+import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import { useGetStudysetById, useUserCanEdit } from 'hooks';
 import { IStudyExtractionStatus } from 'hooks/projects/useGetProjects';
 import { StudyReturn } from 'neurostore-typescript-sdk';
@@ -38,6 +39,7 @@ import {
 import { ChangeEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { EExtractionStatus } from '../ExtractionPage';
+import { retrieveExtractionTableState, updateExtractionTableState } from './ExtractionTable.helpers';
 import styles from './ExtractionTable.module.css';
 import { ExtractionTableAuthorCell, ExtractionTableAuthorHeader } from './ExtractionTableAuthor';
 import ExtractionTableFilterInput from './ExtractionTableFilterInput';
@@ -46,8 +48,6 @@ import { ExtractionTableNameCell, ExtractionTableNameHeader } from './Extraction
 import { ExtractionTablePMIDCell, ExtractionTablePMIDHeader } from './ExtractionTablePMID';
 import { ExtractionTableStatusCell, ExtractionTableStatusHeader } from './ExtractionTableStatus';
 import { ExtractionTableYearCell, ExtractionTableYearHeader } from './ExtractionTableYear';
-import { retrieveExtractionTableState } from './ExtractionTable.helpers';
-import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 
 //allows us to define custom properties for our columns
 declare module '@tanstack/react-table' {
@@ -70,11 +70,6 @@ const ExtractionTable: React.FC = () => {
     const setGivenStudyStatusesAsComplete = useProjectExtractionSetGivenStudyStatusesAsComplete();
     const projectUser = useProjectUser();
     const usercanEdit = useUserCanEdit(projectUser || undefined);
-
-    const [pagination, setPagination] = useState<PaginationState>({
-        pageIndex: 0,
-        pageSize: 25,
-    });
     const [confirmationDialogIsOpen, setConfirmationDialogIsOpen] = useState(false);
 
     useEffect(() => {
@@ -83,8 +78,13 @@ const ExtractionTable: React.FC = () => {
 
         if (state.columnFilters) setColumnFilters(state.columnFilters);
         if (state.sorting) setSorting(state.sorting);
+        if (state.pagination) setPagination(state.pagination);
     }, [projectId]);
 
+    const [pagination, setPagination] = useState<PaginationState>({
+        pageIndex: 0,
+        pageSize: 25,
+    });
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
     const [sorting, setSorting] = useState<SortingState>([]);
 
@@ -214,7 +214,9 @@ const ExtractionTable: React.FC = () => {
         data: data,
         columns: columns,
         onSortingChange: setSorting,
-        onPaginationChange: setPagination,
+        onPaginationChange: (props) => {
+            setPagination(props);
+        },
         getCoreRowModel: getCoreRowModel(),
         getSortedRowModel: getSortedRowModel(),
         getPaginationRowModel: getPaginationRowModel(),
@@ -227,6 +229,25 @@ const ExtractionTable: React.FC = () => {
             sorting: sorting,
         },
     });
+
+    useEffect(() => {
+        updateExtractionTableState(projectId, {
+            sorting: sorting,
+            studies: table.getSortedRowModel().rows.map((x) => x.original.id as string),
+        });
+    }, [sorting, projectId, table]);
+    useEffect(() => {
+        updateExtractionTableState(projectId, {
+            columnFilters: columnFilters,
+            studies: table.getSortedRowModel().rows.map((x) => x.original.id as string),
+        });
+    }, [columnFilters, projectId, table]);
+    useEffect(() => {
+        updateExtractionTableState(projectId, {
+            pagination: pagination,
+            studies: table.getSortedRowModel().rows.map((x) => x.original.id as string),
+        });
+    }, [pagination, projectId, table]);
 
     const handleRowsPerPageChange = useCallback((event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const newRowsPerPage = parseInt(event.target.value);
@@ -324,16 +345,7 @@ const ExtractionTable: React.FC = () => {
                                 key={row.id}
                                 className={styles[studyStatusMap.get(row.original.id || '')?.status ?? 'uncategorized']}
                                 onClick={() => {
-                                    if (!row.original.id) return;
-                                    sessionStorage.setItem(
-                                        `${projectId}-extraction-table`,
-                                        JSON.stringify({
-                                            columnFilters: table.getState().columnFilters,
-                                            sorting: table.getState().sorting,
-                                            studies: table.getSortedRowModel().rows.map((r) => r.original.id),
-                                        })
-                                    );
-
+                                    if (!row.original.id || !projectId) return;
                                     if (usercanEdit) {
                                         navigate(`/projects/${projectId}/extraction/studies/${row.original.id}/edit`);
                                     } else {
@@ -392,7 +404,7 @@ const ExtractionTable: React.FC = () => {
                                         table.setColumnFilters((prev) => prev.filter((f) => f.id !== filter.id))
                                     }
                                     key={filter.id}
-                                    color="primary"
+                                    color="secondary"
                                     variant="outlined"
                                     sx={{ margin: '1px', fontSize: '12px', maxWidth: '200px' }}
                                     label={`Filtering ${filter.id.toUpperCase()}: ${filter.value}`}

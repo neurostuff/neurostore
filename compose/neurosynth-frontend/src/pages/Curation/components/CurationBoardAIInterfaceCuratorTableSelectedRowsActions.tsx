@@ -35,14 +35,17 @@ const CurationBoardAIInterfaceCuratorTableSelectedRowsActions: React.FC<{
         handleAddExclusionForRows(newExclusion);
     };
 
+    const numRowsSelected = table.getSelectedRowModel().rows.length;
+
     return (
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+        <Box sx={{ marginRight: '8px' }}>
             <CurationPopupExclusionSelector
                 popupIsOpen={exclusionTagSelectorIsOpen}
                 onOpenPopup={() => setExclusionTagSelectorIsOpen(true)}
                 onClosePopup={() => setExclusionTagSelectorIsOpen(false)}
                 onAddExclusion={handleAddExclusionForRows}
                 onCreateExclusion={handleCreateExclusion}
+                exclusionButtonEndText={` (${numRowsSelected})`}
                 disabled={false}
                 prismaPhase={undefined}
             />
