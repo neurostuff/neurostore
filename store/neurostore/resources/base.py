@@ -548,6 +548,7 @@ LIST_USER_ARGS = {
     "desc": fields.Boolean(load_default=True),
     "page_size": fields.Int(load_default=20, validate=lambda val: val < 30000),
     "user_id": fields.String(load_default=None),
+    "paginate": fields.Boolean(load_default=True),
 }
 
 
@@ -650,14 +651,20 @@ class ListView(BaseView):
         # join the relevant tables for output
         q = self.eager_load(q, args)
 
-        pagination_query = q.paginate(
-            page=args["page"],
-            per_page=args["page_size"],
-            error_out=False,
-        )
-        records = pagination_query.items
+        if args["paginate"]:
+            pagination_query = q.paginate(
+                page=args["page"],
+                per_page=args["page_size"],
+                error_out=False,
+            )
+            records = pagination_query.items
+            total = pagination_query.total
+        else:
+            records = q.all()
+            total = len(records)
+
         content = self.serialize_records(records, args)
-        metadata = self.create_metadata(q, pagination_query.total)
+        metadata = self.create_metadata(q, total)
         response = {
             "metadata": metadata,
             "results": content,
