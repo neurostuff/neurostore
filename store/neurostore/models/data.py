@@ -214,7 +214,6 @@ class BaseStudy(BaseMixin, db.Model):
                 postgresql_include=['id', 'created_at'],
                 postgresql_where=sa.or_(public == True, user_id.is_(None))),
     )
-    )
 
     @hybrid_property
     def points_exist(self):
