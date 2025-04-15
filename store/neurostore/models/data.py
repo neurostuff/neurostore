@@ -767,8 +767,7 @@ class PipelineStudyResult(BaseMixin, db.Model):
         sa.Index('idx_pipeline_results_lookup',
                 config_id, 
                 base_study_id,
-                date_executed.desc(),
-                postgresql_include=['result_data']),
+                date_executed.desc()),
     )
 
 # from . import event_listeners  # noqa E402
