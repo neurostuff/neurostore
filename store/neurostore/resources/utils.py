@@ -137,21 +137,22 @@ def process_group(group_query: str) -> str:
     Returns:
         str: The processed query string with proper operators.
     """
+
     def parse_parentheses(text):
         """Parse text into a list of groups and terms"""
         groups = []
         current = []
         depth = 0
         buffer = ""
-        
+
         for char in text:
-            if char == '(':
+            if char == "(":
                 if depth == 0 and buffer:
                     current.append(buffer.strip())
                     buffer = ""
                 depth += 1
                 buffer += char
-            elif char == ')':
+            elif char == ")":
                 depth -= 1
                 buffer += char
                 if depth == 0:
@@ -159,12 +160,12 @@ def process_group(group_query: str) -> str:
                     buffer = ""
             else:
                 buffer += char
-                
+
         if buffer:
             current.append(buffer.strip())
-            
+
         for item in current:
-            if item.startswith('(') and item.endswith(')'):
+            if item.startswith("(") and item.endswith(")"):
                 # Recursively process nested groups
                 inner = process_group(item[1:-1])
                 if inner:
@@ -189,22 +190,22 @@ def process_group(group_query: str) -> str:
                             cleaned = re.sub(r"[\[\],;:!?@#]", "", part)
                             if cleaned:
                                 groups.append(cleaned)
-        
+
         result = []
         for i, term in enumerate(groups):
             if i > 0:
                 prev = result[-1] if result else ""
                 curr = term
-                
+
                 # Only add operator if neither current nor previous term is an operator
                 if prev not in {"&", "|", "&!"} and curr not in {"&", "|", "&!"}:
                     result.append("&")
                 elif prev in {"&", "|", "&!"} and curr in {"&", "|", "&!"}:
                     # Skip consecutive operators
                     continue
-                    
+
             result.append(term)
-            
+
         return " ".join(result)
 
     return parse_parentheses(group_query)
