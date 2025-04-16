@@ -210,13 +210,6 @@ def process_group(group_query: str) -> str:
     return parse_parentheses(group_query)
 
 
-def test_query_order(query1: str, query2: str):
-    """Helper function to test query order independence"""
-    print(f"Query 1: {query1}")
-    print(f"Result 1: {pubmed_to_tsquery(query1)}\n")
-    print(f"Query 2: {query2}")
-    print(f"Result 2: {pubmed_to_tsquery(query2)}\n")
-
 def pubmed_to_tsquery(query: str) -> str:
     """
     Convert a PubMed-like search query to PostgreSQL tsquery format,
@@ -233,4 +226,6 @@ def pubmed_to_tsquery(query: str) -> str:
         str: The PostgreSQL tsquery equivalent.
     """
     query = query.upper()  # Ensure uniformity
-    return process_group(query)
+    result = process_group(query)
+
+    return result
