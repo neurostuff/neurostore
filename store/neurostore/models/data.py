@@ -191,7 +191,15 @@ class BaseStudy(BaseMixin, db.Model):
             """
             setweight(to_tsvector('english', coalesce(name, '')), 'A') ||
             setweight(to_tsvector('english', coalesce(description, '')), 'B') ||
-            setweight(to_tsvector('english', coalesce(CASE WHEN pubget_fulltext IS NOT NULL THEN pubget_fulltext ELSE ace_fulltext END, '')), 'C')
+            setweight(to_tsvector('english',
+                coalesce(
+                    CASE
+                        WHEN pubget_fulltext IS NOT NULL THEN pubget_fulltext
+                        ELSE ace_fulltext
+                    END,
+                    ''
+                )
+            ), 'C')
             """,
             persisted=True,
         ),
