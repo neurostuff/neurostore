@@ -5,6 +5,7 @@ import { ICurationBoardAIInterfaceCurator } from './CurationBoardAIInterfaceCura
 import CurationBoardAIInterfaceCuratorTableBody from './CurationBoardAIInterfaceCuratorTableBody';
 import CurationBoardAIInterfaceCuratorTableManageColumns from './CurationBoardAIInterfaceCuratorTableManageColumns';
 import CurationBoardAIInterfaceCuratorTableSelectedRowsActions from './CurationBoardAIInterfaceCuratorTableSelectedRowsActions';
+import { useEffect } from 'react';
 
 //allows us to define custom properties for our columns
 declare module '@tanstack/react-table' {
@@ -23,6 +24,7 @@ declare module '@tanstack/react-table' {
 const CurationBoardAIInterfaceCuratorTable: React.FC<ICurationBoardAIInterfaceCurator> = ({
     table,
     onSetSelectedStub,
+    selectedStub,
     columnIndex,
 }) => {
     const { included, uncategorized } = useGetCurationSummary();
@@ -39,39 +41,32 @@ const CurationBoardAIInterfaceCuratorTable: React.FC<ICurationBoardAIInterfaceCu
     // }, []);
 
     const numRowsSelected = table.getSelectedRowModel().rows.length;
-    const numTotalRows = table.getCoreRowModel().rows.length;
     const columnFilters = table.getState().columnFilters;
     const sorting = table.getState().sorting;
     const curationIsComplete = included > 0 && uncategorized === 0;
     // const rows = table.getRowModel().rows;
 
+    useEffect(() => {
+        if (!selectedStub) return;
+        const row = document.getElementById(selectedStub.id);
+        const scroller = document.getElementById('scroller');
+        if (!row || !scroller) return;
+        scroller.scroll(0, row.offsetTop - 86 - 20 - row.clientHeight / 2);
+    }, [selectedStub, table]);
+
     return (
         <Box sx={{ padding: '0 1rem 2rem 1rem', height: '100%' }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '4px' }}>
-                <Box sx={{ display: 'flex' }}>
-                    {numRowsSelected > 0 && (
-                        <CurationBoardAIInterfaceCuratorTableSelectedRowsActions
-                            table={table}
-                            columnIndex={columnIndex}
-                        />
-                    )}
-                    <CurationBoardAIInterfaceCuratorTableManageColumns
-                        onAddColumn={table.options.meta?.curatorTableOnAddColumn}
-                        onRemoveColumn={table.options.meta?.curatorTableOnRemoveColumn}
-                        columns={table.getAllColumns()}
-                    />
-                </Box>
-                <Box sx={{ whiteSpace: 'nowrap' }}>
-                    {columnFilters.length > 0 ? (
-                        <Typography sx={{ fontSize: '12px' }}>
-                            Viewing {table.getFilteredRowModel().rows.length} / {numTotalRows}
-                        </Typography>
-                    ) : (
-                        <Typography sx={{ fontSize: '12px' }}>Total: {numTotalRows} studies</Typography>
-                    )}
-                </Box>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-start', paddingBottom: '4px' }}>
+                {numRowsSelected > 0 && (
+                    <CurationBoardAIInterfaceCuratorTableSelectedRowsActions table={table} columnIndex={columnIndex} />
+                )}
+                <CurationBoardAIInterfaceCuratorTableManageColumns
+                    onAddColumn={table.options.meta?.curatorTableOnAddColumn}
+                    onRemoveColumn={table.options.meta?.curatorTableOnRemoveColumn}
+                    columns={table.getAllColumns()}
+                />
             </Box>
-            <TableContainer sx={{ maxHeight: 'calc(100% - 48px - 32px - 2rem - 4px)' }}>
+            <TableContainer id="scroller" sx={{ maxHeight: 'calc(100% - 48px - 32px - 2rem - 4px)' }}>
                 <Table size="small" sx={{ tableLayout: 'fixed' }}>
                     <TableHead sx={{ position: 'sticky', top: 0, backgroundColor: 'white', zIndex: 999 }}>
                         {table.getHeaderGroups().map((headerGroup) => (
@@ -80,7 +75,7 @@ const CurationBoardAIInterfaceCuratorTable: React.FC<ICurationBoardAIInterfaceCu
                                     <TableCell
                                         key={header.id}
                                         sx={{
-                                            padding: '6px',
+                                            padding: '7px 0px',
                                             width: `${header.column.getSize()}px`,
                                             verticalAlign: 'bottom',
                                         }}

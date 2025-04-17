@@ -12,6 +12,7 @@ const CurationBoardAIInterfaceCuratorTableBody: React.FC<{
             {table.getRowModel().rows.map((row) => (
                 <TableRow
                     key={row.id}
+                    id={row.id}
                     onClick={() => onSelect(row.original.id)}
                     sx={{
                         transition: 'ease-in 150ms',

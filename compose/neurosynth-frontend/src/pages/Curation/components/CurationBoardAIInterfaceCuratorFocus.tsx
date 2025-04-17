@@ -1,6 +1,6 @@
 import { Box, Typography } from '@mui/material';
 import { useGetCurationSummary, useGetWindowHeight } from 'hooks';
-import React, { useCallback, useEffect, useMemo, useRef } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import { FixedSizeList } from 'react-window';
 import { ICurationBoardAIInterfaceCurator } from './CurationBoardAIInterfaceCurator';
 import CurationEditableStubSummary from './CurationEditableStubSummary';
