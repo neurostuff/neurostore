@@ -182,11 +182,17 @@ class BaseStudy(BaseMixin, db.Model):
     has_coordinates = db.Column(db.Boolean, default=False, nullable=False)
     has_images = db.Column(db.Boolean, default=False, nullable=False)
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"), index=True)
+    ace_fulltext = db.Column(db.Text)
+    pubget_fulltext = db.Column(db.Text)
     _ts_vector = db.Column(
         "__ts_vector__",
         TSVector(),
         db.Computed(
-            "to_tsvector('english', coalesce(name, '') || ' ' || coalesce(description, ''))",
+            """
+            setweight(to_tsvector('english', coalesce(name, '')), 'A') ||
+            setweight(to_tsvector('english', coalesce(description, '')), 'B') ||
+            setweight(to_tsvector('english', coalesce(CASE WHEN pubget_fulltext IS NOT NULL THEN pubget_fulltext ELSE ace_fulltext END, '')), 'C')
+            """,
             persisted=True,
         ),
     )
