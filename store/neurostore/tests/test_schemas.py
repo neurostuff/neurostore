@@ -98,7 +98,7 @@ def test_PipelineStudyResultSchema():
         "date_executed": "2023-01-01T00:00:00Z",
         "result_data": {"result": "success"},
         "file_inputs": {"input1": "file1"},
-        "status": "completed",
+        "status": "UNKNOWN",
     }
     schema = PipelineStudyResultSchema()
     result = schema.load(payload)
@@ -108,4 +108,4 @@ def test_PipelineStudyResultSchema():
     assert result["_base_study"]["id"] == "456"
     assert result["result_data"] == {"result": "success"}
     assert result["file_inputs"] == {"input1": "file1"}
-    assert result["status"] == "completed"
+    assert result["status"] == "UNKNOWN"
