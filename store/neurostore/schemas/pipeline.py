@@ -23,7 +23,7 @@ class PipelineConfigSchema(BaseSchema):
     config_args = fields.Dict()
     executed_at = fields.DateTime()
     config_hash = fields.Str()
-    pipeline_id = fields.String(attribute="pipeline.id")
+    pipeline_id = fields.String()
     _pipeline = fields.Nested(PipelineSchema, load_only=True, data_key="pipeline")
 
     class Meta:
@@ -34,11 +34,11 @@ class PipelineStudyResultSchema(BaseSchema):
     """Schema for pipeline study results."""
 
     # Configuration relationship
-    config_id = fields.String(attribute="config.id")
+    config_id = fields.String()
     _config = fields.Nested(PipelineConfigSchema, load_only=True, data_key="config")
 
     # Base study relationship
-    base_study_id = fields.String(attribute="base_study.id")
+    base_study_id = fields.String()
     _base_study = fields.Nested(BaseStudySchema, load_only=True, data_key="base_study")
 
     # Execution metadata
@@ -54,7 +54,7 @@ class PipelineStudyResultSchema(BaseSchema):
 
     # Pipeline execution status
     status = fields.Str(
-        validate=lambda x: x in ["pending", "running", "completed", "failed"],
+        validate=lambda x: x in ["SUCCESS", "FAILURE", "ERROR", "UNKNOWN"],
         required=True,
         description="Current status of the pipeline execution",
     )

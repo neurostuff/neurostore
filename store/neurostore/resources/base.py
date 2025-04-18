@@ -543,7 +543,7 @@ class ObjectView(BaseView):
 
 LIST_USER_ARGS = {
     "search": fields.String(load_default=None),
-    "sort": fields.String(load_default="created_at"),
+    "sort": fields.String(load_default=None),
     "page": fields.Int(load_default=1),
     "desc": fields.Boolean(load_default=True),
     "page_size": fields.Int(load_default=20, validate=lambda val: val < 30000),
@@ -597,7 +597,6 @@ class ListView(BaseView):
 
         m = self._model  # for brevity
         q = m.query
-        # q = q.options(raiseload("*", sql_only=True))
 
         # query items that are owned by a user_id
         if args.get("user_id"):
@@ -610,6 +609,7 @@ class ListView(BaseView):
 
         # Search
         s = args["search"]
+        rank_col = None
 
         # For multi-column search, default to using search fields
         # temporary fix for pmid search
@@ -621,6 +621,9 @@ class ListView(BaseView):
             except errors.SyntaxError as e:
                 abort(400, description=e.args[0])
             tsquery = func.to_tsquery("english", pubmed_to_tsquery(s))
+            # Add ts_rank calculation if searching
+            rank_col = func.ts_rank(m._ts_vector, tsquery).label("rank")
+            q = q.add_columns(rank_col)
             q = q.filter(m._ts_vector.op("@@")(tsquery))
 
         # Alternatively (or in addition), search on individual fields.
@@ -630,23 +633,27 @@ class ListView(BaseView):
                 q = q.filter(getattr(m, field).ilike(f"%{s}%"))
 
         q = self.view_search(q, args)
-        # Sort
-        sort_col = args["sort"]
+
+        # Determine sort column based on context
         desc = args["desc"]
         desc = {False: "asc", True: "desc"}[desc]
 
-        attr = getattr(m, sort_col)
-
-        # Case-insensitive sorting
-        if sort_col != "created_at" and sort_col != "updated_at":
-            attr = func.lower(attr)
-
-        # TODO: if the sort field is proxied, bad stuff happens. In theory
-        # the next two lines should address this by joining the proxied model,
-        # but weird things are happening. look into this as time allows.
-        # if isinstance(attr, ColumnAssociationProxyInstance):
-        #     q = q.join(*attr.attr)
-        q = q.order_by(getattr(attr, desc)(), getattr(m.id, desc)())
+        # If no sort specified, use ts_rank for search queries, otherwise created_at
+        sort_col = args["sort"]
+        if sort_col is None:
+            if rank_col is not None:
+                # Using ts_rank for search results
+                q = q.order_by(sa.text(f"rank {desc}"), m.id.desc())
+            else:
+                # Default to created_at when no search
+                q = q.order_by(m.created_at.desc(), m.id.desc())
+        else:
+            # Use user-specified sort column
+            attr = getattr(m, sort_col)
+            # Case-insensitive sorting
+            if sort_col not in ("created_at", "updated_at"):
+                attr = func.lower(attr)
+            q = q.order_by(getattr(attr, desc)(), m.id.desc())
 
         # join the relevant tables for output
         q = self.eager_load(q, args)
@@ -661,6 +668,9 @@ class ListView(BaseView):
             total = pagination_query.total
         else:
             records = q.all()
+            # Extract actual records when using rank
+            if rank_col is not None:
+                records = [r[0] for r in records]
             total = len(records)
 
         content = self.serialize_records(records, args)

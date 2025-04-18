@@ -649,6 +649,7 @@ def ace_ingestion_logic(coordinates_df, metadata_df, text_df, skip_existing=Fals
                     authors=metadata_row.authors or None,
                     publication=metadata_row.journal or None,
                     description=text_row.abstract or None,
+                    ace_fulltext=text_row.body or None,
                     year=year,
                     level=level,
                 )
