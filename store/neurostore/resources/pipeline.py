@@ -184,8 +184,10 @@ class PipelineStudyResultsView(ObjectView, ListView):
                 400,
                 {
                     "message": "Pipeline(s) do not exist",
-                    "errors": [{"pipeline": name, "error": "non-existent pipeline"}
-                    for name in missing_pipelines]
+                    "errors": [
+                        {"pipeline": name, "error": "non-existent pipeline"}
+                        for name in missing_pipelines
+                    ],
                 },
             )
 
