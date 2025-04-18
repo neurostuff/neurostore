@@ -183,7 +183,9 @@ class PipelineStudyResultsView(ObjectView, ListView):
             abort(
                 400,
                 {
-                    "message": f"Pipeline(s) do not exist: {', '.join(missing_pipelines)}"
+                    "message": "Pipeline(s) do not exist",
+                    "errors": [{"pipeline": name, "error": "non-existent pipeline"}
+                    for name in missing_pipelines]
                 },
             )
 
