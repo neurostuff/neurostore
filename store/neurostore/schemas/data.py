@@ -335,6 +335,8 @@ class BaseStudySchema(BaseDataSchema):
     metadata_ = fields.Dict(data_key="metadata", load_only=True, allow_none=True)
     versions = StringOrNested("StudySchema", many=True)
     features = fields.Method("get_features")
+    ace_fulltext = fields.String(load_only=True, allow_none=True)
+    pubget_fulltext = fields.String(load_only=True, allow_none=True)
 
     def get_features(self, obj):
         from .pipeline import PipelineStudyResultSchema
