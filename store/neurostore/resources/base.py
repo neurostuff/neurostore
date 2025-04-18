@@ -633,7 +633,7 @@ class ListView(BaseView):
                 q = q.filter(getattr(m, field).ilike(f"%{s}%"))
 
         q = self.view_search(q, args)
-        
+
         # Determine sort column based on context
         desc = args["desc"]
         desc = {False: "asc", True: "desc"}[desc]
@@ -654,7 +654,6 @@ class ListView(BaseView):
             if sort_col not in ("created_at", "updated_at"):
                 attr = func.lower(attr)
             q = q.order_by(getattr(attr, desc)(), m.id.desc())
-
 
         # join the relevant tables for output
         q = self.eager_load(q, args)
