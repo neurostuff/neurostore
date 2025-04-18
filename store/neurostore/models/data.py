@@ -719,7 +719,7 @@ class PipelineConfig(BaseMixin, db.Model):
     pipeline_id = db.Column(
         db.Text, db.ForeignKey("pipelines.id", ondelete="CASCADE"), index=True
     )
-    version = db.Column(db.String)
+    version = db.Column(db.String, index=True)
     config_args = db.Column(JSONB)
     executed_at = db.Column(
         db.DateTime(timezone=True)
