@@ -668,11 +668,11 @@ class ListView(BaseView):
             total = pagination_query.total
         else:
             records = q.all()
-            # Extract actual records when using rank
-            if rank_col is not None:
-                records = [r[0] for r in records]
             total = len(records)
 
+        if rank_col is not None:
+            # Extract actual records when using rank
+            records = [r[0] for r in records]
         content = self.serialize_records(records, args)
         metadata = self.create_metadata(q, total)
         response = {
