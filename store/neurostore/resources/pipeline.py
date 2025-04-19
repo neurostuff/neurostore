@@ -1,11 +1,13 @@
 """Pipeline related resources"""
 
-from sqlalchemy import text
+from sqlalchemy import text, and_, or_
+from flask import abort
+
 from sqlalchemy.orm import selectinload, aliased
 from webargs import fields
-import re
 
 from .utils import view_maker
+from ..utils import parse_json_filter, build_jsonpath
 from .base import ObjectView, ListView
 from ..models import Pipeline, PipelineConfig, PipelineStudyResult
 from ..schemas.pipeline import (
@@ -16,203 +18,6 @@ from ..schemas.pipeline import (
     pipeline_study_result_schema,
     pipeline_study_result_schemas,
 )
-
-
-def determine_value_type(value: str):
-    """Determine the type of a value and cast it appropriately.
-
-    Args:
-        value: The value to type check
-
-    Returns:
-        Tuple of (cast_value, is_numeric)
-    """
-    # Check if boolean
-    if value.lower() in ("true", "false"):
-        return value.lower() == "true", False
-
-    # Check if numeric
-    try:
-        if "." in value:
-            return float(value), True
-        else:
-            return int(value), True
-    except ValueError:
-        return value, False
-
-
-def build_jsonpath(field_path: str, operator: str, value: str) -> str:
-    """Build a jsonpath query for pipeline study results.
-
-    Args:
-        field_path: The path to the field (e.g. predictions.groups.count)
-        operator: The comparison operator (~, =, >, <, [], etc)
-        value: The value to compare against
-
-    Returns:
-        PostgreSQL jsonpath query string
-    """
-
-    # Handle regular field queries
-    cast_val, is_numeric = determine_value_type(value)
-
-    # Map operators
-    op_map = {"~": "like_regex", "=": "==", ">": ">", "<": "<", ">=": ">=", "<=": "<="}
-    sql_op = op_map[operator]
-
-    # Handle pipe-separated values as OR conditions
-    if "|" in value:
-        values = []
-        for val in value.split("|"):
-            val = val.strip()
-            cast_val, is_numeric = determine_value_type(val)
-            if isinstance(cast_val, bool):
-                values.append(str(cast_val).lower())
-            elif is_numeric:
-                values.append(str(cast_val))
-            else:
-                values.append(f'"{cast_val}"')
-        raw_value = " || ".join(f"@ == {val}" for val in values)
-    else:
-        # Build single value comparison
-        if isinstance(cast_val, bool):
-            raw_value = str(cast_val).lower()
-        elif is_numeric:
-            raw_value = str(cast_val)
-        else:
-            raw_value = f'"{cast_val}"'
-        raw_value = f"@ {sql_op} {raw_value}"
-
-    # Check if we're querying an array field
-    path_parts = field_path.split(".")
-    if any(p.endswith("[]") for p in path_parts):
-        # Handle array field queries
-        path_segments = []
-        for i, part in enumerate(path_parts):
-            if part.endswith("[]"):
-                # Convert path up to this point into the base path
-                base_path = ".".join(path_segments)
-                array_field = part[:-2]
-                remaining_path = ".".join(path_parts[i + 1:])
-
-                if remaining_path:
-                    full_path = (
-                        f"{base_path}.{array_field}" if base_path else array_field
-                    )
-                    return f"$.{full_path}[*] ? ({raw_value})".replace(
-                        "@", f"@.{remaining_path}"
-                    )
-                else:
-                    full_path = (
-                        f"{base_path}.{array_field}" if base_path else array_field
-                    )
-                    return f"$.{full_path}[*] ? ({raw_value})"
-            else:
-                path_segments.append(part)
-    else:
-        # Regular field query
-        return f"$.{field_path} ? ({raw_value})"
-
-
-def validate_pipeline_name(pipeline_name: str) -> None:
-    """Validate pipeline name format.
-
-    Args:
-        pipeline_name: Name of pipeline to validate
-
-    Raises:
-        ValueError if name is invalid
-    """
-    if not re.match(r"^[A-Za-z][A-Za-z0-9]*$", pipeline_name):
-        raise ValueError(
-            f"Invalid pipeline name '{pipeline_name}'. "
-            "Must start with letter and contain only alphanumeric characters."
-        )
-
-
-def validate_field_path(field_path: str) -> None:
-    """Validate field path format.
-
-    Args:
-        field_path: Path to field to validate
-
-    Raises:
-        ValueError if path is invalid
-    """
-    # Check for consecutive dots
-    if ".." in field_path:
-        raise ValueError(
-            f"Invalid field path '{field_path}'. Contains consecutive dots."
-        )
-
-    # Check path segments
-    segments = field_path.split(".")
-    if not segments:
-        raise ValueError("Empty field path")
-
-    for segment in segments:
-        # Check array notation
-        if segment.endswith("[]"):
-            segment = segment[:-2]
-
-        # Validate segment format (they can contain other characters tho)
-        if not re.match(r"^[A-Za-z][A-Za-z0-9_\-]*$", segment):
-            raise ValueError(
-                (
-                    f"Invalid path segment '{segment}'. "
-                    "Must start with letter and contain only alphanumeric characters."
-                )
-            )
-
-
-def parse_json_filter(filter_str: str) -> tuple:
-    """Parse a json filter string into components.
-
-    Args:
-        filter_str: Filter string (e.g. "NeuroimagingMethod:predictions.groups[].count=18")
-
-    Returns:
-        Tuple of (pipeline_name, field_path, operator, value)
-
-    Raises:
-        ValueError with descriptive message if filter is invalid
-    """
-    # Split pipeline name from field path
-    parts = filter_str.split(":", 1)
-    if len(parts) != 2:
-        raise ValueError(f"Missing pipeline name in filter: {filter_str}")
-
-    pipeline_name, field_spec = parts
-    validate_pipeline_name(pipeline_name)
-
-    # Match array queries first
-    # array_match = re.match(r"(.+?)\[\]=(.+)", field_spec)
-    # if array_match:
-    #     return pipeline_name, array_match.group(1), "[]", array_match.group(2)
-
-    # Then match regular field queries
-    match = re.match(r"(.+?)(~|=|>=|<=|>|<)(.+)", field_spec)
-    if not match:
-        raise ValueError(f"Invalid filter format: {filter_str}")
-
-    field_path = match.group(1)
-    validate_field_path(field_path)
-
-    operator = match.group(2)
-    value = match.group(3).strip()
-
-    # Validate value is not empty
-    if not value:
-        raise ValueError("Empty value in filter")
-
-    # Validate numeric values
-    if operator in (">", "<", ">=", "<="):
-        try:
-            float(value)
-        except ValueError:
-            raise ValueError(f"Invalid numeric value '{value}' for operator {operator}")
-
-    return pipeline_name, field_path, operator, value
 
 
 @view_maker
@@ -234,15 +39,31 @@ class PipelineConfigsView(ObjectView, ListView):
     schema = pipeline_config_schema
     schemas = pipeline_config_schemas
 
+    _view_fields = {
+        "pipeline": fields.List(fields.String(), load_default=[]),
+    }
+
     _m2o = {"pipeline": "PipelinesView"}
     _o2m = {"study_results": "PipelineStudyResultsView"}
+
+    def view_search(self, q, args):
+        """Apply pipeline filtering to query."""
+
+        # Handle pipeline name filtering
+        pipeline_names = args.get("pipeline", [])
+        if isinstance(pipeline_names, str):
+            pipeline_names = [pipeline_names]
+
+        if pipeline_names:
+            q = q.join(Pipeline).filter(Pipeline.name.in_(pipeline_names))
+
+        return q
 
     def eager_load(self, q, args=None):
         """Join related tables."""
         args = args or {}
         q = q.options(
             selectinload(PipelineConfig.pipeline),
-            selectinload(PipelineConfig.study_results),
         )
         return q
 
@@ -255,7 +76,17 @@ class PipelineStudyResultsView(ObjectView, ListView):
     schema = pipeline_study_result_schema
     schemas = pipeline_study_result_schemas
 
-    _view_fields = {"feature_filter": fields.List(fields.String(), load_default=[])}
+    _view_fields = {
+        "feature_filter": fields.List(fields.String(), load_default=[]),
+        "pipeline_config": fields.List(fields.String(), load_default=[]),
+        "study_id": fields.List(fields.String(), load_default=[]),
+        "feature_flatten": fields.Bool(load_default=False),
+        "feature_display": fields.List(
+            fields.String(),
+            description="List of pipeline results. format: pipeline_name[:version]",
+            load_default=[],
+        ),
+    }
 
     def view_search(self, q, args):
         """Apply feature path filtering to query.
@@ -270,55 +101,159 @@ class PipelineStudyResultsView(ObjectView, ListView):
         Raises:
             ValueError: If any filter is invalid, returns 400 with error details
         """
-        from flask import abort
 
-        q = super().view_search(q, args)
+        # Handle study_id filtering
+        study_ids = args.get("study_id", [])
+        if isinstance(study_ids, str):
+            study_ids = [study_ids]
 
+        # Filter by study IDs if provided
+        if study_ids:
+            q = q.filter(self.model.base_study_id.in_(study_ids))
+
+        # Create aliases for joining - only create once for both filters
+        ConfigAlias = aliased(PipelineConfig)
+        PipelineAlias = aliased(Pipeline)
+
+        # Join with Pipeline and PipelineConfig
+        q = q.join(ConfigAlias, ConfigAlias.id == self.model.config_id).join(
+            PipelineAlias, PipelineAlias.id == ConfigAlias.pipeline_id
+        )
+        # Process and validate all filters upfront
+        invalid_filters = []
+        pipeline_names = set()
+
+        # Process display filters
+        display_filters = args.get("feature_display", [])
+        if isinstance(display_filters, str):
+            display_filters = [display_filters]
+        display_filters = [f for f in display_filters if f.strip()]
+
+        # Parse display filters
+        parsed_display_filters = []
+        for display_filter in display_filters:
+            if ":" in display_filter:
+                pipeline_name, version = display_filter.split(":")
+            else:
+                pipeline_name, version = display_filter, None
+            parsed_display_filters.append((pipeline_name, version))
+            pipeline_names.add(pipeline_name)
+
+        # Process and parse feature filters
         feature_filters = args.get("feature_filter", [])
         if isinstance(feature_filters, str):
             feature_filters = [feature_filters]
-
-        # Don't allow empty string filters
         feature_filters = [f for f in feature_filters if f.strip()]
-        if not feature_filters:
-            return q
 
-        invalid_filters = []
+        parsed_feature_filters = []
         for feature_filter in feature_filters:
             try:
-                pipeline_name, field_path, operator, value = parse_json_filter(
-                    feature_filter
-                )
-
-                # Verify pipeline exists in database
-                pipeline = Pipeline.query.filter_by(name=pipeline_name).first()
-                if not pipeline:
-                    raise ValueError(f"Pipeline '{pipeline_name}' does not exist")
-
-                jsonpath = build_jsonpath(field_path, operator, value)
-
-                # Create aliases for joining
-                ConfigAlias = aliased(PipelineConfig)
-                PipelineAlias = aliased(Pipeline)
-
-                # Add joins to get pipeline name
-                q = q.join(ConfigAlias, self.model.config_id == ConfigAlias.id)
-                q = q.join(PipelineAlias, ConfigAlias.pipeline_id == PipelineAlias.id)
-
-                # Filter by pipeline name and apply jsonpath
-                q = q.filter(PipelineAlias.name == pipeline_name)
-                q = q.filter(
-                    text("jsonb_path_exists(result_data, :jsonpath)").params(
-                        jsonpath=jsonpath
-                    )
-                )
-
+                result = parse_json_filter(feature_filter)
+                parsed_feature_filters.append(result)
+                pipeline_names.add(result[0])  # Add pipeline name
             except ValueError as e:
                 invalid_filters.append({"filter": feature_filter, "error": str(e)})
+
+        # Process and parse config filters
+        config_filters = args.get("pipeline_config", [])
+        if isinstance(config_filters, str):
+            config_filters = [config_filters]
+        config_filters = [f for f in config_filters if f.strip()]
+
+        parsed_config_filters = []
+        for config_filter in config_filters:
+            try:
+                result = parse_json_filter(config_filter)
+                parsed_config_filters.append(result)
+                pipeline_names.add(result[0])  # Add pipeline name
+            except ValueError as e:
+                invalid_filters.append({"filter": config_filter, "error": str(e)})
 
         # If any filters were invalid, return 400 with error details
         if invalid_filters:
             abort(400, {"message": "Invalid JSON filter(s)", "errors": invalid_filters})
+
+        # Verify all pipelines exist upfront
+        existing_pipelines = {
+            p.name
+            for p in Pipeline.query.filter(Pipeline.name.in_(pipeline_names)).all()
+        }
+        missing_pipelines = pipeline_names - existing_pipelines
+        if missing_pipelines:
+            abort(
+                400,
+                {
+                    "message": "Pipeline(s) do not exist",
+                    "errors": [
+                        {"pipeline": name, "error": "non-existent pipeline"}
+                        for name in missing_pipelines
+                    ],
+                },
+            )
+
+        # Handle display filters
+        if parsed_display_filters:
+            display_conditions = []
+            for pipeline_name, version in parsed_display_filters:
+                if version is None:
+                    display_conditions.append(PipelineAlias.name == pipeline_name)
+                else:
+                    display_conditions.append(
+                        and_(
+                            PipelineAlias.name == pipeline_name,
+                            ConfigAlias.version == version,
+                        )
+                    )
+
+            # Apply the combined OR conditions to the query
+            q = q.filter(or_(*display_conditions))
+
+        if not parsed_feature_filters and not parsed_config_filters:
+            return q
+
+        # Process feature filters using parsed results
+        for i, (pipeline_name, version, field_path, operator, value) in enumerate(
+            parsed_feature_filters
+        ):
+            jsonpath = build_jsonpath(field_path, operator, value)
+
+            # Create unique parameter name for this filter
+            param_name = f"jsonpath_feature_{i}"
+
+            # Build filter conditions for this specific pipeline
+            pipeline_conditions = [
+                PipelineAlias.name == pipeline_name,
+                text(f"jsonb_path_exists(result_data, :{param_name})").params(
+                    **{param_name: jsonpath}
+                ),
+            ]
+            if version is not None:
+                pipeline_conditions.append(ConfigAlias.version == version)
+
+            # Apply conditions directly to the query for proper scoping
+            q = q.filter(*pipeline_conditions)
+
+        # Process config filters using parsed results
+        for i, (pipeline_name, version, field_path, operator, value) in enumerate(
+            parsed_config_filters
+        ):
+            jsonpath = build_jsonpath(field_path, operator, value)
+
+            # Create unique parameter name for this filter
+            param_name = f"jsonpathb_config_{i}"
+
+            # Build filter conditions for this specific pipeline
+            pipeline_conditions = [
+                PipelineAlias.name == pipeline_name,
+                text(f"jsonb_path_exists(config_args, :{param_name})").params(
+                    **{param_name: jsonpath}
+                ),
+            ]
+            if version is not None:
+                pipeline_conditions.append(ConfigAlias.version == version)
+
+            # Apply conditions directly to the query for proper scoping
+            q = q.filter(*pipeline_conditions)
 
         return q
 

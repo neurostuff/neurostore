@@ -2,7 +2,7 @@ import pytest
 import random
 import json
 from os import environ
-from neurostore.models.data import Analysis, Condition
+from neurostore.models import Analysis, Condition
 from sqlalchemy.orm import scoped_session, sessionmaker
 import sqlalchemy as sa
 from .. import ingest
@@ -30,6 +30,9 @@ import vcr
 import logging
 
 LOGGER = logging.getLogger(__name__)
+
+# Set fixed seed for reproducible tests
+random.seed(42)
 
 
 """
@@ -702,6 +705,10 @@ def create_pipeline_results(session, ingest_neurosynth, tmp_path):
             "fMRITasks": [
                 {
                     "TaskName": random.choice(["oddball", "n-back", "rest"]),
+                    "Concepts": random.sample(
+                        ["emotion", "memory", "attention", "learning"],
+                        k=random.randint(1, 3),
+                    ),
                     "TaskDescription": (
                         "Participants performed a "
                         f"{random.choice(['visual', 'auditory'])} task"
@@ -729,7 +736,11 @@ def create_pipeline_results(session, ingest_neurosynth, tmp_path):
                         "inputs": {
                             f"/path/to/input/{study.id}.txt": f"md5{random.randint(0, 100)}"
                         },
-                        "date": "2025-03-05",
+                        "date": (
+                            f"{random.randint(2024, 2030)}"
+                            f"-{random.randint(1, 12):02d}"
+                            f"-{random.randint(1, 28):02d}"
+                        ),
                     },
                     f,
                 )

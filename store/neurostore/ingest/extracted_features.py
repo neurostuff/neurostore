@@ -64,7 +64,7 @@ def ingest_feature(feature_directory):
         pipeline_config = PipelineConfig(
             pipeline_id=pipeline.id,
             version=pipeline_info["version"],
-            config=pipeline_info["arguments"],
+            config_args=pipeline_info["arguments"],
             config_hash=config_hash,
         )
         db.session.add(pipeline_config)

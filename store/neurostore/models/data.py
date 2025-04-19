@@ -4,7 +4,7 @@ import sqlalchemy as sa
 from sqlalchemy import exists
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy import ForeignKeyConstraint, func
+from sqlalchemy import ForeignKeyConstraint, func, text
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.orm import relationship, backref, validates, aliased
@@ -12,6 +12,9 @@ import shortuuid
 
 from .migration_types import TSVector
 from ..database import db
+from ..utils import parse_json_filter, build_jsonpath
+
+SEMVER_REGEX = r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$"  # noqa E501
 
 SEMVER_REGEX = r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$"  # noqa E501
 
@@ -181,11 +184,25 @@ class BaseStudy(BaseMixin, db.Model):
     has_coordinates = db.Column(db.Boolean, default=False, nullable=False)
     has_images = db.Column(db.Boolean, default=False, nullable=False)
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"), index=True)
+    ace_fulltext = db.Column(db.Text)
+    pubget_fulltext = db.Column(db.Text)
     _ts_vector = db.Column(
         "__ts_vector__",
         TSVector(),
         db.Computed(
-            "to_tsvector('english', coalesce(name, '') || ' ' || coalesce(description, ''))",
+            """
+            setweight(to_tsvector('english', coalesce(name, '')), 'A') ||
+            setweight(to_tsvector('english', coalesce(description, '')), 'B') ||
+            setweight(to_tsvector('english',
+                coalesce(
+                    CASE
+                        WHEN pubget_fulltext IS NOT NULL THEN pubget_fulltext
+                        ELSE ace_fulltext
+                    END,
+                    ''
+                )
+            ), 'C')
+            """,
             persisted=True,
         ),
     )
@@ -268,42 +285,70 @@ class BaseStudy(BaseMixin, db.Model):
         self.has_images = self.images_exist
         self.has_coordinates = self.points_exist
 
-    def display_features(self, pipelines=None):
+    def display_features(self, pipelines=None, pipeline_configs=None):
         """
         Display pipeline features for the base study.
         Only loads and returns features if pipelines are explicitly specified.
 
         Args:
-            pipelines (list, optional): List of pipeline names to display features from.
+            pipelines (list, optional): List of pipeline names to display features from,
+                                      optionally with versions (e.g. "Pipeline:1.0.0").
                                       If None or empty, returns empty dict.
+            pipeline_configs (list, optional): List of pipeline config filters in format
+                                           "PipelineName:version:field_path(operator)value"
+                                           Only show results matching these configs.
         """
         if not pipelines:
             return {}
+
+        # Parse pipeline names and versions
+        pipeline_specs = {}
+        for pipeline in pipelines:
+            parts = pipeline.split(":", 1)
+            if len(parts) == 2:
+                name, version = parts
+                pipeline_specs[name] = version
+            else:
+                pipeline_specs[parts[0]] = None
+
+        # Parse pipeline configs and match with pipeline specs
+        config_filters = []
+        if pipeline_configs:
+            for pipeline_config in pipeline_configs:
+                try:
+                    pipeline_name, version, field_path, operator, value = (
+                        parse_json_filter(pipeline_config)
+                    )
+
+                    # Only process if pipeline is in pipelines list
+                    if pipeline_name in pipeline_specs:
+                        pipeline_version = pipeline_specs[pipeline_name]
+
+                        # Skip if pipeline specifies version but config doesn't match
+                        if pipeline_version and version and pipeline_version != version:
+                            continue
+
+                        # Use pipeline version if config doesn't specify one
+                        version_to_use = version or pipeline_version
+
+                        config_filters.append(
+                            {
+                                "pipeline_name": pipeline_name,
+                                "version": version_to_use,
+                                "field_path": field_path,
+                                "operator": operator,
+                                "value": value,
+                            }
+                        )
+                except ValueError:
+                    continue
 
         # Create aliases for the tables
         PipelineAlias = aliased(Pipeline)
         PipelineConfigAlias = aliased(PipelineConfig)
         PipelineStudyResultAlias = aliased(PipelineStudyResult)
 
-        # Get latest results subquery
-        latest_results = (
-            db.session.query(
-                PipelineStudyResultAlias.base_study_id,
-                PipelineAlias.name.label("pipeline_name"),
-                func.max(PipelineStudyResultAlias.date_executed).label("max_date"),
-            )
-            .join(
-                PipelineConfigAlias,
-                PipelineStudyResultAlias.config_id == PipelineConfigAlias.id,
-            )
-            .join(PipelineAlias, PipelineConfigAlias.pipeline_id == PipelineAlias.id)
-            .filter(PipelineStudyResultAlias.base_study_id == self.id)
-            .filter(PipelineAlias.name.in_(pipelines))
-            .group_by(PipelineStudyResultAlias.base_study_id, PipelineAlias.name)
-            .subquery()
-        )
-
-        # Main query joining with latest results
+        # Base query
         query = (
             db.session.query(
                 PipelineStudyResultAlias.result_data,
@@ -314,7 +359,58 @@ class BaseStudy(BaseMixin, db.Model):
                 PipelineStudyResultAlias.config_id == PipelineConfigAlias.id,
             )
             .join(PipelineAlias, PipelineConfigAlias.pipeline_id == PipelineAlias.id)
-            .join(
+            .filter(PipelineStudyResultAlias.base_study_id == self.id)
+            .filter(PipelineAlias.name.in_(pipeline_specs.keys()))
+        )
+
+        # Apply config filters if any exist
+        if config_filters:
+            for config in config_filters:
+                conditions = [PipelineAlias.name == config["pipeline_name"]]
+
+                if config["version"]:
+                    conditions.append(PipelineConfigAlias.version == config["version"])
+
+                jsonpath = build_jsonpath(
+                    config["field_path"], config["operator"], config["value"]
+                )
+                conditions.append(
+                    text("jsonb_path_exists(config_args, :jsonpath)").params(
+                        jsonpath=jsonpath
+                    )
+                )
+
+                query = query.filter(*conditions)
+        else:
+            # If no config filters, just use latest version for each pipeline
+            latest_results = (
+                db.session.query(
+                    PipelineStudyResultAlias.base_study_id,
+                    PipelineAlias.name.label("pipeline_name"),
+                    func.max(PipelineStudyResultAlias.date_executed).label("max_date"),
+                )
+                .join(
+                    PipelineConfigAlias,
+                    PipelineStudyResultAlias.config_id == PipelineConfigAlias.id,
+                )
+                .join(
+                    PipelineAlias, PipelineConfigAlias.pipeline_id == PipelineAlias.id
+                )
+                .filter(PipelineStudyResultAlias.base_study_id == self.id)
+                .filter(PipelineAlias.name.in_(pipeline_specs.keys()))
+                .group_by(PipelineStudyResultAlias.base_study_id, PipelineAlias.name)
+                .subquery()
+            )
+
+            # Add version filters from pipeline specs
+            for name, version in pipeline_specs.items():
+                if version:
+                    query = query.filter(
+                        (PipelineAlias.name != name)
+                        | (PipelineConfigAlias.version == version)
+                    )
+
+            query = query.join(
                 latest_results,
                 (
                     PipelineStudyResultAlias.base_study_id
@@ -323,7 +419,6 @@ class BaseStudy(BaseMixin, db.Model):
                 & (PipelineAlias.name == latest_results.c.pipeline_name)
                 & (PipelineStudyResultAlias.date_executed == latest_results.c.max_date),
             )
-        )
 
         # Execute query and build response
         results = query.all()
@@ -612,7 +707,7 @@ class PointValue(BaseMixin, db.Model):
 class Pipeline(BaseMixin, db.Model):
     __tablename__ = "pipelines"
 
-    name = db.Column(db.String)
+    name = db.Column(db.String, index=True, unique=True)
     description = db.Column(db.String)
     study_dependent = db.Column(db.Boolean, default=False)
     ace_compatible = db.Column(db.Boolean, default=False)
@@ -626,8 +721,8 @@ class PipelineConfig(BaseMixin, db.Model):
     pipeline_id = db.Column(
         db.Text, db.ForeignKey("pipelines.id", ondelete="CASCADE"), index=True
     )
-    version = db.Column(db.String)
-    config = db.Column(JSONB)
+    version = db.Column(db.String, index=True)
+    config_args = db.Column(JSONB)
     executed_at = db.Column(
         db.DateTime(timezone=True)
     )  # when the pipeline was executed on the filesystem (not when it was ingested)
