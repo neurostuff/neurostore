@@ -16,7 +16,7 @@ flask-sqlalchemy~=3.0
 gunicorn~=22.0
 httpx~=0.22
 ipython~=7.19
-marshmallow~3.0
+marshmallow~=3.0
 pandas~=2.0
 pip-chill~=1.0
 psycopg2-binary~=2.8
