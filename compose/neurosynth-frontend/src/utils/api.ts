@@ -1,3 +1,4 @@
+import axios from 'axios';
 import {
     Configuration,
     StudiesApi,
@@ -51,6 +52,18 @@ const NeurostoreServices = {
     ImagesService: new ImagesApi(neurostoreConfig),
     PointsService: new PointsApi(neurostoreConfig),
     UsersService: new UserApi(neurostoreConfig),
+    ExtractedDataResultsService: {
+        getAllExtractedDataResults: () => {
+            return axios.get(
+                `${neurostoreConfig.basePath}/pipeline-study-results/?feature_display=ParticipantDemographicsExtractor&feature_display=TaskExtractor&paginate=false`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${neurostoreConfig.accessToken}`,
+                    },
+                }
+            );
+        },
+    },
     AnnotationsService: new NeurostoreAnnotationsApi(neurostoreConfig),
 };
 
