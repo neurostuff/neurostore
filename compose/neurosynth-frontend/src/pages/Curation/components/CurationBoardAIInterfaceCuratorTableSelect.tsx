@@ -23,7 +23,7 @@ export const CuratorTableSelectHeader: React.FC<HeaderContext<ICurationTableStud
     const isIndeterminate = table.getIsSomeRowsSelected();
 
     return (
-        <Box sx={{ width: '100%' }}>
+        <Box sx={{ width: '100%', padding: '0px 6px' }}>
             <Checkbox
                 indeterminate={isIndeterminate}
                 checked={isSelected}

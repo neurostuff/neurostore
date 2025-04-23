@@ -23,6 +23,7 @@ import {
     ProjectsApi,
     DefaultApi as NeurosynthDefaultApi,
 } from '../neurosynth-compose-typescript-sdk';
+import { IParticipantDemographicExtractor, ITaskExtractor } from 'hooks/extractions/useGetAllExtractedData';
 
 export type NeurostoreAnnotation = AnnotationBase &
     ResourceAttributes &
@@ -54,7 +55,19 @@ const NeurostoreServices = {
     UsersService: new UserApi(neurostoreConfig),
     ExtractedDataResultsService: {
         getAllExtractedDataResults: () => {
-            return axios.get(
+            return axios.get<{
+                metadata: {
+                    total_count: number;
+                };
+                results: {
+                    base_study_id: string;
+                    config_id: string;
+                    date_executed: string;
+                    file_inputs: { [path: string]: string };
+                    id: string;
+                    result_data: ITaskExtractor | IParticipantDemographicExtractor;
+                }[];
+            }>(
                 `${neurostoreConfig.basePath}/pipeline-study-results/?feature_display=ParticipantDemographicsExtractor&feature_display=TaskExtractor&paginate=false`,
                 {
                     headers: {

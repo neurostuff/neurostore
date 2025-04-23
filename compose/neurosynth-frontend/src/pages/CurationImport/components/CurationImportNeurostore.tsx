@@ -88,6 +88,7 @@ const CurationImportNeurostore: React.FC<
         if (isLoading) return;
 
         if (button === ENavigationButton.PREV) {
+            navigate(`/projects/${projectId}/curation/import`);
             props.onNavigate(button);
             return;
         }

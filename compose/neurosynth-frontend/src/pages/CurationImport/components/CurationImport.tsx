@@ -15,6 +15,7 @@ const CurationImport: React.FC = () => {
     const [stubs, setStubs] = useState<ICurationStubStudy[]>([]);
     const [unimportedStubs, setUnimportedStubs] = useState<string[]>([]);
     const [searchCriteria, setSearchCriteria] = useState<SearchCriteria>();
+    const [fileName, setFileName] = useState<string>();
     const location = useLocation();
 
     useEffect(() => {
@@ -42,6 +43,16 @@ const CurationImport: React.FC = () => {
             }
         });
     };
+
+    useEffect(() => {
+        // clear memory so we dont get weird side effects when people go back and change data/change import mode
+        if (activeStep === 1) {
+            setStubs([]);
+            setUnimportedStubs([]);
+            setSearchCriteria(undefined);
+            setFileName(undefined);
+        }
+    }, [activeStep]);
 
     const handleImportStubs = (stubs: ICurationStubStudy[], unimportedStubs?: string[]) => {
         setStubs(stubs);
@@ -74,6 +85,7 @@ const CurationImport: React.FC = () => {
                         stubs={stubs}
                         onImportStubs={handleImportStubs}
                         onSetSearchCriteria={setSearchCriteria}
+                        onFileUpload={setFileName}
                         mode={importMode}
                         onNavigate={handleNavigate}
                     />
@@ -84,6 +96,7 @@ const CurationImport: React.FC = () => {
                         searchCriteria={searchCriteria}
                         stubs={stubs}
                         unimportedStubs={unimportedStubs}
+                        fileName={fileName}
                         onNavigate={handleNavigate}
                     />
                 )}

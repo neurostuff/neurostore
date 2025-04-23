@@ -20,62 +20,80 @@ const CurationBoardAIInterfaceCuratorSkeleton: React.FC = () => {
             <Box sx={{ display: 'flex', marginTop: '8px' }}>
                 <Skeleton variant="rounded" width={150} height={30} />
             </Box>
-            <TableContainer>
+            <TableContainer sx={{ maxHeight: 'calc(100% - 48px - 32px - 2rem - 4px)' }}>
                 <Table size="small" sx={{ tableLayout: 'fixed' }}>
-                    <TableHead>
+                    <TableHead sx={{ position: 'sticky', top: 0, backgroundColor: 'white', zIndex: 999 }}>
                         <TableRow>
-                            <TableCell width="40px">
-                                <Box>abc</Box>
+                            <TableCell
+                                sx={{
+                                    padding: '7px 0px',
+                                    width: '40px',
+                                    verticalAlign: 'bottom',
+                                }}
+                            >
+                                <Box
+                                    onClick={(e) => e.stopPropagation()}
+                                    sx={{ width: '100%', padding: '0px 6px' }}
+                                ></Box>
                             </TableCell>
-                            <TableCell>
-                                <Box sx={{ width: '100%' }}>
-                                    lorem eroignaeilugr blrguib liuaebrgliube iurlaebgaliubga <ilubaeiu>' '</ilubaeiu>
-                                    Lorem ipsum dolor sit amet consectetur adipisicing elit. Minima distinctio sapiente
-                                    qui a fugiat ratione nam est perferendis eaque soluta alias iure voluptatibus
-                                    exercitationem, laboriosam debitis deserunt adipisci quasi in.
+                            <TableCell sx={{ padding: '7px 0px', width: '150px', verticalAlign: 'bottom' }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                    <Typography
+                                        variant="body2"
+                                        sx={{
+                                            height: '31.59px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            padding: '0 6px',
+                                        }}
+                                    >
+                                        Study
+                                    </Typography>
                                 </Box>
                             </TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        <TableRow>
-                            <TableCell>
-                                <Skeleton variant="rounded" width="100%" height="30px" />
-                            </TableCell>
-                            <TableCell>def123</TableCell>
-                        </TableRow>
+                        {[1, 2, 3, 4, 5, 6].map((i) => (
+                            <TableRow key={i}>
+                                <TableCell
+                                    sx={{
+                                        padding: '6px',
+                                        height: 'inherit',
+                                        lineHeight: 'normal',
+                                        width: `40px`,
+                                    }}
+                                >
+                                    <Box
+                                        onClick={(e) => e.stopPropagation()}
+                                        sx={{
+                                            width: '100%',
+                                            height: '100%',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            padding: '0px 6px',
+                                        }}
+                                    >
+                                        <Skeleton variant="rounded" height="24px" width=" 24px" />
+                                    </Box>
+                                </TableCell>
+                                <TableCell
+                                    sx={{
+                                        padding: '6px',
+                                        height: 'inherit',
+                                        lineHeight: 'normal',
+                                        width: '150px',
+                                    }}
+                                >
+                                    <Skeleton animation="wave" width="100%" height={24} />
+                                    <Skeleton animation="wave" width="100%" height={16} />
+                                    <Skeleton animation="wave" width="70%" height={16} />
+                                </TableCell>
+                            </TableRow>
+                        ))}
                     </TableBody>
                 </Table>
             </TableContainer>
-            <Box sx={{ display: 'flex', marginTop: '8px' }}>
-                <Box sx={{ width: '210px', height: '20px' }}></Box>
-                <Box sx={{ flexGrow: 1 }}>
-                    <Typography sx={{ marginLeft: '2%' }} variant="body2">
-                        Study
-                    </Typography>
-                </Box>
-            </Box>
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-                <Box key={i} sx={{ display: 'flex', marginTop: '8px', justifyContent: 'space-between' }}>
-                    <Skeleton variant="rounded" width={210} height={58} />
-                    <Box
-                        sx={{
-                            flex: 1,
-                            height: '50px',
-                            padding: '4px',
-                            display: 'flex',
-                            justifyContent: 'space-around',
-                            flexDirection: 'column',
-                            alignItems: 'flex-end',
-                        }}
-                    >
-                        <Skeleton animation="wave" width="100%" height={10} />
-                        <Skeleton animation="wave" width="100%" height={10} />
-                        <Skeleton animation="wave" width="100%" height={10} />
-                        <Skeleton animation="wave" width="70%" height={10} />
-                    </Box>
-                </Box>
-            ))}
         </Box>
     );
 };

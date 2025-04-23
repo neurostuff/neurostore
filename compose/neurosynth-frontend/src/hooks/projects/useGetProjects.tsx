@@ -39,6 +39,7 @@ export interface IImport {
     errorsDuringImport?: string;
     numImported: number;
     neurostoreSearchParams?: string; // search params used for studies (if neurostore was used for import)
+    fileName?: string; // file name imported (if imported via bibtex or pubmed file)
 }
 
 export interface ICurationMetadata {

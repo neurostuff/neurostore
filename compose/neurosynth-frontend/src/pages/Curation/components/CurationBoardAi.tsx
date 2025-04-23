@@ -59,16 +59,17 @@ const CurationBoardAI: React.FC = () => {
             menuItems.push(
                 { id: 'imports_header', type: 'SUBHEADER', label: 'Imports', count: null, UI: null },
                 ...curationImports
-                    .map(
-                        (curationImport) =>
-                            ({
-                                id: curationImport.id,
-                                type: 'LISTITEM',
-                                label: curationImport.name,
-                                count: curationImport.numImported,
-                                UI: ECurationBoardAIInterface.IMPORT_SUMMARY,
-                            }) as IGroupListItem
-                    )
+                    .map((curationImport) => {
+                        const date = new Date(curationImport.date);
+                        return {
+                            id: curationImport.id,
+                            type: 'LISTITEM',
+                            label: curationImport.name,
+                            secondaryLabel: `${curationImport.importModeUsed}\n${date.toLocaleDateString()} ${date.toLocaleTimeString()}`,
+                            count: curationImport.numImported,
+                            UI: ECurationBoardAIInterface.IMPORT_SUMMARY,
+                        } as IGroupListItem;
+                    })
                     .reverse()
             );
         }

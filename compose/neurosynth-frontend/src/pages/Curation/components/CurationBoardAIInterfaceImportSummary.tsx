@@ -85,7 +85,18 @@ const CurationBoardAIInterfaceImportSummary: React.FC<{
         <Box sx={{ padding: '1rem 2rem', overflowY: 'auto' }}>
             <Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <Typography variant="h6" fontWeight="bold" gutterBottom={false}>
+                    <Typography
+                        variant="h6"
+                        fontWeight="bold"
+                        gutterBottom={false}
+                        sx={{
+                            display: '-webkit-box',
+                            WebkitLineClamp: 1,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden',
+                            wordBreak: 'break-all',
+                        }}
+                    >
                         {curationImport?.name || ''}
                     </Typography>
                     <Box>

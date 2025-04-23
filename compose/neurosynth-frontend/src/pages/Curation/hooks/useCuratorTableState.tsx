@@ -11,6 +11,7 @@ import {
     SortingState,
     useReactTable,
 } from '@tanstack/react-table';
+import useGetAllAIExtractedData from 'hooks/extractions/useGetAllExtractedData';
 import { NeurostoreStudyReturn } from 'neurosynth-compose-typescript-sdk';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
@@ -119,6 +120,7 @@ const useCuratorTableState = (
     const [sorting, setSorting] = useState<SortingState>([]);
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+    const { data: extractedData } = useGetAllAIExtractedData();
 
     useEffect(() => {
         if (!projectId) return;
@@ -160,8 +162,17 @@ const useCuratorTableState = (
     }, []);
 
     const data = useMemo(() => {
-        return [...allStubs];
-    }, [allStubs]);
+        if (!extractedData || !allStubs) return [];
+
+        const extractedDataMap = new Map<string, { taskExtraction: any; participantDemographicsExtraction: any }>();
+        // extractedData.
+        extractedData.results.forEach((result) => {
+            // TODO: add to data map and then return a data object with the combined extraction + stub data.
+            // TODO: add more column and update the table
+        });
+
+        return [];
+    }, [allStubs, extractedData]);
 
     const table = useReactTable({
         data: data,

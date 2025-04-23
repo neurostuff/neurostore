@@ -29,13 +29,7 @@ const CurationBoardAIInterfaceCurator: React.FC<{ group: IGroupListItem }> = ({ 
     const navigate = useNavigate();
     const { projectId } = useParams<{ projectId: string | undefined }>();
     const curationColumns = useProjectCurationColumns();
-    const { isLoading, data } = useGetAllAIExtractedData({
-        featureFilter: [],
-        studyId: [],
-        featureDisplay: [EAIExtractors.PARTICIPANTSDEMOGRAPHICSEXTRACTOR, EAIExtractors.TASKEXTRACTOR],
-        pipelineConfig: [],
-        version: undefined,
-    });
+    const { isLoading } = useGetAllAIExtractedData();
 
     const { column, columnIndex } = useMemo(() => {
         const columnIndex = curationColumns.findIndex((col) => col.id === group.id);
@@ -99,7 +93,7 @@ const CurationBoardAIInterfaceCurator: React.FC<{ group: IGroupListItem }> = ({ 
         return <Typography color="error.dark">There was an error loading studies</Typography>;
     }
 
-    if (isLoading || true) {
+    if (isLoading) {
         return <CurationBoardAIInterfaceCuratorTableSkeleton />;
     }
 

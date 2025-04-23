@@ -59,7 +59,8 @@ interface CSLJSON {
 const CurationImportStandardFormat: React.FC<{
     onNavigate: (button: ENavigationButton) => void;
     onImportStubs: (stubs: ICurationStubStudy[]) => void;
-}> = (props) => {
+    onFileUpload: (fileName: string) => void;
+}> = ({ onNavigate, onImportStubs, onFileUpload }) => {
     const [source, setSource] = useState<ISource>();
     const [uploadState, setUploadState] = useState<{
         stubs: ICurationStubStudy[];
@@ -131,6 +132,7 @@ const CurationImportStandardFormat: React.FC<{
     const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event?.target?.files && event.target.files[0]) {
             const file = event.target.files[0];
+            onFileUpload(file.name);
             setUploadState((prev) => ({
                 ...prev,
                 file: file,
@@ -161,9 +163,10 @@ const CurationImportStandardFormat: React.FC<{
 
     const handleButtonClick = (button: ENavigationButton) => {
         if (button === ENavigationButton.PREV) {
-            props.onNavigate(button);
+            onNavigate(button);
         } else {
-            props.onImportStubs(uploadState.stubs);
+            onImportStubs(uploadState.stubs);
+            onNavigate(ENavigationButton.NEXT);
         }
     };
 

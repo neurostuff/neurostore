@@ -26,7 +26,7 @@ export const CuratorTableSummaryHeader: React.FC<HeaderContext<ICurationTableStu
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
             <Typography
                 variant="body2"
-                sx={{ marginRight: '4px', height: '31.59px', display: 'flex', alignItems: 'center' }}
+                sx={{ height: '31.59px', display: 'flex', alignItems: 'center', padding: '0 6px' }}
             >
                 Study
             </Typography>
