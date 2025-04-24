@@ -102,7 +102,7 @@ export class ProjectSearchCriteria {
         public nameSearch: string | undefined = undefined,
         public genericSearchStr: string | undefined = undefined,
         public descriptionSearch: string | undefined = undefined,
-        public sortBy: SortBy | undefined = undefined,
+        public sortBy: SortBy | undefined = SortBy.LASTUPDATED,
         public descOrder: boolean = true
     ) {}
 }
@@ -114,7 +114,7 @@ export const projectsSearchHelper = (projectSearchCriteria: Partial<ProjectSearc
         projectSearchCriteria.nameSearch,
         projectSearchCriteria.genericSearchStr,
         projectSearchCriteria.descriptionSearch,
-        projectSearchCriteria.sortBy === SortBy.LASTUPDATED ? undefined : projectSearchCriteria.sortBy,
+        projectSearchCriteria.sortBy === SortBy.LASTUPDATED ? 'updated_at' : projectSearchCriteria.sortBy,
         projectSearchCriteria.descOrder,
         userId
     );

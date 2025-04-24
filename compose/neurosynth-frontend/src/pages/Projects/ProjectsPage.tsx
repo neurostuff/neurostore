@@ -6,7 +6,7 @@ import { INeurosynthProjectReturn } from 'hooks/projects/useGetProjects';
 import useSearchProjects from 'pages/Projects/hooks/useSearchProjects';
 import ProjectsPageCard from './components/ProjectsPageCard';
 
-const ProjectsPage: React.FC = (props) => {
+const ProjectsPage: React.FC = () => {
     const { user } = useAuth0();
 
     const {

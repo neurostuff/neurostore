@@ -64,9 +64,23 @@ export interface IParticipantDemographicExtractor {
 const useGetAllAIExtractedData = () => {
     return useQuery(
         ['extraction'],
-        () => API.NeurostoreServices.ExtractedDataResultsService.getAllExtractedDataResults(),
+        () => {
+            return Promise.all([
+                API.NeurostoreServices.ExtractedDataResultsService.getAllExtractedDataResults([
+                    EAIExtractors.TASKEXTRACTOR,
+                ]),
+                API.NeurostoreServices.ExtractedDataResultsService.getAllExtractedDataResults([
+                    EAIExtractors.PARTICIPANTSDEMOGRAPHICSEXTRACTOR,
+                ]),
+            ]);
+        },
         {
-            select: (res) => res.data,
+            select: ([taskExtractionRes, participantDemographicsExtractionRes]) => {
+                return {
+                    [EAIExtractors.TASKEXTRACTOR]: taskExtractionRes.data,
+                    [EAIExtractors.PARTICIPANTSDEMOGRAPHICSEXTRACTOR]: participantDemographicsExtractionRes.data,
+                };
+            },
         }
     );
 };

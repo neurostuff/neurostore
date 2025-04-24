@@ -1,8 +1,8 @@
-import { ArrowDownward, Delete } from '@mui/icons-material';
+import { ArrowDownward, AutoAwesome, Delete } from '@mui/icons-material';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import { Box, IconButton, Typography } from '@mui/material';
 import { HeaderContext } from '@tanstack/react-table';
-import { ICurationTableStudy } from './CurationBoardAIInterfaceCuratorTable';
+import { ICurationTableStudy } from '../hooks/useCuratorTableState';
 import CurationBoardAIInterfaceCuratorTableHeaderFilter from './CurationBoardAIInterfaceCuratorTableHeaderFilter';
 
 export const CuratorTableHeader: React.FC<HeaderContext<ICurationTableStudy, unknown>> = ({ table, column }) => {
@@ -14,6 +14,16 @@ export const CuratorTableHeader: React.FC<HeaderContext<ICurationTableStudy, unk
 
     return (
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            {column.columnDef.meta?.isAIExtracted ? (
+                <Box sx={{ display: 'flex', alignItems: 'center', color: '#50b9db' }}>
+                    <AutoAwesome sx={{ height: '16px' }} />
+                    <Typography variant="body2" sx={{ marginRight: '10px', fontSize: '12px' }}>
+                        AI
+                    </Typography>
+                </Box>
+            ) : (
+                <></>
+            )}
             <Typography variant="body2" sx={{ marginRight: '4px' }}>
                 {columnLabel}
             </Typography>
