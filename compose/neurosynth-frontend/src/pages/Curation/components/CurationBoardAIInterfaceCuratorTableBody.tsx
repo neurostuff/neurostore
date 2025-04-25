@@ -1,9 +1,9 @@
 import { TableBody, TableCell, TableRow } from '@mui/material';
 import { flexRender, Table } from '@tanstack/react-table';
-import { ICurationStubStudy } from '../Curation.types';
+import { ICurationTableStudy } from '../hooks/useCuratorTableState.types';
 
 const CurationBoardAIInterfaceCuratorTableBody: React.FC<{
-    table: Table<ICurationStubStudy>;
+    table: Table<ICurationTableStudy>;
     onSelect: (id: string) => void;
 }> = ({ table, onSelect }) => {
     return (

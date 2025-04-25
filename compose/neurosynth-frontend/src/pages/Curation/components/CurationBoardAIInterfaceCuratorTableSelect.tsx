@@ -1,7 +1,7 @@
 import { Box, Checkbox } from '@mui/material';
 import { CellContext, HeaderContext } from '@tanstack/react-table';
 import React from 'react';
-import { ICurationTableStudy } from '../hooks/useCuratorTableState';
+import { ICurationTableStudy } from '../hooks/useCuratorTableState.types';
 
 export const CuratorTableSelectCell: React.FC<CellContext<ICurationTableStudy, unknown>> = (props) => {
     const handleSelectCell = (event: React.ChangeEvent<HTMLInputElement>, checked: boolean) => {

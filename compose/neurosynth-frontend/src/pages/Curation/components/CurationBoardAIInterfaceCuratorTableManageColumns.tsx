@@ -1,10 +1,16 @@
 import { Add, Remove, ViewColumnRounded } from '@mui/icons-material';
-import { Box, Button, List, ListItem, ListItemButton, ListItemIcon, ListItemText } from '@mui/material';
+import { Box, Button, List, ListItem, ListItemButton, ListItemIcon, ListItemText, ListSubheader } from '@mui/material';
 import { AccessorFnColumnDef, DisplayColumnDef } from '@tanstack/react-table';
+import AIICon from 'components/AIIcon';
 import DebouncedTextField from 'components/DebouncedTextField';
 import NeurosynthPopper from 'components/NeurosynthPopper/NeurosynthPopper';
 import React, { useMemo, useState } from 'react';
-import { AI_INTERFACE_CURATOR_COLUMNS, ICurationTableStudy } from '../hooks/useCuratorTableState';
+import {
+    ICurationTableStudy,
+    PARTICIPANTS_DEMOGRAPHICS_EXTRACTOR_CURATOR_COLUMNS,
+    STUB_CURATOR_COLUMNS,
+    TASK_EXTRACTOR_CURATOR_COLUMNS,
+} from '../hooks/useCuratorTableState.types';
 
 const CurationBoardAIInterfaceCuratorTableManageColumns: React.FC<{
     columns: (DisplayColumnDef<ICurationTableStudy, unknown> | AccessorFnColumnDef<ICurationTableStudy, string>)[];
@@ -33,9 +39,21 @@ const CurationBoardAIInterfaceCuratorTableManageColumns: React.FC<{
         }
     };
 
-    const filtered = useMemo(() => {
-        if (!search || search === '') return AI_INTERFACE_CURATOR_COLUMNS;
-        return AI_INTERFACE_CURATOR_COLUMNS.filter((col) => col.label.toLowerCase().includes(search.toLowerCase()));
+    const filteredStubColumns = useMemo(() => {
+        if (!search || search === '') return STUB_CURATOR_COLUMNS;
+        return STUB_CURATOR_COLUMNS.filter((col) => col.label.toLowerCase().includes(search.toLowerCase()));
+    }, [search]);
+
+    const filteredTaskExtractionColumns = useMemo(() => {
+        if (!search || search === '') return TASK_EXTRACTOR_CURATOR_COLUMNS;
+        return TASK_EXTRACTOR_CURATOR_COLUMNS.filter((col) => col.id.toLowerCase().includes(search.toLowerCase()));
+    }, [search]);
+
+    const filteredParticipantsDemographicColumn = useMemo(() => {
+        if (!search || search === '') return PARTICIPANTS_DEMOGRAPHICS_EXTRACTOR_CURATOR_COLUMNS;
+        return PARTICIPANTS_DEMOGRAPHICS_EXTRACTOR_CURATOR_COLUMNS.filter((col) =>
+            col.id.toLowerCase().includes(search.toLowerCase())
+        );
     }, [search]);
 
     return (
@@ -58,8 +76,74 @@ const CurationBoardAIInterfaceCuratorTableManageColumns: React.FC<{
                         value={search}
                         onChange={setSearch}
                     />
-                    <List disablePadding>
-                        {filtered.map((column) => (
+                    <List disablePadding sx={{ maxHeight: '40vh', overflowY: 'auto' }}>
+                        <ListSubheader sx={{ padding: '8px 4px', fontSize: '12px', lineHeight: 'normal' }}>
+                            Study Details
+                        </ListSubheader>
+                        {filteredStubColumns.map((column) => (
+                            <ListItem key={column.id} disablePadding>
+                                <ListItemButton
+                                    onClick={() => handleSelectColumn(column.id)}
+                                    sx={{ padding: '2px 4px' }}
+                                >
+                                    <ListItemIcon sx={{ minWidth: '30px' }}>
+                                        {columnsSet.has(column.id) ? (
+                                            <Remove sx={{ fontSize: '18px' }} />
+                                        ) : (
+                                            <Add sx={{ fontSize: '18px' }} />
+                                        )}
+                                    </ListItemIcon>
+                                    <ListItemText primaryTypographyProps={{ fontSize: '12px' }}>
+                                        {column.label}
+                                    </ListItemText>
+                                </ListItemButton>
+                            </ListItem>
+                        ))}
+                        <ListSubheader
+                            sx={{
+                                padding: '8px 4px',
+                                fontSize: '12px',
+                                lineHeight: 'normal',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                            }}
+                        >
+                            Task Details
+                            <AIICon sx={{ marginRight: '8px' }} />
+                        </ListSubheader>
+                        {filteredTaskExtractionColumns.map((column) => (
+                            <ListItem key={column.id} disablePadding>
+                                <ListItemButton
+                                    onClick={() => handleSelectColumn(column.id)}
+                                    sx={{ padding: '2px 4px' }}
+                                >
+                                    <ListItemIcon sx={{ minWidth: '30px' }}>
+                                        {columnsSet.has(column.id) ? (
+                                            <Remove sx={{ fontSize: '18px' }} />
+                                        ) : (
+                                            <Add sx={{ fontSize: '18px' }} />
+                                        )}
+                                    </ListItemIcon>
+                                    <ListItemText primaryTypographyProps={{ fontSize: '12px' }}>
+                                        {column.label}
+                                    </ListItemText>
+                                </ListItemButton>
+                            </ListItem>
+                        ))}
+                        <ListSubheader
+                            sx={{
+                                padding: '8px 4px',
+                                fontSize: '12px',
+                                lineHeight: 'normal',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                            }}
+                        >
+                            Participant Demographic Details
+                            <AIICon sx={{ marginRight: '8px' }} />
+                        </ListSubheader>
+                        {filteredParticipantsDemographicColumn.map((column) => (
                             <ListItem key={column.id} disablePadding>
                                 <ListItemButton
                                     onClick={() => handleSelectColumn(column.id)}

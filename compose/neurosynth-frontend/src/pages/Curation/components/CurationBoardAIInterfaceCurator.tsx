@@ -15,12 +15,13 @@ import CurationBoardAIInterfaceCuratorTable from './CurationBoardAIInterfaceCura
 import CurationDownloadIncludedStudiesButton from './CurationDownloadIncludedStudiesButton';
 import useCuratorTableState from '../hooks/useCuratorTableState';
 import { Table } from '@tanstack/react-table';
-import useGetAllAIExtractedData, { EAIExtractors } from 'hooks/extractions/useGetAllExtractedData';
+import useGetAllAIExtractedData from 'hooks/extractions/useGetAllExtractedData';
 import CurationBoardAIInterfaceCuratorTableSkeleton from './CurationBoardAIInterfaceCuratorSkeleton';
+import { ICurationTableStudy } from '../hooks/useCuratorTableState.types';
 
 export interface ICurationBoardAIInterfaceCurator {
     selectedStub: ICurationStubStudy | undefined;
-    table: Table<ICurationStubStudy>;
+    table: Table<ICurationTableStudy>;
     columnIndex: number;
     onSetSelectedStub: (stubId: string) => void;
 }

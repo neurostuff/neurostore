@@ -3,8 +3,8 @@ import { Badge, Box, IconButton } from '@mui/material';
 import DebouncedTextField from 'components/DebouncedTextField';
 import NeurosynthPopper from 'components/NeurosynthPopper/NeurosynthPopper';
 import React, { useCallback, useState } from 'react';
-import { ICurationTableStudy } from './CurationBoardAIInterfaceCuratorTable';
 import { Column } from '@tanstack/react-table';
+import { ICurationTableStudy } from '../hooks/useCuratorTableState.types';
 
 const CurationBoardAIInterfaceCuratorTableHeaderFilter: React.FC<{
     column: Column<ICurationTableStudy, unknown>;

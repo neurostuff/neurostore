@@ -4,11 +4,11 @@ import { ITag } from 'hooks/projects/useGetProjects';
 import { useCreateNewExclusion, useSetExclusionForStub } from 'pages/Project/store/ProjectStore';
 import { useState } from 'react';
 import { v4 as uuid } from 'uuid';
-import { ICurationStubStudy } from '../Curation.types';
+import { ICurationTableStudy } from '../hooks/useCuratorTableState.types';
 import CurationPopupExclusionSelector from './CurationPopupExclusionSelector';
 
 const CurationBoardAIInterfaceCuratorTableSelectedRowsActions: React.FC<{
-    table: Table<ICurationStubStudy>;
+    table: Table<ICurationTableStudy>;
     columnIndex: number;
 }> = ({ table, columnIndex }) => {
     const [exclusionTagSelectorIsOpen, setExclusionTagSelectorIsOpen] = useState(false);

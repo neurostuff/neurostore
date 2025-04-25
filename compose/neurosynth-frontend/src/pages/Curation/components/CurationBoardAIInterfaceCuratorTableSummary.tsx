@@ -1,7 +1,7 @@
 import { Box, Typography } from '@mui/material';
 import { CellContext, HeaderContext } from '@tanstack/react-table';
 import { getAuthorsShortName } from 'helpers/utils';
-import { ICurationTableStudy } from '../hooks/useCuratorTableState';
+import { ICurationTableStudy } from '../hooks/useCuratorTableState.types';
 
 export const CuratorTableSummaryCell: React.FC<CellContext<ICurationTableStudy, unknown>> = (props) => {
     const row = props.row.original;

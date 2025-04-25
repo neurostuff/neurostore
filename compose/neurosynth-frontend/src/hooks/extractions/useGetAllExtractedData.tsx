@@ -1,6 +1,5 @@
 // gotta customize this myself
 
-import axios from 'axios';
 import { useQuery } from 'react-query';
 import API from 'utils/api';
 
