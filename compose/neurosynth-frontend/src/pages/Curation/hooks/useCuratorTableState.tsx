@@ -21,7 +21,7 @@ import {
 } from '../components/CurationBoardAIInterfaceCuratorTable.helpers';
 import { ICurationStubStudy } from '../Curation.types';
 import { createColumn } from './useCuratorTableState.helpers';
-import { ICurationTableStudy, IGenericCustomAccessorReturn } from './useCuratorTableState.types';
+import { ICurationTableColumnType, ICurationTableStudy } from './useCuratorTableState.types';
 
 const useCuratorTableState = (
     projectId: string | undefined,
@@ -30,8 +30,8 @@ const useCuratorTableState = (
 ) => {
     const [columns, setColumns] = useState<
         (
-            | DisplayColumnDef<ICurationTableStudy, unknown>
-            | AccessorFnColumnDef<ICurationTableStudy, IGenericCustomAccessorReturn>
+            | DisplayColumnDef<ICurationTableStudy, ICurationTableColumnType>
+            | AccessorFnColumnDef<ICurationTableStudy, ICurationTableColumnType>
         )[]
     >([]);
     const [sorting, setSorting] = useState<SortingState>([]);
@@ -46,8 +46,8 @@ const useCuratorTableState = (
 
         setColumns(() => {
             const newColumns: (
-                | DisplayColumnDef<ICurationTableStudy, unknown>
-                | AccessorFnColumnDef<ICurationTableStudy, IGenericCustomAccessorReturn>
+                | DisplayColumnDef<ICurationTableStudy, ICurationTableColumnType>
+                | AccessorFnColumnDef<ICurationTableStudy, ICurationTableColumnType>
             )[] = [];
             if (allowRowSelection) {
                 newColumns.push(createColumn('select'));

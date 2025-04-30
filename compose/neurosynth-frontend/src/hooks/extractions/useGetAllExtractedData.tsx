@@ -27,10 +27,10 @@ export interface IBehavioralTask {
 }
 
 export type IfMRITask = IBehavioralTask & {
-    TaskDesign: null | undefined | string[];
     RestingState: null | undefined | boolean;
+    RestingStateMetadata: null | undefined | string;
+    TaskDesign: null | undefined | string[];
     TaskDuration: null | undefined | string;
-    RestingStateMetadata: null | undefined | any;
 };
 
 export interface ITaskExtractor {

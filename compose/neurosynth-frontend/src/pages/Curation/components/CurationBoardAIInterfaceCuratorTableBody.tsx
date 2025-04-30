@@ -8,7 +8,6 @@ const CurationBoardAIInterfaceCuratorTableBody: React.FC<{
 }> = ({ table, onSelect }) => {
     return (
         <TableBody>
-            {/* <VariableSizeList height={windowHeigh} ></VariableSizeList> */}
             {table.getRowModel().rows.map((row) => (
                 <TableRow
                     key={row.id}
@@ -19,6 +18,7 @@ const CurationBoardAIInterfaceCuratorTableBody: React.FC<{
                         height: '1px', // https://stackoverflow.com/questions/3215553/make-a-div-fill-an-entire-table-cell
                         '&:hover': {
                             backgroundColor: '#f6f6f6',
+                            // backgroundColor: '#f9f9f9',
                             cursor: 'pointer',
                             transition: 'ease-in-out 150ms',
                         },
@@ -28,6 +28,10 @@ const CurationBoardAIInterfaceCuratorTableBody: React.FC<{
                         <TableCell
                             key={cell.id}
                             sx={{
+                                position: cell.column.id === 'select' ? 'sticky' : '',
+                                backgroundColor: cell.column.id === 'select' ? 'white' : '',
+                                zIndex: 9,
+                                left: 0,
                                 padding: '6px',
                                 height: 'inherit',
                                 lineHeight: 'normal',

@@ -1,24 +1,82 @@
+import { SortingColumnDef } from '@tanstack/react-table';
 import {
     EAIExtractors,
+    IBehavioralTask,
+    IfMRITask,
+    IGroup,
     IParticipantDemographicExtractor,
     ITaskExtractor,
 } from 'hooks/extractions/useGetAllExtractedData';
 import { ICurationStubStudy } from '../Curation.types';
-import { SortingColumnDef } from '@tanstack/react-table';
 
 export interface IGenericCustomAccessorReturn {
-    [key: string]: number | string | boolean | null | undefined | string[];
+    key: string;
+    value: number | string | boolean | null | undefined | string[];
 }
+
+export type ICurationTableColumnType = IGenericCustomAccessorReturn[] | string | number | string[];
 
 export interface ICurationBoardAIInterfaceCuratorTableType {
     id: string;
-    isAIExtracted: boolean;
     label: string;
-    filterVariant: undefined | 'text' | 'numeric';
+    AIExtractor?: EAIExtractors;
+    filterVariant?: 'text' | 'numeric' | 'autocomplete';
     canSort: boolean;
     sortingFn?: SortingColumnDef<ICurationTableStudy>['sortingFn'];
-    customAccessor?: (stub: ICurationTableStudy) => string | number | string[] | IGenericCustomAccessorReturn;
+    customAccessor?: (stub: ICurationTableStudy) => ICurationTableColumnType;
 }
+
+// must put here instead of useCurratorTableState.helpers.ts in order to prevent circular dependency
+const createCustomTaskExtractorAccessor = (
+    property: keyof IfMRITask | keyof IBehavioralTask,
+    taskType: 'FMRI' | 'BEHAVIORAL',
+    stub: ICurationTableStudy
+): IGenericCustomAccessorReturn[] => {
+    if (!stub[EAIExtractors.TASKEXTRACTOR]) return [];
+
+    let allValuesEmpty = true;
+    const tasksList: IGenericCustomAccessorReturn[] = [];
+
+    if (taskType === 'FMRI') {
+        (stub[EAIExtractors.TASKEXTRACTOR]?.fMRITasks || []).forEach((task, index) => {
+            const groupName = task.TaskName || `fMRI Task ${index + 1}`;
+            const value = task[property];
+            if (value !== undefined && value !== null && value !== 'undefined' && value !== 'null')
+                allValuesEmpty = false;
+            tasksList.push({ key: groupName, value: value });
+        });
+    } else {
+        (stub[EAIExtractors.TASKEXTRACTOR]?.BehavioralTasks || []).forEach((task, index) => {
+            const groupName = task.TaskName || `Behavioral Task ${index + 1}`;
+            const typedProperty = property as keyof IBehavioralTask;
+            const value = task[typedProperty];
+            if (value !== undefined && value !== null && value !== 'undefined' && value !== 'null')
+                allValuesEmpty = false;
+            tasksList.push({ key: groupName, value: value });
+        });
+    }
+
+    return allValuesEmpty ? [] : tasksList;
+};
+
+// must put here instead of useCurratorTableState.helpers.ts in order to prevent circular dependency
+const createCustomParticipantDemographicsExtractorAccessor = (
+    property: keyof IGroup,
+    stub: ICurationTableStudy
+): IGenericCustomAccessorReturn[] => {
+    if (!stub[EAIExtractors.PARTICIPANTSDEMOGRAPHICSEXTRACTOR]) return [];
+    let allValuesEmpty = true;
+    const groupsList: IGenericCustomAccessorReturn[] = [];
+
+    (stub[EAIExtractors.PARTICIPANTSDEMOGRAPHICSEXTRACTOR]?.groups || [])?.forEach((group, index) => {
+        const groupName = group.group_name || `fMRI Task ${index + 1}`;
+        const value = group[property];
+        if (value !== undefined && value !== null && value !== 'undefined' && value !== 'null') allValuesEmpty = false;
+        groupsList.push({ key: groupName, value: value });
+    });
+
+    return allValuesEmpty ? [] : groupsList;
+};
 
 export const STUB_CURATOR_COLUMNS: ICurationBoardAIInterfaceCuratorTableType[] = [
     {
@@ -27,17 +85,14 @@ export const STUB_CURATOR_COLUMNS: ICurationBoardAIInterfaceCuratorTableType[] =
         filterVariant: 'numeric',
         canSort: true,
         sortingFn: 'alphanumeric',
-        isAIExtracted: false,
     },
-    { id: 'title', label: 'Title', filterVariant: 'text', canSort: true, sortingFn: 'text', isAIExtracted: false },
-    { id: 'authors', label: 'Authors', filterVariant: 'text', canSort: true, sortingFn: 'text', isAIExtracted: false },
+    { id: 'title', label: 'Title', filterVariant: 'text', canSort: true, sortingFn: 'text' },
+    { id: 'authors', label: 'Authors', filterVariant: 'text', canSort: true, sortingFn: 'text' },
     {
         id: 'keywords',
         label: 'Keywords',
         filterVariant: 'text',
-        canSort: true,
-        sortingFn: 'text',
-        isAIExtracted: false,
+        canSort: false,
     },
     {
         id: 'pmid',
@@ -45,281 +100,134 @@ export const STUB_CURATOR_COLUMNS: ICurationBoardAIInterfaceCuratorTableType[] =
         filterVariant: 'text',
         canSort: true,
         sortingFn: 'alphanumeric',
-        isAIExtracted: false,
     },
-    { id: 'doi', label: 'DOI', filterVariant: 'text', canSort: true, sortingFn: 'alphanumeric', isAIExtracted: false },
-    { id: 'journal', label: 'Journal', filterVariant: 'text', canSort: true, sortingFn: 'text', isAIExtracted: false },
+    { id: 'doi', label: 'DOI', filterVariant: 'text', canSort: true, sortingFn: 'alphanumeric' },
+    { id: 'journal', label: 'Journal', filterVariant: 'autocomplete', canSort: true, sortingFn: 'text' },
     {
         id: 'abstractText',
         label: 'Abstract',
-        filterVariant: undefined,
-        canSort: true,
-        sortingFn: 'text',
-        isAIExtracted: false,
+        filterVariant: 'text',
+        canSort: false,
     },
     {
         id: 'identificationSource',
         label: 'Source',
-        filterVariant: 'text',
+        filterVariant: 'autocomplete',
         canSort: true,
         sortingFn: 'text',
         customAccessor: (stub) => stub.identificationSource.label,
-        isAIExtracted: false,
     },
 ];
 
 export const PARTICIPANTS_DEMOGRAPHICS_EXTRACTOR_CURATOR_COLUMNS: ICurationBoardAIInterfaceCuratorTableType[] = [
     {
         id: 'groupName',
-        label: 'Group Name(s)',
-        filterVariant: 'text',
+        label: 'Group Names',
         canSort: false,
-        sortingFn: 'alphanumeric',
+        filterVariant: 'autocomplete',
         customAccessor: (stub) => {
-            if (stub[EAIExtractors.PARTICIPANTSDEMOGRAPHICSEXTRACTOR]) {
-                const groupNameList = stub[EAIExtractors.PARTICIPANTSDEMOGRAPHICSEXTRACTOR]?.groups
-                    .filter((g) => !!g.group_name)
-                    .map((g) => g.group_name);
-                return groupNameList as string[];
-            }
-            return [];
+            if (!stub[EAIExtractors.PARTICIPANTSDEMOGRAPHICSEXTRACTOR]) return [];
+            const groupNames = (stub[EAIExtractors.PARTICIPANTSDEMOGRAPHICSEXTRACTOR]?.groups || [])
+                .filter((g) => !!g.group_name)
+                .map((g) => g.group_name);
+            return groupNames as string[];
         },
-        isAIExtracted: true,
+        AIExtractor: EAIExtractors.PARTICIPANTSDEMOGRAPHICSEXTRACTOR,
     },
-    // {
-    //     id: 'maleCount',
-    //     label: 'Male Subject Count',
-    //     filterVariant: 'array',
-    //     canSort: false,
-    //     sortingFn: 'alphanumeric',
-    //     customAccessor: (stub) => {
-    //         if (stub[EAIExtractors.PARTICIPANTSDEMOGRAPHICSEXTRACTOR]) {
-    //             const maleCountList = stub[EAIExtractors.PARTICIPANTSDEMOGRAPHICSEXTRACTOR]?.groups.map(
-    //                 (g, index) => ({
-    //                     label: g.group_name || `Group ${index + 1}`,
-    //                     value: g.male_count,
-    //                 })
-    //             );
-    //             return maleCountList;
-    //         }
-    //         return [];
-    //     },
-    //     isAIExtracted: true,
-    // },
-    // {
-    //     id: 'femaleCount',
-    //     label: 'Female Subject Count',
-    //     filterVariant: 'array',
-    //     canSort: false,
-    //     sortingFn: 'alphanumeric',
-    //     customAccessor: (stub) => {
-    //         if (stub[EAIExtractors.PARTICIPANTSDEMOGRAPHICSEXTRACTOR]) {
-    //             const femaleCountList = stub[EAIExtractors.PARTICIPANTSDEMOGRAPHICSEXTRACTOR]?.groups.map(
-    //                 (g, index) => ({
-    //                     label: g.group_name || `Group ${index + 1}`,
-    //                     value: g.female_count,
-    //                 })
-    //             );
-    //             return femaleCountList;
-    //         }
-    //         return [];
-    //     },
-    //     isAIExtracted: true,
-    // },
-    // {
-    //     id: 'ageMaximum',
-    //     label: 'Age Maximum',
-    //     filterVariant: 'array',
-    //     canSort: false,
-    //     sortingFn: 'alphanumeric',
-    //     customAccessor: (stub) => {
-    //         if (stub[EAIExtractors.PARTICIPANTSDEMOGRAPHICSEXTRACTOR]) {
-    //             const ageMaximumList = stub[EAIExtractors.PARTICIPANTSDEMOGRAPHICSEXTRACTOR]?.groups.map(
-    //                 (g, index) => ({
-    //                     label: g.group_name || `Group ${index + 1}`,
-    //                     value: g.age_maximum,
-    //                 })
-    //             );
-    //             return ageMaximumList;
-    //         }
-    //         return [];
-    //     },
-    //     isAIExtracted: true,
-    // },
-    // {
-    //     id: 'ageMinimum',
-    //     label: 'Minimum Age',
-    //     filterVariant: 'array',
-    //     canSort: false,
-    //     sortingFn: 'alphanumeric',
-    //     customAccessor: (stub) => {
-    //         if (stub[EAIExtractors.PARTICIPANTSDEMOGRAPHICSEXTRACTOR]) {
-    //             const ageMinimumList = stub[EAIExtractors.PARTICIPANTSDEMOGRAPHICSEXTRACTOR]?.groups.map(
-    //                 (g, index) => ({
-    //                     label: g.group_name || `Group ${index + 1}`,
-    //                     value: g.age_minimum,
-    //                 })
-    //             );
-    //             return ageMinimumList;
-    //         }
-    //         return [];
-    //     },
-    //     isAIExtracted: true,
-    // },
-    // {
-    //     id: 'ageMedian',
-    //     label: 'Median Age',
-    //     filterVariant: 'array',
-    //     canSort: false,
-    //     sortingFn: 'alphanumeric',
-    //     customAccessor: (stub) => {
-    //         if (stub[EAIExtractors.PARTICIPANTSDEMOGRAPHICSEXTRACTOR]) {
-    //             const ageMedianList = stub[EAIExtractors.PARTICIPANTSDEMOGRAPHICSEXTRACTOR]?.groups.map(
-    //                 (g, index) => ({
-    //                     label: g.group_name || `Group ${index + 1}`,
-    //                     value: g.age_median,
-    //                 })
-    //             );
-    //             return ageMedianList;
-    //         }
-    //         return [];
-    //     },
-    //     isAIExtracted: true,
-    // },
-    // {
-    //     id: 'meanAge',
-    //     label: 'Mean Age',
-    //     filterVariant: 'array',
-    //     canSort: false,
-    //     sortingFn: 'alphanumeric',
-    //     customAccessor: (stub) => {
-    //         if (stub[EAIExtractors.PARTICIPANTSDEMOGRAPHICSEXTRACTOR]) {
-    //             const ageMeanList = stub[EAIExtractors.PARTICIPANTSDEMOGRAPHICSEXTRACTOR]?.groups.map(
-    //                 (g, index) => ({
-    //                     label: g.group_name || `Group ${index + 1}`,
-    //                     value: g.age_mean,
-    //                 })
-    //             );
-    //             return ageMeanList;
-    //         }
-    //         return [];
-    //     },
-    //     isAIExtracted: true,
-    // },
-    // {
-    //     id: 'ageRange',
-    //     label: 'ageRange',
-    //     filterVariant: 'array',
-    //     canSort: false,
-    //     sortingFn: 'alphanumeric',
-    //     customAccessor: (stub) => {
-    //         if (stub[EAIExtractors.PARTICIPANTSDEMOGRAPHICSEXTRACTOR]) {
-    //             const ageRangeList = stub[EAIExtractors.PARTICIPANTSDEMOGRAPHICSEXTRACTOR]?.groups.map(
-    //                 (g, index) => ({
-    //                     label: g.group_name || `Group ${index + 1}`,
-    //                     value: g.age_range,
-    //                 })
-    //             );
-    //             return ageRangeList;
-    //         }
-    //         return [];
-    //     },
-    //     isAIExtracted: true,
-    // },
-    // {
-    //     id: 'count',
-    //     label: 'Count',
-    //     filterVariant: 'array',
-    //     canSort: false,
-    //     sortingFn: 'alphanumeric',
-    //     customAccessor: (stub) => {
-    //         if (stub[EAIExtractors.PARTICIPANTSDEMOGRAPHICSEXTRACTOR]) {
-    //             const countList = stub[EAIExtractors.PARTICIPANTSDEMOGRAPHICSEXTRACTOR]?.groups.map((g, index) => ({
-    //                 label: g.group_name || `Group ${index + 1}`,
-    //                 value: g.count,
-    //             }));
-    //             return countList;
-    //         }
-    //         return [];
-    //     },
-    //     isAIExtracted: true,
-    // },
-    // {
-    //     id: 'diagnosis',
-    //     label: 'Diagnosis',
-    //     filterVariant: 'array',
-    //     canSort: false,
-    //     sortingFn: 'alphanumeric',
-    //     customAccessor: (stub) => {
-    //         if (stub[EAIExtractors.PARTICIPANTSDEMOGRAPHICSEXTRACTOR]) {
-    //             const diagnosisList = stub[EAIExtractors.PARTICIPANTSDEMOGRAPHICSEXTRACTOR]?.groups.map(
-    //                 (g, index) => ({
-    //                     label: g.group_name || `Group ${index + 1}`,
-    //                     value: g.diagnosis,
-    //                 })
-    //             );
-    //             return diagnosisList;
-    //         }
-    //         return [];
-    //     },
-    //     isAIExtracted: true,
-    // },
-    // {
-    //     id: 'imagingSample',
-    //     label: 'Imaging Sample',
-    //     filterVariant: 'array',
-    //     canSort: false,
-    //     sortingFn: 'alphanumeric',
-    //     customAccessor: (stub) => {
-    //         if (stub[EAIExtractors.PARTICIPANTSDEMOGRAPHICSEXTRACTOR]) {
-    //             const imagineSampleList = stub[EAIExtractors.PARTICIPANTSDEMOGRAPHICSEXTRACTOR]?.groups.map(
-    //                 (g, index) => ({
-    //                     label: g.group_name || `Group ${index + 1}`,
-    //                     value: g.imaging_sample,
-    //                 })
-    //             );
-    //             return imagineSampleList;
-    //         }
-    //         return [];
-    //     },
-    //     isAIExtracted: true,
-    // },
-    // {
-    //     id: 'subgroupName',
-    //     label: 'Subgroup Name',
-    //     filterVariant: 'array',
-    //     canSort: false,
-    //     sortingFn: 'alphanumeric',
-    //     customAccessor: (stub) => {
-    //         if (stub[EAIExtractors.PARTICIPANTSDEMOGRAPHICSEXTRACTOR]) {
-    //             const subgroupNameList = stub[EAIExtractors.PARTICIPANTSDEMOGRAPHICSEXTRACTOR]?.groups.map(
-    //                 (g, index) => ({
-    //                     label: g.group_name || `Group ${index + 1}`,
-    //                     value: g.subgroup_name,
-    //                 })
-    //             );
-    //             return subgroupNameList;
-    //         }
-    //         return [];
-    //     },
-    //     isAIExtracted: true,
-    // },
+    {
+        id: 'maleCount',
+        label: 'Male Subject Count',
+        canSort: false,
+        customAccessor: (stub) => createCustomParticipantDemographicsExtractorAccessor('male_count', stub),
+        AIExtractor: EAIExtractors.PARTICIPANTSDEMOGRAPHICSEXTRACTOR,
+    },
+    {
+        id: 'femaleCount',
+        label: 'Female Subject Count',
+        canSort: false,
+        customAccessor: (stub) => createCustomParticipantDemographicsExtractorAccessor('female_count', stub),
+        AIExtractor: EAIExtractors.PARTICIPANTSDEMOGRAPHICSEXTRACTOR,
+    },
+    {
+        id: 'ageMaximum',
+        label: 'Maximum Age',
+        canSort: false,
+        customAccessor: (stub) => createCustomParticipantDemographicsExtractorAccessor('age_maximum', stub),
+        AIExtractor: EAIExtractors.PARTICIPANTSDEMOGRAPHICSEXTRACTOR,
+    },
+    {
+        id: 'ageMinimum',
+        label: 'Minimum Age',
+        canSort: false,
+        customAccessor: (stub) => createCustomParticipantDemographicsExtractorAccessor('age_minimum', stub),
+        AIExtractor: EAIExtractors.PARTICIPANTSDEMOGRAPHICSEXTRACTOR,
+    },
+    {
+        id: 'ageMedian',
+        label: 'Median Age',
+        canSort: false,
+        customAccessor: (stub) => createCustomParticipantDemographicsExtractorAccessor('age_median', stub),
+        AIExtractor: EAIExtractors.PARTICIPANTSDEMOGRAPHICSEXTRACTOR,
+    },
+    {
+        id: 'meanAge',
+        label: 'Mean Age',
+        canSort: false,
+        customAccessor: (stub) => createCustomParticipantDemographicsExtractorAccessor('age_mean', stub),
+        AIExtractor: EAIExtractors.PARTICIPANTSDEMOGRAPHICSEXTRACTOR,
+    },
+    {
+        id: 'ageRange',
+        label: 'Age Range',
+        canSort: false,
+        filterVariant: 'autocomplete',
+        customAccessor: (stub) => createCustomParticipantDemographicsExtractorAccessor('age_range', stub),
+        AIExtractor: EAIExtractors.PARTICIPANTSDEMOGRAPHICSEXTRACTOR,
+    },
+    {
+        id: 'count',
+        label: 'Count',
+        canSort: false,
+        customAccessor: (stub) => createCustomParticipantDemographicsExtractorAccessor('count', stub),
+        AIExtractor: EAIExtractors.PARTICIPANTSDEMOGRAPHICSEXTRACTOR,
+    },
+    {
+        id: 'diagnosis',
+        label: 'Diagnosis',
+        canSort: false,
+        filterVariant: 'autocomplete',
+        customAccessor: (stub) => createCustomParticipantDemographicsExtractorAccessor('diagnosis', stub),
+        AIExtractor: EAIExtractors.PARTICIPANTSDEMOGRAPHICSEXTRACTOR,
+    },
+    {
+        id: 'imagingSample',
+        label: 'Imaging Sample',
+        canSort: false,
+        customAccessor: (stub) => createCustomParticipantDemographicsExtractorAccessor('imaging_sample', stub),
+        AIExtractor: EAIExtractors.PARTICIPANTSDEMOGRAPHICSEXTRACTOR,
+        filterVariant: 'autocomplete',
+    },
+    {
+        id: 'subgroupName',
+        label: 'Subgroup Name',
+        canSort: false,
+        customAccessor: (stub) => createCustomParticipantDemographicsExtractorAccessor('subgroup_name', stub),
+        AIExtractor: EAIExtractors.PARTICIPANTSDEMOGRAPHICSEXTRACTOR,
+        filterVariant: 'autocomplete',
+    },
 ];
 
 export const TASK_EXTRACTOR_CURATOR_COLUMNS: ICurationBoardAIInterfaceCuratorTableType[] = [
     {
         id: 'modality',
         label: 'Modality',
-        filterVariant: 'text',
         canSort: false,
-        sortingFn: 'alphanumeric',
+        filterVariant: 'autocomplete',
         customAccessor: (stub) => {
-            if (stub[EAIExtractors.TASKEXTRACTOR]) {
-                return stub[EAIExtractors.TASKEXTRACTOR]?.Modality;
-            }
-            return [];
+            if (!stub[EAIExtractors.TASKEXTRACTOR]) return [];
+            return stub[EAIExtractors.TASKEXTRACTOR]?.Modality || [];
         },
-        isAIExtracted: true,
+        AIExtractor: EAIExtractors.TASKEXTRACTOR,
     },
     {
         id: 'studyObjective',
@@ -327,46 +235,157 @@ export const TASK_EXTRACTOR_CURATOR_COLUMNS: ICurationBoardAIInterfaceCuratorTab
         filterVariant: 'text',
         canSort: false,
         customAccessor: (stub) => {
-            if (stub[EAIExtractors.TASKEXTRACTOR]) {
-                return stub[EAIExtractors.TASKEXTRACTOR]?.StudyObjective || '';
-            }
-            return '';
+            if (!stub[EAIExtractors.TASKEXTRACTOR]) return '';
+            return stub[EAIExtractors.TASKEXTRACTOR]?.StudyObjective || '';
         },
-        isAIExtracted: true,
+        AIExtractor: EAIExtractors.TASKEXTRACTOR,
     },
     {
-        id: 'taskName',
+        id: 'fMRITTaskName',
         label: 'fMRI Task Name',
-        filterVariant: 'text',
         canSort: false,
+        filterVariant: 'autocomplete',
         customAccessor: (stub) => {
-            if (stub[EAIExtractors.TASKEXTRACTOR]) {
-                const taskNames = (stub[EAIExtractors.TASKEXTRACTOR]?.fMRITasks || [])
-                    .filter((t) => !!t.TaskName)
-                    .map((task) => task.TaskName);
-                return taskNames as string[];
-            }
-            return [];
+            if (!stub[EAIExtractors.TASKEXTRACTOR]) return [];
+            const taskNames = (stub[EAIExtractors.TASKEXTRACTOR]?.fMRITasks || [])
+                .filter((t) => !!t.TaskName)
+                .map((task) => task.TaskName);
+            return taskNames as string[];
         },
-        isAIExtracted: true,
+        AIExtractor: EAIExtractors.TASKEXTRACTOR,
     },
     {
-        id: 'taskMetrics',
+        id: 'fMRITaskMetrics',
         label: 'fMRI Task Metrics',
-        filterVariant: 'text',
+        canSort: false,
+        filterVariant: 'autocomplete',
+        customAccessor: (stub) => createCustomTaskExtractorAccessor('TaskMetrics', 'FMRI', stub),
+        AIExtractor: EAIExtractors.TASKEXTRACTOR,
+    },
+    {
+        id: 'fMRITaskDescription',
+        label: 'fMRI Task Description',
+        canSort: false,
+        customAccessor: (stub) => createCustomTaskExtractorAccessor('TaskDescription', 'FMRI', stub),
+        AIExtractor: EAIExtractors.TASKEXTRACTOR,
+    },
+    {
+        id: 'fMRIDomain',
+        label: 'fMRI Task Domain',
+        canSort: false,
+        filterVariant: 'autocomplete',
+        customAccessor: (stub) => createCustomTaskExtractorAccessor('Domain', 'FMRI', stub),
+        AIExtractor: EAIExtractors.TASKEXTRACTOR,
+    },
+    {
+        id: 'fMRIDesignDetails',
+        label: 'fMRI Task Design Details',
+        canSort: false,
+        customAccessor: (stub) => createCustomTaskExtractorAccessor('DesignDetails', 'FMRI', stub),
+        AIExtractor: EAIExtractors.TASKEXTRACTOR,
+    },
+    {
+        id: 'fMRIConditions',
+        label: 'fMRI Task Conditions',
+        canSort: false,
+        customAccessor: (stub) => createCustomTaskExtractorAccessor('Conditions', 'FMRI', stub),
+        AIExtractor: EAIExtractors.TASKEXTRACTOR,
+        filterVariant: 'autocomplete',
+    },
+    {
+        id: 'fMRIConcepts',
+        label: 'fMRI Task Concepts',
+        canSort: false,
+        customAccessor: (stub) => createCustomTaskExtractorAccessor('Concepts', 'FMRI', stub),
+        AIExtractor: EAIExtractors.TASKEXTRACTOR,
+        filterVariant: 'autocomplete',
+    },
+    {
+        id: 'fMRITaskDesign',
+        label: 'fMRI Task Design',
+        canSort: false,
+        customAccessor: (stub) => createCustomTaskExtractorAccessor('TaskDesign', 'FMRI', stub),
+        AIExtractor: EAIExtractors.TASKEXTRACTOR,
+        filterVariant: 'autocomplete',
+    },
+    {
+        id: 'fMRIRestingState',
+        label: 'fMRI Task Resting State',
+        canSort: false,
+        customAccessor: (stub) => createCustomTaskExtractorAccessor('RestingState', 'FMRI', stub),
+        AIExtractor: EAIExtractors.TASKEXTRACTOR,
+        filterVariant: 'autocomplete',
+    },
+    {
+        id: 'fMRIRestingStateMetadata',
+        label: 'fMRI Task Resting State Metadata',
+        canSort: false,
+        customAccessor: (stub) => createCustomTaskExtractorAccessor('RestingStateMetadata', 'FMRI', stub),
+        AIExtractor: EAIExtractors.TASKEXTRACTOR,
+    },
+    {
+        id: 'fMRITaskDuration',
+        label: 'fMRI Task Duration',
+        canSort: false,
+        customAccessor: (stub) => createCustomTaskExtractorAccessor('TaskDuration', 'FMRI', stub),
+        AIExtractor: EAIExtractors.TASKEXTRACTOR,
+    },
+    {
+        id: 'behavioralTaskName',
+        label: 'Behavioral Task Name',
         canSort: false,
         customAccessor: (stub) => {
-            if (stub[EAIExtractors.TASKEXTRACTOR]) {
-                const ageMaximum = (stub[EAIExtractors.TASKEXTRACTOR]?.fMRITasks || []).reduce((acc, curr, index) => {
-                    const groupName = curr.TaskName || `fMRI Task ${index + 1}`;
-                    acc[groupName] = curr.TaskMetrics;
-                    return acc;
-                }, {} as IGenericCustomAccessorReturn);
-                return ageMaximum;
-            }
-            return {};
+            if (!stub[EAIExtractors.TASKEXTRACTOR]) return [];
+            const taskNames = (stub[EAIExtractors.TASKEXTRACTOR]?.BehavioralTasks || [])
+                .filter((t) => !!t.TaskName)
+                .map((task) => task.TaskName);
+            return taskNames as string[];
         },
-        isAIExtracted: true,
+        AIExtractor: EAIExtractors.TASKEXTRACTOR,
+    },
+    {
+        id: 'behavioralTaskMetrics',
+        label: 'Behavioral Task Metrics',
+        canSort: false,
+        filterVariant: 'autocomplete',
+        customAccessor: (stub) => createCustomTaskExtractorAccessor('TaskMetrics', 'BEHAVIORAL', stub),
+        AIExtractor: EAIExtractors.TASKEXTRACTOR,
+    },
+    {
+        id: 'behavioralTaskDescription',
+        label: 'Behavioral Task Description',
+        canSort: false,
+        customAccessor: (stub) => createCustomTaskExtractorAccessor('TaskDescription', 'BEHAVIORAL', stub),
+        AIExtractor: EAIExtractors.TASKEXTRACTOR,
+    },
+    {
+        id: 'behavioralDomain',
+        label: 'Behavioral Task Domain',
+        canSort: false,
+        customAccessor: (stub) => createCustomTaskExtractorAccessor('Domain', 'BEHAVIORAL', stub),
+        AIExtractor: EAIExtractors.TASKEXTRACTOR,
+    },
+    {
+        id: 'behavioralDesignDetails',
+        label: 'Behavioral Task Design Details',
+        canSort: false,
+        customAccessor: (stub) => createCustomTaskExtractorAccessor('DesignDetails', 'BEHAVIORAL', stub),
+        AIExtractor: EAIExtractors.TASKEXTRACTOR,
+    },
+    {
+        id: 'behavioralConditions',
+        label: 'Behavioral Task Conditions',
+        canSort: false,
+        customAccessor: (stub) => createCustomTaskExtractorAccessor('Conditions', 'BEHAVIORAL', stub),
+        AIExtractor: EAIExtractors.TASKEXTRACTOR,
+    },
+    {
+        id: 'behavioralConcepts',
+        label: 'Behavioral Task Concepts',
+        canSort: false,
+        filterVariant: 'autocomplete',
+        customAccessor: (stub) => createCustomTaskExtractorAccessor('Concepts', 'BEHAVIORAL', stub),
+        AIExtractor: EAIExtractors.TASKEXTRACTOR,
     },
 ];
 

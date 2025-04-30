@@ -11,7 +11,7 @@ export const CuratorTableSelectCell: React.FC<CellContext<ICurationTableStudy, u
     return (
         <Box
             onClick={(e) => e.stopPropagation()}
-            sx={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center' }}
+            sx={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
         >
             <Checkbox size="small" checked={props.row.getIsSelected()} onChange={handleSelectCell} />
         </Box>
@@ -23,7 +23,7 @@ export const CuratorTableSelectHeader: React.FC<HeaderContext<ICurationTableStud
     const isIndeterminate = table.getIsSomeRowsSelected();
 
     return (
-        <Box sx={{ width: '100%', padding: '0px 6px' }}>
+        <Box sx={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Checkbox
                 indeterminate={isIndeterminate}
                 checked={isSelected}

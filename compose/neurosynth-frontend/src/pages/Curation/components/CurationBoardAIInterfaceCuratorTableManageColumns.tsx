@@ -1,5 +1,15 @@
-import { Add, Remove, ViewColumnRounded } from '@mui/icons-material';
-import { Box, Button, List, ListItem, ListItemButton, ListItemIcon, ListItemText, ListSubheader } from '@mui/material';
+import { ViewColumnRounded } from '@mui/icons-material';
+import {
+    Box,
+    Button,
+    Checkbox,
+    List,
+    ListItem,
+    ListItemButton,
+    ListItemText,
+    ListSubheader,
+    Typography,
+} from '@mui/material';
 import { AccessorFnColumnDef, DisplayColumnDef } from '@tanstack/react-table';
 import AIICon from 'components/AIIcon';
 import DebouncedTextField from 'components/DebouncedTextField';
@@ -41,18 +51,20 @@ const CurationBoardAIInterfaceCuratorTableManageColumns: React.FC<{
 
     const filteredStubColumns = useMemo(() => {
         if (!search || search === '') return STUB_CURATOR_COLUMNS;
-        return STUB_CURATOR_COLUMNS.filter((col) => col.label.toLowerCase().includes(search.toLowerCase()));
+        return STUB_CURATOR_COLUMNS.filter((col) => col.label.toLocaleLowerCase().includes(search.toLocaleLowerCase()));
     }, [search]);
 
     const filteredTaskExtractionColumns = useMemo(() => {
         if (!search || search === '') return TASK_EXTRACTOR_CURATOR_COLUMNS;
-        return TASK_EXTRACTOR_CURATOR_COLUMNS.filter((col) => col.id.toLowerCase().includes(search.toLowerCase()));
+        return TASK_EXTRACTOR_CURATOR_COLUMNS.filter((col) =>
+            col.label.toLocaleLowerCase().includes(search.toLocaleLowerCase())
+        );
     }, [search]);
 
     const filteredParticipantsDemographicColumn = useMemo(() => {
         if (!search || search === '') return PARTICIPANTS_DEMOGRAPHICS_EXTRACTOR_CURATOR_COLUMNS;
         return PARTICIPANTS_DEMOGRAPHICS_EXTRACTOR_CURATOR_COLUMNS.filter((col) =>
-            col.id.toLowerCase().includes(search.toLowerCase())
+            col.label.toLocaleLowerCase().includes(search.toLocaleLowerCase())
         );
     }, [search]);
 
@@ -80,19 +92,21 @@ const CurationBoardAIInterfaceCuratorTableManageColumns: React.FC<{
                         <ListSubheader sx={{ padding: '8px 4px', fontSize: '12px', lineHeight: 'normal' }}>
                             Study Details
                         </ListSubheader>
+                        {filteredStubColumns.length === 0 && (
+                            <Typography
+                                variant="body2"
+                                sx={{ color: 'warning.dark', fontSize: '12px', padding: '0px 16px' }}
+                            >
+                                No results
+                            </Typography>
+                        )}
                         {filteredStubColumns.map((column) => (
                             <ListItem key={column.id} disablePadding>
                                 <ListItemButton
                                     onClick={() => handleSelectColumn(column.id)}
                                     sx={{ padding: '2px 4px' }}
                                 >
-                                    <ListItemIcon sx={{ minWidth: '30px' }}>
-                                        {columnsSet.has(column.id) ? (
-                                            <Remove sx={{ fontSize: '18px' }} />
-                                        ) : (
-                                            <Add sx={{ fontSize: '18px' }} />
-                                        )}
-                                    </ListItemIcon>
+                                    <Checkbox checked={columnsSet.has(column.id)} size="small" />
                                     <ListItemText primaryTypographyProps={{ fontSize: '12px' }}>
                                         {column.label}
                                     </ListItemText>
@@ -106,25 +120,26 @@ const CurationBoardAIInterfaceCuratorTableManageColumns: React.FC<{
                                 lineHeight: 'normal',
                                 display: 'flex',
                                 alignItems: 'center',
-                                justifyContent: 'space-between',
                             }}
                         >
+                            <AIICon sx={{ marginRight: '4px' }} />
                             Task Details
-                            <AIICon sx={{ marginRight: '8px' }} />
                         </ListSubheader>
+                        {filteredTaskExtractionColumns.length === 0 && (
+                            <Typography
+                                variant="body2"
+                                sx={{ color: 'warning.dark', fontSize: '12px', padding: '0px 16px' }}
+                            >
+                                No results
+                            </Typography>
+                        )}
                         {filteredTaskExtractionColumns.map((column) => (
                             <ListItem key={column.id} disablePadding>
                                 <ListItemButton
                                     onClick={() => handleSelectColumn(column.id)}
                                     sx={{ padding: '2px 4px' }}
                                 >
-                                    <ListItemIcon sx={{ minWidth: '30px' }}>
-                                        {columnsSet.has(column.id) ? (
-                                            <Remove sx={{ fontSize: '18px' }} />
-                                        ) : (
-                                            <Add sx={{ fontSize: '18px' }} />
-                                        )}
-                                    </ListItemIcon>
+                                    <Checkbox checked={columnsSet.has(column.id)} size="small" />
                                     <ListItemText primaryTypographyProps={{ fontSize: '12px' }}>
                                         {column.label}
                                     </ListItemText>
@@ -137,25 +152,27 @@ const CurationBoardAIInterfaceCuratorTableManageColumns: React.FC<{
                                 fontSize: '12px',
                                 lineHeight: 'normal',
                                 display: 'flex',
-                                justifyContent: 'space-between',
+                                alignItems: 'center',
                             }}
                         >
-                            Participant Demographic Details
                             <AIICon sx={{ marginRight: '8px' }} />
+                            Participant Demographic Details
                         </ListSubheader>
+                        {filteredParticipantsDemographicColumn.length === 0 && (
+                            <Typography
+                                variant="body2"
+                                sx={{ color: 'warning.dark', fontSize: '12px', padding: '0px 16px' }}
+                            >
+                                No results
+                            </Typography>
+                        )}
                         {filteredParticipantsDemographicColumn.map((column) => (
                             <ListItem key={column.id} disablePadding>
                                 <ListItemButton
                                     onClick={() => handleSelectColumn(column.id)}
-                                    sx={{ padding: '2px 4px' }}
+                                    sx={{ padding: '0px 4px' }}
                                 >
-                                    <ListItemIcon sx={{ minWidth: '30px' }}>
-                                        {columnsSet.has(column.id) ? (
-                                            <Remove sx={{ fontSize: '18px' }} />
-                                        ) : (
-                                            <Add sx={{ fontSize: '18px' }} />
-                                        )}
-                                    </ListItemIcon>
+                                    <Checkbox checked={columnsSet.has(column.id)} size="small" />
                                     <ListItemText primaryTypographyProps={{ fontSize: '12px' }}>
                                         {column.label}
                                     </ListItemText>

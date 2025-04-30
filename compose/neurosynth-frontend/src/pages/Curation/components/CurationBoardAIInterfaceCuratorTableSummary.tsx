@@ -8,7 +8,7 @@ export const CuratorTableSummaryCell: React.FC<CellContext<ICurationTableStudy, 
     const authorsShortened = getAuthorsShortName(row.authors);
     return (
         <Box>
-            <Typography sx={{ fontSize: '12px', fontWeight: 'bold' }}>
+            <Typography sx={{ fontSize: '12px', fontWeight: 'bold', lineHeight: 1.4 }}>
                 {row.articleYear && <>({row.articleYear}).</>} {row.title}
             </Typography>
             <Typography sx={{ fontSize: '12px' }} color="black">
