@@ -12,6 +12,7 @@ export interface IGroupListItem {
     type: 'LISTITEM' | 'SUBHEADER';
     id: string | ICurationGroupId;
     label: string;
+    secondaryLabel?: string;
     count: number | null;
     UI: ECurationBoardAIInterface | null;
 }
@@ -51,13 +52,14 @@ const CurationBoardAIGroupsList: React.FC<{
                             >
                                 <ListItemText
                                     sx={{
-                                        textTransform: 'capitalize',
                                         '.MuiListItemText-primary': {
-                                            fontSize: '12px',
+                                            fontSize: '14px',
                                             ...CurationBoardAIGroupsStyles.lineClamp3,
                                         },
                                     }}
+                                    secondaryTypographyProps={{ fontSize: '11px', whiteSpace: 'pre' }}
                                     primary={group.label}
+                                    secondary={group.secondaryLabel}
                                 />
                                 <Chip label={group.count} sx={{ fontSize: '12px', height: '20px' }} />
                             </ListItemButton>

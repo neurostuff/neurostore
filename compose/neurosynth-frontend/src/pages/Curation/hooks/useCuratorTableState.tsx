@@ -1,112 +1,27 @@
 import {
     AccessorFnColumnDef,
     ColumnFiltersState,
-    createColumnHelper,
     DisplayColumnDef,
     getCoreRowModel,
     getFilteredRowModel,
     getSortedRowModel,
     RowSelectionState,
-    SortingColumnDef,
     SortingState,
     useReactTable,
 } from '@tanstack/react-table';
-import { NeurostoreStudyReturn } from 'neurosynth-compose-typescript-sdk';
+import useGetAllAIExtractedData, {
+    EAIExtractors,
+    IParticipantDemographicExtractor,
+    ITaskExtractor,
+} from 'hooks/extractions/useGetAllExtractedData';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
     retrieveCurationTableState,
     updateCurationTableState,
 } from '../components/CurationBoardAIInterfaceCuratorTable.helpers';
-import CuratorTableCell from '../components/CurationBoardAIInterfaceCuratorTableCell';
-import { CuratorTableHeader } from '../components/CurationBoardAIInterfaceCuratorTableHeader';
-import {
-    CuratorTableSelectCell,
-    CuratorTableSelectHeader,
-} from '../components/CurationBoardAIInterfaceCuratorTableSelect';
-import {
-    CuratorTableSummaryCell,
-    CuratorTableSummaryHeader,
-} from '../components/CurationBoardAIInterfaceCuratorTableSummary';
 import { ICurationStubStudy } from '../Curation.types';
-
-export interface ICurationBoardAIInterfaceCuratorTableType {
-    id: string;
-    label: string;
-    filterVariant: undefined | 'text' | 'numeric';
-    canSort: boolean;
-    sortingFn?: SortingColumnDef<ICurationTableStudy>['sortingFn'];
-    customAccessor?: (stub: ICurationTableStudy) => string;
-}
-
-export const AI_INTERFACE_CURATOR_COLUMNS: ICurationBoardAIInterfaceCuratorTableType[] = [
-    { id: 'articleYear', label: 'Year', filterVariant: 'numeric', canSort: true, sortingFn: 'alphanumeric' },
-    { id: 'title', label: 'Title', filterVariant: 'text', canSort: true, sortingFn: 'text' },
-    { id: 'authors', label: 'Authors', filterVariant: 'text', canSort: true, sortingFn: 'text' },
-    { id: 'keywords', label: 'Keywords', filterVariant: 'text', canSort: true, sortingFn: 'text' },
-    { id: 'pmid', label: 'PMID', filterVariant: 'text', canSort: true, sortingFn: 'alphanumeric' },
-    { id: 'doi', label: 'DOI', filterVariant: 'text', canSort: true, sortingFn: 'alphanumeric' },
-    { id: 'journal', label: 'Journal', filterVariant: 'text', canSort: true, sortingFn: 'text' },
-    { id: 'abstractText', label: 'Abstract', filterVariant: undefined, canSort: true, sortingFn: 'text' },
-    {
-        id: 'identificationSource',
-        label: 'Source',
-        filterVariant: 'text',
-        canSort: true,
-        sortingFn: 'text',
-        customAccessor: (stub) => stub.identificationSource.label,
-    },
-];
-
-export type ICurationTableStudy = ICurationStubStudy & { neurostoreStudy?: NeurostoreStudyReturn };
-const columnHelper = createColumnHelper<ICurationTableStudy>();
-
-const createColumn = (
-    columnId: string
-): DisplayColumnDef<ICurationTableStudy, unknown> | AccessorFnColumnDef<ICurationTableStudy, string> => {
-    if (columnId === 'select') {
-        return columnHelper.display({
-            id: 'select',
-            cell: CuratorTableSelectCell,
-            header: CuratorTableSelectHeader,
-            size: 40,
-        });
-    }
-    if (columnId === 'summary') {
-        return columnHelper.display({
-            id: 'summary',
-            cell: CuratorTableSummaryCell,
-            header: CuratorTableSummaryHeader,
-        });
-    }
-
-    const foundColumn = AI_INTERFACE_CURATOR_COLUMNS.find((COL) => COL.id === columnId);
-    if (!foundColumn) throw new Error('Unrecognized column');
-    const newColumn = columnHelper.accessor(
-        foundColumn.customAccessor
-            ? foundColumn.customAccessor
-            : (stub) => stub[foundColumn.id as keyof ICurationTableStudy] as string,
-        {
-            id: foundColumn.id,
-            cell: CuratorTableCell,
-            header: CuratorTableHeader,
-            enableSorting: foundColumn.canSort,
-            enableColumnFilter: foundColumn.filterVariant !== undefined,
-            filterFn:
-                foundColumn.filterVariant === 'text'
-                    ? 'includesString'
-                    : foundColumn.filterVariant === 'numeric'
-                      ? 'inNumberRange'
-                      : undefined,
-            size: foundColumn.id === 'abstractText' ? 400 : 180,
-            sortingFn: foundColumn.sortingFn,
-            meta: {
-                columnLabel: foundColumn.label,
-                filterVariant: foundColumn.filterVariant,
-            },
-        }
-    );
-    return newColumn;
-};
+import { createColumn } from './useCuratorTableState.helpers';
+import { ICurationTableColumnType, ICurationTableStudy } from './useCuratorTableState.types';
 
 const useCuratorTableState = (
     projectId: string | undefined,
@@ -114,11 +29,15 @@ const useCuratorTableState = (
     allowRowSelection: boolean
 ) => {
     const [columns, setColumns] = useState<
-        (DisplayColumnDef<ICurationTableStudy, unknown> | AccessorFnColumnDef<ICurationTableStudy, string>)[]
+        (
+            | DisplayColumnDef<ICurationTableStudy, ICurationTableColumnType>
+            | AccessorFnColumnDef<ICurationTableStudy, ICurationTableColumnType>
+        )[]
     >([]);
     const [sorting, setSorting] = useState<SortingState>([]);
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+    const { data: extractedData } = useGetAllAIExtractedData();
 
     useEffect(() => {
         if (!projectId) return;
@@ -126,7 +45,10 @@ const useCuratorTableState = (
         if (!state) return;
 
         setColumns(() => {
-            const newColumns = [];
+            const newColumns: (
+                | DisplayColumnDef<ICurationTableStudy, ICurationTableColumnType>
+                | AccessorFnColumnDef<ICurationTableStudy, ICurationTableColumnType>
+            )[] = [];
             if (allowRowSelection) {
                 newColumns.push(createColumn('select'));
             }
@@ -160,8 +82,56 @@ const useCuratorTableState = (
     }, []);
 
     const data = useMemo(() => {
-        return [...allStubs];
-    }, [allStubs]);
+        if (!extractedData || !allStubs) return [];
+
+        const extractedDataMap = new Map<
+            string,
+            {
+                taskExtraction: ITaskExtractor | null;
+                participantDemographicsExtraction: IParticipantDemographicExtractor | null;
+            }
+        >();
+
+        extractedData[EAIExtractors.TASKEXTRACTOR]?.results.forEach((result) => {
+            extractedDataMap.set(result.base_study_id, {
+                taskExtraction: result.result_data as ITaskExtractor,
+                participantDemographicsExtraction: null,
+            });
+        });
+
+        extractedData[EAIExtractors.PARTICIPANTSDEMOGRAPHICSEXTRACTOR]?.results.forEach((result) => {
+            const existing = extractedDataMap.get(result.base_study_id);
+            if (existing) {
+                extractedDataMap.set(result.base_study_id, {
+                    taskExtraction: existing.taskExtraction,
+                    participantDemographicsExtraction: result.result_data as IParticipantDemographicExtractor,
+                });
+            } else {
+                extractedDataMap.set(result.base_study_id, {
+                    taskExtraction: null,
+                    participantDemographicsExtraction: result.result_data as IParticipantDemographicExtractor,
+                });
+            }
+        });
+
+        return allStubs.map((stub) => {
+            if (stub.neurostoreId) {
+                const extractedData = extractedDataMap.get(stub.neurostoreId);
+                return {
+                    ...stub,
+                    [EAIExtractors.TASKEXTRACTOR]: extractedData?.taskExtraction || null,
+                    [EAIExtractors.PARTICIPANTSDEMOGRAPHICSEXTRACTOR]:
+                        extractedData?.participantDemographicsExtraction || null,
+                };
+            } else {
+                return {
+                    ...stub,
+                    [EAIExtractors.TASKEXTRACTOR]: null,
+                    [EAIExtractors.PARTICIPANTSDEMOGRAPHICSEXTRACTOR]: null,
+                };
+            }
+        });
+    }, [allStubs, extractedData]);
 
     const table = useReactTable({
         data: data,

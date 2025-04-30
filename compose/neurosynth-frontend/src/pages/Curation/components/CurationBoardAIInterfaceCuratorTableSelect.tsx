@@ -1,7 +1,7 @@
 import { Box, Checkbox } from '@mui/material';
 import { CellContext, HeaderContext } from '@tanstack/react-table';
-import { ICurationTableStudy } from './CurationBoardAIInterfaceCuratorTable';
 import React from 'react';
+import { ICurationTableStudy } from '../hooks/useCuratorTableState.types';
 
 export const CuratorTableSelectCell: React.FC<CellContext<ICurationTableStudy, unknown>> = (props) => {
     const handleSelectCell = (event: React.ChangeEvent<HTMLInputElement>, checked: boolean) => {
@@ -11,7 +11,7 @@ export const CuratorTableSelectCell: React.FC<CellContext<ICurationTableStudy, u
     return (
         <Box
             onClick={(e) => e.stopPropagation()}
-            sx={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center' }}
+            sx={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
         >
             <Checkbox size="small" checked={props.row.getIsSelected()} onChange={handleSelectCell} />
         </Box>
@@ -23,7 +23,7 @@ export const CuratorTableSelectHeader: React.FC<HeaderContext<ICurationTableStud
     const isIndeterminate = table.getIsSomeRowsSelected();
 
     return (
-        <Box sx={{ width: '100%' }}>
+        <Box sx={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Checkbox
                 indeterminate={isIndeterminate}
                 checked={isSelected}

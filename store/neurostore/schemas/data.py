@@ -388,11 +388,38 @@ class BaseStudySchema(BaseDataSchema):
 
     @pre_load
     def check_nulls(self, data, **kwargs):
-        """ensure data is not empty string or whitespace"""
-        for attr in ["pmid", "pmcid", "doi"]:
+        """
+        Sanitize input fields:
+        - Replace empty/whitespace strings with None
+        - Remove common DOI prefixes
+        - Add PMC prefix to numeric PMCIDs
+        """
+        # Replace empty strings with None for all fields
+        text_fields = [
+            "name",
+            "description",
+            "publication",
+            "doi",
+            "pmid",
+            "pmcid",
+            "authors",
+        ]
+        for attr in text_fields:
             val = data.get(attr, None)
             if val is not None and (val == "" or val.isspace()):
                 data[attr] = None
+
+        # Clean DOI
+        if data.get("doi"):
+            for prefix in ["https://doi.org/", "https://dx.doi.org/"]:
+                if data["doi"].startswith(prefix):
+                    data["doi"] = data["doi"][len(prefix):]
+                    break
+
+        # Add PMC prefix to numeric PMCIDs
+        if data.get("pmcid") and data["pmcid"].isdigit():
+            data["pmcid"] = f"PMC{data['pmcid']}"
+
         return data
 
 

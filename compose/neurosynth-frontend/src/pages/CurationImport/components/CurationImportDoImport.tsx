@@ -15,8 +15,12 @@ export interface IImportArgs {
 }
 
 const CurationImportDoImport: React.FC<
-    IImportArgs & { mode: EImportMode; onSetSearchCriteria: (searchCriteria: SearchCriteria) => void }
-> = ({ mode, stubs, onImportStubs, onNavigate, onSetSearchCriteria }) => {
+    IImportArgs & {
+        mode: EImportMode;
+        onSetSearchCriteria: (searchCriteria: SearchCriteria) => void;
+        onFileUpload: (fileName: string) => void;
+    }
+> = ({ mode, stubs, onImportStubs, onNavigate, onSetSearchCriteria, onFileUpload }) => {
     switch (mode) {
         case EImportMode.NEUROSTORE_IMPORT:
             return (
@@ -30,11 +34,24 @@ const CurationImportDoImport: React.FC<
                 </Box>
             );
         case EImportMode.PUBMED_IMPORT:
-            return <CurationImportPMIDs stubs={stubs} onImportStubs={onImportStubs} onNavigate={onNavigate} />;
+            return (
+                <CurationImportPMIDs
+                    stubs={stubs}
+                    onImportStubs={onImportStubs}
+                    onFileUpload={onFileUpload}
+                    onNavigate={onNavigate}
+                />
+            );
         case EImportMode.MANUAL_CREATE:
             return <CurationImportCreateStub onImportStubs={onImportStubs} onNavigate={onNavigate} />;
         default:
-            return <CurationImportStandardFormat onNavigate={onNavigate} onImportStubs={onImportStubs} />;
+            return (
+                <CurationImportStandardFormat
+                    onNavigate={onNavigate}
+                    onFileUpload={onFileUpload}
+                    onImportStubs={onImportStubs}
+                />
+            );
     }
 };
 

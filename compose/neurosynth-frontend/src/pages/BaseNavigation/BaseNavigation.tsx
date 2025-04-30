@@ -93,7 +93,7 @@ const BaseNavigation: React.FC = (_props) => {
                     path="/projects/:projectId/curation"
                     element={
                         <ProtectedProjectRoute errorMessage="You do not have access to this project">
-                            <Box sx={BaseNavigationStyles.pagesContainer}>
+                            <Box sx={BaseNavigationStyles.curationPageContainer}>
                                 <CurationPage />
                             </Box>
                         </ProtectedProjectRoute>

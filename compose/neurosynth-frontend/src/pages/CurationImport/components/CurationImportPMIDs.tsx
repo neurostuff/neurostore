@@ -5,9 +5,11 @@ import CurationImportPMIDsUpload from './CurationImportPMIDsUpload';
 import { ICurationStubStudy } from 'pages/Curation/Curation.types';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons';
 
-const CurationImportPMIDs: React.FC<IImportArgs> = (props) => {
-    const { onNavigate, onImportStubs } = props;
-
+const CurationImportPMIDs: React.FC<IImportArgs & { onFileUpload: (fileName: string) => void }> = ({
+    onNavigate,
+    onImportStubs,
+    onFileUpload,
+}) => {
     const [uploadIdsPhase, setUploadIdsPhase] = useState(true);
     const [parsedIds, setParsedIds] = useState<string[]>([]);
 
@@ -22,7 +24,13 @@ const CurationImportPMIDs: React.FC<IImportArgs> = (props) => {
     };
 
     if (uploadIdsPhase) {
-        return <CurationImportPMIDsUpload onNavigate={onNavigate} onPubmedIdsUploaded={handlePubmedIdsUploaded} />;
+        return (
+            <CurationImportPMIDsUpload
+                onNavigate={onNavigate}
+                onFileUpload={onFileUpload}
+                onPubmedIdsUploaded={handlePubmedIdsUploaded}
+            />
+        );
     }
 
     return <CurationImportPMIDsFetch onStubsUploaded={handleOnStubsUploaded} pubmedIds={parsedIds} />;

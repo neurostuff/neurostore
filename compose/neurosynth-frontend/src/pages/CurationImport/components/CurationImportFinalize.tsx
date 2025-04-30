@@ -27,7 +27,8 @@ const CurationImportFinalize: React.FC<{
     stubs: ICurationStubStudy[];
     unimportedStubs: string[];
     searchCriteria: SearchCriteria | undefined;
-}> = ({ onNavigate, stubs, unimportedStubs, importMode, searchCriteria }) => {
+    fileName: string | undefined;
+}> = ({ onNavigate, stubs, unimportedStubs, importMode, searchCriteria, fileName }) => {
     const { enqueueSnackbar } = useSnackbar();
     const updateCurationColumns = useUpdateCurationColumns();
     const columns = useProjectCurationColumns();
@@ -105,6 +106,8 @@ const CurationImportFinalize: React.FC<{
             onNavigate={onNavigate}
             onNameImport={onFinalizeImport}
             stubs={stubs}
+            fileName={fileName}
+            searchCriteria={searchCriteria}
             unimportedStubs={unimportedStubs}
             importMode={importMode}
         />

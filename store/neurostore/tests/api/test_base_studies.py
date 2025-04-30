@@ -148,6 +148,46 @@ def test_post_list_of_studies(auth_client, ingest_neuroquery):
     assert result.status_code == 200
 
 
+def test_field_sanitization(auth_client):
+    """Test sanitization of input fields in base studies"""
+    test_input = [
+        {
+            "name": "Study with DOI prefix",
+            "doi": "https://doi.org/10.1234/test",
+            "pmcid": "12345",
+        },
+        {
+            "name": "Study with dx DOI prefix",
+            "doi": "https://dx.doi.org/10.5678/test",
+            "pmcid": "PMC67890",  # Already has PMC prefix
+        },
+        {
+            "name": "Study with whitespace fields",
+            "doi": "   ",
+            "pmid": "  ",
+            "description": "  ",
+        },
+    ]
+
+    result = auth_client.post("/api/base-studies/", data=test_input)
+    assert result.status_code == 200
+
+    created_studies = result.json()
+
+    # Check DOI prefix removal
+    assert created_studies[0]["doi"] == "10.1234/test"
+    assert created_studies[1]["doi"] == "10.5678/test"
+
+    # Check PMCID formatting
+    assert created_studies[0]["pmcid"] == "PMC12345"
+    assert created_studies[1]["pmcid"] == "PMC67890"  # Should remain unchanged
+
+    # Check empty string conversion to None
+    assert created_studies[2]["doi"] is None
+    assert created_studies[2]["pmid"] is None
+    assert created_studies[2]["description"] is None
+
+
 def test_flat_base_study(auth_client, ingest_neurosynth, session):
     flat_resp = auth_client.get("/api/base-studies/?flat=true")
     reg_resp = auth_client.get("/api/base-studies/?flat=false")

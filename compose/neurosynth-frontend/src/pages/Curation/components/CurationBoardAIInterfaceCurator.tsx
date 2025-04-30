@@ -15,10 +15,13 @@ import CurationBoardAIInterfaceCuratorTable from './CurationBoardAIInterfaceCura
 import CurationDownloadIncludedStudiesButton from './CurationDownloadIncludedStudiesButton';
 import useCuratorTableState from '../hooks/useCuratorTableState';
 import { Table } from '@tanstack/react-table';
+import useGetAllAIExtractedData from 'hooks/extractions/useGetAllExtractedData';
+import CurationBoardAIInterfaceCuratorTableSkeleton from './CurationBoardAIInterfaceCuratorSkeleton';
+import { ICurationTableStudy } from '../hooks/useCuratorTableState.types';
 
 export interface ICurationBoardAIInterfaceCurator {
     selectedStub: ICurationStubStudy | undefined;
-    table: Table<ICurationStubStudy>;
+    table: Table<ICurationTableStudy>;
     columnIndex: number;
     onSetSelectedStub: (stubId: string) => void;
 }
@@ -27,6 +30,8 @@ const CurationBoardAIInterfaceCurator: React.FC<{ group: IGroupListItem }> = ({ 
     const navigate = useNavigate();
     const { projectId } = useParams<{ projectId: string | undefined }>();
     const curationColumns = useProjectCurationColumns();
+    const { isLoading } = useGetAllAIExtractedData();
+
     const { column, columnIndex } = useMemo(() => {
         const columnIndex = curationColumns.findIndex((col) => col.id === group.id);
         if (columnIndex < 0)
@@ -58,8 +63,6 @@ const CurationBoardAIInterfaceCurator: React.FC<{ group: IGroupListItem }> = ({ 
         [stubsInColumn, selectedStubId]
     );
 
-    console.log({ selectedStub, columnIndex });
-
     const handleToggleUIMode = () => {
         setUIMode((prev) => (prev === 'FOCUSMODE' ? 'TABLEMODE' : 'FOCUSMODE'));
     };
@@ -89,6 +92,10 @@ const CurationBoardAIInterfaceCurator: React.FC<{ group: IGroupListItem }> = ({ 
 
     if (!column || columnIndex < 0) {
         return <Typography color="error.dark">There was an error loading studies</Typography>;
+    }
+
+    if (isLoading) {
+        return <CurationBoardAIInterfaceCuratorTableSkeleton />;
     }
 
     return (
