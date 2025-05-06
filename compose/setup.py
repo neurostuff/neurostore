@@ -12,7 +12,7 @@ requirements = [
     "flask-cors",
     "flask-sqlalchemy",
     "pyld",
-    "marshmallow>=3.0.0",
+    "marshmallow~=3.0.0",
     "webargs",
     "shortuuid",
     "pandas",
