@@ -22,6 +22,7 @@ const CurationEditableStubSummary: React.FC<ICurationEditableStubSummary> = ({
     stub,
     columnIndex,
     onMoveToNextStub,
+    children,
 }) => {
     const updateStubField = useUpdateStubField();
     const curationColumns = useProjectCurationColumns();
@@ -182,6 +183,8 @@ const CurationEditableStubSummary: React.FC<ICurationEditableStubSummary> = ({
             >
                 {stub.abstractText || 'No Abstract'}
             </Typography>
+
+            <Box>{children}</Box>
         </Box>
     );
 };

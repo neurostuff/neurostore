@@ -1,4 +1,4 @@
-import { ViewColumnRounded } from '@mui/icons-material';
+import { Add, Remove } from '@mui/icons-material';
 import {
     Box,
     Button,
@@ -6,6 +6,7 @@ import {
     List,
     ListItem,
     ListItemButton,
+    ListItemIcon,
     ListItemText,
     ListSubheader,
     Typography,
@@ -14,6 +15,7 @@ import { AccessorFnColumnDef, DisplayColumnDef } from '@tanstack/react-table';
 import AIICon from 'components/AIIcon';
 import DebouncedTextField from 'components/DebouncedTextField';
 import NeurosynthPopper from 'components/NeurosynthPopper/NeurosynthPopper';
+import ToDocsIcon from 'components/ToDocsIcon';
 import React, { useMemo, useState } from 'react';
 import {
     ICurationTableStudy,
@@ -74,13 +76,18 @@ const CurationBoardAIInterfaceCuratorTableManageColumns: React.FC<{
                 onClick={(event: React.MouseEvent<HTMLButtonElement>) => setAnchorEl(event.currentTarget)}
                 sx={{ fontSize: '12px' }}
                 size="small"
-                startIcon={<ViewColumnRounded />}
+                startIcon={
+                    <Box sx={{ display: 'flex' }}>
+                        <Add />
+                        <Remove />
+                    </Box>
+                }
                 color="secondary"
             >
-                Update Columns
+                Columns
             </Button>
             <NeurosynthPopper anchorElement={anchorEl} open={isOpen} onClickAway={() => setAnchorEl(null)}>
-                <Box sx={{ padding: '10px', maxWidth: '180px' }}>
+                <Box sx={{ padding: '10px', maxWidth: '250px' }}>
                     <DebouncedTextField
                         size="small"
                         placeholder="search"
@@ -123,7 +130,7 @@ const CurationBoardAIInterfaceCuratorTableManageColumns: React.FC<{
                             }}
                         >
                             <AIICon sx={{ marginRight: '4px' }} />
-                            Task Details
+                            Experimental Details
                         </ListSubheader>
                         {filteredTaskExtractionColumns.length === 0 && (
                             <Typography
@@ -143,6 +150,9 @@ const CurationBoardAIInterfaceCuratorTableManageColumns: React.FC<{
                                     <ListItemText primaryTypographyProps={{ fontSize: '12px' }}>
                                         {column.label}
                                     </ListItemText>
+                                    <ListItemIcon sx={{ minWidth: '0px' }}>
+                                        <ToDocsIcon url={`guide/Project/Curation#${column.id}`} />
+                                    </ListItemIcon>
                                 </ListItemButton>
                             </ListItem>
                         ))}
@@ -156,7 +166,7 @@ const CurationBoardAIInterfaceCuratorTableManageColumns: React.FC<{
                             }}
                         >
                             <AIICon sx={{ marginRight: '8px' }} />
-                            Participant Demographic Details
+                            Participant Demographics
                         </ListSubheader>
                         {filteredParticipantsDemographicColumn.length === 0 && (
                             <Typography
@@ -176,6 +186,9 @@ const CurationBoardAIInterfaceCuratorTableManageColumns: React.FC<{
                                     <ListItemText primaryTypographyProps={{ fontSize: '12px' }}>
                                         {column.label}
                                     </ListItemText>
+                                    <ListItemIcon sx={{ minWidth: '0px' }}>
+                                        <ToDocsIcon url={`guide/Project/Curation#${column.id}`} />
+                                    </ListItemIcon>
                                 </ListItemButton>
                             </ListItem>
                         ))}

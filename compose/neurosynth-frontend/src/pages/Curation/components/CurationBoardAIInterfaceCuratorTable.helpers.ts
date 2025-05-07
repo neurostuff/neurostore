@@ -2,7 +2,7 @@ import { ColumnFiltersState, SortingState } from '@tanstack/react-table';
 
 export const saveCurationTableState = (projectId: string | undefined, state: ICurationTableState) => {
     if (!projectId) return;
-    window.sessionStorage.setItem(`${projectId}-curation-table`, JSON.stringify(state));
+    window.localStorage.setItem(`${projectId}-curation-table`, JSON.stringify(state));
 };
 
 export const updateCurationTableState = (
@@ -25,10 +25,11 @@ export const updateCurationTableState = (
 export const retrieveCurationTableState = (projectId: string | undefined): ICurationTableState | null => {
     if (!projectId) return null;
     try {
-        const parsedState = JSON.parse(window.sessionStorage.getItem(`${projectId}-curation-table`) || '{}');
+        const parsedState = JSON.parse(window.localStorage.getItem(`${projectId}-curation-table`) || '{}');
 
         if (!parsedState.columnFilters || !parsedState.sorting || !parsedState.selectedColumns) {
             return {
+                firstTimeSeeingPage: true,
                 selectedColumns: [],
                 columnFilters: [],
                 sorting: [],
@@ -42,6 +43,7 @@ export const retrieveCurationTableState = (projectId: string | undefined): ICura
 };
 
 export interface ICurationTableState {
+    firstTimeSeeingPage: boolean; // flag to set sensible default
     selectedColumns: string[];
     columnFilters: ColumnFiltersState;
     sorting: SortingState;

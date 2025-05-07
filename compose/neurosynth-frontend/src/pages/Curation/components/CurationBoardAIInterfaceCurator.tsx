@@ -1,6 +1,8 @@
 import { Box, Button, Typography } from '@mui/material';
 import { GridTableRowsIcon } from '@mui/x-data-grid';
+import { Row, Table } from '@tanstack/react-table';
 import { useUserCanEdit } from 'hooks';
+import useGetAllAIExtractedData from 'hooks/extractions/useGetAllExtractedData';
 import {
     useProjectCurationColumns,
     useProjectCurationIsLastColumn,
@@ -8,19 +10,16 @@ import {
 } from 'pages/Project/store/ProjectStore';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ICurationStubStudy } from '../Curation.types';
+import useCuratorTableState from '../hooks/useCuratorTableState';
+import { ICurationTableStudy } from '../hooks/useCuratorTableState.types';
 import { IGroupListItem } from './CurationBoardAIGroupsList';
 import CurationBoardAIInterfaceCuratorFocus from './CurationBoardAIInterfaceCuratorFocus';
+import CurationBoardAIInterfaceCuratorTableSkeleton from './CurationBoardAIInterfaceCuratorSkeleton';
 import CurationBoardAIInterfaceCuratorTable from './CurationBoardAIInterfaceCuratorTable';
 import CurationDownloadIncludedStudiesButton from './CurationDownloadIncludedStudiesButton';
-import useCuratorTableState from '../hooks/useCuratorTableState';
-import { Table } from '@tanstack/react-table';
-import useGetAllAIExtractedData from 'hooks/extractions/useGetAllExtractedData';
-import CurationBoardAIInterfaceCuratorTableSkeleton from './CurationBoardAIInterfaceCuratorSkeleton';
-import { ICurationTableStudy } from '../hooks/useCuratorTableState.types';
 
 export interface ICurationBoardAIInterfaceCurator {
-    selectedStub: ICurationStubStudy | undefined;
+    selectedStub: ICurationTableStudy | undefined;
     table: Table<ICurationTableStudy>;
     columnIndex: number;
     onSetSelectedStub: (stubId: string) => void;
@@ -58,9 +57,9 @@ const CurationBoardAIInterfaceCurator: React.FC<{ group: IGroupListItem }> = ({ 
 
     const [selectedStubId, setSelectedStubId] = useState<string>();
 
-    const selectedStub: ICurationStubStudy | undefined = useMemo(
-        () => (stubsInColumn || []).find((stub) => stub.id === selectedStubId),
-        [stubsInColumn, selectedStubId]
+    const selectedStub: Row<ICurationTableStudy> | undefined = useMemo(
+        () => (table.getCoreRowModel().rows || []).find((stub) => stub.original.id === selectedStubId),
+        [table, selectedStubId]
     );
 
     const handleToggleUIMode = () => {
@@ -151,14 +150,14 @@ const CurationBoardAIInterfaceCurator: React.FC<{ group: IGroupListItem }> = ({ 
                     <CurationBoardAIInterfaceCuratorTable
                         key={group.id} // reset table state when group is changed
                         columnIndex={columnIndex}
-                        selectedStub={selectedStub}
+                        selectedStub={selectedStub?.original}
                         table={table}
                         onSetSelectedStub={setSelectedStubAndFocus}
                     />
                 ) : (
                     <CurationBoardAIInterfaceCuratorFocus
                         key={group.id}
-                        selectedStub={selectedStub}
+                        selectedStub={selectedStub?.original}
                         columnIndex={columnIndex}
                         table={table}
                         onSetSelectedStub={setSelectedStubId}

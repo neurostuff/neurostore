@@ -3,6 +3,7 @@ import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import { Box, IconButton, Tooltip, Typography } from '@mui/material';
 import { HeaderContext } from '@tanstack/react-table';
 import AIICon from 'components/AIIcon';
+import ToDocsIcon from 'components/ToDocsIcon';
 import { ICurationTableColumnType, ICurationTableStudy } from '../hooks/useCuratorTableState.types';
 import CurationBoardAIInterfaceCuratorTableHeaderFilter from './CurationBoardAIInterfaceCuratorTableHeaderFilter';
 
@@ -19,13 +20,14 @@ export const CuratorTableHeader: React.FC<HeaderContext<ICurationTableStudy, ICu
     const rows = table.getCoreRowModel().rows;
 
     return (
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             {column.columnDef.meta?.AIExtractor ? <AIICon sx={{ marginRight: '6px' }} /> : <></>}
             <Tooltip title={columnLabel} placement="top">
                 <Typography variant="body2" sx={{ marginRight: '2px' }} noWrap>
                     {columnLabel}
                 </Typography>
             </Tooltip>
+            <ToDocsIcon url={`guide/Project/Curation#${column.id}`} />
             {canSort && (
                 <>
                     {!isSorted ? (

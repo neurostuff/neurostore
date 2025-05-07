@@ -8,14 +8,16 @@ import {
     IGenericCustomAccessorReturn,
 } from '../hooks/useCuratorTableState.types';
 
-const CuratorTableCell: React.FC<CellContext<ICurationTableStudy, ICurationTableColumnType>> = (props) => {
-    const cellValue = props.getValue();
+const CuratorTableCell: React.FC<Partial<CellContext<ICurationTableStudy, ICurationTableColumnType>>> = (props) => {
+    const cellValue = props.getValue ? props.getValue() : undefined;
 
     if (Array.isArray(cellValue) && cellValue.length === 0) {
         return (
-            <Typography variant="caption" sx={{ color: 'warning.dark', fontSize: '12px' }}>
-                no data
-            </Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                <Typography variant="caption" sx={{ color: 'warning.dark', fontSize: '14px', fontWeight: 'bold' }}>
+                    ---
+                </Typography>
+            </Box>
         );
     } else if (Array.isArray(cellValue) && typeof cellValue[0] === 'string') {
         return (
@@ -27,14 +29,14 @@ const CuratorTableCell: React.FC<CellContext<ICurationTableStudy, ICurationTable
                             variant="caption"
                             sx={{
                                 color: cellValue.length > 0 ? 'inherit' : 'warning.dark',
-                                fontSize: '12px',
+                                fontSize: '14px',
                                 wordBreak: 'break-word',
                                 display: 'flex',
                                 lineHeight: 1.4,
                                 marginBottom: '2px',
                             }}
                         >
-                            {v || 'no data'}
+                            {v || '–'}
                         </Typography>
                     );
                 })}
@@ -52,7 +54,7 @@ const CuratorTableCell: React.FC<CellContext<ICurationTableStudy, ICurationTable
                                 variant="caption"
                                 sx={{
                                     color: 'inherit',
-                                    fontSize: '12px',
+                                    fontSize: '14px',
                                     wordBreak: 'break-word',
                                     lineHeight: 1.4,
                                 }}
@@ -65,12 +67,12 @@ const CuratorTableCell: React.FC<CellContext<ICurationTableStudy, ICurationTable
                                     variant="caption"
                                     sx={{
                                         color: v === undefined || v === null ? 'warning.dark' : 'gray',
-                                        fontSize: '12px',
+                                        fontSize: '14px',
                                         wordBreak: 'break-word',
                                         lineHeight: 1.4,
                                     }}
                                 >
-                                    {v === undefined || v === null ? 'no data' : `${v}`}
+                                    {v === undefined || v === null ? '–' : `${v}`}
                                 </Typography>
                             ))}
                         </Box>
@@ -85,12 +87,12 @@ const CuratorTableCell: React.FC<CellContext<ICurationTableStudy, ICurationTable
                 variant="caption"
                 sx={{
                     color: cellValue ? 'inherit' : 'warning.dark',
-                    fontSize: '12px',
+                    fontSize: '14px',
                     wordBreak: 'break-word',
                     lineHeight: 1,
                 }}
             >
-                {displayStringValue || 'no data'}
+                {displayStringValue || '–'}
             </Typography>
         );
     }

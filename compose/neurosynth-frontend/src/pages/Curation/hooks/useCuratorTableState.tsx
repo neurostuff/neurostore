@@ -20,7 +20,7 @@ import {
     updateCurationTableState,
 } from '../components/CurationBoardAIInterfaceCuratorTable.helpers';
 import { ICurationStubStudy } from '../Curation.types';
-import { createColumn } from './useCuratorTableState.helpers';
+import { COMBINED_CURATOR_TABLE_COLUMNS, createColumn } from './useCuratorTableState.helpers';
 import { ICurationTableColumnType, ICurationTableStudy } from './useCuratorTableState.types';
 
 const useCuratorTableState = (
@@ -44,25 +44,43 @@ const useCuratorTableState = (
         const state = retrieveCurationTableState(projectId);
         if (!state) return;
 
-        setColumns(() => {
-            const newColumns: (
-                | DisplayColumnDef<ICurationTableStudy, ICurationTableColumnType>
-                | AccessorFnColumnDef<ICurationTableStudy, ICurationTableColumnType>
-            )[] = [];
-            if (allowRowSelection) {
-                newColumns.push(createColumn('select'));
-            }
-            newColumns.push(createColumn('summary'));
-            state.selectedColumns.forEach((column) => newColumns.push(createColumn(column)));
-            return newColumns;
-        });
+        const newColumns: (
+            | DisplayColumnDef<ICurationTableStudy, ICurationTableColumnType>
+            | AccessorFnColumnDef<ICurationTableStudy, ICurationTableColumnType>
+        )[] = [];
+
+        if (allowRowSelection) newColumns.push(createColumn('select'));
+        newColumns.push(createColumn('summary'));
+
+        if (state.firstTimeSeeingPage) {
+            // set defaults
+            newColumns.push(createColumn('fMRITasks.TaskName'));
+            newColumns.push(createColumn('group_name'));
+            newColumns.push(createColumn('diagnosis'));
+        } else {
+            COMBINED_CURATOR_TABLE_COLUMNS.forEach((column) => {
+                if (state.selectedColumns.includes(column.id)) newColumns.push(createColumn(column.id));
+            });
+        }
+
+        setColumns(newColumns);
         setSorting(state.sorting);
         setColumnFilters(state.columnFilters);
+
+        updateCurationTableState(projectId, {
+            firstTimeSeeingPage: false,
+            selectedColumns: state.selectedColumns,
+        });
     }, [projectId, allowRowSelection]);
 
-    const handleAddColumn = useCallback((column: string) => {
+    const handleAddColumn = useCallback((colId: string) => {
         setColumns((prev) => {
-            const newColumn = createColumn(column);
+            const colsUpdate = [...prev, colId];
+            const sorted = [];
+            COMBINED_CURATOR_TABLE_COLUMNS.forEach((column) => {
+                if (colsUpdate.includes(column.id)) sorted.push(column.id);
+            })
+            const newColumn = createColumn(colId);
             if (!newColumn) return prev;
 
             return [...prev, newColumn];

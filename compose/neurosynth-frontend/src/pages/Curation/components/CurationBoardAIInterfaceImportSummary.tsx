@@ -144,7 +144,7 @@ const CurationBoardAIInterfaceImportSummary: React.FC<{
                     )}
                 </Box>
                 <Chip
-                    sx={{ fontSize: '10px', height: '24px', marginTop: '4px' }}
+                    sx={{ fontSize: '14px', height: '24px', marginTop: '4px' }}
                     label={`${importDate.toDateString()} ${importDate.toLocaleTimeString()}`}
                 />
                 {curationImport.errorsDuringImport && (
@@ -156,7 +156,7 @@ const CurationBoardAIInterfaceImportSummary: React.FC<{
                             marginTop: '8px',
                             padding: '0px 4px',
                             borderRadius: '4px',
-                            fontSize: '12px',
+                            fontSize: '14px',
                             '.MuiAlert-icon': { fontSize: '18px' },
                         }}
                     >

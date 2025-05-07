@@ -40,7 +40,7 @@ const CurationBoardAIInterfaceCuratorTableHeaderFilterNumeric: React.FC<{
                         <IconButton
                             size="small"
                             onClick={() => {
-                                onChange([undefined, max]);
+                                handleChange(undefined, max);
                             }}
                         >
                             <Close />
@@ -59,14 +59,14 @@ const CurationBoardAIInterfaceCuratorTableHeaderFilterNumeric: React.FC<{
                     input: { fontSize: '12px' },
                 }}
                 onChange={(val) => {
-                    onChange([min, val === undefined ? val : parseInt(val)]);
+                    handleChange(min, val === undefined ? val : parseInt(val));
                 }}
                 InputProps={{
                     endAdornment: (
                         <IconButton
                             size="small"
                             onClick={() => {
-                                onChange([min, undefined]);
+                                handleChange(min, undefined);
                             }}
                         >
                             <Close />

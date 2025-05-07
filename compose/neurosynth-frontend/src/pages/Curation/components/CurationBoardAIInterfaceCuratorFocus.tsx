@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useRef } from 'react';
 import { FixedSizeList } from 'react-window';
 import { ICurationBoardAIInterfaceCurator } from './CurationBoardAIInterfaceCurator';
 import CurationEditableStubSummary from './CurationEditableStubSummary';
+import CurationStubAITableSummary from './CurationStubAITableSummary';
 import CurationStubListItemVirtualizedContainer from './CurationStubListItemVirtualizedContainer';
 
 const CurationBoardAIInterfaceCuratorFocus: React.FC<ICurationBoardAIInterfaceCurator> = ({
@@ -91,7 +92,11 @@ const CurationBoardAIInterfaceCuratorFocus: React.FC<ICurationBoardAIInterfaceCu
                             onMoveToNextStub={handleMoveToNextStub}
                             columnIndex={columnIndex}
                             stub={selectedStub}
-                        />
+                        >
+                            <Box sx={{ marginTop: '0.5rem' }}>
+                                <CurationStubAITableSummary stub={selectedStub} />
+                            </Box>
+                        </CurationEditableStubSummary>
                     </Box>
                 </>
             )}

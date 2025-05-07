@@ -5,7 +5,7 @@ import { ICurationBoardAIInterfaceCurator } from './CurationBoardAIInterfaceCura
 import CurationBoardAIInterfaceCuratorTableBody from './CurationBoardAIInterfaceCuratorTableBody';
 import CurationBoardAIInterfaceCuratorTableManageColumns from './CurationBoardAIInterfaceCuratorTableManageColumns';
 import CurationBoardAIInterfaceCuratorTableSelectedRowsActions from './CurationBoardAIInterfaceCuratorTableSelectedRowsActions';
-import { useEffect } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { EAIExtractors } from 'hooks/extractions/useGetAllExtractedData';
 
 //allows us to define custom properties for our columns
@@ -30,17 +30,6 @@ const CurationBoardAIInterfaceCuratorTable: React.FC<ICurationBoardAIInterfaceCu
     columnIndex,
 }) => {
     const { included, uncategorized } = useGetCurationSummary();
-
-    // for virtualization
-    // const sizeMap = useRef<{ [key: number]: number }>({});
-
-    // const setSize = useCallback((index: number, size: number) => {
-    //     sizeMap.current[index] = size;
-    // }, []);
-
-    // const getSize = useCallback((index: number) => {
-    //     return sizeMap.current[index] || 100;
-    // }, []);
 
     const numRowsSelected = table.getSelectedRowModel().rows.length;
     const columnFilters = table.getState().columnFilters;
