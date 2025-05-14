@@ -1,4 +1,12 @@
-import { AccessorFnColumnDef, createColumnHelper, DisplayColumnDef, FilterFnOption, Row } from '@tanstack/react-table';
+import {
+    AccessorFnColumnDef,
+    Cell,
+    createColumnHelper,
+    DisplayColumnDef,
+    FilterFnOption,
+    Header,
+    Row,
+} from '@tanstack/react-table';
 import CuratorTableCell from '../components/CurationBoardAIInterfaceCuratorTableCell';
 import { CuratorTableHeader } from '../components/CurationBoardAIInterfaceCuratorTableHeader';
 import {
@@ -10,15 +18,18 @@ import {
     CuratorTableSummaryHeader,
 } from '../components/CurationBoardAIInterfaceCuratorTableSummary';
 import {
-    ICurationBoardAIInterfaceCuratorColumnType,
-    ICurationTableColumnType,
-    ICurationTableStudy,
     PARTICIPANTS_DEMOGRAPHICS_EXTRACTOR_CURATOR_COLUMNS,
     STUB_CURATOR_COLUMNS,
     TASK_EXTRACTOR_CURATOR_COLUMNS,
+} from './useCuratorTableState.consts';
+import {
+    ICurationBoardAIInterfaceCuratorColumnType,
+    ICurationTableColumnType,
+    ICurationTableStudy,
 } from './useCuratorTableState.types';
 
 const columnHelper = createColumnHelper<ICurationTableStudy>();
+
 export const COMBINED_CURATOR_TABLE_COLUMNS = [
     ...STUB_CURATOR_COLUMNS,
     ...TASK_EXTRACTOR_CURATOR_COLUMNS,
@@ -129,14 +140,14 @@ const nestedNumericFilter: (
 export const createColumn = (
     columnId: string
 ):
-    | DisplayColumnDef<ICurationTableStudy, unknown>
+    | DisplayColumnDef<ICurationTableStudy, ICurationTableColumnType>
     | AccessorFnColumnDef<ICurationTableStudy, ICurationTableColumnType> => {
     if (columnId === 'select') {
         return columnHelper.display({
             id: 'select',
             cell: CuratorTableSelectCell,
             header: CuratorTableSelectHeader,
-            size: 40,
+            size: 60,
         });
     }
     if (columnId === 'summary') {
@@ -144,7 +155,7 @@ export const createColumn = (
             id: 'summary',
             cell: CuratorTableSummaryCell,
             header: CuratorTableSummaryHeader,
-            size: 250,
+            size: 300,
         });
     }
 
@@ -161,25 +172,35 @@ export const createColumn = (
     else if (foundColumn.filterVariant === 'autocomplete') filterFn = 'arrIncludesAll';
     else filterFn = undefined;
 
-    const newColumn = columnHelper.accessor(
-        foundColumn.customAccessor
-            ? foundColumn.customAccessor
-            : (stub) => stub[foundColumn.id as keyof ICurationTableStudy] as string,
-        {
-            id: foundColumn.id,
-            cell: CuratorTableCell,
-            header: CuratorTableHeader,
-            enableSorting: foundColumn.canSort,
-            enableColumnFilter: foundColumn.filterVariant !== undefined,
-            filterFn: filterFn,
-            size: foundColumn.id === 'abstractText' ? 400 : 250,
-            sortingFn: foundColumn.sortingFn,
-            meta: {
-                columnLabel: foundColumn.label,
-                AIExtractor: foundColumn.AIExtractor,
-                filterVariant: foundColumn.filterVariant,
-            },
-        }
-    );
+    const newColumn: AccessorFnColumnDef<ICurationTableStudy, ICurationTableColumnType | undefined> =
+        columnHelper.accessor(
+            foundColumn.customAccessor
+                ? foundColumn.customAccessor
+                : (stub) => stub[foundColumn.id as keyof ICurationTableStudy] as string,
+            {
+                id: foundColumn.id,
+                cell: CuratorTableCell,
+                header: CuratorTableHeader,
+                enableSorting: foundColumn.canSort,
+                enableColumnFilter: foundColumn.filterVariant !== undefined,
+                filterFn: filterFn,
+                size: foundColumn.id === 'abstractText' ? 400 : 250,
+                sortingFn: foundColumn.sortingFn,
+                meta: {
+                    columnLabel: foundColumn.label,
+                    AIExtractor: foundColumn.AIExtractor,
+                    filterVariant: foundColumn.filterVariant,
+                },
+            }
+        );
     return newColumn;
+};
+
+export const getGridTemplateColumns = (
+    headersOrCells: (Cell<ICurationTableStudy, unknown> | Header<ICurationTableStudy, unknown>)[]
+): string => {
+    return headersOrCells.reduce((acc, curr) => {
+        const size = curr.column.getSize();
+        return `${acc} minmax(${size}px, ${curr.column.id === 'select' ? '60px' : `1fr`})`;
+    }, '');
 };

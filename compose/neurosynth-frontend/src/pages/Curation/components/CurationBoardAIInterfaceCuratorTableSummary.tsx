@@ -7,7 +7,7 @@ export const CuratorTableSummaryCell: React.FC<CellContext<ICurationTableStudy, 
     const row = props.row.original;
     const authorsShortened = getAuthorsShortName(row.authors);
     return (
-        <Box>
+        <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', height: '100%' }}>
             <Typography sx={{ fontSize: '14px', fontWeight: 'bold', lineHeight: 1.4 }}>
                 {row.articleYear && <>({row.articleYear}).</>} {row.title}
             </Typography>

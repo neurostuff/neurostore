@@ -20,10 +20,10 @@ export const CuratorTableHeader: React.FC<HeaderContext<ICurationTableStudy, ICu
     const rows = table.getCoreRowModel().rows;
 
     return (
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            {column.columnDef.meta?.AIExtractor ? <AIICon sx={{ marginRight: '6px' }} /> : <></>}
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}>
+            {column.columnDef.meta?.AIExtractor ? <AIICon sx={{ marginRight: '4px' }} /> : <></>}
             <Tooltip title={columnLabel} placement="top">
-                <Typography variant="body2" sx={{ marginRight: '2px' }} noWrap>
+                <Typography variant="body2" sx={{ marginRight: '2px', maxWidth: `100px` }} noWrap>
                     {columnLabel}
                 </Typography>
             </Tooltip>

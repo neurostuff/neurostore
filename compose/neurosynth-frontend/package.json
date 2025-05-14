@@ -23,6 +23,7 @@
         "@reactour/tour": "^2.10.3",
         "@sentry/react": "^7.119.2",
         "@tanstack/react-table": "^8.20.5",
+        "@tanstack/react-virtual": "^3.13.8",
         "axios": "^1.8.4",
         "fast-xml-parser": "^4.4.1",
         "handsontable": "^12.3.3",

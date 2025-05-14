@@ -1,90 +1,51 @@
-import { Table as MuiTable, TableBody, TableCell, TableRow } from '@mui/material';
-import { flexRender, Table } from '@tanstack/react-table';
+import { TableBody } from '@mui/material';
+import { Table } from '@tanstack/react-table';
+import { useVirtualizer } from '@tanstack/react-virtual';
+import React, { RefObject, useEffect } from 'react';
 import { ICurationTableStudy } from '../hooks/useCuratorTableState.types';
-import React, { forwardRef, useCallback, useRef } from 'react';
-import { VariableSizeList } from 'react-window';
 import CurationBoardAIInterfaceCuratorTableRow from './CurationBoardAIInterfaceCuratorTableRow';
 
-const outer = forwardRef((props, ref) => {
-    return <MuiTable ref={ref} {...props} />;
-});
-
-const inner = forwardRef((props, ref) => {
-    return <TableBody ref={ref} {...props} />;
-});
+const isNotBrowserOrIsFirefox = typeof window === 'undefined' || navigator.userAgent.includes('Firefox');
 
 const CurationBoardAIInterfaceCuratorTableBody: React.FC<{
     table: Table<ICurationTableStudy>;
     onSelect: (id: string) => void;
-}> = ({ table, onSelect }) => {
-    // for virtualization
-    const sizeMap = useRef<{ [key: number]: number }>({});
-
-    const setSize = useCallback((index: number, size: number) => {
-        sizeMap.current[index] = size;
-    }, []);
-
-    const getSize = useCallback((index: number) => {
-        return sizeMap.current[index] || 100;
-    }, []);
-
+    tableContainerRef: RefObject<HTMLDivElement | null>;
+    selectedStub: ICurationTableStudy | undefined;
+}> = ({ table, onSelect, tableContainerRef, selectedStub }) => {
     const rows = table.getRowModel().rows;
+    const virtualizer = useVirtualizer<HTMLDivElement, HTMLTableRowElement>({
+        count: rows.length,
+        estimateSize: () => 100,
+        getScrollElement: () => tableContainerRef.current,
+        measureElement: isNotBrowserOrIsFirefox ? undefined : (e) => e?.getBoundingClientRect()?.height,
+        overscan: 5,
+    });
+
+    useEffect(() => {
+        if (!selectedStub) return;
+        setTimeout(() => {
+            const rowIndex = rows.findIndex((r) => r.original.id === selectedStub.id);
+            virtualizer.scrollToIndex(rowIndex, { align: 'start' });
+        }, 0);
+    }, [rows, selectedStub, virtualizer]);
 
     return (
-        <VariableSizeList
-            innerElementType={inner}
-            outerElementType={outer}
-            width="500"
-            itemSize={getSize}
-            height={400}
-            itemCount={rows.length}
-            itemData={rows}
-        >
-            {({ index, style }) => (
-                <CurationBoardAIInterfaceCuratorTableRow index={index} setSize={setSize} data={rows[index]} />
-            )}
-        </VariableSizeList>
+        <TableBody style={{ display: 'grid', height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
+            {virtualizer.getVirtualItems().map((virtualRow) => {
+                const row = rows[virtualRow.index];
+                return (
+                    <CurationBoardAIInterfaceCuratorTableRow
+                        onSelect={onSelect}
+                        key={row.id}
+                        virtualRow={virtualRow}
+                        virtualizer={virtualizer}
+                        data={row}
+                    />
+                );
+            })}
+        </TableBody>
     );
 };
-// return (
-//     <TableBody>
-
-//         {table.getRowModel().rows.map((row) => (
-//             <TableRow
-//                 key={row.id}
-//                 id={row.id}
-//                 onClick={() => onSelect(row.original.id)}
-//                 sx={{
-//                     transition: 'ease-in 150ms',
-//                     height: '1px', // https://stackoverflow.com/questions/3215553/make-a-div-fill-an-entire-table-cell
-//                     '&:hover': {
-//                         backgroundColor: '#f6f6f6',
-//                         // backgroundColor: '#f9f9f9',
-//                         cursor: 'pointer',
-//                         transition: 'ease-in-out 150ms',
-//                     },
-//                 }}
-//             >
-//                 {row.getVisibleCells().map((cell) => (
-//                     <TableCell
-//                         key={cell.id}
-//                         sx={{
-//                             position: cell.column.id === 'select' ? 'sticky' : '',
-//                             backgroundColor: cell.column.id === 'select' ? 'white' : '',
-//                             zIndex: 9,
-//                             left: 0,
-//                             padding: '6px',
-//                             height: 'inherit',
-//                             lineHeight: 'normal',
-//                             width: `${cell.column.getSize()}px`,
-//                         }}
-//                     >
-//                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
-//                     </TableCell>
-//                 ))}
-//             </TableRow>
-//         ))}
-//     </TableBody>
-// );
 
 export default CurationBoardAIInterfaceCuratorTableBody;

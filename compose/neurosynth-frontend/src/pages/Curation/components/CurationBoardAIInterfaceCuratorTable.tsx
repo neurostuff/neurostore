@@ -1,12 +1,13 @@
 import { Box, Chip, Table, TableCell, TableContainer, TableHead, TableRow, Typography } from '@mui/material';
 import { flexRender, RowData } from '@tanstack/react-table';
 import { useGetCurationSummary } from 'hooks';
+import { EAIExtractors } from 'hooks/extractions/useGetAllExtractedData';
+import { useRef } from 'react';
+import { getGridTemplateColumns } from '../hooks/useCuratorTableState.helpers';
 import { ICurationBoardAIInterfaceCurator } from './CurationBoardAIInterfaceCurator';
 import CurationBoardAIInterfaceCuratorTableBody from './CurationBoardAIInterfaceCuratorTableBody';
 import CurationBoardAIInterfaceCuratorTableManageColumns from './CurationBoardAIInterfaceCuratorTableManageColumns';
 import CurationBoardAIInterfaceCuratorTableSelectedRowsActions from './CurationBoardAIInterfaceCuratorTableSelectedRowsActions';
-import { useCallback, useEffect, useRef } from 'react';
-import { EAIExtractors } from 'hooks/extractions/useGetAllExtractedData';
 
 //allows us to define custom properties for our columns
 declare module '@tanstack/react-table' {
@@ -31,18 +32,12 @@ const CurationBoardAIInterfaceCuratorTable: React.FC<ICurationBoardAIInterfaceCu
 }) => {
     const { included, uncategorized } = useGetCurationSummary();
 
+    const tableContainerRef = useRef<HTMLDivElement>(null);
+
     const numRowsSelected = table.getSelectedRowModel().rows.length;
     const columnFilters = table.getState().columnFilters;
     const sorting = table.getState().sorting;
     const curationIsComplete = included > 0 && uncategorized === 0;
-
-    useEffect(() => {
-        if (!selectedStub) return;
-        const row = document.getElementById(selectedStub.id);
-        const scroller = document.getElementById('scroller');
-        if (!row || !scroller) return;
-        scroller.scroll(0, row.offsetTop - 26 - scroller.clientHeight / 2 + row.clientHeight / 2);
-    }, [selectedStub, table]);
 
     return (
         <Box sx={{ padding: '0 1rem 2rem 1rem', height: '100%' }}>
@@ -57,36 +52,56 @@ const CurationBoardAIInterfaceCuratorTable: React.FC<ICurationBoardAIInterfaceCu
                 />
             </Box>
             <TableContainer
+                ref={tableContainerRef}
                 id="scroller"
                 sx={{
-                    maxHeight: 'calc(100% - 48px - 32px - 2rem - 4px)',
-                    minHeight: 'calc(100% - 48px - 32px - 2rem - 4px)',
+                    maxHeight: 'calc(100% - 48px - 32px - 3rem)',
+                    minHeight: 'calc(100% - 48px - 32px - 3rem)',
+                    overflow: 'auto',
+                    position: 'relative',
+                    width: '100%',
                 }}
             >
-                <Table size="small" sx={{ tableLayout: 'fixed' }}>
-                    <TableHead sx={{ position: 'sticky', top: 0, backgroundColor: 'white', zIndex: 999 }}>
+                <Table size="small" style={{ display: 'grid', width: '100%' }}>
+                    <TableHead
+                        style={{ display: 'grid', position: 'sticky', top: 0, backgroundColor: 'white', zIndex: 999 }}
+                    >
                         {table.getHeaderGroups().map((headerGroup) => (
-                            <TableRow key={headerGroup.id}>
+                            <TableRow
+                                key={headerGroup.id}
+                                style={{
+                                    display: 'grid',
+                                    width: '100%',
+                                    gridTemplateColumns: getGridTemplateColumns(headerGroup.headers),
+                                    gridAutoFlow: 'column',
+                                    position: 'sticky',
+                                    backgroundColor: 'white',
+                                }}
+                            >
                                 {headerGroup.headers.map((header) => (
                                     <TableCell
                                         key={header.id}
-                                        sx={{
-                                            position: header.column.id === 'select' ? 'sticky' : '',
+                                        style={{
+                                            display: 'grid',
+                                            position: header.column.id === 'select' ? 'sticky' : undefined,
+                                            left: header.column.id === 'select' ? 0 : undefined,
+                                            zIndex: header.column.id === 'select' ? 999 : undefined,
                                             backgroundColor: 'white',
-                                            zIndex: 9999,
-                                            left: 0,
-                                            padding: '7px 0px',
-                                            width: `${header.column.getSize()}px`,
-                                            verticalAlign: 'bottom',
+                                            padding: '6px',
                                         }}
                                     >
-                                        <Box>{flexRender(header.column.columnDef.header, header.getContext())}</Box>
+                                        {flexRender(header.column.columnDef.header, header.getContext())}
                                     </TableCell>
                                 ))}
                             </TableRow>
                         ))}
                     </TableHead>
-                    <CurationBoardAIInterfaceCuratorTableBody onSelect={onSetSelectedStub} table={table} />
+                    <CurationBoardAIInterfaceCuratorTableBody
+                        onSelect={onSetSelectedStub}
+                        table={table}
+                        tableContainerRef={tableContainerRef}
+                        selectedStub={selectedStub}
+                    />
                 </Table>
                 {table.getRowModel().rows.length === 0 && (
                     <Typography padding="0.5rem 0" color={curationIsComplete ? 'success.main' : 'warning.dark'}>
@@ -96,33 +111,44 @@ const CurationBoardAIInterfaceCuratorTable: React.FC<ICurationBoardAIInterfaceCu
                     </Typography>
                 )}
             </TableContainer>
-            <Box sx={{ marginTop: '4px', display: 'flex', justifyContent: 'flex-end' }}>
-                {columnFilters
-                    .filter((filter) => !!filter.value)
-                    .map((filter) => (
+            <Box
+                sx={{
+                    marginTop: '4px',
+                    maxWidth: '100%',
+                    width: '100%',
+                    overflow: 'hidden',
+                }}
+            >
+                <Box sx={{ display: 'flex', overflowX: 'auto' }}>
+                    {columnFilters
+                        .filter((filter) => !!filter.value)
+                        .map((filter) => (
+                            <Chip
+                                onDelete={() =>
+                                    table.setColumnFilters((prev) => prev.filter((f) => f.id !== filter.id))
+                                }
+                                key={filter.id}
+                                variant="outlined"
+                                color="secondary"
+                                sx={{ margin: '1px', fontSize: '10px', maxWidth: '200px', height: '18px' }}
+                                label={`Filtering ${filter.id.toUpperCase()}: ${filter.value}`}
+                                size="small"
+                            />
+                        ))}
+                    {sorting.map((sort) => (
                         <Chip
-                            onDelete={() => table.setColumnFilters((prev) => prev.filter((f) => f.id !== filter.id))}
-                            key={filter.id}
+                            key={sort.id}
+                            onDelete={() => {
+                                table.setSorting((prev) => prev.filter((f) => f.id !== sort.id));
+                            }}
                             variant="outlined"
                             color="secondary"
-                            sx={{ margin: '1px', fontSize: '10px', maxWidth: '200px', height: '18px' }}
-                            label={`Filtering ${filter.id.toUpperCase()}: ${filter.value}`}
+                            sx={{ fontSize: '10px', maxWidth: '200px', padding: '0px', height: '18px' }}
+                            label={`Sorting by ${sort.id.toUpperCase()}: ${sort.desc ? 'desc' : 'asc'}`}
                             size="small"
                         />
                     ))}
-                {sorting.map((sort) => (
-                    <Chip
-                        key={sort.id}
-                        onDelete={() => {
-                            table.setSorting((prev) => prev.filter((f) => f.id !== sort.id));
-                        }}
-                        variant="outlined"
-                        color="secondary"
-                        sx={{ fontSize: '10px', maxWidth: '200px', padding: '0px', height: '18px' }}
-                        label={`Sorting by ${sort.id.toUpperCase()}: ${sort.desc ? 'desc' : 'asc'}`}
-                        size="small"
-                    />
-                ))}
+                </Box>
             </Box>
         </Box>
     );

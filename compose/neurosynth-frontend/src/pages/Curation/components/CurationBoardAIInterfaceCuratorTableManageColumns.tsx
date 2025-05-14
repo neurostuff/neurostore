@@ -17,12 +17,12 @@ import DebouncedTextField from 'components/DebouncedTextField';
 import NeurosynthPopper from 'components/NeurosynthPopper/NeurosynthPopper';
 import ToDocsIcon from 'components/ToDocsIcon';
 import React, { useMemo, useState } from 'react';
+import { ICurationTableStudy } from '../hooks/useCuratorTableState.types';
 import {
-    ICurationTableStudy,
     PARTICIPANTS_DEMOGRAPHICS_EXTRACTOR_CURATOR_COLUMNS,
     STUB_CURATOR_COLUMNS,
     TASK_EXTRACTOR_CURATOR_COLUMNS,
-} from '../hooks/useCuratorTableState.types';
+} from '../hooks/useCuratorTableState.consts';
 
 const CurationBoardAIInterfaceCuratorTableManageColumns: React.FC<{
     columns: (DisplayColumnDef<ICurationTableStudy, unknown> | AccessorFnColumnDef<ICurationTableStudy, string>)[];

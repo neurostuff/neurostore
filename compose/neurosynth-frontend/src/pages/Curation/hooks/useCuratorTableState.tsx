@@ -79,7 +79,7 @@ const useCuratorTableState = (
             const sorted = [];
             COMBINED_CURATOR_TABLE_COLUMNS.forEach((column) => {
                 if (colsUpdate.includes(column.id)) sorted.push(column.id);
-            })
+            });
             const newColumn = createColumn(colId);
             if (!newColumn) return prev;
 
@@ -103,7 +103,7 @@ const useCuratorTableState = (
         if (!extractedData || !allStubs) return [];
 
         const extractedDataMap = new Map<
-            string,
+            string, // base study id
             {
                 taskExtraction: ITaskExtractor | null;
                 participantDemographicsExtraction: IParticipantDemographicExtractor | null;
@@ -133,21 +133,13 @@ const useCuratorTableState = (
         });
 
         return allStubs.map((stub) => {
-            if (stub.neurostoreId) {
-                const extractedData = extractedDataMap.get(stub.neurostoreId);
-                return {
-                    ...stub,
-                    [EAIExtractors.TASKEXTRACTOR]: extractedData?.taskExtraction || null,
-                    [EAIExtractors.PARTICIPANTSDEMOGRAPHICSEXTRACTOR]:
-                        extractedData?.participantDemographicsExtraction || null,
-                };
-            } else {
-                return {
-                    ...stub,
-                    [EAIExtractors.TASKEXTRACTOR]: null,
-                    [EAIExtractors.PARTICIPANTSDEMOGRAPHICSEXTRACTOR]: null,
-                };
-            }
+            const extractedData = extractedDataMap.get(stub.neurostoreId || '');
+            return {
+                ...stub,
+                [EAIExtractors.TASKEXTRACTOR]: extractedData?.taskExtraction || null,
+                [EAIExtractors.PARTICIPANTSDEMOGRAPHICSEXTRACTOR]:
+                    extractedData?.participantDemographicsExtraction || null,
+            };
         });
     }, [allStubs, extractedData]);
 

@@ -60,11 +60,32 @@ export interface IParticipantDemographicExtractor {
     groups: IGroup[];
 }
 
+// temporary function, remove later
+const normalizeData = (data: any) => {
+    // base case
+    if (data === null || data === undefined || typeof data !== 'object') return;
+
+    Object.entries(data).forEach(([key, value]) => {
+        if (value === 'null') {
+            data[key] = null;
+            return;
+        } else if (Array.isArray(value)) {
+            value.forEach((item) => {
+                return normalizeData(item);
+            });
+        } else if (typeof value === 'object') {
+            return normalizeData(value);
+        } else {
+            return;
+        }
+    });
+};
+
 const useGetAllAIExtractedData = () => {
     return useQuery(
         ['extraction'],
-        () => {
-            return Promise.all([
+        async () => {
+            const promises = await Promise.all([
                 API.NeurostoreServices.ExtractedDataResultsService.getAllExtractedDataResults([
                     EAIExtractors.TASKEXTRACTOR,
                 ]),
@@ -72,6 +93,12 @@ const useGetAllAIExtractedData = () => {
                     EAIExtractors.PARTICIPANTSDEMOGRAPHICSEXTRACTOR,
                 ]),
             ]);
+
+            promises.forEach((res) => {
+                normalizeData(res.data);
+            });
+
+            return promises;
         },
         {
             select: ([taskExtractionRes, participantDemographicsExtractionRes]) => {
