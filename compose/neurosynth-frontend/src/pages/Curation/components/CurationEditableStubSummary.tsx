@@ -9,6 +9,7 @@ import { ICurationStubStudy } from 'pages/Curation/Curation.types';
 import { useProjectCurationColumns, useProjectUser, useUpdateStubField } from 'pages/Project/store/ProjectStore';
 import React from 'react';
 import CurationEditableStubSummaryHeader from './CurationEditableStubSummaryHeader';
+import TextExpansion from 'components/TextExpansion/TextExpansion';
 
 interface ICurationEditableStubSummary {
     stub: ICurationStubStudy | undefined;
@@ -174,15 +175,7 @@ const CurationEditableStubSummary: React.FC<ICurationEditableStubSummary> = ({
                 {stub.keywords || 'No Keywords'}
             </Typography>
 
-            <Typography
-                variant="body2"
-                sx={{
-                    whiteSpace: 'break-spaces',
-                    color: stub.abstractText ? 'initial' : 'warning.dark',
-                }}
-            >
-                {stub.abstractText || 'No Abstract'}
-            </Typography>
+            <TextExpansion text={stub.abstractText} textSx={{ typography: 'body2' }}></TextExpansion>
 
             <Box>{children}</Box>
         </Box>

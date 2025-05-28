@@ -172,27 +172,26 @@ export const createColumn = (
     else if (foundColumn.filterVariant === 'autocomplete') filterFn = 'arrIncludesAll';
     else filterFn = undefined;
 
-    const newColumn: AccessorFnColumnDef<ICurationTableStudy, ICurationTableColumnType | undefined> =
-        columnHelper.accessor(
-            foundColumn.customAccessor
-                ? foundColumn.customAccessor
-                : (stub) => stub[foundColumn.id as keyof ICurationTableStudy] as string,
-            {
-                id: foundColumn.id,
-                cell: CuratorTableCell,
-                header: CuratorTableHeader,
-                enableSorting: foundColumn.canSort,
-                enableColumnFilter: foundColumn.filterVariant !== undefined,
-                filterFn: filterFn,
-                size: foundColumn.id === 'abstractText' ? 400 : 250,
-                sortingFn: foundColumn.sortingFn,
-                meta: {
-                    columnLabel: foundColumn.label,
-                    AIExtractor: foundColumn.AIExtractor,
-                    filterVariant: foundColumn.filterVariant,
-                },
-            }
-        );
+    const newColumn: AccessorFnColumnDef<ICurationTableStudy, ICurationTableColumnType> = columnHelper.accessor(
+        foundColumn.customAccessor
+            ? foundColumn.customAccessor
+            : (stub) => stub[foundColumn.id as keyof ICurationTableStudy] as string,
+        {
+            id: foundColumn.id,
+            cell: CuratorTableCell,
+            header: CuratorTableHeader,
+            enableSorting: foundColumn.canSort,
+            enableColumnFilter: foundColumn.filterVariant !== undefined,
+            filterFn: filterFn,
+            size: foundColumn.id === 'abstractText' ? 400 : 250,
+            sortingFn: foundColumn.sortingFn,
+            meta: {
+                columnLabel: foundColumn.label,
+                AIExtractor: foundColumn.AIExtractor,
+                filterVariant: foundColumn.filterVariant,
+            },
+        }
+    );
     return newColumn;
 };
 

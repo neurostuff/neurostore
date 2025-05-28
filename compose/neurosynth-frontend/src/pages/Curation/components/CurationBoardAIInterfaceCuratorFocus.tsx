@@ -17,7 +17,7 @@ const CurationBoardAIInterfaceCuratorFocus: React.FC<ICurationBoardAIInterfaceCu
     const windowHeight = useGetWindowHeight();
     const scrollableBoxRef = useRef<HTMLDivElement>(null);
     const listRef = useRef<FixedSizeList>(null);
-    const { included } = useGetCurationSummary();
+    const { uncategorized, included } = useGetCurationSummary();
 
     const handleMoveToNextStub = useCallback(() => {
         if (!selectedStub?.id) return;
@@ -60,8 +60,8 @@ const CurationBoardAIInterfaceCuratorFocus: React.FC<ICurationBoardAIInterfaceCu
     return (
         <Box sx={{ display: 'flex', padding: '0 1rem 1rem 1rem', height: 'calc(100% - 48px - 8px - 20px)' }}>
             {rows.length === 0 && (
-                <Typography color={included > 0 ? 'success.main' : 'warning.dark'}>
-                    {included > 0
+                <Typography color={included > 0 && uncategorized === 0 ? 'success.main' : 'warning.dark'}>
+                    {included > 0 && uncategorized === 0
                         ? "You're done! Go to extraction to continue"
                         : 'No studies. To import studies, click the import button above.'}
                 </Typography>

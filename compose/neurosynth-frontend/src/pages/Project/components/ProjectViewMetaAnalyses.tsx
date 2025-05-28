@@ -38,9 +38,7 @@ const ProjectViewMetaAnalyses: React.FC = () => {
     useGuard(
         `/projects/${projectId}/project`,
         'You must finish the meta-analysis creation process to view this page',
-        projectIdFromProject === undefined || projectId !== projectIdFromProject
-            ? false
-            : !canEditMetaAnalyses
+        projectIdFromProject === undefined || projectId !== projectIdFromProject ? false : !canEditMetaAnalyses
     );
 
     return (

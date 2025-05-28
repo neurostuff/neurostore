@@ -14,7 +14,7 @@ const ProjectCurationStepChooseWorkflow: React.FC<{
                 onCreateCuration(['Identification', 'Screening', 'Eligibility', 'Included'], true);
                 break;
             case ECurationBoardTypes.SIMPLE:
-                onCreateCuration(['Not Included', 'Included'], false);
+                onCreateCuration(['Unreviewed', 'Included'], false);
                 break;
             // case ECurationBoardTypes.CUSTOM:
             //     setDialogIsOpen(true);

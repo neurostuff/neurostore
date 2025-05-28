@@ -1,7 +1,6 @@
 import { Box } from '@mui/material';
 import { NAVBAR_HEIGHT } from 'components/Navbar/Navbar';
 import CurationBoardAIGroupsList, { IGroupListItem } from 'pages/Curation/components/CurationBoardAIGroupsList';
-import CurationBoardAIInterface from 'pages/Curation/components/CurationBoardAIInterface';
 import { useEffect, useMemo, useState } from 'react';
 import CurationBoardAIInterfaceCurator from './CurationBoardAIInterfaceCurator';
 import CurationBoardAIInterfaceExclude from './CurationBoardAIInterfaceExclude';
@@ -28,36 +27,81 @@ const CurationBoardAI: React.FC = () => {
     const curationColumns = useProjectCurationColumns();
     const curationImports = useProjectCurationImports();
 
-    const GROUPS: IGroupListItem[] = useMemo(() => {
-        const menuItems: IGroupListItem[] = [
-            ...curationColumns.map((curationColumn) => {
-                return {
-                    id: curationColumn.id,
-                    type: 'LISTITEM',
-                    label: curationColumn.name,
-                    count: curationColumn.stubStudies.filter((x) => x.exclusionTag === null).length,
-                    UI: ECurationBoardAIInterface.CURATOR,
-                } as IGroupListItem;
-            }),
-            { id: 'excluded_studies_header', type: 'SUBHEADER', label: 'Excluded Studies', count: null, UI: null },
-            ...excludedGroups.map((excludedGroup) => {
-                const numExcludedInGroup = curationColumns.reduce((acc, curr) => {
-                    return acc + curr.stubStudies.filter((study) => study.exclusionTag?.id === excludedGroup.id).length;
-                }, 0);
+    // TODO: if isPrisma, then set exclusion tags for each curation column
 
-                return {
-                    id: excludedGroup.id,
-                    type: 'LISTITEM',
-                    label: excludedGroup.label,
-                    count: numExcludedInGroup,
-                    UI: ECurationBoardAIInterface.EXCLUDE,
-                } as IGroupListItem;
-            }),
+    const GROUPS: IGroupListItem[] = useMemo(() => {
+        if (curationColumns.length === 0) return [];
+        if (curationColumns.length !== 2)
+            throw new Error('Expected 2 curation columns, but got ' + curationColumns.length);
+
+        const [unreviewedColumn, includedColumn] = curationColumns;
+
+        const menuItems: IGroupListItem[] = [
+            {
+                id: 'curate_header',
+                type: 'SUBHEADER',
+                label: 'Curation',
+                count: null,
+                UI: null,
+            },
+            {
+                id: unreviewedColumn.id,
+                type: 'LISTITEM',
+                label: unreviewedColumn.name,
+                count: unreviewedColumn.stubStudies.filter((x) => x.exclusionTag === null).length,
+                UI: ECurationBoardAIInterface.CURATOR,
+                children: [],
+            },
+            {
+                id: 'excluded_studies_column',
+                type: 'LISTITEM',
+                label: 'Excluded',
+                count: unreviewedColumn.stubStudies.filter((x) => x.exclusionTag !== null).length,
+                UI: ECurationBoardAIInterface.EXCLUDE,
+                // listItemStyles: { color: 'error.dark' },
+                children: excludedGroups.map((excludedGroup) => {
+                    const numExcludedInGroup = curationColumns.reduce((acc, curr) => {
+                        return (
+                            acc + curr.stubStudies.filter((study) => study.exclusionTag?.id === excludedGroup.id).length
+                        );
+                    }, 0);
+
+                    return {
+                        id: excludedGroup.id,
+                        type: 'LISTITEM',
+                        label: excludedGroup.label,
+                        count: numExcludedInGroup,
+                        UI: ECurationBoardAIInterface.EXCLUDE,
+                        listItemStyles: { color: 'error.dark' },
+                    } as IGroupListItem;
+                }),
+            },
+            {
+                id: includedColumn.id,
+                type: 'LISTITEM',
+                label: includedColumn.name,
+                count: includedColumn.stubStudies.filter((x) => x.exclusionTag === null).length,
+                UI: ECurationBoardAIInterface.CURATOR,
+                children: [],
+            },
+            {
+                id: 'divider-1',
+                type: 'DIVIDER',
+                label: '',
+                count: null,
+                UI: null,
+            },
         ];
 
         if (curationImports.length > 0) {
             menuItems.push(
-                { id: 'imports_header', type: 'SUBHEADER', label: 'Imports', count: null, UI: null },
+                {
+                    id: 'imports_header',
+                    type: 'SUBHEADER',
+                    label: 'Imports',
+                    count: null,
+                    UI: null,
+                },
                 ...curationImports
                     .map((curationImport) => {
                         const date = new Date(curationImport.date);
@@ -79,13 +123,13 @@ const CurationBoardAI: React.FC = () => {
 
     useEffect(() => {
         if (selectedGroup === undefined && curationColumns.length > 0) {
-            setSelectedGroup(GROUPS[0]);
+            setSelectedGroup(GROUPS[1]);
         }
     }, [GROUPS, curationColumns.length, selectedGroup]);
 
     const handleDeleteCurationImport = (importId: string) => {
         deleteCurationImport(importId);
-        setSelectedGroup(GROUPS[0]);
+        setSelectedGroup(GROUPS[1]);
         enqueueSnackbar(`Deleted import`, { variant: 'success' });
     };
 
@@ -105,9 +149,18 @@ const CurationBoardAI: React.FC = () => {
                     onSelectGroup={setSelectedGroup}
                 />
             </Box>
-            <Box sx={{ width: '80%', overflow: 'hidden', height: '100%', backgroundColor: 'rgb(255, 255, 255)' }}>
+            <Box
+                sx={{
+                    width: '80%',
+                    overflow: 'hidden',
+                    height: '100%',
+                    backgroundColor: 'rgb(255, 255, 255)',
+                }}
+            >
                 {selectedGroup === undefined ? (
-                    <>No Group Selected</>
+                    <Box color="warning.dark" padding={1}>
+                        No Group Selected
+                    </Box>
                 ) : selectedGroup.UI === ECurationBoardAIInterface.CURATOR ? (
                     <CurationBoardAIInterfaceCurator group={selectedGroup} />
                 ) : selectedGroup.UI === ECurationBoardAIInterface.EXCLUDE ? (
@@ -118,7 +171,9 @@ const CurationBoardAI: React.FC = () => {
                         group={selectedGroup}
                     />
                 ) : (
-                    <CurationBoardAIInterface />
+                    <Box color="warning.dark" padding={1}>
+                        No Group Selected
+                    </Box>
                 )}
             </Box>
         </Box>

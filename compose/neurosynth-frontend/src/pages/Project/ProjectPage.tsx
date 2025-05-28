@@ -30,7 +30,7 @@ export interface IProjectPageLocationState {
     };
 }
 
-const ProjectPage: React.FC = (props) => {
+const ProjectPage: React.FC = () => {
     const { projectId } = useParams<{ projectId: string }>();
     const { isAuthenticated } = useAuth0();
     const location = useLocation();
@@ -50,7 +50,7 @@ const ProjectPage: React.FC = (props) => {
     const userCanEdit = useUserCanEdit(projectUser || undefined);
     const getProjectIsError = useProjectIsError();
 
-    useGuard('/', 'No project found with id: ' + projectId, !getProjectIsLoading && getProjectIsError);
+    useGuard('/', 'No project found with id: ' + projectId, getProjectIsError, getProjectIsLoading);
 
     const tab = useMemo(() => {
         if (!metaAnalysesTabEnabled) return 0;
@@ -84,7 +84,7 @@ const ProjectPage: React.FC = (props) => {
                     <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                         <Box sx={{ marginRight: '1rem', width: '100%' }}>
                             <TextEdit
-                                onSave={(updatedName, label) => updateProjectName(updatedName)}
+                                onSave={(updatedName) => updateProjectName(updatedName)}
                                 sx={{ width: '100%' }}
                                 textFieldSx={{ input: { fontSize: '1.5rem' } }}
                                 textToEdit={projectName || ''}
@@ -104,7 +104,7 @@ const ProjectPage: React.FC = (props) => {
                         <ProjectComponentsEditPrivacyToggle />
                     </Box>
                     <TextEdit
-                        onSave={(updatedDescription, label) => updateProjectDescription(updatedDescription)}
+                        onSave={(updatedDescription) => updateProjectDescription(updatedDescription)}
                         textFieldSx={{ input: { fontSize: '1.25rem' } }}
                         textToEdit={projectDescription || ''}
                         editIconIsVisible={userCanEdit}
@@ -161,7 +161,6 @@ const ProjectPage: React.FC = (props) => {
                                 borderTopLeftRadius: '6px',
                                 borderTopRightRadius: '6px',
                                 borderColor: 'lightgray',
-                                // borderBottomColor: 'white',
                                 borderBottom: '0px',
                                 marginBottom: '-2px',
                             },
@@ -170,8 +169,6 @@ const ProjectPage: React.FC = (props) => {
                         }}
                         TabIndicatorProps={{
                             sx: {
-                                // transition: 'none',
-                                // backgroundColor: 'white',
                                 display: 'none',
                             },
                         }}

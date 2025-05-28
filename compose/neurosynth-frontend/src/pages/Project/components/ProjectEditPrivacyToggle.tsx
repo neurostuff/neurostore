@@ -5,7 +5,7 @@ import { ToggleButtonGroup, ToggleButton, Box } from '@mui/material';
 import useUserCanEdit from 'hooks/useUserCanEdit';
 import { useProjectIsPublic, useUpdateProjectIsPublic } from 'pages/Project/store/ProjectStore';
 
-const ProjectEditPrivacyToggle: React.FC = (props) => {
+const ProjectEditPrivacyToggle: React.FC = () => {
     const updateProjectIsPublic = useUpdateProjectIsPublic();
     const isPublic = useProjectIsPublic();
     const { user } = useAuth0();

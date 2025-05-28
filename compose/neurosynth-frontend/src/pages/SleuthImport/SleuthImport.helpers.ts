@@ -723,7 +723,7 @@ export const createProjectHelper = async (
         studyAnalysisList: { studyId: string; analysisId: string; doi: string; pmid: string }[];
         baseStudySleuthstubsWithDetails: BaseStudy[];
     }[],
-    createProjectCallback: (
+    createProjectFunc: (
         variables: Project,
         options?: MutateOptions<AxiosResponse<ProjectReturn>, AxiosError<any>, Project, unknown> | undefined
     ) => Promise<AxiosResponse<ProjectReturn>>
@@ -737,7 +737,7 @@ export const createProjectHelper = async (
         `New project generated from files: ${fileNames}`
     );
 
-    const curationMetadata: ICurationMetadata = initCurationHelper(['not included', 'included'], false);
+    const curationMetadata: ICurationMetadata = initCurationHelper(['Unreviewed', 'included'], false);
 
     curationMetadata.columns[curationMetadata.columns.length - 1].stubStudies = sleuthIngestedStudiesToStubs(uploads);
 
@@ -750,7 +750,7 @@ export const createProjectHelper = async (
             status: EExtractionStatus.COMPLETED,
         }));
 
-    return createProjectCallback({
+    return createProjectFunc({
         ...newProjectData,
         provenance: {
             ...newProjectData.provenance,
