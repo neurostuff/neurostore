@@ -55,11 +55,12 @@ const CurationBoardAIInterfaceCuratorTable: React.FC<ICurationBoardAIInterfaceCu
                 ref={tableContainerRef}
                 id="scroller"
                 sx={{
-                    maxHeight: 'calc(100% - 48px - 32px - 3rem)',
-                    minHeight: 'calc(100% - 48px - 32px - 3rem)',
+                    maxHeight: 'calc(100% - 48px - 32px - 2.5rem)',
+                    minHeight: 'calc(100% - 48px - 32px - 2.5rem)',
                     overflow: 'auto',
                     position: 'relative',
                     width: '100%',
+                    scrollbarColor: '#c1c1c1 white',
                 }}
             >
                 <Table size="small" style={{ display: 'grid', width: '100%' }}>
@@ -113,13 +114,12 @@ const CurationBoardAIInterfaceCuratorTable: React.FC<ICurationBoardAIInterfaceCu
             </TableContainer>
             <Box
                 sx={{
-                    marginTop: '4px',
                     maxWidth: '100%',
                     width: '100%',
                     overflow: 'hidden',
                 }}
             >
-                <Box sx={{ display: 'flex', overflowX: 'auto' }}>
+                <Box sx={{ display: 'flex', overflowX: 'scroll', scrollbarColor: '#c1c1c1 white' }}>
                     {columnFilters
                         .filter((filter) => !!filter.value)
                         .map((filter) => (
@@ -130,7 +130,7 @@ const CurationBoardAIInterfaceCuratorTable: React.FC<ICurationBoardAIInterfaceCu
                                 key={filter.id}
                                 variant="outlined"
                                 color="secondary"
-                                sx={{ margin: '1px', fontSize: '10px', maxWidth: '200px', height: '18px' }}
+                                sx={{ margin: '0px 2px', fontSize: '10px', maxWidth: '200px', height: '18px' }}
                                 label={`Filtering ${filter.id.toUpperCase()}: ${filter.value}`}
                                 size="small"
                             />
@@ -141,9 +141,9 @@ const CurationBoardAIInterfaceCuratorTable: React.FC<ICurationBoardAIInterfaceCu
                             onDelete={() => {
                                 table.setSorting((prev) => prev.filter((f) => f.id !== sort.id));
                             }}
-                            variant="outlined"
+                            variant="filled"
                             color="secondary"
-                            sx={{ fontSize: '10px', maxWidth: '200px', padding: '0px', height: '18px' }}
+                            sx={{ margin: '0px 2px', fontSize: '10px', maxWidth: '200px', height: '18px' }}
                             label={`Sorting by ${sort.id.toUpperCase()}: ${sort.desc ? 'desc' : 'asc'}`}
                             size="small"
                         />

@@ -58,7 +58,11 @@ const CurationBoardAI: React.FC = () => {
                 label: 'Excluded',
                 count: unreviewedColumn.stubStudies.filter((x) => x.exclusionTag !== null).length,
                 UI: ECurationBoardAIInterface.EXCLUDE,
-                // listItemStyles: { color: 'error.dark' },
+                listItemStyles: {
+                    '& .MuiListItemButton-root': {
+                        padding: '2px 16px',
+                    },
+                },
                 children: excludedGroups.map((excludedGroup) => {
                     const numExcludedInGroup = curationColumns.reduce((acc, curr) => {
                         return (
@@ -72,7 +76,12 @@ const CurationBoardAI: React.FC = () => {
                         label: excludedGroup.label,
                         count: numExcludedInGroup,
                         UI: ECurationBoardAIInterface.EXCLUDE,
-                        listItemStyles: { color: 'error.dark' },
+                        listItemStyles: {
+                            color: 'error.dark',
+                            '& .MuiListItemButton-root': {
+                                padding: '2px 16px',
+                            },
+                        },
                     } as IGroupListItem;
                 }),
             },
