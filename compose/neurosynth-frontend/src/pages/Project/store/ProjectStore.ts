@@ -25,6 +25,8 @@ import API from 'utils/api';
 import { create } from 'zustand';
 import { TProjectStore } from './ProjectStore.types';
 import { setUnloadHandler, unsetUnloadHandler } from 'helpers/BeforeUnload.helpers';
+import { QueryClient, useQueryClient } from 'react-query';
+import { AxiosResponse } from 'axios';
 
 const useProjectStore = create<TProjectStore>()((set, get) => {
     return {
@@ -77,6 +79,7 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
             isError: false,
             error: undefined,
             hasUnsavedChanges: false,
+            queryClient: undefined,
         },
 
         // just for testing purposes
@@ -194,6 +197,31 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
                                     hasUnsavedChanges: false,
                                 },
                             }));
+
+                            // fix bug where routing to another page would show the old state
+                            if (oldDebouncedStoreData.metadata.queryClient) {
+                                const queryData = oldDebouncedStoreData.metadata.queryClient.getQueryData<
+                                    AxiosResponse<INeurosynthProjectReturn>
+                                >(['projects', oldDebouncedStoreData.id]);
+
+                                if (queryData) {
+                                    oldDebouncedStoreData.metadata.queryClient.setQueryData(
+                                        ['projects', oldDebouncedStoreData.id],
+                                        {
+                                            ...queryData,
+                                            data: {
+                                                ...queryData.data,
+                                                ...update,
+                                                updated_at: res.data.updated_at,
+                                            },
+                                        } as AxiosResponse<INeurosynthProjectReturn>
+                                    );
+                                }
+
+                                const queryData2 = oldDebouncedStoreData.metadata.queryClient.getQueryData<
+                                    AxiosResponse<INeurosynthProjectReturn>
+                                >(['projects', oldDebouncedStoreData.id]);
+                            }
                         },
                         onError: (err) => {
                             let enqueueSnackbarFunc:
@@ -232,7 +260,7 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
                         },
                     }
                 );
-            }, 3000);
+            }, 2000);
 
             set((state) => ({
                 ...state,
@@ -310,6 +338,7 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
                     isError: false,
                     error: undefined,
                     hasUnsavedChanges: false,
+                    queryClient: undefined,
                 },
             }));
         },
@@ -680,6 +709,7 @@ export const useProjectMetadataHasUnsavedchanges = () => useProjectStore((state)
 // higher level project retrieval hooks
 export const useProjectIsPublic = () => useProjectStore((state) => state.public);
 export const useProjectCreatedAt = () => useProjectStore((state) => new Date(state.created_at || ''));
+export const useProjectUpdatedAt = () => useProjectStore((state) => new Date(state.updated_at || ''));
 export const useProjectName = () => useProjectStore((state) => state.name);
 export const useProjectDescription = () => useProjectStore((state) => state.description);
 export const useProjectProvenance = () => useProjectStore((state) => state.provenance);
@@ -752,6 +782,7 @@ export const useInitProjectStoreIfRequired = () => {
     const { logout } = useAuth0();
 
     const { projectId } = useParams<{ projectId: string; studyId: string }>();
+    const queryClient = useQueryClient();
 
     const { mutate, isLoading: useUpdateProjectIsLoading, isError: useUpdateProjectIsError } = useUpdateProject();
     const { data, isLoading: getProjectIsLoading, isError: getProjectIsError } = useGetProjectById(projectId);
@@ -769,6 +800,7 @@ export const useInitProjectStoreIfRequired = () => {
                 getProjectIsLoading: getProjectIsLoading,
                 updateProjectIsLoading: useUpdateProjectIsLoading,
                 isError: isError,
+                queryClient: queryClient,
             });
         } else {
             updateProjectMetadata({
@@ -776,6 +808,7 @@ export const useInitProjectStoreIfRequired = () => {
                 getProjectIsLoading: getProjectIsLoading,
                 updateProjectIsLoading: useUpdateProjectIsLoading,
                 isError: isError,
+                queryClient: queryClient,
             });
         }
     }, [
@@ -791,6 +824,7 @@ export const useInitProjectStoreIfRequired = () => {
         projectId,
         projectIdFromProject,
         useUpdateProjectIsLoading,
+        queryClient,
     ]);
 };
 

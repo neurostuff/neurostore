@@ -36,9 +36,12 @@ const CurationBoardAIGroupsListItem: React.FC<{
                     }
                 >
                     {isExpandable && (
-                        <ListItemIcon sx={{ width: '40px', minWidth: '0px', ...group.listItemStyles }}>
+                        <ListItemIcon
+                            sx={{ marginLeft: '10px', width: '30px', minWidth: '0px', ...group.listItemStyles }}
+                        >
                             <KeyboardArrowRight
                                 sx={{
+                                    fontSize: '18px',
                                     transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)',
                                     transition: 'transform 200ms ease-in-out',
                                 }}

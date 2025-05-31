@@ -14,7 +14,7 @@ import { ProjectReturn } from 'neurosynth-compose-typescript-sdk';
 import { SnackbarMessage, OptionsObject, SnackbarKey } from 'notistack';
 import { ICurationColumn, ICurationStubStudy } from 'pages/Curation/Curation.types';
 import { EExtractionStatus } from 'pages/Extraction/ExtractionPage';
-import { UseMutateFunction } from 'react-query';
+import { QueryClient, UseMutateFunction } from 'react-query';
 
 export enum ENeurosynthSourceIds {
     NEUROSTORE = 'neurosynth_neurostore_id_source',
@@ -120,6 +120,7 @@ export type ProjectStoreMetadata = {
               unknown
           >
         | undefined;
+    queryClient: QueryClient | undefined;
 };
 
 export type ProjectStoreActions = {

@@ -1,6 +1,6 @@
 import ChangeHistoryIcon from '@mui/icons-material/ChangeHistory';
-import { Box, Button } from '@mui/material';
-import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
+import { Box, Button, FormControlLabel, Switch, Tooltip, Typography } from '@mui/material';
+import CurationPromoteUncategorizedButton from 'components/Buttons/CurationPromoteUncategorizedButton';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs';
 import ProjectIsLoadingText from 'components/ProjectIsLoadingText';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
@@ -9,36 +9,50 @@ import { useGetCurationSummary, useGetStudysetById, useUserCanEdit } from 'hooks
 import CurationBoardBasic from 'pages/Curation/components/CurationBoardBasic';
 import { IProjectPageLocationState } from 'pages/Project/ProjectPage';
 import {
+    useClearProjectStore,
     useInitProjectStoreIfRequired,
+    useProjectCreatedAt,
     useProjectCurationIsPrisma,
     useProjectExtractionAnnotationId,
     useProjectExtractionStudysetId,
     useProjectName,
     useProjectUser,
-    usePromoteAllUncategorized,
 } from 'pages/Project/store/ProjectStore';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import CurationBoardAI from './components/CurationBoardAi';
 import PrismaDialog from './components/PrismaDialog';
 
+const localStorageNewUIKey = 'show-new-ui-may-30-2025';
+
 const CurationPage: React.FC = () => {
-    const { projectId } = useParams<{ projectId: string | undefined }>();
     const navigate = useNavigate();
-
-    const [skipCurationDialogIsOpen, setSkipCurationDialogIsOpen] = useState(false);
-
     const projectUser = useProjectUser();
     const studysetId = useProjectExtractionStudysetId();
     const canEdit = useUserCanEdit(projectUser || undefined);
     const { included, uncategorized } = useGetCurationSummary();
     const annotationId = useProjectExtractionAnnotationId();
     const { data: studyset } = useGetStudysetById(studysetId || '', false);
-    const promoteAllUncategorized = usePromoteAllUncategorized();
+    const { projectId } = useParams<{ projectId: string | undefined }>();
+    const clearProjectStore = useClearProjectStore();
 
     const [prismaIsOpen, setPrismaIsOpen] = useState(false);
 
+    const projectCreateDate = useProjectCreatedAt();
+    const [useNewUI, setUseNewUI] = useState(() => {
+        const localStorageValue = localStorage.getItem(localStorageNewUIKey);
+        if (!localStorageValue) return projectCreateDate >= new Date('2025-05-30'); // arbitrary date representing rollout of this feature
+
+        return localStorageValue === 'true';
+    });
+
     useInitProjectStoreIfRequired();
+
+    useEffect(() => {
+        return () => {
+            clearProjectStore();
+        };
+    }, [clearProjectStore]);
 
     const isPrisma = useProjectCurationIsPrisma();
     const projectName = useProjectName();
@@ -58,14 +72,6 @@ const CurationPage: React.FC = () => {
                 } as IProjectPageLocationState,
             });
         }
-    };
-
-    const handleSkipCuration = (confirm?: boolean) => {
-        if (confirm) {
-            promoteAllUncategorized();
-        }
-
-        setSkipCurationDialogIsOpen(false);
     };
 
     return (
@@ -101,18 +107,32 @@ const CurationPage: React.FC = () => {
                         <ProjectIsLoadingText />
                     </Box>
                     <Box>
-                        {isPrisma && (
+                        <Tooltip
+                            placement="bottom"
+                            title={
+                                <Box style={{ display: 'flex', alignItems: 'center' }}>
+                                    <Typography variant="body2">
+                                        Please note that the old curation phase UI will soon be removed and replaced
+                                        with the new interface. If you have any feedback on the new interface, please
+                                        let us know using the feedback button!
+                                    </Typography>
+                                </Box>
+                            }
+                        >
+                            <FormControlLabel
+                                control={<Switch size="small" checked={useNewUI} />}
+                                label={useNewUI ? 'Switch to Old Interface' : 'Switch to New Interface'}
+                                slotProps={{
+                                    typography: { fontSize: '12px' },
+                                }}
+                                onChange={() => {
+                                    localStorage.setItem(localStorageNewUIKey, `${!useNewUI}`);
+                                    setUseNewUI((prev) => !prev);
+                                }}
+                            />
+                        </Tooltip>
+                        {isPrisma && !useNewUI && (
                             <>
-                                <PrismaDialog onCloseDialog={() => setPrismaIsOpen(false)} isOpen={prismaIsOpen} />
-                                <Button
-                                    onClick={() => setPrismaIsOpen(true)}
-                                    variant="outlined"
-                                    size="small"
-                                    sx={{ marginLeft: '0.5rem' }}
-                                    startIcon={<ChangeHistoryIcon />}
-                                >
-                                    PRISMA diagram
-                                </Button>
                                 <Button
                                     variant="contained"
                                     disableElevation
@@ -123,29 +143,28 @@ const CurationPage: React.FC = () => {
                                 >
                                     import studies
                                 </Button>
-                            </>
-                        )}
-                        {!extractionStepInitialized && (
-                            <>
-                                <ConfirmationDialog
-                                    isOpen={skipCurationDialogIsOpen}
-                                    onCloseDialog={handleSkipCuration}
-                                    dialogTitle="Are you sure you want to skip curation?"
-                                    rejectText="Cancel"
-                                    confirmText="Continue"
-                                    dialogMessage="All studies that have not been explicitly excluded will be included"
-                                />
+                                <PrismaDialog onCloseDialog={() => setPrismaIsOpen(false)} isOpen={prismaIsOpen} />
                                 <Button
-                                    sx={{ ml: '0.5rem' }}
-                                    onClick={() => setSkipCurationDialogIsOpen(true)}
-                                    color="info"
+                                    onClick={() => setPrismaIsOpen(true)}
                                     variant="outlined"
                                     size="small"
-                                    disabled={uncategorized === 0}
+                                    sx={{ marginLeft: '0.5rem', fontSize: '12px' }}
+                                    startIcon={<ChangeHistoryIcon />}
                                 >
-                                    skip curation
+                                    PRISMA diagram
                                 </Button>
                             </>
+                        )}
+                        {!extractionStepInitialized && !isPrisma && (
+                            <CurationPromoteUncategorizedButton
+                                sx={{ ml: '0.5rem', fontSize: '12px' }}
+                                color="info"
+                                variant="outlined"
+                                size="small"
+                                disabled={uncategorized === 0}
+                            >
+                                skip curation
+                            </CurationPromoteUncategorizedButton>
                         )}
                         <Button
                             onClick={handleMoveToExtractionPhase}
@@ -154,6 +173,7 @@ const CurationPage: React.FC = () => {
                             size="small"
                             sx={{
                                 ml: '0.5rem',
+                                fontSize: '12px',
                                 ...(extractionStepInitialized || !canMoveToExtractionPhase
                                     ? { color: 'white' }
                                     : {
@@ -169,7 +189,7 @@ const CurationPage: React.FC = () => {
                     </Box>
                 </Box>
                 <Box sx={{ height: '100%', overflow: 'hidden' }}>
-                    {isPrisma ? <CurationBoardBasic /> : <CurationBoardAI />}
+                    {useNewUI ? <CurationBoardAI /> : <CurationBoardBasic />}
                 </Box>
             </Box>
         </StateHandlerComponent>

@@ -23,6 +23,7 @@ import { ICurationStubStudy } from 'pages/Curation/Curation.types';
 import CurationStubStudyDraggableContainer from 'pages/Curation/components/CurationStubStudyDraggableContainer';
 import CurationDialog from 'pages/Curation/components/CurationDialog';
 import CurationDownloadIncludedStudiesButton from './CurationDownloadIncludedStudiesButton';
+import CurationPromoteUncategorizedButton from 'components/Buttons/CurationPromoteUncategorizedButton';
 
 const getVisibility = (stub: ICurationStubStudy, selectedTag: ITag | undefined): boolean => {
     let isVisible = false;
@@ -176,37 +177,26 @@ const CurationColumn: React.FC<{ columnIndex: number }> = React.memo((props) => 
             </Button>
 
             {props.columnIndex === 0 && (
-                <>
-                    <ConfirmationDialog
-                        dialogTitle="Are you sure you want to promote non duplicated studies?"
-                        dialogMessage="By taking this action, all non duplicated studies will be promoted to the next stage"
-                        rejectText="Cancel"
-                        confirmText="Continue"
-                        isOpen={warningDialogIsOpen}
-                        onCloseDialog={handlePromoteAllUnCategorized}
-                    />
-                    <Button
-                        color="info"
-                        variant="outlined"
-                        disableElevation
-                        onClick={() => setWarningDialogIsOpen(true)}
-                        sx={{
-                            padding: '8px',
-                            marginBottom: '0.75rem',
-                            display: hasUncategorizedStudies ? 'block' : 'none',
-                        }}
-                        disabled={!isAuthenticated}
-                    >
-                        Promote Non Duplicated Studies
-                    </Button>
-                </>
+                <CurationPromoteUncategorizedButton
+                    color="info"
+                    variant="outlined"
+                    disableElevation
+                    sx={{
+                        padding: '8px',
+                        marginBottom: '0.75rem',
+                        display: hasUncategorizedStudies ? 'block' : 'none',
+                    }}
+                    disabled={!isAuthenticated}
+                >
+                    Promote Non Duplicated Studies
+                </CurationPromoteUncategorizedButton>
             )}
             {
                 // It's not possible for the column index to be 0, and also the last column
                 // therefore we can assume it will render this or the above, not both
                 isLastColumn && (
-                    <Box sx={{ marginBottom: '0.75rem' }}>
-                        <CurationDownloadIncludedStudiesButton buttonGroupProps={{ size: 'medium' }} />
+                    <Box style={{ marginBottom: '0.75rem', width: '100%' }}>
+                        <CurationDownloadIncludedStudiesButton buttonGroupProps={{ size: 'medium', fullWidth: true }} />
                     </Box>
                 )
             }

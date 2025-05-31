@@ -17,7 +17,8 @@ export const CuratorTableHeader: React.FC<HeaderContext<ICurationTableStudy, ICu
     const isSorted = column.getIsSorted();
     const canFilter = column.getCanFilter();
 
-    const rows = table.getCoreRowModel().rows;
+    const filteredRows = table.getFilteredRowModel().rows;
+    const allRows = table.getCoreRowModel().rows;
 
     return (
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}>
@@ -54,7 +55,13 @@ export const CuratorTableHeader: React.FC<HeaderContext<ICurationTableStudy, ICu
                     )}
                 </>
             )}
-            {canFilter && <CurationBoardAIInterfaceCuratorTableHeaderFilter rows={rows} column={column} />}
+            {canFilter && (
+                <CurationBoardAIInterfaceCuratorTableHeaderFilter
+                    filteredRows={filteredRows}
+                    allRows={allRows}
+                    column={column}
+                />
+            )}
             <IconButton size="small" onClick={() => removeColumn && removeColumn(column.id)}>
                 <Delete sx={{ height: '0.8em', width: '0.8em', color: 'error.light' }} />
             </IconButton>

@@ -13,6 +13,9 @@ const CurationBoardAIGroupsStyles: Style = {
     listSubheader: {
         backgroundColor: 'rgb(242, 242, 242)',
         color: '#9d9d9d',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
     },
     lineClamp3: {
         display: '-webkit-box',

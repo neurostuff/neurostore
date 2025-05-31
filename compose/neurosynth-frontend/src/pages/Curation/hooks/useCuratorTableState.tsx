@@ -75,11 +75,6 @@ const useCuratorTableState = (
 
     const handleAddColumn = useCallback((colId: string) => {
         setColumns((prev) => {
-            const colsUpdate = [...prev, colId];
-            const sorted = [];
-            COMBINED_CURATOR_TABLE_COLUMNS.forEach((column) => {
-                if (colsUpdate.includes(column.id)) sorted.push(column.id);
-            });
             const newColumn = createColumn(colId);
             if (!newColumn) return prev;
 
@@ -143,9 +138,17 @@ const useCuratorTableState = (
         });
     }, [allStubs, extractedData]);
 
+    const orderedColumns = useMemo(() => {
+        return columns.sort((colA, colB) => {
+            const indexA = COMBINED_CURATOR_TABLE_COLUMNS.findIndex((col) => col.id === colA.id);
+            const indexB = COMBINED_CURATOR_TABLE_COLUMNS.findIndex((col) => col.id === colB.id);
+            return indexA - indexB;
+        });
+    }, [columns]);
+
     const table = useReactTable({
         data: data,
-        columns: columns,
+        columns: orderedColumns,
         getCoreRowModel: getCoreRowModel(),
         onSortingChange: setSorting,
         getSortedRowModel: getSortedRowModel(),

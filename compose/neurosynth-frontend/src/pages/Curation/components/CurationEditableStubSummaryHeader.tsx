@@ -1,6 +1,7 @@
 import { useAuth0 } from '@auth0/auth0-react';
+import { ArrowCircleLeftOutlined, NextPlan, Undo } from '@mui/icons-material';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import { Box, Chip, Tooltip } from '@mui/material';
+import { Box, Button, Chip, Tooltip } from '@mui/material';
 import LoadingButton from 'components/Buttons/LoadingButton';
 import { indexToPRISMAMapping, ITag } from 'hooks/projects/useGetProjects';
 import CurationPopupExclusionSelector from 'pages/Curation/components/CurationPopupExclusionSelector';
@@ -88,10 +89,10 @@ const CurationEditableStubSummaryHeader: React.FC<ICurationEditableStubSummaryHe
         }
     };
 
-    const handleSaveForLater = () => {
-        handleAddTag(defaultInfoTags.needsReview);
-        props.onMoveToNextStub();
-    };
+    // const handleSaveForLater = () => {
+    //     handleAddTag(defaultInfoTags.needsReview);
+    //     props.onMoveToNextStub();
+    // };
 
     let categorizeHeader: JSX.Element;
     switch (props.type) {
@@ -120,21 +121,17 @@ const CurationEditableStubSummaryHeader: React.FC<ICurationEditableStubSummaryHe
         default:
             categorizeHeader = (
                 <Box sx={{ display: 'flex' }}>
-                    <Tooltip placement="top" title="Clicking this button will promote the study to the next column">
-                        {/* have to use fragments, otherwise we get a forwardref error */}
-                        <>
-                            <LoadingButton
-                                text="include"
-                                onClick={handlePromote}
-                                variant="outlined"
-                                disabled={!isAuthenticated}
-                                color="success"
-                                size="small"
-                                sx={{ marginRight: '10px', width: '140px' }}
-                                startIcon={<CheckCircleOutlineIcon />}
-                            />
-                        </>
-                    </Tooltip>
+                    <Button
+                        onClick={handlePromote}
+                        variant="outlined"
+                        disabled={!isAuthenticated}
+                        color="success"
+                        size="small"
+                        sx={{ marginRight: '10px', width: '140px' }}
+                        startIcon={<CheckCircleOutlineIcon />}
+                    >
+                        include
+                    </Button>
                     {/* <LoadingButton
                         onClick={handleSaveForLater}
                         text="Needs Review"
@@ -163,6 +160,18 @@ const CurationEditableStubSummaryHeader: React.FC<ICurationEditableStubSummaryHe
                         disabled={!isAuthenticated}
                         prismaPhase={prismaPhase}
                     />
+                    {props.columnIndex !== 0 && (
+                        <Button
+                            startIcon={<ArrowCircleLeftOutlined />}
+                            style={{ marginLeft: '10px', width: '140px' }}
+                            color="secondary"
+                            onClick={handleDemoteStub}
+                            variant="outlined"
+                            size="small"
+                        >
+                            Move back
+                        </Button>
+                    )}
                 </Box>
             );
             break;

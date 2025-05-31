@@ -1,4 +1,4 @@
-import { Box, Divider, List, ListSubheader, SxProps } from '@mui/material';
+import { Box, Chip, Divider, List, ListSubheader, SxProps } from '@mui/material';
 import React from 'react';
 import { ECurationBoardAIInterface } from './CurationBoardAi';
 import CurationBoardAIGroupsStyles from './CurationBoardAIGroups.styles';
@@ -41,24 +41,26 @@ const CurationBoardAIGroupsList: React.FC<{
             }}
         >
             <Box sx={{ direction: 'ltr' }}>
-                {groups.map((group) =>
-                    group.type === 'LISTITEM' ? (
-                        <CurationBoardAIGroupsListItem
-                            group={group}
-                            selectedGroupId={selectedGroup?.id}
-                            handleSelectGroup={handleSelectGroup}
-                            key={group.id}
-                        />
-                    ) : group.type === 'SUBHEADER' ? (
-                        <ListSubheader key={group.id} sx={CurationBoardAIGroupsStyles.listSubheader}>
-                            {group.label}
-                        </ListSubheader>
-                    ) : (
-                        <Box m="1rem">
-                            <Divider key={group.id} />
-                        </Box>
-                    )
-                )}
+                {groups.map((group) => (
+                    <React.Fragment key={group.id}>
+                        {group.type === 'LISTITEM' ? (
+                            <CurationBoardAIGroupsListItem
+                                group={group}
+                                selectedGroupId={selectedGroup?.id}
+                                handleSelectGroup={handleSelectGroup}
+                            />
+                        ) : group.type === 'SUBHEADER' ? (
+                            <ListSubheader sx={CurationBoardAIGroupsStyles.listSubheader}>
+                                {group.label}
+                                {group.count !== null && <Chip label={group.count} size="small" />}
+                            </ListSubheader>
+                        ) : (
+                            <Box m="1rem">
+                                <Divider />
+                            </Box>
+                        )}
+                    </React.Fragment>
+                ))}
             </Box>
         </List>
     );

@@ -1,3 +1,4 @@
+import ChangeHistoryIcon from '@mui/icons-material/ChangeHistory';
 import { Box, Button, Typography } from '@mui/material';
 import { GridTableRowsIcon } from '@mui/x-data-grid';
 import { Row, Table } from '@tanstack/react-table';
@@ -6,6 +7,7 @@ import useGetAllAIExtractedData from 'hooks/extractions/useGetAllExtractedData';
 import {
     useProjectCurationColumns,
     useProjectCurationIsLastColumn,
+    useProjectCurationIsPrisma,
     useProjectUser,
 } from 'pages/Project/store/ProjectStore';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
@@ -17,6 +19,8 @@ import CurationBoardAIInterfaceCuratorFocus from './CurationBoardAIInterfaceCura
 import CurationBoardAIInterfaceCuratorTableSkeleton from './CurationBoardAIInterfaceCuratorSkeleton';
 import CurationBoardAIInterfaceCuratorTable from './CurationBoardAIInterfaceCuratorTable';
 import CurationDownloadIncludedStudiesButton from './CurationDownloadIncludedStudiesButton';
+import PrismaDialog from './PrismaDialog';
+import CurationPromoteUncategorizedButton from 'components/Buttons/CurationPromoteUncategorizedButton';
 
 export interface ICurationBoardAIInterfaceCurator {
     selectedStub: ICurationTableStudy | undefined;
@@ -29,6 +33,7 @@ const CurationBoardAIInterfaceCurator: React.FC<{ group: IGroupListItem }> = ({ 
     const navigate = useNavigate();
     const { projectId } = useParams<{ projectId: string | undefined }>();
     const curationColumns = useProjectCurationColumns();
+    const isPrisma = useProjectCurationIsPrisma();
     const { isLoading } = useGetAllAIExtractedData();
 
     const { column, columnIndex } = useMemo(() => {
@@ -50,6 +55,7 @@ const CurationBoardAIInterfaceCurator: React.FC<{ group: IGroupListItem }> = ({ 
     }, [column]);
     const table = useCuratorTableState(projectId, stubsInColumn, !isLastColumn);
 
+    const [prismaIsOpen, setPrismaIsOpen] = useState(false);
     const [UIMode, setUIMode] = useState<'TABLEMODE' | 'FOCUSMODE'>('TABLEMODE');
 
     const projectUser = useProjectUser();
@@ -132,6 +138,26 @@ const CurationBoardAIInterfaceCurator: React.FC<{ group: IGroupListItem }> = ({ 
                         >
                             import studies
                         </Button>
+                        <PrismaDialog onCloseDialog={() => setPrismaIsOpen(false)} isOpen={prismaIsOpen} />
+                        <Button
+                            onClick={() => setPrismaIsOpen(true)}
+                            variant="outlined"
+                            size="small"
+                            style={{ marginRight: '0.5rem', fontSize: '12px' }}
+                            startIcon={<ChangeHistoryIcon />}
+                        >
+                            PRISMA diagram
+                        </Button>
+                        {isPrisma && columnIndex === 0 && (
+                            <CurationPromoteUncategorizedButton
+                                sx={{ marginRight: '0.5rem', fontSize: '12px' }}
+                                size="small"
+                                color="info"
+                                variant="outlined"
+                            >
+                                Promote Non Duplicated Studies
+                            </CurationPromoteUncategorizedButton>
+                        )}
                         {isLastColumn && <CurationDownloadIncludedStudiesButton />}
                     </Box>
                 </Box>

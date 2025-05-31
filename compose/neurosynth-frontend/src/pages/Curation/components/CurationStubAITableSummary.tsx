@@ -20,7 +20,7 @@ const CurationStubAITableSummary: React.FC<{ stub: ICurationTableStudy | undefin
     if (!TaskExtractor && !ParticipantDemographicsExtractor) {
         return (
             <Typography color="warning.dark" variant="body2">
-                We have no extracted data for this study. Perhaps this is a new record and we have no text for it yet?
+                We have no extracted data for this study. (Perhaps this is a new record and we have no text for it yet?)
             </Typography>
         );
     }
