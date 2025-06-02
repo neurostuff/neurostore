@@ -138,16 +138,20 @@ const CurationBoardAIInterfaceCurator: React.FC<{ group: IGroupListItem }> = ({ 
                         >
                             import studies
                         </Button>
-                        <PrismaDialog onCloseDialog={() => setPrismaIsOpen(false)} isOpen={prismaIsOpen} />
-                        <Button
-                            onClick={() => setPrismaIsOpen(true)}
-                            variant="outlined"
-                            size="small"
-                            style={{ marginRight: '0.5rem', fontSize: '12px' }}
-                            startIcon={<ChangeHistoryIcon />}
-                        >
-                            PRISMA diagram
-                        </Button>
+                        {isPrisma && (
+                            <>
+                                <PrismaDialog onCloseDialog={() => setPrismaIsOpen(false)} isOpen={prismaIsOpen} />
+                                <Button
+                                    onClick={() => setPrismaIsOpen(true)}
+                                    variant="outlined"
+                                    size="small"
+                                    style={{ marginRight: '0.5rem', fontSize: '12px' }}
+                                    startIcon={<ChangeHistoryIcon />}
+                                >
+                                    PRISMA diagram
+                                </Button>
+                            </>
+                        )}
                         {isPrisma && columnIndex === 0 && (
                             <CurationPromoteUncategorizedButton
                                 sx={{ marginRight: '0.5rem', fontSize: '12px' }}
