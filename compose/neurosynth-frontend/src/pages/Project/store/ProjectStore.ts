@@ -1,4 +1,6 @@
 import { useAuth0 } from '@auth0/auth0-react';
+import { AxiosResponse } from 'axios';
+import { setUnloadHandler, unsetUnloadHandler } from 'helpers/BeforeUnload.helpers';
 import useGetProjectById from 'hooks/projects/useGetProjectById';
 import { INeurosynthProject, INeurosynthProjectReturn, ISource, ITag } from 'hooks/projects/useGetProjects';
 import useUpdateProject from 'hooks/projects/useUpdateProject';
@@ -20,13 +22,11 @@ import {
     updateStubFieldHelper,
 } from 'pages/Project/store/ProjectStore.helpers';
 import { useEffect } from 'react';
+import { useQueryClient } from 'react-query';
 import { useParams } from 'react-router-dom';
 import API from 'utils/api';
 import { create } from 'zustand';
 import { TProjectStore } from './ProjectStore.types';
-import { setUnloadHandler, unsetUnloadHandler } from 'helpers/BeforeUnload.helpers';
-import { QueryClient, useQueryClient } from 'react-query';
-import { AxiosResponse } from 'axios';
 
 const useProjectStore = create<TProjectStore>()((set, get) => {
     return {
@@ -708,8 +708,10 @@ export const useProjectMetadataHasUnsavedchanges = () => useProjectStore((state)
 
 // higher level project retrieval hooks
 export const useProjectIsPublic = () => useProjectStore((state) => state.public);
-export const useProjectCreatedAt = () => useProjectStore((state) => new Date(state.created_at || ''));
-export const useProjectUpdatedAt = () => useProjectStore((state) => new Date(state.updated_at || ''));
+export const useProjectCreatedAt = () =>
+    useProjectStore((state) => (state.created_at ? new Date(state.created_at || '') : undefined));
+export const useProjectUpdatedAt = () =>
+    useProjectStore((state) => (state.updated_at ? new Date(state.updated_at || '') : undefined));
 export const useProjectName = () => useProjectStore((state) => state.name);
 export const useProjectDescription = () => useProjectStore((state) => state.description);
 export const useProjectProvenance = () => useProjectStore((state) => state.provenance);

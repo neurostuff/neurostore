@@ -152,14 +152,14 @@ const CurationBoardAIInterfaceCurator: React.FC<{ group: IGroupListItem }> = ({ 
                                 </Button>
                             </>
                         )}
-                        {isPrisma && columnIndex === 0 && (
+                        {columnIndex === 0 && (
                             <CurationPromoteUncategorizedButton
                                 sx={{ marginRight: '0.5rem', fontSize: '12px' }}
                                 size="small"
-                                color="info"
+                                color="success"
                                 variant="outlined"
                             >
-                                Promote Non Duplicated Studies
+                                {isPrisma ? 'Promote Non Duplicated Studies' : 'Skip Curation'}
                             </CurationPromoteUncategorizedButton>
                         )}
                         {isLastColumn && <CurationDownloadIncludedStudiesButton />}

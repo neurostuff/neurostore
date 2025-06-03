@@ -5,6 +5,7 @@ import TextEdit from 'components/TextEdit/TextEdit';
 import { useGuard } from 'hooks';
 import useUserCanEdit from 'hooks/useUserCanEdit';
 import {
+    useClearProjectStore,
     useGetProjectIsLoading,
     useInitProjectStoreIfRequired,
     useProjectCreatedAt,
@@ -17,7 +18,7 @@ import {
     useUpdateProjectDescription,
     useUpdateProjectName,
 } from 'pages/Project/store/ProjectStore';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Outlet, useLocation, useNavigate, useParams } from 'react-router-dom';
 import ProjectComponentsEditPrivacyToggle from 'pages/Project/components/ProjectEditPrivacyToggle';
 import ProjectIsLoadingText from 'components/ProjectIsLoadingText';
@@ -34,9 +35,16 @@ const ProjectPage: React.FC = () => {
     const { projectId } = useParams<{ projectId: string }>();
     const { isAuthenticated } = useAuth0();
     const location = useLocation();
+    const clearProjectStore = useClearProjectStore();
     const navigate = useNavigate();
 
     useInitProjectStoreIfRequired();
+
+    useEffect(() => {
+        return () => {
+            clearProjectStore();
+        };
+    }, [clearProjectStore]);
 
     const updateProjectName = useUpdateProjectName();
     const updateProjectDescription = useUpdateProjectDescription();

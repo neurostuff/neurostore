@@ -1,6 +1,5 @@
 import ChangeHistoryIcon from '@mui/icons-material/ChangeHistory';
 import { Box, Button, FormControlLabel, Switch, Tooltip, Typography } from '@mui/material';
-import CurationPromoteUncategorizedButton from 'components/Buttons/CurationPromoteUncategorizedButton';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs';
 import ProjectIsLoadingText from 'components/ProjectIsLoadingText';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
@@ -39,14 +38,22 @@ const CurationPage: React.FC = () => {
     const [prismaIsOpen, setPrismaIsOpen] = useState(false);
 
     const projectCreateDate = useProjectCreatedAt();
-    const [useNewUI, setUseNewUI] = useState(() => {
-        const localStorageValue = localStorage.getItem(localStorageNewUIKey);
-        if (!localStorageValue) return projectCreateDate >= new Date('2025-05-30'); // arbitrary date representing rollout of this feature
-
-        return localStorageValue === 'true';
-    });
+    const [useNewUI, setUseNewUI] = useState<boolean>();
 
     useInitProjectStoreIfRequired();
+
+    useEffect(() => {
+        if (useNewUI === undefined) {
+            const localStorageValue = localStorage.getItem(localStorageNewUIKey);
+            if (projectCreateDate === undefined) return;
+            if (!localStorageValue) {
+                setUseNewUI(projectCreateDate >= new Date('2025-05-30')); // arbitrary date representing rollout of this feature
+                return;
+            }
+
+            setUseNewUI(localStorageValue === 'true');
+        }
+    }, [projectCreateDate, useNewUI]);
 
     useEffect(() => {
         return () => {
@@ -120,7 +127,7 @@ const CurationPage: React.FC = () => {
                             }
                         >
                             <FormControlLabel
-                                control={<Switch size="small" checked={useNewUI} />}
+                                control={<Switch size="small" checked={!!useNewUI} />}
                                 label={useNewUI ? 'Switch to Old Interface' : 'Switch to New Interface'}
                                 slotProps={{
                                     typography: { fontSize: '12px' },
@@ -154,17 +161,6 @@ const CurationPage: React.FC = () => {
                                     PRISMA diagram
                                 </Button>
                             </>
-                        )}
-                        {!extractionStepInitialized && !isPrisma && (
-                            <CurationPromoteUncategorizedButton
-                                sx={{ ml: '0.5rem', fontSize: '12px' }}
-                                color="info"
-                                variant="outlined"
-                                size="small"
-                                disabled={uncategorized === 0}
-                            >
-                                skip curation
-                            </CurationPromoteUncategorizedButton>
                         )}
                         <Button
                             onClick={handleMoveToExtractionPhase}

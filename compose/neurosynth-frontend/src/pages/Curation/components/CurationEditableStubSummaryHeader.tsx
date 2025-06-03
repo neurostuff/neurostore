@@ -37,6 +37,7 @@ const CurationEditableStubSummaryHeader: React.FC<ICurationEditableStubSummaryHe
     // const removeTagFromStub = useRemoveTagFromStub();
     const promoteStub = usePromoteStub();
     const demoteStub = useDemoteStub();
+    const isPrismaIdentificationPhase = prismaConfig.isPrisma && prismaPhase === 'identification';
 
     const setExclusionForStub = useSetExclusionForStub();
 
@@ -159,6 +160,7 @@ const CurationEditableStubSummaryHeader: React.FC<ICurationEditableStubSummaryHe
                         onCreateExclusion={handleCreateExclusion}
                         disabled={!isAuthenticated}
                         prismaPhase={prismaPhase}
+                        onlyShowDefaultExclusion={isPrismaIdentificationPhase}
                     />
                     {props.columnIndex !== 0 && (
                         <Button

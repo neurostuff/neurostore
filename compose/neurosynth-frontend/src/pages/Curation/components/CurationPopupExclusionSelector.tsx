@@ -21,6 +21,7 @@ interface IExclusionSelectorPopup {
     disabled?: boolean;
     popupIsOpen: boolean;
     exclusionButtonEndText?: string;
+    onlyShowDefaultExclusion?: boolean;
 }
 
 interface AutoSelectOption {
@@ -40,7 +41,7 @@ const CurationPopupExclusionSelector: React.FC<IExclusionSelectorPopup> = (props
     const excludeButtonRef = useRef<HTMLDivElement>(null);
     const [selectedValue, setSelectedValue] = useState<AutoSelectOption | null>(null);
     const [exclusions, setExclusions] = useState<AutoSelectOption[]>([]);
-    const [defaultExclusion, setDefaultExclusion] = useState<AutoSelectOption>();
+    const [defaultExclusion, setDefaultExclusion] = useState<AutoSelectOption>(defaultExclusionTags.exclusion);
 
     const prismaConfig = useProjectCurationPrismaConfig();
     const genericExclusionTags = useProjectCurationExclusionTags();
@@ -204,22 +205,25 @@ const CurationPopupExclusionSelector: React.FC<IExclusionSelectorPopup> = (props
             </NeurosynthPopper>
             <div ref={excludeButtonRef}>
                 <ButtonGroup size="small" disabled={!!props.disabled} color="error">
-                    {defaultExclusion && (
-                        <LoadingButton
-                            startIcon={<HighlightOffIcon />}
-                            text={defaultExclusion.label + (props.exclusionButtonEndText || '')}
-                            sx={{ fontSize: '12px' }}
-                            isLoading={props.isLoading && !props.popupIsOpen}
-                            onClick={() => handleSelectDefaultExclusion(defaultExclusion)}
-                        />
+                    <LoadingButton
+                        startIcon={<HighlightOffIcon />}
+                        text={defaultExclusion.label + (props.exclusionButtonEndText || '')}
+                        sx={{
+                            fontSize: '12px',
+                            minWidth: props.onlyShowDefaultExclusion ? '140px !important' : undefined,
+                        }}
+                        isLoading={props.isLoading && !props.popupIsOpen}
+                        onClick={() => handleSelectDefaultExclusion(defaultExclusion)}
+                    />
+                    {!props.onlyShowDefaultExclusion && (
+                        <Button
+                            startIcon={defaultExclusion ? undefined : <HighlightOffIcon />}
+                            sx={{ width: '32px' }}
+                            onClick={() => props.onOpenPopup()}
+                        >
+                            <ArrowDropDownIcon sx={{ fontSize: '22px' }} />
+                        </Button>
                     )}
-                    <Button
-                        startIcon={defaultExclusion ? undefined : <HighlightOffIcon />}
-                        sx={{ width: defaultExclusion ? '32px' : '140px' }}
-                        onClick={() => props.onOpenPopup()}
-                    >
-                        {defaultExclusion ? <ArrowDropDownIcon sx={{ fontSize: '22px' }} /> : 'exclude'}
-                    </Button>
                 </ButtonGroup>
             </div>
         </>

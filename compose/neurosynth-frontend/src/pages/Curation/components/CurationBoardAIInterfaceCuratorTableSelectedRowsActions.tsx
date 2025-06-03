@@ -52,6 +52,7 @@ const CurationBoardAIInterfaceCuratorTableSelectedRowsActions: React.FC<{
     };
 
     const numRowsSelected = table.getSelectedRowModel().rows.length;
+    const isPrismaIdentificationPhase = prismaConfig.isPrisma && prismaPhase === 'identification';
 
     return (
         <Box sx={{ marginRight: '8px', display: 'flex' }}>
@@ -64,6 +65,7 @@ const CurationBoardAIInterfaceCuratorTableSelectedRowsActions: React.FC<{
                 exclusionButtonEndText={` (${numRowsSelected})`}
                 disabled={false}
                 prismaPhase={prismaPhase}
+                onlyShowDefaultExclusion={isPrismaIdentificationPhase}
             />
             {columnIndex !== 0 && (
                 <Button

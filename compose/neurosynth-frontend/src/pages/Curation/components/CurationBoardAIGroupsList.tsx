@@ -1,4 +1,4 @@
-import { Box, Chip, Divider, List, ListSubheader, SxProps } from '@mui/material';
+import { Box, Chip, Divider, List, ListSubheader, SxProps, Tooltip } from '@mui/material';
 import React from 'react';
 import { ECurationBoardAIInterface } from './CurationBoardAi';
 import CurationBoardAIGroupsStyles from './CurationBoardAIGroups.styles';
@@ -19,6 +19,7 @@ export interface IGroupListItem {
     UI: ECurationBoardAIInterface | null;
     children?: IGroupListItem[];
     listItemStyles?: SxProps;
+    tooltipContent?: string | React.ReactNode;
 }
 
 const CurationBoardAIGroupsList: React.FC<{

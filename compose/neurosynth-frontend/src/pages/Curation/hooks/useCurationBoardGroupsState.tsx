@@ -9,6 +9,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { IGroupListItem } from '../components/CurationBoardAIGroupsList';
 import { ECurationBoardAIInterface } from '../components/CurationBoardAi';
 import { SxProps } from '@mui/system';
+import { defaultExclusionTags } from 'pages/Project/store/ProjectStore.types';
 
 const excludedListItemStyles: SxProps = {
     '& .MuiListItemButton-root': {
@@ -51,38 +52,73 @@ function useCurationBoardGroupsState() {
                 UI: null,
             });
 
-            curationColumns.forEach((column, index, array) => {
+            curationColumns.forEach((column, index) => {
                 groupListItems.push({
                     id: column.id,
                     type: 'LISTITEM',
-                    label: column.name,
+                    label: `${index + 1}. ${column.name}`,
                     count: column.stubStudies.filter((x) => x.exclusionTag === null).length,
                     UI: ECurationBoardAIInterface.CURATOR,
                     children: [],
                 });
 
-                if (index >= array.length - 1) return; // no exclusion tags for last included column
-
                 const prismaPhase: keyof Omit<IPRISMAConfig, 'isPrisma'> | undefined = indexToPRISMAMapping(index);
-                if (!prismaPhase) return;
 
-                groupListItems.push({
-                    id: `excluded_${column.id}`,
-                    type: 'LISTITEM',
-                    label: 'Excluded',
-                    count: column.stubStudies.filter((x) => x.exclusionTag !== null).length,
-                    UI: ECurationBoardAIInterface.EXCLUDE,
-                    listItemStyles: excludedListItemStyles,
-                    children: prismaConfig[prismaPhase].exclusionTags.map((exclusionTag) => ({
-                        id: exclusionTag.id,
+                if (prismaPhase === 'identification') {
+                    groupListItems[groupListItems.length - 1].tooltipContent =
+                        'Search for studies and identify duplicates';
+                } else if (prismaPhase === 'screening') {
+                    groupListItems[groupListItems.length - 1].tooltipContent =
+                        'Screen titles and abstracts for relevance';
+                } else if (prismaPhase === 'eligibility') {
+                    groupListItems[groupListItems.length - 1].tooltipContent =
+                        'Assess full full-texts against inclusion criteria';
+                } else {
+                    // inclusion phase
+                    groupListItems[groupListItems.length - 1].tooltipContent =
+                        'Studies to be included in the final meta-analysis';
+                    return;
+                }
+
+                if (prismaPhase === 'identification') {
+                    groupListItems.push({
+                        id: defaultExclusionTags.duplicate.id,
                         type: 'LISTITEM',
-                        label: exclusionTag.label,
-                        count: column.stubStudies.filter((x) => x.exclusionTag?.id === exclusionTag.id).length,
+                        label: defaultExclusionTags.duplicate.label,
+                        count: column.stubStudies.filter(
+                            (x) => x.exclusionTag?.id === defaultExclusionTags.duplicate.id
+                        ).length,
                         UI: ECurationBoardAIInterface.EXCLUDE,
-                        listItemStyles: excludedListItemStylesChildren,
+                        listItemStyles: {
+                            '& .MuiListItemButton-root': {
+                                padding: '2px 16px',
+                            },
+                            '& .MuiListItemText-root': {
+                                padding: '2px 40px',
+                                color: 'error.dark',
+                            },
+                        },
                         children: [],
-                    })),
-                });
+                    });
+                } else {
+                    groupListItems.push({
+                        id: `excluded_${column.id}`,
+                        type: 'LISTITEM',
+                        label: 'Excluded',
+                        count: column.stubStudies.filter((x) => x.exclusionTag !== null).length,
+                        UI: ECurationBoardAIInterface.EXCLUDE,
+                        listItemStyles: excludedListItemStyles,
+                        children: prismaConfig[prismaPhase].exclusionTags.map((exclusionTag) => ({
+                            id: exclusionTag.id,
+                            type: 'LISTITEM',
+                            label: exclusionTag.label,
+                            count: column.stubStudies.filter((x) => x.exclusionTag?.id === exclusionTag.id).length,
+                            UI: ECurationBoardAIInterface.EXCLUDE,
+                            listItemStyles: excludedListItemStylesChildren,
+                            children: [],
+                        })),
+                    });
+                }
             });
 
             groupListItems.push({
