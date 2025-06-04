@@ -183,7 +183,7 @@ export const createColumn = (
             enableSorting: foundColumn.canSort,
             enableColumnFilter: foundColumn.filterVariant !== undefined,
             filterFn: filterFn,
-            size: foundColumn.id === 'abstractText' ? 400 : 250,
+            size: foundColumn.size ? foundColumn.size : foundColumn.id === 'abstractText' ? 400 : 250,
             sortingFn: foundColumn.sortingFn,
             meta: {
                 columnLabel: foundColumn.label,

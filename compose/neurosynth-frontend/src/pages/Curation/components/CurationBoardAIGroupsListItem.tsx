@@ -56,7 +56,7 @@ const CurationBoardAIGroupsListItem: React.FC<{
                                     ...CurationBoardAIGroupsStyles.lineClamp3,
                                 },
                             }}
-                            secondaryTypographyProps={{ fontSize: '11px', whiteSpace: 'pre' }}
+                            secondaryTypographyProps={{ fontSize: '11px' }}
                             primary={group.label}
                             secondary={group.secondaryLabel}
                         />

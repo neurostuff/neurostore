@@ -16,10 +16,12 @@ export type ICurationTableColumnType = IGenericCustomAccessorReturn[] | string |
 export interface ICurationBoardAIInterfaceCuratorColumnType {
     id: string;
     label: string;
+    description?: string;
     AIExtractor?: EAIExtractors;
     filterVariant?: 'text' | 'numeric' | 'autocomplete';
     canSort: boolean;
     sortingFn?: SortingColumnDef<ICurationTableStudy>['sortingFn'];
+    size?: number;
     customAccessor?: (stub: ICurationTableStudy) => ICurationTableColumnType | null;
 }
 

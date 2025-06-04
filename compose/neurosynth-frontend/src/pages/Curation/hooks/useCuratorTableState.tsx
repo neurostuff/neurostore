@@ -26,7 +26,8 @@ import { ICurationTableColumnType, ICurationTableStudy } from './useCuratorTable
 const useCuratorTableState = (
     projectId: string | undefined,
     allStubs: ICurationStubStudy[],
-    allowRowSelection: boolean
+    allowRowSelection: boolean,
+    allowAIColumns: boolean
 ) => {
     const [columns, setColumns] = useState<
         (
@@ -41,7 +42,7 @@ const useCuratorTableState = (
 
     useEffect(() => {
         if (!projectId) return;
-        const state = retrieveCurationTableState(projectId);
+        const state = retrieveCurationTableState(projectId, allowAIColumns ? '' : 'identification');
         if (!state) return;
 
         const newColumns: (
@@ -50,13 +51,22 @@ const useCuratorTableState = (
         )[] = [];
 
         if (allowRowSelection) newColumns.push(createColumn('select'));
-        newColumns.push(createColumn('summary'));
+        if (allowAIColumns) newColumns.push(createColumn('summary'));
 
         if (state.firstTimeSeeingPage) {
             // set defaults
-            newColumns.push(createColumn('fMRITasks.TaskName'));
-            newColumns.push(createColumn('group_name'));
-            newColumns.push(createColumn('diagnosis'));
+            if (allowAIColumns) {
+                newColumns.push(createColumn('fMRITasks.TaskName'));
+                newColumns.push(createColumn('group_name'));
+                newColumns.push(createColumn('diagnosis'));
+            } else {
+                newColumns.push(createColumn('articleYear'));
+                newColumns.push(createColumn('title'));
+                newColumns.push(createColumn('journal'));
+                newColumns.push(createColumn('authors'));
+                newColumns.push(createColumn('pmid'));
+                newColumns.push(createColumn('doi'));
+            }
         } else {
             COMBINED_CURATOR_TABLE_COLUMNS.forEach((column) => {
                 if (state.selectedColumns.includes(column.id)) newColumns.push(createColumn(column.id));
@@ -67,11 +77,15 @@ const useCuratorTableState = (
         setSorting(state.sorting);
         setColumnFilters(state.columnFilters);
 
-        updateCurationTableState(projectId, {
-            firstTimeSeeingPage: false,
-            selectedColumns: state.selectedColumns,
-        });
-    }, [projectId, allowRowSelection]);
+        updateCurationTableState(
+            projectId,
+            {
+                firstTimeSeeingPage: false,
+                selectedColumns: state.selectedColumns,
+            },
+            allowAIColumns ? '' : 'identification'
+        );
+    }, [projectId, allowRowSelection, allowAIColumns]);
 
     const handleAddColumn = useCallback((colId: string) => {
         setColumns((prev) => {
@@ -138,17 +152,19 @@ const useCuratorTableState = (
         });
     }, [allStubs, extractedData]);
 
-    const orderedColumns = useMemo(() => {
-        return columns.sort((colA, colB) => {
-            const indexA = COMBINED_CURATOR_TABLE_COLUMNS.findIndex((col) => col.id === colA.id);
-            const indexB = COMBINED_CURATOR_TABLE_COLUMNS.findIndex((col) => col.id === colB.id);
-            return indexA - indexB;
-        });
-    }, [columns]);
+    const orderedFilteredColumns = useMemo(() => {
+        return columns
+            .sort((colA, colB) => {
+                const indexA = COMBINED_CURATOR_TABLE_COLUMNS.findIndex((col) => col.id === colA.id);
+                const indexB = COMBINED_CURATOR_TABLE_COLUMNS.findIndex((col) => col.id === colB.id);
+                return indexA - indexB;
+            })
+            .filter((column) => (allowAIColumns ? column : !column.meta?.AIExtractor));
+    }, [allowAIColumns, columns]);
 
     const table = useReactTable({
         data: data,
-        columns: orderedColumns,
+        columns: orderedFilteredColumns,
         getCoreRowModel: getCoreRowModel(),
         onSortingChange: setSorting,
         getSortedRowModel: getSortedRowModel(),
@@ -171,22 +187,34 @@ const useCuratorTableState = (
     });
 
     useEffect(() => {
-        updateCurationTableState(projectId, {
-            columnFilters: columnFilters,
-        });
-    }, [columnFilters, projectId]);
+        updateCurationTableState(
+            projectId,
+            {
+                columnFilters: columnFilters,
+            },
+            allowAIColumns ? '' : 'identification'
+        );
+    }, [allowAIColumns, columnFilters, projectId]);
     useEffect(() => {
-        updateCurationTableState(projectId, {
-            sorting: sorting,
-        });
-    }, [sorting, projectId]);
+        updateCurationTableState(
+            projectId,
+            {
+                sorting: sorting,
+            },
+            allowAIColumns ? '' : 'identification'
+        );
+    }, [sorting, projectId, allowAIColumns]);
     useEffect(() => {
-        updateCurationTableState(projectId, {
-            selectedColumns: columns
-                .filter((col) => col.id !== undefined && col.id !== 'select' && col.id !== 'summary')
-                .map((col) => col.id as string),
-        });
-    }, [columns, projectId]);
+        updateCurationTableState(
+            projectId,
+            {
+                selectedColumns: columns
+                    .filter((col) => col.id !== undefined && col.id !== 'select' && col.id !== 'summary')
+                    .map((col) => col.id as string),
+            },
+            allowAIColumns ? '' : 'identification'
+        );
+    }, [allowAIColumns, columns, projectId]);
 
     return table;
 };

@@ -17,11 +17,11 @@ export enum ECurationBoardAIInterface {
 const CurationBoardAI: React.FC = () => {
     const deleteCurationImport = useDeleteCurationImport();
     const { enqueueSnackbar } = useSnackbar();
-    const { groups, selectedGroup, setSelectedGroup } = useCurationBoardGroupsState();
+    const { groups, selectedGroup, handleSetSelectedGroup } = useCurationBoardGroupsState();
 
     const handleDeleteCurationImport = (importId: string) => {
         deleteCurationImport(importId);
-        setSelectedGroup(groups[1]);
+        handleSetSelectedGroup(groups[1]);
         enqueueSnackbar(`Deleted import`, { variant: 'success' });
     };
 
@@ -38,7 +38,7 @@ const CurationBoardAI: React.FC = () => {
                 <CurationBoardAIGroupsList
                     groups={groups}
                     selectedGroup={selectedGroup}
-                    onSelectGroup={setSelectedGroup}
+                    onSelectGroup={handleSetSelectedGroup}
                 />
             </Box>
             <Box

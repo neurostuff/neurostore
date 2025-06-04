@@ -42,6 +42,7 @@ const ProjectPage: React.FC = () => {
 
     useEffect(() => {
         return () => {
+            console.log('CLEANING UP PROJECT');
             clearProjectStore();
         };
     }, [clearProjectStore]);

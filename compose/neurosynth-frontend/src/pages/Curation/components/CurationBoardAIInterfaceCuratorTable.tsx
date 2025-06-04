@@ -8,6 +8,8 @@ import { ICurationBoardAIInterfaceCurator } from './CurationBoardAIInterfaceCura
 import CurationBoardAIInterfaceCuratorTableBody from './CurationBoardAIInterfaceCuratorTableBody';
 import CurationBoardAIInterfaceCuratorTableManageColumns from './CurationBoardAIInterfaceCuratorTableManageColumns';
 import CurationBoardAIInterfaceCuratorTableSelectedRowsActions from './CurationBoardAIInterfaceCuratorTableSelectedRowsActions';
+import { useProjectCurationPrismaConfig } from 'pages/Project/store/ProjectStore';
+import { indexToPRISMAMapping, IPRISMAConfig } from 'hooks/projects/useGetProjects';
 
 //allows us to define custom properties for our columns
 declare module '@tanstack/react-table' {
@@ -24,13 +26,64 @@ declare module '@tanstack/react-table' {
     }
 }
 
+export const getStatusText = (
+    numIncluded: number,
+    numUncategorized: number,
+    numExcluded: number,
+    columnIndex: number,
+    isPrisma: boolean
+): { statusColor: string | undefined; statusText: string } => {
+    const noStudiesInCuration = numIncluded === 0 && numUncategorized === 0 && numExcluded === 0;
+    if (noStudiesInCuration) {
+        return {
+            statusColor: 'warning.dark',
+            statusText: 'No studies. To import studies, click the import button above.',
+        };
+    }
+
+    const curationIsComplete = numIncluded > 0 && numUncategorized === 0;
+    if (isPrisma) {
+        const prismaPhase = indexToPRISMAMapping(columnIndex);
+        if (prismaPhase === undefined) {
+            // included phase
+            return {
+                statusColor: undefined,
+                statusText: 'No included studies',
+            };
+        } else {
+            return curationIsComplete
+                ? {
+                      statusColor: 'success.main',
+                      statusText: `You've reviewed all uncategorized studies! Go to extraction to continue your meta-analysis or import more studies to continue`,
+                  }
+                : {
+                      statusColor: undefined,
+                      statusText: `No studies to review for ${prismaPhase}`,
+                  };
+        }
+    } else {
+        return curationIsComplete
+            ? {
+                  statusColor: 'success.main',
+                  statusText:
+                      "You've reviewed all the uncategorized studies! Go to extraction to continue your meta-analysis or import more studies to continue",
+              }
+            : {
+                  statusColor: undefined,
+                  statusText: 'No studies',
+              };
+    }
+};
+
 const CurationBoardAIInterfaceCuratorTable: React.FC<ICurationBoardAIInterfaceCurator> = ({
     table,
     onSetSelectedStub,
     selectedStub,
     columnIndex,
 }) => {
-    const { included, uncategorized } = useGetCurationSummary();
+    const { included, uncategorized, excluded } = useGetCurationSummary();
+    const prismaConfig = useProjectCurationPrismaConfig();
+    const prismaPhase = prismaConfig.isPrisma ? indexToPRISMAMapping(columnIndex) : undefined;
 
     const tableContainerRef = useRef<HTMLDivElement>(null);
 
@@ -38,6 +91,15 @@ const CurationBoardAIInterfaceCuratorTable: React.FC<ICurationBoardAIInterfaceCu
     const columnFilters = table.getState().columnFilters;
     const sorting = table.getState().sorting;
     const curationIsComplete = included > 0 && uncategorized === 0;
+    const noStudiesInCuration = included === 0 && uncategorized === 0 && excluded === 0;
+
+    const { statusColor, statusText } = getStatusText(
+        included,
+        uncategorized,
+        excluded,
+        columnIndex,
+        prismaConfig.isPrisma
+    );
 
     return (
         <Box sx={{ padding: '0 1rem 2rem 1rem', height: '100%' }}>
@@ -49,6 +111,7 @@ const CurationBoardAIInterfaceCuratorTable: React.FC<ICurationBoardAIInterfaceCu
                     onAddColumn={table.options.meta?.curatorTableOnAddColumn}
                     onRemoveColumn={table.options.meta?.curatorTableOnRemoveColumn}
                     columns={table.getAllColumns()}
+                    allowAIColumns={prismaPhase !== 'identification'}
                 />
             </Box>
             <TableContainer
@@ -105,10 +168,8 @@ const CurationBoardAIInterfaceCuratorTable: React.FC<ICurationBoardAIInterfaceCu
                     />
                 </Table>
                 {table.getRowModel().rows.length === 0 && (
-                    <Typography padding="0.5rem 0" color={curationIsComplete ? 'success.main' : 'warning.dark'}>
-                        {curationIsComplete
-                            ? "You're done! Go to extraction to continue your meta analysis"
-                            : 'No studies. To import studies, click the import button above.'}
+                    <Typography padding="0.5rem 0" color={statusColor}>
+                        {statusText}
                     </Typography>
                 )}
             </TableContainer>

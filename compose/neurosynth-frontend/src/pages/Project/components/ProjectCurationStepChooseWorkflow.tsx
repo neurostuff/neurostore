@@ -2,12 +2,13 @@ import { KeyboardArrowDown } from '@mui/icons-material';
 import NavToolbarPopupSubMenu from 'components/Navbar/NavToolbarPopupSubMenu';
 import ProjectComponentsStyles from 'pages/Project/components/Project.styles';
 import { ECurationBoardTypes } from './ProjectCurationStep';
-import { Box, Button } from '@mui/material';
+import { Box, Button, CircularProgress } from '@mui/material';
 
 const ProjectCurationStepChooseWorkflow: React.FC<{
     onCreateCuration: (colNames: string[], isPRISMA: boolean) => void;
+    isLoading: boolean;
     disabled: boolean;
-}> = ({ onCreateCuration, disabled }) => {
+}> = ({ onCreateCuration, disabled, isLoading }) => {
     const handleCreateCreationBoard = (curationBoardType: ECurationBoardTypes) => {
         switch (curationBoardType) {
             case ECurationBoardTypes.PRISMA:
@@ -26,6 +27,20 @@ const ProjectCurationStepChooseWorkflow: React.FC<{
                 return;
         }
     };
+
+    if (isLoading) {
+        return (
+            <Box
+                sx={[
+                    ProjectComponentsStyles.stepCard,
+                    ProjectComponentsStyles.getStartedContainer,
+                    { borderColor: 'muted.main' },
+                ]}
+            >
+                <CircularProgress color="primary" size={40} />
+            </Box>
+        );
+    }
 
     if (disabled) {
         return (

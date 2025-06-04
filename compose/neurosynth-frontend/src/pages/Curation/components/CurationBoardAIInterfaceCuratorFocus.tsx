@@ -6,6 +6,8 @@ import { ICurationBoardAIInterfaceCurator } from './CurationBoardAIInterfaceCura
 import CurationEditableStubSummary from './CurationEditableStubSummary';
 import CurationStubAITableSummary from './CurationStubAITableSummary';
 import CurationStubListItemVirtualizedContainer from './CurationStubListItemVirtualizedContainer';
+import { getStatusText } from './CurationBoardAIInterfaceCuratorTable';
+import { useProjectCurationIsPrisma } from 'pages/Project/store/ProjectStore';
 
 const CurationBoardAIInterfaceCuratorFocus: React.FC<ICurationBoardAIInterfaceCurator> = ({
     selectedStub,
@@ -17,7 +19,8 @@ const CurationBoardAIInterfaceCuratorFocus: React.FC<ICurationBoardAIInterfaceCu
     const windowHeight = useGetWindowHeight();
     const scrollableBoxRef = useRef<HTMLDivElement>(null);
     const listRef = useRef<FixedSizeList>(null);
-    const { uncategorized, included } = useGetCurationSummary();
+    const { uncategorized, included, excluded } = useGetCurationSummary();
+    const isPrisma = useProjectCurationIsPrisma();
 
     const handleMoveToNextStub = useCallback(() => {
         if (!selectedStub?.id) return;
@@ -57,15 +60,11 @@ const CurationBoardAIInterfaceCuratorFocus: React.FC<ICurationBoardAIInterfaceCu
         }
     }, [selectedStub?.id]);
 
+    const { statusColor, statusText } = getStatusText(included, uncategorized, excluded, columnIndex, isPrisma);
+
     return (
         <Box sx={{ display: 'flex', padding: '0 1rem 1rem 1rem', height: 'calc(100% - 48px - 8px - 20px)' }}>
-            {rows.length === 0 && (
-                <Typography color={included > 0 && uncategorized === 0 ? 'success.main' : 'warning.dark'}>
-                    {included > 0 && uncategorized === 0
-                        ? "You're done! Go to extraction to continue"
-                        : 'No studies. To import studies, click the import button above.'}
-                </Typography>
-            )}
+            {rows.length === 0 && <Typography color={statusColor}>{statusText}</Typography>}
             {rows.length > 0 && (
                 <>
                     <Box>

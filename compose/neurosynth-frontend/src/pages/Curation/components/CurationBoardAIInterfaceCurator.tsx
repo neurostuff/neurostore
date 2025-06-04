@@ -2,12 +2,14 @@ import ChangeHistoryIcon from '@mui/icons-material/ChangeHistory';
 import { Box, Button, Typography } from '@mui/material';
 import { GridTableRowsIcon } from '@mui/x-data-grid';
 import { Row, Table } from '@tanstack/react-table';
+import CurationPromoteUncategorizedButton from 'components/Buttons/CurationPromoteUncategorizedButton';
 import { useUserCanEdit } from 'hooks';
 import useGetAllAIExtractedData from 'hooks/extractions/useGetAllExtractedData';
+import { indexToPRISMAMapping } from 'hooks/projects/useGetProjects';
 import {
     useProjectCurationColumns,
     useProjectCurationIsLastColumn,
-    useProjectCurationIsPrisma,
+    useProjectCurationPrismaConfig,
     useProjectUser,
 } from 'pages/Project/store/ProjectStore';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
@@ -20,7 +22,6 @@ import CurationBoardAIInterfaceCuratorTableSkeleton from './CurationBoardAIInter
 import CurationBoardAIInterfaceCuratorTable from './CurationBoardAIInterfaceCuratorTable';
 import CurationDownloadIncludedStudiesButton from './CurationDownloadIncludedStudiesButton';
 import PrismaDialog from './PrismaDialog';
-import CurationPromoteUncategorizedButton from 'components/Buttons/CurationPromoteUncategorizedButton';
 
 export interface ICurationBoardAIInterfaceCurator {
     selectedStub: ICurationTableStudy | undefined;
@@ -33,7 +34,6 @@ const CurationBoardAIInterfaceCurator: React.FC<{ group: IGroupListItem }> = ({ 
     const navigate = useNavigate();
     const { projectId } = useParams<{ projectId: string | undefined }>();
     const curationColumns = useProjectCurationColumns();
-    const isPrisma = useProjectCurationIsPrisma();
     const { isLoading } = useGetAllAIExtractedData();
 
     const { column, columnIndex } = useMemo(() => {
@@ -48,12 +48,16 @@ const CurationBoardAIInterfaceCurator: React.FC<{ group: IGroupListItem }> = ({ 
             columnIndex: columnIndex,
         };
     }, [curationColumns, group.id]);
+    const prismaConfig = useProjectCurationPrismaConfig();
+    const isPrisma = prismaConfig.isPrisma;
+    const prismaPhase = prismaConfig.isPrisma ? indexToPRISMAMapping(columnIndex) : undefined;
     const isLastColumn = useProjectCurationIsLastColumn(columnIndex);
     const stubsInColumn = useMemo(() => {
         if (!column) return [];
         return column.stubStudies.filter((x) => x.exclusionTag === null);
     }, [column]);
-    const table = useCuratorTableState(projectId, stubsInColumn, !isLastColumn);
+
+    const table = useCuratorTableState(projectId, stubsInColumn, !isLastColumn, prismaPhase !== 'identification');
 
     const [prismaIsOpen, setPrismaIsOpen] = useState(false);
     const [UIMode, setUIMode] = useState<'TABLEMODE' | 'FOCUSMODE'>('TABLEMODE');
@@ -154,6 +158,11 @@ const CurationBoardAIInterfaceCurator: React.FC<{ group: IGroupListItem }> = ({ 
                         )}
                         {columnIndex === 0 && (
                             <CurationPromoteUncategorizedButton
+                                dialogTitle={
+                                    isPrisma
+                                        ? 'Are you sure you want to promote all non duplicated studies in identification to screening?'
+                                        : 'Are you sure you want to skip curation?'
+                                }
                                 sx={{ marginRight: '0.5rem', fontSize: '12px' }}
                                 size="small"
                                 color="success"

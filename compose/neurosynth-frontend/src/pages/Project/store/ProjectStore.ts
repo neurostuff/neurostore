@@ -12,7 +12,6 @@ import {
     createNewExclusionHelper,
     demoteStubHelper,
     handleDragEndHelper,
-    initCurationHelper,
     promoteAllUncategorizedHelper,
     promoteStubHelper,
     removeTagFromStubHelper,
@@ -199,29 +198,23 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
                             }));
 
                             // fix bug where routing to another page would show the old state
-                            if (oldDebouncedStoreData.metadata.queryClient) {
-                                const queryData = oldDebouncedStoreData.metadata.queryClient.getQueryData<
-                                    AxiosResponse<INeurosynthProjectReturn>
-                                >(['projects', oldDebouncedStoreData.id]);
+                            if (!oldDebouncedStoreData.metadata.queryClient) return;
+                            const queryData = oldDebouncedStoreData.metadata.queryClient.getQueryData<
+                                AxiosResponse<INeurosynthProjectReturn>
+                            >(['projects', oldDebouncedStoreData.id]);
 
-                                if (queryData) {
-                                    oldDebouncedStoreData.metadata.queryClient.setQueryData(
-                                        ['projects', oldDebouncedStoreData.id],
-                                        {
-                                            ...queryData,
-                                            data: {
-                                                ...queryData.data,
-                                                ...update,
-                                                updated_at: res.data.updated_at,
-                                            },
-                                        } as AxiosResponse<INeurosynthProjectReturn>
-                                    );
-                                }
-
-                                const queryData2 = oldDebouncedStoreData.metadata.queryClient.getQueryData<
-                                    AxiosResponse<INeurosynthProjectReturn>
-                                >(['projects', oldDebouncedStoreData.id]);
-                            }
+                            if (!queryData) return;
+                            oldDebouncedStoreData.metadata.queryClient.setQueryData(
+                                ['projects', oldDebouncedStoreData.id],
+                                {
+                                    ...queryData,
+                                    data: {
+                                        ...queryData.data,
+                                        ...update,
+                                        updated_at: res.data.updated_at,
+                                    },
+                                } as AxiosResponse<INeurosynthProjectReturn>
+                            );
                         },
                         onError: (err) => {
                             let enqueueSnackbarFunc:
@@ -341,20 +334,6 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
                     queryClient: undefined,
                 },
             }));
-        },
-        initCuration: (cols: string[], isPrisma: boolean) => {
-            set((state) => ({
-                ...state,
-                provenance: {
-                    ...state.provenance,
-                    curationMetadata: {
-                        ...state.provenance.curationMetadata,
-                        ...initCurationHelper(cols, isPrisma),
-                    },
-                },
-            }));
-
-            get().updateProjectInDBDebounced();
         },
         updateProjectName: (name: string) => {
             set((state) => ({
@@ -761,7 +740,6 @@ export const useUpdateCurationColumns = () => useProjectStore((state) => state.u
 export const useCreateNewCurationImport = () => useProjectStore((state) => state.createNewCurationImport);
 export const useDeleteCurationImport = () => useProjectStore((state) => state.deleteCurationImport);
 export const useAddNewCurationStubs = () => useProjectStore((state) => state.addNewStubs);
-export const useInitCuration = () => useProjectStore((state) => state.initCuration);
 export const useUpdateStubField = () => useProjectStore((state) => state.updateStubField);
 export const usePromoteStub = () => useProjectStore((state) => state.promoteStub);
 export const useDemoteStub = () => useProjectStore((state) => state.demoteStub);
@@ -793,6 +771,7 @@ export const useInitProjectStoreIfRequired = () => {
 
     useEffect(() => {
         if (projectId && projectId !== projectIdFromProject) {
+            console.log('UPDATING PROJECT');
             clearProjectStore();
             initProjectStore(data);
             updateProjectMetadata({

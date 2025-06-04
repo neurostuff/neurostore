@@ -1,4 +1,4 @@
-import { Box, Chip, Divider, List, ListSubheader, SxProps, Tooltip } from '@mui/material';
+import { Box, Chip, Divider, List, ListSubheader, SxProps } from '@mui/material';
 import React from 'react';
 import { ECurationBoardAIInterface } from './CurationBoardAi';
 import CurationBoardAIGroupsStyles from './CurationBoardAIGroups.styles';
@@ -53,7 +53,9 @@ const CurationBoardAIGroupsList: React.FC<{
                         ) : group.type === 'SUBHEADER' ? (
                             <ListSubheader sx={CurationBoardAIGroupsStyles.listSubheader}>
                                 {group.label}
-                                {group.count !== null && <Chip label={group.count} size="small" />}
+                                {group.count !== null && (
+                                    <Chip label={group.count} sx={{ fontSize: '12px', height: '20px' }} />
+                                )}
                             </ListSubheader>
                         ) : (
                             <Box m="1rem">

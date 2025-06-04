@@ -132,7 +132,6 @@ export type ProjectStoreActions = {
     updateProjectMetaAnalyses: (meta_analyses: string[]) => void;
     updateProjectMetadata: (metadata: Partial<ProjectStoreMetadata>) => void;
     clearProjectStore: () => void;
-    initCuration: (cols: string[], isPrisma: boolean) => void;
     handleDrag: (result: DropResult, provided: ResponderProvided) => void;
     createNewExclusion: (newExclusion: ITag, arg: keyof Omit<IPRISMAConfig, 'isPrisma'> | undefined) => void;
     createNewInfoTag: (newTag: ITag) => void;

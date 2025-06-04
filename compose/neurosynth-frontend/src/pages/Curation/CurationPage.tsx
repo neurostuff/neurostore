@@ -9,6 +9,7 @@ import CurationBoardBasic from 'pages/Curation/components/CurationBoardBasic';
 import { IProjectPageLocationState } from 'pages/Project/ProjectPage';
 import {
     useClearProjectStore,
+    useGetProjectIsLoading,
     useInitProjectStoreIfRequired,
     useProjectCreatedAt,
     useProjectCurationIsPrisma,
@@ -33,6 +34,7 @@ const CurationPage: React.FC = () => {
     const annotationId = useProjectExtractionAnnotationId();
     const { data: studyset } = useGetStudysetById(studysetId || '', false);
     const { projectId } = useParams<{ projectId: string | undefined }>();
+    const projectIsLoading = useGetProjectIsLoading();
     const clearProjectStore = useClearProjectStore();
 
     const [prismaIsOpen, setPrismaIsOpen] = useState(false);
@@ -81,8 +83,13 @@ const CurationPage: React.FC = () => {
         }
     };
 
+    console.log({
+        projectName,
+        projectIsLoading,
+    });
+
     return (
-        <StateHandlerComponent isError={false} isLoading={false}>
+        <StateHandlerComponent isError={false} isLoading={projectIsLoading}>
             <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
                 <Box
                     sx={{

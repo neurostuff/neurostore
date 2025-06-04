@@ -1,21 +1,47 @@
-import { Box, Table, TableBody, TableCell, TableRow, Typography } from '@mui/material';
+import { ExpandMoreOutlined } from '@mui/icons-material';
+import {
+    Accordion,
+    AccordionDetails,
+    AccordionSummary,
+    Box,
+    Table,
+    TableBody,
+    TableCell,
+    TableRow,
+    Typography,
+} from '@mui/material';
 import AIICon from 'components/AIIcon';
-import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
 import { IBehavioralTask, IfMRITask, IGroup } from 'hooks/extractions/useGetAllExtractedData';
-import { ICurationTableStudy } from '../hooks/useCuratorTableState.types';
+import { useState } from 'react';
+import { useParams } from 'react-router-dom';
 import {
     PARTICIPANTS_DEMOGRAPHICS_EXTRACTOR_CURATOR_COLUMNS,
     TASK_EXTRACTOR_CURATOR_COLUMNS,
 } from '../hooks/useCuratorTableState.consts';
+import { ICurationTableStudy } from '../hooks/useCuratorTableState.types';
+import { display } from '@mui/system';
 
 const CurationStubAITableSummary: React.FC<{ stub: ICurationTableStudy | undefined }> = ({ stub }) => {
     const TaskExtractor = stub?.TaskExtractor;
+    const { projectId } = useParams<{ projectId: string }>();
+    const AIFocusModeSummaryLocalStorageKey = `${projectId}_FOCUS_MODE_AI_SUMMARY_EXPANDED_STATE`;
     const ParticipantDemographicsExtractor = stub?.ParticipantDemographicsExtractor;
+
+    const [expandedState, setExpandedState] = useState(() => {
+        const value = localStorage.getItem(AIFocusModeSummaryLocalStorageKey);
+        if (!value) return [false, false];
+        return JSON.parse(value);
+    });
 
     const modalityStr = (stub?.TaskExtractor?.Modality || []).reduce((acc, curr, index) => {
         if (index === 0) return curr;
         return `${acc}, ${curr}`;
     }, '');
+
+    const handleSetExpandedState = (newExpandedState: [boolean, boolean]) => {
+        localStorage.setItem(AIFocusModeSummaryLocalStorageKey, JSON.stringify(newExpandedState));
+        setExpandedState(newExpandedState);
+    };
 
     if (!TaskExtractor && !ParticipantDemographicsExtractor) {
         return (
@@ -27,135 +53,153 @@ const CurationStubAITableSummary: React.FC<{ stub: ICurationTableStudy | undefin
 
     return (
         <Box>
-            <NeurosynthAccordion
-                expandIconColor="gray"
-                TitleElement={
+            <Accordion expanded={expandedState[0]}>
+                <AccordionSummary
+                    onClick={() => handleSetExpandedState([!expandedState[0], expandedState[1]])}
+                    expandIcon={<ExpandMoreOutlined />}
+                >
                     <Box sx={{ display: 'flex' }}>
                         <AIICon sx={{ marginRight: '0.5rem' }} />
                         Experimental Details
                     </Box>
-                }
-            >
-                {TaskExtractor ? (
-                    <>
-                        <Typography variant="body2" fontWeight="bold">
-                            Modality:
-                        </Typography>
-                        <Typography variant="body2">{modalityStr}</Typography>
-                        <Typography variant="body2" fontWeight="bold" sx={{ marginTop: '0.5rem' }}>
-                            Objective:
-                        </Typography>
-                        <Typography variant="body2"> {TaskExtractor.StudyObjective || ''}</Typography>
-                        {TaskExtractor.fMRITasks && TaskExtractor.fMRITasks.length > 0 ? (
-                            <Table sx={{ marginTop: '0.5rem' }}>
-                                <TableBody>
-                                    {TASK_EXTRACTOR_CURATOR_COLUMNS.filter((col) => col.id.includes('fMRI')).map(
-                                        (col, rowIndex) => (
-                                            <TableRow key={rowIndex}>
-                                                <TableCell>{col.label.replace('fMRI Task', '')}</TableCell>
-                                                {TaskExtractor.fMRITasks?.map((task, cellIndex) => {
-                                                    const id = col.id.split('.')[1] as keyof IfMRITask;
-                                                    let value = task[id];
-                                                    if (Array.isArray(value)) {
-                                                        value = value.reduce(
-                                                            (acc, curr, index) =>
-                                                                index === 0 ? curr : `${acc}, ${curr}`,
-                                                            ''
-                                                        );
-                                                    }
-                                                    return (
-                                                        <TableCell key={cellIndex}>
-                                                            <Typography
-                                                                variant="body2"
-                                                                sx={{ color: value ? 'inherit' : 'warning.dark' }}
-                                                            >
-                                                                {value || '---'}
-                                                                {rowIndex === 0 ? ' (fMRI)' : ''}
-                                                            </Typography>
-                                                        </TableCell>
-                                                    );
-                                                })}
-                                                {TaskExtractor.BehavioralTasks?.map((task, cellIndex) => {
-                                                    const id = col.id.split('.')[1] as keyof IBehavioralTask;
-                                                    let value = task[id];
-                                                    if (Array.isArray(value)) {
-                                                        value = value.reduce(
-                                                            (acc, curr, index) =>
-                                                                index === 0 ? curr : `${acc}, ${curr}`,
-                                                            ''
-                                                        );
-                                                    }
-                                                    return (
-                                                        <TableCell key={cellIndex}>
-                                                            <Typography
-                                                                variant="body2"
-                                                                sx={{ color: value ? 'inherit' : 'warning.dark' }}
-                                                            >
-                                                                {value || '---'}
-                                                                {rowIndex === 0 ? ' (Behavioral)' : ''}
-                                                            </Typography>
-                                                        </TableCell>
-                                                    );
-                                                })}
-                                            </TableRow>
-                                        )
-                                    )}
-                                </TableBody>
-                            </Table>
-                        ) : (
-                            <Typography color="warning.dark" mt="0.5rem" variant="body2">
-                                No tasks
+                </AccordionSummary>
+                <AccordionDetails>
+                    {TaskExtractor ? (
+                        <>
+                            <Typography variant="body2" fontWeight="bold">
+                                Modality:
                             </Typography>
-                        )}
-                    </>
-                ) : (
-                    <Typography color="warning.dark" variant="body2">
-                        No extraction found
-                    </Typography>
-                )}
-            </NeurosynthAccordion>
+                            <Typography variant="body2">{modalityStr}</Typography>
+                            <Typography variant="body2" fontWeight="bold" sx={{ marginTop: '0.5rem' }}>
+                                Objective:
+                            </Typography>
+                            <Typography variant="body2"> {TaskExtractor.StudyObjective || ''}</Typography>
+                            {TaskExtractor.fMRITasks && TaskExtractor.fMRITasks.length > 0 ? (
+                                <Table sx={{ marginTop: '0.5rem' }}>
+                                    <TableBody>
+                                        {TASK_EXTRACTOR_CURATOR_COLUMNS.filter((col) => col.id.includes('fMRI')).map(
+                                            (col, rowIndex) => (
+                                                <TableRow key={rowIndex}>
+                                                    <TableCell>
+                                                        <Box style={{ display: 'flex', flexDirection: 'column' }}>
+                                                            <Typography>
+                                                                {col.label.replace('fMRI Task', '')}
+                                                            </Typography>
+                                                            <Typography variant="caption">{col.description}</Typography>
+                                                        </Box>
+                                                    </TableCell>
+                                                    {TaskExtractor.fMRITasks?.map((task, cellIndex) => {
+                                                        const id = col.id.split('.')[1] as keyof IfMRITask;
+                                                        let value = task[id];
+                                                        if (Array.isArray(value)) {
+                                                            value = value.reduce(
+                                                                (acc, curr, index) =>
+                                                                    index === 0 ? curr : `${acc}, ${curr}`,
+                                                                ''
+                                                            );
+                                                        }
+                                                        return (
+                                                            <TableCell key={cellIndex}>
+                                                                <Typography
+                                                                    variant="body2"
+                                                                    sx={{ color: value ? 'inherit' : 'warning.dark' }}
+                                                                >
+                                                                    {value || '---'}
+                                                                    {rowIndex === 0 ? ' (fMRI)' : ''}
+                                                                </Typography>
+                                                            </TableCell>
+                                                        );
+                                                    })}
+                                                    {TaskExtractor.BehavioralTasks?.map((task, cellIndex) => {
+                                                        const id = col.id.split('.')[1] as keyof IBehavioralTask;
+                                                        let value = task[id];
+                                                        if (Array.isArray(value)) {
+                                                            value = value.reduce(
+                                                                (acc, curr, index) =>
+                                                                    index === 0 ? curr : `${acc}, ${curr}`,
+                                                                ''
+                                                            );
+                                                        }
+                                                        return (
+                                                            <TableCell key={cellIndex}>
+                                                                <Typography
+                                                                    variant="body2"
+                                                                    sx={{ color: value ? 'inherit' : 'warning.dark' }}
+                                                                >
+                                                                    {value || '---'}
+                                                                    {rowIndex === 0 ? ' (Behavioral)' : ''}
+                                                                </Typography>
+                                                            </TableCell>
+                                                        );
+                                                    })}
+                                                </TableRow>
+                                            )
+                                        )}
+                                    </TableBody>
+                                </Table>
+                            ) : (
+                                <Typography color="warning.dark" mt="0.5rem" variant="body2">
+                                    No tasks
+                                </Typography>
+                            )}
+                        </>
+                    ) : (
+                        <Typography color="warning.dark" variant="body2">
+                            No extraction found
+                        </Typography>
+                    )}
+                </AccordionDetails>
+            </Accordion>
 
-            <NeurosynthAccordion
-                expandIconColor="gray"
-                TitleElement={
+            <Accordion expanded={expandedState[1]}>
+                <AccordionSummary
+                    onClick={() => handleSetExpandedState([expandedState[0], !expandedState[1]])}
+                    expandIcon={<ExpandMoreOutlined />}
+                >
                     <Box sx={{ display: 'flex' }}>
                         <AIICon sx={{ marginRight: '0.5rem' }} />
                         Participant Demographics
                     </Box>
-                }
-            >
-                {ParticipantDemographicsExtractor ? (
-                    <Table sx={{ marginTop: '0.5rem' }}>
-                        <TableBody>
-                            {PARTICIPANTS_DEMOGRAPHICS_EXTRACTOR_CURATOR_COLUMNS.map((col, index) => (
-                                <TableRow key={index}>
-                                    <TableCell>{col.label}</TableCell>
-                                    {ParticipantDemographicsExtractor.groups?.map((group, index) => {
-                                        const value =
-                                            col.id === 'group_name'
-                                                ? `${group[col.id as keyof IGroup]} ${group.subgroup_name ? `(${group.subgroup_name})` : ''}`
-                                                : group[col.id as keyof IGroup];
-                                        return (
-                                            <TableCell key={index}>
-                                                <Typography
-                                                    variant="body2"
-                                                    sx={{ color: value ? 'inherit' : 'warning.dark' }}
-                                                >
-                                                    {value || '---'}
-                                                </Typography>
-                                            </TableCell>
-                                        );
-                                    })}
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                ) : (
-                    <Typography color="warning.dark" variant="body2">
-                        No extraction found
-                    </Typography>
-                )}
-            </NeurosynthAccordion>
+                </AccordionSummary>
+                <AccordionDetails>
+                    {ParticipantDemographicsExtractor ? (
+                        <Table sx={{ marginTop: '0.5rem' }}>
+                            <TableBody>
+                                {PARTICIPANTS_DEMOGRAPHICS_EXTRACTOR_CURATOR_COLUMNS.map((col, index) => (
+                                    <TableRow key={index}>
+                                        <TableCell>
+                                            <Box style={{ display: 'flex', flexDirection: 'column' }}>
+                                                <Typography>{col.label}</Typography>
+                                                <Typography variant="caption">{col.description}</Typography>
+                                            </Box>
+                                        </TableCell>
+                                        {ParticipantDemographicsExtractor.groups?.map((group, index) => {
+                                            const value =
+                                                col.id === 'group_name'
+                                                    ? `${group[col.id as keyof IGroup]} ${group.subgroup_name ? `(${group.subgroup_name})` : ''}`
+                                                    : group[col.id as keyof IGroup];
+                                            return (
+                                                <TableCell key={index}>
+                                                    <Typography
+                                                        variant="body2"
+                                                        sx={{ color: value ? 'inherit' : 'warning.dark' }}
+                                                    >
+                                                        {value || '---'}
+                                                    </Typography>
+                                                </TableCell>
+                                            );
+                                        })}
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    ) : (
+                        <Typography color="warning.dark" variant="body2">
+                            No extraction found
+                        </Typography>
+                    )}
+                </AccordionDetails>
+            </Accordion>
         </Box>
     );
 };

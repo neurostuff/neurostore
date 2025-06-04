@@ -28,7 +28,8 @@ const CurationBoardAIInterfaceCuratorTableManageColumns: React.FC<{
     columns: (DisplayColumnDef<ICurationTableStudy, unknown> | AccessorFnColumnDef<ICurationTableStudy, string>)[];
     onAddColumn?: (column: string) => void;
     onRemoveColumn?: (column: string) => void;
-}> = ({ onAddColumn = () => {}, onRemoveColumn = () => {}, columns }) => {
+    allowAIColumns: boolean;
+}> = ({ onAddColumn = () => {}, onRemoveColumn = () => {}, columns, allowAIColumns }) => {
     const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
     const [search, setSearch] = useState<string>();
 
@@ -120,78 +121,82 @@ const CurationBoardAIInterfaceCuratorTableManageColumns: React.FC<{
                                 </ListItemButton>
                             </ListItem>
                         ))}
-                        <ListSubheader
-                            sx={{
-                                padding: '8px 4px',
-                                fontSize: '12px',
-                                lineHeight: 'normal',
-                                display: 'flex',
-                                alignItems: 'center',
-                            }}
-                        >
-                            <AIICon sx={{ marginRight: '4px' }} />
-                            Experimental Details
-                        </ListSubheader>
-                        {filteredTaskExtractionColumns.length === 0 && (
-                            <Typography
-                                variant="body2"
-                                sx={{ color: 'warning.dark', fontSize: '12px', padding: '0px 16px' }}
-                            >
-                                No results
-                            </Typography>
-                        )}
-                        {filteredTaskExtractionColumns.map((column) => (
-                            <ListItem key={column.id} disablePadding>
-                                <ListItemButton
-                                    onClick={() => handleSelectColumn(column.id)}
-                                    sx={{ padding: '2px 4px' }}
+                        {allowAIColumns && (
+                            <>
+                                <ListSubheader
+                                    sx={{
+                                        padding: '8px 4px',
+                                        fontSize: '12px',
+                                        lineHeight: 'normal',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                    }}
                                 >
-                                    <Checkbox checked={columnsSet.has(column.id)} size="small" />
-                                    <ListItemText primaryTypographyProps={{ fontSize: '12px' }}>
-                                        {column.label}
-                                    </ListItemText>
-                                    <ListItemIcon sx={{ minWidth: '0px' }}>
-                                        <ToDocsIcon url={`guide/Project/Curation#${column.id}`} />
-                                    </ListItemIcon>
-                                </ListItemButton>
-                            </ListItem>
-                        ))}
-                        <ListSubheader
-                            sx={{
-                                padding: '8px 4px',
-                                fontSize: '12px',
-                                lineHeight: 'normal',
-                                display: 'flex',
-                                alignItems: 'center',
-                            }}
-                        >
-                            <AIICon sx={{ marginRight: '8px' }} />
-                            Participant Demographics
-                        </ListSubheader>
-                        {filteredParticipantsDemographicColumn.length === 0 && (
-                            <Typography
-                                variant="body2"
-                                sx={{ color: 'warning.dark', fontSize: '12px', padding: '0px 16px' }}
-                            >
-                                No results
-                            </Typography>
-                        )}
-                        {filteredParticipantsDemographicColumn.map((column) => (
-                            <ListItem key={column.id} disablePadding>
-                                <ListItemButton
-                                    onClick={() => handleSelectColumn(column.id)}
-                                    sx={{ padding: '0px 4px' }}
+                                    <AIICon sx={{ marginRight: '4px' }} />
+                                    Experimental Details
+                                </ListSubheader>
+                                {filteredTaskExtractionColumns.length === 0 && (
+                                    <Typography
+                                        variant="body2"
+                                        sx={{ color: 'warning.dark', fontSize: '12px', padding: '0px 16px' }}
+                                    >
+                                        No results
+                                    </Typography>
+                                )}
+                                {filteredTaskExtractionColumns.map((column) => (
+                                    <ListItem key={column.id} disablePadding>
+                                        <ListItemButton
+                                            onClick={() => handleSelectColumn(column.id)}
+                                            sx={{ padding: '2px 4px' }}
+                                        >
+                                            <Checkbox checked={columnsSet.has(column.id)} size="small" />
+                                            <ListItemText primaryTypographyProps={{ fontSize: '12px' }}>
+                                                {column.label}
+                                            </ListItemText>
+                                            <ListItemIcon sx={{ minWidth: '0px' }}>
+                                                <ToDocsIcon url={`guide/Project/Curation#${column.id}`} />
+                                            </ListItemIcon>
+                                        </ListItemButton>
+                                    </ListItem>
+                                ))}
+                                <ListSubheader
+                                    sx={{
+                                        padding: '8px 4px',
+                                        fontSize: '12px',
+                                        lineHeight: 'normal',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                    }}
                                 >
-                                    <Checkbox checked={columnsSet.has(column.id)} size="small" />
-                                    <ListItemText primaryTypographyProps={{ fontSize: '12px' }}>
-                                        {column.label}
-                                    </ListItemText>
-                                    <ListItemIcon sx={{ minWidth: '0px' }}>
-                                        <ToDocsIcon url={`guide/Project/Curation#${column.id}`} />
-                                    </ListItemIcon>
-                                </ListItemButton>
-                            </ListItem>
-                        ))}
+                                    <AIICon sx={{ marginRight: '8px' }} />
+                                    Participant Demographics
+                                </ListSubheader>
+                                {filteredParticipantsDemographicColumn.length === 0 && (
+                                    <Typography
+                                        variant="body2"
+                                        sx={{ color: 'warning.dark', fontSize: '12px', padding: '0px 16px' }}
+                                    >
+                                        No results
+                                    </Typography>
+                                )}
+                                {filteredParticipantsDemographicColumn.map((column) => (
+                                    <ListItem key={column.id} disablePadding>
+                                        <ListItemButton
+                                            onClick={() => handleSelectColumn(column.id)}
+                                            sx={{ padding: '0px 4px' }}
+                                        >
+                                            <Checkbox checked={columnsSet.has(column.id)} size="small" />
+                                            <ListItemText primaryTypographyProps={{ fontSize: '12px' }}>
+                                                {column.label}
+                                            </ListItemText>
+                                            <ListItemIcon sx={{ minWidth: '0px' }}>
+                                                <ToDocsIcon url={`guide/Project/Curation#${column.id}`} />
+                                            </ListItemIcon>
+                                        </ListItemButton>
+                                    </ListItem>
+                                ))}
+                            </>
+                        )}
                     </List>
                 </Box>
             </NeurosynthPopper>

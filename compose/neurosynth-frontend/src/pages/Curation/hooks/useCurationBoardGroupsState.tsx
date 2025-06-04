@@ -10,6 +10,7 @@ import { IGroupListItem } from '../components/CurationBoardAIGroupsList';
 import { ECurationBoardAIInterface } from '../components/CurationBoardAi';
 import { SxProps } from '@mui/system';
 import { defaultExclusionTags } from 'pages/Project/store/ProjectStore.types';
+import { useParams } from 'react-router-dom';
 
 const excludedListItemStyles: SxProps = {
     '& .MuiListItemButton-root': {
@@ -26,10 +27,17 @@ const excludedListItemStylesChildren: SxProps = {
 
 function useCurationBoardGroupsState() {
     const curationColumns = useProjectCurationColumns();
+    const { projectId } = useParams<{ projectId: string }>();
+    const selectedCurationStepLocalStorageKey = `${projectId}_CURATION_STEP_ID`;
     const prismaConfig = useProjectCurationPrismaConfig();
     const [selectedGroup, setSelectedGroup] = useState<IGroupListItem>();
     const excludedGroups = useProjectCurationExclusionTags();
     const curationImports = useProjectCurationImports();
+
+    const handleSetSelectedGroup = (group: IGroupListItem) => {
+        localStorage.setItem(selectedCurationStepLocalStorageKey, group.id);
+        setSelectedGroup(group);
+    };
 
     useEffect(() => {
         return () => {
@@ -65,17 +73,17 @@ function useCurationBoardGroupsState() {
                 const prismaPhase: keyof Omit<IPRISMAConfig, 'isPrisma'> | undefined = indexToPRISMAMapping(index);
 
                 if (prismaPhase === 'identification') {
-                    groupListItems[groupListItems.length - 1].tooltipContent =
+                    groupListItems[groupListItems.length - 1].secondaryLabel =
                         'Search for studies and identify duplicates';
                 } else if (prismaPhase === 'screening') {
-                    groupListItems[groupListItems.length - 1].tooltipContent =
+                    groupListItems[groupListItems.length - 1].secondaryLabel =
                         'Screen titles and abstracts for relevance';
                 } else if (prismaPhase === 'eligibility') {
-                    groupListItems[groupListItems.length - 1].tooltipContent =
+                    groupListItems[groupListItems.length - 1].secondaryLabel =
                         'Assess full full-texts against inclusion criteria';
                 } else {
                     // inclusion phase
-                    groupListItems[groupListItems.length - 1].tooltipContent =
+                    groupListItems[groupListItems.length - 1].secondaryLabel =
                         'Studies to be included in the final meta-analysis';
                     return;
                 }
@@ -224,14 +232,21 @@ function useCurationBoardGroupsState() {
 
     useEffect(() => {
         if (selectedGroup === undefined && curationColumns.length > 0) {
-            setSelectedGroup(groups[1]);
+            const localStorageSelectedGroupId = localStorage.getItem(selectedCurationStepLocalStorageKey);
+
+            if (localStorageSelectedGroupId) {
+                setSelectedGroup(groups.find((x) => x.id === localStorageSelectedGroupId));
+            } else {
+                localStorage.setItem(selectedCurationStepLocalStorageKey, groups[1].id);
+                setSelectedGroup(groups[1]);
+            }
         }
-    }, [groups, curationColumns.length, selectedGroup]);
+    }, [groups, curationColumns.length, selectedGroup, selectedCurationStepLocalStorageKey]);
 
     return {
         groups,
         selectedGroup,
-        setSelectedGroup,
+        handleSetSelectedGroup,
     };
 }
 
