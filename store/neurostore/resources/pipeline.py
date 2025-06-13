@@ -171,7 +171,13 @@ class PipelineStudyResultsView(ObjectView, ListView):
 
         # If any filters were invalid, return 400 with error details
         if invalid_filters:
-            abort(400, {"message": "Invalid JSON filter(s)", "errors": invalid_filters})
+            abort(
+                400,
+                {
+                    "message": "Invalid filter format - expected pipeline_name[:version]/path",
+                    "errors": invalid_filters
+                }
+            )
 
         # Verify all pipelines exist upfront
         existing_pipelines = {

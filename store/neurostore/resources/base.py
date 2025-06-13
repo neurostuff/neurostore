@@ -273,7 +273,7 @@ class BaseView(MethodView):
                 q = q.options(selectinload(cls._model.user)).filter_by(id=id)
             record = q.first()
             if record is None:
-                abort(422)
+                abort(422, description=f"Record {id} not found in {str(cls._model)}")
 
         data = cls.load_nested_records(data, record)
 
@@ -283,7 +283,10 @@ class BaseView(MethodView):
             and not only_ids
             and current_user.external_id != compose_bot
         ):
-            abort(403)
+            abort(
+                403,
+                description="You do not have permission to modify this record. You must be the owner or the compose bot.",
+            )
         elif only_ids:
             to_commit.append(record)
 
@@ -291,9 +294,12 @@ class BaseView(MethodView):
                 db.session.add_all(to_commit)
                 try:
                     db.session.flush()
-                except SQLAlchemyError:
+                except SQLAlchemyError as e:
                     db.session.rollback()
-                    abort(400)
+                    abort(
+                        400,
+                        description="Database operation failed during record creation/update",
+                    )
 
             return record
 
@@ -315,7 +321,10 @@ class BaseView(MethodView):
                 if PrtCls._model is BaseStudy:
                     pass
                 elif current_user != v.user and current_user.external_id != compose_bot:
-                    abort(403)
+                    abort(
+                        403,
+                        description="You do not have permission to link to this parent record. You must own the parent record or be the compose bot.",
+                    )
             if k in cls._linked and v is not None:
                 LnCls = getattr(viewdata, cls._linked[k])
                 # this can be owned by someone else
@@ -334,7 +343,7 @@ class BaseView(MethodView):
                     v = q.first()
 
                 if v is None:
-                    abort(400)
+                    abort(400, description=f"Linked record not found with {query_args}")
 
             if k not in cls._nested and k not in ["id", "user"]:
                 try:
@@ -394,9 +403,12 @@ class BaseView(MethodView):
             db.session.add_all(to_commit)
             try:
                 db.session.flush()
-            except SQLAlchemyError:
+            except SQLAlchemyError as e:
                 db.session.rollback()
-                abort(400)
+                abort(
+                    400,
+                    description=f"Database error occurred during nested record update: {str(e)}",
+                )
 
         return record
 
@@ -512,7 +524,10 @@ class ObjectView(BaseView):
 
         current_user = get_current_user()
         if record.user_id != current_user.external_id:
-            abort(403)
+            abort(
+                403,
+                description="You do not have permission to delete this record. Only the owner can delete records.",
+            )
         else:
             db.session.delete(record)
             # clear relevant caches
