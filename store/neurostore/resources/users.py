@@ -35,12 +35,19 @@ class UsersView(ObjectView, ListView):
         ).first()
         data = parser.parse(self.__class__._schema, request)
         if id != data["id"] or id != current_user.id:
-            return abort(422)
+            return abort(
+                422,
+                description=(
+                    f"User ID mismatch. "
+                    f"URL ID: {id}, Data ID: {data['id']}, "
+                    f"Current User ID: {current_user.id}"
+                ),
+            )
 
         record = self._model.query.filter_by(id=id).first()
 
         if record is None:
-            abort(422)
+            abort(422, description=f"User record not found with ID: {id}")
 
         for k, v in data.items():
             setattr(record, k, v)
