@@ -3,7 +3,6 @@
 import json
 import os.path as op
 from pathlib import Path
-import hashlib
 from dateutil.parser import parse as parse_date
 
 from neurostore.database import db
@@ -36,36 +35,39 @@ def ingest_feature(feature_directory):
             study_dependent=(
                 True if pipeline_info.get("type", False) == "dependent" else False
             ),
-            ace_compatible="ace"
-            in pipeline_info.get("arguments", {}).get("input_sources", []),
-            pubget_compatible="pubget"
-            in pipeline_info.get("arguments", {}).get("input_sources", []),
+            ace_compatible="ace" in pipeline_info.get("input_sources", []),
+            pubget_compatible="pubget" in pipeline_info.get("input_sources", []),
             derived_from=pipeline_info.get("derived_from", None),
         )
         db.session.add(pipeline)
 
     # search within the pipeline and see if there are any existing pipeline configs
-    # that match the "arguements" field in the pipeline_info.json
-    # create a hash of the config arguments
-    config_hash = hashlib.sha256(
-        json.dumps(pipeline_info["arguments"]).encode()
-    ).hexdigest()
     pipeline_config = (
         db.session.query(PipelineConfig)
         .filter(
             PipelineConfig.pipeline_id == pipeline.id,
-            PipelineConfig.config_hash == config_hash,
+            PipelineConfig.config_hash == pipeline_info["config_hash"],
             PipelineConfig.version == pipeline_info["version"],
         )
         .first()
     )
+
     # create a pipeline config if it does not exist
     if not pipeline_config:
+        # Build config_args from pipeline_info
+        config_args = {
+            "extractor": pipeline_info.get("extractor"),
+            "extractor_kwargs": pipeline_info.get("extractor_kwargs", {}),
+            "transform_kwargs": pipeline_info.get("transform_kwargs", {}),
+            "input_pipelines": pipeline_info.get("input_pipelines", {}),
+        }
+
         pipeline_config = PipelineConfig(
             pipeline_id=pipeline.id,
             version=pipeline_info["version"],
-            config_args=pipeline_info["arguments"],
-            config_hash=config_hash,
+            config_args=config_args,
+            config_hash=pipeline_info["config_hash"],
+            schema=pipeline_info.get("schema"),
         )
         db.session.add(pipeline_config)
 
@@ -91,6 +93,7 @@ def ingest_feature(feature_directory):
                 date_executed=parse_date(info["date"]),
                 file_inputs=info["inputs"],
                 config=pipeline_config,
+                status="SUCCESS",
             )
         )
 

@@ -19,7 +19,7 @@ def pipeline_study_result_payload(session):
     # create pipeline
     pipeline = Pipeline(name="TestPipeline")
 
-    # Create pipeline config with NLP/LLM configuration
+    # Create pipeline config with extractor configuration
     pipeline_config = PipelineConfig(
         version="1.0.0",
         config_args={
@@ -28,23 +28,33 @@ def pipeline_study_result_payload(session):
                 "min_words": 100,
                 "language": "en",
             },
-            "embeddings": {
-                "model": "bert-base-uncased",
-                "max_length": 512,
-                "batch_size": 32,
+            "extraction_model": "gpt-4",
+            "extractor": "ParticipantDemographicsExtractor",
+            "extractor_kwargs": {
+                "env_variable": "OPENAI_API_KEY",
+                "disable_abbreviation_expansion": True,
             },
-            "classification": {
-                "model_type": "transformer",
-                "architecture": "roberta-large",
-                "fine_tuning": {"epochs": 3, "learning_rate": 2e-5},
-            },
-            "topic_modeling": {
-                "method": "lda",
-                "num_topics": 20,
-                "min_topic_coherence": 0.7,
-            },
+            "transform_kwargs": {},
+            "input_pipelines": {},
         },
         config_hash="test_hash",
+        schema={
+            "type": "object",
+            "properties": {
+                "groups": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "count": {"type": "integer"},
+                            "group_name": {"type": "string"},
+                        },
+                        "required": ["count", "group_name"],
+                    },
+                }
+            },
+            "required": ["groups"],
+        },
         pipeline=pipeline,
     )
     db.session.add(pipeline_config)
@@ -117,23 +127,34 @@ def result3(pipeline_study_result_payload, session):
                 "min_words": 200,
                 "language": "en",
             },
-            "embeddings": {
-                "model": "roberta-base",
-                "max_length": 768,
-                "batch_size": 16,
+            "extraction_model": "gpt-4-turbo",
+            "extractor": "ParticipantDemographicsExtractor",
+            "extractor_kwargs": {
+                "env_variable": "OPENAI_API_KEY",
+                "disable_abbreviation_expansion": False,
             },
-            "classification": {
-                "model_type": "transformer",
-                "architecture": "bert-large",
-                "fine_tuning": {"epochs": 5, "learning_rate": 1e-5},
-            },
-            "topic_modeling": {
-                "method": "bertopic",
-                "num_topics": 30,
-                "min_topic_coherence": 0.8,
-            },
+            "transform_kwargs": {"normalize_ages": True},
+            "input_pipelines": {},
         },
         config_hash="test_hash_v2",
+        schema={
+            "type": "object",
+            "properties": {
+                "groups": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "count": {"type": "integer"},
+                            "group_name": {"type": "string"},
+                            "age_mean": {"type": "number"},
+                        },
+                        "required": ["count", "group_name"],
+                    },
+                }
+            },
+            "required": ["groups"],
+        },
         pipeline=pipeline,
     )
     db.session.add(pipeline_config)
@@ -263,10 +284,12 @@ def test_read_single_pipeline_config(auth_client, pipeline_study_result_payload)
     data = response.json()
     assert data["version"] == "1.0.0"
     assert data["config_hash"] == "test_hash"
+    assert "extraction_model" in data["config_args"]
+    assert "extractor" in data["config_args"]
     assert "text_extraction" in data["config_args"]
-    assert "embeddings" in data["config_args"]
-    assert "classification" in data["config_args"]
-    assert "topic_modeling" in data["config_args"]
+    assert "extractor_kwargs" in data["config_args"]
+    assert "transform_kwargs" in data["config_args"]
+    assert "input_pipelines" in data["config_args"]
 
 
 @pytest.mark.parametrize(
@@ -349,86 +372,48 @@ def test_filter_pipeline_study_results(
 @pytest.mark.parametrize(
     "pipeline_config,expected_count,expected_value,check_field",
     [
-        # Test basic NLP config queries
+        # Test extractor config queries
+        (
+            "TestPipeline:extraction_model=gpt-4",
+            2,
+            "gpt-4",
+            lambda x: x.config_args["extraction_model"],
+        ),
+        (
+            "TestPipeline:extractor=ParticipantDemographicsExtractor",
+            3,  # All configs use this extractor
+            "ParticipantDemographicsExtractor",
+            lambda x: x.config_args["extractor"],
+        ),
+        # Test text extraction config
         (
             "TestPipeline:text_extraction.source=abstract",
             2,
             "abstract",
             lambda x: x.config_args["text_extraction"]["source"],
         ),
+        # Test boolean flags
         (
-            "TestPipeline:embeddings.model=bert-base-uncased",
+            "TestPipeline:1.0.0:extractor_kwargs.disable_abbreviation_expansion=true",
             2,
-            "bert-base-uncased",
-            lambda x: x.config_args["embeddings"]["model"],
+            True,
+            lambda x: x.config_args["extractor_kwargs"][
+                "disable_abbreviation_expansion"
+            ],
         ),
-        # Test numeric comparisons
+        # Test nested paths
         (
-            "TestPipeline:1.0.0:text_extraction.min_words>=50",
-            2,
-            100,
-            lambda x: x.config_args["text_extraction"]["min_words"],
-        ),
-        (
-            "TestPipeline:1.0.0:embeddings.max_length>256",
-            2,
-            512,
-            lambda x: x.config_args["embeddings"]["max_length"],
-        ),
-        # Test nested config paths
-        (
-            "TestPipeline:1.0.0:classification.fine_tuning.epochs=3",
-            2,
-            3,
-            lambda x: x.config_args["classification"]["fine_tuning"]["epochs"],
-        ),
-        # Test with version
-        (
-            "TestPipeline:1.0.0:topic_modeling.method=lda",
-            2,
-            "lda",
-            lambda x: x.config_args["topic_modeling"]["method"],
-        ),
-        # Test floating point values
-        (
-            "TestPipeline:1.0.0:topic_modeling.min_topic_coherence>=0.5",
-            2,
-            0.7,
-            lambda x: x.config_args["topic_modeling"]["min_topic_coherence"],
-        ),
-        # Test version-specific filters for v2.0.0
-        (
-            "TestPipeline:2.0.0:topic_modeling.method=bertopic",
+            "TestPipeline:2.0.0:transform_kwargs.normalize_ages=true",
             1,
-            "bertopic",
-            lambda x: x.config_args["topic_modeling"]["method"],
+            True,
+            lambda x: x.config_args["transform_kwargs"]["normalize_ages"],
         ),
+        # Test version-specific filtering
         (
-            "TestPipeline:2.0.0:embeddings.model=roberta-base",
+            "TestPipeline:2.0.0:text_extraction.source=full_text",
             1,
-            "roberta-base",
-            lambda x: x.config_args["embeddings"]["model"],
-        ),
-        # Test filtering that should match both versions
-        (
-            "TestPipeline:1.0.0:classification.model_type=transformer",
-            2,
-            "transformer",
-            lambda x: x.config_args["classification"]["model_type"],
-        ),
-        # Test numeric comparisons across versions
-        (
-            "TestPipeline:1.0.0:embeddings.max_length>=512",
-            2,
-            None,
-            lambda x: x.config_args["embeddings"]["max_length"],
-        ),
-        # Test floating point values with version
-        (
-            "TestPipeline:2.0.0:topic_modeling.min_topic_coherence>0.75",
-            1,
-            0.8,
-            lambda x: x.config_args["topic_modeling"]["min_topic_coherence"],
+            "full_text",
+            lambda x: x.config_args["text_extraction"]["source"],
         ),
     ],
 )
@@ -473,7 +458,7 @@ def test_combined_filters(auth_client, result1, result2, result3):
     response = auth_client.get(
         "/api/pipeline-study-results/?"
         "feature_filter=TestPipeline:string_field=test value&"
-        "pipeline_config=TestPipeline:embeddings.model=bert-base-uncased"
+        "pipeline_config=TestPipeline:extraction_model=gpt-4"
     )
 
     assert response.status_code == 200
@@ -485,7 +470,7 @@ def test_combined_filters(auth_client, result1, result2, result3):
     # Validate against database config
     pipeline_config = PipelineConfig.query.get(result["config_id"])
     assert pipeline_config is not None
-    assert pipeline_config.config_args["embeddings"]["model"] == "bert-base-uncased"
+    assert pipeline_config.config_args["extraction_model"] == "gpt-4"
 
 
 def test_feature_display_filter(auth_client, result1, result2, result3):
@@ -563,3 +548,42 @@ def test_list_of_studies(
     assert len(data["results"]) == 2
     study_ids = {r["base_study_id"] for r in data["results"]}
     assert study_ids == {study1_id, study2_id}
+
+
+def test_pipeline_config_with_schema(auth_client, pipeline1):
+    """Test creating and reading pipeline config with schema."""
+    # Create config with schema and extractor info
+    pipeline_config = PipelineConfig(
+        version="1.0.0",
+        config_args={
+            "extraction_model": "gpt-4",
+            "extractor": "ParticipantDemographicsExtractor",
+            "extractor_kwargs": {
+                "env_variable": "OPENAI_API_KEY",
+                "disable_abbreviation_expansion": True,
+            },
+            "transform_kwargs": {},
+            "input_pipelines": {},
+        },
+        config_hash="schema_test_hash",
+        schema={
+            "type": "object",
+            "properties": {"groups": {"type": "array", "items": {"type": "object"}}},
+        },
+        pipeline=pipeline1,
+    )
+
+    db.session.add(pipeline_config)
+    db.session.commit()
+
+    # Test reading the config
+    response = auth_client.get(f"/api/pipeline-configs/{pipeline_config.id}")
+    assert response.status_code == 200
+
+    data = response.json()
+    assert "schema" in data
+    assert data["schema"]["type"] == "object"
+    assert "extractor" in data["config_args"]
+    assert data["config_args"]["extractor"] == "ParticipantDemographicsExtractor"
+    assert "extractor_kwargs" in data["config_args"]
+    assert data["config_args"]["extraction_model"] == "gpt-4"

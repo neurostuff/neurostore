@@ -413,7 +413,7 @@ class BaseStudySchema(BaseDataSchema):
         if data.get("doi"):
             for prefix in ["https://doi.org/", "https://dx.doi.org/"]:
                 if data["doi"].startswith(prefix):
-                    data["doi"] = data["doi"][len(prefix):]
+                    data["doi"] = data["doi"][len(prefix) :]  # noqa: E203
                     break
 
         # Add PMC prefix to numeric PMCIDs

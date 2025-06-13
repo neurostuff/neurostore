@@ -721,6 +721,7 @@ class PipelineConfig(BaseMixin, db.Model):
     )
     version = db.Column(db.String, index=True)
     config_args = db.Column(JSONB)
+    schema = db.Column(JSONB)
     executed_at = db.Column(
         db.DateTime(timezone=True)
     )  # when the pipeline was executed on the filesystem (not when it was ingested)
