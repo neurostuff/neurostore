@@ -75,12 +75,12 @@ const CurationBoardAIInterfaceCuratorTableManageColumns: React.FC<{
         <Box>
             <Button
                 onClick={(event: React.MouseEvent<HTMLButtonElement>) => setAnchorEl(event.currentTarget)}
-                sx={{ fontSize: '12px' }}
+                sx={{ fontSize: '12px', height: '30px' }}
                 size="small"
                 startIcon={
                     <Box sx={{ display: 'flex' }}>
-                        <Add />
-                        <Remove />
+                        <Add fontSize="small" />
+                        <Remove fontSize="small" />
                     </Box>
                 }
                 color="secondary"

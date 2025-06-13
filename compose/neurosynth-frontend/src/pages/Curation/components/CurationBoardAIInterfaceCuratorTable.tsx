@@ -2,14 +2,14 @@ import { Box, Chip, Table, TableCell, TableContainer, TableHead, TableRow, Typog
 import { flexRender, RowData } from '@tanstack/react-table';
 import { useGetCurationSummary } from 'hooks';
 import { EAIExtractors } from 'hooks/extractions/useGetAllExtractedData';
+import { indexToPRISMAMapping } from 'hooks/projects/useGetProjects';
+import { useProjectCurationPrismaConfig } from 'pages/Project/store/ProjectStore';
 import { useRef } from 'react';
 import { getGridTemplateColumns } from '../hooks/useCuratorTableState.helpers';
 import { ICurationBoardAIInterfaceCurator } from './CurationBoardAIInterfaceCurator';
 import CurationBoardAIInterfaceCuratorTableBody from './CurationBoardAIInterfaceCuratorTableBody';
 import CurationBoardAIInterfaceCuratorTableManageColumns from './CurationBoardAIInterfaceCuratorTableManageColumns';
 import CurationBoardAIInterfaceCuratorTableSelectedRowsActions from './CurationBoardAIInterfaceCuratorTableSelectedRowsActions';
-import { useProjectCurationPrismaConfig } from 'pages/Project/store/ProjectStore';
-import { indexToPRISMAMapping, IPRISMAConfig } from 'hooks/projects/useGetProjects';
 
 //allows us to define custom properties for our columns
 declare module '@tanstack/react-table' {
@@ -90,8 +90,6 @@ const CurationBoardAIInterfaceCuratorTable: React.FC<ICurationBoardAIInterfaceCu
     const numRowsSelected = table.getSelectedRowModel().rows.length;
     const columnFilters = table.getState().columnFilters;
     const sorting = table.getState().sorting;
-    const curationIsComplete = included > 0 && uncategorized === 0;
-    const noStudiesInCuration = included === 0 && uncategorized === 0 && excluded === 0;
 
     const { statusColor, statusText } = getStatusText(
         included,

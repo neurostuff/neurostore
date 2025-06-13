@@ -11,17 +11,11 @@ describe('ImportStudiesDialog', () => {
     });
 
     it('should load the page', () => {
-        cy.login('mocked')
-            .visit('/projects/abc123/curation')
-            .wait('@projectFixture')
-            .wait('@studysetFixture');
+        cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture').wait('@studysetFixture');
     });
 
     it('should open the import studies dialog', () => {
-        cy.login('mocked')
-            .visit('/projects/abc123/curation')
-            .wait('@projectFixture')
-            .wait('@studysetFixture');
+        cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture').wait('@studysetFixture');
         cy.contains('button', 'import studies').click();
         cy.get('.MuiFormControl-root').should('be.visible');
         cy.url().should('include', '/projects/abc123/curation/import');
@@ -49,12 +43,13 @@ describe('ImportStudiesDialog', () => {
                 cy.contains(
                     'button',
                     `Import ${baseStudiesResponse.response?.body?.results?.length} studies from neurostore`
-                ).click();
+                ).should('be.disabled');
             });
-            cy.contains('button', 'next').should('be.disabled');
         });
 
         it('should import studies', () => {
+            cy.get('input[type="text"]').type('neuron');
+            cy.get('button').contains('Search').click();
             cy.wait('@baseStudiesFixture').then((baseStudiesResponse) => {
                 cy.contains(
                     'button',
@@ -62,19 +57,13 @@ describe('ImportStudiesDialog', () => {
                 ).click();
             });
             cy.get('input').type('my new import{enter}');
-            cy.contains('button', 'next')
-                .click()
-                .url()
-                .should('include', '/projects/abc123/curation');
+            cy.contains('button', 'next').click().url().should('include', '/projects/abc123/curation');
         });
     });
 
     describe('Import via Pubmed IDs', () => {
         beforeEach(() => {
-            cy.login('mocked')
-                .visit('/projects/abc123/curation')
-                .wait('@projectFixture')
-                .wait('@studysetFixture');
+            cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture').wait('@studysetFixture');
             cy.intercept('PUT', '**/api/projects/abc123').as('updateProjectFixture');
             // not going to mock this for now as cypress does not seem to support XML fixtures
             // cy.intercept('POST', 'https://eutils.ncbi.nlm.nih.gov/**', {
@@ -86,9 +75,7 @@ describe('ImportStudiesDialog', () => {
         });
 
         it('should show the pmid input page', () => {
-            cy.get(
-                'textarea[placeholder="Enter list of pubmed IDs separated by a newline"]'
-            ).should('be.visible');
+            cy.get('textarea[placeholder="Enter list of pubmed IDs separated by a newline"]').should('be.visible');
         });
 
         it('should be disabled initially', () => {
@@ -116,10 +103,7 @@ describe('ImportStudiesDialog', () => {
                 .type('123{enter}456{enter}789');
             cy.contains('button', 'next').click();
             cy.get('input').type('my new import{enter}');
-            cy.contains('button', 'next')
-                .click()
-                .url()
-                .should('include', '/projects/abc123/curation');
+            cy.contains('button', 'next').click().url().should('include', '/projects/abc123/curation');
         });
 
         it('should import studies via a file', () => {
@@ -130,10 +114,7 @@ describe('ImportStudiesDialog', () => {
 
     describe('Manually create a new study', () => {
         beforeEach(() => {
-            cy.login('mocked')
-                .visit('/projects/abc123/curation')
-                .wait('@projectFixture')
-                .wait('@studysetFixture');
+            cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture').wait('@studysetFixture');
             cy.intercept('PUT', '**/api/projects/abc123').as('updateProjectFixture');
             cy.contains('button', 'import studies').click();
             cy.contains('Manually create a new study').click();
@@ -170,19 +151,13 @@ describe('ImportStudiesDialog', () => {
             cy.contains('li', 'Neurostore').click();
             cy.contains('button', 'next').click();
             cy.get('input').type('my new import{enter}');
-            cy.contains('button', 'next')
-                .click()
-                .url()
-                .should('include', '/projects/abc123/curation');
+            cy.contains('button', 'next').click().url().should('include', '/projects/abc123/curation');
         });
     });
 
     describe('Import via File Format', () => {
         beforeEach(() => {
-            cy.login('mocked')
-                .visit('/projects/abc123/curation')
-                .wait('@projectFixture')
-                .wait('@studysetFixture');
+            cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture').wait('@studysetFixture');
             cy.intercept('PUT', '**/api/projects/abc123').as('updateProjectFixture');
             cy.contains('button', 'import studies').click();
             cy.contains('Import via File Format').click();
@@ -222,9 +197,7 @@ describe('ImportStudiesDialog', () => {
         it('should show an error message', () => {
             cy.get('input[role="combobox"]').click();
             cy.contains('li', 'Scopus').click();
-            cy.get('textarea[placeholder="paste in valid endnote, bibtex, or RIS syntax"]').type(
-                'INVALID FORMAT'
-            );
+            cy.get('textarea[placeholder="paste in valid endnote, bibtex, or RIS syntax"]').type('INVALID FORMAT');
             cy.contains(/Format is incorrect/).should('be.visible');
         });
 
@@ -242,18 +215,13 @@ describe('ImportStudiesDialog', () => {
 
             cy.contains('button', 'next').click();
             cy.get('input').type('my new import{enter}');
-            cy.contains('button', 'next')
-                .click()
-                .url()
-                .should('include', '/projects/abc123/curation');
+            cy.contains('button', 'next').click().url().should('include', '/projects/abc123/curation');
         });
 
         it('should upload a onenote (ENW) file', () => {
             cy.get('input[role="combobox"]').click();
             cy.contains('li', 'Scopus').click();
-            cy.get('label[role="button"]').selectFile(
-                'cypress/fixtures/standardFiles/onenoteStudies.txt'
-            );
+            cy.get('label[role="button"]').selectFile('cypress/fixtures/standardFiles/onenoteStudies.txt');
             cy.contains('button', 'next').should('be.visible');
         });
 
@@ -262,49 +230,6 @@ describe('ImportStudiesDialog', () => {
 
         // TODO : create a test for importing RIS file
         // it('should import studies via a file', () => {})
-    });
-
-    describe('IMPORT DUPLICATES', () => {
-        beforeEach(() => {
-            cy.login('mocked')
-                .visit('/projects/abc123/curation')
-                .wait('@projectFixture')
-                .wait('@studysetFixture');
-            cy.intercept('PUT', '**/api/projects/abc123').as('updateProjectFixture');
-            cy.contains('button', 'import studies').click();
-            cy.contains('Import via File Format').click();
-            cy.contains('button', 'next').click();
-
-            cy.get('input[role="combobox"').click();
-            cy.contains('li', 'Scopus').click();
-        });
-
-        it('should show the resolve duplicates page', () => {
-            cy.get('label[role="button"]').selectFile(
-                'cypress/fixtures/standardFiles/onenoteStudiesDuplicates.txt'
-            );
-            cy.contains('button', 'next').click();
-            cy.contains('Duplicates were found in your import file').should('be.visible');
-            cy.contains('button', 'next').should('be.disabled');
-        });
-
-        it('should resolve all cases', () => {
-            cy.get('label[role="button"]').selectFile(
-                'cypress/fixtures/standardFiles/onenoteStudiesDuplicates.txt'
-            );
-            cy.contains('button', 'next').click();
-            cy.contains('button', 'Keep this study').first().click();
-            cy.contains('button', 'next').should('not.be.disabled');
-        });
-
-        it('should mark one case as duplicate', () => {
-            cy.get('label[role="button"]').selectFile(
-                'cypress/fixtures/standardFiles/onenoteStudiesDuplicates.txt'
-            );
-            cy.contains('button', 'next').click();
-            cy.contains('button', 'This is a duplicate').first().click();
-            cy.contains('button', 'next').should('be.disabled');
-        });
     });
 
     describe('PROJECT DUPLICATES', () => {
@@ -316,10 +241,7 @@ describe('ImportStudiesDialog', () => {
             cy.intercept('PUT', '**/api/projects/**', { fixture: 'projects/projectWithStub' }).as(
                 'updateProjectFixture'
             );
-            cy.login('mocked')
-                .visit('/projects/abc123/curation')
-                .wait('@projectFixture')
-                .wait('@studysetFixture');
+            cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture').wait('@studysetFixture');
             cy.contains('button', 'import studies').click();
             cy.contains('Import via File Format').click();
             cy.contains('button', 'next').click();
@@ -328,28 +250,13 @@ describe('ImportStudiesDialog', () => {
             cy.contains('li', 'Scopus').click();
         });
 
-        it('should show the resolve duplicates page if there are duplicates IN THE PROJECT', () => {
-            cy.get('label[role="button"]').selectFile(
-                'cypress/fixtures/standardFiles/onenoteStudies.txt'
-            );
+        it('should show the resolve duplicates popup', () => {
+            cy.get('label[role="button"]').selectFile('cypress/fixtures/standardFiles/onenoteStudies.txt');
 
             cy.contains('button', 'next').click();
             cy.get('input').type('my new import{enter}');
             cy.contains('button', 'next').click();
-            cy.contains(/duplicates that already exist within the project/).should('be.visible');
-            cy.contains('button', 'next').should('be.disabled');
-        });
-
-        it('should resolve all cases', () => {
-            cy.get('label[role="button"]').selectFile(
-                'cypress/fixtures/standardFiles/onenoteStudies.txt'
-            );
-
-            cy.contains('button', 'next').click();
-            cy.get('input').type('my new import{enter}');
-            cy.contains('button', 'next').click();
-            cy.contains('button', 'Keep this study').first().click();
-            cy.contains('button', 'next').should('be.enabled');
+            cy.contains(/Some duplicates were detected/).should('be.visible');
         });
     });
 
@@ -359,34 +266,22 @@ describe('ImportStudiesDialog', () => {
                 fixture: 'baseStudies/baseStudiesWithResults',
             }).as('baseStudiesFixture');
             cy.intercept('PUT', '**/api/projects/abc123').as('updateProjectFixture');
-            cy.login('mocked')
-                .visit('/projects/abc123/curation')
-                .wait('@projectFixture')
-                .wait('@studysetFixture');
+            cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture').wait('@studysetFixture');
             cy.contains('button', 'import studies').click();
             cy.contains('button', 'next').click();
         });
 
-        it('should select the import by clicking the option', () => {
+        it('should enter the import name based on the search and typed text', () => {
+            cy.get('input[type="text"]').type('neuron');
+            cy.get('button').contains('Search').click();
             cy.wait('@baseStudiesFixture').then((baseStudiesResponse) => {
                 cy.contains(
                     'button',
                     `Import ${baseStudiesResponse.response?.body?.results?.length} studies from neurostore`
                 ).click();
             });
-            cy.get('input').type('my new import');
-            cy.contains('Set name as "my new import"').click();
-            cy.contains('button', 'next').should('not.be.disabled');
-        });
-
-        it('should select the import by pressing enter', () => {
-            cy.wait('@baseStudiesFixture').then((baseStudiesResponse) => {
-                cy.contains(
-                    'button',
-                    `Import ${baseStudiesResponse.response?.body?.results?.length} studies from neurostore`
-                ).click();
-            });
-            cy.get('input').type('my new import{enter}');
+            cy.get('input[type="text"]').type(' (my import)');
+            cy.should('have.value', 'neuron (my import)').click();
             cy.contains('button', 'next').should('not.be.disabled');
         });
     });

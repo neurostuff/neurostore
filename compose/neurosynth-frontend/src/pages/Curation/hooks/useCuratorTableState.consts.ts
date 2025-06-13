@@ -209,7 +209,7 @@ export const PARTICIPANTS_DEMOGRAPHICS_EXTRACTOR_CURATOR_COLUMNS: ICurationBoard
 
 export const TASK_EXTRACTOR_CURATOR_COLUMNS: ICurationBoardAIInterfaceCuratorColumnType[] = [
     {
-        id: 'Modality',
+        id: 'modality',
         label: 'Modality',
         description: 'Modality of the neuroimaging data',
         canSort: false,
@@ -221,7 +221,7 @@ export const TASK_EXTRACTOR_CURATOR_COLUMNS: ICurationBoardAIInterfaceCuratorCol
         AIExtractor: EAIExtractors.TASKEXTRACTOR,
     },
     {
-        id: 'StudyObjective',
+        id: 'studyobjective',
         label: 'Study Objective',
         description: 'A brief summary of the primary research question or objective of the study.',
         filterVariant: 'text',
@@ -233,7 +233,7 @@ export const TASK_EXTRACTOR_CURATOR_COLUMNS: ICurationBoardAIInterfaceCuratorCol
         AIExtractor: EAIExtractors.TASKEXTRACTOR,
     },
     {
-        id: 'fMRITasks.TaskName',
+        id: 'fmritaskstaskname',
         label: 'fMRI Task Name',
         description: "Name of the task, e.g., 'Stroop Task' or 'Go/No-Go Task'.",
         canSort: false,
@@ -248,7 +248,7 @@ export const TASK_EXTRACTOR_CURATOR_COLUMNS: ICurationBoardAIInterfaceCuratorCol
         AIExtractor: EAIExtractors.TASKEXTRACTOR,
     },
     {
-        id: 'fMRITasks.Domain',
+        id: 'fmritasksdomain',
         label: 'fMRI Task Domain',
         description: 'The domain of the task, e.g., "Perception", "Attention", "Emotion" etc.',
         canSort: false,
@@ -257,7 +257,7 @@ export const TASK_EXTRACTOR_CURATOR_COLUMNS: ICurationBoardAIInterfaceCuratorCol
         AIExtractor: EAIExtractors.TASKEXTRACTOR,
     },
     {
-        id: 'fMRITasks.Concepts',
+        id: 'fmritasksconcepts',
         label: 'fMRI Task Concepts',
         description:
             'List of mental concepts associated with the task, such as cognitive processes or representations it engages',
@@ -267,7 +267,7 @@ export const TASK_EXTRACTOR_CURATOR_COLUMNS: ICurationBoardAIInterfaceCuratorCol
         filterVariant: 'autocomplete',
     },
     {
-        id: 'fMRITasks.Conditions',
+        id: 'fmritasksconditions',
         label: 'fMRI Task Conditions',
         description: 'Conditions of task performed by the subjects.',
         canSort: false,
@@ -276,7 +276,7 @@ export const TASK_EXTRACTOR_CURATOR_COLUMNS: ICurationBoardAIInterfaceCuratorCol
         filterVariant: 'autocomplete',
     },
     {
-        id: 'fMRITasks.TaskMetrics',
+        id: 'fmritaskstaskmetrics',
         label: 'fMRI Task Metrics',
         description:
             'Key metrics or outcomes measured during the task, e.g., "response time", "accuracy", and "fMRI BOLD signal".',
@@ -286,7 +286,7 @@ export const TASK_EXTRACTOR_CURATOR_COLUMNS: ICurationBoardAIInterfaceCuratorCol
         AIExtractor: EAIExtractors.TASKEXTRACTOR,
     },
     {
-        id: 'fMRITasks.TaskDescription',
+        id: 'fmritaskstaskdescription',
         label: 'fMRI Task Description',
         description: 'Description of the key features of the task, such as its purpose or what it measures.',
         canSort: false,
@@ -294,7 +294,7 @@ export const TASK_EXTRACTOR_CURATOR_COLUMNS: ICurationBoardAIInterfaceCuratorCol
         AIExtractor: EAIExtractors.TASKEXTRACTOR,
     },
     {
-        id: 'fMRITasks.DesignDetails',
+        id: 'fmritasksdesigndetails',
         label: 'fMRI Task Design Details',
         description:
             'A detailed description of the task design including information on the number of conditions, the number of trials per condition, the length of trials, and the length of inter-trial intervals.',
@@ -303,7 +303,7 @@ export const TASK_EXTRACTOR_CURATOR_COLUMNS: ICurationBoardAIInterfaceCuratorCol
         AIExtractor: EAIExtractors.TASKEXTRACTOR,
     },
     {
-        id: 'fMRITasks.TaskDesign',
+        id: 'fmritaskstaskdesign',
         label: 'fMRI Task Design',
         description: 'Design(s) of the task',
         canSort: false,
@@ -312,7 +312,7 @@ export const TASK_EXTRACTOR_CURATOR_COLUMNS: ICurationBoardAIInterfaceCuratorCol
         filterVariant: 'autocomplete',
     },
     {
-        id: 'fMRITasks.RestingState',
+        id: 'fmritasksrestingstate',
         label: 'fMRI Task Resting State',
         description: 'Whether this task wa a resting state task or not',
         canSort: false,
@@ -321,7 +321,7 @@ export const TASK_EXTRACTOR_CURATOR_COLUMNS: ICurationBoardAIInterfaceCuratorCol
         filterVariant: 'autocomplete',
     },
     {
-        id: 'fMRITasks.RestingStateMetadata',
+        id: 'fmritasksrestingstatemetadata',
         label: 'fMRI Task Resting State Metadata',
         description:
             'Additional details about the resting-state task, such as duration and instructions provided to participants, if applicable',
@@ -330,7 +330,7 @@ export const TASK_EXTRACTOR_CURATOR_COLUMNS: ICurationBoardAIInterfaceCuratorCol
         AIExtractor: EAIExtractors.TASKEXTRACTOR,
     },
     {
-        id: 'fMRITasks.TaskDuration',
+        id: 'fmritaskstaskduration',
         label: 'fMRI Task Duration',
         description: "Total duration of the task, e.g., '10 minutes' or '600 seconds'.",
         canSort: false,

@@ -19,7 +19,6 @@ import {
     TASK_EXTRACTOR_CURATOR_COLUMNS,
 } from '../hooks/useCuratorTableState.consts';
 import { ICurationTableStudy } from '../hooks/useCuratorTableState.types';
-import { display } from '@mui/system';
 
 const CurationStubAITableSummary: React.FC<{ stub: ICurationTableStudy | undefined }> = ({ stub }) => {
     const TaskExtractor = stub?.TaskExtractor;
@@ -46,10 +45,12 @@ const CurationStubAITableSummary: React.FC<{ stub: ICurationTableStudy | undefin
     if (!TaskExtractor && !ParticipantDemographicsExtractor) {
         return (
             <Typography color="warning.dark" variant="body2">
-                We have no extracted data for this study. (Perhaps this is a new record and we have no text for it yet?)
+                We have no extracted data for this study. (Perhaps this is a new record and we have no text for it yet)
             </Typography>
         );
     }
+
+    console.log(TaskExtractor?.fMRITasks);
 
     return (
         <Box>

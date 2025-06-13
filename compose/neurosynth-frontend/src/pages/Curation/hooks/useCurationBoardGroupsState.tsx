@@ -39,12 +39,6 @@ function useCurationBoardGroupsState() {
         setSelectedGroup(group);
     };
 
-    useEffect(() => {
-        return () => {
-            console.log('cleaning up');
-        };
-    }, []);
-
     const groups: IGroupListItem[] = useMemo(() => {
         if (curationColumns.length === 0) return [];
         let groupListItems: IGroupListItem[] = [];
@@ -154,7 +148,7 @@ function useCurationBoardGroupsState() {
                 {
                     id: unreviewedColumn.id,
                     type: 'LISTITEM',
-                    label: unreviewedColumn.name,
+                    label: `1. ${unreviewedColumn.name}`,
                     count: unreviewedColumn.stubStudies.filter((x) => x.exclusionTag === null).length,
                     UI: ECurationBoardAIInterface.CURATOR,
                     children: [],
@@ -187,7 +181,7 @@ function useCurationBoardGroupsState() {
                 {
                     id: includedColumn.id,
                     type: 'LISTITEM',
-                    label: includedColumn.name,
+                    label: `2. ${includedColumn.name}`,
                     count: includedColumn.stubStudies.filter((x) => x.exclusionTag === null).length,
                     UI: ECurationBoardAIInterface.CURATOR,
                     children: [],
@@ -235,11 +229,15 @@ function useCurationBoardGroupsState() {
             const localStorageSelectedGroupId = localStorage.getItem(selectedCurationStepLocalStorageKey);
 
             if (localStorageSelectedGroupId) {
-                setSelectedGroup(groups.find((x) => x.id === localStorageSelectedGroupId));
-            } else {
-                localStorage.setItem(selectedCurationStepLocalStorageKey, groups[1].id);
-                setSelectedGroup(groups[1]);
+                const foundGroup = groups.find((x) => x.id === localStorageSelectedGroupId);
+                if (foundGroup) {
+                    setSelectedGroup(foundGroup);
+                    return;
+                }
             }
+
+            localStorage.setItem(selectedCurationStepLocalStorageKey, groups[1].id);
+            setSelectedGroup(groups[1]);
         }
     }, [groups, curationColumns.length, selectedGroup, selectedCurationStepLocalStorageKey]);
 

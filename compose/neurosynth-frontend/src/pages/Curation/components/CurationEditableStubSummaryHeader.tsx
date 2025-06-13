@@ -1,8 +1,7 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import { ArrowCircleLeftOutlined, NextPlan, Undo } from '@mui/icons-material';
+import { ArrowCircleLeftOutlined } from '@mui/icons-material';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import { Box, Button, Chip, Tooltip } from '@mui/material';
-import LoadingButton from 'components/Buttons/LoadingButton';
+import { Box, Button, Chip } from '@mui/material';
 import { indexToPRISMAMapping, ITag } from 'hooks/projects/useGetProjects';
 import CurationPopupExclusionSelector from 'pages/Curation/components/CurationPopupExclusionSelector';
 import { ICurationStubStudy } from 'pages/Curation/Curation.types';
@@ -14,7 +13,6 @@ import {
     usePromoteStub,
     useSetExclusionForStub,
 } from 'pages/Project/store/ProjectStore';
-import { defaultInfoTags } from 'pages/Project/store/ProjectStore.types';
 import React, { useState } from 'react';
 import { v4 as uuid } from 'uuid';
 
@@ -40,6 +38,8 @@ const CurationEditableStubSummaryHeader: React.FC<ICurationEditableStubSummaryHe
     const isPrismaIdentificationPhase = prismaConfig.isPrisma && prismaPhase === 'identification';
 
     const setExclusionForStub = useSetExclusionForStub();
+
+    const isStepBeforeInclude = prismaPhase === 'eligibility' || (!prismaConfig.isPrisma && props.columnIndex === 0);
 
     const handleAddTag = (tag: ITag) => {
         if (props.stub) {
@@ -131,7 +131,7 @@ const CurationEditableStubSummaryHeader: React.FC<ICurationEditableStubSummaryHe
                         sx={{ marginRight: '10px', width: '140px' }}
                         startIcon={<CheckCircleOutlineIcon />}
                     >
-                        include
+                        {isStepBeforeInclude ? 'Include' : 'Promote'}
                     </Button>
                     {/* <LoadingButton
                         onClick={handleSaveForLater}
@@ -171,7 +171,7 @@ const CurationEditableStubSummaryHeader: React.FC<ICurationEditableStubSummaryHe
                             variant="outlined"
                             size="small"
                         >
-                            Move back
+                            Demote
                         </Button>
                     )}
                 </Box>

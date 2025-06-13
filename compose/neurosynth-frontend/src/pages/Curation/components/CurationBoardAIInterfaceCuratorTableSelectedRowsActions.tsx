@@ -1,10 +1,12 @@
 import { Box, Button } from '@mui/material';
 import { Table } from '@tanstack/react-table';
 import { indexToPRISMAMapping, ITag } from 'hooks/projects/useGetProjects';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import {
     useCreateNewExclusion,
     useDemoteStub,
     useProjectCurationPrismaConfig,
+    usePromoteStub,
     useSetExclusionForStub,
 } from 'pages/Project/store/ProjectStore';
 import { useState } from 'react';
@@ -23,13 +25,14 @@ const CurationBoardAIInterfaceCuratorTableSelectedRowsActions: React.FC<{
     const setExclusionForStub = useSetExclusionForStub();
     const prismaConfig = useProjectCurationPrismaConfig();
     const prismaPhase = prismaConfig.isPrisma ? indexToPRISMAMapping(columnIndex) : undefined;
-    const demoteStudies = useDemoteStub();
+    const demoteStudy = useDemoteStub();
+    const promoteStudy = usePromoteStub();
 
     const handleAddExclusionForRows = (exclusionTag: ITag) => {
         rows.forEach((stub) => {
             setExclusionForStub(columnIndex, stub.id, exclusionTag);
         });
-        table.setRowSelection({});
+        table.resetRowSelection();
     };
 
     const handleCreateExclusion = (exclusionName: string) => {
@@ -40,22 +43,40 @@ const CurationBoardAIInterfaceCuratorTableSelectedRowsActions: React.FC<{
             isAssignable: true,
         };
 
-        createExclusion(newExclusion, undefined);
+        createExclusion(newExclusion, prismaPhase);
         handleAddExclusionForRows(newExclusion);
     };
 
     const handleDemoteStudies = () => {
         rows.forEach((stub) => {
-            demoteStudies(columnIndex, stub.id);
+            demoteStudy(columnIndex, stub.id);
         });
-        table.setRowSelection({});
+        table.resetRowSelection();
+    };
+
+    const handlePromoteStudies = () => {
+        rows.forEach((stub) => {
+            promoteStudy(columnIndex, stub.id);
+        });
+        table.resetRowSelection();
     };
 
     const numRowsSelected = table.getSelectedRowModel().rows.length;
     const isPrismaIdentificationPhase = prismaConfig.isPrisma && prismaPhase === 'identification';
+    const isStepBeforeInclude = prismaPhase === 'eligibility' || (!prismaConfig.isPrisma && columnIndex === 0);
 
     return (
         <Box sx={{ marginRight: '8px', display: 'flex' }}>
+            <Button
+                color="success"
+                size="small"
+                style={{ marginRight: '8px', fontSize: '12px' }}
+                variant="outlined"
+                startIcon={<CheckCircleOutlineIcon />}
+                onClick={handlePromoteStudies}
+            >
+                {isStepBeforeInclude ? 'Include' : 'Promote'} ({numRowsSelected})
+            </Button>
             <CurationPopupExclusionSelector
                 popupIsOpen={exclusionTagSelectorIsOpen}
                 onOpenPopup={() => setExclusionTagSelectorIsOpen(true)}
@@ -69,14 +90,14 @@ const CurationBoardAIInterfaceCuratorTableSelectedRowsActions: React.FC<{
             />
             {columnIndex !== 0 && (
                 <Button
-                    style={{ marginLeft: '8px' }}
+                    style={{ marginLeft: '8px', fontSize: '12px' }}
                     startIcon={<ArrowCircleLeftOutlined />}
                     variant="outlined"
                     color="secondary"
                     size="small"
                     onClick={handleDemoteStudies}
                 >
-                    Move back ({numRowsSelected})
+                    Demote ({numRowsSelected})
                 </Button>
             )}
         </Box>

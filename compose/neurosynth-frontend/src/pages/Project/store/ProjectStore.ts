@@ -771,7 +771,6 @@ export const useInitProjectStoreIfRequired = () => {
 
     useEffect(() => {
         if (projectId && projectId !== projectIdFromProject) {
-            console.log('UPDATING PROJECT');
             clearProjectStore();
             initProjectStore(data);
             updateProjectMetadata({

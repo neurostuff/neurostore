@@ -84,6 +84,8 @@ const CurationBoardAIInterfaceCurator: React.FC<{ group: IGroupListItem }> = ({ 
     // we only want the first item to be selected the first time the user clicks on a group.
     // it is safe to only have group.id as a dependency as columns must be loaded by the time we reach here
     useEffect(() => {
+        table.resetRowSelection();
+
         if (stubsInColumn.length === 0) return;
         if (UIMode === 'TABLEMODE') {
             // if tablemode, we want to reset the selected stub as the group id has changed

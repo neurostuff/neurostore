@@ -83,11 +83,6 @@ const CurationPage: React.FC = () => {
         }
     };
 
-    console.log({
-        projectName,
-        projectIsLoading,
-    });
-
     return (
         <StateHandlerComponent isError={false} isLoading={projectIsLoading}>
             <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -145,18 +140,20 @@ const CurationPage: React.FC = () => {
                                 }}
                             />
                         </Tooltip>
+                        {!useNewUI && (
+                            <Button
+                                variant="contained"
+                                disableElevation
+                                sx={{ marginLeft: '0.5rem', fontSize: '12px' }}
+                                onClick={() => navigate(`/projects/${projectId}/curation/import`)}
+                                disabled={!canEdit}
+                                size="small"
+                            >
+                                import studies
+                            </Button>
+                        )}
                         {isPrisma && !useNewUI && (
                             <>
-                                <Button
-                                    variant="contained"
-                                    disableElevation
-                                    sx={{ marginLeft: '0.5rem', fontSize: '12px' }}
-                                    onClick={() => navigate(`/projects/${projectId}/curation/import`)}
-                                    disabled={!canEdit}
-                                    size="small"
-                                >
-                                    import studies
-                                </Button>
                                 <PrismaDialog onCloseDialog={() => setPrismaIsOpen(false)} isOpen={prismaIsOpen} />
                                 <Button
                                     onClick={() => setPrismaIsOpen(true)}

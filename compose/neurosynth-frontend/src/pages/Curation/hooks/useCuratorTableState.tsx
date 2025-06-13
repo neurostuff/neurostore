@@ -56,7 +56,7 @@ const useCuratorTableState = (
         if (state.firstTimeSeeingPage) {
             // set defaults
             if (allowAIColumns) {
-                newColumns.push(createColumn('fMRITasks.TaskName'));
+                newColumns.push(createColumn('fmritaskstaskname'));
                 newColumns.push(createColumn('group_name'));
                 newColumns.push(createColumn('diagnosis'));
             } else {

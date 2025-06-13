@@ -86,7 +86,7 @@ describe('CurationDownloadIncludedStudiesButton', () => {
             { name: 'included', id: '1', stubStudies: [] },
         ]);
         render(<CurationDownloadIncludedStudiesButton />);
-        const downloadButton = screen.getByText('Download INCLUDED as CSV');
+        const downloadButton = screen.getByText('Download as CSV');
         expect(downloadButton).toBeDisabled();
     });
 
@@ -95,21 +95,21 @@ describe('CurationDownloadIncludedStudiesButton', () => {
         render(<CurationDownloadIncludedStudiesButton />);
         const dropdownButton = screen.getByTestId('ArrowDropDownIcon');
         expect(dropdownButton).toBeInTheDocument();
-        expect(screen.getByText('Download INCLUDED as CSV')).toBeInTheDocument();
+        expect(screen.getByText('Download as CSV')).toBeInTheDocument();
         userEvent.click(dropdownButton);
-        expect(screen.getByRole('menuitem', { name: 'Download INCLUDED as BibTeX' })).toBeInTheDocument();
+        expect(screen.getByRole('menuitem', { name: 'Download as BibTeX' })).toBeInTheDocument();
     });
 
     it('downloads CSVs when the download CSV button is clicked', () => {
         const csvStudies =
-            `"Title","Authors","PMID","PMCID","DOI","Year","Journal","Link","Source","Tags","Neurosynth ID","Search Term"\r\n` +
-            `"included_1","John Smith","included_pmid_1","included_pmcid_1","included_doi_1","included_articleyear_1","included_journal_1","included_articlelink_1","Neurostore","","included_neurostoreid_1",""\r\n` +
-            `"included_2","included_authors_2","included_pmid_2","included_pmcid_2","","included_articleyear_2","included_journal_2","included_articlelink_2","Neurostore","tag_1_label,tag_2_label","included_neurostoreid_2",""`;
+            `"Title","Authors","PMID","PMCID","DOI","Year","Journal","Link","Source","Tags","Neurosynth ID"\r\n` +
+            `"included_1","John Smith","included_pmid_1","included_pmcid_1","included_doi_1","included_articleyear_1","included_journal_1","included_articlelink_1","Neurostore","","included_neurostoreid_1"\r\n` +
+            `"included_2","included_authors_2","included_pmid_2","included_pmcid_2","","included_articleyear_2","included_journal_2","included_articlelink_2","Neurostore","tag_1_label,tag_2_label","included_neurostoreid_2"`;
 
         (useProjectCurationColumns as Mock).mockReturnValue(mockCurationColumns);
 
         render(<CurationDownloadIncludedStudiesButton />);
-        userEvent.click(screen.getByText('Download INCLUDED as CSV'));
+        userEvent.click(screen.getByText('Download as CSV'));
         expect(downloadFile).toHaveBeenCalledTimes(1);
         expect(downloadFile).toHaveBeenCalledWith(
             `project-name:Curation:${new Date().toLocaleDateString()}.csv`,
@@ -148,7 +148,7 @@ describe('CurationDownloadIncludedStudiesButton', () => {
             userEvent.click(dropdownButton);
         });
         await act(async () => {
-            userEvent.click(screen.getByText('Download INCLUDED as BibTeX'));
+            userEvent.click(screen.getByText('Download as BibTeX'));
         });
         expect(downloadFile).toHaveBeenCalledWith(
             `project-name:Curation:${new Date().toLocaleDateString()}.bib`,

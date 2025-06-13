@@ -22,6 +22,7 @@ const CurationImportFinalizeReviewVirtualizedListItem: React.FC<ICurationStubStu
                 height: '95px',
                 width: 'calc(100% - 15px)',
             }}
+            className="virtualized-import-list-item"
         >
             <Box>
                 {neurostoreId && (
