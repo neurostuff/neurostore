@@ -45,27 +45,57 @@ def ingest_feature(feature_directory):
         db.session.add(pipeline)
 
     # search within the pipeline and see if there are any existing pipeline configs
-    # that match the "arguements" field in the pipeline_info.json
-    # create a hash of the config arguments
-    config_hash = hashlib.sha256(
-        json.dumps(pipeline_info["arguments"]).encode()
-    ).hexdigest()
     pipeline_config = (
         db.session.query(PipelineConfig)
         .filter(
             PipelineConfig.pipeline_id == pipeline.id,
-            PipelineConfig.config_hash == config_hash,
+            PipelineConfig.config_hash == pipeline_info["config_hash"],
             PipelineConfig.version == pipeline_info["version"],
         )
         .first()
     )
+
     # create a pipeline config if it does not exist
     if not pipeline_config:
+        # Prepare config args starting with arguments
+        config_args = pipeline_info.get("arguments", {}).copy()
+
+        # Add extraction_model at top level
+        if "extraction_model" in pipeline_info.get("extractor_kwargs", {}):
+            config_args["extraction_model"] = pipeline_info["extractor_kwargs"][
+                "extraction_model"
+            ]
+
+        # Add other fields
+        config_args.update(
+            {
+                "extractor": pipeline_info.get("extractor"),
+                "text_extraction": pipeline_info.get("text_extraction", {}),
+            }
+        )
+
+        # Add extractor_kwargs without extraction_model
+        extractor_kwargs = pipeline_info.get("extractor_kwargs", {}).copy()
+        extractor_kwargs.pop("extraction_model", None)
+        if extractor_kwargs:
+            config_args["extractor_kwargs"] = extractor_kwargs
+
+        # Add remaining config fields
+        config_args.update(
+            {
+                "extractor": pipeline_info.get("extractor"),
+                "transform_kwargs": pipeline_info.get("transform_kwargs", {}),
+                "input_pipelines": pipeline_info.get("input_pipelines", {}),
+                "extractor_kwargs": extractor_kwargs,
+            }
+        )
+
         pipeline_config = PipelineConfig(
             pipeline_id=pipeline.id,
             version=pipeline_info["version"],
-            config_args=pipeline_info["arguments"],
-            config_hash=config_hash,
+            config_args=config_args,
+            config_hash=pipeline_info["config_hash"],
+            schema=pipeline_info.get("schema"),
         )
         db.session.add(pipeline_config)
 
@@ -91,6 +121,7 @@ def ingest_feature(feature_directory):
                 date_executed=parse_date(info["date"]),
                 file_inputs=info["inputs"],
                 config=pipeline_config,
+                status="SUCCESS",
             )
         )
 
