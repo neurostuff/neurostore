@@ -59,7 +59,7 @@ def ingest_feature(feature_directory):
             "extractor": pipeline_info.get("extractor"),
             "extractor_kwargs": pipeline_info.get("extractor_kwargs", {}),
             "transform_kwargs": pipeline_info.get("transform_kwargs", {}),
-            "input_pipelines": pipeline_info.get("input_pipelines", {})
+            "input_pipelines": pipeline_info.get("input_pipelines", {}),
         }
 
         pipeline_config = PipelineConfig(

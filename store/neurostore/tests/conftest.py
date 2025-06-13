@@ -629,7 +629,7 @@ def create_pipeline_results(session, ingest_neurosynth, tmp_path):
             "transform_kwargs": {},
             "input_pipelines": {},
             "text_extraction": {"source": "text"},
-            "input_sources": ["pubget", "ace"]
+            "input_sources": ["pubget", "ace"],
         },
         "NeuroimagingMethod": {
             "name": "NeuroimagingMethod",
@@ -649,7 +649,7 @@ def create_pipeline_results(session, ingest_neurosynth, tmp_path):
             "transform_kwargs": {},
             "input_pipelines": {},
             "text_extraction": {"source": "text"},
-            "input_sources": ["pubget", "ace"]
+            "input_sources": ["pubget", "ace"],
         },
         "TaskInfo": {
             "name": "TaskInfo",
@@ -669,7 +669,7 @@ def create_pipeline_results(session, ingest_neurosynth, tmp_path):
             "transform_kwargs": {},
             "input_pipelines": {},
             "text_extraction": {"source": "text"},
-            "input_sources": ["pubget", "ace"]
+            "input_sources": ["pubget", "ace"],
         },
     }
 
