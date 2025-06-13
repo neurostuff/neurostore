@@ -285,7 +285,10 @@ class BaseView(MethodView):
         ):
             abort(
                 403,
-                description="You do not have permission to modify this record. You must be the owner or the compose bot.",
+                description=(
+                    "You do not have permission to modify this record. "
+                    "You must be the owner or the compose bot."
+                )
             )
         elif only_ids:
             to_commit.append(record)
@@ -299,6 +302,7 @@ class BaseView(MethodView):
                     abort(
                         400,
                         description="Database operation failed during record creation/update",
+                        errors=str(e),
                     )
 
             return record
@@ -323,7 +327,10 @@ class BaseView(MethodView):
                 elif current_user != v.user and current_user.external_id != compose_bot:
                     abort(
                         403,
-                        description="You do not have permission to link to this parent record. You must own the parent record or be the compose bot.",
+                        description=(
+                            "You do not have permission to link to this parent record. "
+                            "You must own the parent record or be the compose bot."
+                        ),
                     )
             if k in cls._linked and v is not None:
                 LnCls = getattr(viewdata, cls._linked[k])
@@ -526,7 +533,10 @@ class ObjectView(BaseView):
         if record.user_id != current_user.external_id:
             abort(
                 403,
-                description="You do not have permission to delete this record. Only the owner can delete records.",
+                description=(
+                    "You do not have permission to delete this record. "
+                    "Only the owner can delete records."
+                )
             )
         else:
             db.session.delete(record)

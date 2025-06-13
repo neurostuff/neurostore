@@ -175,8 +175,8 @@ class PipelineStudyResultsView(ObjectView, ListView):
                 400,
                 {
                     "message": "Invalid filter format - expected pipeline_name[:version]/path",
-                    "errors": invalid_filters
-                }
+                    "errors": invalid_filters,
+                },
             )
 
         # Verify all pipelines exist upfront

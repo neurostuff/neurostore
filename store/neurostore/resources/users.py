@@ -47,10 +47,7 @@ class UsersView(ObjectView, ListView):
         record = self._model.query.filter_by(id=id).first()
 
         if record is None:
-            abort(
-                422,
-                description=f"User record not found with ID: {id}"
-            )
+            abort(422, description=f"User record not found with ID: {id}")
 
         for k, v in data.items():
             setattr(record, k, v)
