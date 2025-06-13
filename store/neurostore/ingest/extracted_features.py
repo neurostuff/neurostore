@@ -35,10 +35,8 @@ def ingest_feature(feature_directory):
             study_dependent=(
                 True if pipeline_info.get("type", False) == "dependent" else False
             ),
-            ace_compatible="ace"
-            in pipeline_info.get("arguments", {}).get("input_sources", []),
-            pubget_compatible="pubget"
-            in pipeline_info.get("arguments", {}).get("input_sources", []),
+            ace_compatible="ace" in pipeline_info.get("input_sources", []),
+            pubget_compatible="pubget" in pipeline_info.get("input_sources", []),
             derived_from=pipeline_info.get("derived_from", None),
         )
         db.session.add(pipeline)
@@ -56,38 +54,13 @@ def ingest_feature(feature_directory):
 
     # create a pipeline config if it does not exist
     if not pipeline_config:
-        # Prepare config args starting with arguments
-        config_args = pipeline_info.get("arguments", {}).copy()
-
-        # Add extraction_model at top level
-        if "extraction_model" in pipeline_info.get("extractor_kwargs", {}):
-            config_args["extraction_model"] = pipeline_info["extractor_kwargs"][
-                "extraction_model"
-            ]
-
-        # Add other fields
-        config_args.update(
-            {
-                "extractor": pipeline_info.get("extractor"),
-                "text_extraction": pipeline_info.get("text_extraction", {}),
-            }
-        )
-
-        # Add extractor_kwargs without extraction_model
-        extractor_kwargs = pipeline_info.get("extractor_kwargs", {}).copy()
-        extractor_kwargs.pop("extraction_model", None)
-        if extractor_kwargs:
-            config_args["extractor_kwargs"] = extractor_kwargs
-
-        # Add remaining config fields
-        config_args.update(
-            {
-                "extractor": pipeline_info.get("extractor"),
-                "transform_kwargs": pipeline_info.get("transform_kwargs", {}),
-                "input_pipelines": pipeline_info.get("input_pipelines", {}),
-                "extractor_kwargs": extractor_kwargs,
-            }
-        )
+        # Build config_args from pipeline_info
+        config_args = {
+            "extractor": pipeline_info.get("extractor"),
+            "extractor_kwargs": pipeline_info.get("extractor_kwargs", {}),
+            "transform_kwargs": pipeline_info.get("transform_kwargs", {}),
+            "input_pipelines": pipeline_info.get("input_pipelines", {})
+        }
 
         pipeline_config = PipelineConfig(
             pipeline_id=pipeline.id,

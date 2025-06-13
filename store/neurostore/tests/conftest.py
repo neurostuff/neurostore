@@ -620,19 +620,16 @@ def create_pipeline_results(session, ingest_neurosynth, tmp_path):
             "config_hash": "da73c01b87bf",
             "extractor": "ParticipantDemographicsExtractor",
             "extractor_kwargs": {
+                "extraction_model": "gpt-4-turbo",
                 "env_variable": "OPENAI_API_KEY",
                 "env_file": None,
                 "client_url": None,
                 "disable_abbreviation_expansion": True,
-                "kwargs": {},
             },
             "transform_kwargs": {},
             "input_pipelines": {},
-            "arguments": {
-                "extraction_model": "gpt-4-turbo",
-                "inputs": ["text"],
-                "input_sources": ["pubget", "ace"],
-            },
+            "text_extraction": {"source": "text"},
+            "input_sources": ["pubget", "ace"]
         },
         "NeuroimagingMethod": {
             "name": "NeuroimagingMethod",
@@ -643,19 +640,16 @@ def create_pipeline_results(session, ingest_neurosynth, tmp_path):
             "config_hash": "ba32d91c86ae",
             "extractor": "NeuroimagingMethodExtractor",
             "extractor_kwargs": {
+                "extraction_model": "gpt-4-turbo",
                 "env_variable": "OPENAI_API_KEY",
                 "env_file": None,
                 "client_url": None,
                 "disable_abbreviation_expansion": True,
-                "kwargs": {},
             },
             "transform_kwargs": {},
             "input_pipelines": {},
-            "arguments": {
-                "extraction_model": "gpt-4-turbo",
-                "inputs": ["text"],
-                "input_sources": ["pubget", "ace"],
-            },
+            "text_extraction": {"source": "text"},
+            "input_sources": ["pubget", "ace"]
         },
         "TaskInfo": {
             "name": "TaskInfo",
@@ -666,19 +660,16 @@ def create_pipeline_results(session, ingest_neurosynth, tmp_path):
             "config_hash": "cf44e82d95ca",
             "extractor": "TaskInfoExtractor",
             "extractor_kwargs": {
+                "extraction_model": "gpt-4-turbo",
                 "env_variable": "OPENAI_API_KEY",
                 "env_file": None,
                 "client_url": None,
                 "disable_abbreviation_expansion": True,
-                "kwargs": {},
             },
             "transform_kwargs": {},
             "input_pipelines": {},
-            "arguments": {
-                "extraction_model": "gpt-4-turbo",
-                "inputs": ["text"],
-                "input_sources": ["pubget", "ace"],
-            },
+            "text_extraction": {"source": "text"},
+            "input_sources": ["pubget", "ace"]
         },
     }
 

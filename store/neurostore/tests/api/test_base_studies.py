@@ -411,7 +411,7 @@ def test_config_and_feature_filters(auth_client, ingest_demographic_features, se
     response = auth_client.get(
         "/api/base-studies/?"
         "feature_filter=ParticipantInfo:1.0.0:predictions.groups[].age_mean>25&"
-        "pipeline_config=ParticipantInfo:1.0.0:extraction_model=gpt-4-turbo"
+        "pipeline_config=ParticipantInfo:1.0.0:extractor_kwargs.extraction_model=gpt-4-turbo"
     )
 
     assert response.status_code == 200
@@ -421,7 +421,7 @@ def test_config_and_feature_filters(auth_client, ingest_demographic_features, se
     response = auth_client.get(
         "/api/base-studies/?"
         "feature_filter=ParticipantInfo:2.0.0:predictions.groups[].age_mean>30&"
-        "pipeline_config=ParticipantInfo:2.0.0:extraction_model=gpt-4-turbo"
+        "pipeline_config=ParticipantInfo:2.0.0:extractor_kwargs.extraction_model=gpt-4-turbo"
     )
 
     assert response.status_code == 200
@@ -441,7 +441,7 @@ def test_feature_display_and_pipeline_config(auth_client, ingest_demographic_fea
     response = auth_client.get(
         "/api/base-studies/?"
         "feature_display=ParticipantInfo:1.0.0&"
-        "pipeline_config=ParticipantInfo:1.0.0:extraction_model=gpt-4-turbo"
+        "pipeline_config=ParticipantInfo:1.0.0:extractor_kwargs.extraction_model=gpt-4-turbo"
     )
     assert response.status_code == 200
     results = response.json()["results"]
@@ -453,7 +453,7 @@ def test_feature_display_and_pipeline_config(auth_client, ingest_demographic_fea
     default_response = auth_client.get(
         "/api/base-studies/?"
         "feature_display=ParticipantInfo&"
-        "pipeline_config=ParticipantInfo:extraction_model=gpt-4-turbo"
+        "pipeline_config=ParticipantInfo:extractor_kwargs.extraction_model=gpt-4-turbo"
     )
     assert default_response.status_code == 200
     assert len(default_response.json()["results"]) > 0
