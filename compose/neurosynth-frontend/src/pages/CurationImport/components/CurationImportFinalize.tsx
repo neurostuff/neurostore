@@ -1,138 +1,113 @@
 import { ENavigationButton } from 'components/Buttons/NavigationButtons';
+import { getURLFromSearchCriteria } from 'components/Search/search.helpers';
+import { IImport } from 'hooks/projects/useGetProjects';
+import { useSnackbar } from 'notistack';
 import { ICurationStubStudy } from 'pages/Curation/Curation.types';
 import {
+    automaticallyResolveDuplicates,
+    createDuplicateMap,
+    hasDuplicates,
+} from 'pages/CurationImport/CurationImport.helpers';
+import { EImportMode } from 'pages/CurationImport/CurationImport.types';
+import {
+    useCreateNewCurationImport,
     useProjectCurationColumns,
     useProjectId,
     useUpdateCurationColumns,
 } from 'pages/Project/store/ProjectStore';
+import { defaultExclusionTags } from 'pages/Project/store/ProjectStore.types';
+import { SearchCriteria } from 'pages/Study/Study.types';
 import { useNavigate } from 'react-router-dom';
-import { flattenColumns, createDuplicateMap } from 'pages/CurationImport/CurationImport.helpers';
-import { EImportMode, IDuplicateCase } from 'pages/CurationImport/CurationImport.types';
+import { v4 as uuid } from 'uuid';
 import CurationImportFinalizeNameAndReview from './CurationImportFinalizeNameAndReview';
-import CurationImportResolveDuplicatesProject from 'pages/CurationImport/components/CurationImportResolveDuplicatesProject';
 
 const CurationImportFinalize: React.FC<{
     importMode: EImportMode;
     onNavigate: (button: ENavigationButton) => void;
     stubs: ICurationStubStudy[];
     unimportedStubs: string[];
-    isResolvingDuplicates: boolean;
-    onIsResolvingDuplicates: (update: boolean) => void;
-}> = (props) => {
-    const {
-        onNavigate,
-        stubs,
-        unimportedStubs,
-        isResolvingDuplicates,
-        onIsResolvingDuplicates,
-        importMode,
-    } = props;
-
-    const columns = useProjectCurationColumns();
+    searchCriteria: SearchCriteria | undefined;
+    fileName: string | undefined;
+}> = ({ onNavigate, stubs, unimportedStubs, importMode, searchCriteria, fileName }) => {
+    const { enqueueSnackbar } = useSnackbar();
     const updateCurationColumns = useUpdateCurationColumns();
+    const columns = useProjectCurationColumns();
+    const createNewImport = useCreateNewCurationImport();
     const navigate = useNavigate();
     const projectId = useProjectId();
 
-    const hasDuplicates = (stubs: ICurationStubStudy[]) => {
-        const allStubsInProject = flattenColumns(columns);
-        const { duplicateMapping } = createDuplicateMap(allStubsInProject);
-
-        return stubs.some((importedStub) => {
-            if (importedStub.exclusionTag !== null) return false;
-            const formattedTitle = importedStub.title.toLocaleLowerCase().trim();
-            if (importedStub.doi && duplicateMapping.has(importedStub.doi)) return true;
-            if (importedStub.pmid && duplicateMapping.has(importedStub.pmid)) return true;
-            if (importedStub.title && duplicateMapping.has(formattedTitle)) return true;
-            return false;
+    const onFinalizeImport = (importName: string) => {
+        // 1. create new import. Add import to all stubs.
+        const newImport: IImport = {
+            id: uuid(),
+            name: importName,
+            errorsDuringImport:
+                unimportedStubs.length > 0
+                    ? `Unable to import studies with the following IDs: ${unimportedStubs.join(', ')}`
+                    : undefined,
+            importModeUsed: importMode,
+            numImported: stubs.length,
+            date: new Date().toISOString(),
+            neurostoreSearchParams: searchCriteria ? getURLFromSearchCriteria(searchCriteria) : undefined,
+        };
+        createNewImport(newImport);
+        stubs.forEach((stub) => {
+            stub.importId = newImport.id;
         });
-    };
 
-    const handleDoneNamingImport = (stubs: ICurationStubStudy[]) => {
+        // // 2. first find duplicates ONLY WITHIN THE IMPORT ITSELF. Label as duplicate.
+        let snackbarNotify = false;
         const duplicatesExist = hasDuplicates(stubs);
-        if (duplicatesExist) {
-            onIsResolvingDuplicates(true);
-        } else {
-            onIsResolvingDuplicates(false);
-            onFinalizeImport(stubs, []);
-        }
-    };
+        if (duplicatesExist) snackbarNotify = true;
+        const deduplicatedStubs = duplicatesExist ? automaticallyResolveDuplicates(stubs) : stubs;
 
-    const onFinalizeImport = (stubs: ICurationStubStudy[], duplicates: IDuplicateCase[]) => {
-        // handle import
-        const updatedImport = [...stubs];
-        const updatedColumns = [...columns];
-
-        duplicates.forEach(({ importedStub, projectDuplicates }) => {
-            // update the status of the stub being imported
-            updatedImport[importedStub.index] = {
-                ...updatedImport[importedStub.index],
-                exclusionTag: importedStub.exclusionTag,
-            };
-
-            // update the status of all the duplicates in the project
-            projectDuplicates.forEach((projectDuplicateStub) => {
-                if (
-                    projectDuplicateStub.columnIndex === undefined ||
-                    projectDuplicateStub.studyIndex === undefined
-                ) {
-                    return;
-                }
-
-                const updatedStubStudies = [
-                    ...updatedColumns[projectDuplicateStub.columnIndex].stubStudies,
-                ];
-
-                if (
-                    projectDuplicateStub.columnIndex > 0 &&
-                    projectDuplicateStub.resolution === 'duplicate'
-                ) {
-                    // remove stubs that have already been promoted that the user resolved as a duplicate
-                    updatedStubStudies.splice(projectDuplicateStub.studyIndex);
-                    const { columnIndex, studyIndex, resolution, colName, ...stub } =
-                        projectDuplicateStub;
-
-                    // add the stub back to the first column in order to demote it
-                    updatedColumns[0] = {
-                        ...updatedColumns[0],
-                        stubStudies: [stub, ...updatedColumns[0].stubStudies],
-                    };
-                } else {
-                    updatedStubStudies[projectDuplicateStub.studyIndex] = {
-                        ...updatedStubStudies[projectDuplicateStub.studyIndex],
-                        exclusionTag: projectDuplicateStub.exclusionTag,
-                    };
-                }
-
-                updatedColumns[projectDuplicateStub.columnIndex] = {
-                    ...updatedColumns[projectDuplicateStub.columnIndex],
-                    stubStudies: updatedStubStudies,
-                };
-            });
+        // // 3. Label the stubs in the import as duplicates automatically if we find existing stubs IN THE PROJECT
+        const allStubsInProject = columns.reduce(
+            (acc, curr) => [...acc, ...curr.stubStudies],
+            [] as ICurationStubStudy[]
+        );
+        const { duplicateMapping } = createDuplicateMap(allStubsInProject);
+        deduplicatedStubs.forEach((importedStub) => {
+            if (importedStub.exclusionTag !== null) return;
+            const formattedTitle = importedStub.title.toLocaleLowerCase().trim();
+            if (importedStub.doi && duplicateMapping.has(importedStub.doi)) {
+                importedStub.exclusionTag = defaultExclusionTags.duplicate;
+                snackbarNotify = true;
+            } else if (importedStub.pmid && duplicateMapping.has(importedStub.pmid)) {
+                importedStub.exclusionTag = defaultExclusionTags.duplicate;
+                snackbarNotify = true;
+            } else if (importedStub.title && duplicateMapping.has(formattedTitle)) {
+                importedStub.exclusionTag = defaultExclusionTags.duplicate;
+                snackbarNotify = true;
+            }
         });
 
+        // // 4. we should show a snackbar popup if duplicates have been automatically detected so the user knows that some have been automatically resolved
+        if (snackbarNotify) {
+            enqueueSnackbar(
+                'Some duplicates were detected and automatically excluded. To view, expand the Excluded option and click "Duplicate"',
+                { variant: 'info' }
+            );
+        }
+
+        const updatedColumns = [...columns];
         updatedColumns[0] = {
             ...updatedColumns[0],
-            stubStudies: [...updatedImport, ...updatedColumns[0].stubStudies],
+            stubStudies: [...deduplicatedStubs, ...updatedColumns[0].stubStudies],
         };
+
         updateCurationColumns(updatedColumns);
+        enqueueSnackbar(`Added new import: ${importName}`, { variant: 'success' });
         navigate(`/projects/${projectId}/curation`);
     };
-
-    if (isResolvingDuplicates) {
-        return (
-            <CurationImportResolveDuplicatesProject
-                stubs={props.stubs}
-                onNavigate={props.onNavigate}
-                onFinalizeImport={onFinalizeImport}
-            />
-        );
-    }
 
     return (
         <CurationImportFinalizeNameAndReview
             onNavigate={onNavigate}
-            onUpdateStubs={handleDoneNamingImport}
+            onNameImport={onFinalizeImport}
             stubs={stubs}
+            fileName={fileName}
+            searchCriteria={searchCriteria}
             unimportedStubs={unimportedStubs}
             importMode={importMode}
         />

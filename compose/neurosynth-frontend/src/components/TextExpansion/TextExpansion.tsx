@@ -42,7 +42,7 @@ const TextExpansion: React.FC<{
 
     return (
         <Box component="div" sx={props.sx || {}}>
-            <Typography noWrap={!expanded} ref={textRef}>
+            <Typography noWrap={!expanded} ref={textRef} sx={props.textSx}>
                 {props.text}
             </Typography>
             {(isOverflowingElement || expanded) && (

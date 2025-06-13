@@ -1,4 +1,4 @@
-import { Box, Chip, ListItem, ListItemButton, Typography } from '@mui/material';
+import { Box, ListItem, ListItemButton, Typography } from '@mui/material';
 import { ICurationStubStudy } from 'pages/Curation/Curation.types';
 import { ENeurosynthTagIds } from 'pages/Project/store/ProjectStore.types';
 import React from 'react';
@@ -14,8 +14,8 @@ const CurationStubListItem: React.FC<ICurationStubListItem> = React.memo((props)
     const itemColor = props.stub.exclusionTag
         ? '#fff3f3'
         : props.stub.tags.some((x) => x.id === ENeurosynthTagIds.NEEDS_REVIEW_TAG_ID)
-        ? '#fff0b8'
-        : '';
+          ? '#fff0b8'
+          : '';
 
     return (
         <ListItem
@@ -45,12 +45,17 @@ const CurationStubListItem: React.FC<ICurationStubListItem> = React.memo((props)
                     </Typography>
                 )}
                 <Box sx={{ width: '100%' }}>
-                    <Typography noWrap variant="body1">
-                        {props.stub.articleYear ? `(${props.stub.articleYear}). ` : ''}{' '}
-                        {props.stub.title}
+                    <Typography noWrap variant="body2">
+                        {props.stub.articleYear ? `(${props.stub.articleYear}). ` : ''} {props.stub.title}
+                    </Typography>
+                    <Typography noWrap variant="body2" fontSize="12px">
+                        {props.stub.authors}
+                    </Typography>
+                    <Typography noWrap variant="body2" fontSize="12px" color="gray">
+                        {props.stub.journal}
                     </Typography>
                 </Box>
-                <Box sx={{ display: 'flex', width: '100%' }}>
+                {/* <Box sx={{ display: 'flex', width: '100%' }}>
                     {props.stub.tags.map((tag) => (
                         <Chip
                             key={tag.id}
@@ -64,7 +69,7 @@ const CurationStubListItem: React.FC<ICurationStubListItem> = React.memo((props)
                             }}
                         />
                     ))}
-                </Box>
+                </Box> */}
             </ListItemButton>
         </ListItem>
     );

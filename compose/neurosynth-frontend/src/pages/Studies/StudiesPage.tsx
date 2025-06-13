@@ -1,79 +1,57 @@
-import { useAuth0 } from '@auth0/auth0-react';
 import { Box, TableCell, TableRow, Typography } from '@mui/material';
-import SearchContainer from 'components/Search/SearchContainer';
-import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import NeurosynthTable from 'components/NeurosynthTable/NeurosynthTable';
 import NeurosynthTableStyles from 'components/NeurosynthTable/NeurosynthTable.styles';
-import { useGetBaseStudies } from 'hooks';
+import { addKVPToSearch, getSearchCriteriaFromURL, getURLFromSearchCriteria } from 'components/Search/search.helpers';
+import SearchContainer from 'components/Search/SearchContainer';
+import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
+import { baseStudiesSearchHelper } from 'hooks/studies/useGetBaseStudies';
 import { BaseStudyList } from 'neurostore-typescript-sdk';
-import {
-    addKVPToSearch,
-    getSearchCriteriaFromURL,
-    getURLFromSearchCriteria,
-} from 'components/Search/search.helpers';
-import { useEffect, useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useSnackbar } from 'notistack';
+import { useEffect, useMemo, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { SearchCriteria } from '../Study/Study.types';
 
 const StudiesPage = () => {
     // const { startTour } = useGetTour('StudiesPage');
     const navigate = useNavigate();
+    const { enqueueSnackbar } = useSnackbar();
     const location = useLocation();
-    const { user, isLoading: authenticationIsLoading } = useAuth0();
+
+    const [isLoading, setIsLoading] = useState(false);
+    const [isError, setIsError] = useState(false);
 
     // cached data returned from the api
     const [studyData, setStudyData] = useState<BaseStudyList>();
 
-    // state of the current search
-    const [searchCriteria, setSearchCriteria] = useState<SearchCriteria>({
-        ...new SearchCriteria(),
-        ...getSearchCriteriaFromURL(location?.search),
-    });
+    const searchCriteria = useMemo(() => {
+        return {
+            ...new SearchCriteria(),
+            ...getSearchCriteriaFromURL(location?.search),
+        };
+    }, [location?.search]);
 
-    // state of the search to the API (separated from searchCriteria to allow for debouncing)
-    const [debouncedSearchCriteria, setDebouncedSearchCriteria] =
-        useState<SearchCriteria>(searchCriteria);
-
-    /**
-     * This query will not be made until authentication has finished loading. The user?.sub property
-     * exists before loading is complete so we are guaranteed that the first query will run
-     * with the studysetOwner set (if logged in) and undefined otherwise
-     */
-    const { data, isLoading, isError, isFetching } = useGetBaseStudies(
-        { ...debouncedSearchCriteria, studysetOwner: user?.sub },
-        !authenticationIsLoading
-    );
-
-    /**
-     * the data variable itself is undefined when refetching, so we need to save it
-     * in memory to create a more stable experience when changing search criteria.
-     * This is especially noticable when paginating
-     */
     useEffect(() => {
-        if (data) setStudyData(data);
-    }, [data]);
-
-    // runs every time the URL changes, to create a URL driven search.
-    // this is separated from the debounce because otherwise the URL would
-    // not update until the setTimeout is complete
-    useEffect(() => {
-        const urlSearchCriteria = getSearchCriteriaFromURL(location?.search);
-        setSearchCriteria((prev) => {
-            return { ...prev, ...urlSearchCriteria };
-        });
-    }, [location.search]);
-
-    // runs for any change in study query
-    // debounces above useEffect
-    useEffect(() => {
-        const timeout = setTimeout(async () => {
-            setDebouncedSearchCriteria(searchCriteria);
-        }, 500);
+        const debounce = setTimeout(() => {
+            setIsLoading(true);
+            baseStudiesSearchHelper({ ...searchCriteria, flat: true, info: false })
+                .then((data) => {
+                    setStudyData(data.data);
+                })
+                .catch(() => {
+                    setIsError(true);
+                    enqueueSnackbar('There was an error searching for studies', {
+                        variant: 'error',
+                    });
+                })
+                .finally(() => {
+                    setIsLoading(false);
+                });
+        }, 300);
 
         return () => {
-            clearTimeout(timeout);
+            clearTimeout(debounce);
         };
-    }, [searchCriteria]);
+    }, [enqueueSnackbar, searchCriteria]);
 
     const handleSearch = (searchArgs: Partial<SearchCriteria>) => {
         // when we search, we want to reset the search criteria as we dont know the
@@ -108,9 +86,7 @@ const StudiesPage = () => {
                 onSearch={handleSearch}
                 totalCount={studyData?.metadata?.total_count}
                 pageSize={searchCriteria.pageSize}
-                pageOfResults={
-                    (studyData?.results || []).length === 0 ? 1 : searchCriteria.pageOfResults
-                }
+                pageOfResults={(studyData?.results || []).length === 0 ? 1 : searchCriteria.pageOfResults}
                 paginationSelectorStyles={{
                     '& .MuiPaginationItem-root.Mui-selected': {
                         backgroundColor: 'primary.main',
@@ -121,13 +97,9 @@ const StudiesPage = () => {
                 <Box sx={{ marginBottom: '1rem' }}>
                     <NeurosynthTable
                         tableConfig={{
-                            isLoading: isLoading || isFetching,
+                            isLoading: isLoading,
                             loaderColor: 'secondary',
-                            noDataDisplay: (
-                                <Box sx={{ color: 'warning.dark', padding: '1rem' }}>
-                                    No studies found
-                                </Box>
-                            ),
+                            noDataDisplay: <Box sx={{ color: 'warning.dark', padding: '1rem' }}>No studies found</Box>,
                         }}
                         headerCells={[
                             {
@@ -159,19 +131,13 @@ const StudiesPage = () => {
                                 onClick={() => navigate(`/base-studies/${studyrow.id}`)}
                             >
                                 <TableCell>
-                                    {studyrow?.name || (
-                                        <Box sx={{ color: 'warning.dark' }}>No name</Box>
-                                    )}
+                                    {studyrow?.name || <Box sx={{ color: 'warning.dark' }}>No name</Box>}
                                 </TableCell>
                                 <TableCell>
-                                    {studyrow?.authors || (
-                                        <Box sx={{ color: 'warning.dark' }}>No author(s)</Box>
-                                    )}
+                                    {studyrow?.authors || <Box sx={{ color: 'warning.dark' }}>No author(s)</Box>}
                                 </TableCell>
                                 <TableCell>
-                                    {studyrow?.publication || (
-                                        <Box sx={{ color: 'warning.dark' }}>No Publication</Box>
-                                    )}
+                                    {studyrow?.publication || <Box sx={{ color: 'warning.dark' }}>No Publication</Box>}
                                 </TableCell>
                                 <TableCell>{studyrow?.username || 'Neurosynth-Compose'}</TableCell>
                             </TableRow>

@@ -42,9 +42,7 @@ const SearchContainer: React.FC<ISearchContainer> = (props) => {
         searchMode = 'study-search',
     } = props;
 
-    const handleRowsPerPageChange = (
-        event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-    ) => {
+    const handleRowsPerPageChange = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const newRowsPerPage = parseInt(event.target.value);
         if (!isNaN(newRowsPerPage)) onRowsPerPageChange(newRowsPerPage);
     };
@@ -56,11 +54,7 @@ const SearchContainer: React.FC<ISearchContainer> = (props) => {
 
     return (
         <>
-            <SearchBar
-                searchMode={searchMode}
-                searchButtonColor={searchButtonColor}
-                onSearch={onSearch}
-            />
+            <SearchBar searchMode={searchMode} searchButtonColor={searchButtonColor} onSearch={onSearch} />
 
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                 <Pagination
