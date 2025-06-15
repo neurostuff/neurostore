@@ -1,5 +1,6 @@
 import { Project, ProjectReturn } from 'neurosynth-compose-typescript-sdk';
 import { ICurationColumn } from 'pages/Curation/Curation.types';
+import { EImportMode } from 'pages/CurationImport/CurationImport.types';
 import { EExtractionStatus } from 'pages/Extraction/ExtractionPage';
 import { SortBy } from 'pages/Study/Study.types';
 import { useQuery } from 'react-query';
@@ -30,12 +31,24 @@ export interface IPRISMAConfig {
     };
 }
 
+export interface IImport {
+    id: string;
+    name: string;
+    date: string; // ISO DateTime
+    importModeUsed: EImportMode;
+    errorsDuringImport?: string;
+    numImported: number;
+    neurostoreSearchParams?: string; // search params used for studies (if neurostore was used for import)
+    fileName?: string; // file name imported (if imported via bibtex or pubmed file)
+}
+
 export interface ICurationMetadata {
     columns: ICurationColumn[];
     prismaConfig: IPRISMAConfig;
     infoTags: ITag[];
     exclusionTags: ITag[]; // for non prisma workflows, we ignore prismaConfig and use exclusionTags. This property will not be used for the prisma workflow.
     identificationSources: ISource[];
+    imports: IImport[];
 }
 
 export interface IStudyExtractionStatus {
@@ -69,9 +82,7 @@ export interface INeurosynthProjectReturn extends Omit<ProjectReturn, 'provenanc
     provenance: IProvenance;
 }
 
-export const indexToPRISMAMapping = (
-    index: number
-): keyof Omit<IPRISMAConfig, 'isPrisma'> | undefined => {
+export const indexToPRISMAMapping = (index: number): keyof Omit<IPRISMAConfig, 'isPrisma'> | undefined => {
     switch (index) {
         case 0:
             return 'identification';
@@ -91,39 +102,29 @@ export class ProjectSearchCriteria {
         public nameSearch: string | undefined = undefined,
         public genericSearchStr: string | undefined = undefined,
         public descriptionSearch: string | undefined = undefined,
-        public sortBy: SortBy | undefined = undefined,
+        public sortBy: SortBy | undefined = SortBy.LASTUPDATED,
         public descOrder: boolean = true
     ) {}
 }
 
-export const projectsSearchHelper = (
-    projectSearchCriteria: Partial<ProjectSearchCriteria>,
-    userId?: string
-) => {
+export const projectsSearchHelper = (projectSearchCriteria: Partial<ProjectSearchCriteria>, userId?: string) => {
     return API.NeurosynthServices.ProjectsService.projectsGet(
         projectSearchCriteria.pageOfResults || undefined,
         projectSearchCriteria.pageSize,
         projectSearchCriteria.nameSearch,
         projectSearchCriteria.genericSearchStr,
         projectSearchCriteria.descriptionSearch,
-        projectSearchCriteria.sortBy === SortBy.LASTUPDATED
-            ? undefined
-            : projectSearchCriteria.sortBy,
+        projectSearchCriteria.sortBy === SortBy.LASTUPDATED ? 'updated_at' : projectSearchCriteria.sortBy,
         projectSearchCriteria.descOrder,
         userId
     );
 };
 
 const useGetProjects = (projectSearchCriteria: ProjectSearchCriteria) => {
-    return useQuery(
-        ['projects', { ...projectSearchCriteria }],
-        () => projectsSearchHelper(projectSearchCriteria),
-        {
-            select: (axiosResponse) =>
-                (axiosResponse.data.results as INeurosynthProjectReturn[]) || [],
-            refetchOnWindowFocus: false,
-        }
-    );
+    return useQuery(['projects', { ...projectSearchCriteria }], () => projectsSearchHelper(projectSearchCriteria), {
+        select: (axiosResponse) => (axiosResponse.data.results as INeurosynthProjectReturn[]) || [],
+        refetchOnWindowFocus: false,
+    });
 };
 
 export default useGetProjects;

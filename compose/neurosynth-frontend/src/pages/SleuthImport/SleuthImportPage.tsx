@@ -18,7 +18,7 @@ const SleuthImportPage: React.FC = (props) => {
         annotationId: '',
     });
     const { isLoading, isAuthenticated } = useAuth0();
-    useGuard(`/`, 'You must be signed in to access this page.', !isAuthenticated && !isLoading);
+    useGuard(`/`, 'You must be signed in to access this page.', !isAuthenticated, isLoading);
 
     const handleNextFromIntroduction = () => {
         setActiveStep((prev) => prev + 1);
@@ -33,11 +33,7 @@ const SleuthImportPage: React.FC = (props) => {
         setActiveStep((prev) => prev + 1);
     };
 
-    const handleNextFromBuild = (
-        createdProjectId: string,
-        createdStudysetId: string,
-        createdAnnotationId: string
-    ) => {
+    const handleNextFromBuild = (createdProjectId: string, createdStudysetId: string, createdAnnotationId: string) => {
         setProjectComponents({
             projectId: createdProjectId,
             studysetId: createdStudysetId,
@@ -80,20 +76,12 @@ const SleuthImportPage: React.FC = (props) => {
             </Stepper>
 
             <Box sx={{ margin: '2rem 0' }}>
-                {activeStep === 0 && (
-                    <SleuthImportWizardIntroduction onNext={handleNextFromIntroduction} />
-                )}
+                {activeStep === 0 && <SleuthImportWizardIntroduction onNext={handleNextFromIntroduction} />}
                 {activeStep === 1 && (
-                    <SleuthImportWizardUpload
-                        onNext={handleNextFromUpload}
-                        onPrevious={handlePrevious}
-                    />
+                    <SleuthImportWizardUpload onNext={handleNextFromUpload} onPrevious={handlePrevious} />
                 )}
                 {activeStep === 2 && (
-                    <SleuthImportWizardBuild
-                        sleuthUploads={uploadedSleuthFiles}
-                        onNext={handleNextFromBuild}
-                    />
+                    <SleuthImportWizardBuild sleuthUploads={uploadedSleuthFiles} onNext={handleNextFromBuild} />
                 )}
                 {activeStep === 3 && (
                     <SleuthImportWizardCreateMetaAnalyses

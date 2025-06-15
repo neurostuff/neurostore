@@ -1,13 +1,18 @@
-import { Box, Typography } from '@mui/material';
-import DisplayStudyChipLinks from 'components/DisplayStudyChipLinks/DisplayStudyChipLinks';
+import { Box, Tooltip, Typography } from '@mui/material';
+import DisplayLink from 'components/DisplayStudyLink/DisplayLink';
+import DisplayStudyLinkFullText from 'components/DisplayStudyLink/DisplayStudyLinkFullText';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs';
 import ProjectIsLoadingText from 'components/ProjectIsLoadingText';
+import { PUBMED_ARTICLE_URL_PREFIX, PUBMED_CENTRAL_ARTICLE_URL_PREFIX } from 'hooks/external/useGetPubMedIds';
 import { useProjectId, useProjectName } from 'pages/Project/store/ProjectStore';
 import EditStudyToolbar from 'pages/Study/components/EditStudyToolbar';
 import {
     useStudyAuthors,
+    useStudyDOI,
     useStudyLastUpdated,
     useStudyName,
+    useStudyPMCID,
+    useStudyPMID,
     useStudyUsername,
     useStudyYear,
 } from 'pages/Study/store/StudyStore';
@@ -21,6 +26,9 @@ const EditStudyPageHeader: React.FC = () => {
     const projectName = useProjectName();
     const studyOwnerUsername = useStudyUsername();
     const lastUpdatedAt = useStudyLastUpdated();
+    const doi = useStudyDOI();
+    const pmid = useStudyPMID();
+    const pmcid = useStudyPMCID();
 
     const nicelyFormattedDate = useMemo(() => {
         const date = new Date(lastUpdatedAt || '');
@@ -58,7 +66,7 @@ const EditStudyPageHeader: React.FC = () => {
                     />
                     <ProjectIsLoadingText />
                 </Box>
-                <Box sx={{ display: 'flex', flexDirection: 'column', margin: '0.5rem 0' }}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', margin: '0.3rem 0' }}>
                     <Typography variant="h5">
                         {studyYear && `(${studyYear}).`} {studyName}
                     </Typography>
@@ -70,12 +78,33 @@ const EditStudyPageHeader: React.FC = () => {
                     <Typography variant="body2" sx={{ color: 'muted.main' }}>
                         Study owner: {studyOwnerUsername ? studyOwnerUsername : 'neurosynth'}
                     </Typography>
-                    <Typography variant="caption" sx={{ color: 'muted.main' }}>
+                    <Typography variant="body2" sx={{ color: 'muted.main' }}>
                         Last updated: {nicelyFormattedDate}
                     </Typography>
                 </Box>
-                <Box sx={{ margin: '0.5rem 0 1rem 0' }}>
-                    <DisplayStudyChipLinks />
+                <Box sx={{ marginBottom: '0.7rem', display: 'flex' }}>
+                    {doi && (
+                        <DisplayLink sx={{ marginRight: '1rem' }} label="DOI Link" href={`https://doi.org/${doi}`} />
+                    )}
+                    {pmid && (
+                        <DisplayLink
+                            sx={{ marginRight: '1rem' }}
+                            label="Pubmed Study"
+                            href={`${PUBMED_ARTICLE_URL_PREFIX}${pmid}`}
+                        />
+                    )}
+                    {pmcid && (
+                        <Tooltip placement="top" title="View the full article in HTML form via PubMed Central">
+                            <>
+                                <DisplayLink
+                                    sx={{ marginRight: '1rem' }}
+                                    label="Full Text (web)"
+                                    href={`${PUBMED_CENTRAL_ARTICLE_URL_PREFIX}${pmcid}`}
+                                />
+                            </>
+                        </Tooltip>
+                    )}
+                    {studyName && <DisplayStudyLinkFullText sx={{ marginRight: '1rem' }} studyName={studyName} />}
                 </Box>
             </Box>
         </>

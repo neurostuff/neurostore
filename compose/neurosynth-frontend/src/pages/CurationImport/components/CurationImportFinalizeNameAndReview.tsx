@@ -1,130 +1,97 @@
-import { Box, Button, Typography } from '@mui/material';
+import { Box, Button, TextField, Typography } from '@mui/material';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons';
-import { ITag } from 'hooks/projects/useGetProjects';
-import {
-    useCreateNewCurationInfoTag,
-    useProjectCurationInfoTags,
-} from 'pages/Project/store/ProjectStore';
-import { useEffect, useRef, useState } from 'react';
-import { v4 as uuidv4 } from 'uuid';
+import { ICurationStubStudy } from 'pages/Curation/Curation.types';
+import { EImportMode } from 'pages/CurationImport/CurationImport.types';
+import { useState } from 'react';
 import CurationImportBaseStyles from './CurationImport.styles';
 import CurationImportFinalizeReview from './CurationImportFinalizeReview';
-import { EImportMode } from 'pages/CurationImport/CurationImport.types';
-import { ICurationStubStudy } from 'pages/Curation/Curation.types';
-import CurationPopupTagSelector, {
-    AutoSelectOption,
-} from 'pages/Curation/components/CurationPopupTagSelector';
-import { SearchBy, SearchByMapping } from 'components/Search/search.types';
+import { SearchCriteria } from 'pages/Study/Study.types';
 
-const createTagName = (searchTerm: string | undefined, importMode: EImportMode) => {
-    if (importMode !== EImportMode.NEUROSTORE_IMPORT) {
-        return `${importMode}-${new Date().toISOString()}`;
-    }
+const generateDefaultImportName = (
+    importMode: EImportMode,
+    stubs: ICurationStubStudy[],
+    searchCriteria: SearchCriteria | undefined,
+    fileName: string | undefined
+) => {
+    switch (importMode) {
+        case EImportMode.NEUROSTORE_IMPORT: {
+            let finalImportName = '';
 
-    // for pubmed and standard format imports or if the user just does not enter a search term, then we give back a tag with just the date searched
-    if (!searchTerm) return '';
-    const parsedSearch = new URLSearchParams(searchTerm);
-    const search = parsedSearch.get(SearchByMapping[SearchBy.ALL]);
-    const searchString = search ? `${search} ` : '';
-    const title = parsedSearch.get(SearchByMapping[SearchBy.TITLE]);
-    const titleSearchString = title ? `title=${title}` : '';
-    const description = parsedSearch.get(SearchByMapping[SearchBy.DESCRIPTION]);
-    const descriptionSearchString = description ? `description=${description} ` : '';
-    const author = parsedSearch.get(SearchByMapping[SearchBy.AUTHORS]);
-    const authorSearchString = author ? `author=${author}` : '';
-    const journal = parsedSearch.get(SearchByMapping[SearchBy.JOURNAL]);
-    const journalSearchString = journal ? `journal=${journal}` : '';
-    const dataType = parsedSearch.get('dataType');
-    const dataTypeSearchString = dataType ? `datatype=${dataType}` : '';
-
-    const allParametersString = [
-        titleSearchString,
-        descriptionSearchString,
-        authorSearchString,
-        journalSearchString,
-        dataTypeSearchString,
-    ]
-        .filter((x) => x !== '')
-        .reduce((acc, curr, index, arr) => {
-            if (arr.length === 0) {
-                return '';
-            } else if (arr.length === 1) {
-                return `(${acc}${curr})`;
-            } else if (index === 0) {
-                return `(${acc}${curr}`;
-            } else if (index >= arr.length - 1) {
-                return `${acc}, ${curr})`;
-            } else {
-                return `${acc}, ${curr}`;
+            if (searchCriteria?.genericSearchStr) {
+                finalImportName = `${searchCriteria.genericSearchStr}`;
             }
-        }, '');
 
-    return `${searchString}${allParametersString}`;
+            if (searchCriteria?.nameSearch) {
+                const nameStrSegment = searchCriteria.nameSearch;
+                finalImportName =
+                    finalImportName.length > 0
+                        ? `${finalImportName} with name "${nameStrSegment}"`
+                        : `name "${nameStrSegment}"`;
+            }
+
+            if (searchCriteria?.journalSearch) {
+                const journalStrSegment = searchCriteria.journalSearch;
+                finalImportName =
+                    finalImportName.length > 0
+                        ? `${finalImportName} in journal "${journalStrSegment}"`
+                        : `journal "${journalStrSegment}"`;
+            }
+
+            if (searchCriteria?.authorSearch) {
+                const authorStrSegment = searchCriteria.authorSearch;
+                finalImportName =
+                    finalImportName.length > 0
+                        ? `${finalImportName} by author "${authorStrSegment}"`
+                        : `author "${authorStrSegment}"`;
+            }
+
+            if (searchCriteria?.descriptionSearch) {
+                const descriptionStrSegment = searchCriteria.descriptionSearch;
+                finalImportName =
+                    finalImportName.length > 0
+                        ? `${finalImportName} with description "${descriptionStrSegment}"`
+                        : `description "${descriptionStrSegment}"`;
+            }
+
+            return finalImportName;
+        }
+        case EImportMode.FILE_IMPORT: {
+            const source = stubs[0].identificationSource; // this is safe because we know we must have at least one stub
+            const finalImportName = fileName ? `${fileName} from ${source.label}` : source.label;
+            return finalImportName;
+        }
+        case EImportMode.MANUAL_CREATE:
+            return stubs[0].title || '';
+        case EImportMode.PUBMED_IMPORT:
+            if (fileName) {
+                return `${fileName}`;
+            } else {
+                const pmids = stubs.reduce((acc, curr, index) => {
+                    if (index === 0) return curr.pmid;
+                    return `${acc}, ${curr.pmid}`;
+                }, '');
+
+                return pmids;
+            }
+    }
 };
 
 const CurationImportFinalizeNameAndReview: React.FC<{
     importMode: EImportMode;
     onNavigate: (button: ENavigationButton) => void;
-    onUpdateStubs: (stubs: ICurationStubStudy[]) => void;
+    onNameImport: (name: string) => void;
     stubs: ICurationStubStudy[];
+    searchCriteria: SearchCriteria | undefined;
     unimportedStubs: string[];
-}> = (props) => {
-    const { onUpdateStubs, onNavigate, stubs, unimportedStubs, importMode } = props;
-    const infoTags = useProjectCurationInfoTags();
-    const createNewInfoTag = useCreateNewCurationInfoTag();
-    const [tag, setTag] = useState<AutoSelectOption | undefined>();
-
-    const intialized = useRef<boolean>(false);
-
-    useEffect(() => {
-        const tagName = createTagName(stubs[0]?.searchTerm, importMode);
-        if (!tagName || tag || intialized.current) return;
-        const existingTag = infoTags.find((infoTag) => infoTag.label === tagName);
-        if (existingTag) {
-            setTag(existingTag);
-        } else {
-            setTag({
-                id: uuidv4(),
-                label: tagName,
-                addOptionActualLabel: null,
-            });
-        }
-        intialized.current = true;
-    }, [importMode, infoTags, stubs, tag]);
-
-    const handleAddTag = (tag: AutoSelectOption) => {
-        setTag(tag);
-    };
-
-    const handleClearInput = () => {
-        setTag(undefined);
-    };
+    fileName: string | undefined;
+}> = ({ onNameImport, onNavigate, stubs, unimportedStubs, importMode, fileName, searchCriteria }) => {
+    const [importName, setImportName] = useState(
+        generateDefaultImportName(importMode, stubs, searchCriteria, fileName)
+    );
 
     const handleClickNext = () => {
-        if (!tag) return;
-        let newTag: ITag;
-
-        const existingTag = infoTags.find((infoTag) => infoTag.id === tag.id);
-        if (existingTag) {
-            newTag = existingTag;
-        } else {
-            newTag = {
-                id: uuidv4(),
-                label: tag.label,
-                isExclusionTag: false,
-                isAssignable: true,
-            };
-            createNewInfoTag(newTag);
-        }
-
-        const updatedStubs = [...stubs];
-        updatedStubs.forEach((_, index) => {
-            updatedStubs[index] = {
-                ...updatedStubs[index],
-                tags: [newTag],
-            };
-        });
-        onUpdateStubs(updatedStubs);
+        if (!importName) return;
+        onNameImport(importName);
         return;
     };
 
@@ -136,22 +103,13 @@ const CurationImportFinalizeNameAndReview: React.FC<{
                     sx={{ fontWeight: 'bold', marginRight: '4px', display: 'inline' }}
                     variant="h6"
                 >
-                    Give your import a name (or add to previous import):{' '}
+                    Give your import a name:
                 </Typography>
-                <Typography sx={{ display: 'inline' }} variant="h6">
-                    {tag?.label || ''}
-                </Typography>
-
-                <CurationPopupTagSelector
-                    size="medium"
-                    label="enter import name or click to select a previous import"
-                    placeholder="start typing or select from previous imports"
-                    sx={{ margin: '1rem 0' }}
-                    onAddTag={handleAddTag}
-                    onCreateTag={handleAddTag}
-                    addOptionText="Set name as"
-                    onClearInput={handleClearInput}
-                    value={tag}
+                <TextField
+                    sx={{ width: '100%', marginTop: '0.5rem' }}
+                    size="small"
+                    value={importName}
+                    onChange={(val) => setImportName(val.target.value)}
                 />
 
                 <CurationImportFinalizeReview stubs={stubs} unimportedStubs={unimportedStubs} />
@@ -165,7 +123,7 @@ const CurationImportFinalizeNameAndReview: React.FC<{
                         variant="contained"
                         sx={CurationImportBaseStyles.nextButton}
                         disableElevation
-                        disabled={!tag}
+                        disabled={!importName || stubs.length === 0}
                         onClick={handleClickNext}
                     >
                         next

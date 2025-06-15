@@ -1,8 +1,5 @@
 import { Box, Typography } from '@mui/material';
-import {
-    useProjectMetadataHasUnsavedchanges,
-    useUpdateProjectIsLoading,
-} from 'pages/Project/store/ProjectStore';
+import { useProjectMetadataHasUnsavedchanges, useUpdateProjectIsLoading } from 'pages/Project/store/ProjectStore';
 
 const ProjectIsLoadingText: React.FC<{ isLoading?: boolean }> = (props) => {
     const updateProjectIsLoading = useUpdateProjectIsLoading();
@@ -12,7 +9,7 @@ const ProjectIsLoadingText: React.FC<{ isLoading?: boolean }> = (props) => {
 
     if (isLoading) {
         return (
-            <Box sx={{ marginLeft: '2rem' }}>
+            <Box sx={{ marginLeft: '1rem' }}>
                 <Typography
                     sx={{
                         color: 'muted.main',

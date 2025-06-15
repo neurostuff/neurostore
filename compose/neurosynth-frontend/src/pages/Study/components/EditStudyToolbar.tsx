@@ -58,12 +58,14 @@ const EditStudyToolbar: React.FC<{ isViewOnly?: boolean }> = ({ isViewOnly = fal
         columnFilters: [],
         sorting: [],
         studies: [],
+        pagination: { pageIndex: 0, pageSize: 25 },
     });
 
     useEffect(() => {
         if (isLoading || isError) return;
         const stateFromSessionStorage = retrieveExtractionTableState(projectId);
-        if (!stateFromSessionStorage) {
+
+        if (!stateFromSessionStorage?.studies) {
             setExtractionTableState((prev) => ({
                 ...prev,
                 studies: (data?.studies || []).map((study) => (study as StudyReturn).id as string),
@@ -95,9 +97,11 @@ const EditStudyToolbar: React.FC<{ isViewOnly?: boolean }> = ({ isViewOnly = fal
             return;
         }
 
-        canEdit
-            ? navigate(`/projects/${projectId}/extraction/studies/${prevId}/edit`)
-            : navigate(`/projects/${projectId}/extraction/studies/${prevId}`);
+        if (canEdit) {
+            navigate(`/projects/${projectId}/extraction/studies/${prevId}/edit`);
+        } else {
+            navigate(`/projects/${projectId}/extraction/studies/${prevId}`);
+        }
     };
 
     const handleMoveToNextStudy = () => {
@@ -114,9 +118,11 @@ const EditStudyToolbar: React.FC<{ isViewOnly?: boolean }> = ({ isViewOnly = fal
             return;
         }
 
-        canEdit
-            ? navigate(`/projects/${projectId}/extraction/studies/${nextId}/edit`)
-            : navigate(`/projects/${projectId}/extraction/studies/${nextId}`);
+        if (canEdit) {
+            navigate(`/projects/${projectId}/extraction/studies/${nextId}/edit`);
+        } else {
+            navigate(`/projects/${projectId}/extraction/studies/${nextId}`);
+        }
     };
 
     const handleMoveToComplete = () => {
@@ -179,9 +185,7 @@ const EditStudyToolbar: React.FC<{ isViewOnly?: boolean }> = ({ isViewOnly = fal
     }, [extractionSummary.completed, extractionSummary.total]);
 
     const isComplete = useMemo(() => {
-        return (
-            extractionSummary.completed === extractionSummary.total && extractionSummary.total > 0
-        );
+        return extractionSummary.completed === extractionSummary.total && extractionSummary.total > 0;
     }, [extractionSummary.completed, extractionSummary.total]);
 
     const hasPrevStudies = useMemo(() => {
@@ -235,9 +239,7 @@ const EditStudyToolbar: React.FC<{ isViewOnly?: boolean }> = ({ isViewOnly = fal
                                     title={`${percentageCompleteString} studies marked as complete`}
                                 >
                                     <Box>
-                                        <Box sx={EditStudyToolbarStyles.showProgress}>
-                                            {percentageComplete}%
-                                        </Box>
+                                        <Box sx={EditStudyToolbarStyles.showProgress}>{percentageComplete}%</Box>
 
                                         <CircularProgress
                                             sx={{
@@ -255,10 +257,7 @@ const EditStudyToolbar: React.FC<{ isViewOnly?: boolean }> = ({ isViewOnly = fal
                             <EditStudySwapVersionButton />
                         </Box>
                         <Box sx={{ marginBottom: '1rem' }}>
-                            <Tooltip
-                                title={!hasEdits ? 'No edits to save' : 'Save'}
-                                placement="left"
-                            >
+                            <Tooltip title={!hasEdits ? 'No edits to save' : 'Save'} placement="left">
                                 <Box>
                                     <Button
                                         disabled={!hasEdits}
@@ -291,17 +290,12 @@ const EditStudyToolbar: React.FC<{ isViewOnly?: boolean }> = ({ isViewOnly = fal
                             >
                                 <Tooltip title="Mark as uncategorized" placement="left">
                                     <Button
-                                        onClick={() =>
-                                            handleUpdateExtractionStatus(
-                                                EExtractionStatus.UNCATEGORIZED
-                                            )
-                                        }
+                                        onClick={() => handleUpdateExtractionStatus(EExtractionStatus.UNCATEGORIZED)}
                                         sx={{ minWidth: '0', width: '40px', height: '40px' }}
                                         disableElevation
                                         color="warning"
                                         variant={
-                                            extractionStatus?.status ===
-                                            EExtractionStatus.UNCATEGORIZED
+                                            extractionStatus?.status === EExtractionStatus.UNCATEGORIZED
                                                 ? 'contained'
                                                 : 'outlined'
                                         }
@@ -311,16 +305,11 @@ const EditStudyToolbar: React.FC<{ isViewOnly?: boolean }> = ({ isViewOnly = fal
                                 </Tooltip>
                                 <Tooltip title="Save for later" placement="left">
                                     <Button
-                                        onClick={() =>
-                                            handleUpdateExtractionStatus(
-                                                EExtractionStatus.SAVEDFORLATER
-                                            )
-                                        }
+                                        onClick={() => handleUpdateExtractionStatus(EExtractionStatus.SAVEDFORLATER)}
                                         sx={{ minWidth: '0', width: '40px', height: '40px' }}
                                         disableElevation
                                         variant={
-                                            extractionStatus?.status ===
-                                            EExtractionStatus.SAVEDFORLATER
+                                            extractionStatus?.status === EExtractionStatus.SAVEDFORLATER
                                                 ? 'contained'
                                                 : 'outlined'
                                         }
@@ -330,11 +319,7 @@ const EditStudyToolbar: React.FC<{ isViewOnly?: boolean }> = ({ isViewOnly = fal
                                 </Tooltip>
                                 <Tooltip title="Complete" placement="left">
                                     <Button
-                                        onClick={() =>
-                                            handleUpdateExtractionStatus(
-                                                EExtractionStatus.COMPLETED
-                                            )
-                                        }
+                                        onClick={() => handleUpdateExtractionStatus(EExtractionStatus.COMPLETED)}
                                         sx={{ minWidth: '0', width: '40px', height: '40px' }}
                                         disableElevation
                                         color="success"
@@ -350,16 +335,10 @@ const EditStudyToolbar: React.FC<{ isViewOnly?: boolean }> = ({ isViewOnly = fal
                             </ButtonGroup>
                         </Box>
                         <Box>
-                            <ButtonGroup
-                                color="info"
-                                orientation="vertical"
-                                sx={{ minWidth: '0px' }}
-                            >
+                            <ButtonGroup color="info" orientation="vertical" sx={{ minWidth: '0px' }}>
                                 <Tooltip
                                     placement="right"
-                                    title={
-                                        hasPrevStudies ? `go to previous study` : `no more studies`
-                                    }
+                                    title={hasPrevStudies ? `go to previous study` : `no more studies`}
                                 >
                                     {/* need this box as a wrapper because tooltip will not act on a disabled element */}
                                     <Box>

@@ -1,9 +1,9 @@
 /// <reference types="cypress" />
 
+import { getAuthorsShortName } from 'helpers/utils';
 import { INeurosynthProjectReturn } from 'hooks/projects/useGetProjects';
 import { StudyReturn, StudysetReturn } from 'neurostore-typescript-sdk';
 import { IExtractionTableStudy } from 'pages/Extraction/components/ExtractionTable';
-import { getAuthorShortName } from 'pages/Extraction/components/ExtractionTable.helpers';
 
 describe('ExtractionTable', () => {
     beforeEach(() => {
@@ -14,14 +14,10 @@ describe('ExtractionTable', () => {
         }).as('projectFixture');
         cy.intercept('GET', `**/api/studysets/*`, { fixture: 'studyset' }).as('studysetFixture');
 
-        cy.intercept('PUT', `**/api/projects/*`, { fixture: 'Extraction/project' }).as(
-            'updateProjectFixture'
-        );
+        cy.intercept('PUT', `**/api/projects/*`, { fixture: 'Extraction/project' }).as('updateProjectFixture');
 
         cy.intercept('GET', `**/api/studies/*`, { fixture: 'study' }).as('studyFixture');
-        cy.intercept('GET', `**/api/annotations/*`, { fixture: 'annotation' }).as(
-            'annotationsFixture'
-        );
+        cy.intercept('GET', `**/api/annotations/*`, { fixture: 'annotation' }).as('annotationsFixture');
 
         cy.intercept('GET', `https://api.semanticscholar.org/**`, {
             fixture: 'semanticScholar',
@@ -145,12 +141,8 @@ describe('ExtractionTable', () => {
                     .eq(1)
                     .type(studysetStudies[0].name?.toString() || '');
 
-                cy.contains(`Filtering YEAR: ${studysetStudies[0].year?.toString()}`).should(
-                    'exist'
-                );
-                cy.contains(`Filtering NAME: ${studysetStudies[0].name?.toString()}`).should(
-                    'exist'
-                );
+                cy.contains(`Filtering YEAR: ${studysetStudies[0].year?.toString()}`).should('exist');
+                cy.contains(`Filtering NAME: ${studysetStudies[0].name?.toString()}`).should('exist');
             });
         });
 
@@ -160,7 +152,7 @@ describe('ExtractionTable', () => {
             cy.wait('@studysetFixture').then((studysetFixture) => {
                 const studyset = studysetFixture?.response?.body as StudysetReturn;
                 const studysetStudies = studyset.studies as StudyReturn[];
-                studysetYear = studysetStudies[0].year?.toString() || "";
+                studysetYear = studysetStudies[0].year?.toString() || '';
                 cy.get('input').eq(0).click();
                 cy.get(`input`)
                     .eq(0)
@@ -169,15 +161,11 @@ describe('ExtractionTable', () => {
             cy.get('tbody > tr').should('have.length', 1);
 
             // ACT
-            cy.contains(
-                `Filtering YEAR: ${studysetYear}`
-            ).parent().find('[data-testid="CancelIcon"]').click();
+            cy.contains(`Filtering YEAR: ${studysetYear}`).parent().find('[data-testid="CancelIcon"]').click();
 
             // ASSERT
             cy.get('tbody > tr').should('have.length', 3);
-            cy.contains(
-                `Filtering YEAR: ${studysetYear}`
-            ).should('not.exist')
+            cy.contains(`Filtering YEAR: ${studysetYear}`).should('not.exist');
         });
     });
 
@@ -218,15 +206,11 @@ describe('ExtractionTable', () => {
                 const studyset = studysetFixture.response?.body as StudysetReturn;
                 const studies = [...(studyset.studies || [])] as StudyReturn[];
 
-                const sortedStudies = studies.sort(
-                    (a, b) => (b.year as number) - (a.year as number)
-                );
+                const sortedStudies = studies.sort((a, b) => (b.year as number) - (a.year as number));
 
                 cy.get('tbody > tr').each((tr, index) => {
                     cy.wrap(tr).within(() => {
-                        cy.get('td')
-                            .eq(0)
-                            .should('have.text', sortedStudies[index].year?.toString());
+                        cy.get('td').eq(0).should('have.text', sortedStudies[index].year?.toString());
                     });
                 });
             });
@@ -241,15 +225,11 @@ describe('ExtractionTable', () => {
                 const studyset = studysetFixture.response?.body as StudysetReturn;
                 const studies = [...(studyset.studies || [])] as StudyReturn[];
 
-                const sortedStudies = studies.sort(
-                    (a, b) => (a.year as number) - (b.year as number)
-                );
+                const sortedStudies = studies.sort((a, b) => (a.year as number) - (b.year as number));
 
                 cy.get('tbody > tr').each((tr, index) => {
                     cy.wrap(tr).within(() => {
-                        cy.get('td')
-                            .eq(0)
-                            .should('have.text', sortedStudies[index].year?.toString());
+                        cy.get('td').eq(0).should('have.text', sortedStudies[index].year?.toString());
                     });
                 });
             });
@@ -262,9 +242,7 @@ describe('ExtractionTable', () => {
                 const studyset = studysetFixture.response?.body as StudysetReturn;
                 const studies = [...(studyset.studies || [])] as StudyReturn[];
 
-                const sortedStudies = studies.sort((a, b) =>
-                    (b.name as string).localeCompare(a.name as string)
-                );
+                const sortedStudies = studies.sort((a, b) => (b.name as string).localeCompare(a.name as string));
 
                 console.log(sortedStudies);
 
@@ -285,9 +263,7 @@ describe('ExtractionTable', () => {
                 const studyset = studysetFixture.response?.body as StudysetReturn;
                 const studies = [...(studyset.studies || [])] as StudyReturn[];
 
-                const sortedStudies = studies.sort((a, b) =>
-                    (a.name as string).localeCompare(b.name as string)
-                );
+                const sortedStudies = studies.sort((a, b) => (a.name as string).localeCompare(b.name as string));
 
                 cy.get('tbody > tr').each((tr, index) => {
                     cy.wrap(tr).within(() => {
@@ -304,18 +280,13 @@ describe('ExtractionTable', () => {
                 const studyset = studysetFixture.response?.body as StudysetReturn;
                 const studies = [...(studyset.studies || [])] as StudyReturn[];
 
-                const sortedStudies = studies.sort((a, b) =>
-                    (b.authors as string).localeCompare(a.authors as string)
-                );
+                const sortedStudies = studies.sort((a, b) => (b.authors as string).localeCompare(a.authors as string));
 
                 cy.get('tbody > tr').each((tr, index) => {
                     cy.wrap(tr).within(() => {
                         cy.get('td')
                             .eq(2)
-                            .should(
-                                'have.text',
-                                getAuthorShortName(sortedStudies?.[index]?.authors || '')
-                            );
+                            .should('have.text', getAuthorsShortName(sortedStudies?.[index]?.authors || ''));
                     });
                 });
             });
@@ -330,18 +301,13 @@ describe('ExtractionTable', () => {
                 const studyset = studysetFixture.response?.body as StudysetReturn;
                 const studies = [...(studyset.studies || [])] as StudyReturn[];
 
-                const sortedStudies = studies.sort((a, b) =>
-                    (a.authors as string).localeCompare(b.authors as string)
-                );
+                const sortedStudies = studies.sort((a, b) => (a.authors as string).localeCompare(b.authors as string));
 
                 cy.get('tbody > tr').each((tr, index) => {
                     cy.wrap(tr).within(() => {
                         cy.get('td')
                             .eq(2)
-                            .should(
-                                'have.text',
-                                getAuthorShortName(sortedStudies?.[index]?.authors || '')
-                            );
+                            .should('have.text', getAuthorsShortName(sortedStudies?.[index]?.authors || ''));
                     });
                 });
             });
@@ -490,8 +456,7 @@ describe('ExtractionTable', () => {
                     const sortedStudies: IExtractionTableStudy[] = studies
                         .map((study) => ({
                             ...study,
-                            status: studyStatusList.find((status) => status.id === study.id)
-                                ?.status,
+                            status: studyStatusList.find((status) => status.id === study.id)?.status,
                         }))
                         .sort((a, b) =>
                             (a?.status || '').localeCompare(b?.status || '', undefined, {
@@ -506,23 +471,13 @@ describe('ExtractionTable', () => {
                                 .within(() => {
                                     const studyStatus = sortedStudies[index].status;
                                     const buttonIndex =
-                                        studyStatus === 'completed'
-                                            ? 2
-                                            : studyStatus === 'savedforlater'
-                                            ? 1
-                                            : 0;
+                                        studyStatus === 'completed' ? 2 : studyStatus === 'savedforlater' ? 1 : 0;
 
                                     cy.get('button').each((button, index) => {
                                         if (index === buttonIndex) {
-                                            cy.wrap(button).should(
-                                                'have.class',
-                                                'MuiButton-contained'
-                                            );
+                                            cy.wrap(button).should('have.class', 'MuiButton-contained');
                                         } else {
-                                            cy.wrap(button).should(
-                                                'have.class',
-                                                'MuiButton-outlined'
-                                            );
+                                            cy.wrap(button).should('have.class', 'MuiButton-outlined');
                                         }
                                     });
                                 });
@@ -548,8 +503,7 @@ describe('ExtractionTable', () => {
                     const sortedStudies: IExtractionTableStudy[] = studies
                         .map((study) => ({
                             ...study,
-                            status: studyStatusList.find((status) => status.id === study.id)
-                                ?.status,
+                            status: studyStatusList.find((status) => status.id === study.id)?.status,
                         }))
                         .sort((a, b) =>
                             (b?.status || '').localeCompare(a?.status || '', undefined, {
@@ -564,23 +518,13 @@ describe('ExtractionTable', () => {
                                 .within(() => {
                                     const studyStatus = sortedStudies[index].status;
                                     const buttonIndex =
-                                        studyStatus === 'completed'
-                                            ? 2
-                                            : studyStatus === 'savedforlater'
-                                            ? 1
-                                            : 0;
+                                        studyStatus === 'completed' ? 2 : studyStatus === 'savedforlater' ? 1 : 0;
 
                                     cy.get('button').each((button, index) => {
                                         if (index === buttonIndex) {
-                                            cy.wrap(button).should(
-                                                'have.class',
-                                                'MuiButton-contained'
-                                            );
+                                            cy.wrap(button).should('have.class', 'MuiButton-contained');
                                         } else {
-                                            cy.wrap(button).should(
-                                                'have.class',
-                                                'MuiButton-outlined'
-                                            );
+                                            cy.wrap(button).should('have.class', 'MuiButton-outlined');
                                         }
                                     });
                                 });

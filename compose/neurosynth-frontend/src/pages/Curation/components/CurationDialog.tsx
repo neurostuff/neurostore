@@ -1,12 +1,11 @@
 import { Box, Typography } from '@mui/material';
 import BaseDialog, { IDialog } from 'components/Dialogs/BaseDialog';
-import { useEffect, useRef, useState } from 'react';
-import CurationStubListItem from './CurationStubListItem';
-import { ICurationStubStudy } from 'pages/Curation/Curation.types';
-import { FixedSizeList, ListChildComponentProps } from 'react-window';
 import useGetWindowHeight from 'hooks/useGetWindowHeight';
-import React from 'react';
 import CurationEditableStubSummary from 'pages/Curation/components/CurationEditableStubSummary';
+import { ICurationStubStudy } from 'pages/Curation/Curation.types';
+import React, { useEffect, useRef, useState } from 'react';
+import { FixedSizeList } from 'react-window';
+import CurationStubListItemVirtualizedContainer from './CurationStubListItemVirtualizedContainer';
 
 interface ICurationDialog {
     columnIndex: number;
@@ -16,32 +15,10 @@ interface ICurationDialog {
     onSetSelectedStub: (stub: string) => void;
 }
 
-const CurationDialogFixedSizeListRow: React.FC<
-    ListChildComponentProps<{
-        stubs: ICurationStubStudy[];
-        selectedStubId: string | undefined;
-        onSetSelectedStub: (stub: string) => void;
-    }>
-> = (props) => {
-    const stub = props.data.stubs[props.index];
-    const isSelected = props.data.selectedStubId === stub.id;
-
-    return (
-        <CurationStubListItem
-            selected={isSelected}
-            onSetSelectedStub={props.data.onSetSelectedStub}
-            stub={stub}
-            style={props.style}
-        />
-    );
-};
-
 const CurationDialog: React.FC<ICurationDialog & IDialog> = (props) => {
     const [stubs, setStubs] = useState<ICurationStubStudy[]>(props.stubs);
     const scrollableBoxRef = useRef<HTMLDivElement>(null);
-    const selectedStub: ICurationStubStudy | undefined = props.stubs.find(
-        (stub) => stub.id === props.selectedStubId
-    );
+    const selectedStub: ICurationStubStudy | undefined = props.stubs.find((stub) => stub.id === props.selectedStubId);
 
     const windowHeight = useGetWindowHeight();
 
@@ -72,9 +49,7 @@ const CurationDialog: React.FC<ICurationDialog & IDialog> = (props) => {
     const handleScrollTo = React.useCallback(
         (listRef: FixedSizeList) => {
             if (listRef) {
-                const selectedItemIndex = props.stubs.findIndex(
-                    (x) => x.id === props.selectedStubId
-                );
+                const selectedItemIndex = props.stubs.findIndex((x) => x.id === props.selectedStubId);
                 listRef.scrollToItem(selectedItemIndex, 'smart');
             }
         },
@@ -91,9 +66,7 @@ const CurationDialog: React.FC<ICurationDialog & IDialog> = (props) => {
                 fullWidth
                 onCloseDialog={props.onCloseDialog}
                 isOpen={props.isOpen}
-                dialogTitle={`Curation View ${
-                    props.selectedFilter ? `(Filtering for ${props.selectedFilter})` : ''
-                }`}
+                dialogTitle={`Curation View ${props.selectedFilter ? `(Filtering for ${props.selectedFilter})` : ''}`}
             >
                 <Typography sx={{ color: 'warning.dark' }}>No studies</Typography>
             </BaseDialog>
@@ -106,9 +79,7 @@ const CurationDialog: React.FC<ICurationDialog & IDialog> = (props) => {
             fullWidth
             onCloseDialog={props.onCloseDialog}
             isOpen={props.isOpen}
-            dialogTitle={`Curation View ${
-                props.selectedFilter ? `(Filtering for ${props.selectedFilter})` : ''
-            }`}
+            dialogTitle={`Curation View ${props.selectedFilter ? `(Filtering for ${props.selectedFilter})` : ''}`}
         >
             <Box sx={{ display: 'flex', height: '60vh' }}>
                 <Box>
@@ -127,7 +98,7 @@ const CurationDialog: React.FC<ICurationDialog & IDialog> = (props) => {
                         overscanCount={3}
                         ref={handleScrollTo}
                     >
-                        {CurationDialogFixedSizeListRow}
+                        {CurationStubListItemVirtualizedContainer}
                     </FixedSizeList>
                 </Box>
                 <Box ref={scrollableBoxRef} sx={{ flexGrow: 1, overflowY: 'auto' }}>

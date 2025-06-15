@@ -25,6 +25,7 @@ import {
     SortingState,
     useReactTable,
 } from '@tanstack/react-table';
+import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import { useGetStudysetById, useUserCanEdit } from 'hooks';
 import { IStudyExtractionStatus } from 'hooks/projects/useGetProjects';
 import { StudyReturn } from 'neurostore-typescript-sdk';
@@ -38,6 +39,7 @@ import {
 import { ChangeEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { EExtractionStatus } from '../ExtractionPage';
+import { retrieveExtractionTableState, updateExtractionTableState } from './ExtractionTable.helpers';
 import styles from './ExtractionTable.module.css';
 import { ExtractionTableAuthorCell, ExtractionTableAuthorHeader } from './ExtractionTableAuthor';
 import ExtractionTableFilterInput from './ExtractionTableFilterInput';
@@ -46,14 +48,12 @@ import { ExtractionTableNameCell, ExtractionTableNameHeader } from './Extraction
 import { ExtractionTablePMIDCell, ExtractionTablePMIDHeader } from './ExtractionTablePMID';
 import { ExtractionTableStatusCell, ExtractionTableStatusHeader } from './ExtractionTableStatus';
 import { ExtractionTableYearCell, ExtractionTableYearHeader } from './ExtractionTableYear';
-import { retrieveExtractionTableState } from './ExtractionTable.helpers';
-import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 
 //allows us to define custom properties for our columns
 declare module '@tanstack/react-table' {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     interface ColumnMeta<TData extends RowData, TValue> {
-        filterVariant?: 'text' | 'status-select' | 'journal-autocomplete';
+        filterVariant?: 'text' | 'numeric' | 'status-select' | 'journal-autocomplete' | 'autocomplete';
     }
 }
 
@@ -70,11 +70,6 @@ const ExtractionTable: React.FC = () => {
     const setGivenStudyStatusesAsComplete = useProjectExtractionSetGivenStudyStatusesAsComplete();
     const projectUser = useProjectUser();
     const usercanEdit = useUserCanEdit(projectUser || undefined);
-
-    const [pagination, setPagination] = useState<PaginationState>({
-        pageIndex: 0,
-        pageSize: 25,
-    });
     const [confirmationDialogIsOpen, setConfirmationDialogIsOpen] = useState(false);
 
     useEffect(() => {
@@ -83,8 +78,13 @@ const ExtractionTable: React.FC = () => {
 
         if (state.columnFilters) setColumnFilters(state.columnFilters);
         if (state.sorting) setSorting(state.sorting);
+        if (state.pagination) setPagination(state.pagination);
     }, [projectId]);
 
+    const [pagination, setPagination] = useState<PaginationState>({
+        pageIndex: 0,
+        pageSize: 25,
+    });
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
     const [sorting, setSorting] = useState<SortingState>([]);
 
@@ -117,6 +117,7 @@ const ExtractionTable: React.FC = () => {
                 enableColumnFilter: true,
                 filterFn: 'includesString',
                 meta: {
+                    columnLabel: 'Year',
                     filterVariant: 'text',
                 },
             }),
@@ -131,6 +132,7 @@ const ExtractionTable: React.FC = () => {
                 sortingFn: 'text',
                 filterFn: 'includesString',
                 meta: {
+                    columnLabel: 'Name',
                     filterVariant: 'text',
                 },
             }),
@@ -146,6 +148,7 @@ const ExtractionTable: React.FC = () => {
                 cell: ExtractionTableAuthorCell,
                 header: ExtractionTableAuthorHeader,
                 meta: {
+                    columnLabel: 'Authors',
                     filterVariant: 'text',
                 },
             }),
@@ -159,6 +162,7 @@ const ExtractionTable: React.FC = () => {
                 cell: ExtractionTableJournalCell,
                 header: ExtractionTableJournalHeader,
                 meta: {
+                    columnLabel: 'Journal',
                     filterVariant: 'journal-autocomplete',
                 },
             }),
@@ -174,6 +178,7 @@ const ExtractionTable: React.FC = () => {
                 enableSorting: true,
                 sortingFn: 'alphanumeric',
                 meta: {
+                    columnLabel: 'PMID',
                     filterVariant: 'text',
                 },
             }),
@@ -198,6 +203,7 @@ const ExtractionTable: React.FC = () => {
                 header: ExtractionTableStatusHeader,
                 enableColumnFilter: true,
                 meta: {
+                    columnLabel: 'Status',
                     filterVariant: 'status-select',
                 },
             }),
@@ -208,7 +214,9 @@ const ExtractionTable: React.FC = () => {
         data: data,
         columns: columns,
         onSortingChange: setSorting,
-        onPaginationChange: setPagination,
+        onPaginationChange: (props) => {
+            setPagination(props);
+        },
         getCoreRowModel: getCoreRowModel(),
         getSortedRowModel: getSortedRowModel(),
         getPaginationRowModel: getPaginationRowModel(),
@@ -222,13 +230,29 @@ const ExtractionTable: React.FC = () => {
         },
     });
 
-    const handleRowsPerPageChange = useCallback(
-        (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-            const newRowsPerPage = parseInt(event.target.value);
-            if (!isNaN(newRowsPerPage)) setPagination({ pageIndex: 0, pageSize: newRowsPerPage });
-        },
-        []
-    );
+    useEffect(() => {
+        updateExtractionTableState(projectId, {
+            sorting: sorting,
+            studies: table.getSortedRowModel().rows.map((x) => x.original.id as string),
+        });
+    }, [sorting, projectId, table]);
+    useEffect(() => {
+        updateExtractionTableState(projectId, {
+            columnFilters: columnFilters,
+            studies: table.getSortedRowModel().rows.map((x) => x.original.id as string),
+        });
+    }, [columnFilters, projectId, table]);
+    useEffect(() => {
+        updateExtractionTableState(projectId, {
+            pagination: pagination,
+            studies: table.getSortedRowModel().rows.map((x) => x.original.id as string),
+        });
+    }, [pagination, projectId, table]);
+
+    const handleRowsPerPageChange = useCallback((event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        const newRowsPerPage = parseInt(event.target.value);
+        if (!isNaN(newRowsPerPage)) setPagination({ pageIndex: 0, pageSize: newRowsPerPage });
+    }, []);
 
     const handleMarkAllAsComplete = useCallback(
         (ok: boolean | undefined) => {
@@ -289,10 +313,7 @@ const ExtractionTable: React.FC = () => {
                 </Box>
             </Box>
             <TableContainer sx={{ marginBottom: '2rem' }}>
-                <Table
-                    size="small"
-                    sx={{ tableLayout: 'fixed', width: 'fit-content', minWidth: '800px' }}
-                >
+                <Table size="small" sx={{ tableLayout: 'fixed', width: 'fit-content', minWidth: '800px' }}>
                     <TableHead>
                         {table.getHeaderGroups().map((headerGroup) => (
                             <TableRow key={headerGroup.id}>
@@ -301,22 +322,14 @@ const ExtractionTable: React.FC = () => {
                                         key={header.id}
                                         sx={{
                                             width:
-                                                header.column.id === 'name'
-                                                    ? '100%'
-                                                    : `${header.column.getSize()}px`,
+                                                header.column.id === 'name' ? '100%' : `${header.column.getSize()}px`,
                                             verticalAlign: 'bottom',
                                         }}
                                     >
                                         <Box>
-                                            {flexRender(
-                                                header.column.columnDef.header,
-                                                header.getContext()
-                                            )}
+                                            {flexRender(header.column.columnDef.header, header.getContext())}
                                             {header.column.getCanFilter() ? (
-                                                <ExtractionTableFilterInput
-                                                    table={table}
-                                                    column={header.column}
-                                                />
+                                                <ExtractionTableFilterInput table={table} column={header.column} />
                                             ) : (
                                                 <Box sx={{ height: '40px' }}></Box>
                                             )}
@@ -330,33 +343,13 @@ const ExtractionTable: React.FC = () => {
                         {table.getRowModel().rows.map((row) => (
                             <TableRow
                                 key={row.id}
-                                className={
-                                    styles[
-                                        studyStatusMap.get(row.original.id || '')?.status ??
-                                            'uncategorized'
-                                    ]
-                                }
+                                className={styles[studyStatusMap.get(row.original.id || '')?.status ?? 'uncategorized']}
                                 onClick={() => {
-                                    if (!row.original.id) return;
-                                    sessionStorage.setItem(
-                                        `${projectId}-extraction-table`,
-                                        JSON.stringify({
-                                            columnFilters: table.getState().columnFilters,
-                                            sorting: table.getState().sorting,
-                                            studies: table
-                                                .getSortedRowModel()
-                                                .rows.map((r) => r.original.id),
-                                        })
-                                    );
-
+                                    if (!row.original.id || !projectId) return;
                                     if (usercanEdit) {
-                                        navigate(
-                                            `/projects/${projectId}/extraction/studies/${row.original.id}/edit`
-                                        );
+                                        navigate(`/projects/${projectId}/extraction/studies/${row.original.id}/edit`);
                                     } else {
-                                        navigate(
-                                            `/projects/${projectId}/extraction/studies/${row.original.id}`
-                                        );
+                                        navigate(`/projects/${projectId}/extraction/studies/${row.original.id}`);
                                     }
                                 }}
                                 sx={{
@@ -365,12 +358,7 @@ const ExtractionTable: React.FC = () => {
                             >
                                 {row.getVisibleCells().map((cell) => (
                                     <TableCell key={cell.id}>
-                                        <Box>
-                                            {flexRender(
-                                                cell.column.columnDef.cell,
-                                                cell.getContext()
-                                            )}
-                                        </Box>
+                                        <Box>{flexRender(cell.column.columnDef.cell, cell.getContext())}</Box>
                                     </TableCell>
                                 ))}
                             </TableRow>
@@ -413,12 +401,10 @@ const ExtractionTable: React.FC = () => {
                             .map((filter) => (
                                 <Chip
                                     onDelete={() =>
-                                        table.setColumnFilters((prev) =>
-                                            prev.filter((f) => f.id !== filter.id)
-                                        )
+                                        table.setColumnFilters((prev) => prev.filter((f) => f.id !== filter.id))
                                     }
                                     key={filter.id}
-                                    color="primary"
+                                    color="secondary"
                                     variant="outlined"
                                     sx={{ margin: '1px', fontSize: '12px', maxWidth: '200px' }}
                                     label={`Filtering ${filter.id.toUpperCase()}: ${filter.value}`}
@@ -429,16 +415,12 @@ const ExtractionTable: React.FC = () => {
                             <Chip
                                 key={sort.id}
                                 onDelete={() => {
-                                    table.setSorting((prev) =>
-                                        prev.filter((f) => f.id !== sort.id)
-                                    );
+                                    table.setSorting((prev) => prev.filter((f) => f.id !== sort.id));
                                 }}
                                 color="secondary"
                                 variant="outlined"
                                 sx={{ margin: '1px', fontSize: '12px', maxWidth: '200px' }}
-                                label={`Sorting by ${sort.id.toUpperCase()}: ${
-                                    sort.desc ? 'desc' : 'asc'
-                                }`}
+                                label={`Sorting by ${sort.id.toUpperCase()}: ${sort.desc ? 'desc' : 'asc'}`}
                                 size="small"
                             />
                         ))}
@@ -447,8 +429,7 @@ const ExtractionTable: React.FC = () => {
                         <Box sx={{ whiteSpace: 'nowrap' }}>
                             {columnFilters.length > 0 ? (
                                 <Typography>
-                                    Viewing {table.getFilteredRowModel().rows.length} /{' '}
-                                    {data.length}
+                                    Viewing {table.getFilteredRowModel().rows.length} / {data.length}
                                 </Typography>
                             ) : (
                                 <Typography>Total: {data.length} studies</Typography>

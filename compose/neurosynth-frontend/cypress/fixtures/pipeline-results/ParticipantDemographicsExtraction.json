@@ -1,0 +1,933 @@
+{
+    "metadata": {
+        "total_count": 3714
+    },
+    "results": [
+        {
+            "id": "ZztfkZ2bYr3F",
+            "config_id": "HLhDNdeoUuzX",
+            "base_study_id": "6xmYJkfuy4cm",
+            "date_executed": "2025-02-27T19:35:40.001119+00:00",
+            "result_data": {
+                "groups": [
+                    {
+                        "count": 35,
+                        "age_mean": 72.69,
+                        "age_range": null,
+                        "diagnosis": "idiopathic Parkinson's disease",
+                        "age_median": null,
+                        "group_name": "patients",
+                        "male_count": 25,
+                        "age_maximum": null,
+                        "age_minimum": null,
+                        "female_count": 10,
+                        "subgroup_name": null,
+                        "imaging_sample": "yes"
+                    },
+                    {
+                        "count": 20,
+                        "age_mean": 71.18,
+                        "age_range": null,
+                        "diagnosis": null,
+                        "age_median": null,
+                        "group_name": "healthy",
+                        "male_count": 10,
+                        "age_maximum": null,
+                        "age_minimum": null,
+                        "female_count": 10,
+                        "subgroup_name": null,
+                        "imaging_sample": "yes"
+                    }
+                ]
+            },
+            "file_inputs": {
+                "../ns-pond/data/5XCP385ZExQE/processed/ace/text.txt": "393399880604636400003fb848a706f9"
+            }
+        },
+        {
+            "id": "ZZrSEB77Z2Gp",
+            "config_id": "HLhDNdeoUuzX",
+            "base_study_id": "oLN334zTPnTK",
+            "date_executed": "2025-02-27T19:07:15.267820+00:00",
+            "result_data": {
+                "groups": [
+                    {
+                        "count": 21,
+                        "age_mean": 22.3,
+                        "age_range": null,
+                        "diagnosis": null,
+                        "age_median": null,
+                        "group_name": "healthy",
+                        "male_count": 11,
+                        "age_maximum": null,
+                        "age_minimum": null,
+                        "female_count": 10,
+                        "subgroup_name": null,
+                        "imaging_sample": "yes"
+                    }
+                ]
+            },
+            "file_inputs": {
+                "../ns-pond/data/8HLSPuUyhADH/processed/ace/text.txt": "1689c8d8e8d6c323c176f62f75dbdf3a"
+            }
+        },
+        {
+            "id": "ZzqhpBjJGrPk",
+            "config_id": "HLhDNdeoUuzX",
+            "base_study_id": "5S6vjpT7ji3N",
+            "date_executed": "2025-02-27T19:49:28.730403+00:00",
+            "result_data": {
+                "groups": [
+                    {
+                        "count": 19,
+                        "age_mean": null,
+                        "age_range": "20–45",
+                        "diagnosis": null,
+                        "age_median": null,
+                        "group_name": "healthy",
+                        "male_count": 0,
+                        "age_maximum": 45,
+                        "age_minimum": 20,
+                        "female_count": 19,
+                        "subgroup_name": "HC",
+                        "imaging_sample": "yes"
+                    },
+                    {
+                        "count": 22,
+                        "age_mean": null,
+                        "age_range": "20–45",
+                        "diagnosis": "AN-C, DSM IV criteria within prior 6 months",
+                        "age_median": null,
+                        "group_name": "patients",
+                        "male_count": 0,
+                        "age_maximum": 45,
+                        "age_minimum": 20,
+                        "female_count": 22,
+                        "subgroup_name": "AN-C",
+                        "imaging_sample": "yes"
+                    },
+                    {
+                        "count": 18,
+                        "age_mean": null,
+                        "age_range": "20–45",
+                        "diagnosis": "AN-WR, 24 months with BMI > 19.0",
+                        "age_median": null,
+                        "group_name": "patients",
+                        "male_count": 0,
+                        "age_maximum": 45,
+                        "age_minimum": 20,
+                        "female_count": 18,
+                        "subgroup_name": "AN-WR",
+                        "imaging_sample": "yes"
+                    }
+                ]
+            },
+            "file_inputs": {
+                "../ns-pond/data/56H5phQwF7Wv/processed/pubget/text.txt": "24205aeebadced32cb916cb5123116de"
+            }
+        },
+        {
+            "id": "ZzBatcCUxm4P",
+            "config_id": "HLhDNdeoUuzX",
+            "base_study_id": "7n23JXf3eKqu",
+            "date_executed": "2025-02-27T20:54:29.013335+00:00",
+            "result_data": {
+                "groups": [
+                    {
+                        "count": 10,
+                        "age_mean": 26.3,
+                        "age_range": null,
+                        "diagnosis": null,
+                        "age_median": null,
+                        "group_name": "healthy",
+                        "male_count": 5,
+                        "age_maximum": null,
+                        "age_minimum": null,
+                        "female_count": 5,
+                        "subgroup_name": null,
+                        "imaging_sample": "yes"
+                    }
+                ]
+            },
+            "file_inputs": {
+                "../ns-pond/data/mwHckv3XvkW7/processed/pubget/text.txt": "9c2b78396e69e80fa67721281d89d32a"
+            }
+        },
+        {
+            "id": "zZ5gX5ofdFAU",
+            "config_id": "HLhDNdeoUuzX",
+            "base_study_id": "7nWeMnu9f5eT",
+            "date_executed": "2025-02-27T20:53:40.459411+00:00",
+            "result_data": {
+                "groups": [
+                    {
+                        "count": 18,
+                        "age_mean": 27.01,
+                        "age_range": null,
+                        "diagnosis": null,
+                        "age_median": null,
+                        "group_name": "healthy",
+                        "male_count": 7,
+                        "age_maximum": 35,
+                        "age_minimum": 18,
+                        "female_count": 11,
+                        "subgroup_name": null,
+                        "imaging_sample": "yes"
+                    }
+                ]
+            },
+            "file_inputs": {
+                "../ns-pond/data/5RzMGiCzUB6u/processed/ace/text.txt": "b84e84f40e7f2fdb0c24497d46eaf5e4"
+            }
+        },
+        {
+            "id": "zz3b7mtMiQEE",
+            "config_id": "HLhDNdeoUuzX",
+            "base_study_id": "7AzwATnK5rf5",
+            "date_executed": "2025-02-27T20:20:59.198396+00:00",
+            "result_data": {
+                "groups": [
+                    {
+                        "count": 32,
+                        "age_mean": 23.3,
+                        "age_range": null,
+                        "diagnosis": null,
+                        "age_median": null,
+                        "group_name": "healthy",
+                        "male_count": 16,
+                        "age_maximum": null,
+                        "age_minimum": null,
+                        "female_count": 16,
+                        "subgroup_name": null,
+                        "imaging_sample": "yes"
+                    },
+                    {
+                        "count": 23,
+                        "age_mean": 25.1,
+                        "age_range": null,
+                        "diagnosis": null,
+                        "age_median": null,
+                        "group_name": "healthy",
+                        "male_count": 13,
+                        "age_maximum": null,
+                        "age_minimum": null,
+                        "female_count": 10,
+                        "subgroup_name": null,
+                        "imaging_sample": "yes"
+                    },
+                    {
+                        "count": 22,
+                        "age_mean": 24.7,
+                        "age_range": null,
+                        "diagnosis": null,
+                        "age_median": null,
+                        "group_name": "healthy",
+                        "male_count": 12,
+                        "age_maximum": null,
+                        "age_minimum": null,
+                        "female_count": 10,
+                        "subgroup_name": null,
+                        "imaging_sample": "yes"
+                    }
+                ]
+            },
+            "file_inputs": {
+                "../ns-pond/data/56hKNuipjohj/processed/ace/text.txt": "9e3ed3337e068cbc09108a5d7b6c04fa"
+            }
+        },
+        {
+            "id": "zYamnEVJhVZC",
+            "config_id": "HLhDNdeoUuzX",
+            "base_study_id": "3owpWYKEEbn5",
+            "date_executed": "2025-02-27T19:39:27.846520+00:00",
+            "result_data": {
+                "groups": [
+                    {
+                        "count": 42,
+                        "age_mean": 19.1,
+                        "age_range": null,
+                        "diagnosis": "healthy social drinkers",
+                        "age_median": 19,
+                        "group_name": "healthy",
+                        "male_count": 31,
+                        "age_maximum": 20,
+                        "age_minimum": 18,
+                        "female_count": 11,
+                        "subgroup_name": "D-LAYA study",
+                        "imaging_sample": "yes"
+                    }
+                ]
+            },
+            "file_inputs": {
+                "../ns-pond/data/3NDiGrxNkGQw/processed/ace/text.txt": "aa35789ba309a03b6b3c5ed0ee9a566a"
+            }
+        },
+        {
+            "id": "ZXwBnnzh5ieb",
+            "config_id": "HLhDNdeoUuzX",
+            "base_study_id": "jiH8WPAcGYjo",
+            "date_executed": "2025-02-27T20:24:31.139226+00:00",
+            "result_data": {
+                "groups": [
+                    {
+                        "count": 22,
+                        "age_mean": 30.76,
+                        "age_range": null,
+                        "diagnosis": "neurologically healthy",
+                        "age_median": null,
+                        "group_name": "patients",
+                        "male_count": 20,
+                        "age_maximum": null,
+                        "age_minimum": null,
+                        "female_count": 2,
+                        "subgroup_name": "experimental",
+                        "imaging_sample": "yes"
+                    },
+                    {
+                        "count": 21,
+                        "age_mean": null,
+                        "age_range": null,
+                        "diagnosis": "neurologically healthy",
+                        "age_median": null,
+                        "group_name": "patients",
+                        "male_count": 15,
+                        "age_maximum": null,
+                        "age_minimum": null,
+                        "female_count": 6,
+                        "subgroup_name": "active control",
+                        "imaging_sample": "yes"
+                    }
+                ]
+            },
+            "file_inputs": {
+                "../ns-pond/data/7MopXsgkVQ5j/processed/pubget/text.txt": "5c8c3246c7ba61e51e499dd9584cff72"
+            }
+        },
+        {
+            "id": "ZxSMDZzHWsze",
+            "config_id": "HLhDNdeoUuzX",
+            "base_study_id": "6q834wTgjbW3",
+            "date_executed": "2025-02-27T19:52:02.022582+00:00",
+            "result_data": {
+                "groups": [
+                    {
+                        "count": 9,
+                        "age_mean": null,
+                        "age_range": null,
+                        "diagnosis": "chronic episodic migraine",
+                        "age_median": null,
+                        "group_name": "patients",
+                        "male_count": null,
+                        "age_maximum": null,
+                        "age_minimum": null,
+                        "female_count": null,
+                        "subgroup_name": null,
+                        "imaging_sample": "yes"
+                    },
+                    {
+                        "count": 9,
+                        "age_mean": null,
+                        "age_range": null,
+                        "diagnosis": "healthy",
+                        "age_median": null,
+                        "group_name": "healthy",
+                        "male_count": null,
+                        "age_maximum": null,
+                        "age_minimum": null,
+                        "female_count": null,
+                        "subgroup_name": null,
+                        "imaging_sample": "yes"
+                    }
+                ]
+            },
+            "file_inputs": {
+                "../ns-pond/data/5TywyBrkGoS3/processed/pubget/text.txt": "1eb44bf329ae77873173c170241dbd7b"
+            }
+        },
+        {
+            "id": "zxJWpgDPi3BF",
+            "config_id": "HLhDNdeoUuzX",
+            "base_study_id": "roVkmukJCW2p",
+            "date_executed": "2025-02-27T19:38:57.082219+00:00",
+            "result_data": {
+                "groups": [
+                    {
+                        "count": 24,
+                        "age_mean": null,
+                        "age_range": null,
+                        "diagnosis": "behavioral variant frontotemporal dementia (bvFTD)",
+                        "age_median": null,
+                        "group_name": "patients",
+                        "male_count": null,
+                        "age_maximum": null,
+                        "age_minimum": null,
+                        "female_count": null,
+                        "subgroup_name": null,
+                        "imaging_sample": "yes"
+                    },
+                    {
+                        "count": 14,
+                        "age_mean": null,
+                        "age_range": null,
+                        "diagnosis": "semantic variant primary progressive aphasia (svPPA)",
+                        "age_median": null,
+                        "group_name": "patients",
+                        "male_count": null,
+                        "age_maximum": null,
+                        "age_minimum": null,
+                        "female_count": null,
+                        "subgroup_name": null,
+                        "imaging_sample": "yes"
+                    },
+                    {
+                        "count": 18,
+                        "age_mean": null,
+                        "age_range": null,
+                        "diagnosis": "nonfluent variant primary progressive aphasia (nfvPPA)",
+                        "age_median": null,
+                        "group_name": "patients",
+                        "male_count": null,
+                        "age_maximum": null,
+                        "age_minimum": null,
+                        "female_count": null,
+                        "subgroup_name": null,
+                        "imaging_sample": "yes"
+                    }
+                ]
+            },
+            "file_inputs": {
+                "../ns-pond/data/4Tx9Fj2uoXYs/processed/pubget/text.txt": "28203f4939e9312c660384e7a6168a73"
+            }
+        },
+        {
+            "id": "zXFJgC9vckqX",
+            "config_id": "HLhDNdeoUuzX",
+            "base_study_id": "9eHKveFNXbBZ",
+            "date_executed": "2025-02-27T19:20:03.265960+00:00",
+            "result_data": {
+                "groups": [
+                    {
+                        "count": 27,
+                        "age_mean": 20.37,
+                        "age_range": null,
+                        "diagnosis": "early-onset major depressive disorder (MDD)",
+                        "age_median": null,
+                        "group_name": "patients",
+                        "male_count": 11,
+                        "age_maximum": 24,
+                        "age_minimum": 17,
+                        "female_count": 16,
+                        "subgroup_name": null,
+                        "imaging_sample": "yes"
+                    },
+                    {
+                        "count": 25,
+                        "age_mean": 20.96,
+                        "age_range": null,
+                        "diagnosis": "healthy controls (HC)",
+                        "age_median": null,
+                        "group_name": "healthy",
+                        "male_count": 11,
+                        "age_maximum": 24,
+                        "age_minimum": 17,
+                        "female_count": 14,
+                        "subgroup_name": null,
+                        "imaging_sample": "yes"
+                    }
+                ]
+            },
+            "file_inputs": {
+                "../ns-pond/data/3AwJ7GVsQT62/processed/ace/text.txt": "95ff4a7412841db95c9e49db014eeb8a"
+            }
+        },
+        {
+            "id": "zxdMSsRkkLGo",
+            "config_id": "HLhDNdeoUuzX",
+            "base_study_id": "47QjQrXD3UHU",
+            "date_executed": "2025-02-27T20:09:22.874031+00:00",
+            "result_data": {
+                "groups": [
+                    {
+                        "count": 35,
+                        "age_mean": 64.55,
+                        "age_range": null,
+                        "diagnosis": "healthy older adults",
+                        "age_median": null,
+                        "group_name": "patients",
+                        "male_count": 22,
+                        "age_maximum": 70,
+                        "age_minimum": 58,
+                        "female_count": 13,
+                        "subgroup_name": null,
+                        "imaging_sample": "yes"
+                    },
+                    {
+                        "count": 33,
+                        "age_mean": 22.76,
+                        "age_range": null,
+                        "diagnosis": "healthy young adults",
+                        "age_median": null,
+                        "group_name": "healthy",
+                        "male_count": 16,
+                        "age_maximum": 25,
+                        "age_minimum": 20,
+                        "female_count": 17,
+                        "subgroup_name": null,
+                        "imaging_sample": "yes"
+                    }
+                ]
+            },
+            "file_inputs": {
+                "../ns-pond/data/5wZCR3bms5GG/processed/ace/text.txt": "3e762ab9d95aacde74dea3622ceffb2c"
+            }
+        },
+        {
+            "id": "zVXqKpUarQJe",
+            "config_id": "HLhDNdeoUuzX",
+            "base_study_id": "77QR4AnfJW5x",
+            "date_executed": "2025-02-27T20:29:07.229284+00:00",
+            "result_data": {
+                "groups": [
+                    {
+                        "count": 15,
+                        "age_mean": 24.0,
+                        "age_range": null,
+                        "diagnosis": "healthy",
+                        "age_median": null,
+                        "group_name": "healthy",
+                        "male_count": 9,
+                        "age_maximum": null,
+                        "age_minimum": null,
+                        "female_count": 6,
+                        "subgroup_name": null,
+                        "imaging_sample": "yes"
+                    }
+                ]
+            },
+            "file_inputs": {
+                "../ns-pond/data/4hUYwJcnpphP/processed/ace/text.txt": "31a39643c7cb2757af2221ad7f6004b2"
+            }
+        },
+        {
+            "id": "zvUXWJA62duA",
+            "config_id": "HLhDNdeoUuzX",
+            "base_study_id": "c9RzphNkc4pi",
+            "date_executed": "2025-02-27T20:25:21.342408+00:00",
+            "result_data": {
+                "groups": [
+                    {
+                        "count": 24,
+                        "age_mean": 35.67,
+                        "age_range": null,
+                        "diagnosis": "heroin-dependent individuals (HDIs)",
+                        "age_median": null,
+                        "group_name": "patients",
+                        "male_count": 20,
+                        "age_maximum": null,
+                        "age_minimum": null,
+                        "female_count": 4,
+                        "subgroup_name": null,
+                        "imaging_sample": "yes"
+                    },
+                    {
+                        "count": 24,
+                        "age_mean": 35.38,
+                        "age_range": null,
+                        "diagnosis": "matched controls",
+                        "age_median": null,
+                        "group_name": "healthy",
+                        "male_count": 20,
+                        "age_maximum": null,
+                        "age_minimum": null,
+                        "female_count": 4,
+                        "subgroup_name": null,
+                        "imaging_sample": "yes"
+                    }
+                ]
+            },
+            "file_inputs": {
+                "../ns-pond/data/5bjGoBux9yuU/processed/ace/text.txt": "355e5086f966358c6df1b3b4b705c371"
+            }
+        },
+        {
+            "id": "zVUswG9eMrYz",
+            "config_id": "HLhDNdeoUuzX",
+            "base_study_id": "TKfEAD7wBVcg",
+            "date_executed": "2025-02-27T20:21:51.682656+00:00",
+            "result_data": {
+                "groups": [
+                    {
+                        "count": 10,
+                        "age_mean": 9.5,
+                        "age_range": null,
+                        "diagnosis": "anxiety disorder (GAD, SAD, Separation anxiety)",
+                        "age_median": 9,
+                        "group_name": "patients",
+                        "male_count": 5,
+                        "age_maximum": 11,
+                        "age_minimum": 8,
+                        "female_count": 5,
+                        "subgroup_name": "caregiver present",
+                        "imaging_sample": "yes"
+                    },
+                    {
+                        "count": 10,
+                        "age_mean": null,
+                        "age_range": null,
+                        "diagnosis": "anxiety disorders",
+                        "age_median": null,
+                        "group_name": "patients",
+                        "male_count": 3,
+                        "age_maximum": null,
+                        "age_minimum": null,
+                        "female_count": 7,
+                        "subgroup_name": "caregiver absent",
+                        "imaging_sample": "yes"
+                    },
+                    {
+                        "count": 10,
+                        "age_mean": null,
+                        "age_range": null,
+                        "diagnosis": "healthy controls",
+                        "age_median": null,
+                        "group_name": "healthy",
+                        "male_count": null,
+                        "age_maximum": null,
+                        "age_minimum": null,
+                        "female_count": null,
+                        "subgroup_name": null,
+                        "imaging_sample": "yes"
+                    }
+                ]
+            },
+            "file_inputs": {
+                "../ns-pond/data/V26uBuHy7WVv/processed/pubget/text.txt": "4eab188d47dc972003729ddeb8e164c3"
+            }
+        },
+        {
+            "id": "ZVJ6Pfij9H8H",
+            "config_id": "HLhDNdeoUuzX",
+            "base_study_id": "S8QLQhXKFNZy",
+            "date_executed": "2025-02-27T19:54:19.851521+00:00",
+            "result_data": {
+                "groups": [
+                    {
+                        "count": 14,
+                        "age_mean": 21.0,
+                        "age_range": null,
+                        "diagnosis": null,
+                        "age_median": 21,
+                        "group_name": "healthy",
+                        "male_count": 7,
+                        "age_maximum": null,
+                        "age_minimum": null,
+                        "female_count": 7,
+                        "subgroup_name": null,
+                        "imaging_sample": "yes"
+                    }
+                ]
+            },
+            "file_inputs": {
+                "../ns-pond/data/5XNkLFgHzTkh/processed/ace/text.txt": "cba02d37e6c4a727f31ef0feccbccbb0"
+            }
+        },
+        {
+            "id": "zvgMs6SvTRYu",
+            "config_id": "HLhDNdeoUuzX",
+            "base_study_id": "7JnJXrBk4VKT",
+            "date_executed": "2025-02-27T20:51:49.561764+00:00",
+            "result_data": {
+                "groups": [
+                    {
+                        "count": 14,
+                        "age_mean": null,
+                        "age_range": "21–57 years",
+                        "diagnosis": null,
+                        "age_median": null,
+                        "group_name": "healthy",
+                        "male_count": 2,
+                        "age_maximum": 57,
+                        "age_minimum": 21,
+                        "female_count": 12,
+                        "subgroup_name": null,
+                        "imaging_sample": "yes"
+                    }
+                ]
+            },
+            "file_inputs": {
+                "../ns-pond/data/4gTmCHhYobej/processed/pubget/text.txt": "5ef6ac646257a9e639b9fa2ff3e7a795"
+            }
+        },
+        {
+            "id": "zvgD94GcWkTf",
+            "config_id": "HLhDNdeoUuzX",
+            "base_study_id": "7DTecoKuNLSn",
+            "date_executed": "2025-02-27T20:05:27.198632+00:00",
+            "result_data": {
+                "groups": [
+                    {
+                        "count": 20,
+                        "age_mean": 26.8,
+                        "age_range": null,
+                        "diagnosis": "healthy",
+                        "age_median": null,
+                        "group_name": "healthy",
+                        "male_count": 9,
+                        "age_maximum": 39,
+                        "age_minimum": 18,
+                        "female_count": 11,
+                        "subgroup_name": null,
+                        "imaging_sample": "yes"
+                    }
+                ]
+            },
+            "file_inputs": {
+                "../ns-pond/data/3SmjAz9DPbHQ/processed/ace/text.txt": "92d27f52ed590f537eac0a93b87c63d6"
+            }
+        },
+        {
+            "id": "zVfjCZt6NMFy",
+            "config_id": "HLhDNdeoUuzX",
+            "base_study_id": "5irU3K5rcTrb",
+            "date_executed": "2025-02-27T19:15:54.180927+00:00",
+            "result_data": {
+                "groups": [
+                    {
+                        "count": 16,
+                        "age_mean": null,
+                        "age_range": null,
+                        "diagnosis": "highly distressed tinnitus patients",
+                        "age_median": null,
+                        "group_name": "patients",
+                        "male_count": null,
+                        "age_maximum": null,
+                        "age_minimum": null,
+                        "female_count": null,
+                        "subgroup_name": "HDT",
+                        "imaging_sample": "yes"
+                    },
+                    {
+                        "count": 16,
+                        "age_mean": null,
+                        "age_range": null,
+                        "diagnosis": "low distressed tinnitus patients",
+                        "age_median": null,
+                        "group_name": "patients",
+                        "male_count": null,
+                        "age_maximum": null,
+                        "age_minimum": null,
+                        "female_count": null,
+                        "subgroup_name": "LDT",
+                        "imaging_sample": "yes"
+                    },
+                    {
+                        "count": 16,
+                        "age_mean": null,
+                        "age_range": null,
+                        "diagnosis": "healthy controls",
+                        "age_median": null,
+                        "group_name": "healthy",
+                        "male_count": null,
+                        "age_maximum": null,
+                        "age_minimum": null,
+                        "female_count": null,
+                        "subgroup_name": "HC",
+                        "imaging_sample": "yes"
+                    }
+                ]
+            },
+            "file_inputs": {
+                "../ns-pond/data/8N2bxfCgG6ys/processed/pubget/text.txt": "2219bad6946f3807558780de9bea7cfc"
+            }
+        },
+        {
+            "id": "zVa4GyYpbscC",
+            "config_id": "HLhDNdeoUuzX",
+            "base_study_id": "eW3M8n5wJeDv",
+            "date_executed": "2025-02-27T19:22:34.416227+00:00",
+            "result_data": {
+                "groups": [
+                    {
+                        "count": 10,
+                        "age_mean": 41.6,
+                        "age_range": null,
+                        "diagnosis": "early blind",
+                        "age_median": 41,
+                        "group_name": "patients",
+                        "male_count": 6,
+                        "age_maximum": 60,
+                        "age_minimum": 21,
+                        "female_count": 4,
+                        "subgroup_name": null,
+                        "imaging_sample": "yes"
+                    }
+                ]
+            },
+            "file_inputs": {
+                "../ns-pond/data/5rvf5V7kQBkA/processed/ace/text.txt": "a6d28e9b074af2bd06771bcf8c108e44"
+            }
+        },
+        {
+            "id": "ZuYNTAdxf245",
+            "config_id": "HLhDNdeoUuzX",
+            "base_study_id": "4yB3uMDJQzmX",
+            "date_executed": "2025-02-27T20:00:01.326983+00:00",
+            "result_data": {
+                "groups": [
+                    {
+                        "count": 20,
+                        "age_mean": 29.2,
+                        "age_range": null,
+                        "diagnosis": null,
+                        "age_median": null,
+                        "group_name": "healthy",
+                        "male_count": 10,
+                        "age_maximum": 44,
+                        "age_minimum": 25,
+                        "female_count": 10,
+                        "subgroup_name": null,
+                        "imaging_sample": "yes"
+                    }
+                ]
+            },
+            "file_inputs": {
+                "../ns-pond/data/43oxAPmVhqjB/processed/pubget/text.txt": "bb45e57f433daba39fbfa558b6327127"
+            }
+        },
+        {
+            "id": "ZUu3QUjNVmKY",
+            "config_id": "HLhDNdeoUuzX",
+            "base_study_id": "56qETB8QpJ6y",
+            "date_executed": "2025-02-27T19:42:57.278496+00:00",
+            "result_data": {
+                "groups": [
+                    {
+                        "count": 20,
+                        "age_mean": 25.4,
+                        "age_range": null,
+                        "diagnosis": null,
+                        "age_median": null,
+                        "group_name": "healthy",
+                        "male_count": 13,
+                        "age_maximum": 35,
+                        "age_minimum": 22,
+                        "female_count": 7,
+                        "subgroup_name": null,
+                        "imaging_sample": "yes"
+                    }
+                ]
+            },
+            "file_inputs": {
+                "../ns-pond/data/4g8uDJPnJQ2m/processed/pubget/text.txt": "d4d5871dc0122364951cecb4092a3786"
+            }
+        },
+        {
+            "id": "zuRUb7F3E6Am",
+            "config_id": "HLhDNdeoUuzX",
+            "base_study_id": "64sQUf8SBKLW",
+            "date_executed": "2025-02-27T19:52:41.454653+00:00",
+            "result_data": {
+                "groups": [
+                    {
+                        "count": 14,
+                        "age_mean": 28.5,
+                        "age_range": null,
+                        "diagnosis": null,
+                        "age_median": null,
+                        "group_name": "healthy",
+                        "male_count": 10,
+                        "age_maximum": 40,
+                        "age_minimum": 23,
+                        "female_count": 4,
+                        "subgroup_name": null,
+                        "imaging_sample": "yes"
+                    }
+                ]
+            },
+            "file_inputs": {
+                "../ns-pond/data/6pLpkRfAz4yv/processed/pubget/text.txt": "b1892a720a6c492538213b8971bdf964"
+            }
+        },
+        {
+            "id": "ZuRHQCSyffg5",
+            "config_id": "HLhDNdeoUuzX",
+            "base_study_id": "66iWEEFp6J3h",
+            "date_executed": "2025-02-27T19:49:43.304900+00:00",
+            "result_data": {
+                "groups": [
+                    {
+                        "count": 14,
+                        "age_mean": 24.6,
+                        "age_range": null,
+                        "diagnosis": null,
+                        "age_median": null,
+                        "group_name": "healthy",
+                        "male_count": 14,
+                        "age_maximum": 31,
+                        "age_minimum": 23,
+                        "female_count": 0,
+                        "subgroup_name": null,
+                        "imaging_sample": "yes"
+                    }
+                ]
+            },
+            "file_inputs": {
+                "../ns-pond/data/6mFLCSyDziez/processed/pubget/text.txt": "af137b742d657d8609f71214d4807120"
+            }
+        },
+        {
+            "id": "ZUo6q55N8bEh",
+            "config_id": "HLhDNdeoUuzX",
+            "base_study_id": "7AcSJTQu2gfb",
+            "date_executed": "2025-02-27T19:27:13.473908+00:00",
+            "result_data": {
+                "groups": [
+                    {
+                        "count": 20,
+                        "age_mean": 26.9,
+                        "age_range": null,
+                        "diagnosis": null,
+                        "age_median": null,
+                        "group_name": "healthy",
+                        "male_count": 10,
+                        "age_maximum": 37,
+                        "age_minimum": 24,
+                        "female_count": 10,
+                        "subgroup_name": null,
+                        "imaging_sample": "yes"
+                    }
+                ]
+            },
+            "file_inputs": {
+                "../ns-pond/data/452sgmLGz5SW/processed/ace/text.txt": "a53ecd9111e819896345e066cc32b24b"
+            }
+        },
+        {
+            "id": "ZugQVDHfvxBh",
+            "config_id": "HLhDNdeoUuzX",
+            "base_study_id": "4Z74Hk5pi3cx",
+            "date_executed": "2025-02-27T20:32:38.647342+00:00",
+            "result_data": {
+                "groups": [
+                    {
+                        "count": 21,
+                        "age_mean": 23.7,
+                        "age_range": null,
+                        "diagnosis": null,
+                        "age_median": null,
+                        "group_name": "healthy",
+                        "male_count": 9,
+                        "age_maximum": null,
+                        "age_minimum": null,
+                        "female_count": 12,
+                        "subgroup_name": null,
+                        "imaging_sample": "yes"
+                    }
+                ]
+            },
+            "file_inputs": {
+                "../ns-pond/data/5HTYHifSuMD9/processed/pubget/text.txt": "c07fb5eb1e9b91c430782e287780f686"
+            }
+        }
+    ]
+}

@@ -7,6 +7,7 @@ import {
     DialogTitle,
     Typography,
     IconButton,
+    ButtonProps,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import React, { ReactNode, useMemo } from 'react';
@@ -17,6 +18,8 @@ export interface IConfirmationDialog {
     dialogTitle: string;
     dialogMessage?: ReactNode | string;
     confirmText?: string;
+    confirmButtonProps?: ButtonProps;
+    rejectButtonProps?: ButtonProps;
     rejectText?: string;
 }
 
@@ -51,6 +54,7 @@ const ConfirmationDialog: React.FC<IConfirmationDialog> = (props) => {
                         onClick={() => props.onCloseDialog(false)}
                         variant="text"
                         color="error"
+                        {...(props.rejectButtonProps || {})}
                     >
                         {props.rejectText ? props.rejectText : 'Reject'}
                     </Button>
@@ -60,6 +64,7 @@ const ConfirmationDialog: React.FC<IConfirmationDialog> = (props) => {
                         variant="contained"
                         color="primary"
                         disableElevation
+                        {...(props.confirmButtonProps || {})}
                     >
                         {props.confirmText ? props.confirmText : 'Confirm'}
                     </Button>

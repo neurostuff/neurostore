@@ -1,3 +1,4 @@
+import axios from 'axios';
 import {
     Configuration,
     StudiesApi,
@@ -22,6 +23,11 @@ import {
     ProjectsApi,
     DefaultApi as NeurosynthDefaultApi,
 } from '../neurosynth-compose-typescript-sdk';
+import {
+    EAIExtractors,
+    IParticipantDemographicExtractor,
+    ITaskExtractor,
+} from 'hooks/extractions/useGetAllExtractedData';
 
 export type NeurostoreAnnotation = AnnotationBase &
     ResourceAttributes &
@@ -51,6 +57,32 @@ const NeurostoreServices = {
     ImagesService: new ImagesApi(neurostoreConfig),
     PointsService: new PointsApi(neurostoreConfig),
     UsersService: new UserApi(neurostoreConfig),
+    ExtractedDataResultsService: {
+        getAllExtractedDataResults: (extractors: EAIExtractors[]) => {
+            const extractorsSegment = extractors.reduce((acc, curr, index) => {
+                if (index === 0) return `feature_display=${curr}`;
+                return `${acc}&feature_display=${curr}`;
+            }, '');
+
+            return axios.get<{
+                metadata: {
+                    total_count: number;
+                };
+                results: {
+                    base_study_id: string;
+                    config_id: string;
+                    date_executed: string;
+                    file_inputs: { [path: string]: string };
+                    id: string;
+                    result_data: ITaskExtractor | IParticipantDemographicExtractor;
+                }[];
+            }>(`${neurostoreConfig.basePath}/pipeline-study-results/?${extractorsSegment}&paginate=false`, {
+                headers: {
+                    Authorization: `Bearer ${neurostoreConfig.accessToken}`,
+                },
+            });
+        },
+    },
     AnnotationsService: new NeurostoreAnnotationsApi(neurostoreConfig),
 };
 
