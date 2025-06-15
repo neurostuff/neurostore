@@ -383,7 +383,7 @@ describe('CurationAIInterface', () => {
             cy.get('table').should('exist');
         });
 
-        describe.only('table', () => {
+        describe('table', () => {
             it('should not have checkboxes for the included phase', () => {
                 cy.fixture('projects/projectCurationSimpleWithStudies').then(
                     (projectFixture: INeurosynthProjectReturn) => {
