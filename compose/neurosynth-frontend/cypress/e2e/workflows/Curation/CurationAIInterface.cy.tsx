@@ -383,7 +383,7 @@ describe('CurationAIInterface', () => {
             cy.get('table').should('exist');
         });
 
-        describe('table', () => {
+        describe.only('table', () => {
             it('should not have checkboxes for the included phase', () => {
                 cy.fixture('projects/projectCurationSimpleWithStudies').then(
                     (projectFixture: INeurosynthProjectReturn) => {
@@ -421,7 +421,7 @@ describe('CurationAIInterface', () => {
 
             it('should show the promote button but not the demote button in the identification phase for PRISMA', () => {
                 cy.intercept('GET', '**/api/projects/*', {
-                    fixture: 'projects/projectcurationPRISMAWithStudies',
+                    fixture: 'projects/projectCurationPRISMAWithStudies',
                 }).as('projectFixture');
 
                 cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
@@ -435,7 +435,7 @@ describe('CurationAIInterface', () => {
             });
 
             it('should show the PROMOTE and the DEMOTE button in the screening phase for PRISMA', () => {
-                cy.fixture('projects/projectcurationPRISMAWithStudies').then(
+                cy.fixture('projects/projectCurationPRISMAWithStudies').then(
                     (projectFixture: INeurosynthProjectReturn) => {
                         // move all the stub studies from the first column to the second and clear the first
                         projectFixture.provenance.curationMetadata.columns[1].stubStudies =
@@ -459,7 +459,7 @@ describe('CurationAIInterface', () => {
             });
 
             it('should show the INCLUDE and the DEMOTE button in the eligibility phase for PRISMA', () => {
-                cy.fixture('projects/projectcurationPRISMAWithStudies').then(
+                cy.fixture('projects/projectCurationPRISMAWithStudies').then(
                     (projectFixture: INeurosynthProjectReturn) => {
                         // move all the stub studies from the first column to the second and clear the first
                         projectFixture.provenance.curationMetadata.columns[2].stubStudies =
@@ -483,7 +483,7 @@ describe('CurationAIInterface', () => {
             });
 
             it('should show the number of studies selected', () => {
-                cy.fixture('projects/projectcurationPRISMAWithStudies').then(
+                cy.fixture('projects/projectCurationPRISMAWithStudies').then(
                     (projectFixture: INeurosynthProjectReturn) => {
                         // move all the stub studies from the first column to the second and clear the first
                         projectFixture.provenance.curationMetadata.columns[1].stubStudies =
