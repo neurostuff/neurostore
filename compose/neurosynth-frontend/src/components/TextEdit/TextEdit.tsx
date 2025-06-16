@@ -58,6 +58,7 @@ const TextEdit: React.FC<ITextEdit> = (props) => {
                 />
                 <Box>
                     <Button
+                        size="small"
                         onClick={async () => {
                             setEditMode(false);
                             onSave(editedValue, fieldName || label);
@@ -66,6 +67,7 @@ const TextEdit: React.FC<ITextEdit> = (props) => {
                         Save
                     </Button>
                     <Button
+                        size="small"
                         onClick={() => {
                             setEditedValue(textToEdit);
                             setEditMode(false);

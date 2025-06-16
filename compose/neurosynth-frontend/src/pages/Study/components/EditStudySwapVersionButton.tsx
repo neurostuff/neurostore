@@ -18,7 +18,7 @@ import { lastUpdatedAtSortFn } from 'helpers/utils';
 import { useGetStudysetById, useUpdateStudyset, useGetBaseStudyById } from 'hooks';
 import { StudyReturn } from 'neurostore-typescript-sdk';
 import { useSnackbar } from 'notistack';
-import { updateExtractionTableStateInStorage } from 'pages/Extraction/components/ExtractionTable.helpers';
+import { updateExtractionTableStateStudySwapInStorage } from 'pages/Extraction/components/ExtractionTable.helpers';
 import {
     useProjectExtractionReplaceStudyListStatusId,
     useProjectExtractionStudysetId,
@@ -115,7 +115,7 @@ const EditStudySwapVersionButton: React.FC = (props) => {
             updateStudyListStatusWithNewStudyId(studyId, versionToSwapTo);
             updateStudyByField('id', versionToSwapTo);
             unsetUnloadHandler('study');
-            updateExtractionTableStateInStorage(projectId, studyId, versionToSwapTo);
+            updateExtractionTableStateStudySwapInStorage(projectId, studyId, versionToSwapTo);
             await setAnalysesInAnnotationAsIncluded(annotationId);
 
             navigate(`/projects/${projectId}/extraction/studies/${versionToSwapTo}/edit`);

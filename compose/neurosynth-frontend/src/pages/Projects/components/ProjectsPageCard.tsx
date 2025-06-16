@@ -58,10 +58,10 @@ const ProjectsPageCard: React.FC<INeurosynthProjectReturn> = (props) => {
     }, [created_at]);
 
     const curationSummary = useMemo(() => {
-        if (provenance.curationMetadata.columns.length === 0) return;
+        if (!provenance?.curationMetadata?.columns || provenance.curationMetadata.columns.length === 0) return;
 
-        return getCurationSummary(provenance.curationMetadata.columns);
-    }, [provenance.curationMetadata.columns]);
+        return getCurationSummary(provenance?.curationMetadata?.columns);
+    }, [provenance?.curationMetadata?.columns]);
 
     const extractionSummary = useMemo(() => {
         if (!provenance.extractionMetadata.studysetId) return;

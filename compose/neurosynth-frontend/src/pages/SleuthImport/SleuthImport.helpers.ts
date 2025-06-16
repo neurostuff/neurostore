@@ -20,10 +20,7 @@ import {
 import { Project, ProjectReturn } from 'neurosynth-compose-typescript-sdk';
 import { ICurationStubStudy } from 'pages/Curation/Curation.types';
 import { EExtractionStatus } from 'pages/Extraction/ExtractionPage';
-import {
-    generateNewProjectData,
-    initCurationHelper,
-} from 'pages/Project/store/ProjectStore.helpers';
+import { generateNewProjectData, initCurationHelper } from 'pages/Project/store/ProjectStore.helpers';
 import { defaultIdentificationSources } from 'pages/Project/store/ProjectStore.types';
 import { DefaultSpaceTypes, IStudyVersion } from 'pages/Study/store/StudyStore.helpers';
 import { MutateOptions } from 'react-query';
@@ -76,15 +73,13 @@ export const parseCoordinate = (coordinates: string): { coords: number[]; isVali
     };
 };
 
-export const stringsAreValidFileFormat = (
-    sleuthStudy: string
-): { isValid: boolean; errorMessage?: string } => {
+export const stringsAreValidFileFormat = (sleuthStudy: string): { isValid: boolean; errorMessage?: string } => {
     let containsDOI = false;
     let containsPMID = false;
     let containsAtLeastOneExperimentName = false;
     const parsedSleuthStudy = sleuthStudy.replaceAll(/\/\/\s*/g, '').split('\n');
     let hasReachedCoordinates = false;
-    for (let line of parsedSleuthStudy) {
+    for (const line of parsedSleuthStudy) {
         if (hasReachedCoordinates) {
             if (!parseCoordinate(line).isValid) {
                 return {
@@ -178,11 +173,9 @@ export const stringsAreValidFileFormat = (
     return { isValid: true };
 };
 
-export const validateFileContents = (
-    fileContents: string
-): { isValid: boolean; errorMessage?: string } => {
+export const validateFileContents = (fileContents: string): { isValid: boolean; errorMessage?: string } => {
     // we expect the first line to be something like: "// Reference"
-    let [expectedReferenceString, ...lines] = fileContents.split(/\r?\n/);
+    const [expectedReferenceString, ...lines] = fileContents.split(/\r?\n/);
     if (!expectedReferenceString || lines.length === 0) {
         return {
             isValid: false,
@@ -192,16 +185,14 @@ export const validateFileContents = (
     if (!expectedReferenceString.toLocaleLowerCase().includes('reference')) {
         return {
             isValid: false,
-            errorMessage:
-                'No coordinate reference space specified (e.g. expecting REFERENCE property)',
+            errorMessage: 'No coordinate reference space specified (e.g. expecting REFERENCE property)',
         };
     }
     const space = expectedReferenceString.split('=')[1].trim();
     if (!space) {
         return {
             isValid: false,
-            errorMessage:
-                'No coordinate reference space specified (e.g. expecting REFERENCE property)',
+            errorMessage: 'No coordinate reference space specified (e.g. expecting REFERENCE property)',
         };
     }
 
@@ -214,9 +205,7 @@ export const validateFileContents = (
         if (!isValid) {
             return {
                 isValid: false,
-                errorMessage:
-                    errorMessage ||
-                    `Unexpected format. Encountered error at: ${sleuthStudy.slice(0, 80)}...`,
+                errorMessage: errorMessage || `Unexpected format. Encountered error at: ${sleuthStudy.slice(0, 80)}...`,
             };
         }
     }
@@ -272,12 +261,8 @@ const extractStubFromSleuthStudy = (sleuthStudy: string): ISleuthStub => {
     return stub;
 };
 
-export const sleuthUploadToStubs = (
-    sleuthFile: string
-): Omit<ISleuthFileUploadStubs, 'fileName'> => {
-    const [expectedReferenceString, ...lines] = sleuthFile
-        .replaceAll(/\/\/\s*/g, '')
-        .split(/\r?\n/);
+export const sleuthUploadToStubs = (sleuthFile: string): Omit<ISleuthFileUploadStubs, 'fileName'> => {
+    const [expectedReferenceString, ...lines] = sleuthFile.replaceAll(/\/\/\s*/g, '').split(/\r?\n/);
 
     const sleuthStubs = lines
         .join('\n')
@@ -305,9 +290,7 @@ export const parseFile = async (file: File): Promise<string> => {
                 return reject(new Error('File contents are invalid (expected string)'));
             }
             const { isValid, errorMessage } = validateFileContents(fileContents);
-            return isValid
-                ? resolve(fileContents)
-                : reject(new Error(errorMessage || 'File is invalid'));
+            return isValid ? resolve(fileContents) : reject(new Error(errorMessage || 'File is invalid'));
         };
 
         fileReader.onerror = (err) => {
@@ -321,10 +304,7 @@ export const parseFile = async (file: File): Promise<string> => {
 
 export const sleuthStubsToBaseStudies = (sleuthStubs: ISleuthStub[]) => {
     const baseStudies: Array<
-        Pick<
-            BaseStudy,
-            'name' | 'doi' | 'pmid' | 'pmcid' | 'year' | 'description' | 'publication' | 'authors'
-        >
+        Pick<BaseStudy, 'name' | 'doi' | 'pmid' | 'pmcid' | 'year' | 'description' | 'publication' | 'authors'>
     > = sleuthStubs.map((stub) => {
         const { isValid, value } = extractYearFromString(stub.authorYearString);
         return {
@@ -366,9 +346,7 @@ export const organizeSleuthStubsIntoHTTPRequests = (
             (ingestedBaseStudy) => ingestedBaseStudy.doi === doi || ingestedBaseStudy.pmid === pmid
         );
         if (!correspondingBaseStudy) {
-            throw new Error(
-                `No corresponding base study found for sleuth study: PMID: ${pmid}, DOI: ${doi}`
-            );
+            throw new Error(`No corresponding base study found for sleuth study: PMID: ${pmid}, DOI: ${doi}`);
         }
         if (correspondingBaseStudy.versions?.length === 0)
             throw new Error(`No versions found for base study: ${correspondingBaseStudy.id}`);
@@ -395,16 +373,16 @@ export const organizeSleuthStubsIntoHTTPRequests = (
                     space === DefaultSpaceTypes.MNI.label.toLocaleLowerCase()
                         ? DefaultSpaceTypes.MNI.value
                         : space === DefaultSpaceTypes.TAL.label.toLocaleLowerCase()
-                        ? DefaultSpaceTypes.TAL.value
-                        : space,
+                          ? DefaultSpaceTypes.TAL.value
+                          : space,
             })),
         };
 
         // step 3: if the user does not own the study version, then we need to create a new study with a new analysis, or new analyses.
         // There may be other sleuth stubs in the future that belongs to the same study, so we dont create the request yet. Instead, we add all STUDY POST requests to a list
-        const loggedInUsersExistingStudyVersion = (
-            (correspondingBaseStudy.versions as IStudyVersion[]) || []
-        ).find((version) => version.user === currUserId);
+        const loggedInUsersExistingStudyVersion = ((correspondingBaseStudy.versions as IStudyVersion[]) || []).find(
+            (version) => version.user === currUserId
+        );
         if (loggedInUsersExistingStudyVersion && loggedInUsersExistingStudyVersion.id) {
             // if there is a duplicate, then this analyses POST request will just return the existing analysis. If not, it will create the analysis and return that instead
             allRequests.push(() =>
@@ -419,9 +397,8 @@ export const organizeSleuthStubsIntoHTTPRequests = (
                 existingStudyCreateRequest!.analyses.push(newAnalysis);
             } else {
                 studyRequestsMap.set(sleuthStudyIdentifier, {
-                    studyId: selectBestBaseStudyVersion(
-                        (correspondingBaseStudy?.versions as IStudyVersion[]) || []
-                    ).id as string,
+                    studyId: selectBestBaseStudyVersion((correspondingBaseStudy?.versions as IStudyVersion[]) || [])
+                        .id as string,
                     analyses: [newAnalysis],
                 });
             }
@@ -510,8 +487,7 @@ export const sleuthIngestedStudiesToStubs = (
                 if (doi) allIdentifiersSet.add(doi);
 
                 const correspondingStudyId = studyAnalysisList.find(
-                    (studyAnalysisObject) =>
-                        studyAnalysisObject.doi === doi || studyAnalysisObject.pmid === pmid
+                    (studyAnalysisObject) => studyAnalysisObject.doi === doi || studyAnalysisObject.pmid === pmid
                 );
 
                 studyResponsesToStubs.push({
@@ -530,7 +506,6 @@ export const sleuthIngestedStudiesToStubs = (
                     identificationSource: defaultIdentificationSources.sleuth,
                     tags: [tag],
                     neurostoreId: correspondingStudyId?.studyId || '',
-                    searchTerm: '',
                 });
             }
         );
@@ -555,9 +530,7 @@ export const lookForPMIDsAndFetchStudyDetails = async (
     baseStudySleuthStubs: BaseStudy[],
     getPubmedIdFromDOICallback: (doi: string) => Promise<AxiosResponse<IESearchResult>>,
     updateProgressStateCallback: (value: number) => void,
-    getPubmedStudiesFromIdsCallback: (
-        pubmedIds: string[]
-    ) => Promise<INeurosynthParsedPubmedArticle[][]>
+    getPubmedStudiesFromIdsCallback: (pubmedIds: string[]) => Promise<INeurosynthParsedPubmedArticle[][]>
 ) => {
     const responses = await executeHTTPRequestsAsBatches(
         baseStudySleuthStubs,
@@ -593,11 +566,7 @@ export const lookForPMIDsAndFetchStudyDetails = async (
     const pubmedIds: string[] = [];
     responses.forEach((response) => {
         const searchResult = response.data.esearchresult;
-        if (
-            searchResult.count === '1' &&
-            searchResult.idlist.length === 1 &&
-            !searchResult.errorlist
-        ) {
+        if (searchResult.count === '1' && searchResult.idlist.length === 1 && !searchResult.errorlist) {
             pubmedIds.push(searchResult.idlist[0]);
         }
     });
@@ -617,8 +586,7 @@ export const applyPubmedStudyDetailsToBaseStudiesAndRemoveDuplicates = (
     const deduplicatedBaseStudiesWithDetails: BaseStudy[] = [];
     baseStudySleuthStubs.forEach((baseStudy) => {
         const associatedPubmedStudy =
-            idToPubmedStudyMap.get(baseStudy.pmid || '') ||
-            idToPubmedStudyMap.get(baseStudy.doi || '');
+            idToPubmedStudyMap.get(baseStudy.pmid || '') || idToPubmedStudyMap.get(baseStudy.doi || '');
 
         let updatedBaseStudyWithDetails: BaseStudy = {};
         if (!associatedPubmedStudy) {
@@ -627,9 +595,7 @@ export const applyPubmedStudyDetailsToBaseStudiesAndRemoveDuplicates = (
         } else {
             const authorString = (associatedPubmedStudy?.authors || []).reduce(
                 (prev, curr, index, arr) =>
-                    `${prev}${curr.ForeName} ${curr.LastName}${
-                        index === arr.length - 1 ? '' : ', '
-                    }`,
+                    `${prev}${curr.ForeName} ${curr.LastName}${index === arr.length - 1 ? '' : ', '}`,
                 ''
             );
             const { isValid, value } = stringToNumber(associatedPubmedStudy?.articleYear || '');
@@ -641,9 +607,7 @@ export const applyPubmedStudyDetailsToBaseStudiesAndRemoveDuplicates = (
                 pmcid: baseStudy.pmcid ? baseStudy.pmcid : associatedPubmedStudy.PMCID,
                 name: baseStudy.name ? baseStudy.name : associatedPubmedStudy.title,
                 pmid: baseStudy.pmid ? baseStudy.pmid : associatedPubmedStudy.PMID,
-                publication: baseStudy.publication
-                    ? baseStudy.publication
-                    : associatedPubmedStudy.journal.title,
+                publication: baseStudy.publication ? baseStudy.publication : associatedPubmedStudy.journal.title,
                 year: baseStudy.year ? baseStudy.year : isValid ? value : undefined,
                 level: 'group',
             };
@@ -651,11 +615,9 @@ export const applyPubmedStudyDetailsToBaseStudiesAndRemoveDuplicates = (
 
         const hasThisStudyAlready = deduplicatedBaseStudiesWithDetails.some(
             ({ doi, pmid }) =>
-                (doi && doi === updatedBaseStudyWithDetails.doi) ||
-                (pmid && pmid === updatedBaseStudyWithDetails.pmid)
+                (doi && doi === updatedBaseStudyWithDetails.doi) || (pmid && pmid === updatedBaseStudyWithDetails.pmid)
         );
-        if (!hasThisStudyAlready)
-            deduplicatedBaseStudiesWithDetails.push(updatedBaseStudyWithDetails);
+        if (!hasThisStudyAlready) deduplicatedBaseStudiesWithDetails.push(updatedBaseStudyWithDetails);
     });
     return deduplicatedBaseStudiesWithDetails;
 };
@@ -667,12 +629,7 @@ export const ingestBaseStudies = async (
     ingestCallback: (
         variables: BaseStudiesPostRequest,
         options?:
-            | MutateOptions<
-                  AxiosResponse<BaseStudiesPost200Response>,
-                  AxiosError<any>,
-                  BaseStudiesPostRequest,
-                  unknown
-              >
+            | MutateOptions<AxiosResponse<BaseStudiesPost200Response>, AxiosError<any>, BaseStudiesPostRequest, unknown>
             | undefined
     ) => Promise<AxiosResponse<BaseStudiesPost200Response>>,
     updateProgressStateCallback: (value: number) => void
@@ -680,11 +637,7 @@ export const ingestBaseStudies = async (
     const { data } = await ingestCallback(baseStudiesWithPubmedDetailsNoDuplicates);
 
     // consolidate sleuth stubs into studies and create update requests
-    const httpRequests = organizeSleuthStubsIntoHTTPRequests(
-        data as BaseStudyReturn[],
-        sleuthUpload,
-        userId
-    );
+    const httpRequests = organizeSleuthStubsIntoHTTPRequests(data as BaseStudyReturn[], sleuthUpload, userId);
 
     const httpResponses = await executeHTTPRequestsAsBatches(
         httpRequests,
@@ -747,16 +700,14 @@ export const generateAnnotationForSleuthImport = (
         [filenameReplacePeriodsWithUnderscores]: EPropertyType.BOOLEAN,
     };
 
-    const responsesToNotes: NoteCollectionReturn[] = studyAnalysisObjects.map(
-        ({ analysisId, studyId }) => ({
-            analysis: analysisId,
-            study: studyId,
-            note: {
-                included: true,
-                [filenameReplacePeriodsWithUnderscores]: true,
-            },
-        })
-    );
+    const responsesToNotes: NoteCollectionReturn[] = studyAnalysisObjects.map(({ analysisId, studyId }) => ({
+        analysis: analysisId,
+        study: studyId,
+        note: {
+            included: true,
+            [filenameReplacePeriodsWithUnderscores]: true,
+        },
+    }));
 
     return {
         noteKeys: noteKeys,
@@ -772,11 +723,9 @@ export const createProjectHelper = async (
         studyAnalysisList: { studyId: string; analysisId: string; doi: string; pmid: string }[];
         baseStudySleuthstubsWithDetails: BaseStudy[];
     }[],
-    createProjectCallback: (
+    createProjectFunc: (
         variables: Project,
-        options?:
-            | MutateOptions<AxiosResponse<ProjectReturn>, AxiosError<any>, Project, unknown>
-            | undefined
+        options?: MutateOptions<AxiosResponse<ProjectReturn>, AxiosError<any>, Project, unknown> | undefined
     ) => Promise<AxiosResponse<ProjectReturn>>
 ) => {
     const fileNames = uploads.reduce((acc, curr, index) => {
@@ -788,13 +737,9 @@ export const createProjectHelper = async (
         `New project generated from files: ${fileNames}`
     );
 
-    const curationMetadata: ICurationMetadata = initCurationHelper(
-        ['not included', 'included'],
-        false
-    );
+    const curationMetadata: ICurationMetadata = initCurationHelper(['Unreviewed', 'included'], false);
 
-    curationMetadata.columns[curationMetadata.columns.length - 1].stubStudies =
-        sleuthIngestedStudiesToStubs(uploads);
+    curationMetadata.columns[curationMetadata.columns.length - 1].stubStudies = sleuthIngestedStudiesToStubs(uploads);
 
     const setStudyStatusesAsComplete = uploads
         .reduce((acc, curr) => {
@@ -805,7 +750,7 @@ export const createProjectHelper = async (
             status: EExtractionStatus.COMPLETED,
         }));
 
-    return createProjectCallback({
+    return createProjectFunc({
         ...newProjectData,
         provenance: {
             ...newProjectData.provenance,

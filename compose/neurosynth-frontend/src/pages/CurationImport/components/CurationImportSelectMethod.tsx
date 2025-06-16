@@ -1,12 +1,4 @@
-import {
-    Box,
-    Button,
-    FormControl,
-    FormControlLabel,
-    Radio,
-    RadioGroup,
-    Typography,
-} from '@mui/material';
+import { Box, Button, FormControl, FormControlLabel, Radio, RadioGroup, Typography } from '@mui/material';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons';
 import CurationImportSelectMethodStyles from 'pages/CurationImport/components/CurationImportSelectMethod.styles';
 import CurationImportStyles from 'pages/CurationImport/components/CurationImport.styles';
@@ -25,12 +17,7 @@ const CurationImportSelectMethod: React.FC<{
                     onChange={(event) => {
                         props.onChangeImportMode(event.target.value as EImportMode);
                     }}
-                    sx={{
-                        '.MuiFormControlLabel-root': {
-                            marginLeft: '0 !important',
-                            marginRight: '0 !important',
-                        },
-                    }}
+                    sx={CurationImportSelectMethodStyles.radioGroup}
                 >
                     <FormControlLabel
                         sx={[
@@ -60,9 +47,7 @@ const CurationImportSelectMethod: React.FC<{
                         value={EImportMode.PUBMED_IMPORT}
                         label={
                             <>
-                                <Typography variant="h6">
-                                    Import via Pubmed ID (PMID) List
-                                </Typography>
+                                <Typography variant="h6">Import via Pubmed ID (PMID) List</Typography>
                                 <Typography variant="body1" sx={{ color: 'muted.main' }}>
                                     Import studies from a collection in pubmed
                                 </Typography>
@@ -82,8 +67,8 @@ const CurationImportSelectMethod: React.FC<{
                             <>
                                 <Typography variant="h6">Manually create a new study</Typography>
                                 <Typography variant="body1" sx={{ color: 'muted.main' }}>
-                                    Create a new study from scratch, manually filling in the title,
-                                    authors, PMID, DOI, etc
+                                    Create a new study from scratch, manually filling in the title, authors, PMID, DOI,
+                                    etc
                                 </Typography>
                             </>
                         }
@@ -101,8 +86,7 @@ const CurationImportSelectMethod: React.FC<{
                             <>
                                 <Typography variant="h6">Import via File Format</Typography>
                                 <Typography variant="body1" sx={{ color: 'muted.main' }}>
-                                    Import studies from widely used standard formats such as RIS,
-                                    endnote, or BibTex
+                                    Import studies from widely used standard formats such as RIS, endnote, or BibTex
                                 </Typography>
                             </>
                         }
@@ -112,12 +96,7 @@ const CurationImportSelectMethod: React.FC<{
             </FormControl>
 
             <Box sx={CurationImportStyles.fixedContainer}>
-                <Box
-                    sx={[
-                        CurationImportStyles.fixedButtonsContainer,
-                        { justifyContent: 'flex-end' },
-                    ]}
-                >
+                <Box sx={[CurationImportStyles.fixedButtonsContainer, { justifyContent: 'flex-end' }]}>
                     <Button
                         variant="contained"
                         sx={CurationImportStyles.nextButton}

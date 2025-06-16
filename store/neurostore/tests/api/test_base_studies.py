@@ -148,6 +148,46 @@ def test_post_list_of_studies(auth_client, ingest_neuroquery):
     assert result.status_code == 200
 
 
+def test_field_sanitization(auth_client):
+    """Test sanitization of input fields in base studies"""
+    test_input = [
+        {
+            "name": "Study with DOI prefix",
+            "doi": "https://doi.org/10.1234/test",
+            "pmcid": "12345",
+        },
+        {
+            "name": "Study with dx DOI prefix",
+            "doi": "https://dx.doi.org/10.5678/test",
+            "pmcid": "PMC67890",  # Already has PMC prefix
+        },
+        {
+            "name": "Study with whitespace fields",
+            "doi": "   ",
+            "pmid": "  ",
+            "description": "  ",
+        },
+    ]
+
+    result = auth_client.post("/api/base-studies/", data=test_input)
+    assert result.status_code == 200
+
+    created_studies = result.json()
+
+    # Check DOI prefix removal
+    assert created_studies[0]["doi"] == "10.1234/test"
+    assert created_studies[1]["doi"] == "10.5678/test"
+
+    # Check PMCID formatting
+    assert created_studies[0]["pmcid"] == "PMC12345"
+    assert created_studies[1]["pmcid"] == "PMC67890"  # Should remain unchanged
+
+    # Check empty string conversion to None
+    assert created_studies[2]["doi"] is None
+    assert created_studies[2]["pmid"] is None
+    assert created_studies[2]["description"] is None
+
+
 def test_flat_base_study(auth_client, ingest_neurosynth, session):
     flat_resp = auth_client.get("/api/base-studies/?flat=true")
     reg_resp = auth_client.get("/api/base-studies/?flat=false")
@@ -371,7 +411,7 @@ def test_config_and_feature_filters(auth_client, ingest_demographic_features, se
     response = auth_client.get(
         "/api/base-studies/?"
         "feature_filter=ParticipantInfo:1.0.0:predictions.groups[].age_mean>25&"
-        "pipeline_config=ParticipantInfo:1.0.0:extraction_model=gpt-4-turbo"
+        "pipeline_config=ParticipantInfo:1.0.0:extractor_kwargs.extraction_model=gpt-4-turbo"
     )
 
     assert response.status_code == 200
@@ -381,7 +421,7 @@ def test_config_and_feature_filters(auth_client, ingest_demographic_features, se
     response = auth_client.get(
         "/api/base-studies/?"
         "feature_filter=ParticipantInfo:2.0.0:predictions.groups[].age_mean>30&"
-        "pipeline_config=ParticipantInfo:2.0.0:extraction_model=gpt-4-turbo"
+        "pipeline_config=ParticipantInfo:2.0.0:extractor_kwargs.extraction_model=gpt-4-turbo"
     )
 
     assert response.status_code == 200
@@ -401,7 +441,7 @@ def test_feature_display_and_pipeline_config(auth_client, ingest_demographic_fea
     response = auth_client.get(
         "/api/base-studies/?"
         "feature_display=ParticipantInfo:1.0.0&"
-        "pipeline_config=ParticipantInfo:1.0.0:extraction_model=gpt-4-turbo"
+        "pipeline_config=ParticipantInfo:1.0.0:extractor_kwargs.extraction_model=gpt-4-turbo"
     )
     assert response.status_code == 200
     results = response.json()["results"]
@@ -413,7 +453,7 @@ def test_feature_display_and_pipeline_config(auth_client, ingest_demographic_fea
     default_response = auth_client.get(
         "/api/base-studies/?"
         "feature_display=ParticipantInfo&"
-        "pipeline_config=ParticipantInfo:extraction_model=gpt-4-turbo"
+        "pipeline_config=ParticipantInfo:extractor_kwargs.extraction_model=gpt-4-turbo"
     )
     assert default_response.status_code == 200
     assert len(default_response.json()["results"]) > 0

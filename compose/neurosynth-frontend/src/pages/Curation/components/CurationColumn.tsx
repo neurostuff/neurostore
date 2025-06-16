@@ -1,15 +1,6 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import { Draggable, Droppable } from '@hello-pangea/dnd';
-import {
-    Autocomplete,
-    Box,
-    Button,
-    Divider,
-    ListItem,
-    ListItemText,
-    Paper,
-    TextField,
-} from '@mui/material';
+import { Autocomplete, Box, Button, Divider, ListItem, ListItemText, Paper, TextField } from '@mui/material';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 
 import useGetWindowHeight from 'hooks/useGetWindowHeight';
@@ -17,6 +8,7 @@ import {
     useProjectCurationColumn,
     useProjectCurationExclusionTags,
     useProjectCurationInfoTags,
+    useProjectCurationIsLastColumn,
     useProjectCurationPrismaConfig,
     useProjectUser,
     usePromoteAllUncategorized,
@@ -30,6 +22,8 @@ import useUserCanEdit from 'hooks/useUserCanEdit';
 import { ICurationStubStudy } from 'pages/Curation/Curation.types';
 import CurationStubStudyDraggableContainer from 'pages/Curation/components/CurationStubStudyDraggableContainer';
 import CurationDialog from 'pages/Curation/components/CurationDialog';
+import CurationDownloadIncludedStudiesButton from './CurationDownloadIncludedStudiesButton';
+import CurationPromoteUncategorizedButton from 'components/Buttons/CurationPromoteUncategorizedButton';
 
 const getVisibility = (stub: ICurationStubStudy, selectedTag: ITag | undefined): boolean => {
     let isVisible = false;
@@ -101,6 +95,7 @@ const CurationColumn: React.FC<{ columnIndex: number }> = React.memo((props) => 
         isOpen: false,
         stubId: undefined,
     });
+    const isLastColumn = useProjectCurationIsLastColumn(props.columnIndex);
 
     useEffect(() => {
         if (prismaConfig.isPrisma) {
@@ -182,31 +177,29 @@ const CurationColumn: React.FC<{ columnIndex: number }> = React.memo((props) => 
             </Button>
 
             {props.columnIndex === 0 && (
-                <>
-                    <ConfirmationDialog
-                        dialogTitle="Are you sure you want to promote non duplicated studies?"
-                        dialogMessage="By taking this action, all non duplicated studies will be promoted to the next stage"
-                        rejectText="Cancel"
-                        confirmText="Continue"
-                        isOpen={warningDialogIsOpen}
-                        onCloseDialog={handlePromoteAllUnCategorized}
-                    />
-                    <Button
-                        variant="contained"
-                        color="info"
-                        disableElevation
-                        onClick={() => setWarningDialogIsOpen(true)}
-                        sx={{
-                            padding: '8px',
-                            marginBottom: '0.75rem',
-                            display: hasUncategorizedStudies ? 'block' : 'none',
-                        }}
-                        disabled={!isAuthenticated}
-                    >
-                        Promote Non Duplicated Studies
-                    </Button>
-                </>
+                <CurationPromoteUncategorizedButton
+                    color="info"
+                    variant="outlined"
+                    disableElevation
+                    sx={{
+                        padding: '8px',
+                        marginBottom: '0.75rem',
+                        display: hasUncategorizedStudies ? 'block' : 'none',
+                    }}
+                    disabled={!isAuthenticated}
+                >
+                    Promote Non Duplicated Studies
+                </CurationPromoteUncategorizedButton>
             )}
+            {
+                // It's not possible for the column index to be 0, and also the last column
+                // therefore we can assume it will render this or the above, not both
+                isLastColumn && (
+                    <Box style={{ marginBottom: '0.75rem', width: '100%' }}>
+                        <CurationDownloadIncludedStudiesButton buttonGroupProps={{ size: 'medium', fullWidth: true }} />
+                    </Box>
+                )
+            }
 
             <Paper elevation={0} sx={{ width: '100%' }}>
                 <Autocomplete
@@ -225,8 +218,8 @@ const CurationColumn: React.FC<{ columnIndex: number }> = React.memo((props) => 
                         return option.isExclusionTag
                             ? 'Exclusion Tags'
                             : option.isAssignable
-                            ? 'Your Tags'
-                            : 'Default Tags';
+                              ? 'Your Tags'
+                              : 'Default Tags';
                     }}
                     renderInput={(params) => <TextField {...params} label="filter" />}
                     options={tags}

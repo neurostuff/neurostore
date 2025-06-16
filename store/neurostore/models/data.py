@@ -16,6 +16,8 @@ from ..utils import parse_json_filter, build_jsonpath
 
 SEMVER_REGEX = r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$"  # noqa E501
 
+SEMVER_REGEX = r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$"  # noqa E501
+
 
 def _check_type(x):
     """check annotation key type"""
@@ -721,6 +723,7 @@ class PipelineConfig(BaseMixin, db.Model):
     )
     version = db.Column(db.String, index=True)
     config_args = db.Column(JSONB)
+    schema = db.Column(JSONB)
     executed_at = db.Column(
         db.DateTime(timezone=True)
     )  # when the pipeline was executed on the filesystem (not when it was ingested)
