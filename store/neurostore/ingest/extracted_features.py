@@ -23,7 +23,7 @@ def ingest_feature(feature_directory, overwrite=False):
     pipeline = (
         db.session.query(Pipeline)
         .filter(
-            Pipeline.name == pipeline_info["name"],
+            Pipeline.name == pipeline_info["extractor"],
         )
         .first()
     )
@@ -56,10 +56,8 @@ def ingest_feature(feature_directory, overwrite=False):
     if not pipeline_config:
         # Build config_args from pipeline_info
         config_args = {
-            "extractor": pipeline_info.get("extractor"),
             "extractor_kwargs": pipeline_info.get("extractor_kwargs", {}),
             "transform_kwargs": pipeline_info.get("transform_kwargs", {}),
-            "input_pipelines": pipeline_info.get("input_pipelines", {}),
         }
 
         pipeline_config = PipelineConfig(
