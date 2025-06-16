@@ -603,14 +603,28 @@ class ListView(BaseView):
             return q
         return q.options(selectinload(self._model.user))
 
-    def serialize_records(self, records, args, exclude=tuple()):
-        """serialize records from search"""
-        content = self._schema(
-            exclude=exclude,
-            many=True,
-            context=args,
-        ).dump(records)
-        return content
+    def serialize_records(self, records, args, exclude=None):
+        schema_many = self._schema(exclude=exclude, many=True, context=args)
+
+        try:
+            # Fast path
+            return schema_many.dump(records)
+        except Exception as e:
+            # Fall back to manual loop to isolate the problem
+            # logger.warning("Bulk serialization failed, falling back to per-record serialization. Error: %s", e)
+
+            schema = self._schema(exclude=exclude, many=False, context=args)
+            for idx, record in enumerate(records):
+                try:
+                    schema.dump(record)
+                except Exception as rec_err:
+                    #logger.error("Serialization failed on record #%d: %s", idx, record)
+                    raise ValueError(
+                        f"Serialization failed on record #{idx}: {record}. Error: {rec_err}"
+                    ) from rec_err
+
+            # If somehow we didn't catch the failing record, re-raise the original error
+            raise e
 
     def create_metadata(self, q, total):
         return {"total_count": total}
