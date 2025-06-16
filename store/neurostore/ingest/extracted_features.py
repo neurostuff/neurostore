@@ -10,6 +10,7 @@ from neurostore.models import (
     Pipeline,
     PipelineConfig,
     PipelineStudyResult,
+    BaseStudy,
 )
 
 
@@ -32,9 +33,7 @@ def ingest_feature(feature_directory, overwrite=False):
         pipeline = Pipeline(
             name=pipeline_info["extractor"],
             description=pipeline_info.get("description"),
-            study_dependent=(
-                True if pipeline_info.get("type", True) == "dependent" else False
-            ),
+            study_dependent=None,
             ace_compatible=True,
             pubget_compatible=True,
             derived_from=pipeline_info.get("input_pipelines", None),
@@ -74,22 +73,41 @@ def ingest_feature(feature_directory, overwrite=False):
 
     # for each subject directory, read the results.json file and the info.json file
     pipeline_study_results = []
+
     for paper_dir in paper_dirs:
-        with open(op.join(paper_dir, "results.json")) as f:
-            results = json.load(f)
-
-        with open(op.join(paper_dir, "info.json")) as f:
-            info = json.load(f)
-
         # use the directory name as the base_study_id
         base_study_id = paper_dir.name
-        
+
+        if BaseStudy.query.filter_by(id=base_study_id).first() is None:
+            print(
+                f"Skipping {paper_dir} as it does not correspond to a valid base_study_id"
+            )
+            continue
+        try:
+            with open(op.join(paper_dir, "results.json")) as f:
+                results = json.load(f)
+        except FileNotFoundError:
+            print(f"Skipping {paper_dir} as it does not contain results.json")
+            continue
+        except json.JSONDecodeError:
+            print(f"Skipping {paper_dir} as it contains invalid JSON in results.json")
+            continue
+        try:
+            with open(op.join(paper_dir, "info.json")) as f:
+                info = json.load(f)
+        except FileNotFoundError:
+            print(f"Skipping {paper_dir} as it does not contain info.json")
+            continue
+        except json.JSONDecodeError:
+            print(f"Skipping {paper_dir} as it contains invalid JSON in info.json")
+            continue
+
         # check for existing result
         existing_result = (
             db.session.query(PipelineStudyResult)
             .filter(
                 PipelineStudyResult.base_study_id == base_study_id,
-                PipelineStudyResult.config_id == pipeline_config.id
+                PipelineStudyResult.config_id == pipeline_config.id,
             )
             .first()
         )
