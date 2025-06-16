@@ -1,7 +1,6 @@
-import { Box, Button, Dialog, DialogContent, DialogTitle, IconButton, Typography } from '@mui/material';
+import { Box, Button, Typography } from '@mui/material';
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
-import CloseIcon from '@mui/icons-material/Close';
 import BaseDialog from './Dialogs/BaseDialog';
 
 const InfoPopup: React.FC = () => {
