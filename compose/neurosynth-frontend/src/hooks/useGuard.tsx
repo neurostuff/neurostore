@@ -6,12 +6,17 @@ const useGuard = (
     navigationLink: string,
     snackbarMessage = 'you must be authenticated to view this page',
     shouldNotSeePage = false,
+    isLoading: boolean | undefined = false,
     replace?: boolean
 ) => {
     const navigate = useNavigate();
     const { enqueueSnackbar } = useSnackbar();
 
     useEffect(() => {
+        if (isLoading) {
+            return;
+        }
+
         if (shouldNotSeePage) {
             navigate(navigationLink || '/', { replace: replace || false });
             if (snackbarMessage && snackbarMessage.length > 0) {
@@ -20,7 +25,7 @@ const useGuard = (
                 });
             }
         }
-    }, [enqueueSnackbar, navigate, navigationLink, replace, shouldNotSeePage, snackbarMessage]);
+    }, [enqueueSnackbar, isLoading, navigate, navigationLink, replace, shouldNotSeePage, snackbarMessage]);
 
     return;
 };

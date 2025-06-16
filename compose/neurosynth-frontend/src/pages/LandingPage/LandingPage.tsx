@@ -15,9 +15,9 @@ import { useNavigate } from 'react-router';
 const AUTH0_AUDIENCE = import.meta.env.VITE_APP_AUTH0_AUDIENCE;
 
 const LandingPage = () => {
-    const { isAuthenticated, loginWithPopup } = useAuth0();
+    const { isAuthenticated, isLoading, loginWithPopup } = useAuth0();
     const navigate = useNavigate();
-    useGuard('/projects', '', isAuthenticated, true);
+    useGuard('/projects', '', isAuthenticated, isLoading, true);
 
     const handleLogin = async () => {
         await loginWithPopup({
@@ -33,19 +33,14 @@ const LandingPage = () => {
     return (
         <>
             <Box sx={[LandingPageStyles.sectionContainer, { backgroundColor: 'primary.main' }]}>
-                <Box
-                    sx={[
-                        LandingPageStyles.sectionContents,
-                        LandingPageStyles.heroBannerContentContainer,
-                    ]}
-                >
+                <Box sx={[LandingPageStyles.sectionContents, LandingPageStyles.heroBannerContentContainer]}>
                     <Box sx={LandingPageStyles.heroBannerTextContainer}>
                         <Typography sx={LandingPageStyles.title} variant="h3">
                             A free and open platform for neuroimaging meta-analysis
                         </Typography>
                         <Typography variant="h5" sx={LandingPageStyles.heroBannerText}>
-                            Perform custom neuroimaging meta-analyses entirely in the browser, and
-                            quickly get results in the cloud using automated analysis pipelines.
+                            Perform custom neuroimaging meta-analyses entirely in the browser, and quickly get results
+                            in the cloud using automated analysis pipelines.
                         </Typography>
                         <Box
                             sx={{
@@ -59,10 +54,7 @@ const LandingPage = () => {
                         <Box sx={LandingPageStyles.heroButtonContainer}>
                             <Button
                                 variant="contained"
-                                sx={[
-                                    LandingPageStyles.getStartedButton,
-                                    LandingPageStyles.heroButtons,
-                                ]}
+                                sx={[LandingPageStyles.getStartedButton, LandingPageStyles.heroButtons]}
                                 onClick={handleLogin}
                             >
                                 get started
@@ -104,8 +96,8 @@ const LandingPage = () => {
                                     Find Studies
                                 </Typography>
                                 <Typography variant="h6">
-                                    Search across thousands of indexed neuroimaging studies, or
-                                    import custom studies from PubMed and other sources
+                                    Search across thousands of indexed neuroimaging studies, or import custom studies
+                                    from PubMed and other sources
                                 </Typography>
                             </CardContent>
                         </Card>
@@ -116,8 +108,8 @@ const LandingPage = () => {
                                     Curate collections
                                 </Typography>
                                 <Typography variant="h6">
-                                    Systematically select relevant studies, and track exclusion
-                                    criteria using a PRISMA-compliant workflow
+                                    Systematically select relevant studies, and track exclusion criteria using a
+                                    PRISMA-compliant workflow
                                 </Typography>
                             </CardContent>
                         </Card>
@@ -128,8 +120,8 @@ const LandingPage = () => {
                                     Specify & Execute Meta-analysis
                                 </Typography>
                                 <Typography variant="h6">
-                                    Choose from dozens of meta-analysis algorithms, and execute
-                                    either locally or in the cloud
+                                    Choose from dozens of meta-analysis algorithms, and execute either locally or in the
+                                    cloud
                                 </Typography>
                             </CardContent>
                         </Card>
@@ -140,9 +132,8 @@ const LandingPage = () => {
                                     Share your results!
                                 </Typography>
                                 <Typography variant="h6">
-                                    Automatically upload results to NeuroVault for easy sharing and
-                                    complete analysis provenance. Geneate comprehensive reports to
-                                    facilitate interpretation
+                                    Automatically upload results to NeuroVault for easy sharing and complete analysis
+                                    provenance. Geneate comprehensive reports to facilitate interpretation
                                 </Typography>
                             </CardContent>
                         </Card>
@@ -176,20 +167,14 @@ const LandingPage = () => {
                         margin: '0 auto',
                     }}
                 >
-                    <Typography
-                        variant="h5"
-                        sx={{ padding: '3rem 0', textAlign: { xs: 'center', sm: 'left' } }}
-                    >
+                    <Typography variant="h5" sx={{ padding: '3rem 0', textAlign: { xs: 'center', sm: 'left' } }}>
                         Neurosynth compose is supported by the following organizations:
                     </Typography>
 
                     <Box sx={{ width: '100%' }}>
                         <Box sx={LandingPageStyles.sponsorsImgContainer}>
                             {LOGOS.map((logo) => (
-                                <Box
-                                    key={logo.logoPath}
-                                    sx={LandingPageStyles.sponsorLogoContainer}
-                                >
+                                <Box key={logo.logoPath} sx={LandingPageStyles.sponsorLogoContainer}>
                                     <Box
                                         component="img"
                                         sx={LandingPageStyles.sponsorLogo}

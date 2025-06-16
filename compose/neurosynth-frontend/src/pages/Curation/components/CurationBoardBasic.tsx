@@ -1,13 +1,10 @@
 import { Box } from '@mui/material';
-import {
-    useHandleCurationDrag,
-    useProjectNumCurationColumns,
-} from 'pages/Project/store/ProjectStore';
+import { useHandleCurationDrag, useProjectNumCurationColumns } from 'pages/Project/store/ProjectStore';
 import CurationColumn from './CurationColumn';
 import CurationBoardStyles from './CurationBoard.styles';
 import { DragDropContext } from '@hello-pangea/dnd';
 
-const CurationBoard: React.FC = (props) => {
+const CurationBoardBasic: React.FC = () => {
     const handleDrag = useHandleCurationDrag();
     const numColumns = useProjectNumCurationColumns();
     const columnArr = [...Array(numColumns).keys()];
@@ -25,4 +22,4 @@ const CurationBoard: React.FC = (props) => {
     );
 };
 
-export default CurationBoard;
+export default CurationBoardBasic;

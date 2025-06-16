@@ -6,25 +6,25 @@ type EDebouncedTextFieldProps = Omit<TextFieldProps, 'onChange' | 'value'> & {
     value?: string | undefined;
 };
 
-const DebouncedTextField: React.FC<EDebouncedTextFieldProps> = ({
-    value,
-    onChange,
-    ...otherProps
-}) => {
-    const [debouncedValue, setDebouncedValue] = useState(value || '');
+const DebouncedTextField: React.FC<EDebouncedTextFieldProps> = ({ value, onChange, ...otherProps }) => {
+    const [debouncedValue, setDebouncedValue] = useState(value);
 
     useEffect(() => {
+        if (debouncedValue === value) return;
         const debounce = setTimeout(() => {
-            onChange && onChange(debouncedValue);
+            if (onChange) {
+                onChange(debouncedValue);
+            }
         }, 400);
         return () => {
             clearTimeout(debounce);
         };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [debouncedValue, onChange]);
 
     // when an update occurs from outside the component, we want to reflect that new value (like if a filter is cleard)
     useEffect(() => {
-        setDebouncedValue(value || '');
+        setDebouncedValue(value);
     }, [value]);
 
     const handleOnChange = (event: ChangeEvent<HTMLInputElement>) => {

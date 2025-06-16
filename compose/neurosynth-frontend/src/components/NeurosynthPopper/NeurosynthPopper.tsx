@@ -4,19 +4,29 @@ export interface INeurosynthPopper {
     open: boolean;
     anchorElement: HTMLElement | null;
     placement?: PopperPlacementType;
+    disablePortal?: boolean;
+    style?: React.CSSProperties;
     onClickAway: (event: MouseEvent | TouchEvent) => void;
 }
 
 const NeurosynthPopper: React.FC<INeurosynthPopper> = (props) => {
-    const { open, anchorElement, placement = 'bottom-start', onClickAway, children } = props;
+    const {
+        open,
+        anchorElement,
+        disablePortal = true,
+        placement = 'bottom-start',
+        onClickAway,
+        style,
+        children,
+    } = props;
 
     return (
         <Popper
             className="tour-highlighted-popper"
-            style={{ zIndex: 1 }}
+            style={{ zIndex: 9999, ...style }}
             anchorEl={anchorElement}
             open={open}
-            disablePortal
+            disablePortal={disablePortal}
             transition
             placement={placement}
         >

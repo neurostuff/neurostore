@@ -1,9 +1,14 @@
 import { Box, Step, StepContent, StepLabel, StepProps, Typography } from '@mui/material';
-import { useInitCuration } from 'pages/Project/store/ProjectStore';
 import { useNavigate, useParams } from 'react-router-dom';
 import ProjectCurationStepCard from './ProjectCurationStepCard';
 import ProjectCurationStepChooseWorkflow from './ProjectCurationStepChooseWorkflow';
 import ProjectComponentsStyles from 'pages/Project/components/Project.styles';
+import useUpdateProject from 'hooks/projects/useUpdateProject';
+import { useGetProjectById } from 'hooks';
+import { initCurationHelper } from '../store/ProjectStore.helpers';
+import { useQueryClient } from 'react-query';
+import { AxiosResponse } from 'axios';
+import { INeurosynthProject } from 'hooks/projects/useGetProjects';
 
 export enum ECurationBoardTypes {
     PRISMA,
@@ -19,16 +24,45 @@ interface ICurationStep {
 
 const ProjectCurationStep: React.FC<ICurationStep & StepProps> = (props) => {
     const { projectId } = useParams<{ projectId: string }>();
+    const { data } = useGetProjectById(projectId);
     const navigate = useNavigate();
     const { curationStepHasBeenInitialized, disabled, ...stepProps } = props;
-
-    const initCuration = useInitCuration();
+    const { mutate, isLoading } = useUpdateProject();
+    const queryClient = useQueryClient();
 
     const handleCreateCuration = (curationBoardInitColumns: string[], isPRISMA: boolean) => {
-        if (!projectId) return;
+        if (!projectId || !data) return;
 
-        initCuration(curationBoardInitColumns, isPRISMA);
-        navigate(`/projects/${projectId}/curation`);
+        const curationMetadata = initCurationHelper(curationBoardInitColumns, isPRISMA);
+        const updatedProvenance = {
+            ...data.provenance,
+            curationMetadata: curationMetadata,
+        };
+
+        mutate(
+            {
+                projectId: projectId,
+                project: {
+                    provenance: updatedProvenance,
+                },
+            },
+            {
+                onSuccess: () => {
+                    const data = queryClient.getQueryData<AxiosResponse<INeurosynthProject>>(['projects', projectId]);
+                    if (!data) return;
+
+                    queryClient.setQueryData(['projects', projectId], {
+                        ...data,
+                        data: {
+                            ...data.data,
+                            provenance: updatedProvenance,
+                        },
+                    });
+
+                    navigate(`/projects/${projectId}/curation`);
+                },
+            }
+        );
     };
 
     return (
@@ -44,8 +78,8 @@ const ProjectCurationStep: React.FC<ICurationStep & StepProps> = (props) => {
                         <b>The first step in creating a meta-analysis</b>
                     </Typography>
                     <Typography gutterBottom sx={{ color: 'muted.main' }}>
-                        In this step, import studies from PubMed, tag studies, and either exclude or
-                        include studies into your meta-analysis
+                        In this step, import studies from PubMed, tag studies, and either exclude or include studies
+                        into your meta-analysis
                     </Typography>
                     <Box sx={{ marginTop: '1rem' }}>
                         {curationStepHasBeenInitialized ? (
@@ -53,6 +87,7 @@ const ProjectCurationStep: React.FC<ICurationStep & StepProps> = (props) => {
                         ) : (
                             <ProjectCurationStepChooseWorkflow
                                 disabled={disabled}
+                                isLoading={isLoading}
                                 onCreateCuration={handleCreateCuration}
                             />
                         )}

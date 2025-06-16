@@ -64,3 +64,12 @@ export const stringToNumber = (s: string): { value: number; isValid: boolean } =
         isValid: true,
     };
 };
+
+export const getAuthorsShortName = (authors: string) => {
+    let shortName = authors;
+    const authorsList = (authors || '').split(',');
+    if (authorsList.length > 1) {
+        shortName = `${authorsList[0]}., et al.`;
+    }
+    return shortName;
+};

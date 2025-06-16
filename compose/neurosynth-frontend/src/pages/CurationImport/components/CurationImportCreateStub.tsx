@@ -22,6 +22,7 @@ const CurationImportCreateStub: React.FC<{
         name: string;
         authors: string;
         pmid: string;
+        pmcid: string;
         keywords: string;
         articleYear: string;
         doi: string;
@@ -33,6 +34,7 @@ const CurationImportCreateStub: React.FC<{
         name: '',
         authors: '',
         pmid: '',
+        pmcid: '',
         keywords: '',
         articleYear: '',
         doi: '',
@@ -79,7 +81,7 @@ const CurationImportCreateStub: React.FC<{
                     authors: form.authors,
                     keywords: form.keywords,
                     pmid: form.pmid,
-                    pmcid: '',
+                    pmcid: form.pmcid,
                     doi: form.doi,
                     journal: form.journal,
                     articleYear: form.articleYear,
@@ -102,11 +104,7 @@ const CurationImportCreateStub: React.FC<{
                 onChange={handleUpdateForm}
                 required
                 value={form.name}
-                helperText={
-                    formFieldTouched.name && form.name.length === 0
-                        ? 'study name cannot be empty'
-                        : ''
-                }
+                helperText={formFieldTouched.name && form.name.length === 0 ? 'study name cannot be empty' : ''}
                 error={formFieldTouched.name && form.name.length === 0}
                 sx={CreateStubStudyStyles.textInput}
                 name="name"
@@ -125,9 +123,7 @@ const CurationImportCreateStub: React.FC<{
                 <TextField
                     value={form.doi}
                     onChange={handleUpdateForm}
-                    helperText={
-                        formFieldTouched.doi && form.doi.length === 0 ? 'doi cannot be empty' : ''
-                    }
+                    helperText={formFieldTouched.doi && form.doi.length === 0 ? 'doi cannot be empty' : ''}
                     error={formFieldTouched.doi && form.doi.length === 0}
                     name="doi"
                     label="DOI"
@@ -147,7 +143,7 @@ const CurationImportCreateStub: React.FC<{
                     onChange={handleUpdateForm}
                     sx={{ width: '25%', marginRight: '15px' }}
                     label="PubMed Central ID"
-                    value={form.pmid}
+                    value={form.pmcid}
                     name="pmcid"
                     fullWidth
                     placeholder="PMC3146590"
@@ -217,10 +213,7 @@ const CurationImportCreateStub: React.FC<{
             />
             <Box sx={CurationImportBaseStyles.fixedContainer}>
                 <Box sx={CurationImportBaseStyles.fixedButtonsContainer}>
-                    <Button
-                        variant="outlined"
-                        onClick={() => handleButtonClick(ENavigationButton.PREV)}
-                    >
+                    <Button variant="outlined" onClick={() => handleButtonClick(ENavigationButton.PREV)}>
                         back
                     </Button>
                     <Button

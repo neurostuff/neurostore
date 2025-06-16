@@ -24,10 +24,7 @@ export const handleDragEndHelper = (
 ): ICurationColumn[] => {
     const { destination, source } = result;
     // don't do anything if not dropped to a valid destination, or if the draggable was not moved
-    if (
-        !destination ||
-        (destination.droppableId === source.droppableId && destination.index === source.index)
-    ) {
+    if (!destination || (destination.droppableId === source.droppableId && destination.index === source.index)) {
         return state;
     }
 
@@ -91,13 +88,14 @@ export const initCurationHelper = (cols: string[], isPrisma: boolean): ICuration
             screening: { exclusionTags: [] },
             eligibility: { exclusionTags: [] },
         },
-        exclusionTags: Object.entries(defaultExclusionTags).map(([key, value]) => ({
+        exclusionTags: Object.entries(defaultExclusionTags).map(([, value]) => ({
             ...value,
         })),
-        infoTags: Object.entries(defaultInfoTags).map(([key, value]) => ({ ...value })),
-        identificationSources: Object.entries(defaultIdentificationSources).map(([key, value]) => ({
+        infoTags: Object.entries(defaultInfoTags).map(([, value]) => ({ ...value })),
+        identificationSources: Object.entries(defaultIdentificationSources).map(([, value]) => ({
             ...value,
         })),
+        imports: [],
     };
 
     if (isPrisma) {
@@ -140,30 +138,12 @@ export const initCurationHelper = (cols: string[], isPrisma: boolean): ICuration
     return curation;
 };
 
-export const addNewStubsHelper = (
-    state: ICurationColumn[],
-    newStubs: ICurationStubStudy[]
-): ICurationColumn[] => {
+export const addNewStubsHelper = (state: ICurationColumn[], newStubs: ICurationStubStudy[]): ICurationColumn[] => {
     const updatedState = [...state];
     updatedState[0] = {
         ...updatedState[0],
         stubStudies: [...newStubs, ...updatedState[0].stubStudies],
     };
-    return updatedState;
-};
-
-export const deleteStubHelper = (
-    state: ICurationColumn[],
-    columnIndex: number,
-    stubId: string
-): ICurationColumn[] => {
-    const updatedState = [...state];
-
-    updatedState[columnIndex] = {
-        ...updatedState[columnIndex],
-        stubStudies: [...updatedState[columnIndex].stubStudies.filter((x) => x.id !== stubId)],
-    };
-
     return updatedState;
 };
 
@@ -193,11 +173,7 @@ export const updateStubFieldHelper = (
     return updatedState;
 };
 
-export const promoteStubHelper = (
-    state: ICurationColumn[],
-    columnIndex: number,
-    stubId: string
-): ICurationColumn[] => {
+export const promoteStubHelper = (state: ICurationColumn[], columnIndex: number, stubId: string): ICurationColumn[] => {
     const nextColumnExists = state[columnIndex + 1];
     const stubSourceIndex = state[columnIndex].stubStudies.findIndex((stub) => stub.id === stubId);
 
@@ -206,6 +182,39 @@ export const promoteStubHelper = (
 
         const startColIndex = columnIndex;
         const endColIndex = columnIndex + 1;
+
+        const updatedStartColStubStudiesList = [...updatedState[startColIndex].stubStudies];
+        const promotedStub = { ...updatedStartColStubStudiesList[stubSourceIndex] };
+        updatedStartColStubStudiesList.splice(stubSourceIndex, 1);
+        updatedState[startColIndex] = {
+            ...updatedState[startColIndex],
+            stubStudies: updatedStartColStubStudiesList,
+        };
+
+        const updatedEndColStubStudiesList = [...updatedState[endColIndex].stubStudies];
+        updatedEndColStubStudiesList.splice(0, 0, promotedStub);
+        updatedState[endColIndex] = {
+            ...updatedState[endColIndex],
+            stubStudies: updatedEndColStubStudiesList,
+        };
+
+        return updatedState;
+    }
+
+    return state;
+};
+
+export const demoteStubHelper = (state: ICurationColumn[], columnIndex: number, stubId: string): ICurationColumn[] => {
+    if (state.length === 1) return state;
+
+    const prevColumnExists = state[columnIndex - 1];
+    const stubSourceIndex = state[columnIndex].stubStudies.findIndex((stub) => stub.id === stubId);
+
+    if (prevColumnExists && stubSourceIndex >= 0) {
+        const updatedState = [...state];
+
+        const startColIndex = columnIndex;
+        const endColIndex = columnIndex - 1;
 
         const updatedStartColStubStudiesList = [...updatedState[startColIndex].stubStudies];
         const promotedStub = { ...updatedStartColStubStudiesList[stubSourceIndex] };
@@ -302,10 +311,7 @@ export const createNewExclusionHelper = (
             ...updatedState.prismaConfig,
             [phase]: {
                 ...updatedState.prismaConfig[phase],
-                exclusionTags: [
-                    ...updatedState.prismaConfig[phase].exclusionTags,
-                    { ...newExclusion },
-                ],
+                exclusionTags: [...updatedState.prismaConfig[phase].exclusionTags, { ...newExclusion }],
             },
         };
     }
@@ -404,9 +410,7 @@ export const replaceStudyListStatusIdHelper = (
     return updatedState;
 };
 
-export const setGivenStudyStatusesAsCompleteHelper = (
-    studyIds: string[]
-): IStudyExtractionStatus[] => {
+export const setGivenStudyStatusesAsCompleteHelper = (studyIds: string[]): IStudyExtractionStatus[] => {
     return studyIds
         .filter((studyId) => !!studyId)
         .map((studyId) => ({
@@ -415,10 +419,7 @@ export const setGivenStudyStatusesAsCompleteHelper = (
         }));
 };
 
-export const generateNewProjectData = (
-    name?: string,
-    description?: string
-): INeurosynthProjectReturn => {
+export const generateNewProjectData = (name?: string, description?: string): INeurosynthProjectReturn => {
     return {
         name: name || '',
         description: description || '',
@@ -440,6 +441,7 @@ export const generateNewProjectData = (
                 infoTags: [],
                 exclusionTags: [],
                 identificationSources: [],
+                imports: [],
             },
             extractionMetadata: {
                 studysetId: undefined,
