@@ -1,3 +1,4 @@
+from urllib.parse import urlencode
 import pytest
 from ...models import Study, BaseStudy
 from ...schemas.data import StudysetSchema, StudySchema, AnalysisSchema, StringOrNested
@@ -113,5 +114,6 @@ def test_valid_pubmed_queries(query, expected, auth_client, ingest_neurosynth, s
 def test_invalid_pubmed_queries(
     query, expected, auth_client, ingest_neurosynth, session
 ):
-    search = auth_client.get(f"/api/base-studies/?search={query}")
+    url_safe_query = urlencode({"search": query})
+    search = auth_client.get(f"/api/base-studies/?{url_safe_query}")
     assert search.status_code == 400
