@@ -7,6 +7,7 @@ import useCurationBoardGroupsState from '../hooks/useCurationBoardGroupsState';
 import CurationBoardAIInterfaceCurator from './CurationBoardAIInterfaceCurator';
 import CurationBoardAIInterfaceExclude from './CurationBoardAIInterfaceExclude';
 import CurationBoardAIInterfaceImportSummary from './CurationBoardAIInterfaceImportSummary';
+import InfoPopup from 'components/InfoPopup';
 
 export enum ECurationBoardAIInterface {
     CURATOR = 'CURATOR', // basic curation interface with ability to toggle between spreadsheet and focused UIs.
@@ -34,6 +35,8 @@ const CurationBoardAI: React.FC = () => {
                 height: `calc(100vh - 40px - ${NAVBAR_HEIGHT}px - 64px - 4px)`, // add 4px for a bit of padding at the bottom
             }}
         >
+            {/* eventually remove this */}
+            <InfoPopup />
             <Box sx={{ width: '20%', minWidth: '200px', height: '100%' }}>
                 <CurationBoardAIGroupsList
                     groups={groups}

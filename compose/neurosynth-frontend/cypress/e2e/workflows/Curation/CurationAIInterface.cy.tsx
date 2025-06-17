@@ -26,6 +26,9 @@ describe('CurationAIInterface', () => {
             fixture: 'pipeline-results/ParticipantDemographicsExtraction',
         }).as('taskExtraction');
 
+        // this is necessary to hide an info popup that appears for the first time in projects for the new curation UI
+        cy.addToLocalStorage('abc123-hide-info-popup', 'true');
+
         // cy.intercept('GET', `**/api/studysets/*`, { fixture: 'studyset' }).as('studysetFixture');
     });
 
