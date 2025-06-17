@@ -21,14 +21,14 @@ def test_pipeline_numeric_queries(auth_client, study_pipeline_data):
     """Test numeric comparisons on pipeline results."""
     # Verify control group count query
     resp = auth_client.get(
-        "/api/pipeline-study-results?feature_filter=ParticipantInfo:predictions.groups[].count=18"
+        "/api/pipeline-study-results?feature_filter=ParticipantDemographicsExtractor:predictions.groups[].count=18"
     )
     assert resp.status_code == 200
     assert len(resp.json()["results"]) > 0
 
     # Verify patient group count query
     resp = auth_client.get(
-        "/api/pipeline-study-results?feature_filter=ParticipantInfo:predictions.groups[].count=15"
+        "/api/pipeline-study-results?feature_filter=ParticipantDemographicsExtractor:predictions.groups[].count=15"
     )
     assert resp.status_code == 200
     assert len(resp.json()["results"]) > 0
@@ -37,7 +37,7 @@ def test_pipeline_numeric_queries(auth_client, study_pipeline_data):
     resp = auth_client.get(
         (
             "/api/pipeline-study-results?feature_filter="
-            "ParticipantInfo:predictions.groups[].age_mean>25"
+            "ParticipantDemographicsExtractor:predictions.groups[].age_mean>25"
         )
     )
     assert resp.status_code == 200
@@ -50,7 +50,7 @@ def test_pipeline_array_queries(auth_client, study_pipeline_data):
     eeg_count = (
         PipelineStudyResult.query.join(PipelineConfig)
         .join(Pipeline)
-        .filter(Pipeline.name == "NeuroimagingMethod")
+        .filter(Pipeline.name == "NeuroimagingMethodExtractor")
         .filter(
             PipelineStudyResult.result_data["predictions"]["Modality"].contains(["EEG"])
         )
@@ -59,7 +59,7 @@ def test_pipeline_array_queries(auth_client, study_pipeline_data):
 
     # Test single modality
     resp = auth_client.get(
-        "/api/pipeline-study-results?feature_filter=NeuroimagingMethod:predictions.Modality[]=EEG"
+        "/api/pipeline-study-results?feature_filter=NeuroimagingMethodExtractor:predictions.Modality[]=EEG"
     )
     assert resp.status_code == 200
     results = resp.json()["results"]
@@ -70,7 +70,7 @@ def test_pipeline_array_queries(auth_client, study_pipeline_data):
     eeg_fmri_count = (
         PipelineStudyResult.query.join(PipelineConfig)
         .join(Pipeline)
-        .filter(Pipeline.name == "NeuroimagingMethod")
+        .filter(Pipeline.name == "NeuroimagingMethodExtractor")
         .filter(
             or_(
                 PipelineStudyResult.result_data["predictions"]["Modality"].contains(
@@ -88,7 +88,7 @@ def test_pipeline_array_queries(auth_client, study_pipeline_data):
     resp = auth_client.get(
         (
             "/api/pipeline-study-results?feature_filter="
-            "NeuroimagingMethod:predictions.Modality[]=EEG|fMRI"
+            "NeuroimagingMethodExtractor:predictions.Modality[]=EEG|fMRI"
         )
     )
     assert resp.status_code == 200
@@ -102,7 +102,7 @@ def test_pipeline_nested_queries(auth_client, study_pipeline_data):
     resp = auth_client.get(
         (
             "/api/pipeline-study-results?feature_filter="
-            "TaskInfo:predictions.fMRITasks[].TaskName=oddball"
+            "TaskInfoExtractor:predictions.fMRITasks[].TaskName=oddball"
         )
     )
     assert resp.status_code == 200
@@ -111,7 +111,7 @@ def test_pipeline_nested_queries(auth_client, study_pipeline_data):
     resp = auth_client.get(
         (
             "/api/pipeline-study-results?feature_filter="
-            "TaskInfo:predictions.fMRITasks[].TaskDescription~visual"
+            "TaskInfoExtractor:predictions.fMRITasks[].TaskDescription~visual"
         )
     )
     assert resp.status_code == 200
@@ -120,7 +120,7 @@ def test_pipeline_nested_queries(auth_client, study_pipeline_data):
     resp = auth_client.get(
         (
             "/api/pipeline-study-results?feature_filter="
-            "ParticipantInfo:predictions.groups[].diagnosis=ADHD"
+            "ParticipantDemographicsExtractor:predictions.groups[].diagnosis=ADHD"
         )
     )
     assert resp.status_code == 200
@@ -131,16 +131,16 @@ def test_pipeline_multiple_filters(auth_client, study_pipeline_data):
     # Test modality and diagnosis
     resp = auth_client.get(
         "/api/pipeline-study-results?"
-        "feature_filter=NeuroimagingMethod:predictions.Modality[]=EEG&"
-        "feature_filter=ParticipantInfo:predictions.groups[].diagnosis=ADHD"
+        "feature_filter=NeuroimagingMethodExtractor:predictions.Modality[]=EEG&"
+        "feature_filter=ParticipantDemographicsExtractor:predictions.groups[].diagnosis=ADHD"
     )
     assert resp.status_code == 200
 
     # Test task and group size
     resp = auth_client.get(
         "/api/pipeline-study-results?"
-        "feature_filter=TaskInfo:predictions.fMRITasks[].TaskName=oddball&"
-        "feature_filter=ParticipantInfo:predictions.groups[].count=18"
+        "feature_filter=TaskInfoExtractor:predictions.fMRITasks[].TaskName=oddball&"
+        "feature_filter=ParticipantDemographicsExtractor:predictions.groups[].count=18"
     )
     assert resp.status_code == 200
 
@@ -151,7 +151,7 @@ def test_search_list_of_lists(auth_client, study_pipeline_data):
     resp = auth_client.get(
         (
             "/api/pipeline-study-results?feature_filter="
-            "TaskInfo:predictions.fMRITasks[].Concepts[]~emotion"
+            "TaskInfoExtractor:predictions.fMRITasks[].Concepts[]~emotion"
         )
     )
     assert resp.status_code == 200
@@ -171,16 +171,16 @@ def test_search_list_of_lists(auth_client, study_pipeline_data):
             "non-existent pipeline",
         ),
         # Invalid paths
-        ("ParticipantInfo:invalid..path=value", "Contains consecutive dots"),
-        ("NeuroimagingMethod:groups..count=15", "Contains consecutive dots"),
+        ("ParticipantDemographicsExtractor:invalid..path=value", "Contains consecutive dots"),
+        ("NeuroimagingMethodExtractor:groups..count=15", "Contains consecutive dots"),
         # Invalid array syntax
-        ("TaskInfo:predictions.fMRITasks[[].TaskName=value", "Invalid path segment"),
+        ("TaskInfoExtractor:predictions.fMRITasks[[].TaskName=value", "Invalid path segment"),
         # Invalid values
         (
-            "ParticipantInfo:predictions.groups[].count>notanumber",
+            "ParticipantDemographicsExtractor:predictions.groups[].count>notanumber",
             "Invalid numeric value 'notanumber'",
         ),
-        ("NeuroimagingMethod:predictions.Modality[]=", "Invalid filter format"),
+        ("NeuroimagingMethodExtractor:predictions.Modality[]=", "Invalid filter format"),
     ],
 )
 def test_invalid_pipeline_queries(

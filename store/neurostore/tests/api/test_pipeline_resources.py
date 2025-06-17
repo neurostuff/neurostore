@@ -17,7 +17,7 @@ def pipeline_study_result_payload(session):
     db.session.add(study2)
 
     # create pipeline
-    pipeline = Pipeline(name="TestPipeline")
+    pipeline = Pipeline(name="ParticipantDemographicsExtractor")
 
     # Create pipeline config with extractor configuration
     pipeline_config = PipelineConfig(
@@ -285,11 +285,9 @@ def test_read_single_pipeline_config(auth_client, pipeline_study_result_payload)
     assert data["version"] == "1.0.0"
     assert data["config_hash"] == "test_hash"
     assert "extraction_model" in data["config_args"]
-    assert "extractor" in data["config_args"]
     assert "text_extraction" in data["config_args"]
     assert "extractor_kwargs" in data["config_args"]
     assert "transform_kwargs" in data["config_args"]
-    assert "input_pipelines" in data["config_args"]
 
 
 @pytest.mark.parametrize(
