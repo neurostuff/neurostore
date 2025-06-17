@@ -70,7 +70,7 @@ options = {"swagger_ui": True}
 
 openapi_file = Path(os.path.dirname(__file__) + "/openapi/neurostore-openapi.yml")
 
-# Enable CORS
+# Enable CORS for both ASGI and WSGI
 connexion_app.add_middleware(
     CORSMiddleware,
     position=MiddlewarePosition.BEFORE_ROUTING,
@@ -112,6 +112,23 @@ auth0 = oauth.register(
         "scope": "openid profile email",
     },
 )
+
+
+# Add Flask error handlers
+@app.errorhandler(400)
+@app.errorhandler(401)
+@app.errorhandler(403)
+@app.errorhandler(404)
+@app.errorhandler(422)
+@app.errorhandler(500)
+def handle_error(error):
+    headers = {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "*",
+        "Access-Control-Allow-Headers": "*",
+    }
+    return error.description, error.code, headers
+
 
 json_provider = OrjsonProvider(app)
 app.json = json_provider
