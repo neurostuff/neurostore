@@ -1,5 +1,7 @@
 """Test JSON query functionality."""
 
+from urllib.parse import urlencode
+
 import pytest
 from sqlalchemy import or_
 
@@ -192,7 +194,9 @@ def test_invalid_pipeline_queries(
 ):
     """Test handling of invalid queries returns appropriate errors."""
     # Make request
-    resp = auth_client.get(f"/api/pipeline-study-results?feature_filter={query}")
+    url_safe_query = urlencode({"feature_filter": query})
+
+    resp = auth_client.get(f"/api/pipeline-study-results?{url_safe_query}")
 
     # Verify error response
     assert resp.status_code == 400
