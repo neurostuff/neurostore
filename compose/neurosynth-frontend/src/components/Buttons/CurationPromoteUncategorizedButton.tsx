@@ -3,8 +3,9 @@ import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import { usePromoteAllUncategorized } from 'pages/Project/store/ProjectStore';
 import { useState } from 'react';
 
-const CurationPromoteUncategorizedButton: React.FC<ButtonProps & { dialogTitle: string }> = ({
+const CurationPromoteUncategorizedButton: React.FC<ButtonProps & { dialogTitle: string; dialogMessage: string }> = ({
     dialogTitle,
+    dialogMessage,
     ...props
 }) => {
     const [skipCurationDialogIsOpen, setSkipCurationDialogIsOpen] = useState(false);
@@ -26,7 +27,7 @@ const CurationPromoteUncategorizedButton: React.FC<ButtonProps & { dialogTitle: 
                 dialogTitle={dialogTitle}
                 rejectText="Cancel"
                 confirmText="Continue"
-                dialogMessage="All studies that have not been explicitly excluded in this stage will be included"
+                dialogMessage={dialogMessage}
             />
             <Button {...props} onClick={() => setSkipCurationDialogIsOpen(true)}>
                 {props.children}
