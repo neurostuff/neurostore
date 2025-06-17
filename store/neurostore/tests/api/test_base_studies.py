@@ -27,12 +27,8 @@ def test_features_query(auth_client, ingest_demographic_features):
     )
     assert result.status_code == 200
     assert "features" in result.json()["results"][0]
-    features = result.json()["results"][0]["features"][
-        "ParticipantDemographicsExtractor"
-    ]
-    assert any(
-        key.startswith("predictions") and key.endswith("].age_mean") for key in features
-    )
+    features = result.json()["results"][0]["features"]["ParticipantDemographicsExtractor"]
+    assert any(key.startswith("predictions") and key.endswith("].age_mean") for key in features)
 
 
 def test_features_query_with_or(auth_client, ingest_demographic_features, session):
@@ -74,10 +70,7 @@ def test_features_query_with_or(auth_client, ingest_demographic_features, sessio
         .join(
             latest_results,
             (PipelineStudyResultAlias.base_study_id == latest_results.c.base_study_id)
-            & (
-                PipelineStudyResultAlias.date_executed
-                >= latest_results.c.max_date_executed
-            ),
+            & (PipelineStudyResultAlias.date_executed >= latest_results.c.max_date_executed),
         )
         .filter(PipelineAlias.name == "ParticipantDemographicsExtractor")
         .filter(
@@ -217,9 +210,7 @@ def test_info_base_study(auth_client, ingest_neurosynth, session):
     assert single_reg_resp.status_code == 200
 
     info_fields = [
-        f
-        for f, v in StudySchema._declared_fields.items()
-        if v.metadata.get("info_field")
+        f for f, v in StudySchema._declared_fields.items() if v.metadata.get("info_field")
     ]
 
     study = single_info_resp.json()["versions"][0]
@@ -395,9 +386,7 @@ def test_has_coordinates_images(auth_client, session):
     assert base_study_2.has_images is True
 
     # delete the full study
-    delete_study = auth_client.delete(
-        f"/api/studies/{create_full_study_again.json()['id']}"
-    )
+    delete_study = auth_client.delete(f"/api/studies/{create_full_study_again.json()['id']}")
 
     assert delete_study.status_code == 200
     session.refresh(base_study_2)
@@ -429,8 +418,7 @@ def test_config_and_feature_filters(auth_client, ingest_demographic_features, se
 
     # Test error handling for invalid filter format
     response = auth_client.get(
-        "/api/base-studies/?"
-        "pipeline_config=ParticipantDemographicsExtractor:invalid:filter:format"
+        "/api/base-studies/?pipeline_config=ParticipantDemographicsExtractor:invalid:filter:format"
     )
 
     assert response.status_code == 400
@@ -505,15 +493,11 @@ def test_feature_flatten(auth_client, ingest_demographic_features):
 
     # Verify features are flattened in dot notation
     # Check nested predictions.groups objects are flattened
-    assert any(
-        key.startswith("predictions.groups") for key in flattened_features.keys()
-    )
+    assert any(key.startswith("predictions.groups") for key in flattened_features.keys())
 
     # Verify values are preserved after flattening
     # Example: predictions.groups[0].age_mean should equal the nested value
-    if "predictions" in unflattened_features and unflattened_features[
-        "predictions"
-    ].get("groups"):
+    if "predictions" in unflattened_features and unflattened_features["predictions"].get("groups"):
         nested_age = unflattened_features["predictions"]["groups"][0].get("age_mean")
         if nested_age is not None:
             flattened_age = flattened_features.get("predictions.groups[0].age_mean")

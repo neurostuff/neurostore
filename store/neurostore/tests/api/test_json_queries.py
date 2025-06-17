@@ -35,10 +35,8 @@ def test_pipeline_numeric_queries(auth_client, study_pipeline_data):
 
     # Test age range query
     resp = auth_client.get(
-        (
-            "/api/pipeline-study-results?feature_filter="
-            "ParticipantDemographicsExtractor:predictions.groups[].age_mean>25"
-        )
+        "/api/pipeline-study-results?feature_filter="
+        "ParticipantDemographicsExtractor:predictions.groups[].age_mean>25"
     )
     assert resp.status_code == 200
     assert len(resp.json()["results"]) > 0
@@ -51,9 +49,7 @@ def test_pipeline_array_queries(auth_client, study_pipeline_data):
         PipelineStudyResult.query.join(PipelineConfig)
         .join(Pipeline)
         .filter(Pipeline.name == "NeuroimagingMethodExtractor")
-        .filter(
-            PipelineStudyResult.result_data["predictions"]["Modality"].contains(["EEG"])
-        )
+        .filter(PipelineStudyResult.result_data["predictions"]["Modality"].contains(["EEG"]))
         .count()
     )
 
@@ -73,12 +69,8 @@ def test_pipeline_array_queries(auth_client, study_pipeline_data):
         .filter(Pipeline.name == "NeuroimagingMethodExtractor")
         .filter(
             or_(
-                PipelineStudyResult.result_data["predictions"]["Modality"].contains(
-                    ["EEG"]
-                ),
-                PipelineStudyResult.result_data["predictions"]["Modality"].contains(
-                    ["fMRI"]
-                ),
+                PipelineStudyResult.result_data["predictions"]["Modality"].contains(["EEG"]),
+                PipelineStudyResult.result_data["predictions"]["Modality"].contains(["fMRI"]),
             )
         )
         .count()
@@ -86,10 +78,8 @@ def test_pipeline_array_queries(auth_client, study_pipeline_data):
 
     # Test multiple modalities with pipe (should be same as comma)
     resp = auth_client.get(
-        (
-            "/api/pipeline-study-results?feature_filter="
-            "NeuroimagingMethodExtractor:predictions.Modality[]=EEG|fMRI"
-        )
+        "/api/pipeline-study-results?feature_filter="
+        "NeuroimagingMethodExtractor:predictions.Modality[]=EEG|fMRI"
     )
     assert resp.status_code == 200
     results = resp.json()["results"]
@@ -100,28 +90,22 @@ def test_pipeline_nested_queries(auth_client, study_pipeline_data):
     """Test queries on nested objects and arrays."""
     # Test task name
     resp = auth_client.get(
-        (
-            "/api/pipeline-study-results?feature_filter="
-            "TaskInfoExtractor:predictions.fMRITasks[].TaskName=oddball"
-        )
+        "/api/pipeline-study-results?feature_filter="
+        "TaskInfoExtractor:predictions.fMRITasks[].TaskName=oddball"
     )
     assert resp.status_code == 200
 
     # Test task description text search
     resp = auth_client.get(
-        (
-            "/api/pipeline-study-results?feature_filter="
-            "TaskInfoExtractor:predictions.fMRITasks[].TaskDescription~visual"
-        )
+        "/api/pipeline-study-results?feature_filter="
+        "TaskInfoExtractor:predictions.fMRITasks[].TaskDescription~visual"
     )
     assert resp.status_code == 200
 
     # Test group diagnosis
     resp = auth_client.get(
-        (
-            "/api/pipeline-study-results?feature_filter="
-            "ParticipantDemographicsExtractor:predictions.groups[].diagnosis=ADHD"
-        )
+        "/api/pipeline-study-results?feature_filter="
+        "ParticipantDemographicsExtractor:predictions.groups[].diagnosis=ADHD"
     )
     assert resp.status_code == 200
 
@@ -149,10 +133,8 @@ def test_search_list_of_lists(auth_client, study_pipeline_data):
     """Test search queries on lists of lists."""
     # Test searching for a specific task name in a list of lists
     resp = auth_client.get(
-        (
-            "/api/pipeline-study-results?feature_filter="
-            "TaskInfoExtractor:predictions.fMRITasks[].Concepts[]~emotion"
-        )
+        "/api/pipeline-study-results?feature_filter="
+        "TaskInfoExtractor:predictions.fMRITasks[].Concepts[]~emotion"
     )
     assert resp.status_code == 200
     results = resp.json()["results"]
@@ -192,9 +174,7 @@ def test_search_list_of_lists(auth_client, study_pipeline_data):
         ),
     ],
 )
-def test_invalid_pipeline_queries(
-    auth_client, study_pipeline_data, query, expected_error
-):
+def test_invalid_pipeline_queries(auth_client, study_pipeline_data, query, expected_error):
     """Test handling of invalid queries returns appropriate errors."""
     # Make request
     resp = auth_client.get(f"/api/pipeline-study-results?feature_filter={query}")
