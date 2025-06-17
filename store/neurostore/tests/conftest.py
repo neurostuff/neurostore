@@ -783,6 +783,7 @@ invalid_queries = [
         "Unmatched parentheses",
     ),
     ("smoking AND NOT memory", "Consecutive operators are not allowed"),
+    ("fmri+%26", "Query cannot end with an operator"),
 ]
 
 valid_queries = [
