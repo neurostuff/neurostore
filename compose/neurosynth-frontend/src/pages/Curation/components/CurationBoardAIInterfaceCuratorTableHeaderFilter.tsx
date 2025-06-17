@@ -12,7 +12,7 @@ const CurationBoardAIInterfaceCuratorTableHeaderFilter: React.FC<{
     column: Column<ICurationTableStudy, ICurationTableColumnType>;
     filteredRows: Row<ICurationTableStudy>[];
     allRows: Row<ICurationTableStudy>[];
-}> = ({ column, filteredRows, allRows }) => {
+}> = ({ column, allRows }) => {
     const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
     const isOpen = Boolean(anchorEl);
     const filterVariant = column.columnDef.meta?.filterVariant;
@@ -53,6 +53,7 @@ const CurationBoardAIInterfaceCuratorTableHeaderFilter: React.FC<{
                 {filterVariant === 'text' ? (
                     <CurationBoardAIInterfaceCuratorTableHeaderFilterText
                         value={currentFilterValue as string}
+                        onClose={() => setAnchorEl(null)}
                         onChange={handleUpdateFilter}
                     />
                 ) : filterVariant === 'numeric' ? (
@@ -64,7 +65,7 @@ const CurationBoardAIInterfaceCuratorTableHeaderFilter: React.FC<{
                     />
                 ) : filterVariant === 'autocomplete' ? (
                     <CurationBoardAIInterfaceCuratorTableHeaderFilterNestedAutocomplete
-                        rows={filteredRows}
+                        rows={allRows}
                         value={currentFilterValue as string[]}
                         onChange={handleUpdateFilter}
                         accessorFn={column.accessorFn}

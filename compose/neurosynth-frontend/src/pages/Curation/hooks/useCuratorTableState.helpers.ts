@@ -97,7 +97,7 @@ const nestedAutocompleteFilter: (
         const columnValue = column.customAccessor(row.original) as ICurationTableColumnType;
         const flattenedValues = flattenColumnValues(columnValue, true);
 
-        return filter.every((filterValue) => flattenedValues.has(filterValue.toLowerCase()));
+        return filter.some((filterValue) => flattenedValues.has(filterValue.toLowerCase()));
     };
 };
 
@@ -210,7 +210,7 @@ export const createColumn = (
     else if (foundColumn.filterVariant === 'numeric') filterFn = 'inNumberRange';
     else if (foundColumn.filterVariant === 'autocomplete' && !!foundColumn.AIExtractor)
         filterFn = nestedAutocompleteFilter(foundColumn);
-    else if (foundColumn.filterVariant === 'autocomplete') filterFn = 'arrIncludesAll';
+    else if (foundColumn.filterVariant === 'autocomplete') filterFn = 'arrIncludesSome';
     else filterFn = undefined;
 
     const newColumn: AccessorFnColumnDef<ICurationTableStudy, ICurationTableColumnType> = columnHelper.accessor(
