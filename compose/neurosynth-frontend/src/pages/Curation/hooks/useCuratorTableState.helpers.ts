@@ -57,8 +57,9 @@ export const flattenColumnValues = (
                     val.value === 'null' ||
                     val.value === 'undefined' ||
                     val.value === ''
-                )
+                ) {
                     return;
+                }
                 if (Array.isArray(val.value)) {
                     val.value.forEach((v) => {
                         if (
@@ -67,8 +68,9 @@ export const flattenColumnValues = (
                             val.value === 'null' ||
                             val.value === 'undefined' ||
                             val.value === ''
-                        )
+                        ) {
                             return;
+                        }
                         values.add(transformLowerCase ? v.toLocaleLowerCase() : v);
                     });
                 } else {
@@ -137,6 +139,42 @@ const nestedNumericFilter: (
     };
 };
 
+// custom text filter for more complex nested data objects
+const nestedTextFilter: (column: ICurationBoardAIInterfaceCuratorColumnType) => FilterFnOption<ICurationTableStudy> = (
+    column: ICurationBoardAIInterfaceCuratorColumnType
+) => {
+    return (row: Row<ICurationTableStudy>, colId: string, filter: string | undefined) => {
+        if (!filter) return true;
+        if (!column.AIExtractor || !row.original[column.AIExtractor] || !column.customAccessor) return false;
+
+        /**
+         * Technically this is overkill because this function should only be used for nested EAIExtractor output (IGenericCustomAccessorReturn)
+         * However, just to be safe, we will handle all cases (ICurationTableColumnType)
+         */
+        const columnValue = column.customAccessor(row.original) as ICurationTableColumnType;
+        const flattenedValues = flattenColumnValues(columnValue, true);
+
+        return flattenedValues.values().some((v) => v.includes(filter.toLocaleLowerCase()));
+
+        // return flattenedValues.values().some((v) => {
+        //     const toNumeric = parseInt(v);
+        //     if (isNaN(toNumeric)) return false;
+        //     const lowerBound = filter[0];
+        //     const upperBound = filter[1];
+
+        //     if (!lowerBound && upperBound) {
+        //         return toNumeric <= upperBound;
+        //     } else if (lowerBound && !upperBound) {
+        //         return toNumeric >= lowerBound;
+        //     } else if (lowerBound && upperBound) {
+        //         return toNumeric >= lowerBound && toNumeric <= upperBound;
+        //     } else if (!lowerBound && !upperBound) {
+        //         return true;
+        //     }
+        // });
+    };
+};
+
 export const createColumn = (
     columnId: string
 ):
@@ -163,8 +201,11 @@ export const createColumn = (
     if (!foundColumn) throw new Error(`Unrecognized column ${columnId}`);
 
     let filterFn: FilterFnOption<ICurationTableStudy> | undefined;
-    if (foundColumn.filterVariant === 'text') filterFn = 'includesString';
-    else if (foundColumn.filterVariant === 'numeric' && !!foundColumn.AIExtractor)
+    if (foundColumn.filterVariant === 'text' && !!foundColumn.AIExtractor) {
+        filterFn = nestedTextFilter(foundColumn);
+    } else if (foundColumn.filterVariant === 'text') {
+        filterFn = 'includesString';
+    } else if (foundColumn.filterVariant === 'numeric' && !!foundColumn.AIExtractor)
         filterFn = nestedNumericFilter(foundColumn);
     else if (foundColumn.filterVariant === 'numeric') filterFn = 'inNumberRange';
     else if (foundColumn.filterVariant === 'autocomplete' && !!foundColumn.AIExtractor)

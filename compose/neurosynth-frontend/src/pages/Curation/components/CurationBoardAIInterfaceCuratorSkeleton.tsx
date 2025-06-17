@@ -58,7 +58,7 @@ const CurationBoardAIInterfaceCuratorSkeleton: React.FC = () => {
                             <TableRow key={i}>
                                 <TableCell
                                     sx={{
-                                        padding: '6px',
+                                        padding: '7px',
                                         height: 'inherit',
                                         lineHeight: 'normal',
                                         width: `40px`,
@@ -79,7 +79,7 @@ const CurationBoardAIInterfaceCuratorSkeleton: React.FC = () => {
                                 </TableCell>
                                 <TableCell
                                     sx={{
-                                        padding: '6px',
+                                        padding: '7px',
                                         height: 'inherit',
                                         lineHeight: 'normal',
                                         width: '150px',

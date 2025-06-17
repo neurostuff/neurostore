@@ -42,7 +42,7 @@ const CurationBoardAIInterfaceCuratorTableRow: React.FC<{
                         backgroundColor: cell.column.id === 'select' ? 'white' : undefined,
                         left: 0,
                         zIndex: cell.column.id === 'select' ? 9 : undefined,
-                        padding: '6px',
+                        padding: '7px',
                         lineHeight: 'normal',
                         display: 'flex',
                         alignItems: 'center',
