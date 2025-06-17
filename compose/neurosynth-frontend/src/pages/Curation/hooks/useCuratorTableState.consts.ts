@@ -290,6 +290,7 @@ export const TASK_EXTRACTOR_CURATOR_COLUMNS: ICurationBoardAIInterfaceCuratorCol
         label: 'fMRI Task Description',
         description: 'Description of the key features of the task, such as its purpose or what it measures.',
         canSort: false,
+        filterVariant: 'text',
         customAccessor: (stub) => createCustomTaskExtractorAccessor('TaskDescription', 'FMRI', stub),
         AIExtractor: EAIExtractors.TASKEXTRACTOR,
     },
@@ -299,6 +300,7 @@ export const TASK_EXTRACTOR_CURATOR_COLUMNS: ICurationBoardAIInterfaceCuratorCol
         description:
             'A detailed description of the task design including information on the number of conditions, the number of trials per condition, the length of trials, and the length of inter-trial intervals.',
         canSort: false,
+        filterVariant: 'text',
         customAccessor: (stub) => createCustomTaskExtractorAccessor('DesignDetails', 'FMRI', stub),
         AIExtractor: EAIExtractors.TASKEXTRACTOR,
     },
@@ -334,6 +336,7 @@ export const TASK_EXTRACTOR_CURATOR_COLUMNS: ICurationBoardAIInterfaceCuratorCol
         label: 'fMRI Task Duration',
         description: "Total duration of the task, e.g., '10 minutes' or '600 seconds'.",
         canSort: false,
+        filterVariant: 'text',
         customAccessor: (stub) => createCustomTaskExtractorAccessor('TaskDuration', 'FMRI', stub),
         AIExtractor: EAIExtractors.TASKEXTRACTOR,
     },

@@ -165,6 +165,11 @@ const CurationBoardAIInterfaceCurator: React.FC<{ group: IGroupListItem }> = ({ 
                                         ? 'Are you sure you want to promote all non duplicated studies in identification to screening?'
                                         : 'Are you sure you want to skip curation?'
                                 }
+                                dialogMessage={
+                                    isPrisma
+                                        ? 'All studies that have not been marked as duplicates in this stage will be promoted'
+                                        : 'All studies that have not been excluded in this stage will be included'
+                                }
                                 sx={{ marginRight: '0.5rem', fontSize: '12px' }}
                                 size="small"
                                 color="success"
