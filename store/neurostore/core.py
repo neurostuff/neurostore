@@ -127,7 +127,35 @@ def handle_error(error):
         "Access-Control-Allow-Methods": "*",
         "Access-Control-Allow-Headers": "*",
     }
-    return error.description, error.code, headers
+
+    # Handle case where error.description is a dict with message/errors structure
+    if isinstance(error.description, dict) and "message" in error.description:
+        if "detail" not in error.description:
+            error.description = {"detail": error.description}
+        return error.description, error.code, headers
+
+    # Handle errors with detail structure (like JSON query errors)
+    if hasattr(error, "detail"):
+        return error.detail, error.code, headers
+
+    # Handle errors with separate description and errors fields
+    if hasattr(error, "errors"):
+        detail = {
+            "detail": {
+                "message": error.description,
+                "errors": [{"error": str(error.errors)}],
+            }
+        }
+        return detail, error.code, headers
+
+    # Handle simple description errors (fallback)
+    response = {
+        "detail": {
+            "message": error.description,
+            "errors": [{"error": error.description}],
+        }
+    }
+    return response, error.code, headers
 
 
 json_provider = OrjsonProvider(app)
