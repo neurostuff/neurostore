@@ -118,7 +118,7 @@ def result2(pipeline_study_result_payload, session):
 @pytest.fixture
 def result3(pipeline_study_result_payload, session):
     # Create new pipeline config with different version
-    pipeline = session.query(Pipeline).filter_by(name="TestPipeline").first()
+    pipeline = session.query(Pipeline).filter_by(name="ParticipantDemographicsExtractor").first()
     pipeline_config = PipelineConfig(
         version="2.0.0",
         config_args={
@@ -251,7 +251,7 @@ def test_read_pipeline_configs(auth_client, result1, result2, result3):
         assert "config_hash" in config
 
     # Test filtering by pipeline name
-    response = auth_client.get("/api/pipeline-configs/?pipeline=TestPipeline")
+    response = auth_client.get("/api/pipeline-configs/?pipeline=ParticipantDemographicsExtractor")
     assert response.status_code == 200
     data = response.json()
 
@@ -268,7 +268,7 @@ def test_read_pipeline_configs(auth_client, result1, result2, result3):
 
     # Test filtering with multiple pipelines
     response = auth_client.get(
-        "/api/pipeline-configs/?pipeline=TestPipeline&pipeline=Pipeline1"
+        "/api/pipeline-configs/?pipeline=ParticipantDemographicsExtractor&pipeline=Pipeline1"
     )
     assert response.status_code == 200
 
@@ -295,46 +295,46 @@ def test_read_single_pipeline_config(auth_client, pipeline_study_result_payload)
     [
         # Regular field queries without version
         (
-            "TestPipeline:array_field[]=value1",
+            "ParticipantDemographicsExtractor:array_field[]=value1",
             2,
             "value1",
             lambda x: x["result_data"]["array_field"],
         ),
         (
-            "TestPipeline:string_field=test value",
+            "ParticipantDemographicsExtractor:string_field=test value",
             1,
             "test value",
             lambda x: x["result_data"]["string_field"],
         ),
         # Version specific queries
         (
-            "TestPipeline:1.0.0:array_field[]=value1",
+            "ParticipantDemographicsExtractor:1.0.0:array_field[]=value1",
             1,
             "value1",
             lambda x: x["result_data"]["array_field"],
         ),
         (
-            "TestPipeline:2.0.0:string_field=v2 test",
+            "ParticipantDemographicsExtractor:2.0.0:string_field=v2 test",
             1,
             "v2 test",
             lambda x: x["result_data"]["string_field"],
         ),
         (
-            "TestPipeline:3.0.0:array_field[]=value3",  # Non-existent version
+            "ParticipantDemographicsExtractor:3.0.0:array_field[]=value3",  # Non-existent version
             0,
             None,
             lambda x: x["result_data"]["array_field"],
         ),
         # Test array queries with version
         (
-            "TestPipeline:1.0.0:nested.array[]=nested1",
+            "ParticipantDemographicsExtractor:1.0.0:nested.array[]=nested1",
             1,
             "nested1",
             lambda x: x["result_data"]["nested"]["array"],
         ),
         # Test regex queries with version
         (
-            "TestPipeline:1.0.0:nested.string~other",
+            "ParticipantDemographicsExtractor:1.0.0:nested.string~other",
             1,
             "other",
             lambda x: x["result_data"]["nested"]["string"],
@@ -372,27 +372,27 @@ def test_filter_pipeline_study_results(
     [
         # Test extractor config queries
         (
-            "TestPipeline:extraction_model=gpt-4",
+            "ParticipantDemographicsExtractor:extraction_model=gpt-4",
             2,
             "gpt-4",
             lambda x: x.config_args["extraction_model"],
         ),
         (
-            "TestPipeline:extractor=ParticipantDemographicsExtractor",
+            "ParticipantDemographicsExtractor:extractor=ParticipantDemographicsExtractor",
             3,  # All configs use this extractor
             "ParticipantDemographicsExtractor",
             lambda x: x.config_args["extractor"],
         ),
         # Test text extraction config
         (
-            "TestPipeline:text_extraction.source=abstract",
+            "ParticipantDemographicsExtractor:text_extraction.source=abstract",
             2,
             "abstract",
             lambda x: x.config_args["text_extraction"]["source"],
         ),
         # Test boolean flags
         (
-            "TestPipeline:1.0.0:extractor_kwargs.disable_abbreviation_expansion=true",
+            "ParticipantDemographicsExtractor:1.0.0:extractor_kwargs.disable_abbreviation_expansion=true",
             2,
             True,
             lambda x: x.config_args["extractor_kwargs"][
@@ -401,14 +401,14 @@ def test_filter_pipeline_study_results(
         ),
         # Test nested paths
         (
-            "TestPipeline:2.0.0:transform_kwargs.normalize_ages=true",
+            "ParticipantDemographicsExtractor:2.0.0:transform_kwargs.normalize_ages=true",
             1,
             True,
             lambda x: x.config_args["transform_kwargs"]["normalize_ages"],
         ),
         # Test version-specific filtering
         (
-            "TestPipeline:2.0.0:text_extraction.source=full_text",
+            "ParticipantDemographicsExtractor:2.0.0:text_extraction.source=full_text",
             1,
             "full_text",
             lambda x: x.config_args["text_extraction"]["source"],
@@ -455,8 +455,8 @@ def test_combined_filters(auth_client, result1, result2, result3):
     """Test combining feature_filter and pipeline_config filters."""
     response = auth_client.get(
         "/api/pipeline-study-results/?"
-        "feature_filter=TestPipeline:string_field=test value&"
-        "pipeline_config=TestPipeline:extraction_model=gpt-4"
+        "feature_filter=ParticipantDemographicsExtractor:string_field=test value&"
+        "pipeline_config=ParticipantDemographicsExtractor:extraction_model=gpt-4"
     )
 
     assert response.status_code == 200
@@ -475,7 +475,7 @@ def test_feature_display_filter(auth_client, result1, result2, result3):
     """Test filtering pipeline study results by feature_display parameter."""
     # Test displaying results from a specific pipeline
     response = auth_client.get(
-        "/api/pipeline-study-results/?feature_display=TestPipeline"
+        "/api/pipeline-study-results/?feature_display=ParticipantDemographicsExtractor"
     )
     assert response.status_code == 200
     data = response.json()
@@ -483,7 +483,7 @@ def test_feature_display_filter(auth_client, result1, result2, result3):
 
     # Test displaying results from specific pipeline version
     response = auth_client.get(
-        "/api/pipeline-study-results/?feature_display=TestPipeline:1.0.0"
+        "/api/pipeline-study-results/?feature_display=ParticipantDemographicsExtractor:1.0.0"
     )
     assert response.status_code == 200
     data = response.json()
@@ -498,7 +498,7 @@ def test_feature_display_filter(auth_client, result1, result2, result3):
 
     # Test non-existent version
     response = auth_client.get(
-        "/api/pipeline-study-results/?feature_display=TestPipeline:3.0.0"
+        "/api/pipeline-study-results/?feature_display=ParticipantDemographicsExtractor:3.0.0"
     )
     assert response.status_code == 200
     data = response.json()
@@ -507,8 +507,8 @@ def test_feature_display_filter(auth_client, result1, result2, result3):
     # Test multiple pipeline filters
     response = auth_client.get(
         (
-            "/api/pipeline-study-results/?feature_display=TestPipeline:1.0.0"
-            "&feature_display=TestPipeline:2.0.0"
+            "/api/pipeline-study-results/?feature_display=ParticipantDemographicsExtractor:1.0.0"
+            "&feature_display=ParticipantDemographicsExtractor:2.0.0"
         )
     )
     assert response.status_code == 200
