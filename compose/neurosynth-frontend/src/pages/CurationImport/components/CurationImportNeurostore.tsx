@@ -60,10 +60,10 @@ const CurationImportNeurostore: React.FC<
                             };
                         }>
                     ) => {
-                        if (err.response?.status && err.response.status === 400) {
+                        if (err.response?.status && err.response.status === 400 && err.response.data.detail.message) {
                             setError(err.response?.data.detail.message);
                         } else {
-                            setError('There was an error searching for studies');
+                            setError('There was an error searching for studies. (Is the query well formed?)');
                         }
                     }
                 )

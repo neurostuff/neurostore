@@ -195,7 +195,7 @@ const SearchBar: React.FC<ISearchBar> = (props) => {
                                 borderTopRightRadius: 0,
                                 width: `calc(100% - 150px + 18px)`,
                             }}
-                            severity="warning"
+                            severity="error"
                         >
                             {props.error}
                         </Alert>
