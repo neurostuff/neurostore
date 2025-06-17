@@ -70,7 +70,7 @@ options = {"swagger_ui": True}
 
 openapi_file = Path(os.path.dirname(__file__) + "/openapi/neurostore-openapi.yml")
 
-# Enable CORS
+# Enable CORS for both ASGI and WSGI
 connexion_app.add_middleware(
     CORSMiddleware,
     position=MiddlewarePosition.BEFORE_ROUTING,
@@ -112,6 +112,51 @@ auth0 = oauth.register(
         "scope": "openid profile email",
     },
 )
+
+
+# Add Flask error handlers
+@app.errorhandler(400)
+@app.errorhandler(401)
+@app.errorhandler(403)
+@app.errorhandler(404)
+@app.errorhandler(422)
+@app.errorhandler(500)
+def handle_error(error):
+    headers = {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "*",
+        "Access-Control-Allow-Headers": "*",
+    }
+
+    # Handle case where error.description is a dict with message/errors structure
+    if isinstance(error.description, dict) and "message" in error.description:
+        if "detail" not in error.description:
+            error.description = {"detail": error.description}
+        return error.description, error.code, headers
+
+    # Handle errors with detail structure (like JSON query errors)
+    if hasattr(error, "detail"):
+        return error.detail, error.code, headers
+
+    # Handle errors with separate description and errors fields
+    if hasattr(error, "errors"):
+        detail = {
+            "detail": {
+                "message": error.description,
+                "errors": [{"error": str(error.errors)}],
+            }
+        }
+        return detail, error.code, headers
+
+    # Handle simple description errors (fallback)
+    response = {
+        "detail": {
+            "message": error.description,
+            "errors": [{"error": error.description}],
+        }
+    }
+    return response, error.code, headers
+
 
 json_provider = OrjsonProvider(app)
 app.json = json_provider

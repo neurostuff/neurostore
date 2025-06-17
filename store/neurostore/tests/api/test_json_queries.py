@@ -55,7 +55,9 @@ def test_pipeline_array_queries(auth_client, study_pipeline_data):
         PipelineStudyResult.query.join(PipelineConfig)
         .join(Pipeline)
         .filter(Pipeline.name == "NeuroimagingMethodExtractor")
-        .filter(PipelineStudyResult.result_data["predictions"]["Modality"].contains(["EEG"]))
+        .filter(
+            PipelineStudyResult.result_data["predictions"]["Modality"].contains(["EEG"])
+        )
         .count()
     )
 
@@ -76,8 +78,12 @@ def test_pipeline_array_queries(auth_client, study_pipeline_data):
         .filter(Pipeline.name == "NeuroimagingMethodExtractor")
         .filter(
             or_(
-                PipelineStudyResult.result_data["predictions"]["Modality"].contains(["EEG"]),
-                PipelineStudyResult.result_data["predictions"]["Modality"].contains(["fMRI"]),
+                PipelineStudyResult.result_data["predictions"]["Modality"].contains(
+                    ["EEG"]
+                ),
+                PipelineStudyResult.result_data["predictions"]["Modality"].contains(
+                    ["fMRI"]
+                ),
             )
         )
         .count()
@@ -181,7 +187,9 @@ def test_search_list_of_lists(auth_client, study_pipeline_data):
         ),
     ],
 )
-def test_invalid_pipeline_queries(auth_client, study_pipeline_data, query, expected_error):
+def test_invalid_pipeline_queries(
+    auth_client, study_pipeline_data, query, expected_error
+):
     """Test handling of invalid queries returns appropriate errors."""
     # Make request
     resp = auth_client.get(f"/api/pipeline-study-results?feature_filter={query}")

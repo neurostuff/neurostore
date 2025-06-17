@@ -118,7 +118,11 @@ def result2(pipeline_study_result_payload, session):
 @pytest.fixture
 def result3(pipeline_study_result_payload, session):
     # Create new pipeline config with different version
-    pipeline = session.query(Pipeline).filter_by(name="ParticipantDemographicsExtractor").first()
+    pipeline = (
+        session.query(Pipeline)
+        .filter_by(name="ParticipantDemographicsExtractor")
+        .first()
+    )
     pipeline_config = PipelineConfig(
         version="2.0.0",
         config_args={
@@ -251,12 +255,17 @@ def test_read_pipeline_configs(auth_client, result1, result2, result3):
         assert "config_hash" in config
 
     # Test filtering by pipeline name
-    response = auth_client.get("/api/pipeline-configs/?pipeline=ParticipantDemographicsExtractor")
+    response = auth_client.get(
+        "/api/pipeline-configs/?pipeline=ParticipantDemographicsExtractor"
+    )
     assert response.status_code == 200
     data = response.json()
 
     # Should only get configs from TestPipeline
-    assert all(config["pipeline_id"] == result1.config.pipeline.id for config in data["results"])
+    assert all(
+        config["pipeline_id"] == result1.config.pipeline.id
+        for config in data["results"]
+    )
 
     # Test filtering with non-existent pipeline
     response = auth_client.get("/api/pipeline-configs/?pipeline=NonExistentPipeline")
@@ -348,7 +357,9 @@ def test_filter_pipeline_study_results(
     expected_value,
     check_field,
 ):
-    response = auth_client.get(f"/api/pipeline-study-results/?feature_filter={feature_filter}")
+    response = auth_client.get(
+        f"/api/pipeline-study-results/?feature_filter={feature_filter}"
+    )
     assert response.status_code == 200
     data = response.json()
     assert len(data["results"]) == expected_count
@@ -391,7 +402,9 @@ def test_filter_pipeline_study_results(
             "extractor_kwargs.disable_abbreviation_expansion=true",
             2,
             True,
-            lambda x: x.config_args["extractor_kwargs"]["disable_abbreviation_expansion"],
+            lambda x: x.config_args["extractor_kwargs"][
+                "disable_abbreviation_expansion"
+            ],
         ),
         # Test nested paths
         (
@@ -420,7 +433,9 @@ def test_config_pipeline_study_results(
     check_field,
 ):
     """Test filtering pipeline study results by config parameters."""
-    response = auth_client.get(f"/api/pipeline-study-results/?pipeline_config={pipeline_config}")
+    response = auth_client.get(
+        f"/api/pipeline-study-results/?pipeline_config={pipeline_config}"
+    )
     assert response.status_code == 200
     data = response.json()
     assert len(data["results"]) == expected_count
@@ -435,7 +450,9 @@ def test_config_pipeline_study_results(
         actual_value = check_field(pipeline_config)
 
         # Compare with expected value, handling numeric comparisons specially
-        if isinstance(actual_value, (int, float)) and isinstance(expected_value, (int, float)):
+        if isinstance(actual_value, (int, float)) and isinstance(
+            expected_value, (int, float)
+        ):
             assert abs(actual_value - expected_value) < 1e-6
         elif expected_value is not None:  # Skip comparison if expected_value is None
             assert actual_value == expected_value
@@ -480,7 +497,9 @@ def test_feature_display_filter(auth_client, result1, result2, result3):
     assert len(data["results"]) == 2  # Only results from version 1.0.0
 
     # Test non-existent pipeline
-    response = auth_client.get("/api/pipeline-study-results/?feature_display=NonExistentPipeline")
+    response = auth_client.get(
+        "/api/pipeline-study-results/?feature_display=NonExistentPipeline"
+    )
     assert response.status_code == 400
     assert "Pipeline(s) do not exist" in response.json()["detail"]["message"]
 
@@ -502,7 +521,9 @@ def test_feature_display_filter(auth_client, result1, result2, result3):
     assert len(data["results"]) == 3  # All results from both versions
 
 
-def test_list_of_studies(auth_client, result1, result2, pipeline_study_result_payload, session):
+def test_list_of_studies(
+    auth_client, result1, result2, pipeline_study_result_payload, session
+):
     # Get study IDs from payload
     study1_id = pipeline_study_result_payload[0]["base_study_id"]
     study2_id = pipeline_study_result_payload[1]["base_study_id"]
