@@ -612,7 +612,6 @@ def create_pipeline_results(session, ingest_neurosynth, tmp_path):
     # Pipeline configurations
     pipeline_configs = {
         "ParticipantInfo": {
-            "name": "ParticipantInfo",
             "version": "1.0.0",
             "description": "Participant demographics extractor",
             "type": "apipromptextractor",
@@ -632,7 +631,6 @@ def create_pipeline_results(session, ingest_neurosynth, tmp_path):
             "input_sources": ["pubget", "ace"],
         },
         "NeuroimagingMethod": {
-            "name": "NeuroimagingMethod",
             "version": "1.0.0",
             "description": "Neuroimaging method extractor",
             "type": "apipromptextractor",
@@ -652,7 +650,6 @@ def create_pipeline_results(session, ingest_neurosynth, tmp_path):
             "input_sources": ["pubget", "ace"],
         },
         "TaskInfo": {
-            "name": "TaskInfo",
             "version": "1.0.0",
             "description": "Task information extractor",
             "type": "apipromptextractor",

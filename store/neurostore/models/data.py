@@ -712,7 +712,7 @@ class Pipeline(BaseMixin, db.Model):
     study_dependent = db.Column(db.Boolean, default=False)
     ace_compatible = db.Column(db.Boolean, default=False)
     pubget_compatible = db.Column(db.Boolean, default=False)
-    derived_from = db.Column(db.Text)
+    derived_from = db.Column(JSONB)
 
 
 class PipelineConfig(BaseMixin, db.Model):

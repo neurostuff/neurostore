@@ -102,6 +102,10 @@ def ingest_feature(feature_directory, overwrite=False):
             print(f"Skipping {paper_dir} as it contains invalid JSON in info.json")
             continue
 
+        # sometimes the model returns a boolean instead of a dict
+        if isinstance(results, bool):
+            results = {}
+
         # check for existing result
         existing_result = (
             db.session.query(PipelineStudyResult)

@@ -20,19 +20,16 @@ def test_features_query(auth_client, ingest_demographic_features):
     # flatten the features (flatten json objects)
     # test features organized like this: {top_key: ["list", "of", "values"]}
     result = auth_client.get(
-        (
-            "/api/base-studies/?feature_filter=ParticipantInfo:predictions.groups[].age_mean>10&"
-            "feature_filter=ParticipantInfo:predictions.groups[].age_mean<=100&"
-            "feature_display=ParticipantInfo&"
-            "feature_flatten=true"
-        )
+        "/api/base-studies/?feature_filter="
+        "ParticipantDemographicsExtractor:predictions.groups[].age_mean>10&"
+        "feature_filter=ParticipantDemographicsExtractor:predictions.groups[].age_mean<=100&"
+        "feature_display=ParticipantDemographicsExtractor&"
+        "feature_flatten=true"
     )
     assert result.status_code == 200
     assert "features" in result.json()["results"][0]
-    features = result.json()["results"][0]["features"]["ParticipantInfo"]
-    assert any(
-        key.startswith("predictions") and key.endswith("].age_mean") for key in features
-    )
+    features = result.json()["results"][0]["features"]["ParticipantDemographicsExtractor"]
+    assert any(key.startswith("predictions") and key.endswith("].age_mean") for key in features)
 
 
 def test_features_query_with_or(auth_client, ingest_demographic_features, session):
@@ -56,7 +53,9 @@ def test_features_query_with_or(auth_client, ingest_demographic_features, sessio
             PipelineAlias,
             PipelineConfigAlias.pipeline_id == PipelineAlias.id,
         )
-        .filter(PipelineAlias.name == "ParticipantInfo")  # Filter for specific pipeline
+        .filter(
+            PipelineAlias.name == "ParticipantDemographicsExtractor"
+        )  # Filter for specific pipeline
         .group_by(PipelineStudyResultAlias.base_study_id)
         .subquery()
     )
@@ -72,12 +71,9 @@ def test_features_query_with_or(auth_client, ingest_demographic_features, sessio
         .join(
             latest_results,
             (PipelineStudyResultAlias.base_study_id == latest_results.c.base_study_id)
-            & (
-                PipelineStudyResultAlias.date_executed
-                >= latest_results.c.max_date_executed
-            ),
+            & (PipelineStudyResultAlias.date_executed >= latest_results.c.max_date_executed),
         )
-        .filter(PipelineAlias.name == "ParticipantInfo")
+        .filter(PipelineAlias.name == "ParticipantDemographicsExtractor")
         .filter(
             text(
                 "jsonb_path_exists(result_data, '$.predictions.groups[*].diagnosis ?"
@@ -94,12 +90,10 @@ def test_features_query_with_or(auth_client, ingest_demographic_features, sessio
 
     # Now make the API request
     result = auth_client.get(
-        (
-            "/api/base-studies/?feature_filter="
-            "ParticipantInfo:predictions.groups[].diagnosis=ADHD|ASD&"
-            "feature_display=ParticipantInfo&"
-            "feature_flatten=true"
-        )
+        "/api/base-studies/?feature_filter="
+        "ParticipantDemographicsExtractor:predictions.groups[].diagnosis=ADHD|ASD&"
+        "feature_display=ParticipantDemographicsExtractor&"
+        "feature_flatten=true"
     )
 
     assert result.status_code == 200
@@ -107,7 +101,7 @@ def test_features_query_with_or(auth_client, ingest_demographic_features, sessio
 
     api_diagnoses = set()
     for res in result.json()["results"]:
-        features = res["features"]["ParticipantInfo"]
+        features = res["features"]["ParticipantDemographicsExtractor"]
         # Get all diagnosis values from flattened structure
         diagnoses = [v for k, v in features.items() if k.endswith(".diagnosis")]
         api_diagnoses.update(diagnoses)
@@ -217,9 +211,7 @@ def test_info_base_study(auth_client, ingest_neurosynth, session):
     assert single_reg_resp.status_code == 200
 
     info_fields = [
-        f
-        for f, v in StudySchema._declared_fields.items()
-        if v.metadata.get("info_field")
+        f for f, v in StudySchema._declared_fields.items() if v.metadata.get("info_field")
     ]
 
     study = single_info_resp.json()["versions"][0]
@@ -395,9 +387,7 @@ def test_has_coordinates_images(auth_client, session):
     assert base_study_2.has_images is True
 
     # delete the full study
-    delete_study = auth_client.delete(
-        f"/api/studies/{create_full_study_again.json()['id']}"
-    )
+    delete_study = auth_client.delete(f"/api/studies/{create_full_study_again.json()['id']}")
 
     assert delete_study.status_code == 200
     session.refresh(base_study_2)
@@ -410,8 +400,9 @@ def test_config_and_feature_filters(auth_client, ingest_demographic_features, se
     # Test combined feature and config filtering
     response = auth_client.get(
         "/api/base-studies/?"
-        "feature_filter=ParticipantInfo:1.0.0:predictions.groups[].age_mean>25&"
-        "pipeline_config=ParticipantInfo:1.0.0:extractor_kwargs.extraction_model=gpt-4-turbo"
+        "feature_filter=ParticipantDemographicsExtractor:1.0.0:predictions.groups[].age_mean>25&"
+        "pipeline_config=ParticipantDemographicsExtractor:"
+        "1.0.0:extractor_kwargs.extraction_model=gpt-4-turbo"
     )
 
     assert response.status_code == 200
@@ -420,8 +411,9 @@ def test_config_and_feature_filters(auth_client, ingest_demographic_features, se
     # Test with mismatched version
     response = auth_client.get(
         "/api/base-studies/?"
-        "feature_filter=ParticipantInfo:2.0.0:predictions.groups[].age_mean>30&"
-        "pipeline_config=ParticipantInfo:2.0.0:extractor_kwargs.extraction_model=gpt-4-turbo"
+        "feature_filter=ParticipantDemographicsExtractor:2.0.0:predictions.groups[].age_mean>30&"
+        "pipeline_config=ParticipantDemographicsExtractor:2.0.0:"
+        "extractor_kwargs.extraction_model=gpt-4-turbo"
     )
 
     assert response.status_code == 200
@@ -429,7 +421,7 @@ def test_config_and_feature_filters(auth_client, ingest_demographic_features, se
 
     # Test error handling for invalid filter format
     response = auth_client.get(
-        "/api/base-studies/?" "pipeline_config=ParticipantInfo:invalid:filter:format"
+        "/api/base-studies/?pipeline_config=ParticipantDemographicsExtractor:invalid:filter:format"
     )
 
     assert response.status_code == 400
@@ -440,20 +432,22 @@ def test_feature_display_and_pipeline_config(auth_client, ingest_demographic_fea
     # Test feature display with version specified
     response = auth_client.get(
         "/api/base-studies/?"
-        "feature_display=ParticipantInfo:1.0.0&"
-        "pipeline_config=ParticipantInfo:1.0.0:extractor_kwargs.extraction_model=gpt-4-turbo"
+        "feature_display=ParticipantDemographicsExtractor:1.0.0&"
+        "pipeline_config=ParticipantDemographicsExtractor:1.0.0:"
+        "extractor_kwargs.extraction_model=gpt-4-turbo"
     )
     assert response.status_code == 200
     results = response.json()["results"]
     assert len(results) > 0
     assert "features" in results[0]
-    assert "ParticipantInfo" in results[0]["features"]
+    assert "ParticipantDemographicsExtractor" in results[0]["features"]
 
     # Test default behavior when version not specified (should use latest version)
     default_response = auth_client.get(
         "/api/base-studies/?"
-        "feature_display=ParticipantInfo&"
-        "pipeline_config=ParticipantInfo:extractor_kwargs.extraction_model=gpt-4-turbo"
+        "feature_display=ParticipantDemographicsExtractor&"
+        "pipeline_config=ParticipantDemographicsExtractor:"
+        "extractor_kwargs.extraction_model=gpt-4-turbo"
     )
     assert default_response.status_code == 200
     assert len(default_response.json()["results"]) > 0
@@ -461,7 +455,7 @@ def test_feature_display_and_pipeline_config(auth_client, ingest_demographic_fea
     # Verify the output structure
     result = default_response.json()["results"][0]
     assert "features" in result
-    features = result["features"]["ParticipantInfo"]
+    features = result["features"]["ParticipantDemographicsExtractor"]
     assert isinstance(features, dict)
     if "predictions" in features:
         assert isinstance(features["predictions"], dict)
@@ -469,8 +463,8 @@ def test_feature_display_and_pipeline_config(auth_client, ingest_demographic_fea
     # Test mismatched versions between feature_display and pipeline_config
     mismatch_response = auth_client.get(
         "/api/base-studies/?"
-        "feature_display=ParticipantInfo:1.0.0&"
-        "pipeline_config=ParticipantInfo:2.0.0:model_version=2"
+        "feature_display=ParticipantDemographicsExtractor:1.0.0&"
+        "pipeline_config=ParticipantDemographicsExtractor:2.0.0:model_version=2"
     )
     assert mismatch_response.status_code == 200
     assert len(mismatch_response.json()["results"]) == 0
@@ -479,12 +473,14 @@ def test_feature_display_and_pipeline_config(auth_client, ingest_demographic_fea
 def test_feature_flatten(auth_client, ingest_demographic_features):
     """Test flattening nested feature objects into dot notation"""
     # Get response without flattening
-    unflattened = auth_client.get("/api/base-studies/?feature_display=ParticipantInfo")
+    unflattened = auth_client.get(
+        "/api/base-studies/?feature_display=ParticipantDemographicsExtractor"
+    )
     assert unflattened.status_code == 200
 
     # Get response with flattening
     flattened = auth_client.get(
-        "/api/base-studies/?feature_display=ParticipantInfo&feature_flatten=true"
+        "/api/base-studies/?feature_display=ParticipantDemographicsExtractor&feature_flatten=true"
     )
     assert flattened.status_code == 200
 
@@ -494,21 +490,19 @@ def test_feature_flatten(auth_client, ingest_demographic_features):
 
     # Get the feature dictionaries
     unflattened_features = unflattened.json()["results"][0]["features"][
-        "ParticipantInfo"
+        "ParticipantDemographicsExtractor"
     ]
-    flattened_features = flattened.json()["results"][0]["features"]["ParticipantInfo"]
+    flattened_features = flattened.json()["results"][0]["features"][
+        "ParticipantDemographicsExtractor"
+    ]
 
     # Verify features are flattened in dot notation
     # Check nested predictions.groups objects are flattened
-    assert any(
-        key.startswith("predictions.groups") for key in flattened_features.keys()
-    )
+    assert any(key.startswith("predictions.groups") for key in flattened_features.keys())
 
     # Verify values are preserved after flattening
     # Example: predictions.groups[0].age_mean should equal the nested value
-    if "predictions" in unflattened_features and unflattened_features[
-        "predictions"
-    ].get("groups"):
+    if "predictions" in unflattened_features and unflattened_features["predictions"].get("groups"):
         nested_age = unflattened_features["predictions"]["groups"][0].get("age_mean")
         if nested_age is not None:
             flattened_age = flattened_features.get("predictions.groups[0].age_mean")
