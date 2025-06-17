@@ -387,7 +387,8 @@ def test_filter_pipeline_study_results(
         ),
         # Test boolean flags
         (
-            "ParticipantDemographicsExtractor:1.0.0:extractor_kwargs.disable_abbreviation_expansion=true",
+            "ParticipantDemographicsExtractor:1.0.0:"
+            "extractor_kwargs.disable_abbreviation_expansion=true",
             2,
             True,
             lambda x: x.config_args["extractor_kwargs"]["disable_abbreviation_expansion"],

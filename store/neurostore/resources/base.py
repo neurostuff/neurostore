@@ -611,8 +611,6 @@ class ListView(BaseView):
             return schema_many.dump(records)
         except Exception as e:
             # Fall back to manual loop to isolate the problem
-            # logger.warning("Bulk serialization failed, falling back to per-record serialization. Error: %s", e)
-
             schema = self._schema(exclude=exclude, many=False, context=args)
             for idx, record in enumerate(records):
                 try:

@@ -21,14 +21,20 @@ def test_pipeline_numeric_queries(auth_client, study_pipeline_data):
     """Test numeric comparisons on pipeline results."""
     # Verify control group count query
     resp = auth_client.get(
-        "/api/pipeline-study-results?feature_filter=ParticipantDemographicsExtractor:predictions.groups[].count=18"
+        (
+            "/api/pipeline-study-results?feature_filter="
+            "ParticipantDemographicsExtractor:predictions.groups[].count=18"
+        )
     )
     assert resp.status_code == 200
     assert len(resp.json()["results"]) > 0
 
     # Verify patient group count query
     resp = auth_client.get(
-        "/api/pipeline-study-results?feature_filter=ParticipantDemographicsExtractor:predictions.groups[].count=15"
+        (
+            "/api/pipeline-study-results?feature_filter="
+            "ParticipantDemographicsExtractor:predictions.groups[].count=15"
+        )
     )
     assert resp.status_code == 200
     assert len(resp.json()["results"]) > 0
@@ -55,7 +61,8 @@ def test_pipeline_array_queries(auth_client, study_pipeline_data):
 
     # Test single modality
     resp = auth_client.get(
-        "/api/pipeline-study-results?feature_filter=NeuroimagingMethodExtractor:predictions.Modality[]=EEG"
+        "/api/pipeline-study-results?feature_filter="
+        "NeuroimagingMethodExtractor:predictions.Modality[]=EEG"
     )
     assert resp.status_code == 200
     results = resp.json()["results"]
