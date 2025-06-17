@@ -79,7 +79,9 @@ def ingest_feature(feature_directory, overwrite=False):
         base_study_id = paper_dir.name
 
         if BaseStudy.query.filter_by(id=base_study_id).first() is None:
-            print(f"Skipping {paper_dir} as it does not correspond to a valid base_study_id")
+            print(
+                f"Skipping {paper_dir} as it does not correspond to a valid base_study_id"
+            )
             continue
         try:
             with open(op.join(paper_dir, "results.json")) as f:

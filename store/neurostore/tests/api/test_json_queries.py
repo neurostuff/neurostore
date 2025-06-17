@@ -171,16 +171,25 @@ def test_search_list_of_lists(auth_client, study_pipeline_data):
             "non-existent pipeline",
         ),
         # Invalid paths
-        ("ParticipantDemographicsExtractor:invalid..path=value", "Contains consecutive dots"),
+        (
+            "ParticipantDemographicsExtractor:invalid..path=value",
+            "Contains consecutive dots",
+        ),
         ("NeuroimagingMethodExtractor:groups..count=15", "Contains consecutive dots"),
         # Invalid array syntax
-        ("TaskInfoExtractor:predictions.fMRITasks[[].TaskName=value", "Invalid path segment"),
+        (
+            "TaskInfoExtractor:predictions.fMRITasks[[].TaskName=value",
+            "Invalid path segment",
+        ),
         # Invalid values
         (
             "ParticipantDemographicsExtractor:predictions.groups[].count>notanumber",
             "Invalid numeric value 'notanumber'",
         ),
-        ("NeuroimagingMethodExtractor:predictions.Modality[]=", "Invalid filter format"),
+        (
+            "NeuroimagingMethodExtractor:predictions.Modality[]=",
+            "Invalid filter format",
+        ),
     ],
 )
 def test_invalid_pipeline_queries(

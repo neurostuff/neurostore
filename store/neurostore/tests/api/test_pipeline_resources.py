@@ -118,7 +118,11 @@ def result2(pipeline_study_result_payload, session):
 @pytest.fixture
 def result3(pipeline_study_result_payload, session):
     # Create new pipeline config with different version
-    pipeline = session.query(Pipeline).filter_by(name="ParticipantDemographicsExtractor").first()
+    pipeline = (
+        session.query(Pipeline)
+        .filter_by(name="ParticipantDemographicsExtractor")
+        .first()
+    )
     pipeline_config = PipelineConfig(
         version="2.0.0",
         config_args={
@@ -251,7 +255,9 @@ def test_read_pipeline_configs(auth_client, result1, result2, result3):
         assert "config_hash" in config
 
     # Test filtering by pipeline name
-    response = auth_client.get("/api/pipeline-configs/?pipeline=ParticipantDemographicsExtractor")
+    response = auth_client.get(
+        "/api/pipeline-configs/?pipeline=ParticipantDemographicsExtractor"
+    )
     assert response.status_code == 200
     data = response.json()
 

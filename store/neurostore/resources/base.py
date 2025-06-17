@@ -288,7 +288,7 @@ class BaseView(MethodView):
                 description=(
                     "You do not have permission to modify this record. "
                     "You must be the owner or the compose bot."
-                )
+                ),
             )
         elif only_ids:
             to_commit.append(record)
@@ -536,7 +536,7 @@ class ObjectView(BaseView):
                 description=(
                     "You do not have permission to delete this record. "
                     "Only the owner can delete records."
-                )
+                ),
             )
         else:
             db.session.delete(record)
@@ -618,7 +618,7 @@ class ListView(BaseView):
                 try:
                     schema.dump(record)
                 except Exception as rec_err:
-                    #logger.error("Serialization failed on record #%d: %s", idx, record)
+                    # logger.error("Serialization failed on record #%d: %s", idx, record)
                     raise ValueError(
                         f"Serialization failed on record #{idx}: {record}. Error: {rec_err}"
                     ) from rec_err

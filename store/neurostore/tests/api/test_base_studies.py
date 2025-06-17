@@ -29,7 +29,9 @@ def test_features_query(auth_client, ingest_demographic_features):
     )
     assert result.status_code == 200
     assert "features" in result.json()["results"][0]
-    features = result.json()["results"][0]["features"]["ParticipantDemographicsExtractor"]
+    features = result.json()["results"][0]["features"][
+        "ParticipantDemographicsExtractor"
+    ]
     assert any(
         key.startswith("predictions") and key.endswith("].age_mean") for key in features
     )
@@ -56,7 +58,9 @@ def test_features_query_with_or(auth_client, ingest_demographic_features, sessio
             PipelineAlias,
             PipelineConfigAlias.pipeline_id == PipelineAlias.id,
         )
-        .filter(PipelineAlias.name == "ParticipantDemographicsExtractor")  # Filter for specific pipeline
+        .filter(
+            PipelineAlias.name == "ParticipantDemographicsExtractor"
+        )  # Filter for specific pipeline
         .group_by(PipelineStudyResultAlias.base_study_id)
         .subquery()
     )
@@ -429,7 +433,8 @@ def test_config_and_feature_filters(auth_client, ingest_demographic_features, se
 
     # Test error handling for invalid filter format
     response = auth_client.get(
-        "/api/base-studies/?" "pipeline_config=ParticipantDemographicsExtractor:invalid:filter:format"
+        "/api/base-studies/?"
+        "pipeline_config=ParticipantDemographicsExtractor:invalid:filter:format"
     )
 
     assert response.status_code == 400
@@ -479,7 +484,9 @@ def test_feature_display_and_pipeline_config(auth_client, ingest_demographic_fea
 def test_feature_flatten(auth_client, ingest_demographic_features):
     """Test flattening nested feature objects into dot notation"""
     # Get response without flattening
-    unflattened = auth_client.get("/api/base-studies/?feature_display=ParticipantDemographicsExtractor")
+    unflattened = auth_client.get(
+        "/api/base-studies/?feature_display=ParticipantDemographicsExtractor"
+    )
     assert unflattened.status_code == 200
 
     # Get response with flattening
@@ -496,7 +503,9 @@ def test_feature_flatten(auth_client, ingest_demographic_features):
     unflattened_features = unflattened.json()["results"][0]["features"][
         "ParticipantDemographicsExtractor"
     ]
-    flattened_features = flattened.json()["results"][0]["features"]["ParticipantDemographicsExtractor"]
+    flattened_features = flattened.json()["results"][0]["features"][
+        "ParticipantDemographicsExtractor"
+    ]
 
     # Verify features are flattened in dot notation
     # Check nested predictions.groups objects are flattened
