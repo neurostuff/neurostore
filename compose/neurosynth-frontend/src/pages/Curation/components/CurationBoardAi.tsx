@@ -57,7 +57,11 @@ const CurationBoardAI: React.FC = () => {
                         No Group Selected
                     </Box>
                 ) : selectedGroup.UI === ECurationBoardAIInterface.CURATOR ? (
-                    <CurationBoardAIInterfaceCurator group={selectedGroup} />
+                    <CurationBoardAIInterfaceCurator
+                        groups={groups}
+                        onSetSelectedGroup={handleSetSelectedGroup}
+                        group={selectedGroup}
+                    />
                 ) : selectedGroup.UI === ECurationBoardAIInterface.EXCLUDE ? (
                     <CurationBoardAIInterfaceExclude group={selectedGroup} />
                 ) : selectedGroup.UI === ECurationBoardAIInterface.IMPORT_SUMMARY ? (

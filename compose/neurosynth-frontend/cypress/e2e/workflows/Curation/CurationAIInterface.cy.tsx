@@ -1,4 +1,4 @@
-import { INeurosynthProjectReturn } from 'hooks/projects/useGetProjects';
+import { INeurosynthProject, INeurosynthProjectReturn } from 'hooks/projects/useGetProjects';
 import { ICurationStubStudy } from 'pages/Curation/Curation.types';
 import { defaultExclusionTags } from 'pages/Project/store/ProjectStore.types';
 
@@ -34,7 +34,6 @@ describe('CurationAIInterface', () => {
 
     it('should load the page', () => {
         cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
-        cy.clearLocalStorage();
     });
 
     describe('old vs new interface', () => {
@@ -298,7 +297,12 @@ describe('CurationAIInterface', () => {
             cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
             cy.wait('@projectFixture');
 
-            cy.contains("You've reviewed all uncategorized studies!").should('exist');
+            cy.contains('li', '1. Identification').click();
+            cy.contains("You've reviewed all uncategorized studies in identification!").should('exist');
+            cy.contains('li', '2. Screening').click();
+            cy.contains("You've reviewed all uncategorized studies in screening!").should('exist');
+            cy.contains('li', '3. Eligibility').click();
+            cy.contains("You've reviewed all uncategorized studies in eligibility!").should('exist');
         });
     });
 
@@ -341,7 +345,7 @@ describe('CurationAIInterface', () => {
             cy.contains('No studies. To import studies, click the import button above').should('exist');
         });
 
-        it('should show "no studies"', () => {
+        it('should show "no included studies"', () => {
             cy.intercept('GET', `**/api/projects/*`, {
                 fixture: 'projects/projectCurationSimpleWithStudies',
             }).as('projectFixture');
@@ -349,7 +353,7 @@ describe('CurationAIInterface', () => {
             cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
             cy.wait('@projectFixture');
             cy.contains('li', '2. Included').click();
-            cy.contains('No studies').should('exist');
+            cy.contains('No included studies.').should('exist');
         });
 
         it('should show "You\'ve reviewed all the uncategorized studies!"', () => {
@@ -379,10 +383,10 @@ describe('CurationAIInterface', () => {
             cy.wait('@projectFixture');
 
             cy.get('tr').eq(1).click({ force: true });
-            cy.get('table').should('not.exist');
-            cy.contains('back to table view').should('exist');
+            cy.contains('button', 'columns').should('not.exist');
+            cy.contains('button', 'back to table view').should('exist');
 
-            cy.contains('back to table view').click();
+            cy.contains('button', 'back to table view').click();
             cy.get('table').should('exist');
         });
 
@@ -538,7 +542,16 @@ describe('CurationAIInterface', () => {
                 cy.wait('@projectFixture');
                 cy.contains('Skip Curation').click();
                 cy.contains('button', 'Continue').click();
+                cy.contains('li', '1. Unreviewed').click();
                 cy.get('tr').should('have.length', 1);
+            });
+
+            it('should move to the next group after skip curation', () => {
+                cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
+                cy.wait('@projectFixture');
+                cy.contains('Skip Curation').click();
+                cy.contains('button', 'Continue').click();
+                cy.contains('li', '2. Included').find('.Mui-selected').should('exist');
             });
 
             it('should promote all uncategorized studies', () => {
@@ -604,7 +617,7 @@ describe('CurationAIInterface', () => {
                 cy.contains('li', 'some new exclusion reason').find('.MuiChip-label').should('have.text', 2);
             });
 
-            it('should move multiple studies to the previous phase', () => {
+            it('should move demote multiple studies', () => {
                 cy.fixture('projects/projectCurationPRISMAWithStudies').then(
                     (projectFixture: INeurosynthProjectReturn) => {
                         projectFixture.provenance.curationMetadata.columns[1].stubStudies =
@@ -654,6 +667,86 @@ describe('CurationAIInterface', () => {
                 cy.contains('Modality').should('exist');
                 cy.get('[data-testid="DeleteIcon"]').click();
                 cy.contains('Modality').should('not.exist');
+            });
+
+            it('should filter studies via free text', () => {
+                cy.addToLocalStorage(
+                    'abc123-curation-table',
+                    `{"firstTimeSeeingPage":false,"selectedColumns":["title"],"columnFilters":[],"sorting":[]}`
+                );
+
+                cy.intercept('GET', '**/api/projects/*', {
+                    fixture: 'projects/projectCurationSimpleWithStudies',
+                }).as('projectFixture');
+
+                cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
+                cy.wait('@projectFixture');
+                cy.get('tr').should('have.length', 5); // 4 plus header
+                cy.get(`[data-testid="FilterListIcon"]`).click();
+                cy.get('input[type="text"]').type('major depression');
+                cy.get('tr').should('have.length', 2);
+            });
+
+            it('should filter studies via autocomplete and implement the SOME array compare strategy', () => {
+                cy.addToLocalStorage(
+                    'abc123-curation-table',
+                    `{"firstTimeSeeingPage":false,"selectedColumns":["fmritaskstaskname"],"columnFilters":[],"sorting":[]}`
+                );
+
+                cy.intercept('GET', '**/api/projects/*', {
+                    fixture: 'projects/projectCurationSimpleWithStudies',
+                }).as('projectFixture');
+
+                cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
+                cy.wait('@projectFixture');
+
+                cy.get('tr').should('have.length', 5); // 4 plus header
+                cy.get(`[data-testid="FilterListIcon"]`).click();
+                cy.get('input[placeholder="filter"]').type('virtual reality');
+                cy.contains('li', 'Virtual Reality').click();
+                cy.get('tr').should('have.length', 2);
+                cy.get('input[placeholder="filter"]').type('symbol match');
+                cy.contains('li', 'Symbol Match').click();
+                cy.get('tr').should('have.length', 3);
+            });
+
+            it('should sort studies', () => {
+                cy.addToLocalStorage(
+                    'abc123-curation-table',
+                    `{"firstTimeSeeingPage":false,"selectedColumns":["title"],"columnFilters":[],"sorting":[]}`
+                );
+
+                cy.intercept('GET', '**/api/projects/*', {
+                    fixture: 'projects/projectCurationSimpleWithStudies',
+                }).as('projectFixture');
+
+                cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
+                cy.wait('@projectFixture');
+
+                cy.fixture('projects/projectCurationSimpleWithStudies').then((data: INeurosynthProject) => {
+                    data.provenance.curationMetadata.columns[0].stubStudies.forEach((study, index) => {
+                        cy.get('tr')
+                            .eq(index + 1)
+                            .find('td')
+                            .eq(2)
+                            .should('have.text', study.title);
+                    });
+                });
+
+                // sort column
+                cy.get(`[data-testid="ArrowDownwardIcon"]`).click();
+
+                cy.fixture('projects/projectCurationSimpleWithStudies').then((data: INeurosynthProject) => {
+                    data.provenance.curationMetadata.columns[0].stubStudies
+                        .sort((a, b) => b.title.localeCompare(a.title))
+                        .forEach((study, index) => {
+                            cy.get('tr')
+                                .eq(index + 1)
+                                .find('td')
+                                .eq(2)
+                                .should('have.text', study.title);
+                        });
+                });
             });
         });
 

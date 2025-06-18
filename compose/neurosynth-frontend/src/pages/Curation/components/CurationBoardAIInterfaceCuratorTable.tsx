@@ -41,38 +41,48 @@ export const getStatusText = (
         };
     }
 
+    const returnObject: {
+        statusColor: string | undefined;
+        statusText: string;
+    } = {
+        statusColor: undefined,
+        statusText: '',
+    };
     const curationIsComplete = numIncluded > 0 && numUncategorized === 0;
     if (isPrisma) {
         const prismaPhase = indexToPRISMAMapping(columnIndex);
-        if (prismaPhase === undefined) {
-            // included phase
-            return {
-                statusColor: undefined,
-                statusText: 'No included studies',
-            };
-        } else {
-            return curationIsComplete
-                ? {
-                      statusColor: 'success.main',
-                      statusText: `You've reviewed all uncategorized studies! Go to extraction to continue your meta-analysis or import more studies to continue`,
-                  }
-                : {
-                      statusColor: undefined,
-                      statusText: `No studies to review for ${prismaPhase}`,
-                  };
+        if (curationIsComplete) {
+            returnObject.statusColor = 'success.main';
+            returnObject.statusText = `You've reviewed all uncategorized studies in ${prismaPhase}! Go to extraction to continue your meta-analysis or import more studies to continue`;
+        } else if (prismaPhase === 'identification') {
+            returnObject.statusColor = undefined;
+            returnObject.statusText = `No studies to review for identification. Import more studies, or continue onto the screening step`;
+        } else if (prismaPhase === 'screening') {
+            returnObject.statusColor = undefined;
+            returnObject.statusText = `No studies to review for screening. Promote duplicated studies from identification, or continue onto the eligibility step`;
+        } else if (prismaPhase === 'eligibility') {
+            returnObject.statusColor = undefined;
+            returnObject.statusText = `No studies to review for eligibility. Promote non excluded studies from screening to continue`;
+        } else if (prismaPhase === undefined) {
+            returnObject.statusColor = undefined;
+            returnObject.statusText = 'No included studies. Promote non excluded studies from eligibility to continue';
         }
     } else {
-        return curationIsComplete
-            ? {
-                  statusColor: 'success.main',
-                  statusText:
-                      "You've reviewed all the uncategorized studies! Go to extraction to continue your meta-analysis or import more studies to continue",
-              }
-            : {
-                  statusColor: undefined,
-                  statusText: 'No studies',
-              };
+        if (curationIsComplete) {
+            returnObject.statusColor = 'success.main';
+            returnObject.statusText =
+                "You've reviewed all the uncategorized studies! Go to extraction to continue your meta-analysis or import more studies to continue";
+        } else if (columnIndex === 0) {
+            returnObject.statusColor = undefined;
+            returnObject.statusText = 'No studies to review. Import more studies to continue';
+        } else {
+            // included
+            returnObject.statusColor = undefined;
+            returnObject.statusText = 'No included studies. Promote non excluded studies from "Unreviewed" to continue';
+        }
     }
+
+    return returnObject;
 };
 
 const CurationBoardAIInterfaceCuratorTable: React.FC<ICurationBoardAIInterfaceCurator> = ({
