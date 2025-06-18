@@ -5,7 +5,13 @@ const DOCS_PREFIX = 'https://neurostuff.github.io/compose-docs/';
 
 const ToDocsIcon: React.FC<IconButtonOwnProps & { url: string }> = ({ url, ...props }) => {
     return (
-        <IconButton {...props} size="small" target="_blank" href={`${DOCS_PREFIX}${url}`}>
+        <IconButton
+            {...props}
+            size="small"
+            target="_blank"
+            href={`${DOCS_PREFIX}${url}`}
+            onClick={(e) => e.stopPropagation()}
+        >
             <HelpOutline sx={{ height: '0.8em', width: '0.8em' }} />
         </IconButton>
     );
