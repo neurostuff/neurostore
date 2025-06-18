@@ -542,7 +542,16 @@ describe('CurationAIInterface', () => {
                 cy.wait('@projectFixture');
                 cy.contains('Skip Curation').click();
                 cy.contains('button', 'Continue').click();
+                cy.contains('li', '1. Unreviewed').click();
                 cy.get('tr').should('have.length', 1);
+            });
+
+            it('should move to the next group after skip curation', () => {
+                cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
+                cy.wait('@projectFixture');
+                cy.contains('Skip Curation').click();
+                cy.contains('button', 'Continue').click();
+                cy.contains('li', '2. Included').find('.Mui-selected').should('exist');
             });
 
             it('should promote all uncategorized studies', () => {
