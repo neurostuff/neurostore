@@ -105,7 +105,7 @@ describe('CurationAIInterface', () => {
                 fixture: 'projects/projectCurationPRISMAWithStudies',
             }).as('projectFixture');
             // cy.fixture('projects/projectCurationPRISMAWithStudies').as('projectFixture');
-            cy.login('mocked').visit('/projects/abc123/curation');
+            cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
             cy.wait('@projectFixture');
         });
 
@@ -125,7 +125,7 @@ describe('CurationAIInterface', () => {
             cy.contains('PRISMA diagram').should('exist');
         });
 
-        it('should have a button to download the CSVs in the included phase', () => {
+        it.only('should have a button to download the CSVs in the included phase', () => {
             cy.contains('4. Included').click();
             cy.contains('Download as CSV').should('exist');
         });
