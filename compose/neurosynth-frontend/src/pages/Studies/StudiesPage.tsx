@@ -10,6 +10,7 @@ import { useSnackbar } from 'notistack';
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { SearchCriteria } from '../Study/Study.types';
+import { AxiosError } from 'axios';
 
 const StudiesPage = () => {
     // const { startTour } = useGetTour('StudiesPage');
@@ -18,7 +19,7 @@ const StudiesPage = () => {
     const location = useLocation();
 
     const [isLoading, setIsLoading] = useState(false);
-    const [isError, setIsError] = useState(false);
+    const [error, setError] = useState<string>();
 
     // cached data returned from the api
     const [studyData, setStudyData] = useState<BaseStudyList>();
@@ -37,12 +38,24 @@ const StudiesPage = () => {
                 .then((data) => {
                     setStudyData(data.data);
                 })
-                .catch(() => {
-                    setIsError(true);
-                    enqueueSnackbar('There was an error searching for studies', {
-                        variant: 'error',
-                    });
-                })
+                .catch(
+                    (
+                        err: AxiosError<{
+                            detail: {
+                                errors: {
+                                    error: string;
+                                }[];
+                                message: string;
+                            };
+                        }>
+                    ) => {
+                        if (err.response?.status && err.response.status === 400 && err.response.data.detail.message) {
+                            setError(err.response?.data.detail.message);
+                        } else {
+                            setError('There was an error searching for studies. (Is the query well formed?)');
+                        }
+                    }
+                )
                 .finally(() => {
                     setIsLoading(false);
                 });
@@ -75,12 +88,13 @@ const StudiesPage = () => {
     };
 
     return (
-        <StateHandlerComponent isLoading={false} isError={isError}>
+        <StateHandlerComponent isLoading={false} isError={false}>
             <Box sx={{ display: 'flex', marginBottom: '1rem' }}>
                 <Typography variant="h4">Studies</Typography>
             </Box>
 
             <SearchContainer
+                error={error}
                 onPageChange={handlePageChange}
                 onRowsPerPageChange={handleRowsPerPageChange}
                 onSearch={handleSearch}
