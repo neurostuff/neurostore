@@ -50,8 +50,6 @@ const CurationStubAITableSummary: React.FC<{ stub: ICurationTableStudy | undefin
         );
     }
 
-    console.log(TaskExtractor?.fMRITasks);
-
     return (
         <Box>
             <Accordion expanded={expandedState[0]}>
