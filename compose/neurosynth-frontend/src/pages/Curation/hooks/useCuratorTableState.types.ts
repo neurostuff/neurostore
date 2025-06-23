@@ -8,7 +8,7 @@ import { ICurationStubStudy } from '../Curation.types';
 
 export interface IGenericCustomAccessorReturn {
     key: string;
-    value: number | string | boolean | null | undefined | string[];
+    value: number | string | boolean | null | undefined | string[] | Record<string, string | null>;
 }
 
 export type ICurationTableColumnType = IGenericCustomAccessorReturn[] | string | number | string[];
