@@ -9,12 +9,12 @@ const ProtectedProjectRoute: React.FC<{ onlyOwnerCanAccess?: boolean; errorMessa
     children,
 }) => {
     const { projectId } = useParams<{ projectId: string }>();
-    const { data, isLoading } = useGetProjectById(projectId);
+    const { data, isLoading, isError } = useGetProjectById(projectId);
     const { isLoading: getAuthIsLoading } = useAuth0();
     const { pathname } = useLocation();
     const userCanEdit = useUserCanEdit(data?.user ?? undefined);
 
-    const isOk = onlyOwnerCanAccess ? userCanEdit : userCanEdit || data?.public;
+    const isOk = isError ? false : onlyOwnerCanAccess ? userCanEdit : userCanEdit || data?.public;
 
     if (isLoading || getAuthIsLoading) {
         return <NeurosynthLoader loaded={false} />;
