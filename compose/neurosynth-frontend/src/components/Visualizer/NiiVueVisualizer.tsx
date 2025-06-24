@@ -5,10 +5,10 @@ import { Niivue, SHOW_RENDER } from '@niivue/niivue';
 import { ChangeEvent, useCallback, useEffect, useRef, useState } from 'react';
 import ThresholdSlider from './ThresholdSlider';
 
-const NiiVueVisualizer: React.FC<{ file: string; filename: string; neurovaultLink?: string }> = ({
+const NiiVueVisualizer: React.FC<{ file: string; filename: string; neurovaultCollectionLink?: string }> = ({
     file,
     filename,
-    neurovaultLink,
+    neurovaultCollectionLink: neurovaultCollectionLink,
 }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const niivueRef = useRef<Niivue | null>(null);
@@ -314,11 +314,15 @@ const NiiVueVisualizer: React.FC<{ file: string; filename: string; neurovaultLin
                         Download image
                     </Button>
                 </Box>
-                {neurovaultLink && (
+                {neurovaultCollectionLink && (
                     <Button
                         component={Link}
                         sx={{ marginTop: '0.5rem' }}
-                        href={neurovaultLink.includes('/api') ? neurovaultLink.replace(/\/api/, '') : neurovaultLink}
+                        href={
+                            neurovaultCollectionLink.includes('/api')
+                                ? neurovaultCollectionLink.replace(/\/api/, '')
+                                : neurovaultCollectionLink
+                        }
                         rel="noreferrer"
                         size="small"
                         target="_blank"

@@ -1,4 +1,5 @@
-import axios, { AxiosResponse } from 'axios';
+import axios from 'axios';
+import { executeHTTPRequestsAsBatches } from 'pages/SleuthImport/SleuthImport.helpers';
 import { useQuery } from 'react-query';
 
 export interface INeurovault {
@@ -62,7 +63,12 @@ function useGetNeurovaultImages(neurovaultImages: string[]) {
         queryKey: ['neurovault-images', ...neurovaultImages],
 
         queryFn: async () => {
-            const res = await Promise.all<AxiosResponse<INeurovault>>(neurovaultImages.map((url) => axios.get(url)));
+            const res = await executeHTTPRequestsAsBatches(
+                neurovaultImages,
+                (imageURL) => axios.get(imageURL),
+                10, // neurovault rate limits at 10 requests at a time
+                500
+            );
 
             return res.map((x) => ({
                 ...x.data,
