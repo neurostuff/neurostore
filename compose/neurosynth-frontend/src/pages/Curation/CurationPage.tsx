@@ -44,6 +44,8 @@ const CurationPage: React.FC = () => {
 
     useInitProjectStoreIfRequired();
 
+    throw new Error('error');
+
     useEffect(() => {
         if (useNewUI === undefined) {
             const localStorageValue = localStorage.getItem(localStorageNewUIKey);
