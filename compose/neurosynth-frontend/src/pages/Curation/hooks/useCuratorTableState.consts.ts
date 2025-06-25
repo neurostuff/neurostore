@@ -23,7 +23,15 @@ const createCustomTaskExtractorAccessor = (
             if (value !== undefined && value !== null && value !== 'undefined' && value !== 'null') {
                 allValuesEmpty = false;
             }
-            tasksList.push({ key: groupName, value: value });
+
+            if (typeof value === 'object' && !Array.isArray(value)) {
+                tasksList.push({
+                    key: groupName,
+                    value: Object.entries(value || {}).map(([key, value]) => `${key}: ${value}`),
+                });
+            } else {
+                tasksList.push({ key: groupName, value: value });
+            }
         });
     } else {
         (stub[EAIExtractors.TASKEXTRACTOR]?.BehavioralTasks || []).forEach((task, index) => {
@@ -32,7 +40,14 @@ const createCustomTaskExtractorAccessor = (
             const value = task[typedProperty];
             if (value !== undefined && value !== null && value !== 'undefined' && value !== 'null')
                 allValuesEmpty = false;
-            tasksList.push({ key: groupName, value: value });
+            if (typeof value === 'object' && !Array.isArray(value)) {
+                tasksList.push({
+                    key: groupName,
+                    value: Object.entries(value || {}).map(([key, value]) => `${key}: ${value}`),
+                });
+            } else {
+                tasksList.push({ key: groupName, value: value });
+            }
         });
     }
 
@@ -323,15 +338,15 @@ export const TASK_EXTRACTOR_CURATOR_COLUMNS: ICurationBoardAIInterfaceCuratorCol
         AIExtractor: EAIExtractors.TASKEXTRACTOR,
         filterVariant: 'autocomplete',
     },
-    // {
-    //     id: 'fMRITasks.RestingStateMetadata',
-    //     label: 'fMRI Task Resting State Metadata',
-    //     description:
-    //         'Additional details about the resting-state task, such as duration and instructions provided to participants, if applicable',
-    //     canSort: false,
-    //     customAccessor: (stub) => createCustomTaskExtractorAccessor('RestingStateMetadata', 'FMRI', stub),
-    //     AIExtractor: EAIExtractors.TASKEXTRACTOR,
-    // },
+    {
+        id: 'fMRITasks.RestingStateMetadata',
+        label: 'fMRI Task Resting State Metadata',
+        description:
+            'Additional details about the resting-state task, such as duration and instructions provided to participants, if applicable',
+        canSort: false,
+        customAccessor: (stub) => createCustomTaskExtractorAccessor('RestingStateMetadata', 'FMRI', stub),
+        AIExtractor: EAIExtractors.TASKEXTRACTOR,
+    },
     {
         id: 'fMRITasks.TaskDuration',
         label: 'fMRI Task Duration',

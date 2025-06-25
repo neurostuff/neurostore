@@ -29,7 +29,7 @@ const CurationBoardAIInterfaceCuratorTableHeaderFilter: React.FC<{
     return (
         <Box>
             <Badge
-                sx={{ padding: 0, '.MuiBadge-badge': { padding: 0, height: '14px', minWidth: '14px' } }}
+                sx={{ padding: 0, '.MuiBadge-badge': { padding: 0, height: '14px', minWidth: '14px', top: '4px' } }}
                 badgeContent={
                     currentFilterValue ? (
                         <IconButton onClick={() => handleUpdateFilter(undefined)} sx={{ padding: 0 }}>

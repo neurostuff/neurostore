@@ -33,7 +33,7 @@ const CurationBoardAIInterfaceCuratorFocus: React.FC<ICurationBoardAIInterfaceCu
         onSetSelectedStub(nextStubId);
     }, [onSetSelectedStub, rows, selectedStub?.id]);
 
-    const pxInVh = Math.round(windowHeight - 280);
+    const pxInVh = Math.round(windowHeight - 250);
 
     // cant use useRef as the listRef does not exist due to it being rendered
     // later as a dialog. useEffect also does not keep track of useRef value changes
