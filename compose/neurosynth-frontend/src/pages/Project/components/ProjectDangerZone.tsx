@@ -1,10 +1,11 @@
 import ReportProblemIcon from '@mui/icons-material/ReportProblem';
 import { Box, Button, Typography } from '@mui/material';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
+import { useDeleteStudyset } from 'hooks';
 import useDeleteProject from 'hooks/projects/useDeleteProject';
 import useUserCanEdit from 'hooks/useUserCanEdit';
 import { useSnackbar } from 'notistack';
-import { useClearProvenance, useProjectUser } from 'pages/Project/store/ProjectStore';
+import { useClearProvenance, useProjectExtractionStudysetId, useProjectUser } from 'pages/Project/store/ProjectStore';
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
@@ -17,6 +18,8 @@ const DangerZone: React.FC = (props) => {
     const clearProvenance = useClearProvenance();
     const navigate = useNavigate();
     const { enqueueSnackbar } = useSnackbar();
+    const { mutateAsync: deleteStudyset } = useDeleteStudyset();
+    const studysetId = useProjectExtractionStudysetId();
 
     const userCanEdit = useUserCanEdit(projectUser || undefined);
 
@@ -75,7 +78,12 @@ const DangerZone: React.FC = (props) => {
                     </Button>
                     <Box>
                         <Button
-                            onClick={() => clearProvenance()}
+                            onClick={async () => {
+                                if (studysetId) {
+                                    await deleteStudyset(studysetId);
+                                }
+                                clearProvenance();
+                            }}
                             variant="outlined"
                             sx={{ marginTop: '1rem' }}
                             color="error"

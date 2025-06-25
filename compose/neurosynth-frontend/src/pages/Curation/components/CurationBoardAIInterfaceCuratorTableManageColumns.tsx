@@ -154,7 +154,9 @@ const CurationBoardAIInterfaceCuratorTableManageColumns: React.FC<{
                                                 {column.label}
                                             </ListItemText>
                                             <ListItemIcon sx={{ minWidth: '0px' }}>
-                                                <ToDocsIcon url={`guide/Project/Curation#${column.id}`} />
+                                                <ToDocsIcon
+                                                    url={`guide/Project/Curation#${column.id.replace('.', '').toLocaleLowerCase()}`}
+                                                />
                                             </ListItemIcon>
                                         </ListItemButton>
                                     </ListItem>

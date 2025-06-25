@@ -65,4 +65,9 @@ describe('SearchBar Component', () => {
         const button = screen.getByTestId('SearchIcon');
         expect(button.parentElement).toHaveStyle({ backgroundColor: 'rgb(255, 255, 255);' }); // equivalent to '#FFFFFF', dont forget semicolon
     });
+
+    it('should show the error when there is one', () => {
+        render(<SearchBar error="there is an error" onSearch={onSearchMock} />);
+        expect(screen.getByText('there is an error')).toBeInTheDocument();
+    });
 });

@@ -1,9 +1,10 @@
-import { Typography, Box } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import ProgressLoader from 'components/ProgressLoader';
+import React from 'react';
 
 export interface IStateHandlerComponent {
     isError: boolean;
-    errorMessage?: string;
+    errorMessage?: string | React.ReactNode;
     isLoading: boolean;
     loadingText?: string;
     loadingColor?: string;
@@ -13,7 +14,11 @@ export interface IStateHandlerComponent {
 
 const StateHandlerComponent: React.FC<IStateHandlerComponent> = (props) => {
     if (props.isError) {
-        return <Typography sx={{ color: 'error.main' }}>{props.errorMessage || 'There was an error'}</Typography>;
+        if (typeof props.errorMessage === 'string' || props.errorMessage === undefined) {
+            return <Typography sx={{ color: 'error.main' }}>{props.errorMessage || 'There was an error'}</Typography>;
+        } else {
+            return <>{props.errorMessage}</>;
+        }
     }
 
     if (props.isLoading) {

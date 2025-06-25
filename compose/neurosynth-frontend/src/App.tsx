@@ -1,14 +1,14 @@
 import Close from '@mui/icons-material/Close';
 import { IconButton } from '@mui/material';
 import { AxiosError } from 'axios';
+import Navbar from 'components/Navbar/Navbar';
 import useGoogleAnalytics from 'hooks/useGoogleAnalytics';
 import { SnackbarKey, SnackbarProvider } from 'notistack';
+import BaseNavigation from 'pages/BaseNavigation/BaseNavigation';
 import { useEffect, useRef } from 'react';
 import { QueryCache, QueryClient, QueryClientProvider } from 'react-query';
-import Navbar from 'components/Navbar/Navbar';
-import useGetToken from './hooks/useGetToken';
-import BaseNavigation from 'pages/BaseNavigation/BaseNavigation';
 import { useLocation } from 'react-router-dom';
+import useGetToken from './hooks/useGetToken';
 
 const queryClient = new QueryClient({
     defaultOptions: {

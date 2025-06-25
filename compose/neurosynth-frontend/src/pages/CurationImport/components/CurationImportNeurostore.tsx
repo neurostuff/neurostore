@@ -16,6 +16,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { IImportArgs } from './CurationImportDoImport';
 import CurationImportBaseStyles from './CurationImport.styles';
 import { studiesToStubs } from 'helpers/Curation.helpers';
+import { AxiosError } from 'axios';
 
 const CurationImportNeurostore: React.FC<
     IImportArgs & { onSetSearchCriteria: (searchCriteria: SearchCriteria) => void }
@@ -24,7 +25,7 @@ const CurationImportNeurostore: React.FC<
     const { enqueueSnackbar } = useSnackbar();
 
     const [isLoading, setIsLoading] = useState(false);
-    const [isError, setIsError] = useState(false);
+    const [error, setError] = useState<string>();
 
     const navigate = useNavigate();
     const location = useLocation();
@@ -41,18 +42,31 @@ const CurationImportNeurostore: React.FC<
     }, [location?.search]);
 
     useEffect(() => {
+        setError(undefined);
         const debounce = setTimeout(() => {
             setIsLoading(true);
             baseStudiesSearchHelper({ ...searchCriteria, flat: true, info: false })
                 .then((data) => {
                     setStudyData(data.data);
                 })
-                .catch(() => {
-                    setIsError(true);
-                    enqueueSnackbar('There was an error searching for studies', {
-                        variant: 'error',
-                    });
-                })
+                .catch(
+                    (
+                        err: AxiosError<{
+                            detail: {
+                                errors: {
+                                    error: string;
+                                }[];
+                                message: string;
+                            };
+                        }>
+                    ) => {
+                        if (err.response?.status && err.response.status === 400 && err.response.data.detail.message) {
+                            setError(err.response?.data.detail.message);
+                        } else {
+                            setError('There was an error searching for studies. (Is the query well formed?)');
+                        }
+                    }
+                )
                 .finally(() => {
                     setIsLoading(false);
                 });
@@ -123,8 +137,9 @@ const CurationImportNeurostore: React.FC<
         searchCriteria.nameSearch !== undefined;
 
     return (
-        <StateHandlerComponent isLoading={false} isError={isError}>
+        <StateHandlerComponent isLoading={false} isError={false}>
             <SearchContainer
+                error={error}
                 onPageChange={handlePageChange}
                 onRowsPerPageChange={handleRowsPerPageChange}
                 onSearch={handleSearch}
@@ -202,7 +217,7 @@ const CurationImportNeurostore: React.FC<
                         onClick={() => handleButtonClick(ENavigationButton.NEXT)}
                         disableElevation
                         sx={{ width: '400px' }}
-                        disabled={(studyData?.metadata?.total_count || 0) === 0 || !hasSearch || isLoading}
+                        disabled={(studyData?.metadata?.total_count || 0) === 0 || !hasSearch || isLoading || !!error}
                         loaderColor="secondary"
                         isLoading={importIsLoading}
                     ></LoadingButton>

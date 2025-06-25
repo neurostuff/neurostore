@@ -28,17 +28,21 @@ export interface IBehavioralTask {
 
 export type IfMRITask = IBehavioralTask & {
     RestingState: null | undefined | boolean;
-    RestingStateMetadata: null | undefined | string;
+    RestingStateMetadata: null | undefined | Record<string, string | null>;
     TaskDesign: null | undefined | string[];
     TaskDuration: null | undefined | string;
 };
 
 export interface ITaskExtractor {
+    Exclude: null | boolean;
     Modality: string[];
     fMRITasks: null | undefined | IfMRITask[];
-    BehavioralTasks: null | undefined | IBehavioralTask[];
+    TaskDesign: null | undefined | string[];
+    RestingState: null | undefined | boolean;
+    TaskDuration: null | undefined | string;
     StudyObjective: null | undefined | string;
-    Exclude: null | boolean;
+    BehavioralTasks: null | undefined | IBehavioralTask[];
+    RestingStateMetadata: null | undefined | Record<string, string | null>;
 }
 
 export interface IGroup {

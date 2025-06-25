@@ -47,6 +47,30 @@ describe('StateHandlerComponent', () => {
         expect(screen.queryByText('some-loading-text')).not.toBeInTheDocument();
     });
 
+    it('should show a react node as an error', () => {
+        render(
+            <StateHandlerComponent
+                loadingText="some-loading-text"
+                errorMessage={<button>some-action-on-error</button>}
+                isLoading={false}
+                isError={true}
+            >
+                <span>some-child-text</span>
+            </StateHandlerComponent>
+        );
+        expect(screen.getByRole('button')).toBeInTheDocument();
+        expect(screen.getByRole('button')).toHaveTextContent('some-action-on-error');
+    });
+
+    it('should show the default error message on error', () => {
+        render(
+            <StateHandlerComponent loadingText="some-loading-text" isLoading={false} isError={true}>
+                <span>some-child-text</span>
+            </StateHandlerComponent>
+        );
+        expect(screen.queryByText('There was an error')).toBeInTheDocument();
+    });
+
     it('should show children', () => {
         render(
             <StateHandlerComponent

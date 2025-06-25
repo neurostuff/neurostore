@@ -51,6 +51,7 @@ const CurationBoardAIGroupsListItem: React.FC<{
                         )}
                         <ListItemText
                             sx={{
+                                textTransform: 'capitalize',
                                 '.MuiListItemText-primary': {
                                     fontSize: '14px',
                                     ...CurationBoardAIGroupsStyles.lineClamp3,

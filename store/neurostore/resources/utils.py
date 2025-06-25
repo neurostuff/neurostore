@@ -98,7 +98,7 @@ def validate_parentheses(query: str) -> bool:
 
 def validate_query_end(query: str) -> bool:
     """Query should not end with an operator"""
-    operators = ("AND", "OR", "NOT")
+    operators = ("AND", "OR", "NOT", "&", "|", "&!")
 
     if query.strip().split(" ")[-1] in operators:
         return False

@@ -20,9 +20,18 @@ const createCustomTaskExtractorAccessor = (
         (stub[EAIExtractors.TASKEXTRACTOR]?.fMRITasks || []).forEach((task, index) => {
             const groupName = task.TaskName || `fMRI Task ${index + 1}`;
             const value = task[property];
-            if (value !== undefined && value !== null && value !== 'undefined' && value !== 'null')
+            if (value !== undefined && value !== null && value !== 'undefined' && value !== 'null') {
                 allValuesEmpty = false;
-            tasksList.push({ key: groupName, value: value });
+            }
+
+            if (typeof value === 'object' && !Array.isArray(value)) {
+                tasksList.push({
+                    key: groupName,
+                    value: Object.entries(value || {}).map(([key, value]) => `${key}: ${value}`),
+                });
+            } else {
+                tasksList.push({ key: groupName, value: value });
+            }
         });
     } else {
         (stub[EAIExtractors.TASKEXTRACTOR]?.BehavioralTasks || []).forEach((task, index) => {
@@ -31,7 +40,14 @@ const createCustomTaskExtractorAccessor = (
             const value = task[typedProperty];
             if (value !== undefined && value !== null && value !== 'undefined' && value !== 'null')
                 allValuesEmpty = false;
-            tasksList.push({ key: groupName, value: value });
+            if (typeof value === 'object' && !Array.isArray(value)) {
+                tasksList.push({
+                    key: groupName,
+                    value: Object.entries(value || {}).map(([key, value]) => `${key}: ${value}`),
+                });
+            } else {
+                tasksList.push({ key: groupName, value: value });
+            }
         });
     }
 
@@ -233,7 +249,7 @@ export const TASK_EXTRACTOR_CURATOR_COLUMNS: ICurationBoardAIInterfaceCuratorCol
         AIExtractor: EAIExtractors.TASKEXTRACTOR,
     },
     {
-        id: 'fmritaskstaskname',
+        id: 'fMRITasks.TaskName',
         label: 'fMRI Task Name',
         description: "Name of the task, e.g., 'Stroop Task' or 'Go/No-Go Task'.",
         canSort: false,
@@ -248,7 +264,7 @@ export const TASK_EXTRACTOR_CURATOR_COLUMNS: ICurationBoardAIInterfaceCuratorCol
         AIExtractor: EAIExtractors.TASKEXTRACTOR,
     },
     {
-        id: 'fmritasksdomain',
+        id: 'fMRITasks.Domain',
         label: 'fMRI Task Domain',
         description: 'The domain of the task, e.g., "Perception", "Attention", "Emotion" etc.',
         canSort: false,
@@ -257,7 +273,7 @@ export const TASK_EXTRACTOR_CURATOR_COLUMNS: ICurationBoardAIInterfaceCuratorCol
         AIExtractor: EAIExtractors.TASKEXTRACTOR,
     },
     {
-        id: 'fmritasksconcepts',
+        id: 'fMRITasks.Concepts',
         label: 'fMRI Task Concepts',
         description:
             'List of mental concepts associated with the task, such as cognitive processes or representations it engages',
@@ -267,7 +283,7 @@ export const TASK_EXTRACTOR_CURATOR_COLUMNS: ICurationBoardAIInterfaceCuratorCol
         filterVariant: 'autocomplete',
     },
     {
-        id: 'fmritasksconditions',
+        id: 'fMRITasks.Conditions',
         label: 'fMRI Task Conditions',
         description: 'Conditions of task performed by the subjects.',
         canSort: false,
@@ -276,7 +292,7 @@ export const TASK_EXTRACTOR_CURATOR_COLUMNS: ICurationBoardAIInterfaceCuratorCol
         filterVariant: 'autocomplete',
     },
     {
-        id: 'fmritaskstaskmetrics',
+        id: 'fMRITasks.TaskMetrics',
         label: 'fMRI Task Metrics',
         description:
             'Key metrics or outcomes measured during the task, e.g., "response time", "accuracy", and "fMRI BOLD signal".',
@@ -286,24 +302,26 @@ export const TASK_EXTRACTOR_CURATOR_COLUMNS: ICurationBoardAIInterfaceCuratorCol
         AIExtractor: EAIExtractors.TASKEXTRACTOR,
     },
     {
-        id: 'fmritaskstaskdescription',
+        id: 'fMRITasks.TaskDescription',
         label: 'fMRI Task Description',
         description: 'Description of the key features of the task, such as its purpose or what it measures.',
         canSort: false,
+        filterVariant: 'text',
         customAccessor: (stub) => createCustomTaskExtractorAccessor('TaskDescription', 'FMRI', stub),
         AIExtractor: EAIExtractors.TASKEXTRACTOR,
     },
     {
-        id: 'fmritasksdesigndetails',
+        id: 'fMRITasks.DesignDetails',
         label: 'fMRI Task Design Details',
         description:
             'A detailed description of the task design including information on the number of conditions, the number of trials per condition, the length of trials, and the length of inter-trial intervals.',
         canSort: false,
+        filterVariant: 'text',
         customAccessor: (stub) => createCustomTaskExtractorAccessor('DesignDetails', 'FMRI', stub),
         AIExtractor: EAIExtractors.TASKEXTRACTOR,
     },
     {
-        id: 'fmritaskstaskdesign',
+        id: 'fMRITasks.TaskDesign',
         label: 'fMRI Task Design',
         description: 'Design(s) of the task',
         canSort: false,
@@ -312,7 +330,7 @@ export const TASK_EXTRACTOR_CURATOR_COLUMNS: ICurationBoardAIInterfaceCuratorCol
         filterVariant: 'autocomplete',
     },
     {
-        id: 'fmritasksrestingstate',
+        id: 'fMRITasks.RestingState',
         label: 'fMRI Task Resting State',
         description: 'Whether this task wa a resting state task or not',
         canSort: false,
@@ -321,7 +339,7 @@ export const TASK_EXTRACTOR_CURATOR_COLUMNS: ICurationBoardAIInterfaceCuratorCol
         filterVariant: 'autocomplete',
     },
     {
-        id: 'fmritasksrestingstatemetadata',
+        id: 'fMRITasks.RestingStateMetadata',
         label: 'fMRI Task Resting State Metadata',
         description:
             'Additional details about the resting-state task, such as duration and instructions provided to participants, if applicable',
@@ -330,10 +348,11 @@ export const TASK_EXTRACTOR_CURATOR_COLUMNS: ICurationBoardAIInterfaceCuratorCol
         AIExtractor: EAIExtractors.TASKEXTRACTOR,
     },
     {
-        id: 'fmritaskstaskduration',
+        id: 'fMRITasks.TaskDuration',
         label: 'fMRI Task Duration',
         description: "Total duration of the task, e.g., '10 minutes' or '600 seconds'.",
         canSort: false,
+        filterVariant: 'text',
         customAccessor: (stub) => createCustomTaskExtractorAccessor('TaskDuration', 'FMRI', stub),
         AIExtractor: EAIExtractors.TASKEXTRACTOR,
     },

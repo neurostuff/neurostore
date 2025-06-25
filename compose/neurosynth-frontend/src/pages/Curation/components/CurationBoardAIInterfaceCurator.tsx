@@ -30,7 +30,11 @@ export interface ICurationBoardAIInterfaceCurator {
     onSetSelectedStub: (stubId: string) => void;
 }
 
-const CurationBoardAIInterfaceCurator: React.FC<{ group: IGroupListItem }> = ({ group }) => {
+const CurationBoardAIInterfaceCurator: React.FC<{
+    group: IGroupListItem;
+    groups: IGroupListItem[];
+    onSetSelectedGroup: (group: IGroupListItem) => void;
+}> = ({ group, groups, onSetSelectedGroup }) => {
     const navigate = useNavigate();
     const { projectId } = useParams<{ projectId: string | undefined }>();
     const curationColumns = useProjectCurationColumns();
@@ -98,6 +102,13 @@ const CurationBoardAIInterfaceCurator: React.FC<{ group: IGroupListItem }> = ({ 
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [group.id]);
 
+    const handleCompletePromoteAllUncategorized = () => {
+        const nextCurationColumn = curationColumns[columnIndex + 1];
+        const newGroup = groups.find((group) => group.id === nextCurationColumn.id);
+        if (!newGroup) return;
+        onSetSelectedGroup(newGroup);
+    };
+
     const columnFilters = table.getState().columnFilters;
     const numTotalRows = table.getCoreRowModel().rows.length;
 
@@ -160,10 +171,16 @@ const CurationBoardAIInterfaceCurator: React.FC<{ group: IGroupListItem }> = ({ 
                         )}
                         {columnIndex === 0 && (
                             <CurationPromoteUncategorizedButton
+                                onComplete={handleCompletePromoteAllUncategorized}
                                 dialogTitle={
                                     isPrisma
                                         ? 'Are you sure you want to promote all non duplicated studies in identification to screening?'
                                         : 'Are you sure you want to skip curation?'
+                                }
+                                dialogMessage={
+                                    isPrisma
+                                        ? 'All studies that have not been marked as duplicates in this stage will be promoted'
+                                        : 'All studies that have not been excluded in this stage will be included'
                                 }
                                 sx={{ marginRight: '0.5rem', fontSize: '12px' }}
                                 size="small"

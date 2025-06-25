@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import NeurosynthList from './NeurosynthList';
 import ArticleIcon from '@mui/icons-material/Article';
 
-vi.mock('react-router-dom')
+vi.mock('react-router-dom');
 
 describe('NeurosynthList Component', () => {
     const mockListItems = [

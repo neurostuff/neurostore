@@ -16,6 +16,7 @@ export interface ISearchContainer {
     paginationSelectorStyles?: SystemStyleObject;
     tablePaginationSelectorStyles?: SystemStyleObject;
     searchMode?: 'study-search' | 'project-search';
+    error?: string;
 }
 
 export const getNumTotalPages = (totalCount: number | undefined, pageSize: number | undefined) => {
@@ -40,6 +41,7 @@ const SearchContainer: React.FC<ISearchContainer> = (props) => {
         paginationSelectorStyles = {},
         tablePaginationSelectorStyles = {},
         searchMode = 'study-search',
+        error = undefined,
     } = props;
 
     const handleRowsPerPageChange = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -54,7 +56,12 @@ const SearchContainer: React.FC<ISearchContainer> = (props) => {
 
     return (
         <>
-            <SearchBar searchMode={searchMode} searchButtonColor={searchButtonColor} onSearch={onSearch} />
+            <SearchBar
+                error={error}
+                searchMode={searchMode}
+                searchButtonColor={searchButtonColor}
+                onSearch={onSearch}
+            />
 
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                 <Pagination

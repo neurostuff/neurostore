@@ -182,7 +182,7 @@ const CurationBoardAIInterfaceImportSummary: React.FC<{
                             backgroundColor: 'white',
                             width: '100%',
                             marginBottom: '8px',
-                            input: { padding: '6px 12px', fontSize: '14px' },
+                            input: { padding: '7px 12px', fontSize: '14px' },
                         }}
                     />
                 </Box>
