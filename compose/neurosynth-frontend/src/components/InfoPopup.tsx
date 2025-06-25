@@ -1,4 +1,4 @@
-import { Box, Button, Typography } from '@mui/material';
+import { Box, Button, Link, Typography } from '@mui/material';
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import BaseDialog from './Dialogs/BaseDialog';
@@ -38,10 +38,21 @@ const InfoPopup: React.FC = () => {
                     For <i>PRISMA</i>, this feature is available after the Identification step (also in the table and
                     individual study view).
                 </Typography>
-                <Typography>
+                <Typography mb={3}>
                     If needed, you can switch back to the old interface using the toggle on the top right.
                 </Typography>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', marginTop: '1rem' }}>
+                <Typography>
+                    To learn more, you can{' '}
+                    <Link
+                        underline="hover"
+                        fontWeight="bold"
+                        target="_blank"
+                        href="https://neurostuff.github.io/compose-docs/blog/2025/6/20/ai-review"
+                    >
+                        checkout our recent blog post
+                    </Link>
+                </Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', marginTop: '2rem' }}>
                     <Button fullWidth onClick={handleCloseDialog} variant="contained" color="primary" disableElevation>
                         Continue
                     </Button>
