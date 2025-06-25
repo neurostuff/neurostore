@@ -159,7 +159,7 @@ const CurationBoardAIInterfaceCuratorTable: React.FC<ICurationBoardAIInterfaceCu
                                             left: header.column.id === 'select' ? 0 : undefined,
                                             zIndex: header.column.id === 'select' ? 999 : undefined,
                                             backgroundColor: 'white',
-                                            padding: '7px',
+                                            padding: '7px 0px',
                                         }}
                                     >
                                         {flexRender(header.column.columnDef.header, header.getContext())}

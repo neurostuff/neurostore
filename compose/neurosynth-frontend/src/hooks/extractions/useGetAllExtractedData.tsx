@@ -28,7 +28,7 @@ export interface IBehavioralTask {
 
 export type IfMRITask = IBehavioralTask & {
     RestingState: null | undefined | boolean;
-    RestingStateMetadata: null | undefined | string;
+    RestingStateMetadata: null | undefined | Record<string, string | null>;
     TaskDesign: null | undefined | string[];
     TaskDuration: null | undefined | string;
 };
