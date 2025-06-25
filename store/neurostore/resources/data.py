@@ -669,7 +669,7 @@ class BaseStudiesView(ObjectView, ListView):
         # the request is either a list or a dict
         if isinstance(request.json, dict):
             return super().post()
-        # in the list scenerio, try to find an existing record
+        # in the list scenario, try to find an existing record
         # then return the best version and return that study id
         data = parser.parse(self.__class__._schema(many=True), request)
         base_studies = []
