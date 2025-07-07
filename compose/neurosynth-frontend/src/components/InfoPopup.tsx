@@ -5,7 +5,6 @@ import BaseDialog from './Dialogs/BaseDialog';
 
 const InfoPopup: React.FC = () => {
     const { user } = useAuth0();
-    console.log(user);
     const localStorageKey = `${user?.sub || ''}-hide-info-popup`;
     const shouldHide = !!localStorage.getItem(localStorageKey);
     const [hide, setShouldHide] = useState(shouldHide);
