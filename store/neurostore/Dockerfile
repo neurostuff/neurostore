@@ -1,4 +1,4 @@
-FROM python:3.10-buster
+FROM python:3.10-bullseye
 ARG DEBIAN_FRONTEND=noninteractive
 
 RUN mkdir -p /usr/src/app
