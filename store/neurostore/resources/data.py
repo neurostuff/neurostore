@@ -1177,6 +1177,8 @@ class AnalysesView(ObjectView, ListView):
         name = data.get("name")
         user_id = data.get("user_id")
         coordinates = data.get("points")
+        if coordinates is None:
+            return False
 
         for analysis in study.analyses:
             if (
