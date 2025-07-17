@@ -395,13 +395,20 @@ class ListView(BaseView):
         # Parse arguments using webargs
         # args = parser.parse(self._user_args, request, location="query")
 
+        import logging
+        logger = logging.getLogger("debug_test")
+        logger.warning("Before DB write in analysis.py POST")
+
         try:
             data = parser.parse(self.__class__._schema, request)
         except ValidationError as e:
             abort(422, description=f"input does not conform to specification: {str(e)}")
 
         with db.session.no_autoflush:
+            logger.warning("Before update_or_create in analysis.py POST")
             record = self.__class__.update_or_create(data)
+            logger.warning("After update_or_create in analysis.py POST")
+        logger.warning("After DB write in analysis.py POST")
         return self.__class__._schema().dump(record)
 
 

@@ -1,0 +1,137 @@
+global:
+  # The smarthost and SMTP sender used for mail notifications
+  smtp_smarthost: '${SMTP_HOST:-smtp.gmail.com:587}'
+  smtp_from: '${SMTP_FROM:-alerts@neurosynth.org}'
+  smtp_auth_username: '${SMTP_USER}'
+  smtp_auth_password: '${SMTP_PASSWORD}'
+  smtp_require_tls: true
+
+  # Slack configuration
+  slack_api_url: '${SLACK_WEBHOOK_URL:-""}'
+
+  # How long to wait before sending a notification again
+  resolve_timeout: 5m
+
+# Templates for notifications
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'
+
+# The root route on which each incoming alert enters
+route:
+  # The root route must not have any matchers as it is the entry point for all alerts
+  receiver: 'team-email'
+
+  # Group by alertname and service
+  group_by: ['alertname', 'service']
+
+  # How long to initially wait to send notifications for a group of alerts
+  group_wait: 30s
+
+  # How long to wait before sending a notification about new alerts that are in a group
+  group_interval: 5m
+
+  # How long to wait before sending a notification again if it has already been sent
+  repeat_interval: 4h
+
+  # Child routes
+  routes:
+  - receiver: 'critical-alerts'
+    matchers:
+      - severity = 'critical'
+    repeat_interval: 1h
+    continue: true
+
+  - receiver: 'slack-notifications'
+    matchers:
+      - severity =~ 'warning|critical'
+    continue: true
+
+  - receiver: 'task-failures'
+    matchers:
+      - alertname =~ 'HighTaskFailureRate|NeurovaultUploadFailures|NeurostoreAnalysisFailures'
+
+# Inhibition rules
+inhibit_rules:
+  - source_matchers:
+      - severity = 'critical'
+    target_matchers:
+      - severity = 'warning'
+    # Apply inhibition if the alertname and service is the same
+    equal: ['alertname', 'service']
+
+receivers:
+- name: 'team-email'
+  email_configs:
+  - to: '${ALERT_EMAIL_TO:-team@neurosynth.org}'
+    send_resolved: true
+    html: |
+      {{ define "email.custom.html" }}
+      <!DOCTYPE html>
+      <html>
+      <body>
+        <h2>{{ .GroupLabels.alertname }}</h2>
+        <p><strong>Status:</strong> {{ .Status }}</p>
+        {{ if eq .Status "firing" }}
+        <p style="color: red;"><strong>Alerts Firing:</strong></p>
+        {{ else }}
+        <p style="color: green;"><strong>Alerts Resolved:</strong></p>
+        {{ end }}
+        {{ range .Alerts }}
+        <hr>
+        <p><strong>Alert:</strong> {{ .Annotations.summary }}</p>
+        <p><strong>Description:</strong> {{ .Annotations.description }}</p>
+        <p><strong>Severity:</strong> {{ .Labels.severity }}</p>
+        <p><strong>Started:</strong> {{ .StartsAt }}</p>
+        {{ if .EndsAt }}
+        <p><strong>Ended:</strong> {{ .EndsAt }}</p>
+        {{ end }}
+        {{ end }}
+      </body>
+      </html>
+      {{ end }}
+
+- name: 'critical-alerts'
+  email_configs:
+  - to: '${CRITICAL_EMAIL_TO:-oncall@neurosynth.org}'
+    send_resolved: true
+    priority: 'high'
+
+- name: 'slack-notifications'
+  slack_configs:
+  - channel: '#monitoring'
+    send_resolved: true
+    icon_url: https://avatars3.githubusercontent.com/u/3380462
+    title: |-
+      [{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}] {{ .GroupLabels.alertname }}
+    text: >-
+      {{ range .Alerts -}}
+      *Alert:* {{ .Annotations.summary }}
+      *Description:* {{ .Annotations.description }}
+      *Severity:* {{ .Labels.severity }}
+      *Duration:* {{ duration .StartsAt .EndsAt }}
+      {{ end }}
+
+- name: 'task-failures'
+  webhook_configs:
+  - url: 'http://task-failure-handler:8080/alert'
+    send_resolved: true
+
+# Time intervals for grouping and repeat notifications
+time_intervals:
+- name: business_hours
+  time_intervals:
+  - times:
+    - start_time: '09:00'
+      end_time: '17:00'
+    weekdays: ['monday:friday']
+    location: 'America/New_York'
+
+# Muting configuration
+mute_time_intervals:
+- name: maintenance
+  time_intervals:
+  - times:
+    - start_time: '00:00'
+      end_time: '04:00'
+    weekdays: ['sunday']
+    location: 'America/New_York'

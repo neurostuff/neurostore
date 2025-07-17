@@ -1,8 +1,8 @@
 from flask_security import UserMixin, RoleMixin, SQLAlchemyUserDatastore
 
 
-from ..database import db
-from .analysis import BaseMixin
+# Delayed import to avoid circular dependency
+from .analysis import db, BaseMixin
 
 
 roles_users = db.Table(

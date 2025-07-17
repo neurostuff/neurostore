@@ -1,0 +1,110 @@
+groups:
+  - name: celery_alerts
+    rules:
+    # Task failure rate alerts
+    - alert: HighTaskFailureRate
+      expr: |
+        rate(celery_task_errors_total[5m]) > 0.1
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: High task failure rate
+        description: "Task {{ $labels.task_name }} has high failure rate ({{ $value }})"
+
+    # Queue length alerts
+    - alert: QueueBacklog
+      expr: |
+        celery_queue_length > 100
+      for: 10m
+      labels:
+        severity: warning
+      annotations:
+        summary: Queue backlog detected
+        description: "Queue {{ $labels.queue }} has {{ $value }} pending tasks"
+
+    # Task latency alerts
+    - alert: HighTaskLatency
+      expr: |
+        histogram_quantile(0.95, rate(celery_task_latency_seconds_bucket[5m])) > 300
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: High task latency
+        description: "Task {{ $labels.task_name }} p95 latency is {{ $value }}s"
+
+    # Worker alerts
+    - alert: LowWorkerCount
+      expr: |
+        celery_worker_count < 2
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: Low worker count
+        description: "Only {{ $value }} workers are running"
+
+    # External API alerts
+    - alert: NeurovaultApiLatency
+      expr: |
+        histogram_quantile(0.95, rate(neurovault_request_latency_seconds_bucket[5m])) > 10
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: High Neurovault API latency
+        description: "Neurovault {{ $labels.endpoint }} p95 latency is {{ $value }}s"
+
+    - alert: NeurostoreApiLatency
+      expr: |
+        histogram_quantile(0.95, rate(neurostore_request_latency_seconds_bucket[5m])) > 5
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: High Neurostore API latency
+        description: "Neurostore {{ $labels.endpoint }} p95 latency is {{ $value }}s"
+
+    # Task-specific alerts
+    - alert: NeurovaultUploadFailures
+      expr: |
+        rate(celery_task_errors_total{task_name="neurovault.upload"}[15m]) > 0
+      for: 15m
+      labels:
+        severity: warning
+      annotations:
+        summary: Neurovault upload failures
+        description: "Neurovault uploads failing with error {{ $labels.error_type }}"
+
+    - alert: NeurostoreAnalysisFailures
+      expr: |
+        rate(celery_task_errors_total{task_name="neurostore.analysis_upload"}[15m]) > 0
+      for: 15m
+      labels:
+        severity: warning
+      annotations:
+        summary: Neurostore analysis failures
+        description: "Neurostore analysis uploads failing with error {{ $labels.error_type }}"
+
+    # Resource alerts
+    - alert: HighMemoryUsage
+      expr: |
+        process_resident_memory_bytes{job="celery"} > 1e9
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: High memory usage
+        description: "Worker using {{ $value | humanize }}B of memory"
+
+    # Retry alerts
+    - alert: HighRetryRate
+      expr: |
+        rate(celery_task_retries_total[5m]) > 1
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: High task retry rate
+        description: "Task {{ $labels.task_name }} has high retry rate"
