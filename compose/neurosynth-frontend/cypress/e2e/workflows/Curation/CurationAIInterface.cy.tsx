@@ -27,7 +27,8 @@ describe('CurationAIInterface', () => {
         }).as('taskExtraction');
 
         // this is necessary to hide an info popup that appears for the first time in projects for the new curation UI
-        cy.addToLocalStorage('abc123-hide-info-popup', 'true');
+        // the auth0
+        cy.addToLocalStorage('auth0|62e0e6c9dd47048572613b4d-hide-info-popup', 'true');
 
         // cy.intercept('GET', `**/api/studysets/*`, { fixture: 'studyset' }).as('studysetFixture');
     });
@@ -124,7 +125,7 @@ describe('CurationAIInterface', () => {
             cy.contains('PRISMA diagram').should('exist');
         });
 
-        it.only('should have a button to download the CSVs in the included phase', () => {
+        it('should have a button to download the CSVs in the included phase', () => {
             cy.contains('4. Included').click();
             cy.contains('Download as CSV').should('exist');
         });
@@ -150,7 +151,6 @@ describe('CurationAIInterface', () => {
             });
 
             it('should show the correct button options when a row is selected', () => {
-                cy.wait('@projectFixture');
                 cy.contains('button', /^Promote$/).should('not.exist');
                 cy.contains('button', 'Duplicate (1)').should('not.exist');
 
@@ -184,10 +184,6 @@ describe('CurationAIInterface', () => {
         });
 
         describe('focus mode', () => {
-            beforeEach(() => {
-                cy.wait('@projectFixture');
-            });
-
             it('should show the include button as PROMOTE in the identification phase and not demote', () => {
                 cy.contains('li', '1. Identification').click();
 
@@ -690,7 +686,7 @@ describe('CurationAIInterface', () => {
             it('should filter studies via autocomplete and implement the SOME array compare strategy', () => {
                 cy.addToLocalStorage(
                     'abc123-curation-table',
-                    `{"firstTimeSeeingPage":false,"selectedColumns":["fmritaskstaskname"],"columnFilters":[],"sorting":[]}`
+                    `{"firstTimeSeeingPage":false,"selectedColumns":["fMRITasks.TaskName"],"columnFilters":[],"sorting":[]}`
                 );
 
                 cy.intercept('GET', '**/api/projects/*', {

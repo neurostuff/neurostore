@@ -1,17 +1,21 @@
-import { Box, Button, Link, Typography } from '@mui/material';
+import { useAuth0 } from '@auth0/auth0-react';
+import { Box, Button, Checkbox, FormControlLabel, Link, Typography } from '@mui/material';
 import { useState } from 'react';
-import { useParams } from 'react-router-dom';
 import BaseDialog from './Dialogs/BaseDialog';
 
 const InfoPopup: React.FC = () => {
-    const { projectId } = useParams<{ projectId: string | undefined }>();
-    const localStorageKey = `${projectId}-hide-info-popup`;
+    const { user } = useAuth0();
+    const localStorageKey = `${user?.sub || ''}-hide-info-popup`;
     const shouldHide = !!localStorage.getItem(localStorageKey);
     const [hide, setShouldHide] = useState(shouldHide);
 
+    const [checked, setIsChecked] = useState(false);
+
     const handleCloseDialog = () => {
+        if (checked) {
+            window.localStorage.setItem(localStorageKey, 'true');
+        }
         setShouldHide(true);
-        window.localStorage.setItem(localStorageKey, 'true');
     };
 
     return (
@@ -52,7 +56,13 @@ const InfoPopup: React.FC = () => {
                         checkout our recent blog post
                     </Link>
                 </Typography>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', marginTop: '2rem' }}>
+                <Box sx={{ marginTop: '1rem', marginBottom: '0.5rem' }}>
+                    <FormControlLabel
+                        control={<Checkbox checked={checked} onChange={(e) => setIsChecked(e.target.checked)} />}
+                        label="Don't show this again"
+                    />
+                </Box>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                     <Button fullWidth onClick={handleCloseDialog} variant="contained" color="primary" disableElevation>
                         Continue
                     </Button>
