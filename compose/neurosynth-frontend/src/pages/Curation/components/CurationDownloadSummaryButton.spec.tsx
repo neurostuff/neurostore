@@ -1,6 +1,6 @@
 import { vi, Mock } from 'vitest';
 import { act, render, screen } from '@testing-library/react';
-import CurationDownloadIncludedStudiesButton from 'pages/Curation/components/CurationDownloadIncludedStudiesButton';
+import CurationDownloadSummaryButton from 'pages/Curation/components/CurationDownloadSummaryButton';
 import userEvent from '@testing-library/user-event';
 import { useProjectCurationColumns } from 'pages/Project/store/ProjectStore';
 import { ICurationColumn } from '../Curation.types';
@@ -17,11 +17,6 @@ const mockCurationColumns: ICurationColumn[] = [
     {
         name: 'excluded',
         id: '1',
-        stubStudies: [],
-    },
-    {
-        name: 'included',
-        id: '2',
         stubStudies: [
             {
                 id: 'included_1',
@@ -37,9 +32,20 @@ const mockCurationColumns: ICurationColumn[] = [
                 identificationSource: defaultIdentificationSources.neurostore,
                 keywords: '',
                 abstractText: 'included_abstract_1',
-                exclusionTag: null,
+                exclusionTag: {
+                    id: 'excluded',
+                    label: 'exclusion-tag-label',
+                    isExclusionTag: true,
+                    isAssignable: true,
+                },
                 neurostoreId: 'included_neurostoreid_1',
             },
+        ],
+    },
+    {
+        name: 'included',
+        id: '2',
+        stubStudies: [
             {
                 id: 'included_2',
                 title: 'included_2',
@@ -74,25 +80,22 @@ const mockCurationColumns: ICurationColumn[] = [
     },
 ];
 
-describe('CurationDownloadIncludedStudiesButton', () => {
+describe('CurationDownloadSummaryButton', () => {
     it('should render', () => {
         (useProjectCurationColumns as Mock).mockReturnValue(mockCurationColumns);
-        render(<CurationDownloadIncludedStudiesButton />);
+        render(<CurationDownloadSummaryButton />);
     });
 
     it('should be disabled if there are no included studies', () => {
-        (useProjectCurationColumns as Mock).mockReturnValue([
-            { name: 'excluded', id: '1', stubStudies: [] },
-            { name: 'included', id: '1', stubStudies: [] },
-        ]);
-        render(<CurationDownloadIncludedStudiesButton />);
+        (useProjectCurationColumns as Mock).mockReturnValue([]);
+        render(<CurationDownloadSummaryButton />);
         const downloadButton = screen.getByText('Download as CSV');
         expect(downloadButton).toBeDisabled();
     });
 
     it('renders the button group and opens the dropdown menu when clicked', () => {
         (useProjectCurationColumns as Mock).mockReturnValue(mockCurationColumns);
-        render(<CurationDownloadIncludedStudiesButton />);
+        render(<CurationDownloadSummaryButton />);
         const dropdownButton = screen.getByTestId('ArrowDropDownIcon');
         expect(dropdownButton).toBeInTheDocument();
         expect(screen.getByText('Download as CSV')).toBeInTheDocument();
@@ -102,13 +105,13 @@ describe('CurationDownloadIncludedStudiesButton', () => {
 
     it('downloads CSVs when the download CSV button is clicked', () => {
         const csvStudies =
-            `"Title","Authors","PMID","PMCID","DOI","Year","Journal","Link","Source","Tags","Neurosynth ID"\r\n` +
-            `"included_1","John Smith","included_pmid_1","included_pmcid_1","included_doi_1","included_articleyear_1","included_journal_1","included_articlelink_1","Neurostore","","included_neurostoreid_1"\r\n` +
-            `"included_2","included_authors_2","included_pmid_2","included_pmcid_2","","included_articleyear_2","included_journal_2","included_articlelink_2","Neurostore","tag_1_label,tag_2_label","included_neurostoreid_2"`;
+            `"Title","Authors","PMID","PMCID","DOI","Year","Journal","Link","Source","Status","Exclusion","Tags","Neurosynth ID"\r\n` +
+            `"included_1","John Smith","included_pmid_1","included_pmcid_1","included_doi_1","included_articleyear_1","included_journal_1","included_articlelink_1","Neurostore","excluded","exclusion-tag-label","","included_neurostoreid_1"\r\n` +
+            `"included_2","included_authors_2","included_pmid_2","included_pmcid_2","","included_articleyear_2","included_journal_2","included_articlelink_2","Neurostore","included","","tag_1_label, tag_2_label","included_neurostoreid_2"`;
 
         (useProjectCurationColumns as Mock).mockReturnValue(mockCurationColumns);
 
-        render(<CurationDownloadIncludedStudiesButton />);
+        render(<CurationDownloadSummaryButton />);
         userEvent.click(screen.getByText('Download as CSV'));
         expect(downloadFile).toHaveBeenCalledTimes(1);
         expect(downloadFile).toHaveBeenCalledWith(
@@ -142,7 +145,7 @@ describe('CurationDownloadIncludedStudiesButton', () => {
         (useProjectCurationColumns as Mock).mockReturnValue(mockCurationColumns);
 
         await act(async () => {
-            render(<CurationDownloadIncludedStudiesButton />);
+            render(<CurationDownloadSummaryButton />);
             const dropdownButton = screen.getByTestId('ArrowDropDownIcon');
             expect(dropdownButton).toBeInTheDocument();
             userEvent.click(dropdownButton);
