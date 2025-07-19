@@ -79,11 +79,13 @@ const CurationStubAITableSummary: React.FC<{ stub: ICurationTableStudy | undefin
                                     <TableHead>
                                         <TableRow>
                                             <TableCell sx={{ p: '8px' }}>
-                                                <Typography variant="body2"></Typography>
+                                                <Typography variant="body2" fontWeight="bold">
+                                                    fMRI Tasks
+                                                </Typography>
                                             </TableCell>
                                             {TaskExtractor.fMRITasks.map((task, index) => (
                                                 <TableCell key={index} sx={{ p: '8px' }}>
-                                                    <Typography variant="body2">fMRI Task ({index + 1})</Typography>
+                                                    <Typography variant="body2">Task {index + 1}</Typography>
                                                 </TableCell>
                                             ))}
                                             {/* {TaskExtractor.BehavioralTasks?.map((task, index) => (
@@ -123,7 +125,14 @@ const CurationStubAITableSummary: React.FC<{ stub: ICurationTableStudy | undefin
                                                                 },
                                                                 ''
                                                             );
+                                                        } else if (value === undefined) {
+                                                            value = 'undefined';
+                                                        } else if (value === null) {
+                                                            value = 'null';
+                                                        } else if (typeof value !== 'string') {
+                                                            value = value.toString();
                                                         }
+
                                                         return (
                                                             <TableCell key={cellIndex} sx={{ p: '8px' }}>
                                                                 <Typography
@@ -200,6 +209,14 @@ const CurationStubAITableSummary: React.FC<{ stub: ICurationTableStudy | undefin
                 <AccordionDetails>
                     {ParticipantDemographicsExtractor ? (
                         <Table sx={{ marginTop: '0.5rem', tableLayout: 'fixed' }}>
+                            <TableHead>
+                                <TableCell></TableCell>
+                                {ParticipantDemographicsExtractor.groups?.map((group, index) => (
+                                    <TableCell key={index}>
+                                        <Typography variant="body2">Group {index + 1}</Typography>
+                                    </TableCell>
+                                ))}
+                            </TableHead>
                             <TableBody>
                                 {PARTICIPANTS_DEMOGRAPHICS_EXTRACTOR_CURATOR_COLUMNS.map((col, index) => (
                                     <TableRow key={index}>
