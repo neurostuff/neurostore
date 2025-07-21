@@ -14,14 +14,12 @@ import {
     useProjectCurationColumn,
     useProjectCurationExclusionTags,
     useProjectCurationInfoTags,
-    useProjectCurationIsLastColumn,
     useProjectCurationPrismaConfig,
     useProjectUser,
 } from 'pages/Project/store/ProjectStore';
 import { ENeurosynthTagIds } from 'pages/Project/store/ProjectStore.types';
 import React, { useEffect, useMemo, useState } from 'react';
 import { FixedSizeList, ListChildComponentProps } from 'react-window';
-import CurationDownloadIncludedStudiesButton from './CurationDownloadIncludedStudiesButton';
 
 const getVisibility = (stub: ICurationStubStudy, selectedTag: ITag | undefined): boolean => {
     let isVisible = false;
@@ -90,7 +88,6 @@ const CurationColumn: React.FC<{ columnIndex: number }> = React.memo((props) => 
         isOpen: false,
         stubId: undefined,
     });
-    const isLastColumn = useProjectCurationIsLastColumn(props.columnIndex);
 
     useEffect(() => {
         if (prismaConfig.isPrisma) {
@@ -188,15 +185,6 @@ const CurationColumn: React.FC<{ columnIndex: number }> = React.memo((props) => 
                     Promote Non Duplicated Studies
                 </CurationPromoteUncategorizedButton>
             )}
-            {
-                // It's not possible for the column index to be 0, and also the last column
-                // therefore we can assume it will render this or the above, not both
-                isLastColumn && (
-                    <Box style={{ marginBottom: '0.75rem', width: '100%' }}>
-                        <CurationDownloadIncludedStudiesButton buttonGroupProps={{ size: 'medium', fullWidth: true }} />
-                    </Box>
-                )
-            }
 
             <Paper elevation={0} sx={{ width: '100%' }}>
                 <Autocomplete
@@ -222,7 +210,7 @@ const CurationColumn: React.FC<{ columnIndex: number }> = React.memo((props) => 
                     options={tags}
                     isOptionEqualToValue={(option, value) => option?.id === value?.id}
                     getOptionLabel={(option) => option?.label || ''}
-                    onChange={(_event, newValue, _reason) => {
+                    onChange={(_event, newValue) => {
                         setSelectedTag(newValue || undefined);
                     }}
                 />
@@ -246,7 +234,7 @@ const CurationColumn: React.FC<{ columnIndex: number }> = React.memo((props) => 
                     />
                 )}
             >
-                {(provided, snapshot) => (
+                {(provided) => (
                     <FixedSizeList
                         // 212 roughly represents the space taken up by other components above the column like buttons and headers
                         height={windowHeight - 212 < 0 ? 0 : windowHeight - 212}

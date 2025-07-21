@@ -1,12 +1,17 @@
-import { ICurationStubStudy } from '../Curation.types';
+import { ICurationColumn, ICurationStubStudy } from '../Curation.types';
 // @ts-expect-error @citation-js/core is throwing an error saying it cannot find types. This is because there are no npm types
 import { Cite } from '@citation-js/core';
 import '@citation-js/plugin-bibtex';
 import '@citation-js/plugin-doi';
 import { generateBibtex } from 'hooks/external/useGetBibtexCitations';
 
-export const stubsToCSV = (stubs: ICurationStubStudy[]) => {
-    const mappedCSVStudyObjs = stubs.map((stub) => ({
+export const stubsToCSV = (curationColumns: ICurationColumn[]) => {
+    const allStudies = curationColumns.reduce(
+        (acc, curr) => [...acc, ...curr.stubStudies.map((stub) => ({ ...stub, status: curr.name }))],
+        [] as (ICurationStubStudy & { status: string })[]
+    );
+
+    const mappedCSVStudyObjs = allStudies.map((stub) => ({
         title: stub.title || '',
         authors: stub.authors || '',
         pmid: stub.pmid || '',
@@ -16,10 +21,9 @@ export const stubsToCSV = (stubs: ICurationStubStudy[]) => {
         journal: stub.journal || '',
         articleLink: stub.articleLink || '',
         source: stub.identificationSource.label || '',
-        tags: stub.tags.reduce(
-            (prev, curr, index, arr) => `${prev}${curr.label}${index === arr.length - 1 ? '' : ','}`,
-            ''
-        ),
+        status: stub.status || '',
+        exclusion: stub.exclusionTag?.label || '',
+        tags: stub.tags.map((tag) => tag.label).join(', ') || '',
         neurostoreId: stub.neurostoreId || '',
     }));
 
@@ -34,7 +38,9 @@ export const stubsToCSV = (stubs: ICurationStubStudy[]) => {
             journal: 'Journal',
             articleLink: 'Link',
             source: 'Source',
-            tags: 'Tags',
+            status: 'Status', // curation column status
+            exclusion: 'Exclusion',
+            Tags: 'Tags',
             neurostoreId: 'Neurosynth ID',
         },
         ...mappedCSVStudyObjs,
@@ -50,7 +56,9 @@ export const stubsToCSV = (stubs: ICurationStubStudy[]) => {
         .join('\r\n');
 };
 
-export const stubsToBibtex = (stubs: ICurationStubStudy[]) => {
+export const stubsToBibtex = (cuerationColumns: ICurationColumn[]) => {
+    const stubs = cuerationColumns.reduce((acc, curr) => [...acc, ...curr.stubStudies], [] as ICurationStubStudy[]);
+
     const responses = stubs.map((stub) => generateBibtex(stub));
     const citeObj = new Cite(responses);
     return citeObj.format('bibtex', { format: 'text' }) as string;
