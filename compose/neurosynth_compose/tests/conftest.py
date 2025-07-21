@@ -82,12 +82,32 @@ Test fixtures for bypassing authentication
 
 
 # Removed real_app and real_db fixtures for unified test setup
-@pytest.fixture(autouse=True, scope="function")
-def create_all_tables(db):
-    # Ensure tables are created before each test
+# Remove function-scoped create_all_tables fixture.
+# Use session-scoped table creation and function-scoped transaction rollback for isolation.
+
+@pytest.fixture(scope="session", autouse=True)
+def setup_database(db):
+    """Create all tables at the start of the test session, drop at the end."""
     db.create_all()
     yield
     db.drop_all()
+
+@pytest.fixture(scope="function", autouse=True)
+def isolate_db_session(db):
+    """Rollback all changes after each test for isolation."""
+    connection = db.engine.connect()
+    transaction = connection.begin()
+    options = dict(bind=connection, binds={})
+    session = db._make_scoped_session(options=options)
+    session.begin_nested()
+
+    db.session = session
+
+    yield session
+
+    session.remove()
+    transaction.rollback()
+    connection.close()
 
 
 # https://github.com/pytest-dev/pytest/issues/363#issuecomment-406536200

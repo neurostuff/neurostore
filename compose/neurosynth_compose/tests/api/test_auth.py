@@ -72,3 +72,4 @@ def test_creating_new_user_on_db(mock_add_users):
     resp = client.post("/api/projects", data={"name": "my project"})
 
     assert resp.status_code == 200
+    client.close()
