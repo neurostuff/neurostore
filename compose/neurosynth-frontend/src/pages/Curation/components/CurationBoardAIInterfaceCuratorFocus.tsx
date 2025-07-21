@@ -35,19 +35,6 @@ const CurationBoardAIInterfaceCuratorFocus: React.FC<ICurationBoardAIInterfaceCu
 
     const pxInVh = Math.round(windowHeight - 250);
 
-    // cant use useRef as the listRef does not exist due to it being rendered
-    // later as a dialog. useEffect also does not keep track of useRef value changes
-    // https://stackoverflow.com/questions/60476155/is-it-safe-to-use-ref-current-as-useeffects-dependency-when-ref-points-to-a-dom
-    // const handleScrollTo = React.useCallback(
-    //     (listRef: FixedSizeList) => {
-    //         if (listRef) {
-    //             const selectedItemIndex = (stubs || []).findIndex((x) => x.id === selectedStub?.id);
-    //             listRef.scrollToItem(selectedItemIndex, 'smart');
-    //         }
-    //     },
-    //     [stubs, selectedStub?.id]
-    // );
-
     useEffect(() => {
         if (!listRef.current) return;
         const selectedItemIndex = (rows || []).findIndex((row) => row.id === selectedStub?.id);
