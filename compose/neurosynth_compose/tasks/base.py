@@ -1,9 +1,9 @@
 """Base task for Celery tasks."""
 
 from celery import Task
-import structlog
+import logging
 
-logger = structlog.get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class NeuroTask(Task):
@@ -13,41 +13,49 @@ class NeuroTask(Task):
     _logger = None
 
     def get_logger(self):
-        """Get a logger bound with task context."""
-        if not self._logger:
-            self._logger = logger.bind(task_name=self.name)
-        return self._logger
+        """Get a logger with task context."""
+        return logging.getLogger(self.name)
 
     def __call__(self, *args, **kwargs):
         """Execute task."""
         bound_logger = self.get_logger()
-        bound_logger.info("task_started")
-        
+        bound_logger.info("task_started", extra={"task_name": self.name})
+
         try:
-            if not hasattr(self, '_orig_run'):
+            if not hasattr(self, "_orig_run"):
                 self._orig_run = self.run
             result = self._orig_run(*args, **kwargs)
-            bound_logger.info("task_completed")
+            bound_logger.info("task_completed", extra={"task_name": self.name})
             return result
         except Exception as exc:
-            bound_logger.exception("task_failed", exc_info=exc)
+            bound_logger.exception(
+                "task_failed", extra={"task_name": self.name, "exc_info": exc}
+            )
             raise
 
     def on_failure(self, exc, task_id, args, kwargs, einfo):
         """Handle task failure."""
-        bound_logger = self.get_logger().bind(
-            task_id=task_id,
-            args=str(args),
-            kwargs=str(kwargs),
-            error=str(exc)
+        bound_logger = self.get_logger()
+        bound_logger.error(
+            "task_failed",
+            extra={
+                "task_name": self.name,
+                "task_id": task_id,
+                "task_args": str(args),
+                "task_kwargs": str(kwargs),
+                "error": str(exc),
+            },
         )
-        bound_logger.error("task_failed")
 
     def on_success(self, retval, task_id, args, kwargs):
         """Handle task success."""
-        bound_logger = self.get_logger().bind(
-            task_id=task_id,
-            args=str(args),
-            kwargs=str(kwargs)
+        bound_logger = self.get_logger()
+        bound_logger.info(
+            "task_success",
+            extra={
+                "task_name": self.name,
+                "task_id": task_id,
+                "task_args": str(args),
+                "task_kwargs": str(kwargs),
+            },
         )
-        bound_logger.info("task_success")

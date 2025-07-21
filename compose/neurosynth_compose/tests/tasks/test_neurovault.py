@@ -5,13 +5,12 @@ import tempfile
 import shutil
 
 import pytest
-from neurosynth_compose.tests.tasks.celery_conftest import app_context
 import celery
 
 from neurosynth_compose.tasks.neurovault import (
     file_upload_neurovault,
     determine_map_type,
-    update_record
+    update_record,
 )
 
 
@@ -31,11 +30,11 @@ def test_update_record(neurovault_files):
         "id": 123,  # Integer ID
         "url": "https://neurovault.org/123",
         "file": "test.nii.gz",
-        "target_template_image": "MNI152"
+        "target_template_image": "MNI152",
     }
-    
+
     update_record(record, nv_file)
-    
+
     assert record.value_type == "Z"
     assert isinstance(record.image_id, int)  # Check type
     assert record.image_id == 123  # Check value
@@ -47,33 +46,29 @@ def test_update_record(neurovault_files):
 
 @pytest.mark.integration
 def test_file_upload_neurovault_success(
-    app,
-    mock_neurovault_api,
-    test_nifti_file,
-    neurovault_collection,
-    neurovault_files
+    app, mock_neurovault_api, test_nifti_file, neurovault_collection, neurovault_files
 ):
     """Test successful file upload to Neurovault."""
     with app.app_context():
         # Configure Celery
         celery.current_app.conf.update(
-            CELERY_ALWAYS_EAGER=True,
-            CELERY_EAGER_PROPAGATES_EXCEPTIONS=True
+            CELERY_ALWAYS_EAGER=True, CELERY_EAGER_PROPAGATES_EXCEPTIONS=True
         )
-        
+
         nv_file = neurovault_files[0]
         file_id = nv_file.id
-        
+
         with tempfile.TemporaryDirectory() as tmpdirname:
             test_file = Path(tmpdirname) / "z_stat.nii.gz"
             shutil.copyfile(test_nifti_file, test_file)
-            
+
             # Execute task synchronously
             result = file_upload_neurovault.apply(args=[str(test_file), file_id])
             result.get()
-            
+
             # Verify database record
             from neurosynth_compose.models.analysis import db
+
             db.session.expire_all()
             nv_file = nv_file.__class__.query.get(file_id)  # Get fresh instance
             assert nv_file.status == "OK"
@@ -81,7 +76,7 @@ def test_file_upload_neurovault_success(
             assert isinstance(nv_file.image_id, int)  # Check type
             assert nv_file.image_id == 123  # Check value
             assert nv_file.url == "https://neurovault.org/images/123"
-            
+
             # Verify API call
             call_args, call_kwargs = mock_neurovault_api.add_image.call_args
             assert call_args[0] == neurovault_collection.collection_id
@@ -90,34 +85,31 @@ def test_file_upload_neurovault_success(
 
 @pytest.mark.integration
 def test_file_upload_neurovault_failure(
-    app,
-    mock_neurovault_api_error,
-    test_nifti_file,
-    neurovault_files
+    app, mock_neurovault_api_error, test_nifti_file, neurovault_files
 ):
     """Test handling of Neurovault upload failure."""
     with app.app_context():
         # Configure Celery
         celery.current_app.conf.update(
-            CELERY_ALWAYS_EAGER=True,
-            CELERY_EAGER_PROPAGATES_EXCEPTIONS=True
+            CELERY_ALWAYS_EAGER=True, CELERY_EAGER_PROPAGATES_EXCEPTIONS=True
         )
-        
+
         nv_file = neurovault_files[0]
         file_id = nv_file.id
-        
+
         with tempfile.TemporaryDirectory() as tmpdirname:
             test_file = Path(tmpdirname) / "test.nii.gz"
             shutil.copyfile(test_nifti_file, test_file)
-            
+
             # Execute task synchronously
             result = file_upload_neurovault.apply(args=[str(test_file), file_id])
-            
+
             with pytest.raises(Exception):
                 result.get()
-            
+
             # Verify error state
             from neurosynth_compose.models.analysis import db
+
             db.session.expire_all()
             nv_file = nv_file.__class__.query.get(file_id)  # Get fresh instance
             assert nv_file.status == "FAILED"

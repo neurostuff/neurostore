@@ -6,27 +6,16 @@ import pytest
 import pandas as pd
 import numpy as np
 import nibabel as nib
-from unittest.mock import MagicMock, Mock
+from unittest.mock import Mock
 from sqlalchemy import create_engine, text
-from flask_sqlalchemy import SQLAlchemy
 
-from sqlalchemy import create_engine
 from neurosynth_compose.models.analysis import (
-    Condition,
-    SpecificationCondition,
-    Specification,
-    Studyset,
-    StudysetReference,
-    Annotation,
-    AnnotationReference,
-    MetaAnalysis,
-    MetaAnalysisResult,
     NeurovaultCollection,
     NeurovaultFile,
-    Project,
 )
-from neurosynth_compose.models.auth import User  # Ensure User is imported for table registration
+
 from neurosynth_compose.models.analysis import db
+
 metadata = db.Model.metadata
 
 
@@ -40,18 +29,25 @@ def mock_auth():
 def db_engine():
     """Create test database engine."""
     engine = create_engine("postgresql://postgres:example@compose_pgsql:5432/compose")
-    
+
     # Ensure all tables, including `neurovault_collections`, are created
     metadata.create_all(engine)
     # Debug: Print registered tables to confirm model registration
     print("Registered tables:", metadata.tables.keys())
     # Debug: Check if the `neurovault_collections` table exists
     with engine.connect() as conn:
-        result = conn.execute(text("SELECT table_name FROM information_schema.tables WHERE table_name = 'neurovault_collections'"))
+        result = conn.execute(
+            text(
+                (
+                    "SELECT table_name FROM information_schema.tables "
+                    "WHERE table_name = 'neurovault_collections'"
+                )
+            )
+        )
         assert result.rowcount > 0, "Table `neurovault_collections` was not created."
-    
+
     yield engine
-    
+
     # Drop all tables in reverse dependency order
     conn = engine.connect()
     # Start a transaction
@@ -70,6 +66,7 @@ def test_db(db_engine):
     """Create test database."""
     from neurosynth_compose.models.analysis import db
     from sqlalchemy.orm import scoped_session, sessionmaker
+
     session = scoped_session(sessionmaker(bind=db_engine))
     db.session = session
     yield session
@@ -81,11 +78,11 @@ def test_db(db_engine):
 def test_cluster_table():
     """Create test cluster table."""
     data = {
-        'X': [10, 20, 30],
-        'Y': [-5, -10, -15],
-        'Z': [0, 5, 10],
-        'Peak Stat': [3.5, 4.0, 4.5],
-        'Cluster Size (mm3)': [100, 200, 300]
+        "X": [10, 20, 30],
+        "Y": [-5, -10, -15],
+        "Z": [0, 5, 10],
+        "Peak Stat": [3.5, 4.0, 4.5],
+        "Cluster Size (mm3)": [100, 200, 300],
     }
     return pd.DataFrame(data)
 
@@ -99,7 +96,7 @@ def meta_analysis_result_files():
             filename=f"test{i}.nii.gz",
             url=f"https://example.com/test{i}.nii.gz",
             value_type="Z",
-            created_at="2023-01-01"
+            created_at="2023-01-01",
         )
         for i in range(3)
     ]
@@ -109,10 +106,7 @@ def meta_analysis_result_files():
 @pytest.fixture
 def neurovault_collection(test_db):
     """Create test neurovault collection."""
-    collection = NeurovaultCollection(
-        id=str(uuid.uuid4()),
-        collection_id="123"
-    )
+    collection = NeurovaultCollection(id=str(uuid.uuid4()), collection_id="123")
     test_db.add(collection)
     test_db.commit()
     return collection
@@ -129,7 +123,8 @@ def neurovault_files(test_db, neurovault_collection):
             value_type="Z",
             created_at="2023-01-01",
             status="PENDING",
-            neurovault_collection=neurovault_collection
+            neurovault_collection=neurovault_collection,
+            collection_id=neurovault_collection.collection_id,
         )
         for i in range(3)
     ]
@@ -142,7 +137,7 @@ def neurovault_files(test_db, neurovault_collection):
 @pytest.fixture
 def mock_neurovault_api(monkeypatch):
     """Mock Neurovault API for successful upload."""
-    from unittest.mock import Mock
+
     mock_api = Mock()
     mock_response = Mock()
     mock_response.ok = True
@@ -151,29 +146,40 @@ def mock_neurovault_api(monkeypatch):
     mock_response.json.return_value = {
         "map_type": "Z",
         "id": 123,
+        "image_id": 123,
+        "collection_id": 12345,
         "url": "https://neurovault.org/images/123",
         "file": "z_stat.nii.gz",
-        "target_template_image": "MNI152"
+        "filename": "z_stat.nii.gz",
+        "target_template_image": "MNI152",
     }
     mock_api.add_image.return_value = mock_response
-    monkeypatch.setattr("neurosynth_compose.tasks.neurovault.pynv.Client", lambda *a, **kw: mock_api)
+    monkeypatch.setattr(
+        "neurosynth_compose.tasks.neurovault.pynv.Client", lambda *a, **kw: mock_api
+    )
     return mock_api
+
 
 @pytest.fixture
 def mock_neurovault_api_error(monkeypatch):
     """Mock Neurovault API for upload failure."""
-    from unittest.mock import Mock
+
     mock_api = Mock()
     mock_response = Mock()
     mock_response.ok = False
     mock_response.status_code = 404
     mock_response.text = "Not found."
     mock_response.json.return_value = {}
+
     def raise_api_error(*args, **kwargs):
         from pynv.exceptions import APIError
+
         raise APIError(mock_response)
+
     mock_api.add_image.side_effect = raise_api_error
-    monkeypatch.setattr("neurosynth_compose.tasks.neurovault.pynv.Client", lambda *a, **kw: mock_api)
+    monkeypatch.setattr(
+        "neurosynth_compose.tasks.neurovault.pynv.Client", lambda *a, **kw: mock_api
+    )
     return mock_api
 
 
@@ -183,12 +189,12 @@ def test_nifti_file(tmpdir):
     # Create a simple 3D array
     data = np.zeros((4, 4, 4))
     data[1:3, 1:3, 1:3] = 1  # Create a central cube of ones
-    
+
     # Create the NIfTI image
     img = nib.Nifti1Image(data, affine=np.eye(4))
-    
+
     # Save to temporary file
     filepath = os.path.join(tmpdir, "test.nii.gz")
     nib.save(img, filepath)
-    
+
     return filepath

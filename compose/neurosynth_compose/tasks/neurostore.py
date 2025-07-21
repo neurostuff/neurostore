@@ -1,8 +1,6 @@
 """Tasks for interacting with Neurostore."""
 
-import structlog
-import json
-from pathlib import Path
+import logging
 
 import requests
 from flask import current_app
@@ -11,12 +9,12 @@ from ..database import db
 from ..models import NeurostoreAnalysis
 from .base import NeuroTask
 
-logger = structlog.get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def get_auth_token():
     """Get auth token from app config."""
-    return current_app.config.get('NEUROSTORE_TOKEN')
+    return current_app.config.get("NEUROSTORE_TOKEN")
 
 
 def prepare_points_data(cluster_table):
@@ -27,11 +25,11 @@ def prepare_points_data(cluster_table):
     points = []
     for _, row in cluster_table.iterrows():
         point = {
-            "coordinates": [row['X'], row['Y'], row['Z']],
+            "coordinates": [row["X"], row["Y"], row["Z"]],
             "space": "MNI",
             "kind": "t",
-            "statistic": row.get('Peak Stat'),
-            "cluster_size": row.get('Cluster Size (mm3)')
+            "statistic": row.get("Peak Stat"),
+            "cluster_size": row.get("Cluster Size (mm3)"),
         }
         points.append(point)
     return points
@@ -49,7 +47,7 @@ def prepare_images_data(files):
             "filename": file.filename,
             "space": "MNI",
             "value_type": file.value_type,
-            "add_date": file.created_at
+            "add_date": file.created_at,
         }
         images.append(image)
     return images
@@ -62,8 +60,11 @@ class NeurostoreAnalysisTask(NeuroTask):
 
     def run(self, analysis_id, session=None):
         """Create or update analysis in Neurostore."""
-        bound_logger = self.get_logger().bind(analysis_id=analysis_id)
-        bound_logger.info("starting_analysis")
+        bound_logger = self.get_logger()
+        bound_logger.info(
+            "starting_analysis",
+            extra={"ns_analysis_id": analysis_id, "task_name": self.name},
+        )
 
         if session is None:
             session = db.session
@@ -78,15 +79,15 @@ class NeurostoreAnalysisTask(NeuroTask):
                 "name": getattr(analysis, "title", analysis.id),
                 "description": getattr(analysis, "description", ""),
                 "points": prepare_points_data(getattr(analysis, "cluster_table", [])),
-                "images": prepare_images_data(getattr(analysis, "files", []))
+                "images": prepare_images_data(getattr(analysis, "files", [])),
             }
 
             headers = {
                 "Authorization": f"Bearer {get_auth_token()}",
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
             }
 
-            base_url = current_app.config['NEUROSTORE_URL']
+            base_url = current_app.config["NEUROSTORE_URL"]
 
             # Create or update
             if analysis.neurostore_id:
@@ -104,11 +105,17 @@ class NeurostoreAnalysisTask(NeuroTask):
             analysis.status = "OK"
             session.commit()
 
-            bound_logger.info("analysis_complete")
+            bound_logger.info(
+                "analysis_complete",
+                extra={"ns_analysis_id": analysis_id, "task_name": self.name},
+            )
             return result
 
         except Exception as e:
-            bound_logger.exception("analysis_failed")
+            bound_logger.exception(
+                "analysis_failed",
+                extra={"ns_analysis_id": analysis_id, "task_name": self.name},
+            )
             if analysis:
                 analysis.status = "FAILED"
                 analysis.traceback = str(e)

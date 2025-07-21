@@ -5,8 +5,8 @@ from .neurostore import create_or_update_neurostore_analysis
 from ..core import celery_app
 
 __all__ = [
-    'file_upload_neurovault',
-    'create_or_update_neurostore_analysis',
+    "file_upload_neurovault",
+    "create_or_update_neurostore_analysis",
 ]
 
 # Register tasks

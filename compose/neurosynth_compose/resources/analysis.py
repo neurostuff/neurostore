@@ -396,6 +396,7 @@ class ListView(BaseView):
         # args = parser.parse(self._user_args, request, location="query")
 
         import logging
+
         logger = logging.getLogger("debug_test")
         logger.warning("Before DB write in analysis.py POST")
 
@@ -751,6 +752,7 @@ def parse_upload_files(result, stat_maps, cluster_tables, diagnostic_tables):
     # append the existing NeurovaultFiles to be committed
     for record in stat_map_fnames.values():
         record.neurovault_collection = nv_collection
+        record.collection_id = nv_collection.collection_id
         records.append(record)
 
     return records, stat_map_fnames, cluster_table_fnames, diagnostic_table_fnames

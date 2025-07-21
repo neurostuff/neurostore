@@ -1,4 +1,3 @@
-from neurosynth_compose.tests.conftest import celery_test
 from neurosynth_compose.models import (
     Project,
     MetaAnalysis,
@@ -21,7 +20,9 @@ def test_file_upload_neurovault(session, app, db, mock_pynv):
 
     nifti_file = os.path.join(data_path, "example_nifti2.nii.gz")
     nv_collection = NeurovaultCollection(collection_id=12345)
-    nv_file = NeurovaultFile(neurovault_collection=nv_collection, filename=str(nifti_file))
+    nv_file = NeurovaultFile(
+        neurovault_collection=nv_collection, filename=str(nifti_file)
+    )
     db.session.add_all([nv_file, nv_collection])
     db.session.commit()
 
@@ -71,11 +72,13 @@ def test_create_or_update_neurostore_analysis(
     db.session.commit()
     import pandas as pd
     import numpy as np
+
     df = pd.read_csv(cluster_table, sep="\t")
     df = df.replace({np.nan: None})
     ns_analysis.cluster_table = df
-    app.config['NEUROSTORE_URL'] = "http://dummy-neurostore"
+    app.config["NEUROSTORE_URL"] = "http://dummy-neurostore"
     import unittest.mock as mock
+
     mock_response = mock.MagicMock()
     mock_response.status_code = 200
     mock_response.json.return_value = {"id": "dummy-id"}
