@@ -30,9 +30,6 @@ def init_db(app):
         Base.query = db.session.query_property()
     return db
 
-
 # Debug: Print registered tables and models to confirm registration
 print("Registered tables:", Base.metadata.tables.keys())
-print(
-    "Registered models:", [mapper.class_.__name__ for mapper in Base.registry.mappers]
-)
+print("Registered models:", [mapper.class_.__name__ for mapper in Base.registry.mappers])
