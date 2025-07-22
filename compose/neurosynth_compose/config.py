@@ -79,6 +79,7 @@ class DevelopmentConfig(Config):
         f"postgresql://postgres:" f"{POSTGRES_PASSWORD}@{POSTGRES_HOST}:5432/{DB_NAME}"
     )
 
+
 class TestingConfig(Config):
     ENV = "testing"
     TESTING = True

@@ -30,7 +30,10 @@ def db_engine():
     """Create test database engine using environment/configured URI."""
     from neurosynth_compose.config import TestingConfig
 
-    db_uri = os.environ.get("SQLALCHEMY_DATABASE_URI", getattr(TestingConfig, "SQLALCHEMY_DATABASE_URI", None))
+    db_uri = os.environ.get(
+        "SQLALCHEMY_DATABASE_URI",
+        getattr(TestingConfig, "SQLALCHEMY_DATABASE_URI", None),
+    )
     if not db_uri:
         raise RuntimeError("No test database URI found in environment or config.")
 
