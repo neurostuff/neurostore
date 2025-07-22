@@ -51,41 +51,15 @@ def pytest_addoption(parser):
         default=False,
         help="Run schemathesis tests",
     )
-    parser.addoption(
-        "--celery",
-        action="store_true",
-        default=False,
-        help="Run celery tests",
-    )
-    parser.addoption(
-        "--auth",
-        action="store_true",
-        default=False,
-        help="Run authentication tests",
-    )
 
-
-celery_test = pytest.mark.skipif(
-    "not config.getoption('--celery')",
-    reason="Only run when --celery is given",
-)
 schemathesis_test = pytest.mark.skipif(
     "not config.getoption('--schemathesis')",
     reason="Only run when --schemathesis is given",
-)
-auth_test = pytest.mark.skipif(
-    "not config.getoption('--auth')",
-    reason="Only run when --auth is given",
 )
 
 """
 Test fixtures for bypassing authentication
 """
-
-
-# Removed real_app and real_db fixtures for unified test setup
-# Remove function-scoped create_all_tables fixture.
-# Use session-scoped table creation and function-scoped transaction rollback for isolation.
 
 
 @pytest.fixture(autouse=True)
@@ -312,17 +286,9 @@ def session(db):
 
     yield session
 
-    import logging
-
-    logger = logging.getLogger("debug_test")
-    logger.warning("Starting session fixture teardown")
     session.remove()
-    logger.warning("Called session.remove() in session fixture teardown")
     transaction.rollback()
-    logger.warning("Called transaction.rollback() in session fixture teardown")
     connection.close()
-    logger.warning("Called connection.close() in session fixture teardown")
-
 
 """
 Data population fixtures
