@@ -22,6 +22,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import CurationBoardAI from './components/CurationBoardAi';
 import PrismaDialog from './components/PrismaDialog';
+import CurationDownloadSummaryButton from './components/CurationDownloadSummaryButton';
 
 const localStorageNewUIKey = 'show-new-ui-may-30-2025';
 
@@ -165,6 +166,9 @@ const CurationPage: React.FC = () => {
                                     PRISMA diagram
                                 </Button>
                             </>
+                        )}
+                        {!useNewUI && (
+                            <CurationDownloadSummaryButton buttonGroupProps={{ sx: { marginLeft: '0.5rem' } }} />
                         )}
                         <Button
                             onClick={handleMoveToExtractionPhase}

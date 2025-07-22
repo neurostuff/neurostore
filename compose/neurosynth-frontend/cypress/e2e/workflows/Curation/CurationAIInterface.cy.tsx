@@ -27,7 +27,8 @@ describe('CurationAIInterface', () => {
         }).as('taskExtraction');
 
         // this is necessary to hide an info popup that appears for the first time in projects for the new curation UI
-        cy.addToLocalStorage('abc123-hide-info-popup', 'true');
+        // the auth0
+        cy.addToLocalStorage('auth0|62e0e6c9dd47048572613b4d-hide-info-popup', 'true');
 
         // cy.intercept('GET', `**/api/studysets/*`, { fixture: 'studyset' }).as('studysetFixture');
     });
@@ -106,6 +107,9 @@ describe('CurationAIInterface', () => {
             // cy.fixture('projects/projectCurationPRISMAWithStudies').as('projectFixture');
             cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
             cy.wait('@projectFixture');
+
+            cy.wait('@taskExtraction');
+            cy.wait('@participantDemographicsExtraction');
         });
 
         it('should have the discrete PRISMA phases: identification, screening, eligibility and included', () => {
@@ -124,7 +128,7 @@ describe('CurationAIInterface', () => {
             cy.contains('PRISMA diagram').should('exist');
         });
 
-        it.only('should have a button to download the CSVs in the included phase', () => {
+        it('should have a button to download the CSVs in the included phase', () => {
             cy.contains('4. Included').click();
             cy.contains('Download as CSV').should('exist');
         });
@@ -150,7 +154,6 @@ describe('CurationAIInterface', () => {
             });
 
             it('should show the correct button options when a row is selected', () => {
-                cy.wait('@projectFixture');
                 cy.contains('button', /^Promote$/).should('not.exist');
                 cy.contains('button', 'Duplicate (1)').should('not.exist');
 
@@ -184,10 +187,6 @@ describe('CurationAIInterface', () => {
         });
 
         describe('focus mode', () => {
-            beforeEach(() => {
-                cy.wait('@projectFixture');
-            });
-
             it('should show the include button as PROMOTE in the identification phase and not demote', () => {
                 cy.contains('li', '1. Identification').click();
 
@@ -382,7 +381,10 @@ describe('CurationAIInterface', () => {
             cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
             cy.wait('@projectFixture');
 
-            cy.get('tr').eq(1).click({ force: true });
+            cy.wait('@taskExtraction');
+            cy.wait('@participantDemographicsExtraction');
+
+            cy.get('tr').eq(1).click();
             cy.contains('button', 'columns').should('not.exist');
             cy.contains('button', 'back to table view').should('exist');
 
@@ -569,6 +571,8 @@ describe('CurationAIInterface', () => {
             it('should exclude the study', () => {
                 cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
                 cy.wait('@projectFixture');
+                cy.wait('@taskExtraction');
+                cy.wait('@participantDemographicsExtraction');
 
                 cy.get('tr').eq(1).click();
                 cy.contains('button', 'Exclude').click();
@@ -577,7 +581,8 @@ describe('CurationAIInterface', () => {
 
             it('should create a new exclusion and then exclude the study', () => {
                 cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
-                cy.wait('@projectFixture');
+                cy.wait('@taskExtraction');
+                cy.wait('@participantDemographicsExtraction');
 
                 // go to first row and click exclude
                 cy.get('tr').eq(1).click();
@@ -690,7 +695,7 @@ describe('CurationAIInterface', () => {
             it('should filter studies via autocomplete and implement the SOME array compare strategy', () => {
                 cy.addToLocalStorage(
                     'abc123-curation-table',
-                    `{"firstTimeSeeingPage":false,"selectedColumns":["fmritaskstaskname"],"columnFilters":[],"sorting":[]}`
+                    `{"firstTimeSeeingPage":false,"selectedColumns":["fMRITasks.TaskName"],"columnFilters":[],"sorting":[]}`
                 );
 
                 cy.intercept('GET', '**/api/projects/*', {
@@ -758,6 +763,8 @@ describe('CurationAIInterface', () => {
 
                 cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
                 cy.wait('@projectFixture');
+                cy.wait('@taskExtraction');
+                cy.wait('@participantDemographicsExtraction');
 
                 cy.contains('li', '1. Identification').find('.MuiChip-label').should('have.text', 80);
                 cy.contains('li', '2. Screening').find('.MuiChip-label').should('have.text', 0);
@@ -793,6 +800,9 @@ describe('CurationAIInterface', () => {
             it('should exclude the study', () => {
                 cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
                 cy.wait('@projectFixture');
+                cy.wait('@taskExtraction');
+                cy.wait('@participantDemographicsExtraction');
+
                 cy.contains('li', '1. Unreviewed').click();
                 cy.get('tr').eq(1).click({ force: true });
                 cy.contains('button', /^Exclude$/).click();
@@ -802,6 +812,9 @@ describe('CurationAIInterface', () => {
             it('should create a new exclusion and then exclude the study', () => {
                 cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
                 cy.wait('@projectFixture');
+                cy.wait('@taskExtraction');
+                cy.wait('@participantDemographicsExtraction');
+
                 cy.contains('li', '1. Unreviewed').click();
                 cy.get('tr').eq(1).click({ force: true });
                 cy.contains('button', /^Exclude$/)
@@ -831,6 +844,8 @@ describe('CurationAIInterface', () => {
 
                 cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
                 cy.wait('@projectFixture');
+                cy.wait('@taskExtraction');
+                cy.wait('@participantDemographicsExtraction');
 
                 cy.contains('li', '1. Identification').find('.MuiChip-label').should('have.text', 0);
                 cy.contains('li', '2. Screening').find('.MuiChip-label').should('have.text', 80);
@@ -856,6 +871,9 @@ describe('CurationAIInterface', () => {
 
             cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
             cy.wait('@projectFixture');
+            cy.wait('@taskExtraction');
+            cy.wait('@participantDemographicsExtraction');
+
             cy.contains('li', '3. Eligibility').find('.MuiChip-label').should('have.text', 0);
             cy.contains('li', '4. Included').find('.MuiChip-label').should('have.text', 80);
             cy.contains('li', '4. Included').click();

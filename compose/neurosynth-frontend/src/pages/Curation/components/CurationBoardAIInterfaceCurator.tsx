@@ -20,7 +20,7 @@ import { IGroupListItem } from './CurationBoardAIGroupsList';
 import CurationBoardAIInterfaceCuratorFocus from './CurationBoardAIInterfaceCuratorFocus';
 import CurationBoardAIInterfaceCuratorTableSkeleton from './CurationBoardAIInterfaceCuratorSkeleton';
 import CurationBoardAIInterfaceCuratorTable from './CurationBoardAIInterfaceCuratorTable';
-import CurationDownloadIncludedStudiesButton from './CurationDownloadIncludedStudiesButton';
+import CurationDownloadSummaryButton from './CurationDownloadSummaryButton';
 import PrismaDialog from './PrismaDialog';
 
 export interface ICurationBoardAIInterfaceCurator {
@@ -169,6 +169,7 @@ const CurationBoardAIInterfaceCurator: React.FC<{
                                 </Button>
                             </>
                         )}
+                        <CurationDownloadSummaryButton buttonGroupProps={{ sx: { marginRight: '0.5rem' } }} />
                         {columnIndex === 0 && (
                             <CurationPromoteUncategorizedButton
                                 onComplete={handleCompletePromoteAllUncategorized}
@@ -190,7 +191,6 @@ const CurationBoardAIInterfaceCurator: React.FC<{
                                 {isPrisma ? 'Promote Non Duplicated Studies' : 'Skip Curation'}
                             </CurationPromoteUncategorizedButton>
                         )}
-                        {isLastColumn && <CurationDownloadIncludedStudiesButton />}
                     </Box>
                 </Box>
                 <Box sx={{ whiteSpace: 'nowrap' }}>
