@@ -21,8 +21,12 @@ import { useNavigate } from 'react-router-dom';
 import BaseDialog, { IDialog } from 'components/Dialogs/BaseDialog';
 import MoveToExtractionDialogIntroduction from './MoveToExtractionDialogIntroduction';
 import { selectBestVersionsForStudyset } from 'helpers/Extraction.helpers';
+import { useQueryClient } from 'react-query';
+import { AxiosResponse } from 'axios';
+import { INeurosynthProjectReturn } from 'hooks/projects/useGetProjects';
 
 const MoveToExtractionDialog: React.FC<IDialog> = (props) => {
+    const queryClient = useQueryClient();
     const numColumns = useProjectNumCurationColumns();
     const curationIncludedStudies = useProjectCurationColumn(numColumns - 1);
     const projectId = useProjectId();
@@ -76,11 +80,6 @@ const MoveToExtractionDialog: React.FC<IDialog> = (props) => {
                 if (!newStudysetId) throw new Error('expected a studyset id but did not receive one');
 
                 tempStudysetId = newStudysetId;
-
-                updateExtractionMetadata({
-                    studysetId: newStudysetId,
-                    studyStatusList: [],
-                });
             }
             setLoadingStatus((prev) => ({
                 ...prev,
@@ -116,9 +115,6 @@ const MoveToExtractionDialog: React.FC<IDialog> = (props) => {
                 if (!newAnnotationId) throw new Error('expected a studyset id but did not receive one');
 
                 tempAnnotationId = newAnnotationId;
-                updateExtractionMetadata({
-                    annotationId: newAnnotationId,
-                });
             }
             setLoadingStatus((prev) => ({
                 ...prev,
@@ -181,6 +177,35 @@ const MoveToExtractionDialog: React.FC<IDialog> = (props) => {
         try {
             const newStudysetId = await handleCreateStudyset();
             const newAnnotationId = await handleCreateAnnotations(newStudysetId);
+
+            updateExtractionMetadata({
+                studysetId: newStudysetId,
+                annotationId: newAnnotationId,
+                studyStatusList: [],
+            });
+
+            const queryData = queryClient.getQueryData<AxiosResponse<INeurosynthProjectReturn>>([
+                'projects',
+                projectId,
+            ]);
+            if (queryData) {
+                queryClient.setQueryData(['projects', projectId], {
+                    ...queryData,
+                    data: {
+                        ...queryData.data,
+                        provenance: {
+                            ...queryData.data.provenance,
+                            extractionMetadata: {
+                                ...queryData.data.provenance.extractionMetadata,
+                                studysetId: newStudysetId,
+                                annotationId: newAnnotationId,
+                                studyStatusList: [],
+                            },
+                        },
+                    },
+                });
+            }
+
             await handleIngest(newStudysetId, newAnnotationId);
             handleFinalize();
         } catch (e) {

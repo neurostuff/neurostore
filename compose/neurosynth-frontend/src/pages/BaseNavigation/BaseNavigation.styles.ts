@@ -1,7 +1,7 @@
 import { NAVBAR_HEIGHT } from 'components/Navbar/Navbar';
 import { Style } from '../..';
 
-const curationPageMargin = 1;
+const curationPageMargin = 2;
 
 const BaseNavigationStyles: Style = {
     pagesContainer: {
@@ -12,12 +12,11 @@ const BaseNavigationStyles: Style = {
         margin: '2rem auto',
     },
     curationPageContainer: {
-        marginTop: `${curationPageMargin}rem`,
-        marginBottom: `${curationPageMargin}rem`,
+        marginTop: `1rem`,
         marginLeft: `${curationPageMargin}rem`,
+        marginRight: `${curationPageMargin}rem`,
         display: 'flex',
         flexDirection: 'column',
-        height: `calc(100vh - ${NAVBAR_HEIGHT}px - ${curationPageMargin * 2}rem)`,
     },
 };
 

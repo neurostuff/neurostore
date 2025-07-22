@@ -21,6 +21,7 @@ const isValidNumberList = (rawIdText: string | undefined) => {
 const CurationImportPMIDsUpload: React.FC<{
     onPubmedIdsUploaded: (parsedIds: string[]) => void;
     onNavigate: (button: ENavigationButton) => void;
+    onFileUpload: (fileName: string) => void;
 }> = (props) => {
     const [uploadState, setUploadState] = useState<{
         parsedIdList: string[];
@@ -79,6 +80,7 @@ const CurationImportPMIDsUpload: React.FC<{
     const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event?.target?.files && event.target.files[0]) {
             const file = event.target.files[0];
+            props.onFileUpload(file.name);
             setUploadState((prev) => ({
                 ...prev,
                 file: file,
@@ -153,19 +155,14 @@ const CurationImportPMIDsUpload: React.FC<{
             </Box>
             <Box sx={CurationImportBaseStyles.fixedContainer}>
                 <Box sx={CurationImportBaseStyles.fixedButtonsContainer}>
-                    <Button
-                        variant="outlined"
-                        onClick={() => handleButtonClick(ENavigationButton.PREV)}
-                    >
+                    <Button variant="outlined" onClick={() => handleButtonClick(ENavigationButton.PREV)}>
                         back
                     </Button>
                     <Button
                         variant="contained"
                         sx={CurationImportBaseStyles.nextButton}
                         disableElevation
-                        disabled={
-                            uploadState.parsedIdList.length === 0 || uploadState.isValid === false
-                        }
+                        disabled={uploadState.parsedIdList.length === 0 || uploadState.isValid === false}
                         onClick={() => handleButtonClick(ENavigationButton.NEXT)}
                     >
                         next

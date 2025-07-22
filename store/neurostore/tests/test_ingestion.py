@@ -15,5 +15,9 @@ def test_ingest_neuroquery(ingest_neuroquery, session):
     pass
 
 
-def test_ingest_features(create_demographic_features, session):
-    ingest_feature(create_demographic_features)
+def test_ingest_features(create_pipeline_results, session):
+    # Test ingesting each pipeline's features
+    for pipeline_dir in create_pipeline_results.iterdir():
+        if pipeline_dir.is_dir():
+            pipeline_version_dir = pipeline_dir / "1.0.0"
+            ingest_feature(pipeline_version_dir)

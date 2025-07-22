@@ -48,6 +48,9 @@ const ExtractionPage: React.FC = (props) => {
         isRefetching: getStudysetIsRefetching,
         isError: getStudysetIsError,
     } = useGetStudysetById(studysetId, true);
+
+    console.log({ studyset, studysetId });
+
     const { mutate } = useUpdateStudyset();
 
     const [fieldBeingUpdated, setFieldBeingUpdated] = useState('');
@@ -94,8 +97,7 @@ const ExtractionPage: React.FC = (props) => {
     };
 
     const isReadyToMoveToNextStep = useMemo(
-        () =>
-            extractionSummary.total === extractionSummary.completed && extractionSummary.total > 0,
+        () => extractionSummary.total === extractionSummary.completed && extractionSummary.total > 0,
         [extractionSummary]
     );
 
@@ -141,9 +143,7 @@ const ExtractionPage: React.FC = (props) => {
                             color="secondary"
                             variant="contained"
                             disableElevation
-                            onClick={() =>
-                                navigate(`/projects/${projectId}/extraction/annotations`)
-                            }
+                            onClick={() => navigate(`/projects/${projectId}/extraction/annotations`)}
                         >
                             Annotations
                         </Button>
@@ -157,9 +157,7 @@ const ExtractionPage: React.FC = (props) => {
                                     disableElevation
                                     disabled={!canEdit || !isReadyToMoveToNextStep}
                                 >
-                                    {isReadyToMoveToNextStep
-                                        ? 'Advance'
-                                        : `${percentageComplete}% complete`}
+                                    {isReadyToMoveToNextStep ? 'Advance' : `${percentageComplete}% complete`}
                                 </Button>
                             </span>
                         </Tooltip>
@@ -197,10 +195,7 @@ const ExtractionPage: React.FC = (props) => {
                             onSave={handleUpdateStudyset}
                             textToEdit={studyset?.description || ''}
                         >
-                            <Typography
-                                sx={{ color: 'muted.main', whiteSpace: 'pre-line' }}
-                                variant="body1"
-                            >
+                            <Typography sx={{ color: 'muted.main', whiteSpace: 'pre-line' }} variant="body1">
                                 {studyset?.description || (
                                     <Box component="span" sx={{ color: 'warning.dark' }}>
                                         No description

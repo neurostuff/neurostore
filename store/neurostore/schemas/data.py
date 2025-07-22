@@ -334,6 +334,33 @@ class BaseStudySchema(BaseDataSchema):
     metadata = fields.Dict(attribute="metadata_", dump_only=True)
     metadata_ = fields.Dict(data_key="metadata", load_only=True, allow_none=True)
     versions = StringOrNested("StudySchema", many=True)
+    features = fields.Method("get_features")
+    ace_fulltext = fields.String(load_only=True, allow_none=True)
+    pubget_fulltext = fields.String(load_only=True, allow_none=True)
+
+    def get_features(self, obj):
+        from .pipeline import PipelineStudyResultSchema
+
+        pipelines = self.context.get("feature_display", None)
+        pipeline_configs = self.context.get("pipeline_config", None)
+
+        if pipelines is None:
+            return {}
+
+        features = obj.display_features(pipelines, pipeline_configs)
+        # Flatten each pipeline's predictions
+        if features and self.context.get("feature_flatten", False):
+            flattened_features = {}
+            for pipeline_name, feature_data in features.items():
+                if isinstance(feature_data, dict):
+                    flattened_features[pipeline_name] = (
+                        PipelineStudyResultSchema.flatten_dict(feature_data)
+                    )
+                else:
+                    flattened_features[pipeline_name] = feature_data
+            return flattened_features
+
+        return features
 
     class Meta:
         additional = (
@@ -361,11 +388,38 @@ class BaseStudySchema(BaseDataSchema):
 
     @pre_load
     def check_nulls(self, data, **kwargs):
-        """ensure data is not empty string or whitespace"""
-        for attr in ["pmid", "pmcid", "doi"]:
+        """
+        Sanitize input fields:
+        - Replace empty/whitespace strings with None
+        - Remove common DOI prefixes
+        - Add PMC prefix to numeric PMCIDs
+        """
+        # Replace empty strings with None for all fields
+        text_fields = [
+            "name",
+            "description",
+            "publication",
+            "doi",
+            "pmid",
+            "pmcid",
+            "authors",
+        ]
+        for attr in text_fields:
             val = data.get(attr, None)
             if val is not None and (val == "" or val.isspace()):
                 data[attr] = None
+
+        # Clean DOI
+        if data.get("doi"):
+            for prefix in ["https://doi.org/", "https://dx.doi.org/"]:
+                if data["doi"].startswith(prefix):
+                    data["doi"] = data["doi"][len(prefix) :]  # noqa: E203
+                    break
+
+        # Add PMC prefix to numeric PMCIDs
+        if data.get("pmcid") and data["pmcid"].isdigit():
+            data["pmcid"] = f"PMC{data['pmcid']}"
+
         return data
 
 

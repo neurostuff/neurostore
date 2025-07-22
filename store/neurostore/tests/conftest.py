@@ -2,7 +2,7 @@ import pytest
 import random
 import json
 from os import environ
-from neurostore.models.data import Analysis, Condition
+from neurostore.models import Analysis, Condition
 from sqlalchemy.orm import scoped_session, sessionmaker
 import sqlalchemy as sa
 from .. import ingest
@@ -18,6 +18,7 @@ from ..models import (
     Image,
     Entity,
 )
+from ..ingest.extracted_features import ingest_feature
 from auth0.v3.authentication import GetToken
 from auth0.v3.authentication.users import Users
 from unittest.mock import patch
@@ -29,6 +30,9 @@ import vcr
 import logging
 
 LOGGER = logging.getLogger(__name__)
+
+# Set fixed seed for reproducible tests
+random.seed(42)
 
 
 """
@@ -591,51 +595,176 @@ def simple_neurosynth_annotation(session, ingest_neurosynth):
 
 
 @pytest.fixture(scope="function")
-def create_demographic_features(session, ingest_neurosynth, tmp_path):
-    output_dir = tmp_path / "output" / "demographics" / "v1.0.0"
-    output_dir.mkdir(exist_ok=True, parents=True)
-    pipeline_info = {
-        "name": "demographics",
-        "version": "v1.0.0",
-        "description": "demographic features",
-        "type": "independent",
-        "derived_from": None,
-        "arguments": {
-            "parallel": 1,
-            "inputs": ["text"],
-            "input_sources": ["pubget"],
+def create_pipeline_results(session, ingest_neurosynth, tmp_path):
+    studies = BaseStudy.query.all()
+
+    base_output_dir = tmp_path / "output"
+
+    # Create directories for different pipeline results
+    demo_dir = base_output_dir / "ParticipantInfo" / "1.0.0"
+    method_dir = base_output_dir / "NeuroimagingMethod" / "1.0.0"
+    task_dir = base_output_dir / "TaskInfo" / "1.0.0"
+
+    pipeline_dirs = [demo_dir, method_dir, task_dir]
+    for dir in pipeline_dirs:
+        dir.mkdir(exist_ok=True, parents=True)
+
+    # Pipeline configurations
+    pipeline_configs = {
+        "ParticipantInfo": {
+            "version": "1.0.0",
+            "description": "Participant demographics extractor",
+            "type": "apipromptextractor",
+            "date": "2025-03-05T23:55:00.000000",
+            "config_hash": "da73c01b87bf",
+            "extractor": "ParticipantDemographicsExtractor",
+            "extractor_kwargs": {
+                "extraction_model": "gpt-4-turbo",
+                "env_variable": "OPENAI_API_KEY",
+                "env_file": None,
+                "client_url": None,
+                "disable_abbreviation_expansion": True,
+            },
+            "transform_kwargs": {},
+            "input_pipelines": {},
+            "text_extraction": {"source": "text"},
+            "input_sources": ["pubget", "ace"],
+        },
+        "NeuroimagingMethod": {
+            "version": "1.0.0",
+            "description": "Neuroimaging method extractor",
+            "type": "apipromptextractor",
+            "date": "2025-03-05T23:55:00.000000",
+            "config_hash": "ba32d91c86ae",
+            "extractor": "NeuroimagingMethodExtractor",
+            "extractor_kwargs": {
+                "extraction_model": "gpt-4-turbo",
+                "env_variable": "OPENAI_API_KEY",
+                "env_file": None,
+                "client_url": None,
+                "disable_abbreviation_expansion": True,
+            },
+            "transform_kwargs": {},
+            "input_pipelines": {},
+            "text_extraction": {"source": "text"},
+            "input_sources": ["pubget", "ace"],
+        },
+        "TaskInfo": {
+            "version": "1.0.0",
+            "description": "Task information extractor",
+            "type": "apipromptextractor",
+            "date": "2025-03-05T23:55:00.000000",
+            "config_hash": "cf44e82d95ca",
+            "extractor": "TaskInfoExtractor",
+            "extractor_kwargs": {
+                "extraction_model": "gpt-4-turbo",
+                "env_variable": "OPENAI_API_KEY",
+                "env_file": None,
+                "client_url": None,
+                "disable_abbreviation_expansion": True,
+            },
+            "transform_kwargs": {},
+            "input_pipelines": {},
+            "text_extraction": {"source": "text"},
+            "input_sources": ["pubget", "ace"],
         },
     }
-    with open(output_dir / "pipeline_info.json", "w") as f:
-        json.dump(pipeline_info, f)
 
-    studies = BaseStudy.query.all()
-    diseases = ["schizophrenia", "bipolar disorder", "depression", "healthy"]
-    studies_data = [
-        [
-            {"age": random.randint(18, 100), "group": group}
-            for group in random.sample(diseases, k=random.randint(1, 2))
-        ]
-        for study in studies
-    ]
+    # Write pipeline configs
+    for dir, (name, config) in zip(pipeline_dirs, pipeline_configs.items()):
+        with open(dir / "pipeline_info.json", "w") as f:
+            json.dump(config, f)
 
-    for study, study_data in zip(studies, studies_data):
-        study_dir = output_dir / study.id
-        study_dir.mkdir(exist_ok=True, parents=True)
-        with open(study_dir / "results.json", "w") as f:
-            json.dump({"predictions": study_data}, f)
-        with open(study_dir / "info.json", "w") as f:
-            json.dump(
+    # Generate sample data for each study
+    for study in studies:
+        # ParticipantInfo data
+        demo_data = {
+            "groups": [
                 {
-                    "inputs": {
-                        f"/path/to/input/{study.id}.txt": f"md5{random.randint(0, 100)}"
-                    },
-                    "date": f"2021-01-{random.randint(1, 30)}",
+                    "group_name": "healthy",
+                    "diagnosis": "healthy controls",
+                    "count": 18,
+                    "male_count": 9,
+                    "female_count": 9,
+                    "age_mean": 25.4,
                 },
-                f,
-            )
+                {
+                    "group_name": "patient",
+                    "diagnosis": random.choice(["ADHD", "ASD", "schizophrenia"]),
+                    "count": 15,
+                    "male_count": 8,
+                    "female_count": 7,
+                    "age_mean": 26.1,
+                },
+            ]
+        }
 
-    return output_dir
+        # NeuroimagingMethod data
+        method_data = {
+            "Modality": random.sample(["EEG", "fMRI", "MEG"], k=random.randint(1, 2)),
+            "StudyObjective": (
+                "To investigate "
+                f"{random.choice(['cognitive', 'sensory', 'motor'])} processing"
+            ),
+            "SampleSize": random.randint(20, 100),
+        }
+
+        # TaskInfo data
+        task_data = {
+            "fMRITasks": [
+                {
+                    "TaskName": random.choice(["oddball", "n-back", "rest"]),
+                    "Concepts": random.sample(
+                        ["emotion", "memory", "attention", "learning"],
+                        k=random.randint(1, 3),
+                    ),
+                    "TaskDescription": (
+                        "Participants performed a "
+                        f"{random.choice(['visual', 'auditory'])} task"
+                    ),
+                    "TaskDuration": f"{random.randint(5, 15)} minutes",
+                }
+            ],
+            "BehavioralTasks": None,
+        }
+
+        # Write data for each pipeline
+        for dir, data in [
+            (demo_dir, demo_data),
+            (method_dir, method_data),
+            (task_dir, task_data),
+        ]:
+            study_dir = dir / study.id
+            study_dir.mkdir(exist_ok=True, parents=True)
+
+            with open(study_dir / "results.json", "w") as f:
+                json.dump({"predictions": data}, f)
+            with open(study_dir / "info.json", "w") as f:
+                json.dump(
+                    {
+                        "inputs": {
+                            f"/path/to/input/{study.id}.txt": f"md5{random.randint(0, 100)}"
+                        },
+                        "date": (
+                            f"{random.randint(2024, 2030)}"
+                            f"-{random.randint(1, 12):02d}"
+                            f"-{random.randint(1, 28):02d}"
+                        ),
+                    },
+                    f,
+                )
+
+    return base_output_dir
+
+
+@pytest.fixture(scope="function")
+def ingest_demographic_features(session, create_pipeline_results):
+    """Ingest results from all pipelines"""
+    results = []
+    for pipeline_dir in create_pipeline_results.iterdir():
+        if pipeline_dir.is_dir():
+            results.append(ingest_feature(pipeline_dir / "1.0.0"))
+    return results
 
 
 """
@@ -654,6 +783,7 @@ invalid_queries = [
         "Unmatched parentheses",
     ),
     ("smoking AND NOT memory", "Consecutive operators are not allowed"),
+    ("fmri &", "Query cannot end with an operator"),
 ]
 
 valid_queries = [

@@ -1,4 +1,5 @@
-import { Box, List, ListItemButton, ListItemText, Typography } from '@mui/material';
+import { Box, Button, Link, List, ListItemButton, ListItemText, Typography } from '@mui/material';
+import { OpenInNew } from '@mui/icons-material';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import NiiVueVisualizer from 'components/Visualizer/NiiVueVisualizer';
 import { useGetMetaAnalysisResultById, useGetNeurovaultImages } from 'hooks';
@@ -17,7 +18,7 @@ const DisplayMetaAnalysisResults: React.FC<{
     const { data, isLoading, isError } = useGetMetaAnalysisResultById(
         metaAnalysisResults[metaAnalysisResults.length - 1]?.id
     );
-    const neurovaultLink = data?.neurovault_collection?.url || '';
+    const neurovaultCollectionLink = data?.neurovault_collection?.url || '';
 
     const neurovaultFileURLs = ((data?.neurovault_collection?.files || []) as NeurovaultFile[]).map(
         (file) => file.url || ''
@@ -98,6 +99,29 @@ const DisplayMetaAnalysisResults: React.FC<{
 
     return (
         <StateHandlerComponent
+            errorMessage={
+                neurovaultCollectionLink ? (
+                    <Button
+                        component={Link}
+                        sx={{ marginTop: '1rem' }}
+                        href={
+                            neurovaultCollectionLink.includes('/api')
+                                ? neurovaultCollectionLink.replace(/\/api/, '')
+                                : neurovaultCollectionLink
+                        }
+                        rel="noreferrer"
+                        size="small"
+                        variant="contained"
+                        target="_blank"
+                        disableElevation
+                    >
+                        Open in neurovault
+                        <OpenInNew sx={{ marginLeft: '4px' }} fontSize="small" />
+                    </Button>
+                ) : (
+                    'There was an error'
+                )
+            }
             isLoading={isLoading || neurovaultFilesIsLoading}
             isError={isError || neurovaultFilesIsError}
         >
@@ -133,7 +157,7 @@ const DisplayMetaAnalysisResults: React.FC<{
                             <NiiVueVisualizer
                                 file={selectedNeurovaultImage.file}
                                 filename={selectedNeurovaultImage.name || ''}
-                                neurovaultLink={neurovaultLink}
+                                neurovaultCollectionLink={neurovaultCollectionLink}
                             />
                         </>
                     ) : (
