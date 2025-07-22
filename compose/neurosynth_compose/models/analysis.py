@@ -6,6 +6,7 @@ from sqlalchemy.ext.associationproxy import association_proxy
 import shortuuid
 import secrets
 
+# Delayed import to avoid circular dependency
 from neurosynth_compose.database import db
 
 

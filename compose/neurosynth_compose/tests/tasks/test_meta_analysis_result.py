@@ -92,19 +92,13 @@ def test_result_upload(
     session, auth_client, app, db, meta_analysis_cached_result_files
 ):
     data = {}
-    data["statistical_maps"] = [
-        (open(m, "rb"), m.name) for m in meta_analysis_cached_result_files["maps"]
-    ]
-    data["cluster_tables"] = [
-        (open(f, "rb"), f.name)
-        for f in meta_analysis_cached_result_files["tables"]
-        if "clust.tsv" in f.name
-    ]
-    data["diagnostic_tables"] = [
-        (open(f, "rb"), f.name)
-        for f in meta_analysis_cached_result_files["tables"]
-        if "clust.tsv" not in f.name
-    ]
+    # Open files and collect handles for later closing
+    stat_map_files = [open(m, "rb") for m in meta_analysis_cached_result_files["maps"]]
+    data["statistical_maps"] = [(f, f.name) for f in stat_map_files]
+    cluster_table_files = [open(f, "rb") for f in meta_analysis_cached_result_files["tables"] if "clust.tsv" in f.name]
+    data["cluster_tables"] = [(f, f.name) for f in cluster_table_files]
+    diagnostic_table_files = [open(f, "rb") for f in meta_analysis_cached_result_files["tables"] if "clust.tsv" not in f.name]
+    data["diagnostic_tables"] = [(f, f.name) for f in diagnostic_table_files]
     data["method_description"] = meta_analysis_cached_result_files["method_description"]
 
     meta_analysis = MetaAnalysis.query.filter_by(
@@ -144,13 +138,15 @@ def test_result_upload(
         content_type="multipart/form-data",
         headers=headers,
     )
+    # Close all files opened for the first upload
+    for f in stat_map_files + cluster_table_files + diagnostic_table_files:
+        f.close()
 
     assert rupload_result.status_code == 200
 
     # re-open the statistical maps
-    data["statistical_maps"] = [
-        (open(m, "rb"), m.name) for m in meta_analysis_cached_result_files["maps"]
-    ]
+    stat_map_files_2 = [open(m, "rb") for m in meta_analysis_cached_result_files["maps"]]
+    data["statistical_maps"] = [(f, f.name) for f in stat_map_files_2]
     # with pre-existing snapshots
     code = None
     i = 0
@@ -168,8 +164,19 @@ def test_result_upload(
         if i >= 5:
             break
         i += 1
+    # Close all files opened for the second upload
+    # Close all files opened for the second upload
+    for f in stat_map_files_2:
+        f.close()
 
     result_id = resp.json["id"]
+    # Re-open files for the final upload
+    stat_map_files_3 = [open(m, "rb") for m in meta_analysis_cached_result_files["maps"]]
+    cluster_table_files_3 = [open(f, "rb") for f in meta_analysis_cached_result_files["tables"] if "clust.tsv" in f.name]
+    diagnostic_table_files_3 = [open(f, "rb") for f in meta_analysis_cached_result_files["tables"] if "clust.tsv" not in f.name]
+    data["statistical_maps"] = [(f, f.name) for f in stat_map_files_3]
+    data["cluster_tables"] = [(f, f.name) for f in cluster_table_files_3]
+    data["diagnostic_tables"] = [(f, f.name) for f in diagnostic_table_files_3]
     upload_result = auth_client.put(
         f"/api/meta-analysis-results/{result_id}",
         data=data,
@@ -177,5 +184,8 @@ def test_result_upload(
         content_type="multipart/form-data",
         headers=headers,
     )
+    # Close all files opened for the final upload
+    for f in stat_map_files_3 + cluster_table_files_3 + diagnostic_table_files_3:
+        f.close()
 
     assert upload_result.status_code == 200

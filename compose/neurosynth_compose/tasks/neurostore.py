@@ -70,7 +70,7 @@ class NeurostoreAnalysisTask(NeuroTask):
             session = db.session
 
         try:
-            analysis = session.query(NeurostoreAnalysis).get(analysis_id)
+            analysis = session.get(NeurostoreAnalysis, analysis_id)
             if not analysis:
                 raise ValueError(f"Analysis {analysis_id} not found")
 

@@ -40,91 +40,43 @@ class ResultInitSchema(Schema):
 
 
 class ResultUploadSchema(Schema):
-    statistical_maps = fields.Raw(
-        metadata={"type": "string", "format": "binary"}, many=True
-    )
-    cluster_tables = fields.Raw(
-        metadata={"type": "string", "format": "binary"}, many=True
-    )
-    diagnostic_tables = fields.Raw(
-        metadata={"type": "string", "format": "binary"}, many=True
-    )
+    statistical_maps = fields.Raw(metadata={"many": True})
+    cluster_tables = fields.Raw(metadata={"many": True})
+    diagnostic_tables = fields.Raw(metadata={"many": True})
     method_description = fields.String()
 
 
-class StringOrNested(fields.Nested):
-    #: Default error messages.
-    default_error_messages = {
-        "invalid": "Not a valid string.",
-        "invalid_utf8": "Not a valid utf-8 string.",
-    }
+class IDOrNested(fields.Field):
+    """
+    Marshmallow field that serializes/deserializes either a string ID or a nested object,
+    depending on the 'nested' parameter in the schema context.
+    """
+    def __init__(self, nested_schema, id_field="id", many=False, **kwargs):
+        super().__init__(**kwargs)
+        self.nested_schema = nested_schema
+        self.id_field = id_field
+        self.many = many
 
     def _serialize(self, value, attr, obj, **kwargs):
-        if value is None:
-            return None
-        nested = (
-            False
-            if self.metadata.get("nested", None) is False
-            else self.context.get("nested")
-        )
-        info = self.context.get("info")
-        if info:
-            schema = self.schema
-            info_fields = [
-                field
-                for field, f_obj in schema._declared_fields.items()
-                if f_obj.metadata.get("info_field")
-            ]
-            schema.only = schema.set_class(info_fields)
-            # set exclude to an empty set
-            schema.exclude = schema.set_class()
-            schema._init_fields()
-
-        nested_attr = self.metadata.get("pluck")
-        if nested or info:
-            many = self.schema.many or self.many
-            nested_obj = getattr(obj, self.data_key or self.name)
-            return self.schema.dump(nested_obj, many=many)
-        elif nested_attr and self.many:
-            return [getattr(v, nested_attr) for v in value]
-        elif nested_attr:
-            return getattr(value, nested_attr)
+        nested = self.parent.context.get("nested") if self.parent and hasattr(self.parent, "context") else False
+        if nested:
+            schema = self.nested_schema(many=self.many, context=self.parent.context if self.parent else None)
+            return schema.dump(value)
         else:
             if self.many:
-                return [utils.ensure_text_type(v) for v in value]
-            return utils.ensure_text_type(value)
+                return [getattr(v, self.id_field, v) for v in value]
+            return getattr(value, self.id_field, value)
 
     def _deserialize(self, value, attr, data, **kwargs):
-        nested = self.context.get("nested")
-        many = self.many
-
+        nested = self.parent.context.get("nested") if self.parent and hasattr(self.parent, "context") else False
+        schema = self.nested_schema(many=self.many, context=self.parent.context if self.parent else None)
         if nested:
-            if many:
-                for v in value:
-                    self._test_collection(v)
-                return [self._load(v, data) for v in value]
-        elif many:
-            try:
-                return [
-                    utils.ensure_text_type(v).replace("\x00", "\uFFFD") for v in value
-                ]
-            except UnicodeDecodeError as error:
-                raise self.make_error("invalid_utf8") from error
+            return schema.load(value)
         else:
-            if not isinstance(value, (str, bytes, list)):
-                raise self.make_error("invalid")
-            if isinstance(value, list):
-                try:
-                    return [
-                        utils.ensure_text_type(v).replace("\x00", "\uFFFD")
-                        for v in value
-                    ]
-                except UnicodeDecodeError as error:
-                    raise self.make_error("invalid_utf8") from error
-            try:
-                return utils.ensure_text_type(value).replace("\x00", "\uFFFD")
-            except UnicodeDecodeError as error:
-                raise self.make_error("invalid_utf8") from error
+            if self.many:
+                return value if isinstance(value, list) else [value]
+            return value
+# StringOrNested replaced by IDOrNested (see above)
 
 
 class BaseSchema(Schema):
@@ -147,7 +99,7 @@ class ConditionSchema(Schema):
 
 class SpecificationConditionSchema(BaseSchema):
     condition = fields.Pluck(ConditionSchema, "name")
-    weight = fields.Number()
+    weight = fields.Float()
 
 
 class EstimatorSchema(Schema):
@@ -159,11 +111,10 @@ class StudysetReferenceSchema(Schema):
     id = PGSQLString()
     created_at = fields.DateTime()
     updated_at = fields.DateTime(allow_none=True)
-    studysets = StringOrNested(
+    studysets = IDOrNested(
         "StudysetSchema",
         exclude=("snapshot",),
-        metadata={"pluck": "id"},
-        many=True,
+        metadata={"pluck": "id", "many": True},
         dump_only=True,
     )
 
@@ -181,28 +132,31 @@ class SpecificationSchema(BaseSchema):
     contrast = PGSQLString(allow_none=True)
     filter = PGSQLString(allow_none=True)
     corrector = fields.Dict(allow_none=True)
-    _conditions = fields.Pluck(
-        SpecificationConditionSchema,
-        "condition",
-        many=True,
-        allow_none=True,
+    _conditions = fields.List(
+        fields.Pluck(
+            SpecificationConditionSchema,
+            "condition",
+            allow_none=True,
+        ),
         load_only=True,
-        attribute="conditions",
+        # attribute="conditions",
         data_key="conditions",
     )
-    conditions = fields.Pluck(
-        ConditionSchema, "name", many=True, allow_none=True, dump_only=True
+    conditions = fields.List(
+        fields.Pluck(ConditionSchema, "name", allow_none=True, dump_only=True)
     )
     weights = fields.List(
         fields.Float(),
         allow_none=True,
         dump_only=True,
     )
-    _weights = fields.Pluck(
-        SpecificationConditionSchema,
-        "weight",
-        many=True,
-        allow_none=True,
+    _weights = fields.List(
+        fields.Pluck(
+            SpecificationConditionSchema,
+            "weight",
+            many=True,
+            allow_none=True,
+        ),
         load_only=True,
         data_key="weights",
         attribute="weights",
@@ -302,17 +256,11 @@ class MetaAnalysisSchema(BaseSchema):
     name = fields.String(allow_none=True, metadata={"info_field": True})
     description = fields.String(allow_none=True, metadata={"info_field": True})
     provenance = fields.Dict(allow_none=True)
-    specification_id = StringOrNested(SpecificationSchema, data_key="specification")
+    specification_id = IDOrNested(SpecificationSchema, id_field="id", data_key="specification")
     neurostore_analysis = fields.Nested("NeurostoreAnalysisSchema", dump_only=True)
-    studyset = StringOrNested(
-        StudysetSchema, metadata={"pluck": "neurostore_id"}, dump_only=True
-    )
-    annotation = StringOrNested(
-        AnnotationSchema, metadata={"pluck": "neurostore_id"}, dump_only=True
-    )
-    project_id = StringOrNested(
-        "ProjectSchema", metadata={"nested": False}, data_key="project"
-    )
+    studyset = IDOrNested(StudysetSchema, id_field="neurostore_id", dump_only=True)
+    annotation = IDOrNested(AnnotationSchema, id_field="neurostore_id", dump_only=True)
+    project_id = IDOrNested(ProjectSchema, id_field="id", data_key="project")
     cached_studyset_id = fields.Pluck(
         StudysetSchema, "id", load_only=True, attribute="studyset"
     )
@@ -333,7 +281,7 @@ class MetaAnalysisSchema(BaseSchema):
     )
     run_key = fields.String(dump_only=True)
     results = fields.Nested(
-        MetaAnalysisResultSchema, only=("id", "created_at", "updated_at"), many=True
+        MetaAnalysisResultSchema, only=("id", "created_at", "updated_at"), metadata={"many": True}
     )
     neurostore_url = fields.String(dump_only=True)
 
@@ -381,7 +329,7 @@ class NeurovaultCollectionSchema(BaseSchema):
     collection_id = fields.String()
     url = fields.String(dump_only=True)
     files = fields.Nested(
-        NeurovaultFileSchema, exclude=("collection_id", "id"), many=True
+        NeurovaultFileSchema, exclude=("collection_id", "id"), metadata={"many": True}
     )
 
     @post_dump
@@ -396,7 +344,7 @@ class NeurostoreStudySchema(BaseSchema):
     exception = fields.String()
     traceback = fields.String()
     status = fields.String()
-    analyses = fields.Nested("NeurostoreAnalysisSchema", exclude=("id",), many=True)
+    analyses = fields.Nested("NeurostoreAnalysisSchema", exclude=("id",), metadata={"many": True})
 
 
 class NeurostoreAnalysisSchema(BaseSchema):
@@ -412,16 +360,14 @@ class ProjectSchema(BaseSchema):
     provenance = fields.Dict(allow_none=True)
     public = fields.Boolean()
     draft = fields.Boolean()
-    meta_analyses = StringOrNested(
-        MetaAnalysisSchema, metadata={"pluck": "id"}, dump_only=True, many=True
-    )
+    meta_analyses = IDOrNested(MetaAnalysisSchema, id_field="id", many=True, dump_only=True)
     _meta_analyses = fields.Pluck(
         MetaAnalysisSchema,
         "id",
         data_key="meta_analyses",
         attribute="meta_analyses",
         load_only=True,
-        many=True,
+        metadata={"many": True},
     )
     neurostore_study = fields.Nested("NeurostoreStudySchema", exclude=("id",))
     neurostore_url = fields.String(dump_only=True)

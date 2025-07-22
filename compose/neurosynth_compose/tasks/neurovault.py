@@ -61,7 +61,7 @@ class FileUploadNeurovault(NeuroTask):
 
         try:
             # Get file record
-            file = db.session.query(NeurovaultFile).get(file_id)
+            file = db.session.get(NeurovaultFile, file_id)
             if not file:
                 raise ValueError(f"File {file_id} not found")
 

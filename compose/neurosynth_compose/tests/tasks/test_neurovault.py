@@ -44,7 +44,6 @@ def test_update_record(neurovault_files):
     assert record.status == "OK"
 
 
-@pytest.mark.integration
 def test_file_upload_neurovault_success(
     app, mock_neurovault_api, test_nifti_file, neurovault_collection, neurovault_files
 ):
@@ -83,7 +82,6 @@ def test_file_upload_neurovault_success(
             assert Path(call_args[1]).name == Path(test_file).name
 
 
-@pytest.mark.integration
 def test_file_upload_neurovault_failure(
     app, mock_neurovault_api_error, test_nifti_file, neurovault_files
 ):
