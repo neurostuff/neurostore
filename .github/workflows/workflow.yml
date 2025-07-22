@@ -258,7 +258,7 @@ jobs:
           -e "NEUROVAULT_ACCESS_TOKEN=${NEUROVAULT_ACCESS_TOKEN}" \
           --rm -w /compose \
           compose \
-          bash -c "python -m pytest neurosynth_compose/tests && python -m pytest --celery neurosynth_compose/tests/api/celery_tests && python -m pytest --auth neurosynth_compose/tests/api/test_auth.py"
+          bash -c "python -m pytest neurosynth_compose/tests"
 
   style_check:
     runs-on: ubuntu-latest
