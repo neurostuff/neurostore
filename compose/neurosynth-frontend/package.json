@@ -57,7 +57,6 @@
         "cy:e2e-headless-staging-single": "env-cmd -f .env.staging cypress run --spec",
         "cy:install": "cypress install",
         "serve-build": "vite preview --mode staging --port 3000",
-        "cy:ci": "start-server-and-test start-ci:dev 3000 cy:e2e-headless",
         "lint": "eslint ."
     },
     "type": "module",
@@ -101,7 +100,6 @@
         "jsdom": "^25.0.1",
         "prettier": "^3.3.3",
         "react-error-overlay": "^6.0.9",
-        "start-server-and-test": "^2.0.10",
         "ts-node": "^10.9.2",
         "typescript": "^4.9.5",
         "typescript-eslint": "^8.13.0",
