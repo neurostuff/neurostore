@@ -1,16 +1,20 @@
+from unittest.mock import patch
+
+import flask_sqlalchemy
 import json
 from os.path import isfile
 from os import environ
 import pathlib
 
+from auth0.v3.authentication import GetToken
 import schemathesis
 import pytest
 from nimare.results import MetaResult
 import sqlalchemy as sa
 from requests.exceptions import HTTPError
 
-
 from neurosynth_compose.ingest.neurostore import create_meta_analyses
+from ..models.analysis import generate_id
 from ..database import db as _db
 from ..models import (
     User,
@@ -23,8 +27,19 @@ from ..models import (
     NeurostoreStudy,
     Project,
 )
-from ..models.analysis import generate_id
-from auth0.v3.authentication import GetToken
+
+# Patch Flask-SQLAlchemy teardown to ignore AttributeError on session.remove()
+orig_teardown_session = flask_sqlalchemy.SQLAlchemy._teardown_session
+
+
+def safe_teardown_session(self, exc):
+    try:
+        orig_teardown_session(self, exc)
+    except AttributeError:
+        pass
+
+
+flask_sqlalchemy.SQLAlchemy._teardown_session = safe_teardown_session
 
 DATA_PATH = pathlib.Path(__file__).parent.resolve() / "data"
 
@@ -36,31 +51,11 @@ def pytest_addoption(parser):
         default=False,
         help="Run schemathesis tests",
     )
-    parser.addoption(
-        "--celery",
-        action="store_true",
-        default=False,
-        help="Run celery tests",
-    )
-    parser.addoption(
-        "--auth",
-        action="store_true",
-        default=False,
-        help="Run authentication tests",
-    )
 
 
-celery_test = pytest.mark.skipif(
-    "not config.getoption('--celery')",
-    reason="Only run when --celery is given",
-)
 schemathesis_test = pytest.mark.skipif(
     "not config.getoption('--schemathesis')",
     reason="Only run when --schemathesis is given",
-)
-auth_test = pytest.mark.skipif(
-    "not config.getoption('--auth')",
-    reason="Only run when --auth is given",
 )
 
 """
@@ -68,39 +63,47 @@ Test fixtures for bypassing authentication
 """
 
 
-@pytest.fixture(scope="session")
-def real_app():
-    """Session-wide test `Flask` application."""
-    from ..core import app as _app
+@pytest.fixture(autouse=True)
+def mock_create_neurovault_collection():
+    import itertools
 
-    if "APP_SETTINGS" not in environ:
-        config = "neurostore.config.TestingConfig"
-    else:
-        config = environ["APP_SETTINGS"]
-    if not getattr(_app, "config", None):
-        _app = _app._app
-    _app.config.from_object(config)
-    # _app.config["SQLALCHEMY_ECHO"] = True
+    def set_collection_id(collection):
+        collection.collection_id = next(set_collection_id.counter)
+        return None
 
-    # Establish an application context before running the tests.
-    ctx = _app.app_context()
-    ctx.push()
-
-    yield _app
-
-    ctx.pop()
+    if not hasattr(set_collection_id, "counter"):
+        set_collection_id.counter = itertools.count(10000)
+    with patch(
+        "neurosynth_compose.resources.analysis.create_neurovault_collection"
+    ) as mock_func:
+        mock_func.side_effect = set_collection_id
+        yield mock_func
 
 
-@pytest.fixture(scope="session")
-def real_db(real_app):
-    """Session-wide test database."""
-    _db.create_all()
+@pytest.fixture(scope="session", autouse=True)
+def setup_database(db):
+    """Create all tables at the start of the test session, drop at the end."""
+    db.create_all()
+    yield
+    db.drop_all()
 
-    yield _db
 
-    _db.session.remove()
-    sa.orm.close_all_sessions()
-    _db.drop_all()
+@pytest.fixture(scope="function", autouse=True)
+def isolate_db_session(db):
+    """Rollback all changes after each test for isolation."""
+    connection = db.engine.connect()
+    transaction = connection.begin()
+    options = dict(bind=connection, binds={})
+    session = db._make_scoped_session(options=options)
+    session.begin_nested()
+
+    db.session = session
+
+    yield session
+
+    session.remove()
+    transaction.rollback()
+    connection.close()
 
 
 # https://github.com/pytest-dev/pytest/issues/363#issuecomment-406536200
@@ -159,7 +162,9 @@ class MockPYNVClient:
         image_id = random.randint(1, 10000)
         self.files.append(image_id)
 
-        return {
+        from unittest.mock import MagicMock
+
+        response_data = {
             "id": image_id,
             "url": f"http://neurovault.org/images/{image_id}/",
             "file": f"http://neurovault.org/media/images/{image_id}/name.nii.gz",
@@ -167,6 +172,10 @@ class MockPYNVClient:
             "map_type": "Z map",
             "image_type": "statistic_map",
         }
+        response = MagicMock()
+        response.json.return_value = response_data
+        response.status_code = 200
+        return response
 
 
 class MockNSSDKClient:
@@ -230,7 +239,11 @@ def db(app):
 
     yield _db
 
-    _db.session.remove()
+    try:
+        _db.session.remove()
+    except AttributeError:
+        pass
+
     sa.orm.close_all_sessions()
     _db.drop_all()
 
@@ -299,7 +312,6 @@ def auth_clients(mock_add_users, app):
 
 @pytest.fixture(scope="function")
 def mock_add_users(app, db, mock_auth):
-    # from neurostore.resources.auth import decode_token
     from jose.jwt import encode
 
     users = [
@@ -316,21 +328,28 @@ def mock_add_users(app, db, mock_auth):
     ]
 
     tokens = {}
-    for u in users:
-        token_info = mock_decode_token(u["access_token"])
-        user = User(
-            name=u["name"],
-            external_id=token_info["sub"],
-        )
-        if User.query.filter_by(external_id=token_info["sub"]).first() is None:
-            db.session.add(user)
-            db.session.commit()
+    with app.app_context():
+        for u in users:
+            token_info = {"sub": u["name"] + "-id"}
+            user = User(
+                name=u["name"],
+                external_id=token_info["sub"],
+            )
+            if (
+                db.session.query(User).filter_by(external_id=token_info["sub"]).first()
+                is None
+            ):
+                db.session.add(user)
+                db.session.commit()
 
-        tokens[u["name"]] = {
-            "token": u["access_token"],
-            "external_id": token_info["sub"],
-            "id": User.query.filter_by(external_id=token_info["sub"]).first().id,
-        }
+            tokens[u["name"]] = {
+                "token": u["access_token"],
+                "external_id": token_info["sub"],
+                "id": db.session.query(User)
+                .filter_by(external_id=token_info["sub"])
+                .first()
+                .id,
+            }
 
     yield tokens
 

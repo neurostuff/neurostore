@@ -17,6 +17,10 @@ class Client(object):
         self.token = token
         self.username = username
 
+    def close(self):
+        if self.client_flask and hasattr(self.client, "close"):
+            self.client.close()
+
     def _get_headers(self):
         if self.token is not None:
             return {"Authorization": "Bearer %s" % self.token}

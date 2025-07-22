@@ -258,7 +258,7 @@ jobs:
           -e "NEUROVAULT_ACCESS_TOKEN=${NEUROVAULT_ACCESS_TOKEN}" \
           --rm -w /compose \
           compose \
-          bash -c "python -m pytest neurosynth_compose/tests && python -m pytest --celery neurosynth_compose/tests/api/celery_tests && python -m pytest --auth neurosynth_compose/tests/api/test_auth.py"
+          bash -c "python -m pytest neurosynth_compose/tests"
 
   style_check:
     runs-on: ubuntu-latest
@@ -436,7 +436,7 @@ jobs:
 
         docker compose exec -T \
         compose_pgsql \
-        psql -U postgres -c "create database compose"
+        psql -U postgres -c "create database test_db"
     -
       name: Create Store Database
       run: |
@@ -446,7 +446,7 @@ jobs:
 
         docker compose exec -T \
         store_pgsql \
-        psql -U postgres -c "create database neurostore"
+        psql -U postgres -c "create database test_db"
     -
       name: Initialize Compose Database
       run: |
@@ -482,6 +482,7 @@ jobs:
       name: Frontend Cypress E2E Tests
       uses: cypress-io/github-action@v6
       env:
+        APP_SETTINGS: neurosynth_compose.config.DockerTestConfig
         CYPRESS_auth0ClientId: ${{ secrets.VITE_APP_AUTH0_CLIENT_ID }}
         CYPRESS_auth0ClientSecret: ${{ secrets.VITE_APP_AUTH0_CLIENT_SECRET }}
         CYPRESS_: ${{ secrets.VITE_APP_AUTH0_DOMAIN }}
