@@ -27,24 +27,17 @@ def mock_auth():
 
 @pytest.fixture(scope="function")
 def db_engine():
-    """Create test database engine."""
-    engine = create_engine("postgresql://postgres:example@compose_pgsql:5432/compose")
+    """Create test database engine using environment/configured URI."""
+    from neurosynth_compose.config import TestingConfig
+
+    db_uri = os.environ.get("SQLALCHEMY_DATABASE_URI", getattr(TestingConfig, "SQLALCHEMY_DATABASE_URI", None))
+    if not db_uri:
+        raise RuntimeError("No test database URI found in environment or config.")
+
+    engine = create_engine(db_uri)
 
     # Ensure all tables, including `neurovault_collections`, are created
     metadata.create_all(engine)
-    # Debug: Print registered tables to confirm model registration
-    print("Registered tables:", metadata.tables.keys())
-    # Debug: Check if the `neurovault_collections` table exists
-    with engine.connect() as conn:
-        result = conn.execute(
-            text(
-                (
-                    "SELECT table_name FROM information_schema.tables "
-                    "WHERE table_name = 'neurovault_collections'"
-                )
-            )
-        )
-        assert result.rowcount > 0, "Table `neurovault_collections` was not created."
 
     yield engine
 

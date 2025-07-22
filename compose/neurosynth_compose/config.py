@@ -63,6 +63,7 @@ class StagingConfig(Config):
 
 class DevelopmentConfig(Config):
     ENV = "development"
+    DB_NAME = "test_db"
     DEBUG = True
 
     AUTH0_CLIENT_ID = os.environ.get("AUTH0_CLIENT_ID")
@@ -77,6 +78,7 @@ class DevelopmentConfig(Config):
 class TestingConfig(Config):
     ENV = "testing"
     TESTING = True
+    DB_NAME = "test_db"
 
     AUTH0_CLIENT_ID = os.environ.get("AUTH0_CLIENT_ID")
     AUTH0_CLIENT_SECRET = os.environ.get("AUTH0_CLIENT_SECRET")
