@@ -436,7 +436,7 @@ jobs:
 
         docker compose exec -T \
         compose_pgsql \
-        psql -U postgres -c "create database compose"
+        psql -U postgres -c "create database test_db"
     -
       name: Create Store Database
       run: |
@@ -446,7 +446,7 @@ jobs:
 
         docker compose exec -T \
         store_pgsql \
-        psql -U postgres -c "create database neurostore"
+        psql -U postgres -c "create database test_db"
     -
       name: Initialize Compose Database
       run: |
