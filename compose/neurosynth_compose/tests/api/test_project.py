@@ -23,7 +23,6 @@ def test_get_all_projects(session, app, auth_client, user_data):
 
 def test_project_info(session, app, auth_client, user_data):
     proj = Project.query.first()
-    print(f"DEBUG: Project.query.first() = {proj}")
 
     info_resp = auth_client.get(f"/api/projects/{proj.id}?info=true")
     assert info_resp.status_code == 200
@@ -42,7 +41,6 @@ def test_project_info(session, app, auth_client, user_data):
 
 def test_delete_project(session, app, auth_client, user_data):
     project = Project.query.first()
-    print(f"DEBUG: Project.query.first() = {project}")
 
     # add a meta-analysis result
     project.meta_analyses[0].results.append(MetaAnalysisResult())

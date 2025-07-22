@@ -1,3 +1,12 @@
+import os
+from pathlib import Path
+import shutil
+import tempfile
+
+import pandas as pd
+import numpy as np
+from nibabel.testing import data_path
+
 from neurosynth_compose.models import (
     Project,
     MetaAnalysis,
@@ -12,11 +21,6 @@ from neurosynth_compose.resources.analysis import create_or_update_neurostore_st
 
 
 def test_file_upload_neurovault(session, app, db, mock_pynv):
-    import os
-    from pathlib import Path
-    import shutil
-    import tempfile
-    from nibabel.testing import data_path
 
     nifti_file = os.path.join(data_path, "example_nifti2.nii.gz")
     nv_collection = NeurovaultCollection(collection_id=12345)
@@ -70,8 +74,6 @@ def test_create_or_update_neurostore_analysis(
         ]
     )
     db.session.commit()
-    import pandas as pd
-    import numpy as np
 
     df = pd.read_csv(cluster_table, sep="\t")
     df = df.replace({np.nan: None})

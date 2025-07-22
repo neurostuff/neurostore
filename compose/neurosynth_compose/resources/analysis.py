@@ -395,21 +395,14 @@ class ListView(BaseView):
         # Parse arguments using webargs
         # args = parser.parse(self._user_args, request, location="query")
 
-        import logging
-
-        logger = logging.getLogger("debug_test")
-        logger.warning("Before DB write in analysis.py POST")
-
         try:
             data = parser.parse(self.__class__._schema, request)
         except ValidationError as e:
             abort(422, description=f"input does not conform to specification: {str(e)}")
 
         with db.session.no_autoflush:
-            logger.warning("Before update_or_create in analysis.py POST")
             record = self.__class__.update_or_create(data)
-            logger.warning("After update_or_create in analysis.py POST")
-        logger.warning("After DB write in analysis.py POST")
+
         return self.__class__._schema().dump(record)
 
 
@@ -752,7 +745,6 @@ def parse_upload_files(result, stat_maps, cluster_tables, diagnostic_tables):
     # append the existing NeurovaultFiles to be committed
     for record in stat_map_fnames.values():
         record.neurovault_collection = nv_collection
-        record.collection_id = nv_collection.collection_id
         records.append(record)
 
     return records, stat_map_fnames, cluster_table_fnames, diagnostic_table_fnames

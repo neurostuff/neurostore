@@ -52,6 +52,7 @@ def pytest_addoption(parser):
         help="Run schemathesis tests",
     )
 
+
 schemathesis_test = pytest.mark.skipif(
     "not config.getoption('--schemathesis')",
     reason="Only run when --schemathesis is given",
@@ -238,20 +239,13 @@ def db(app):
 
     yield _db
 
-    import logging
-
-    logger = logging.getLogger("debug_test")
-    logger.warning("Starting db fixture teardown")
     try:
         _db.session.remove()
-        logger.warning("Called _db.session.remove() in db fixture teardown")
     except AttributeError:
-        logger.warning("AttributeError in _db.session.remove() in db fixture teardown")
         pass
+
     sa.orm.close_all_sessions()
-    logger.warning("Called sa.orm.close_all_sessions() in db fixture teardown")
     _db.drop_all()
-    logger.warning("Called _db.drop_all() in db fixture teardown")
 
 
 @pytest.fixture(scope="session")
@@ -289,6 +283,7 @@ def session(db):
     session.remove()
     transaction.rollback()
     connection.close()
+
 
 """
 Data population fixtures

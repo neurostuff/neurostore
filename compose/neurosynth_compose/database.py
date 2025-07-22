@@ -5,6 +5,7 @@ db = SQLAlchemy()
 
 Base = declarative_base()
 
+
 def init_db(app):
     # Make Flask-Security, Flask-SQLAlchemy, and Graphene all play nice.
     # See https://github.com/mattupstate/flask-security/issues/766#issuecomment-393567456

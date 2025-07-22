@@ -1,7 +1,5 @@
 from flask_security import UserMixin, RoleMixin, SQLAlchemyUserDatastore
 
-
-# Delayed import to avoid circular dependency
 from .analysis import db, BaseMixin
 
 
