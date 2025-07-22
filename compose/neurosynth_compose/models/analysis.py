@@ -6,7 +6,7 @@ from sqlalchemy.ext.associationproxy import association_proxy
 import shortuuid
 import secrets
 
-from ..database import db
+from neurosynth_compose.database import db
 
 
 def generate_id():

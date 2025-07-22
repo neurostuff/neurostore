@@ -1,5 +1,5 @@
 """
-Utilities for View construction and function
+Resource-specific utilities for View construction and function
 """
 
 import re
@@ -12,12 +12,13 @@ from .. import schemas
 from .singular import singularize
 
 
-# https://www.geeksforgeeks.org/python-split-camelcase-string-to-individual-strings/
 def camel_case_split(str):
+    """Split camel case string to individual strings"""
     return re.findall(r"[A-Z](?:[a-z]+|[A-Z]*(?=[A-Z]|$))", str)
 
 
 def get_current_user():
+    """Get the current user from the context"""
     if context.get("user_obj"):
         return context["user_obj"]
 
@@ -29,6 +30,7 @@ def get_current_user():
 
 
 def view_maker(cls):
+    """Create a View class with model and schema attributes"""
     proc_name = cls.__name__.removesuffix("View").removesuffix("Resource")
     basename = singularize(
         proc_name,
@@ -96,7 +98,7 @@ def validate_parentheses(query: str) -> bool:
 
 def validate_query_end(query: str) -> bool:
     """Query should not end with an operator"""
-    operators = ("AND", "OR", "NOT")
+    operators = ("AND", "OR", "NOT", "&", "|", "&!")
 
     if query.strip().split(" ")[-1] in operators:
         return False
@@ -126,6 +128,89 @@ def count_chars(target, query: str) -> int:
     return count
 
 
+def process_group(group_query: str) -> str:
+    """Process a group of tokens (with or without parentheses)
+
+    Args:
+        group_query (str): The query string to process.
+
+    Returns:
+        str: The processed query string with proper operators.
+    """
+
+    def parse_parentheses(text):
+        """Parse text into a list of groups and terms"""
+        groups = []
+        current = []
+        depth = 0
+        buffer = ""
+
+        for char in text:
+            if char == "(":
+                if depth == 0 and buffer:
+                    current.append(buffer.strip())
+                    buffer = ""
+                depth += 1
+                buffer += char
+            elif char == ")":
+                depth -= 1
+                buffer += char
+                if depth == 0:
+                    current.append(buffer)
+                    buffer = ""
+            else:
+                buffer += char
+
+        if buffer:
+            current.append(buffer.strip())
+
+        for item in current:
+            if item.startswith("(") and item.endswith(")"):
+                # Recursively process nested groups
+                inner = process_group(item[1:-1])
+                if inner:
+                    groups.append(f"({inner})")
+            else:
+                # Process non-group terms
+                parts = re.findall(r'"[^"]*"|\'[^\']*\'|\S+', item)
+                for part in parts:
+                    part = part.strip()
+                    if part:
+                        if part == "AND":
+                            groups.append("&")
+                        elif part == "OR":
+                            groups.append("|")
+                        elif part == "NOT":
+                            groups.append("&!")
+                        elif part.startswith('"') or part.startswith("'"):
+                            words = re.findall(r"\w+", part)
+                            if words:
+                                groups.append("<->".join(words))
+                        else:
+                            cleaned = re.sub(r"[\[\],;:!?@#]", "", part)
+                            if cleaned:
+                                groups.append(cleaned)
+
+        result = []
+        for i, term in enumerate(groups):
+            if i > 0:
+                prev = result[-1] if result else ""
+                curr = term
+
+                # Only add operator if neither current nor previous term is an operator
+                if prev not in {"&", "|", "&!"} and curr not in {"&", "|", "&!"}:
+                    result.append("&")
+                elif prev in {"&", "|", "&!"} and curr in {"&", "|", "&!"}:
+                    # Skip consecutive operators
+                    continue
+
+            result.append(term)
+
+        return " ".join(result)
+
+    return parse_parentheses(group_query)
+
+
 def pubmed_to_tsquery(query: str) -> str:
     """
     Convert a PubMed-like search query to PostgreSQL tsquery format,
@@ -141,102 +226,7 @@ def pubmed_to_tsquery(query: str) -> str:
     Returns:
         str: The PostgreSQL tsquery equivalent.
     """
-
     query = query.upper()  # Ensure uniformity
+    result = process_group(query)
 
-    # Step 1: Split into tokens (preserving quoted phrases)
-    # Regex pattern: match quoted phrases or non-space sequences
-    tokens = re.findall(r'"[^"]*"|\'[^\']*\'|\S+', query)
-
-    # Step 2: Combine tokens in parantheses into single tokens
-    def combine_parentheses(tokens: list) -> list:
-        """
-        Combine tokens within parentheses into a single token.
-
-        Args:
-            tokens (list): List of tokens to process.
-
-        Returns:
-            list: Processed list with tokens inside parentheses combined.
-        """
-        combined_tokens = []
-        buffer = []
-        paren_count = 0
-        for token in tokens:
-            # If buffer is not empty, we are inside parentheses
-            if len(buffer) > 0:
-                buffer.append(token)
-
-                # Adjust the count of parentheses
-                paren_count += count_chars("(", token) - count_chars(")", token)
-
-                if paren_count < 1:
-                    # Combine all tokens in parentheses
-                    combined_tokens.append(" ".join(buffer))
-                    buffer = []  # Clear the buffer
-                    paren_count = 0
-
-            else:
-                n_paren = count_chars("(", token) - count_chars(")", token)
-                # If not in parentheses, but token contains opening parentheses
-                # Start capturing tokens inside parentheses
-                if token[0] == "(" and n_paren > 0:
-                    paren_count += n_paren
-                    buffer.append(token)  # Start capturing tokens in parens
-                    print(buffer)
-                else:
-                    combined_tokens.append(token)
-
-        # If the list ends without a closing parenthesis (invalid input)
-        # append buffer contents (fallback)
-        if buffer:
-            combined_tokens.append(" ".join(buffer))
-
-        return combined_tokens
-
-    tokens = combine_parentheses(tokens)
-    print(tokens)
-    for i, token in enumerate(tokens):
-        if token[0] == "(" and token[-1] == ")":
-            # RECURSIVE: Process the contents of the parentheses
-            token_res = pubmed_to_tsquery(token[1:-1])
-            token = "(" + token_res + ")"
-            tokens[i] = token
-
-        # Step 4: Handle both single-quoted and double-quoted phrases,
-        # grouping them with <-> (proximity operator)
-        elif token[0] in ('"', "'"):
-            # Split quoted text into individual words and join with <-> for
-            # proximity search
-            words = re.findall(r"\w+", token)
-            tokens[i] = "<->".join(words)
-
-        # Step 3: Replace logical operators AND, OR, NOT
-        else:
-            if token == "AND":
-                tokens[i] = "&"
-            elif token == "OR":
-                tokens[i] = "|"
-            elif token == "NOT":
-                tokens[i] = "&!"
-
-    processed_tokens = []
-    last_token = None
-    for token in tokens:
-        # Step 5: Add & between consecutive terms that aren't already
-        # connected by an operator
-        stripped_token = token.strip()
-        if stripped_token not in ("&", "|", "!", "&!"):
-            stripped_token = re.sub(r"[\[\],;:!?@#]", "", stripped_token)
-        if stripped_token == "":
-            continue  # Ignore empty tokens from splitting
-
-        if last_token and last_token not in ("&", "|", "!", "&!"):
-            if stripped_token not in ("&", "|", "!", "&!"):
-                # Insert an implicit AND (&) between two non-operator tokens
-                processed_tokens.append("&")
-
-        processed_tokens.append(stripped_token)
-        last_token = stripped_token
-
-    return " ".join(processed_tokens)
+    return result

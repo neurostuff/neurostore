@@ -7,9 +7,9 @@ import { useProjectExtractionAddOrUpdateStudyListStatus } from 'pages/Project/st
 import { EExtractionStatus } from '../ExtractionPage';
 import { IExtractionTableStudy } from './ExtractionTable';
 
-export const ExtractionTableStatusCell: React.FC<
-    CellContext<IExtractionTableStudy, EExtractionStatus | undefined>
-> = (props) => {
+export const ExtractionTableStatusCell: React.FC<CellContext<IExtractionTableStudy, EExtractionStatus | undefined>> = (
+    props
+) => {
     const status = props.getValue();
 
     const updateStudyListStatus = useProjectExtractionAddOrUpdateStudyListStatus();
@@ -20,19 +20,14 @@ export const ExtractionTableStatusCell: React.FC<
                 <Button
                     onClick={(event) => {
                         event.stopPropagation();
-                        updateStudyListStatus(
-                            props.row.original.id || '',
-                            EExtractionStatus.UNCATEGORIZED
-                        );
+                        updateStudyListStatus(props.row.original.id || '', EExtractionStatus.UNCATEGORIZED);
                     }}
                     disableElevation
                     sx={{ paddingX: '0' }}
                     color="warning"
                     size="small"
                     variant={
-                        status === undefined || status === EExtractionStatus.UNCATEGORIZED
-                            ? 'contained'
-                            : 'outlined'
+                        status === undefined || status === EExtractionStatus.UNCATEGORIZED ? 'contained' : 'outlined'
                     }
                 >
                     <QuestionMark />
@@ -40,10 +35,7 @@ export const ExtractionTableStatusCell: React.FC<
                 <Button
                     onClick={(event) => {
                         event.stopPropagation();
-                        updateStudyListStatus(
-                            props.row.original.id || '',
-                            EExtractionStatus.SAVEDFORLATER
-                        );
+                        updateStudyListStatus(props.row.original.id || '', EExtractionStatus.SAVEDFORLATER);
                     }}
                     disableElevation
                     sx={{ paddingX: '0' }}
@@ -56,10 +48,7 @@ export const ExtractionTableStatusCell: React.FC<
                 <Button
                     onClick={(event) => {
                         event.stopPropagation();
-                        updateStudyListStatus(
-                            props.row.original.id || '',
-                            EExtractionStatus.COMPLETED
-                        );
+                        updateStudyListStatus(props.row.original.id || '', EExtractionStatus.COMPLETED);
                     }}
                     disableElevation
                     sx={{ paddingX: '0' }}
@@ -74,46 +63,39 @@ export const ExtractionTableStatusCell: React.FC<
     );
 };
 
-export const ExtractionTableStatusHeader: React.FC<
-    HeaderContext<IExtractionTableStudy, unknown>
-> = ({ table, column }) => {
+export const ExtractionTableStatusHeader: React.FC<HeaderContext<IExtractionTableStudy, unknown>> = ({
+    table,
+    column,
+}) => {
+    const columnLabel = column.columnDef.meta?.columnLabel || '';
     const isSorted = column.getIsSorted();
     return (
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
             <Typography variant="h6" sx={{ marginRight: '4px' }}>
-                Status
+                {columnLabel}
             </Typography>
             {!isSorted ? (
                 <Tooltip title="Sort by Status" placement="top">
                     <IconButton
                         size="small"
                         onClick={() => {
-                            if (!!isSorted) {
+                            if (isSorted) {
                                 table.resetSorting();
                             } else {
                                 table.setSorting([{ id: 'status', desc: true }]);
                             }
                         }}
                     >
-                        <ArrowDownward
-                            sx={{ height: '0.9em', width: '0.9em', color: 'lightgray' }}
-                        />
+                        <ArrowDownward sx={{ height: '0.9em', width: '0.9em', color: 'lightgray' }} />
                     </IconButton>
                 </Tooltip>
             ) : isSorted === 'asc' ? (
                 <IconButton size="small" onClick={() => table.resetSorting()}>
-                    <ArrowUpwardIcon
-                        sx={{ height: '0.9em', width: '0.9em', color: 'secondary.main' }}
-                    />
+                    <ArrowUpwardIcon sx={{ height: '0.9em', width: '0.9em', color: 'secondary.main' }} />
                 </IconButton>
             ) : (
-                <IconButton
-                    size="small"
-                    onClick={() => table.setSorting([{ id: 'status', desc: false }])}
-                >
-                    <ArrowDownward
-                        sx={{ height: '0.9em', width: '0.9em', color: 'secondary.main' }}
-                    />
+                <IconButton size="small" onClick={() => table.setSorting([{ id: 'status', desc: false }])}>
+                    <ArrowDownward sx={{ height: '0.9em', width: '0.9em', color: 'secondary.main' }} />
                 </IconButton>
             )}
         </Box>

@@ -23,17 +23,13 @@ export const baseStudiesSearchHelper = (searchCriteria: Partial<SearchCriteria>)
 };
 
 const useGetBaseStudies = (searchCriteria: Partial<SearchCriteria>, enabled?: boolean) => {
-    return useQuery(
-        ['studies', { ...searchCriteria }],
-        () => baseStudiesSearchHelper(searchCriteria),
-        {
-            enabled,
-            select: (res) => {
-                const studyList = res.data;
-                return studyList;
-            },
-        }
-    );
+    return useQuery(['studies', { ...searchCriteria }], () => baseStudiesSearchHelper(searchCriteria), {
+        enabled,
+        select: (res) => {
+            const studyList = res.data;
+            return studyList;
+        },
+    });
 };
 
 export default useGetBaseStudies;

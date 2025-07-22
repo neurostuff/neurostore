@@ -20,5 +20,3 @@ jobs:
         uses: actions/checkout@v4
       - name: Codespell
         uses: codespell-project/actions-codespell@master
-        with:
-          exclude_file: compose/neurosynth-frontend/cypress/fixtures/*.json

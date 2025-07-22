@@ -1,0 +1,210 @@
+{
+  "created_at": "2025-06-04T04:12:33.113627+00:00",
+  "description": "",
+  "draft": true,
+  "id": "JaBUTg7tH5em",
+  "meta_analyses": [],
+  "name": "Untitled",
+  "neurostore_study": {
+    "created_at": "2025-06-04T04:12:33.128909+00:00",
+    "exception": null,
+    "neurostore_id": "5cefaph578gE",
+    "status": "PENDING",
+    "traceback": null,
+    "updated_at": "2025-06-04T04:12:33.146465+00:00"
+  },
+  "neurostore_url": "https://neurostore.org/api/studies/5cefaph578gE",
+  "provenance": {
+    "curationMetadata": {
+      "columns": [
+        {
+          "id": "b53f96f3-3ebe-40d6-b6f4-47dde7b0ee50",
+          "name": "Unreviewed",
+          "stubStudies": [
+            {
+              "abstractText": "OBJECTIVE:\r\nThe authors conducted a comprehensive meta-analysis of MRI region-of-interest and voxel-based morphometry (VBM) studies in posttraumatic stress disorder (PTSD). Because patients have high rates of comorbid depression, an additional objective was to compare the findings to a meta-analysis of MRI studies in depression.\r\n\r\nMETHOD:\r\nThe MEDLINE database was searched for studies from 1985 through 2016. A total of 113 studies met inclusion criteria and were included in an online database. Of these, 66 were selected for the region-of-interest meta-analysis and 13 for the VBM meta-analysis. The region-of-interest meta-analysis was conducted and compared with a meta-analysis of major depressive disorder. Within the region-of-interest meta-analysis, three subanalyses were conducted that included control groups with and without trauma.\r\n\r\nRESULTS:\r\nIn the region-of-interest meta-analysis, patients with PTSD compared with all control subjects were found to have reduced brain volume, intracranial volume, and volumes of the hippocampus, insula, and anterior cingulate. PTSD patients compared with nontraumatized or traumatized control subjects showed similar changes. Traumatized compared with nontraumatized control subjects showed smaller volumes of the hippocampus bilaterally. For all regions, pooled effect sizes (Hedges' g) varied from -0.84 to 0.43, and number of studies from three to 41. The VBM meta-analysis revealed prominent volumetric reductions in the medial prefrontal cortex, including the anterior cingulate. Compared with region-of-interest data from patients with major depressive disorder, those with PTSD had reduced total brain volume, and both disorders were associated with reduced hippocampal volume.\r\n\r\nCONCLUSIONS:\r\nThe meta-analyses revealed structural brain abnormalities associated with PTSD and trauma and suggest that global brain volume reductions distinguish PTSD from major depression.",
+              "articleLink": "",
+              "articleYear": "",
+              "authors": "Konstantinos Bromis, Maria Calem, Antje A.T.S. Reinders, Steven C.R. Williams and Matthew J. Kempton",
+              "doi": "10.1176/appi.ajp.2018.17111199",
+              "exclusionTag": null,
+              "id": "413b53a1-ed75-49ee-a7ae-04a880dff623",
+              "identificationSource": {
+                "id": "neurosynth_neurostore_id_source",
+                "label": "Neurostore"
+              },
+              "importId": "53240dca-baa4-4f5f-9fee-36f197de37a7",
+              "journal": "American Journal of Psychiatry",
+              "keywords": "",
+              "neurostoreId": "KpTqqB36JshB",
+              "pmcid": "",
+              "pmid": "",
+              "tags": [],
+              "title": "Meta-Analysis of 89 Structural MRI Studies in Posttraumatic Stress Disorder and Comparison With Major Depressive Disorder"
+            },
+            {
+              "abstractText": "",
+              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/17331476",
+              "articleYear": "",
+              "authors": "Hou C, Liu J, Wang K, Li L, Liang M, He Z, Liu Y, Zhang Y, Li W, Jiang T",
+              "doi": "10.1016/j.brainres.2007.01.089",
+              "exclusionTag": null,
+              "id": "512e0ca2-0e1c-442f-9cdd-9fdcf8dff49f",
+              "identificationSource": {
+                "id": "neurosynth_neurostore_id_source",
+                "label": "Neurostore"
+              },
+              "importId": "53240dca-baa4-4f5f-9fee-36f197de37a7",
+              "journal": "Brain research",
+              "keywords": "",
+              "neurostoreId": "5pTxsjLiZYgF",
+              "pmcid": "",
+              "pmid": "17331476",
+              "tags": [],
+              "title": "Brain responses to symptom provocation and trauma-related short-term memory recall in coal mining accident survivors with acute severe PTSD."
+            },
+            {
+              "abstractText": "",
+              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/24737710",
+              "articleYear": "",
+              "authors": "Grant MM, White D, Hadley J, Hutcheson N, Shelton R, Sreenivasan K, Deshpande G",
+              "doi": "10.1002/hbm.22514",
+              "exclusionTag": null,
+              "id": "4cb0bfaa-cf12-4a96-b40a-4ce20614df02",
+              "identificationSource": {
+                "id": "neurosynth_neurostore_id_source",
+                "label": "Neurostore"
+              },
+              "importId": "53240dca-baa4-4f5f-9fee-36f197de37a7",
+              "journal": "Human brain mapping",
+              "keywords": "",
+              "neurostoreId": "3yPGeCjieLJ3",
+              "pmcid": "",
+              "pmid": "24737710",
+              "tags": [],
+              "title": "Early life trauma and directional brain connectivity within major depression."
+            },
+            {
+              "abstractText": "",
+              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/27547195",
+              "articleYear": "",
+              "authors": "",
+              "doi": "",
+              "exclusionTag": null,
+              "id": "a1288bc8-81cf-4116-9153-ec955c53e5b4",
+              "identificationSource": {
+                "id": "neurosynth_neurostore_id_source",
+                "label": "Neurostore"
+              },
+              "importId": "53240dca-baa4-4f5f-9fee-36f197de37a7",
+              "journal": "",
+              "keywords": "",
+              "neurostoreId": "4usz4hrGYvVi",
+              "pmcid": "",
+              "pmid": "27547195",
+              "tags": [],
+              "title": "Brain Activity in Response to Trauma-specific, Negative, and Neutral Stimuli. A fMRI Study of Recent Road Traffic Accident Survivors"
+            }
+          ]
+        },
+        {
+          "id": "6c30dd53-f539-4380-b74b-1f7d54777662",
+          "name": "Included",
+          "stubStudies": []
+        }
+      ],
+      "exclusionTags": [
+        {
+          "id": "neurosynth_exclude_exclusion",
+          "isAssignable": true,
+          "isExclusionTag": true,
+          "label": "Exclude"
+        },
+        {
+          "id": "neurosynth_duplicate_exclusion",
+          "isAssignable": true,
+          "isExclusionTag": true,
+          "label": "Duplicate"
+        }
+      ],
+      "identificationSources": [
+        {
+          "id": "neurosynth_neurostore_id_source",
+          "label": "Neurostore"
+        },
+        {
+          "id": "neurosynth_pubmed_id_source",
+          "label": "PubMed"
+        },
+        {
+          "id": "neurosynth_scopus_id_source",
+          "label": "Scopus"
+        },
+        {
+          "id": "neurosynth_web_of_science_id_source",
+          "label": "Web of Science"
+        },
+        {
+          "id": "neurosynth_psycinfo_id_source",
+          "label": "PsycInfo"
+        },
+        {
+          "id": "neurosynth_sleuth_id_source",
+          "label": "Sleuth"
+        }
+      ],
+      "imports": [
+        {
+          "date": "2025-06-04T04:13:37.098Z",
+          "id": "53240dca-baa4-4f5f-9fee-36f197de37a7",
+          "importModeUsed": "NEUROSTORE_IMPORT",
+          "name": "brain trauma",
+          "neurostoreSearchParams": "genericSearchStr=brain+trauma&sortBy=relevance&pageOfResults=1&descOrder=true&pageSize=10&source=all&dataType=all&level=group&flat=true&info=true",
+          "numImported": 4
+        }
+      ],
+      "infoTags": [
+        {
+          "id": "neurosynth_untagged_tag",
+          "isAssignable": false,
+          "isExclusionTag": false,
+          "label": "Untagged studies"
+        },
+        {
+          "id": "neurosynth_uncategorized_tag",
+          "isAssignable": false,
+          "isExclusionTag": false,
+          "label": "Uncategorized Studies"
+        },
+        {
+          "id": "neurosynth_needs_review_tag",
+          "isAssignable": false,
+          "isExclusionTag": false,
+          "label": "Needs Review"
+        }
+      ],
+      "prismaConfig": {
+        "eligibility": {
+          "exclusionTags": []
+        },
+        "identification": {
+          "exclusionTags": []
+        },
+        "isPrisma": false,
+        "screening": {
+          "exclusionTags": []
+        }
+      }
+    },
+    "extractionMetadata": {
+      "studyStatusList": []
+    },
+    "metaAnalysisMetadata": {
+      "canEditMetaAnalyses": false
+    }
+  },
+  "public": true,
+  "updated_at": "2025-06-09T21:27:10.591441+00:00",
+  "user": "github|26612023",
+  "username": "Nicholas Lee"
+}

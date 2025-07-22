@@ -1,5 +1,5 @@
 import SearchIcon from '@mui/icons-material/Search';
-import { Box, Button, InputBase, Paper } from '@mui/material';
+import { Alert, Box, Button, InputBase, Paper } from '@mui/material';
 import SearchBarStyles from 'components/Search/SearchBar.styles';
 import {
     SearchCriteria,
@@ -22,6 +22,7 @@ export interface ISearchBar {
     onSearch: (searchArgs: Partial<SearchCriteria | ProjectSearchCriteria>) => void;
     searchButtonColor?: string;
     searchMode?: 'study-search' | 'project-search';
+    error?: string;
 }
 
 const searchPlaceholderExamples = [
@@ -62,10 +63,7 @@ const SearchBar: React.FC<ISearchBar> = (props) => {
     // set new placeholder on reload
     useEffect(() => {
         if (searchMode === 'study-search') {
-            const placeholder =
-                searchPlaceholderExamples[
-                    Math.floor(Math.random() * searchPlaceholderExamples.length)
-                ];
+            const placeholder = searchPlaceholderExamples[Math.floor(Math.random() * searchPlaceholderExamples.length)];
             setPlaceholder(placeholder);
         } else {
             setPlaceholder('Enter a project name...');
@@ -144,141 +142,131 @@ const SearchBar: React.FC<ISearchBar> = (props) => {
     return (
         <Box sx={{ display: 'flex', margin: '1rem 0' }}>
             <Box sx={{ flexGrow: 1 }}>
-                <Box data-tour="StudiesPage-2">
-                    <Box component="form" sx={{ width: '100%' }} onSubmit={handleOnSubmit}>
-                        <Box sx={SearchBarStyles.searchContainer}>
-                            <Paper sx={SearchBarStyles.paper} variant="outlined">
-                                <InputBase
-                                    value={searchState.genericSearchStr || ''}
-                                    onChange={(event) =>
-                                        setSearchState((prev) => {
-                                            return {
-                                                ...prev,
-                                                genericSearchStr: event.target.value as string,
-                                            };
-                                        })
-                                    }
-                                    placeholder={placeholder}
-                                    sx={SearchBarStyles.textfield}
-                                />
-                            </Paper>
-                            <Button
-                                disableElevation
-                                type="submit"
-                                sx={{
-                                    borderTopLeftRadius: '0px',
-                                    borderBottomLeftRadius: '0px',
-                                    backgroundColor: searchButtonColor,
-                                    width: '150px',
-                                }}
-                                variant="contained"
-                                startIcon={<SearchIcon />}
-                            >
-                                Search
-                            </Button>
-                            <Button
-                                onClick={handleReset}
-                                sx={{
-                                    borderTopLeftRadius: '0px',
-                                    borderBottomLeftRadius: '0px',
-                                    borderLeft: '0px !important',
-                                    width: '100px',
-                                    color: searchButtonColor,
-                                }}
-                                disableElevation
-                                variant="text"
-                            >
-                                Reset
-                            </Button>
-                        </Box>
+                <Box component="form" sx={{ width: '100%' }} onSubmit={handleOnSubmit}>
+                    <Box sx={SearchBarStyles.searchContainer}>
+                        <Paper sx={SearchBarStyles.paper} variant="outlined">
+                            <InputBase
+                                value={searchState.genericSearchStr || ''}
+                                onChange={(event) =>
+                                    setSearchState((prev) => {
+                                        return {
+                                            ...prev,
+                                            genericSearchStr: event.target.value as string,
+                                        };
+                                    })
+                                }
+                                placeholder={placeholder}
+                                sx={SearchBarStyles.textfield}
+                            />
+                        </Paper>
+                        <Button
+                            disableElevation
+                            type="submit"
+                            sx={{
+                                borderTopLeftRadius: '0px',
+                                borderBottomLeftRadius: '0px',
+                                backgroundColor: searchButtonColor,
+                                width: '150px',
+                            }}
+                            variant="contained"
+                            startIcon={<SearchIcon />}
+                        >
+                            Search
+                        </Button>
+                        <Button
+                            onClick={handleReset}
+                            sx={{
+                                borderTopLeftRadius: '0px',
+                                borderBottomLeftRadius: '0px',
+                                borderLeft: '0px !important',
+                                width: '100px',
+                                color: searchButtonColor,
+                            }}
+                            disableElevation
+                            variant="text"
+                        >
+                            Reset
+                        </Button>
                     </Box>
-                    {searchMode === 'study-search' ? (
-                        <Box sx={{ marginTop: '10px' }}>
-                            <SearchSelectChip
-                                chipLabel={`Study Data Type: ${
-                                    SearchDataTypeEnumToString[
-                                        (searchState as SearchCriteria).dataType as SearchDataType
-                                    ]
-                                }`}
-                                onSelectSearch={(selectedDataType) =>
-                                    onSearch({
-                                        ...(searchState as SearchCriteria),
-                                        dataType: selectedDataType,
-                                    })
-                                }
-                                options={[
-                                    { value: SearchDataType.ALL, label: 'All' },
-                                    { value: SearchDataType.COORDINATE, label: 'Coordinates' },
-                                    { value: SearchDataType.IMAGE, label: 'Images' },
-                                ]}
-                            />
-                            <SearchSelectSortChip
-                                searchMode="study-search"
-                                chipLabel={`Sort By: ${
-                                    SortByEnumToString[
-                                        (searchState as SearchCriteria).sortBy as SortBy
-                                    ]
-                                }`}
-                                descOrderChipLabel={
-                                    (searchState as SearchCriteria).descOrder ? 'DESC' : 'ASC'
-                                }
-                                onSelectDescOrder={(descOrder) =>
-                                    onSearch({ ...(searchState as SearchCriteria), descOrder })
-                                }
-                                onSelectSort={(sortBy) =>
-                                    onSearch({ ...(searchState as SearchCriteria), sortBy })
-                                }
-                            />
-                            <SearchBarFilters
-                                searchMode="study-search"
-                                nameSearch={(searchState as SearchCriteria).nameSearch}
-                                descriptionSearch={
-                                    (searchState as SearchCriteria).descriptionSearch
-                                }
-                                journalSearch={(searchState as SearchCriteria).journalSearch}
-                                authorSearch={(searchState as SearchCriteria).authorSearch}
-                                onAddFilter={handleAddFilter}
-                                onRemoveFilter={handleRemoveFilter}
-                            />
-                        </Box>
-                    ) : (
-                        <Box sx={{ marginTop: '10px' }}>
-                            <SearchSelectSortChip
-                                searchMode="project-search"
-                                chipLabel={`Sort By: ${
-                                    SortByEnumToString[
-                                        (searchState as ProjectSearchCriteria).sortBy as SortBy
-                                    ]
-                                }`}
-                                descOrderChipLabel={
-                                    (searchState as ProjectSearchCriteria).descOrder
-                                        ? 'DESC'
-                                        : 'ASC'
-                                }
-                                onSelectDescOrder={(descOrder) =>
-                                    onSearch({
-                                        ...(searchState as ProjectSearchCriteria),
-                                        descOrder,
-                                    })
-                                }
-                                onSelectSort={(sortBy) =>
-                                    onSearch({ ...(searchState as ProjectSearchCriteria), sortBy })
-                                }
-                            />
-                            <SearchBarFilters
-                                searchMode="project-search"
-                                nameSearch={(searchState as ProjectSearchCriteria).nameSearch}
-                                descriptionSearch={
-                                    (searchState as ProjectSearchCriteria).descriptionSearch
-                                }
-                                journalSearchAllowed={false}
-                                authorSearchAllowed={false}
-                                onAddFilter={handleAddFilter}
-                                onRemoveFilter={handleRemoveFilter}
-                            />
-                        </Box>
+                    {props.error && (
+                        <Alert
+                            style={{
+                                borderTopLeftRadius: 0,
+                                borderTopRightRadius: 0,
+                                width: `calc(100% - 150px + 18px)`,
+                            }}
+                            severity="error"
+                        >
+                            {props.error}
+                        </Alert>
                     )}
                 </Box>
+                {searchMode === 'study-search' ? (
+                    <Box sx={{ marginTop: '10px' }}>
+                        <SearchSelectChip
+                            chipLabel={`Study Data Type: ${
+                                SearchDataTypeEnumToString[(searchState as SearchCriteria).dataType as SearchDataType]
+                            }`}
+                            onSelectSearch={(selectedDataType) =>
+                                onSearch({
+                                    ...(searchState as SearchCriteria),
+                                    dataType: selectedDataType,
+                                })
+                            }
+                            options={[
+                                { value: SearchDataType.ALL, label: 'All' },
+                                { value: SearchDataType.COORDINATE, label: 'Coordinates' },
+                                { value: SearchDataType.IMAGE, label: 'Images' },
+                            ]}
+                        />
+                        <SearchSelectSortChip
+                            searchMode="study-search"
+                            chipLabel={`Sort By: ${
+                                SortByEnumToString[(searchState as SearchCriteria).sortBy as SortBy]
+                            }`}
+                            descOrderChipLabel={(searchState as SearchCriteria).descOrder ? 'DESC' : 'ASC'}
+                            onSelectDescOrder={(descOrder) =>
+                                onSearch({ ...(searchState as SearchCriteria), descOrder })
+                            }
+                            onSelectSort={(sortBy) => onSearch({ ...(searchState as SearchCriteria), sortBy })}
+                        />
+                        <SearchBarFilters
+                            searchMode="study-search"
+                            nameSearch={(searchState as SearchCriteria).nameSearch}
+                            descriptionSearch={(searchState as SearchCriteria).descriptionSearch}
+                            journalSearch={(searchState as SearchCriteria).journalSearch}
+                            authorSearch={(searchState as SearchCriteria).authorSearch}
+                            onAddFilter={handleAddFilter}
+                            onRemoveFilter={handleRemoveFilter}
+                        />
+                    </Box>
+                ) : (
+                    <Box sx={{ marginTop: '10px' }}>
+                        <SearchSelectSortChip
+                            searchMode="project-search"
+                            chipLabel={`Sort By: ${
+                                SortByEnumToString[(searchState as ProjectSearchCriteria).sortBy as SortBy]
+                            }`}
+                            descOrderChipLabel={(searchState as ProjectSearchCriteria).descOrder ? 'DESC' : 'ASC'}
+                            onSelectDescOrder={(descOrder) =>
+                                onSearch({
+                                    ...(searchState as ProjectSearchCriteria),
+                                    descOrder,
+                                })
+                            }
+                            onSelectSort={(sortBy) => onSearch({ ...(searchState as ProjectSearchCriteria), sortBy })}
+                        />
+                        <SearchBarFilters
+                            searchMode="project-search"
+                            nameSearch={(searchState as ProjectSearchCriteria).nameSearch}
+                            descriptionSearch={(searchState as ProjectSearchCriteria).descriptionSearch}
+                            journalSearchAllowed={false}
+                            authorSearchAllowed={false}
+                            onAddFilter={handleAddFilter}
+                            onRemoveFilter={handleRemoveFilter}
+                        />
+                    </Box>
+                )}
             </Box>
         </Box>
     );

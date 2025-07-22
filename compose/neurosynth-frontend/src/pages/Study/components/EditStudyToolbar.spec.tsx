@@ -48,9 +48,7 @@ describe('EditStudyToolbar Component', () => {
             userEvent.hover(screen.getByText(`${expectedPercentage}%`));
             const tooltip = await screen.findByRole('tooltip');
             expect(tooltip).toBeInTheDocument();
-            expect(tooltip).toHaveTextContent(
-                `${expectedCompleted} / ${expectedTotal} studies marked as complete`
-            );
+            expect(tooltip).toHaveTextContent(`${expectedCompleted} / ${expectedTotal} studies marked as complete`);
         }
     );
 
@@ -116,6 +114,7 @@ describe('EditStudyToolbar Component', () => {
                     columnFilters: [],
                     sorting: [],
                     studies: ['study-1', 'study-2', 'study-3', 'study-4'],
+                    pagination: { pageIndex: 0, pageSize: 25 },
                 })
             );
             (useStudyId as Mock).mockReturnValue('study-2');
@@ -127,9 +126,7 @@ describe('EditStudyToolbar Component', () => {
             // ACT
             userEvent.click(screen.getByTestId('KeyboardArrowLeftIcon'));
             // ASSERT
-            expect(useNavigate()).toHaveBeenCalledWith(
-                '/projects/projectid/extraction/studies/study-1/edit'
-            );
+            expect(useNavigate()).toHaveBeenCalledWith('/projects/projectid/extraction/studies/study-1/edit');
         });
 
         it('should show a popup if there are unsaved changes when going to previous', () => {
@@ -140,6 +137,7 @@ describe('EditStudyToolbar Component', () => {
                     columnFilters: [],
                     sorting: [],
                     studies: ['study-1', 'study-2', 'study-3', 'study-4'],
+                    pagination: { pageIndex: 0, pageSize: 25 },
                 })
             );
             setUnloadHandler('study'); // simulate an unsaved change
@@ -152,9 +150,7 @@ describe('EditStudyToolbar Component', () => {
             // ACT
             userEvent.click(screen.getByTestId('KeyboardArrowLeftIcon'));
             // ASSERT
-            expect(useNavigate()).not.toHaveBeenCalledWith(
-                '/projects/projectid/extraction/studies/study-1/edit'
-            );
+            expect(useNavigate()).not.toHaveBeenCalledWith('/projects/projectid/extraction/studies/study-1/edit');
             expect(screen.getByTestId('mock-confirmation-dialog')).toBeInTheDocument();
         });
 
@@ -173,9 +169,7 @@ describe('EditStudyToolbar Component', () => {
             // ACT
             userEvent.click(screen.getByTestId('KeyboardArrowLeftIcon'));
             // ASSERT
-            expect(useNavigate()).toHaveBeenCalledWith(
-                '/projects/projectid/extraction/studies/study-2/edit'
-            );
+            expect(useNavigate()).toHaveBeenCalledWith('/projects/projectid/extraction/studies/study-2/edit');
         });
 
         it('should disable the back button if on the first study', () => {
@@ -206,6 +200,7 @@ describe('EditStudyToolbar Component', () => {
                     columnFilters: [],
                     sorting: [],
                     studies: ['study-1', 'study-2', 'study-3', 'study-4'],
+                    pagination: { pageIndex: 0, pageSize: 25 },
                 })
             );
             (useStudyId as Mock).mockReturnValue('study-2');
@@ -217,9 +212,7 @@ describe('EditStudyToolbar Component', () => {
             // ACT
             userEvent.click(screen.getByTestId('KeyboardArrowRightIcon'));
             // ASSERT
-            expect(useNavigate()).toHaveBeenCalledWith(
-                '/projects/projectid/extraction/studies/study-3/edit'
-            );
+            expect(useNavigate()).toHaveBeenCalledWith('/projects/projectid/extraction/studies/study-3/edit');
         });
 
         it('should show a popup if there are unsaved changes when going to next', () => {
@@ -230,6 +223,7 @@ describe('EditStudyToolbar Component', () => {
                     columnFilters: [],
                     sorting: [],
                     studies: ['study-1', 'study-2', 'study-3', 'study-4'],
+                    pagination: { pageIndex: 0, pageSize: 25 },
                 })
             );
             setUnloadHandler('study'); // simulate an unsaved change
@@ -242,9 +236,7 @@ describe('EditStudyToolbar Component', () => {
             // ACT
             userEvent.click(screen.getByTestId('KeyboardArrowRightIcon'));
             // ASSERT
-            expect(useNavigate()).not.toHaveBeenCalledWith(
-                '/projects/projectid/extraction/studies/study-3/edit'
-            );
+            expect(useNavigate()).not.toHaveBeenCalledWith('/projects/projectid/extraction/studies/study-3/edit');
             expect(screen.getByTestId('mock-confirmation-dialog')).toBeInTheDocument();
         });
 
@@ -263,9 +255,7 @@ describe('EditStudyToolbar Component', () => {
             // ACT
             userEvent.click(screen.getByTestId('KeyboardArrowRightIcon'));
             // ASSERT
-            expect(useNavigate()).toHaveBeenCalledWith(
-                '/projects/projectid/extraction/studies/study-4/edit'
-            );
+            expect(useNavigate()).toHaveBeenCalledWith('/projects/projectid/extraction/studies/study-4/edit');
         });
 
         it('should disable the next button if on the last study', () => {

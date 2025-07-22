@@ -1,35 +1,25 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import { Draggable, Droppable } from '@hello-pangea/dnd';
-import {
-    Autocomplete,
-    Box,
-    Button,
-    Divider,
-    ListItem,
-    ListItemText,
-    Paper,
-    TextField,
-} from '@mui/material';
-import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
+import { Autocomplete, Box, Button, Divider, ListItem, ListItemText, Paper, TextField } from '@mui/material';
 
+import CurationPromoteUncategorizedButton from 'components/Buttons/CurationPromoteUncategorizedButton';
+import { ITag, indexToPRISMAMapping } from 'hooks/projects/useGetProjects';
 import useGetWindowHeight from 'hooks/useGetWindowHeight';
+import useUserCanEdit from 'hooks/useUserCanEdit';
+import { ICurationStubStudy } from 'pages/Curation/Curation.types';
+import CurationColumnStyles from 'pages/Curation/components/CurationColumn.styles';
+import CurationDialog from 'pages/Curation/components/CurationDialog';
+import CurationStubStudyDraggableContainer from 'pages/Curation/components/CurationStubStudyDraggableContainer';
 import {
     useProjectCurationColumn,
     useProjectCurationExclusionTags,
     useProjectCurationInfoTags,
     useProjectCurationPrismaConfig,
     useProjectUser,
-    usePromoteAllUncategorized,
 } from 'pages/Project/store/ProjectStore';
 import { ENeurosynthTagIds } from 'pages/Project/store/ProjectStore.types';
 import React, { useEffect, useMemo, useState } from 'react';
 import { FixedSizeList, ListChildComponentProps } from 'react-window';
-import CurationColumnStyles from 'pages/Curation/components/CurationColumn.styles';
-import { ITag, indexToPRISMAMapping } from 'hooks/projects/useGetProjects';
-import useUserCanEdit from 'hooks/useUserCanEdit';
-import { ICurationStubStudy } from 'pages/Curation/Curation.types';
-import CurationStubStudyDraggableContainer from 'pages/Curation/components/CurationStubStudyDraggableContainer';
-import CurationDialog from 'pages/Curation/components/CurationDialog';
 
 const getVisibility = (stub: ICurationStubStudy, selectedTag: ITag | undefined): boolean => {
     let isVisible = false;
@@ -88,10 +78,7 @@ const CurationColumn: React.FC<{ columnIndex: number }> = React.memo((props) => 
     const prismaConfig = useProjectCurationPrismaConfig();
     const infoTags = useProjectCurationInfoTags();
     const exclusionTags = useProjectCurationExclusionTags();
-    const promoteAllUncategorized = usePromoteAllUncategorized();
-
     const [selectedTag, setSelectedTag] = useState<ITag>();
-    const [warningDialogIsOpen, setWarningDialogIsOpen] = useState(false); // TODO: get rid of this
     const windowHeight = useGetWindowHeight();
     const [tags, setTags] = useState<ITag[]>([]);
     const [dialogState, setDialogState] = useState<{
@@ -139,14 +126,6 @@ const CurationColumn: React.FC<{ columnIndex: number }> = React.memo((props) => 
         });
     }, []);
 
-    const handlePromoteAllUnCategorized = (confirm?: boolean) => {
-        if (confirm) {
-            promoteAllUncategorized();
-        }
-
-        setWarningDialogIsOpen(false);
-    };
-
     // This logic was previously in a useEffect hook, but was removed because it caused
     // visual flickering as the filteredStudies took noticable milliseconds to get updated
     const filteredStudies = useMemo(() => {
@@ -182,30 +161,29 @@ const CurationColumn: React.FC<{ columnIndex: number }> = React.memo((props) => 
             </Button>
 
             {props.columnIndex === 0 && (
-                <>
-                    <ConfirmationDialog
-                        dialogTitle="Are you sure you want to promote non duplicated studies?"
-                        dialogMessage="By taking this action, all non duplicated studies will be promoted to the next stage"
-                        rejectText="Cancel"
-                        confirmText="Continue"
-                        isOpen={warningDialogIsOpen}
-                        onCloseDialog={handlePromoteAllUnCategorized}
-                    />
-                    <Button
-                        variant="contained"
-                        color="info"
-                        disableElevation
-                        onClick={() => setWarningDialogIsOpen(true)}
-                        sx={{
-                            padding: '8px',
-                            marginBottom: '0.75rem',
-                            display: hasUncategorizedStudies ? 'block' : 'none',
-                        }}
-                        disabled={!isAuthenticated}
-                    >
-                        Promote Non Duplicated Studies
-                    </Button>
-                </>
+                <CurationPromoteUncategorizedButton
+                    dialogTitle={
+                        prismaConfig.isPrisma
+                            ? 'Are you sure you want to promote all non duplicated studies in identification to screening?'
+                            : 'Are you sure you want to skip curation?'
+                    }
+                    dialogMessage={
+                        prismaConfig.isPrisma
+                            ? 'All studies that have not been marked as duplicates in this stage will be promoted'
+                            : 'All studies that have not been excluded in this stage will be included'
+                    }
+                    color="info"
+                    variant="outlined"
+                    disableElevation
+                    sx={{
+                        padding: '8px',
+                        marginBottom: '0.75rem',
+                        display: hasUncategorizedStudies ? 'block' : 'none',
+                    }}
+                    disabled={!isAuthenticated}
+                >
+                    Promote Non Duplicated Studies
+                </CurationPromoteUncategorizedButton>
             )}
 
             <Paper elevation={0} sx={{ width: '100%' }}>
@@ -225,14 +203,14 @@ const CurationColumn: React.FC<{ columnIndex: number }> = React.memo((props) => 
                         return option.isExclusionTag
                             ? 'Exclusion Tags'
                             : option.isAssignable
-                            ? 'Your Tags'
-                            : 'Default Tags';
+                              ? 'Your Tags'
+                              : 'Default Tags';
                     }}
                     renderInput={(params) => <TextField {...params} label="filter" />}
                     options={tags}
                     isOptionEqualToValue={(option, value) => option?.id === value?.id}
                     getOptionLabel={(option) => option?.label || ''}
-                    onChange={(_event, newValue, _reason) => {
+                    onChange={(_event, newValue) => {
                         setSelectedTag(newValue || undefined);
                     }}
                 />
@@ -256,7 +234,7 @@ const CurationColumn: React.FC<{ columnIndex: number }> = React.memo((props) => 
                     />
                 )}
             >
-                {(provided, snapshot) => (
+                {(provided) => (
                     <FixedSizeList
                         // 212 roughly represents the space taken up by other components above the column like buttons and headers
                         height={windowHeight - 212 < 0 ? 0 : windowHeight - 212}
