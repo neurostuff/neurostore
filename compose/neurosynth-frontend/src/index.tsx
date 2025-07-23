@@ -95,7 +95,7 @@ if (env === 'PROD') {
             Sentry.replayIntegration({
                 maskAllText: false,
                 blockAllMedia: false,
-                maskAllInputs: true,
+                maskAllInputs: false,
             }),
         ],
         replaysSessionSampleRate: 0.1,
@@ -123,8 +123,3 @@ ReactDOM.render(
     </React.StrictMode>,
     document.getElementById('root')
 );
-
-// If you want to start measuring performance in your app, pass a function
-// to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
-// reportWebVitals();
