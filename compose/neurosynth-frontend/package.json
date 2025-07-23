@@ -22,6 +22,7 @@
         "@niivue/niivue": "^0.46.0",
         "@reactour/tour": "^2.10.3",
         "@sentry/react": "^7.119.2",
+        "@sentry/vite-plugin": "^4.0.0",
         "@tanstack/react-table": "^8.20.5",
         "@tanstack/react-virtual": "^3.13.8",
         "axios": "^1.8.4",
