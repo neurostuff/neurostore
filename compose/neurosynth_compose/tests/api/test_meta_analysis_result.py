@@ -23,19 +23,20 @@ def test_create_meta_analysis_result(session, app, auth_client, user_data):
     assert meta_resp.status_code == 200
 
 
-def test_create_meta_analysis_result_no_snapshots(
-    session, app, db, auth_client, user_data
-):
-    meta_analysis = MetaAnalysis.query.first()
-    meta_analysis.studyset.snapshot = None
-    meta_analysis.annotation.snapshot = None
-    headers = {"Compose-Upload-Key": meta_analysis.run_key}
-    data = {
-        "studyset_snapshot": {"name": "my studyset"},
-        "annotation_snapshot": {"name": "my_annotation"},
-        "meta_analysis_id": meta_analysis.id,
-    }
-    auth_client.token = None
-    resp = auth_client.post("/api/meta-analysis-results", data=data, headers=headers)
+def test_create_meta_analysis_result_no_snapshots(session, auth_client, user_data):
+    meta_analyses = MetaAnalysis.query.all()
+    for meta_analysis in meta_analyses:
+        meta_analysis.studyset.snapshot = None
+        meta_analysis.annotation.snapshot = None
+        headers = {"Compose-Upload-Key": meta_analysis.run_key}
+        data = {
+            "studyset_snapshot": {"name": "my studyset"},
+            "annotation_snapshot": {"name": "my annotation"},
+            "meta_analysis_id": meta_analysis.id,
+        }
+        auth_client.token = None
+        resp = auth_client.post(
+            "/api/meta-analysis-results", data=data, headers=headers
+        )
 
-    assert resp.status_code == 200
+        assert resp.status_code == 200

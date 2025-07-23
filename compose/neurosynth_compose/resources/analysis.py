@@ -402,6 +402,7 @@ class ListView(BaseView):
 
         with db.session.no_autoflush:
             record = self.__class__.update_or_create(data)
+
         return self.__class__._schema().dump(record)
 
 

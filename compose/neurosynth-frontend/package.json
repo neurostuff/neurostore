@@ -38,7 +38,7 @@
         "react-window": "^1.8.8",
         "reactflow": "^11.5.3",
         "uuid": "^9.0.0",
-        "vite": "^5.4.14",
+        "vite": "^6.2.0",
         "web-vitals": "^1.1.2",
         "zustand": "^4.3.3"
     },
@@ -58,7 +58,6 @@
         "cy:e2e-headless-staging-single": "env-cmd -f .env.staging cypress run --spec",
         "cy:install": "cypress install",
         "serve-build": "vite preview --mode staging --port 3000",
-        "cy:ci": "start-server-and-test start-ci:dev 3000 cy:e2e-headless",
         "lint": "eslint ."
     },
     "type": "module",
@@ -89,7 +88,7 @@
         "@types/react-window": "^1.8.5",
         "@types/uuid": "^9.0.0",
         "@typescript-eslint/parser": "^8.13.0",
-        "@vitejs/plugin-react": "^4.3.3",
+        "@vitejs/plugin-react": "^4.3.4",
         "cypress": "^13.2.0",
         "env-cmd": "^10.1.0",
         "eslint": "^9.14.0",
@@ -102,11 +101,10 @@
         "jsdom": "^25.0.1",
         "prettier": "^3.3.3",
         "react-error-overlay": "^6.0.9",
-        "start-server-and-test": "^1.14.0",
         "ts-node": "^10.9.2",
         "typescript": "^4.9.5",
         "typescript-eslint": "^8.13.0",
         "vite-tsconfig-paths": "^5.0.1",
-        "vitest": "^2.1.4"
+        "vitest": "^3.0.7"
     }
 }

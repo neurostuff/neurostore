@@ -70,6 +70,12 @@ class DevelopmentConfig(Config):
     AUTH0_AUTH_URL = "https://dev-mui7zm42.us.auth0.com/authorize"
     AUTH0_API_AUDIENCE = "localhost"
     COMPOSE_AUTH0_CLIENT_ID = os.environ.get("COMPOSE_AUTH0_CLIENT_ID")
+    DB_NAME = "test_db"
+    POSTGRES_HOST = os.environ.get("POSTGRES_HOST")
+    POSTGRES_PASSWORD = os.environ.get("POSTGRES_PASSWORD", "")
+    SQLALCHEMY_DATABASE_URI = (
+        f"postgresql://postgres:" f"{POSTGRES_PASSWORD}@{POSTGRES_HOST}:5432/{DB_NAME}"
+    )
 
 
 class TestingConfig(Config):
@@ -83,6 +89,12 @@ class TestingConfig(Config):
     AUTH0_AUTH_URL = "https://dev-mui7zm42.us.auth0.com/authorize"
     AUTH0_API_AUDIENCE = "localhost"
     COMPOSE_AUTH0_CLIENT_ID = os.environ.get("COMPOSE_AUTH0_CLIENT_ID")
+    DB_NAME = "test_db"
+    POSTGRES_HOST = os.environ.get("POSTGRES_HOST")
+    POSTGRES_PASSWORD = os.environ.get("POSTGRES_PASSWORD", "")
+    SQLALCHEMY_DATABASE_URI = (
+        f"postgresql://postgres:" f"{POSTGRES_PASSWORD}@{POSTGRES_HOST}:5432/{DB_NAME}"
+    )
 
 
 class DockerTestConfig(TestingConfig):

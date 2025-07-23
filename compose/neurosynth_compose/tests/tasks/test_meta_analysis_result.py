@@ -1,5 +1,13 @@
-from ...conftest import celery_test
-from ....models import (
+import os
+from pathlib import Path
+import shutil
+import tempfile
+
+import pandas as pd
+import numpy as np
+from nibabel.testing import data_path
+
+from neurosynth_compose.models import (
     Project,
     MetaAnalysis,
     NeurovaultFile,
@@ -7,26 +15,18 @@ from ....models import (
     NeurostoreStudy,
     NeurostoreAnalysis,
 )
-from ....resources.tasks import (
-    file_upload_neurovault,
-    create_or_update_neurostore_analysis,
-)
-from ....resources.analysis import (
-    create_or_update_neurostore_study,
-)
+from neurosynth_compose.tasks.neurovault import file_upload_neurovault
+from neurosynth_compose.tasks.neurostore import create_or_update_neurostore_analysis
+from neurosynth_compose.resources.analysis import create_or_update_neurostore_study
 
 
-@celery_test
 def test_file_upload_neurovault(session, app, db, mock_pynv):
-    import os
-    from pathlib import Path
-    import shutil
-    import tempfile
-    from nibabel.testing import data_path
 
     nifti_file = os.path.join(data_path, "example_nifti2.nii.gz")
     nv_collection = NeurovaultCollection(collection_id=12345)
-    nv_file = NeurovaultFile(neurovault_collection=nv_collection)
+    nv_file = NeurovaultFile(
+        neurovault_collection=nv_collection, filename=str(nifti_file)
+    )
     db.session.add_all([nv_file, nv_collection])
     db.session.commit()
 
@@ -36,7 +36,6 @@ def test_file_upload_neurovault(session, app, db, mock_pynv):
         file_upload_neurovault(str(tst_file), nv_file.id)
 
 
-@celery_test
 def test_create_or_update_neurostore_analysis(
     session, auth_client, app, db, mock_pynv, meta_analysis_cached_result_files
 ):
@@ -75,12 +74,20 @@ def test_create_or_update_neurostore_analysis(
         ]
     )
     db.session.commit()
-    create_or_update_neurostore_analysis(
-        ns_analysis.id, cluster_table, nv_collection.id, access_token=None
-    )
+
+    df = pd.read_csv(cluster_table, sep="\t")
+    df = df.replace({np.nan: None})
+    ns_analysis.cluster_table = df
+    app.config["NEUROSTORE_URL"] = "http://dummy-neurostore"
+    import unittest.mock as mock
+
+    mock_response = mock.MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {"id": "dummy-id"}
+    with mock.patch("requests.post", return_value=mock_response):
+        create_or_update_neurostore_analysis(ns_analysis.id)
 
 
-@celery_test
 def test_result_upload(
     session, auth_client, app, db, meta_analysis_cached_result_files
 ):
