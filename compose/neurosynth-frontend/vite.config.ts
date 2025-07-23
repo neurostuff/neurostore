@@ -2,35 +2,41 @@ import { sentryVitePlugin } from '@sentry/vite-plugin';
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import viteTsconfigPaths from 'vite-tsconfig-paths';
+import { loadEnv } from 'vite';
 
-export default defineConfig({
-    plugins: [
-        react(),
-        viteTsconfigPaths(),
-        sentryVitePlugin({
-            org: 'neurosynth',
-            project: 'javascript-react',
-        }),
-    ],
+export default ({ mode }) => {
+    process.env = { ...process.env, ...loadEnv(mode, process.cwd()) };
 
-    server: {
-        host: 'localhost',
-        open: true,
-        port: 3000,
-    },
+    return defineConfig({
+        plugins: [
+            react(),
+            viteTsconfigPaths(),
+            sentryVitePlugin({
+                org: 'neurosynth',
+                project: 'javascript-react',
+                authToken: process.env.VITE_SENTRY_AUTH_TOKEN,
+            }),
+        ],
 
-    test: {
-        globals: true,
-        setupFiles: 'src/setupTests.ts',
-        environment: 'jsdom',
-    },
+        server: {
+            host: 'localhost',
+            open: true,
+            port: 3000,
+        },
 
-    preview: {
-        port: 3000,
-        host: true,
-    },
+        test: {
+            globals: true,
+            setupFiles: 'src/setupTests.ts',
+            environment: 'jsdom',
+        },
 
-    build: {
-        sourcemap: true,
-    },
-});
+        preview: {
+            port: 3000,
+            host: true,
+        },
+
+        build: {
+            sourcemap: true,
+        },
+    });
+};
