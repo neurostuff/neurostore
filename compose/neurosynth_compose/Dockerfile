@@ -1,4 +1,4 @@
-FROM python:3.10-bullseye
+FROM python:3.11-bullseye
 ARG DEBIAN_FRONTEND=noninteractive
 
 RUN mkdir -p /usr/src/app
@@ -19,15 +19,18 @@ RUN mkdir -p /app/.cache/Cypress
 RUN chmod 777 /app/.cache/Cypress
 ENV CYPRESS_CACHE_FOLDER "/app/.cache/Cypress"
 
-COPY neurosynth_compose/requirements.txt /usr/src/app/
 # in order to install nimare dependency indexed_gzip (no binaries for python 3.10)
 RUN apt-get install -y build-essential
 RUN pip install cython
 
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --upgrade pip
+# Copy only dependency files first for better layer caching
+COPY MANIFEST.in /usr/src/app/
+COPY pyproject.toml /usr/src/app/
 
+RUN pip install .
+
+# Now copy the rest of the app
 COPY . /usr/src/app
-
-RUN pip install /usr/src/app
 
 WORKDIR /compose

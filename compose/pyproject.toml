@@ -1,0 +1,55 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "neurosynth_compose"
+version = "0.0.0"
+description = "neurosynth compose"
+authors = [
+    { name="Tal Yarkoni", email="tyarkoni@gmail.com" }
+]
+license = { text = "MIT" }
+dependencies = [
+    "aniso8601~=8.1",
+    "auth0-python~=3.16",
+    "authlib~=0.15",
+    "celery~=5.0",
+    "connexion[swagger-ui]~=2.13",
+    "email-validator~=1.1",
+    "flask~=2.0",
+    "Flask-CeleryExt~=0.5",
+    "flask-cors~=3.0",
+    "flask-dance~=3.2",
+    "flask-migrate~=2.5",
+    "flask-security~=3.0",
+    "flask-shell-ipython~=0.4",
+    "flask-sqlalchemy~=3.0",
+    "gunicorn~=22.0",
+    "httpx~=0.22",
+    "ipython~=7.19",
+    "marshmallow~=3.0",
+    "pandas~=2.0",
+    "psycopg2-binary~=2.8",
+    "pyld~=2.0",
+    "python-jose~=3.3",
+    "Redis~=4.4",
+    "scipy~=1.9",
+    "shortuuid~=1.0",
+    "sqlalchemy~=1.4",
+    "sqlalchemy-utils~=0.36",
+    "webargs~=7.0",
+    "wrapt~=1.12",
+    "NiMARE==0.2.2",
+    "pynv @ git+https://github.com/NeuroVault/pynv.git#egg=pynv",
+    "neurostore-sdk @ git+https://github.com/neurostuff/neurostore-python-sdk.git#egg=neurostore-sdk"
+]
+
+[project.optional-dependencies]
+dev = [
+    "flake8~=3.8",
+    "pip-chill~=1.0",
+    "wheel~=0.36",
+    "schemathesis~=3.14",
+    "pytest~=7.1"
+]
