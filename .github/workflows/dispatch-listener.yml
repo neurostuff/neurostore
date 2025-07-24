@@ -19,11 +19,13 @@ jobs:
       - name: Dispatch workflow
         uses: peter-evans/slash-command-dispatch@v4
         with:
-          token: ${{ secrets.PAT }}                # must be a repo-scoped PAT
-          reaction-token: ${{ secrets.PAT }}       # optional, for reactions by user
+          token: ${{ secrets.PAT }}
+          reaction-token: ${{ secrets.PAT }}
           commands: |
-            run-tests
-          dispatch-type: workflow
-          workflow: workflow.yml
-          inputs: |
-            pr_number: ${{ github.event.issue.number }}
+            run-tests:
+              permission: write
+              dispatch-type: workflow
+              repository: neurostuff/neurostore
+              workflow: workflow.yml
+              inputs:
+                pr_number: ${{ github.event.issue.number }}
