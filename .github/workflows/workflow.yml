@@ -210,7 +210,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         submodules: recursive
-          ref: ${{ inputs.pr_number && format('refs/pull/{0}/head', inputs.pr_number) || github.ref }}
+        ref: ${{ inputs.pr_number && format('refs/pull/{0}/head', inputs.pr_number) || github.ref }}
     -
       name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
@@ -280,7 +280,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         submodules: recursive
-          ref: ${{ inputs.pr_number && format('refs/pull/{0}/head', inputs.pr_number) || github.ref }}
+        ref: ${{ inputs.pr_number && format('refs/pull/{0}/head', inputs.pr_number) || github.ref }}
     -
       name: run flake8
       run: |
@@ -303,7 +303,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         submodules: recursive
-          ref: ${{ inputs.pr_number && format('refs/pull/{0}/head', inputs.pr_number) || github.ref }}
+        ref: ${{ inputs.pr_number && format('refs/pull/{0}/head', inputs.pr_number) || github.ref }}
     -
       name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
@@ -387,7 +387,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         submodules: recursive
-          ref: ${{ inputs.pr_number && format('refs/pull/{0}/head', inputs.pr_number) || github.ref }}
+        ref: ${{ inputs.pr_number && format('refs/pull/{0}/head', inputs.pr_number) || github.ref }}
     -
       name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
