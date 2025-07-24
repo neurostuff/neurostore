@@ -24,6 +24,6 @@ jobs:
           commands: |
             run-tests
           dispatch-type: workflow
-          workflow: testing.yml
+          workflow: workflow.yml
           inputs: |
             pr_number: ${{ github.event.issue.number }}
