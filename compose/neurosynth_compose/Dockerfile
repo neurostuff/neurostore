@@ -33,4 +33,6 @@ RUN pip install .
 # Now copy the rest of the app
 COPY . /usr/src/app
 
+RUN pip install .
+
 WORKDIR /compose
