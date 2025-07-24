@@ -8,6 +8,10 @@ on:
         required: false
         type: string
 
+# Set the access for individual scopes, or use permissions: write-all
+permissions:
+  pull-requests: write
+  issues: write
 
 jobs:
   clean:
