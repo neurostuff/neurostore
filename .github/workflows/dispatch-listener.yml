@@ -1,0 +1,29 @@
+# .github/workflows/dispatch-listener.yml
+name: PR Comment Trigger
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  issues: read
+  contents: read
+
+jobs:
+  slash-command:
+    if: >
+      github.event.issue.pull_request != null &&
+      startsWith(github.event.comment.body, '/run-tests')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dispatch workflow
+        uses: peter-evans/slash-command-dispatch@v4
+        with:
+          token: ${{ secrets.ADMIN_PAT }}                # must be a repo-scoped PAT
+          reaction-token: ${{ secrets.ADMIN_PAT }}       # optional, for reactions by user
+          commands: |
+            run-tests
+          dispatch-type: workflow
+          workflow: testing.yml
+          inputs: |
+            pr_number: ${{ github.event.issue.number }}

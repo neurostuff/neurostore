@@ -121,3 +121,6 @@ doc/generated/
 
 # all dot directories
 .*/
+
+# Except .github
+!.github/
