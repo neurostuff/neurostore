@@ -12,6 +12,7 @@ on:
 permissions:
   pull-requests: write
   issues: write
+  packages: write
 
 jobs:
   clean:
