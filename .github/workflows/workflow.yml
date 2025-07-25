@@ -292,7 +292,7 @@ jobs:
         pip install flake8
         cd ./store/backend
         flake8 ./neurostore
-        cd ../compose/backend
+        cd ../../compose/backend
         flake8 ./neurosynth_compose
 
 
