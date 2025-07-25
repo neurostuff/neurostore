@@ -290,10 +290,10 @@ jobs:
       name: run flake8
       run: |
         pip install flake8
-        cd ./store
-        flake8 ./backend/neurostore
-        cd ../compose
-        flake8 ./backend/neurosynth_compose
+        cd ./store/backend
+        flake8 ./neurostore
+        cd ../compose/backend
+        flake8 ./neurosynth_compose
 
 
   neurosynth_compose_JUNIT_tests:
