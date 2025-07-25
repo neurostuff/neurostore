@@ -65,8 +65,8 @@ jobs:
           workdir: compose
           source: "{{defaultContext}}:compose"
           set: |
-              compose.tags=ghcr.io/${{ github.repository_owner }}/neurosynth_compose:${{ hashFiles('**/compose/neurosynth_compose/**') }}
-              compose.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/neurosynth_compose:${{ hashFiles('**/compose/neurosynth_compose/**') }}
+              compose.tags=ghcr.io/${{ github.repository_owner }}/neurosynth_compose:${{ hashFiles('**/compose/backend/neurosynth_compose/**') }}
+              compose.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/neurosynth_compose:${{ hashFiles('**/compose/backend/neurosynth_compose/**') }}
               compose.cache-from=type=gha,scope=cached-compose
               compose.cache-to=type=gha,scope=cached-compose,mode=max,ignore-error=true
               compose_nginx.tags=ghcr.io/${{ github.repository_owner }}/compose_nginx:${{ hashFiles('**/compose/nginx/**') }}
@@ -77,8 +77,8 @@ jobs:
               compose_pgsql.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/compose_pgsql:${{ hashFiles('**/compose/postgres/**') }}
               compose_pgsql.cache-from=type=gha,scope=cached-compose-pgsql
               compose_pgsql.cache-to=type=gha,scope=cached-compose-pgsql,mode=max,ignore-error=true
-              compose_worker.tags=ghcr.io/${{ github.repository_owner }}/compose_worker:${{ hashFiles('**/compose/neurosynth_compose/**') }}
-              compose_worker.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/compose_worker:${{ hashFiles('**/compose/neurosynth_compose/**') }}
+              compose_worker.tags=ghcr.io/${{ github.repository_owner }}/compose_worker:${{ hashFiles('**/compose/backend/neurosynth_compose/**') }}
+              compose_worker.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/compose_worker:${{ hashFiles('**/compose/backend/neurosynth_compose/**') }}
               compose_worker.cache-from=type=gha,scope=cached-compose-worker
               compose_worker.cache-to=type=gha,scope=cached-compose-worker,mode=max,ignore-error=true
 
@@ -118,8 +118,8 @@ jobs:
           workdir: store
           source: "{{defaultContext}}:store"
           set: |
-              neurostore.tags=ghcr.io/${{ github.repository_owner }}/neurostore:${{ hashFiles('**/store/neurostore/**') }}
-              neurostore.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/neurostore:${{ hashFiles('**/store/neurostore/**') }}
+              neurostore.tags=ghcr.io/${{ github.repository_owner }}/neurostore:${{ hashFiles('**/store/backend/neurostore/**') }}
+              neurostore.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/neurostore:${{ hashFiles('**/store/backend/neurostore/**') }}
               neurostore.cache-from=type=gha,scope=cached-neurostore
               neurostore.cache-to=type=gha,scope=cached-neurostore,mode=max,ignore-error=true
               store_nginx.tags=ghcr.io/${{ github.repository_owner }}/store_nginx:${{ hashFiles('**/store/nginx/**') }}
