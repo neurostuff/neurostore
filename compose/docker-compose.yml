@@ -3,9 +3,9 @@ services:
   compose:
     image: compose
     restart: always
-    build: 
-      dockerfile: ./neurosynth_compose/Dockerfile
-      context: ./
+    build:
+      dockerfile: ./Dockerfile
+      context: ./backend
     expose:
       - "8000"
     volumes:
@@ -24,8 +24,8 @@ services:
   compose_worker:
     image: compose_worker
     build:
-      dockerfile: ./neurosynth_compose/Dockerfile
-      context: ./
+      dockerfile: ./Dockerfile
+      context: ./backend
     depends_on:
       - compose
       - compose_redis

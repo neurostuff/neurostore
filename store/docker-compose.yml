@@ -4,8 +4,8 @@ services:
     image: neurostore
     restart: always
     build:
-      context: .
-      dockerfile: neurostore/Dockerfile
+      context: ./backend
+      dockerfile: ./Dockerfile
     depends_on:
       - store_pgsql
       - store_redis
