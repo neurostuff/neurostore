@@ -53,3 +53,6 @@ dev = [
     "schemathesis~=3.14",
     "pytest~=7.1"
 ]
+
+[tool.setuptools.packages.find]
+include = ["neurosynth_compose*"]

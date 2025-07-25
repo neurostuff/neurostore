@@ -48,6 +48,7 @@ dependencies = [
 
 [tool.setuptools.packages.find]
 exclude = ["tests", "test_*"]
+include = ["neurostore*"]
 
 [project.optional-dependencies]
 dev = [

@@ -9,7 +9,7 @@ services:
     expose:
       - "8000"
     volumes:
-      - ./postgres/migrations:/migrations
+      - ./backend/migrations:/migrations
       - ./:/compose
       - ${FILE_DIR}:/file-data
     command: /usr/local/bin/gunicorn -w 2 -b :8000 neurosynth_compose.core:app --log-level debug --timeout 120

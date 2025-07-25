@@ -18,7 +18,7 @@ def get_env_var(name, default=None, required=False):
 class Config:
     """Base configuration."""
 
-    MIGRATIONS_DIR = "/migrations/migrations"
+    MIGRATIONS_DIR = "/migrations"
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     WTF_CSRF_ENABLED = False
 
