@@ -34,5 +34,3 @@ RUN pip install .[dev]
 COPY . /compose/backend/
 
 RUN pip install .
-
-WORKDIR /compose

@@ -21,5 +21,3 @@ RUN pip install .[dev]
 COPY . /store/backend/
 
 RUN pip install .
-
-WORKDIR /store
