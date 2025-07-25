@@ -1,8 +1,8 @@
 FROM python:3.11-bullseye
 ARG DEBIAN_FRONTEND=noninteractive
 
-RUN mkdir -p /usr/src/app
-WORKDIR /usr/src/app
+RUN mkdir -p /store/backend
+WORKDIR /store/backend
 
 RUN apt-get -qq update
 
@@ -15,11 +15,11 @@ RUN apt-get install -y nodejs
 RUN npm install -g yarn
 RUN pip install --upgrade pip
 
-COPY pyproject.toml /usr/src/app/
+COPY pyproject.toml /store/backend/
 RUN pip install .[dev]
 
-COPY . /usr/src/app
+COPY . /store/backend/
 
 RUN pip install .
 
-WORKDIR /neurostore
+WORKDIR /store

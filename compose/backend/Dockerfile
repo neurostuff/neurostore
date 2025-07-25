@@ -1,8 +1,8 @@
 FROM python:3.11-bullseye
 ARG DEBIAN_FRONTEND=noninteractive
 
-RUN mkdir -p /usr/src/app
-WORKDIR /usr/src/app
+RUN mkdir -p /compose/backend
+WORKDIR /compose/backend
 
 RUN apt-get -qq update
 
@@ -25,13 +25,13 @@ RUN pip install cython
 
 RUN pip install --upgrade pip
 # Copy only dependency files first for better layer caching
-COPY MANIFEST.in /usr/src/app/
-COPY pyproject.toml /usr/src/app/
+COPY MANIFEST.in /compose/backend/
+COPY pyproject.toml /compose/backend/
 
 RUN pip install .[dev]
 
 # Now copy the rest of the app
-COPY . /usr/src/app
+COPY . /compose/backend/
 
 RUN pip install .
 
