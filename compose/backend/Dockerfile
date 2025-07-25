@@ -28,7 +28,7 @@ RUN pip install --upgrade pip
 COPY MANIFEST.in /usr/src/app/
 COPY pyproject.toml /usr/src/app/
 
-RUN pip install .
+RUN pip install .[dev]
 
 # Now copy the rest of the app
 COPY . /usr/src/app

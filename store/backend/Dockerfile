@@ -16,7 +16,7 @@ RUN npm install -g yarn
 RUN pip install --upgrade pip
 
 COPY pyproject.toml /usr/src/app/
-RUN pip install .
+RUN pip install .[dev]
 
 COPY . /usr/src/app
 

@@ -201,7 +201,7 @@ jobs:
             -e "AUTH0_AUTH_URL=${AUTH0_AUTH_URL}" \
             --rm -w /neurostore \
             neurostore \
-            bash -c "python -m pytest neurostore/tests && python -m pytest --auth neurostore/tests/test_auth.py"
+            bash -c "python -m pytest backend/neurostore/tests && python -m pytest --auth backend/neurostore/tests/test_auth.py"
 
   neurosynth_compose_backend_tests:
     runs-on: ubuntu-latest
@@ -275,7 +275,7 @@ jobs:
           -e "NEUROVAULT_ACCESS_TOKEN=${NEUROVAULT_ACCESS_TOKEN}" \
           --rm -w /compose \
           compose \
-          bash -c "python -m pytest neurosynth_compose/tests"
+          bash -c "python -m pytest backend/neurosynth_compose/tests"
 
   style_check:
     runs-on: ubuntu-latest
@@ -291,9 +291,9 @@ jobs:
       run: |
         pip install flake8
         cd ./store
-        flake8 ./neurostore
+        flake8 ./backend/neurostore
         cd ../compose
-        flake8 ./neurosynth_compose
+        flake8 ./backend/neurosynth_compose
 
 
   neurosynth_compose_JUNIT_tests:

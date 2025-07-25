@@ -4,10 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "neurosynth_compose"
-version = "0.0.0"
+version = "0.10.0"
 description = "neurosynth compose"
 authors = [
-    { name="Tal Yarkoni", email="tyarkoni@gmail.com" }
+    { name="James Kent", email="jamesdkent21@gmail.com" }
 ]
 license = { text = "MIT" }
 dependencies = [
