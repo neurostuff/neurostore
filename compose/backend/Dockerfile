@@ -28,9 +28,9 @@ RUN pip install --upgrade pip
 COPY MANIFEST.in /compose/backend/
 COPY pyproject.toml /compose/backend/
 
-RUN pip install .[dev]
+RUN pip install --no-cache-dir .[dev]
 
 # Now copy the rest of the app
 COPY . /compose/backend/
 
-RUN pip install .
+RUN pip install --no-cache-dir .
