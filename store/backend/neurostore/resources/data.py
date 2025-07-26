@@ -311,6 +311,13 @@ class AnnotationsView(ObjectView, ListView):
     def _load_from_source(cls, source, source_id, data=None):
         if source == "neurostore":
             return cls.load_from_neurostore(source_id, data)
+        else:
+            abort(
+                422, {
+                    "message": "invalid source, choose from: 'neurostore'",
+                    "errors": f"source: {source}"
+                }
+            )
 
     @classmethod
     def load_from_neurostore(cls, source_id, data=None):
@@ -957,6 +964,13 @@ class StudiesView(ObjectView, ListView):
             return cls.load_from_neurovault(source_id, data)
         elif source == "pubmed":
             return cls.load_from_pubmed(source_id, data)
+        else:
+            abort(
+                422, {
+                    "message": "invalid source, choose from: 'neurostore', 'neurovault', 'pubmed'",
+                    "errors": f"source: {source}"
+                }
+            )
 
     @classmethod
     def load_from_neurostore(cls, source_id, data=None):
