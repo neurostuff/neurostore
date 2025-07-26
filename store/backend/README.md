@@ -1,3 +1,10 @@
+## Directory Structure
+
+- [`store/backend/`](store/backend): Contains all neurostore backend code and configuration.
+  - [`neurostore/`](store/backend/neurostore): Python package source code
+  - [`manage.py`](store/backend/manage.py), [`pyproject.toml`](store/backend/pyproject.toml), [`setup.cfg`](store/backend/setup.cfg), [`README.md`](store/backend/README.md): Backend config and docs
+
+Other unrelated files (data, cassettes, nginx, postgres, scripts, docker-compose files) remain at the top level of `store/`.
 # neurostore
 
 Requirements: Docker and docker-compose.

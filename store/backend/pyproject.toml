@@ -1,0 +1,61 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "neurostore"
+version = "0.10.0"
+description = "neurostore"
+authors = [
+    { name = "James Kent", email = "jamesdkent21@gmail.com" }
+]
+license = { text = "MIT" }
+dependencies = [
+    "aniso8601~=8.1",
+    "auth0-python~=3.16",
+    "authlib~=0.15",
+    "connexion[swagger-ui,uvicorn,flask]==3.0.0",
+    "email-validator~=1.1",
+    "flask~=2.0",
+    "flask-caching~=2.0",
+    "flask-dance~=3.2",
+    "flask-shell-ipython~=0.4",
+    "flask-migrate~=2.5",
+    "flask-sqlalchemy~=3.1", # fix multiple instance error: https://flask-sqlalchemy.palletsprojects.com/en/3.0.x/changes/#version-3-0-3
+    "gunicorn~=22.0",
+    "ipython~=7.19",
+    "marshmallow~=3.0",
+    "numpy<2.0.0",
+    "pandas~=1.2",
+    "psycopg2-binary~=2.8",
+    "pyld~=2.0",
+    "python-jose~=3.3",
+    "redis",
+    "shortuuid~=1.0",
+    "sqlalchemy~=2.0",
+    "sqlalchemy-utils",
+    "sqltap",
+    "webargs~=7.0",
+    "wrapt~=1.12",
+    "openapi-spec-validator~=0.3",
+    "scipy~=1.9",
+    "pytest~=7.1",
+    "vcrpy~=7.0",
+    "pytest-recording~=0.13.1",
+    "orjson~=3.8",
+    "flask_orjson~=2.0.0"
+]
+
+[tool.setuptools.packages.find]
+exclude = ["tests", "test_*"]
+include = ["neurostore*"]
+
+[project.optional-dependencies]
+dev = [
+    "flake8~=3.8",
+    "pip-chill~=1.0",
+    "wheel~=0.36",
+    "pytest~=7.1",
+    "vcrpy~=7.0",
+    "pytest-recording~=0.13.1",
+]

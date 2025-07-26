@@ -1,8 +1,8 @@
-FROM python:3.10-bullseye
+FROM python:3.11-bullseye
 ARG DEBIAN_FRONTEND=noninteractive
 
-RUN mkdir -p /usr/src/app
-WORKDIR /usr/src/app
+RUN mkdir -p /store/backend
+WORKDIR /store/backend
 
 RUN apt-get -qq update
 
@@ -13,10 +13,11 @@ RUN echo "deb-src https://deb.nodesource.com/node_16.x buster main" | tee -a /et
 RUN apt-get update --allow-releaseinfo-change
 RUN apt-get install -y nodejs
 RUN npm install -g yarn
+RUN pip install --upgrade pip
 
-COPY requirements.txt /usr/src/app/
-RUN pip install --no-cache-dir -r requirements.txt
+COPY pyproject.toml /store/backend/
+RUN pip install --no-cache-dir .[dev]
 
-COPY . /usr/src/app
+COPY . /store/backend/
 
-WORKDIR /neurostore
+RUN pip install --no-cache-dir .

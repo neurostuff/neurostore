@@ -1,3 +1,10 @@
+## Directory Structure
+
+- [`compose/backend/`](compose/backend): Contains all neurosynth_compose backend code and configuration.
+  - [`neurosynth_compose/`](compose/backend/neurosynth_compose): Python package source code
+  - [`manage.py`](compose/backend/manage.py), [`pyproject.toml`](compose/backend/pyproject.toml), [`setup.cfg`](compose/backend/setup.cfg), [`MANIFEST.in`](compose/backend/MANIFEST.in), [`README.md`](compose/backend/README.md): Backend config and docs
+
+Other unrelated files (neurosynth-frontend, nginx, postgres, scripts, docker-compose files) remain at the top level of `compose/`.
 # neurosynth-compose
 
 Requirements: Docker and docker-compose.

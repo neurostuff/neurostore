@@ -3,13 +3,13 @@ services:
   compose:
     image: compose
     restart: always
-    build: 
-      dockerfile: ./neurosynth_compose/Dockerfile
-      context: ./
+    build:
+      dockerfile: ./Dockerfile
+      context: ./backend
     expose:
       - "8000"
     volumes:
-      - ./postgres/migrations:/migrations
+      - ./backend/migrations:/migrations
       - ./:/compose
       - ${FILE_DIR}:/file-data
     command: /usr/local/bin/gunicorn -w 2 -b :8000 neurosynth_compose.core:app --log-level debug --timeout 120
@@ -24,8 +24,8 @@ services:
   compose_worker:
     image: compose_worker
     build:
-      dockerfile: ./neurosynth_compose/Dockerfile
-      context: ./
+      dockerfile: ./Dockerfile
+      context: ./backend
     depends_on:
       - compose
       - compose_redis

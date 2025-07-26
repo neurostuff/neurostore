@@ -3,15 +3,17 @@ services:
   neurostore:
     image: neurostore
     restart: always
-    build: ./neurostore
+    build:
+      context: ./backend
+      dockerfile: ./Dockerfile
     depends_on:
       - store_pgsql
       - store_redis
     expose:
       - "8000"
     volumes:
-      - ./postgres/migrations:/migrations
-      - ./:/neurostore
+      - ./backend/migrations:/migrations
+      - ./:/store
       - ${FILE_DIR}:/file-data
       - ${ACE_DIR}:/ace
     command: /usr/local/bin/gunicorn -w 8 -b :8000 neurostore.core:connexion_app --worker-class uvicorn.workers.UvicornWorker --log-level debug --timeout 120

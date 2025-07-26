@@ -9,7 +9,7 @@ from pathlib import Path
 class Config(object):
     # SERVER_NAME = 'localhost'  # Set to external server name in production
 
-    MIGRATIONS_DIR = "/migrations/migrations"
+    MIGRATIONS_DIR = "/migrations"
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     WTF_CSRF_ENABLED = False
 
