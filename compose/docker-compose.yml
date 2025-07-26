@@ -6,6 +6,11 @@ services:
     build:
       dockerfile: ./Dockerfile
       context: ./backend
+    depends_on:
+      compose_pgsql:
+        condition: service_healthy
+      compose_worker:
+        condition: service_started
     expose:
       - "8000"
     volumes:
@@ -20,6 +25,11 @@ services:
     image: redis
     expose:
       - '6379'
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
 
   compose_worker:
     image: compose_worker
@@ -27,8 +37,8 @@ services:
       dockerfile: ./Dockerfile
       context: ./backend
     depends_on:
-      - compose
-      - compose_redis
+      compose_redis:
+        condition: service_healthy
     entrypoint: celery -A neurosynth_compose.resources.tasks.celery_app worker --loglevel=debug
     volumes:
       - ${CELERY_LOG_DIR}:/logs:rw
@@ -60,6 +70,11 @@ services:
       - '5432'
     env_file:
       - .env
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
 
   # compose_monitor:
   #   image: compose_monitor

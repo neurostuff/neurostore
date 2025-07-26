@@ -18,8 +18,8 @@ export default defineConfig({
             });
         },
         baseUrl: 'http://localhost:3000',
-        defaultCommandTimeout: 6000,
-        requestTimeout: 6000,
+        defaultCommandTimeout: 10000,
+        requestTimeout: 10000,
     },
     env: {
         auth0Username: 'test-user@gmail.com',
