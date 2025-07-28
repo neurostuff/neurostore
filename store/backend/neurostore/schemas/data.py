@@ -216,6 +216,7 @@ class PointSchema(BaseDataSchema):
     entities = fields.Nested(EntitySchema, many=True, load_only=True)
     cluster_size = fields.Float(allow_none=True)
     subpeak = fields.Boolean(allow_none=True)
+    deactivation = fields.Boolean()
     order = fields.Integer()
     coordinates = fields.List(fields.Float(), dump_only=True)
 

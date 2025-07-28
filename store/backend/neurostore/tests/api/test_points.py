@@ -123,3 +123,44 @@ def test_post_point_without_order(auth_client, ingest_neurosynth, session):
 
     # Check if the 'order' field is not None
     assert resp.json()["order"] is not None
+
+def test_point_deactivation_column(auth_client, session):
+    from ...models import User, Point, Analysis, Study
+
+    id_ = auth_client.username
+    user = User.query.filter_by(external_id=id_).first()
+    # Create study with two points: one deactivated, one not
+    s = Study(
+        name="deactivation test",
+        user=user,
+        analyses=[
+            Analysis(
+                name="analysis",
+                user=user,
+                points=[
+                    Point(x=1, y=2, z=3, user=user, order=1, deactivation=True),
+                    Point(x=4, y=5, z=6, user=user, order=2),  # default False
+                ],
+            )
+        ],
+    )
+    session.add(s)
+    session.commit()
+
+    point_true = s.analyses[0].points[0]
+    point_false = s.analyses[0].points[1]
+
+    # Fetch via API
+    resp_true = auth_client.get(f"/api/points/{point_true.id}")
+    resp_false = auth_client.get(f"/api/points/{point_false.id}")
+
+    assert resp_true.status_code == 200
+    assert resp_false.status_code == 200
+
+    assert resp_true.json()["deactivation"] is True
+    assert resp_false.json()["deactivation"] is False
+
+    # Update deactivation value
+    resp_update = auth_client.put(f"/api/points/{point_false.id}", data={"deactivation": True})
+    assert resp_update.status_code == 200
+    assert resp_update.json()["deactivation"] is True
