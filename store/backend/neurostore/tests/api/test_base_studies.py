@@ -10,6 +10,7 @@ from neurostore.models import (
     PipelineStudyResult,
     BaseStudy,
     Analysis,
+    User,
 )
 from neurostore.schemas import StudySchema
 
@@ -532,3 +533,28 @@ def test_invalid_search_query_cors(auth_client):
     assert "Access-Control-Allow-Methods" in result.headers
     assert "Access-Control-Allow-Headers" in result.headers
     assert result.headers["Access-Control-Allow-Origin"] == "*"
+
+
+def test_base_studies_year_range(auth_client, session):
+    # Create studies with different years
+    user_id = auth_client.username
+    user_obj = session.query(User).filter_by(external_id=user_id).first()
+    years = [1999, 2005, 2010, 2020]
+    for y in years:
+        session.add(BaseStudy(name=f"YearStudy{y}", year=y, user=user_obj))
+    session.commit()
+
+    # Query with year_min
+    resp = auth_client.get("/api/base-studies/?year_min=2005")
+    results = resp.json().get("results", [])
+    assert all(study["year"] >= 2005 for study in results)
+
+    # Query with year_max
+    resp = auth_client.get("/api/base-studies/?year_max=2010")
+    results = resp.json().get("results", [])
+    assert all(study["year"] <= 2010 for study in results)
+
+    # Query with both
+    resp = auth_client.get("/api/base-studies/?year_min=2005&year_max=2010")
+    results = resp.json().get("results", [])
+    assert all(2005 <= study["year"] <= 2010 for study in results)
