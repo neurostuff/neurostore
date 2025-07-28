@@ -1,3 +1,6 @@
+import logging
+
+logging.basicConfig(level=logging.WARNING, force=True)
 import string
 from sqlalchemy import func, text
 
@@ -313,10 +316,11 @@ class AnnotationsView(ObjectView, ListView):
             return cls.load_from_neurostore(source_id, data)
         else:
             abort(
-                422, {
+                422,
+                {
                     "message": "invalid source, choose from: 'neurostore'",
-                    "errors": f"source: {source}"
-                }
+                    "errors": f"source: {source}",
+                },
             )
 
     @classmethod
@@ -390,6 +394,10 @@ class BaseStudiesView(ObjectView, ListView):
         "feature_flatten": fields.Boolean(load_default=False),
         "year_min": fields.Integer(required=False, allow_none=True),
         "year_max": fields.Integer(required=False, allow_none=True),
+        "x": fields.Float(required=False, allow_none=True),
+        "y": fields.Float(required=False, allow_none=True),
+        "z": fields.Float(required=False, allow_none=True),
+        "radius": fields.Float(required=False, allow_none=True),
     }
 
     _multi_search = ("name", "description")
@@ -445,6 +453,50 @@ class BaseStudiesView(ObjectView, ListView):
         return q
 
     def view_search(self, q, args):
+        # Spatial filter: x, y, z, radius must all be present to apply
+        x = args.get("x")
+        y = args.get("y")
+        z = args.get("z")
+        radius = args.get("radius")
+        if all(v is not None for v in [x, y, z, radius]):
+            import logging
+
+            logging.basicConfig(level=logging.WARNING)
+            try:
+                x = float(x)
+                y = float(y)
+                z = float(z)
+                radius = float(radius)
+            except Exception:
+                abort(400, "Spatial parameters must be numeric.")
+            # Join BaseStudy -> Study -> Analysis -> Point
+            q = q.join(Study, Study.base_study_id == self._model.id)
+            q = q.join(Analysis, Analysis.study_id == Study.id)
+            q = q.join(Point, Point.analysis_id == Analysis.id)
+            # Box filter first, then Euclidean distance
+            q = q.filter(
+                Point.x <= x + radius,
+                Point.x >= x - radius,
+                Point.y <= y + radius,
+                Point.y >= y - radius,
+                Point.z <= z + radius,
+                Point.z >= z - radius,
+                (Point.x - x) * (Point.x - x)
+                + (Point.y - y) * (Point.y - y)
+                + (Point.z - z) * (Point.z - z)
+                <= radius * radius,
+            )
+            # Only return distinct base studies
+            q = q.distinct()
+            # Log the SQL query and results for debugging
+            logging.warning(
+                "Spatial query SQL: %s",
+                str(q.statement.compile(compile_kwargs={"literal_binds": True})),
+            )
+            logging.warning("Spatial query results: %s", [bs.id for bs in q.all()])
+        elif any(v is not None for v in [x, y, z, radius]):
+            abort(400, "Spatial query requires x, y, z, and radius together.")
+
         # search studies for data_type
         if args.get("data_type"):
             if args["data_type"] == "coordinate":
@@ -966,10 +1018,11 @@ class StudiesView(ObjectView, ListView):
             return cls.load_from_pubmed(source_id, data)
         else:
             abort(
-                422, {
+                422,
+                {
                     "message": "invalid source, choose from: 'neurostore', 'neurovault', 'pubmed'",
-                    "errors": f"source: {source}"
-                }
+                    "errors": f"source: {source}",
+                },
             )
 
     @classmethod

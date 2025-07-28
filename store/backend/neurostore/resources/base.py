@@ -710,7 +710,10 @@ class ListView(BaseView):
         if rank_col is not None:
             # Extract actual records when using rank
             records = [r[0] for r in records]
+        import logging
+
         content = self.serialize_records(records, args)
+        logging.warning("API response results: %s", [r.get("id") for r in content])
         metadata = self.create_metadata(q, total)
         response = {
             "metadata": metadata,
