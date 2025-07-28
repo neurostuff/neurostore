@@ -652,6 +652,7 @@ class Point(BaseMixin, db.Model):
     )
     cluster_size = db.Column(db.Float)
     subpeak = db.Column(db.Boolean)
+    deactivation = db.Column(db.Boolean, default=False, index=True)
     order = db.Column(db.Integer)
 
     entities = relationship(
