@@ -177,9 +177,6 @@ jobs:
       - 
         name: Create Test Database
         run: |
-          until docker compose exec -T \
-          store_pgsql pg_isready -U postgres; do sleep 1; done
-
           docker compose exec -T \
           store_pgsql \
           psql -U postgres -c "create database test_db"
@@ -249,9 +246,6 @@ jobs:
     -
       name: Create Test Database
       run: |
-        until docker compose exec -T \
-        compose_pgsql pg_isready -U postgres; do sleep 1; done
-
         docker compose exec -T \
         compose_pgsql \
         psql -U postgres -c "create database test_db"
@@ -341,10 +335,7 @@ jobs:
           up -d --no-build
     -
       name: Create Test Database
-      run: |
-        until docker compose exec -T \
-        compose_pgsql pg_isready -U postgres; do sleep 1; done
-
+      run: | 
         docker compose exec -T \
         compose_pgsql \
         psql -U postgres -c "create database test_db"
@@ -451,8 +442,6 @@ jobs:
       name: Create Compose Database
       run: |
         cd compose
-        until docker compose exec -T \
-        compose_pgsql pg_isready -U postgres; do sleep 1; done
 
         docker compose exec -T \
         compose_pgsql \
@@ -461,8 +450,6 @@ jobs:
       name: Create Store Database
       run: |
         cd store
-        until docker compose exec -T \
-        store_pgsql pg_isready -U postgres; do sleep 1; done
 
         docker compose exec -T \
         store_pgsql \
