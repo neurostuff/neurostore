@@ -7,8 +7,10 @@ services:
       context: ./backend
       dockerfile: ./Dockerfile
     depends_on:
-      - store_pgsql
-      - store_redis
+      store_pgsql:
+        condition: service_healthy
+      store_redis:
+        condition: service_healthy
     expose:
       - "8000"
     volumes:
@@ -25,6 +27,11 @@ services:
     image: redis
     expose:
       - '6379'
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
 
   store_nginx:
     image: store_nginx
@@ -52,6 +59,11 @@ services:
     env_file:
       - .env
     command: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"]  # Use the custom config
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
 
 volumes:
   postgres_data:
