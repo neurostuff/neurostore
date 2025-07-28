@@ -381,6 +381,8 @@ class BaseStudiesView(ObjectView, ListView):
         "pipeline_config": fields.List(fields.String(load_default=None)),
         "feature_display": fields.List(fields.String(load_default=None)),
         "feature_flatten": fields.Boolean(load_default=False),
+        "year_min": fields.Integer(required=False, allow_none=True),
+        "year_max": fields.Integer(required=False, allow_none=True),
     }
 
     _multi_search = ("name", "description")
@@ -449,6 +451,13 @@ class BaseStudiesView(ObjectView, ListView):
                         self._model.has_images.is_(True),
                     ),
                 )
+        # filter by year range
+        year_min = args.get("year_min")
+        year_max = args.get("year_max")
+        if year_min is not None:
+            q = q.filter(self._model.year >= int(year_min))
+        if year_max is not None:
+            q = q.filter(self._model.year <= int(year_max))
         # filter by level of analysis (group or meta)
         if args.get("level"):
             q = q.filter(self._model.level == args.get("level"))
