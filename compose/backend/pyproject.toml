@@ -11,22 +11,18 @@ authors = [
 ]
 license = { text = "MIT" }
 dependencies = [
-    "aniso8601~=8.1",
     "auth0-python~=3.16",
     "authlib~=0.15",
     "celery~=5.0",
     "connexion[swagger-ui]~=2.13",
-    "email-validator~=1.1",
     "flask~=2.0",
     "Flask-CeleryExt~=0.5",
     "flask-cors~=3.0",
-    "flask-dance~=3.2",
     "flask-migrate~=2.5",
     "flask-security~=3.0",
     "flask-shell-ipython~=0.4",
     "flask-sqlalchemy~=3.0",
     "gunicorn~=22.0",
-    "httpx~=0.22",
     "ipython~=7.19",
     "marshmallow~=3.0",
     "pandas~=2.0",
