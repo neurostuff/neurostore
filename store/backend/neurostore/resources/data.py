@@ -1,6 +1,3 @@
-import logging
-
-logging.basicConfig(level=logging.WARNING, force=True)
 import string
 from sqlalchemy import func, text
 
@@ -459,9 +456,6 @@ class BaseStudiesView(ObjectView, ListView):
         z = args.get("z")
         radius = args.get("radius")
         if all(v is not None for v in [x, y, z, radius]):
-            import logging
-
-            logging.basicConfig(level=logging.WARNING)
             try:
                 x = float(x)
                 y = float(y)
@@ -488,12 +482,6 @@ class BaseStudiesView(ObjectView, ListView):
             )
             # Only return distinct base studies
             q = q.distinct()
-            # Log the SQL query and results for debugging
-            logging.warning(
-                "Spatial query SQL: %s",
-                str(q.statement.compile(compile_kwargs={"literal_binds": True})),
-            )
-            logging.warning("Spatial query results: %s", [bs.id for bs in q.all()])
         elif any(v is not None for v in [x, y, z, radius]):
             abort(400, "Spatial query requires x, y, z, and radius together.")
 
