@@ -230,9 +230,11 @@ class Project(BaseMixin, db.Model):
     name = db.Column(db.Text)
     description = db.Column(db.Text)
     provenance = db.Column(db.JSON)
-    user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
-    public = db.Column(db.Boolean, default=True)
-    draft = db.Column(db.Boolean, default=True)
+    user_id = db.Column(
+        db.Text, db.ForeignKey("users.external_id"), index=True
+    )
+    public = db.Column(db.Boolean, default=True, index=True)
+    draft = db.Column(db.Boolean, default=True, index=True)
 
     user = relationship("User", backref=backref("projects"))
 
