@@ -558,3 +558,38 @@ def test_base_studies_year_range(auth_client, session):
     resp = auth_client.get("/api/base-studies/?year_min=2005&year_max=2010")
     results = resp.json().get("results", [])
     assert all(2005 <= study["year"] <= 2010 for study in results)
+
+
+def test_base_studies_spatial_query_with_mock_data(auth_client, session):
+    """Test spatial filtering for base studies endpoint with mock data"""
+    from neurostore.models import BaseStudy, Study, Analysis, Point
+
+    # Create mock base study, study, analysis, and points
+    base_study = BaseStudy(
+        name="SpatialTest", has_coordinates=True, public=True, level="group"
+    )
+    session.add(base_study)
+    session.flush()
+
+    study = Study(name="SpatialStudy", base_study_id=base_study.id)
+    session.add(study)
+    session.flush()
+
+    analysis = Analysis(name="SpatialAnalysis", study_id=study.id)
+    session.add(analysis)
+    session.flush()
+
+    # Point within radius
+    point1 = Point(x=10, y=20, z=30, analysis_id=analysis.id)
+    # Point outside radius
+    point2 = Point(x=100, y=200, z=300, analysis_id=analysis.id)
+    session.add_all([point1, point2])
+    session.commit()
+
+    # Query for base studies with a point near (10, 20, 30) radius 15
+    # Query for base studies with a point near (10, 20, 30) radius 15
+    url = "/api/base-studies/?x=10&y=20&z=30&radius=15"
+    result = auth_client.get(url)
+    assert result.status_code == 200
+    ids = [s["id"] for s in result.json()["results"]]
+    assert base_study.id in ids
