@@ -631,6 +631,7 @@ class Entity(BaseMixin, db.Model):
 
 class Point(BaseMixin, db.Model):
     __tablename__ = "points"
+    __table_args__ = (sa.Index("ix_points_xyz", "x", "y", "z"),)
 
     @hybrid_property
     def coordinates(self):
