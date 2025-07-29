@@ -24,7 +24,6 @@ dependencies = [
     "flask-shell-ipython~=0.4",
     "flask-sqlalchemy~=3.0",
     "gunicorn~=22.0",
-    "httpx~=0.22",
     "ipython~=7.19",
     "marshmallow~=3.0",
     "pandas~=2.0",
