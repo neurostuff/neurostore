@@ -11,7 +11,6 @@ authors = [
 ]
 license = { text = "MIT" }
 dependencies = [
-    "aniso8601~=8.1",
     "auth0-python~=3.16",
     "authlib~=0.15",
     "celery~=5.0",
