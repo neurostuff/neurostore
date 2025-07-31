@@ -253,8 +253,6 @@ def celery_app(app, db):
     from ..celery_app import make_celery
 
     celery = make_celery(app)
-    celery.conf.task_always_eager = True
-    celery.conf.task_eager_propagates = True
     celery.conf.CELERY_ALWAYS_EAGER = True
     celery.conf.CELERY_EAGER_PROPAGATES_EXCEPTIONS = True
     return celery
