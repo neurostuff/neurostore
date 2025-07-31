@@ -250,9 +250,12 @@ def db(app):
 
 @pytest.fixture(scope="session")
 def celery_app(app, db):
-    from .. import make_celery
+    from ..celery_app import make_celery
 
-    return make_celery(app)
+    celery = make_celery(app)
+    celery.conf.CELERY_ALWAYS_EAGER = True
+    celery.conf.CELERY_EAGER_PROPAGATES_EXCEPTIONS = True
+    return celery
 
 
 @pytest.fixture(scope="function", autouse=False)
