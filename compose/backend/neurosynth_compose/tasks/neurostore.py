@@ -66,7 +66,7 @@ class NeurostoreAnalysisTask(NeuroTask):
         access_token,
         session=None,
     ):
-        """Create or update analysis in Neurostore, using helpers for points/images and including cluster table filename as metadata."""
+        """Create or update analysis in Neurostore."""
         import pathlib
         import pandas as pd
 
