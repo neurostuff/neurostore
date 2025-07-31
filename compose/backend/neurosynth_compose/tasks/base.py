@@ -27,10 +27,8 @@ class NeuroTask(Task):
             result = self._orig_run(*args, **kwargs)
             bound_logger.info("task_completed", extra={"task_name": self.name})
             return result
-        except Exception as exc:
-            bound_logger.exception(
-                "task_failed", extra={"task_name": self.name, "exc_info": exc}
-            )
+        except Exception:
+            bound_logger.exception("task_failed", extra={"task_name": self.name})
             raise
 
     def on_failure(self, exc, task_id, args, kwargs, einfo):

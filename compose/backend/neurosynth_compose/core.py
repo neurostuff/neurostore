@@ -1,8 +1,5 @@
-from flask_celeryext import FlaskCeleryExt
-
 from .__init__ import create_app
+from .celery_app import make_celery
 
 app = create_app()
-
-ext_celery = FlaskCeleryExt(app)
-celery_app = ext_celery.celery
+celery_app = make_celery(app)

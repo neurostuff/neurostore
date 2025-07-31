@@ -33,4 +33,4 @@ RUN pip install --no-cache-dir .[dev]
 # Now copy the rest of the app
 COPY . /compose/backend/
 
-RUN pip install --no-cache-dir .
+RUN pip install --no-cache-dir -e .

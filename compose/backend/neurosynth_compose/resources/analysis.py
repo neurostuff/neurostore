@@ -48,7 +48,8 @@ from ..schemas import (  # noqa E401
     NeurostoreStudySchema,
     ProjectSchema,
 )
-from ..tasks import create_or_update_neurostore_analysis, file_upload_neurovault
+from ..tasks.neurostore import create_or_update_neurostore_analysis
+from ..tasks.neurovault import file_upload_neurovault
 from celery import group
 
 from .singular import singularize
