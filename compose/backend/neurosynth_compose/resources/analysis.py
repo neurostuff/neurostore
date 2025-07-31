@@ -50,7 +50,7 @@ from ..schemas import (  # noqa E401
 )
 from ..tasks import create_or_update_neurostore_analysis, file_upload_neurovault
 from celery import group
-        
+
 from .singular import singularize
 
 

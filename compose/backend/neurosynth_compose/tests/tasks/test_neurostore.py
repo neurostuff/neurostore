@@ -74,6 +74,7 @@ def test_create_or_update_neurostore_analysis_new(mock_requests, app, test_db):
 
         # Create real NeurovaultCollection in DB
         from neurosynth_compose.models import NeurovaultCollection
+
         nv_collection = NeurovaultCollection(id=str(uuid.uuid4()))
         test_db.add(nv_collection)
         test_db.commit()
@@ -88,23 +89,33 @@ def test_create_or_update_neurostore_analysis_new(mock_requests, app, test_db):
         analysis = test_db.query(NeurostoreAnalysis).get(analysis.id)
         assert analysis.status == "OK"
 
+
 @patch("neurosynth_compose.tasks.neurostore.requests")
-def test_create_or_update_neurostore_analysis_metadata(mock_requests, app, test_db, tmp_path):
+def test_create_or_update_neurostore_analysis_metadata(
+    mock_requests, app, test_db, tmp_path
+):
     """Test that cluster table filename is included in metadata."""
     app.config["NEUROSTORE_URL"] = "http://api.neurostore.org"
 
     with app.app_context():
         # Create test cluster table file
         cluster_table_path = tmp_path / "test_cluster.tsv"
-        df = pd.DataFrame({
-            "X": [1], "Y": [2], "Z": [3], "Peak Stat": [0.5], "Cluster Size (mm3)": [100]
-        })
+        df = pd.DataFrame(
+            {
+                "X": [1],
+                "Y": [2],
+                "Z": [3],
+                "Peak Stat": [0.5],
+                "Cluster Size (mm3)": [100],
+            }
+        )
         df.to_csv(cluster_table_path, sep="\t", index=False)
 
         # Create test analysis and real neurovault collection
         analysis = NeurostoreAnalysis(id=str(uuid.uuid4()), status="PENDING")
         test_db.add(analysis)
         from neurosynth_compose.models import NeurovaultCollection
+
         nv_collection = NeurovaultCollection(id=str(uuid.uuid4()))
         test_db.add(nv_collection)
         test_db.commit()
@@ -116,13 +127,17 @@ def test_create_or_update_neurostore_analysis_metadata(mock_requests, app, test_
         mock_requests.post.return_value = mock_response
 
         # Execute task
-        from neurosynth_compose.tasks.neurostore import create_or_update_neurostore_analysis
+        from neurosynth_compose.tasks.neurostore import (
+            create_or_update_neurostore_analysis,
+        )
+
         result = create_or_update_neurostore_analysis.run(
             analysis.id, str(cluster_table_path), nv_collection.id, "fake_token"
         )
 
         assert "metadata" in result
         assert result["metadata"]["cluster_table_filename"] == "test_cluster.tsv"
+
 
 @patch("neurosynth_compose.tasks.neurostore.requests")
 def test_create_or_update_neurostore_analysis_existing(mock_requests, app, test_db):
@@ -146,6 +161,7 @@ def test_create_or_update_neurostore_analysis_existing(mock_requests, app, test_
 
         # Create real NeurovaultCollection in DB
         from neurosynth_compose.models import NeurovaultCollection
+
         nv_collection = NeurovaultCollection(id=str(uuid.uuid4()))
         test_db.add(nv_collection)
         test_db.commit()
@@ -181,7 +197,9 @@ def test_create_or_update_neurostore_analysis_failure(mock_requests, app, test_d
             # Create mock NeurovaultCollection
             nv_collection = MagicMock()
             nv_collection.files = []
-            with patch("neurosynth_compose.tasks.neurostore.NeurovaultCollection") as MockNVCol:
+            with patch(
+                "neurosynth_compose.tasks.neurostore.NeurovaultCollection"
+            ) as MockNVCol:
                 MockNVCol.query.filter_by.return_value.one.return_value = nv_collection
 
                 create_or_update_neurostore_analysis.run(

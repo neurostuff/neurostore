@@ -58,7 +58,14 @@ class NeurostoreAnalysisTask(NeuroTask):
 
     name = "neurostore.create_or_update_analysis"
 
-    def run(self, ns_analysis_id, cluster_table, nv_collection_id, access_token, session=None):
+    def run(
+        self,
+        ns_analysis_id,
+        cluster_table,
+        nv_collection_id,
+        access_token,
+        session=None,
+    ):
         """Create or update analysis in Neurostore, using helpers for points/images and including cluster table filename as metadata."""
         import pathlib
         import pandas as pd
@@ -73,8 +80,12 @@ class NeurostoreAnalysisTask(NeuroTask):
             session = db.session
 
         try:
-            ns_analysis = session.query(NeurostoreAnalysis).filter_by(id=ns_analysis_id).one()
-            nv_collection = session.query(NeurovaultCollection).filter_by(id=nv_collection_id).one()
+            ns_analysis = (
+                session.query(NeurostoreAnalysis).filter_by(id=ns_analysis_id).one()
+            )
+            nv_collection = (
+                session.query(NeurovaultCollection).filter_by(id=nv_collection_id).one()
+            )
 
             # Prepare points from cluster table file
             cluster_table_filename = None
@@ -101,7 +112,6 @@ class NeurostoreAnalysisTask(NeuroTask):
                 payload["metadata"] = {"cluster_table_filename": cluster_table_filename}
             if images:
                 payload["images"] = images
-
 
             # Authentication logic (replace get_auth_token with your actual method)
             headers = {
@@ -141,10 +151,11 @@ class NeurostoreAnalysisTask(NeuroTask):
                 "analysis_failed",
                 extra={"ns_analysis_id": ns_analysis_id, "task_name": self.name},
             )
-            if 'ns_analysis' in locals():
+            if "ns_analysis" in locals():
                 ns_analysis.status = "FAILED"
                 ns_analysis.traceback = str(e)
                 session.commit()
             raise
+
 
 create_or_update_neurostore_analysis = NeurostoreAnalysisTask()
