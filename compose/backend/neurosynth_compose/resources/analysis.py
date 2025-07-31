@@ -48,6 +48,9 @@ from ..schemas import (  # noqa E401
     NeurostoreStudySchema,
     ProjectSchema,
 )
+from ..tasks import create_or_update_neurostore_analysis, file_upload_neurovault
+from celery import group
+        
 from .singular import singularize
 
 
@@ -521,9 +524,6 @@ class MetaAnalysisResultsView(ObjectView, ListView):
         return self.__class__._schema().dump(record)
 
     def put(self, id):
-        from .tasks import file_upload_neurovault, create_or_update_neurostore_analysis
-        from celery import group
-
         result = self._model.query.filter_by(id=id).one()
 
         if request.files:
