@@ -123,22 +123,6 @@ const MoveToExtractionDialog: React.FC<IDialog> = (props) => {
         }
     };
 
-    const handleUpdateProjectProvenance = async (newStudysetId: string, newAnnotationId: string) => {
-        if (!projectId) return;
-        try {
-            const updatedExtractionMetadata = {
-                studysetId: newStudysetId,
-                annotationId: newAnnotationId,
-                studyStatusList: [],
-            };
-
-            updateExtractionMetadata(updatedExtractionMetadata);
-        } catch (e) {
-            console.error(e);
-            throw new Error('there was an error updating the project provenance');
-        }
-    };
-
     const handleIngest = async (newStudysetId: string, newAnnotationId: string) => {
         if (!newStudysetId || !newAnnotationId) return;
         const includedStubs = curationIncludedStudies.stubStudies;
@@ -189,7 +173,14 @@ const MoveToExtractionDialog: React.FC<IDialog> = (props) => {
         try {
             const newStudysetId = await handleCreateStudyset();
             const newAnnotationId = await handleCreateAnnotations(newStudysetId);
-            await handleUpdateProjectProvenance(newStudysetId, newAnnotationId);
+
+            const updatedExtractionMetadata = {
+                studysetId: newStudysetId,
+                annotationId: newAnnotationId,
+                studyStatusList: [],
+            };
+            updateExtractionMetadata(updatedExtractionMetadata);
+
             await handleIngest(newStudysetId, newAnnotationId);
             handleFinalize();
         } catch (e) {
