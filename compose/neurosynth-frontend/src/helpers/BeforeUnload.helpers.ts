@@ -53,6 +53,15 @@ export const unsetUnloadHandler = (store: 'project' | 'study' | 'annotation') =>
     }
 };
 
+export const clearUnloadHandlers = () => {
+    window.sessionStorage.removeItem(EUnloadStatus.PROJECTSTORE);
+    window.sessionStorage.removeItem(EUnloadStatus.STUDYSTORE);
+    window.sessionStorage.removeItem(EUnloadStatus.ANNOTATIONSTORE);
+    window.removeEventListener('beforeunload', onBeforeUnloadHandler);
+    window.removeEventListener('unload', onUnloadHandler);
+    eventListenerSet = false;
+};
+
 export const hasUnsavedChanges = () => {
     return (
         window.sessionStorage.getItem(EUnloadStatus.PROJECTSTORE) === 'true' ||

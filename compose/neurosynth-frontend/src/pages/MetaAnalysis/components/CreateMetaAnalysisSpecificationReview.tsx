@@ -16,10 +16,7 @@ import {
 } from 'pages/Project/store/ProjectStore';
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-    IAlgorithmSelection,
-    IAnalysesSelection,
-} from './CreateMetaAnalysisSpecificationDialogBase.types';
+import { IAlgorithmSelection, IAnalysesSelection } from './CreateMetaAnalysisSpecificationDialogBase.types';
 import { getWeightAndConditionsForSpecification } from './CreateMetaAnalysisSpecificationReview.helpers';
 import DynamicInputDisplay from 'pages/MetaAnalysis/components/DynamicInputDisplay';
 import { getFilteredAnnotationNotes } from 'pages/MetaAnalysis/components/SelectAnalysesComponent.helpers';
@@ -88,7 +85,7 @@ const CreateMetaAnalysisSpecificationReview: React.FC<{
         if (typeof metaAnalysis.data.id !== 'string') {
             throw new Error('metaAnalysis.data.id must be a string');
         }
-        const updatedMetaAnalyses = [...projectMetaAnalyses, metaAnalysis.data.id] as string[];
+        const updatedMetaAnalyses = [...(projectMetaAnalyses as string[]), metaAnalysis.data.id] as string[];
         // Update the project meta analyses
         updateProjectMetaAnalyses(updatedMetaAnalyses);
 
@@ -113,9 +110,7 @@ const CreateMetaAnalysisSpecificationReview: React.FC<{
     const selectionText = useMemo(() => {
         if (!props.selection) return '';
         const selectionKey = props.selection.selectionKey;
-        const selectionValue = props.selection.selectionValue
-            ? `: ${props.selection.selectionValue}`
-            : '';
+        const selectionValue = props.selection.selectionValue ? `: ${props.selection.selectionValue}` : '';
         return `${selectionKey} ${selectionValue}`;
     }, [props.selection]);
 
@@ -131,11 +126,7 @@ const CreateMetaAnalysisSpecificationReview: React.FC<{
                     value={props.details.name}
                     caption={props.details.description}
                 />
-                <MetaAnalysisSummaryRow
-                    title="Selection"
-                    value={selectionText}
-                    caption={numSelectedAnnotationsText}
-                >
+                <MetaAnalysisSummaryRow title="Selection" value={selectionText} caption={numSelectedAnnotationsText}>
                     {props.selection.referenceDataset && (
                         <>
                             <Typography sx={{ marginTop: '1rem', color: 'gray' }}>
@@ -203,16 +194,12 @@ const CreateMetaAnalysisSpecificationReview: React.FC<{
                 </Box> */}
             </Box>
             <Box sx={{ marginTop: '1rem', display: 'flex', justifyContent: 'space-between' }}>
-                <Button
-                    onClick={() => props.onNavigate(ENavigationButton.PREV)}
-                    color="primary"
-                    variant="outlined"
-                >
+                <Button onClick={() => props.onNavigate(ENavigationButton.PREV)} color="primary" variant="outlined">
                     Back
                 </Button>
                 <LoadingButton
                     variant="contained"
-                    sx={{ width: '303px' }}
+                    sx={{ width: '350px' }}
                     color="success"
                     isLoading={isLoading}
                     onClick={handleCreateSpecification}

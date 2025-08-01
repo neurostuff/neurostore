@@ -2,6 +2,7 @@ import { useAuth0 } from '@auth0/auth0-react';
 import NeurosynthLoader from 'components/NeurosynthLoader/NeurosynthLoader';
 import { useGetProjectById } from 'hooks';
 import useUserCanEdit from 'hooks/useUserCanEdit';
+import { useInitProjectStoreIfRequired } from 'pages/Project/store/ProjectStore';
 import { Navigate, useLocation, useParams } from 'react-router-dom';
 const ProtectedProjectRoute: React.FC<{ onlyOwnerCanAccess?: boolean; errorMessage?: string }> = ({
     onlyOwnerCanAccess,
@@ -14,7 +15,16 @@ const ProtectedProjectRoute: React.FC<{ onlyOwnerCanAccess?: boolean; errorMessa
     const { pathname } = useLocation();
     const userCanEdit = useUserCanEdit(data?.user ?? undefined);
 
-    const isOk = isError ? false : onlyOwnerCanAccess ? userCanEdit : userCanEdit || data?.public;
+    useInitProjectStoreIfRequired();
+
+    let isOk = true;
+    if (isError || (onlyOwnerCanAccess && !userCanEdit) || !data?.public) {
+        isOk = false;
+    }
+
+    if (!data) {
+        isOk = false;
+    }
 
     if (isLoading || getAuthIsLoading) {
         return <NeurosynthLoader loaded={false} />;

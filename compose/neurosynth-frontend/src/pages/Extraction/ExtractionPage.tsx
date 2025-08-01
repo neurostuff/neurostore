@@ -12,7 +12,6 @@ import { resolveStudysetAndCurationDifferences } from 'pages/Extraction/Extracti
 import { IProjectPageLocationState } from 'pages/Project/ProjectPage';
 import {
     useGetProjectIsLoading,
-    useInitProjectStoreIfRequired,
     useProjectCurationColumns,
     useProjectExtractionStudysetId,
     useProjectName,
@@ -21,6 +20,7 @@ import {
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import ExtractionTable from './components/ExtractionTable';
+import LoadingStateIndicatorProject from 'components/LoadingStateIndicator/LoadingStateIndicatorProject';
 
 export enum EExtractionStatus {
     'COMPLETED' = 'completed',
@@ -31,8 +31,6 @@ export enum EExtractionStatus {
 const ExtractionPage: React.FC = (props) => {
     const { projectId } = useParams<{ projectId: string | undefined }>();
     const navigate = useNavigate();
-
-    useInitProjectStoreIfRequired();
 
     const projectName = useProjectName();
     const studysetId = useProjectExtractionStudysetId();
@@ -48,8 +46,6 @@ const ExtractionPage: React.FC = (props) => {
         isRefetching: getStudysetIsRefetching,
         isError: getStudysetIsError,
     } = useGetStudysetById(studysetId, true);
-
-    console.log({ studyset, studysetId });
 
     const { mutate } = useUpdateStudyset();
 
@@ -116,7 +112,7 @@ const ExtractionPage: React.FC = (props) => {
         <StateHandlerComponent isError={getStudysetIsError} isLoading={getStudysetIsLoading}>
             <Box sx={{ minWidth: '450px', margin: '0 auto' }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <Box sx={{ display: 'flex', marginBottom: '0.5rem' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', marginBottom: '0.5rem' }}>
                         <NeurosynthBreadcrumbs
                             breadcrumbItems={[
                                 {
@@ -136,7 +132,7 @@ const ExtractionPage: React.FC = (props) => {
                                 },
                             ]}
                         />
-                        <ProjectIsLoadingText isLoading={getStudysetIsRefetching} />
+                        <LoadingStateIndicatorProject isLoading={getStudysetIsRefetching} />
                     </Box>
                     <Box>
                         <Button

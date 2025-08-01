@@ -2,22 +2,14 @@ import { Box, Button } from '@mui/material';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { hasUnsavedStudyChanges, unsetUnloadHandler } from 'helpers/BeforeUnload.helpers';
-import {
-    useInitProjectStoreIfRequired,
-    useProjectExtractionAnnotationId,
-} from 'pages/Project/store/ProjectStore';
+import { useProjectExtractionAnnotationId } from 'pages/Project/store/ProjectStore';
 import EditStudyAnalyses from 'pages/Study/components/EditStudyAnalyses';
 import EditStudyAnnotations from 'pages/Study/components/EditStudyAnnotations';
 import EditStudyDetails from 'pages/Study/components/EditStudyDetails';
 import EditStudyMetadata from 'pages/Study/components/EditStudyMetadata';
 import EditStudyPageHeader from 'pages/Study/components/EditStudyPageHeader';
 import EditStudyPageStyles from 'pages/Study/EditStudyPage.styles';
-import {
-    useClearStudyStore,
-    useGetStudyIsLoading,
-    useInitStudyStore,
-    useStudyId,
-} from 'pages/Study/store/StudyStore';
+import { useClearStudyStore, useGetStudyIsLoading, useInitStudyStore, useStudyId } from 'pages/Study/store/StudyStore';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useClearAnnotationStore, useInitAnnotationStore } from 'stores/AnnotationStore.actions';
@@ -41,7 +33,6 @@ const EditStudyPage: React.FC = (props) => {
     const initAnnotationStore = useInitAnnotationStore();
     const getAnnotationIsLoading = useGetAnnotationIsLoading();
 
-    useInitProjectStoreIfRequired();
     // instead of the useInitStudyStoreIfRequired hook we call these funcitons in a useEffect as
     // we want to clear and init the study store every time in case the user wants to refresh the page and cancel their edits
     useEffect(() => {
@@ -49,14 +40,7 @@ const EditStudyPage: React.FC = (props) => {
         clearAnnotationStore();
         initStudyStore(studyId);
         initAnnotationStore(annotationId);
-    }, [
-        annotationId,
-        clearAnnotationStore,
-        clearStudyStore,
-        initAnnotationStore,
-        initStudyStore,
-        studyId,
-    ]);
+    }, [annotationId, clearAnnotationStore, clearStudyStore, initAnnotationStore, initStudyStore, studyId]);
 
     const [confirmationDialogIsOpen, setConfirmationDialogIsOpen] = useState(false);
 
@@ -83,9 +67,7 @@ const EditStudyPage: React.FC = (props) => {
         <StateHandlerComponent
             disableShrink={false}
             isError={false}
-            isLoading={
-                !studyStoreId || !annotationStoreId || getStudyIsLoading || getAnnotationIsLoading
-            }
+            isLoading={!studyStoreId || !annotationStoreId || getStudyIsLoading || getAnnotationIsLoading}
         >
             <Box>
                 <EditStudyPageHeader />

@@ -1,13 +1,15 @@
+import { useAuth0 } from '@auth0/auth0-react';
 import { Box, Chip, Tab, Tabs, Typography } from '@mui/material';
+import LoadingStateIndicatorProject from 'components/LoadingStateIndicator/LoadingStateIndicatorProject';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs';
+import ProjectIsLoadingText from 'components/ProjectIsLoadingText';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import TextEdit from 'components/TextEdit/TextEdit';
 import { useGuard } from 'hooks';
 import useUserCanEdit from 'hooks/useUserCanEdit';
+import ProjectComponentsEditPrivacyToggle from 'pages/Project/components/ProjectEditPrivacyToggle';
 import {
-    useClearProjectStore,
     useGetProjectIsLoading,
-    useInitProjectStoreIfRequired,
     useProjectCreatedAt,
     useProjectDescription,
     useProjectIsError,
@@ -18,11 +20,8 @@ import {
     useUpdateProjectDescription,
     useUpdateProjectName,
 } from 'pages/Project/store/ProjectStore';
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { Outlet, useLocation, useNavigate, useParams } from 'react-router-dom';
-import ProjectComponentsEditPrivacyToggle from 'pages/Project/components/ProjectEditPrivacyToggle';
-import ProjectIsLoadingText from 'components/ProjectIsLoadingText';
-import { useAuth0 } from '@auth0/auth0-react';
 
 export interface IProjectPageLocationState {
     projectPage?: {
@@ -35,16 +34,7 @@ const ProjectPage: React.FC = () => {
     const { projectId } = useParams<{ projectId: string }>();
     const { isAuthenticated } = useAuth0();
     const location = useLocation();
-    const clearProjectStore = useClearProjectStore();
     const navigate = useNavigate();
-
-    useInitProjectStoreIfRequired();
-
-    useEffect(() => {
-        return () => {
-            clearProjectStore();
-        };
-    }, [clearProjectStore]);
 
     const updateProjectName = useUpdateProjectName();
     const updateProjectDescription = useUpdateProjectDescription();
@@ -68,7 +58,7 @@ const ProjectPage: React.FC = () => {
     return (
         <StateHandlerComponent isLoading={getProjectIsLoading} isError={getProjectIsError}>
             <Box sx={{ marginBottom: '5rem' }}>
-                <Box sx={{ marginBottom: '0.5rem', display: 'flex' }}>
+                <Box sx={{ marginBottom: '0.5rem', display: 'flex', alignItems: 'center' }}>
                     {isAuthenticated && (
                         <NeurosynthBreadcrumbs
                             breadcrumbItems={[
@@ -85,7 +75,7 @@ const ProjectPage: React.FC = () => {
                             ]}
                         />
                     )}
-                    <ProjectIsLoadingText />
+                    <LoadingStateIndicatorProject />
                 </Box>
 
                 <Box sx={{ marginBottom: '0.5rem' }}>

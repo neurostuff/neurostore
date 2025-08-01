@@ -253,35 +253,7 @@ const EditStudyToolbar: React.FC<{ isViewOnly?: boolean }> = ({ isViewOnly = fal
                                 </Tooltip>
                             )}
                         </Box>
-                        <Box sx={{ marginBottom: '0.5rem' }}>
-                            <EditStudySwapVersionButton />
-                        </Box>
-                        <Box sx={{ marginBottom: '1rem' }}>
-                            <Tooltip title={!hasEdits ? 'No edits to save' : 'Save'} placement="left">
-                                <Box>
-                                    <Button
-                                        disabled={!hasEdits}
-                                        disableElevation
-                                        onClick={handleSave}
-                                        variant="outlined"
-                                        color="primary"
-                                        sx={{
-                                            width: '40px',
-                                            maxWidth: '40px',
-                                            minWidth: '40px',
-                                            height: '40px',
-                                            padding: 0,
-                                        }}
-                                    >
-                                        {saveStudyIsLoading ? (
-                                            <ProgressLoader color="secondary" size={20} />
-                                        ) : (
-                                            <SaveIcon />
-                                        )}
-                                    </Button>
-                                </Box>
-                            </Tooltip>
-                        </Box>
+
                         <Box>
                             <ButtonGroup
                                 color="info"
@@ -334,6 +306,37 @@ const EditStudyToolbar: React.FC<{ isViewOnly?: boolean }> = ({ isViewOnly = fal
                                 </Tooltip>
                             </ButtonGroup>
                         </Box>
+
+                        <Box sx={{ marginBottom: '4px' }}>
+                            <EditStudySwapVersionButton />
+                        </Box>
+                        <Box sx={{ marginBottom: '1rem' }}>
+                            <Tooltip title={!hasEdits ? 'No edits to save' : 'Save'} placement="left">
+                                <Box>
+                                    <Button
+                                        disabled={!hasEdits}
+                                        disableElevation
+                                        onClick={handleSave}
+                                        variant="contained"
+                                        color="primary"
+                                        sx={{
+                                            width: '40px',
+                                            maxWidth: '40px',
+                                            minWidth: '40px',
+                                            height: '40px',
+                                            padding: 0,
+                                        }}
+                                    >
+                                        {saveStudyIsLoading ? (
+                                            <ProgressLoader color="secondary" size={20} />
+                                        ) : (
+                                            <SaveIcon />
+                                        )}
+                                    </Button>
+                                </Box>
+                            </Tooltip>
+                        </Box>
+
                         <Box>
                             <ButtonGroup color="info" orientation="vertical" sx={{ minWidth: '0px' }}>
                                 <Tooltip

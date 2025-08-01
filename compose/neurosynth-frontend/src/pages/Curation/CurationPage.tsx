@@ -1,16 +1,13 @@
 import ChangeHistoryIcon from '@mui/icons-material/ChangeHistory';
 import { Box, Button, FormControlLabel, Switch, Tooltip, Typography } from '@mui/material';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs';
-import ProjectIsLoadingText from 'components/ProjectIsLoadingText';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import GlobalStyles from 'global.styles';
 import { useGetCurationSummary, useGetStudysetById, useUserCanEdit } from 'hooks';
 import CurationBoardBasic from 'pages/Curation/components/CurationBoardBasic';
 import { IProjectPageLocationState } from 'pages/Project/ProjectPage';
 import {
-    useClearProjectStore,
     useGetProjectIsLoading,
-    useInitProjectStoreIfRequired,
     useProjectCreatedAt,
     useProjectCurationIsPrisma,
     useProjectExtractionAnnotationId,
@@ -21,8 +18,9 @@ import {
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import CurationBoardAI from './components/CurationBoardAi';
-import PrismaDialog from './components/PrismaDialog';
 import CurationDownloadSummaryButton from './components/CurationDownloadSummaryButton';
+import PrismaDialog from './components/PrismaDialog';
+import LoadingStateIndicatorProject from 'components/LoadingStateIndicator/LoadingStateIndicatorProject';
 
 const localStorageNewUIKey = 'show-new-ui-may-30-2025';
 
@@ -36,14 +34,11 @@ const CurationPage: React.FC = () => {
     const { data: studyset } = useGetStudysetById(studysetId || '', false);
     const { projectId } = useParams<{ projectId: string | undefined }>();
     const projectIsLoading = useGetProjectIsLoading();
-    const clearProjectStore = useClearProjectStore();
 
     const [prismaIsOpen, setPrismaIsOpen] = useState(false);
 
     const projectCreateDate = useProjectCreatedAt();
     const [useNewUI, setUseNewUI] = useState<boolean>();
-
-    useInitProjectStoreIfRequired();
 
     useEffect(() => {
         if (useNewUI === undefined) {
@@ -57,12 +52,6 @@ const CurationPage: React.FC = () => {
             setUseNewUI(localStorageValue === 'true');
         }
     }, [projectCreateDate, useNewUI]);
-
-    useEffect(() => {
-        return () => {
-            clearProjectStore();
-        };
-    }, [clearProjectStore]);
 
     const isPrisma = useProjectCurationIsPrisma();
     const projectName = useProjectName();
@@ -94,7 +83,7 @@ const CurationPage: React.FC = () => {
                         justifyContent: 'space-between',
                     }}
                 >
-                    <Box sx={{ display: 'flex' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
                         <NeurosynthBreadcrumbs
                             breadcrumbItems={[
                                 {
@@ -114,7 +103,7 @@ const CurationPage: React.FC = () => {
                                 },
                             ]}
                         />
-                        <ProjectIsLoadingText />
+                        <LoadingStateIndicatorProject />
                     </Box>
                     <Box>
                         <Tooltip

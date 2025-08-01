@@ -1,5 +1,6 @@
 // gotta customize this myself
 
+import { AxiosError, AxiosResponse } from 'axios';
 import { useQuery } from 'react-query';
 import API from 'utils/api';
 
@@ -85,8 +86,32 @@ const normalizeData = (data: any) => {
     });
 };
 
+export interface IExtractedDataResult {
+    metadata: {
+        total_count: number;
+    };
+    results: {
+        base_study_id: string;
+        config_id: string;
+        date_executed: string;
+        file_inputs: {
+            [path: string]: string;
+        };
+        id: string;
+        result_data: ITaskExtractor | IParticipantDemographicExtractor;
+    }[];
+}
+
 const useGetAllAIExtractedData = () => {
-    return useQuery(
+    return useQuery<
+        [AxiosResponse<IExtractedDataResult>, AxiosResponse<IExtractedDataResult>],
+        AxiosError,
+        {
+            [EAIExtractors.TASKEXTRACTOR]: IExtractedDataResult;
+            [EAIExtractors.PARTICIPANTSDEMOGRAPHICSEXTRACTOR]: IExtractedDataResult;
+        },
+        [string]
+    >(
         ['extraction'],
         async () => {
             const promises = await Promise.all([
