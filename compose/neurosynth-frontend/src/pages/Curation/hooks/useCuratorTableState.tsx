@@ -109,7 +109,7 @@ const useCuratorTableState = (
     }, []);
 
     const data = useMemo(() => {
-        if (!extractedData || !allStubs) return [];
+        if (!allStubs) return [];
 
         const extractedDataMap = new Map<
             string, // base study id
@@ -121,59 +121,66 @@ const useCuratorTableState = (
             }
         >();
 
-        extractedData[EAIExtractors.TASKEXTRACTOR]?.results.forEach((result) => {
-            const existing = extractedDataMap.get(result.base_study_id);
-            if (existing && existing.taskExtraction) {
-                // multiple taskExtractions have been done on the same base study, we want to grab the latest one
-                const existingResultDate = new Date(existing.taskExtraction.dateExecuted as string);
-                const resultDate = new Date(result.date_executed as string);
+        if (extractedData) {
+            extractedData[EAIExtractors.TASKEXTRACTOR]?.results.forEach((result) => {
+                const existing = extractedDataMap.get(result.base_study_id);
+                if (existing && existing.taskExtraction) {
+                    // multiple taskExtractions have been done on the same base study, we want to grab the latest one
+                    const existingResultDate = new Date(existing.taskExtraction.dateExecuted as string);
+                    const resultDate = new Date(result.date_executed as string);
 
-                if (resultDate > existingResultDate) {
+                    if (resultDate > existingResultDate) {
+                        extractedDataMap.set(result.base_study_id, {
+                            taskExtraction: {
+                                ...(result.result_data as ITaskExtractor),
+                                dateExecuted: result.date_executed,
+                            },
+                            participantDemographicsExtraction: existing.participantDemographicsExtraction,
+                        });
+                        return;
+                    }
+                } else {
                     extractedDataMap.set(result.base_study_id, {
                         taskExtraction: {
                             ...(result.result_data as ITaskExtractor),
                             dateExecuted: result.date_executed,
                         },
-                        participantDemographicsExtraction: existing.participantDemographicsExtraction,
+                        participantDemographicsExtraction: null,
                     });
-                    return;
                 }
-            } else {
-                extractedDataMap.set(result.base_study_id, {
-                    taskExtraction: { ...(result.result_data as ITaskExtractor), dateExecuted: result.date_executed },
-                    participantDemographicsExtraction: null,
-                });
-            }
-        });
+            });
 
-        extractedData[EAIExtractors.PARTICIPANTSDEMOGRAPHICSEXTRACTOR]?.results.forEach((result) => {
-            const existing = extractedDataMap.get(result.base_study_id);
+            extractedData[EAIExtractors.PARTICIPANTSDEMOGRAPHICSEXTRACTOR]?.results.forEach((result) => {
+                const existing = extractedDataMap.get(result.base_study_id);
 
-            if (existing && existing.participantDemographicsExtraction) {
-                // multiple participant demographics extractions have been done on the same base study, we want to grab the latest one
-                const existingResultDate = new Date(existing.participantDemographicsExtraction.dateExecuted as string);
-                const resultDate = new Date(result.date_executed as string);
+                if (existing && existing.participantDemographicsExtraction) {
+                    // multiple participant demographics extractions have been done on the same base study, we want to grab the latest one
+                    const existingResultDate = new Date(
+                        existing.participantDemographicsExtraction.dateExecuted as string
+                    );
+                    const resultDate = new Date(result.date_executed as string);
 
-                if (resultDate > existingResultDate) {
+                    if (resultDate > existingResultDate) {
+                        extractedDataMap.set(result.base_study_id, {
+                            taskExtraction: existing.taskExtraction,
+                            participantDemographicsExtraction: {
+                                ...(result.result_data as IParticipantDemographicExtractor),
+                                dateExecuted: result.date_executed,
+                            },
+                        });
+                        return;
+                    }
+                } else {
                     extractedDataMap.set(result.base_study_id, {
-                        taskExtraction: existing.taskExtraction,
+                        taskExtraction: existing ? existing.taskExtraction : null,
                         participantDemographicsExtraction: {
                             ...(result.result_data as IParticipantDemographicExtractor),
                             dateExecuted: result.date_executed,
                         },
                     });
-                    return;
                 }
-            } else {
-                extractedDataMap.set(result.base_study_id, {
-                    taskExtraction: existing ? existing.taskExtraction : null,
-                    participantDemographicsExtraction: {
-                        ...(result.result_data as IParticipantDemographicExtractor),
-                        dateExecuted: result.date_executed,
-                    },
-                });
-            }
-        });
+            });
+        }
 
         return allStubs.map((stub) => {
             const extractedData = extractedDataMap.get(stub.neurostoreId || '');

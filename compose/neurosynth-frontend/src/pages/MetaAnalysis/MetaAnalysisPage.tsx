@@ -7,9 +7,10 @@ import useUpdateMetaAnalysis from 'hooks/metaAnalyses/useUpdateMetaAnalysis';
 import useUserCanEdit from 'hooks/useUserCanEdit';
 import { ResultReturn, SpecificationReturn, StudysetReturn } from 'neurosynth-compose-typescript-sdk';
 import MetaAnalysisPageStyles from 'pages/MetaAnalysis/MetaAnalysisPage.styles';
-import { useInitProjectStoreIfRequired, useProjectName, useProjectUser } from 'pages/Project/store/ProjectStore';
+import { useProjectName, useProjectUser } from 'pages/Project/store/ProjectStore';
 import { useParams } from 'react-router-dom';
 import { NeurostoreAnnotation } from 'utils/api';
+import MetaAnalysisDangerZone from './components/MetaAnalysisDangerZone';
 import MetaAnalysisResult from './components/MetaAnalysisResult';
 import NoMetaAnalysisResultDisplay from './components/NoMetaAnalysisResultDisplay';
 
@@ -21,8 +22,6 @@ const MetaAnalysisPage: React.FC = () => {
     }>();
     const projectUser = useProjectUser();
     const editsAllowed = useUserCanEdit(projectUser || undefined);
-
-    useInitProjectStoreIfRequired();
     const projectName = useProjectName();
 
     /**
@@ -166,6 +165,8 @@ const MetaAnalysisPage: React.FC = () => {
                 </Box>
 
                 {noMetaAnalysisResults ? <NoMetaAnalysisResultDisplay /> : <MetaAnalysisResult />}
+
+                <MetaAnalysisDangerZone metaAnalysisId={metaAnalysisId} />
             </StateHandlerComponent>
         </>
     );

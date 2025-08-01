@@ -1,5 +1,4 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import { AxiosResponse } from 'axios';
 import { setUnloadHandler, unsetUnloadHandler } from 'helpers/BeforeUnload.helpers';
 import useGetProjectById from 'hooks/projects/useGetProjectById';
 import { INeurosynthProject, INeurosynthProjectReturn, ISource, ITag } from 'hooks/projects/useGetProjects';
@@ -12,6 +11,7 @@ import {
     createNewExclusionHelper,
     demoteStubHelper,
     handleDragEndHelper,
+    initCurationHelper,
     promoteAllUncategorizedHelper,
     promoteStubHelper,
     removeTagFromStubHelper,
@@ -196,25 +196,6 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
                                     hasUnsavedChanges: false,
                                 },
                             }));
-
-                            // fix bug where routing to another page would show the old state
-                            if (!oldDebouncedStoreData.metadata.queryClient) return;
-                            const queryData = oldDebouncedStoreData.metadata.queryClient.getQueryData<
-                                AxiosResponse<INeurosynthProjectReturn>
-                            >(['projects', oldDebouncedStoreData.id]);
-
-                            if (!queryData) return;
-                            oldDebouncedStoreData.metadata.queryClient.setQueryData(
-                                ['projects', oldDebouncedStoreData.id],
-                                {
-                                    ...queryData,
-                                    data: {
-                                        ...queryData.data,
-                                        ...update,
-                                        updated_at: res.data.updated_at,
-                                    },
-                                } as AxiosResponse<INeurosynthProjectReturn>
-                            );
                         },
                         onError: (err) => {
                             let enqueueSnackbarFunc:
@@ -253,7 +234,7 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
                         },
                     }
                 );
-            }, 2000);
+            }, 2500);
 
             set((state) => ({
                 ...state,
@@ -334,6 +315,20 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
                     queryClient: undefined,
                 },
             }));
+        },
+        initCuration: (cols, isPrisma) => {
+            set((state) => ({
+                ...state,
+                provenance: {
+                    ...state.provenance,
+                    curationMetadata: {
+                        ...state.provenance.curationMetadata,
+                        ...initCurationHelper(cols, isPrisma),
+                    },
+                },
+            }));
+
+            get().updateProjectInDBDebounced();
         },
         updateProjectName: (name: string) => {
             set((state) => ({
@@ -750,6 +745,7 @@ export const useRemoveTagFromStub = () => useProjectStore((state) => state.remov
 export const useSetExclusionForStub = () => useProjectStore((state) => state.setExclusionForStub);
 export const useCreateNewExclusion = () => useProjectStore((state) => state.createNewExclusion);
 export const useUpdateProjectMetadata = () => useProjectStore((state) => state.updateProjectMetadata);
+export const useInitCuration = () => useProjectStore((state) => state.initCuration);
 
 export const useInitProjectStoreIfRequired = () => {
     const clearProjectStore = useClearProjectStore();
@@ -770,7 +766,7 @@ export const useInitProjectStoreIfRequired = () => {
     const isError = useUpdateProjectIsError || getProjectIsError;
 
     useEffect(() => {
-        if (projectId && projectId !== projectIdFromProject) {
+        if (projectId && projectId !== projectIdFromProject && data) {
             clearProjectStore();
             initProjectStore(data);
             updateProjectMetadata({
