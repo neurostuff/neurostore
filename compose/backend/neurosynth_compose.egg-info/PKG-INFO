@@ -1,0 +1,40 @@
+Metadata-Version: 2.4
+Name: neurosynth_compose
+Version: 0.10.0
+Summary: neurosynth compose
+Author-email: James Kent <jamesdkent21@gmail.com>
+License: MIT
+Requires-Dist: auth0-python~=3.16
+Requires-Dist: authlib~=0.15
+Requires-Dist: celery~=5.0
+Requires-Dist: connexion[swagger-ui]~=2.13
+Requires-Dist: flask~=2.0
+Requires-Dist: Flask-CeleryExt~=0.5
+Requires-Dist: flask-cors~=3.0
+Requires-Dist: flask-migrate~=2.5
+Requires-Dist: flask-security~=3.0
+Requires-Dist: flask-shell-ipython~=0.4
+Requires-Dist: flask-sqlalchemy~=3.0
+Requires-Dist: gunicorn~=22.0
+Requires-Dist: ipython~=7.19
+Requires-Dist: marshmallow~=3.0
+Requires-Dist: pandas~=2.0
+Requires-Dist: psycopg2-binary~=2.8
+Requires-Dist: pyld~=2.0
+Requires-Dist: python-jose~=3.3
+Requires-Dist: Redis~=4.4
+Requires-Dist: scipy~=1.9
+Requires-Dist: shortuuid~=1.0
+Requires-Dist: sqlalchemy~=1.4
+Requires-Dist: sqlalchemy-utils~=0.36
+Requires-Dist: webargs~=8.7
+Requires-Dist: wrapt~=1.12
+Requires-Dist: NiMARE==0.2.2
+Requires-Dist: pynv@ git+https://github.com/NeuroVault/pynv.git#egg=pynv
+Requires-Dist: neurostore-sdk@ git+https://github.com/neurostuff/neurostore-python-sdk.git#egg=neurostore-sdk
+Provides-Extra: dev
+Requires-Dist: flake8~=3.8; extra == "dev"
+Requires-Dist: pip-chill~=1.0; extra == "dev"
+Requires-Dist: wheel~=0.36; extra == "dev"
+Requires-Dist: schemathesis~=3.14; extra == "dev"
+Requires-Dist: pytest~=7.1; extra == "dev"
