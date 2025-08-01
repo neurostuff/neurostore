@@ -85,9 +85,7 @@ def test_create_or_update_neurostore_analysis(
     mock_response.status_code = 200
     mock_response.json.return_value = {"id": "dummy-id"}
     with mock.patch("requests.post", return_value=mock_response):
-        create_or_update_neurostore_analysis(
-            ns_analysis.id, cluster_table, nv_collection.id, "dummy-token"
-        )
+        create_or_update_neurostore_analysis(ns_analysis.id)
 
 
 def test_result_upload(

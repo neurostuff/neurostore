@@ -6,7 +6,7 @@ import requests
 from flask import current_app
 
 from ..database import db
-from ..models import NeurostoreAnalysis, NeurovaultCollection
+from ..models import NeurostoreAnalysis
 from .base import NeuroTask
 
 logger = logging.getLogger(__name__)
@@ -58,71 +58,40 @@ class NeurostoreAnalysisTask(NeuroTask):
 
     name = "neurostore.create_or_update_analysis"
 
-    def run(
-        self,
-        ns_analysis_id,
-        cluster_table,
-        nv_collection_id,
-        access_token,
-        session=None,
-    ):
+    def run(self, analysis_id, session=None):
         """Create or update analysis in Neurostore."""
-        import pathlib
-        import pandas as pd
-
         bound_logger = self.get_logger()
         bound_logger.info(
             "starting_analysis",
-            extra={"ns_analysis_id": ns_analysis_id, "task_name": self.name},
+            extra={"ns_analysis_id": analysis_id, "task_name": self.name},
         )
 
         if session is None:
             session = db.session
 
         try:
-            ns_analysis = (
-                session.query(NeurostoreAnalysis).filter_by(id=ns_analysis_id).one()
-            )
-            nv_collection = (
-                session.query(NeurovaultCollection).filter_by(id=nv_collection_id).one()
-            )
-
-            # Prepare points from cluster table file
-            cluster_table_filename = None
-            points = []
-            if cluster_table:
-                cluster_table_filename = pathlib.Path(cluster_table).name
-                cluster_df = pd.read_csv(cluster_table, sep="\t")
-                points = prepare_points_data(cluster_df)
-
-            # Prepare images from Neurovault files
-            images = prepare_images_data(nv_collection.files)
+            analysis = session.query(NeurostoreAnalysis).get(analysis_id)
+            if not analysis:
+                raise ValueError(f"Analysis {analysis_id} not found")
 
             # Build payload
-            meta = ns_analysis.meta_analysis
             payload = {
-                "name": (meta.name if meta else "Untitled"),
-                "description": (getattr(meta, "description", "") if meta else ""),
-                "study": ns_analysis.neurostore_study_id,
+                "name": getattr(analysis, "title", analysis.id),
+                "description": getattr(analysis, "description", ""),
+                "points": prepare_points_data(getattr(analysis, "cluster_table", [])),
+                "images": prepare_images_data(getattr(analysis, "files", [])),
             }
-            if points:
-                payload["points"] = points
-                payload["metadata"] = {"cluster_table_filename": cluster_table_filename}
-            elif cluster_table_filename:
-                payload["metadata"] = {"cluster_table_filename": cluster_table_filename}
-            if images:
-                payload["images"] = images
 
-            # Authentication logic (replace get_auth_token with your actual method)
             headers = {
-                "Authorization": f"Bearer {access_token}",
+                "Authorization": f"Bearer {get_auth_token()}",
                 "Content-Type": "application/json",
             }
+
             base_url = current_app.config["NEUROSTORE_URL"]
 
             # Create or update
-            if ns_analysis.neurostore_id:
-                url = f"{base_url}/analyses/{ns_analysis.neurostore_id}"
+            if analysis.neurostore_id:
+                url = f"{base_url}/analyses/{analysis.neurostore_id}"
                 response = requests.put(url, json=payload, headers=headers)
             else:
                 url = f"{base_url}/analyses"
@@ -132,28 +101,24 @@ class NeurostoreAnalysisTask(NeuroTask):
             result = response.json()
 
             # Update record
-            ns_analysis.neurostore_id = result["id"]
-            ns_analysis.status = "OK"
+            analysis.neurostore_id = result["id"]
+            analysis.status = "OK"
             session.commit()
-
-            # Ensure metadata is present in result if it was in payload
-            if "metadata" in payload:
-                result["metadata"] = payload["metadata"]
 
             bound_logger.info(
                 "analysis_complete",
-                extra={"ns_analysis_id": ns_analysis_id, "task_name": self.name},
+                extra={"ns_analysis_id": analysis_id, "task_name": self.name},
             )
             return result
 
         except Exception as e:
             bound_logger.exception(
                 "analysis_failed",
-                extra={"ns_analysis_id": ns_analysis_id, "task_name": self.name},
+                extra={"ns_analysis_id": analysis_id, "task_name": self.name},
             )
-            if "ns_analysis" in locals():
-                ns_analysis.status = "FAILED"
-                ns_analysis.traceback = str(e)
+            if analysis:
+                analysis.status = "FAILED"
+                analysis.traceback = str(e)
                 session.commit()
             raise
 

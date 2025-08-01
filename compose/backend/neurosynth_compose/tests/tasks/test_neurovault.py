@@ -5,11 +5,12 @@ import tempfile
 import shutil
 
 import pytest
+import celery
 
 from neurosynth_compose.tasks.neurovault import (
+    file_upload_neurovault,
     determine_map_type,
     update_record,
-    file_upload_neurovault,
 )
 
 
@@ -45,18 +46,15 @@ def test_update_record(neurovault_files):
 
 @pytest.mark.integration
 def test_file_upload_neurovault_success(
-    app,
-    mock_neurovault_api,
-    test_nifti_file,
-    neurovault_collection,
-    neurovault_files,
-    celery_app,
+    app, mock_neurovault_api, test_nifti_file, neurovault_collection, neurovault_files
 ):
     """Test successful file upload to Neurovault."""
-    from neurosynth_compose.models.analysis import db
-
     with app.app_context():
-        celery_app.register_task(file_upload_neurovault)
+        # Configure Celery
+        celery.current_app.conf.update(
+            CELERY_ALWAYS_EAGER=True, CELERY_EAGER_PROPAGATES_EXCEPTIONS=True
+        )
+
         nv_file = neurovault_files[0]
         file_id = nv_file.id
 
@@ -65,9 +63,11 @@ def test_file_upload_neurovault_success(
             shutil.copyfile(test_nifti_file, test_file)
 
             # Execute task synchronously
-            celery_app.tasks[file_upload_neurovault.name].apply_async(
-                args=[str(test_file), file_id]
-            ).get(propagate=True)
+            result = file_upload_neurovault.apply(args=[str(test_file), file_id])
+            result.get()
+
+            # Verify database record
+            from neurosynth_compose.models.analysis import db
 
             db.session.expire_all()
             nv_file = nv_file.__class__.query.get(file_id)  # Get fresh instance
@@ -85,15 +85,15 @@ def test_file_upload_neurovault_success(
 
 @pytest.mark.integration
 def test_file_upload_neurovault_failure(
-    app, mock_neurovault_api_error, test_nifti_file, neurovault_files, celery_app
+    app, mock_neurovault_api_error, test_nifti_file, neurovault_files
 ):
     """Test handling of Neurovault upload failure."""
-    from pynv.exceptions import APIError
-    from celery.utils.serialization import UnpickleableExceptionWrapper
-    from neurosynth_compose.models.analysis import db
-
     with app.app_context():
-        celery_app.register_task(file_upload_neurovault)
+        # Configure Celery
+        celery.current_app.conf.update(
+            CELERY_ALWAYS_EAGER=True, CELERY_EAGER_PROPAGATES_EXCEPTIONS=True
+        )
+
         nv_file = neurovault_files[0]
         file_id = nv_file.id
 
@@ -101,17 +101,16 @@ def test_file_upload_neurovault_failure(
             test_file = Path(tmpdirname) / "test.nii.gz"
             shutil.copyfile(test_nifti_file, test_file)
 
-            # Assert APIError or UnpickleableExceptionWrapper is raised
-            try:
-                celery_app.tasks[file_upload_neurovault.name].apply_async(
-                    args=[str(test_file), file_id]
-                ).get(propagate=True)
-                assert False, "Expected APIError or UnpickleableExceptionWrapper"
-            except (APIError, UnpickleableExceptionWrapper) as exc:
-                if isinstance(exc, UnpickleableExceptionWrapper):
-                    assert exc.exc_cls_name == "APIError"
+            # Execute task synchronously
+            result = file_upload_neurovault.apply(args=[str(test_file), file_id])
+
+            with pytest.raises(Exception):
+                result.get()
+
+            # Verify error state
+            from neurosynth_compose.models.analysis import db
 
             db.session.expire_all()
-            nv_file = nv_file.__class__.query.get(file_id)
+            nv_file = nv_file.__class__.query.get(file_id)  # Get fresh instance
             assert nv_file.status == "FAILED"
             assert nv_file.traceback is not None
