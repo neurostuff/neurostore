@@ -23,7 +23,7 @@ dependencies = [
     "ipython~=7.19",
     "marshmallow~=3.0",
     "numpy<2.0.0",
-    "pandas~=1.2",
+    "pandas~=2.3",
     "psycopg2-binary~=2.8",
     "pyld~=2.0",
     "python-jose~=3.3",
