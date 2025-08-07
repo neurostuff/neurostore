@@ -8,11 +8,17 @@ import { useGetProjectById } from 'hooks';
 vi.mock('react-router-dom', async () => {
     const actualReactRouterDom = await vi.importActual('react-router-dom');
     return {
-        ...actualReactRouterDom
-    }
-})
+        ...actualReactRouterDom,
+    };
+});
+vi.mock('pages/Project/store/ProjectStore', async () => {
+    return {
+        useInitProjectStoreIfRequired: vi.fn(),
+    };
+});
 vi.mock('hooks');
 vi.mock('@auth0/auth0-react');
+vi.mock('notistack');
 
 describe('ProtectedProjectRoute Component', () => {
     it('should render', () => {

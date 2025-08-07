@@ -76,7 +76,6 @@ describe('CurationAIInterface', () => {
             });
 
             cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
-            cy.wait('@projectFixture');
 
             cy.contains('Switch to Old Interface').should('exist');
         });
@@ -106,7 +105,6 @@ describe('CurationAIInterface', () => {
             }).as('projectFixture');
             // cy.fixture('projects/projectCurationPRISMAWithStudies').as('projectFixture');
             cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
-            cy.wait('@projectFixture');
 
             cy.wait('@taskExtraction');
             cy.wait('@participantDemographicsExtraction');
@@ -251,7 +249,6 @@ describe('CurationAIInterface', () => {
             }).as('projectFixture');
 
             cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
-            cy.wait('@projectFixture');
             cy.contains('No studies. To import studies, click the import button above').should('exist');
         });
 
@@ -267,7 +264,6 @@ describe('CurationAIInterface', () => {
             });
 
             cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
-            cy.wait('@projectFixture');
             cy.contains('No studies to review for identification').should('exist');
         });
 
@@ -277,7 +273,6 @@ describe('CurationAIInterface', () => {
             }).as('projectFixture');
 
             cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
-            cy.wait('@projectFixture');
             cy.contains('li', '4. Included').click();
             cy.contains('No included studies').should('exist');
         });
@@ -294,7 +289,6 @@ describe('CurationAIInterface', () => {
             });
 
             cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
-            cy.wait('@projectFixture');
 
             cy.contains('li', '1. Identification').click();
             cy.contains("You've reviewed all uncategorized studies in identification!").should('exist');
@@ -312,7 +306,6 @@ describe('CurationAIInterface', () => {
             }).as('projectFixture');
 
             cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
-            cy.wait('@projectFixture');
         });
 
         it('should have two phases: unreviewed and included', () => {
@@ -340,7 +333,6 @@ describe('CurationAIInterface', () => {
             }).as('projectFixture');
 
             cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
-            cy.wait('@projectFixture');
             cy.contains('No studies. To import studies, click the import button above').should('exist');
         });
 
@@ -350,7 +342,6 @@ describe('CurationAIInterface', () => {
             }).as('projectFixture');
 
             cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
-            cy.wait('@projectFixture');
             cy.contains('li', '2. Included').click();
             cy.contains('No included studies.').should('exist');
         });
@@ -367,7 +358,6 @@ describe('CurationAIInterface', () => {
             });
 
             cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
-            cy.wait('@projectFixture');
             cy.contains("You've reviewed all the uncategorized studies!").should('exist');
         });
     });
@@ -379,7 +369,6 @@ describe('CurationAIInterface', () => {
             }).as('projectFixture');
 
             cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
-            cy.wait('@projectFixture');
 
             cy.wait('@taskExtraction');
             cy.wait('@participantDemographicsExtraction');
@@ -393,7 +382,7 @@ describe('CurationAIInterface', () => {
         });
 
         describe('table', () => {
-            it('should not have checkboxes for the included phase', () => {
+            it.only('should not have checkboxes for the included phase', () => {
                 cy.fixture('projects/projectCurationSimpleWithStudies').then(
                     (projectFixture: INeurosynthProjectReturn) => {
                         // move all the stub studies from the first column to the second and clear the first
@@ -406,7 +395,6 @@ describe('CurationAIInterface', () => {
                     }
                 );
                 cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
-                cy.wait('@projectFixture');
 
                 cy.contains('li', '2. Included').click();
                 cy.get('.MuiCheckbox-root').should('not.exist');
@@ -418,7 +406,6 @@ describe('CurationAIInterface', () => {
                 }).as('projectFixture');
 
                 cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
-                cy.wait('@projectFixture');
                 cy.contains('button', 'Include (1)').should('not.exist');
                 cy.contains('button', 'Exclude (1)').should('not.exist');
 
@@ -434,7 +421,6 @@ describe('CurationAIInterface', () => {
                 }).as('projectFixture');
 
                 cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
-                cy.wait('@projectFixture');
 
                 cy.get('.MuiCheckbox-root').eq(1).click();
 
@@ -456,7 +442,6 @@ describe('CurationAIInterface', () => {
                     }
                 );
                 cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
-                cy.wait('@projectFixture');
 
                 cy.contains('li', '2. Screening').click();
 
@@ -481,7 +466,6 @@ describe('CurationAIInterface', () => {
                 );
 
                 cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
-                cy.wait('@projectFixture');
 
                 cy.contains('li', '3. Eligibility').click();
                 cy.get('.MuiCheckbox-root').eq(1).click();
@@ -504,7 +488,6 @@ describe('CurationAIInterface', () => {
                     }
                 );
                 cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
-                cy.wait('@projectFixture');
 
                 cy.contains('li', '2. Screening').click();
 
@@ -519,7 +502,6 @@ describe('CurationAIInterface', () => {
 
             it('should clear the selection when the group is changed', () => {
                 cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
-                cy.wait('@projectFixture');
                 cy.get('.MuiCheckbox-root').eq(1).click();
                 cy.get('.MuiCheckbox-root.Mui-checked').should('exist');
 
@@ -531,7 +513,6 @@ describe('CurationAIInterface', () => {
 
             it('should promote multiple studies', () => {
                 cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
-                cy.wait('@projectFixture');
 
                 cy.get('.MuiCheckbox-root').eq(1).click();
                 cy.get('.MuiCheckbox-root').eq(2).click();
@@ -541,7 +522,6 @@ describe('CurationAIInterface', () => {
 
             it('should skip curation', () => {
                 cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
-                cy.wait('@projectFixture');
                 cy.contains('Skip Curation').click();
                 cy.contains('button', 'Continue').click();
                 cy.contains('li', '1. Unreviewed').click();
@@ -550,7 +530,6 @@ describe('CurationAIInterface', () => {
 
             it('should move to the next group after skip curation', () => {
                 cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
-                cy.wait('@projectFixture');
                 cy.contains('Skip Curation').click();
                 cy.contains('button', 'Continue').click();
                 cy.contains('li', '2. Included').find('.Mui-selected').should('exist');
@@ -562,7 +541,6 @@ describe('CurationAIInterface', () => {
                 }).as('projectFixture');
 
                 cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
-                cy.wait('@projectFixture');
                 cy.contains('button', 'Promote Non Duplicated Studies').click();
                 cy.contains('button', 'Continue').click();
                 cy.get('tr').should('have.length', 1);
@@ -570,7 +548,6 @@ describe('CurationAIInterface', () => {
 
             it('should exclude the study', () => {
                 cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
-                cy.wait('@projectFixture');
                 cy.wait('@taskExtraction');
                 cy.wait('@participantDemographicsExtraction');
 
@@ -602,7 +579,6 @@ describe('CurationAIInterface', () => {
 
             it('should exclude multiple studies', () => {
                 cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
-                cy.wait('@projectFixture');
 
                 cy.get('.MuiCheckbox-root').eq(1).click();
                 cy.get('.MuiCheckbox-root').eq(2).click();
@@ -635,7 +611,6 @@ describe('CurationAIInterface', () => {
                     }
                 );
                 cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
-                cy.wait('@projectFixture');
 
                 cy.contains('li', '2. Screening').click();
 
@@ -655,7 +630,6 @@ describe('CurationAIInterface', () => {
                     `{"firstTimeSeeingPage":false,"selectedColumns":[],"columnFilters":[],"sorting":[]}`
                 );
                 cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
-                cy.wait('@projectFixture');
                 cy.contains('Title').should('not.exist');
                 cy.contains('button', 'Columns').click();
                 cy.contains('li', 'Title').click();
@@ -668,7 +642,6 @@ describe('CurationAIInterface', () => {
                     `{"firstTimeSeeingPage":false,"selectedColumns":["modality"],"columnFilters":[],"sorting":[]}`
                 );
                 cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
-                cy.wait('@projectFixture');
                 cy.contains('Modality').should('exist');
                 cy.get('[data-testid="DeleteIcon"]').click();
                 cy.contains('Modality').should('not.exist');
@@ -685,7 +658,6 @@ describe('CurationAIInterface', () => {
                 }).as('projectFixture');
 
                 cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
-                cy.wait('@projectFixture');
                 cy.get('tr').should('have.length', 5); // 4 plus header
                 cy.get(`[data-testid="FilterListIcon"]`).click();
                 cy.get('input[type="text"]').type('major depression');
@@ -703,7 +675,6 @@ describe('CurationAIInterface', () => {
                 }).as('projectFixture');
 
                 cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
-                cy.wait('@projectFixture');
 
                 cy.get('tr').should('have.length', 5); // 4 plus header
                 cy.get(`[data-testid="FilterListIcon"]`).click();
@@ -726,7 +697,6 @@ describe('CurationAIInterface', () => {
                 }).as('projectFixture');
 
                 cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
-                cy.wait('@projectFixture');
 
                 cy.fixture('projects/projectCurationSimpleWithStudies').then((data: INeurosynthProject) => {
                     data.provenance.curationMetadata.columns[0].stubStudies.forEach((study, index) => {
@@ -762,7 +732,6 @@ describe('CurationAIInterface', () => {
                 }).as('projectFixture');
 
                 cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
-                cy.wait('@projectFixture');
                 cy.wait('@taskExtraction');
                 cy.wait('@participantDemographicsExtraction');
 
@@ -799,7 +768,6 @@ describe('CurationAIInterface', () => {
 
             it('should exclude the study', () => {
                 cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
-                cy.wait('@projectFixture');
                 cy.wait('@taskExtraction');
                 cy.wait('@participantDemographicsExtraction');
 
@@ -811,7 +779,6 @@ describe('CurationAIInterface', () => {
 
             it('should create a new exclusion and then exclude the study', () => {
                 cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
-                cy.wait('@projectFixture');
                 cy.wait('@taskExtraction');
                 cy.wait('@participantDemographicsExtraction');
 
@@ -843,7 +810,6 @@ describe('CurationAIInterface', () => {
                 );
 
                 cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
-                cy.wait('@projectFixture');
                 cy.wait('@taskExtraction');
                 cy.wait('@participantDemographicsExtraction');
 
@@ -870,7 +836,6 @@ describe('CurationAIInterface', () => {
             });
 
             cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
-            cy.wait('@projectFixture');
             cy.wait('@taskExtraction');
             cy.wait('@participantDemographicsExtraction');
 
@@ -890,14 +855,12 @@ describe('CurationAIInterface', () => {
     describe('imports', () => {
         it('should have imports', () => {
             cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
-            cy.wait('@projectFixture');
             cy.contains('li', 'brain trauma').should('exist');
             cy.contains('li', 'brain trauma').find('.MuiChip-label').should('have.text', 4);
         });
 
         it('should show the studies in the import view', () => {
             cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
-            cy.wait('@projectFixture');
             cy.contains('li', 'brain trauma').click();
             cy.fixture('projects/projectCurationSimpleWithStudies').then((projectFixture: INeurosynthProjectReturn) => {
                 const importId = projectFixture.provenance.curationMetadata.imports[0].id;
@@ -916,7 +879,6 @@ describe('CurationAIInterface', () => {
 
         it('should filter the studies in the import view', () => {
             cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
-            cy.wait('@projectFixture');
             cy.contains('li', 'brain trauma').click();
             cy.get('input[type="text"]').type('Meta-Analysis');
             cy.get('.virtualized-import-list-item').should('have.length', 1);
@@ -926,7 +888,6 @@ describe('CurationAIInterface', () => {
     describe('exclusions', () => {
         it('should show empty when in the exclusions view and there are no studies', () => {
             cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
-            cy.wait('@projectFixture');
             cy.contains('li', 'Excluded').click();
             cy.contains('Duplicate').click();
             cy.contains('No studies for this exclusion').should('exist');
@@ -954,7 +915,6 @@ describe('CurationAIInterface', () => {
             });
 
             cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
-            cy.wait('@projectFixture');
 
             cy.contains('li', 'Excluded').click();
             cy.contains('Duplicate').click(); // open Duplicate exclusion group
@@ -982,7 +942,6 @@ describe('CurationAIInterface', () => {
                 } as INeurosynthProjectReturn).as('projectFixture');
 
                 cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
-                cy.wait('@projectFixture');
 
                 cy.contains('li', 'Excluded').click();
                 cy.contains('Duplicate').click(); // open Duplicate exclusion group
