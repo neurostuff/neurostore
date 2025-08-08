@@ -58,10 +58,15 @@ const NeurostoreServices = {
     PointsService: new PointsApi(neurostoreConfig),
     UsersService: new UserApi(neurostoreConfig),
     ExtractedDataResultsService: {
-        getAllExtractedDataResults: (extractors: EAIExtractors[]) => {
+        getAllExtractedDataResults: (extractors: EAIExtractors[], baseStudyIds?: string[]) => {
             const extractorsSegment = extractors.reduce((acc, curr, index) => {
                 if (index === 0) return `feature_display=${curr}`;
                 return `${acc}&feature_display=${curr}`;
+            }, '');
+
+            const baseStudyIdsSegment = (baseStudyIds ?? []).reduce((acc, curr, index) => {
+                if (index === 0) return `study_id=${curr}`;
+                return `${acc}&study_id=${curr}`;
             }, '');
 
             return axios.get<{
@@ -76,11 +81,14 @@ const NeurostoreServices = {
                     id: string;
                     result_data: ITaskExtractor | IParticipantDemographicExtractor;
                 }[];
-            }>(`${neurostoreConfig.basePath}/pipeline-study-results/?${extractorsSegment}&paginate=false`, {
-                headers: {
-                    Authorization: `Bearer ${neurostoreConfig.accessToken}`,
-                },
-            });
+            }>(
+                `${neurostoreConfig.basePath}/pipeline-study-results/?${extractorsSegment}&${baseStudyIdsSegment}&paginate=false`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${neurostoreConfig.accessToken}`,
+                    },
+                }
+            );
         },
     },
     AnnotationsService: new NeurostoreAnnotationsApi(neurostoreConfig),

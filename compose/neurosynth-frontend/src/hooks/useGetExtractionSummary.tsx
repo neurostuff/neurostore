@@ -1,8 +1,5 @@
 import { EExtractionStatus } from 'pages/Extraction/ExtractionPage';
-import {
-    useProjectExtractionStudysetId,
-    useProjectExtractionStudyStatusList,
-} from 'pages/Project/store/ProjectStore';
+import { useProjectExtractionStudysetId, useProjectExtractionStudyStatusList } from 'pages/Project/store/ProjectStore';
 import { useEffect, useState } from 'react';
 import { IStudyExtractionStatus } from './projects/useGetProjects';
 import useGetStudysetById from './studysets/useGetStudysetById';
@@ -14,10 +11,7 @@ export interface IExtractionSummary {
     total: number;
 }
 
-export const getExtractionSummary = (
-    studysetStudiesArg: Array<string>,
-    studyStatusList: IStudyExtractionStatus[]
-) => {
+export const getExtractionSummary = (studysetStudiesArg: Array<string>, studyStatusList: IStudyExtractionStatus[]) => {
     const studysetStudies = studysetStudiesArg || [];
 
     const summary = {
