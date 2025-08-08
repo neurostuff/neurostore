@@ -17,7 +17,6 @@ import useCuratorTableState from '../hooks/useCuratorTableState';
 import { ICurationTableStudy } from '../hooks/useCuratorTableState.types';
 import { IGroupListItem } from './CurationBoardAIGroupsList';
 import CurationBoardAIInterfaceCuratorFocus from './CurationBoardAIInterfaceCuratorFocus';
-import CurationBoardAIInterfaceCuratorTableSkeleton from './CurationBoardAIInterfaceCuratorSkeleton';
 import CurationBoardAIInterfaceCuratorTable from './CurationBoardAIInterfaceCuratorTable';
 import CurationDownloadSummaryButton from './CurationDownloadSummaryButton';
 import PrismaDialog from './PrismaDialog';
@@ -59,12 +58,7 @@ const CurationBoardAIInterfaceCurator: React.FC<{
         return column.stubStudies.filter((x) => x.exclusionTag === null);
     }, [column]);
 
-    const { table, isLoading } = useCuratorTableState(
-        projectId,
-        stubsInColumn,
-        !isLastColumn,
-        prismaPhase !== 'identification'
-    );
+    const { table } = useCuratorTableState(projectId, stubsInColumn, !isLastColumn, prismaPhase !== 'identification');
 
     const [prismaIsOpen, setPrismaIsOpen] = useState(false);
     const [UIMode, setUIMode] = useState<'TABLEMODE' | 'FOCUSMODE'>('TABLEMODE');
@@ -117,10 +111,6 @@ const CurationBoardAIInterfaceCurator: React.FC<{
 
     if (!column || columnIndex < 0) {
         return <Typography color="error.dark">There was an error loading studies</Typography>;
-    }
-
-    if (isLoading) {
-        return <CurationBoardAIInterfaceCuratorTableSkeleton />;
     }
 
     return (

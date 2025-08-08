@@ -118,11 +118,11 @@ const useGetAllAIExtractedData = (baseStudyIds?: string[]) => {
             const promises = await Promise.all([
                 API.NeurostoreServices.ExtractedDataResultsService.getAllExtractedDataResults(
                     [EAIExtractors.TASKEXTRACTOR],
-                    baseStudyIds
+                    baseStudyIdsOrEmpty
                 ),
                 API.NeurostoreServices.ExtractedDataResultsService.getAllExtractedDataResults(
                     [EAIExtractors.PARTICIPANTSDEMOGRAPHICSEXTRACTOR],
-                    baseStudyIds
+                    baseStudyIdsOrEmpty
                 ),
             ]);
 
