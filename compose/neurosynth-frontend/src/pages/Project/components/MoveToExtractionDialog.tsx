@@ -1,6 +1,9 @@
 import { Box, CircularProgress, LinearProgress, Typography } from '@mui/material';
+import BaseDialog, { IDialog } from 'components/Dialogs/BaseDialog';
 import { EPropertyType } from 'components/EditMetadata/EditMetadata.types';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
+import { setAnalysesInAnnotationAsIncluded } from 'helpers/Annotation.helpers';
+import { selectBestVersionsForStudyset } from 'helpers/Extraction.helpers';
 import { useCreateAnnotation, useCreateStudyset, useUpdateStudyset } from 'hooks';
 import useIngest from 'hooks/studies/useIngest';
 import { BaseStudy, BaseStudyReturn } from 'neurostore-typescript-sdk';
@@ -15,18 +18,11 @@ import {
     useProjectNumCurationColumns,
     useUpdateExtractionMetadata,
 } from 'pages/Project/store/ProjectStore';
-import { setAnalysesInAnnotationAsIncluded } from 'helpers/Annotation.helpers';
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import BaseDialog, { IDialog } from 'components/Dialogs/BaseDialog';
 import MoveToExtractionDialogIntroduction from './MoveToExtractionDialogIntroduction';
-import { selectBestVersionsForStudyset } from 'helpers/Extraction.helpers';
-import { useQueryClient } from 'react-query';
-import { AxiosResponse } from 'axios';
-import { INeurosynthProjectReturn } from 'hooks/projects/useGetProjects';
 
 const MoveToExtractionDialog: React.FC<IDialog> = (props) => {
-    const queryClient = useQueryClient();
     const numColumns = useProjectNumCurationColumns();
     const curationIncludedStudies = useProjectCurationColumn(numColumns - 1);
     const projectId = useProjectId();
@@ -178,33 +174,12 @@ const MoveToExtractionDialog: React.FC<IDialog> = (props) => {
             const newStudysetId = await handleCreateStudyset();
             const newAnnotationId = await handleCreateAnnotations(newStudysetId);
 
-            updateExtractionMetadata({
+            const updatedExtractionMetadata = {
                 studysetId: newStudysetId,
                 annotationId: newAnnotationId,
                 studyStatusList: [],
-            });
-
-            const queryData = queryClient.getQueryData<AxiosResponse<INeurosynthProjectReturn>>([
-                'projects',
-                projectId,
-            ]);
-            if (queryData) {
-                queryClient.setQueryData(['projects', projectId], {
-                    ...queryData,
-                    data: {
-                        ...queryData.data,
-                        provenance: {
-                            ...queryData.data.provenance,
-                            extractionMetadata: {
-                                ...queryData.data.provenance.extractionMetadata,
-                                studysetId: newStudysetId,
-                                annotationId: newAnnotationId,
-                                studyStatusList: [],
-                            },
-                        },
-                    },
-                });
-            }
+            };
+            updateExtractionMetadata(updatedExtractionMetadata);
 
             await handleIngest(newStudysetId, newAnnotationId);
             handleFinalize();

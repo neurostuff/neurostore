@@ -182,7 +182,7 @@ const BaseNavigation: React.FC = () => {
                     <Route
                         path="/meta-analyses/:metaAnalysisId"
                         element={
-                            <ProtectedMetaAnalysesRoute errorMessage="You do not have access to this project">
+                            <ProtectedMetaAnalysesRoute errorMessage="You do not have access to this meta-analysis">
                                 <Box sx={BaseNavigationStyles.pagesContainer}>
                                     <MetaAnalysisPage />
                                 </Box>

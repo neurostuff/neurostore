@@ -2,6 +2,7 @@ import { useAuth0 } from '@auth0/auth0-react';
 import NeurosynthLoader from 'components/NeurosynthLoader/NeurosynthLoader';
 import { useGetProjectById } from 'hooks';
 import useUserCanEdit from 'hooks/useUserCanEdit';
+import { useInitProjectStoreIfRequired } from 'pages/Project/store/ProjectStore';
 import { Navigate, useLocation, useParams } from 'react-router-dom';
 const ProtectedProjectRoute: React.FC<{ onlyOwnerCanAccess?: boolean; errorMessage?: string }> = ({
     onlyOwnerCanAccess,
@@ -9,14 +10,25 @@ const ProtectedProjectRoute: React.FC<{ onlyOwnerCanAccess?: boolean; errorMessa
     children,
 }) => {
     const { projectId } = useParams<{ projectId: string }>();
-    const { data, isLoading, isError } = useGetProjectById(projectId);
+    const { data, isLoading: getProjectIsLoading, isError } = useGetProjectById(projectId);
     const { isLoading: getAuthIsLoading } = useAuth0();
     const { pathname } = useLocation();
     const userCanEdit = useUserCanEdit(data?.user ?? undefined);
 
-    const isOk = isError ? false : onlyOwnerCanAccess ? userCanEdit : userCanEdit || data?.public;
+    useInitProjectStoreIfRequired();
 
-    if (isLoading || getAuthIsLoading) {
+    let isOk = true;
+    if (isError) {
+        isOk = false;
+    } else if (onlyOwnerCanAccess) {
+        isOk = userCanEdit;
+    } else {
+        isOk = userCanEdit || !!data?.public;
+    }
+
+    const isLoading = getProjectIsLoading || getAuthIsLoading;
+
+    if (isLoading) {
         return <NeurosynthLoader loaded={false} />;
     }
 
