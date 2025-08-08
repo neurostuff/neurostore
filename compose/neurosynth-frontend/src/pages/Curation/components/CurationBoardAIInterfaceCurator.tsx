@@ -68,9 +68,10 @@ const CurationBoardAIInterfaceCurator: React.FC<{
 
     const [selectedStubId, setSelectedStubId] = useState<string>();
 
+    const rows = table.getCoreRowModel().rows;
     const selectedStub: Row<ICurationTableStudy> | undefined = useMemo(
-        () => (table.getCoreRowModel().rows || []).find((stub) => stub.original.id === selectedStubId),
-        [table, selectedStubId]
+        () => (rows || []).find((stub) => stub.original.id === selectedStubId),
+        [rows, selectedStubId]
     );
 
     const handleToggleUIMode = () => {
