@@ -4,7 +4,6 @@ import { GridTableRowsIcon } from '@mui/x-data-grid';
 import { Row, Table } from '@tanstack/react-table';
 import CurationPromoteUncategorizedButton from 'components/Buttons/CurationPromoteUncategorizedButton';
 import { useUserCanEdit } from 'hooks';
-import useGetAllAIExtractedData from 'hooks/extractions/useGetAllExtractedData';
 import { indexToPRISMAMapping } from 'hooks/projects/useGetProjects';
 import {
     useProjectCurationColumns,
@@ -38,7 +37,6 @@ const CurationBoardAIInterfaceCurator: React.FC<{
     const navigate = useNavigate();
     const { projectId } = useParams<{ projectId: string | undefined }>();
     const curationColumns = useProjectCurationColumns();
-    const { isLoading } = useGetAllAIExtractedData();
 
     const { column, columnIndex } = useMemo(() => {
         const columnIndex = curationColumns.findIndex((col) => col.id === group.id);
@@ -61,7 +59,12 @@ const CurationBoardAIInterfaceCurator: React.FC<{
         return column.stubStudies.filter((x) => x.exclusionTag === null);
     }, [column]);
 
-    const table = useCuratorTableState(projectId, stubsInColumn, !isLastColumn, prismaPhase !== 'identification');
+    const { table, isLoading } = useCuratorTableState(
+        projectId,
+        stubsInColumn,
+        !isLastColumn,
+        prismaPhase !== 'identification'
+    );
 
     const [prismaIsOpen, setPrismaIsOpen] = useState(false);
     const [UIMode, setUIMode] = useState<'TABLEMODE' | 'FOCUSMODE'>('TABLEMODE');

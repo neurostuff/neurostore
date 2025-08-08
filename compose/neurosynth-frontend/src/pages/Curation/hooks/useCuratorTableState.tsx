@@ -38,7 +38,10 @@ const useCuratorTableState = (
     const [sorting, setSorting] = useState<SortingState>([]);
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-    const { data: extractedData } = useGetAllAIExtractedData();
+    const filteredStubs = useMemo(() => {
+        return allStubs.filter((stub) => !!stub.neurostoreId).map((stub) => stub!.neurostoreId) as string[];
+    }, [allStubs]);
+    const { data: extractedData, isLoading } = useGetAllAIExtractedData(filteredStubs);
 
     useEffect(() => {
         if (!projectId) return;
@@ -260,7 +263,10 @@ const useCuratorTableState = (
         );
     }, [allowAIColumns, columns, projectId]);
 
-    return table;
+    return {
+        table,
+        isLoading,
+    };
 };
 
 export default useCuratorTableState;
