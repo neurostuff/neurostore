@@ -1,4 +1,5 @@
 /// <reference types="cypress" />
+import { expect } from 'chai';
 
 describe('ImportStudiesDialog', () => {
     beforeEach(() => {
@@ -225,10 +226,32 @@ describe('ImportStudiesDialog', () => {
             cy.contains('button', 'next').should('be.visible');
         });
 
-        // TODO : create a test for importing bibtex file
-        // it('should import studies via a file', () => {})
+        it('should upload a .RIS file and import successfully', () => {
+            cy.get('input[role="combobox"]').click();
+            cy.contains('li', 'Scopus').click();
+            cy.get('label[role="button"]').selectFile('cypress/fixtures/standardFiles/ris.ris');
+            cy.contains('button', 'next').should('be.visible').and('not.be.disabled');
+            cy.contains('button', 'next').click();
+        });
 
-        // TODO : create a test for importing RIS file
+        it('should handle the duplicates in an import file', () => {
+            cy.get('input[role="combobox"]').click();
+            cy.contains('li', 'Scopus').click();
+            cy.get('label[role="button"]').selectFile('cypress/fixtures/standardFiles/duplicates.ris');
+            cy.contains('button', 'next').should('be.visible').and('not.be.disabled');
+            cy.contains('button', 'next').click();
+            cy.contains('Click to view 1 imported studies').click();
+            cy.contains('(2023). Manifold Learning for fMRI time-varying FC').should(
+                // doing this to enforce strict equals
+                ($el: JQuery<HTMLElement> | undefined) => {
+                    if (!$el) throw new Error('Could not find element');
+                    expect($el.text()).to.equal('(2023). Manifold Learning for fMRI time-varying FC');
+                }
+            );
+            cy.contains(/^\bbioRxiv\b/).should('exist'); // \b is a word boundary which means there shouldnt be any other letters/words before and after
+        });
+
+        // TODO : create a test for importing bibtex file
         // it('should import studies via a file', () => {})
     });
 
