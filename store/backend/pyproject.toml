@@ -46,7 +46,7 @@ include = ["neurostore*"]
 
 [project.optional-dependencies]
 dev = [
-    "flake8~=3.8",
+    "flake8~=7.3",
     "pip-chill~=1.0",
     "wheel~=0.36",
     "pytest~=8.4",
