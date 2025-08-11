@@ -22,7 +22,7 @@ dependencies = [
     "gunicorn~=23.0",
     "ipython~=8.18",
     "marshmallow~=3.0",
-    "numpy<2.0.0",
+    "numpy<3.0.0",
     "pandas~=2.3",
     "psycopg2-binary~=2.8",
     "pyld~=2.0",
