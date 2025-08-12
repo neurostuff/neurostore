@@ -62,6 +62,10 @@ function App() {
             <SnackbarProvider
                 ref={notistackRef}
                 autoHideDuration={8000}
+                anchorOrigin={{
+                    vertical: 'bottom',
+                    horizontal: 'right',
+                }}
                 action={(key) => (
                     <IconButton onClick={handleCloseSnackbar(key)}>
                         <Close sx={{ color: 'white' }} />

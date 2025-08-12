@@ -24,9 +24,7 @@ const ProjectEditMetaAnalyses: React.FC = (props) => {
     const curationStepHasBeenInitialized = useProjectCurationColumns().length > 0;
 
     const extractionStepHasBeenInitialized =
-        !!extractionMetadata.annotationId &&
-        !!extractionMetadata.studysetId &&
-        (studyset?.studies?.length || 0) > 0;
+        !!extractionMetadata.annotationId && !!extractionMetadata.studysetId && (studyset?.studies?.length || 0) > 0;
 
     const { total, included, uncategorized } = useGetCurationSummary();
     const disableExtractionStep =
@@ -41,10 +39,7 @@ const ProjectEditMetaAnalyses: React.FC = (props) => {
 
     return (
         <Stepper activeStep={activeStep} orientation="vertical" sx={[ProjectPageStyles.stepper]}>
-            <ProjectCurationStep
-                disabled={!canEdit}
-                curationStepHasBeenInitialized={curationStepHasBeenInitialized}
-            />
+            <ProjectCurationStep disabled={!canEdit} curationStepHasBeenInitialized={curationStepHasBeenInitialized} />
             <ProjectExtractionStep
                 extractionStepHasBeenInitialized={extractionStepHasBeenInitialized}
                 disabled={!canEdit || disableExtractionStep}

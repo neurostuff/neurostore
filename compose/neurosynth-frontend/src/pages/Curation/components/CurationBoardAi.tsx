@@ -1,13 +1,12 @@
 import { Box } from '@mui/material';
+import InfoPopup from 'components/InfoPopup';
 import { NAVBAR_HEIGHT } from 'components/Navbar/Navbar';
 import { useSnackbar } from 'notistack';
-import CurationBoardAIGroupsList from 'pages/Curation/components/CurationBoardAIGroupsList';
+import CurationBoardAIGroupsList, { IGroupListItem } from 'pages/Curation/components/CurationBoardAIGroupsList';
 import { useDeleteCurationImport } from 'pages/Project/store/ProjectStore';
-import useCurationBoardGroupsState from '../hooks/useCurationBoardGroupsState';
 import CurationBoardAIInterfaceCurator from './CurationBoardAIInterfaceCurator';
 import CurationBoardAIInterfaceExclude from './CurationBoardAIInterfaceExclude';
 import CurationBoardAIInterfaceImportSummary from './CurationBoardAIInterfaceImportSummary';
-import InfoPopup from 'components/InfoPopup';
 
 export enum ECurationBoardAIInterface {
     CURATOR = 'CURATOR', // basic curation interface with ability to toggle between spreadsheet and focused UIs.
@@ -15,10 +14,13 @@ export enum ECurationBoardAIInterface {
     EXCLUDE = 'EXCLUDE', // exclusion view
 }
 
-const CurationBoardAI: React.FC = () => {
+const CurationBoardAI: React.FC<{
+    groups: IGroupListItem[];
+    selectedGroup: IGroupListItem | undefined;
+    handleSetSelectedGroup: (group: IGroupListItem) => void;
+}> = ({ groups, selectedGroup, handleSetSelectedGroup }) => {
     const deleteCurationImport = useDeleteCurationImport();
     const { enqueueSnackbar } = useSnackbar();
-    const { groups, selectedGroup, handleSetSelectedGroup } = useCurationBoardGroupsState();
 
     const handleDeleteCurationImport = (importId: string) => {
         deleteCurationImport(importId);
