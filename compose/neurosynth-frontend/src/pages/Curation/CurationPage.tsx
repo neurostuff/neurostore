@@ -65,19 +65,23 @@ const CurationPage: React.FC = () => {
     const extractionStepInitialized = studysetId && annotationId && (studyset?.studies?.length || 0) > 0;
     const canMoveToExtractionPhase = included > 0 && uncategorized === 0;
 
-    const handleNavigateToStep = (phase: string, snackbarId: SnackbarKey) => {
+    const handleNavigateToStep = (groupId: string, snackbarId: SnackbarKey) => {
+        const foundGroup = groups.find((g) => g.id === groupId);
+        if (foundGroup) {
+            handleSetSelectedGroup(foundGroup);
+        }
         closeSnackbar(snackbarId);
     };
 
     const handleMoveToExtractionPhase = () => {
         if (!canMoveToExtractionPhase) {
-            const existingIssues: { phase: string; numUncategorized: number }[] = [];
+            const existingIssues: { phase: string; colId: string; numUncategorized: number }[] = [];
             for (let i = 0; i < columns.length - 1; i++) {
                 // skip the last column as it is included
                 const column = columns[i];
                 const numUncategorized = column.stubStudies.filter((s) => s.exclusionTag === null).length;
                 if (numUncategorized > 0) {
-                    existingIssues.push({ phase: column.name, numUncategorized });
+                    existingIssues.push({ phase: column.name, colId: column.id, numUncategorized });
                 }
             }
 
@@ -102,9 +106,9 @@ const CurationPage: React.FC = () => {
                                 color="primary"
                                 disableElevation
                                 size="small"
-                                onClick={() => handleNavigateToStep(issue.phase, snackbarId)}
+                                onClick={() => handleNavigateToStep(issue.colId, snackbarId)}
                             >
-                                Fix {issue.phase}
+                                Go to {issue.phase}
                             </Button>
                         ))}
                     </Box>
@@ -215,7 +219,7 @@ const CurationPage: React.FC = () => {
                         )}
                         <Button
                             onClick={handleMoveToExtractionPhase}
-                            variant={extractionStepInitialized ? 'contained' : 'outlined'}
+                            variant={canMoveToExtractionPhase ? 'contained' : 'outlined'}
                             color="success"
                             size="small"
                             sx={{
@@ -228,7 +232,7 @@ const CurationPage: React.FC = () => {
                             disableElevation
                             disabled={!canEdit}
                         >
-                            {extractionStepInitialized ? 'view extraction' : 'go to extraction'}
+                            {extractionStepInitialized ? 'view extraction' : 'start extraction'}
                         </Button>
                     </Box>
                 </Box>

@@ -1,15 +1,7 @@
 import BookmarkIcon from '@mui/icons-material/Bookmark';
 import CheckIcon from '@mui/icons-material/Check';
 import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
-import {
-    Box,
-    Card,
-    CardContent,
-    Typography,
-    CircularProgress,
-    CardActions,
-    Button,
-} from '@mui/material';
+import { Box, Card, CardContent, Typography, CircularProgress, CardActions, Button } from '@mui/material';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import ProjectComponentsStyles from 'pages/Project/components/Project.styles';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
@@ -30,10 +22,7 @@ const getPercentageComplete = (extractionSummary: IExtractionSummary): number =>
 };
 
 const ProjectExtractionStepCard: React.FC<{ disabled: boolean }> = ({ disabled }) => {
-    const [
-        markAllAsCompleteConfirmationDialogIsOpen,
-        setMarkAllAsCompleteConfirmationDialogIsOpen,
-    ] = useState(false);
+    const [markAllAsCompleteConfirmationDialogIsOpen, setMarkAllAsCompleteConfirmationDialogIsOpen] = useState(false);
     const studysetId = useProjectExtractionStudysetId();
     const { projectId } = useParams<{ projectId: string }>();
     const extractionSummary = useGetExtractionSummary(projectId);
@@ -55,9 +44,7 @@ const ProjectExtractionStepCard: React.FC<{ disabled: boolean }> = ({ disabled }
     };
 
     const allStudiesAreComplete = useMemo(() => {
-        return (
-            extractionSummary.total > 0 && extractionSummary.completed === extractionSummary.total
-        );
+        return extractionSummary.total > 0 && extractionSummary.completed === extractionSummary.total;
     }, [extractionSummary.completed, extractionSummary.total]);
 
     return (
@@ -70,10 +57,7 @@ const ProjectExtractionStepCard: React.FC<{ disabled: boolean }> = ({ disabled }
                     padding: '8px',
                 }}
             >
-                <StateHandlerComponent
-                    isError={getStudysetIsError}
-                    isLoading={getStudysetIsLoading}
-                >
+                <StateHandlerComponent isError={getStudysetIsError} isLoading={getStudysetIsLoading}>
                     <CardContent>
                         <Box sx={ProjectComponentsStyles.stepTitle}>
                             <Typography sx={{ color: 'muted.main' }}>
@@ -83,11 +67,7 @@ const ProjectExtractionStepCard: React.FC<{ disabled: boolean }> = ({ disabled }
                                 sx={ProjectComponentsStyles.progressCircle}
                                 variant="determinate"
                                 value={getPercentageComplete(extractionSummary)}
-                                color={
-                                    getPercentageComplete(extractionSummary) === 100
-                                        ? 'success'
-                                        : 'secondary'
-                                }
+                                color={getPercentageComplete(extractionSummary) === 100 ? 'success' : 'secondary'}
                             />
                         </Box>
                         <Typography gutterBottom variant="h5" sx={{ marginRight: '40px' }}>

@@ -237,7 +237,7 @@ function useCurationBoardGroupsState() {
             localStorage.setItem(selectedCurationStepLocalStorageKey, groups[1].id);
             setSelectedGroup(groups[1]);
         }
-    }, [groups, curationColumns.length, selectedGroup, selectedCurationStepLocalStorageKey]);
+    }, [groups, curationColumns.length, selectedGroup, selectedCurationStepLocalStorageKey, projectId]);
 
     return {
         groups,
