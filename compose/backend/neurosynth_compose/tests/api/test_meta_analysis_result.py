@@ -1,4 +1,9 @@
-from neurosynth_compose.models import MetaAnalysis
+from neurosynth_compose.models import (
+    MetaAnalysis,
+    MetaAnalysisResult,
+    NeurovaultCollection,
+    NeurostoreAnalysis,
+)
 
 
 def test_create_meta_analysis_result(session, app, auth_client, user_data):
@@ -41,6 +46,7 @@ def test_create_meta_analysis_result_no_snapshots(session, auth_client, user_dat
 
         assert resp.status_code == 200
 
+
 def test_put_meta_analysis_result_with_celery(
     session,
     app,
@@ -64,6 +70,7 @@ def test_put_meta_analysis_result_with_celery(
 
     # Step 1: Create the meta analysis result (POST)
     from neurosynth_compose.models import MetaAnalysis
+
     meta_analysis = MetaAnalysis.query.filter_by(id=meta_analysis_id).first()
     headers = {"Compose-Upload-Key": meta_analysis.run_key}
     post_data = {
@@ -71,7 +78,9 @@ def test_put_meta_analysis_result_with_celery(
         "annotation_snapshot": {"name": "my_annotation"},
         "meta_analysis_id": meta_analysis_id,
     }
-    resp_post = auth_client.post("/api/meta-analysis-results", data=post_data, headers=headers)
+    resp_post = auth_client.post(
+        "/api/meta-analysis-results", data=post_data, headers=headers
+    )
     assert resp_post.status_code == 200
     meta_analysis_result_id = resp_post.json["id"]
 
@@ -116,10 +125,6 @@ def test_put_meta_analysis_result_with_celery(
         json_dump=False,
     )
 
-    # Close file handles
-    for fobj in file_handles:
-        fobj.close()
-
     # Validate response
     assert resp.status_code == 200
     # Optionally, check database changes and Celery task effects
@@ -127,26 +132,46 @@ def test_put_meta_analysis_result_with_celery(
     assert updated_result is not None
 
     # Assign meta_analysis_result before use
-    from neurosynth_compose.models import MetaAnalysisResult, NeurovaultCollection, NeurovaultFile, NeurostoreAnalysis
-    meta_analysis_result = MetaAnalysisResult.query.filter_by(id=meta_analysis_result_id).one()
+    meta_analysis_result = MetaAnalysisResult.query.filter_by(
+        id=meta_analysis_result_id
+    ).one()
     assert meta_analysis_result is not None, "MetaAnalysisResult object not found"
 
     # Inspect NeurovaultCollection and NeurovaultFile statuses
-    nv_collection = NeurovaultCollection.query.filter_by(result_id=meta_analysis_result.id).first()
+    nv_collection = NeurovaultCollection.query.filter_by(
+        result_id=meta_analysis_result.id
+    ).first()
     assert nv_collection is not None, "NeurovaultCollection object not found"
-    print("NeurovaultCollection id:", nv_collection.id)
-
-    nv_files = nv_collection.files
-    for nv_file in nv_files:
-        print(f"NeurovaultFile id: {nv_file.id}, status: {nv_file.status}, exception: {nv_file.exception}, traceback: {nv_file.traceback}")
 
     # Inspect NeurostoreAnalysis execution status
-    neurostore_analysis = NeurostoreAnalysis.query.filter_by(meta_analysis_id=meta_analysis_id).first()
+    neurostore_analysis = NeurostoreAnalysis.query.filter_by(
+        meta_analysis_id=meta_analysis_id
+    ).first()
     assert neurostore_analysis is not None, "NeurostoreAnalysis object not found"
-    assert neurostore_analysis.status == "OK", f"NeurostoreAnalysis.status is '{neurostore_analysis.status}', expected 'OK'"
-    print("NeurostoreAnalysis status:", neurostore_analysis.status)
-    print("NeurostoreAnalysis exception:", neurostore_analysis.exception)
-    print("NeurostoreAnalysis traceback:", neurostore_analysis.traceback)
-    print("MetaAnalysisResult diagnostic_table:", meta_analysis_result.diagnostic_table)
-    print("MetaAnalysisResult method_description:", meta_analysis_result.method_description)
+    assert (
+        neurostore_analysis.status == "OK"
+    ), f"NeurostoreAnalysis.status is '{neurostore_analysis.status}', expected 'OK'"
     # Further assertions can be added to validate Neurovault/Neurostore integration
+
+    # PREP Files again
+    # Prepare data dict for upload (single or multiple files per key)
+    data = {}
+    file_handles = []
+
+    add_files("statistical_maps", maps)
+    add_files("cluster_tables", cluster_tables)
+    add_files("diagnostic_tables", diagnostic_tables)
+    # RUN the put request again to see how it handles repeats
+    resp2 = auth_client.put(
+        f"/api/meta-analysis-results/{meta_analysis_result_id}",
+        data=data,
+        headers=headers,
+        content_type="multipart/form-data",
+        json_dump=False,
+    )
+
+    assert resp2.status_code == 200
+    assert neurostore_analysis.status == "OK"
+    # Close file handles
+    for fobj in file_handles:
+        fobj.close()

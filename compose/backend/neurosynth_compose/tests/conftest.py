@@ -137,7 +137,11 @@ def mock_ns_session(request):
             return MockResponse(json)
 
         def put(self, path, json):
+            json.update({"id": path.split("/")[-1]})
             return MockResponse(json)
+
+        def get(self, path):
+            return MockResponse({"metadata": {"test": "value"}})
 
     return MockSession()
 
@@ -247,6 +251,7 @@ def db(app):
 @pytest.fixture(scope="session")
 def celery_app(app, db):
     from ..core import celery_app as prod_celery_app
+
     # Clone the production Celery app for testing
     test_celery = prod_celery_app
     test_celery.conf.task_always_eager = True
@@ -522,7 +527,9 @@ def meta_analysis_results(app, db, user_data, mock_add_users):
 
             results[user_info["id"]] = {
                 "meta_analysis_id": meta_analysis.id,
-                "results": CBMAWorkflow(estimator, corrector, diagnostics=[FocusCounter()]).fit(dataset),
+                "results": CBMAWorkflow(
+                    estimator, corrector, diagnostics=[FocusCounter()]
+                ).fit(dataset),
             }
 
     return results
