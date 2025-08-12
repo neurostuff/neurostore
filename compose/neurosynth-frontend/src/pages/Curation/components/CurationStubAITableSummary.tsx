@@ -210,12 +210,14 @@ const CurationStubAITableSummary: React.FC<{ stub: ICurationTableStudy | undefin
                     {ParticipantDemographicsExtractor ? (
                         <Table sx={{ marginTop: '0.5rem', tableLayout: 'fixed' }}>
                             <TableHead>
-                                <TableCell></TableCell>
-                                {ParticipantDemographicsExtractor.groups?.map((group, index) => (
-                                    <TableCell key={index}>
-                                        <Typography variant="body2">Group {index + 1}</Typography>
-                                    </TableCell>
-                                ))}
+                                <TableRow>
+                                    <TableCell></TableCell>
+                                    {ParticipantDemographicsExtractor.groups?.map((group, index) => (
+                                        <TableCell key={index}>
+                                            <Typography variant="body2">Group {index + 1}</Typography>
+                                        </TableCell>
+                                    ))}
+                                </TableRow>
                             </TableHead>
                             <TableBody>
                                 {PARTICIPANTS_DEMOGRAPHICS_EXTRACTOR_CURATOR_COLUMNS.map((col, index) => (
