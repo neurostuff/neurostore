@@ -10,5 +10,5 @@ __all__ = [
 ]
 
 # Register tasks
-celery_app.tasks.register(file_upload_neurovault)
-celery_app.tasks.register(create_or_update_neurostore_analysis)
+#celery_app.tasks.register(file_upload_neurovault)
+#celery_app.tasks.register(create_or_update_neurostore_analysis)

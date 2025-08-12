@@ -33,11 +33,11 @@ def test_file_upload_neurovault(session, app, db, mock_pynv):
     with tempfile.TemporaryDirectory() as tmpdirname:
         tst_file = Path(tmpdirname) / "test.nii.gz"
         shutil.copyfile(nifti_file, tst_file)
-        file_upload_neurovault(str(tst_file), nv_file.id)
+        file_upload_neurovault.run(str(tst_file), nv_file.id)
 
 
 def test_create_or_update_neurostore_analysis(
-    session, auth_client, app, db, mock_pynv, meta_analysis_cached_result_files
+    session, auth_client, app, db, mock_pynv, mock_ns, meta_analysis_cached_result_files
 ):
     cluster_tables = [
         f for f in meta_analysis_cached_result_files["tables"] if "clust.tsv" in f.name
@@ -54,6 +54,11 @@ def test_create_or_update_neurostore_analysis(
         neurostore_study=ns_study,
     )
     cluster_table = cluster_tables[0]
+    # Clean cluster table to avoid NaN/Infinity for JSON serialization
+    import pandas as pd
+    df = pd.read_csv(cluster_table, sep="\t")
+    df = df.fillna(0).replace([float("inf"), float("-inf")], 0)
+    df.to_csv(cluster_table, sep="\t", index=False)
     nv_collection = NeurovaultCollection(collection_id=12345)
     nv_file = NeurovaultFile(
         image_id=12345,
@@ -75,17 +80,8 @@ def test_create_or_update_neurostore_analysis(
     )
     db.session.commit()
 
-    df = pd.read_csv(cluster_table, sep="\t")
-    df = df.replace({np.nan: None})
-    ns_analysis.cluster_table = df
-    app.config["NEUROSTORE_URL"] = "http://dummy-neurostore"
-    import unittest.mock as mock
-
-    mock_response = mock.MagicMock()
-    mock_response.status_code = 200
-    mock_response.json.return_value = {"id": "dummy-id"}
-    with mock.patch("requests.post", return_value=mock_response):
-        create_or_update_neurostore_analysis(ns_analysis.id)
+    result = create_or_update_neurostore_analysis(ns_analysis.id, cluster_table)
+    assert result["metadata"]["cluster_table_name"] == cluster_table.name
 
 
 def test_result_upload(

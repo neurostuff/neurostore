@@ -12,6 +12,7 @@ import pytest
 from nimare.results import MetaResult
 import sqlalchemy as sa
 from requests.exceptions import HTTPError
+import uuid
 
 from neurosynth_compose.ingest.neurostore import create_meta_analyses
 from ..models.analysis import generate_id
@@ -63,49 +64,6 @@ Test fixtures for bypassing authentication
 """
 
 
-@pytest.fixture(autouse=True)
-def mock_create_neurovault_collection():
-    import itertools
-
-    def set_collection_id(collection):
-        collection.collection_id = next(set_collection_id.counter)
-        return None
-
-    if not hasattr(set_collection_id, "counter"):
-        set_collection_id.counter = itertools.count(10000)
-    with patch(
-        "neurosynth_compose.resources.analysis.create_neurovault_collection"
-    ) as mock_func:
-        mock_func.side_effect = set_collection_id
-        yield mock_func
-
-
-@pytest.fixture(scope="session", autouse=True)
-def setup_database(db):
-    """Create all tables at the start of the test session, drop at the end."""
-    db.create_all()
-    yield
-    db.drop_all()
-
-
-@pytest.fixture(scope="function", autouse=True)
-def isolate_db_session(db):
-    """Rollback all changes after each test for isolation."""
-    connection = db.engine.connect()
-    transaction = connection.begin()
-    options = dict(bind=connection, binds={})
-    session = db._make_scoped_session(options=options)
-    session.begin_nested()
-
-    db.session = session
-
-    yield session
-
-    session.remove()
-    transaction.rollback()
-    connection.close()
-
-
 # https://github.com/pytest-dev/pytest/issues/363#issuecomment-406536200
 @pytest.fixture(scope="session", autouse=False)
 def monkeysession(request):
@@ -124,26 +82,44 @@ def mock_decode_token(token):
 
 def mock_ns_session(request):
     class MockResponse:
-        def __init__(self, data):
+        def __init__(self, data, status_code=200):
             self.data = data
-            self.status_code = 200
+            self.status_code = status_code
 
+        def raise_for_status(self):
+            """Mock raise_for_status method."""
+            if hasattr(self, 'status_code') and self.status_code != 200:
+                raise HTTPError(f"Status code was {self.status_code}")
+        
         def json(self):
             return self.data
 
     class MockSession:
-        def post(self, path, data):
-            data.update({"id": "123"})
-            return MockResponse(data)
+        def __init__(self):
+            super().__init__()
 
-        def put(self, path, data):
-            return MockResponse(data)
+        def post(self, path, json):
+            json.update({"id": str(uuid.uuid4())})
+            return MockResponse(json)
+
+        def put(self, path, json):
+            if path.split('/')[-1] == "RAISE_ERROR":
+                return MockResponse({}, status_code=500)
+            json.update({"id": path.split('/')[-1]})
+            return MockResponse(json)
+
+        def get(self, path):
+            # Return a mock response with metadata
+            return MockResponse({
+                "id": path.split('/')[-1], "metadata": {"num_subjects": 20}
+            })
 
     return MockSession()
 
 
 class MockPYNVClient:
     def __init__(self, access_token):
+        print("MockPYNVClient __init__ called")
         self.access_token = access_token
         self.collections = []
         self.files = []
@@ -178,14 +154,11 @@ class MockPYNVClient:
         return response
 
 
-class MockNSSDKClient:
-    def __init__(self, access_token):
-        self.access_token = access_token
-
-
 @pytest.fixture(scope="session")
 def mock_pynv(monkeysession):
+    print("mock_pynv fixture called")
     monkeysession.setattr("pynv.Client", MockPYNVClient)
+    return True
 
 
 @pytest.fixture(scope="session")
@@ -200,7 +173,10 @@ def mock_auth(monkeysession):
 def mock_ns(monkeysession):
     """mock neurostore api"""
     monkeysession.setattr(
-        "neurosynth_compose.resources.neurostore_session", mock_ns_session
+        "neurosynth_compose.resources.neurostore.neurostore_session", mock_ns_session
+    )
+    monkeysession.setattr(
+        "neurosynth_compose.tasks.neurostore.neurostore_session", mock_ns_session
     )
 
 

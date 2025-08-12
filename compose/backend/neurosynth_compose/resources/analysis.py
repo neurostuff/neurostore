@@ -570,7 +570,7 @@ class MetaAnalysisResultsView(ObjectView, ListView):
             access_token = request.headers.get("Authorization")
             neurostore_analysis_upload = create_or_update_neurostore_analysis.si(
                 ns_analysis_id=ns_analysis.id,
-                cluster_table=(
+                cluster_table_path=(
                     str(cluster_table_fnames[0]) if cluster_table_fnames else None
                 ),
                 nv_collection_id=result.neurovault_collection.id,

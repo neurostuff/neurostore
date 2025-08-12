@@ -1,13 +1,15 @@
 """Tasks for interacting with Neurostore."""
 
 import logging
+import os
 
-import requests
+from celery import shared_task
+import pandas as pd
 from flask import current_app
 
+from neurosynth_compose.resources.neurostore import neurostore_session
 from ..database import db
 from ..models import NeurostoreAnalysis
-from .base import NeuroTask
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +19,7 @@ def get_auth_token():
     return current_app.config.get("NEUROSTORE_TOKEN")
 
 
-def prepare_points_data(cluster_table):
+def prepare_points_data(cluster_table: pd.DataFrame):
     """Prepare points data from cluster table."""
     if cluster_table is None or cluster_table.empty:
         return []
@@ -52,75 +54,54 @@ def prepare_images_data(files):
         images.append(image)
     return images
 
-
-class NeurostoreAnalysisTask(NeuroTask):
+@shared_task()
+def create_or_update_neurostore_analysis(analysis_id: str, cluster_table_path: str, session=None):
     """Create or update analysis in Neurostore."""
+    if session is None:
+        session = db.session
 
-    name = "neurostore.create_or_update_analysis"
+    try:
+        analysis = session.query(NeurostoreAnalysis).get(analysis_id)
+        cluster_table_filename = os.path.basename(cluster_table_path)
+        df = pd.read_csv(cluster_table_path, sep="\t")
 
-    def run(self, analysis_id, session=None):
-        """Create or update analysis in Neurostore."""
-        bound_logger = self.get_logger()
-        bound_logger.info(
-            "starting_analysis",
-            extra={"ns_analysis_id": analysis_id, "task_name": self.name},
-        )
+        # Build payload
+        payload = {
+            "name": getattr(analysis, "title", analysis.id),
+            "description": getattr(analysis, "description", ""),
+            "points": prepare_points_data(df),
+            "images": prepare_images_data(getattr(analysis, "files", [])),
+            "metadata": {"cluster_table_name": cluster_table_filename}
+        }
+        ns_ses = neurostore_session(get_auth_token())
+    
+        # Create or update
+        if analysis.neurostore_id:
+            get = ns_ses.get(f"/api/analyses/{analysis.neurostore_id}")
+            get.raise_for_status()
+            payload["metadata"].update(get.json().get("metadata", {}))
+            resp = ns_ses.put(
+                f"/api/analyses/{analysis.neurostore_id}",
+                json=payload,
+            )
+        else:
+            resp = ns_ses.post(
+                "/api/analyses",
+                json=payload,
+            )
 
-        if session is None:
-            session = db.session
+        resp.raise_for_status()
+        result = resp.json()
 
-        try:
-            analysis = session.query(NeurostoreAnalysis).get(analysis_id)
-            if not analysis:
-                raise ValueError(f"Analysis {analysis_id} not found")
+        # Update record
+        analysis.neurostore_id = result["id"]
+        analysis.status = "OK"
+        session.commit()
+        return result
 
-            # Build payload
-            payload = {
-                "name": getattr(analysis, "title", analysis.id),
-                "description": getattr(analysis, "description", ""),
-                "points": prepare_points_data(getattr(analysis, "cluster_table", [])),
-                "images": prepare_images_data(getattr(analysis, "files", [])),
-            }
-
-            headers = {
-                "Authorization": f"Bearer {get_auth_token()}",
-                "Content-Type": "application/json",
-            }
-
-            base_url = current_app.config["NEUROSTORE_URL"]
-
-            # Create or update
-            if analysis.neurostore_id:
-                url = f"{base_url}/analyses/{analysis.neurostore_id}"
-                response = requests.put(url, json=payload, headers=headers)
-            else:
-                url = f"{base_url}/analyses"
-                response = requests.post(url, json=payload, headers=headers)
-
-            response.raise_for_status()
-            result = response.json()
-
-            # Update record
-            analysis.neurostore_id = result["id"]
-            analysis.status = "OK"
+    except Exception as e:
+        if analysis:
+            analysis.status = "FAILED"
+            analysis.traceback = str(e)
             session.commit()
-
-            bound_logger.info(
-                "analysis_complete",
-                extra={"ns_analysis_id": analysis_id, "task_name": self.name},
-            )
-            return result
-
-        except Exception as e:
-            bound_logger.exception(
-                "analysis_failed",
-                extra={"ns_analysis_id": analysis_id, "task_name": self.name},
-            )
-            if analysis:
-                analysis.status = "FAILED"
-                analysis.traceback = str(e)
-                session.commit()
-            raise
-
-
-create_or_update_neurostore_analysis = NeurostoreAnalysisTask()
+        raise
