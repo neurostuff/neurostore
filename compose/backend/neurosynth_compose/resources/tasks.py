@@ -10,6 +10,7 @@ from ..models import NeurovaultFile, NeurovaultCollection, NeurostoreAnalysis
 
 @celery_app.task(name="neurovault.upload", bind=True)
 def file_upload_neurovault(self, fpath, id):
+    print(f"[CELERY] file_upload_neurovault called with fpath={fpath}, id={id}")
     from pynv import Client
 
     try:
@@ -85,6 +86,7 @@ def file_upload_neurovault(self, fpath, id):
 def create_or_update_neurostore_analysis(
     self, ns_analysis_id, cluster_table, nv_collection_id, access_token
 ):
+    print(f"[CELERY] create_or_update_neurostore_analysis called with ns_analysis_id={ns_analysis_id}, cluster_table={cluster_table}, nv_collection_id={nv_collection_id}")
     from auth0.v3.authentication.get_token import GetToken
     import pandas as pd
     from .neurostore import neurostore_session
@@ -172,5 +174,7 @@ def create_or_update_neurostore_analysis(
         ns_analysis.traceback = str(exception)
         ns_analysis.status = "FAILED"
 
+    import logging
+    logging.warning(f"[DEBUG] NeurostoreAnalysis status: {ns_analysis.status}, traceback: {ns_analysis.traceback}")
     db.session.add(ns_analysis)
     db.session.commit()
