@@ -43,14 +43,12 @@ function useCurationBoardGroupsState() {
         if (curationColumns.length === 0) return [];
         let groupListItems: IGroupListItem[] = [];
 
-        const numTotalStudies = curationColumns.reduce((acc, curr) => acc + curr.stubStudies.length, 0);
-
         if (prismaConfig.isPrisma) {
             groupListItems.push({
                 id: 'prisma_header',
                 type: 'SUBHEADER',
                 label: 'PRISMA Curation',
-                count: numTotalStudies,
+                count: null,
                 UI: null,
             });
 
@@ -142,7 +140,7 @@ function useCurationBoardGroupsState() {
                     id: 'curate_header',
                     type: 'SUBHEADER',
                     label: 'Curation',
-                    count: numTotalStudies,
+                    count: null,
                     UI: null,
                 },
                 {

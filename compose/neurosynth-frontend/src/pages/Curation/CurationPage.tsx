@@ -9,6 +9,7 @@ import { IProjectPageLocationState } from 'pages/Project/ProjectPage';
 import {
     useGetProjectIsLoading,
     useProjectCreatedAt,
+    useProjectCurationColumns,
     useProjectCurationIsPrisma,
     useProjectExtractionAnnotationId,
     useProjectExtractionStudysetId,
@@ -21,6 +22,8 @@ import CurationBoardAI from './components/CurationBoardAi';
 import CurationDownloadSummaryButton from './components/CurationDownloadSummaryButton';
 import PrismaDialog from './components/PrismaDialog';
 import LoadingStateIndicatorProject from 'components/LoadingStateIndicator/LoadingStateIndicatorProject';
+import { SnackbarKey, useSnackbar } from 'notistack';
+import useCurationBoardGroupsState from './hooks/useCurationBoardGroupsState';
 
 const localStorageNewUIKey = 'show-new-ui-may-30-2025';
 
@@ -30,10 +33,13 @@ const CurationPage: React.FC = () => {
     const studysetId = useProjectExtractionStudysetId();
     const canEdit = useUserCanEdit(projectUser || undefined);
     const { included, uncategorized } = useGetCurationSummary();
+    const columns = useProjectCurationColumns();
     const annotationId = useProjectExtractionAnnotationId();
     const { data: studyset } = useGetStudysetById(studysetId || '', false);
     const { projectId } = useParams<{ projectId: string | undefined }>();
     const projectIsLoading = useGetProjectIsLoading();
+    const { enqueueSnackbar, closeSnackbar } = useSnackbar();
+    const { groups, selectedGroup, handleSetSelectedGroup } = useCurationBoardGroupsState();
 
     const [prismaIsOpen, setPrismaIsOpen] = useState(false);
 
@@ -59,8 +65,54 @@ const CurationPage: React.FC = () => {
     const extractionStepInitialized = studysetId && annotationId && (studyset?.studies?.length || 0) > 0;
     const canMoveToExtractionPhase = included > 0 && uncategorized === 0;
 
+    const handleNavigateToStep = (phase: string, snackbarId: SnackbarKey) => {
+        closeSnackbar(snackbarId);
+    };
+
     const handleMoveToExtractionPhase = () => {
-        if (extractionStepInitialized) {
+        if (!canMoveToExtractionPhase) {
+            const existingIssues: { phase: string; numUncategorized: number }[] = [];
+            for (let i = 0; i < columns.length - 1; i++) {
+                // skip the last column as it is included
+                const column = columns[i];
+                const numUncategorized = column.stubStudies.filter((s) => s.exclusionTag === null).length;
+                if (numUncategorized > 0) {
+                    existingIssues.push({ phase: column.name, numUncategorized });
+                }
+            }
+
+            const snackbarId = enqueueSnackbar(
+                <Box>
+                    <Typography variant="body1" sx={{ fontWeight: 'bold' }} gutterBottom>
+                        You must complete curation before moving to extraction
+                    </Typography>
+                    {existingIssues.map((issue) => (
+                        <Typography key={issue.phase} variant="body2">
+                            The <b>{issue.phase}</b> step still has <b>{issue.numUncategorized} studies</b> that need to
+                            be either <b>included</b> or <b>excluded</b>.
+                        </Typography>
+                    ))}
+
+                    <Box sx={{ marginTop: '1rem' }}>
+                        {existingIssues.map((issue) => (
+                            <Button
+                                key={issue.phase}
+                                sx={{ margin: '4px' }}
+                                variant="contained"
+                                color="primary"
+                                disableElevation
+                                size="small"
+                                onClick={() => handleNavigateToStep(issue.phase, snackbarId)}
+                            >
+                                Fix {issue.phase}
+                            </Button>
+                        ))}
+                    </Box>
+                </Box>,
+                { variant: 'warning', autoHideDuration: null }
+            );
+            return;
+        } else if (extractionStepInitialized) {
             navigate(`/projects/${projectId}/extraction`);
         } else {
             navigate(`/projects/${projectId}/project`, {
@@ -72,6 +124,8 @@ const CurationPage: React.FC = () => {
             });
         }
     };
+
+    const indicateGoToExtraction = !extractionStepInitialized && canMoveToExtractionPhase;
 
     return (
         <StateHandlerComponent isError={false} isLoading={projectIsLoading}>
@@ -161,28 +215,33 @@ const CurationPage: React.FC = () => {
                         )}
                         <Button
                             onClick={handleMoveToExtractionPhase}
-                            variant="contained"
+                            variant={extractionStepInitialized ? 'contained' : 'outlined'}
                             color="success"
                             size="small"
                             sx={{
                                 ml: '0.5rem',
                                 fontSize: '12px',
-                                ...(extractionStepInitialized || !canMoveToExtractionPhase
-                                    ? { color: 'white' }
-                                    : {
-                                          ...GlobalStyles.colorPulseAnimation,
-                                          color: 'success.dark',
-                                      }),
+                                ...(indicateGoToExtraction
+                                    ? { ...GlobalStyles.colorPulseAnimation, color: 'success.dark' }
+                                    : {}),
                             }}
                             disableElevation
-                            disabled={!canEdit || !canMoveToExtractionPhase}
+                            disabled={!canEdit}
                         >
                             {extractionStepInitialized ? 'view extraction' : 'go to extraction'}
                         </Button>
                     </Box>
                 </Box>
                 <Box sx={{ height: '100%', overflow: 'hidden' }}>
-                    {useNewUI ? <CurationBoardAI /> : <CurationBoardBasic />}
+                    {useNewUI ? (
+                        <CurationBoardAI
+                            groups={groups}
+                            selectedGroup={selectedGroup}
+                            handleSetSelectedGroup={handleSetSelectedGroup}
+                        />
+                    ) : (
+                        <CurationBoardBasic />
+                    )}
                 </Box>
             </Box>
         </StateHandlerComponent>
