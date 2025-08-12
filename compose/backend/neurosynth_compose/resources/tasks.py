@@ -2,13 +2,10 @@ import os
 from pathlib import Path
 
 from flask import current_app as app
-import logging
 
 from ..core import celery_app
 from ..database import db
 from ..models import NeurovaultFile, NeurovaultCollection, NeurostoreAnalysis
-
-LGR = logging.getLogger(__name__)
 
 
 @celery_app.task(name="neurovault.upload", bind=True)
@@ -187,8 +184,5 @@ def create_or_update_neurostore_analysis(
         ns_analysis.traceback = str(exception)
         ns_analysis.status = "FAILED"
 
-    LGR.warning(
-        f"[DEBUG] NeurostoreAnalysis status: {ns_analysis.status}, traceback: {ns_analysis.traceback}"
-    )
     db.session.add(ns_analysis)
     db.session.commit()
