@@ -3,6 +3,7 @@ from pathlib import Path
 
 from connexion.middleware import MiddlewarePosition
 from starlette.middleware.cors import CORSMiddleware
+from backend.neurostore.raw_asgi_logger import RawASGILoggerMiddleware
 from authlib.integrations.flask_client import OAuth
 import connexion
 
