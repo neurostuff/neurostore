@@ -590,3 +590,24 @@ def test_pipeline_config_with_schema(auth_client, pipeline1):
     assert data["config_args"]["extractor"] == "ParticipantDemographicsExtractor"
     assert "extractor_kwargs" in data["config_args"]
     assert data["config_args"]["extraction_model"] == "gpt-4"
+
+def test_post_pipeline_study_results_with_study_ids(auth_client, result1, result2, pipeline_study_result_payload):
+    study1_id = pipeline_study_result_payload[0]["base_study_id"]
+    study2_id = pipeline_study_result_payload[1]["base_study_id"]
+    url = "/api/pipeline-study-results/"
+    payload = {"study_ids": [study1_id, study2_id]}
+
+    # First request: should call search logic and return both results
+    response = auth_client.post(url, data=payload, content_type="application/json")
+    assert response.status_code == 200
+    data = response.json()
+    returned_ids = {r["base_study_id"] for r in data["results"]}
+    assert returned_ids == {study1_id, study2_id}
+
+    # Test cache hit (currently not working)
+    response2 = auth_client.post(url, data=payload)
+    assert response2.status_code == 200
+    data2 = response2.json()
+    returned_ids2 = {r["base_study_id"] for r in data2["results"]}
+    assert returned_ids2 == {study1_id, study2_id}
+    

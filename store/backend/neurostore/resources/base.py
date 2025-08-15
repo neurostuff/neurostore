@@ -441,14 +441,27 @@ def clear_cache(unique_ids):
 
 def cache_key_creator(*args, **kwargs):
     # relevant pieces of information
-    # 1. the query arguments
+    # 1. the query arguments (including extra_args if present)
     # 2. the path
     # 3. the user
     path = request.path
     user = get_current_user().id if get_current_user() else ""
-    args_as_sorted_tuple = tuple(
-        sorted(pair for pair in request.args.items(multi=True))
-    )
+
+    # Get query args from request
+    query_items = list(request.args.items(multi=True))
+
+    # If extra_args is present, merge into query_items
+    extra_args = kwargs.get("extra_args")
+    if extra_args:
+        for k, v in extra_args.items():
+            # Support both single values and lists
+            if isinstance(v, list):
+                for item in v:
+                    query_items.append((k, item))
+            else:
+                query_items.append((k, v))
+
+    args_as_sorted_tuple = tuple(sorted(query_items))
     query_args = str(args_as_sorted_tuple)
 
     cache_key = "_".join([path, query_args, user])
@@ -628,9 +641,13 @@ class ListView(BaseView):
         return {"total_count": total}
 
     @cache.cached(60 * 60, query_string=True, make_cache_key=cache_key_creator)
-    def search(self):
+    def search(self, extra_args=None):
         # Parse arguments using webargs
+        import logging
+        logging.warning(f"I RAN HERE Request args: {request.args}")
         args = parser.parse(self._user_args, request, location="query")
+        if extra_args:
+            args.update(extra_args)
 
         m = self._model  # for brevity
         q = m.query
