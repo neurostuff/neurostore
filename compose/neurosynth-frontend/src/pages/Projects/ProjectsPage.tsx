@@ -21,7 +21,7 @@ const ProjectsPage: React.FC = () => {
     } = useSearchProjects(user?.sub);
 
     return (
-        <StateHandlerComponent isLoading={false} isError={isError}>
+        <Box>
             <Box sx={{ display: 'flex' }}>
                 <Typography gutterBottom variant="h4">
                     My Projects
@@ -59,7 +59,7 @@ const ProjectsPage: React.FC = () => {
                     )}
                 </StateHandlerComponent>
             </SearchContainer>
-        </StateHandlerComponent>
+        </Box>
     );
 };
 
