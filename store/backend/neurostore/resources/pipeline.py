@@ -6,7 +6,6 @@ from flask import abort, request
 from sqlalchemy.orm import selectinload, aliased
 from webargs import fields
 
-from ..core import cache
 from .utils import view_maker
 from ..utils import parse_json_filter, build_jsonpath
 from .base import ObjectView, ListView
@@ -19,6 +18,7 @@ from ..schemas.pipeline import (
     pipeline_study_result_schema,
     pipeline_study_result_schemas,
 )
+
 
 @view_maker
 class PipelinesView(ObjectView, ListView):
@@ -272,7 +272,6 @@ class PipelineStudyResultsView(ObjectView, ListView):
             )
         )
         return q
-
 
     def post(self):
         """

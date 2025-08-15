@@ -644,6 +644,7 @@ class ListView(BaseView):
     def search(self, extra_args=None):
         # Parse arguments using webargs
         import logging
+
         logging.warning(f"I RAN HERE Request args: {request.args}")
         args = parser.parse(self._user_args, request, location="query")
         if extra_args:

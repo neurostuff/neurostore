@@ -591,7 +591,10 @@ def test_pipeline_config_with_schema(auth_client, pipeline1):
     assert "extractor_kwargs" in data["config_args"]
     assert data["config_args"]["extraction_model"] == "gpt-4"
 
-def test_post_pipeline_study_results_with_study_ids(auth_client, result1, result2, pipeline_study_result_payload):
+
+def test_post_pipeline_study_results_with_study_ids(
+    auth_client, result1, result2, pipeline_study_result_payload
+):
     study1_id = pipeline_study_result_payload[0]["base_study_id"]
     study2_id = pipeline_study_result_payload[1]["base_study_id"]
     url = "/api/pipeline-study-results/"
@@ -610,4 +613,3 @@ def test_post_pipeline_study_results_with_study_ids(auth_client, result1, result
     data2 = response2.json()
     returned_ids2 = {r["base_study_id"] for r in data2["results"]}
     assert returned_ids2 == {study1_id, study2_id}
-    
