@@ -4,6 +4,7 @@ import {
     AccordionDetails,
     AccordionSummary,
     Box,
+    Skeleton,
     Table,
     TableBody,
     TableCell,
@@ -20,8 +21,10 @@ import {
     TASK_EXTRACTOR_CURATOR_COLUMNS,
 } from '../hooks/useCuratorTableState.consts';
 import { ICurationTableStudy } from '../hooks/useCuratorTableState.types';
+import { useIsFetching } from 'react-query';
 
 const CurationStubAITableSummary: React.FC<{ stub: ICurationTableStudy | undefined }> = ({ stub }) => {
+    const isFetchingExtractions = useIsFetching({ queryKey: ['extraction'] }) > 0;
     const TaskExtractor = stub?.TaskExtractor;
     const { projectId } = useParams<{ projectId: string }>();
     const AIFocusModeSummaryLocalStorageKey = `${projectId}_FOCUS_MODE_AI_SUMMARY_EXPANDED_STATE`;
@@ -42,6 +45,15 @@ const CurationStubAITableSummary: React.FC<{ stub: ICurationTableStudy | undefin
         localStorage.setItem(AIFocusModeSummaryLocalStorageKey, JSON.stringify(newExpandedState));
         setExpandedState(newExpandedState);
     };
+
+    if (isFetchingExtractions) {
+        return (
+            <>
+                <Skeleton width="100%" height="50px" sx={{ transform: 'none', marginBottom: '2px' }} />
+                <Skeleton width="100%" height="50px" sx={{ transform: 'none' }} />
+            </>
+        );
+    }
 
     if (!TaskExtractor && !ParticipantDemographicsExtractor) {
         return (
