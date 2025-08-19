@@ -40,9 +40,6 @@ const CurationBoardAIInterfaceCuratorTableHeaderFilterNestedAutocomplete: React.
             <Autocomplete
                 size="small"
                 open
-                blurOnSelect={false}
-                clearOnBlur={false}
-                clearOnEscape={false}
                 renderInput={(params) => (
                     <TextField {...params} sx={{ width: '200px', input: { fontSize: '12px' } }} placeholder="filter" />
                 )}

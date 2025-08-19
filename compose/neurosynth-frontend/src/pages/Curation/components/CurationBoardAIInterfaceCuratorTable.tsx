@@ -122,6 +122,44 @@ const CurationBoardAIInterfaceCuratorTable: React.FC<ICurationBoardAIInterfaceCu
                     allowAIColumns={prismaPhase !== 'identification'}
                 />
             </Box>
+            <Box
+                sx={{
+                    maxWidth: '100%',
+                    width: '100%',
+                    overflow: 'hidden',
+                }}
+            >
+                <Box sx={{ display: 'flex', overflowX: 'scroll', scrollbarColor: '#c1c1c1 white' }}>
+                    {columnFilters
+                        .filter((filter) => !!filter.value)
+                        .map((filter) => (
+                            <Chip
+                                onDelete={() =>
+                                    table.setColumnFilters((prev) => prev.filter((f) => f.id !== filter.id))
+                                }
+                                key={filter.id}
+                                variant="outlined"
+                                color="secondary"
+                                sx={{ margin: '0px 2px', fontSize: '10px', maxWidth: '200px', height: '18px' }}
+                                label={`Filtering ${filter.id.toUpperCase()}: ${filter.value}`}
+                                size="small"
+                            />
+                        ))}
+                    {sorting.map((sort) => (
+                        <Chip
+                            key={sort.id}
+                            onDelete={() => {
+                                table.setSorting((prev) => prev.filter((f) => f.id !== sort.id));
+                            }}
+                            variant="filled"
+                            color="secondary"
+                            sx={{ margin: '0px 2px', fontSize: '10px', maxWidth: '200px', height: '18px' }}
+                            label={`Sorting by ${sort.id.toUpperCase()}: ${sort.desc ? 'desc' : 'asc'}`}
+                            size="small"
+                        />
+                    ))}
+                </Box>
+            </Box>
             <TableContainer
                 ref={tableContainerRef}
                 id="scroller"
@@ -181,44 +219,6 @@ const CurationBoardAIInterfaceCuratorTable: React.FC<ICurationBoardAIInterfaceCu
                     </Typography>
                 )}
             </TableContainer>
-            <Box
-                sx={{
-                    maxWidth: '100%',
-                    width: '100%',
-                    overflow: 'hidden',
-                }}
-            >
-                <Box sx={{ display: 'flex', overflowX: 'scroll', scrollbarColor: '#c1c1c1 white' }}>
-                    {columnFilters
-                        .filter((filter) => !!filter.value)
-                        .map((filter) => (
-                            <Chip
-                                onDelete={() =>
-                                    table.setColumnFilters((prev) => prev.filter((f) => f.id !== filter.id))
-                                }
-                                key={filter.id}
-                                variant="outlined"
-                                color="secondary"
-                                sx={{ margin: '0px 2px', fontSize: '10px', maxWidth: '200px', height: '18px' }}
-                                label={`Filtering ${filter.id.toUpperCase()}: ${filter.value}`}
-                                size="small"
-                            />
-                        ))}
-                    {sorting.map((sort) => (
-                        <Chip
-                            key={sort.id}
-                            onDelete={() => {
-                                table.setSorting((prev) => prev.filter((f) => f.id !== sort.id));
-                            }}
-                            variant="filled"
-                            color="secondary"
-                            sx={{ margin: '0px 2px', fontSize: '10px', maxWidth: '200px', height: '18px' }}
-                            label={`Sorting by ${sort.id.toUpperCase()}: ${sort.desc ? 'desc' : 'asc'}`}
-                            size="small"
-                        />
-                    ))}
-                </Box>
-            </Box>
         </Box>
     );
 };
