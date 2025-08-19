@@ -27,7 +27,7 @@ import {
     EAIExtractors,
     IParticipantDemographicExtractor,
     ITaskExtractor,
-} from 'hooks/extractions/useGetAllExtractedData';
+} from 'hooks/extractions/useGetAllExtractedDataForStudies';
 
 export type NeurostoreAnnotation = AnnotationBase &
     ResourceAttributes &

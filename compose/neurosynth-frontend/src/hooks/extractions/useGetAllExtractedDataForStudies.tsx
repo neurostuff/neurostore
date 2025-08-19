@@ -102,7 +102,7 @@ export interface IExtractedDataResult {
     }[];
 }
 
-const useGetAllAIExtractedData = (baseStudyIds?: string[]) => {
+const useGetAllAIExtractedDataForStudies = (baseStudyIds?: string[]) => {
     const baseStudyIdsOrEmpty = baseStudyIds ?? [];
     return useQuery<
         [AxiosResponse<IExtractedDataResult>, AxiosResponse<IExtractedDataResult>],
@@ -145,4 +145,4 @@ const useGetAllAIExtractedData = (baseStudyIds?: string[]) => {
     );
 };
 
-export default useGetAllAIExtractedData;
+export default useGetAllAIExtractedDataForStudies;

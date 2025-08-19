@@ -13,7 +13,7 @@ import {
     Typography,
 } from '@mui/material';
 import AIICon from 'components/AIIcon';
-import { IfMRITask, IGroup } from 'hooks/extractions/useGetAllExtractedData';
+import { IfMRITask, IGroup } from 'hooks/extractions/useGetAllExtractedDataForStudies';
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import {

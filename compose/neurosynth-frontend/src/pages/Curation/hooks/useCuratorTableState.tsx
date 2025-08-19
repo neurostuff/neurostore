@@ -9,11 +9,11 @@ import {
     SortingState,
     useReactTable,
 } from '@tanstack/react-table';
-import useGetAllAIExtractedData, {
+import useGetAllAIExtractedDataForStudies, {
     EAIExtractors,
     IParticipantDemographicExtractor,
     ITaskExtractor,
-} from 'hooks/extractions/useGetAllExtractedData';
+} from 'hooks/extractions/useGetAllExtractedDataForStudies';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
     retrieveCurationTableState,
@@ -41,7 +41,7 @@ const useCuratorTableState = (
     const filteredStubs = useMemo(() => {
         return (allStubs.filter((stub) => !!stub.neurostoreId).map((stub) => stub!.neurostoreId) as string[]).sort();
     }, [allStubs]);
-    const { data: extractedData, isLoading } = useGetAllAIExtractedData(filteredStubs);
+    const { data: extractedData, isLoading } = useGetAllAIExtractedDataForStudies(filteredStubs);
 
     useEffect(() => {
         if (!projectId) return;
