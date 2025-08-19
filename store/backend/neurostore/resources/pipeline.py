@@ -1,7 +1,7 @@
 """Pipeline related resources"""
 
 from sqlalchemy import text, and_, or_
-from flask import abort
+from flask import abort, request
 
 from sqlalchemy.orm import selectinload, aliased
 from webargs import fields
@@ -272,3 +272,22 @@ class PipelineStudyResultsView(ObjectView, ListView):
             )
         )
         return q
+
+    def post(self):
+        """
+        If 'study_ids' is present in the request body, treat as a search (bypass authorization).
+        Only study_ids are in the body; all other filters are in the query string.
+        Otherwise, treat as a creation (require authorization).
+        """
+        data = request.get_json() or {}
+
+        if "study_ids" in data:
+            # Bypass authorization for search requests
+            # Convert study_ids to study_id for consistent filtering
+            study_ids = data.get("study_ids", [])
+            extra_args = {"study_id": study_ids}
+            # Call cached search (enables cache for study_ids POST)
+            return self.search(extra_args=extra_args)
+        else:
+            # Standard POST: require authorization (enforced by OpenAPI and Flask)
+            return super().post(self)
