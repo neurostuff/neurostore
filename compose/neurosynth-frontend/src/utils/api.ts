@@ -69,7 +69,7 @@ const NeurostoreServices = {
                 return `${acc}&study_id=${curr}`;
             }, '');
 
-            return axios.get<{
+            return axios.post<{
                 metadata: {
                     total_count: number;
                 };
@@ -82,7 +82,10 @@ const NeurostoreServices = {
                     result_data: ITaskExtractor | IParticipantDemographicExtractor;
                 }[];
             }>(
-                `${neurostoreConfig.basePath}/pipeline-study-results/?${extractorsSegment}&${baseStudyIdsSegment}&paginate=false`,
+                `${neurostoreConfig.basePath}/pipeline-study-results/?${extractorsSegment}&paginate=false`,
+                {
+                    study_ids: baseStudyIds,
+                },
                 {
                     headers: {
                         Authorization: `Bearer ${neurostoreConfig.accessToken}`,
