@@ -14,4 +14,5 @@ RUN dos2unix /home/s3-autodelete.sh
 RUN apt-get update && apt-get install -y postgresql-12-pgvector
 
 COPY postgresql.conf /etc/postgresql/postgresql.conf
+COPY pg_stat_statements.sql /docker-entrypoint-initdb.d/
 

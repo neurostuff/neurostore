@@ -7,7 +7,7 @@ services:
       context: ./backend
       dockerfile: ./Dockerfile
     depends_on:
-      store_pgsql:
+      store-pgsql:
         condition: service_healthy
       store_redis:
         condition: service_healthy
@@ -47,8 +47,8 @@ services:
       - VIRTUAL_HOST=${V_HOST}
       - LETSENCRYPT_HOST=${V_HOST}
 
-  store_pgsql:
-    image: store_pgsql
+  store-pgsql:
+    image: store-pgsql
     restart: always
     build: ./postgres
     # shm_size: '256MB'  # if I'm going to increase work_mem in postgres, also increase this
@@ -58,12 +58,25 @@ services:
       - '5432'
     env_file:
       - .env
-    command: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"]  # Use the custom config
+    command: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 3s
       timeout: 3s
       retries: 10
+    
+  pghero:
+    image: ankane/pghero
+    restart: always
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: "postgres://postgres:example@store-pgsql:5432/neurostore"
+    depends_on:
+      store-pgsql:
+        condition: service_healthy
 
 volumes:
   postgres_data:
