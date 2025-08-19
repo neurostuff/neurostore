@@ -24,6 +24,7 @@ dependencies = [
     "marshmallow~=3.0",
     "numpy<2.0.0",
     "pandas~=2.3",
+    "pgvector-python~=0.4.1",
     "psycopg2-binary~=2.8",
     "pyld~=2.0",
     "python-jose~=3.3",
