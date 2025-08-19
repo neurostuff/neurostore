@@ -57,9 +57,9 @@ const CurationImportFinalize: React.FC<{
 
         // // 2. first find duplicates ONLY WITHIN THE IMPORT ITSELF. Label as duplicate.
         let snackbarNotify = false;
-        const duplicatesExist = hasDuplicates(stubs);
-        if (duplicatesExist) snackbarNotify = true;
-        const deduplicatedStubs = duplicatesExist ? automaticallyResolveDuplicates(stubs) : stubs;
+        const duplicatesExistWithinImport = hasDuplicates(stubs);
+        if (duplicatesExistWithinImport) snackbarNotify = true;
+        const deduplicatedStubs = duplicatesExistWithinImport ? automaticallyResolveDuplicates(stubs) : stubs;
 
         // // 3. Label the stubs in the import as duplicates automatically if we find existing stubs IN THE PROJECT
         const allStubsInProject = columns.reduce(

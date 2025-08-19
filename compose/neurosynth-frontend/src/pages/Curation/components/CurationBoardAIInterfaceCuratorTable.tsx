@@ -1,7 +1,7 @@
 import { Box, Chip, Table, TableCell, TableContainer, TableHead, TableRow, Typography } from '@mui/material';
 import { flexRender, RowData } from '@tanstack/react-table';
 import { useGetCurationSummary } from 'hooks';
-import { EAIExtractors } from 'hooks/extractions/useGetAllExtractedData';
+import { EAIExtractors } from 'hooks/extractions/useGetAllExtractedDataForStudies';
 import { indexToPRISMAMapping } from 'hooks/projects/useGetProjects';
 import { useProjectCurationPrismaConfig } from 'pages/Project/store/ProjectStore';
 import { useRef } from 'react';
