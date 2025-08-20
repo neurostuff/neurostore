@@ -1,8 +1,8 @@
 FROM postgres:17.6
 RUN apt-get update && apt-get install -y dos2unix
-RUN apt-get install -yq python3-pip python-dev build-essential
+RUN apt-get install -yq python3-pip python-dev-is-python3 build-essential
 RUN apt-get install -yq cron
-RUN pip3 install awscli
+RUN pip3 install --break-system-packages awscli
 COPY pg_dump-to-s3 /home
 RUN chmod +x /home/pg_dump-to-s3.sh /home/s3-autodelete.sh
 RUN crontab /home/backup.txt
