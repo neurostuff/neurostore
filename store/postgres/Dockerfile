@@ -10,9 +10,6 @@ RUN service cron start
 RUN dos2unix /home/pg_dump-to-s3.sh
 RUN dos2unix /home/s3-autodelete.sh
 
-# Install pgvector extension for Postgres 12
-RUN apt-get update && apt-get install -y postgresql-12-pgvector
-
 COPY postgresql.conf /etc/postgresql/postgresql.conf
 COPY pg_stat_statements.sql /docker-entrypoint-initdb.d/
 

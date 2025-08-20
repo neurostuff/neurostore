@@ -9,11 +9,12 @@ from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.orm import relationship, backref, validates, aliased
 import shortuuid
-from pgvector.sqlalchemy import Vector
 
 from .migration_types import TSVector
 from ..database import db
 from ..utils import parse_json_filter, build_jsonpath
+
+SEMVER_REGEX = r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$"  # noqa E501
 
 SEMVER_REGEX = r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$"  # noqa E501
 
@@ -758,19 +759,6 @@ class PipelineStudyResult(BaseMixin, db.Model):
     )
 
 
-class PipelineStudyVector(BaseMixin, db.Model):
-    __tablename__ = "pipeline_study_vectors"
+# from . import event_listeners  # noqa E402
 
-    config_id = db.Column(
-        db.Text, db.ForeignKey("pipeline_configs.id", ondelete="CASCADE"), index=True
-    )
-    base_study_id = db.Column(db.Text, db.ForeignKey("base_studies.id"), index=True)
-    date_executed = db.Column(db.DateTime(timezone=True))
-    vector = db.Column(Vector)  # pgvector, variable length
-    file_inputs = db.Column(JSONB)
-    status = db.Column(
-        db.Enum("SUCCESS", "FAILURE", "ERROR", "UNKNOWN", name="status_enum")
-    )
-    config = relationship(
-        "PipelineConfig", backref=backref("vectors", passive_deletes=True)
-    )
+# del event_listeners
