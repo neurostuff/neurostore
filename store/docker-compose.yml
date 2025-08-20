@@ -79,10 +79,34 @@ services:
       store-pgsql:
         condition: service_healthy
 
+  grafana:
+    image: grafana/grafana
+    restart: always
+    expose:
+      - "3030"
+    env_file:
+      - .env
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
+      - GF_SERVER_ROOT_URL=/grafana
+      - GF_SERVER_SERVE_FROM_SUB_PATH="true"
+      - GF_SERVER_HTTP_PORT=3030
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+    depends_on:
+      store-pgsql:
+        condition: service_healthy
+    networks:
+      - default
+
 volumes:
   postgres_data:
+  grafana_data:
 
 networks:
   default:
     external:
       name: nginx-proxy
+
