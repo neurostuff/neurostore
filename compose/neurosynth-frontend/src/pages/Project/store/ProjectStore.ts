@@ -20,7 +20,7 @@ import {
     setGivenStudyStatusesAsCompleteHelper,
     updateStubFieldHelper,
 } from 'pages/Project/store/ProjectStore.helpers';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useQueryClient } from 'react-query';
 import { useParams } from 'react-router-dom';
 import API from 'utils/api';
