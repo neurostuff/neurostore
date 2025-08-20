@@ -73,7 +73,7 @@ services:
     env_file:
       - .env
     environment:
-      DATABASE_URL: "postgres://postgres:example@store-pgsql:5432/neurostore"
+      DATABASE_URL: "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:5432/${POSTGRES_DB}"
       RAILS_RELATIVE_URL_ROOT: "/pghero"
     depends_on:
       store-pgsql:
