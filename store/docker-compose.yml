@@ -74,6 +74,7 @@ services:
       - .env
     environment:
       DATABASE_URL: "postgres://postgres:example@store-pgsql:5432/neurostore"
+      RAILS_RELATIVE_URL_ROOT: "/pghero"
     depends_on:
       store-pgsql:
         condition: service_healthy
