@@ -22,7 +22,7 @@ describe('ImportStudiesDialog', () => {
         cy.url().should('include', '/projects/abc123/curation/import');
     });
 
-    describe('Import via Neurostore', () => {
+    describe('Search Neurostore', () => {
         beforeEach(() => {
             cy.login('mocked').visit('/projects/abc123/curation');
             cy.intercept('GET', '**/api/base-studies/**', {
