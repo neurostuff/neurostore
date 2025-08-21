@@ -46,6 +46,7 @@ describe('Ingestion', () => {
         cy.login('mocked').visit(PATH);
         cy.contains('button', 'start extraction').click(); // popup should open automatically as extraction has not been initialized in this mock
         cy.contains('button', 'NEXT').click();
+        cy.contains('button', 'START').click();
 
         cy.get('@baseStudiesFixture').its('request.body').should('not.have.a.property', 'doi');
         cy.get('@baseStudiesFixture').its('request.body').should('not.have.a.property', 'pmid');
