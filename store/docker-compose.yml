@@ -50,10 +50,32 @@ services:
   store-pgsql:
     image: store-pgsql
     restart: always
-    build: ./postgres
+    build: 
+      context: ./postgres
+      dockerfile: ./Dockerfile.old
     # shm_size: '256MB'  # if I'm going to increase work_mem in postgres, also increase this
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    expose:
+      - '5432'
+    env_file:
+      - .env
+    command: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+  
+  store-pgsql17:
+    image: store-pgsql17
+    restart: always
+    build:
+      context: ./postgres
+      dockerfile: ./Dockerfile
+    # shm_size: '256MB'  # if I'm going to increase work_mem in postgres, also increase this
+    volumes:
+      - postgres17_data:/var/lib/postgresql/data
     expose:
       - '5432'
     env_file:
@@ -104,6 +126,7 @@ services:
 volumes:
   postgres_data:
   grafana_data:
+  postgres17_data:
 
 networks:
   default:
