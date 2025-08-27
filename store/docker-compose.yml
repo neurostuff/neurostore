@@ -51,7 +51,7 @@ services:
     image: store-pgsql
     restart: always
     build: ./postgres
-    # shm_size: '256MB'  # if I'm going to increase work_mem in postgres, also increase this
+    shm_size: '256MB'
     volumes:
       - postgres_data:/var/lib/postgresql/data
     expose:
