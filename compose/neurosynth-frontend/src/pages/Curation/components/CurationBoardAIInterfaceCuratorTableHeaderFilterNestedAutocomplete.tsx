@@ -1,6 +1,6 @@
-import { Autocomplete, Box, ListItem, ListItemText, TextField } from '@mui/material';
+import { Autocomplete, Box, Chip, ListItem, ListItemText, TextField } from '@mui/material';
 import { AccessorFn, Row } from '@tanstack/react-table';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { flattenColumnValues } from '../hooks/useCuratorTableState.helpers';
 import { ICurationTableColumnType, ICurationTableStudy } from '../hooks/useCuratorTableState.types';
 
@@ -10,6 +10,8 @@ const CurationBoardAIInterfaceCuratorTableHeaderFilterNestedAutocomplete: React.
     value: string[] | undefined;
     onChange: (newVal: string[] | undefined) => void;
 }> = ({ rows, onChange, value, accessorFn }) => {
+    const [inputValue, setInputValue] = useState('');
+
     // note that for this data, we only expect column data to be a string or an object
     const uniqueValuesForColumn = useMemo(() => {
         if (!accessorFn) return [];
@@ -34,25 +36,36 @@ const CurationBoardAIInterfaceCuratorTableHeaderFilterNestedAutocomplete: React.
     }, [accessorFn, rows]);
 
     return (
-        <Box sx={{ padding: '0.5rem' }}>
+        <Box>
             <Autocomplete
                 size="small"
+                open
                 renderInput={(params) => (
-                    <TextField
-                        {...params}
-                        sx={{
-                            width: '200px',
-                            input: { fontSize: '12px' },
-                        }}
-                        placeholder="filter"
-                    />
+                    <TextField {...params} sx={{ width: '200px', input: { fontSize: '12px' } }} placeholder="filter" />
                 )}
                 onChange={(_event, value) => {
                     onChange(value.length === 0 ? undefined : value);
                 }}
                 value={value || []}
+                inputValue={inputValue}
+                onInputChange={(event, value, reason) => {
+                    if (event && event.type === 'blur') {
+                        setInputValue('');
+                    } else if (reason !== 'reset') {
+                        setInputValue(value);
+                    }
+                }}
                 options={uniqueValuesForColumn}
                 multiple
+                slotProps={{
+                    popper: { disablePortal: true },
+                    paper: { sx: { fontSize: '12px' } },
+                }}
+                renderTags={(value, getTagProps) =>
+                    value.map((option, index) => (
+                        <Chip label={option} sx={{ fontSize: '12px' }} size="small" {...getTagProps({ index })} />
+                    ))
+                }
                 renderOption={(props, option) => (
                     <ListItem {...props} key={option}>
                         <ListItemText primary={option} primaryTypographyProps={{ fontSize: '12px' }} />

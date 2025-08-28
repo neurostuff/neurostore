@@ -1,6 +1,9 @@
 import { Box, CircularProgress, LinearProgress, Typography } from '@mui/material';
+import BaseDialog, { IDialog } from 'components/Dialogs/BaseDialog';
 import { EPropertyType } from 'components/EditMetadata/EditMetadata.types';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
+import { setAnalysesInAnnotationAsIncluded } from 'helpers/Annotation.helpers';
+import { selectBestVersionsForStudyset } from 'helpers/Extraction.helpers';
 import { useCreateAnnotation, useCreateStudyset, useUpdateStudyset } from 'hooks';
 import useIngest from 'hooks/studies/useIngest';
 import { BaseStudy, BaseStudyReturn } from 'neurostore-typescript-sdk';
@@ -15,18 +18,12 @@ import {
     useProjectNumCurationColumns,
     useUpdateExtractionMetadata,
 } from 'pages/Project/store/ProjectStore';
-import { setAnalysesInAnnotationAsIncluded } from 'helpers/Annotation.helpers';
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import BaseDialog, { IDialog } from 'components/Dialogs/BaseDialog';
-import MoveToExtractionDialogIntroduction from './MoveToExtractionDialogIntroduction';
-import { selectBestVersionsForStudyset } from 'helpers/Extraction.helpers';
-import { useQueryClient } from 'react-query';
-import { AxiosResponse } from 'axios';
-import { INeurosynthProjectReturn } from 'hooks/projects/useGetProjects';
+import MoveToExtractionDialogIntroductionPart1 from './MoveToExtractionDialogIntroPart1';
+import MoveToExtractionDialogIntroductionPart2 from './MoveToExtractionDialogIntroPart2';
 
 const MoveToExtractionDialog: React.FC<IDialog> = (props) => {
-    const queryClient = useQueryClient();
     const numColumns = useProjectNumCurationColumns();
     const curationIncludedStudies = useProjectCurationColumn(numColumns - 1);
     const projectId = useProjectId();
@@ -40,6 +37,8 @@ const MoveToExtractionDialog: React.FC<IDialog> = (props) => {
     const { enqueueSnackbar } = useSnackbar();
     const { mutateAsync: asyncIngest } = useIngest();
     const { mutateAsync: asyncUpdateStudyset } = useUpdateStudyset();
+
+    const [step, setStep] = useState(0);
 
     const navigate = useNavigate();
 
@@ -172,39 +171,18 @@ const MoveToExtractionDialog: React.FC<IDialog> = (props) => {
     };
 
     const handleInitialize = async () => {
-        setIsLoadingPhase(true);
+        setStep(2);
 
         try {
             const newStudysetId = await handleCreateStudyset();
             const newAnnotationId = await handleCreateAnnotations(newStudysetId);
 
-            updateExtractionMetadata({
+            const updatedExtractionMetadata = {
                 studysetId: newStudysetId,
                 annotationId: newAnnotationId,
                 studyStatusList: [],
-            });
-
-            const queryData = queryClient.getQueryData<AxiosResponse<INeurosynthProjectReturn>>([
-                'projects',
-                projectId,
-            ]);
-            if (queryData) {
-                queryClient.setQueryData(['projects', projectId], {
-                    ...queryData,
-                    data: {
-                        ...queryData.data,
-                        provenance: {
-                            ...queryData.data.provenance,
-                            extractionMetadata: {
-                                ...queryData.data.provenance.extractionMetadata,
-                                studysetId: newStudysetId,
-                                annotationId: newAnnotationId,
-                                studyStatusList: [],
-                            },
-                        },
-                    },
-                });
-            }
+            };
+            updateExtractionMetadata(updatedExtractionMetadata);
 
             await handleIngest(newStudysetId, newAnnotationId);
             handleFinalize();
@@ -221,6 +199,14 @@ const MoveToExtractionDialog: React.FC<IDialog> = (props) => {
             props.onCloseDialog();
             navigate(`/projects/${projectId}/extraction`);
         }, 1000);
+    };
+
+    const handleNavigateNext = () => {
+        setStep((prev) => (prev < 2 ? prev + 1 : prev));
+    };
+
+    const handleNavigatePrev = () => {
+        setStep((prev) => (prev > 0 ? prev - 1 : prev));
     };
 
     const progress = useMemo(() => {
@@ -250,7 +236,11 @@ const MoveToExtractionDialog: React.FC<IDialog> = (props) => {
             onCloseDialog={handleCloseDialog}
         >
             <StateHandlerComponent isLoading={false} isError={isError}>
-                {isLoadingPhase ? (
+                {step === 0 ? (
+                    <MoveToExtractionDialogIntroductionPart1 onNext={handleNavigateNext} />
+                ) : step === 1 ? (
+                    <MoveToExtractionDialogIntroductionPart2 onPrev={handleNavigatePrev} onNext={handleInitialize} />
+                ) : (
                     <Box
                         sx={{
                             height: '300px',
@@ -275,8 +265,6 @@ const MoveToExtractionDialog: React.FC<IDialog> = (props) => {
                         {/* need this empty div to space out elements properly */}
                         <div></div>
                     </Box>
-                ) : (
-                    <MoveToExtractionDialogIntroduction onNext={handleInitialize} />
                 )}
             </StateHandlerComponent>
         </BaseDialog>

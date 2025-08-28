@@ -216,7 +216,7 @@ class PointSchema(BaseDataSchema):
     entities = fields.Nested(EntitySchema, many=True, load_only=True)
     cluster_size = fields.Float(allow_none=True)
     subpeak = fields.Boolean(allow_none=True)
-    deactivation = fields.Boolean()
+    deactivation = fields.Boolean(missing=False, allow_none=True)
     order = fields.Integer()
     coordinates = fields.List(fields.Float(), dump_only=True)
 
@@ -246,6 +246,11 @@ class PointSchema(BaseDataSchema):
                 data["order"] = 1 if max_order is None else max_order + 1
             else:
                 data["order"] = 1
+
+        # Convert deactivation None to False
+        if data.get("deactivation") is None:
+            data["deactivation"] = False
+
         return data
 
     @pre_dump

@@ -1,20 +1,16 @@
 import { Box } from '@mui/material';
+import LoadingStateIndicatorProject from 'components/LoadingStateIndicator/LoadingStateIndicatorProject';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs';
-import {
-    useInitProjectStoreIfRequired,
-    useProjectId,
-    useProjectName,
-} from 'pages/Project/store/ProjectStore';
 import CurationImport from 'pages/CurationImport/components/CurationImport';
+import { useProjectId, useProjectName } from 'pages/Project/store/ProjectStore';
 
 const CurationImportPage: React.FC = (props) => {
-    useInitProjectStoreIfRequired();
     const projectId = useProjectId();
     const projectName = useProjectName();
 
     return (
         <Box>
-            <Box sx={{ display: 'flex' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
                 <NeurosynthBreadcrumbs
                     breadcrumbItems={[
                         {
@@ -39,6 +35,7 @@ const CurationImportPage: React.FC = (props) => {
                         },
                     ]}
                 />
+                <LoadingStateIndicatorProject />
             </Box>
             <Box sx={{ marginTop: '1rem' }}>
                 <CurationImport />

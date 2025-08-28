@@ -1,0 +1,17 @@
+TY  - JOUR
+T1  - Manifold Learning for fMRI time-varying FC
+T1  - DUPLICATE TITLE!!!
+JF  - bioRxiv
+JF  - DUPLICATE JOURNAL!
+DO  - 10.1101/2023.01.14.523992
+SP  - 2023.01.14.523992
+SP  - DUPLICATE DATE!
+AU  - Gonzalez-Castillo, Javier
+AU  - Smith, Michael
+Y1  - 2023/01/01
+Y1  - DUPLICATE OTHER DATE!
+UR  - http://biorxiv.org/content/early/2023/01/16/2023.01.14.523992.abstract
+UR  - DUPLICATE LINK!
+N2  - Whole-brain functional connectivity (FC) measured with functional MRI (fMRI) evolve over time in meaningful ways at temporal scales going from years (e.g., development) to seconds (e.g., within-scan time-varying FC (tvFC)). Yet, our ability to explore tvFC is severely constrained by its large dimensionality (several thousands). To overcome this difficulty, researchers seek to generate low dimensional representations (e.g., 2D and 3D scatter plots) expected to retain its most informative aspects (e.g., relationships to behavior, disease progression). Limited prior empirical work suggests that manifold learning techniques (MLTs)—namely those seeking to infer a low dimensional non-linear surface (i.e., the manifold) where most of the data lies—are good candidates for accomplishing this task. Here we explore this possibility in detail. First, we discuss why one should expect tvFC data to lie on a low dimensional manifold. Second, we estimate what is the intrinsic dimension (i.e., minimum number of latent dimensions; ID) of tvFC data manifolds. Third, we describe the inner workings of three state-of-the-art MLTs: Laplacian Eigenmaps (LE), T-distributed Stochastic Neighbor Embedding (T-SNE), and Uniform Manifold Approximation and Projection (UMAP). For each method, we empirically evaluate its ability to generate neuro-biologically meaningful representations of tvFC data, as well as their robustness against hyper-parameter selection. Our results show that tvFC data has an ID that ranges between 4 and 26, and that ID varies significantly between rest and task states. We also show how all three methods can effectively capture subject identity and task being performed: UMAP and T-SNE can capture these two levels of detail concurrently, but LE could only capture one at a time. We observed substantial variability in embedding quality across MLTs, and within-MLT as a function of hyper-parameter selection. To help alleviate this issue, we provide heuristics that can inform future studies. Finally, we also demonstrate the importance of feature normalization when combining data across subjects and the role that temporal autocorrelation plays in the application of MLTs to tvFC data. Overall, we conclude that while MLTs can be useful to generate summary views of labeled tvFC data, their application to unlabeled data such as resting-state remains challenging.Competing Interest StatementThe authors have declared no competing interest.
+N2  - DUPLICATE ABSTRACT!
+ER  - 
