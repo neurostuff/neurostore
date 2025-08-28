@@ -6,6 +6,7 @@ import { loadEnv } from 'vite';
 
 export default ({ mode }) => {
     process.env = { ...process.env, ...loadEnv(mode, process.cwd()) };
+    const isProduction = process.env.VITE_APP_ENV === 'PROD';
 
     return defineConfig({
         plugins: [
@@ -15,6 +16,7 @@ export default ({ mode }) => {
                 org: 'neurosynth',
                 project: 'javascript-react',
                 authToken: process.env.VITE_SENTRY_AUTH_TOKEN,
+                telemetry: isProduction,
             }),
         ],
 
@@ -36,7 +38,7 @@ export default ({ mode }) => {
         },
 
         build: {
-            sourcemap: true,
+            sourcemap: isProduction,
         },
     });
 };

@@ -1,13 +1,12 @@
-[submodule "store/neurostore/openapi"]
-	path = store/neurostore/openapi
-	url = https://github.com/neurostuff/neurostore-spec
-
-[submodule "synth/neurosynth/openapi"]
-	path = compose/neurosynth_compose/openapi
-	url = https://github.com/neurostuff/neurostore-spec
 [submodule "synth/neurosynth-frontend/src/neurostore-typescript-sdk"]
 	path = compose/neurosynth-frontend/src/neurostore-typescript-sdk
 	url = https://github.com/neurostuff/neurostore-typescript-sdk.git
 [submodule "synth/neurosynth-frontend/src/neurosynth-compose-typescript-sdk"]
 	path = compose/neurosynth-frontend/src/neurosynth-compose-typescript-sdk
 	url = https://github.com/neurostuff/neurosynth-compose-typescript-sdk.git
+[submodule "store/backend/neurostore/openapi"]
+	path = store/backend/neurostore/openapi
+	url = https://github.com/neurostuff/neurostore-spec.git
+[submodule "compose/backend/neurosynth_compose/openapi"]
+	path = compose/backend/neurosynth_compose/openapi
+	url = https://github.com/neurostuff/neurostore-spec.git
