@@ -3,19 +3,27 @@ import { Box, Button, Checkbox, FormControlLabel, Link, Typography } from '@mui/
 import { useState } from 'react';
 import BaseDialog from './Dialogs/BaseDialog';
 
+// We are saving this as a global variable so that the state is reset every time the page is reloaded
+let userHasSeenPopupThisSession = false;
+
 const InfoPopup: React.FC = () => {
     const { user } = useAuth0();
     const localStorageKey = `${user?.sub || ''}-hide-info-popup`;
-    const shouldHide = !!localStorage.getItem(localStorageKey);
+    const shouldHide = !!localStorage.getItem(localStorageKey) || userHasSeenPopupThisSession;
     const [hide, setShouldHide] = useState(shouldHide);
 
     const [checked, setIsChecked] = useState(false);
 
     const handleCloseDialog = () => {
+        userHasSeenPopupThisSession = true;
+        setShouldHide(true);
+    };
+
+    const handleClose = () => {
         if (checked) {
             window.localStorage.setItem(localStorageKey, 'true');
         }
-        setShouldHide(true);
+        handleCloseDialog();
     };
 
     return (
@@ -63,7 +71,7 @@ const InfoPopup: React.FC = () => {
                     />
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <Button fullWidth onClick={handleCloseDialog} variant="contained" color="primary" disableElevation>
+                    <Button fullWidth onClick={handleClose} variant="contained" color="primary" disableElevation>
                         Continue
                     </Button>
                 </Box>

@@ -132,12 +132,16 @@ def mock_ns_session(request):
             return self.data
 
     class MockSession:
-        def post(self, path, data):
-            data.update({"id": "123"})
-            return MockResponse(data)
+        def post(self, path, json):
+            json.update({"id": "123"})
+            return MockResponse(json)
 
-        def put(self, path, data):
-            return MockResponse(data)
+        def put(self, path, json):
+            json.update({"id": path.split("/")[-1]})
+            return MockResponse(json)
+
+        def get(self, path):
+            return MockResponse({"metadata": {"test": "value"}})
 
     return MockSession()
 
@@ -162,8 +166,6 @@ class MockPYNVClient:
         image_id = random.randint(1, 10000)
         self.files.append(image_id)
 
-        from unittest.mock import MagicMock
-
         response_data = {
             "id": image_id,
             "url": f"http://neurovault.org/images/{image_id}/",
@@ -172,10 +174,7 @@ class MockPYNVClient:
             "map_type": "Z map",
             "image_type": "statistic_map",
         }
-        response = MagicMock()
-        response.json.return_value = response_data
-        response.status_code = 200
-        return response
+        return response_data
 
 
 class MockNSSDKClient:
@@ -200,8 +199,9 @@ def mock_auth(monkeysession):
 def mock_ns(monkeysession):
     """mock neurostore api"""
     monkeysession.setattr(
-        "neurosynth_compose.resources.neurostore_session", mock_ns_session
+        "neurosynth_compose.resources.neurostore.neurostore_session", mock_ns_session
     )
+    # Remove patch for tasks, only patch neurostore.neurostore_session
 
 
 """
@@ -250,9 +250,13 @@ def db(app):
 
 @pytest.fixture(scope="session")
 def celery_app(app, db):
-    from .. import make_celery
+    from ..core import celery_app as prod_celery_app
 
-    return make_celery(app)
+    # Clone the production Celery app for testing
+    test_celery = prod_celery_app
+    test_celery.conf.task_always_eager = True
+    test_celery.conf.task_eager_propagates = True
+    return test_celery
 
 
 @pytest.fixture(scope="function", autouse=False)
@@ -499,7 +503,7 @@ def user_data(app, db, mock_add_users):
 
 @pytest.fixture(scope="function")
 def meta_analysis_results(app, db, user_data, mock_add_users):
-    from nimare.workflows import cbma_workflow
+    from nimare.workflows.cbma import CBMAWorkflow
     from nimare.diagnostics import FocusCounter
     from ..resources.executor import process_bundle
     from ..schemas import MetaAnalysisSchema
@@ -523,7 +527,9 @@ def meta_analysis_results(app, db, user_data, mock_add_users):
 
             results[user_info["id"]] = {
                 "meta_analysis_id": meta_analysis.id,
-                "results": cbma_workflow(dataset, estimator, corrector, FocusCounter()),
+                "results": CBMAWorkflow(
+                    estimator, corrector, diagnostics=[FocusCounter()]
+                ).fit(dataset),
             }
 
     return results

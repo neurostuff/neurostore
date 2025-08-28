@@ -1,6 +1,7 @@
 import { Box, Tooltip, Typography } from '@mui/material';
 import DisplayLink from 'components/DisplayStudyLink/DisplayLink';
 import DisplayStudyLinkFullText from 'components/DisplayStudyLink/DisplayStudyLinkFullText';
+import LoadingStateIndicatorProject from 'components/LoadingStateIndicator/LoadingStateIndicatorProject';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs';
 import ProjectIsLoadingText from 'components/ProjectIsLoadingText';
 import { PUBMED_ARTICLE_URL_PREFIX, PUBMED_CENTRAL_ARTICLE_URL_PREFIX } from 'hooks/external/useGetPubMedIds';
@@ -39,7 +40,7 @@ const EditStudyPageHeader: React.FC = () => {
         <>
             <EditStudyToolbar />
             <Box>
-                <Box sx={{ display: 'flex' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     <NeurosynthBreadcrumbs
                         breadcrumbItems={[
                             {
@@ -64,7 +65,7 @@ const EditStudyPageHeader: React.FC = () => {
                             },
                         ]}
                     />
-                    <ProjectIsLoadingText />
+                    <LoadingStateIndicatorProject />
                 </Box>
                 <Box sx={{ display: 'flex', flexDirection: 'column', margin: '0.3rem 0' }}>
                     <Typography variant="h5">

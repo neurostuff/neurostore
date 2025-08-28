@@ -27,7 +27,7 @@ The server should now be running at http://localhost/
 
 Create the database for neurostore:
 
-    docker-compose exec store_pgsql psql -U postgres -c "create database neurostore"
+    docker-compose exec store-pgsql psql -U postgres -c "create database neurostore"
 
 Next, migrate and upgrade the database migrations.
 
@@ -64,7 +64,7 @@ If you need to upgrade the db after changing any models:
 ## Running tests
 To run tests, after starting services, create a test database:
 
-    docker-compose exec store_pgsql psql -U postgres -c "create database test_db"
+    docker-compose exec store-pgsql psql -U postgres -c "create database test_db"
 
 **NOTE**: This command will ask you for the postgres password which is defined
 in the `.env` file.
@@ -72,3 +72,29 @@ in the `.env` file.
 and execute:
 
     docker-compose run -e "APP_SETTINGS=neurostore.config.DockerTestConfig" --rm -w /neurostore neurostore python -m pytest neurostore/tests
+
+## pgHero Service
+
+[pgHero](https://github.com/ankane/pghero) is a PostgreSQL monitoring tool that provides insights into database performance and queries through a web UI.
+
+### Starting pgHero with Docker Compose
+
+To start the pgHero service, ensure Docker Compose is set up and run:
+
+```sh
+docker-compose up -d pghero
+```
+
+### Accessing the pgHero Web UI
+
+Once running, access the pgHero dashboard at: [http://localhost/pghero](http://localhost/pghero) (replace "localhost" with your server's address as needed).
+
+The `/pghero` route is proxied by nginx to the pgHero service, so you do not need to specify a port.
+
+### Required Environment Variables
+
+Set the following environment variables (typically in your `.env` file):
+
+- `PGHERO_DATABASE_URL` — The connection string for your PostgreSQL database (e.g., `postgres://postgres:password@store-pgsql:5432/neurostore`).
+
+Refer to the `docker-compose.yml` for additional configuration options.

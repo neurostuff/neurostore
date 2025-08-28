@@ -576,10 +576,7 @@ class MetaAnalysisResultsView(ObjectView, ListView):
                 nv_collection_id=result.neurovault_collection.id,
                 access_token=access_token,
             )
-
-            # upload analysis after uploading neurovault images
-            (nv_upload_group | neurostore_analysis_upload).apply_async()
-
+            _ = (nv_upload_group | neurostore_analysis_upload).delay()
         return self.__class__._schema().dump(result)
 
 

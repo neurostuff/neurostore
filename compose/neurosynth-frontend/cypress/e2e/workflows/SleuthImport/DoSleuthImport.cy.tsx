@@ -1,11 +1,10 @@
 /// <reference types="cypress" />
 
-import esearchSingleResponse from '../../../fixtures/DoSleuthImport/pubmedResponses/esearchSingleResponse.json';
-import baseStudiesSingleSleuthStudyResponse from '../../../fixtures/DoSleuthImport/neurosynthResponses/baseStudiesSingleSleuthStudyResponse.json';
-import baseStudiesMultipleSleuthStudyResponse from '../../../fixtures/DoSleuthImport/neurosynthResponses/baseStudiesMultipleSleuthStudyResponse.json';
-import studysetsSingleSleuthStudyResponse from '../../../fixtures/DoSleuthImport/neurosynthResponses/studysetsSingleSleuthStudyResponse.json';
 import analysesSingleSleuthStudyResponse from '../../../fixtures/DoSleuthImport/neurosynthResponses/analysesSingleSleuthStudyResponse.json';
 import annotationsSingleSleuthStudyResponse from '../../../fixtures/DoSleuthImport/neurosynthResponses/annotationsSingleSleuthStudyResponse.json';
+import baseStudiesSingleSleuthStudyResponse from '../../../fixtures/DoSleuthImport/neurosynthResponses/baseStudiesSingleSleuthStudyResponse.json';
+import studysetsSingleSleuthStudyResponse from '../../../fixtures/DoSleuthImport/neurosynthResponses/studysetsSingleSleuthStudyResponse.json';
+import esearchSingleResponse from '../../../fixtures/DoSleuthImport/pubmedResponses/esearchSingleResponse.json';
 
 const PATH = '/projects/new/sleuth';
 
@@ -17,9 +16,7 @@ describe('DoSleuthImport', () => {
         cy.clearLocalStorage();
         cy.intercept('GET', 'https://api.appzi.io/**', { fixture: 'appzi' }).as('appziFixture');
 
-        cy.intercept('POST', `https://www.google-analytics.com/*/**`, {}).as(
-            'googleAnalyticsFixture'
-        );
+        cy.intercept('POST', `https://www.google-analytics.com/*/**`, {}).as('googleAnalyticsFixture');
     });
 
     it('should load successfully', () => {
@@ -182,37 +179,31 @@ describe('DoSleuthImport', () => {
                 delay: 500,
             }).as('pmidsFetch');
             cy.intercept('POST', `${neurostoreAPIBaseURL}/base-studies/**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/baseStudiesSingleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/baseStudiesSingleSleuthStudyResponse.json',
                 delay: 500,
             }).as('baseStudiesIngestFixture');
             cy.intercept('POST', `${neurostoreAPIBaseURL}/analyses/**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/analysesSingleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/analysesSingleSleuthStudyResponse.json',
             }).as('analysesPostFixture');
 
             cy.intercept('POST', `${neurostoreAPIBaseURL}/studysets/**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/studysetsSingleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/studysetsSingleSleuthStudyResponse.json',
                 delay: 500,
             }).as('studysetsPostFixture');
 
             cy.intercept('POST', `${neurostoreAPIBaseURL}/annotations/**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/annotationsSingleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/annotationsSingleSleuthStudyResponse.json',
                 delay: 500,
             }).as('annotationsPostFixture');
 
             // compose API responses
             cy.intercept('POST', `${neurosynthAPIBaseURL}/projects**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/projectsSingleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/projectsSingleSleuthStudyResponse.json',
                 delay: 500,
             }).as('projectsPostFixture');
 
             cy.intercept('GET', `${neurosynthAPIBaseURL}/projects/**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/projectsSingleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/projectsSingleSleuthStudyResponse.json',
             }).as('projectsGetFixture');
             cy.login('mocked').visit(PATH);
             cy.contains('button', 'next').click();
@@ -237,9 +228,7 @@ describe('DoSleuthImport', () => {
 
         it('should query pubmed for study details and show progress', () => {
             cy.wait(['@doiToPubmedQuery', '@pmidsFetch']).then((res) => {
-                expect(res[1].request.body as string).contains(
-                    `id=${esearchSingleResponse.esearchresult.idlist[0]}`
-                );
+                expect(res[1].request.body as string).contains(`id=${esearchSingleResponse.esearchresult.idlist[0]}`);
             });
             cy.contains('Adding studies from').should('exist');
             cy.get('[aria-valuenow="40"]').should('exist');
@@ -257,9 +246,8 @@ describe('DoSleuthImport', () => {
 
             cy.wait('@analysesPostFixture').then((res) => {
                 expect(res.request.body.study).equals(
-                    baseStudiesSingleSleuthStudyResponse[0].versions.find(
-                        (version) => version.username === 'test-user'
-                    )?.id
+                    baseStudiesSingleSleuthStudyResponse[0].versions.find((version) => version.username === 'test-user')
+                        ?.id
                 );
             });
         });
@@ -273,9 +261,7 @@ describe('DoSleuthImport', () => {
         it('should begin creating the annotation and show progress', () => {
             cy.wait('@studysetsPostFixture', { timeout: 10000 }).then((res) => {
                 expect(res.request.body.name).equals('Studyset for Untitled sleuth project');
-                expect(res.request.body.studies).deep.equals(
-                    studysetsSingleSleuthStudyResponse.studies
-                );
+                expect(res.request.body.studies).deep.equals(studysetsSingleSleuthStudyResponse.studies);
             });
             cy.contains('Creating annotation...').should('be.visible');
             cy.get('[aria-valuenow="90"]').should('exist');
@@ -330,54 +316,43 @@ describe('DoSleuthImport', () => {
                 fixture: 'DoSleuthImport/pubmedResponses/efetchSingleResponse.xml',
             }).as('pmidsFetch');
             cy.intercept('POST', `${neurostoreAPIBaseURL}/base-studies/**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/baseStudiesSingleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/baseStudiesSingleSleuthStudyResponse.json',
             }).as('baseStudiesIngestFixture');
             cy.intercept('POST', `${neurostoreAPIBaseURL}/analyses/**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/analysesSingleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/analysesSingleSleuthStudyResponse.json',
             }).as('analysesPostFixture');
 
             cy.intercept('POST', `${neurostoreAPIBaseURL}/studysets/**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/studysetsSingleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/studysetsSingleSleuthStudyResponse.json',
             }).as('studysetsPostFixture');
 
             cy.intercept('POST', `${neurostoreAPIBaseURL}/annotations/**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/annotationsSingleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/annotationsSingleSleuthStudyResponse.json',
             }).as('annotationsPostFixture');
 
             // compose API responses
             cy.intercept('POST', `${neurosynthAPIBaseURL}/projects**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/projectsSingleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/projectsSingleSleuthStudyResponse.json',
             }).as('projectsPostFixture');
 
             cy.intercept('GET', `${neurosynthAPIBaseURL}/projects/**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/projectsSingleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/projectsSingleSleuthStudyResponse.json',
             }).as('projectsGetFixture');
 
             cy.intercept('POST', `${neurosynthAPIBaseURL}/specifications**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/specificationsSingleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/specificationsSingleSleuthStudyResponse.json',
             }).as('specificationPostFixture');
             cy.intercept('POST', `${neurosynthAPIBaseURL}/studysets**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/composeStudysetsSingleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/composeStudysetsSingleSleuthStudyResponse.json',
             }).as('composeStudysetsPostFixture');
             cy.intercept('POST', `${neurosynthAPIBaseURL}/annotations**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/composeAnnotationsSingleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/composeAnnotationsSingleSleuthStudyResponse.json',
             }).as('composeAnnotationsPostFixture');
             cy.intercept('POST', `${neurosynthAPIBaseURL}/meta-analyses**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/composeMetaAnalysesSingleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/composeMetaAnalysesSingleSleuthStudyResponse.json',
             }).as('composeMetaAnalysesPostFixture');
             cy.intercept('GET', `${neurosynthAPIBaseURL}/meta-analyses**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/composeGetMetaAnalysesSingleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/composeGetMetaAnalysesSingleSleuthStudyResponse.json',
             }).as('composeGetMetaAnalysesPostFixture');
 
             cy.login('mocked').visit(PATH);
@@ -437,48 +412,38 @@ describe('DoSleuthImport', () => {
             // this stuff exists just to make sure cypress doesnt send any real requests. They are not under test
             // synth API responses
             cy.intercept('POST', `${neurostoreAPIBaseURL}/analyses/**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/analysesSingleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/analysesSingleSleuthStudyResponse.json',
             }).as('analysesPostFixture');
             cy.intercept('POST', `${neurostoreAPIBaseURL}/studysets/**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/studysetsSingleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/studysetsSingleSleuthStudyResponse.json',
             }).as('studysetsPostFixture');
             cy.intercept('POST', `${neurostoreAPIBaseURL}/annotations/**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/annotationsSingleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/annotationsSingleSleuthStudyResponse.json',
             }).as('annotationsPostFixture');
 
             // compose API responses
             cy.intercept('POST', `${neurosynthAPIBaseURL}/projects**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/projectsSingleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/projectsSingleSleuthStudyResponse.json',
             }).as('projectsPostFixture');
 
             cy.intercept('GET', `${neurosynthAPIBaseURL}/projects/**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/projectsSingleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/projectsSingleSleuthStudyResponse.json',
             }).as('projectsGetFixture');
 
             cy.intercept('POST', `${neurosynthAPIBaseURL}/specifications**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/specificationsSingleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/specificationsSingleSleuthStudyResponse.json',
             }).as('specificationPostFixture');
             cy.intercept('POST', `${neurosynthAPIBaseURL}/studysets**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/composeStudysetsSingleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/composeStudysetsSingleSleuthStudyResponse.json',
             }).as('composeStudysetsPostFixture');
             cy.intercept('POST', `${neurosynthAPIBaseURL}/annotations**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/composeAnnotationsSingleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/composeAnnotationsSingleSleuthStudyResponse.json',
             }).as('composeAnnotationsPostFixture');
             cy.intercept('POST', `${neurosynthAPIBaseURL}/meta-analyses**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/composeMetaAnalysesSingleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/composeMetaAnalysesSingleSleuthStudyResponse.json',
             }).as('composeMetaAnalysesPostFixture');
             cy.intercept('GET', `${neurosynthAPIBaseURL}/meta-analyses/**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/composeGetMetaAnalysesSingleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/composeGetMetaAnalysesSingleSleuthStudyResponse.json',
             }).as('composeGetMetaAnalysesPostFixture');
 
             // this stuff is the important stuff needed for the test
@@ -492,8 +457,7 @@ describe('DoSleuthImport', () => {
 
             // this is not important but is needed to finish the rest of the import
             cy.intercept('POST', `${neurostoreAPIBaseURL}/base-studies/**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/baseStudiesMultipleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/baseStudiesMultipleSleuthStudyResponse.json',
             }).as('baseStudiesIngestFixture');
 
             cy.login('mocked').visit(PATH);
@@ -533,21 +497,17 @@ describe('DoSleuthImport', () => {
             }).as('pmidsFetch');
 
             cy.intercept('POST', `${neurostoreAPIBaseURL}/base-studies/**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/baseStudiesMultipleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/baseStudiesMultipleSleuthStudyResponse.json',
             }).as('baseStudiesIngestFixture');
 
             cy.intercept('POST', `${neurostoreAPIBaseURL}/analyses/**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/analysesSingleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/analysesSingleSleuthStudyResponse.json',
             }).as('analysesPostFixture');
             cy.intercept('POST', `${neurostoreAPIBaseURL}/studysets/**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/studysetsSingleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/studysetsSingleSleuthStudyResponse.json',
             }).as('studysetsPostFixture');
             cy.intercept('POST', `${neurostoreAPIBaseURL}/annotations/**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/annotationsSingleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/annotationsSingleSleuthStudyResponse.json',
             }).as('annotationsPostFixture');
 
             cy.intercept('POST', `${neurostoreAPIBaseURL}/studies/**`, {
@@ -556,34 +516,27 @@ describe('DoSleuthImport', () => {
 
             // compose API responses
             cy.intercept('POST', `${neurosynthAPIBaseURL}/projects**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/projectsSingleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/projectsSingleSleuthStudyResponse.json',
             }).as('projectsPostFixture');
 
             cy.intercept('GET', `${neurosynthAPIBaseURL}/projects/**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/projectsSingleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/projectsSingleSleuthStudyResponse.json',
             }).as('projectsGetFixture');
 
             cy.intercept('POST', `${neurosynthAPIBaseURL}/specifications**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/specificationsSingleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/specificationsSingleSleuthStudyResponse.json',
             }).as('specificationPostFixture');
             cy.intercept('POST', `${neurosynthAPIBaseURL}/studysets**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/composeStudysetsSingleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/composeStudysetsSingleSleuthStudyResponse.json',
             }).as('composeStudysetsPostFixture');
             cy.intercept('POST', `${neurosynthAPIBaseURL}/annotations**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/composeAnnotationsSingleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/composeAnnotationsSingleSleuthStudyResponse.json',
             }).as('composeAnnotationsPostFixture');
             cy.intercept('POST', `${neurosynthAPIBaseURL}/meta-analyses**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/composeMetaAnalysesSingleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/composeMetaAnalysesSingleSleuthStudyResponse.json',
             }).as('composeMetaAnalysesPostFixture');
             cy.intercept('GET', `${neurosynthAPIBaseURL}/meta-analyses/**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/composeGetMetaAnalysesSingleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/composeGetMetaAnalysesSingleSleuthStudyResponse.json',
             }).as('composeGetMetaAnalysesPostFixture');
 
             // this stuff is the important stuff needed for the test
@@ -611,21 +564,17 @@ describe('DoSleuthImport', () => {
             }).as('pmidsFetch');
 
             cy.intercept('POST', `${neurostoreAPIBaseURL}/base-studies/**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/baseStudiesMultipleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/baseStudiesMultipleSleuthStudyResponse.json',
             }).as('baseStudiesIngestFixture');
 
             cy.intercept('POST', `${neurostoreAPIBaseURL}/analyses/**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/analysesSingleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/analysesSingleSleuthStudyResponse.json',
             }).as('analysesPostFixture');
             cy.intercept('POST', `${neurostoreAPIBaseURL}/studysets/**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/studysetsSingleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/studysetsSingleSleuthStudyResponse.json',
             }).as('studysetsPostFixture');
             cy.intercept('POST', `${neurostoreAPIBaseURL}/annotations/**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/annotationsSingleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/annotationsSingleSleuthStudyResponse.json',
             }).as('annotationsPostFixture');
 
             cy.intercept('POST', `${neurostoreAPIBaseURL}/studies/**`, {
@@ -634,34 +583,27 @@ describe('DoSleuthImport', () => {
 
             // compose API responses
             cy.intercept('POST', `${neurosynthAPIBaseURL}/projects**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/projectsSingleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/projectsSingleSleuthStudyResponse.json',
             }).as('projectsPostFixture');
 
             cy.intercept('GET', `${neurosynthAPIBaseURL}/projects/**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/projectsSingleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/projectsSingleSleuthStudyResponse.json',
             }).as('projectsGetFixture');
 
             cy.intercept('POST', `${neurosynthAPIBaseURL}/specifications**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/specificationsSingleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/specificationsSingleSleuthStudyResponse.json',
             }).as('specificationPostFixture');
             cy.intercept('POST', `${neurosynthAPIBaseURL}/studysets**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/composeStudysetsSingleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/composeStudysetsSingleSleuthStudyResponse.json',
             }).as('composeStudysetsPostFixture');
             cy.intercept('POST', `${neurosynthAPIBaseURL}/annotations**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/composeAnnotationsSingleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/composeAnnotationsSingleSleuthStudyResponse.json',
             }).as('composeAnnotationsPostFixture');
             cy.intercept('POST', `${neurosynthAPIBaseURL}/meta-analyses**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/composeMetaAnalysesSingleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/composeMetaAnalysesSingleSleuthStudyResponse.json',
             }).as('composeMetaAnalysesPostFixture');
             cy.intercept('GET', `${neurosynthAPIBaseURL}/meta-analyses/**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/composeGetMetaAnalysesSingleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/composeGetMetaAnalysesSingleSleuthStudyResponse.json',
             }).as('composeGetMetaAnalysesPostFixture');
 
             // this stuff is the important stuff needed for the test
@@ -691,53 +633,42 @@ describe('DoSleuthImport', () => {
             }).as('pmidsFetch');
 
             cy.intercept('POST', `${neurostoreAPIBaseURL}/base-studies/**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/baseStudiesMultipleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/baseStudiesMultipleSleuthStudyResponse.json',
             }).as('baseStudiesIngestFixture');
 
             cy.intercept('POST', `${neurostoreAPIBaseURL}/analyses/**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/analysesSingleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/analysesSingleSleuthStudyResponse.json',
             }).as('analysesPostFixture');
             cy.intercept('POST', `${neurostoreAPIBaseURL}/studysets/**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/studysetsSingleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/studysetsSingleSleuthStudyResponse.json',
             }).as('studysetsPostFixture');
             cy.intercept('POST', `${neurostoreAPIBaseURL}/annotations/**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/annotationsSingleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/annotationsSingleSleuthStudyResponse.json',
             }).as('annotationsPostFixture');
 
             // compose API responses
             cy.intercept('POST', `${neurosynthAPIBaseURL}/projects**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/projectsSingleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/projectsSingleSleuthStudyResponse.json',
             }).as('projectsPostFixture');
 
             cy.intercept('GET', `${neurosynthAPIBaseURL}/projects/**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/projectsSingleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/projectsSingleSleuthStudyResponse.json',
             }).as('projectsGetFixture');
 
             cy.intercept('POST', `${neurosynthAPIBaseURL}/specifications**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/specificationsSingleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/specificationsSingleSleuthStudyResponse.json',
             }).as('specificationPostFixture');
             cy.intercept('POST', `${neurosynthAPIBaseURL}/studysets**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/composeStudysetsSingleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/composeStudysetsSingleSleuthStudyResponse.json',
             }).as('composeStudysetsPostFixture');
             cy.intercept('POST', `${neurosynthAPIBaseURL}/annotations**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/composeAnnotationsSingleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/composeAnnotationsSingleSleuthStudyResponse.json',
             }).as('composeAnnotationsPostFixture');
             cy.intercept('POST', `${neurosynthAPIBaseURL}/meta-analyses**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/composeMetaAnalysesSingleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/composeMetaAnalysesSingleSleuthStudyResponse.json',
             }).as('composeMetaAnalysesPostFixture');
             cy.intercept('GET', `${neurosynthAPIBaseURL}/meta-analyses/**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/composeGetMetaAnalysesSingleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/composeGetMetaAnalysesSingleSleuthStudyResponse.json',
             }).as('composeGetMetaAnalysesPostFixture');
 
             // this stuff is the important stuff needed for the test
@@ -765,53 +696,42 @@ describe('DoSleuthImport', () => {
             }).as('pmidsFetch');
 
             cy.intercept('POST', `${neurostoreAPIBaseURL}/base-studies/**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/baseStudiesMultipleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/baseStudiesMultipleSleuthStudyResponse.json',
             }).as('baseStudiesIngestFixture');
 
             cy.intercept('POST', `${neurostoreAPIBaseURL}/analyses/**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/analysesSingleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/analysesSingleSleuthStudyResponse.json',
             }).as('analysesPostFixture');
             cy.intercept('POST', `${neurostoreAPIBaseURL}/studysets/**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/studysetsSingleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/studysetsSingleSleuthStudyResponse.json',
             }).as('studysetsPostFixture');
             cy.intercept('POST', `${neurostoreAPIBaseURL}/annotations/**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/annotationsSingleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/annotationsSingleSleuthStudyResponse.json',
             }).as('annotationsPostFixture');
 
             // compose API responses
             cy.intercept('POST', `${neurosynthAPIBaseURL}/projects**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/projectsSingleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/projectsSingleSleuthStudyResponse.json',
             }).as('projectsPostFixture');
 
             cy.intercept('GET', `${neurosynthAPIBaseURL}/projects/**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/projectsSingleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/projectsSingleSleuthStudyResponse.json',
             }).as('projectsGetFixture');
 
             cy.intercept('POST', `${neurosynthAPIBaseURL}/specifications**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/specificationsSingleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/specificationsSingleSleuthStudyResponse.json',
             }).as('specificationPostFixture');
             cy.intercept('POST', `${neurosynthAPIBaseURL}/studysets**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/composeStudysetsSingleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/composeStudysetsSingleSleuthStudyResponse.json',
             }).as('composeStudysetsPostFixture');
             cy.intercept('POST', `${neurosynthAPIBaseURL}/annotations**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/composeAnnotationsSingleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/composeAnnotationsSingleSleuthStudyResponse.json',
             }).as('composeAnnotationsPostFixture');
             cy.intercept('POST', `${neurosynthAPIBaseURL}/meta-analyses**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/composeMetaAnalysesSingleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/composeMetaAnalysesSingleSleuthStudyResponse.json',
             }).as('composeMetaAnalysesPostFixture');
             cy.intercept('GET', `${neurosynthAPIBaseURL}/meta-analyses/**`, {
-                fixture:
-                    'DoSleuthImport/neurosynthResponses/composeGetMetaAnalysesSingleSleuthStudyResponse.json',
+                fixture: 'DoSleuthImport/neurosynthResponses/composeGetMetaAnalysesSingleSleuthStudyResponse.json',
             }).as('composeGetMetaAnalysesPostFixture');
 
             // this stuff is the important stuff needed for the test
@@ -839,8 +759,7 @@ describe('DoSleuthImport', () => {
             fixture: 'DoSleuthImport/pubmedResponses/efetchSingleResponse.xml',
         }).as('pmidsFetch');
         cy.intercept('POST', `${neurostoreAPIBaseURL}/base-studies/**`, {
-            fixture:
-                'DoSleuthImport/neurosynthResponses/baseStudiesMultipleSleuthStudyResponse.json',
+            fixture: 'DoSleuthImport/neurosynthResponses/baseStudiesMultipleSleuthStudyResponse.json',
         }).as('baseStudiesIngestFixture');
         cy.intercept('POST', `${neurostoreAPIBaseURL}/analyses/**`, {
             fixture: 'DoSleuthImport/neurosynthResponses/analysesSingleSleuthStudyResponse.json',
@@ -862,24 +781,19 @@ describe('DoSleuthImport', () => {
         }).as('projectsGetFixture');
 
         cy.intercept('POST', `${neurosynthAPIBaseURL}/specifications**`, {
-            fixture:
-                'DoSleuthImport/neurosynthResponses/specificationsSingleSleuthStudyResponse.json',
+            fixture: 'DoSleuthImport/neurosynthResponses/specificationsSingleSleuthStudyResponse.json',
         }).as('specificationPostFixture');
         cy.intercept('POST', `${neurosynthAPIBaseURL}/studysets**`, {
-            fixture:
-                'DoSleuthImport/neurosynthResponses/composeStudysetsSingleSleuthStudyResponse.json',
+            fixture: 'DoSleuthImport/neurosynthResponses/composeStudysetsSingleSleuthStudyResponse.json',
         }).as('composeStudysetsPostFixture');
         cy.intercept('POST', `${neurosynthAPIBaseURL}/annotations**`, {
-            fixture:
-                'DoSleuthImport/neurosynthResponses/composeAnnotationsSingleSleuthStudyResponse.json',
+            fixture: 'DoSleuthImport/neurosynthResponses/composeAnnotationsSingleSleuthStudyResponse.json',
         }).as('composeAnnotationsPostFixture');
         cy.intercept('POST', `${neurosynthAPIBaseURL}/meta-analyses**`, {
-            fixture:
-                'DoSleuthImport/neurosynthResponses/composeMetaAnalysesSingleSleuthStudyResponse.json',
+            fixture: 'DoSleuthImport/neurosynthResponses/composeMetaAnalysesSingleSleuthStudyResponse.json',
         }).as('composeMetaAnalysesPostFixture');
         cy.intercept('GET', `${neurosynthAPIBaseURL}/meta-analyses/**`, {
-            fixture:
-                'DoSleuthImport/neurosynthResponses/composeGetMetaAnalysesSingleSleuthStudyResponse.json',
+            fixture: 'DoSleuthImport/neurosynthResponses/composeGetMetaAnalysesSingleSleuthStudyResponse.json',
         }).as('composeGetMetaAnalysesPostFixture');
 
         cy.login('mocked').visit(PATH);

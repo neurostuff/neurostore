@@ -35,14 +35,14 @@ const ProjectExtractionStep: React.FC<IExtractionStep & StepProps> = (props) => 
                 <Box sx={{ marginLeft: '2rem' }}>
                     <Typography sx={{ color: 'muted.main' }}>
                         <b>
-                            You have completed your study curation, and now have a potential list of
-                            studies to include in your meta-analysis
+                            You have completed your study curation, and now have a potential list of studies to include
+                            in your meta-analysis
                         </b>
                     </Typography>
                     <Typography gutterBottom sx={{ color: 'muted.main' }}>
-                        In this step, add necessary study data to the studies in your studyset (like
-                        coordinates and metadata) as well as analysis annotations that will be used
-                        to help filter analyses within your studies
+                        In this step, add necessary study data to the studies in your studyset (like coordinates and
+                        metadata) as well as analysis annotations that will be used to help filter analyses within your
+                        studies
                     </Typography>
                     <Box sx={{ marginTop: '1rem' }}>
                         {extractionStepHasBeenInitialized ? (

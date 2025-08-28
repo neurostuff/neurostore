@@ -18,7 +18,7 @@ jobs:
   clean:
     strategy:
       matrix:
-        package: ['neurosynth_compose', 'compose_nginx', 'compose_pgsql', 'compose_worker', 'neurostore', 'store_nginx', 'store_pgsql']
+        package: ['neurosynth_compose', 'compose_nginx', 'compose_pgsql', 'compose_worker', 'neurostore', 'store_nginx', 'store-pgsql']
     runs-on: ubuntu-latest
 
     steps:
@@ -126,10 +126,10 @@ jobs:
               store_nginx.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/store_nginx:${{ hashFiles('**/store/nginx/**') }}
               store_nginx.cache-from=type=gha,scope=cached-store-nginx
               store_nginx.cache-to=type=gha,scope=cached-store-nginx,mode=max,ignore-error=true
-              store_pgsql.tags=ghcr.io/${{ github.repository_owner }}/store_pgsql:${{ hashFiles('**/store/postgres/**') }}
-              store_pgsql.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/store_pgsql:${{ hashFiles('**/store/postgres/**') }}
-              store_pgsql.cache-from=type=gha,scope=cached-store-pgsql
-              store_pgsql.cache-to=type=gha,scope=cached-store-pgsql,mode=max,ignore-error=true
+              store-pgsql.tags=ghcr.io/${{ github.repository_owner }}/store-pgsql:${{ hashFiles('**/store/postgres/**') }}
+              store-pgsql.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/store-pgsql:${{ hashFiles('**/store/postgres/**') }}
+              store-pgsql.cache-from=type=gha,scope=cached-store-pgsql
+              store-pgsql.cache-to=type=gha,scope=cached-store-pgsql,mode=max,ignore-error=true
 
 
   neurostore_backend_tests:
@@ -164,7 +164,7 @@ jobs:
           set: |
               neurostore.cache-from=type=gha,scope=cached-neurostore
               store_nginx.cache-from=type=gha,scope=cached-store-nginx
-              store_pgsql.cache-from=type=gha,scope=cached-store-pgsql
+              store-pgsql.cache-from=type=gha,scope=cached-store-pgsql
       - 
         name: spin up backend
         run: |
@@ -178,7 +178,7 @@ jobs:
         name: Create Test Database
         run: |
           docker compose exec -T \
-          store_pgsql \
+          store-pgsql \
           psql -U postgres -c "create database test_db"
       -
         name: Backend Tests
@@ -418,7 +418,7 @@ jobs:
         set: |
             neurostore.cache-from=type=gha,scope=cached-neurostore
             store_nginx.cache-from=type=gha,scope=cached-store-nginx
-            store_pgsql.cache-from=type=gha,scope=cached-store-pgsql
+            store-pgsql.cache-from=type=gha,scope=cached-store-pgsql
     -
       name: Spin up compose backend
       run: |
@@ -452,7 +452,7 @@ jobs:
         cd store
 
         docker compose exec -T \
-        store_pgsql \
+        store-pgsql \
         psql -U postgres -c "create database test_db"
     -
       name: Initialize Compose Database
