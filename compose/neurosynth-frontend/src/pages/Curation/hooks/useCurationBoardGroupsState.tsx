@@ -25,10 +25,12 @@ const excludedListItemStylesChildren: SxProps = {
     },
 };
 
+export const SELECTED_CURATION_STEP_LOCAL_STORAGE_KEY_SUFFIX = '_CURATION_STEP_ID';
+
 function useCurationBoardGroupsState() {
     const curationColumns = useProjectCurationColumns();
     const { projectId } = useParams<{ projectId: string }>();
-    const selectedCurationStepLocalStorageKey = `${projectId}_CURATION_STEP_ID`;
+    const selectedCurationStepLocalStorageKey = `${projectId}${SELECTED_CURATION_STEP_LOCAL_STORAGE_KEY_SUFFIX}`;
     const prismaConfig = useProjectCurationPrismaConfig();
     const [selectedGroup, setSelectedGroup] = useState<IGroupListItem>();
     const excludedGroups = useProjectCurationExclusionTags();
