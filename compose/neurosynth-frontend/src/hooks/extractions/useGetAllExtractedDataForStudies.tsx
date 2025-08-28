@@ -1,5 +1,6 @@
 // gotta customize this myself
 
+import { AxiosError, AxiosResponse } from 'axios';
 import { useQuery } from 'react-query';
 import API from 'utils/api';
 
@@ -85,17 +86,44 @@ const normalizeData = (data: any) => {
     });
 };
 
-const useGetAllAIExtractedData = () => {
-    return useQuery(
-        ['extraction'],
+export interface IExtractedDataResult {
+    metadata: {
+        total_count: number;
+    };
+    results: {
+        base_study_id: string;
+        config_id: string;
+        date_executed: string;
+        file_inputs: {
+            [path: string]: string;
+        };
+        id: string;
+        result_data: ITaskExtractor | IParticipantDemographicExtractor;
+    }[];
+}
+
+const useGetAllAIExtractedDataForStudies = (baseStudyIds?: string[]) => {
+    const baseStudyIdsOrEmpty = baseStudyIds ?? [];
+    return useQuery<
+        [AxiosResponse<IExtractedDataResult>, AxiosResponse<IExtractedDataResult>],
+        AxiosError,
+        {
+            [EAIExtractors.TASKEXTRACTOR]: IExtractedDataResult;
+            [EAIExtractors.PARTICIPANTSDEMOGRAPHICSEXTRACTOR]: IExtractedDataResult;
+        },
+        string[]
+    >(
+        ['extraction', ...baseStudyIdsOrEmpty],
         async () => {
             const promises = await Promise.all([
-                API.NeurostoreServices.ExtractedDataResultsService.getAllExtractedDataResults([
-                    EAIExtractors.TASKEXTRACTOR,
-                ]),
-                API.NeurostoreServices.ExtractedDataResultsService.getAllExtractedDataResults([
-                    EAIExtractors.PARTICIPANTSDEMOGRAPHICSEXTRACTOR,
-                ]),
+                API.NeurostoreServices.ExtractedDataResultsService.getAllExtractedDataResults(
+                    [EAIExtractors.TASKEXTRACTOR],
+                    baseStudyIdsOrEmpty
+                ),
+                API.NeurostoreServices.ExtractedDataResultsService.getAllExtractedDataResults(
+                    [EAIExtractors.PARTICIPANTSDEMOGRAPHICSEXTRACTOR],
+                    baseStudyIdsOrEmpty
+                ),
             ]);
 
             promises.forEach((res) => {
@@ -111,8 +139,10 @@ const useGetAllAIExtractedData = () => {
                     [EAIExtractors.PARTICIPANTSDEMOGRAPHICSEXTRACTOR]: participantDemographicsExtractionRes.data,
                 };
             },
+            refetchOnMount: false,
+            enabled: baseStudyIdsOrEmpty.length > 0,
         }
     );
 };
 
-export default useGetAllAIExtractedData;
+export default useGetAllAIExtractedDataForStudies;

@@ -4,7 +4,6 @@ import { GridTableRowsIcon } from '@mui/x-data-grid';
 import { Row, Table } from '@tanstack/react-table';
 import CurationPromoteUncategorizedButton from 'components/Buttons/CurationPromoteUncategorizedButton';
 import { useUserCanEdit } from 'hooks';
-import useGetAllAIExtractedData from 'hooks/extractions/useGetAllExtractedData';
 import { indexToPRISMAMapping } from 'hooks/projects/useGetProjects';
 import {
     useProjectCurationColumns,
@@ -18,7 +17,6 @@ import useCuratorTableState from '../hooks/useCuratorTableState';
 import { ICurationTableStudy } from '../hooks/useCuratorTableState.types';
 import { IGroupListItem } from './CurationBoardAIGroupsList';
 import CurationBoardAIInterfaceCuratorFocus from './CurationBoardAIInterfaceCuratorFocus';
-import CurationBoardAIInterfaceCuratorTableSkeleton from './CurationBoardAIInterfaceCuratorSkeleton';
 import CurationBoardAIInterfaceCuratorTable from './CurationBoardAIInterfaceCuratorTable';
 import CurationDownloadSummaryButton from './CurationDownloadSummaryButton';
 import PrismaDialog from './PrismaDialog';
@@ -38,7 +36,6 @@ const CurationBoardAIInterfaceCurator: React.FC<{
     const navigate = useNavigate();
     const { projectId } = useParams<{ projectId: string | undefined }>();
     const curationColumns = useProjectCurationColumns();
-    const { isLoading } = useGetAllAIExtractedData();
 
     const { column, columnIndex } = useMemo(() => {
         const columnIndex = curationColumns.findIndex((col) => col.id === group.id);
@@ -61,7 +58,7 @@ const CurationBoardAIInterfaceCurator: React.FC<{
         return column.stubStudies.filter((x) => x.exclusionTag === null);
     }, [column]);
 
-    const table = useCuratorTableState(projectId, stubsInColumn, !isLastColumn, prismaPhase !== 'identification');
+    const { table } = useCuratorTableState(projectId, stubsInColumn, !isLastColumn, prismaPhase !== 'identification');
 
     const [prismaIsOpen, setPrismaIsOpen] = useState(false);
     const [UIMode, setUIMode] = useState<'TABLEMODE' | 'FOCUSMODE'>('TABLEMODE');
@@ -71,9 +68,10 @@ const CurationBoardAIInterfaceCurator: React.FC<{
 
     const [selectedStubId, setSelectedStubId] = useState<string>();
 
+    const rows = table.getCoreRowModel().rows;
     const selectedStub: Row<ICurationTableStudy> | undefined = useMemo(
-        () => (table.getCoreRowModel().rows || []).find((stub) => stub.original.id === selectedStubId),
-        [table, selectedStubId]
+        () => (rows || []).find((stub) => stub.original.id === selectedStubId),
+        [rows, selectedStubId]
     );
 
     const handleToggleUIMode = () => {
@@ -114,10 +112,6 @@ const CurationBoardAIInterfaceCurator: React.FC<{
 
     if (!column || columnIndex < 0) {
         return <Typography color="error.dark">There was an error loading studies</Typography>;
-    }
-
-    if (isLoading) {
-        return <CurationBoardAIInterfaceCuratorTableSkeleton />;
     }
 
     return (

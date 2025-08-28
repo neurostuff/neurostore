@@ -1,0 +1,56 @@
+TY  - JOUR
+T1  - Distinct neurochemical influences on fMRI response polarity in the striatum
+JF  - bioRxiv
+DO  - 10.1101/2023.02.20.529283
+SP  - 2023.02.20.529283
+AU  - Cerri, Domenic H.
+AU  - Albaugh, Daniel L.
+AU  - Walton, Lindsay R.
+AU  - Katz, Brittany
+AU  - Wang, Tzu-Wen
+AU  - Chao, Tzu-Hao Harry
+AU  - Zhang, Weiting
+AU  - Nonneman, Randal J.
+AU  - Jiang, Jing
+AU  - Lee, Sung-Ho
+AU  - Etkin, Amit
+AU  - Hall, Catherine N.
+AU  - Stuber, Garret D.
+AU  - Shih, Yen-Yu Ian
+Y1  - 2023/01/01
+UR  - http://biorxiv.org/content/early/2023/02/21/2023.02.20.529283.abstract
+N2  - The striatum is the primary input nucleus of the basal ganglia, widely studied for its complex roles in health and disease. Functional magnetic resonance imaging (fMRI) studies are essential for discerning striatal function, however the relationship between neuronal and hemodynamic activity, critical for interpreting fMRI signals, has not been rigorously examined in striatum. We find that optogenetic stimulation of striatal neurons or afferents evokes negative striatal fMRI responses in rats that can occur despite broad increases in local neuronal activity. Intra-striatal pharmacological manipulations suggest that opioidergic, but not dopaminergic transmission contributes to negative striatal fMRI signals (the latter instead associated with positive signals). Striatal neuronal activity peaks are also associated with negative hemodynamic signals in behaving rats. Negative fMRI responses are observed in human striatum under conditions of anticipated neuronal activity increases. Our results prompt consideration of local cellular and neurochemical environments along with neuronal activity in fMRI signal interpretation.Competing Interest StatementThe authors have declared no competing interest.
+ER  - 
+
+TY  - JOUR
+T1  - A systematically optimized awake mouse fMRI paradigm
+JF  - bioRxiv
+DO  - 10.1101/2022.11.16.516376
+SP  - 2022.11.16.516376
+AU  - Xu, Wenjing
+AU  - Pei, Mengchao
+AU  - Zhang, Kaiwei
+AU  - Tong, Chuanjun
+AU  - Bo, Binshi
+AU  - Feng, Jianfeng
+AU  - Zhang, Xiao-Yong
+AU  - Liang, Zhifeng
+Y1  - 2022/01/01
+UR  - http://biorxiv.org/content/early/2022/11/16/2022.11.16.516376.abstract
+N2  - Functional magnetic resonance imaging (fMRI) has been increasingly utilized in mice. Due to the non-negligible effects of anesthetics on mouse fMRI, it is becoming more common to perform fMRI in the awake mice. However, high stress level and head motion in awake mouse fMRI remain to be fully addressed, which limits its practical applications. Therefore, here we presented a systematically optimized awake mouse fMRI paradigm as a practical and open-source solution. First, we designed a soundproof habituation chamber in which multiple mice can be habituated simultaneously and independently. Then, combining corticosterone, body weight and behavioral measurements, we systematically evaluated the potential factors that may contribute to animals’ stress level for awake imaging. Among many factors, we found that the restraining setup allowing forelimbs freely moving and head tilted at 30-degree was optimal for minimizing stress level. Importantly, we implemented multiband simultaneous multi-slice imaging to enable ultrafast fMRI acquisition in awake mice. Compared to conventional single-band EPI, faster acquisition enabled by multiband imaging were more robust to head motion and yielded higher statistical power. Thus, more robust resting-state functional connectivity was detected using multiband acquisition in awake mouse fMRI, compared to conventional single-band acquisition. In conclusion, we presented an awake mouse fMRI paradigm that is highly optimized in both awake mice habituation and fMRI acquisition, and such paradigm minimized animals’ stress level and provided more resistance to head motion and higher statistical power.Competing Interest StatementThe authors have declared no competing interest.
+ER  - 
+
+TY  - JOUR
+T1  - Real-time feedback reduces participant motion during task-based fMRI
+JF  - bioRxiv
+DO  - 10.1101/2023.01.12.523791
+SP  - 2023.01.12.523791
+AU  - Rogers, Chad S.
+AU  - Jones, Michael S.
+AU  - McConkey, Sarah
+AU  - McLaughlin, Drew J.
+AU  - Peelle, Jonathan E.
+Y1  - 2023/01/01
+UR  - http://biorxiv.org/content/early/2023/01/24/2023.01.12.523791.abstract
+N2  - The potential negative impact of head movement during fMRI has long been appreciated. Although a variety of prospective and retrospective approaches have been developed to help mitigate these effects, reducing head movement in the first place remains the most appealing strategy for optimizing data quality. Real-time interventions, in which participants are provided feedback regarding their scan-to-scan motion, have recently shown promise in reducing motion during resting state fMRI. However, whether feedback might similarly reduce motion during task-based fMRI is an open question. In particular, it is unclear whether participants can effectively monitor motion feedback while attending to task-related demands. Here we assessed whether a combination of real-time and between-run feedback could reduce head motion during task-based fMRI. During an auditory word repetition task, 78 adult participants (aged 18–81) were pseudorandomly assigned to receive feedback, implemented in FIRMM software, or not. We quantified movement using framewise displacement (FD). We found that motion feedback resulted in a statistically significant reduction in participant head motion, with a small-to-moderate effect size (reducing average FD from 0.347 to 0.282). There was some evidence for a change of effect over the course of six runs, but no clear evidence for practice effects based on motion feedback. We conclude that under some circumstances real-time feedback may reduce head motion during task-based fMRI, although its effectiveness may depend on the specific participant population and task demands of a given study.Competing Interest StatementThe authors have declared no competing interest.
+ER  - 

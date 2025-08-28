@@ -14,6 +14,18 @@ import '@citation-js/plugin-enw';
 import '@citation-js/plugin-bibtex';
 import '@citation-js/plugin-ris';
 
+const normalize = (t: unknown): string => {
+    if (typeof t === 'string') return t;
+    if (Array.isArray(t)) return t.find((x) => typeof x === 'string' && x.trim()) || '';
+    return '';
+};
+
+const extractYear = (dateString: string | undefined) => {
+    if (!dateString) return '';
+    const match = dateString.match(/\b\d{4}\b/);
+    return match ? match[0] : '';
+};
+
 enum EValidationReason {
     EMPTY = 'Input is empty',
     INCORRECT = 'Format is incorrect or unsupported',
@@ -24,6 +36,7 @@ interface CSLJSONDateParts {
         | [string | number, number | number, string | number][]
         | [string | number, string | number][]
         | [string | number][];
+    raw?: string | string[];
 }
 
 interface CSLJSON {
@@ -92,27 +105,38 @@ const CurationImportStandardFormat: React.FC<{
             const citeObj = new Cite(uploadState.rawIdText);
             citeObj.format('data', { format: 'object' });
 
-            const formattedArticles: ICurationStubStudy[] = ((citeObj.data as CSLJSON[]) || []).map((article) => ({
-                id: uuidv4(),
-                title: article.title || article['title-short'] || '',
-                authors: (article.author || []).reduce((acc, curr, index, arr) => {
-                    const middleParticle = curr['non-dropping-particle'] || curr['dropping-particle'] || '';
-                    return `${acc}${curr.given} ${middleParticle ? middleParticle + ' ' : ''}${
-                        curr.family
-                    }${index < arr.length - 1 ? ', ' : ''}`;
-                }, ''),
-                keywords: '',
-                pmid: article.PMID || '',
-                pmcid: article.PMCID || '',
-                doi: article.DOI || '',
-                articleYear: `${article?.issued?.['date-parts']?.[0]?.[0] || ''}`,
-                journal: article['container-title'] || '',
-                abstractText: article.abstract || article.annote || '',
-                articleLink: article.URL || (article.PMID ? `https://pubmed.ncbi.nlm.nih.gov/${article.PMID}` : ''),
-                exclusionTag: null,
-                identificationSource: source,
-                tags: [],
-            }));
+            const formattedArticles: ICurationStubStudy[] = ((citeObj.data as CSLJSON[]) || []).map((article) => {
+                const titleRaw = article.title ?? article['title-short'];
+                const articleYear =
+                    article?.issued?.['date-parts']?.[0]?.[0]?.toString() ??
+                    extractYear(normalize(article?.issued?.raw));
+                const articleJournal = normalize(article['container-title']);
+                const articleAbstract = article.abstract ?? article.annote;
+                const articleLink =
+                    article.URL ?? (article.PMID ? `https://pubmed.ncbi.nlm.nih.gov/${normalize(article.PMID)}` : '');
+
+                return {
+                    id: uuidv4(),
+                    title: normalize(titleRaw),
+                    authors: (article.author || []).reduce((acc, curr, index, arr) => {
+                        const middleParticle = curr['non-dropping-particle'] || curr['dropping-particle'] || '';
+                        return `${acc}${curr.given} ${middleParticle ? middleParticle + ' ' : ''}${
+                            curr.family
+                        }${index < arr.length - 1 ? ', ' : ''}`;
+                    }, ''),
+                    keywords: '',
+                    pmid: normalize(article.PMID),
+                    pmcid: normalize(article.PMCID),
+                    doi: normalize(article.DOI),
+                    articleYear: articleYear ?? '',
+                    journal: articleJournal ?? '',
+                    abstractText: normalize(articleAbstract),
+                    articleLink: articleLink,
+                    exclusionTag: null,
+                    identificationSource: source,
+                    tags: [],
+                };
+            });
 
             setUploadState((prev) => ({
                 ...prev,

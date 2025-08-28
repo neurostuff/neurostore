@@ -1,6 +1,6 @@
 import pytest
 
-from ..schemas import StudySchema, StudysetSchema, StudysetSnapshot
+from ..schemas import StudySchema, StudysetSchema, StudysetSnapshot, PointSchema
 from ..models import Study, Studyset
 from neurostore.schemas.pipeline import (
     PipelineSchema,
@@ -109,3 +109,28 @@ def test_PipelineStudyResultSchema():
     assert result["result_data"] == {"result": "success"}
     assert result["file_inputs"] == {"input1": "file1"}
     assert result["status"] == "UNKNOWN"
+
+
+def test_PointSchema_deactivation_field():
+    """Test deactivation field behavior in PointSchema"""
+    schema = PointSchema()
+
+    # Test 1: When deactivation is explicitly set to None, it should convert to False
+    data_with_none = {"x": 1.0, "y": 2.0, "z": 3.0, "deactivation": None}
+    result = schema.load(data_with_none)
+    assert result["deactivation"] is False
+
+    # Test 2: When deactivation is not included in the input data, it should default to False
+    data_without_deactivation = {"x": 1.0, "y": 2.0, "z": 3.0}
+    result = schema.load(data_without_deactivation)
+    assert result["deactivation"] is False
+
+    # Test 3: When deactivation is explicitly set to True, it should remain True
+    data_with_true = {"x": 1.0, "y": 2.0, "z": 3.0, "deactivation": True}
+    result = schema.load(data_with_true)
+    assert result["deactivation"] is True
+
+    # Test 4: When deactivation is explicitly set to False, it should remain False
+    data_with_false = {"x": 1.0, "y": 2.0, "z": 3.0, "deactivation": False}
+    result = schema.load(data_with_false)
+    assert result["deactivation"] is False

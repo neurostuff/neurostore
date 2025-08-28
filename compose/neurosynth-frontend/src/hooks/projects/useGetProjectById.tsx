@@ -9,6 +9,7 @@ const useGetProjectById = (projectId: string | undefined) => {
         {
             select: (axiosResponse) => axiosResponse.data as INeurosynthProjectReturn,
             enabled: !!projectId,
+            cacheTime: 0, // IMPORTANT: disable cache for this query as caching causes the project store to sometimes have old data when you switch between projects
         }
     );
 };
