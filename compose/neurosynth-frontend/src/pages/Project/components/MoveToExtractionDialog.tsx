@@ -20,7 +20,8 @@ import {
 } from 'pages/Project/store/ProjectStore';
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import MoveToExtractionDialogIntroduction from './MoveToExtractionDialogIntroduction';
+import MoveToExtractionDialogIntroductionPart1 from './MoveToExtractionDialogIntroPart1';
+import MoveToExtractionDialogIntroductionPart2 from './MoveToExtractionDialogIntroPart2';
 
 const MoveToExtractionDialog: React.FC<IDialog> = (props) => {
     const numColumns = useProjectNumCurationColumns();
@@ -36,6 +37,8 @@ const MoveToExtractionDialog: React.FC<IDialog> = (props) => {
     const { enqueueSnackbar } = useSnackbar();
     const { mutateAsync: asyncIngest } = useIngest();
     const { mutateAsync: asyncUpdateStudyset } = useUpdateStudyset();
+
+    const [step, setStep] = useState(0);
 
     const navigate = useNavigate();
 
@@ -168,7 +171,7 @@ const MoveToExtractionDialog: React.FC<IDialog> = (props) => {
     };
 
     const handleInitialize = async () => {
-        setIsLoadingPhase(true);
+        setStep(2);
 
         try {
             const newStudysetId = await handleCreateStudyset();
@@ -198,6 +201,14 @@ const MoveToExtractionDialog: React.FC<IDialog> = (props) => {
         }, 1000);
     };
 
+    const handleNavigateNext = () => {
+        setStep((prev) => (prev < 2 ? prev + 1 : prev));
+    };
+
+    const handleNavigatePrev = () => {
+        setStep((prev) => (prev > 0 ? prev - 1 : prev));
+    };
+
     const progress = useMemo(() => {
         const createdStudyset = +loadingStatus.createdStudyset;
         const createdAnnotations = +loadingStatus.createdAnnotations;
@@ -225,7 +236,11 @@ const MoveToExtractionDialog: React.FC<IDialog> = (props) => {
             onCloseDialog={handleCloseDialog}
         >
             <StateHandlerComponent isLoading={false} isError={isError}>
-                {isLoadingPhase ? (
+                {step === 0 ? (
+                    <MoveToExtractionDialogIntroductionPart1 onNext={handleNavigateNext} />
+                ) : step === 1 ? (
+                    <MoveToExtractionDialogIntroductionPart2 onPrev={handleNavigatePrev} onNext={handleInitialize} />
+                ) : (
                     <Box
                         sx={{
                             height: '300px',
@@ -250,8 +265,6 @@ const MoveToExtractionDialog: React.FC<IDialog> = (props) => {
                         {/* need this empty div to space out elements properly */}
                         <div></div>
                     </Box>
-                ) : (
-                    <MoveToExtractionDialogIntroduction onNext={handleInitialize} />
                 )}
             </StateHandlerComponent>
         </BaseDialog>

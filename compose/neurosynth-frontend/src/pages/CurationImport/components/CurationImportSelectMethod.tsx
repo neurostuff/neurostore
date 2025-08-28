@@ -29,9 +29,10 @@ const CurationImportSelectMethod: React.FC<{
                         value={EImportMode.NEUROSTORE_IMPORT}
                         label={
                             <>
-                                <Typography variant="h6">Import via Neurostore</Typography>
+                                <Typography variant="h6">Search Neurostore</Typography>
                                 <Typography variant="body1" sx={{ color: 'muted.main' }}>
-                                    Use our database full of automatically extracted coordinates
+                                    Search our database of over 30,000 neuroimaging studies with automatically extracted
+                                    coordinates
                                 </Typography>
                             </>
                         }

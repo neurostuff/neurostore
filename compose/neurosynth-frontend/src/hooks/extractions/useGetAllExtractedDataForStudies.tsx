@@ -102,7 +102,8 @@ export interface IExtractedDataResult {
     }[];
 }
 
-const useGetAllAIExtractedData = () => {
+const useGetAllAIExtractedDataForStudies = (baseStudyIds?: string[]) => {
+    const baseStudyIdsOrEmpty = baseStudyIds ?? [];
     return useQuery<
         [AxiosResponse<IExtractedDataResult>, AxiosResponse<IExtractedDataResult>],
         AxiosError,
@@ -110,17 +111,19 @@ const useGetAllAIExtractedData = () => {
             [EAIExtractors.TASKEXTRACTOR]: IExtractedDataResult;
             [EAIExtractors.PARTICIPANTSDEMOGRAPHICSEXTRACTOR]: IExtractedDataResult;
         },
-        [string]
+        string[]
     >(
-        ['extraction'],
+        ['extraction', ...baseStudyIdsOrEmpty],
         async () => {
             const promises = await Promise.all([
-                API.NeurostoreServices.ExtractedDataResultsService.getAllExtractedDataResults([
-                    EAIExtractors.TASKEXTRACTOR,
-                ]),
-                API.NeurostoreServices.ExtractedDataResultsService.getAllExtractedDataResults([
-                    EAIExtractors.PARTICIPANTSDEMOGRAPHICSEXTRACTOR,
-                ]),
+                API.NeurostoreServices.ExtractedDataResultsService.getAllExtractedDataResults(
+                    [EAIExtractors.TASKEXTRACTOR],
+                    baseStudyIdsOrEmpty
+                ),
+                API.NeurostoreServices.ExtractedDataResultsService.getAllExtractedDataResults(
+                    [EAIExtractors.PARTICIPANTSDEMOGRAPHICSEXTRACTOR],
+                    baseStudyIdsOrEmpty
+                ),
             ]);
 
             promises.forEach((res) => {
@@ -136,8 +139,10 @@ const useGetAllAIExtractedData = () => {
                     [EAIExtractors.PARTICIPANTSDEMOGRAPHICSEXTRACTOR]: participantDemographicsExtractionRes.data,
                 };
             },
+            refetchOnMount: false,
+            enabled: baseStudyIdsOrEmpty.length > 0,
         }
     );
 };
 
-export default useGetAllAIExtractedData;
+export default useGetAllAIExtractedDataForStudies;

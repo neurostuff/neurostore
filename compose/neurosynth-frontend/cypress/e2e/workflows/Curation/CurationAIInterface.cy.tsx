@@ -18,11 +18,11 @@ describe('CurationAIInterface', () => {
             {}
         ).as('updateProject');
 
-        cy.intercept('GET', `**/api/pipeline-study-results/?feature_display=TaskExtractor*`, {
+        cy.intercept('POST', `**/api/pipeline-study-results/?feature_display=TaskExtractor*`, {
             fixture: 'pipeline-results/TaskExtraction',
         }).as('participantDemographicsExtraction');
 
-        cy.intercept('GET', `**/api/pipeline-study-results/?feature_display=ParticipantDemographicsExtractor*`, {
+        cy.intercept('POST', `**/api/pipeline-study-results/?feature_display=ParticipantDemographicsExtractor*`, {
             fixture: 'pipeline-results/ParticipantDemographicsExtraction',
         }).as('taskExtraction');
 
