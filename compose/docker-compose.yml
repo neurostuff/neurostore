@@ -3,13 +3,18 @@ services:
   compose:
     image: compose
     restart: always
-    build: 
-      dockerfile: ./neurosynth_compose/Dockerfile
-      context: ./
+    build:
+      dockerfile: ./Dockerfile
+      context: ./backend
+    depends_on:
+      compose_pgsql:
+        condition: service_healthy
+      compose_worker:
+        condition: service_started
     expose:
       - "8000"
     volumes:
-      - ./postgres/migrations:/migrations
+      - ./backend/migrations:/migrations
       - ./:/compose
       - ${FILE_DIR}:/file-data
     command: /usr/local/bin/gunicorn -w 2 -b :8000 neurosynth_compose.core:app --log-level debug --timeout 120
@@ -20,15 +25,20 @@ services:
     image: redis
     expose:
       - '6379'
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
 
   compose_worker:
     image: compose_worker
     build:
-      dockerfile: ./neurosynth_compose/Dockerfile
-      context: ./
+      dockerfile: ./Dockerfile
+      context: ./backend
     depends_on:
-      - compose
-      - compose_redis
+      compose_redis:
+        condition: service_healthy
     entrypoint: celery -A neurosynth_compose.resources.tasks.celery_app worker --loglevel=debug
     volumes:
       - ${CELERY_LOG_DIR}:/logs:rw
@@ -60,6 +70,11 @@ services:
       - '5432'
     env_file:
       - .env
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
 
   # compose_monitor:
   #   image: compose_monitor

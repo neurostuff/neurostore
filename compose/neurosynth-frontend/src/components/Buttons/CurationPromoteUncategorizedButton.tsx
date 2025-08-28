@@ -12,11 +12,10 @@ const CurationPromoteUncategorizedButton: React.FC<
     const handleSkipCuration = (confirm?: boolean) => {
         if (confirm) {
             promoteAllUncategorized();
+            if (onComplete) onComplete();
         }
 
         setSkipCurationDialogIsOpen(false);
-
-        if (onComplete) onComplete();
     };
 
     return (

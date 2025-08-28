@@ -1,7 +1,8 @@
-import { Typography } from '@mui/material';
+import { Skeleton, Typography } from '@mui/material';
 import { Box } from '@mui/system';
 import { CellContext } from '@tanstack/react-table';
 import React from 'react';
+import { useIsFetching } from 'react-query';
 import {
     ICurationTableColumnType,
     ICurationTableStudy,
@@ -11,7 +12,13 @@ import {
 const CuratorTableCell: React.FC<Partial<CellContext<ICurationTableStudy, ICurationTableColumnType | null>>> = (
     props
 ) => {
+    const isFetchingExtractions = useIsFetching({ queryKey: ['extraction'] }) > 0;
+    const isAI = !!props?.column?.columnDef?.meta?.AIExtractor;
     const cellValue = props.getValue ? props.getValue() : undefined;
+
+    if (isFetchingExtractions && isAI) {
+        return <Skeleton width="100%" height="40px" />;
+    }
 
     if (cellValue === null) {
         // if there is no extraction done for the given study, we get null. This is in contrast

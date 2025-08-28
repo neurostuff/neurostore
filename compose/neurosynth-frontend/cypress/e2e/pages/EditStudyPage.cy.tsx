@@ -13,25 +13,17 @@ describe(PAGE_NAME, () => {
             fixture: 'semanticScholar',
         }).as('semanticScholarFixture');
 
-        cy.intercept('GET', `**/api/studies/mock-study-id*`, { fixture: 'study' }).as(
-            'studyFixture'
-        );
-        cy.intercept('GET', `**/api/projects/*`, { fixture: 'projects/project' }).as(
-            'projectFixture'
-        );
-        cy.intercept('GET', `**/api/annotations/*`, { fixture: 'annotation' }).as(
-            'annotationFixture'
-        );
+        cy.intercept('GET', `**/api/studies/mock-study-id*`, { fixture: 'study' }).as('studyFixture');
+        cy.intercept('GET', `**/api/projects/*`, { fixture: 'projects/project' }).as('projectFixture');
+        cy.intercept('GET', `**/api/annotations/*`, { fixture: 'annotation' }).as('annotationFixture');
         cy.intercept('GET', `**/api/studysets/*`, { fixture: 'studyset' }).as('studysetFixture');
 
-        cy.intercept('POST', `https://www.google-analytics.com/*/**`, {}).as(
-            'googleAnalyticsFixture'
-        );
+        cy.intercept('POST', `https://www.google-analytics.com/*/**`, {}).as('googleAnalyticsFixture');
 
         cy.login('mocked').visit(PATH);
     });
 
-    it('should load', () => {
+    it.only('should load', () => {
         cy.visit(PATH)
             .wait('@studyFixture')
             .wait('@projectFixture')

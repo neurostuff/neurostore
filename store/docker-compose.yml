@@ -3,15 +3,19 @@ services:
   neurostore:
     image: neurostore
     restart: always
-    build: ./neurostore
+    build:
+      context: ./backend
+      dockerfile: ./Dockerfile
     depends_on:
-      - store_pgsql
-      - store_redis
+      store-pgsql:
+        condition: service_healthy
+      store_redis:
+        condition: service_healthy
     expose:
       - "8000"
     volumes:
-      - ./postgres/migrations:/migrations
-      - ./:/neurostore
+      - ./backend/migrations:/migrations
+      - ./:/store
       - ${FILE_DIR}:/file-data
       - ${ACE_DIR}:/ace
     command: /usr/local/bin/gunicorn -w 8 -b :8000 neurostore.core:connexion_app --worker-class uvicorn.workers.UvicornWorker --log-level debug --timeout 120
@@ -23,6 +27,11 @@ services:
     image: redis
     expose:
       - '6379'
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
 
   store_nginx:
     image: store_nginx
@@ -38,23 +47,66 @@ services:
       - VIRTUAL_HOST=${V_HOST}
       - LETSENCRYPT_HOST=${V_HOST}
 
-  store_pgsql:
-    image: store_pgsql
+  store-pgsql:
+    image: store-pgsql
     restart: always
     build: ./postgres
-    # shm_size: '256MB'  # if I'm going to increase work_mem in postgres, also increase this
+    shm_size: '256MB'
     volumes:
       - postgres_data:/var/lib/postgresql/data
     expose:
       - '5432'
     env_file:
       - .env
-    command: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"]  # Use the custom config
+    command: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+    
+  pghero:
+    image: ankane/pghero
+    restart: always
+    expose:
+      - "8080"
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:5432/${POSTGRES_DB}"
+      RAILS_RELATIVE_URL_ROOT: "/pghero"
+    depends_on:
+      store-pgsql:
+        condition: service_healthy
+
+  grafana:
+    image: grafana/grafana
+    restart: always
+    expose:
+      - "3030"
+    env_file:
+      - .env
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
+      - GF_SERVER_ROOT_URL=/grafana
+      - GF_SERVER_SERVE_FROM_SUB_PATH="true"
+      - GF_SERVER_HTTP_PORT=3030
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+    depends_on:
+      store-pgsql:
+        condition: service_healthy
+    networks:
+      - default
 
 volumes:
   postgres_data:
+  grafana_data:
 
 networks:
   default:
     external:
       name: nginx-proxy
+

@@ -11,4 +11,5 @@ RUN dos2unix /home/pg_dump-to-s3.sh
 RUN dos2unix /home/s3-autodelete.sh
 
 COPY postgresql.conf /etc/postgresql/postgresql.conf
+COPY pg_stat_statements.sql /docker-entrypoint-initdb.d/
 

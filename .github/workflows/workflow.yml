@@ -1,11 +1,24 @@
 name: Testing Workflow
-on: [workflow_dispatch,push]
+on:
+  push:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number (optional)'
+        required: false
+        type: string
+
+# Set the access for individual scopes, or use permissions: write-all
+permissions:
+  pull-requests: write
+  issues: write
+  packages: write
 
 jobs:
   clean:
     strategy:
       matrix:
-        package: ['neurosynth_compose', 'compose_nginx', 'compose_pgsql', 'compose_worker', 'neurostore', 'store_nginx', 'store_pgsql']
+        package: ['neurosynth_compose', 'compose_nginx', 'compose_pgsql', 'compose_worker', 'neurostore', 'store_nginx', 'store-pgsql']
     runs-on: ubuntu-latest
 
     steps:
@@ -27,6 +40,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: recursive
+          ref: ${{ inputs.pr_number && format('refs/pull/{0}/head', inputs.pr_number) || github.ref }}
       -
         name: Configuration
         run: |
@@ -51,8 +65,8 @@ jobs:
           workdir: compose
           source: "{{defaultContext}}:compose"
           set: |
-              compose.tags=ghcr.io/${{ github.repository_owner }}/neurosynth_compose:${{ hashFiles('**/compose/neurosynth_compose/**') }}
-              compose.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/neurosynth_compose:${{ hashFiles('**/compose/neurosynth_compose/**') }}
+              compose.tags=ghcr.io/${{ github.repository_owner }}/neurosynth_compose:${{ hashFiles('**/compose/backend/neurosynth_compose/**') }}
+              compose.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/neurosynth_compose:${{ hashFiles('**/compose/backend/neurosynth_compose/**') }}
               compose.cache-from=type=gha,scope=cached-compose
               compose.cache-to=type=gha,scope=cached-compose,mode=max,ignore-error=true
               compose_nginx.tags=ghcr.io/${{ github.repository_owner }}/compose_nginx:${{ hashFiles('**/compose/nginx/**') }}
@@ -63,8 +77,8 @@ jobs:
               compose_pgsql.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/compose_pgsql:${{ hashFiles('**/compose/postgres/**') }}
               compose_pgsql.cache-from=type=gha,scope=cached-compose-pgsql
               compose_pgsql.cache-to=type=gha,scope=cached-compose-pgsql,mode=max,ignore-error=true
-              compose_worker.tags=ghcr.io/${{ github.repository_owner }}/compose_worker:${{ hashFiles('**/compose/neurosynth_compose/**') }}
-              compose_worker.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/compose_worker:${{ hashFiles('**/compose/neurosynth_compose/**') }}
+              compose_worker.tags=ghcr.io/${{ github.repository_owner }}/compose_worker:${{ hashFiles('**/compose/backend/neurosynth_compose/**') }}
+              compose_worker.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/compose_worker:${{ hashFiles('**/compose/backend/neurosynth_compose/**') }}
               compose_worker.cache-from=type=gha,scope=cached-compose-worker
               compose_worker.cache-to=type=gha,scope=cached-compose-worker,mode=max,ignore-error=true
 
@@ -79,6 +93,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: recursive
+          ref: ${{ inputs.pr_number && format('refs/pull/{0}/head', inputs.pr_number) || github.ref }}
       -
         name: Configuration
         run: |
@@ -103,18 +118,18 @@ jobs:
           workdir: store
           source: "{{defaultContext}}:store"
           set: |
-              neurostore.tags=ghcr.io/${{ github.repository_owner }}/neurostore:${{ hashFiles('**/store/neurostore/**') }}
-              neurostore.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/neurostore:${{ hashFiles('**/store/neurostore/**') }}
+              neurostore.tags=ghcr.io/${{ github.repository_owner }}/neurostore:${{ hashFiles('**/store/backend/neurostore/**') }}
+              neurostore.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/neurostore:${{ hashFiles('**/store/backend/neurostore/**') }}
               neurostore.cache-from=type=gha,scope=cached-neurostore
               neurostore.cache-to=type=gha,scope=cached-neurostore,mode=max,ignore-error=true
               store_nginx.tags=ghcr.io/${{ github.repository_owner }}/store_nginx:${{ hashFiles('**/store/nginx/**') }}
               store_nginx.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/store_nginx:${{ hashFiles('**/store/nginx/**') }}
               store_nginx.cache-from=type=gha,scope=cached-store-nginx
               store_nginx.cache-to=type=gha,scope=cached-store-nginx,mode=max,ignore-error=true
-              store_pgsql.tags=ghcr.io/${{ github.repository_owner }}/store_pgsql:${{ hashFiles('**/store/postgres/**') }}
-              store_pgsql.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/store_pgsql:${{ hashFiles('**/store/postgres/**') }}
-              store_pgsql.cache-from=type=gha,scope=cached-store-pgsql
-              store_pgsql.cache-to=type=gha,scope=cached-store-pgsql,mode=max,ignore-error=true
+              store-pgsql.tags=ghcr.io/${{ github.repository_owner }}/store-pgsql:${{ hashFiles('**/store/postgres/**') }}
+              store-pgsql.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/store-pgsql:${{ hashFiles('**/store/postgres/**') }}
+              store-pgsql.cache-from=type=gha,scope=cached-store-pgsql
+              store-pgsql.cache-to=type=gha,scope=cached-store-pgsql,mode=max,ignore-error=true
 
 
   neurostore_backend_tests:
@@ -129,6 +144,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: recursive
+          ref: ${{ inputs.pr_number && format('refs/pull/{0}/head', inputs.pr_number) || github.ref }}
       -
         name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -148,7 +164,7 @@ jobs:
           set: |
               neurostore.cache-from=type=gha,scope=cached-neurostore
               store_nginx.cache-from=type=gha,scope=cached-store-nginx
-              store_pgsql.cache-from=type=gha,scope=cached-store-pgsql
+              store-pgsql.cache-from=type=gha,scope=cached-store-pgsql
       - 
         name: spin up backend
         run: |
@@ -161,11 +177,8 @@ jobs:
       - 
         name: Create Test Database
         run: |
-          until docker compose exec -T \
-          store_pgsql pg_isready -U postgres; do sleep 1; done
-
           docker compose exec -T \
-          store_pgsql \
+          store-pgsql \
           psql -U postgres -c "create database test_db"
       -
         name: Backend Tests
@@ -183,7 +196,7 @@ jobs:
             -e "AUTH0_BASE_URL=${AUTH0_BASE_URL}" \
             -e "AUTH0_ACCESS_TOKEN_URL=${AUTH0_ACCESS_TOKEN_URL}" \
             -e "AUTH0_AUTH_URL=${AUTH0_AUTH_URL}" \
-            --rm -w /neurostore \
+            --rm \
             neurostore \
             bash -c "python -m pytest neurostore/tests && python -m pytest --auth neurostore/tests/test_auth.py"
 
@@ -199,6 +212,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         submodules: recursive
+        ref: ${{ inputs.pr_number && format('refs/pull/{0}/head', inputs.pr_number) || github.ref }}
     -
       name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
@@ -232,9 +246,6 @@ jobs:
     -
       name: Create Test Database
       run: |
-        until docker compose exec -T \
-        compose_pgsql pg_isready -U postgres; do sleep 1; done
-
         docker compose exec -T \
         compose_pgsql \
         psql -U postgres -c "create database test_db"
@@ -256,7 +267,7 @@ jobs:
           -e "AUTH0_ACCESS_TOKEN_URL=${AUTH0_ACCESS_TOKEN_URL}" \
           -e "AUTH0_AUTH_URL=${AUTH0_AUTH_URL}" \
           -e "NEUROVAULT_ACCESS_TOKEN=${NEUROVAULT_ACCESS_TOKEN}" \
-          --rm -w /compose \
+          --rm \
           compose \
           bash -c "python -m pytest neurosynth_compose/tests"
 
@@ -268,13 +279,14 @@ jobs:
       uses: actions/checkout@v4
       with:
         submodules: recursive
+        ref: ${{ inputs.pr_number && format('refs/pull/{0}/head', inputs.pr_number) || github.ref }}
     -
       name: run flake8
       run: |
         pip install flake8
-        cd ./store
+        cd ./store/backend
         flake8 ./neurostore
-        cd ../compose
+        cd ../../compose/backend
         flake8 ./neurosynth_compose
 
 
@@ -290,6 +302,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         submodules: recursive
+        ref: ${{ inputs.pr_number && format('refs/pull/{0}/head', inputs.pr_number) || github.ref }}
     -
       name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
@@ -322,10 +335,7 @@ jobs:
           up -d --no-build
     -
       name: Create Test Database
-      run: |
-        until docker compose exec -T \
-        compose_pgsql pg_isready -U postgres; do sleep 1; done
-
+      run: | 
         docker compose exec -T \
         compose_pgsql \
         psql -U postgres -c "create database test_db"
@@ -373,6 +383,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         submodules: recursive
+        ref: ${{ inputs.pr_number && format('refs/pull/{0}/head', inputs.pr_number) || github.ref }}
     -
       name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
@@ -407,7 +418,7 @@ jobs:
         set: |
             neurostore.cache-from=type=gha,scope=cached-neurostore
             store_nginx.cache-from=type=gha,scope=cached-store-nginx
-            store_pgsql.cache-from=type=gha,scope=cached-store-pgsql
+            store-pgsql.cache-from=type=gha,scope=cached-store-pgsql
     -
       name: Spin up compose backend
       run: |
@@ -431,8 +442,6 @@ jobs:
       name: Create Compose Database
       run: |
         cd compose
-        until docker compose exec -T \
-        compose_pgsql pg_isready -U postgres; do sleep 1; done
 
         docker compose exec -T \
         compose_pgsql \
@@ -441,11 +450,9 @@ jobs:
       name: Create Store Database
       run: |
         cd store
-        until docker compose exec -T \
-        store_pgsql pg_isready -U postgres; do sleep 1; done
 
         docker compose exec -T \
-        store_pgsql \
+        store-pgsql \
         psql -U postgres -c "create database test_db"
     -
       name: Initialize Compose Database
