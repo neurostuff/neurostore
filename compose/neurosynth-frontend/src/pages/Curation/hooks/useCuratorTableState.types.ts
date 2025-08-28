@@ -3,7 +3,7 @@ import {
     EAIExtractors,
     IParticipantDemographicExtractor,
     ITaskExtractor,
-} from 'hooks/extractions/useGetAllExtractedData';
+} from 'hooks/extractions/useGetAllExtractedDataForStudies';
 import { ICurationStubStudy } from '../Curation.types';
 
 export interface IGenericCustomAccessorReturn {

@@ -1,23 +1,19 @@
+import { Box } from '@mui/material';
+import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { useGetStudyById } from 'hooks';
 import { AnalysisReturn } from 'neurostore-typescript-sdk';
+import { useGetProjectIsLoading, useProjectName } from 'pages/Project/store/ProjectStore';
 import Study from 'pages/Study/components/Study';
 import { useInitStudyStore } from 'pages/Study/store/StudyStore';
 import React, { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { studyAnalysesToStoreAnalyses } from './store/StudyStore.helpers';
-import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs';
-import { Box } from '@mui/material';
-import {
-    useGetProjectIsLoading,
-    useInitProjectStoreIfRequired,
-    useProjectName,
-} from 'pages/Project/store/ProjectStore';
 import EditStudyToolbar from './components/EditStudyToolbar';
+import { studyAnalysesToStoreAnalyses } from './store/StudyStore.helpers';
+import LoadingStateIndicatorProject from 'components/LoadingStateIndicator/LoadingStateIndicatorProject';
 
 const ProjectStudyPage: React.FC = (props) => {
     const initStudyStore = useInitStudyStore();
-    useInitProjectStoreIfRequired();
 
     const getProjectIsLoading = useGetProjectIsLoading();
     const projectName = useProjectName();
@@ -29,11 +25,7 @@ const ProjectStudyPage: React.FC = (props) => {
 
     // if studyVersionId doesnt exist, then it will not be queried.
     // In the second useEffect hook below, we keep trying to set the studyVersionId
-    const {
-        data: study,
-        isLoading: studyIsLoading,
-        isError: studyIsError,
-    } = useGetStudyById(studyId || '');
+    const { data: study, isLoading: studyIsLoading, isError: studyIsError } = useGetStudyById(studyId || '');
 
     // init the study store with the given version when a new one is set
     useEffect(() => {
@@ -51,7 +43,7 @@ const ProjectStudyPage: React.FC = (props) => {
             isError={studyIsError}
         >
             <EditStudyToolbar isViewOnly />
-            <Box mb="1rem">
+            <Box mb="1rem" sx={{ display: 'flex', alignItems: 'center' }}>
                 <NeurosynthBreadcrumbs
                     breadcrumbItems={[
                         {
@@ -76,6 +68,7 @@ const ProjectStudyPage: React.FC = (props) => {
                         },
                     ]}
                 />
+                <LoadingStateIndicatorProject />
             </Box>
             <Study
                 id={study?.id}

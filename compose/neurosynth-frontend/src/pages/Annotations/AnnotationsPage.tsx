@@ -1,18 +1,13 @@
 import { Box, Typography } from '@mui/material';
-import EditAnnotationsHotTable from 'pages/Annotations/components/EditAnnotationsHotTable';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { useGetAnnotationById } from 'hooks';
-import {
-    useInitProjectStoreIfRequired,
-    useProjectExtractionAnnotationId,
-    useProjectName,
-} from 'pages/Project/store/ProjectStore';
+import EditAnnotationsHotTable from 'pages/Annotations/components/EditAnnotationsHotTable';
+import { useProjectExtractionAnnotationId, useProjectName } from 'pages/Project/store/ProjectStore';
 import { useParams } from 'react-router-dom';
 
 const AnnotationsPage: React.FC = () => {
     const { annotationId } = useParams<{ annotationId: string }>();
-    useInitProjectStoreIfRequired();
     const annotationIdFromProject = useProjectExtractionAnnotationId();
     const projectName = useProjectName();
 
