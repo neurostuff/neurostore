@@ -63,9 +63,29 @@ services:
   compose_pgsql:
     image: compose_pgsql
     restart: always
-    build: ./postgres
+    build:
+      context: ./postgres
+      dockerfile: ./Dockerfile.old
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    expose:
+      - '5432'
+    env_file:
+      - .env
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+    
+  compose_pgsql17:
+    image: compose_pgsql17
+    restart: always
+    build:
+      context: ./postgres
+      dockerfile: ./Dockerfile
+    volumes:
+      - postgres17_data:/var/lib/postgresql/data
     expose:
       - '5432'
     env_file:
@@ -94,6 +114,7 @@ services:
 
 volumes:
   postgres_data:
+  postgres17_data:
 
 networks:
   default:
