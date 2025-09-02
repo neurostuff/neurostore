@@ -20,6 +20,7 @@ import { SearchCriteria } from 'pages/Study/Study.types';
 import { useNavigate } from 'react-router-dom';
 import { v4 as uuid } from 'uuid';
 import CurationImportFinalizeNameAndReview from './CurationImportFinalizeNameAndReview';
+import { SELECTED_CURATION_STEP_LOCAL_STORAGE_KEY_SUFFIX } from 'pages/Curation/hooks/useCurationBoardGroupsState';
 
 const CurationImportFinalize: React.FC<{
     importMode: EImportMode;
@@ -98,6 +99,7 @@ const CurationImportFinalize: React.FC<{
 
         updateCurationColumns(updatedColumns);
         enqueueSnackbar(`Added new import: ${importName}`, { variant: 'success' });
+        localStorage.removeItem(`${projectId}${SELECTED_CURATION_STEP_LOCAL_STORAGE_KEY_SUFFIX}`);
         navigate(`/projects/${projectId}/curation`);
     };
 

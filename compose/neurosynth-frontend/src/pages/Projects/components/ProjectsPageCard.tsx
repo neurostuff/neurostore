@@ -35,10 +35,7 @@ const ProjectsPageCard: React.FC<INeurosynthProjectReturn> = (props) => {
         meta_analyses = [],
     } = props;
 
-    const { data: studyset } = useGetStudysetById(
-        provenance?.extractionMetadata?.studysetId,
-        false
-    );
+    const { data: studyset } = useGetStudysetById(provenance?.extractionMetadata?.studysetId, false);
     const { data: metaAnalyses = [] } = useGetMetaAnalysesByIds(meta_analyses as string[]);
 
     const lastUpdateDate = useMemo(() => {
@@ -67,13 +64,9 @@ const ProjectsPageCard: React.FC<INeurosynthProjectReturn> = (props) => {
         if (!provenance.extractionMetadata.studysetId) return;
 
         const studysetStudies = (studyset?.studies || []) as string[];
-        const studyStatusesList = provenance.extractionMetadata.studyStatusList;
+        const studyStatusesList = provenance.extractionMetadata?.studyStatusList ?? [];
         return getExtractionSummary(studysetStudies, studyStatusesList);
-    }, [
-        provenance.extractionMetadata.studyStatusList,
-        provenance.extractionMetadata.studysetId,
-        studyset?.studies,
-    ]);
+    }, [provenance.extractionMetadata?.studyStatusList, provenance.extractionMetadata.studysetId, studyset?.studies]);
 
     const activeStep = useMemo(() => {
         if (!curationSummary) return -1;
@@ -85,12 +78,7 @@ const ProjectsPageCard: React.FC<INeurosynthProjectReturn> = (props) => {
         );
         if (metaAnalyses?.length === 0 || metaAnalysesWithResults.length === 0) return 2;
         return 3; // getting here means that at least one meta-analysis has been run
-    }, [
-        curationSummary,
-        extractionSummary,
-        metaAnalyses,
-        provenance?.metaAnalysisMetadata?.canEditMetaAnalyses,
-    ]);
+    }, [curationSummary, extractionSummary, metaAnalyses, provenance?.metaAnalysisMetadata?.canEditMetaAnalyses]);
 
     const metaAnalysisOptionalText = useMemo(() => {
         if (!metaAnalyses || metaAnalyses.length === 0) {
@@ -131,16 +119,12 @@ const ProjectsPageCard: React.FC<INeurosynthProjectReturn> = (props) => {
                 >
                     <ProjectsPageCardStep
                         title="Curation"
-                        optionalText={
-                            activeStep < 0 ? 'Not started' : activeStep === 0 ? 'In progress' : ''
-                        }
+                        optionalText={activeStep < 0 ? 'Not started' : activeStep === 0 ? 'In progress' : ''}
                         isActive={activeStep === 0}
                     />
                     <ProjectsPageCardStep
                         title="Extraction"
-                        optionalText={
-                            activeStep < 1 ? 'Not started' : activeStep === 1 ? 'In progress' : ''
-                        }
+                        optionalText={activeStep < 1 ? 'Not started' : activeStep === 1 ? 'In progress' : ''}
                         isActive={activeStep === 1}
                     />
                     <ProjectsPageCardStep
@@ -168,12 +152,7 @@ const ProjectsPageCard: React.FC<INeurosynthProjectReturn> = (props) => {
                         />
                     )}
                     {created_at && (
-                        <Chip
-                            label={`Created: ${createdDate}`}
-                            variant="outlined"
-                            size="small"
-                            sx={{ mr: '6px' }}
-                        />
+                        <Chip label={`Created: ${createdDate}`} variant="outlined" size="small" sx={{ mr: '6px' }} />
                     )}
                     {provenance?.curationMetadata?.prismaConfig?.isPrisma && (
                         <Chip
@@ -185,11 +164,7 @@ const ProjectsPageCard: React.FC<INeurosynthProjectReturn> = (props) => {
                         />
                     )}
                     {studyset && (
-                        <Chip
-                            variant="outlined"
-                            size="small"
-                            label={`${(studyset.studies || []).length} studies`}
-                        />
+                        <Chip variant="outlined" size="small" label={`${(studyset.studies || []).length} studies`} />
                     )}
                 </Box>
                 <MuiLink
@@ -229,19 +204,12 @@ const ProjectsPageCard: React.FC<INeurosynthProjectReturn> = (props) => {
                 <Box>
                     {activeStep < 0 ? (
                         <Box sx={{ color: 'warning.dark' }}>
-                            This project has not been initialized. Click the name of this project
-                            (above) to get started
+                            This project has not been initialized. Click the name of this project (above) to get started
                         </Box>
                     ) : activeStep === 0 && curationSummary ? (
-                        <ProjectsPageCardSummaryCuration
-                            projectId={id || ''}
-                            {...curationSummary}
-                        />
+                        <ProjectsPageCardSummaryCuration projectId={id || ''} {...curationSummary} />
                     ) : activeStep === 1 && extractionSummary ? (
-                        <ProjectsPageCardExtractionSummary
-                            projectId={id || ''}
-                            {...extractionSummary}
-                        />
+                        <ProjectsPageCardExtractionSummary projectId={id || ''} {...extractionSummary} />
                     ) : (
                         <ProjectsPageCardSummaryMetaAnalyses
                             projectId={id || ''}

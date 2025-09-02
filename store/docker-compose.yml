@@ -53,7 +53,7 @@ services:
     build: 
       context: ./postgres
       dockerfile: ./Dockerfile.old
-    # shm_size: '256MB'  # if I'm going to increase work_mem in postgres, also increase this
+    shm_size: '256MB'
     volumes:
       - postgres_data:/var/lib/postgresql/data
     expose:
@@ -73,7 +73,7 @@ services:
     build:
       context: ./postgres
       dockerfile: ./Dockerfile
-    # shm_size: '256MB'  # if I'm going to increase work_mem in postgres, also increase this
+    shm_size: '256MB'  # if I'm going to increase work_mem in postgres, also increase this
     volumes:
       - postgres17_data:/var/lib/postgresql/data
     expose:
@@ -90,8 +90,8 @@ services:
   pghero:
     image: ankane/pghero
     restart: always
-    ports:
-      - "8080:8080"
+    expose:
+      - "8080"
     env_file:
       - .env
     environment:
