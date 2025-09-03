@@ -45,7 +45,9 @@ const SleuthImportWizardUpload: React.FC<{
 
         for (const targetFile of [...event.target.files]) {
             try {
-                const parsedFile = await parseFile(targetFile);
+                let parsedFile = await parseFile(targetFile);
+                // Normalize Windows and lone carriage returns to Unix/Mac line endings
+                parsedFile = parsedFile.replace(/\r\n|\r/g, '\n');
                 uploadedFiles.push({
                     file: targetFile,
                     parsedFileContents: parsedFile,
