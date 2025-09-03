@@ -7,7 +7,7 @@ services:
       dockerfile: ./Dockerfile
       context: ./backend
     depends_on:
-      compose_pgsql:
+      compose_pgsql17:
         condition: service_healthy
       compose_worker:
         condition: service_started
