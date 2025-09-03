@@ -7,7 +7,7 @@ services:
       context: ./backend
       dockerfile: ./Dockerfile
     depends_on:
-      store-pgsql:
+      store-pgsql17:
         condition: service_healthy
       store_redis:
         condition: service_healthy
@@ -98,7 +98,7 @@ services:
       DATABASE_URL: "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:5432/${POSTGRES_DB}"
       RAILS_RELATIVE_URL_ROOT: "/pghero"
     depends_on:
-      store-pgsql:
+      store-pgsql17:
         condition: service_healthy
 
   grafana:
@@ -118,7 +118,7 @@ services:
       - grafana_data:/var/lib/grafana
       - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
     depends_on:
-      store-pgsql:
+      store-pgsql17:
         condition: service_healthy
     networks:
       - default
