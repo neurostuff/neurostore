@@ -5,11 +5,16 @@ datasources:
     type: postgres
     access: proxy
     isDefault: true
+
+    # Connection
+    url: $__env{POSTGRES_HOST}:5432
     user: $__env{POSTGRES_USER}
+    database: $__env{POSTGRES_DB}
+
     secureJsonData:
       password: $__env{POSTGRES_PASSWORD}
+
     jsonData:
-      host: store-pgsql
-      port: 5432
-      database: $__env{POSTGRES_DB}
-      sslmode: disable
+      sslmode: "disable"
+      postgresVersion: 1700
+
