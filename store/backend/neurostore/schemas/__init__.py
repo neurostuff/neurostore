@@ -22,6 +22,7 @@ from .pipeline import (
     PipelineSchema,
     PipelineConfigSchema,
     PipelineStudyResultSchema,
+    PipelineEmbeddingSchema,
 )
 
 __all__ = [
@@ -44,4 +45,5 @@ __all__ = [
     "PipelineSchema",
     "PipelineConfigSchema",
     "PipelineStudyResultSchema",
+    "PipelineEmbeddingSchema",
 ]

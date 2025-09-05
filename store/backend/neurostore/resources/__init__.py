@@ -19,6 +19,7 @@ from .pipeline import (
     PipelinesView,
     PipelineConfigsView,
     PipelineStudyResultsView,
+    PipelineEmbeddingsView,
 )
 
 __all__ = [
@@ -36,4 +37,5 @@ __all__ = [
     "PipelinesView",
     "PipelineConfigsView",
     "PipelineStudyResultsView",
+    "PipelineEmbeddingsView",
 ]

@@ -9,7 +9,7 @@ from webargs import fields
 from .utils import view_maker
 from ..utils import parse_json_filter, build_jsonpath
 from .base import ObjectView, ListView
-from ..models import Pipeline, PipelineConfig, PipelineStudyResult
+from ..models import Pipeline, PipelineConfig, PipelineStudyResult, PipelineEmbedding
 from ..schemas.pipeline import (
     pipeline_schema,
     pipeline_schemas,
@@ -17,6 +17,8 @@ from ..schemas.pipeline import (
     pipeline_config_schemas,
     pipeline_study_result_schema,
     pipeline_study_result_schemas,
+    pipeline_embedding_schema,
+    pipeline_embedding_schemas,
 )
 
 
@@ -291,3 +293,10 @@ class PipelineStudyResultsView(ObjectView, ListView):
         else:
             # Standard POST: require authorization (enforced by OpenAPI and Flask)
             return super().post(self)
+
+
+@view_maker
+class PipelineEmbeddingsView(ObjectView, ListView):
+    model = PipelineEmbedding
+    schema = pipeline_embedding_schema
+    schemas = pipeline_embedding_schemas

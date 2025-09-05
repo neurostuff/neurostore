@@ -629,7 +629,6 @@ class ListView(BaseView):
                 try:
                     schema.dump(record)
                 except Exception as rec_err:
-                    # logger.error("Serialization failed on record #%d: %s", idx, record)
                     raise ValueError(
                         f"Serialization failed on record #{idx}: {record}. Error: {rec_err}"
                     ) from rec_err
@@ -642,10 +641,6 @@ class ListView(BaseView):
 
     @cache.cached(60 * 60, query_string=True, make_cache_key=cache_key_creator)
     def search(self, extra_args=None):
-        # Parse arguments using webargs
-        import logging
-
-        logging.warning(f"I RAN HERE Request args: {request.args}")
         args = parser.parse(self._user_args, request, location="query")
         if extra_args:
             args.update(extra_args)

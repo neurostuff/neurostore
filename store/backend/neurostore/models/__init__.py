@@ -15,6 +15,7 @@ from .data import (
     Pipeline,
     PipelineConfig,
     PipelineStudyResult,
+    PipelineEmbedding,
 )
 from .auth import User, Role
 
@@ -37,4 +38,5 @@ __all__ = [
     "Pipeline",
     "PipelineConfig",
     "PipelineStudyResult",
+    "PipelineEmbedding",
 ]

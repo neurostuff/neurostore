@@ -1,6 +1,7 @@
 import string
 from sqlalchemy import func, text
 
+from pgvector.sqlalchemy import Vector
 from flask import request, abort
 from webargs.flaskparser import parser
 from webargs import fields
@@ -11,9 +12,13 @@ from sqlalchemy.orm import (
     raiseload,
     selectinload,
 )
+import sqlalchemy as sa
 from sqlalchemy import select
 from sqlalchemy.orm import aliased
 
+import numpy as np
+from ..embeddings import get_embedding
+from ..models import PipelineEmbedding
 from .utils import view_maker, get_current_user
 from .base import BaseView, ObjectView, ListView, clear_cache, create_user
 from ..database import db
@@ -381,6 +386,10 @@ class BaseStudiesView(ObjectView, ListView):
     _nested = {"versions": "StudiesView"}
 
     _view_fields = {
+        "semantic_search": fields.String(),
+        "pipeline_config_id": fields.String(),
+        "distance_threshold": fields.Float(load_default=0.5),
+        "overall_cap": fields.Integer(load_default=3000),
         "level": fields.String(dump_default="group", load_default="group"),
         "flat": fields.Boolean(load_default=False),
         "info": fields.Boolean(load_default=False),
@@ -413,6 +422,55 @@ class BaseStudiesView(ObjectView, ListView):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.context = {}
+
+    def ann_query_object(
+        self,
+        q,  # an existing SQLAlchemy Query object
+        user_vector,
+        config_id,
+        distance_threshold=0.5,
+        overall_cap=3000,
+    ):
+        # Parameters (explicit types to avoid incorrect bind processing)
+        qvec = sa.bindparam("qvec", type_=Vector())
+        cfg = sa.bindparam("config_id", type_=sa.String())
+        thr = sa.bindparam("threshold", type_=sa.Float())
+
+        # Distance expression
+        distance = sa.cast(PipelineEmbedding.embedding.op("<=>")(qvec), sa.Float).label(
+            "distance"
+        )
+
+        # Build the ANN CTE
+        inner = (
+            sa.select(
+                PipelineEmbedding.base_study_id,
+                distance,
+            )
+            .where(PipelineEmbedding.config_id == cfg)
+            .order_by(distance)
+            .limit(overall_cap)
+        )
+        nearest = inner.cte("nearest_results").prefix_with("MATERIALIZED")
+
+        # ensure qvec is a plain 1-D Python list of floats (pgvector requires 1-D)
+        qvec_value = np.asarray(user_vector).ravel().astype(float).tolist()
+
+        # Add the CTE join + filters to the *existing* query
+        q = (
+            q.with_entities(BaseStudy)
+            .join(nearest, BaseStudy.id == nearest.c.base_study_id)
+            .filter(nearest.c.distance < thr)
+            .order_by(nearest.c.distance)
+            .params(
+                qvec=qvec_value,
+                config_id=config_id,
+                threshold=distance_threshold,
+            )
+        )
+
+        # return the modified query object
+        return q
 
     def eager_load(self, q, args=None):
         args = args or {}
@@ -450,6 +508,36 @@ class BaseStudiesView(ObjectView, ListView):
         return q
 
     def view_search(self, q, args):
+        if args.get("semantic_search"):
+            pipeline_config_id = args.get("pipeline_config_id", None)
+            if pipeline_config_id is None:
+                row = db.session.execute(
+                    select(
+                        PipelineConfig.id, PipelineConfig.embedding_dimensions
+                    ).where(
+                        PipelineConfig.has_embeddings == True,  # noqa E712
+                        PipelineConfig.config_args["extractor_kwargs"][
+                            "extraction_model"
+                        ].astext
+                        == "text-embedding-3-small",
+                        PipelineConfig.config_args["extractor_kwargs"][
+                            "text_source"
+                        ].astext
+                        == "abstract",
+                    )
+                ).first()
+                if row is None:
+                    pipeline_config_id = None
+                    dimensions = None
+                else:
+                    pipeline_config_id, dimensions = row
+            user_vector = get_embedding(args["semantic_search"], dimensions=dimensions)
+            distance_threshold = args.get("distance_threshold", 0.5)
+            overall_cap = args.get("overall_cap", 3000)
+            q = self.ann_query_object(
+                q, user_vector, pipeline_config_id, distance_threshold, overall_cap
+            )
+
         # Spatial filter: x, y, z, radius must all be present to apply
         x = args.get("x")
         y = args.get("y")
@@ -712,6 +800,9 @@ class BaseStudiesView(ObjectView, ListView):
             abort(
                 400, {"message": "Invalid feature filter(s)", "errors": invalid_filters}
             )
+        if args.get("semantic_search"):
+            q = q.filter(self._model.semantic_search == args["semantic_search"])
+
         return q
 
     def join_tables(self, q, args):
@@ -721,7 +812,6 @@ class BaseStudiesView(ObjectView, ListView):
         return super().join_tables(q, args)
 
     def post(self):
-
         # the request is either a list or a dict
         if isinstance(request.json, dict):
             return super().post()
