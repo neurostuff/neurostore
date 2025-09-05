@@ -18,19 +18,48 @@ from tenacity import (
     retry=retry_if_exception_type(Exception),
 )
 def _call_openai_create(
-    model: str, input_text: str, dimensions: Optional[int] = None
+    model: str,
+    input_text: str,
+    dimensions: Optional[int] = None,
+    api_key: Optional[str] = None,
 ) -> Any:
     """
     Internal call wrapped with tenacity to perform the OpenAI embeddings request.
 
-    This tries the common SDK surface openai.Embedding.create(...). If that attribute is
-    missing (different client versions), the caller will attempt other fallbacks.
-
+    This prefers the modern SDK client (openai.OpenAI().embeddings.create) when available,
+    and falls back to legacy surfaces (openai.Embedding.create or openai.embeddings.create).
     The `dimensions` argument is forwarded to the OpenAI API when provided.
+    The optional `api_key` is used to construct the modern OpenAI client if supplied.
     """
-    if dimensions is None:
-        return openai.Embedding.create(model=model, input=input_text)
-    return openai.Embedding.create(model=model, input=input_text, dimensions=dimensions)
+    # Try modern OpenAI client (openai>=1.x)
+    try:
+        if hasattr(openai, "OpenAI"):
+            client = openai.OpenAI(api_key=api_key) if api_key else openai.OpenAI()
+            if dimensions is None:
+                return client.embeddings.create(model=model, input=input_text)
+            return client.embeddings.create(
+                model=model, input=input_text, dimensions=dimensions
+            )
+    except Exception:
+        # If the modern client fails for any reason, fall through to legacy surfaces.
+        pass
+
+    # Fallback: older SDK surfaces
+    if hasattr(openai, "Embedding") and hasattr(openai.Embedding, "create"):
+        if dimensions is None:
+            return openai.Embedding.create(model=model, input=input_text)
+        return openai.Embedding.create(
+            model=model, input=input_text, dimensions=dimensions
+        )
+
+    if hasattr(openai, "embeddings") and hasattr(openai.embeddings, "create"):
+        if dimensions is None:
+            return openai.embeddings.create(model=model, input=input_text)
+        return openai.embeddings.create(
+            model=model, input=input_text, dimensions=dimensions
+        )
+
+    raise AttributeError("No supported OpenAI embeddings API found on openai package")
 
 
 def get_embedding(text: str, dimensions: Optional[int] = None) -> List[float]:
@@ -69,49 +98,39 @@ def get_embedding(text: str, dimensions: Optional[int] = None) -> List[float]:
         raise ValueError("dimensions must be an int when provided")
 
     try:
-        # Primary path: openai.Embedding.create (older/newer SDKs)
-        try:
-            resp = _call_openai_create(
-                model=model_name, input_text=text, dimensions=dimensions
-            )
-        except AttributeError:
-            # Fallback: some SDK versions expose a lower-level embeddings API
-            # e.g., openai.embeddings.create(...)
-            if hasattr(openai, "embeddings") and hasattr(openai.embeddings, "create"):
-                # wrap this call with tenacity as well
-                @retry(
-                    reraise=True,
-                    stop=stop_after_attempt(3),
-                    wait=wait_exponential(multiplier=0.5, max=1.0),
-                    retry=retry_if_exception_type(Exception),
-                )
-                def _call_fallback(m: str, i: str, d: Optional[int] = None) -> Any:
-                    if d is None:
-                        return openai.embeddings.create(model=m, input=i)
-                    return openai.embeddings.create(model=m, input=i, dimensions=d)
+        # Use unified caller that handles both modern and legacy SDKs.
+        resp = _call_openai_create(
+            model=model_name, input_text=text, dimensions=dimensions, api_key=api_key
+        )
 
-                resp = _call_fallback(model_name, text, dimensions)
-            else:
-                raise
-
-        # Expected response shape: dict with "data" -> list -> {"embedding": [...]}
-        if not isinstance(resp, dict):
+        # Handle both legacy dict responses and modern OpenAI response objects.
+        data = None
+        if isinstance(resp, dict):
+            data = resp.get("data")
+        elif hasattr(resp, "data"):
+            data = resp.data
+        else:
             raise RuntimeError(f"Unexpected response type from OpenAI: {type(resp)}")
 
-        data = resp.get("data")
         if not isinstance(data, list) or not data:
             raise RuntimeError(f"Invalid response shape from OpenAI: {resp}")
 
         first = data[0]
-        if not isinstance(first, dict) or "embedding" not in first:
+        # extract embedding whether first is a dict or an object with .embedding
+        embedding = None
+        if isinstance(first, dict):
+            embedding = first.get("embedding")
+        elif hasattr(first, "embedding"):
+            embedding = first.embedding
+        else:
             raise RuntimeError(f"Invalid embedding in OpenAI response: {resp}")
 
-        embedding = first["embedding"]
-        if not isinstance(embedding, list):
-            raise RuntimeError("Embedding returned by OpenAI is not a list")
+        if not hasattr(embedding, "__iter__"):
+            raise RuntimeError("Embedding returned by OpenAI is not iterable")
 
-        # ensure floats
-        return [float(x) for x in embedding]
+        # normalize to plain list of floats
+        embedding_list = list(embedding)
+        return [float(x) for x in embedding_list]
 
     except Exception as exc:
         # Surface a clear runtime error for callers/tests

@@ -1,6 +1,7 @@
 import pytest
 import random
 import json
+import os
 from os import environ
 from neurostore.models import Analysis, Condition
 from sqlalchemy.orm import scoped_session, sessionmaker
@@ -30,6 +31,20 @@ import vcr
 import logging
 
 LOGGER = logging.getLogger(__name__)
+
+
+@pytest.fixture(scope="module")
+def vcr_config():
+    """
+    Simple pytest-recording vcr_config fixture.
+    Filters out authentication headers (authorization) and sets cassette dir and record mode.
+    """
+    return {
+        "cassette_library_dir": os.path.join(os.path.dirname(__file__), "cassettes"),
+        "record_mode": "once",
+        "filter_headers": ["authorization"],
+    }
+
 
 # Set fixed seed for reproducible tests
 random.seed(42)
@@ -445,9 +460,12 @@ def assign_neurosynth_to_user(session, ingest_neurosynth_large, auth_client):
 
 
 @pytest.fixture(scope="function")
-@vcr.use_cassette("cassettes/ingest_neurovault.yml")
 def ingest_neurovault(session):
-    return ingest.ingest_neurovault(limit=5, max_images=50)
+    cassette_path = os.path.join(
+        os.path.dirname(__file__), "cassettes", "ingest_neurovault.yml"
+    )
+    with vcr.use_cassette(cassette_path, record_mode="once"):
+        return ingest.ingest_neurovault(limit=5, max_images=50)
 
 
 @pytest.fixture(scope="function")
