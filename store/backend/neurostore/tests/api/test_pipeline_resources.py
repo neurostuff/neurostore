@@ -613,3 +613,40 @@ def test_post_pipeline_study_results_with_study_ids(
     data2 = response2.json()
     returned_ids2 = {r["base_study_id"] for r in data2["results"]}
     assert returned_ids2 == {study1_id, study2_id}
+
+
+def test_get_pipeline_embeddings_list(auth_client, ingest_demographic_features):
+    """Test GET /api/pipeline-embeddings/ returns embeddings created by ingestion."""
+    response = auth_client.get("/api/pipeline-embeddings/")
+    assert response.status_code == 200
+
+    data = response.json()
+    assert "results" in data
+    assert (
+        len(data["results"]) >= 1
+    )  # ingest_demographic_features should provide at least one
+
+    item = data["results"][0]
+    assert "id" in item
+    assert "embedding" in item
+    assert isinstance(item["embedding"], list)
+    assert len(item["embedding"]) > 0
+    assert all(isinstance(x, (int, float)) for x in item["embedding"])
+
+
+def test_get_pipeline_embedding_by_id(auth_client, ingest_demographic_features):
+    """Test GET /api/pipeline-embeddings/{id} returns the correct embedding."""
+    list_resp = auth_client.get("/api/pipeline-embeddings/")
+    assert list_resp.status_code == 200
+    list_data = list_resp.json()
+    assert list_data["results"]
+
+    emb_id = list_data["results"][0]["id"]
+    resp = auth_client.get(f"/api/pipeline-embeddings/{emb_id}")
+    assert resp.status_code == 200
+
+    item = resp.json()
+    assert item["id"] == emb_id
+    assert "embedding" in item
+    assert isinstance(item["embedding"], list)
+    assert all(isinstance(x, (int, float)) for x in item["embedding"])

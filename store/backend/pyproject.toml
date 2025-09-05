@@ -37,7 +37,10 @@ dependencies = [
     "openapi-spec-validator~=0.3",
     "scipy~=1.9",
     "orjson~=3.8",
-    "flask_orjson~=2.0.0"
+    "flask_orjson~=2.0.0",
+    "pgvector~=0.4",
+    "openai~=1.106",
+    "tenacity~=9.1",
 ]
 
 [tool.setuptools.packages.find]

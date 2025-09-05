@@ -2,7 +2,12 @@
 
 from marshmallow import fields, post_dump
 
-from neurostore.models import PipelineStudyResult, Pipeline, PipelineConfig
+from neurostore.models import (
+    PipelineStudyResult,
+    Pipeline,
+    PipelineConfig,
+    PipelineEmbedding,
+)
 from neurostore.schemas.data import BaseStudySchema, BaseSchema
 
 
@@ -106,6 +111,46 @@ class PipelineStudyResultSchema(BaseSchema):
         return data
 
 
+class PipelineEmbeddingSchema(BaseSchema):
+    """Schema for pipeline study embeddings."""
+
+    # Configuration relationship
+    config_id = fields.String(required=True)
+    _config = fields.Nested(PipelineConfigSchema, load_only=True, data_key="config")
+
+    # Base study relationship
+    base_study_id = fields.String()
+    _base_study = fields.Nested(BaseStudySchema, load_only=True, data_key="base_study")
+
+    # Execution metadata
+    date_executed = fields.DateTime(
+        dump_only=True, description="Timestamp of pipeline execution", allow_none=True
+    )
+
+    # Result and input data
+    file_inputs = fields.Dict(
+        description="Files used as input for the pipeline", allow_none=True
+    )
+
+    # Pipeline execution status
+    status = fields.Str(
+        validate=lambda x: x in ["SUCCESS", "FAILURE", "ERROR", "UNKNOWN"],
+        required=True,
+        description="Current status of the pipeline execution",
+    )
+
+    # Vector embedding data
+    embedding = fields.List(
+        fields.Float(),
+        required=True,
+        description="Vector embedding data",
+        allow_none=False,
+    )
+
+    class Meta:
+        model = PipelineEmbedding
+
+
 # Register schemas
 pipeline_schema = PipelineSchema()
 pipeline_schemas = PipelineSchema(many=True)
@@ -113,3 +158,5 @@ pipeline_config_schema = PipelineConfigSchema()
 pipeline_config_schemas = PipelineConfigSchema(many=True)
 pipeline_study_result_schema = PipelineStudyResultSchema()
 pipeline_study_result_schemas = PipelineStudyResultSchema(many=True)
+pipeline_embedding_schema = PipelineEmbeddingSchema()
+pipeline_embedding_schemas = PipelineEmbeddingSchema(many=True)
