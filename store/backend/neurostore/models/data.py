@@ -36,7 +36,6 @@ def generate_id():
     return shortuuid.ShortUUID().random(length=12)
 
 
-
 class BaseMixin(object):
     id = db.Column(db.Text, primary_key=True, index=True, default=generate_id)
     created_at = db.Column(

@@ -1,6 +1,6 @@
 from __future__ import with_statement
 from alembic import context
-from sqlalchemy import engine_from_config, pool
+from sqlalchemy import engine_from_config, pool, text
 from logging.config import fileConfig
 import logging
 
@@ -75,6 +75,10 @@ def run_migrations_online():
     )
 
     connection = engine.connect()
+
+    # Ensure pgvector extension exists in the current database before running migrations.
+    connection.execute(text("CREATE EXTENSION IF NOT EXISTS vector;"))
+
     context.configure(
         connection=connection,
         target_metadata=target_metadata,
