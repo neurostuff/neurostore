@@ -1,6 +1,5 @@
 import re
 
-from pgvector.sqlalchemy import Vector
 import sqlalchemy as sa
 from sqlalchemy import exists
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -12,7 +11,7 @@ from sqlalchemy.orm import relationship, backref, validates, aliased
 import shortuuid
 
 
-from .migration_types import TSVector
+from .migration_types import TSVector, VectorType
 from ..database import db
 from ..utils import parse_json_filter, build_jsonpath
 
@@ -36,13 +35,6 @@ def _check_type(x):
 def generate_id():
     return shortuuid.ShortUUID().random(length=12)
 
-
-class VectorType(sa.types.TypeDecorator):
-    impl = Vector
-    cache_ok = True
-
-    def load_dialect_impl(self, dialect):
-        return dialect.type_descriptor(Vector())
 
 
 class BaseMixin(object):
