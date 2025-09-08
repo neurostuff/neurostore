@@ -526,11 +526,17 @@ class BaseStudiesView(ObjectView, ListView):
                         == "abstract",
                     )
                 ).first()
-                if row is None:
-                    pipeline_config_id = None
-                    dimensions = None
-                else:
-                    pipeline_config_id, dimensions = row
+            else:
+                row = db.session.execute(
+                    select(
+                        PipelineConfig.id, PipelineConfig.embedding_dimensions
+                    ).where(PipelineConfig.id == pipeline_config_id)
+                ).first()
+            if row is None:
+                pipeline_config_id = None
+                dimensions = None
+            else:
+                pipeline_config_id, dimensions = row
             user_vector = get_embedding(args["semantic_search"], dimensions=dimensions)
             distance_threshold = args.get("distance_threshold", 0.5)
             overall_cap = args.get("overall_cap", 3000)
