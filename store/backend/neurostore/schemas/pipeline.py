@@ -29,6 +29,8 @@ class PipelineConfigSchema(BaseSchema):
     executed_at = fields.DateTime()
     config_hash = fields.Str()
     pipeline_id = fields.String()
+    has_embeddings = fields.Bool()
+    embedding_dimensions = fields.Int(allow_none=True)
     schema = fields.Dict(allow_none=True)
     _pipeline = fields.Nested(PipelineSchema, load_only=True, data_key="pipeline")
 

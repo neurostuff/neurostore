@@ -43,6 +43,8 @@ class PipelineConfigsView(ObjectView, ListView):
 
     _view_fields = {
         "pipeline": fields.List(fields.String(), load_default=[]),
+        "has_embeddings": fields.Bool(),
+        "embedding_dimensions": fields.Int(load_default=None),
     }
 
     _m2o = {"pipeline": "PipelinesView"}
@@ -58,7 +60,12 @@ class PipelineConfigsView(ObjectView, ListView):
 
         if pipeline_names:
             q = q.join(Pipeline).filter(Pipeline.name.in_(pipeline_names))
-
+        
+        if isinstance(args.get("has_embeddings"), bool):
+                q = q.filter(self.model.has_embeddings.is_(args["has_embeddings"]))
+        if args.get("embedding_dimensions") is not None:
+            q = q.filter(self.model.embedding_dimensions == args["embedding_dimensions"])
+        
         return q
 
     def eager_load(self, q, args=None):

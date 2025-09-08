@@ -650,3 +650,24 @@ def test_get_pipeline_embedding_by_id(auth_client, ingest_demographic_features):
     assert "embedding" in item
     assert isinstance(item["embedding"], list)
     assert all(isinstance(x, (int, float)) for x in item["embedding"])
+
+
+def test_filter_pipeline_configs(auth_client, ingest_demographic_features):
+    """Test filtering pipeline configs that have embeddings."""
+    response = auth_client.get("/api/pipeline-configs/?has_embeddings=true")
+    assert response.status_code == 200
+
+    data = response.json()
+    assert data["results"]
+    for config in data["results"]:
+        assert config["has_embeddings"] is True
+        assert config["embedding_dimensions"] is not None
+        assert config["embedding_dimensions"] > 0
+
+    # Test filtering for configs without embeddings (should be none in this test)
+    response = auth_client.get("/api/pipeline-configs/?has_embeddings=false")
+    assert response.status_code == 200
+    data = response.json()
+    # Depending on test setup, there may or may not be configs without embeddings
+    for config in data["results"]:
+        assert config["has_embeddings"] is False or config["embedding_dimensions"] is None

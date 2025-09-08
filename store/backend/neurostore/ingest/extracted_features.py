@@ -264,9 +264,11 @@ def ingest_feature(
             )
             # Validate vector
             if vector is None:
-                raise ValueError(
-                    "save_as_embedding=True requires a valid 'embedding' in results.json"
+                logging.warning(
+                    "No embedding found in results for base_study_id=%s, skipping", base_study_id
                 )
+                continue
+
             if np is not None and isinstance(vector, np.ndarray):
                 vector_list = vector.tolist()
             elif isinstance(vector, list):
@@ -274,9 +276,16 @@ def ingest_feature(
                 try:
                     vector_list = [float(x) for x in vector]
                 except Exception:
-                    raise ValueError("Provided vector list must contain numeric values")
+                    logging.warning(
+                        "Embedding for base_study_id=%s contains non-float values, skipping",
+                        base_study_id,
+                    )
+                    continue
             else:
-                raise ValueError("vector must be a list of floats or a numpy.ndarray")
+                logging.warning(
+                    "Embedding for base_study_id=%s is not a list, skipping", base_study_id
+                )
+                continue
 
             # Ensure partition exists for this pipeline_config
             # BEFORE ANY operation that could flush

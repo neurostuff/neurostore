@@ -3,7 +3,7 @@ import re
 import sqlalchemy as sa
 from sqlalchemy import exists
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import JSONB, ENUM as PGEnum
 from sqlalchemy import ForeignKeyConstraint, func, text
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.mutable import MutableDict
@@ -14,6 +14,16 @@ import shortuuid
 from .migration_types import TSVector, VectorType
 from ..database import db
 from ..utils import parse_json_filter, build_jsonpath
+
+# status of pipeline run
+STATUS_ENUM = PGEnum(
+    "SUCCESS",
+    "FAILURE",
+    "ERROR",
+    "UNKNOWN",
+    name="status_enum",
+    create_type=True,
+)
 
 SEMVER_REGEX = r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$"  # noqa E501
 
@@ -751,9 +761,7 @@ class PipelineStudyResult(BaseMixin, db.Model):
     date_executed = db.Column(db.DateTime(timezone=True))
     result_data = db.Column(JSONB)
     file_inputs = db.Column(JSONB)
-    status = db.Column(
-        db.Enum("SUCCESS", "FAILURE", "ERROR", "UNKNOWN", name="status_enum")
-    )
+    status = db.Column(STATUS_ENUM)
     config = relationship(
         "PipelineConfig", backref=backref("results", passive_deletes=True)
     )
@@ -780,9 +788,7 @@ class PipelineEmbedding(db.Model):
     base_study_id = db.Column(db.Text, db.ForeignKey("base_studies.id"), index=True)
     date_executed = db.Column(db.DateTime(timezone=True))
     file_inputs = db.Column(JSONB)
-    status = db.Column(
-        db.Enum("SUCCESS", "FAILURE", "ERROR", "UNKNOWN", name="status_enum")
-    )
+    status = db.Column(STATUS_ENUM)
 
     # Store the vector directly on the parent; partitions will add per-dimension CHECKs
     embedding = db.Column(VectorType(), nullable=False)
