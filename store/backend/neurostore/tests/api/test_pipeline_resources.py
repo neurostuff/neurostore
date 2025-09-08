@@ -670,4 +670,6 @@ def test_filter_pipeline_configs(auth_client, ingest_demographic_features):
     data = response.json()
     # Depending on test setup, there may or may not be configs without embeddings
     for config in data["results"]:
-        assert config["has_embeddings"] is False or config["embedding_dimensions"] is None
+        assert (
+            config["has_embeddings"] is False or config["embedding_dimensions"] is None
+        )

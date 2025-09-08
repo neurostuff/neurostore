@@ -265,7 +265,8 @@ def ingest_feature(
             # Validate vector
             if vector is None:
                 logging.warning(
-                    "No embedding found in results for base_study_id=%s, skipping", base_study_id
+                    "No embedding found in results for base_study_id=%s, skipping",
+                    base_study_id,
                 )
                 continue
 
@@ -283,7 +284,8 @@ def ingest_feature(
                     continue
             else:
                 logging.warning(
-                    "Embedding for base_study_id=%s is not a list, skipping", base_study_id
+                    "Embedding for base_study_id=%s is not a list, skipping",
+                    base_study_id,
                 )
                 continue
 

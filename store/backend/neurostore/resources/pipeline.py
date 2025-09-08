@@ -60,12 +60,14 @@ class PipelineConfigsView(ObjectView, ListView):
 
         if pipeline_names:
             q = q.join(Pipeline).filter(Pipeline.name.in_(pipeline_names))
-        
+
         if isinstance(args.get("has_embeddings"), bool):
-                q = q.filter(self.model.has_embeddings.is_(args["has_embeddings"]))
+            q = q.filter(self.model.has_embeddings.is_(args["has_embeddings"]))
         if args.get("embedding_dimensions") is not None:
-            q = q.filter(self.model.embedding_dimensions == args["embedding_dimensions"])
-        
+            q = q.filter(
+                self.model.embedding_dimensions == args["embedding_dimensions"]
+            )
+
         return q
 
     def eager_load(self, q, args=None):

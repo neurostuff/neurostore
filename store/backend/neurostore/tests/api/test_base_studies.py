@@ -614,7 +614,8 @@ def test_base_studies_semantic_search(
     pipeline_config_id = PipelineConfig.query.filter_by(has_embeddings=True).first().id
 
     resp = auth_client.get(
-        f"/api/base-studies/?semantic_search='neural developmental disorders'&distance_threshold=1&pipeline_config_id={pipeline_config_id}"
+        f"/api/base-studies/?semantic_search='neural developmental disorders'&"
+        f"distance_threshold=1&pipeline_config_id={pipeline_config_id}"
     )
     assert resp.status_code == 200
     data = resp.json()
