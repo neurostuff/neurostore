@@ -9,7 +9,7 @@ from webargs import fields
 from .utils import view_maker
 from ..utils import parse_json_filter, build_jsonpath
 from .base import ObjectView, ListView
-from ..models import Pipeline, PipelineConfig, PipelineStudyResult
+from ..models import Pipeline, PipelineConfig, PipelineStudyResult, PipelineEmbedding
 from ..schemas.pipeline import (
     pipeline_schema,
     pipeline_schemas,
@@ -17,6 +17,8 @@ from ..schemas.pipeline import (
     pipeline_config_schemas,
     pipeline_study_result_schema,
     pipeline_study_result_schemas,
+    pipeline_embedding_schema,
+    pipeline_embedding_schemas,
 )
 
 
@@ -41,6 +43,8 @@ class PipelineConfigsView(ObjectView, ListView):
 
     _view_fields = {
         "pipeline": fields.List(fields.String(), load_default=[]),
+        "has_embeddings": fields.Bool(),
+        "embedding_dimensions": fields.Int(load_default=None),
     }
 
     _m2o = {"pipeline": "PipelinesView"}
@@ -56,6 +60,13 @@ class PipelineConfigsView(ObjectView, ListView):
 
         if pipeline_names:
             q = q.join(Pipeline).filter(Pipeline.name.in_(pipeline_names))
+
+        if isinstance(args.get("has_embeddings"), bool):
+            q = q.filter(self.model.has_embeddings.is_(args["has_embeddings"]))
+        if args.get("embedding_dimensions") is not None:
+            q = q.filter(
+                self.model.embedding_dimensions == args["embedding_dimensions"]
+            )
 
         return q
 
@@ -291,3 +302,10 @@ class PipelineStudyResultsView(ObjectView, ListView):
         else:
             # Standard POST: require authorization (enforced by OpenAPI and Flask)
             return super().post(self)
+
+
+@view_maker
+class PipelineEmbeddingsView(ObjectView, ListView):
+    model = PipelineEmbedding
+    schema = pipeline_embedding_schema
+    schemas = pipeline_embedding_schemas

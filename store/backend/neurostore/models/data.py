@@ -3,18 +3,27 @@ import re
 import sqlalchemy as sa
 from sqlalchemy import exists
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import JSONB, ENUM as PGEnum
 from sqlalchemy import ForeignKeyConstraint, func, text
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.orm import relationship, backref, validates, aliased
 import shortuuid
 
-from .migration_types import TSVector
+
+from .migration_types import TSVector, VectorType
 from ..database import db
 from ..utils import parse_json_filter, build_jsonpath
 
-SEMVER_REGEX = r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$"  # noqa E501
+# status of pipeline run
+STATUS_ENUM = PGEnum(
+    "SUCCESS",
+    "FAILURE",
+    "ERROR",
+    "UNKNOWN",
+    name="status_enum",
+    create_type=True,
+)
 
 SEMVER_REGEX = r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$"  # noqa E501
 
@@ -169,7 +178,6 @@ class AnnotationAnalysis(db.Model):
 
 class BaseStudy(BaseMixin, db.Model):
     __tablename__ = "base_studies"
-
     name = db.Column(db.String)
     description = db.Column(db.String)
     publication = db.Column(db.String, index=True)
@@ -730,6 +738,8 @@ class PipelineConfig(BaseMixin, db.Model):
         db.DateTime(timezone=True)
     )  # when the pipeline was executed on the filesystem (not when it was ingested)
     config_hash = db.Column(db.String, index=True)
+    has_embeddings = db.Column(db.Boolean, default=False)
+    embedding_dimensions = db.Column(db.Integer, default=0, nullable=True)
     pipeline = relationship(
         "Pipeline", backref=backref("configs", passive_deletes=True)
     )
@@ -751,12 +761,37 @@ class PipelineStudyResult(BaseMixin, db.Model):
     date_executed = db.Column(db.DateTime(timezone=True))
     result_data = db.Column(JSONB)
     file_inputs = db.Column(JSONB)
-    status = db.Column(
-        db.Enum("SUCCESS", "FAILURE", "ERROR", "UNKNOWN", name="status_enum")
-    )
+    status = db.Column(STATUS_ENUM)
     config = relationship(
         "PipelineConfig", backref=backref("results", passive_deletes=True)
     )
+
+
+class PipelineEmbedding(db.Model):
+    __tablename__ = "pipeline_embeddings"
+    # Partition by LIST on config_id (parent table)
+    __table_args__ = ({"postgresql_partition_by": "LIST (config_id)"},)
+
+    # Primary key MUST include the partition key for partitioned tables
+    id = db.Column(db.Text, primary_key=True)
+    config_id = db.Column(
+        db.Text,
+        db.ForeignKey("pipeline_configs.id", ondelete="CASCADE"),
+        primary_key=True,
+        index=True,
+    )
+
+    created_at = db.Column(
+        db.DateTime(timezone=True), index=True, server_default=func.now()
+    )
+    updated_at = db.Column(db.DateTime(timezone=True), index=True, onupdate=func.now())
+    base_study_id = db.Column(db.Text, db.ForeignKey("base_studies.id"), index=True)
+    date_executed = db.Column(db.DateTime(timezone=True))
+    file_inputs = db.Column(JSONB)
+    status = db.Column(STATUS_ENUM)
+
+    # Store the vector directly on the parent; partitions will add per-dimension CHECKs
+    embedding = db.Column(VectorType(), nullable=False)
 
 
 # from . import event_listeners  # noqa E402

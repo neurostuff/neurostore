@@ -32,6 +32,8 @@
 		"ms-toolsai.jupyter",
 		"ms-python.vscode-pylance",
 		"ms-python.python",
+                "RooVeterinaryInc.roo-cline",
+
 	]
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.

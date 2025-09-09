@@ -467,6 +467,10 @@ jobs:
         docker compose exec -T \
         store-pgsql17 \
         psql -U postgres -c "create database test_db"
+
+        docker compose exec -T \
+        store-pgsql17 \
+        psql -U postgres -d test_db -c "CREATE EXTENSION IF NOT EXISTS vector;"
     -
       name: Initialize Compose Database
       run: |
