@@ -175,7 +175,8 @@ export const stringsAreValidFileFormat = (sleuthStudy: string): { isValid: boole
 
 export const validateFileContents = (fileContents: string): { isValid: boolean; errorMessage?: string } => {
     // we expect the first line to be something like: "// Reference"
-    const [expectedReferenceString, ...lines] = fileContents.split(/\r?\n/);
+    // we can also assume that all line endings are \n as fileContents have been normalized in parseFileContents
+    const [expectedReferenceString, ...lines] = fileContents.split('\n');
     if (!expectedReferenceString || lines.length === 0) {
         return {
             isValid: false,
@@ -213,6 +214,11 @@ export const validateFileContents = (fileContents: string): { isValid: boolean; 
         isValid: true,
         errorMessage: undefined,
     };
+};
+
+export const normalizeFileContents = (fileContents: string): string => {
+    // Normalize Windows and lone carriage returns to Unix/Mac line endings
+    return fileContents.replace(/\r\n|\r/g, '\n');
 };
 
 const extractStubFromSleuthStudy = (sleuthStudy: string): ISleuthStub => {
@@ -262,7 +268,7 @@ const extractStubFromSleuthStudy = (sleuthStudy: string): ISleuthStub => {
 };
 
 export const sleuthUploadToStubs = (sleuthFile: string): Omit<ISleuthFileUploadStubs, 'fileName'> => {
-    const [expectedReferenceString, ...lines] = sleuthFile.replaceAll(/\/\/\s*/g, '').split(/\r?\n/);
+    const [expectedReferenceString, ...lines] = sleuthFile.replaceAll(/\/\/\s*/g, '').split('\n');
 
     const sleuthStubs = lines
         .join('\n')
@@ -289,8 +295,9 @@ export const parseFile = async (file: File): Promise<string> => {
             if (!fileContents || typeof fileContents !== 'string') {
                 return reject(new Error('File contents are invalid (expected string)'));
             }
-            const { isValid, errorMessage } = validateFileContents(fileContents);
-            return isValid ? resolve(fileContents) : reject(new Error(errorMessage || 'File is invalid'));
+            const normalizedFileContents = normalizeFileContents(fileContents);
+            const { isValid, errorMessage } = validateFileContents(normalizedFileContents);
+            return isValid ? resolve(normalizedFileContents) : reject(new Error(errorMessage || 'File is invalid'));
         };
 
         fileReader.onerror = (err) => {

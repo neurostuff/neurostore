@@ -29,7 +29,7 @@ describe('DoSleuthImport', () => {
             cy.contains('button', 'next').click();
         });
 
-        describe('should upload invalid sleuth files', () => {
+        describe('should handle invalid sleuth files', () => {
             it('should upload a file and show invalid with no reference', () => {
                 cy.get('input[type="file"]').selectFile(
                     'cypress/fixtures/DoSleuthImport/sleuthFiles/invalidSleuthFileNoReference.txt',
@@ -140,6 +140,15 @@ describe('DoSleuthImport', () => {
                     { force: true }
                 );
                 cy.get('[data-testid="InsertDriveFileIcon"]').should('have.length', 2);
+            });
+
+            it.only('should upload a valid sleuth file with windows line endings', () => {
+                cy.get('input[type="file"]').selectFile(
+                    'cypress/fixtures/DoSleuthImport/sleuthFiles/validSleuthFileWindowsLineEndings.txt',
+                    { force: true }
+                );
+                cy.get('[data-testid="InsertDriveFileIcon"]').should('exist').and('be.visible');
+                cy.contains('button', 'create project').should('be.enabled');
             });
 
             it('should enable if a valid file is uploaded', () => {
