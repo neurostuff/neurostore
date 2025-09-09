@@ -20,7 +20,7 @@ import {
     setGivenStudyStatusesAsCompleteHelper,
     updateStubFieldHelper,
 } from 'pages/Project/store/ProjectStore.helpers';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useQueryClient } from 'react-query';
 import { useParams } from 'react-router-dom';
 import API from 'utils/api';
@@ -734,6 +734,24 @@ export const useProjectCurationImport = (importId: string) =>
     useProjectStore((state) =>
         state.provenance.curationMetadata.imports.find((curationImport) => curationImport.id === importId)
     );
+export const useProjectGetColumnForStub = (stubId: string) =>
+    useProjectStore((state) => {
+        const colIndex = state.provenance.curationMetadata.columns.findIndex((col) =>
+            col.stubStudies.find((stub) => stub.id === stubId)
+        );
+
+        if (colIndex < 0) {
+            return {
+                column: undefined,
+                columnIndex: -1,
+            };
+        }
+
+        return {
+            columnIndex: colIndex,
+            column: state.provenance.curationMetadata.columns[colIndex],
+        };
+    });
 
 // curation updater hooks
 export const useUpdateProjectIsPublic = () => useProjectStore((state) => state.updateProjectIsPublic);

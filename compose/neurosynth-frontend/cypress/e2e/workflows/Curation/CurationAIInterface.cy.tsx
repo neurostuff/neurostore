@@ -118,8 +118,51 @@ describe('CurationAIInterface', () => {
             cy.contains('4. Included').should('exist');
         });
 
-        it('should have a promote non duplicated studies button', () => {
-            cy.contains('Promote Non Duplicated Studies').should('exist');
+        it('should have the identification phase UI initially', () => {
+            cy.contains(
+                'Neurosynth-Compose has searched your import and automatically excluded any duplicates found.'
+            ).should('exist');
+            cy.contains('Manually review').should('exist');
+            cy.contains('Promote all uncategorized studies to screening').should('exist');
+        });
+
+        it('should show the table after clicking manually review', () => {
+            cy.contains('Manually review').click();
+            // The table should now be visible instead of the identification phase UI
+            cy.contains(
+                'Neurosynth-Compose has searched your import and automatically excluded any duplicates found.'
+            ).should('not.exist');
+            // Check that some table elements are visible
+            cy.get('table').should('exist');
+            // Check that the back button is visible
+            cy.contains('Back to identification overview').should('exist');
+        });
+
+        it('should return to identification overview after clicking back button', () => {
+            cy.contains('Manually review').click();
+            cy.contains('Back to identification overview').click();
+            // Should be back to the identification phase UI
+            cy.contains(
+                'Neurosynth-Compose has searched your import and automatically excluded any duplicates found.'
+            ).should('exist');
+            cy.contains('Manually review').should('exist');
+            cy.contains('Promote all uncategorized studies to screening').should('exist');
+        });
+
+        it('should handle focus mode transition when going back to overview', () => {
+            cy.contains('Manually review').click();
+            // Click on a study row to enter focus mode
+            cy.get('tr').eq(1).click(); // Click on first study row
+            // Should be in focus mode
+            cy.contains('back to table view').should('exist');
+            // Click back to identification overview (should be first button)
+            cy.contains('Back to identification overview').should('be.visible');
+            cy.contains('Back to identification overview').click();
+            // Should be back to the identification phase UI (not in focus mode)
+            cy.contains(
+                'Neurosynth-Compose has searched your import and automatically excluded any duplicates found.'
+            ).should('exist');
+            cy.contains('back to table view').should('not.exist');
         });
 
         it('should have a button to show the PRISMA diagram', () => {
@@ -541,7 +584,7 @@ describe('CurationAIInterface', () => {
                 }).as('projectFixture');
 
                 cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
-                cy.contains('button', 'Promote Non Duplicated Studies').click();
+                cy.contains('button', 'Promote all uncategorized studies to screening').click();
                 cy.contains('button', 'Continue').click();
                 cy.get('tr').should('have.length', 1);
             });

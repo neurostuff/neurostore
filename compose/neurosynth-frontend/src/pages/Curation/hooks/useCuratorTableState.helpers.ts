@@ -185,7 +185,7 @@ export const createColumn = (
             id: 'select',
             cell: CuratorTableSelectCell,
             header: CuratorTableSelectHeader,
-            size: 60,
+            size: 80,
         });
     }
     if (columnId === 'summary') {

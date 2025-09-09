@@ -60,9 +60,10 @@ const CurationBoardAI: React.FC<{
                     </Box>
                 ) : selectedGroup.UI === ECurationBoardAIInterface.CURATOR ? (
                     <CurationBoardAIInterfaceCurator
+                        key={selectedGroup.id} // need this to trigger the UIMode state reset when the group has changed
                         groups={groups}
                         onSetSelectedGroup={handleSetSelectedGroup}
-                        group={selectedGroup}
+                        selectedGroup={selectedGroup}
                     />
                 ) : selectedGroup.UI === ECurationBoardAIInterface.EXCLUDE ? (
                     <CurationBoardAIInterfaceExclude group={selectedGroup} />
