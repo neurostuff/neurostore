@@ -34,7 +34,7 @@ dependencies = [
     "shortuuid~=1.0",
     "sqlalchemy~=2.0",
     "sqlalchemy-utils~=0.36",
-    "webargs~=8.7",
+    "webargs~=7.0",
     "wrapt~=1.12",
     "NiMARE==0.2.2",
     "pynv @ git+https://github.com/NeuroVault/pynv.git#egg=pynv",
