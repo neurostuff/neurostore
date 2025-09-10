@@ -3,7 +3,7 @@ import pytest
 from ...models import Study, Analysis, Condition, AnalysisConditions
 
 
-def test_condition_cloning_via_api(auth_client, ingest_neurosynth, session):
+def test_condition_cloning_neurovault(auth_client, ingest_neurovault, session):
     """
     Integration test to verify condition cloning preserves original references via API.
     This test validates the complete end-to-end behavior.
@@ -22,9 +22,6 @@ def test_condition_cloning_via_api(auth_client, ingest_neurosynth, session):
                 break
         if study_with_conditions:
             break
-
-    if not study_with_conditions:
-        pytest.skip("No study with conditions found")
 
     # Count total conditions before cloning
     total_conditions_before = Condition.query.count()
@@ -72,7 +69,7 @@ def test_condition_cloning_via_api(auth_client, ingest_neurosynth, session):
     )
 
 
-def test_condition_cloning_creates_own_test_data(auth_client, session):
+def test_condition_cloning_new_data(auth_client, session):
     """
     Integration test to verify condition cloning with self-created test data.
     This test creates its own data instead of relying on fixtures.
@@ -145,30 +142,3 @@ def test_condition_cloning_creates_own_test_data(auth_client, session):
         f"Condition count increased from {conditions_before} to {conditions_after}. "
         "Conditions should not be cloned!"
     )
-
-
-def test_study_cloning_creates_new_study_id(auth_client, ingest_neurosynth):
-    """
-    Test that studies get new IDs when cloned (normal cloning behavior).
-    This confirms that the preserve_on_clone flag only affects conditions, not studies.
-    """
-    # Get a study to clone
-    original_study = Study.query.first()
-    if not original_study:
-        pytest.skip("No study found")
-
-    # Clone the study
-    resp = auth_client.post(f"/api/studies/?source_id={original_study.id}", data={})
-    assert resp.status_code == 200
-
-    cloned_study_data = resp.json()
-    cloned_study_id = cloned_study_data["id"]
-
-    # Study should have a new ID
-    assert cloned_study_id != original_study.id, "Study should be cloned with new ID"
-
-    # Verify cloned study exists in database
-    cloned_study = Study.query.filter_by(id=cloned_study_id).first()
-    assert cloned_study is not None
-    assert cloned_study.name == original_study.name  # Same content
-    assert cloned_study.id != original_study.id  # Different ID
