@@ -672,10 +672,7 @@ def meta_analysis_cached_result_files(
         .scalars()
         .first()
     )
-    if meta_analysis is None:
-        pytest.skip(
-            "No public MetaAnalysis available for this user", allow_module_level=True
-        )
+
     meta_analysis_id = meta_analysis.id
     res = cached_metaresult
     res.save_maps(tmpdir / "maps")

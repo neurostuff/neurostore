@@ -1,7 +1,6 @@
 from neurosynth_compose.models import Project, MetaAnalysisResult, User
 from neurosynth_compose.schemas import MetaAnalysisSchema
 from sqlalchemy import select
-import pytest
 
 
 def test_get_all_projects(session, app, auth_client, user_data):
@@ -52,8 +51,6 @@ def test_delete_project(session, app, auth_client, user_data):
         .scalars()
         .first()
     )
-    if project is None:
-        pytest.skip("No project owned by auth_client")
 
     # add a meta-analysis result
     project.meta_analyses[0].results.append(MetaAnalysisResult())

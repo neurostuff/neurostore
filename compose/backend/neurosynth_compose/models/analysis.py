@@ -8,7 +8,15 @@ import secrets
 
 from neurosynth_compose.database import db
 from sqlalchemy import (
-    Column, Text, DateTime, JSON, Float, Integer, Boolean, CheckConstraint, ForeignKey
+    Column,
+    Text,
+    DateTime,
+    JSON,
+    Float,
+    Integer,
+    Boolean,
+    CheckConstraint,
+    ForeignKey,
 )
 
 
@@ -132,9 +140,7 @@ class MetaAnalysis(BaseMixin, db.Model):
     description = Column(Text)
     specification_id = Column(Text, ForeignKey("specifications.id"))
     neurostore_studyset_id = Column(Text, ForeignKey("studyset_references.id"))
-    neurostore_annotation_id = Column(
-        Text, ForeignKey("annotation_references.id")
-    )
+    neurostore_annotation_id = Column(Text, ForeignKey("annotation_references.id"))
     cached_studyset_id = Column(Text, ForeignKey("studysets.id"))
     cached_annotation_id = Column(Text, ForeignKey("annotations.id"))
     project_id = Column(Text, ForeignKey("projects.id"))
@@ -177,9 +183,7 @@ class NeurovaultCollection(BaseMixin, db.Model):
     __tablename__ = "neurovault_collections"
 
     collection_id = Column(Integer, unique=True)
-    result_id = Column(
-        Text, ForeignKey("meta_analysis_results.id"), unique=True
-    )
+    result_id = Column(Text, ForeignKey("meta_analysis_results.id"), unique=True)
     files = relationship("NeurovaultFile", back_populates="neurovault_collection")
     result = relationship(
         "MetaAnalysisResult", back_populates="neurovault_collection", uselist=False
@@ -232,12 +236,8 @@ class NeurostoreAnalysis(BaseMixin, db.Model):
     exception = Column(Text)
     traceback = Column(Text)
     status = Column(Text, default="PENDING")
-    meta_analysis_id = Column(
-        Text, ForeignKey("meta_analyses.id"), unique=True
-    )
-    neurostore_study_id = Column(
-        Text, ForeignKey("neurostore_studies.neurostore_id")
-    )
+    meta_analysis_id = Column(Text, ForeignKey("meta_analyses.id"), unique=True)
+    neurostore_study_id = Column(Text, ForeignKey("neurostore_studies.neurostore_id"))
     meta_analysis = relationship(
         "MetaAnalysis", back_populates="neurostore_analysis", uselist=False
     )

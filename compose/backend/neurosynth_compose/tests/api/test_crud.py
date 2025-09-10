@@ -23,13 +23,11 @@ from sqlalchemy import select
     ],
 )
 def test_create(session, auth_client, user_data, db, endpoint, model, schema):
-    user = db.session.execute(
-        select(User).where(User.name == "user1")
-    ).scalar_one_or_none()
+    user = (
+        db.session.execute(select(User).where(User.name == "user1")).scalars().first()
+    )
     examples = (
         db.session.execute(select(model).where(model.user == user)).scalars().all()
-        if user is not None
-        else []
     )
     for example in examples:
         payload = schema().dump(example)
