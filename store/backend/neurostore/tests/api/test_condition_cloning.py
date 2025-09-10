@@ -89,7 +89,7 @@ def test_condition_cloning_cross_user_permissions(auth_client, session):
     test_condition = Condition(
         name="Cross User Test Condition",
         description="A test condition for cross-user cloning",
-        user_id=condition_owner.id
+        user_id=condition_owner.external_id
     )
     session.add(test_condition)
     session.flush()
@@ -98,7 +98,7 @@ def test_condition_cloning_cross_user_permissions(auth_client, session):
     test_study = Study(
         name="Cross User Test Study",
         description="A test study for cross-user cloning",
-        user_id=condition_owner.id
+        user_id=condition_owner.external_id
     )
     session.add(test_study)
     session.flush()
@@ -107,7 +107,7 @@ def test_condition_cloning_cross_user_permissions(auth_client, session):
     test_analysis = Analysis(
         name="Cross User Test Analysis",
         study_id=test_study.id,
-        user_id=condition_owner.id
+        user_id=condition_owner.external_id
     )
     session.add(test_analysis)
     session.flush()
@@ -159,8 +159,8 @@ def test_condition_cloning_cross_user_permissions(auth_client, session):
     )
     
     # Condition should still be owned by original user (read-only reference)
-    assert cloned_condition.user_id == condition_owner.id, (
-        f"Condition ownership changed! Expected {condition_owner.id}, got {cloned_condition.user_id}"
+    assert cloned_condition.user_id == condition_owner.external_id, (
+        f"Condition ownership changed! Expected {condition_owner.external_id}, got {cloned_condition.user_id}"
     )
     
     # Total condition count should not increase
@@ -258,7 +258,7 @@ def test_debug_condition_serialization_cloning(session):
     condition = Condition(
         name="Debug Condition",
         description="For debugging",
-        user_id=test_user.id
+        user_id=test_user.external_id
     )
     session.add(condition)
     session.commit()
