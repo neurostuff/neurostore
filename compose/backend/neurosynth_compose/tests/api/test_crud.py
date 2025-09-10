@@ -65,6 +65,10 @@ def test_create(session, auth_client, user_data, db, endpoint, model, schema):
                 del payload["studyset"]
             if "annotation" in payload:
                 del payload["annotation"]
+            if "cached_studyset" in payload:
+                del payload["cached_studyset"]
+            if "cached_annotation" in payload:
+                del payload["cached_annotation"]
 
         resp = auth_client.post(f"/api/{endpoint}", data=payload)
 
