@@ -2,7 +2,7 @@
 
 Neurostore is a containerized neuroimaging meta-analysis platform consisting of two Python Flask backend services (Neurostore and Neurosynth-Compose) and a React/TypeScript frontend. All services are deployed using Docker Compose.
 
-**Always reference these instructions first and fallback to search or bash commands only when you encounter unexpected information that does not match the info here.**
+**Always reference these instructions first and fallback to `.github/workflows/workflow.yml` for testing setup help, and then fallback to search or bash commands only when you encounter unexpected information that does not match the info here.**
 
 ## Working Effectively
 
