@@ -70,16 +70,19 @@ class StringOrNested(fields.Nested):
         if self.context.get("clone"):
             # Check if this schema has preserve_on_clone set for any id field
             has_preserve_on_clone = any(
-                f_obj.metadata.get("id_field") and f_obj.metadata.get("preserve_on_clone")
+                f_obj.metadata.get("id_field")
+                and f_obj.metadata.get("preserve_on_clone")
                 for f_obj in schema._declared_fields.values()
             )
-            
+
             if has_preserve_on_clone:
-                # For schemas with preserve_on_clone, include ONLY id fields with preserve_on_clone=True
+                # For schemas with preserve_on_clone,
+                # include ONLY id fields with preserve_on_clone=True
                 preserve_fields = [
                     field
                     for field, f_obj in schema._declared_fields.items()
-                    if f_obj.metadata.get("id_field") and f_obj.metadata.get("preserve_on_clone")
+                    if f_obj.metadata.get("id_field")
+                    and f_obj.metadata.get("preserve_on_clone")
                 ]
                 if preserve_fields:
                     schema.only = schema.set_class(preserve_fields)
@@ -89,11 +92,12 @@ class StringOrNested(fields.Nested):
                 id_fields = [
                     field
                     for field, f_obj in schema._declared_fields.items()
-                    if f_obj.metadata.get("id_field") and not f_obj.metadata.get("preserve_on_clone")
+                    if f_obj.metadata.get("id_field")
+                    and not f_obj.metadata.get("preserve_on_clone")
                 ]
                 for f in id_fields:
                     schema.exclude.add(f)
-                    
+
         if self.context.get("info"):
             info_fields = [
                 field
@@ -153,21 +157,24 @@ class BaseSchema(Schema):
         exclude = kwargs.get("exclude") or self.opts.exclude
         context = kwargs.get("context", {})
         only = kwargs.get("only")
-        
+
         # if cloning and not only id, exclude id fields (unless preserve_on_clone is True)
         if context.get("clone") and only != ("id",):
             # Check if this schema has preserve_on_clone set for any id field
             has_preserve_on_clone = any(
-                f_obj.metadata.get("id_field") and f_obj.metadata.get("preserve_on_clone")
+                f_obj.metadata.get("id_field")
+                and f_obj.metadata.get("preserve_on_clone")
                 for f_obj in self._declared_fields.values()
             )
-            
+
             if has_preserve_on_clone:
-                # For schemas with preserve_on_clone, include ONLY id fields with preserve_on_clone=True
+                # For schemas with preserve_on_clone,
+                # include ONLY id fields with preserve_on_clone=True
                 preserve_fields = [
                     field
                     for field, f_obj in self._declared_fields.items()
-                    if f_obj.metadata.get("id_field") and f_obj.metadata.get("preserve_on_clone")
+                    if f_obj.metadata.get("id_field")
+                    and f_obj.metadata.get("preserve_on_clone")
                 ]
                 if preserve_fields and only is None:
                     kwargs["only"] = tuple(preserve_fields)
@@ -180,7 +187,7 @@ class BaseSchema(Schema):
                 ]
                 for f in id_fields:
                     exclude += (f,)
-                    
+
         if context.get("flat"):
             relationships = [
                 field
@@ -223,7 +230,9 @@ class ConditionSchema(BaseDataSchema):
         allow_none = ("name", "description")
 
     # Override the id field to preserve it during cloning
-    id = fields.String(metadata={"info_field": True, "id_field": True, "preserve_on_clone": True})
+    id = fields.String(
+        metadata={"info_field": True, "id_field": True, "preserve_on_clone": True}
+    )
 
 
 class EntitySchema(BaseDataSchema):

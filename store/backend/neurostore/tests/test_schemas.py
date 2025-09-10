@@ -191,7 +191,9 @@ def test_condition_preserve_on_clone_metadata():
 
     # Check that the preserve_on_clone metadata is set
     preserve_on_clone = id_field.metadata.get("preserve_on_clone", False)
-    assert preserve_on_clone is True, "ConditionSchema ID field should have preserve_on_clone=True"
+    assert (
+        preserve_on_clone is True
+    ), "ConditionSchema ID field should have preserve_on_clone=True"
 
 
 def test_study_cloning_excludes_id_fields():
