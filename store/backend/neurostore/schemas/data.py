@@ -17,9 +17,10 @@ from neurostore.models import Analysis, Point
 
 # context parameters
 # clone: create a new object with new ids (true or false)
-# nested: serialize nested objects (true or false)
+# nested: serialize nested objects (true or false)  
 # flat: do not display any relationships
 # info: only display info fields
+# preserve_on_clone: field metadata to preserve original values when cloning
 
 
 class BooleanOrString(fields.Field):
@@ -70,7 +71,7 @@ class StringOrNested(fields.Nested):
             id_fields = [
                 field
                 for field, f_obj in schema._declared_fields.items()
-                if f_obj.metadata.get("id_field")
+                if f_obj.metadata.get("id_field") and not f_obj.metadata.get("preserve_on_clone")
             ]
             for f in id_fields:
                 schema.exclude.add(f)
@@ -119,35 +120,6 @@ class StringOrNested(fields.Nested):
         return schema.load(value, many=self.many)
 
 
-class ConditionReference(StringOrNested):
-    """
-    Special field for condition references that preserves original condition IDs during cloning.
-    When clone=True, conditions should keep their original references instead of being cloned.
-    """
-    
-    def _modify_schema(self):
-        """Override to never clone conditions - always preserve original references"""
-        schema = self.schema
-        schema.context = self.context
-        
-        # Never apply clone logic to conditions - we want to preserve original references
-        # This means conditions will keep their original IDs even when clone=True
-        
-        if self.context.get("info"):
-            info_fields = [
-                field
-                for field, f_obj in schema._declared_fields.items()
-                if f_obj.metadata.get("info_field")
-            ]
-            schema.only = schema.set_class(info_fields)
-            # set exclude to an empty set
-            schema.exclude = schema.set_class()
-        # have the changes take effect
-        schema._init_fields()
-
-        return schema
-
-
 # https://github.com/marshmallow-code/marshmallow/issues/466#issuecomment-285342071
 class BaseSchemaOpts(SchemaOpts):
     def __init__(self, meta, *args, **kwargs):
@@ -161,12 +133,12 @@ class BaseSchema(Schema):
     def __init__(self, *args, **kwargs):
         exclude = kwargs.get("exclude") or self.opts.exclude
         context = kwargs.get("context", {})
-        # if cloning and not only id, exclude id fields
+        # if cloning and not only id, exclude id fields (unless preserve_on_clone is True)
         if context.get("clone") and kwargs.get("only") != ("id",):
             id_fields = [
                 field
                 for field, f_obj in self._declared_fields.items()
-                if f_obj.metadata.get("id_field")
+                if f_obj.metadata.get("id_field") and not f_obj.metadata.get("preserve_on_clone")
             ]
             for f in id_fields:
                 exclude += (f,)
@@ -211,16 +183,8 @@ class ConditionSchema(BaseDataSchema):
         additional = ("name", "description")
         allow_none = ("name", "description")
 
-    def __init__(self, *args, **kwargs):
-        # Override the clone behavior specifically for ConditionSchema
-        # Remove clone from context when initializing ConditionSchema to prevent ID exclusion
-        context = kwargs.get("context", {}) or {}
-        if context.get("clone"):
-            # Make a copy of context and remove clone flag for conditions
-            new_context = context.copy()
-            new_context.pop("clone", None)
-            kwargs["context"] = new_context
-        super().__init__(*args, **kwargs)
+    # Override the id field to preserve it during cloning
+    id = fields.String(metadata={"info_field": True, "id_field": True, "preserve_on_clone": True})
 
 
 class EntitySchema(BaseDataSchema):
