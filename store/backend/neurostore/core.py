@@ -1,5 +1,7 @@
 import os
 from pathlib import Path
+import json
+
 
 from connexion.middleware import MiddlewarePosition
 from starlette.middleware.cors import CORSMiddleware
@@ -11,49 +13,17 @@ from connexion.resolver import MethodResolver
 from flask_caching import Cache
 from flask_orjson import OrjsonProvider
 
-# Starlette/Connexion middleware for unified error handling
-from .middleware.error_handling import NeuroStoreErrorMiddleware
-from .middleware.request_context import RequestContextMiddleware
+# Centralized error handling: replaced middleware with Starlette exception handlers
+from neurostore.exceptions.handlers import (
+    neurostore_exception_handler,
+    general_exception_handler,
+    flask_neurostore_body_and_status,
+    flask_general_body_and_status,
+)
+
+from neurostore.exceptions.base import NeuroStoreException
 
 from .database import init_db
-
-# from datetime import datetime
-
-# import sqltap.wsgi
-# import sqltap
-
-# import yappi
-
-
-# class SQLTapMiddleware:
-#     def __init__(self, app):
-#         self.app = app
-
-#     async def __call__(self, scope, receive, send):
-#         profiler = sqltap.start()
-#         await self.app(scope, receive, send)
-#         statistics = profiler.collect()
-#         sqltap.report(statistics, "report.txt", report_format="text")
-
-
-# class LineProfilerMiddleware:
-#     def __init__(self, app):
-#         self.app = app
-
-#     async def __call__(self, scope, receive, send):
-#         yappi.start()
-#         await self.app(scope, receive, send)
-#         yappi.stop()
-#         filename = (
-#             scope["path"].lstrip("/").rstrip("/").replace("/", "-")
-#             + "-"
-#             + scope["method"].lower()
-#             + str(datetime.now())
-#             + ".prof"
-#         )
-#         stats = yappi.get_func_stats()
-#         stats.save(filename, type="pstat")
-
 
 connexion_app = connexion.FlaskApp(__name__, specification_dir="openapi/")
 app = connexion_app.app
@@ -74,12 +44,6 @@ options = {"swagger_ui": True}
 openapi_file = Path(os.path.dirname(__file__) + "/openapi/neurostore-openapi.yml")
 
 
-# Request context (adds request_id, instance) before routing
-connexion_app.add_middleware(
-    RequestContextMiddleware,
-    position=MiddlewarePosition.BEFORE_ROUTING,
-)
-
 # Enable CORS for both ASGI and WSGI (moved before error handling)
 connexion_app.add_middleware(
     CORSMiddleware,
@@ -90,21 +54,43 @@ connexion_app.add_middleware(
     allow_headers=["*"],
 )
 
-# Centralized error handling middleware (converts exceptions to RFC7807 responses)
-connexion_app.add_middleware(
-    NeuroStoreErrorMiddleware,
-    position=MiddlewarePosition.BEFORE_ROUTING,
-)
+exception_handlers = {
+    NeuroStoreException: neurostore_exception_handler,
+    Exception: general_exception_handler,
+}
+# Attach exception handlers to the connexion app for use by the underlying ASGI app.
+# Connexion/Starlette will pick this up when constructing the ASGI app.
+connexion_app.exception_handlers = exception_handlers
 
-# add sqltap
-# connexion_app.add_middleware(
-#    SQLTapMiddleware,
-# )
 
-# add profiling
-# connexion_app.add_middleware(
-#    LineProfilerMiddleware
-# )
+# Register equivalent Flask (WSGI) error handlers so WSGI responses produced
+# during tests include the same JSON body and CORS headers as the ASGI handlers.
+def _flask_neurostore_handler(exc):
+    body, status = flask_neurostore_body_and_status(exc)
+    resp = app.response_class(
+        json.dumps(body), status=status, mimetype="application/json"
+    )
+    resp.headers["Access-Control-Allow-Origin"] = "*"
+    resp.headers["Access-Control-Allow-Methods"] = "*"
+    resp.headers["Access-Control-Allow-Headers"] = "*"
+    resp.headers["Access-Control-Allow-Credentials"] = "true"
+    return resp
+
+
+def _flask_general_handler(exc):
+    body, status = flask_general_body_and_status(exc)
+    resp = app.response_class(
+        json.dumps(body), status=status, mimetype="application/json"
+    )
+    resp.headers["Access-Control-Allow-Origin"] = "*"
+    resp.headers["Access-Control-Allow-Methods"] = "*"
+    resp.headers["Access-Control-Allow-Headers"] = "*"
+    resp.headers["Access-Control-Allow-Credentials"] = "true"
+    return resp
+
+
+app.register_error_handler(NeuroStoreException, _flask_neurostore_handler)
+app.register_error_handler(Exception, _flask_general_handler)
 
 connexion_app.add_api(
     openapi_file,
@@ -115,7 +101,6 @@ connexion_app.add_api(
     strict_validation=os.getenv("DEBUG", False) == "True",
     validate_responses=os.getenv("DEBUG", False) == "True",
 )
-
 
 auth0 = oauth.register(
     "auth0",

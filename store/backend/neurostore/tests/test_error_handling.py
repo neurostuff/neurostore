@@ -13,7 +13,10 @@ from neurostore.exceptions.utils.error_helpers import (
     abort_validation,
     abort_not_found,
 )
-from neurostore.middleware.error_handling import NeuroStoreErrorMiddleware
+from neurostore.exceptions.handlers import (
+    neurostore_exception_handler,
+    general_exception_handler,
+)
 
 
 async def _dummy_receive():
@@ -60,20 +63,13 @@ def test_error_helpers_raise():
         abort_not_found("User", "123")
 
 
-def test_middleware_handles_neurostore_exception():
+def test_neurostore_exception_handler():
     async def inner():
-        async def app(scope, receive, send):
-            return None
-
-        mw = NeuroStoreErrorMiddleware(app)
         scope = {"type": "http", "method": "GET", "path": "/test", "headers": []}
         request = Request(scope, receive=_dummy_receive)
+        exc = create_not_found_error("User", "123")
 
-        async def call_next(req):
-            # raise a NeuroStore-specific exception
-            raise create_not_found_error("User", "123")
-
-        response = await mw.dispatch(request, call_next)
+        response = await neurostore_exception_handler(request, exc)
         assert response.status_code == 404
         assert response.media_type == "application/json"
         body = json.loads(response.body)
@@ -84,19 +80,13 @@ def test_middleware_handles_neurostore_exception():
     asyncio.run(inner())
 
 
-def test_middleware_handles_unexpected_exception():
+def test_general_exception_handler():
     async def inner():
-        async def app(scope, receive, send):
-            return None
-
-        mw = NeuroStoreErrorMiddleware(app)
         scope = {"type": "http", "method": "GET", "path": "/test", "headers": []}
         request = Request(scope, receive=_dummy_receive)
+        exc = ValueError("boom")
 
-        async def call_next(req):
-            raise ValueError("boom")
-
-        response = await mw.dispatch(request, call_next)
+        response = await general_exception_handler(request, exc)
         assert response.status_code == 500
         assert response.media_type == "application/json"
         body = json.loads(response.body)
