@@ -1,22 +1,30 @@
 import os
 
-from flask_cors import CORS
-
+from connexion.middleware import MiddlewarePosition
+from starlette.middleware.cors import CORSMiddleware
 from authlib.integrations.flask_client import OAuth
 import connexion
-from connexion.resolver import MethodViewResolver
+from connexion.resolver import MethodResolver
 
 
 def create_app():
-    connexion_app = connexion.FlaskApp(
-        __name__,
-        specification_dir="openapi/",
-        debug=os.getenv(key="DEBUG", default=False) == "True",
-    )
+    connexion_app = connexion.FlaskApp(__name__, specification_dir="openapi/")
 
-    options = {"swagger_ui": True}
     app = connexion_app.app
     app.config.from_object(os.environ["APP_SETTINGS"])
+
+    options = {"swagger_ui": True}
+    
+    # Enable CORS for both ASGI and WSGI
+    connexion_app.add_middleware(
+        CORSMiddleware,
+        position=MiddlewarePosition.BEFORE_ROUTING,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
     # use application context for connexion to work with app variables
     with app.app_context():
         connexion_app.add_api(
@@ -24,9 +32,9 @@ def create_app():
             base_path="/api",
             options=options,
             arguments={"title": "NeuroSynth API"},
-            resolver=MethodViewResolver("neurosynth_compose.resources"),
-            strict_validation=os.getenv(key="DEBUG", default=False) == "True",
-            validate_responses=os.getenv(key="DEBUG", default=False) == "True",
+            resolver=MethodResolver("neurosynth_compose.resources"),
+            strict_validation=os.getenv("DEBUG", False) == "True",
+            validate_responses=os.getenv("DEBUG", False) == "True",
         )
 
     oauth = OAuth(app)
@@ -50,8 +58,5 @@ def create_app():
     # setup authentication
     # jwt = JWTManager(app)
     app.secret_key = app.config["JWT_SECRET_KEY"]
-
-    # Enable CORS
-    cors = CORS(app)  # noqa: F841
 
     return app

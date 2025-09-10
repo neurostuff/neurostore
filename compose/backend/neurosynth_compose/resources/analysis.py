@@ -2,7 +2,7 @@ from collections import ChainMap
 import pathlib
 from operator import itemgetter
 
-import connexion
+from connexion.context import context
 from flask import abort, request, jsonify, current_app
 from flask.views import MethodView
 
@@ -74,15 +74,15 @@ def create_user():
     if "@" in name:
         name = profile_info.get("nickname", "Unknown")
 
-    current_user = User(external_id=connexion.context["user"], name=name)
+    current_user = User(external_id=context["user"], name=name)
 
     return current_user
 
 
 def get_current_user():
-    user = connexion.context.get("user")
+    user = context.get("user")
     if user:
-        return User.query.filter_by(external_id=connexion.context["user"]).first()
+        return User.query.filter_by(external_id=context["user"]).first()
     return None
 
 

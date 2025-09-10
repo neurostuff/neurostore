@@ -1,4 +1,4 @@
-import connexion
+from connexion.context import context
 from flask import request, abort
 from webargs.flaskparser import parser
 
@@ -32,7 +32,7 @@ class UsersView(ObjectView, ListView):
 
     def put(self, id):
         current_user = db.session.execute(
-            select(User).where(User.external_id == connexion.context["user"])
+            select(User).where(User.external_id == context["user"])
         ).scalar_one_or_none()
         data = parser.parse(self.__class__._schema, request)
         if id != data["id"] or id != current_user.id:
