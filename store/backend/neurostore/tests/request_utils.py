@@ -37,29 +37,31 @@ class Client(object):
     ):
         """Generic request handler"""
         request_function = getattr(self.client, request)
-        headers = headers or self._get_headers()
-
+        headers = headers or self._get_headers() or {}
+ 
         if content_type is None:
             content_type = "application/json"
-
-        headers["Content-Type"] = content_type
-
+ 
+        # Request body Content-Type vs response Accept header.
+        # Set Accept to request the desired response media type from the server.
+        headers["Accept"] = content_type
+        # Only set Content-Type when we're sending a request body.
+        if data is not None:
+            headers["Content-Type"] = content_type
+ 
         route = self.prepend + route
-
+ 
         if self.client_flask:
             kwargs = {
                 "headers": headers,
                 "params": params,
             }
-
+ 
             if data is not None and json_dump is True:
                 data = json.dumps(data)
                 kwargs["data"] = data
-
-            return request_function(
-                route,
-                **kwargs,
-            )
+ 
+            return request_function(route, **kwargs)
         else:
             return request_function(route, json=data, headers=headers, params=params)
 

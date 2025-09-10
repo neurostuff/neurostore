@@ -1,6 +1,7 @@
 import connexion
-from flask import request, abort
+from flask import request
 from webargs.flaskparser import parser
+from neurostore.exceptions.utils.error_helpers import abort_unprocessable, abort_not_found
 
 from .data import ListView, ObjectView
 from ..models.auth import User
@@ -35,19 +36,14 @@ class UsersView(ObjectView, ListView):
         ).first()
         data = parser.parse(self.__class__._schema, request)
         if id != data["id"] or id != current_user.id:
-            return abort(
-                422,
-                description=(
-                    f"User ID mismatch. "
-                    f"URL ID: {id}, Data ID: {data['id']}, "
-                    f"Current User ID: {current_user.id}"
-                ),
+            abort_unprocessable(
+                f"User ID mismatch. URL ID: {id}, Data ID: {data['id']}, Current User ID: {current_user.id}"
             )
 
         record = self._model.query.filter_by(id=id).first()
 
         if record is None:
-            abort(422, description=f"User record not found with ID: {id}")
+            abort_not_found("User", str(id))
 
         for k, v in data.items():
             setattr(record, k, v)

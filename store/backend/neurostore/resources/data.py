@@ -2,8 +2,15 @@ import string
 from sqlalchemy import func, text
 
 from pgvector.sqlalchemy import Vector
-from flask import request, abort
+from flask import request
 from webargs.flaskparser import parser
+from neurostore.exceptions.utils.error_helpers import (
+    abort_validation,
+    abort_not_found,
+    abort_permission,
+    abort_unprocessable,
+    make_field_error,
+)
 from webargs import fields
 import sqlalchemy.sql.expression as sae
 from sqlalchemy.orm import (
@@ -317,24 +324,23 @@ class AnnotationsView(ObjectView, ListView):
         if source == "neurostore":
             return cls.load_from_neurostore(source_id, data)
         else:
-            abort(
-                422,
-                {
-                    "message": "invalid source, choose from: 'neurostore'",
-                    "errors": f"source: {source}",
-                },
-            )
+            field_err = make_field_error("source", source, valid_options=["neurostore"])
+            abort_unprocessable("invalid source, choose from: 'neurostore'", [field_err])
 
     @classmethod
     def load_from_neurostore(cls, source_id, data=None):
         q = cls._model.query.filter_by(id=source_id)
         q = cls().join_tables(q, {})
-        annotation = q.first_or_404()
+        annotation = q.first()
+        if annotation is None:
+            abort_not_found(cls._model.__name__, source_id)
         parent_source_id = annotation.source_id
         parent_source = annotation.source
         while parent_source_id is not None and parent_source == "neurostore":
             source_id = parent_source_id
-            parent = cls._model.query.filter_by(id=source_id).first_or_404()
+            parent = cls._model.query.filter_by(id=source_id).first()
+            if parent is None:
+                abort_not_found(cls._model.__name__, source_id)
             parent_source = parent.source
             parent_source_id = parent.source_id
 
@@ -374,10 +380,7 @@ class AnnotationsView(ObjectView, ListView):
             return
 
         if db_analysis_ids != data_analysis_ids:
-            abort(
-                400,
-                description="annotation request must contain all analyses from the studyset.",
-            )
+            abort_validation("annotation request must contain all analyses from the studyset.")
 
 
 @view_maker
@@ -556,7 +559,7 @@ class BaseStudiesView(ObjectView, ListView):
                 z = float(z)
                 radius = float(radius)
             except Exception:
-                abort(400, "Spatial parameters must be numeric.")
+                abort_validation("Spatial parameters must be numeric.")
             # Join BaseStudy -> Study -> Analysis -> Point
             q = q.join(Study, Study.base_study_id == self._model.id)
             q = q.join(Analysis, Analysis.study_id == Study.id)
@@ -577,7 +580,7 @@ class BaseStudiesView(ObjectView, ListView):
             # Only return distinct base studies
             q = q.distinct()
         elif any(v is not None for v in [x, y, z, radius]):
-            abort(400, "Spatial query requires x, y, z, and radius together.")
+            abort_validation("Spatial query requires x, y, z, and radius together.")
 
         # search studies for data_type
         if args.get("data_type"):
@@ -690,9 +693,8 @@ class BaseStudiesView(ObjectView, ListView):
                 invalid_filters.append({"filter": config_filter, "error": str(e)})
 
         if invalid_filters:
-            abort(
-                400, {"message": "Invalid feature filter(s)", "errors": invalid_filters}
-            )
+            field_err = make_field_error("feature_filters", invalid_filters, code="INVALID_FILTER")
+            abort_validation("Invalid feature filter(s)", [field_err])
 
         # Create subqueries for each pipeline
         pipeline_subqueries = []
@@ -803,9 +805,8 @@ class BaseStudiesView(ObjectView, ListView):
 
         # If any filters were invalid, return 400 with error details
         if invalid_filters:
-            abort(
-                400, {"message": "Invalid feature filter(s)", "errors": invalid_filters}
-            )
+            field_err = make_field_error("feature_filters", invalid_filters, code="INVALID_FILTER")
+            abort_validation("Invalid feature filter(s)", [field_err])
         if args.get("semantic_search"):
             q = q.filter(self._model.semantic_search == args["semantic_search"])
 
@@ -1101,25 +1102,24 @@ class StudiesView(ObjectView, ListView):
         elif source == "pubmed":
             return cls.load_from_pubmed(source_id, data)
         else:
-            abort(
-                422,
-                {
-                    "message": "invalid source, choose from: 'neurostore', 'neurovault', 'pubmed'",
-                    "errors": f"source: {source}",
-                },
-            )
+            field_err = make_field_error("source", source, valid_options=["neurostore", "neurovault", "pubmed"])
+            abort_unprocessable("invalid source, choose from: 'neurostore', 'neurovault', 'pubmed'", [field_err])
 
     @classmethod
     def load_from_neurostore(cls, source_id, data=None):
         q = cls._model.query.filter_by(id=source_id)
         q = cls().eager_load(q, {"nested": True})
 
-        study = q.first_or_404()
+        study = q.first()
+        if study is None:
+            abort_not_found(cls._model.__name__, source_id)
         parent_source_id = study.source_id
         parent_source = study.source
         while parent_source_id is not None and parent_source == "neurostore":
             source_id = parent_source_id
-            parent = cls._model.query.filter_by(id=source_id).first_or_404()
+            parent = cls._model.query.filter_by(id=source_id).first()
+            if parent is None:
+                abort_not_found(cls._model.__name__, source_id)
             parent_source = parent.source
             parent_source_id = parent.source_id
 
@@ -1588,7 +1588,7 @@ class AnnotationAnalysesView(ObjectView, ListView):
             with db.session.no_autoflush:
                 d = ids.get(input_record.id)
                 to_commit.append(
-                    self.__class__.update_or_create(d, id, record=input_record)
+                    self.__class__.update_or_create(d, id=input_record.id, record=input_record)
                 )
 
         db.session.add_all(to_commit)
