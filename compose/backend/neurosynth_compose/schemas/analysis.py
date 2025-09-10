@@ -429,12 +429,14 @@ class ProjectSchema(BaseSchema):
         "id",
         dump_only=True,
         attribute="studyset",
+        allow_none=True
     )
     cached_annotation = fields.Pluck(
         AnnotationSchema,
         "id",
         dump_only=True,
         attribute="annotation",
+        allow_none=True
     )
     meta_analyses = StringOrNested(
         MetaAnalysisSchema, metadata={"pluck": "id"}, dump_only=True, many=True
