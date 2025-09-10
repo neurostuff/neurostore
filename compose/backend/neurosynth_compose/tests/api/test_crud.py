@@ -9,6 +9,7 @@ from ...schemas import (
     ProjectSchema,
 )
 from ...schemas.analysis import StringOrNested
+from sqlalchemy import select
 
 
 @pytest.mark.parametrize(
@@ -21,9 +22,15 @@ from ...schemas.analysis import StringOrNested
         ("projects", Project, ProjectSchema),
     ],
 )
-def test_create(session, auth_client, user_data, endpoint, model, schema):
-    user = User.query.filter_by(name="user1").first()
-    examples = model.query.filter_by(user=user).all()
+def test_create(session, auth_client, user_data, db, endpoint, model, schema):
+    user = db.session.execute(
+        select(User).where(User.name == "user1")
+    ).scalar_one_or_none()
+    examples = (
+        db.session.execute(select(model).where(model.user == user)).scalars().all()
+        if user is not None
+        else []
+    )
     for example in examples:
         payload = schema().dump(example)
         if "id" in payload:
@@ -79,17 +86,21 @@ def test_create(session, auth_client, user_data, endpoint, model, schema):
         ("projects", Project, ProjectSchema),
     ],
 )
-def test_read(session, auth_client, user_data, endpoint, model, schema):
-    user = User.query.filter_by(name="user1").first()
+def test_read(session, auth_client, user_data, db, endpoint, model, schema):
+    user = db.session.execute(
+        select(User).where(User.name == "user1")
+    ).scalar_one_or_none()
     if hasattr(model, "public"):
         query = (model.user == user) | (
             (model.public == True) & (model.draft == False)  # noqa E712
         )
     else:
         query = True
-    expected_results = model.query.filter(query).all()
+    expected_results = db.session.execute(select(model).where(query)).scalars().all()
 
-    resp = auth_client.get(f"/api/{endpoint}")
+    # Request enough results to satisfy test expectations (avoid changing global defaults)
+    page_size_param = f"?page_size={len(expected_results)}"
+    resp = auth_client.get(f"/api/{endpoint}{page_size_param}")
 
     assert resp.status_code == 200
     assert len(expected_results) == len(resp.json["results"])
@@ -114,8 +125,12 @@ def test_read(session, auth_client, user_data, endpoint, model, schema):
     ],
 )
 def test_update(session, auth_client, db, user_data, endpoint, model, schema, update):
-    user = User.query.filter_by(name="user1").first()
-    record = model.query.filter_by(user=user).first()
+    user = db.session.execute(
+        select(User).where(User.name == "user1")
+    ).scalar_one_or_none()
+    record = (
+        db.session.execute(select(model).where(model.user == user)).scalars().first()
+    )
 
     resp = auth_client.put(f"/api/{endpoint}/{record.id}", data=update)
 

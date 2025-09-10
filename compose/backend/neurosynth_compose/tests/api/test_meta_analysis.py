@@ -1,7 +1,8 @@
 from neurosynth_compose.models import MetaAnalysis, MetaAnalysisResult
+from sqlalchemy import select
 
 
-def test_get_meta_analyses(session, app, auth_client, user_data):
+def test_get_meta_analyses(session, app, auth_client, user_data, db):
     get_all = auth_client.get("/api/meta-analyses")
     assert get_all.status_code == 200
 
@@ -18,8 +19,8 @@ def test_get_meta_analyses(session, app, auth_client, user_data):
         assert data[key] is None or isinstance(data[key], dict)
 
 
-def test_get_specific_meta_analyses(session, app, auth_client, user_data):
-    metas = MetaAnalysis.query.limit(3).all()
+def test_get_specific_meta_analyses(session, app, auth_client, user_data, db):
+    metas = db.session.execute(select(MetaAnalysis).limit(3)).scalars().all()
     ids = set([m.id for m in metas])
     ids_str = "&".join([f"ids={m.id}" for m in metas])
     get_all = auth_client.get(f"/api/meta-analyses?{ids_str}")
@@ -30,8 +31,8 @@ def test_get_specific_meta_analyses(session, app, auth_client, user_data):
     assert ids == return_ids
 
 
-def test_delete_meta_analysis(session, app, auth_client, user_data):
-    meta_analysis = MetaAnalysis.query.first()
+def test_delete_meta_analysis(session, app, auth_client, user_data, db):
+    meta_analysis = db.session.execute(select(MetaAnalysis)).scalars().first()
 
     # add a meta-analysis result
     meta_analysis.results.append(MetaAnalysisResult())

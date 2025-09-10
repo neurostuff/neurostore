@@ -7,14 +7,14 @@ from flask import abort, request, jsonify, current_app
 from flask.views import MethodView
 
 # from sqlalchemy.ext.associationproxy import ColumnAssociationProxyInstance
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import selectinload
 from marshmallow.exceptions import ValidationError
 import sqlalchemy.sql.expression as sae
-from sqlalchemy import func
+from sqlalchemy import func, select
 from webargs.flaskparser import parser
 from webargs import fields
 
-from ..database import db
+from ..database import db, commit_session
 from ..models.analysis import (  # noqa E401
     Condition,
     SpecificationCondition,
@@ -134,14 +134,22 @@ class BaseView(MethodView):
 
         if cls._model is Condition:
             record = (
-                cls._model.query.filter_by(name=data.get("name")).first()
+                db.session.execute(
+                    select(cls._model)
+                    .where(cls._model.name == data.get("name"))
+                    .limit(1)
+                )
+                .scalars()
+                .first()
                 or cls._model()
             )
         if id is None:
             record = cls._model()
             record.user = current_user
         else:
-            record = cls._model.query.filter_by(id=id).first()
+            record = db.session.execute(
+                select(cls._model).where(cls._model.id == id)
+            ).scalar_one_or_none()
             if record is None and cls._model in (
                 StudysetReference,
                 AnnotationReference,
@@ -157,7 +165,7 @@ class BaseView(MethodView):
 
                 if commit:
                     db.session.add_all(to_commit)
-                    db.session.commit()
+                    commit_session()
 
                 return record
 
@@ -224,7 +232,7 @@ class BaseView(MethodView):
 
         if commit:
             db.session.add_all(to_commit)
-            db.session.commit()
+            commit_session()
 
         return record
 
@@ -232,7 +240,11 @@ class BaseView(MethodView):
 class ObjectView(BaseView):
     def get(self, id):
         id = id.replace("\x00", "\uFFFD")
-        record = self._model.query.filter_by(id=id).first_or_404()
+        record = db.session.execute(
+            select(self._model).where(self._model.id == id)
+        ).scalar_one_or_none()
+        if record is None:
+            abort(404)
         args = parser.parse(self._user_args, request, location="query")
 
         return self.__class__._schema(context=args).dump(record)
@@ -252,7 +264,16 @@ class ObjectView(BaseView):
 
     def delete(self, id):
         id = id.replace("\x00", "\uFFFD")
-        record = self.__class__._model.query.filter_by(id=id).first()
+        record = db.session.execute(
+            select(self.__class__._model).where(self.__class__._model.id == id)
+        ).scalar_one_or_none()
+        if record is None:
+            abort(404)
+
+        # Run DB-level validation first so constraint errors (e.g. existing results)
+        # are surfaced as 409 regardless of caller identity. Keep ownership check
+        # to prevent unauthorized mutation after validation.
+        self.db_validation({"id": id})
 
         current_user = get_current_user()
         if record.user_id != current_user.external_id:
@@ -263,11 +284,9 @@ class ObjectView(BaseView):
                     f"record owned by {record.user_id}."
                 ),
             )
-        else:
-            self.db_validation({"id": id})
-            db.session.delete(record)
 
-        db.session.commit()
+        db.session.delete(record)
+        commit_session()
 
         return 204
 
@@ -368,23 +387,17 @@ class ListView(BaseView):
         #     q = q.join(*attr.attr)
         q = q.order_by(getattr(attr, desc)(), getattr(m.id, desc)())
 
-        pagination_query = q.paginate(
-            page=args["page"],
-            per_page=args["page_size"],
-            error_out=False,
+        page = args["page"]
+        page_size = args["page_size"]
+        total = q.count()
+        offset = (page - 1) * page_size
+        records = q.offset(offset).limit(page_size).all()
+        metadata = {"total_count": total}
+        content = self.__class__._schema(only=self._only, many=True, context=args).dump(
+            records
         )
-        records = pagination_query.items
-        metadata = {"total_count": pagination_query.total}
-        content = self.__class__._schema(
-            only=self._only,
-            many=True,
-            context=args,
-        ).dump(records)
 
-        response = {
-            "metadata": metadata,
-            "results": content,
-        }
+        response = {"metadata": metadata, "results": content}
 
         return jsonify(response), 200
 
@@ -419,12 +432,12 @@ class MetaAnalysesView(ObjectView, ListView):
     }
 
     def db_validation(self, data):
-        ma = (
-            MetaAnalysis.query.options(joinedload(MetaAnalysis.results))
-            .filter_by(id=data["id"])
-            .one()
-        )
-        if ma.results:
+        ma = db.session.execute(
+            select(MetaAnalysis)
+            .options(selectinload(MetaAnalysis.results))
+            .where(MetaAnalysis.id == data["id"])
+        ).scalar_one_or_none()
+        if ma and ma.results:
             abort(
                 409,
                 description="this meta-analysis already has results and cannot be deleted.",
@@ -443,7 +456,7 @@ class MetaAnalysesView(ObjectView, ListView):
                 meta_analysis=record, neurostore_study=record.project.neurostore_study
             )
             db.session.add(ns_analysis)
-            db.session.commit()
+            commit_session()
         return self.__class__._schema().dump(record)
 
 
@@ -505,8 +518,12 @@ class MetaAnalysisResultsView(ObjectView, ListView):
 
         with db.session.no_autoflush:
             # add snapshots to cached_studyset/annotation (if not already set)
-            meta = MetaAnalysis.query.filter_by(id=data["meta_analysis_id"]).one()
-            if meta.studyset.snapshot is None or meta.annotation.snapshot is None:
+            meta = db.session.execute(
+                select(MetaAnalysis).where(MetaAnalysis.id == data["meta_analysis_id"])
+            ).scalar_one_or_none()
+            if meta and (
+                meta.studyset.snapshot is None or meta.annotation.snapshot is None
+            ):
                 meta.studyset.snapshot = data.pop("studyset_snapshot", None)
                 meta.annotation.snapshot = data.pop("annotation_snapshot", None)
                 db.session.add(meta)
@@ -514,17 +531,30 @@ class MetaAnalysisResultsView(ObjectView, ListView):
             # create neurovault collection
             nv_collection = NeurovaultCollection(result=record)
             create_neurovault_collection(nv_collection)
-            meta.project.draft = False
-            db.session.add(meta)
+            # avoid inserting duplicate NeurovaultCollection if one with same collection_id exists
+            existing = db.session.execute(
+                select(NeurovaultCollection).where(
+                    NeurovaultCollection.collection_id == nv_collection.collection_id
+                )
+            ).scalar_one_or_none()
+            if existing is not None:
+                nv_collection = existing
+                nv_collection.result = record
+            # Only update project draft flag if project is present
+            if meta and getattr(meta, "project", None):
+                meta.project.draft = False
+                db.session.add(meta)
             db.session.add(nv_collection)
-            db.session.commit()
+            commit_session()
         return self.__class__._schema().dump(record)
 
     def put(self, id):
         from .tasks import file_upload_neurovault, create_or_update_neurostore_analysis
         from celery import group
 
-        result = self._model.query.filter_by(id=id).one()
+        result = db.session.execute(
+            select(self._model).where(self._model.id == id)
+        ).scalar_one()
 
         if request.files:
             stat_maps = request.files.getlist("statistical_maps")
@@ -546,7 +576,7 @@ class MetaAnalysisResultsView(ObjectView, ListView):
                 records.append(result)
 
             db.session.add_all(records)
-            db.session.commit()
+            commit_session()
 
             # get the neurostore analysis
             if result.meta_analysis.neurostore_analysis:
@@ -557,7 +587,7 @@ class MetaAnalysisResultsView(ObjectView, ListView):
                     meta_analysis=result.meta_analysis,
                 )
                 db.session.add(ns_analysis)
-                db.session.commit()
+                commit_session()
 
             # upload the individual statistical maps
             nv_upload_tasks = []
@@ -603,17 +633,22 @@ class ProjectsView(ObjectView, ListView):
     }
 
     def db_validation(self, data):
-        q = Project.query.filter_by(id=data["id"])
-        q = q.options(
-            joinedload(Project.meta_analyses).options(joinedload(MetaAnalysis.results))
-        )
-        proj = q.one()
-        for ma in proj.meta_analyses:
-            if ma.results:
-                abort(
-                    409,
-                    description="this project already has results and cannot be deleted.",
+        proj = db.session.execute(
+            select(Project)
+            .options(
+                selectinload(Project.meta_analyses).options(
+                    selectinload(MetaAnalysis.results)
                 )
+            )
+            .where(Project.id == data["id"])
+        ).scalar_one_or_none()
+        if proj:
+            for ma in proj.meta_analyses:
+                if ma.results:
+                    abort(
+                        409,
+                        description="this project already has results and cannot be deleted.",
+                    )
 
     def post(self):
         try:
@@ -626,10 +661,10 @@ class ProjectsView(ObjectView, ListView):
             # create neurostore study
             ns_study = NeurostoreStudy(project=record)
             db.session.add(ns_study)
-            db.session.commit()
+            commit_session()
             create_or_update_neurostore_study(ns_study)
             db.session.add(ns_study)
-            db.session.commit()
+            commit_session()
         return self.__class__._schema().dump(record)
 
 
@@ -736,8 +771,18 @@ def parse_upload_files(result, stat_maps, cluster_tables, diagnostic_tables):
     else:
         nv_collection = NeurovaultCollection(result=result)
         create_neurovault_collection(nv_collection)
-        # append the collection to be committed
-        records.append(nv_collection)
+        # avoid inserting duplicate NeurovaultCollection if one with same collection_id exists
+        existing = db.session.execute(
+            select(NeurovaultCollection).where(
+                NeurovaultCollection.collection_id == nv_collection.collection_id
+            )
+        ).scalar_one_or_none()
+        if existing is not None:
+            nv_collection = existing
+            nv_collection.result = result
+        else:
+            # append the collection to be committed
+            records.append(nv_collection)
 
     # append the existing NeurovaultFiles to be committed
     for record in stat_map_fnames.values():

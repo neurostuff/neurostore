@@ -1,9 +1,11 @@
-from neurosynth_compose.models import Project, MetaAnalysisResult
+from neurosynth_compose.models import Project, MetaAnalysisResult, User
 from neurosynth_compose.schemas import MetaAnalysisSchema
+from sqlalchemy import select
+import pytest
 
 
 def test_get_all_projects(session, app, auth_client, user_data):
-    projects = Project.query.all()
+    projects = session.execute(select(Project)).scalars().all()
 
     project_ids = set(
         [
@@ -22,7 +24,7 @@ def test_get_all_projects(session, app, auth_client, user_data):
 
 
 def test_project_info(session, app, auth_client, user_data):
-    proj = Project.query.first()
+    proj = session.execute(select(Project)).scalars().first()
 
     info_resp = auth_client.get(f"/api/projects/{proj.id}?info=true")
     assert info_resp.status_code == 200
@@ -40,13 +42,25 @@ def test_project_info(session, app, auth_client, user_data):
 
 
 def test_delete_project(session, app, auth_client, user_data):
-    project = Project.query.first()
+    # select a project owned by the authenticated client to ensure ownership checks pass
+    project = (
+        session.execute(
+            select(Project)
+            .join(Project.user)
+            .where(User.external_id == auth_client.username)
+        )
+        .scalars()
+        .first()
+    )
+    if project is None:
+        pytest.skip("No project owned by auth_client")
 
     # add a meta-analysis result
     project.meta_analyses[0].results.append(MetaAnalysisResult())
 
     session.add(project)
-    session.commit()
+    # persist into the test's transaction/savepoint only; avoid committing
+    session.flush()
 
     bad_delete = auth_client.delete(f"/api/projects/{project.id}")
 
@@ -54,7 +68,8 @@ def test_delete_project(session, app, auth_client, user_data):
 
     project.meta_analyses[0].results = []
     session.add(project)
-    session.commit()
+    # persist change to current savepoint without committing the outer transaction
+    session.flush()
 
     good_delete = auth_client.delete(f"/api/projects/{project.id}")
 

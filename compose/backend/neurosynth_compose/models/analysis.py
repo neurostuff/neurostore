@@ -37,6 +37,9 @@ class Condition(BaseMixin, db.Model):
     __tablename__ = "conditions"
     name = db.Column(db.Text)
     description = db.Column(db.Text)
+    specification_conditions = relationship(
+        "SpecificationCondition", back_populates="condition", lazy="selectin"
+    )
 
 
 class SpecificationCondition(BaseMixin, db.Model):
@@ -48,10 +51,10 @@ class SpecificationCondition(BaseMixin, db.Model):
     condition_id = db.Column(
         db.Text, db.ForeignKey("conditions.id"), index=True, primary_key=True
     )
-    condition = relationship("Condition", backref=backref("specification_conditions"))
+    condition = relationship("Condition", back_populates="specification_conditions")
     specification = relationship(
         "Specification",
-        backref=backref("specification_conditions", cascade="all, delete-orphan"),
+        back_populates="specification_conditions",
     )
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
     user = relationship("User", backref=backref("specification_conditions"))
@@ -69,6 +72,14 @@ class Specification(BaseMixin, db.Model):
     corrector = db.Column(db.JSON)
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
     user = relationship("User", backref=backref("specifications"))
+    # explicit relationship for SpecificationCondition
+    # use selectin loading to make association_proxy access efficient
+    specification_conditions = relationship(
+        "SpecificationCondition",
+        back_populates="specification",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )
 
 
 class StudysetReference(db.Model):
@@ -76,6 +87,7 @@ class StudysetReference(db.Model):
     id = db.Column(db.Text, primary_key=True)
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
     updated_at = db.Column(db.DateTime(timezone=True), onupdate=func.now())
+    studysets = relationship("Studyset", back_populates="studyset_reference")
 
 
 class Studyset(BaseMixin, db.Model):
@@ -85,13 +97,14 @@ class Studyset(BaseMixin, db.Model):
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
     neurostore_id = db.Column(db.Text, db.ForeignKey("studyset_references.id"))
     version = db.Column(db.Text)
-    studyset_reference = relationship("StudysetReference", backref=backref("studysets"))
+    studyset_reference = relationship("StudysetReference", back_populates="studysets")
     user = relationship("User", backref=backref("studysets"))
 
 
 class AnnotationReference(db.Model):
     __tablename__ = "annotation_references"
     id = db.Column(db.Text, primary_key=True)
+    annotations = relationship("Annotation", back_populates="annotation_reference")
 
 
 class Annotation(BaseMixin, db.Model):
@@ -105,7 +118,7 @@ class Annotation(BaseMixin, db.Model):
     user = relationship("User", backref=backref("annotations"))
     studyset = relationship("Studyset", backref=backref("annotations"), lazy="joined")
     annotation_reference = relationship(
-        "AnnotationReference", backref=backref("annotations")
+        "AnnotationReference", back_populates="annotations"
     )
 
 
@@ -135,6 +148,10 @@ class MetaAnalysis(BaseMixin, db.Model):
     )
     project = relationship("Project", backref=backref("meta_analyses"))
     user = relationship("User", backref=backref("meta_analyses"))
+    results = relationship("MetaAnalysisResult", back_populates="meta_analysis")
+    neurostore_analysis = relationship(
+        "NeurostoreAnalysis", back_populates="meta_analysis", uselist=False
+    )
 
 
 class MetaAnalysisResult(BaseMixin, db.Model):
@@ -144,7 +161,11 @@ class MetaAnalysisResult(BaseMixin, db.Model):
     cli_args = db.Column(db.JSON)  # Dictionary of cli arguments
     method_description = db.Column(db.Text)  # description of the method applied
     diagnostic_table = db.Column(db.Text)
-    meta_analysis = relationship("MetaAnalysis", backref=backref("results"))
+    meta_analysis = relationship("MetaAnalysis", back_populates="results")
+    # neurovault_collection is one-to-one with MetaAnalysisResult
+    neurovault_collection = relationship(
+        "NeurovaultCollection", back_populates="result", uselist=False
+    )
 
 
 class NeurovaultCollection(BaseMixin, db.Model):
@@ -156,9 +177,9 @@ class NeurovaultCollection(BaseMixin, db.Model):
     result_id = db.Column(
         db.Text, db.ForeignKey("meta_analysis_results.id"), unique=True
     )
-    files = db.relationship("NeurovaultFile", backref="neurovault_collection")
-    result = db.relationship(
-        "MetaAnalysisResult", backref=backref("neurovault_collection", uselist=False)
+    files = relationship("NeurovaultFile", back_populates="neurovault_collection")
+    result = relationship(
+        "MetaAnalysisResult", back_populates="neurovault_collection", uselist=False
     )
 
 
@@ -180,6 +201,8 @@ class NeurovaultFile(BaseMixin, db.Model):
     exception = db.Column(db.Text)
     traceback = db.Column(db.Text)
     status = db.Column(db.Text, default="PENDING")
+    neurovault_collection = relationship("NeurovaultCollection", back_populates="files")
+
     __table_args__ = (db.CheckConstraint(status.in_(["OK", "FAILED", "PENDING"])),)
 
 
@@ -193,10 +216,7 @@ class NeurostoreStudy(BaseMixin, db.Model):
     traceback = db.Column(db.Text)
     status = db.Column(db.Text, default="PENDING")
     project_id = db.Column(db.Text, db.ForeignKey("projects.id"))
-    project = db.relationship(
-        "Project",
-        backref=backref("neurostore_study", uselist=False),
-    )
+    project = relationship("Project", back_populates="neurostore_study")
     __table_args__ = (db.CheckConstraint(status.in_(["OK", "FAILED", "PENDING"])),)
 
 
@@ -215,10 +235,10 @@ class NeurostoreAnalysis(BaseMixin, db.Model):
     neurostore_study_id = db.Column(
         db.Text, db.ForeignKey("neurostore_studies.neurostore_id")
     )
-    meta_analysis = db.relationship(
-        "MetaAnalysis", backref=backref("neurostore_analysis", uselist=False)
+    meta_analysis = relationship(
+        "MetaAnalysis", back_populates="neurostore_analysis", uselist=False
     )
-    neurostore_study = db.relationship(
+    neurostore_study = relationship(
         "NeurostoreStudy", backref=backref("neurostore_analyses")
     )
     __table_args__ = (db.CheckConstraint(status.in_(["OK", "FAILED", "PENDING"])),)
@@ -235,6 +255,10 @@ class Project(BaseMixin, db.Model):
     draft = db.Column(db.Boolean, default=True, index=True)
 
     user = relationship("User", backref=backref("projects"))
+
+    neurostore_study = relationship(
+        "NeurostoreStudy", back_populates="project", uselist=False
+    )
 
 
 # class MetaAnalysisImage(db.Model):

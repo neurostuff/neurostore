@@ -12,7 +12,8 @@ from ..models import (
     StudysetReference,
     AnnotationReference,
 )
-from ..database import db
+from ..database import db, commit_session
+from sqlalchemy import select
 
 
 def ingest_neurostore(
@@ -28,9 +29,9 @@ def ingest_neurostore(
     to_commit = []
     with db.session.no_autoflush:
         for studyset in studysets:
-            ss_ref = StudysetReference.query.filter_by(
-                id=studyset["id"]
-            ).one_or_none() or StudysetReference(id=studyset["id"])
+            ss_ref = db.session.execute(
+                select(StudysetReference).where(StudysetReference.id == studyset["id"])
+            ).scalar_one_or_none() or StudysetReference(id=studyset["id"])
             ss = Studyset(studyset_reference=ss_ref)
             to_commit.append(ss)
             # only ingest annotations for smaller studysets now.
@@ -39,9 +40,11 @@ def ingest_neurostore(
                     f"{url}/api/annotations/?studyset_id={studyset['id']}"
                 ).json()["results"]
                 for annot in annotations:
-                    annot_ref = AnnotationReference.query.filter_by(
-                        id=annot["id"]
-                    ).one_or_none() or AnnotationReference(id=annot["id"])
+                    annot_ref = db.session.execute(
+                        select(AnnotationReference).where(
+                            AnnotationReference.id == annot["id"]
+                        )
+                    ).scalar_one_or_none() or AnnotationReference(id=annot["id"])
                     to_commit.append(
                         Annotation(
                             studyset=ss,
@@ -50,12 +53,12 @@ def ingest_neurostore(
                     )
 
         db.session.add_all(to_commit)
-        db.session.commit()
+        commit_session()
 
 
 def create_meta_analyses(url="https://neurostore.org", n_studysets=None):
     ingest_neurostore(url, n_studysets)
-    stdsts = Studyset.query.all()
+    stdsts = db.session.execute(select(Studyset)).scalars().all()
     to_commit = []
     with db.session.no_autoflush:
         for ss in stdsts:
@@ -80,4 +83,4 @@ def create_meta_analyses(url="https://neurostore.org", n_studysets=None):
             )
 
         db.session.add_all(to_commit)
-        db.session.commit()
+        commit_session()

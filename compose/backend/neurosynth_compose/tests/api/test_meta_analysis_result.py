@@ -4,10 +4,11 @@ from neurosynth_compose.models import (
     NeurovaultCollection,
     NeurostoreAnalysis,
 )
+from sqlalchemy import select
 
 
-def test_create_meta_analysis_result(session, app, auth_client, user_data):
-    meta_analysis = MetaAnalysis.query.first()
+def test_create_meta_analysis_result(session, db, app, auth_client, user_data):
+    meta_analysis = db.session.execute(select(MetaAnalysis)).scalars().first()
     headers = {"Compose-Upload-Key": meta_analysis.run_key}
     data = {
         "studyset_snapshot": {"name": "my studyset"},
@@ -28,8 +29,8 @@ def test_create_meta_analysis_result(session, app, auth_client, user_data):
     assert meta_resp.status_code == 200
 
 
-def test_create_meta_analysis_result_no_snapshots(session, auth_client, user_data):
-    meta_analyses = MetaAnalysis.query.all()
+def test_create_meta_analysis_result_no_snapshots(session, db, auth_client, user_data):
+    meta_analyses = db.session.execute(select(MetaAnalysis)).scalars().all()
     for meta_analysis in meta_analyses:
         meta_analysis.studyset.snapshot = None
         meta_analysis.annotation.snapshot = None
@@ -50,6 +51,7 @@ def test_create_meta_analysis_result_no_snapshots(session, auth_client, user_dat
 def test_put_meta_analysis_result_with_celery(
     session,
     app,
+    db,
     auth_client,
     meta_analysis_cached_result_files,
     celery_app,
@@ -71,7 +73,9 @@ def test_put_meta_analysis_result_with_celery(
     # Step 1: Create the meta analysis result (POST)
     from neurosynth_compose.models import MetaAnalysis
 
-    meta_analysis = MetaAnalysis.query.filter_by(id=meta_analysis_id).first()
+    meta_analysis = db.session.execute(
+        select(MetaAnalysis).where(MetaAnalysis.id == meta_analysis_id)
+    ).scalar_one_or_none()
     headers = {"Compose-Upload-Key": meta_analysis.run_key}
     post_data = {
         "studyset_snapshot": {"name": "my studyset"},
@@ -128,25 +132,33 @@ def test_put_meta_analysis_result_with_celery(
     # Validate response
     assert resp.status_code == 200
     # Optionally, check database changes and Celery task effects
-    updated_result = MetaAnalysis.query.filter_by(id=meta_analysis_id).first()
+    updated_result = db.session.execute(
+        select(MetaAnalysis).where(MetaAnalysis.id == meta_analysis_id)
+    ).scalar_one_or_none()
     assert updated_result is not None
 
     # Assign meta_analysis_result before use
-    meta_analysis_result = MetaAnalysisResult.query.filter_by(
-        id=meta_analysis_result_id
-    ).one()
+    meta_analysis_result = db.session.execute(
+        select(MetaAnalysisResult).where(
+            MetaAnalysisResult.id == meta_analysis_result_id
+        )
+    ).scalar_one()
     assert meta_analysis_result is not None, "MetaAnalysisResult object not found"
 
     # Inspect NeurovaultCollection and NeurovaultFile statuses
-    nv_collection = NeurovaultCollection.query.filter_by(
-        result_id=meta_analysis_result.id
-    ).first()
+    nv_collection = db.session.execute(
+        select(NeurovaultCollection).where(
+            NeurovaultCollection.result_id == meta_analysis_result.id
+        )
+    ).scalar_one_or_none()
     assert nv_collection is not None, "NeurovaultCollection object not found"
 
     # Inspect NeurostoreAnalysis execution status
-    neurostore_analysis = NeurostoreAnalysis.query.filter_by(
-        meta_analysis_id=meta_analysis_id
-    ).first()
+    neurostore_analysis = db.session.execute(
+        select(NeurostoreAnalysis).where(
+            NeurostoreAnalysis.meta_analysis_id == meta_analysis_id
+        )
+    ).scalar_one_or_none()
     assert neurostore_analysis is not None, "NeurostoreAnalysis object not found"
     assert (
         neurostore_analysis.status == "OK"

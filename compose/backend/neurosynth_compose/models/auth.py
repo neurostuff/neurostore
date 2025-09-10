@@ -16,6 +16,9 @@ class Role(BaseMixin, db.Model, RoleMixin):
 
     name = db.Column(db.Text, unique=True)
     description = db.Column(db.Text)
+    users = db.relationship(
+        "User", secondary=roles_users, back_populates="roles", lazy="dynamic"
+    )
 
 
 class User(BaseMixin, db.Model, UserMixin):
@@ -23,9 +26,7 @@ class User(BaseMixin, db.Model, UserMixin):
     active = db.Column(db.Boolean())
     name = db.Column(db.Text)
     external_id = db.Column(db.Text, unique=True)
-    roles = db.relationship(
-        "Role", secondary=roles_users, backref=db.backref("users", lazy="dynamic")
-    )
+    roles = db.relationship("Role", secondary=roles_users, back_populates="users")
 
 
 class Device(BaseMixin, db.Model):
