@@ -11,7 +11,10 @@ from .base import (
 
 
 def create_field_validation_error(
-    field: str, value: Any, valid_options: Optional[List[Any]] = None, code: str = "INVALID_VALUE"
+    field: str,
+    value: Any,
+    valid_options: Optional[List[Any]] = None,
+    code: str = "INVALID_VALUE",
 ) -> ErrorDetail:
     """
     Create a field-level ErrorDetail for validation responses.
@@ -26,7 +29,9 @@ def create_field_validation_error(
     return ErrorDetail(field=field, code=code, message=message, context=context)
 
 
-def create_validation_error(detail: str, field_errors: Optional[List[ErrorDetail]] = None) -> ValidationError:
+def create_validation_error(
+    detail: str, field_errors: Optional[List[ErrorDetail]] = None
+) -> ValidationError:
     """
     Create a ValidationError containing optional field-level errors.
 
@@ -52,7 +57,10 @@ def create_validation_error(detail: str, field_errors: Optional[List[ErrorDetail
                 else:
                     # Decide on error text: for pipeline NOT_FOUND, tests expect
                     # the phrase "non-existent pipeline".
-                    if getattr(first, "field", "") == "pipeline" and getattr(first, "code", "") == "NOT_FOUND":
+                    if (
+                        getattr(first, "field", "") == "pipeline"
+                        and getattr(first, "code", "") == "NOT_FOUND"
+                    ):
                         err_text = "non-existent pipeline"
                     else:
                         err_text = detail
@@ -60,7 +68,9 @@ def create_validation_error(detail: str, field_errors: Optional[List[ErrorDetail
             # Return ValidationError preserving the original field_errors in the
             # exception `.errors` so to_payload() includes a top-level "errors" list,
             # while embedding the normalized provided list into the `detail` for legacy clients.
-            return ValidationError(detail={"message": detail, "errors": normalized}, errors=field_errors)
+            return ValidationError(
+                detail={"message": detail, "errors": normalized}, errors=field_errors
+            )
     return ValidationError(detail=detail, errors=field_errors)
 
 
@@ -89,7 +99,9 @@ def create_authentication_error(detail: Optional[str] = None) -> AuthenticationE
     return AuthenticationError()
 
 
-def create_unprocessable_error(detail: str, field_errors: Optional[List[ErrorDetail]] = None) -> UnprocessableEntityError:
+def create_unprocessable_error(
+    detail: str, field_errors: Optional[List[ErrorDetail]] = None
+) -> UnprocessableEntityError:
     """
     Create an UnprocessableEntityError (422) with optional field errors.
     """

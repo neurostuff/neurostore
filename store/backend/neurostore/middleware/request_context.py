@@ -3,6 +3,7 @@ from starlette.requests import Request
 import uuid
 from typing import Callable
 
+
 class RequestContextMiddleware(BaseHTTPMiddleware):
     """
     Populate request.state with request_id and instance path to be used by error middleware.

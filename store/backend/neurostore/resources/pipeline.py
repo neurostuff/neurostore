@@ -184,8 +184,13 @@ class PipelineStudyResultsView(ObjectView, ListView):
         # If any filters were invalid, return 400 with error details
         if invalid_filters:
             # Create a field-level error carrying the invalid filter list
-            field_err = make_field_error("feature_filter", invalid_filters, code="INVALID_FILTER")
-            abort_validation("Invalid filter format - expected pipeline_name[:version]/path", [field_err])
+            field_err = make_field_error(
+                "feature_filter", invalid_filters, code="INVALID_FILTER"
+            )
+            abort_validation(
+                "Invalid filter format - expected pipeline_name[:version]/path",
+                [field_err],
+            )
 
         # Verify all pipelines exist upfront
         existing_pipelines = {
@@ -194,7 +199,9 @@ class PipelineStudyResultsView(ObjectView, ListView):
         }
         missing_pipelines = pipeline_names - existing_pipelines
         if missing_pipelines:
-            field_err = make_field_error("pipeline", list(missing_pipelines), code="NOT_FOUND")
+            field_err = make_field_error(
+                "pipeline", list(missing_pipelines), code="NOT_FOUND"
+            )
             abort_validation("Pipeline(s) do not exist", [field_err])
 
         # Handle display filters

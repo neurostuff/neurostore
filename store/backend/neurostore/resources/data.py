@@ -7,7 +7,6 @@ from webargs.flaskparser import parser
 from neurostore.exceptions.utils.error_helpers import (
     abort_validation,
     abort_not_found,
-    abort_permission,
     abort_unprocessable,
     make_field_error,
 )
@@ -325,7 +324,9 @@ class AnnotationsView(ObjectView, ListView):
             return cls.load_from_neurostore(source_id, data)
         else:
             field_err = make_field_error("source", source, valid_options=["neurostore"])
-            abort_unprocessable("invalid source, choose from: 'neurostore'", [field_err])
+            abort_unprocessable(
+                "invalid source, choose from: 'neurostore'", [field_err]
+            )
 
     @classmethod
     def load_from_neurostore(cls, source_id, data=None):
@@ -380,7 +381,9 @@ class AnnotationsView(ObjectView, ListView):
             return
 
         if db_analysis_ids != data_analysis_ids:
-            abort_validation("annotation request must contain all analyses from the studyset.")
+            abort_validation(
+                "annotation request must contain all analyses from the studyset."
+            )
 
 
 @view_maker
@@ -693,7 +696,9 @@ class BaseStudiesView(ObjectView, ListView):
                 invalid_filters.append({"filter": config_filter, "error": str(e)})
 
         if invalid_filters:
-            field_err = make_field_error("feature_filters", invalid_filters, code="INVALID_FILTER")
+            field_err = make_field_error(
+                "feature_filters", invalid_filters, code="INVALID_FILTER"
+            )
             abort_validation("Invalid feature filter(s)", [field_err])
 
         # Create subqueries for each pipeline
@@ -805,7 +810,9 @@ class BaseStudiesView(ObjectView, ListView):
 
         # If any filters were invalid, return 400 with error details
         if invalid_filters:
-            field_err = make_field_error("feature_filters", invalid_filters, code="INVALID_FILTER")
+            field_err = make_field_error(
+                "feature_filters", invalid_filters, code="INVALID_FILTER"
+            )
             abort_validation("Invalid feature filter(s)", [field_err])
         if args.get("semantic_search"):
             q = q.filter(self._model.semantic_search == args["semantic_search"])
@@ -1102,8 +1109,13 @@ class StudiesView(ObjectView, ListView):
         elif source == "pubmed":
             return cls.load_from_pubmed(source_id, data)
         else:
-            field_err = make_field_error("source", source, valid_options=["neurostore", "neurovault", "pubmed"])
-            abort_unprocessable("invalid source, choose from: 'neurostore', 'neurovault', 'pubmed'", [field_err])
+            field_err = make_field_error(
+                "source", source, valid_options=["neurostore", "neurovault", "pubmed"]
+            )
+            abort_unprocessable(
+                "invalid source, choose from: 'neurostore', 'neurovault', 'pubmed'",
+                [field_err],
+            )
 
     @classmethod
     def load_from_neurostore(cls, source_id, data=None):
@@ -1588,7 +1600,9 @@ class AnnotationAnalysesView(ObjectView, ListView):
             with db.session.no_autoflush:
                 d = ids.get(input_record.id)
                 to_commit.append(
-                    self.__class__.update_or_create(d, id=input_record.id, record=input_record)
+                    self.__class__.update_or_create(
+                        d, id=input_record.id, record=input_record
+                    )
                 )
 
         db.session.add_all(to_commit)

@@ -1,5 +1,4 @@
 from typing import List, Optional
-from dataclasses import asdict
 
 from .utils.errors import ErrorDetail
 
@@ -63,30 +62,50 @@ class NeuroStoreException(Exception):
 
 
 class ValidationError(NeuroStoreException):
-    def __init__(self, detail: str, errors: Optional[List[ErrorDetail]] = None, instance: Optional[str] = None):
+    def __init__(
+        self,
+        detail: str,
+        errors: Optional[List[ErrorDetail]] = None,
+        instance: Optional[str] = None,
+    ):
         super().__init__(400, detail, errors=errors, instance=instance)
 
 
 class AuthenticationError(NeuroStoreException):
-    def __init__(self, detail: str = "Authentication required", instance: Optional[str] = None):
+    def __init__(
+        self, detail: str = "Authentication required", instance: Optional[str] = None
+    ):
         super().__init__(401, detail, instance=instance)
 
 
 class PermissionError(NeuroStoreException):
-    def __init__(self, detail: str = "You do not have permission to perform this action", instance: Optional[str] = None):
+    def __init__(
+        self,
+        detail: str = "You do not have permission to perform this action",
+        instance: Optional[str] = None,
+    ):
         super().__init__(403, detail, instance=instance)
 
 
 class NotFoundError(NeuroStoreException):
-    def __init__(self, detail: str = "Resource not found", instance: Optional[str] = None):
+    def __init__(
+        self, detail: str = "Resource not found", instance: Optional[str] = None
+    ):
         super().__init__(404, detail, instance=instance)
 
 
 class UnprocessableEntityError(NeuroStoreException):
-    def __init__(self, detail: str = "Unprocessable entity", errors: Optional[List[ErrorDetail]] = None, instance: Optional[str] = None):
+    def __init__(
+        self,
+        detail: str = "Unprocessable entity",
+        errors: Optional[List[ErrorDetail]] = None,
+        instance: Optional[str] = None,
+    ):
         super().__init__(422, detail, errors=errors, instance=instance)
 
 
 class InternalServerError(NeuroStoreException):
-    def __init__(self, detail: str = "Internal Server Error", instance: Optional[str] = None):
+    def __init__(
+        self, detail: str = "Internal Server Error", instance: Optional[str] = None
+    ):
         super().__init__(500, detail, instance=instance)

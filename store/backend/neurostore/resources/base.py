@@ -8,7 +8,6 @@ from connexion.context import context
 from flask import request, current_app  # jsonify
 from flask.views import MethodView
 from ..exceptions.utils.error_helpers import (
-    abort_unprocessable,
     abort_permission,
     abort_validation,
     abort_not_found,
@@ -290,7 +289,8 @@ class BaseView(MethodView):
             and current_user.external_id != compose_bot
         ):
             abort_permission(
-                "You do not have permission to modify this record. You must be the owner or the compose bot."
+                "You do not have permission to modify this record."
+                " You must be the owner or the compose bot."
             )
         elif only_ids:
             to_commit.append(record)
@@ -301,7 +301,10 @@ class BaseView(MethodView):
                     db.session.flush()
                 except SQLAlchemyError as e:
                     db.session.rollback()
-                    abort_validation("Database operation failed during record creation/update: " + str(e))
+                    abort_validation(
+                        "Database operation failed during record creation/update: "
+                        + str(e)
+                    )
 
             return record
 
@@ -337,13 +340,13 @@ class BaseView(MethodView):
                     }
                 else:
                     query_args = {"id": v["id"]}
- 
+
                 if v.get("preloaded_data"):
                     v = v["preloaded_data"]
                 else:
                     q = LnCls._model.query.filter_by(**query_args)
                     v = q.first()
- 
+
                 if v is None:
                     abort_validation(f"Linked record not found with {query_args}")
 
@@ -407,7 +410,9 @@ class BaseView(MethodView):
                 db.session.flush()
             except SQLAlchemyError as e:
                 db.session.rollback()
-                abort_validation(f"Database error occurred during nested record update: {str(e)}")
+                abort_validation(
+                    f"Database error occurred during nested record update: {str(e)}"
+                )
 
         return record
 
@@ -475,7 +480,7 @@ class ObjectView(BaseView):
         record = q.filter_by(id=id).first()
         if record is None:
             abort_not_found(self._model.__name__, id)
-    
+
         if self._model is Studyset and args["nested"]:
             snapshot = StudysetSnapshot()
             return snapshot.dump(record), 200, {"Content-Type": "application/json"}

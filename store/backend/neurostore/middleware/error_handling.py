@@ -41,7 +41,9 @@ class NeuroStoreErrorMiddleware(BaseHTTPMiddleware):
                 errors=errors,
             )
             body = err.to_dict()
-            response = JSONResponse(body, status_code=err.status, media_type="application/json")
+            response = JSONResponse(
+                body, status_code=err.status, media_type="application/json"
+            )
             # Ensure CORS headers are present on error responses
             response.headers["Access-Control-Allow-Origin"] = "*"
             response.headers["Access-Control-Allow-Methods"] = "*"
@@ -55,7 +57,11 @@ class NeuroStoreErrorMiddleware(BaseHTTPMiddleware):
             if isinstance(exc, anyio.EndOfStream):
                 raise
 
-            logger.exception("Unhandled exception in request: %s %s", request.method, request.url.path)
+            logger.exception(
+                "Unhandled exception in request: %s %s",
+                request.method,
+                request.url.path,
+            )
             logger.debug(traceback.format_exc())
 
             # Create minimal internal server error response
@@ -63,11 +69,15 @@ class NeuroStoreErrorMiddleware(BaseHTTPMiddleware):
             err = ErrorResponse(
                 status=internal.status_code,
                 title=internal.title,
-                detail=str(exc) if logger.isEnabledFor(logging.DEBUG) else internal.detail,
+                detail=(
+                    str(exc) if logger.isEnabledFor(logging.DEBUG) else internal.detail
+                ),
                 type=internal.type,
             )
             body = err.to_dict()
-            response = JSONResponse(body, status_code=err.status, media_type="application/json")
+            response = JSONResponse(
+                body, status_code=err.status, media_type="application/json"
+            )
             # Ensure CORS headers are present on error responses
             response.headers["Access-Control-Allow-Origin"] = "*"
             response.headers["Access-Control-Allow-Methods"] = "*"

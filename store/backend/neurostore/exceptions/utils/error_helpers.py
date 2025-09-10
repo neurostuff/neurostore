@@ -10,7 +10,9 @@ from ...exceptions.factories import (
 from .errors import ErrorDetail
 
 
-def abort_validation(message: str, field_errors: Optional[List[ErrorDetail]] = None) -> None:
+def abort_validation(
+    message: str, field_errors: Optional[List[ErrorDetail]] = None
+) -> None:
     """
     Replace abort(400, ...) calls.
     Raises a ValidationError built via factories.
@@ -39,18 +41,27 @@ def abort_auth(detail: Optional[str] = None) -> None:
     raise create_authentication_error(detail)
 
 
-def abort_unprocessable(message: str, field_errors: Optional[List[ErrorDetail]] = None) -> None:
+def abort_unprocessable(
+    message: str, field_errors: Optional[List[ErrorDetail]] = None
+) -> None:
     """
     Replace abort(422, ...) calls.
     """
     raise create_unprocessable_error(detail=message, field_errors=field_errors)
 
 
-def make_field_error(field: str, value: Any, valid_options: Optional[List[Any]] = None, code: str = "INVALID_VALUE") -> ErrorDetail:
+def make_field_error(
+    field: str,
+    value: Any,
+    valid_options: Optional[List[Any]] = None,
+    code: str = "INVALID_VALUE",
+) -> ErrorDetail:
     """
     Convenience helper to create an ErrorDetail without importing factories manually.
     """
     # Import locally to avoid circular imports at module import time
     from ...exceptions.factories import create_field_validation_error
 
-    return create_field_validation_error(field=field, value=value, valid_options=valid_options, code=code)
+    return create_field_validation_error(
+        field=field, value=value, valid_options=valid_options, code=code
+    )

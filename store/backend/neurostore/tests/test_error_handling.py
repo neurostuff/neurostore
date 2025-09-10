@@ -1,6 +1,7 @@
 import json
 import pytest
 from starlette.requests import Request
+import asyncio
 
 from neurostore.exceptions.utils.errors import ErrorDetail, ErrorResponse
 from neurostore.exceptions.factories import (
@@ -8,7 +9,10 @@ from neurostore.exceptions.factories import (
     create_validation_error,
     create_not_found_error,
 )
-from neurostore.exceptions.utils.error_helpers import abort_validation, abort_not_found, make_field_error
+from neurostore.exceptions.utils.error_helpers import (
+    abort_validation,
+    abort_not_found,
+)
 from neurostore.middleware.error_handling import NeuroStoreErrorMiddleware
 
 
@@ -17,7 +21,12 @@ async def _dummy_receive():
 
 
 def test_error_detail_and_response_serialization():
-    fd = ErrorDetail(field="source", code="INVALID_VALUE", message="invalid source", context={"provided": "x"})
+    fd = ErrorDetail(
+        field="source",
+        code="INVALID_VALUE",
+        message="invalid source",
+        context={"provided": "x"},
+    )
     fd_dict = fd.to_dict()
     assert fd_dict["field"] == "source"
     assert fd_dict["code"] == "INVALID_VALUE"
@@ -52,8 +61,6 @@ def test_error_helpers_raise():
 
 
 def test_middleware_handles_neurostore_exception():
-    import asyncio
-
     async def inner():
         async def app(scope, receive, send):
             return None
@@ -74,10 +81,10 @@ def test_middleware_handles_neurostore_exception():
         assert body["title"] == "Not Found"
         assert "request_id" in body and body["request_id"]
 
+    asyncio.run(inner())
+
 
 def test_middleware_handles_unexpected_exception():
-    import asyncio
-
     async def inner():
         async def app(scope, receive, send):
             return None
