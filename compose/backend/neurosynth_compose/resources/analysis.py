@@ -629,6 +629,8 @@ class NeurostoreStudiesView(ObjectView, ListView):
 class ProjectsView(ObjectView, ListView):
     _search_fields = ("name", "description")
     _nested = {
+        "studyset": "StudysetsView",
+        "annotation": "AnnotationsView",
         "meta_analyses": "MetaAnalysesView",
     }
 

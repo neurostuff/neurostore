@@ -35,11 +35,11 @@ def test_create(session, auth_client, user_data, db, endpoint, model, schema):
             del payload["id"]
         if "studyset" in payload:
             del payload["studyset"]
-            if hasattr(example, 'studyset') and example.studyset:
+            if hasattr(example, "studyset") and example.studyset:
                 payload["cached_studyset_id"] = example.studyset.id
         if "annotation" in payload:
             del payload["annotation"]
-            if hasattr(example, 'annotation') and example.annotation:
+            if hasattr(example, "annotation") and example.annotation:
                 payload["cached_annotation_id"] = example.annotation.id
         if "run_key" in payload:
             del payload["run_key"]
@@ -80,7 +80,7 @@ def test_create(session, auth_client, user_data, db, endpoint, model, schema):
             if not isinstance(
                 d_key_sf.get(k),
                 (StringOrNested, fields.Nested),
-            ) and not getattr(d_key_sf.get(k), 'load_only', False):
+            ) and not getattr(d_key_sf.get(k), "load_only", False):
                 assert v == resp.json[k]
 
 

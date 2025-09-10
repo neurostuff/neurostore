@@ -413,10 +413,16 @@ class ProjectSchema(BaseSchema):
     public = fields.Boolean()
     draft = fields.Boolean()
     studyset = StringOrNested(
-        StudysetSchema, metadata={"pluck": "neurostore_id"}, dump_only=True, allow_none=True
+        StudysetSchema,
+        metadata={"pluck": "neurostore_id"},
+        dump_only=True,
+        allow_none=True,
     )
     annotation = StringOrNested(
-        AnnotationSchema, metadata={"pluck": "neurostore_id"}, dump_only=True, allow_none=True
+        AnnotationSchema,
+        metadata={"pluck": "neurostore_id"},
+        dump_only=True,
+        allow_none=True,
     )
     cached_studyset_id = fields.Pluck(
         StudysetSchema, "id", load_only=True, attribute="studyset", allow_none=True
@@ -425,18 +431,10 @@ class ProjectSchema(BaseSchema):
         AnnotationSchema, "id", load_only=True, attribute="annotation", allow_none=True
     )
     cached_studyset = fields.Pluck(
-        StudysetSchema,
-        "id",
-        dump_only=True,
-        attribute="studyset",
-        allow_none=True
+        StudysetSchema, "id", dump_only=True, attribute="studyset", allow_none=True
     )
     cached_annotation = fields.Pluck(
-        AnnotationSchema,
-        "id",
-        dump_only=True,
-        attribute="annotation",
-        allow_none=True
+        AnnotationSchema, "id", dump_only=True, attribute="annotation", allow_none=True
     )
     meta_analyses = StringOrNested(
         MetaAnalysisSchema, metadata={"pluck": "id"}, dump_only=True, many=True
