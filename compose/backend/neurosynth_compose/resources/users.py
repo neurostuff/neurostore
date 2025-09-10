@@ -6,6 +6,7 @@ from .analysis import ListView, ObjectView
 from ..models.auth import User
 from ..schemas import UserSchema  # noqa E401
 from ..database import db
+from sqlalchemy import select
 
 
 class UsersView(ObjectView, ListView):
@@ -30,14 +31,16 @@ class UsersView(ObjectView, ListView):
         return self.__class__._schema().dump(record)
 
     def put(self, id):
-        current_user = User.query.filter_by(
-            external_id=connexion.context["user"]
-        ).first()
+        current_user = db.session.execute(
+            select(User).where(User.external_id == connexion.context["user"])
+        ).scalar_one_or_none()
         data = parser.parse(self.__class__._schema, request)
         if id != data["id"] or id != current_user.id:
             return abort(422)
 
-        record = self._model.query.filter_by(id=id).first()
+        record = db.session.execute(
+            select(self._model).where(self._model.id == id)
+        ).scalar_one_or_none()
 
         if record is None:
             abort(422)

@@ -5,6 +5,8 @@ from flask import jsonify, request
 from jose import jwt
 
 from flask import current_app as app
+from ..database import db
+from sqlalchemy import select
 
 
 # Error handler
@@ -127,15 +129,21 @@ def verify_key(*args, **kwargs):
     if request.method == "POST":
         from ..models import MetaAnalysis
 
-        meta_analysis = MetaAnalysis.query.filter_by(
-            id=request.json["meta_analysis_id"]
-        ).one()
+        meta_analysis = db.session.execute(
+            select(MetaAnalysis).where(
+                MetaAnalysis.id == request.json["meta_analysis_id"]
+            )
+        ).scalar_one()
     elif request.method == "PUT":
         from ..models import MetaAnalysisResult
 
         result_id = request.view_args["id"]
         meta_analysis = (
-            MetaAnalysisResult.query.filter_by(id=result_id).one().meta_analysis
+            db.session.execute(
+                select(MetaAnalysisResult).where(MetaAnalysisResult.id == result_id)
+            )
+            .scalar_one()
+            .meta_analysis
         )
     run_key = args[0]
 

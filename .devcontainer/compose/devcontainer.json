@@ -7,8 +7,8 @@
 	// Update the 'dockerComposeFile' list if you have more compose files or use different names.
 	// The .devcontainer/docker-compose.yml file contains any overrides you need/want to make.
 	"dockerComposeFile": [
-		"../docker-compose.yml",
-		"../docker-compose.dev.yml",
+		"../../compose/docker-compose.yml",
+		"../../compose/docker-compose.dev.yml",
 		"docker-compose.yml"
 	],
 
@@ -31,8 +31,9 @@
 		"eamodio.gitlens",
 		"ms-toolsai.jupyter",
 		"ms-python.vscode-pylance",
-		"ms-python.python"
-	]
+		"ms-python.python",
+		"RooVeterinaryInc.roo-cline"
+	],
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// "forwardPorts": [],

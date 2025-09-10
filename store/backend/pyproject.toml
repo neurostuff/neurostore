@@ -33,7 +33,7 @@ dependencies = [
     "sqlalchemy~=2.0",
     "sqlalchemy-utils",
     "sqltap",
-    "webargs~=7.0",
+    "webargs~=8.7",
     "wrapt~=1.12",
     "openapi-spec-validator~=0.3",
     "scipy~=1.9",
