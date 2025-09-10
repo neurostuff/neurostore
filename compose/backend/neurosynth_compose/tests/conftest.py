@@ -7,7 +7,6 @@ from os import environ
 import pathlib
 
 from auth0.v3.authentication import GetToken
-import schemathesis
 import pytest
 from nimare.results import MetaResult
 import sqlalchemy as sa
@@ -43,21 +42,6 @@ def safe_teardown_session(self, exc):
 flask_sqlalchemy.SQLAlchemy._teardown_session = safe_teardown_session
 
 DATA_PATH = pathlib.Path(__file__).parent.resolve() / "data"
-
-
-def pytest_addoption(parser):
-    parser.addoption(
-        "--schemathesis",
-        action="store_true",
-        default=False,
-        help="Run schemathesis tests",
-    )
-
-
-schemathesis_test = pytest.mark.skipif(
-    "not config.getoption('--schemathesis')",
-    reason="Only run when --schemathesis is given",
-)
 
 """
 Test fixtures for bypassing authentication
@@ -694,8 +678,3 @@ def neurostore_data(db, mock_add_users):
         pytest.skip(
             "neurostore.org is not responding as expected", allow_module_level=True
         )
-
-
-@pytest.fixture()
-def app_schema(app):
-    return schemathesis.from_wsgi("/api/openapi.json", app)
