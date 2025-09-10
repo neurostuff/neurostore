@@ -412,8 +412,20 @@ class ProjectSchema(BaseSchema):
     provenance = fields.Dict(allow_none=True)
     public = fields.Boolean()
     draft = fields.Boolean()
-    studyset = StringOrNested(StudysetSchema, metadata={"pluck": "id"}, dump_only=True)
-    annotation = StringOrNested(AnnotationSchema, metadata={"pluck": "id"}, dump_only=True)
+    studyset_id = fields.String(data_key="studyset", dump_only=True, allow_none=True)
+    annotation_id = fields.String(data_key="annotation", dump_only=True, allow_none=True)
+    _cached_studyset_id = fields.String(
+        data_key="cached_studyset_id",
+        attribute="studyset_id",
+        load_only=True,
+        allow_none=True
+    )
+    _cached_annotation_id = fields.String(
+        data_key="cached_annotation_id",
+        attribute="annotation_id",
+        load_only=True,
+        allow_none=True
+    )
     meta_analyses = StringOrNested(
         MetaAnalysisSchema, metadata={"pluck": "id"}, dump_only=True, many=True
     )

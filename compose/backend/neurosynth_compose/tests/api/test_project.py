@@ -46,13 +46,13 @@ def test_project_studyset_annotation_attributes(session, app, auth_client, user_
 
     resp = auth_client.get(f"/api/projects/{proj.id}")
     assert resp.status_code == 200
-    
+
     project_data = resp.json
-    
+
     # Check that studyset and annotation attributes are present
     assert "studyset" in project_data
     assert "annotation" in project_data
-    
+
     # These should be string IDs (due to pluck metadata)
     assert isinstance(project_data["studyset"], str)
     assert isinstance(project_data["annotation"], str)
