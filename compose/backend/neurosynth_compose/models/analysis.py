@@ -256,8 +256,12 @@ class Project(BaseMixin, db.Model):
     user_id = Column(Text, ForeignKey("users.external_id"), index=True)
     public = Column(Boolean, default=True, index=True)
     draft = Column(Boolean, default=True, index=True)
+    studyset_id = Column(Text, ForeignKey("studysets.id"), nullable=True)
+    annotation_id = Column(Text, ForeignKey("annotations.id"), nullable=True)
 
     user = relationship("User", backref=backref("projects"))
+    studyset = relationship("Studyset", backref=backref("projects"))
+    annotation = relationship("Annotation", backref=backref("projects"))
 
     neurostore_study = relationship(
         "NeurostoreStudy", back_populates="project", uselist=False

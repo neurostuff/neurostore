@@ -59,6 +59,10 @@ def test_create(session, auth_client, user_data, db, endpoint, model, schema):
 
         if isinstance(example, Project):
             del payload["meta_analyses"]
+            if "studyset" in payload:
+                del payload["studyset"]
+            if "annotation" in payload:
+                del payload["annotation"]
 
         resp = auth_client.post(f"/api/{endpoint}", data=payload)
 

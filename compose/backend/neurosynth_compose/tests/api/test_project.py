@@ -40,6 +40,24 @@ def test_project_info(session, app, auth_client, user_data):
         assert f in meta_analysis
 
 
+def test_project_studyset_annotation_attributes(session, app, auth_client, user_data):
+    """Test that project has studyset and annotation attributes"""
+    proj = session.execute(select(Project)).scalars().first()
+
+    resp = auth_client.get(f"/api/projects/{proj.id}")
+    assert resp.status_code == 200
+    
+    project_data = resp.json
+    
+    # Check that studyset and annotation attributes are present
+    assert "studyset" in project_data
+    assert "annotation" in project_data
+    
+    # These should be string IDs (due to pluck metadata)
+    assert isinstance(project_data["studyset"], str)
+    assert isinstance(project_data["annotation"], str)
+
+
 def test_delete_project(session, app, auth_client, user_data):
     # select a project owned by the authenticated client to ensure ownership checks pass
     project = (

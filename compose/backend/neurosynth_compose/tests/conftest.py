@@ -473,6 +473,8 @@ def user_data(app, db, mock_add_users, session):
                     neurostore_study=ns_study,
                     user=user,
                     public=public,
+                    studyset=studyset,
+                    annotation=annotation,
                 )
                 # Ensure MetaAnalysis.project and project_id are explicitly set so
                 # the relationship is visible across sessions/savepoints immediately
