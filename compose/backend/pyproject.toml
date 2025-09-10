@@ -46,7 +46,6 @@ dev = [
     "flake8~=3.8",
     "pip-chill~=1.0",
     "wheel~=0.36",
-    "schemathesis~=3.14",
     "pytest~=8.4"
 ]
 
