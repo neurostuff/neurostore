@@ -119,6 +119,35 @@ class StringOrNested(fields.Nested):
         return schema.load(value, many=self.many)
 
 
+class ConditionReference(StringOrNested):
+    """
+    Special field for condition references that preserves original condition IDs during cloning.
+    When clone=True, conditions should keep their original references instead of being cloned.
+    """
+    
+    def _modify_schema(self):
+        """Override to never clone conditions - always preserve original references"""
+        schema = self.schema
+        schema.context = self.context
+        
+        # Never apply clone logic to conditions - we want to preserve original references
+        # This means conditions will keep their original IDs even when clone=True
+        
+        if self.context.get("info"):
+            info_fields = [
+                field
+                for field, f_obj in schema._declared_fields.items()
+                if f_obj.metadata.get("info_field")
+            ]
+            schema.only = schema.set_class(info_fields)
+            # set exclude to an empty set
+            schema.exclude = schema.set_class()
+        # have the changes take effect
+        schema._init_fields()
+
+        return schema
+
+
 # https://github.com/marshmallow-code/marshmallow/issues/466#issuecomment-285342071
 class BaseSchemaOpts(SchemaOpts):
     def __init__(self, meta, *args, **kwargs):
@@ -181,6 +210,17 @@ class ConditionSchema(BaseDataSchema):
     class Meta:
         additional = ("name", "description")
         allow_none = ("name", "description")
+
+    def __init__(self, *args, **kwargs):
+        # Override the clone behavior specifically for ConditionSchema
+        # Remove clone from context when initializing ConditionSchema to prevent ID exclusion
+        context = kwargs.get("context", {}) or {}
+        if context.get("clone"):
+            # Make a copy of context and remove clone flag for conditions
+            new_context = context.copy()
+            new_context.pop("clone", None)
+            kwargs["context"] = new_context
+        super().__init__(*args, **kwargs)
 
 
 class EntitySchema(BaseDataSchema):
