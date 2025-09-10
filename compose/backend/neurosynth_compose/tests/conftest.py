@@ -487,8 +487,8 @@ def user_data(app, db, mock_add_users, session):
                     description=user.id + "'s empty project",
                     public=public,
                     neurostore_study=ns_empty_study,
-                    studyset=studyset,
-                    annotation=annotation,
+                    studyset=None,
+                    annotation=None,
                 )
                 to_commit.extend(
                     [

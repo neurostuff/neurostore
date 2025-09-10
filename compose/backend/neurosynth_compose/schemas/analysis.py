@@ -413,16 +413,16 @@ class ProjectSchema(BaseSchema):
     public = fields.Boolean()
     draft = fields.Boolean()
     studyset = StringOrNested(
-        StudysetSchema, metadata={"pluck": "neurostore_id"}, dump_only=True
+        StudysetSchema, metadata={"pluck": "neurostore_id"}, dump_only=True, allow_none=True
     )
     annotation = StringOrNested(
-        AnnotationSchema, metadata={"pluck": "neurostore_id"}, dump_only=True
+        AnnotationSchema, metadata={"pluck": "neurostore_id"}, dump_only=True, allow_none=True
     )
     cached_studyset_id = fields.Pluck(
-        StudysetSchema, "id", load_only=True, attribute="studyset"
+        StudysetSchema, "id", load_only=True, attribute="studyset", allow_none=True
     )
     cached_annotation_id = fields.Pluck(
-        AnnotationSchema, "id", load_only=True, attribute="annotation"
+        AnnotationSchema, "id", load_only=True, attribute="annotation", allow_none=True
     )
     cached_studyset = fields.Pluck(
         StudysetSchema,
