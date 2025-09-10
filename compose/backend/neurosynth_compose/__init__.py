@@ -4,7 +4,7 @@ from flask_cors import CORS
 
 from authlib.integrations.flask_client import OAuth
 import connexion
-from connexion.resolver import MethodViewResolver
+from connexion.resolver import MethodResolver
 
 from .database import db
 
@@ -18,16 +18,17 @@ def create_app():
     app = connexion_app.app
     app.config.from_object(os.environ["APP_SETTINGS"])
     
-    # use application context for connexion to work with app variables
-    with app.app_context():
-        connexion_app.add_api(
-            "neurosynth-compose-openapi.yml",
-            base_path="/api",
-            arguments={"title": "NeuroSynth API"},
-            resolver=MethodViewResolver("neurosynth_compose.resources"),
-            strict_validation=os.getenv(key="DEBUG", default=False) == "True",
-            validate_responses=os.getenv(key="DEBUG", default=False) == "True",
-        )
+    options = {"swagger_ui": True}
+    
+    connexion_app.add_api(
+        "neurosynth-compose-openapi.yml",
+        base_path="/api",
+        options=options,
+        arguments={"title": "NeuroSynth API"},
+        resolver=MethodResolver("neurosynth_compose.resources"),
+        strict_validation=os.getenv(key="DEBUG", default=False) == "True",
+        validate_responses=os.getenv(key="DEBUG", default=False) == "True",
+    )
 
     oauth = OAuth(app)
     auth0 = oauth.register(  # noqa: F841
