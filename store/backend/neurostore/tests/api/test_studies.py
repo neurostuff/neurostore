@@ -295,7 +295,7 @@ def test_create_study_new_user(new_user_client, mock_auth0_auth, session):
     assert study_resp.status_code == 200
 
 
-def test_condition_cloning_current_behavior(auth_client, ingest_neurovault, session):
+def test_condition_cloning_current_behavior(auth_client, ingest_neurosynth, session):
     """
     Test to see the current condition cloning behavior.
     This test documents what happens currently with conditions during study cloning.
@@ -377,7 +377,7 @@ def test_condition_cloning_current_behavior(auth_client, ingest_neurovault, sess
     assert total_conditions_after > total_conditions_before, "CURRENT BUG: New condition records are being created"
 
 
-def test_condition_cloning_should_preserve_references(auth_client, ingest_neurovault, session):
+def test_condition_cloning_should_preserve_references(auth_client, ingest_neurosynth, session):
     """
     Test to validate that conditions are NOT cloned when a study is cloned.
     This is the requirement: conditions should keep their original references.
@@ -445,3 +445,99 @@ def test_condition_cloning_should_preserve_references(auth_client, ingest_neurov
         f"Condition count increased from {total_conditions_before} to {total_conditions_after}. "
         "Conditions should not be cloned!"
     )
+
+
+def test_condition_cloning_integration(auth_client, session):
+    """
+    Integration test to verify that condition cloning preserves original references.
+    This test creates its own test data instead of relying on external fixtures.
+    """
+    # Get the authenticated user ID from the client
+    user_id = auth_client.username  # auth_client has username attribute
+    
+    # Create test condition
+    test_condition = Condition(name="Test Condition", description="A test condition", user_id=user_id)
+    session.add(test_condition)
+    session.flush()  # Get the ID
+    
+    # Create test study with the same user
+    test_study = Study(name="Test Study", description="A test study", user_id=user_id)
+    session.add(test_study)
+    session.flush()  # Get the ID
+    
+    # Create test analysis with the same user
+    test_analysis = Analysis(name="Test Analysis", study_id=test_study.id, user_id=user_id)
+    session.add(test_analysis)
+    session.flush()  # Get the ID
+    
+    # Link analysis to condition
+    from neurostore.models import AnalysisConditions
+    analysis_condition = AnalysisConditions(
+        analysis_id=test_analysis.id,
+        condition_id=test_condition.id,
+        weight=1.0
+    )
+    session.add(analysis_condition)
+    session.commit()
+    
+    print(f"\n=== BEFORE CLONING ===")
+    print(f"User ID: {user_id}")
+    print(f"Original study ID: {test_study.id}")
+    print(f"Original condition ID: {test_condition.id}")
+    print(f"Original condition name: {test_condition.name}")
+    
+    # Count conditions before cloning
+    conditions_before = Condition.query.count()
+    print(f"Total conditions before: {conditions_before}")
+    
+    # Clone the study using the API
+    resp = auth_client.post(f"/api/studies/?source_id={test_study.id}", data={})
+    print(f"Clone response status: {resp.status_code}")
+    if resp.status_code != 200:
+        print(f"Clone response: {resp.text}")
+        pytest.fail(f"Failed to clone study, status: {resp.status_code}")
+    
+    cloned_study_data = resp.json()
+    cloned_study_id = cloned_study_data["id"]
+    
+    print(f"\n=== AFTER CLONING ===")
+    print(f"Cloned study ID: {cloned_study_id}")
+    
+    # Count conditions after cloning
+    conditions_after = Condition.query.count()
+    print(f"Total conditions after: {conditions_after}")
+    
+    # Get the cloned study from database
+    cloned_study = Study.query.filter_by(id=cloned_study_id).first()
+    assert cloned_study is not None
+    
+    # Get conditions from cloned study
+    cloned_conditions = []
+    for analysis in cloned_study.analyses:
+        for ac in analysis.analysis_conditions:
+            cloned_conditions.append(ac.condition)
+    
+    print(f"Cloned study has {len(cloned_conditions)} conditions")
+    
+    # The key test: condition should have the same ID (not cloned)
+    assert len(cloned_conditions) == 1, f"Expected 1 condition, got {len(cloned_conditions)}"
+    
+    cloned_condition = cloned_conditions[0]
+    print(f"Cloned condition ID: {cloned_condition.id}")
+    print(f"Cloned condition name: {cloned_condition.name}")
+    
+    # THIS IS THE MAIN TEST: Condition ID should be preserved
+    assert cloned_condition.id == test_condition.id, (
+        f"Condition was cloned! Original ID: {test_condition.id}, "
+        f"Cloned ID: {cloned_condition.id}"
+    )
+    
+    # Total condition count should not increase
+    assert conditions_after == conditions_before, (
+        f"Condition count increased from {conditions_before} to {conditions_after}. "
+        "Conditions should not be cloned!"
+    )
+    
+    print(f"\n=== SUCCESS ===")
+    print(f"Condition ID preserved: {test_condition.id}")
+    print(f"No new conditions created!")
