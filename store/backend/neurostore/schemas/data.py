@@ -17,7 +17,7 @@ from neurostore.models import Analysis, Point
 
 # context parameters
 # clone: create a new object with new ids (true or false)
-# nested: serialize nested objects (true or false)  
+# nested: serialize nested objects (true or false)
 # flat: do not display any relationships
 # info: only display info fields
 # preserve_on_clone: field metadata to preserve original values when cloning
