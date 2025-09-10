@@ -1,6 +1,6 @@
 import pytest
 
-from ...models import Studyset, Study, User, Analysis
+from ...models import Studyset, Study, User, Analysis, Condition
 from ...schemas import StudySchema
 
 
@@ -293,3 +293,84 @@ def test_create_study_new_user(new_user_client, mock_auth0_auth, session):
 
     study_resp = new_user_client.post("/api/studies/", data={"name": "test"})
     assert study_resp.status_code == 200
+
+
+def test_condition_cloning_current_behavior(auth_client, ingest_neurovault, session):
+    """
+    Test to see the current condition cloning behavior.
+    This test documents what happens currently with conditions during study cloning.
+    """
+    # Get the first study that has conditions
+    study_with_conditions = None
+    original_conditions = []
+    
+    for study in Study.query.all():
+        for analysis in study.analyses:
+            if analysis.analysis_conditions:
+                study_with_conditions = study
+                original_conditions = [
+                    ac.condition for ac in analysis.analysis_conditions
+                ]
+                break
+        if study_with_conditions:
+            break
+    
+    if not study_with_conditions:
+        pytest.skip("No study with conditions found")
+    
+    print(f"\n=== BEFORE CLONING ===")
+    print(f"Original study ID: {study_with_conditions.id}")
+    print(f"Original conditions: {[(c.id, c.name) for c in original_conditions]}")
+    
+    # Count total conditions in database before cloning
+    total_conditions_before = Condition.query.count()
+    print(f"Total conditions in DB before: {total_conditions_before}")
+    
+    # Clone the study
+    resp = auth_client.post(f"/api/studies/?source_id={study_with_conditions.id}", data={})
+    assert resp.status_code == 200
+    
+    cloned_study_data = resp.json()
+    cloned_study_id = cloned_study_data["id"]
+    
+    print(f"\n=== AFTER CLONING ===")
+    print(f"Cloned study ID: {cloned_study_id}")
+    
+    # Count total conditions in database after cloning
+    total_conditions_after = Condition.query.count()
+    print(f"Total conditions in DB after: {total_conditions_after}")
+    
+    # Get the cloned study from database
+    cloned_study = Study.query.filter_by(id=cloned_study_id).first()
+    assert cloned_study is not None
+    
+    # Check conditions in the cloned study
+    cloned_conditions = []
+    for analysis in cloned_study.analyses:
+        for ac in analysis.analysis_conditions:
+            cloned_conditions.append(ac.condition)
+    
+    print(f"Cloned conditions: {[(c.id, c.name) for c in cloned_conditions]}")
+    
+    # Check if conditions were cloned (new instances created) or referenced
+    conditions_were_cloned = False
+    for orig_cond in original_conditions:
+        # Find corresponding condition in cloned study by name
+        matching_cloned_cond = next(
+            (c for c in cloned_conditions if c.name == orig_cond.name), None
+        )
+        assert matching_cloned_cond is not None, f"No matching condition found for {orig_cond.name}"
+        
+        if matching_cloned_cond.id != orig_cond.id:
+            conditions_were_cloned = True
+            print(f"CLONED: {orig_cond.name} - Original ID: {orig_cond.id}, Cloned ID: {matching_cloned_cond.id}")
+        else:
+            print(f"REFERENCED: {orig_cond.name} - Same ID: {orig_cond.id}")
+    
+    print(f"\n=== SUMMARY ===")
+    print(f"Conditions were cloned: {conditions_were_cloned}")
+    print(f"DB conditions increased from {total_conditions_before} to {total_conditions_after}")
+    
+    # This assertion will fail if conditions are being cloned (which is the current bug)
+    # After the fix, this should pass
+    assert not conditions_were_cloned, "Conditions should NOT be cloned, they should keep original references!"
