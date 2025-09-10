@@ -6,8 +6,6 @@ from authlib.integrations.flask_client import OAuth
 import connexion
 from connexion.resolver import MethodViewResolver
 
-from .database import db
-
 
 def create_app():
     connexion_app = connexion.FlaskApp(
@@ -44,8 +42,10 @@ def create_app():
         },
     )
 
-    # initialize db
-    db.init_app(app)
+    # initialize db (ensure models register against the app-bound registry)
+    from .database import init_db
+
+    init_db(app)
 
     # setup authentication
     # jwt = JWTManager(app)
