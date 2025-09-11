@@ -38,7 +38,7 @@ class NeuroStoreException(Exception):
             detail=detail,
             type=type_,
             instance=instance,
-            errors=errors or []
+            errors=errors or [],
         )
 
     @property

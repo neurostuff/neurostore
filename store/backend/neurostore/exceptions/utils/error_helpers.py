@@ -1,4 +1,4 @@
-from typing import List, Optional, Any
+from typing import List, Optional
 
 from ...exceptions.factories import (
     create_validation_error,
@@ -6,6 +6,7 @@ from ...exceptions.factories import (
     create_permission_error,
     create_authentication_error,
     create_unprocessable_error,
+    create_internal_server_error,
 )
 from .errors import ErrorDetail
 
@@ -15,7 +16,6 @@ def abort_validation(
 ) -> None:
     """
     400 error helper.
-    Raises a ValidationError built via factories.
     """
     raise create_validation_error(detail=message, field_errors=field_errors)
 
@@ -49,3 +49,9 @@ def abort_unprocessable(
     """
     raise create_unprocessable_error(detail=message, field_errors=field_errors)
 
+
+def abort_internal_server_error(detail: Optional[str] = None) -> None:
+    """
+    500 error helper.
+    """
+    raise create_internal_server_error(detail)

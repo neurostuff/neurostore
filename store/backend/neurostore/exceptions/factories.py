@@ -7,6 +7,7 @@ from .base import (
     PermissionError,
     AuthenticationError,
     UnprocessableEntityError,
+    InternalServerError,
 )
 
 
@@ -106,6 +107,14 @@ def create_unprocessable_error(
     Create an UnprocessableEntityError (422) with optional field errors.
     """
     return UnprocessableEntityError(detail=detail, errors=field_errors)
+
+
+def create_internal_server_error(detail: Optional[str] = None) -> InternalServerError:
+    """
+    Create an InternalServerError (500); optional detail may be provided.
+    """
+    return InternalServerError(detail=detail)
+
 
 def make_field_error(
     field: str,
