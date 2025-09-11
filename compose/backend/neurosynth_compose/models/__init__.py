@@ -1,4 +1,6 @@
 from .analysis import (
+    Condition,
+    SpecificationCondition,
     Specification,
     Studyset,
     StudysetReference,
@@ -13,7 +15,7 @@ from .analysis import (
     Project,
 )
 
-from .auth import User
+from .auth import User, Role, Device
 
 __all__ = [
     "Condition",
@@ -31,4 +33,6 @@ __all__ = [
     "NeurostoreAnalysis",
     "Project",
     "User",
+    "Role",
+    "Device",
 ]
