@@ -96,6 +96,42 @@ services:
       timeout: 3s
       retries: 10
 
+  pghero:
+    image: ankane/pghero
+    restart: always
+    expose:
+      - "8080"
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: "postgres://postgres:example@compose_pgsql17:5432/compose"
+      RAILS_RELATIVE_URL_ROOT: "/pghero"
+    depends_on:
+      compose_pgsql17:
+        condition: service_healthy
+
+  grafana:
+    image: grafana/grafana
+    restart: always
+    expose:
+      - "3030"
+    env_file:
+      - .env
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
+      - GF_SERVER_ROOT_URL=/grafana
+      - GF_SERVER_SERVE_FROM_SUB_PATH="true"
+      - GF_SERVER_HTTP_PORT=3030
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+    depends_on:
+      compose_pgsql17:
+        condition: service_healthy
+    networks:
+      - default
+
   # compose_monitor:
   #   image: compose_monitor
   #   build:
@@ -115,6 +151,7 @@ services:
 volumes:
   postgres_data:
   postgres17_data:
+  grafana_data:
 
 networks:
   default:
