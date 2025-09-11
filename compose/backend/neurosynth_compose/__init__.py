@@ -5,7 +5,7 @@ from connexion.middleware import MiddlewarePosition
 from starlette.middleware.cors import CORSMiddleware
 from authlib.integrations.flask_client import OAuth
 import connexion
-from connexion.resolver import MethodViewResolver
+from connexion.resolver import MethodViewResolver, MethodResolver
 
 
 connexion_app = connexion.FlaskApp(__name__, specification_dir="openapi/")
@@ -43,32 +43,21 @@ connexion_app.add_middleware(
     allow_headers=["*"],
 )
 
-# API configuration - but don't add it yet
-_api_added = False
+# API configuration
 _openapi_file = Path(os.path.dirname(__file__) + "/openapi/neurosynth-compose-openapi.yml")
 _options = {"swagger_ui": True}
 
-
-def ensure_api_added():
-    """Ensure API is added exactly once"""
-    global _api_added
-    if not _api_added:
-        connexion_app.add_api(
-            _openapi_file,
-            base_path="/api",
-            options=_options,
-            arguments={"title": "NeuroSynth API"},
-            resolver=MethodViewResolver("neurosynth_compose.resources"),
-            strict_validation=os.getenv("DEBUG", False) == "True",
-            validate_responses=os.getenv("DEBUG", False) == "True",
-        )
-        _api_added = True
+connexion_app.add_api(
+    _openapi_file,
+    base_path="/api",
+    options=_options,
+    arguments={"title": "NeuroSynth API"},
+    resolver=MethodViewResolver("neurosynth_compose.resources"),
+    strict_validation=os.getenv("DEBUG", False) == "True",
+    validate_responses=os.getenv("DEBUG", False) == "True",
+)
 
 
 def create_app():
     """Return the Flask app - for testing compatibility"""
     return app
-
-
-# Add the API immediately since we're at module level
-ensure_api_added()
