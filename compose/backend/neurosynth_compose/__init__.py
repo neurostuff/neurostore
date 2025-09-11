@@ -5,7 +5,7 @@ from connexion.middleware import MiddlewarePosition
 from starlette.middleware.cors import CORSMiddleware
 from authlib.integrations.flask_client import OAuth
 import connexion
-from connexion.resolver import MethodViewResolver, MethodResolver
+from connexion.resolver import MethodResolver
 
 
 connexion_app = connexion.FlaskApp(__name__, specification_dir="openapi/")
@@ -52,7 +52,7 @@ connexion_app.add_api(
     base_path="/api",
     options=_options,
     arguments={"title": "NeuroSynth API"},
-    resolver=MethodViewResolver("neurosynth_compose.resources"),
+    resolver=MethodResolver("neurosynth_compose.resources"),
     strict_validation=os.getenv("DEBUG", False) == "True",
     validate_responses=os.getenv("DEBUG", False) == "True",
 )
