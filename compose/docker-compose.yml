@@ -7,7 +7,7 @@ services:
       dockerfile: ./Dockerfile
       context: ./backend
     depends_on:
-      compose_pgsql17:
+      compose-pgsql17:
         condition: service_healthy
       compose_worker:
         condition: service_started
@@ -78,7 +78,7 @@ services:
       timeout: 3s
       retries: 10
     
-  compose_pgsql17:
+  compose-pgsql17:
     image: compose_pgsql17
     restart: always
     build:
@@ -104,10 +104,10 @@ services:
     env_file:
       - .env
     environment:
-      DATABASE_URL: "postgres://postgres:example@compose_pgsql17:5432/compose"
+      DATABASE_URL: "postgres://postgres:example@compose-pgsql17:5432/compose"
       RAILS_RELATIVE_URL_ROOT: "/pghero"
     depends_on:
-      compose_pgsql17:
+      compose-pgsql17:
         condition: service_healthy
 
   grafana:
@@ -127,7 +127,7 @@ services:
       - grafana_data:/var/lib/grafana
       - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
     depends_on:
-      compose_pgsql17:
+      compose-pgsql17:
         condition: service_healthy
     networks:
       - default
