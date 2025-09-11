@@ -2,7 +2,8 @@
 
 from sqlalchemy import text, and_, or_
 from flask import request
-from neurostore.exceptions.utils.error_helpers import abort_validation, make_field_error
+from neurostore.exceptions.utils.error_helpers import abort_validation
+from neurostore.exceptions.factories import make_field_error
 
 from sqlalchemy.orm import selectinload, aliased
 from webargs import fields

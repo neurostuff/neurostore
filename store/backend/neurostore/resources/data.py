@@ -8,8 +8,8 @@ from neurostore.exceptions.utils.error_helpers import (
     abort_validation,
     abort_not_found,
     abort_unprocessable,
-    make_field_error,
 )
+from neurostore.exceptions.factories import make_field_error
 from webargs import fields
 import sqlalchemy.sql.expression as sae
 from sqlalchemy.orm import (

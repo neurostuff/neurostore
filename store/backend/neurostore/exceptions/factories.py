@@ -106,3 +106,17 @@ def create_unprocessable_error(
     Create an UnprocessableEntityError (422) with optional field errors.
     """
     return UnprocessableEntityError(detail=detail, errors=field_errors)
+
+def make_field_error(
+    field: str,
+    value: Any,
+    valid_options: Optional[List[Any]] = None,
+    code: str = "INVALID_VALUE",
+) -> ErrorDetail:
+    """
+    Convenience helper to create an ErrorDetail without importing factories manually.
+    """
+
+    return create_field_validation_error(
+        field=field, value=value, valid_options=valid_options, code=code
+    )

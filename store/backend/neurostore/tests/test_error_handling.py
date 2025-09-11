@@ -55,6 +55,39 @@ def test_neurostore_exception_payload_and_factories():
     assert "invalid source" in payload["errors"][0]["message"]
 
 
+def test_neurostore_exception_properties():
+    """Test that NeuroStoreException properties work correctly after refactoring"""
+    from neurostore.exceptions.base import NeuroStoreException, ErrorDetail
+    errors = [ErrorDetail(field="test", code="TEST_ERROR", message="Test error")]
+    exc = NeuroStoreException(
+        status_code=400,
+        detail="Test exception",
+        errors=errors,
+        type_="http://example.com/test-error",
+        title="Test Error",
+        instance="http://example.com/test-error/1"
+    )
+    
+    # Test that all properties are accessible and return correct values
+    assert exc.status_code == 400
+    assert exc.detail == "Test exception"
+    assert len(exc.errors) == 1
+    assert exc.errors[0].field == "test"
+    assert exc.type == "http://example.com/test-error"
+    assert exc.title == "Test Error"
+    assert exc.instance == "http://example.com/test-error/1"
+    
+    # Test that to_payload works correctly
+    payload = exc.to_payload()
+    assert payload["status"] == 400
+    assert payload["detail"] == "Test exception"
+    assert payload["type"] == "http://example.com/test-error"
+    assert payload["title"] == "Test Error"
+    assert payload["instance"] == "http://example.com/test-error/1"
+    assert "errors" in payload
+    assert payload["errors"][0]["field"] == "test"
+
+
 def test_error_helpers_raise():
     fe = create_field_validation_error("x", "y", None)
     with pytest.raises(Exception):
