@@ -15,7 +15,7 @@ from sqlalchemy import select
 
 from neurosynth_compose.ingest.neurostore import create_meta_analyses
 from neurosynth_compose.models.analysis import generate_id
-from neurosynth_compose.database import db as _db
+from neurosynth_compose.database import db as _db, Base
 from neurosynth_compose.models import (
     User,
     Specification,
@@ -194,7 +194,8 @@ def app(mock_auth):
 @pytest.fixture(scope="function")
 def db(app):
     """Session-wide test database."""
-    _db.create_all()
+    # Use Base metadata since models inherit from Base, not db.Model
+    Base.metadata.create_all(bind=_db.engine)
 
     yield _db
 
@@ -204,7 +205,7 @@ def db(app):
         pass
 
     sa.orm.close_all_sessions()
-    _db.drop_all()
+    Base.metadata.drop_all(bind=_db.engine)
 
 
 @pytest.fixture(scope="session")

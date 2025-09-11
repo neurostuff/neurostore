@@ -9,7 +9,7 @@ from .analysis import BaseMixin
 roles_users = Table(
     "roles_users",
     Base.metadata,
-    Column("user_id", Text, ForeignKey("users.id")),
+    Column("user_id", Text, ForeignKey("users.external_id")),
     Column("role_id", Text, ForeignKey("roles.id")),
 )
 
@@ -36,7 +36,7 @@ class Device(BaseMixin, Base):
     __tablename__ = "devices"
     device_name = Column(String)
     api_key = Column(String)
-    user_id = Column("user_id", Text, ForeignKey("users.id"))
+    user_id = Column("user_id", Text, ForeignKey("users.external_id"))
     user = relationship("User", backref=backref("devices"))
 
 
