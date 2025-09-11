@@ -80,7 +80,7 @@ def create_user():
 
 
 def get_current_user():
-    user = connexion.context.get("user")
+    user = context.get("user")
     if user:
         return User.query.filter_by(external_id=connexion.context["user"]).first()
     return None

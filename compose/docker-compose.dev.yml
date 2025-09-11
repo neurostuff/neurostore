@@ -11,7 +11,7 @@ services:
   compose:
     expose:
       - "8000"
-    command: /usr/local/bin/gunicorn -w 2 -b :8000 neurosynth_compose.core:app --log-level debug --timeout 300 --reload
+    command: /usr/local/bin/gunicorn -w 2 -b :8000 neurosynth_compose.core:connexion_app --worker-class uvicorn.workers.UvicornWorker --log-level debug --timeout 300 --reload
     restart: "no"
   
   compose_worker:

@@ -6,7 +6,7 @@ from sqlalchemy.ext.associationproxy import association_proxy
 import shortuuid
 import secrets
 
-from neurosynth_compose.database import db
+from neurosynth_compose.database import db, Base
 from sqlalchemy import (
     Column,
     Text,
@@ -44,7 +44,7 @@ class BaseMixin(object):
     #     relationship("User", backref=cls.__tablename__, uselist=False)
 
 
-class Condition(BaseMixin, db.Model):
+class Condition(BaseMixin, Base):
     __tablename__ = "conditions"
     name = Column(Text)
     description = Column(Text)
@@ -53,7 +53,7 @@ class Condition(BaseMixin, db.Model):
     )
 
 
-class SpecificationCondition(BaseMixin, db.Model):
+class SpecificationCondition(BaseMixin, Base):
     __tablename__ = "specification_conditions"
     weight = Column(Float)
     specification_id = Column(
@@ -71,7 +71,7 @@ class SpecificationCondition(BaseMixin, db.Model):
     user = relationship("User", backref=backref("specification_conditions"))
 
 
-class Specification(BaseMixin, db.Model):
+class Specification(BaseMixin, Base):
     __tablename__ = "specifications"
 
     type = Column(Text)
@@ -93,7 +93,7 @@ class Specification(BaseMixin, db.Model):
     )
 
 
-class StudysetReference(db.Model):
+class StudysetReference(Base):
     __tablename__ = "studyset_references"
     id = Column(Text, primary_key=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -101,7 +101,7 @@ class StudysetReference(db.Model):
     studysets = relationship("Studyset", back_populates="studyset_reference")
 
 
-class Studyset(BaseMixin, db.Model):
+class Studyset(BaseMixin, Base):
     __tablename__ = "studysets"
 
     snapshot = Column(JSON)
@@ -112,13 +112,13 @@ class Studyset(BaseMixin, db.Model):
     user = relationship("User", backref=backref("studysets"))
 
 
-class AnnotationReference(db.Model):
+class AnnotationReference(Base):
     __tablename__ = "annotation_references"
     id = Column(Text, primary_key=True)
     annotations = relationship("Annotation", back_populates="annotation_reference")
 
 
-class Annotation(BaseMixin, db.Model):
+class Annotation(BaseMixin, Base):
     __tablename__ = "annotations"
 
     snapshot = Column(JSON)
@@ -133,7 +133,7 @@ class Annotation(BaseMixin, db.Model):
     )
 
 
-class MetaAnalysis(BaseMixin, db.Model):
+class MetaAnalysis(BaseMixin, Base):
     __tablename__ = "meta_analyses"
 
     name = Column(Text)
@@ -163,7 +163,7 @@ class MetaAnalysis(BaseMixin, db.Model):
     )
 
 
-class MetaAnalysisResult(BaseMixin, db.Model):
+class MetaAnalysisResult(BaseMixin, Base):
     __tablename__ = "meta_analysis_results"
     meta_analysis_id = Column(Text, ForeignKey("meta_analyses.id"))
     cli_version = Column(Text)  # neurosynth-compose cli version
@@ -177,7 +177,7 @@ class MetaAnalysisResult(BaseMixin, db.Model):
     )
 
 
-class NeurovaultCollection(BaseMixin, db.Model):
+class NeurovaultCollection(BaseMixin, Base):
     """Neurovault collection and upload status"""
 
     __tablename__ = "neurovault_collections"
@@ -190,7 +190,7 @@ class NeurovaultCollection(BaseMixin, db.Model):
     )
 
 
-class NeurovaultFile(BaseMixin, db.Model):
+class NeurovaultFile(BaseMixin, Base):
     """NV file upload"""
 
     __tablename__ = "neurovault_files"
@@ -213,7 +213,7 @@ class NeurovaultFile(BaseMixin, db.Model):
     __table_args__ = (CheckConstraint(status.in_(["OK", "FAILED", "PENDING"])),)
 
 
-class NeurostoreStudy(BaseMixin, db.Model):
+class NeurostoreStudy(BaseMixin, Base):
     """Neurostore upload of a study"""
 
     __tablename__ = "neurostore_studies"
@@ -227,7 +227,7 @@ class NeurostoreStudy(BaseMixin, db.Model):
     __table_args__ = (CheckConstraint(status.in_(["OK", "FAILED", "PENDING"])),)
 
 
-class NeurostoreAnalysis(BaseMixin, db.Model):
+class NeurostoreAnalysis(BaseMixin, Base):
     """Neurostore upload of an analysis"""
 
     __tablename__ = "neurostore_analyses"
@@ -247,7 +247,7 @@ class NeurostoreAnalysis(BaseMixin, db.Model):
     __table_args__ = (CheckConstraint(status.in_(["OK", "FAILED", "PENDING"])),)
 
 
-class Project(BaseMixin, db.Model):
+class Project(BaseMixin, Base):
     __tablename__ = "projects"
 
     name = Column(Text)
