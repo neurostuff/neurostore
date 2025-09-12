@@ -142,7 +142,7 @@ describe('DoSleuthImport', () => {
                 cy.get('[data-testid="InsertDriveFileIcon"]').should('have.length', 2);
             });
 
-            it.only('should upload a valid sleuth file with windows line endings', () => {
+            it('should upload a valid sleuth file with windows line endings', () => {
                 cy.get('input[type="file"]').selectFile(
                     'cypress/fixtures/DoSleuthImport/sleuthFiles/validSleuthFileWindowsLineEndings.txt',
                     { force: true }
@@ -151,7 +151,7 @@ describe('DoSleuthImport', () => {
                 cy.contains('button', 'create project').should('be.enabled');
             });
 
-            it.only('should upload a valid sleuth file with wonky white space', () => {
+            it('should upload a valid sleuth file with wonky white space', () => {
                 cy.get('input[type="file"]').selectFile(
                     'cypress/fixtures/DoSleuthImport/sleuthFiles/validSleuthFileWonkyWhiteSpace.txt',
                     { force: true }
