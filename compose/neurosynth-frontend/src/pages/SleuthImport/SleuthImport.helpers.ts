@@ -141,9 +141,15 @@ export const stringsAreValidFileFormat = (sleuthStudy: string): { isValid: boole
         const line = cleanLine(rawLine);
         const [authorInfo, ...experimentName] = line.split(':');
         if (!experimentName?.join('').trim()) {
+            // If we've already seen a valid AUTHOR:EXPERIMENT earlier, then a stray
+            // non-key/value line without a colon is an unexpected format (generic).
+            // If we haven't seen one yet, give the colon-specific hint.
+            if (containsAtLeastOneExperimentName) {
+                return { isValid: false, errorMessage: `Unexpected format. Encountered error at: ${rawLine}` };
+            }
             return {
                 isValid: false,
-                errorMessage: `Unexpected format. (Hint: Did you omit a colon or use a semi colon instead of a colon?) Encountered error at: ${line}`,
+                errorMessage: `Unexpected format. (Hint: Did you omit a colon or use a semi colon instead of a colon?) Encountered error at: ${rawLine}`,
             };
         }
         if (!authorInfo?.trim()) {
