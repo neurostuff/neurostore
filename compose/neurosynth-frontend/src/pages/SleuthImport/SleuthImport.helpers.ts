@@ -130,7 +130,10 @@ export const stringsAreValidFileFormat = (sleuthStudy: string): { isValid: boole
                 containsPMID = true;
                 continue;
             }
-            // unknown key=value -> treat as metadata, continue
+            // only accept known keys (subjects, doi, pubmedid) as allowed metadata; unknown key=value is invalid
+            if (!['subjects', 'doi', 'pubmedid'].includes(kv.key)) {
+                return { isValid: false, errorMessage: `Unexpected format. Encountered unknown property: ${rawLine}` };
+            }
             continue;
         }
 
@@ -140,7 +143,7 @@ export const stringsAreValidFileFormat = (sleuthStudy: string): { isValid: boole
         if (!experimentName?.join('').trim()) {
             return {
                 isValid: false,
-                errorMessage: `Unexpected format. (Hint: missing colon?) At: ${rawLine}`,
+                errorMessage: 'Did you omit a colon or use a semi colon instead of a colon?',
             };
         }
         if (!authorInfo?.trim()) {
