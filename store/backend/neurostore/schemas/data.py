@@ -7,6 +7,7 @@ from marshmallow import (
     pre_load,
     post_load,
     EXCLUDE,
+    ValidationError,
 )
 
 from sqlalchemy import func
@@ -286,11 +287,11 @@ class PointSchema(BaseDataSchema):
         # Handle case where data might be a string ID instead of dict
         if not isinstance(data, dict):
             return data
-            
+
         # Only process coordinates if they exist in the data
         if "coordinates" in data and data["coordinates"] is not None:
             coords = data.pop("coordinates")
-            
+
             # Check if all coordinates are null
             if all(c is None for c in coords):
                 # During cloning, allow null coordinates but store them as None
@@ -298,28 +299,30 @@ class PointSchema(BaseDataSchema):
                     data["x"], data["y"], data["z"] = None, None, None
                 else:
                     # Don't save points with all null coordinates to database
-                    from marshmallow import ValidationError
                     raise ValidationError("Points cannot have all null coordinates")
             else:
                 # Convert coordinates to float, handling potential null values
                 try:
-                    data["x"], data["y"], data["z"] = [float(c) if c is not None else None for c in coords]
+                    converted_coords = [
+                        float(c) if c is not None else None for c in coords
+                    ]
+                    data["x"], data["y"], data["z"] = converted_coords
                 except (TypeError, ValueError) as e:
-                    from marshmallow import ValidationError
                     raise ValidationError(f"Invalid coordinate values: {e}")
 
         if data.get("order") is None:
-            if data.get("analysis_id") is not None or data.get("analysis"):
-                analysis_id = data.get("analysis_id") or (data.get("analysis") if isinstance(data.get("analysis"), str) else None)
-                if analysis_id:
-                    max_order = (
-                        db.session.query(func.max(Point.order))
-                        .filter_by(analysis_id=analysis_id)
-                        .scalar()
-                    )
-                    data["order"] = 1 if max_order is None else max_order + 1
-                else:
-                    data["order"] = 1
+            # Extract analysis_id first, then check if it exists
+            analysis_id = data.get("analysis_id") or (
+                data.get("analysis") if isinstance(data.get("analysis"), str) else None
+            )
+
+            if analysis_id:
+                max_order = (
+                    db.session.query(func.max(Point.order))
+                    .filter_by(analysis_id=analysis_id)
+                    .scalar()
+                )
+                data["order"] = 1 if max_order is None else max_order + 1
             else:
                 data["order"] = 1
 
