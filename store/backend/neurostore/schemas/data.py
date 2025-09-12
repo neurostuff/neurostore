@@ -140,24 +140,7 @@ class StringOrNested(fields.Nested):
             return self.string_field._deserialize(value, attr, data, many=self.many)
 
         schema = self._modify_schema()
-        
-        # Handle many=True case with filtering for cloning
-        if self.many and self.context.get("clone"):
-            from marshmallow import ValidationError
-            filtered_items = []
-            for item in value:
-                try:
-                    loaded_item = schema.load(item)
-                    filtered_items.append(loaded_item)
-                except ValidationError as e:
-                    # Skip items that raise SKIP_NULL_COORDINATES_POINT during cloning
-                    if "SKIP_NULL_COORDINATES_POINT" in str(e):
-                        continue  # Skip this item
-                    else:
-                        raise  # Re-raise other validation errors
-            return filtered_items
-        else:
-            return schema.load(value, many=self.many)
+        return schema.load(value, many=self.many)
 
 
 # https://github.com/marshmallow-code/marshmallow/issues/466#issuecomment-285342071
@@ -304,18 +287,19 @@ class PointSchema(BaseDataSchema):
         if not isinstance(data, dict):
             return data
             
-        # PointValues need special handling
-        if data.get("coordinates"):
+        # Only process coordinates if they exist in the data
+        if "coordinates" in data and data["coordinates"] is not None:
             coords = data.pop("coordinates")
+            
             # Check if all coordinates are null
             if all(c is None for c in coords):
-                # Don't save points with all null coordinates to database
-                if not self.context.get("clone"):
+                # During cloning, allow null coordinates but store them as None
+                if self.context.get("clone"):
+                    data["x"], data["y"], data["z"] = None, None, None
+                else:
+                    # Don't save points with all null coordinates to database
                     from marshmallow import ValidationError
                     raise ValidationError("Points cannot have all null coordinates")
-                # During cloning, skip this point by raising a special exception
-                from marshmallow import ValidationError
-                raise ValidationError("SKIP_NULL_COORDINATES_POINT")
             else:
                 # Convert coordinates to float, handling potential null values
                 try:

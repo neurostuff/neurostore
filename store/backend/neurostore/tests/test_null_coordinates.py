@@ -24,7 +24,7 @@ def test_point_schema_null_coordinates_validation():
 
 
 def test_point_schema_null_coordinates_cloning():
-    """Test that PointSchema raises special error for filtering during cloning"""
+    """Test that PointSchema handles null coordinates during cloning"""
     from neurostore.schemas.data import PointSchema
     
     point_data = {
@@ -36,10 +36,12 @@ def test_point_schema_null_coordinates_cloning():
     
     schema = PointSchema(context={"clone": True})
     
-    with pytest.raises(ValidationError) as exc_info:
-        schema.load(point_data)
+    # During cloning, null coordinates should be allowed and stored as None
+    result = schema.load(point_data)
     
-    assert "SKIP_NULL_COORDINATES_POINT" in str(exc_info.value)
+    assert result["x"] is None
+    assert result["y"] is None 
+    assert result["z"] is None
 
 
 def test_point_schema_valid_coordinates():
@@ -61,8 +63,8 @@ def test_point_schema_valid_coordinates():
     assert result["z"] == 3.0
 
 
-def test_analysis_schema_filters_null_coordinates():
-    """Test that StringOrNested filters points with null coordinates during cloning"""
+def test_analysis_schema_allows_null_coordinates_during_cloning():
+    """Test that AnalysisSchema allows null coordinate points during cloning"""
     from neurostore.schemas.data import AnalysisSchema
     
     analysis_data = {
@@ -87,11 +89,18 @@ def test_analysis_schema_filters_null_coordinates():
     schema = AnalysisSchema(context={"clone": True, "nested": True})
     result = schema.load(analysis_data)
     
-    # Should have filtered out the null coordinate point
+    # Should have both points, including the null coordinate one
     points = result.get("points", [])
-    assert len(points) == 1  # Only the valid point should remain
+    assert len(points) == 2  # Both points should be present
     
-    # Verify the remaining point has valid coordinates
-    assert points[0]["x"] == 1.0
-    assert points[0]["y"] == 2.0
-    assert points[0]["z"] == 3.0
+    # Verify the valid point has valid coordinates
+    valid_point = next(p for p in points if p["x"] == 1.0)
+    assert valid_point["x"] == 1.0
+    assert valid_point["y"] == 2.0
+    assert valid_point["z"] == 3.0
+    
+    # Verify the null coordinate point has null coordinates
+    null_point = next(p for p in points if p["x"] is None)
+    assert null_point["x"] is None
+    assert null_point["y"] is None  
+    assert null_point["z"] is None
