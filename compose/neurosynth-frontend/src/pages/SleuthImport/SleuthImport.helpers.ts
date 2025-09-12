@@ -143,11 +143,11 @@ export const stringsAreValidFileFormat = (sleuthStudy: string): { isValid: boole
         if (!experimentName?.join('').trim()) {
             return {
                 isValid: false,
-                errorMessage: 'Did you omit a colon or use a semi colon instead of a colon?',
+                errorMessage: `Unexpected format. (Hint: Did you omit a colon or use a semi colon instead of a colon?) Encountered error at: ${line}`,
             };
         }
         if (!authorInfo?.trim()) {
-            return { isValid: false, errorMessage: `Unexpected format. At: ${rawLine}` };
+            return { isValid: false, errorMessage: `Unexpected format. Encountered error at: ${rawLine}` };
         }
         containsAtLeastOneExperimentName = true;
     }
@@ -181,7 +181,7 @@ export const validateFileContents = (fileContents: string): { isValid: boolean; 
     if (!refKV || refKV.key !== 'reference' || !refKV.value) {
         return {
             isValid: false,
-            errorMessage: "No coordinate reference space specified (expect 'Reference = MNI' or similar).",
+            errorMessage: "No coordinate reference space specified (e.g. expecting REFERENCE property)",
         };
     }
     const space = refKV.value;
