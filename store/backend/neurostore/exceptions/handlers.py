@@ -40,6 +40,11 @@ async def neurostore_exception_handler(request: Request, exc: NeuroStoreExceptio
     err = _build_error_response_from_payload(payload, default_exc=exc)
     body = err.to_dict()
     response = JSONResponse(body, status_code=err.status, media_type="application/json")
+    # Ensure CORS headers are present on ASGI error responses (mirrors WSGI handlers)
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "*"
+    response.headers["Access-Control-Allow-Headers"] = "*"
+    response.headers["Access-Control-Allow-Credentials"] = "true"
     return response
 
 
@@ -66,6 +71,11 @@ async def general_exception_handler(request: Request, exc: Exception):
     err = _build_error_response_from_payload(payload, default_exc=internal)
     body = err.to_dict()
     response = JSONResponse(body, status_code=err.status, media_type="application/json")
+    # Ensure CORS headers are present on ASGI error responses (mirrors WSGI handlers)
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "*"
+    response.headers["Access-Control-Allow-Headers"] = "*"
+    response.headers["Access-Control-Allow-Credentials"] = "true"
     return response
 
 
