@@ -454,7 +454,7 @@ export const executeHTTPRequestsAsBatches = async <T, Y>(
         const batchedRes = await Promise.all(requests.map(mapFunc));
         batchedResList.push(...batchedRes);
         if (progressCallbackFunc) {
-            progressCallbackFunc(Math.round((batchedRes.length / requestList.length) * 100));
+            progressCallbackFunc(Math.round((batchedResList.length / requestList.length) * 100));
         }
         if (delayInMS) {
             await new Promise((res) => {
