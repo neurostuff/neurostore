@@ -285,7 +285,7 @@ export const sleuthUploadToStubs = (sleuthFile: string): Omit<ISleuthFileUploadS
 
 export const parseFile = async (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
-        if (file.type !== 'text/plain')) {
+        if (file.type !== 'text/plain') {
             return reject(new Error('File should be .txt'));
         }
 
