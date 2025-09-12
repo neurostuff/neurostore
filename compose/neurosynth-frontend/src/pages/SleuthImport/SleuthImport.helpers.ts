@@ -58,17 +58,31 @@ export const extractAuthorsFromString = (s: string): string => {
     return splitStr.trim();
 };
 
+/**
+ * Helpers for whitespace-robust parsing
+ */
+const cleanLine = (line: string) => line.replace(/^\s*\/\/\s*/, '').trim(); // strip one leading // then trim
+const parseKeyVal = (lineRaw: string): { key: string; value: string } | null => {
+    const line = cleanLine(lineRaw).replace(/^\//, ''); // allow optional leading '/'
+    const m = line.match(/^([A-Za-z]+)\s*=\s*(.+)$/);
+    if (!m) return null;
+    return { key: m[1].toLowerCase(), value: m[2].trim() };
+};
+const isCoordLine = (lineRaw: string) => {
+    const line = lineRaw.trim();
+    if (!line) return false;
+    // exactly three numeric tokens separated by whitespace
+    return /^\s*-?\d+(?:\.\d+)?\s+-?\d+(?:\.\d+)?\s+-?\d+(?:\.\d+)?\s*$/.test(line);
+};
+
 // [x, y, z]
 export const parseCoordinate = (coordinates: string): { coords: number[]; isValid: boolean } => {
-    const parsedCoordinates: number[] = [];
-    const coordinatesAsStringArr = coordinates.split(/\t/);
-    for (const coordinateString of coordinatesAsStringArr) {
-        const { value, isValid } = stringToNumber(coordinateString);
-        if (!isValid) return { coords: [], isValid: false };
-        parsedCoordinates.push(value);
-    }
+    const parts = coordinates.trim().split(/\s+/); // accept tabs OR spaces
+    if (parts.length !== 3) return { coords: [], isValid: false };
+    const nums = parts.map((p) => stringToNumber(p));
+    if (nums.some((n) => !n.isValid)) return { coords: [], isValid: false };
     return {
-        coords: parsedCoordinates,
+        coords: nums.map((n) => n.value),
         isValid: true,
     };
 };
@@ -77,119 +91,97 @@ export const stringsAreValidFileFormat = (sleuthStudy: string): { isValid: boole
     let containsDOI = false;
     let containsPMID = false;
     let containsAtLeastOneExperimentName = false;
-    const parsedSleuthStudy = sleuthStudy.replaceAll(/\/\/\s*/g, '').split('\n');
     let hasReachedCoordinates = false;
-    for (const line of parsedSleuthStudy) {
+
+    const lines = sleuthStudy.split('\n').map((l) => l.replace(/\s+$/, '')); // drop trailing ws
+
+    for (const rawLine of lines) {
+        if (!rawLine.trim()) continue; // ignore blank lines
+
         if (hasReachedCoordinates) {
-            if (!parseCoordinate(line).isValid) {
-                return {
-                    isValid: false,
-                    errorMessage: `Invalid coordinates: ${line}`,
-                };
+            if (!isCoordLine(rawLine)) {
+                return { isValid: false, errorMessage: `Invalid coordinates: ${rawLine}` };
             }
-        } else {
-            if (line.toLocaleLowerCase().includes('subjects=')) {
-                const [_, numSubjects] = line.split('=');
-                const { isValid } = stringToNumber(numSubjects);
+            continue; // keep consuming coordinates
+        }
+
+        const kv = parseKeyVal(rawLine);
+        if (kv) {
+            if (kv.key === 'subjects') {
+                const { isValid } = stringToNumber(kv.value);
                 if (!isValid) {
                     return {
                         isValid: false,
-                        errorMessage: `Expected number of subjects. Encountered error at: ${line}`,
+                        errorMessage: `Expected number of subjects. Encountered error at: ${rawLine}`,
                     };
                 }
-                hasReachedCoordinates = true; // we assume that subjects is last before coordinates
-            } else if (line.toLocaleLowerCase().includes('doi=')) {
-                const [_, id] = line.split('=');
-                if (!id) {
-                    return {
-                        isValid: false,
-                        errorMessage: `Expected valid DOI but did not find one. Encountered error at: ${line}`,
-                    };
-                }
-                if (containsDOI) {
-                    return {
-                        isValid: false,
-                        errorMessage: `Encountered multiple DOIs: ${line}`,
-                    };
-                } else {
-                    containsDOI = true;
-                }
-            } else if (line.toLocaleLowerCase().includes('pubmedid=')) {
-                const [_, id] = line.split('=');
-                if (!id) {
-                    return {
-                        isValid: false,
-                        errorMessage: `Expected valid PMID but did not find one. Encountered error at: ${line}`,
-                    };
-                }
-                if (containsPMID) {
-                    return {
-                        isValid: false,
-                        errorMessage: `Encountered multiple PubMed IDs: ${line}`,
-                    };
-                } else {
-                    containsPMID = true;
-                }
-            } else {
-                const [authorInfo, experimentName] = line.split(':');
-                if (!experimentName?.trim()) {
-                    return {
-                        isValid: false,
-                        errorMessage: `Unexpected format. (Hint: Did you omit a colon or use a semi colon instead of a colon?) Encountered error at: ${line}`,
-                    };
-                }
-
-                if (!authorInfo?.trim()) {
-                    return {
-                        isValid: false,
-                        errorMessage: `Unexpected format. Encountered error at: ${line}`,
-                    };
-                }
-                containsAtLeastOneExperimentName = true;
+                hasReachedCoordinates = true; // assume coordinates follow
+                continue;
             }
+            if (kv.key === 'doi') {
+                if (!kv.value) return { isValid: false, errorMessage: `Expected valid DOI. At: ${rawLine}` };
+                if (containsDOI) return { isValid: false, errorMessage: `Encountered multiple DOIs: ${rawLine}` };
+                containsDOI = true;
+                continue;
+            }
+            if (kv.key === 'pubmedid') {
+                if (!kv.value) return { isValid: false, errorMessage: `Expected valid PMID. At: ${rawLine}` };
+                if (containsPMID) return { isValid: false, errorMessage: `Encountered multiple PubMed IDs: ${rawLine}` };
+                containsPMID = true;
+                continue;
+            }
+            // unknown key=value -> treat as metadata, continue
+            continue;
         }
+
+        // Not key=value; expect "AUTHOR : EXPERIMENT"
+        const line = cleanLine(rawLine);
+        const [authorInfo, ...experimentName] = line.split(':');
+        if (!experimentName?.join('').trim()) {
+            return {
+                isValid: false,
+                errorMessage: `Unexpected format. (Hint: missing colon?) At: ${rawLine}`,
+            };
+        }
+        if (!authorInfo?.trim()) {
+            return { isValid: false, errorMessage: `Unexpected format. At: ${rawLine}` };
+        }
+        containsAtLeastOneExperimentName = true;
     }
 
     // need at least one identifier
     if (!containsDOI && !containsPMID) {
         return {
             isValid: false,
-            errorMessage: `Either DOI or PMID is required. (Hint: is it in the right format?) Encountered error at: ${sleuthStudy.slice(
-                0,
-                100
-            )}...`,
+            errorMessage:
+                "Either DOI or PMID is required. (Formats like 'DOI=...' or '// DOI=...' or '/DOI=...' are accepted.)",
         };
     }
     if (!containsAtLeastOneExperimentName) {
-        return {
-            isValid: false,
-            errorMessage: `At least one experiment name is required. Encountered error at: ${sleuthStudy.slice(
-                0,
-                100
-            )}...`,
-        };
+        return { isValid: false, errorMessage: 'At least one experiment name is required.' };
     }
 
     return { isValid: true };
 };
 
 export const validateFileContents = (fileContents: string): { isValid: boolean; errorMessage?: string } => {
-    // we expect the first line to be something like: "// Reference"
+    // we expect the first meaningful line to be "Reference = <space>"
     // we can also assume that all line endings are \n as fileContents have been normalized in parseFileContents
-    const [expectedReferenceString, ...lines] = fileContents.split('\n');
-    if (!expectedReferenceString || lines.length === 0) {
+    const lines = fileContents.split('\n');
+    // find first non-empty, meaningful line
+    let i = 0;
+    while (i < lines.length && !cleanLine(lines[i])) i++;
+    if (i >= lines.length) {
+        return { isValid: false, errorMessage: 'File has no data' };
+    }
+    const refKV = parseKeyVal(lines[i]);
+    if (!refKV || refKV.key !== 'reference' || !refKV.value) {
         return {
             isValid: false,
-            errorMessage: 'File has no data',
+            errorMessage: "No coordinate reference space specified (expect 'Reference = MNI' or similar).",
         };
     }
-    if (!expectedReferenceString.toLocaleLowerCase().includes('reference')) {
-        return {
-            isValid: false,
-            errorMessage: 'No coordinate reference space specified (e.g. expecting REFERENCE property)',
-        };
-    }
-    const space = expectedReferenceString.split('=')[1].trim();
+    const space = refKV.value;
     if (!space) {
         return {
             isValid: false,
@@ -197,23 +189,32 @@ export const validateFileContents = (fileContents: string): { isValid: boolean; 
         };
     }
 
-    const splitLinesBySleuthStudy = fileContents
-        .replace(expectedReferenceString + '\n', '')
-        .trim()
-        .split(/\n\s*\n/);
-    for (const sleuthStudy of splitLinesBySleuthStudy) {
+    // split studies by blank lines after reference
+    const studyChunks: string[] = [];
+    let chunk: string[] = [];
+    for (let j = i + 1; j < lines.length; j++) {
+        const raw = lines[j];
+        if (!raw.trim()) {
+            if (chunk.length) {
+                studyChunks.push(chunk.join('\n'));
+                chunk = [];
+            }
+            continue;
+        }
+        chunk.push(raw);
+    }
+    if (chunk.length) studyChunks.push(chunk.join('\n'));
+
+    for (const sleuthStudy of studyChunks) {
         const { isValid, errorMessage = '' } = stringsAreValidFileFormat(sleuthStudy);
         if (!isValid) {
             return {
                 isValid: false,
-                errorMessage: errorMessage || `Unexpected format. Encountered error at: ${sleuthStudy.slice(0, 80)}...`,
+                errorMessage: errorMessage || `Unexpected format. Encountered at: ${sleuthStudy.slice(0, 80)}...`,
             };
         }
     }
-    return {
-        isValid: true,
-        errorMessage: undefined,
-    };
+    return { isValid: true, errorMessage: undefined };
 };
 
 export const normalizeFileContents = (fileContents: string): string => {
@@ -225,33 +226,30 @@ const extractStubFromSleuthStudy = (sleuthStudy: string): ISleuthStub => {
     const studyStrings = sleuthStudy.split('\n');
     const stub: ISleuthStub = studyStrings.reduce(
         (acc, curr) => {
-            if (curr.toLocaleLowerCase().includes('subjects=')) {
-                const [_, numSubjects] = curr.split('=');
-                acc.subjects = stringToNumber(numSubjects).value;
-            } else if (curr.toLocaleLowerCase().includes('doi=')) {
-                const [_, doi] = curr.split('=');
-                acc.doi = doi;
-            } else if (curr.toLocaleLowerCase().includes('pubmedid=')) {
-                const [_, pmid] = curr.split('=');
-                acc.pmid = pmid;
-            } else if (/^(-?\d*(\.\d+)?\t?){3}$/.test(curr)) {
-                /**
-                 * regex is scary but dont panic.
-                 * (-?\d*(\.\d+)?\t){2} = match negative sign, 0 or more numbers, optional decimal with numbers, and end with tab. Match three times
-                 * do not end regex with "g". We only want the first instance
-                 */
+            const kv = parseKeyVal(curr);
 
-                // we know this is valid already so no need to handle invalid case
+            if (kv?.key === 'subjects') {
+                const { value } = stringToNumber(kv.value);
+                acc.subjects = value;
+                return acc;
+            } else if (kv?.key === 'doi') {
+                acc.doi = kv.value;
+                return acc;
+            } else if (kv?.key === 'pubmedid') {
+                acc.pmid = kv.value;
+                return acc;
+            } else if (isCoordLine(curr)) {
                 const { coords } = parseCoordinate(curr);
                 acc.coordinates.push({ x: coords[0], y: coords[1], z: coords[2] });
+                return acc;
             } else {
-                // We expect <AUTHOR> : <EXPERIMENT_NAME>
-                // However, we need to prepare for something like <AUTHOR> : <SOME TEXT> : <MORE TEXT> where "<SOME TEXT> : <MORE TEXT>" is the experiment name
-                const [authorInfo, ...experimentName] = curr.split(':');
+                // We expect <AUTHOR> : <EXPERIMENT_NAME>, allow extra colons and leading comments
+                const header = cleanLine(curr);
+                if (!header) return acc;
+                const [authorInfo, ...experimentName] = header.split(':');
                 acc.authorYearString = authorInfo.trim();
-                acc.analysisName = acc.analysisName
-                    ? `${acc.analysisName}, ${experimentName.join('').trim()}`
-                    : experimentName.join('').trim();
+                const exp = experimentName.join(':').trim();
+                acc.analysisName = acc.analysisName ? `${acc.analysisName}, ${exp}` : exp;
             }
             return acc;
         },
@@ -268,23 +266,26 @@ const extractStubFromSleuthStudy = (sleuthStudy: string): ISleuthStub => {
 };
 
 export const sleuthUploadToStubs = (sleuthFile: string): Omit<ISleuthFileUploadStubs, 'fileName'> => {
-    const [expectedReferenceString, ...lines] = sleuthFile.replaceAll(/\/\/\s*/g, '').split('\n');
+    const lines = sleuthFile.split('\n');
+    // find first meaningful line for Reference
+    let idx = 0;
+    while (idx < lines.length && !cleanLine(lines[idx])) idx++;
+    const refKV = parseKeyVal(lines[idx] || '');
+    const space = refKV?.key === 'reference' ? refKV.value : '';
 
     const sleuthStubs = lines
+        .slice(idx + 1)
         .join('\n')
         .trim()
         .split(/\n\s*\n/)
         .map((sleuthStudy) => extractStubFromSleuthStudy(sleuthStudy));
 
-    return {
-        space: expectedReferenceString.split('=')[1].trim(),
-        sleuthStubs,
-    };
+    return { space, sleuthStubs };
 };
 
 export const parseFile = async (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
-        if (file.type !== 'text/plain') {
+        if (file.type !== 'text/plain')) {
             return reject(new Error('File should be .txt'));
         }
 
@@ -450,13 +451,11 @@ export const executeHTTPRequestsAsBatches = async <T, Y>(
         const batchedRes = await Promise.all(requests.map(mapFunc));
         batchedResList.push(...batchedRes);
         if (progressCallbackFunc) {
-            progressCallbackFunc(Math.round((batchedResList.length / requestList.length) * 100));
+            progressCallbackFunc(Math.round((batchedRes.length / requestList.length) * 100));
         }
         if (delayInMS) {
             await new Promise((res) => {
-                setTimeout(() => {
-                    res(null);
-                }, delayInMS);
+                setTimeout(() => res(null), delayInMS);
             });
         }
     }
@@ -560,8 +559,7 @@ export const lookForPMIDsAndFetchStudyDetails = async (
                     res(fakeAxiosResponse);
                 });
             } else {
-                // we know that if a study does not have a PMID, then it must at least have a DOI because
-                // we have already validated this when the files were uploaded
+                // if a study does not have a PMID, it must have a DOI (already validated in upload)
                 return getPubmedIdFromDOICallback(baseStudy.doi as string);
             }
         },
@@ -597,7 +595,6 @@ export const applyPubmedStudyDetailsToBaseStudiesAndRemoveDuplicates = (
 
         let updatedBaseStudyWithDetails: BaseStudy = {};
         if (!associatedPubmedStudy) {
-            // there is no corresponding pubmed study
             updatedBaseStudyWithDetails = { ...baseStudy };
         } else {
             const authorString = (associatedPubmedStudy?.authors || []).reduce(
@@ -662,7 +659,6 @@ export const ingestBaseStudies = async (
     }[] = [];
     httpResponses.forEach((httpResponse) => {
         if ((httpResponse.data as StudyReturn).base_study) {
-            // this is a study
             ((httpResponse.data as StudyReturn).analyses || []).forEach((analysis) => {
                 studyToAnalysisObjects.push({
                     studyId: httpResponse.data.id as string,
@@ -678,7 +674,6 @@ export const ingestBaseStudies = async (
                     (baseStudyVersion) => (baseStudyVersion as IStudyVersion)?.id === studyId
                 );
             });
-            // this is an analysis
             studyToAnalysisObjects.push({
                 studyId: (httpResponse.data as AnalysisReturn)?.study as string,
                 analysisId: httpResponse.data.id as string,
