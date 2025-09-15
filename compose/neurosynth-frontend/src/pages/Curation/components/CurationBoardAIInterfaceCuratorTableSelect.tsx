@@ -17,6 +17,7 @@ export const CuratorTableSelectCell: React.FC<CellContext<ICurationTableStudy, u
         setExclusionForStub(columnIndex, props.row.original.id, null);
     };
 
+    // only for the PRISMA identification column - other columns have their excluded studies filtered out
     const isExcluded = props.row.original.exclusionTag !== null;
 
     if (isExcluded) {
@@ -24,7 +25,7 @@ export const CuratorTableSelectCell: React.FC<CellContext<ICurationTableStudy, u
             <Box>
                 <Chip
                     color="error"
-                    label="Excluded"
+                    label="Duplicate"
                     sx={{ fontSize: '8px', padding: '0px' }}
                     size="small"
                     onDelete={() => {

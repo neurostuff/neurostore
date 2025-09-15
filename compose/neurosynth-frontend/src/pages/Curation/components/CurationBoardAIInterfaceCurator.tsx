@@ -85,8 +85,8 @@ const CurationBoardAIInterfaceCurator: React.FC<{
     };
 
     const setSelectedStubAndFocus = useCallback((stubId: string | undefined) => {
-        if (!stubId) return;
         setSelectedStubId(stubId);
+        if (!stubId) return;
         setUIMode('FOCUSMODE');
     }, []);
 
@@ -108,10 +108,11 @@ const CurationBoardAIInterfaceCurator: React.FC<{
             // if tablemode, we want to reset the selected stub as the group id has changed
             setSelectedStubId(undefined);
             return;
+        } else if (UIMode === 'FOCUSMODE') {
+            const rows = table.getRowModel().rows;
+            if (rows.length === 0) return;
+            setSelectedStubId(rows[0].original.id);
         }
-        const rows = table.getRowModel().rows;
-        if (rows.length === 0) return;
-        setSelectedStubId(rows[0].original.id);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedGroup.id]);
 

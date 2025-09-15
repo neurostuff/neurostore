@@ -1,14 +1,45 @@
-import { Box, Button, Typography } from '@mui/material';
+import { Box, Button, Link as MuiLink, Typography } from '@mui/material';
+import { Link } from 'react-router-dom';
 import CurationPromoteUncategorizedButton from 'components/Buttons/CurationPromoteUncategorizedButton';
+import { useProjectCurationColumns } from 'pages/Project/store/ProjectStore';
+import { useMemo } from 'react';
 
 const CurationBoardAIInterfaceIdentificationUI: React.FC<{
     hasUncategorizedStudies: boolean;
     onManuallyReview: () => void;
     onPromoteAllUncategorized: () => void;
 }> = ({ hasUncategorizedStudies, onManuallyReview, onPromoteAllUncategorized }) => {
+    const cols = useProjectCurationColumns();
+    const noStudies = useMemo(() => {
+        return cols.every((col) => col.stubStudies.length === 0);
+    }, [cols]);
+
     const handleReviewDuplicates = () => {
         onManuallyReview();
     };
+
+    if (noStudies) {
+        return (
+            <Box
+                sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    height: '100%',
+                }}
+            >
+                <Typography variant="h6" sx={{ marginBottom: '2rem', color: 'text.secondary' }}>
+                    No studies in this project yet.{' '}
+                    <MuiLink underline="hover" component={Link} to="import">
+                        {' '}
+                        Import studies
+                    </MuiLink>{' '}
+                    to get started.
+                </Typography>
+            </Box>
+        );
+    }
 
     if (hasUncategorizedStudies) {
         return (
@@ -26,7 +57,8 @@ const CurationBoardAIInterfaceIdentificationUI: React.FC<{
                         Neurosynth-Compose reviewed your import and automatically excluded any duplicates found.
                     </Typography>
                     <Typography variant="body1" color="gray">
-                        You can either manually review the duplicates or promote all uncategorized studies to screening.
+                        You can either manually review the import for duplicates or promote all uncategorized studies to
+                        screening.
                     </Typography>
                 </Box>
 
