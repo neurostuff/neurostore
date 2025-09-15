@@ -1,0 +1,14 @@
+// Reference=MNI
+// DOI=10.9999/example-doi-0001 
+// PubMedID=12345678	
+// Doe et al., 2021: sleep disorder > controls Table 1
+//Subjects=12	
+-12	28	54  
+3	 12 		27	
+
+// DOI=10.8888/example-doi-0002
+// PubMedID=23456789
+// Roe et al., 2022: sleep disorder < controls
+// Subjects = 10
+18 -12	63 
+-42	-57	0	

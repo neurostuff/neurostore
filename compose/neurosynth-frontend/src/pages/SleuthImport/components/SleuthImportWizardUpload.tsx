@@ -3,17 +3,7 @@ import { Warning } from '@mui/icons-material';
 import CloseIcon from '@mui/icons-material/Close';
 import FileUploadIcon from '@mui/icons-material/FileUpload';
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
-import {
-    Box,
-    Button,
-    IconButton,
-    Link,
-    List,
-    ListItem,
-    ListItemIcon,
-    ListItemText,
-    Typography,
-} from '@mui/material';
+import { Box, Button, IconButton, Link, List, ListItem, ListItemIcon, ListItemText, Typography } from '@mui/material';
 import CurationImportBaseStyles from 'pages/CurationImport/components/CurationImport.styles';
 import React, { useMemo, useState } from 'react';
 import { ISleuthFileUploadStubs, parseFile, sleuthUploadToStubs } from '../SleuthImport.helpers';
@@ -46,6 +36,7 @@ const SleuthImportWizardUpload: React.FC<{
         for (const targetFile of [...event.target.files]) {
             try {
                 const parsedFile = await parseFile(targetFile);
+
                 uploadedFiles.push({
                     file: targetFile,
                     parsedFileContents: parsedFile,
@@ -73,7 +64,7 @@ const SleuthImportWizardUpload: React.FC<{
 
     const handleClickNext = () => {
         const convertedUploads: ISleuthFileUploadStubs[] = [];
-        for (let file of sleuthFileUploads) {
+        for (const file of sleuthFileUploads) {
             const { sleuthStubs, space } = sleuthUploadToStubs(file.parsedFileContents);
             convertedUploads.push({
                 fileName: file.file.name,
@@ -92,8 +83,7 @@ const SleuthImportWizardUpload: React.FC<{
         <Box>
             <Box mb="1rem" sx={{ display: 'flex', alignItems: 'center' }}>
                 <Typography>
-                    Please ensure that your sleuth files are in the <Link>correct format</Link>{' '}
-                    before uploading
+                    Please ensure that your sleuth files are in the <Link>correct format</Link> before uploading
                 </Typography>
                 <Box ml="10px">
                     <SleuthImportHelpDialog />
@@ -117,9 +107,7 @@ const SleuthImportWizardUpload: React.FC<{
                         }}
                         component="label"
                     >
-                        <Box
-                            sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
-                        >
+                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                             <FileUploadIcon
                                 sx={{
                                     width: '50px',
@@ -153,9 +141,7 @@ const SleuthImportWizardUpload: React.FC<{
                                 </ListItemIcon>
                                 <ListItemText
                                     sx={{
-                                        color: sleuthFile.isValidFile
-                                            ? 'primary.main'
-                                            : 'error.main',
+                                        color: sleuthFile.isValidFile ? 'primary.main' : 'error.main',
                                         overflowWrap: 'break-word',
                                     }}
                                     secondaryTypographyProps={{
@@ -164,16 +150,12 @@ const SleuthImportWizardUpload: React.FC<{
                                     secondary={
                                         sleuthFile.isValidFile
                                             ? sleuthFile.file.type
-                                            : sleuthFile.errorMessage ||
-                                              'The format of this file is invalid'
+                                            : sleuthFile.errorMessage || 'The format of this file is invalid'
                                     }
                                 >
                                     {sleuthFile.file.name}
                                 </ListItemText>
-                                <IconButton
-                                    sx={{ color: 'error.main' }}
-                                    onClick={() => handleRemoveFile(index)}
-                                >
+                                <IconButton sx={{ color: 'error.main' }} onClick={() => handleRemoveFile(index)}>
                                     <CloseIcon />
                                 </IconButton>
                             </ListItem>
@@ -182,12 +164,7 @@ const SleuthImportWizardUpload: React.FC<{
                 </Box>
             </Box>
             <Box sx={CurationImportBaseStyles.fixedContainer}>
-                <Box
-                    sx={[
-                        CurationImportBaseStyles.fixedButtonsContainer,
-                        { justifyContent: 'space-between' },
-                    ]}
-                >
+                <Box sx={[CurationImportBaseStyles.fixedButtonsContainer, { justifyContent: 'space-between' }]}>
                     <Button
                         color="secondary"
                         sx={CurationImportBaseStyles.nextButton}
