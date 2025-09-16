@@ -7,6 +7,7 @@ from marshmallow import (
     pre_load,
     post_load,
     EXCLUDE,
+    ValidationError,
 )
 
 from sqlalchemy import func
@@ -273,26 +274,52 @@ class PointSchema(BaseDataSchema):
     coordinates = fields.List(fields.Float(), dump_only=True)
 
     # deserialization
-    x = fields.Float(load_only=True)
-    y = fields.Float(load_only=True)
-    z = fields.Float(load_only=True)
+    x = fields.Float(load_only=True, allow_none=True)
+    y = fields.Float(load_only=True, allow_none=True)
+    z = fields.Float(load_only=True, allow_none=True)
 
     class Meta:
         additional = ("kind", "space", "image", "label_id")
-        allow_none = ("kind", "space", "image", "label_id")
+        allow_none = ("kind", "space", "image", "label_id", "x", "y", "z")
 
     @pre_load
     def process_values(self, data, **kwargs):
-        # PointValues need special handling
-        if data.get("coordinates"):
-            coords = [float(c) for c in data.pop("coordinates")]
-            data["x"], data["y"], data["z"] = coords
+        # Handle case where data might be a string ID instead of dict
+        if not isinstance(data, dict):
+            return data
+
+        # Only process coordinates if they exist in the data
+        if "coordinates" in data and data["coordinates"] is not None:
+            coords = data.pop("coordinates")
+
+            # Check if all coordinates are null
+            if all(c is None for c in coords):
+                # During cloning, allow null coordinates but store them as None
+                if self.context.get("clone"):
+                    data["x"], data["y"], data["z"] = None, None, None
+                else:
+                    # Don't save points with all null coordinates to database
+                    raise ValidationError("Points cannot have all null coordinates")
+            else:
+                # Convert coordinates to float, handling potential null values
+                try:
+                    converted_coords = [
+                        float(c) if c is not None else None for c in coords
+                    ]
+                    data["x"], data["y"], data["z"] = converted_coords
+                except (TypeError, ValueError) as e:
+                    raise ValidationError(f"Invalid coordinate values: {e}")
 
         if data.get("order") is None:
-            if data.get("analysis_id") is not None:
+            # Extract analysis_id first, then check if it exists
+            analysis_id = data.get("analysis_id") or (
+                data.get("analysis") if isinstance(data.get("analysis"), str) else None
+            )
+
+            if analysis_id:
                 max_order = (
                     db.session.query(func.max(Point.order))
-                    .filter_by(analysis_id=data["analysis_id"])
+                    .filter_by(analysis_id=analysis_id)
                     .scalar()
                 )
                 data["order"] = 1 if max_order is None else max_order + 1
