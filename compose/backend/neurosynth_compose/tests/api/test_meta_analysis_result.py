@@ -107,9 +107,7 @@ def test_put_meta_analysis_result_with_celery(
         def add_files(field, paths):
             for path in paths:
                 fobj = open(path, "rb")
-                payload.append(
-                    (f"{field}[]", (path.name, fobj, "application/octet-stream"))
-                )
+                payload.append((field, (path.name, fobj, "application/octet-stream")))
                 handles.append(fobj)
 
         add_files("statistical_maps", maps)

@@ -57,7 +57,12 @@ def _make_json_response(payload, status=200):
     return ConnexionResponse(
         body=json.dumps(payload),
         status_code=status,
+        # Explicitly set both mimetype and content type because Connexion
+        # populates the header from ``content_type`` only; otherwise the
+        # response header becomes ``Content-Type: None`` and Connexion's
+        # response validation rejects it.
         mimetype="application/json",
+        content_type="application/json",
     )
 
 
