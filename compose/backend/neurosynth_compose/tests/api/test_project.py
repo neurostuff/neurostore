@@ -151,8 +151,14 @@ def test_clone_public_project_creates_new_project(
         .one()
     )
     assert cloned_project.user.external_id == auth_client.username
-    assert cloned_project.studyset_id and cloned_project.studyset_id != source_project.studyset_id
-    assert cloned_project.annotation_id and cloned_project.annotation_id != source_project.annotation_id
+    assert (
+        cloned_project.studyset_id
+        and cloned_project.studyset_id != source_project.studyset_id
+    )
+    assert (
+        cloned_project.annotation_id
+        and cloned_project.annotation_id != source_project.annotation_id
+    )
 
     expected_auth = f"Bearer {auth_client.token}"
     auth_headers = {

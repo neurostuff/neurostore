@@ -711,7 +711,9 @@ class ProjectsView(ObjectView, ListView):
 
         source_id = clone_args.get("source_id")
         if source_id:
-            return self._clone_project(source_id, clone_args.get("copy_annotations", True))
+            return self._clone_project(
+                source_id, clone_args.get("copy_annotations", True)
+            )
 
         try:
             data = parser.parse(self.__class__._schema, request)
@@ -754,7 +756,10 @@ class ProjectsView(ObjectView, ListView):
         if source_project is None:
             abort(404)
 
-        if not source_project.public and source_project.user_id != current_user.external_id:
+        if (
+            not source_project.public
+            and source_project.user_id != current_user.external_id
+        ):
             abort(403, description="project is not public")
 
         access_token = request.headers.get("Authorization")
@@ -768,7 +773,9 @@ class ProjectsView(ObjectView, ListView):
                 client_secret=current_app.config["AUTH0_CLIENT_SECRET"],
                 audience=current_app.config["AUTH0_API_AUDIENCE"],
             )
-            access_token = " ".join([token_resp["token_type"], token_resp["access_token"]])
+            access_token = " ".join(
+                [token_resp["token_type"], token_resp["access_token"]]
+            )
 
         ns_session = neurostore_session(access_token)
 
@@ -858,9 +865,11 @@ class ProjectsView(ObjectView, ListView):
             )
             new_studyset = Studyset(
                 user=current_user,
-                snapshot=deepcopy(source_studyset.snapshot)
-                if source_studyset.snapshot
-                else None,
+                snapshot=(
+                    deepcopy(source_studyset.snapshot)
+                    if source_studyset.snapshot
+                    else None
+                ),
                 version=source_studyset.version,
                 studyset_reference=ss_ref,
             )
@@ -877,9 +886,11 @@ class ProjectsView(ObjectView, ListView):
                 )
                 new_annotation = Annotation(
                     user=current_user,
-                    snapshot=deepcopy(source_annotation.snapshot)
-                    if source_annotation.snapshot
-                    else None,
+                    snapshot=(
+                        deepcopy(source_annotation.snapshot)
+                        if source_annotation.snapshot
+                        else None
+                    ),
                     annotation_reference=annot_ref,
                     studyset=new_studyset,
                 )
@@ -887,9 +898,7 @@ class ProjectsView(ObjectView, ListView):
 
         return new_studyset, new_annotation
 
-    def _clone_meta_analysis(
-        self, meta, user, project, new_studyset, new_annotation
-    ):
+    def _clone_meta_analysis(self, meta, user, project, new_studyset, new_annotation):
         cloned_spec = self._clone_specification(meta.specification, user)
         cloned_meta = MetaAnalysis(
             name=meta.name,
@@ -911,7 +920,9 @@ class ProjectsView(ObjectView, ListView):
             cloned_meta.cached_studyset = new_studyset
 
         if new_annotation and new_annotation.annotation_reference:
-            cloned_meta.neurostore_annotation_id = new_annotation.annotation_reference.id
+            cloned_meta.neurostore_annotation_id = (
+                new_annotation.annotation_reference.id
+            )
             cloned_meta.cached_annotation = new_annotation
 
         return cloned_meta
