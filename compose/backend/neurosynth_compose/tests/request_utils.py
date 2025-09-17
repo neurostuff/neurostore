@@ -1,6 +1,8 @@
 import json
 from functools import partialmethod
 
+from starlette.testclient import TestClient as StarletteTestClient
+
 
 class Client(object):
     def __init__(self, token, test_client=None, prepend="", username=None):
@@ -9,24 +11,18 @@ class Client(object):
         if test_client is None:
             from flask import current_app as app
 
+            asgi_app = app.extensions.get("connexion_asgi")
             connexion_app = app.extensions.get("connexion_app")
 
-            if connexion_app is not None:
-                target_app = connexion_app
-                if not getattr(target_app, "test_client", None):
-                    target_app = getattr(target_app, "app", target_app)
-                if not getattr(target_app, "test_client", None):
-                    target_app = getattr(target_app, "_app", target_app)
-                if not getattr(target_app, "test_client", None):
-                    target_app = getattr(target_app, "app", target_app)
-                test_client = target_app.test_client()
+            if asgi_app is not None:
+                test_client = StarletteTestClient(asgi_app)
+            elif connexion_app is not None and hasattr(connexion_app, "test_client"):
+                test_client = connexion_app.test_client()
             else:
                 test_client = app.test_client()
 
-        if hasattr(test_client, "open"):
-            self.client_mode = "flask"
-        else:
-            self.client_mode = "requests"
+        self.client_flask = hasattr(test_client, "open")
+        self.client_mode = "flask" if self.client_flask else "requests"
 
         self.client = test_client
         self.prepend = prepend
@@ -34,7 +30,7 @@ class Client(object):
         self.username = username
 
     def close(self):
-        if self.client_flask and hasattr(self.client, "close"):
+        if hasattr(self.client, "close"):
             self.client.close()
 
     def _get_headers(self):

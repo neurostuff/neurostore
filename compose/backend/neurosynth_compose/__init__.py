@@ -3,13 +3,11 @@ from pathlib import Path
 
 import connexion
 from authlib.integrations.flask_client import OAuth
-from connexion.middleware import MiddlewarePosition
 from connexion.resolver import MethodResolver
-from flask_cors import CORS
 from starlette.middleware.cors import CORSMiddleware
 
 from .database import init_db
-from .resources.auth import handle_auth_error, AuthError
+from .resources.auth import AuthError, handle_auth_error
 
 
 def create_app():
@@ -32,9 +30,7 @@ def create_app():
         "APIKEYINFO_FUNC", app.config.get("APIKEYINFO_FUNC", default_apikey)
     )
 
-    connexion_app.add_middleware(
-        CORSMiddleware,
-        position=MiddlewarePosition.BEFORE_ROUTING,
+    cors_kwargs = dict(
         allow_origins=["*"],
         allow_credentials=True,
         allow_methods=["*"],
@@ -79,10 +75,12 @@ def create_app():
     init_db(app)
 
     app.secret_key = app.config["JWT_SECRET_KEY"]
-    CORS(app)
 
     app.register_error_handler(AuthError, handle_auth_error)
 
+    cors_asgi_app = CORSMiddleware(connexion_app, **cors_kwargs)
+
     app.extensions["connexion_app"] = connexion_app
+    app.extensions["connexion_asgi"] = cors_asgi_app
 
     return app
