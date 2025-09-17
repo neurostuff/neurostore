@@ -1,4 +1,6 @@
 import pytest
+from starlette.testclient import TestClient
+from werkzeug.routing import Rule
 
 from .request_utils import Client
 
@@ -14,14 +16,20 @@ def cors_test_client(app):
                 return "", 204
             return jsonify({"status": status_code}), status_code
 
-        app.add_url_rule(
-            "/__test/cors/<int:status_code>",
-            endpoint_name,
-            _cors_status,
-            methods=["GET"],
+        app.url_map.add(
+            Rule(
+                "/__test/cors/<int:status_code>",
+                endpoint=endpoint_name,
+                methods=["GET"],
+            )
         )
+        app.view_functions[endpoint_name] = _cors_status
 
-    return app.test_client()
+    client = TestClient(app.extensions["connexion_asgi"])
+    try:
+        yield client
+    finally:
+        client.close()
 
 
 @pytest.fixture
@@ -35,7 +43,7 @@ def anonymous_client():
         ("auth_client", "get", "/api/specifications?page_size=1", 200),
         ("cors_test_client", "get", "/__test/cors/204", 204),
         ("cors_test_client", "get", "/__test/cors/400", 400),
-        ("anonymous_client", "get", "/api/annotations", 401),
+        ("anonymous_client", "post", "/api/annotations", 401),
         ("cors_test_client", "get", "/__test/cors/404", 404),
         ("cors_test_client", "get", "/__test/cors/420", 420),
         ("cors_test_client", "get", "/__test/cors/500", 500),
@@ -45,7 +53,8 @@ def test_cors_headers_present(
     client_fixture, method, path, expected_status, request, user_data
 ):
     client = request.getfixturevalue(client_fixture)
-    response = getattr(client, method)(path)
+    headers = {"Origin": "https://client.example"}
+    response = getattr(client, method)(path, headers=headers)
 
     assert response.status_code == expected_status
     assert response.headers.get("Access-Control-Allow-Origin") == "*"
