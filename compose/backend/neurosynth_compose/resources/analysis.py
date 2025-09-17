@@ -883,10 +883,7 @@ class ProjectsView(ObjectView, ListView):
                 )
                 new_annotation = Annotation(
                     user=current_user,
-                    snapshot=(
-                        deepcopy(source_annotation.snapshot)
-                        if source_annotation.snapshot
-                        else None
+                    snapshot=None
                     ),
                     annotation_reference=annot_ref,
                     studyset=new_studyset,
