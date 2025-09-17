@@ -29,6 +29,22 @@ def test_create_meta_analysis_result(session, db, app, auth_client, user_data):
     assert meta_resp.status_code == 200
 
 
+def test_create_meta_analysis_result_requires_upload_key(
+    session, db, auth_client, user_data
+):
+    meta_analysis = db.session.execute(select(MetaAnalysis)).scalars().first()
+    data = {
+        "studyset_snapshot": {"name": "my studyset"},
+        "annotation_snapshot": {"name": "my_annotation"},
+        "meta_analysis_id": meta_analysis.id,
+    }
+
+    auth_client.token = None
+    resp = auth_client.post("/api/meta-analysis-results", data=data)
+
+    assert resp.status_code == 401
+
+
 def test_create_meta_analysis_result_no_snapshots(session, db, auth_client, user_data):
     meta_analyses = db.session.execute(select(MetaAnalysis)).scalars().all()
     for meta_analysis in meta_analyses:
@@ -184,3 +200,30 @@ def test_put_meta_analysis_result_with_celery(
     finally:
         for fobj in second_handles:
             fobj.close()
+
+
+def test_put_meta_analysis_result_requires_upload_key(
+    session, db, auth_client, user_data
+):
+    meta_analysis = db.session.execute(select(MetaAnalysis)).scalars().first()
+    headers = {"Compose-Upload-Key": meta_analysis.run_key}
+    post_data = {
+        "studyset_snapshot": {"name": "my studyset"},
+        "annotation_snapshot": {"name": "my_annotation"},
+        "meta_analysis_id": meta_analysis.id,
+    }
+
+    auth_client.token = None
+    create_resp = auth_client.post(
+        "/api/meta-analysis-results", data=post_data, headers=headers
+    )
+    assert create_resp.status_code == 200
+    result_id = create_resp.json["id"]
+
+    # Attempt to update without providing the upload key should fail auth
+    update_resp = auth_client.put(
+        f"/api/meta-analysis-results/{result_id}",
+        data={"meta_analysis_id": meta_analysis.id},
+    )
+
+    assert update_resp.status_code == 401

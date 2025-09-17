@@ -20,6 +20,18 @@ def create_app():
 
     app.config.from_object(os.environ["APP_SETTINGS"])
 
+    # Ensure security handler functions are available, while allowing tests or
+    # deployments to override them via environment variables or config objects.
+    default_bearer = "neurosynth_compose.resources.auth.decode_token"
+    default_apikey = "neurosynth_compose.resources.auth.verify_key"
+
+    app.config["BEARERINFO_FUNC"] = os.getenv(
+        "BEARERINFO_FUNC", app.config.get("BEARERINFO_FUNC", default_bearer)
+    )
+    app.config["APIKEYINFO_FUNC"] = os.getenv(
+        "APIKEYINFO_FUNC", app.config.get("APIKEYINFO_FUNC", default_apikey)
+    )
+
     connexion_app.add_middleware(
         CORSMiddleware,
         position=MiddlewarePosition.BEFORE_ROUTING,
