@@ -2,7 +2,7 @@ import connexion
 from flask import request, abort
 from webargs.flaskparser import parser
 
-from .analysis import ListView, ObjectView
+from .analysis import ListView, ObjectView, _make_json_response
 from ..models.auth import User
 from ..schemas import UserSchema  # noqa E401
 from ..database import db
@@ -28,11 +28,12 @@ class UsersView(ObjectView, ListView):
         db.session.add_all(to_commit)
         db.session.commit()
 
-        return self.__class__._schema().dump(record)
+        payload = self.__class__._schema().dump(record)
+        return _make_json_response(payload)
 
     def put(self, id):
         current_user = db.session.execute(
-            select(User).where(User.external_id == connexion.context["user"])
+            select(User).where(User.external_id == connexion.context.context["user"])
         ).scalar_one_or_none()
         data = parser.parse(self.__class__._schema, request)
         if id != data["id"] or id != current_user.id:
@@ -51,4 +52,5 @@ class UsersView(ObjectView, ListView):
         db.session.add(record)
         db.session.commit()
 
-        return self.__class__._schema().dump(record)
+        payload = self.__class__._schema().dump(record)
+        return _make_json_response(payload)
