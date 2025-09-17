@@ -50,7 +50,7 @@ def test_delete_meta_analysis(session, app, auth_client, user_data, db):
 
     good_delete = auth_client.delete(f"/api/meta-analyses/{meta_analysis.id}")
 
-    assert good_delete.status_code == 200
+    assert good_delete.status_code == 204
 
 
 def test_ingest_neurostore(session, neurostore_data):

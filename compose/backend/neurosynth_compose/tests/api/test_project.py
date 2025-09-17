@@ -88,7 +88,7 @@ def test_delete_project(session, app, auth_client, user_data):
 
     good_delete = auth_client.delete(f"/api/projects/{project.id}")
 
-    assert good_delete.status_code == 200
+    assert good_delete.status_code == 204
 
 
 def test_total_count(session, app, auth_client, user_data):

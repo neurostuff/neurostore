@@ -307,7 +307,7 @@ class ObjectView(BaseView):
         db.session.delete(record)
         commit_session()
 
-        return _make_json_response({}, status=200)
+        return "", 204
 
     def insert_data(self, id, data):
         return data
