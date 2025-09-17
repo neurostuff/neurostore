@@ -1,4 +1,5 @@
 import string
+from copy import deepcopy
 from sqlalchemy import func, text
 
 from pgvector.sqlalchemy import Vector
@@ -87,6 +88,7 @@ class StudysetsView(ObjectView, ListView):
     _view_fields = {
         **LIST_CLONE_ARGS,
         **LIST_NESTED_ARGS,
+        "copy_annotations": fields.Boolean(load_default=True),
     }
     # reorg int o2m and m2o
     _o2m = {"studies": "StudiesView", "annotations": "AnnotationsView"}
@@ -212,6 +214,151 @@ class StudysetsView(ObjectView, ListView):
             content = [snapshot.dump(r) for r in records]
             return content
         return super().serialize_records(records, args)
+
+    def post(self):
+        args = parser.parse(self._user_args, request, location="query")
+        copy_annotations = args.pop("copy_annotations", True)
+        source_id = args.get("source_id")
+
+        if not source_id:
+            return super().post()
+
+        source = args.get("source") or "neurostore"
+        if source != "neurostore":
+            field_err = make_field_error("source", source, valid_options=["neurostore"])
+            abort_unprocessable(
+                "invalid source, choose from: 'neurostore'", [field_err]
+            )
+
+        unknown = self.__class__._schema.opts.unknown
+        data = parser.parse(
+            self.__class__._schema(exclude=("id",)), request, unknown=unknown
+        )
+
+        clone_payload, source_record = self._build_clone_payload(source_id, data)
+
+        # ensure nested serialization when cloning
+        args["nested"] = bool(args.get("nested") or request.args.get("source_id"))
+
+        with db.session.no_autoflush:
+            record = self.__class__.update_or_create(clone_payload)
+
+        unique_ids = self.get_affected_ids([record.id])
+        clear_cache(unique_ids)
+
+        db.session.flush()
+
+        self.update_base_studies(unique_ids.get("base-studies"))
+
+        try:
+            if copy_annotations:
+                self._clone_annotations(source_record, record)
+            self.update_annotations(unique_ids.get("annotations"))
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            abort_validation(str(e))
+
+        response_context = dict(args)
+        response = self.__class__._schema(context=response_context).dump(record)
+
+        db.session.commit()
+
+        return response
+
+    def _build_clone_payload(self, source_id, override_data):
+        source_record = (
+            Studyset.query.options(
+                selectinload(Studyset.studies),
+                selectinload(Studyset.annotations).options(
+                    selectinload(Annotation.annotation_analyses)
+                ),
+            )
+            .filter_by(id=source_id)
+            .first()
+        )
+
+        if source_record is None:
+            abort_not_found(Studyset.__name__, source_id)
+
+        payload = {
+            "name": source_record.name,
+            "description": source_record.description,
+            "publication": source_record.publication,
+            "doi": source_record.doi,
+            "pmid": source_record.pmid,
+            "authors": source_record.authors,
+            "metadata_": deepcopy(source_record.metadata_)
+            if source_record.metadata_ is not None
+            else None,
+            "public": source_record.public,
+            "studies": [{"id": study.id} for study in source_record.studies],
+            "source": "neurostore",
+            "source_id": self._resolve_neurostore_origin(source_record),
+            "source_updated_at": source_record.updated_at or source_record.created_at,
+        }
+
+        if payload.get("metadata_") is None:
+            payload.pop("metadata_", None)
+
+        if override_data:
+            payload.update(override_data)
+
+        return payload, source_record
+
+    def _clone_annotations(self, source_record, cloned_record):
+        if not source_record.annotations:
+            return
+
+        owner_id = cloned_record.user_id
+
+        for annotation in source_record.annotations:
+            clone_annotation = Annotation(
+                name=annotation.name,
+                description=annotation.description,
+                source="neurostore",
+                source_id=self._resolve_neurostore_origin(annotation),
+                source_updated_at=annotation.updated_at or annotation.created_at,
+                user_id=owner_id,
+                metadata_=deepcopy(annotation.metadata_) if annotation.metadata_ else None,
+                public=annotation.public,
+                note_keys=deepcopy(annotation.note_keys) if annotation.note_keys else {},
+            )
+            clone_annotation.studyset = cloned_record
+            db.session.add(clone_annotation)
+            db.session.flush()
+
+            analyses_to_create = []
+            for aa in annotation.annotation_analyses:
+                analyses_to_create.append(
+                    AnnotationAnalysis(
+                        annotation_id=clone_annotation.id,
+                        analysis_id=aa.analysis_id,
+                        note=deepcopy(aa.note) if aa.note else {},
+                        user_id=owner_id,
+                        study_id=aa.study_id,
+                        studyset_id=cloned_record.id,
+                    )
+                )
+
+            if analyses_to_create:
+                db.session.add_all(analyses_to_create)
+
+    @staticmethod
+    def _resolve_neurostore_origin(record):
+        source_id = record.id
+        parent_source_id = record.source_id
+        parent_source = getattr(record, "source", None)
+        Model = type(record)
+
+        while parent_source_id is not None and parent_source == "neurostore":
+            source_id = parent_source_id
+            parent = Model.query.filter_by(id=parent_source_id).first()
+            if parent is None:
+                break
+            parent_source_id = parent.source_id
+            parent_source = getattr(parent, "source", None)
+
+        return source_id
 
 
 @view_maker

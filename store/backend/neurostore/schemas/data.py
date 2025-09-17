@@ -569,6 +569,9 @@ class StudysetSchema(BaseDataSchema):
     studies = StringOrNested(
         StudySchema, many=True
     )  # This needs to be nested, but not cloned
+    source = fields.String(dump_only=True, allow_none=True)
+    source_id = fields.String(dump_only=True, allow_none=True)
+    source_updated_at = fields.DateTime(dump_only=True, allow_none=True)
 
     class Meta:
         additional = ("name", "description", "publication", "doi", "pmid")
