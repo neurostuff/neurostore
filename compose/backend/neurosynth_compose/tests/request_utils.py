@@ -101,6 +101,8 @@ class Client(object):
 
 def decode_json(rv):
     return json.loads(rv.data.decode())
+
+
 class JSONAccessor:
     def __init__(self, response):
         self._response = response

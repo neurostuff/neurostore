@@ -5,9 +5,7 @@ from flask import jsonify, request
 from jose import jwt
 from flask import current_app
 from werkzeug.local import LocalProxy
-import connexion
 from connexion.security import NO_VALUE
-import connexion
 from ..database import db
 from sqlalchemy import select
 
