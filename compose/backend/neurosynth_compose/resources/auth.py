@@ -3,20 +3,19 @@ from urllib.request import urlopen
 
 from flask import jsonify, request
 from jose import jwt
-
-from flask import current_app as app
+from flask import current_app
+from werkzeug.local import LocalProxy
+from connexion.security import NO_VALUE
 from ..database import db
 from sqlalchemy import select
 
 
-# Error handler
 class AuthError(Exception):
     def __init__(self, error, status_code):
         self.error = error
         self.status_code = status_code
 
 
-@app.errorhandler(AuthError)
 def handle_auth_error(ex):
     response = jsonify(ex.error)
     response.status_code = ex.status_code
@@ -62,7 +61,15 @@ def get_token_auth_header():
     return token
 
 
+def _get_current_app():
+    return current_app._get_current_object()
+
+
+app = LocalProxy(_get_current_app)
+
+
 def decode_token(token):
+    app = _get_current_app()
     jsonurl = urlopen(app.config["AUTH0_BASE_URL"] + "/.well-known/jwks.json")
     jwks = json.loads(jsonurl.read())
     try:
@@ -125,31 +132,20 @@ def decode_token(token):
     )
 
 
-def verify_key(*args, **kwargs):
-    if request.method == "POST":
-        from ..models import MetaAnalysis
+def verify_key(run_key):
+    if not run_key:
+        return NO_VALUE
 
-        meta_analysis = db.session.execute(
-            select(MetaAnalysis).where(
-                MetaAnalysis.id == request.json["meta_analysis_id"]
-            )
-        ).scalar_one()
-    elif request.method == "PUT":
-        from ..models import MetaAnalysisResult
+    from ..models import MetaAnalysis
 
-        result_id = request.view_args["id"]
-        meta_analysis = (
-            db.session.execute(
-                select(MetaAnalysisResult).where(MetaAnalysisResult.id == result_id)
-            )
-            .scalar_one()
-            .meta_analysis
-        )
-    run_key = args[0]
+    meta_analysis = db.session.execute(
+        select(MetaAnalysis).where(MetaAnalysis.run_key == run_key)
+    ).scalar_one_or_none()
 
-    if meta_analysis.run_key != run_key:
+    if meta_analysis is None:
         raise AuthError(
             {"code": "invalid_key", "description": "Unable to find appropriate key"},
             401,
         )
-    return {"sub": "neurosynth_compose"}
+
+    return {"sub": "neurosynth_compose", "meta_analysis_id": meta_analysis.id}

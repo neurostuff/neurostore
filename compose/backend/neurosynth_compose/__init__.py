@@ -1,57 +1,88 @@
 import os
+from pathlib import Path
 
-from flask_cors import CORS
-
-from authlib.integrations.flask_client import OAuth
 import connexion
-from connexion.resolver import MethodViewResolver
+from authlib.integrations.flask_client import OAuth
+from connexion.middleware import MiddlewarePosition
+from connexion.resolver import MethodResolver
+from flask_cors import CORS
+from starlette.middleware.cors import CORSMiddleware
+
+from .database import init_db
+from .resources.auth import handle_auth_error, AuthError
 
 
 def create_app():
-    connexion_app = connexion.FlaskApp(
-        __name__,
-        specification_dir="openapi/",
-        debug=os.getenv(key="DEBUG", default=False) == "True",
+    """Create and configure the Neurosynth Compose Flask application."""
+
+    connexion_app = connexion.FlaskApp(__name__, specification_dir="openapi/")
+    app = connexion_app.app
+
+    app.config.from_object(os.environ["APP_SETTINGS"])
+
+    # Ensure security handler functions are available, while allowing tests or
+    # deployments to override them via environment variables or config objects.
+    default_bearer = "neurosynth_compose.resources.auth.decode_token"
+    default_apikey = "neurosynth_compose.resources.auth.verify_key"
+
+    app.config["BEARERINFO_FUNC"] = os.getenv(
+        "BEARERINFO_FUNC", app.config.get("BEARERINFO_FUNC", default_bearer)
+    )
+    app.config["APIKEYINFO_FUNC"] = os.getenv(
+        "APIKEYINFO_FUNC", app.config.get("APIKEYINFO_FUNC", default_apikey)
     )
 
-    options = {"swagger_ui": True}
-    app = connexion_app.app
-    app.config.from_object(os.environ["APP_SETTINGS"])
-    # use application context for connexion to work with app variables
+    connexion_app.add_middleware(
+        CORSMiddleware,
+        position=MiddlewarePosition.BEFORE_ROUTING,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
+    openapi_path = Path(app.root_path) / "openapi" / "neurosynth-compose-openapi.yml"
+    swagger_options = {"swagger_ui": True}
+
+    debug_flag = app.config.get("DEBUG", False)
+    if isinstance(debug_flag, str):
+        debug_flag = debug_flag.lower() == "true"
+    else:
+        debug_flag = bool(debug_flag)
+
+    env_debug = os.getenv("DEBUG")
+    if env_debug is not None:
+        debug_flag = debug_flag or env_debug.lower() == "true"
+
     with app.app_context():
         connexion_app.add_api(
-            "neurosynth-compose-openapi.yml",
+            openapi_path,
             base_path="/api",
-            options=options,
+            options=swagger_options,
             arguments={"title": "NeuroSynth API"},
-            resolver=MethodViewResolver("neurosynth_compose.resources"),
-            strict_validation=os.getenv(key="DEBUG", default=False) == "True",
-            validate_responses=os.getenv(key="DEBUG", default=False) == "True",
+            resolver=MethodResolver("neurosynth_compose.resources"),
+            strict_validation=debug_flag,
+            validate_responses=debug_flag,
         )
 
     oauth = OAuth(app)
-    auth0 = oauth.register(  # noqa: F841
+    oauth.register(
         "auth0",
         client_id=os.environ["AUTH0_CLIENT_ID"],
         client_secret=os.environ["AUTH0_CLIENT_SECRET"],
         api_base_url=app.config["AUTH0_BASE_URL"],
         access_token_url=app.config["AUTH0_ACCESS_TOKEN_URL"],
         authorize_url=app.config["AUTH0_AUTH_URL"],
-        client_kwargs={
-            "scope": "openid profile email",
-        },
+        client_kwargs={"scope": "openid profile email"},
     )
-
-    # initialize db (ensure models register against the app-bound registry)
-    from .database import init_db
 
     init_db(app)
 
-    # setup authentication
-    # jwt = JWTManager(app)
     app.secret_key = app.config["JWT_SECRET_KEY"]
+    CORS(app)
 
-    # Enable CORS
-    cors = CORS(app)  # noqa: F841
+    app.register_error_handler(AuthError, handle_auth_error)
+
+    app.extensions["connexion_app"] = connexion_app
 
     return app

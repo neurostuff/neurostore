@@ -1,9 +1,11 @@
 from collections import ChainMap
+import json
 import pathlib
 from operator import itemgetter
 
 import connexion
-from flask import abort, request, jsonify, current_app
+from connexion.lifecycle import ConnexionResponse
+from flask import abort, request, current_app
 from flask.views import MethodView
 
 # from sqlalchemy.ext.associationproxy import ColumnAssociationProxyInstance
@@ -51,6 +53,19 @@ from ..schemas import (  # noqa E401
 from .singular import singularize
 
 
+def _make_json_response(payload, status=200):
+    return ConnexionResponse(
+        body=json.dumps(payload),
+        status_code=status,
+        # Explicitly set both mimetype and content type because Connexion
+        # populates the header from ``content_type`` only; otherwise the
+        # response header becomes ``Content-Type: None`` and Connexion's
+        # response validation rejects it.
+        mimetype="application/json",
+        content_type="application/json",
+    )
+
+
 def create_user():
     from auth0.v3.authentication.users import Users
     from auth0.v3.exceptions import Auth0Error
@@ -74,15 +89,17 @@ def create_user():
     if "@" in name:
         name = profile_info.get("nickname", "Unknown")
 
-    current_user = User(external_id=connexion.context["user"], name=name)
+    current_user = User(external_id=connexion.context.context["user"], name=name)
 
     return current_user
 
 
 def get_current_user():
-    user = connexion.context.get("user")
+    user = connexion.context.context.get("user")
     if user:
-        return User.query.filter_by(external_id=connexion.context["user"]).first()
+        return User.query.filter_by(
+            external_id=connexion.context.context["user"]
+        ).first()
     return None
 
 
@@ -247,7 +264,8 @@ class ObjectView(BaseView):
             abort(404)
         args = parser.parse(self._user_args, request, location="query")
 
-        return self.__class__._schema(context=args).dump(record)
+        payload = self.__class__._schema(context=args).dump(record)
+        return _make_json_response(payload)
 
     def put(self, id):
         id = id.replace("\x00", "\uFFFD")
@@ -260,7 +278,8 @@ class ObjectView(BaseView):
         with db.session.no_autoflush:
             record = self.__class__.update_or_create(data, id)
 
-        return self.__class__._schema().dump(record)
+        payload = self.__class__._schema().dump(record)
+        return _make_json_response(payload)
 
     def delete(self, id):
         id = id.replace("\x00", "\uFFFD")
@@ -288,7 +307,7 @@ class ObjectView(BaseView):
         db.session.delete(record)
         commit_session()
 
-        return 204
+        return "", 204
 
     def insert_data(self, id, data):
         return data
@@ -399,7 +418,7 @@ class ListView(BaseView):
 
         response = {"metadata": metadata, "results": content}
 
-        return jsonify(response), 200
+        return _make_json_response(response)
 
     def post(self):
         # TODO: check to make sure current user hasn't already created a
@@ -416,7 +435,8 @@ class ListView(BaseView):
         with db.session.no_autoflush:
             record = self.__class__.update_or_create(data)
 
-        return self.__class__._schema().dump(record)
+        payload = self.__class__._schema().dump(record)
+        return _make_json_response(payload)
 
 
 # Individual resource views
@@ -457,7 +477,8 @@ class MetaAnalysesView(ObjectView, ListView):
             )
             db.session.add(ns_analysis)
             commit_session()
-        return self.__class__._schema().dump(record)
+        payload = self.__class__._schema().dump(record)
+        return _make_json_response(payload)
 
 
 @view_maker
@@ -516,11 +537,19 @@ class MetaAnalysisResultsView(ObjectView, ListView):
         except ValidationError as e:
             abort(422, description=f"input does not conform to specification: {str(e)}")
 
+        token_info = connexion.context.request.context.get("token_info", {})
+        upload_meta_id = token_info.get("meta_analysis_id")
+
         with db.session.no_autoflush:
             # add snapshots to cached_studyset/annotation (if not already set)
             meta = db.session.execute(
                 select(MetaAnalysis).where(MetaAnalysis.id == data["meta_analysis_id"])
             ).scalar_one_or_none()
+            if upload_meta_id is not None and meta and meta.id != upload_meta_id:
+                abort(
+                    401,
+                    description="Upload key does not match the target meta-analysis.",
+                )
             if meta and (
                 meta.studyset.snapshot is None or meta.annotation.snapshot is None
             ):
@@ -546,15 +575,29 @@ class MetaAnalysisResultsView(ObjectView, ListView):
                 db.session.add(meta)
             db.session.add(nv_collection)
             commit_session()
-        return self.__class__._schema().dump(record)
+        payload = self.__class__._schema().dump(record)
+        return _make_json_response(payload)
 
     def put(self, id):
         from .tasks import file_upload_neurovault, create_or_update_neurostore_analysis
         from celery import group
 
+        token_info = connexion.context.request.context.get("token_info", {})
+        upload_meta_id = token_info.get("meta_analysis_id")
+
         result = db.session.execute(
             select(self._model).where(self._model.id == id)
         ).scalar_one()
+
+        if (
+            upload_meta_id is not None
+            and result.meta_analysis
+            and result.meta_analysis.id != upload_meta_id
+        ):
+            abort(
+                401,
+                description="Upload key does not match the target meta-analysis.",
+            )
 
         if request.files:
             stat_maps = request.files.getlist("statistical_maps")
@@ -607,7 +650,8 @@ class MetaAnalysisResultsView(ObjectView, ListView):
                 access_token=access_token,
             )
             _ = (nv_upload_group | neurostore_analysis_upload).delay()
-        return self.__class__._schema().dump(result)
+        payload = self.__class__._schema().dump(result)
+        return _make_json_response(payload)
 
 
 @view_maker
@@ -667,7 +711,8 @@ class ProjectsView(ObjectView, ListView):
             create_or_update_neurostore_study(ns_study)
             db.session.add(ns_study)
             commit_session()
-        return self.__class__._schema().dump(record)
+        payload = self.__class__._schema().dump(record)
+        return _make_json_response(payload)
 
 
 def create_neurovault_collection(nv_collection):
