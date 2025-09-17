@@ -1,6 +1,7 @@
 import string
 from copy import deepcopy
 from sqlalchemy import func, text
+from sqlalchemy.exc import SQLAlchemyError
 
 from pgvector.sqlalchemy import Vector
 from flask import request
@@ -287,9 +288,11 @@ class StudysetsView(ObjectView, ListView):
             "doi": source_record.doi,
             "pmid": source_record.pmid,
             "authors": source_record.authors,
-            "metadata_": deepcopy(source_record.metadata_)
-            if source_record.metadata_ is not None
-            else None,
+            "metadata_": (
+                deepcopy(source_record.metadata_)
+                if source_record.metadata_ is not None
+                else None
+            ),
             "public": source_record.public,
             "studies": [{"id": study.id} for study in source_record.studies],
             "source": "neurostore",
@@ -319,9 +322,13 @@ class StudysetsView(ObjectView, ListView):
                 source_id=self._resolve_neurostore_origin(annotation),
                 source_updated_at=annotation.updated_at or annotation.created_at,
                 user_id=owner_id,
-                metadata_=deepcopy(annotation.metadata_) if annotation.metadata_ else None,
+                metadata_=(
+                    deepcopy(annotation.metadata_) if annotation.metadata_ else None
+                ),
                 public=annotation.public,
-                note_keys=deepcopy(annotation.note_keys) if annotation.note_keys else {},
+                note_keys=(
+                    deepcopy(annotation.note_keys) if annotation.note_keys else {}
+                ),
             )
             clone_annotation.studyset = cloned_record
             db.session.add(clone_annotation)
