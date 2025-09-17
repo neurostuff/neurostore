@@ -865,8 +865,7 @@ class ProjectsView(ObjectView, ListView):
             )
             new_studyset = Studyset(
                 user=current_user,
-                snapshot=None
-                ),
+                snapshot=None,
                 version=source_studyset.version,
                 studyset_reference=ss_ref,
             )
@@ -883,8 +882,7 @@ class ProjectsView(ObjectView, ListView):
                 )
                 new_annotation = Annotation(
                     user=current_user,
-                    snapshot=None
-                    ),
+                    snapshot=None,
                     annotation_reference=annot_ref,
                     studyset=new_studyset,
                 )
