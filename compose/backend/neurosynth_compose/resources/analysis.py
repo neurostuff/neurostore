@@ -785,7 +785,7 @@ class ProjectsView(ObjectView, ListView):
             )
 
             cloned_project = Project(
-                name=source_project.name,
+                name=source_project.name + "Copy",
                 description=source_project.description,
                 provenance=self._clone_provenance(
                     source_project.provenance,
