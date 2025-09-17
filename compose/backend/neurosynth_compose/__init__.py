@@ -7,7 +7,7 @@ from connexion.resolver import MethodResolver
 from starlette.middleware.cors import CORSMiddleware
 
 from .database import init_db
-from .resources.auth import AuthError, handle_auth_error
+from .resources.auth import AuthError, handle_auth_error, init_app as init_auth
 
 
 def create_app():
@@ -73,6 +73,7 @@ def create_app():
     )
 
     init_db(app)
+    init_auth(app)
 
     app.secret_key = app.config["JWT_SECRET_KEY"]
 
