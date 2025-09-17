@@ -865,10 +865,7 @@ class ProjectsView(ObjectView, ListView):
             )
             new_studyset = Studyset(
                 user=current_user,
-                snapshot=(
-                    deepcopy(source_studyset.snapshot)
-                    if source_studyset.snapshot
-                    else None
+                snapshot=None
                 ),
                 version=source_studyset.version,
                 studyset_reference=ss_ref,
