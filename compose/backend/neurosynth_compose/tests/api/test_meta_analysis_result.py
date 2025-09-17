@@ -100,37 +100,40 @@ def test_put_meta_analysis_result_with_celery(
             diagnostic_tables.append(table_path)
 
     # Prepare data dict for upload (single or multiple files per key)
-    data = {}
-    file_handles = []
+    def build_files_payload():
+        payload = []
+        handles = []
 
-    def add_files(key, paths):
-        # If only one file, use tuple; if multiple, use list of tuples
-        if len(paths) == 1:
-            fobj = open(paths[0], "rb")
-            data[key] = (fobj, paths[0].name)
-            file_handles.append(fobj)
-        elif len(paths) > 1:
-            data[key] = []
-            for p in paths:
-                fobj = open(p, "rb")
-                data[key].append((fobj, p.name))
-                file_handles.append(fobj)
+        def add_files(field, paths):
+            for path in paths:
+                fobj = open(path, "rb")
+                payload.append(
+                    (f"{field}[]", (path.name, fobj, "application/octet-stream"))
+                )
+                handles.append(fobj)
 
-    add_files("statistical_maps", maps)
-    add_files("cluster_tables", cluster_tables)
-    add_files("diagnostic_tables", diagnostic_tables)
+        add_files("statistical_maps", maps)
+        add_files("cluster_tables", cluster_tables)
+        add_files("diagnostic_tables", diagnostic_tables)
+        return payload, handles
 
-    # PUT request to update meta analysis result
-    resp = auth_client.put(
-        f"/api/meta-analysis-results/{meta_analysis_result_id}",
-        data=data,
-        headers=headers,
-        content_type="multipart/form-data",
-        json_dump=False,
-    )
+    files_payload, file_handles = build_files_payload()
 
-    # Validate response
-    assert resp.status_code == 200
+    try:
+        # PUT request to update meta analysis result
+        resp = auth_client.put(
+            f"/api/meta-analysis-results/{meta_analysis_result_id}",
+            data=files_payload,
+            headers=headers,
+            content_type="multipart/form-data",
+            json_dump=False,
+        )
+
+        # Validate response
+        assert resp.status_code == 200, resp.json
+    finally:
+        for fobj in file_handles:
+            fobj.close()
     # Optionally, check database changes and Celery task effects
     updated_result = db.session.execute(
         select(MetaAnalysis).where(MetaAnalysis.id == meta_analysis_id)
@@ -166,24 +169,20 @@ def test_put_meta_analysis_result_with_celery(
     # Further assertions can be added to validate Neurovault/Neurostore integration
 
     # PREP Files again
-    # Prepare data dict for upload (single or multiple files per key)
-    data = {}
-    file_handles = []
+    files_payload, second_handles = build_files_payload()
 
-    add_files("statistical_maps", maps)
-    add_files("cluster_tables", cluster_tables)
-    add_files("diagnostic_tables", diagnostic_tables)
-    # RUN the put request again to see how it handles repeats
-    resp2 = auth_client.put(
-        f"/api/meta-analysis-results/{meta_analysis_result_id}",
-        data=data,
-        headers=headers,
-        content_type="multipart/form-data",
-        json_dump=False,
-    )
+    try:
+        # RUN the put request again to see how it handles repeats
+        resp2 = auth_client.put(
+            f"/api/meta-analysis-results/{meta_analysis_result_id}",
+            data=files_payload,
+            headers=headers,
+            content_type="multipart/form-data",
+            json_dump=False,
+        )
 
-    assert resp2.status_code == 200
-    assert neurostore_analysis.status == "OK"
-    # Close file handles
-    for fobj in file_handles:
-        fobj.close()
+        assert resp2.status_code == 200, resp2.json
+        assert neurostore_analysis.status == "OK"
+    finally:
+        for fobj in second_handles:
+            fobj.close()

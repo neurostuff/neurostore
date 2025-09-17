@@ -83,8 +83,11 @@ class Client(object):
             if params is not None:
                 kwargs["params"] = params
             if data is not None:
-                if json_dump:
+                if json_dump and content_type == "application/json":
                     kwargs["json"] = data
+                elif content_type.startswith("multipart/form-data"):
+                    kwargs["files"] = data
+                    kwargs["headers"].pop("Content-Type", None)
                 else:
                     kwargs["data"] = data
             response = request_function(route, **kwargs)
