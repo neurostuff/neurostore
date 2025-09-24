@@ -1,4 +1,3 @@
-/* eslint-disable react/jsx-no-comment-textnodes */
 import { Alert, Typography } from '@mui/material';
 import CodeSnippet from 'components/CodeSnippet/CodeSnippet';
 import HelpDialog from 'components/Dialogs/HelpDialog';
@@ -6,38 +5,33 @@ import HelpDialog from 'components/Dialogs/HelpDialog';
 const SleuthImportHelpDialog = () => {
     return (
         <HelpDialog dialogTitle="Compatible sleuth files">
+            <Typography gutterBottom>Neurosynth Compose expects files in a specific format.</Typography>
             <Typography gutterBottom>
-                Neurosynth Compose expects files in a specific format.
-            </Typography>
-            <Typography gutterBottom>
-                In order to make sure that the files you upload are compatible, please make sure to
-                format your files using the following standards:
+                In order to make sure that the files you upload are compatible, please make sure to format your files
+                using the following standards:
             </Typography>
 
             <ul>
                 <li>
-                    Begin the file with a Reference specifying coordinate space. This should only
-                    appear in the file once, at the top.
+                    Begin the file with a Reference specifying coordinate space. This should only appear in the file
+                    once, at the top.
                     <br />
                     ex: <b>// Reference=MNI"</b>
                 </li>
                 <li>
-                    The next line should contain the DOI associated with the study. This field
-                    identifies the study that the data came from. At least one of either a DOI or a
-                    PubMedId is required.
+                    The next line should contain the DOI associated with the study. This field identifies the study that
+                    the data came from. At least one of either a DOI or a PubMedId is required.
                     <br />
                     ex: <b>// DOI=1234567</b>
                 </li>
                 <li>
-                    The next line should contain the PubMedId associated with the study. This field
-                    identifies the study that the data came from. At least one of either a DOI or a
-                    PubMedId is required.
+                    The next line should contain the PubMedId associated with the study. This field identifies the study
+                    that the data came from. At least one of either a DOI or a PubMedId is required.
                     <br />
                     ex: <b>// PubMedId=1234567</b>
                 </li>
                 <li>
-                    The next line(s) should contain the author followed by the experiment, separated
-                    by a colon.
+                    The next line(s) should contain the author followed by the experiment, separated by a colon.
                     <br />
                     ex: <b>// Smith et al., 2019: Working Memory vs Baseline</b>
                 </li>
@@ -51,17 +45,14 @@ const SleuthImportHelpDialog = () => {
                     <br />
                     ex: <b>-7.5/t-8.5/t-9.5</b>
                 </li>
-                <li>
-                    Finally, a newline should be added as a delimiter, separating each of the
-                    studies in the file
-                </li>
+                <li>Finally, a newline should be added as a delimiter, separating each of the studies in the file</li>
             </ul>
 
             <Typography mb="1rem">Files should be plain text files with a .txt suffix.</Typography>
 
             <Alert severity="info" sx={{ marginBottom: '1rem' }}>
-                Note: In the example below, the spaces between the coordinates are <b>tabs</b>.
-                Please make sure that the sleuth file coordinates are separated by tabs.
+                Note: In the example below, the spaces between the coordinates are <b>tabs</b>. Please make sure that
+                the sleuth file coordinates are separated by tabs.
             </Alert>
 
             <Typography gutterBottom>Example: myFile.txt</Typography>
