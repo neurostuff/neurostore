@@ -77,6 +77,10 @@ jobs:
               compose_pgsql.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/compose_pgsql:${{ hashFiles('**/compose/postgres/**') }}
               compose_pgsql.cache-from=type=gha,scope=cached-compose-pgsql
               compose_pgsql.cache-to=type=gha,scope=cached-compose-pgsql,mode=max,ignore-error=true
+              compose_pgsql17.tags=ghcr.io/${{ github.repository_owner }}/compose_pgsql17:${{ hashFiles('**/compose/postgres/**') }}
+              compose_pgsql17.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/compose_pgsql17:${{ hashFiles('**/compose/postgres/**') }}
+              compose_pgsql17.cache-from=type=gha,scope=cached-compose-pgsql17
+              compose_pgsql17.cache-to=type=gha,scope=cached-compose-pgsql17,mode=max,ignore-error=true
               compose_worker.tags=ghcr.io/${{ github.repository_owner }}/compose_worker:${{ hashFiles('**/compose/backend/neurosynth_compose/**') }}
               compose_worker.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/compose_worker:${{ hashFiles('**/compose/backend/neurosynth_compose/**') }}
               compose_worker.cache-from=type=gha,scope=cached-compose-worker
@@ -130,6 +134,10 @@ jobs:
               store-pgsql.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/store-pgsql:${{ hashFiles('**/store/postgres/**') }}
               store-pgsql.cache-from=type=gha,scope=cached-store-pgsql
               store-pgsql.cache-to=type=gha,scope=cached-store-pgsql,mode=max,ignore-error=true
+              store-pgsql17.tags=ghcr.io/${{ github.repository_owner }}/store-pgsql17:${{ hashFiles('**/store/postgres/**') }}
+              store-pgsql17.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/store-pgsql17:${{ hashFiles('**/store/postgres/**') }}
+              store-pgsql17.cache-from=type=gha,scope=cached-store-pgsql17
+              store-pgsql17.cache-to=type=gha,scope=cached-store-pgsql17,mode=max,ignore-error=true
 
 
   neurostore_backend_tests:
@@ -165,6 +173,7 @@ jobs:
               neurostore.cache-from=type=gha,scope=cached-neurostore
               store_nginx.cache-from=type=gha,scope=cached-store-nginx
               store-pgsql.cache-from=type=gha,scope=cached-store-pgsql
+              store-pgsql17.cache-from=type=gha,scope=cached-store-pgsql17
       - 
         name: spin up backend
         run: |
@@ -178,7 +187,7 @@ jobs:
         name: Create Test Database
         run: |
           docker compose exec -T \
-          store-pgsql \
+          store-pgsql17 \
           psql -U postgres -c "create database test_db"
       -
         name: Backend Tests
@@ -233,6 +242,7 @@ jobs:
             compose.cache-from=type=gha,scope=cached-compose
             compose_nginx.cache-from=type=gha,scope=cached-compose-nginx
             compose_pgsql.cache-from=type=gha,scope=cached-compose-pgsql
+            compose_pgsql17.cache-from=type=gha,scope=cached-compose-pgsql17
             compose_worker.cache-from=type=gha,scope=cached-compose-worker
     -
       name: Spin up backend
@@ -247,7 +257,7 @@ jobs:
       name: Create Test Database
       run: |
         docker compose exec -T \
-        compose_pgsql \
+        compose_pgsql17 \
         psql -U postgres -c "create database test_db"
     -
       name: Backend Tests
@@ -323,6 +333,7 @@ jobs:
             compose.cache-from=type=gha,scope=cached-compose
             compose_nginx.cache-from=type=gha,scope=cached-compose-nginx
             compose_pgsql.cache-from=type=gha,scope=cached-compose-pgsql
+            compose_pgsql17.cache-from=type=gha,scope=cached-compose-pgsql17
             compose_worker.cache-from=type=gha,scope=cached-compose-worker
     -
       name: Spin up backend
@@ -337,7 +348,7 @@ jobs:
       name: Create Test Database
       run: | 
         docker compose exec -T \
-        compose_pgsql \
+        compose_pgsql17 \
         psql -U postgres -c "create database test_db"
     -
       name: Frontend Jest Unit Tests
@@ -405,6 +416,7 @@ jobs:
             compose.cache-from=type=gha,scope=cached-compose
             compose_nginx.cache-from=type=gha,scope=cached-compose-nginx
             compose_pgsql.cache-from=type=gha,scope=cached-compose-pgsql
+            compose_pgsql17.cache-from=type=gha,scope=cached-compose-pgsql17
             compose_worker.cache-from=type=gha,scope=cached-compose-worker
     -
       name: load store images
@@ -419,6 +431,7 @@ jobs:
             neurostore.cache-from=type=gha,scope=cached-neurostore
             store_nginx.cache-from=type=gha,scope=cached-store-nginx
             store-pgsql.cache-from=type=gha,scope=cached-store-pgsql
+            store-pgsql17.cache-from=type=gha,scope=cached-store-pgsql17
     -
       name: Spin up compose backend
       run: |
@@ -444,7 +457,7 @@ jobs:
         cd compose
 
         docker compose exec -T \
-        compose_pgsql \
+        compose_pgsql17 \
         psql -U postgres -c "create database test_db"
     -
       name: Create Store Database
@@ -452,8 +465,12 @@ jobs:
         cd store
 
         docker compose exec -T \
-        store-pgsql \
+        store-pgsql17 \
         psql -U postgres -c "create database test_db"
+
+        docker compose exec -T \
+        store-pgsql17 \
+        psql -U postgres -d test_db -c "CREATE EXTENSION IF NOT EXISTS vector;"
     -
       name: Initialize Compose Database
       run: |

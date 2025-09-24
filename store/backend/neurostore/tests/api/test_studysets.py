@@ -148,3 +148,104 @@ def test_hot_swap_study_in_studyset(auth_client, ingest_neurosynth, session):
         == set(s for s in clone_ss_non_nested.json()["studies"])
         == set(s["id"] for s in clone_ss_nested.json()["studies"])
     )
+
+
+def _create_studyset_with_annotation(auth_client, study_ids, name="clone-source"):
+    studyset_resp = auth_client.post(
+        "/api/studysets/",
+        data={
+            "name": name,
+            "description": "clone me",
+            "studies": study_ids,
+        },
+    )
+    assert studyset_resp.status_code == 200
+    studyset_id = studyset_resp.json()["id"]
+
+    annotation_payload = {
+        "studyset": studyset_id,
+        "note_keys": {"include": "boolean"},
+        "name": "annotation for clone",
+    }
+    annotation_resp = auth_client.post("/api/annotations/", data=annotation_payload)
+    assert annotation_resp.status_code == 200
+
+    annotations = auth_client.get(f"/api/annotations/?studyset_id={studyset_id}")
+    assert annotations.status_code == 200
+    assert len(annotations.json()["results"]) >= 1
+
+    return studyset_resp.json(), annotations.json()["results"]
+
+
+def _study_ids_from_payload(studies):
+    ids = []
+    for entry in studies:
+        if isinstance(entry, dict):
+            ids.append(entry.get("id"))
+        else:
+            ids.append(entry)
+    return ids
+
+
+def test_clone_studyset_copies_annotations_by_default(
+    auth_client, ingest_neurosynth, session
+):
+    studies_payload = auth_client.get("/api/studies/?page_size=2")
+    study_ids = [study["id"] for study in studies_payload.json()["results"]]
+
+    source_studyset, source_annotations = _create_studyset_with_annotation(
+        auth_client, study_ids
+    )
+
+    clone_resp = auth_client.post(
+        f"/api/studysets/?source_id={source_studyset['id']}", data={}
+    )
+
+    assert clone_resp.status_code == 200
+    clone_data = clone_resp.json()
+
+    assert clone_data["source"] == "neurostore"
+    assert clone_data["source_id"] == source_studyset["id"]
+    assert set(_study_ids_from_payload(clone_data["studies"])) == set(
+        _study_ids_from_payload(source_studyset["studies"])
+    )
+    assert clone_data["user"] == auth_client.username
+
+    cloned_annotations = auth_client.get(
+        f"/api/annotations/?studyset_id={clone_data['id']}"
+    )
+    assert cloned_annotations.status_code == 200
+    assert len(cloned_annotations.json()["results"]) == len(source_annotations)
+
+
+def test_clone_studyset_without_annotations_when_disabled(
+    auth_client, ingest_neurosynth, session
+):
+    studies_payload = auth_client.get("/api/studies/?page_size=2")
+    study_ids = [study["id"] for study in studies_payload.json()["results"]]
+
+    source_studyset, source_annotations = _create_studyset_with_annotation(
+        auth_client, study_ids, name="clone-source-no-annots"
+    )
+
+    assert len(source_annotations) >= 1
+
+    clone_resp = auth_client.post(
+        f"/api/studysets/?source_id={source_studyset['id']}&copy_annotations=false",
+        data={},
+    )
+
+    assert clone_resp.status_code == 200
+    clone_data = clone_resp.json()
+
+    assert set(_study_ids_from_payload(clone_data["studies"])) == set(
+        _study_ids_from_payload(source_studyset["studies"])
+    )
+    assert clone_data["source"] == "neurostore"
+    assert clone_data["source_id"] == source_studyset["id"]
+
+    cloned_annotations = auth_client.get(
+        f"/api/annotations/?studyset_id={clone_data['id']}"
+    )
+    assert cloned_annotations.status_code == 200
+    assert cloned_annotations.json()["results"] == []

@@ -5,8 +5,13 @@ Base Classes/functions for constructing views
 import re
 
 from connexion.context import context
-from flask import abort, request, current_app  # jsonify
+from flask import request, current_app  # jsonify
 from flask.views import MethodView
+from ..exceptions.utils.error_helpers import (
+    abort_permission,
+    abort_validation,
+    abort_not_found,
+)
 
 from psycopg2 import errors
 
@@ -273,7 +278,7 @@ class BaseView(MethodView):
                 q = q.options(selectinload(cls._model.user)).filter_by(id=id)
             record = q.first()
             if record is None:
-                abort(422, description=f"Record {id} not found in {str(cls._model)}")
+                abort_not_found(f"Record {id} not found in {str(cls._model)}")
 
         data = cls.load_nested_records(data, record)
 
@@ -283,12 +288,9 @@ class BaseView(MethodView):
             and not only_ids
             and current_user.external_id != compose_bot
         ):
-            abort(
-                403,
-                description=(
-                    "You do not have permission to modify this record. "
-                    "You must be the owner or the compose bot."
-                ),
+            abort_permission(
+                "You do not have permission to modify this record."
+                " You must be the owner or the compose bot."
             )
         elif only_ids:
             to_commit.append(record)
@@ -299,10 +301,9 @@ class BaseView(MethodView):
                     db.session.flush()
                 except SQLAlchemyError as e:
                     db.session.rollback()
-                    abort(
-                        400,
-                        description="Database operation failed during record creation/update",
-                        errors=str(e),
+                    abort_validation(
+                        "Database operation failed during record creation/update: "
+                        + str(e)
                     )
 
             return record
@@ -325,12 +326,9 @@ class BaseView(MethodView):
                 if PrtCls._model is BaseStudy:
                     pass
                 elif current_user != v.user and current_user.external_id != compose_bot:
-                    abort(
-                        403,
-                        description=(
-                            "You do not have permission to link to this parent record. "
-                            "You must own the parent record or be the compose bot."
-                        ),
+                    abort_permission(
+                        "You do not have permission to link to this parent record. "
+                        "You must own the parent record or be the compose bot."
                     )
             if k in cls._linked and v is not None:
                 LnCls = getattr(viewdata, cls._linked[k])
@@ -350,7 +348,7 @@ class BaseView(MethodView):
                     v = q.first()
 
                 if v is None:
-                    abort(400, description=f"Linked record not found with {query_args}")
+                    abort_validation(f"Linked record not found with {query_args}")
 
             if k not in cls._nested and k not in ["id", "user"]:
                 try:
@@ -412,9 +410,8 @@ class BaseView(MethodView):
                 db.session.flush()
             except SQLAlchemyError as e:
                 db.session.rollback()
-                abort(
-                    400,
-                    description=f"Database error occurred during nested record update: {str(e)}",
+                abort_validation(
+                    f"Database error occurred during nested record update: {str(e)}"
                 )
 
         return record
@@ -480,8 +477,10 @@ class ObjectView(BaseView):
 
         q = self._model.query
         q = self.eager_load(q, args)
+        record = q.filter_by(id=id).first()
+        if record is None:
+            abort_not_found(self._model.__name__, id)
 
-        record = q.filter_by(id=id).first_or_404()
         if self._model is Studyset and args["nested"]:
             snapshot = StudysetSnapshot()
             return snapshot.dump(record), 200, {"Content-Type": "application/json"}
@@ -527,7 +526,7 @@ class ObjectView(BaseView):
                 self.update_annotations(unique_ids.get("annotations"))
         except SQLAlchemyError as e:
             db.session.rollback()
-            abort(400, description=str(e))
+            abort_validation(str(e))
 
         db.session.flush()
 
@@ -544,12 +543,9 @@ class ObjectView(BaseView):
 
         current_user = get_current_user()
         if record.user_id != current_user.external_id:
-            abort(
-                403,
-                description=(
-                    "You do not have permission to delete this record. "
-                    "Only the owner can delete records."
-                ),
+            abort_permission(
+                "You do not have permission to delete this record. "
+                "Only the owner can delete records."
             )
         else:
             db.session.delete(record)
@@ -566,7 +562,7 @@ class ObjectView(BaseView):
                 self.update_annotations(unique_ids.get("annotations"))
             except SQLAlchemyError as e:
                 db.session.rollback()
-                abort(400, description=str(e))
+                abort_validation(str(e))
 
             db.session.commit()
 
@@ -629,7 +625,6 @@ class ListView(BaseView):
                 try:
                     schema.dump(record)
                 except Exception as rec_err:
-                    # logger.error("Serialization failed on record #%d: %s", idx, record)
                     raise ValueError(
                         f"Serialization failed on record #{idx}: {record}. Error: {rec_err}"
                     ) from rec_err
@@ -642,10 +637,6 @@ class ListView(BaseView):
 
     @cache.cached(60 * 60, query_string=True, make_cache_key=cache_key_creator)
     def search(self, extra_args=None):
-        # Parse arguments using webargs
-        import logging
-
-        logging.warning(f"I RAN HERE Request args: {request.args}")
         args = parser.parse(self._user_args, request, location="query")
         if extra_args:
             args.update(extra_args)
@@ -674,7 +665,7 @@ class ListView(BaseView):
             try:
                 validate_search_query(s)
             except errors.SyntaxError as e:
-                abort(400, description=e.args[0])
+                abort_validation(e.args[0])
             tsquery = func.to_tsquery("english", pubmed_to_tsquery(s))
             # Add ts_rank calculation if searching
             rank_col = func.ts_rank(m._ts_vector, tsquery).label("rank")
@@ -772,7 +763,7 @@ class ListView(BaseView):
             self.update_annotations(unique_ids.get("annotations"))
         except SQLAlchemyError as e:
             db.session.rollback()
-            abort(400, description=str(e))
+            abort_validation(str(e))
 
         # dump done before commit to prevent invalidating
         # the orm object and sending unnecessary queries
