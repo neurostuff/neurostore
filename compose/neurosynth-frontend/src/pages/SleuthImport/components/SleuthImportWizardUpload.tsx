@@ -1,4 +1,3 @@
-/* eslint-disable react/jsx-no-comment-textnodes */
 import { Warning } from '@mui/icons-material';
 import CloseIcon from '@mui/icons-material/Close';
 import FileUploadIcon from '@mui/icons-material/FileUpload';
@@ -6,8 +5,8 @@ import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import { Box, Button, IconButton, Link, List, ListItem, ListItemIcon, ListItemText, Typography } from '@mui/material';
 import CurationImportBaseStyles from 'pages/CurationImport/components/CurationImport.styles';
 import React, { useMemo, useState } from 'react';
-import { ISleuthFileUploadStubs, parseFile, sleuthUploadToStubs } from '../SleuthImport.helpers';
 import SleuthImportHelpDialog from './SleuthImportHelpDialog';
+import { ISleuthFileUploadStubs, normalizeLineEndings, sleuthUploadToStubs, validateFileContents } from '../helpers';
 
 const SleuthImportWizardUpload: React.FC<{
     onNext: (sleuthUploads: ISleuthFileUploadStubs[]) => void;
@@ -18,35 +17,67 @@ const SleuthImportWizardUpload: React.FC<{
     const [sleuthFileUploads, setSleuthFileUploads] = useState<
         {
             file: File;
-            parsedFileContents: string;
+            validatedNormalizedFileContents: string;
             isValidFile: boolean;
             errorMessage?: string;
         }[]
     >([]);
 
+    const validateAndNormalizeFile = async (file: File): Promise<string> => {
+        return new Promise((resolve, reject) => {
+            if (file.type !== 'text/plain') {
+                return reject(new Error('File should be .txt'));
+            }
+
+            const fileReader = new FileReader();
+            fileReader.readAsText(file, 'UTF-8');
+            fileReader.onload = (e) => {
+                const fileContents = e.target?.result;
+                if (!fileContents || typeof fileContents !== 'string') {
+                    return reject(new Error('File contents are invalid (expected string)'));
+                }
+                const normalizedFileContents = normalizeLineEndings(fileContents);
+                const { isValid, errorMessage } = validateFileContents(normalizedFileContents);
+                return isValid ? resolve(normalizedFileContents) : reject(new Error(errorMessage || 'File is invalid'));
+            };
+
+            fileReader.onerror = (err) => {
+                reject(err);
+            };
+            fileReader.onabort = (err) => {
+                reject(err);
+            };
+        });
+    };
+
     const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
         if (!event?.target?.files) return;
         const uploadedFiles: {
             file: File;
-            parsedFileContents: string;
+            validatedNormalizedFileContents: string;
             isValidFile: boolean;
             errorMessage?: string;
         }[] = [];
 
         for (const targetFile of [...event.target.files]) {
             try {
-                const parsedFile = await parseFile(targetFile);
+                const validatedNormalizedFile = await validateAndNormalizeFile(targetFile);
 
                 uploadedFiles.push({
                     file: targetFile,
-                    parsedFileContents: parsedFile,
+                    validatedNormalizedFileContents: validatedNormalizedFile,
                     isValidFile: true,
                 });
-            } catch (error: any) {
+            } catch (error: unknown) {
                 uploadedFiles.push({
                     file: targetFile,
-                    parsedFileContents: '',
-                    errorMessage: error?.message || '',
+                    validatedNormalizedFileContents: '',
+                    errorMessage:
+                        typeof error === 'string'
+                            ? error
+                            : error instanceof Error
+                              ? error.message
+                              : 'File parsing error',
                     isValidFile: false,
                 });
             }
@@ -65,7 +96,7 @@ const SleuthImportWizardUpload: React.FC<{
     const handleClickNext = () => {
         const convertedUploads: ISleuthFileUploadStubs[] = [];
         for (const file of sleuthFileUploads) {
-            const { sleuthStubs, space } = sleuthUploadToStubs(file.parsedFileContents);
+            const { sleuthStubs, space } = sleuthUploadToStubs(file.validatedNormalizedFileContents);
             convertedUploads.push({
                 fileName: file.file.name,
                 sleuthStubs,
