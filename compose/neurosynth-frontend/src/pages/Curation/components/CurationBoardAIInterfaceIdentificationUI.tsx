@@ -35,14 +35,18 @@ const CurationBoardAIInterfaceIdentificationUI: React.FC<{
                     height: '100%',
                 }}
             >
-                <Typography variant="h6" sx={{ marginBottom: '2rem', color: 'text.secondary' }}>
-                    No studies in this project yet.{' '}
-                    <MuiLink underline="hover" component={Link} to="import">
-                        {' '}
-                        Import studies
-                    </MuiLink>{' '}
-                    to get started.
-                </Typography>
+                <Card sx={{ padding: '1rem', width: { xs: '90%', lg: '70%' } }}>
+                    <CardContent>
+                        <Typography variant="h6" sx={{ marginBottom: '2rem', color: 'text.secondary' }}>
+                            No studies in this project yet.{' '}
+                            <MuiLink underline="hover" component={Link} to="import">
+                                {' '}
+                                Import studies
+                            </MuiLink>{' '}
+                            to get started.
+                        </Typography>
+                    </CardContent>
+                </Card>
             </Box>
         );
     }
@@ -154,13 +158,22 @@ const CurationBoardAIInterfaceIdentificationUI: React.FC<{
                 height: '100%',
             }}
         >
-            <Typography variant="h6" sx={{ marginBottom: '2rem', color: 'text.secondary' }}>
-                There are no uncategorized studies left to review.
-            </Typography>
+            <Card sx={{ padding: '1rem', width: { xs: '90%', lg: '70%' } }}>
+                <CardContent>
+                    <Typography variant="h6" sx={{ marginBottom: '2rem', color: 'text.secondary' }}>
+                        There are no uncategorized studies left to review.
+                    </Typography>
 
-            <Button variant="outlined" color="primary" onClick={handleReviewDuplicates} sx={{ minWidth: '150px' }}>
-                Review all duplicates
-            </Button>
+                    <Button
+                        variant="outlined"
+                        color="primary"
+                        onClick={handleReviewDuplicates}
+                        sx={{ minWidth: '150px' }}
+                    >
+                        Review all duplicates
+                    </Button>
+                </CardContent>
+            </Card>
         </Box>
     );
 };
