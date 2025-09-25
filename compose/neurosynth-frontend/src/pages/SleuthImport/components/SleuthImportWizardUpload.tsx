@@ -1,23 +1,12 @@
-/* eslint-disable react/jsx-no-comment-textnodes */
 import { Warning } from '@mui/icons-material';
 import CloseIcon from '@mui/icons-material/Close';
 import FileUploadIcon from '@mui/icons-material/FileUpload';
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
-import {
-    Box,
-    Button,
-    IconButton,
-    Link,
-    List,
-    ListItem,
-    ListItemIcon,
-    ListItemText,
-    Typography,
-} from '@mui/material';
+import { Box, Button, IconButton, Link, List, ListItem, ListItemIcon, ListItemText, Typography } from '@mui/material';
 import CurationImportBaseStyles from 'pages/CurationImport/components/CurationImport.styles';
 import React, { useMemo, useState } from 'react';
-import { ISleuthFileUploadStubs, parseFile, sleuthUploadToStubs } from '../SleuthImport.helpers';
 import SleuthImportHelpDialog from './SleuthImportHelpDialog';
+import { ISleuthFileUploadStubs, normalizeLineEndings, sleuthUploadToStubs, validateFileContents } from '../helpers';
 
 const SleuthImportWizardUpload: React.FC<{
     onNext: (sleuthUploads: ISleuthFileUploadStubs[]) => void;
@@ -28,34 +17,67 @@ const SleuthImportWizardUpload: React.FC<{
     const [sleuthFileUploads, setSleuthFileUploads] = useState<
         {
             file: File;
-            parsedFileContents: string;
+            validatedNormalizedFileContents: string;
             isValidFile: boolean;
             errorMessage?: string;
         }[]
     >([]);
 
+    const validateAndNormalizeFile = async (file: File): Promise<string> => {
+        return new Promise((resolve, reject) => {
+            if (file.type !== 'text/plain') {
+                return reject(new Error('File should be .txt'));
+            }
+
+            const fileReader = new FileReader();
+            fileReader.readAsText(file, 'UTF-8');
+            fileReader.onload = (e) => {
+                const fileContents = e.target?.result;
+                if (!fileContents || typeof fileContents !== 'string') {
+                    return reject(new Error('File contents are invalid (expected string)'));
+                }
+                const normalizedFileContents = normalizeLineEndings(fileContents);
+                const { isValid, errorMessage } = validateFileContents(normalizedFileContents);
+                return isValid ? resolve(normalizedFileContents) : reject(new Error(errorMessage || 'File is invalid'));
+            };
+
+            fileReader.onerror = (err) => {
+                reject(err);
+            };
+            fileReader.onabort = (err) => {
+                reject(err);
+            };
+        });
+    };
+
     const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
         if (!event?.target?.files) return;
         const uploadedFiles: {
             file: File;
-            parsedFileContents: string;
+            validatedNormalizedFileContents: string;
             isValidFile: boolean;
             errorMessage?: string;
         }[] = [];
 
         for (const targetFile of [...event.target.files]) {
             try {
-                const parsedFile = await parseFile(targetFile);
+                const validatedNormalizedFile = await validateAndNormalizeFile(targetFile);
+
                 uploadedFiles.push({
                     file: targetFile,
-                    parsedFileContents: parsedFile,
+                    validatedNormalizedFileContents: validatedNormalizedFile,
                     isValidFile: true,
                 });
-            } catch (error: any) {
+            } catch (error: unknown) {
                 uploadedFiles.push({
                     file: targetFile,
-                    parsedFileContents: '',
-                    errorMessage: error?.message || '',
+                    validatedNormalizedFileContents: '',
+                    errorMessage:
+                        typeof error === 'string'
+                            ? error
+                            : error instanceof Error
+                              ? error.message
+                              : 'File parsing error',
                     isValidFile: false,
                 });
             }
@@ -73,8 +95,8 @@ const SleuthImportWizardUpload: React.FC<{
 
     const handleClickNext = () => {
         const convertedUploads: ISleuthFileUploadStubs[] = [];
-        for (let file of sleuthFileUploads) {
-            const { sleuthStubs, space } = sleuthUploadToStubs(file.parsedFileContents);
+        for (const file of sleuthFileUploads) {
+            const { sleuthStubs, space } = sleuthUploadToStubs(file.validatedNormalizedFileContents);
             convertedUploads.push({
                 fileName: file.file.name,
                 sleuthStubs,
@@ -92,8 +114,7 @@ const SleuthImportWizardUpload: React.FC<{
         <Box>
             <Box mb="1rem" sx={{ display: 'flex', alignItems: 'center' }}>
                 <Typography>
-                    Please ensure that your sleuth files are in the <Link>correct format</Link>{' '}
-                    before uploading
+                    Please ensure that your sleuth files are in the <Link>correct format</Link> before uploading
                 </Typography>
                 <Box ml="10px">
                     <SleuthImportHelpDialog />
@@ -117,9 +138,7 @@ const SleuthImportWizardUpload: React.FC<{
                         }}
                         component="label"
                     >
-                        <Box
-                            sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
-                        >
+                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                             <FileUploadIcon
                                 sx={{
                                     width: '50px',
@@ -153,9 +172,7 @@ const SleuthImportWizardUpload: React.FC<{
                                 </ListItemIcon>
                                 <ListItemText
                                     sx={{
-                                        color: sleuthFile.isValidFile
-                                            ? 'primary.main'
-                                            : 'error.main',
+                                        color: sleuthFile.isValidFile ? 'primary.main' : 'error.main',
                                         overflowWrap: 'break-word',
                                     }}
                                     secondaryTypographyProps={{
@@ -164,16 +181,12 @@ const SleuthImportWizardUpload: React.FC<{
                                     secondary={
                                         sleuthFile.isValidFile
                                             ? sleuthFile.file.type
-                                            : sleuthFile.errorMessage ||
-                                              'The format of this file is invalid'
+                                            : sleuthFile.errorMessage || 'The format of this file is invalid'
                                     }
                                 >
                                     {sleuthFile.file.name}
                                 </ListItemText>
-                                <IconButton
-                                    sx={{ color: 'error.main' }}
-                                    onClick={() => handleRemoveFile(index)}
-                                >
+                                <IconButton sx={{ color: 'error.main' }} onClick={() => handleRemoveFile(index)}>
                                     <CloseIcon />
                                 </IconButton>
                             </ListItem>
@@ -182,12 +195,7 @@ const SleuthImportWizardUpload: React.FC<{
                 </Box>
             </Box>
             <Box sx={CurationImportBaseStyles.fixedContainer}>
-                <Box
-                    sx={[
-                        CurationImportBaseStyles.fixedButtonsContainer,
-                        { justifyContent: 'space-between' },
-                    ]}
-                >
+                <Box sx={[CurationImportBaseStyles.fixedButtonsContainer, { justifyContent: 'space-between' }]}>
                     <Button
                         color="secondary"
                         sx={CurationImportBaseStyles.nextButton}

@@ -1,0 +1,21 @@
+// Reference=MNI
+// DOI=10.1016/1234567
+// PubMedId=67123237
+// Smith et al., 2019: Working Memory vs Baseline
+// Subjects=23
+-7.5	-8.5	-9.5
+10	-12	-62
+21	-14	-2
+0	-9	16
+
+
+// DOI=10.217/1234568
+// PubMedId=23782389
+// Roberts et al., 1995: 2 Back vs 1 Back
+// Graeff et al., 2000: 1 Back vs 0 Back
+// Edwards et al., 2017: 2 Back vs 0 Back
+// Subjects=62
+82	12	0
+-27	34	72
+-7	-8	-9
+10	-12	-62

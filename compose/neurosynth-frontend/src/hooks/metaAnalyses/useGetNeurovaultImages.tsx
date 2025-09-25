@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { executeHTTPRequestsAsBatches } from 'pages/SleuthImport/SleuthImport.helpers';
+import { executeHTTPRequestsAsBatches } from 'helpers/requests';
 import { useQuery } from 'react-query';
 
 export interface INeurovault {
