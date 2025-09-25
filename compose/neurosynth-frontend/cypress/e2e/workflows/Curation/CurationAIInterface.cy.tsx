@@ -119,19 +119,15 @@ describe('CurationAIInterface', () => {
         });
 
         it('should have the identification phase UI initially', () => {
-            cy.contains(
-                'Neurosynth-Compose has searched your import and automatically excluded any duplicates found.'
-            ).should('exist');
+            cy.contains('We did not identify any duplicate studies').should('exist');
             cy.contains('Manually review').should('exist');
-            cy.contains('Promote all uncategorized studies to screening').should('exist');
+            cy.contains('Promote all uncategorized studies').should('exist');
         });
 
         it('should show the table after clicking manually review', () => {
             cy.contains('Manually review').click();
             // The table should now be visible instead of the identification phase UI
-            cy.contains(
-                'Neurosynth-Compose has searched your import and automatically excluded any duplicates found.'
-            ).should('not.exist');
+            cy.contains('We did not identify any duplicate studies').should('not.exist');
             // Check that some table elements are visible
             cy.get('table').should('exist');
             // Check that the back button is visible
@@ -142,27 +138,27 @@ describe('CurationAIInterface', () => {
             cy.contains('Manually review').click();
             cy.contains('Back to identification overview').click();
             // Should be back to the identification phase UI
-            cy.contains(
-                'Neurosynth-Compose has searched your import and automatically excluded any duplicates found.'
-            ).should('exist');
+            cy.contains('We did not identify any duplicate studies').should('exist');
             cy.contains('Manually review').should('exist');
-            cy.contains('Promote all uncategorized studies to screening').should('exist');
+            cy.contains('Promote all uncategorized studies').should('exist');
         });
 
         it('should handle focus mode transition when going back to overview', () => {
             cy.contains('Manually review').click();
             // Click on a study row to enter focus mode
-            cy.get('tr').eq(1).click(); // Click on first study row
+            cy.get('tr').eq(1).click({ force: true }); // Click on first study row
             // Should be in focus mode
             cy.contains('back to table view').should('exist');
-            // Click back to identification overview (should be first button)
-            cy.contains('Back to identification overview').should('be.visible');
+            // Click back to table view (should be first button)
+            cy.contains('back to table view').should('exist');
+            cy.contains('back to table view').click();
+            // Click back to identification overview
             cy.contains('Back to identification overview').click();
             // Should be back to the identification phase UI (not in focus mode)
-            cy.contains(
-                'Neurosynth-Compose has searched your import and automatically excluded any duplicates found.'
-            ).should('exist');
+            cy.contains('We did not identify any duplicate studies').should('exist');
             cy.contains('back to table view').should('not.exist');
+            cy.contains('Back to identification overview').should('not.exist');
+            cy.contains('Promote all uncategorized studies').should('exist');
         });
 
         it('should have a button to show the PRISMA diagram', () => {
@@ -190,11 +186,13 @@ describe('CurationAIInterface', () => {
 
         describe('table mode', () => {
             it('should only show the basic, non-AI options in the manage columns dropdown for the identification phase', () => {
+                cy.contains('button', 'Manually review').click();
                 cy.contains('button', 'Columns').click();
                 cy.get('.base-Popper-root').should('exist').and('not.contain', 'AI');
             });
 
             it('should show the correct button options when a row is selected', () => {
+                cy.contains('button', 'Manually review').click();
                 cy.contains('button', /^Promote$/).should('not.exist');
                 cy.contains('button', 'Duplicate (1)').should('not.exist');
 
@@ -228,60 +226,168 @@ describe('CurationAIInterface', () => {
         });
 
         describe('focus mode', () => {
-            it('should show the include button as PROMOTE in the identification phase and not demote', () => {
+            beforeEach(() => {
+                cy.contains('button', 'Manually review').click();
                 cy.contains('li', '1. Identification').click();
+            });
 
+            it('should show the include button as PROMOTE in the identification phase and not demote', () => {
                 cy.get('tr').eq(1).click({ force: true });
                 cy.contains('Promote').should('exist');
                 cy.contains('Demote').should('not.exist');
             });
-
             it('should show the include button as PROMOTE in the screening phase and demote', () => {
                 // select an option and move it to screening
-                cy.contains('li', '1. Identification').click();
                 cy.get('tr').eq(1).click({ force: true });
                 cy.contains(/^Promote$/).click();
-
                 cy.contains('li', '2. Screening').click();
-
+                cy.get('tr').eq(1).click({ force: true });
                 cy.contains('Promote').should('exist');
                 cy.contains('Demote').should('exist');
             });
-
             it('should show the include button as INCLUDE in the eligibility phase', () => {
                 // select an option and move it to screening and then move it to eligibility
-                cy.contains('li', '1. Identification').click();
                 cy.get('tr').eq(1).click({ force: true });
                 cy.contains(/^Promote$/).click();
-
                 cy.contains('li', '2. Screening').click();
+                cy.get('tr').eq(1).click({ force: true });
                 cy.contains('Promote').click();
-
                 cy.contains('li', '3. Eligibility').click();
-
+                cy.get('tr').eq(1).click({ force: true });
                 cy.contains(/^Include$/).should('exist');
                 cy.contains('Promote').should('not.exist');
                 cy.contains('Demote').should('exist');
             });
-
             it('should not show the include button in the included phase', () => {
                 // select an option and move it to screening and then move it to eligibility and then move it to included
-                cy.contains('li', '1. Identification').click();
                 cy.get('tr').eq(1).click({ force: true });
                 cy.contains(/^Promote$/).click();
-
                 cy.contains('li', '2. Screening').click();
+                cy.get('tr').eq(1).click({ force: true });
                 cy.contains('Promote').click();
-
                 cy.contains('li', '3. Eligibility').click();
+                cy.get('tr').eq(1).click({ force: true });
                 cy.contains(/^Include$/).click();
-
                 cy.contains('li', '4. Included').click();
-
                 cy.contains(/^Include$/).should('not.exist');
                 cy.contains('Promote').should('not.exist');
                 cy.contains('Demote').should('not.exist');
             });
+        });
+    });
+
+    describe('identification duplicates', () => {
+        beforeEach(() => {
+            cy.addToLocalStorage('show-new-ui-may-30-2025', 'true');
+            cy.intercept('GET', `**/api/projects/*`, {
+                fixture: 'projects/projectCurationPRISMAWithStudies',
+            }).as('projectFixture');
+        });
+
+        it('should show 1 duplicate identified message when one duplicate exists project-wide', () => {
+            cy.fixture('projects/projectCurationPRISMAWithStudies').then((projectFixture: INeurosynthProjectReturn) => {
+                // add a duplicate tag to the first identification phase stub
+                projectFixture.provenance.curationMetadata.columns[0].stubStudies[0].exclusionTag =
+                    defaultExclusionTags.duplicate;
+
+                cy.intercept('GET', '**/api/projects/*', {
+                    ...projectFixture,
+                } as INeurosynthProjectReturn).as('projectFixture');
+            });
+
+            cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
+            cy.wait('@taskExtraction');
+            cy.wait('@participantDemographicsExtraction');
+
+            cy.contains('li', '1. Identification').click();
+            cy.contains('We automatically identified 1 duplicate study across your 3 imports').should('exist');
+        });
+
+        it('should show the correct number of duplicates identified message when multiple duplicates exist project-wide', () => {
+            cy.fixture('projects/projectCurationPRISMAWithStudies').then((projectFixture: INeurosynthProjectReturn) => {
+                projectFixture.provenance.curationMetadata.columns[0].stubStudies[0].exclusionTag =
+                    defaultExclusionTags.duplicate;
+                projectFixture.provenance.curationMetadata.columns[0].stubStudies[1].exclusionTag =
+                    defaultExclusionTags.duplicate;
+                projectFixture.provenance.curationMetadata.columns[0].stubStudies[2].exclusionTag =
+                    defaultExclusionTags.duplicate;
+
+                cy.intercept('GET', '**/api/projects/*', {
+                    ...projectFixture,
+                } as INeurosynthProjectReturn).as('projectFixture');
+            });
+
+            cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
+            cy.wait('@taskExtraction');
+            cy.wait('@participantDemographicsExtraction');
+
+            cy.contains('li', '1. Identification').click();
+            cy.contains('We automatically identified 3 duplicate studies across your 3 imports').should('exist');
+        });
+
+        it('should show the message when no more studies can be promoted to screening', () => {
+            cy.fixture('projects/projectCurationPRISMAWithStudies').then((projectFixture: INeurosynthProjectReturn) => {
+                // exclude all studies in the first column
+                projectFixture.provenance.curationMetadata.columns[0].stubStudies.forEach((stub) => {
+                    stub.exclusionTag = defaultExclusionTags.duplicate;
+                });
+
+                cy.intercept('GET', '**/api/projects/*', {
+                    ...projectFixture,
+                } as INeurosynthProjectReturn).as('projectFixture');
+            });
+
+            cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
+            cy.wait('@taskExtraction');
+            cy.wait('@participantDemographicsExtraction');
+
+            cy.contains('li', '1. Identification').click();
+            cy.contains('There are no uncategorized studies left to review.').should('exist');
+        });
+
+        it('should set the duplicate tag in the table row', () => {
+            cy.intercept('GET', `**/api/projects/*`, {
+                fixture: 'projects/projectWithStubPrisma',
+            }).as('projectFixture');
+
+            cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
+            cy.wait('@taskExtraction');
+            cy.wait('@participantDemographicsExtraction');
+
+            cy.contains('li', '1. Identification').click();
+            // go to manually review table
+            cy.contains('button', 'Manually review').should('exist');
+            cy.contains('button', 'Manually review').click();
+            // click on the first study row
+            cy.get('input[type="checkbox"]').eq(1).click({ force: true });
+            // click on the duplicate button
+            cy.contains('button', 'Duplicate (1)').click();
+            // should show the duplicate tag
+            cy.contains('Duplicate').should('exist');
+        });
+
+        it('should remove the duplicate tag from the table row', () => {
+            cy.intercept('GET', `**/api/projects/*`, {
+                fixture: 'projects/projectWithStubPrisma',
+            }).as('projectFixture');
+
+            cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
+            cy.wait('@taskExtraction');
+            cy.wait('@participantDemographicsExtraction');
+
+            // add duplicate tag:
+            cy.contains('li', '1. Identification').click();
+            // go to manually review table
+            cy.contains('button', 'Manually review').should('exist');
+            cy.contains('button', 'Manually review').click();
+            // click on the first study row
+            cy.get('input[type="checkbox"]').eq(2).click({ force: true });
+            // click on the duplicate button
+            cy.contains('button', 'Duplicate (1)').click();
+
+            // remove duplicate tag:
+            // cy.get('.MuiChip-deletable').find('[data-testid="CancelIcon"]').click();
+            cy.contains('.MuiChip-deletable').should('not.exist');
         });
     });
 
@@ -292,7 +398,7 @@ describe('CurationAIInterface', () => {
             }).as('projectFixture');
 
             cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
-            cy.contains('No studies. To import studies, click the import button above').should('exist');
+            cy.contains('No studies in this project yet. Import studies to get started').should('exist');
         });
 
         it('should show "No studies to review for..."', () => {
@@ -307,7 +413,7 @@ describe('CurationAIInterface', () => {
             });
 
             cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
-            cy.contains('No studies to review for identification').should('exist');
+            cy.contains('There are no uncategorized studies left to review.').should('exist');
         });
 
         it('should show "No included studies..."', () => {
@@ -334,7 +440,7 @@ describe('CurationAIInterface', () => {
             cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
 
             cy.contains('li', '1. Identification').click();
-            cy.contains("You've reviewed all uncategorized studies in identification!").should('exist');
+            cy.contains('There are no uncategorized studies left to review.').should('exist');
             cy.contains('li', '2. Screening').click();
             cy.contains("You've reviewed all uncategorized studies in screening!").should('exist');
             cy.contains('li', '3. Eligibility').click();
@@ -425,7 +531,7 @@ describe('CurationAIInterface', () => {
         });
 
         describe('table', () => {
-            it.only('should not have checkboxes for the included phase', () => {
+            it('should not have checkboxes for the included phase', () => {
                 cy.fixture('projects/projectCurationSimpleWithStudies').then(
                     (projectFixture: INeurosynthProjectReturn) => {
                         // move all the stub studies from the first column to the second and clear the first
@@ -464,6 +570,9 @@ describe('CurationAIInterface', () => {
                 }).as('projectFixture');
 
                 cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
+
+                cy.contains('li', '1. Identification').click();
+                cy.contains('button', 'Manually review').click();
 
                 cy.get('.MuiCheckbox-root').eq(1).click();
 
@@ -584,9 +693,10 @@ describe('CurationAIInterface', () => {
                 }).as('projectFixture');
 
                 cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
-                cy.contains('button', 'Promote all uncategorized studies to screening').click();
+                cy.contains('There are no uncategorized studies left to review.').should('not.exist');
+                cy.contains('button', 'Promote all uncategorized studies').click();
                 cy.contains('button', 'Continue').click();
-                cy.get('tr').should('have.length', 1);
+                cy.contains('There are no uncategorized studies left to review.').should('exist');
             });
 
             it('should exclude the study', () => {
@@ -641,7 +751,7 @@ describe('CurationAIInterface', () => {
                 cy.contains('li', 'some new exclusion reason').find('.MuiChip-label').should('have.text', 2);
             });
 
-            it('should move demote multiple studies', () => {
+            it('should demote multiple studies', () => {
                 cy.fixture('projects/projectCurationPRISMAWithStudies').then(
                     (projectFixture: INeurosynthProjectReturn) => {
                         projectFixture.provenance.curationMetadata.columns[1].stubStudies =
@@ -663,6 +773,7 @@ describe('CurationAIInterface', () => {
                 cy.contains('li', '1. Identification').find('.MuiChip-label').should('have.text', 0);
                 cy.contains('Demote (2)').click();
                 cy.contains('li', '1. Identification').click();
+                cy.contains('button', 'Manually review').click();
                 cy.get('tr').should('have.length', 3);
                 cy.contains('li', '1. Identification').find('.MuiChip-label').should('have.text', 2);
             });
@@ -718,12 +829,15 @@ describe('CurationAIInterface', () => {
                 }).as('projectFixture');
 
                 cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
+                cy.wait('@taskExtraction');
+                cy.wait('@participantDemographicsExtraction');
 
                 cy.get('tr').should('have.length', 5); // 4 plus header
                 cy.get(`[data-testid="FilterListIcon"]`).click();
                 cy.get('input[placeholder="filter"]').type('virtual reality');
                 cy.contains('li', 'Virtual Reality').click();
                 cy.get('tr').should('have.length', 2);
+                cy.get('input[placeholder="filter"]').clear();
                 cy.get('input[placeholder="filter"]').type('symbol match');
                 cy.contains('li', 'Symbol Match').click();
                 cy.get('tr').should('have.length', 3);
@@ -784,6 +898,7 @@ describe('CurationAIInterface', () => {
                 cy.contains('li', '4. Included').find('.MuiChip-label').should('have.text', 0);
 
                 cy.contains('li', '1. Identification').click();
+                cy.contains('button', 'Manually review').click();
                 cy.get('tr').eq(1).click({ force: true });
                 cy.contains('button', /^Promote$/).click();
 
@@ -793,6 +908,7 @@ describe('CurationAIInterface', () => {
                 cy.contains('li', '4. Included').find('.MuiChip-label').should('have.text', 0);
 
                 cy.contains('li', '2. Screening').click();
+                cy.get('tr').eq(1).click({ force: true });
                 cy.contains('button', /^Promote$/).click();
 
                 cy.contains('li', '1. Identification').find('.MuiChip-label').should('have.text', 79);
@@ -801,6 +917,7 @@ describe('CurationAIInterface', () => {
                 cy.contains('li', '4. Included').find('.MuiChip-label').should('have.text', 0);
 
                 cy.contains('li', '3. Eligibility').click();
+                cy.get('tr').eq(1).click({ force: true });
                 cy.contains('button', /^Include$/).click();
 
                 cy.contains('li', '1. Identification').find('.MuiChip-label').should('have.text', 79);
@@ -852,9 +969,8 @@ describe('CurationAIInterface', () => {
                     }
                 );
 
+                // we dont wait for taskExtraction or participantDemographicsExtraction because we dont have any data in the first column
                 cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
-                cy.wait('@taskExtraction');
-                cy.wait('@participantDemographicsExtraction');
 
                 cy.contains('li', '1. Identification').find('.MuiChip-label').should('have.text', 0);
                 cy.contains('li', '2. Screening').find('.MuiChip-label').should('have.text', 80);
@@ -878,9 +994,8 @@ describe('CurationAIInterface', () => {
                 } as INeurosynthProjectReturn).as('projectFixture');
             });
 
+            // we dont wait for taskExtraction or participantDemographicsExtraction because we dont have any data in the first column
             cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
-            cy.wait('@taskExtraction');
-            cy.wait('@participantDemographicsExtraction');
 
             cy.contains('li', '3. Eligibility').find('.MuiChip-label').should('have.text', 0);
             cy.contains('li', '4. Included').find('.MuiChip-label').should('have.text', 80);

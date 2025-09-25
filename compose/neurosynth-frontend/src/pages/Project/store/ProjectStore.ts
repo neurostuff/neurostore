@@ -752,6 +752,11 @@ export const useProjectGetColumnForStub = (stubId: string) =>
             column: state.provenance.curationMetadata.columns[colIndex],
         };
     });
+export const useProjectCurationDuplicates = () =>
+    useProjectStore((state) => {
+        if (!state.provenance.curationMetadata.prismaConfig.isPrisma) return [];
+        return state.provenance.curationMetadata.columns[0].stubStudies.filter((x) => x.exclusionTag !== null);
+    });
 
 // curation updater hooks
 export const useUpdateProjectIsPublic = () => useProjectStore((state) => state.updateProjectIsPublic);

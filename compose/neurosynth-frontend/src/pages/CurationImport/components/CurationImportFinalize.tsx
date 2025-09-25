@@ -57,9 +57,7 @@ const CurationImportFinalize: React.FC<{
         });
 
         // // 2. first find duplicates ONLY WITHIN THE IMPORT ITSELF. Label as duplicate.
-        let snackbarNotify = false;
         const duplicatesExistWithinImport = hasDuplicates(stubs);
-        if (duplicatesExistWithinImport) snackbarNotify = true;
         const deduplicatedStubs = duplicatesExistWithinImport ? automaticallyResolveDuplicates(stubs) : stubs;
 
         // // 3. Label the stubs in the import as duplicates automatically if we find existing stubs IN THE PROJECT
@@ -73,23 +71,12 @@ const CurationImportFinalize: React.FC<{
             const formattedTitle = importedStub.title.toLocaleLowerCase().trim();
             if (importedStub.doi && duplicateMapping.has(importedStub.doi)) {
                 importedStub.exclusionTag = defaultExclusionTags.duplicate;
-                snackbarNotify = true;
             } else if (importedStub.pmid && duplicateMapping.has(importedStub.pmid)) {
                 importedStub.exclusionTag = defaultExclusionTags.duplicate;
-                snackbarNotify = true;
             } else if (importedStub.title && duplicateMapping.has(formattedTitle)) {
                 importedStub.exclusionTag = defaultExclusionTags.duplicate;
-                snackbarNotify = true;
             }
         });
-
-        // // 4. we should show a snackbar popup if duplicates have been automatically detected so the user knows that some have been automatically resolved
-        if (snackbarNotify) {
-            enqueueSnackbar(
-                'Some duplicates were detected and automatically excluded. To view, expand the Excluded option and click "Duplicate"',
-                { variant: 'info' }
-            );
-        }
 
         const updatedColumns = [...columns];
         updatedColumns[0] = {

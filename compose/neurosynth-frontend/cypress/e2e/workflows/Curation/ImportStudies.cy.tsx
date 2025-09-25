@@ -15,7 +15,7 @@ describe('ImportStudiesDialog', () => {
         cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture').wait('@studysetFixture');
     });
 
-    it('should open the import studies dialog', () => {
+    it('should open the import studies page', () => {
         cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture').wait('@studysetFixture');
         cy.contains('button', 'import studies').click();
         cy.get('.MuiFormControl-root').should('be.visible');
@@ -253,34 +253,6 @@ describe('ImportStudiesDialog', () => {
 
         // TODO : create a test for importing bibtex file
         // it('should import studies via a file', () => {})
-    });
-
-    describe('PROJECT DUPLICATES', () => {
-        beforeEach(() => {
-            cy.intercept('GET', `**/api/projects/*`, {
-                fixture: 'projects/projectWithStub',
-            }).as('projectFixture');
-            // not a very good mocked update, but we need to provide a fixture so that it doesnt send a real request to the BE
-            cy.intercept('PUT', '**/api/projects/**', { fixture: 'projects/projectWithStub' }).as(
-                'updateProjectFixture'
-            );
-            cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture').wait('@studysetFixture');
-            cy.contains('button', 'import studies').click();
-            cy.contains('Import via File Format').click();
-            cy.contains('button', 'next').click();
-
-            cy.get('input[role="combobox"').click();
-            cy.contains('li', 'Scopus').click();
-        });
-
-        it('should show the resolve duplicates popup', () => {
-            cy.get('label[role="button"]').selectFile('cypress/fixtures/standardFiles/onenoteStudies.txt');
-
-            cy.contains('button', 'next').click();
-            cy.get('input').type('my new import{enter}');
-            cy.contains('button', 'next').click();
-            cy.contains(/Some duplicates were detected/).should('be.visible');
-        });
     });
 
     describe('Other features', () => {
