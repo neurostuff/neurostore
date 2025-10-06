@@ -16,14 +16,14 @@ jobs:
         working-directory: store
         run: |
           echo "Services in store/docker-compose.yml:"
-          docker-compose config --services
+          docker compose config --services
           echo "Building all images in store/docker-compose.yml with --no-cache"
-          docker-compose build --no-cache
+          docker compose build --no-cache
 
       - name: Build compose images
         working-directory: compose
         run: |
           echo "Services in compose/docker-compose.yml:"
-          docker-compose config --services
+          docker compose config --services
           echo "Building all images in compose/docker-compose.yml with --no-cache"
-          docker-compose build --no-cache
+          docker compose build --no-cache
