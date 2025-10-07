@@ -6,6 +6,7 @@ from marshmallow import (
     pre_dump,
     pre_load,
     post_load,
+    validates_schema,
     EXCLUDE,
     ValidationError,
 )
@@ -661,6 +662,19 @@ class AnnotationSchema(BaseDataSchema):
         if isinstance(data.get("studyset_id"), str):
             data["studyset"] = {"id": data.pop("studyset_id")}
         return data
+
+    @validates_schema
+    def validate_notes(self, data, **kwargs):
+        notes = data.get("annotation_analyses") or []
+        invalid = {}
+
+        for idx, note in enumerate(notes):
+            note_payload = note.get("note") if isinstance(note, dict) else None
+            if not isinstance(note_payload, dict) or len(note_payload) == 0:
+                invalid[idx] = ["note must include at least one field"]
+
+        if invalid:
+            raise ValidationError({"notes": invalid})
 
 
 class BaseSnapshot(object):
