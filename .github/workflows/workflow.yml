@@ -188,7 +188,7 @@ jobs:
             up -d --no-build
       - 
         name: Dump store postgres logs
-        if: failure()
+        if: ${{ steps.spin_up_backend.outcome == 'failure' }}
         run: |
           cd store
           docker compose ps
@@ -472,7 +472,7 @@ jobs:
           up -d --no-build
     -
       name: Dump store postgres logs
-      if: failure()
+      if: ${{ steps.spin_up_store_backend.outcome == 'failure' }}
       run: |
         cd store
         docker compose ps
