@@ -190,7 +190,6 @@ jobs:
         name: Dump store postgres logs
         if: ${{ steps.spin_up_backend.outcome == 'failure' }}
         run: |
-          cd store
           docker compose ps
           docker compose logs --tail=200 store-pgsql17 || true
           docker inspect store-store-pgsql17-1 \
