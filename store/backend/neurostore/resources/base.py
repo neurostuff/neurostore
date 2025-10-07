@@ -2,6 +2,7 @@
 Base Classes/functions for constructing views
 """
 
+import json
 import re
 
 from connexion.context import context
@@ -11,6 +12,7 @@ from ..exceptions.utils.error_helpers import (
     abort_permission,
     abort_validation,
     abort_not_found,
+    abort_unprocessable,
 )
 
 from psycopg2 import errors
@@ -43,6 +45,12 @@ from ..models import (
 )
 from ..schemas.data import StudysetSnapshot
 from . import data as viewdata
+
+
+@parser.error_handler
+def handle_parser_error(err, req, schema, *, error_status_code, error_headers):
+    detail = json.dumps(err.messages)
+    abort_unprocessable(f"input does not conform to specification: {detail}")
 
 
 def create_user():
@@ -128,10 +136,13 @@ class BaseView(MethodView):
         create_annotation_analyses = []
         for result in results:
             if result.analysis_id and not result.annotation_analysis_id:
+                note_payload = result.note or self._build_default_note(result.note_keys)
+                if note_payload is None:
+                    note_payload = {}
                 params = {
                     "analysis_id": result.analysis_id,
                     "annotation_id": result.id,
-                    "note": result.note or {},
+                    "note": note_payload,
                     "user_id": result.user_id,
                     "study_id": result.study_id,
                     "studyset_id": result.studyset_id,
@@ -214,6 +225,12 @@ class BaseView(MethodView):
 
     def eager_load(self, q, args):
         return q
+
+    @staticmethod
+    def _build_default_note(note_keys):
+        if not note_keys:
+            return None
+        return {key: None for key in note_keys.keys()}
 
     def db_validation(self, record, data):
         """
