@@ -38,10 +38,10 @@ const useCuratorTableState = (
     const [sorting, setSorting] = useState<SortingState>([]);
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-    const filteredStubs = useMemo(() => {
+    const stubsWithNeurostoreIds = useMemo(() => {
         return (allStubs.filter((stub) => !!stub.neurostoreId).map((stub) => stub!.neurostoreId) as string[]).sort();
     }, [allStubs]);
-    const { data: extractedData, isLoading } = useGetAllAIExtractedDataForStudies(filteredStubs);
+    const { data: extractedData, isLoading } = useGetAllAIExtractedDataForStudies(stubsWithNeurostoreIds);
 
     useEffect(() => {
         if (!projectId) return;

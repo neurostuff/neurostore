@@ -34,6 +34,7 @@
                   "id": "neurosynth_neurostore_id_source",
                   "label": "Neurostore"
                 },
+                "importId": "75d6c47e-627f-4965-b51e-c06912b67dde",
                 "journal": "Brain structure and function",
                 "keywords": "",
                 "neurostoreId": "3haTSe2ojmt6",
@@ -91,6 +92,16 @@
           {
             "id": "neurosynth_psycinfo_id_source",
             "label": "PsycInfo"
+          }
+        ],
+        "imports": [
+          {
+            "date": "2025-05-31T22:27:37.191Z",
+            "id": "75d6c47e-627f-4965-b51e-c06912b67dde",
+            "importModeUsed": "NEUROSTORE_IMPORT",
+            "name": "marijuana",
+            "neurostoreSearchParams": "genericSearchStr=marijuana&sortBy=relevance&pageOfResults=1&descOrder=true&pageSize=10&source=all&dataType=all&level=group&flat=true&info=true",
+            "numImported": 29
           }
         ],
         "infoTags": [

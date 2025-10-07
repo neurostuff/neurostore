@@ -37,6 +37,13 @@ const CurationBoardAIInterfaceCuratorTableRow: React.FC<{
             {tableCells.map((cell) => (
                 <TableCell
                     key={cell.id}
+                    onClick={(e) => {
+                        if (cell.column.id === 'select') {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            return;
+                        }
+                    }}
                     sx={{
                         position: cell.column.id === 'select' ? 'sticky' : undefined,
                         backgroundColor: cell.column.id === 'select' ? 'white' : undefined,
