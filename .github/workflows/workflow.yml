@@ -188,14 +188,6 @@ jobs:
             -f docker-compose.dev.yml \
             up -d --no-build
       - 
-        name: Dump store postgres logs
-        if: ${{ steps.spin_up_backend.outcome == 'failure' }}
-        run: |
-          docker compose ps
-          docker compose logs --tail=200 store-pgsql17 || true
-          docker inspect store-store-pgsql17-1 \
-            --format '{{.State.Health.Status}} {{range .State.Health.Log}}{{printf "%s: %s\n" .End .Output}}{{end}}' || true
-      - 
         name: Abort if compose failed
         if: ${{ steps.spin_up_backend.outcome == 'failure' }}
         run: exit 1
@@ -224,15 +216,6 @@ jobs:
             --rm \
             neurostore \
             bash -c "python -m pytest neurostore/tests && python -m pytest --auth neurostore/tests/test_auth.py"
-      -
-        name: Dump store postgres logs (post-tests)
-        if: failure()
-        run: |
-          cd store
-          docker compose ps
-          docker compose logs --tail=200 store-pgsql17 || true
-          docker inspect store-store-pgsql17-1 \
-            --format '{{.State.Health.Status}} {{range .State.Health.Log}}{{printf "%s: %s\n" .End .Output}}{{end}}' || true
 
   neurosynth_compose_backend_tests:
     runs-on: ubuntu-latest
@@ -480,15 +463,6 @@ jobs:
           -f docker-compose.dev.yml \
           up -d --no-build
     -
-      name: Dump store postgres logs
-      if: ${{ steps.spin_up_store_backend.outcome == 'failure' }}
-      run: |
-        cd store
-        docker compose ps
-        docker compose logs --tail=200 store-pgsql17 || true
-        docker inspect store-store-pgsql17-1 \
-          --format '{{.State.Health.Status}} {{range .State.Health.Log}}{{printf "%s: %s\n" .End .Output}}{{end}}' || true
-    -
       name: Abort if store compose failed
       if: ${{ steps.spin_up_store_backend.outcome == 'failure' }}
       run: exit 1
@@ -567,12 +541,3 @@ jobs:
         browser: chrome
         wait-on: http://localhost:3000
         working-directory: /home/runner/work/neurostore/neurostore/compose/neurosynth-frontend
-    -
-      name: Dump store postgres logs (post-tests)
-      if: failure()
-      run: |
-        cd store
-        docker compose ps
-        docker compose logs --tail=200 store-pgsql17 || true
-        docker inspect store-store-pgsql17-1 \
-          --format '{{.State.Health.Status}} {{range .State.Health.Log}}{{printf "%s: %s\n" .End .Output}}{{end}}' || true
