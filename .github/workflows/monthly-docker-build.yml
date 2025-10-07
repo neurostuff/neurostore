@@ -16,6 +16,7 @@ jobs:
         working-directory: store
         run: |
           echo "Services in store/docker-compose.yml:"
+          cp .env.example .env
           docker compose config --services
           echo "Building all images in store/docker-compose.yml with --no-cache"
           docker compose build --no-cache
@@ -24,6 +25,7 @@ jobs:
         working-directory: compose
         run: |
           echo "Services in compose/docker-compose.yml:"
+          cp .env.example .env
           docker compose config --services
           echo "Building all images in compose/docker-compose.yml with --no-cache"
           docker compose build --no-cache
