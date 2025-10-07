@@ -18,7 +18,7 @@ jobs:
   clean:
     strategy:
       matrix:
-        package: ['neurosynth_compose', 'compose_nginx', 'compose_pgsql', 'compose_worker', 'neurostore', 'store_nginx', 'store-pgsql']
+        package: ['neurosynth_compose', 'compose_nginx', 'compose_pgsql', 'compose_worker', 'neurostore', 'store_nginx', 'store-pgsql', 'store-pgsql17', 'compose_pgsql17']
     runs-on: ubuntu-latest
 
     steps:
