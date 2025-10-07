@@ -37,7 +37,7 @@ const CurationBoardAIInterfaceIdentificationUI: React.FC<{
             >
                 <Card sx={{ padding: '1rem', width: { xs: '90%', lg: '70%' } }}>
                     <CardContent>
-                        <Typography variant="h6" sx={{ marginBottom: '2rem', color: 'text.secondary' }}>
+                        <Typography variant="h6" sx={{ color: 'text.secondary' }}>
                             No studies in this project yet.{' '}
                             <MuiLink underline="hover" component={Link} to="import">
                                 {' '}
@@ -160,16 +160,11 @@ const CurationBoardAIInterfaceIdentificationUI: React.FC<{
         >
             <Card sx={{ padding: '1rem', width: { xs: '90%', lg: '70%' } }}>
                 <CardContent>
-                    <Typography variant="h6" sx={{ marginBottom: '2rem', color: 'text.secondary' }}>
+                    <Typography variant="h6" sx={{ marginBottom: '1rem', color: 'text.secondary' }}>
                         There are no uncategorized studies left to review.
                     </Typography>
 
-                    <Button
-                        variant="outlined"
-                        color="primary"
-                        onClick={handleReviewDuplicates}
-                        sx={{ minWidth: '150px' }}
-                    >
+                    <Button color="primary" onClick={handleReviewDuplicates} sx={{ minWidth: '150px' }}>
                         Review all duplicates
                     </Button>
                 </CardContent>
