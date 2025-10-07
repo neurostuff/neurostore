@@ -17,8 +17,9 @@ permissions:
 jobs:
   clean:
     strategy:
+      fail-fast: false
       matrix:
-        package: ['neurosynth_compose', 'compose_nginx', 'compose_pgsql', 'compose_worker', 'neurostore', 'store_nginx', 'store-pgsql']
+        package: ['neurosynth_compose', 'compose_nginx', 'compose_pgsql', 'compose_worker', 'neurostore', 'store_nginx', 'store-pgsql', 'store-pgsql17', 'compose_pgsql17']
     runs-on: ubuntu-latest
 
     steps:
@@ -176,13 +177,20 @@ jobs:
               store-pgsql17.cache-from=type=gha,scope=cached-store-pgsql17
       - 
         name: spin up backend
+        id: spin_up_backend
+        continue-on-error: true
         run: |
+          set -o pipefail
           docker network create nginx-proxy
           docker compose pull --ignore-buildable 
           docker compose \
             -f docker-compose.yml \
             -f docker-compose.dev.yml \
             up -d --no-build
+      - 
+        name: Abort if compose failed
+        if: ${{ steps.spin_up_backend.outcome == 'failure' }}
+        run: exit 1
       - 
         name: Create Test Database
         run: |
@@ -444,13 +452,20 @@ jobs:
           up -d --no-build
     -
       name: Spin up store backend
+      id: spin_up_store_backend
+      continue-on-error: true
       run: |
+        set -o pipefail
         cd store
         docker compose pull --ignore-buildable 
         docker compose \
           -f docker-compose.yml \
           -f docker-compose.dev.yml \
           up -d --no-build
+    -
+      name: Abort if store compose failed
+      if: ${{ steps.spin_up_store_backend.outcome == 'failure' }}
+      run: exit 1
     -
       name: Create Compose Database
       run: |
