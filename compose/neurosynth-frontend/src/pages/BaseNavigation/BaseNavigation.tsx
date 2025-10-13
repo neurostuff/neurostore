@@ -19,6 +19,7 @@ import ProtectedProjectRoute from 'pages/BaseNavigation/components/ProtectedProj
 import ProtectedRoute from './components/ProtectedRoute';
 import ProtectedMetaAnalysesRoute from 'pages/BaseNavigation/components/ProtectedMetaAnalysesRoute';
 import { ErrorBoundary } from '@sentry/react';
+import NewStudySearchPage from 'pages/NewStudySearchPage/NewStudySearchPage';
 
 const ImportSleuthPage = React.lazy(() => import('pages/SleuthImport/SleuthImportPage'));
 const EditStudyPage = React.lazy(() => import('pages/Study/EditStudyPage'));
@@ -64,6 +65,14 @@ const BaseNavigation: React.FC = () => {
             >
                 <Routes>
                     <Route path="/" element={<LandingPage />} />
+                    <Route
+                        path="/new-study-search"
+                        element={
+                            <Box sx={BaseNavigationStyles.pagesContainer}>
+                                <NewStudySearchPage />
+                            </Box>
+                        }
+                    />
                     <Route
                         path="/projects"
                         element={
