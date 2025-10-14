@@ -340,6 +340,19 @@ def test_has_coordinates_images(auth_client, session):
     assert base_study_2.has_coordinates is True
     assert base_study_2.has_images is True
 
+    # adding an analysis without media should not flip the flags back to False
+    empty_analysis_resp = auth_client.post(
+        "/api/analyses/",
+        data={
+            "study": create_full_study.json()["id"],
+            "name": "empty analysis",
+        },
+    )
+    assert empty_analysis_resp.status_code == 200
+    session.refresh(base_study_2)
+    assert base_study_2.has_coordinates is True
+    assert base_study_2.has_images is True
+
     # delete analysis a
     analysis_ids = create_full_study.json()["analyses"]
     analyses = [Analysis.query.filter_by(id=id_).one() for id_ in analysis_ids]

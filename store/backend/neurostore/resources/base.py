@@ -162,45 +162,34 @@ class BaseView(MethodView):
 
         # Subquery for new_has_coordinates
         new_has_coordinates_subquery = (
-            sa.select(
-                sa.func.coalesce(
-                    sa.func.bool_and(Point.analysis_id != None), False  # noqa E711
-                )  # noqa E711
-            )
-            .where(Point.analysis_id == Analysis.id)
-            .correlate(Study)
+            sa.select(sa.func.count(Point.id) > 0)
+            .select_from(Study)
+            .join(Analysis, Analysis.study_id == Study.id)
+            .join(Point, Point.analysis_id == Analysis.id)
+            .where(Study.base_study_id == BaseStudy.id)
+            .correlate(BaseStudy)
             .scalar_subquery()
         )
 
         # Subquery for new_has_images
         new_has_images_subquery = (
-            sa.select(
-                sa.func.coalesce(
-                    sa.func.bool_and(Image.analysis_id != None), False  # noqa E711
-                )  # noqa E711
-            )
-            .where(Image.analysis_id == Analysis.id)
-            .correlate(Study)
+            sa.select(sa.func.count(Image.id) > 0)
+            .select_from(Study)
+            .join(Analysis, Analysis.study_id == Study.id)
+            .join(Image, Image.analysis_id == Analysis.id)
+            .where(Study.base_study_id == BaseStudy.id)
+            .correlate(BaseStudy)
             .scalar_subquery()
         )
 
         # Main query
-        query = (
-            sa.select(
-                BaseStudy.id,
-                BaseStudy.has_images,
-                BaseStudy.has_coordinates,
-                new_has_coordinates_subquery.label("new_has_coordinates"),
-                new_has_images_subquery.label("new_has_images"),
-            )
-            .distinct()
-            .select_from(BaseStudy)
-            .join(Study, Study.base_study_id == BaseStudy.id)
-            .outerjoin(Analysis, Analysis.study_id == Study.id)
-            .where(
-                BaseStudy.id.in_(base_studies),
-            )
-        )
+        query = sa.select(
+            BaseStudy.id,
+            BaseStudy.has_images,
+            BaseStudy.has_coordinates,
+            new_has_coordinates_subquery.label("new_has_coordinates"),
+            new_has_images_subquery.label("new_has_images"),
+        ).where(BaseStudy.id.in_(base_studies))
 
         affected_base_studies = db.session.execute(query).fetchall()
         update_base_studies = []
