@@ -956,6 +956,34 @@ class BaseStudiesView(ObjectView, ListView):
             for idx, (field_path, operator, value) in enumerate(
                 filters["result_filters"]
             ):
+                normalized_field = field_path.replace("[]", "")
+                if (
+                    pipeline_name == "TaskExtractor"
+                    and normalized_field == "Modality"
+                    and operator == "="
+                ):
+                    modality_values = [
+                        val.strip() for val in value.split("|") if val.strip()
+                    ]
+                    if modality_values:
+                        modality_field = PipelineStudyResultAlias.result_data.op("->")(
+                            sa.literal_column("'Modality'")
+                        )
+                        modality_clauses = []
+                        for idx, modality_value in enumerate(modality_values):
+                            param_name = f"modality_filter_{pipeline_name}_{idx}"
+                            modality_clauses.append(
+                                modality_field.op("@>")(
+                                    sa.func.jsonb_build_array(
+                                        sa.bindparam(param_name, modality_value)
+                                    )
+                                )
+                            )
+                        pipeline_query = pipeline_query.filter(
+                            sae.or_(*modality_clauses)
+                        )
+                        pipeline_subqueries.append(pipeline_query.subquery())
+                    continue
                 jsonpath = build_jsonpath(field_path, operator, value)
                 param_name = f"jsonpath_result_{pipeline_name}_{idx}"
                 pipeline_query = pipeline_query.filter(
