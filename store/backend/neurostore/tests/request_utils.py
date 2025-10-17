@@ -63,7 +63,24 @@ class Client(object):
 
             return request_function(route, **kwargs)
         else:
-            return request_function(route, json=data, headers=headers, params=params)
+            kwargs = {"headers": headers, "params": params}
+
+            if data is not None:
+                if (
+                    content_type.startswith("application/json")
+                    and json_dump
+                    and isinstance(data, (dict, list))
+                ):
+                    kwargs["json"] = data
+                else:
+                    payload = data
+                    if json_dump and isinstance(data, (dict, list)):
+                        payload = json.dumps(data)
+                    if isinstance(payload, str):
+                        payload = payload.encode("utf-8")
+                    kwargs["content"] = payload
+
+            return request_function(route, **kwargs)
 
     get = partialmethod(_make_request, "get")
     post = partialmethod(_make_request, "post")

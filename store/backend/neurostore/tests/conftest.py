@@ -267,12 +267,12 @@ def session(db):
     yield session
 
     cache.clear()
-    try:
+    txn = session.get_transaction()
+    if txn is not None and txn.is_active:
         session.rollback()
-    except:  # noqa
-        pass
     session.close()
-    transaction.rollback()
+    if transaction.is_active:
+        transaction.rollback()
     connection.close()
 
 
