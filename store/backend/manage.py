@@ -17,7 +17,25 @@ if not getattr(app, "config", None):
 app.config.from_object(os.environ["APP_SETTINGS"])
 
 
-migrate = Migrate(app, db, directory=app.config["MIGRATIONS_DIR"])
+def include_object(obj, name, type_, reflected, compare_to):
+    # Skip partitions/objects created on the fly for vector embeddings; Alembic must ignore them.
+    if type_ == "table" and name.startswith("pipeline_embeddings_"):
+        return False
+    if (
+        type_ in {"index", "constraint"}
+        and name.startswith("pe_")
+        and (name.endswith("_hnsw") or name.endswith("_dims_chk"))
+    ):
+        return False
+    return True
+
+
+migrate = Migrate(
+    app,
+    db,
+    directory=app.config["MIGRATIONS_DIR"],
+    include_object=include_object,
+)
 migrate.init_app(app, db)
 
 
