@@ -54,7 +54,7 @@ def handle_parser_error(err, req, schema, *, error_status_code, error_headers):
 
 
 def create_user():
-    from auth0.v3.authentication.users import Users
+    from auth0.authentication.users import Users
 
     auth = request.headers.get("Authorization", None)
     token = auth.split()[1]

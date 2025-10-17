@@ -20,8 +20,8 @@ from ..models import (
     Entity,
 )
 from ..ingest.extracted_features import ingest_feature
-from auth0.v3.authentication import GetToken
-from auth0.v3.authentication.users import Users
+from auth0.authentication import GetToken
+from auth0.authentication.users import Users
 from unittest.mock import patch
 
 
