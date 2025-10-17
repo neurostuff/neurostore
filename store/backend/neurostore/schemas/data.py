@@ -65,9 +65,11 @@ class ObjToString(fields.Field):
     def _deserialize(self, value, attr, data, **kwargs):
         if self.many:
             return [
-                {"id": v}
-                if isinstance(v, (str, int))
-                else (v if isinstance(v, dict) else {"id": getattr(v, "id", v)})
+                (
+                    {"id": v}
+                    if isinstance(v, (str, int))
+                    else (v if isinstance(v, dict) else {"id": getattr(v, "id", v)})
+                )
                 for v in value
             ]
         if isinstance(value, (str, int)):
