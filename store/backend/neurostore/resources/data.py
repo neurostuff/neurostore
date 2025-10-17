@@ -971,9 +971,7 @@ class BaseStudiesView(ObjectView, ListView):
                         )
                         modality_clauses = []
                         for idx, modality_value in enumerate(modality_values):
-                            param_name = (
-                                f"modality_filter_{pipeline_name}_{idx}"
-                            )
+                            param_name = f"modality_filter_{pipeline_name}_{idx}"
                             modality_clauses.append(
                                 modality_field.op("@>")(
                                     sa.func.jsonb_build_array(
