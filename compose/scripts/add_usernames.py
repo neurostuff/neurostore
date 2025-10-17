@@ -1,4 +1,4 @@
-from auth0.v3.management.users import Users
+from auth0.management.users import Users
 from neurosynth_compose.resources.users import User
 from flask import current_app
 
