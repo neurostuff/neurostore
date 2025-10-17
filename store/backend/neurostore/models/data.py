@@ -753,6 +753,13 @@ class PipelineConfig(BaseMixin, db.Model):
 
 class PipelineStudyResult(BaseMixin, db.Model):
     __tablename__ = "pipeline_study_results"
+    __table_args__ = (
+        sa.Index(
+            "ix_pipeline_study_results__modality",
+            sa.text("(result_data -> 'Modality')"),
+            postgresql_using="gin",
+        ),
+    )
 
     config_id = db.Column(
         db.Text, db.ForeignKey("pipeline_configs.id", ondelete="CASCADE"), index=True
