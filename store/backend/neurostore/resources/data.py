@@ -966,14 +966,23 @@ class BaseStudiesView(ObjectView, ListView):
                         val.strip() for val in value.split("|") if val.strip()
                     ]
                     if modality_values:
-                        pipeline_query = pipeline_query.filter(
-                            sae.or_(
-                                *[
-                                    PipelineStudyResultAlias.result_data["Modality"]
-                                    .contains([modality_value])
-                                    for modality_value in modality_values
-                                ]
+                        modality_field = PipelineStudyResultAlias.result_data.op("->")(
+                            sa.literal_column("'Modality'")
+                        )
+                        modality_clauses = []
+                        for idx, modality_value in enumerate(modality_values):
+                            param_name = (
+                                f"modality_filter_{pipeline_name}_{idx}"
                             )
+                            modality_clauses.append(
+                                modality_field.op("@>")(
+                                    sa.func.jsonb_build_array(
+                                        sa.bindparam(param_name, modality_value)
+                                    )
+                                )
+                            )
+                        pipeline_query = pipeline_query.filter(
+                            sae.or_(*modality_clauses)
                         )
                         pipeline_subqueries.append(pipeline_query.subquery())
                     continue
