@@ -377,7 +377,11 @@ def add_users(real_app, real_db):
     from neurostore.resources.auth import decode_token
 
     domain = real_app.config["AUTH0_BASE_URL"].split("://")[1]
-    token = GetToken(domain)
+    token = GetToken(
+        domain,
+        real_app.config["AUTH0_CLIENT_ID"],
+        real_app.config["AUTH0_CLIENT_SECRET"],
+    )
 
     users = [
         {
@@ -395,8 +399,6 @@ def add_users(real_app, real_db):
         name = u["name"]
         passw = u["password"]
         payload = token.login(
-            client_id=real_app.config["AUTH0_CLIENT_ID"],
-            client_secret=real_app.config["AUTH0_CLIENT_SECRET"],
             username=name + "@email.com",
             password=passw,
             realm="Username-Password-Authentication",
