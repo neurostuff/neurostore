@@ -593,6 +593,7 @@ class BaseStudiesView(ObjectView, ListView):
         q,  # an existing SQLAlchemy Query object
         user_vector,
         config_id,
+        embedding_dimensions=None,
         distance_threshold=0.5,
         overall_cap=3000,
     ):
@@ -601,10 +602,21 @@ class BaseStudiesView(ObjectView, ListView):
         cfg = sa.bindparam("config_id", type_=sa.String())
         thr = sa.bindparam("threshold", type_=sa.Float())
 
-        # Distance expression
-        distance = sa.cast(PipelineEmbedding.embedding.op("<=>")(qvec), sa.Float).label(
-            "distance"
-        )
+        # Distance expression (cast to fixed-dimension vector when provided so the
+        # planner can use the per-partition HNSW index)
+        dims = None
+        try:
+            if embedding_dimensions is not None:
+                dims = int(embedding_dimensions)
+        except (TypeError, ValueError):
+            dims = None
+
+        if dims:
+            embedding_expr = sa.cast(PipelineEmbedding.embedding, Vector(dims))
+        else:
+            embedding_expr = PipelineEmbedding.embedding
+
+        distance = sa.cast(embedding_expr.op("<=>")(qvec), sa.Float).label("distance")
 
         # Build the ANN CTE
         inner = (
@@ -706,7 +718,12 @@ class BaseStudiesView(ObjectView, ListView):
             distance_threshold = args.get("distance_threshold", 0.5)
             overall_cap = args.get("overall_cap", 3000)
             q = self.ann_query_object(
-                q, user_vector, pipeline_config_id, distance_threshold, overall_cap
+                q,
+                user_vector,
+                pipeline_config_id,
+                dimensions,
+                distance_threshold,
+                overall_cap,
             )
 
         # Spatial filter: x, y, z, radius must all be present to apply
