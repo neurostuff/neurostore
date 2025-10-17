@@ -317,21 +317,21 @@ class ObjectView(BaseView):
 
 
 LIST_USER_ARGS = {
-    "search": fields.String(missing=None),
-    "sort": fields.String(missing="created_at"),
-    "page": fields.Int(missing=1),
-    "desc": fields.Boolean(missing=True),
-    "page_size": fields.Int(missing=20, validate=lambda val: val < 100),
-    "source_id": fields.String(missing=None),
-    "source": fields.String(missing=None),
-    "unique": fields.Boolean(missing=False),
-    "nested": fields.Boolean(missing=False),
-    "user_id": fields.String(missing=None),
-    "dataset_id": fields.String(missing=None),
-    "export": fields.Boolean(missing=False),
-    "data_type": fields.String(missing=None),
-    "info": fields.Boolean(missing=False),
-    "ids": fields.List(fields.String(), missing=None),
+    "search": fields.String(load_default=None),
+    "sort": fields.String(load_default="created_at"),
+    "page": fields.Int(load_default=1),
+    "desc": fields.Boolean(load_default=True),
+    "page_size": fields.Int(load_default=20, validate=lambda val: val < 100),
+    "source_id": fields.String(load_default=None),
+    "source": fields.String(load_default=None),
+    "unique": fields.Boolean(load_default=False),
+    "nested": fields.Boolean(load_default=False),
+    "user_id": fields.String(load_default=None),
+    "dataset_id": fields.String(load_default=None),
+    "export": fields.Boolean(load_default=False),
+    "data_type": fields.String(load_default=None),
+    "info": fields.Boolean(load_default=False),
+    "ids": fields.List(fields.String(), load_default=None),
 }
 
 
@@ -702,8 +702,8 @@ class ProjectsView(ObjectView, ListView):
     def post(self):
         clone_args = parser.parse(
             {
-                "source_id": fields.String(missing=None),
-                "copy_annotations": fields.Boolean(missing=True),
+                "source_id": fields.String(load_default=None),
+                "copy_annotations": fields.Boolean(load_default=True),
             },
             request,
             location="query",
