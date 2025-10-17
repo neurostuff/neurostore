@@ -18,7 +18,9 @@ def test_post_blank_annotation(auth_client, ingest_neurosynth, session):
     assert annot.annotation_analyses[0].user_id == annot.user_id
 
 
-def test_blank_annotation_populates_note_fields(auth_client, ingest_neurosynth, session):
+def test_blank_annotation_populates_note_fields(
+    auth_client, ingest_neurosynth, session
+):
     dset = Studyset.query.first()
     note_keys = {"included": "boolean", "quality": "string"}
     payload = {

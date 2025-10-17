@@ -506,6 +506,11 @@ class AnnotationsView(ObjectView, ListView):
         schema = cls._schema(context=context)
         tmp_data = schema.dump(annotation)
         data = schema.load(tmp_data)
+        # Ensure cloned payload does not reference original primary keys
+        data.pop("id", None)
+        for note in data.get("annotation_analyses") or []:
+            if isinstance(note, dict):
+                note.pop("id", None)
         data["source"] = "neurostore"
         data["source_id"] = source_id
         data["source_updated_at"] = annotation.updated_at or annotation.created_at
