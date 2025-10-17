@@ -14,7 +14,7 @@ dependencies = [
     "auth0-python~=4.13",
     "authlib~=1.6",
     "celery~=5.0",
-    "connexion[swagger-ui,uvicorn,flask]==3.0.0",
+    "connexion[swagger-ui,uvicorn,flask]==3.3.0",
     "flask~=3.1",
     "Flask-CeleryExt~=0.5",
     "flask-cors~=6.0",
