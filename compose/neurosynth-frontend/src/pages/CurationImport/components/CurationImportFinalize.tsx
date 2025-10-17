@@ -20,6 +20,7 @@ import { SearchCriteria } from 'pages/Study/Study.types';
 import { useNavigate } from 'react-router-dom';
 import { v4 as uuid } from 'uuid';
 import CurationImportFinalizeNameAndReview from './CurationImportFinalizeNameAndReview';
+import { SELECTED_CURATION_STEP_LOCAL_STORAGE_KEY_SUFFIX } from 'pages/Curation/hooks/useCurationBoardGroupsState';
 
 const CurationImportFinalize: React.FC<{
     importMode: EImportMode;
@@ -56,10 +57,8 @@ const CurationImportFinalize: React.FC<{
         });
 
         // // 2. first find duplicates ONLY WITHIN THE IMPORT ITSELF. Label as duplicate.
-        let snackbarNotify = false;
-        const duplicatesExist = hasDuplicates(stubs);
-        if (duplicatesExist) snackbarNotify = true;
-        const deduplicatedStubs = duplicatesExist ? automaticallyResolveDuplicates(stubs) : stubs;
+        const duplicatesExistWithinImport = hasDuplicates(stubs);
+        const deduplicatedStubs = duplicatesExistWithinImport ? automaticallyResolveDuplicates(stubs) : stubs;
 
         // // 3. Label the stubs in the import as duplicates automatically if we find existing stubs IN THE PROJECT
         const allStubsInProject = columns.reduce(
@@ -72,23 +71,12 @@ const CurationImportFinalize: React.FC<{
             const formattedTitle = importedStub.title.toLocaleLowerCase().trim();
             if (importedStub.doi && duplicateMapping.has(importedStub.doi)) {
                 importedStub.exclusionTag = defaultExclusionTags.duplicate;
-                snackbarNotify = true;
             } else if (importedStub.pmid && duplicateMapping.has(importedStub.pmid)) {
                 importedStub.exclusionTag = defaultExclusionTags.duplicate;
-                snackbarNotify = true;
             } else if (importedStub.title && duplicateMapping.has(formattedTitle)) {
                 importedStub.exclusionTag = defaultExclusionTags.duplicate;
-                snackbarNotify = true;
             }
         });
-
-        // // 4. we should show a snackbar popup if duplicates have been automatically detected so the user knows that some have been automatically resolved
-        if (snackbarNotify) {
-            enqueueSnackbar(
-                'Some duplicates were detected and automatically excluded. To view, expand the Excluded option and click "Duplicate"',
-                { variant: 'info' }
-            );
-        }
 
         const updatedColumns = [...columns];
         updatedColumns[0] = {
@@ -98,6 +86,7 @@ const CurationImportFinalize: React.FC<{
 
         updateCurationColumns(updatedColumns);
         enqueueSnackbar(`Added new import: ${importName}`, { variant: 'success' });
+        localStorage.removeItem(`${projectId}${SELECTED_CURATION_STEP_LOCAL_STORAGE_KEY_SUFFIX}`);
         navigate(`/projects/${projectId}/curation`);
     };
 

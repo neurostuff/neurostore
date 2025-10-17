@@ -1,12 +1,40 @@
-import { Box, Checkbox } from '@mui/material';
+import { Box, Checkbox, Chip } from '@mui/material';
 import { CellContext, HeaderContext } from '@tanstack/react-table';
 import React from 'react';
 import { ICurationTableStudy } from '../hooks/useCuratorTableState.types';
+import { useProjectGetColumnForStub, useSetExclusionForStub } from 'pages/Project/store/ProjectStore';
 
 export const CuratorTableSelectCell: React.FC<CellContext<ICurationTableStudy, unknown>> = (props) => {
     const handleSelectCell = (event: React.ChangeEvent<HTMLInputElement>, checked: boolean) => {
         props.row.toggleSelected(checked);
     };
+
+    const setExclusionForStub = useSetExclusionForStub();
+    const { columnIndex } = useProjectGetColumnForStub(props.row.original.id);
+
+    const handleRemoveExclusion = () => {
+        if (columnIndex < 0 || !props.row.original.id) return;
+        setExclusionForStub(columnIndex, props.row.original.id, null);
+    };
+
+    // only for the PRISMA identification column - other columns have their excluded studies filtered out
+    const isExcluded = props.row.original.exclusionTag !== null;
+
+    if (isExcluded) {
+        return (
+            <Box>
+                <Chip
+                    color="error"
+                    label="Duplicate"
+                    sx={{ fontSize: '8px', padding: '0px' }}
+                    size="small"
+                    onDelete={() => {
+                        handleRemoveExclusion();
+                    }}
+                />
+            </Box>
+        );
+    }
 
     return (
         <Box

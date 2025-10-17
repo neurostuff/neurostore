@@ -49,7 +49,12 @@ const CurationBoardAIInterfaceCuratorTableHeaderFilter: React.FC<{
                     />
                 </IconButton>
             </Badge>
-            <NeurosynthPopper open={isOpen} onClickAway={() => setAnchorEl(null)} anchorElement={anchorEl}>
+            <NeurosynthPopper
+                open={isOpen}
+                onClickAway={() => setAnchorEl(null)}
+                anchorElement={anchorEl}
+                disablePortal={false}
+            >
                 {filterVariant === 'text' ? (
                     <CurationBoardAIInterfaceCuratorTableHeaderFilterText
                         value={currentFilterValue as string}

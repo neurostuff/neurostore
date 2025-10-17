@@ -11,16 +11,28 @@ import { BaseStudy, NoteCollectionReturn } from 'neurostore-typescript-sdk';
 import { EExtractionStatus } from 'pages/Extraction/ExtractionPage';
 import { useEffect, useRef, useState } from 'react';
 import {
-    ISleuthFileUploadStubs,
     applyPubmedStudyDetailsToBaseStudiesAndRemoveDuplicates,
     createProjectHelper,
     generateAnnotationForSleuthImport,
+} from '../helpers';
+import CurationImportStyles from 'pages/CurationImport/components/CurationImport.styles';
+import {
     ingestBaseStudies,
+    ISleuthFileUploadStubs,
     lookForPMIDsAndFetchStudyDetails,
     sleuthStubsToBaseStudies,
-    updateUploadSummary,
-} from '../SleuthImport.helpers';
-import CurationImportStyles from 'pages/CurationImport/components/CurationImport.styles';
+} from '../helpers';
+
+const updateUploadSummary = (sleuthUpload: ISleuthFileUploadStubs) => {
+    const numCoordinatesImported = sleuthUpload.sleuthStubs.reduce((acc, curr) => {
+        return acc + curr.coordinates.length;
+    }, 0);
+
+    return {
+        numAnalyses: sleuthUpload.sleuthStubs.length,
+        numCoordinates: numCoordinatesImported,
+    };
+};
 
 const SleuthImportWizardBuild: React.FC<{
     sleuthUploads: ISleuthFileUploadStubs[];
@@ -85,7 +97,7 @@ const SleuthImportWizardBuild: React.FC<{
                     setProgressText(
                         `Fetching study details for studies within ${sleuthUpload.fileName} (if they exist)...`
                     );
-                    let percentageAlreadyComplete = index * percentageIncrement;
+                    const percentageAlreadyComplete = index * percentageIncrement;
                     // 1. convert sleuth stubs to a format neurosynth compose recognizes
                     const baseStudySleuthStubs = sleuthStubsToBaseStudies(sleuthUpload.sleuthStubs);
 
@@ -95,18 +107,13 @@ const SleuthImportWizardBuild: React.FC<{
                         getPubMedIdFromDOI,
                         (progress) => {
                             setProgressValue(
-                                Math.round(
-                                    (progress / 100) * (percentageIncrement / 2) +
-                                        percentageAlreadyComplete
-                                )
+                                Math.round((progress / 100) * (percentageIncrement / 2) + percentageAlreadyComplete)
                             );
                         },
                         queryImperatively
                     );
 
-                    setProgressText(
-                        `Adding studies from ${sleuthUpload.fileName} into the database...`
-                    );
+                    setProgressText(`Adding studies from ${sleuthUpload.fileName} into the database...`);
 
                     // 3. From the previous step, take our initial undetailed base studies and add details from pubmed
                     // Remove duplicates. The ingestion endpoint will take these base studies and either
@@ -186,8 +193,7 @@ const SleuthImportWizardBuild: React.FC<{
                         studyset: createdStudyset.data.id,
                     },
                 });
-                if (!createdAnnotation.data.id)
-                    throw new Error('Created annotation but found no ID');
+                if (!createdAnnotation.data.id) throw new Error('Created annotation but found no ID');
 
                 setProgressValue(95);
                 setProgressText('Finalizing project...');
@@ -277,9 +283,7 @@ const SleuthImportWizardBuild: React.FC<{
                         >
                             <CircularProgress />
                             <Typography>{progressText}</Typography>
-                            <Typography sx={{ marginTop: '1rem' }}>
-                                (This may take a minute)
-                            </Typography>
+                            <Typography sx={{ marginTop: '1rem' }}>(This may take a minute)</Typography>
                         </Box>
                         {/* need this empty div to space out elements properly */}
                         <div></div>
@@ -302,15 +306,11 @@ const SleuthImportWizardBuild: React.FC<{
                                             alignItems="center"
                                             color="primary"
                                         >
-                                            <InsertDriveFileIcon
-                                                color="primary"
-                                                sx={{ marginRight: '10px' }}
-                                            />
+                                            <InsertDriveFileIcon color="primary" sx={{ marginRight: '10px' }} />
                                             {upload.fileName}
                                         </Typography>
                                         <Typography>
-                                            Successfully extracted and imported{' '}
-                                            <b>{numCoordinates} coordinates </b>
+                                            Successfully extracted and imported <b>{numCoordinates} coordinates </b>
                                             across <b>{numAnalyses} analyses</b>
                                         </Typography>
                                     </Box>
@@ -318,12 +318,7 @@ const SleuthImportWizardBuild: React.FC<{
                             })}
                         </Box>
                         <Box sx={CurationImportStyles.fixedContainer}>
-                            <Box
-                                sx={[
-                                    CurationImportStyles.fixedButtonsContainer,
-                                    { justifyContent: 'flex-end' },
-                                ]}
-                            >
+                            <Box sx={[CurationImportStyles.fixedButtonsContainer, { justifyContent: 'flex-end' }]}>
                                 <Button
                                     variant="contained"
                                     sx={CurationImportStyles.nextButton}

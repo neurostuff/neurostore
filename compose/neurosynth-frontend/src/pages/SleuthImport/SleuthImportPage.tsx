@@ -3,13 +3,13 @@ import { Box, Step, StepLabel, Stepper } from '@mui/material';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs';
 import { useGuard } from 'hooks';
 import { useState } from 'react';
-import { ISleuthFileUploadStubs } from 'pages/SleuthImport/SleuthImport.helpers';
 import SleuthImportWizardBuild from 'pages/SleuthImport/components/SleuthImportWizardBuild';
 import SleuthImportWizardCreateMetaAnalyses from 'pages/SleuthImport/components/SleuthImportWizardCreateMetaAnalyses';
 import SleuthImportWizardIntroduction from 'pages/SleuthImport/components/SleuthImportWizardIntroduction';
 import SleuthImportWizardUpload from 'pages/SleuthImport/components/SleuthImportWizardUpload';
+import { ISleuthFileUploadStubs } from './helpers';
 
-const SleuthImportPage: React.FC = (props) => {
+const SleuthImportPage: React.FC = () => {
     const [activeStep, setActiveStep] = useState(0);
     const [uploadedSleuthFiles, setUploadedSleuthFiles] = useState<ISleuthFileUploadStubs[]>([]);
     const [projectComponents, setProjectComponents] = useState({

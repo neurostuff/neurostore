@@ -182,7 +182,7 @@ const CurationColumn: React.FC<{ columnIndex: number }> = React.memo((props) => 
                     }}
                     disabled={!isAuthenticated}
                 >
-                    Promote Non Duplicated Studies
+                    {prismaConfig.isPrisma ? 'Promote Non Duplicated Studies' : 'Skip Curation'}
                 </CurationPromoteUncategorizedButton>
             )}
 

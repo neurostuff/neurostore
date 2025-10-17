@@ -1,7 +1,9 @@
 """Pipeline related resources"""
 
 from sqlalchemy import text, and_, or_
-from flask import abort
+from flask import request
+from neurostore.exceptions.utils.error_helpers import abort_validation
+from neurostore.exceptions.factories import make_field_error
 
 from sqlalchemy.orm import selectinload, aliased
 from webargs import fields
@@ -9,7 +11,7 @@ from webargs import fields
 from .utils import view_maker
 from ..utils import parse_json_filter, build_jsonpath
 from .base import ObjectView, ListView
-from ..models import Pipeline, PipelineConfig, PipelineStudyResult
+from ..models import Pipeline, PipelineConfig, PipelineStudyResult, PipelineEmbedding
 from ..schemas.pipeline import (
     pipeline_schema,
     pipeline_schemas,
@@ -17,6 +19,8 @@ from ..schemas.pipeline import (
     pipeline_config_schemas,
     pipeline_study_result_schema,
     pipeline_study_result_schemas,
+    pipeline_embedding_schema,
+    pipeline_embedding_schemas,
 )
 
 
@@ -41,6 +45,8 @@ class PipelineConfigsView(ObjectView, ListView):
 
     _view_fields = {
         "pipeline": fields.List(fields.String(), load_default=[]),
+        "has_embeddings": fields.Bool(),
+        "embedding_dimensions": fields.Int(load_default=None),
     }
 
     _m2o = {"pipeline": "PipelinesView"}
@@ -56,6 +62,13 @@ class PipelineConfigsView(ObjectView, ListView):
 
         if pipeline_names:
             q = q.join(Pipeline).filter(Pipeline.name.in_(pipeline_names))
+
+        if isinstance(args.get("has_embeddings"), bool):
+            q = q.filter(self.model.has_embeddings.is_(args["has_embeddings"]))
+        if args.get("embedding_dimensions") is not None:
+            q = q.filter(
+                self.model.embedding_dimensions == args["embedding_dimensions"]
+            )
 
         return q
 
@@ -83,8 +96,10 @@ class PipelineStudyResultsView(ObjectView, ListView):
         "feature_flatten": fields.Bool(load_default=False),
         "feature_display": fields.List(
             fields.String(),
-            description="List of pipeline results. format: pipeline_name[:version]",
             load_default=[],
+            metadata={
+                "description": "List of pipeline results. format: pipeline_name[:version]"
+            },
         ),
     }
 
@@ -171,12 +186,13 @@ class PipelineStudyResultsView(ObjectView, ListView):
 
         # If any filters were invalid, return 400 with error details
         if invalid_filters:
-            abort(
-                400,
-                {
-                    "message": "Invalid filter format - expected pipeline_name[:version]/path",
-                    "errors": invalid_filters,
-                },
+            # Create a field-level error carrying the invalid filter list
+            field_err = make_field_error(
+                "feature_filter", invalid_filters, code="INVALID_FILTER"
+            )
+            abort_validation(
+                "Invalid filter format - expected pipeline_name[:version]/path",
+                [field_err],
             )
 
         # Verify all pipelines exist upfront
@@ -186,16 +202,10 @@ class PipelineStudyResultsView(ObjectView, ListView):
         }
         missing_pipelines = pipeline_names - existing_pipelines
         if missing_pipelines:
-            abort(
-                400,
-                {
-                    "message": "Pipeline(s) do not exist",
-                    "errors": [
-                        {"pipeline": name, "error": "non-existent pipeline"}
-                        for name in missing_pipelines
-                    ],
-                },
+            field_err = make_field_error(
+                "pipeline", list(missing_pipelines), code="NOT_FOUND"
             )
+            abort_validation("Pipeline(s) do not exist", [field_err])
 
         # Handle display filters
         if parsed_display_filters:
@@ -272,3 +282,29 @@ class PipelineStudyResultsView(ObjectView, ListView):
             )
         )
         return q
+
+    def post(self):
+        """
+        If 'study_ids' is present in the request body, treat as a search (bypass authorization).
+        Only study_ids are in the body; all other filters are in the query string.
+        Otherwise, treat as a creation (require authorization).
+        """
+        data = request.get_json() or {}
+
+        if "study_ids" in data:
+            # Bypass authorization for search requests
+            # Convert study_ids to study_id for consistent filtering
+            study_ids = data.get("study_ids", [])
+            extra_args = {"study_id": study_ids}
+            # Call cached search (enables cache for study_ids POST)
+            return self.search(extra_args=extra_args)
+        else:
+            # Standard POST: require authorization (enforced by OpenAPI and Flask)
+            return super().post(self)
+
+
+@view_maker
+class PipelineEmbeddingsView(ObjectView, ListView):
+    model = PipelineEmbedding
+    schema = pipeline_embedding_schema
+    schemas = pipeline_embedding_schemas

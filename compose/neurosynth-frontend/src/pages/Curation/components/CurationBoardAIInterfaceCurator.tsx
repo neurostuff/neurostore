@@ -1,10 +1,10 @@
+import { ChevronLeft } from '@mui/icons-material';
 import ChangeHistoryIcon from '@mui/icons-material/ChangeHistory';
 import { Box, Button, Typography } from '@mui/material';
 import { GridTableRowsIcon } from '@mui/x-data-grid';
 import { Row, Table } from '@tanstack/react-table';
 import CurationPromoteUncategorizedButton from 'components/Buttons/CurationPromoteUncategorizedButton';
 import { useUserCanEdit } from 'hooks';
-import useGetAllAIExtractedData from 'hooks/extractions/useGetAllExtractedData';
 import { indexToPRISMAMapping } from 'hooks/projects/useGetProjects';
 import {
     useProjectCurationColumns,
@@ -18,8 +18,8 @@ import useCuratorTableState from '../hooks/useCuratorTableState';
 import { ICurationTableStudy } from '../hooks/useCuratorTableState.types';
 import { IGroupListItem } from './CurationBoardAIGroupsList';
 import CurationBoardAIInterfaceCuratorFocus from './CurationBoardAIInterfaceCuratorFocus';
-import CurationBoardAIInterfaceCuratorTableSkeleton from './CurationBoardAIInterfaceCuratorSkeleton';
 import CurationBoardAIInterfaceCuratorTable from './CurationBoardAIInterfaceCuratorTable';
+import CurationBoardAIInterfaceIdentificationUI from './CurationBoardAIInterfaceIdentificationUI';
 import CurationDownloadSummaryButton from './CurationDownloadSummaryButton';
 import PrismaDialog from './PrismaDialog';
 
@@ -27,21 +27,20 @@ export interface ICurationBoardAIInterfaceCurator {
     selectedStub: ICurationTableStudy | undefined;
     table: Table<ICurationTableStudy>;
     columnIndex: number;
-    onSetSelectedStub: (stubId: string) => void;
+    onSetSelectedStub: (stubId: string | undefined) => void;
 }
 
 const CurationBoardAIInterfaceCurator: React.FC<{
-    group: IGroupListItem;
+    selectedGroup: IGroupListItem;
     groups: IGroupListItem[];
     onSetSelectedGroup: (group: IGroupListItem) => void;
-}> = ({ group, groups, onSetSelectedGroup }) => {
+}> = ({ selectedGroup, groups, onSetSelectedGroup }) => {
     const navigate = useNavigate();
     const { projectId } = useParams<{ projectId: string | undefined }>();
     const curationColumns = useProjectCurationColumns();
-    const { isLoading } = useGetAllAIExtractedData();
 
     const { column, columnIndex } = useMemo(() => {
-        const columnIndex = curationColumns.findIndex((col) => col.id === group.id);
+        const columnIndex = curationColumns.findIndex((col) => col.id === selectedGroup.id);
         if (columnIndex < 0)
             return {
                 column: undefined,
@@ -51,39 +50,53 @@ const CurationBoardAIInterfaceCurator: React.FC<{
             column: curationColumns[columnIndex],
             columnIndex: columnIndex,
         };
-    }, [curationColumns, group.id]);
+    }, [curationColumns, selectedGroup.id]);
     const prismaConfig = useProjectCurationPrismaConfig();
     const isPrisma = prismaConfig.isPrisma;
     const prismaPhase = prismaConfig.isPrisma ? indexToPRISMAMapping(columnIndex) : undefined;
     const isLastColumn = useProjectCurationIsLastColumn(columnIndex);
+    const isIdentificationPhase = isPrisma && columnIndex === 0;
     const stubsInColumn = useMemo(() => {
         if (!column) return [];
+        if (isIdentificationPhase) return column.stubStudies; // we want to include the excluded studies
         return column.stubStudies.filter((x) => x.exclusionTag === null);
-    }, [column]);
+    }, [column, isIdentificationPhase]);
 
-    const table = useCuratorTableState(projectId, stubsInColumn, !isLastColumn, prismaPhase !== 'identification');
+    const { table } = useCuratorTableState(projectId, stubsInColumn, !isLastColumn, prismaPhase !== 'identification');
 
     const [prismaIsOpen, setPrismaIsOpen] = useState(false);
-    const [UIMode, setUIMode] = useState<'TABLEMODE' | 'FOCUSMODE'>('TABLEMODE');
+    const [UIMode, setUIMode] = useState<'TABLEMODE' | 'FOCUSMODE' | 'IDENTIFICATION_OVERVIEW'>(() => {
+        return isIdentificationPhase ? 'IDENTIFICATION_OVERVIEW' : 'TABLEMODE';
+    });
 
     const projectUser = useProjectUser();
     const canEdit = useUserCanEdit(projectUser || undefined);
 
     const [selectedStubId, setSelectedStubId] = useState<string>();
 
+    const rows = table.getCoreRowModel().rows;
     const selectedStub: Row<ICurationTableStudy> | undefined = useMemo(
-        () => (table.getCoreRowModel().rows || []).find((stub) => stub.original.id === selectedStubId),
-        [table, selectedStubId]
+        () => (rows || []).find((stub) => stub.original.id === selectedStubId),
+        [rows, selectedStubId]
     );
 
     const handleToggleUIMode = () => {
         setUIMode((prev) => (prev === 'FOCUSMODE' ? 'TABLEMODE' : 'FOCUSMODE'));
     };
 
-    const setSelectedStubAndFocus = useCallback((stubId: string) => {
+    const setSelectedStubAndFocus = useCallback((stubId: string | undefined) => {
         setSelectedStubId(stubId);
+        if (!stubId) return;
         setUIMode('FOCUSMODE');
     }, []);
+
+    const handleManuallyReview = () => {
+        setUIMode('TABLEMODE');
+    };
+
+    const handleShowIdentificationOverview = () => {
+        setUIMode('IDENTIFICATION_OVERVIEW');
+    };
 
     // we only want the first item to be selected the first time the user clicks on a group.
     // it is safe to only have group.id as a dependency as columns must be loaded by the time we reach here
@@ -95,12 +108,13 @@ const CurationBoardAIInterfaceCurator: React.FC<{
             // if tablemode, we want to reset the selected stub as the group id has changed
             setSelectedStubId(undefined);
             return;
+        } else if (UIMode === 'FOCUSMODE') {
+            const rows = table.getRowModel().rows;
+            if (rows.length === 0) return;
+            setSelectedStubId(rows[0].original.id);
         }
-        const rows = table.getRowModel().rows;
-        if (rows.length === 0) return;
-        setSelectedStubId(rows[0].original.id);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [group.id]);
+    }, [selectedGroup.id]);
 
     const handleCompletePromoteAllUncategorized = () => {
         const nextCurationColumn = curationColumns[columnIndex + 1];
@@ -116,10 +130,6 @@ const CurationBoardAIInterfaceCurator: React.FC<{
         return <Typography color="error.dark">There was an error loading studies</Typography>;
     }
 
-    if (isLoading) {
-        return <CurationBoardAIInterfaceCuratorTableSkeleton />;
-    }
-
     return (
         <Box sx={{ height: '100%' }}>
             <Box
@@ -132,6 +142,17 @@ const CurationBoardAIInterfaceCurator: React.FC<{
             >
                 <Box sx={{ display: 'flex' }}>
                     <Box>
+                        {isIdentificationPhase && UIMode === 'TABLEMODE' && (
+                            <Button
+                                color="secondary"
+                                startIcon={<ChevronLeft />}
+                                onClick={handleShowIdentificationOverview}
+                                sx={{ marginRight: '0.5rem', fontSize: '12px' }}
+                                size="small"
+                            >
+                                Back to identification overview
+                            </Button>
+                        )}
                         {UIMode === 'FOCUSMODE' && (
                             <Button
                                 startIcon={<GridTableRowsIcon />}
@@ -170,25 +191,17 @@ const CurationBoardAIInterfaceCurator: React.FC<{
                             </>
                         )}
                         <CurationDownloadSummaryButton buttonGroupProps={{ sx: { marginRight: '0.5rem' } }} />
-                        {columnIndex === 0 && (
+                        {columnIndex === 0 && !isPrisma && (
                             <CurationPromoteUncategorizedButton
                                 onComplete={handleCompletePromoteAllUncategorized}
-                                dialogTitle={
-                                    isPrisma
-                                        ? 'Are you sure you want to promote all non duplicated studies in identification to screening?'
-                                        : 'Are you sure you want to skip curation?'
-                                }
-                                dialogMessage={
-                                    isPrisma
-                                        ? 'All studies that have not been marked as duplicates in this stage will be promoted'
-                                        : 'All studies that have not been excluded in this stage will be included'
-                                }
+                                dialogTitle="Are you sure you want to skip curation?"
+                                dialogMessage="All studies that have not been excluded in this stage will be included"
                                 sx={{ marginRight: '0.5rem', fontSize: '12px' }}
                                 size="small"
                                 color="success"
                                 variant="outlined"
                             >
-                                {isPrisma ? 'Promote Non Duplicated Studies' : 'Skip Curation'}
+                                Skip Curation
                             </CurationPromoteUncategorizedButton>
                         )}
                     </Box>
@@ -203,24 +216,30 @@ const CurationBoardAIInterfaceCurator: React.FC<{
                     )}
                 </Box>
             </Box>
-            <Box sx={{ height: '100%' }}>
+            <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
                 {UIMode === 'TABLEMODE' ? (
                     <CurationBoardAIInterfaceCuratorTable
-                        key={group.id} // reset table state when group is changed
+                        key={selectedGroup.id} // reset table state when group is changed
                         columnIndex={columnIndex}
                         selectedStub={selectedStub?.original}
                         table={table}
                         onSetSelectedStub={setSelectedStubAndFocus}
                     />
-                ) : (
+                ) : UIMode === 'FOCUSMODE' ? (
                     <CurationBoardAIInterfaceCuratorFocus
-                        key={group.id}
+                        key={selectedGroup.id}
                         selectedStub={selectedStub?.original}
                         columnIndex={columnIndex}
                         table={table}
                         onSetSelectedStub={setSelectedStubId}
                     />
-                )}
+                ) : UIMode === 'IDENTIFICATION_OVERVIEW' ? (
+                    <CurationBoardAIInterfaceIdentificationUI
+                        hasUncategorizedStudies={stubsInColumn.filter((x) => x.exclusionTag === null).length > 0}
+                        onManuallyReview={handleManuallyReview}
+                        onPromoteAllUncategorized={handleCompletePromoteAllUncategorized}
+                    />
+                ) : null}
             </Box>
         </Box>
     );

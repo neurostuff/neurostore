@@ -1,4 +1,4 @@
-import { EAIExtractors, IBehavioralTask, IfMRITask, IGroup } from 'hooks/extractions/useGetAllExtractedData';
+import { EAIExtractors, IBehavioralTask, IfMRITask, IGroup } from 'hooks/extractions/useGetAllExtractedDataForStudies';
 import {
     ICurationBoardAIInterfaceCuratorColumnType,
     ICurationTableStudy,

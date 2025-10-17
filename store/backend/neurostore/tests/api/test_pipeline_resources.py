@@ -590,3 +590,86 @@ def test_pipeline_config_with_schema(auth_client, pipeline1):
     assert data["config_args"]["extractor"] == "ParticipantDemographicsExtractor"
     assert "extractor_kwargs" in data["config_args"]
     assert data["config_args"]["extraction_model"] == "gpt-4"
+
+
+def test_post_pipeline_study_results_with_study_ids(
+    auth_client, result1, result2, pipeline_study_result_payload
+):
+    study1_id = pipeline_study_result_payload[0]["base_study_id"]
+    study2_id = pipeline_study_result_payload[1]["base_study_id"]
+    url = "/api/pipeline-study-results/"
+    payload = {"study_ids": [study1_id, study2_id]}
+
+    # First request: should call search logic and return both results
+    response = auth_client.post(url, data=payload, content_type="application/json")
+    assert response.status_code == 200
+    data = response.json()
+    returned_ids = {r["base_study_id"] for r in data["results"]}
+    assert returned_ids == {study1_id, study2_id}
+
+    # Test cache hit (currently not working)
+    response2 = auth_client.post(url, data=payload)
+    assert response2.status_code == 200
+    data2 = response2.json()
+    returned_ids2 = {r["base_study_id"] for r in data2["results"]}
+    assert returned_ids2 == {study1_id, study2_id}
+
+
+def test_get_pipeline_embeddings_list(auth_client, ingest_demographic_features):
+    """Test GET /api/pipeline-embeddings/ returns embeddings created by ingestion."""
+    response = auth_client.get("/api/pipeline-embeddings/")
+    assert response.status_code == 200
+
+    data = response.json()
+    assert "results" in data
+    assert (
+        len(data["results"]) >= 1
+    )  # ingest_demographic_features should provide at least one
+
+    item = data["results"][0]
+    assert "id" in item
+    assert "embedding" in item
+    assert isinstance(item["embedding"], list)
+    assert len(item["embedding"]) > 0
+    assert all(isinstance(x, (int, float)) for x in item["embedding"])
+
+
+def test_get_pipeline_embedding_by_id(auth_client, ingest_demographic_features):
+    """Test GET /api/pipeline-embeddings/{id} returns the correct embedding."""
+    list_resp = auth_client.get("/api/pipeline-embeddings/")
+    assert list_resp.status_code == 200
+    list_data = list_resp.json()
+    assert list_data["results"]
+
+    emb_id = list_data["results"][0]["id"]
+    resp = auth_client.get(f"/api/pipeline-embeddings/{emb_id}")
+    assert resp.status_code == 200
+
+    item = resp.json()
+    assert item["id"] == emb_id
+    assert "embedding" in item
+    assert isinstance(item["embedding"], list)
+    assert all(isinstance(x, (int, float)) for x in item["embedding"])
+
+
+def test_filter_pipeline_configs(auth_client, ingest_demographic_features):
+    """Test filtering pipeline configs that have embeddings."""
+    response = auth_client.get("/api/pipeline-configs/?has_embeddings=true")
+    assert response.status_code == 200
+
+    data = response.json()
+    assert data["results"]
+    for config in data["results"]:
+        assert config["has_embeddings"] is True
+        assert config["embedding_dimensions"] is not None
+        assert config["embedding_dimensions"] > 0
+
+    # Test filtering for configs without embeddings (should be none in this test)
+    response = auth_client.get("/api/pipeline-configs/?has_embeddings=false")
+    assert response.status_code == 200
+    data = response.json()
+    # Depending on test setup, there may or may not be configs without embeddings
+    for config in data["results"]:
+        assert (
+            config["has_embeddings"] is False or config["embedding_dimensions"] is None
+        )

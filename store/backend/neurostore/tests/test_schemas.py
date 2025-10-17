@@ -1,6 +1,6 @@
 import pytest
 
-from ..schemas import StudySchema, StudysetSchema, StudysetSnapshot
+from ..schemas import StudySchema, StudysetSchema, StudysetSnapshot, PointSchema
 from ..models import Study, Studyset
 from neurostore.schemas.pipeline import (
     PipelineSchema,
@@ -109,3 +109,132 @@ def test_PipelineStudyResultSchema():
     assert result["result_data"] == {"result": "success"}
     assert result["file_inputs"] == {"input1": "file1"}
     assert result["status"] == "UNKNOWN"
+
+
+def test_PointSchema_deactivation_field():
+    """Test deactivation field behavior in PointSchema"""
+    schema = PointSchema()
+
+    # Test 1: When deactivation is explicitly set to None, it should convert to False
+    data_with_none = {"x": 1.0, "y": 2.0, "z": 3.0, "deactivation": None}
+    result = schema.load(data_with_none)
+    assert result["deactivation"] is False
+
+    # Test 2: When deactivation is not included in the input data, it should default to False
+    data_without_deactivation = {"x": 1.0, "y": 2.0, "z": 3.0}
+    result = schema.load(data_without_deactivation)
+    assert result["deactivation"] is False
+
+    # Test 3: When deactivation is explicitly set to True, it should remain True
+    data_with_true = {"x": 1.0, "y": 2.0, "z": 3.0, "deactivation": True}
+    result = schema.load(data_with_true)
+    assert result["deactivation"] is True
+
+    # Test 4: When deactivation is explicitly set to False, it should remain False
+    data_with_false = {"x": 1.0, "y": 2.0, "z": 3.0, "deactivation": False}
+    result = schema.load(data_with_false)
+    assert result["deactivation"] is False
+
+
+def test_condition_cloning_direct_schema(ingest_neurosynth, session):
+    """
+    Test condition cloning behavior directly at the schema level.
+    This tests that conditions preserve their IDs during cloning due to preserve_on_clone flag.
+    """
+    # Find a study with conditions
+    study_with_conditions = None
+    for study in Study.query.all():
+        for analysis in study.analyses:
+            if analysis.analysis_conditions:
+                study_with_conditions = study
+                break
+        if study_with_conditions:
+            break
+
+    if not study_with_conditions:
+        pytest.skip("No study with conditions found")
+
+    # Get original conditions
+    original_conditions = []
+    for analysis in study_with_conditions.analyses:
+        for ac in analysis.analysis_conditions:
+            original_conditions.append(ac.condition)
+
+    # Test cloning via schema
+    schema = StudySchema(context={"clone": True})
+    cloned_data = schema.dump(study_with_conditions)
+
+    # Study ID should be excluded for cloning
+    assert "id" not in cloned_data
+
+    # But conditions should have IDs preserved due to preserve_on_clone=True
+    for analysis in cloned_data.get("analyses", []):
+        for condition in analysis.get("conditions", []):
+            # Find matching original condition by name
+            orig_condition = next(
+                (c for c in original_conditions if c.name == condition["name"]), None
+            )
+            if orig_condition:
+                # Condition ID should be preserved
+                assert "id" in condition
+                assert condition["id"] == orig_condition.id
+
+
+def test_condition_preserve_on_clone_metadata():
+    """
+    Test that the ConditionSchema has preserve_on_clone metadata set correctly.
+    """
+    from ..schemas import ConditionSchema
+
+    schema = ConditionSchema()
+    id_field = schema.fields["id"]
+
+    # Check that the preserve_on_clone metadata is set
+    preserve_on_clone = id_field.metadata.get("preserve_on_clone", False)
+    assert (
+        preserve_on_clone is True
+    ), "ConditionSchema ID field should have preserve_on_clone=True"
+
+
+def test_study_cloning_excludes_id_fields():
+    """
+    Test that normal study fields (without preserve_on_clone) have IDs excluded during cloning.
+    """
+    schema = StudySchema(context={"clone": True})
+
+    # The study ID field should be excluded during cloning
+    assert "id" not in schema.fields or schema.fields["id"].exclude
+
+
+def test_nested_object_cloning_with_conditions(ingest_neurosynth):
+    """
+    Test that when cloning a study with nested objects, conditions preserve IDs but others don't.
+    """
+    # Find a study with conditions and analyses
+    study_with_conditions = None
+    for study in Study.query.all():
+        if study.analyses:
+            for analysis in study.analyses:
+                if analysis.analysis_conditions:
+                    study_with_conditions = study
+                    break
+        if study_with_conditions:
+            break
+
+    if not study_with_conditions:
+        pytest.skip("No study with conditions found")
+
+    # Clone the study using schema
+    schema = StudySchema(context={"clone": True})
+    cloned_data = schema.dump(study_with_conditions)
+
+    # Study should not have ID
+    assert "id" not in cloned_data
+
+    # Analyses should not have IDs (they get cloned)
+    for analysis_data in cloned_data.get("analyses", []):
+        assert "id" not in analysis_data
+
+        # But conditions should have IDs preserved
+        for condition_data in analysis_data.get("conditions", []):
+            assert "id" in condition_data

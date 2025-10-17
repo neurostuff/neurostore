@@ -11,42 +11,41 @@ authors = [
 ]
 license = { text = "MIT" }
 dependencies = [
-    "auth0-python~=3.16",
-    "authlib~=0.15",
+    "auth0-python~=4.13",
+    "authlib~=1.6",
     "celery~=5.0",
-    "connexion[swagger-ui]~=2.13",
-    "flask~=2.0",
+    "connexion[swagger-ui,uvicorn,flask]==3.0.0",
+    "flask~=3.1",
     "Flask-CeleryExt~=0.5",
-    "flask-cors~=3.0",
-    "flask-migrate~=2.5",
-    "flask-security~=3.0",
+    "flask-cors~=6.0",
+    "flask-migrate~=4.1",
+    "Flask-Security-Too~=5.5",
     "flask-shell-ipython~=0.4",
-    "flask-sqlalchemy~=3.0",
+    "flask-sqlalchemy~=3.1",
     "gunicorn~=23.0",
-    "ipython~=7.19",
-    "marshmallow~=3.0",
+    "ipython~=9.6",
+    "marshmallow~=4.0",
     "pandas~=2.0",
     "psycopg2-binary~=2.8",
     "pyld~=2.0",
     "python-jose~=3.3",
-    "Redis~=4.4",
+    "Redis~=6.4",
     "scipy~=1.9",
     "shortuuid~=1.0",
-    "sqlalchemy~=1.4",
+    "sqlalchemy~=2.0",
     "sqlalchemy-utils~=0.36",
     "webargs~=8.7",
     "wrapt~=1.12",
-    "NiMARE==0.2.2",
+    "NiMARE==0.6.1",
     "pynv @ git+https://github.com/NeuroVault/pynv.git#egg=pynv",
     "neurostore-sdk @ git+https://github.com/neurostuff/neurostore-python-sdk.git#egg=neurostore-sdk"
 ]
 
 [project.optional-dependencies]
 dev = [
-    "flake8~=3.8",
+    "flake8~=7.3",
     "pip-chill~=1.0",
     "wheel~=0.36",
-    "schemathesis~=3.14",
     "pytest~=8.4"
 ]
 

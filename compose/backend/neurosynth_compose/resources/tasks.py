@@ -5,6 +5,7 @@ from flask import current_app as app
 
 from ..core import celery_app
 from ..database import db
+from sqlalchemy import select
 from ..models import NeurovaultFile, NeurovaultCollection, NeurostoreAnalysis
 
 
@@ -13,10 +14,14 @@ def file_upload_neurovault(self, fpath, id):
     from pynv import Client
 
     try:
-        record = NeurovaultFile.query.filter_by(id=id).one()
+        record = db.session.execute(
+            select(NeurovaultFile).where(NeurovaultFile.id == id)
+        ).scalar_one()
     except:  # noqa: E722
         db.session.rollback()
-        record = NeurovaultFile.query.filter_by(id=id).one()
+        record = db.session.execute(
+            select(NeurovaultFile).where(NeurovaultFile.id == id)
+        ).scalar_one()
 
     # record = NeurovaultFile.query.filter_by(id=id).one()
     api = Client(access_token=app.config["NEUROVAULT_ACCESS_TOKEN"])
@@ -85,79 +90,97 @@ def file_upload_neurovault(self, fpath, id):
 def create_or_update_neurostore_analysis(
     self, ns_analysis_id, cluster_table, nv_collection_id, access_token
 ):
-    from auth0.v3.authentication.get_token import GetToken
+    from auth0.authentication.get_token import GetToken
     import pandas as pd
     from .neurostore import neurostore_session
 
-    ns_analysis = NeurostoreAnalysis.query.filter_by(id=ns_analysis_id).one()
-    nv_collection = NeurovaultCollection.query.filter_by(id=nv_collection_id).one()
-
-    # use the client to authenticate if user credentials were not used
-    if not access_token:
-        domain = app.config["AUTH0_BASE_URL"].lstrip("https://")
-        g_token = GetToken(domain)
-        token_resp = g_token.client_credentials(
-            client_id=app.config["AUTH0_CLIENT_ID"],
-            client_secret=app.config["AUTH0_CLIENT_SECRET"],
-            audience=app.config["AUTH0_API_AUDIENCE"],
-        )
-        access_token = " ".join([token_resp["token_type"], token_resp["access_token"]])
-
-    ns_ses = neurostore_session(access_token)
-
-    # get the study(project) the (meta)analysis is associated with
-    analysis_data = {
-        "name": ns_analysis.meta_analysis.name or "Untitled",
-        "study": ns_analysis.neurostore_study_id,
-    }
-
-    # parse the cluster table to get coordinates
-    points = []
-    if cluster_table:
-        cluster_df = pd.read_csv(cluster_table, sep="\t")
-        point_idx = 0
-        for _, row in cluster_df.iterrows():
-            point = {
-                "coordinates": [row.X, row.Y, row.Z],
-                "kind": "center of mass",  # make this dynamic
-                "space": "MNI",  # make this dynamic
-                "values": [
-                    {
-                        "kind": "Z",
-                        "value": row["Peak Stat"],
-                    }
-                ],
-                "order": point_idx,
-            }
-            if not pd.isna(row["Cluster Size (mm3)"]):
-                point["subpeak"] = False
-                point["cluster_size"] = row["Cluster Size (mm3)"]
-            else:
-                point["subpeak"] = True
-            points.append(point)
-            point_idx += 1
-    # reference the uploaded images on neurovault to associate images
-    images = []
-    for nv_file in nv_collection.files:
-        image = {
-            "url": nv_file.url,
-            "filename": nv_file.filename,
-            "space": nv_file.space,
-            "value_type": nv_file.value_type,
-        }
-        images.append(image)
-
-    if points:
-        analysis_data["points"] = points
-    if images:
-        analysis_data["images"] = images
-
     try:
+        ns_analysis = db.session.execute(
+            select(NeurostoreAnalysis).where(NeurostoreAnalysis.id == ns_analysis_id)
+        ).scalar_one()
+        nv_collection = db.session.execute(
+            select(NeurovaultCollection).where(
+                NeurovaultCollection.id == nv_collection_id
+            )
+        ).scalar_one()
+
+        # use the client to authenticate if user credentials were not used
+        if not access_token:
+            domain = app.config["AUTH0_BASE_URL"].lstrip("https://")
+            g_token = GetToken(domain)
+            token_resp = g_token.client_credentials(
+                client_id=app.config["AUTH0_CLIENT_ID"],
+                client_secret=app.config["AUTH0_CLIENT_SECRET"],
+                audience=app.config["AUTH0_API_AUDIENCE"],
+            )
+            access_token = " ".join(
+                [token_resp["token_type"], token_resp["access_token"]]
+            )
+
+        ns_ses = neurostore_session(access_token)
+
+        # get the study(project) the (meta)analysis is associated with
+        analysis_data = {
+            "name": ns_analysis.meta_analysis.name or "Untitled",
+            "study": ns_analysis.neurostore_study_id,
+            "metadata": {},
+        }
+
+        # parse the cluster table to get coordinates
+        points = []
+        if cluster_table:
+            cluster_df = pd.read_csv(cluster_table, sep="\t")
+            point_idx = 0
+            for _, row in cluster_df.iterrows():
+                point = {
+                    "coordinates": [row.X, row.Y, row.Z],
+                    "kind": "center of mass",  # make this dynamic
+                    "space": "MNI",  # make this dynamic
+                    "values": [
+                        {
+                            "kind": "Z",
+                            "value": row["Peak Stat"],
+                        }
+                    ],
+                    "order": point_idx,
+                }
+                if not pd.isna(row["Cluster Size (mm3)"]):
+                    point["subpeak"] = False
+                    point["cluster_size"] = row["Cluster Size (mm3)"]
+                else:
+                    point["subpeak"] = True
+                points.append(point)
+                point_idx += 1
+        # reference the uploaded images on neurovault to associate images
+        images = []
+        for nv_file in nv_collection.files:
+            image = {
+                "url": nv_file.url,
+                "filename": nv_file.filename,
+                "space": nv_file.space,
+                "value_type": nv_file.value_type,
+            }
+            images.append(image)
+
+        if cluster_table:
+            analysis_data["metadata"].update(
+                {"cluster_table": cluster_table.split("/")[-1]}
+            )
+        if points:
+            analysis_data["points"] = points
+        if images:
+            analysis_data["images"] = images
+
         # if the analysis already exists, update it
         if ns_analysis.neurostore_id:
-            ns_analysis_res = ns_ses.put(
-                f"/api/analyses/{ns_analysis.neurostore_id}", json=analysis_data
-            )
+            ns_analysis_get = ns_ses.get(f"/api/analyses/{ns_analysis.neurostore_id}")
+            if ns_analysis_get.status_code == 200:
+                analysis_data["metadata"].update(
+                    ns_analysis_get.json().get("metadata", {})
+                )
+                ns_analysis_res = ns_ses.put(
+                    f"/api/analyses/{ns_analysis.neurostore_id}", json=analysis_data
+                )
         else:
             # create a new analysis
             ns_analysis_res = ns_ses.post("/api/analyses/", json=analysis_data)

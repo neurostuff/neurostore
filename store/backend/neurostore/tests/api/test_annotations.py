@@ -18,6 +18,50 @@ def test_post_blank_annotation(auth_client, ingest_neurosynth, session):
     assert annot.annotation_analyses[0].user_id == annot.user_id
 
 
+def test_blank_annotation_populates_note_fields(
+    auth_client, ingest_neurosynth, session
+):
+    dset = Studyset.query.first()
+    note_keys = {"included": "boolean", "quality": "string"}
+    payload = {
+        "studyset": dset.id,
+        "note_keys": note_keys,
+        "name": "with defaults",
+    }
+
+    resp = auth_client.post("/api/annotations/", data=payload)
+    assert resp.status_code == 200
+
+    for note in resp.json()["notes"]:
+        assert set(note["note"].keys()) == set(note_keys.keys())
+        assert all(value is None for value in note["note"].values())
+
+
+def test_annotation_rejects_empty_note(auth_client, ingest_neurosynth, session):
+    dset = Studyset.query.first()
+    study = dset.studies[0]
+    analysis = study.analyses[0]
+
+    payload = {
+        "studyset": dset.id,
+        "notes": [
+            {
+                "study": study.id,
+                "analysis": analysis.id,
+                "note": {},
+            }
+        ],
+        "note_keys": {"included": "boolean"},
+        "name": "invalid annotation",
+    }
+
+    resp = auth_client.post("/api/annotations/", data=payload)
+
+    assert resp.status_code == 422
+    error = resp.json()
+    assert "note must include at least one field" in error["detail"]
+
+
 def test_post_annotation(auth_client, ingest_neurosynth, session):
     dset = Studyset.query.first()
     # y for x in non_flat for y in x

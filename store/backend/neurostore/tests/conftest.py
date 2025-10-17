@@ -1,6 +1,7 @@
 import pytest
 import random
 import json
+import os
 from os import environ
 from neurostore.models import Analysis, Condition
 from sqlalchemy.orm import scoped_session, sessionmaker
@@ -19,8 +20,8 @@ from ..models import (
     Entity,
 )
 from ..ingest.extracted_features import ingest_feature
-from auth0.v3.authentication import GetToken
-from auth0.v3.authentication.users import Users
+from auth0.authentication import GetToken
+from auth0.authentication.users import Users
 from unittest.mock import patch
 
 
@@ -30,6 +31,20 @@ import vcr
 import logging
 
 LOGGER = logging.getLogger(__name__)
+
+
+@pytest.fixture(scope="module")
+def vcr_config():
+    """
+    Simple pytest-recording vcr_config fixture.
+    Filters out authentication headers (authorization) and sets cassette dir and record mode.
+    """
+    return {
+        "cassette_library_dir": os.path.join(os.path.dirname(__file__), "cassettes"),
+        "record_mode": "once",
+        "filter_headers": ["authorization"],
+    }
+
 
 # Set fixed seed for reproducible tests
 random.seed(42)
@@ -102,6 +117,33 @@ def mock_auth(monkeysession):
     monkeysession.setenv(
         "BEARERINFO_FUNC", "neurostore.tests.conftest.mock_decode_token"
     )
+
+
+@pytest.fixture(scope="function")
+def mock_get_embedding(monkeysession):
+    """Mock get_embedding to return a deterministic vector respecting provided dimensions.
+
+    If `dimensions` is an int, returns a list of floats of that length.
+    If `dimensions` is None, returns a default-length vector (1536).
+    The fixture patches neurostore.embeddings.get_embedding and also patches
+    common direct-import locations so tests see the mock regardless of import style.
+    """
+    import neurostore.embeddings as embeddings
+
+    def _mock_get_embedding(text, dimensions=None):
+        if dimensions is not None and not isinstance(dimensions, int):
+            raise ValueError("dimensions must be an int when provided")
+        length = dimensions if isinstance(dimensions, int) else 1536
+        return [random.random() for _ in range(length)]
+
+    # Patch the canonical implementation
+    monkeysession.setattr(embeddings, "get_embedding", _mock_get_embedding)
+    # Also patch modules that may have imported the function directly.
+    # Use raising=False so this won't error if the attribute/path doesn't exist.
+    monkeysession.setattr(
+        "neurostore.resources.data.get_embedding", _mock_get_embedding, raising=False
+    )
+    yield _mock_get_embedding
 
 
 """
@@ -186,6 +228,17 @@ def db(app):
     """Session-wide test database."""
     _db = app.extensions["sqlalchemy"]
     _db.drop_all()
+    # Ensure pgvector extension exists before creating tables so the VECTOR type is available.
+    try:
+        # Use a direct engine connection to run CREATE EXTENSION, which is safer than using
+        # the session before tables/metadata exist.
+        with _db.engine.connect() as conn:
+            conn.execute(sa.text("CREATE EXTENSION IF NOT EXISTS vector;"))
+            conn.commit()
+    except Exception as e:
+        LOGGER.warning("Could not create pgvector extension: %s", e)
+        # If the extension cannot be created (permissions or non-Postgres DB), continue;
+        # table creation will fail later if VECTOR is required by the dialect.
     _db.create_all()
 
     yield _db
@@ -324,7 +377,11 @@ def add_users(real_app, real_db):
     from neurostore.resources.auth import decode_token
 
     domain = real_app.config["AUTH0_BASE_URL"].split("://")[1]
-    token = GetToken(domain)
+    token = GetToken(
+        domain,
+        real_app.config["AUTH0_CLIENT_ID"],
+        real_app.config["AUTH0_CLIENT_SECRET"],
+    )
 
     users = [
         {
@@ -342,8 +399,6 @@ def add_users(real_app, real_db):
         name = u["name"]
         passw = u["password"]
         payload = token.login(
-            client_id=real_app.config["AUTH0_CLIENT_ID"],
-            client_secret=real_app.config["AUTH0_CLIENT_SECRET"],
             username=name + "@email.com",
             password=passw,
             realm="Username-Password-Authentication",
@@ -407,9 +462,12 @@ def assign_neurosynth_to_user(session, ingest_neurosynth_large, auth_client):
 
 
 @pytest.fixture(scope="function")
-@vcr.use_cassette("cassettes/ingest_neurovault.yml")
 def ingest_neurovault(session):
-    return ingest.ingest_neurovault(limit=5, max_images=50)
+    cassette_path = os.path.join(
+        os.path.dirname(__file__), "cassettes", "ingest_neurovault.yml"
+    )
+    with vcr.use_cassette(cassette_path, record_mode="once"):
+        return ingest.ingest_neurovault(limit=5, max_images=50)
 
 
 @pytest.fixture(scope="function")
@@ -604,8 +662,10 @@ def create_pipeline_results(session, ingest_neurosynth, tmp_path):
     demo_dir = base_output_dir / "ParticipantInfo" / "1.0.0"
     method_dir = base_output_dir / "NeuroimagingMethod" / "1.0.0"
     task_dir = base_output_dir / "TaskInfo" / "1.0.0"
+    embed256_dir = base_output_dir / "Embeddings256" / "1.0.0"
+    embed128_dir = base_output_dir / "Embeddings128" / "1.0.0"
 
-    pipeline_dirs = [demo_dir, method_dir, task_dir]
+    pipeline_dirs = [demo_dir, method_dir, task_dir, embed256_dir, embed128_dir]
     for dir in pipeline_dirs:
         dir.mkdir(exist_ok=True, parents=True)
 
@@ -662,6 +722,40 @@ def create_pipeline_results(session, ingest_neurosynth, tmp_path):
                 "env_file": None,
                 "client_url": None,
                 "disable_abbreviation_expansion": True,
+            },
+            "transform_kwargs": {},
+            "input_pipelines": {},
+            "text_extraction": {"source": "text"},
+            "input_sources": ["pubget", "ace"],
+        },
+        "Embeddings256": {
+            "version": "1.0.0",
+            "description": "Embedding256 pipeline for testing",
+            "type": "embedding",
+            "date": "2025-03-05T23:55:00.000000",
+            "config_hash": "embedhash",
+            "extractor": "EmbeddingExtractor256",
+            "extractor_kwargs": {
+                "extraction_model": "text-embedding-3-small",
+                "text_source": "abstract",
+                "env_variable": "OPENAI_API_KEY",
+            },
+            "transform_kwargs": {},
+            "input_pipelines": {},
+            "text_extraction": {"source": "text"},
+            "input_sources": ["pubget", "ace"],
+        },
+        "Embeddings128": {
+            "version": "1.0.0",
+            "description": "Embedding128 pipeline for testing",
+            "type": "embedding",
+            "date": "2025-03-05T23:55:00.000000",
+            "config_hash": "embedhash",
+            "extractor": "EmbeddingExtractor128",
+            "extractor_kwargs": {
+                "extraction_model": "text-embedding-3-small",
+                "text_source": "abstract",
+                "env_variable": "OPENAI_API_KEY",
             },
             "transform_kwargs": {},
             "input_pipelines": {},
@@ -727,12 +821,21 @@ def create_pipeline_results(session, ingest_neurosynth, tmp_path):
             ],
             "BehavioralTasks": None,
         }
+        # Embedding data
+        embedding256_data = {
+            "embedding": [random.random() for _ in range(256)],
+        }
+        embedding128_data = {
+            "embedding": [random.random() for _ in range(128)],
+        }
 
         # Write data for each pipeline
         for dir, data in [
             (demo_dir, demo_data),
             (method_dir, method_data),
             (task_dir, task_data),
+            (embed256_dir, embedding256_data),
+            (embed128_dir, embedding128_data),
         ]:
             study_dir = dir / study.id
             study_dir.mkdir(exist_ok=True, parents=True)
@@ -763,7 +866,12 @@ def ingest_demographic_features(session, create_pipeline_results):
     results = []
     for pipeline_dir in create_pipeline_results.iterdir():
         if pipeline_dir.is_dir():
-            results.append(ingest_feature(pipeline_dir / "1.0.0"))
+            if pipeline_dir.name.startswith("Embeddings"):
+                results.append(
+                    ingest_feature(pipeline_dir / "1.0.0", save_as_embedding=True)
+                )
+            else:
+                results.append(ingest_feature(pipeline_dir / "1.0.0"))
     return results
 
 

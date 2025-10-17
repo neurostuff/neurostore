@@ -340,6 +340,19 @@ def test_has_coordinates_images(auth_client, session):
     assert base_study_2.has_coordinates is True
     assert base_study_2.has_images is True
 
+    # adding an analysis without media should not flip the flags back to False
+    empty_analysis_resp = auth_client.post(
+        "/api/analyses/",
+        data={
+            "study": create_full_study.json()["id"],
+            "name": "empty analysis",
+        },
+    )
+    assert empty_analysis_resp.status_code == 200
+    session.refresh(base_study_2)
+    assert base_study_2.has_coordinates is True
+    assert base_study_2.has_images is True
+
     # delete analysis a
     analysis_ids = create_full_study.json()["analyses"]
     analyses = [Analysis.query.filter_by(id=id_).one() for id_ in analysis_ids]
@@ -593,3 +606,33 @@ def test_base_studies_spatial_query_with_mock_data(auth_client, session):
     assert result.status_code == 200
     ids = [s["id"] for s in result.json()["results"]]
     assert base_study.id in ids
+
+
+def test_base_studies_semantic_search(
+    auth_client, mock_get_embedding, ingest_demographic_features
+):
+    """Query base-studies with semantic_search."""
+    # have a very liberal distance threshold since arrays are randomly created.
+    resp = auth_client.get(
+        "/api/base-studies/?semantic_search='neural developmental disorders'&distance_threshold=1"
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "results" in data
+    assert isinstance(data["results"], list)
+    if data["results"]:
+        assert "id" in data["results"][0]
+
+    # test with pipeline_config_id
+    pipeline_config_id = PipelineConfig.query.filter_by(has_embeddings=True).first().id
+
+    resp = auth_client.get(
+        f"/api/base-studies/?semantic_search='neural developmental disorders'&"
+        f"distance_threshold=1&pipeline_config_id={pipeline_config_id}"
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "results" in data
+    assert isinstance(data["results"], list)
+    if data["results"]:
+        assert "id" in data["results"][0]

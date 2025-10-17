@@ -8,6 +8,13 @@ NV_BASE = "https://neurovault.org/api"
 NS_BASE = "https://neurostore.org/api"
 
 
+class ContextSchema(Schema):
+    def __init__(self, *args, **kwargs):
+        context = kwargs.pop("context", {})
+        super().__init__(*args, **kwargs)
+        self.context = context or {}
+
+
 class BytesField(fields.Field):
     def _deserialize(self, value, attr, data, **kwargs):
         if isinstance(value, str):
@@ -29,7 +36,7 @@ class PGSQLString(fields.String):
             return result.replace("\x00", "\uFFFD")
 
 
-class ResultInitSchema(Schema):
+class ResultInitSchema(ContextSchema):
     meta_analysis_id = fields.String(load_only=True)
     meta_analysis = fields.Pluck(
         "MetaAnalysisSchema", "id", attribute="meta_analysis", dump_only=True
@@ -39,15 +46,15 @@ class ResultInitSchema(Schema):
     specification_snapshot = fields.Dict()
 
 
-class ResultUploadSchema(Schema):
-    statistical_maps = fields.Raw(
-        metadata={"type": "string", "format": "binary"}, many=True
+class ResultUploadSchema(ContextSchema):
+    statistical_maps = fields.List(
+        fields.Raw(metadata={"type": "string", "format": "binary"})
     )
-    cluster_tables = fields.Raw(
-        metadata={"type": "string", "format": "binary"}, many=True
+    cluster_tables = fields.List(
+        fields.Raw(metadata={"type": "string", "format": "binary"})
     )
-    diagnostic_tables = fields.Raw(
-        metadata={"type": "string", "format": "binary"}, many=True
+    diagnostic_tables = fields.List(
+        fields.Raw(metadata={"type": "string", "format": "binary"})
     )
     method_description = fields.String()
 
@@ -58,6 +65,23 @@ class StringOrNested(fields.Nested):
         "invalid": "Not a valid string.",
         "invalid_utf8": "Not a valid utf-8 string.",
     }
+
+    def __init__(self, nested, *args, **kwargs):
+        super().__init__(nested, **kwargs)
+        self._explicit_context = {}
+
+    @property
+    def context(self):
+        if self._explicit_context:
+            return self._explicit_context
+        parent = getattr(self, "parent", None)
+        if parent is not None and hasattr(parent, "context"):
+            return parent.context
+        return {}
+
+    @context.setter
+    def context(self, value):
+        self._explicit_context = value or {}
 
     def _serialize(self, value, attr, obj, **kwargs):
         if value is None:
@@ -127,7 +151,7 @@ class StringOrNested(fields.Nested):
                 raise self.make_error("invalid_utf8") from error
 
 
-class BaseSchema(Schema):
+class BaseSchema(ContextSchema):
     id = PGSQLString(metadata={"info_field": True})
     created_at = fields.DateTime()
     updated_at = fields.DateTime(allow_none=True)
@@ -137,7 +161,7 @@ class BaseSchema(Schema):
     )
 
 
-class ConditionSchema(Schema):
+class ConditionSchema(ContextSchema):
     id = PGSQLString()
     created_at = fields.DateTime()
     updated_at = fields.DateTime(allow_none=True)
@@ -147,15 +171,15 @@ class ConditionSchema(Schema):
 
 class SpecificationConditionSchema(BaseSchema):
     condition = fields.Pluck(ConditionSchema, "name")
-    weight = fields.Number()
+    weight = fields.Float()
 
 
-class EstimatorSchema(Schema):
+class EstimatorSchema(ContextSchema):
     type = fields.String()
     args = fields.Dict()
 
 
-class StudysetReferenceSchema(Schema):
+class StudysetReferenceSchema(ContextSchema):
     id = PGSQLString()
     created_at = fields.DateTime()
     updated_at = fields.DateTime(allow_none=True)
@@ -168,7 +192,7 @@ class StudysetReferenceSchema(Schema):
     )
 
 
-class AnnotationReferenceSchema(Schema):
+class AnnotationReferenceSchema(ContextSchema):
     id = PGSQLString()
 
 
@@ -177,6 +201,8 @@ class SpecificationSchema(BaseSchema):
     mask = PGSQLString(allow_none=True)
     transformer = PGSQLString(allow_none=True)
     estimator = fields.Nested("EstimatorSchema")
+    name = PGSQLString(allow_none=True)
+    description = PGSQLString(allow_none=True)
     database_studyset = PGSQLString(allow_none=True)
     contrast = PGSQLString(allow_none=True)
     filter = PGSQLString(allow_none=True)
@@ -207,10 +233,6 @@ class SpecificationSchema(BaseSchema):
         data_key="weights",
         attribute="weights",
     )
-
-    class Meta:
-        additional = ("name", "description")
-        allow_none = ("name", "description")
 
     @post_dump
     def to_bool(self, data, **kwargs):
@@ -412,6 +434,30 @@ class ProjectSchema(BaseSchema):
     provenance = fields.Dict(allow_none=True)
     public = fields.Boolean()
     draft = fields.Boolean()
+    studyset = StringOrNested(
+        StudysetSchema,
+        metadata={"pluck": "neurostore_id"},
+        dump_only=True,
+        allow_none=True,
+    )
+    annotation = StringOrNested(
+        AnnotationSchema,
+        metadata={"pluck": "neurostore_id"},
+        dump_only=True,
+        allow_none=True,
+    )
+    cached_studyset_id = fields.Pluck(
+        StudysetSchema, "id", load_only=True, attribute="studyset", allow_none=True
+    )
+    cached_annotation_id = fields.Pluck(
+        AnnotationSchema, "id", load_only=True, attribute="annotation", allow_none=True
+    )
+    cached_studyset = fields.Pluck(
+        StudysetSchema, "id", dump_only=True, attribute="studyset", allow_none=True
+    )
+    cached_annotation = fields.Pluck(
+        AnnotationSchema, "id", dump_only=True, attribute="annotation", allow_none=True
+    )
     meta_analyses = StringOrNested(
         MetaAnalysisSchema, metadata={"pluck": "id"}, dump_only=True, many=True
     )

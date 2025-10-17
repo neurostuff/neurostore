@@ -1,8 +1,17 @@
 import string
+from copy import deepcopy
 from sqlalchemy import func, text
+from sqlalchemy.exc import SQLAlchemyError
 
-from flask import request, abort
+from pgvector.sqlalchemy import Vector
+from flask import request
 from webargs.flaskparser import parser
+from neurostore.exceptions.utils.error_helpers import (
+    abort_validation,
+    abort_not_found,
+    abort_unprocessable,
+)
+from neurostore.exceptions.factories import make_field_error
 from webargs import fields
 import sqlalchemy.sql.expression as sae
 from sqlalchemy.orm import (
@@ -11,9 +20,13 @@ from sqlalchemy.orm import (
     raiseload,
     selectinload,
 )
+import sqlalchemy as sa
 from sqlalchemy import select
 from sqlalchemy.orm import aliased
 
+import numpy as np
+from ..embeddings import get_embedding
+from ..models import PipelineEmbedding
 from .utils import view_maker, get_current_user
 from .base import BaseView, ObjectView, ListView, clear_cache, create_user
 from ..database import db
@@ -76,6 +89,7 @@ class StudysetsView(ObjectView, ListView):
     _view_fields = {
         **LIST_CLONE_ARGS,
         **LIST_NESTED_ARGS,
+        "copy_annotations": fields.Boolean(load_default=True),
     }
     # reorg int o2m and m2o
     _o2m = {"studies": "StudiesView", "annotations": "AnnotationsView"}
@@ -202,6 +216,157 @@ class StudysetsView(ObjectView, ListView):
             return content
         return super().serialize_records(records, args)
 
+    def post(self):
+        args = parser.parse(self._user_args, request, location="query")
+        copy_annotations = args.pop("copy_annotations", True)
+        source_id = args.get("source_id")
+
+        if not source_id:
+            return super().post()
+
+        source = args.get("source") or "neurostore"
+        if source != "neurostore":
+            field_err = make_field_error("source", source, valid_options=["neurostore"])
+            abort_unprocessable(
+                "invalid source, choose from: 'neurostore'", [field_err]
+            )
+
+        unknown = self.__class__._schema.opts.unknown
+        data = parser.parse(
+            self.__class__._schema(exclude=("id",)), request, unknown=unknown
+        )
+
+        clone_payload, source_record = self._build_clone_payload(source_id, data)
+
+        # ensure nested serialization when cloning
+        args["nested"] = bool(args.get("nested") or request.args.get("source_id"))
+
+        with db.session.no_autoflush:
+            record = self.__class__.update_or_create(clone_payload)
+
+        unique_ids = self.get_affected_ids([record.id])
+        clear_cache(unique_ids)
+
+        db.session.flush()
+
+        self.update_base_studies(unique_ids.get("base-studies"))
+
+        try:
+            if copy_annotations:
+                self._clone_annotations(source_record, record)
+            self.update_annotations(unique_ids.get("annotations"))
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            abort_validation(str(e))
+
+        response_context = dict(args)
+        response = self.__class__._schema(context=response_context).dump(record)
+
+        db.session.commit()
+
+        return response
+
+    def _build_clone_payload(self, source_id, override_data):
+        source_record = (
+            Studyset.query.options(
+                selectinload(Studyset.studies),
+                selectinload(Studyset.annotations).options(
+                    selectinload(Annotation.annotation_analyses)
+                ),
+            )
+            .filter_by(id=source_id)
+            .first()
+        )
+
+        if source_record is None:
+            abort_not_found(Studyset.__name__, source_id)
+
+        payload = {
+            "name": source_record.name,
+            "description": source_record.description,
+            "publication": source_record.publication,
+            "doi": source_record.doi,
+            "pmid": source_record.pmid,
+            "authors": source_record.authors,
+            "metadata_": (
+                deepcopy(source_record.metadata_)
+                if source_record.metadata_ is not None
+                else None
+            ),
+            "public": source_record.public,
+            "studies": [{"id": study.id} for study in source_record.studies],
+            "source": "neurostore",
+            "source_id": self._resolve_neurostore_origin(source_record),
+            "source_updated_at": source_record.updated_at or source_record.created_at,
+        }
+
+        if payload.get("metadata_") is None:
+            payload.pop("metadata_", None)
+
+        if override_data:
+            payload.update(override_data)
+
+        return payload, source_record
+
+    def _clone_annotations(self, source_record, cloned_record):
+        if not source_record.annotations:
+            return
+
+        owner_id = cloned_record.user_id
+
+        for annotation in source_record.annotations:
+            clone_annotation = Annotation(
+                name=annotation.name,
+                description=annotation.description,
+                source="neurostore",
+                source_id=self._resolve_neurostore_origin(annotation),
+                source_updated_at=annotation.updated_at or annotation.created_at,
+                user_id=owner_id,
+                metadata_=(
+                    deepcopy(annotation.metadata_) if annotation.metadata_ else None
+                ),
+                public=annotation.public,
+                note_keys=(
+                    deepcopy(annotation.note_keys) if annotation.note_keys else {}
+                ),
+            )
+            clone_annotation.studyset = cloned_record
+            db.session.add(clone_annotation)
+            db.session.flush()
+
+            analyses_to_create = []
+            for aa in annotation.annotation_analyses:
+                analyses_to_create.append(
+                    AnnotationAnalysis(
+                        annotation_id=clone_annotation.id,
+                        analysis_id=aa.analysis_id,
+                        note=deepcopy(aa.note) if aa.note else {},
+                        user_id=owner_id,
+                        study_id=aa.study_id,
+                        studyset_id=cloned_record.id,
+                    )
+                )
+
+            if analyses_to_create:
+                db.session.add_all(analyses_to_create)
+
+    @staticmethod
+    def _resolve_neurostore_origin(record):
+        source_id = record.id
+        parent_source_id = record.source_id
+        parent_source = getattr(record, "source", None)
+        Model = type(record)
+
+        while parent_source_id is not None and parent_source == "neurostore":
+            source_id = parent_source_id
+            parent = Model.query.filter_by(id=parent_source_id).first()
+            if parent is None:
+                break
+            parent_source_id = parent.source_id
+            parent_source = getattr(parent, "source", None)
+
+        return source_id
+
 
 @view_maker
 class AnnotationsView(ObjectView, ListView):
@@ -312,24 +477,25 @@ class AnnotationsView(ObjectView, ListView):
         if source == "neurostore":
             return cls.load_from_neurostore(source_id, data)
         else:
-            abort(
-                422,
-                {
-                    "message": "invalid source, choose from: 'neurostore'",
-                    "errors": f"source: {source}",
-                },
+            field_err = make_field_error("source", source, valid_options=["neurostore"])
+            abort_unprocessable(
+                "invalid source, choose from: 'neurostore'", [field_err]
             )
 
     @classmethod
     def load_from_neurostore(cls, source_id, data=None):
         q = cls._model.query.filter_by(id=source_id)
         q = cls().join_tables(q, {})
-        annotation = q.first_or_404()
+        annotation = q.first()
+        if annotation is None:
+            abort_not_found(cls._model.__name__, source_id)
         parent_source_id = annotation.source_id
         parent_source = annotation.source
         while parent_source_id is not None and parent_source == "neurostore":
             source_id = parent_source_id
-            parent = cls._model.query.filter_by(id=source_id).first_or_404()
+            parent = cls._model.query.filter_by(id=source_id).first()
+            if parent is None:
+                abort_not_found(cls._model.__name__, source_id)
             parent_source = parent.source
             parent_source_id = parent.source_id
 
@@ -340,6 +506,11 @@ class AnnotationsView(ObjectView, ListView):
         schema = cls._schema(context=context)
         tmp_data = schema.dump(annotation)
         data = schema.load(tmp_data)
+        # Ensure cloned payload does not reference original primary keys
+        data.pop("id", None)
+        for note in data.get("annotation_analyses") or []:
+            if isinstance(note, dict):
+                note.pop("id", None)
         data["source"] = "neurostore"
         data["source_id"] = source_id
         data["source_updated_at"] = annotation.updated_at or annotation.created_at
@@ -369,9 +540,8 @@ class AnnotationsView(ObjectView, ListView):
             return
 
         if db_analysis_ids != data_analysis_ids:
-            abort(
-                400,
-                description="annotation request must contain all analyses from the studyset.",
+            abort_validation(
+                "annotation request must contain all analyses from the studyset."
             )
 
 
@@ -381,6 +551,10 @@ class BaseStudiesView(ObjectView, ListView):
     _nested = {"versions": "StudiesView"}
 
     _view_fields = {
+        "semantic_search": fields.String(),
+        "pipeline_config_id": fields.String(),
+        "distance_threshold": fields.Float(load_default=0.5),
+        "overall_cap": fields.Integer(load_default=3000),
         "level": fields.String(dump_default="group", load_default="group"),
         "flat": fields.Boolean(load_default=False),
         "info": fields.Boolean(load_default=False),
@@ -413,6 +587,55 @@ class BaseStudiesView(ObjectView, ListView):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.context = {}
+
+    def ann_query_object(
+        self,
+        q,  # an existing SQLAlchemy Query object
+        user_vector,
+        config_id,
+        distance_threshold=0.5,
+        overall_cap=3000,
+    ):
+        # Parameters (explicit types to avoid incorrect bind processing)
+        qvec = sa.bindparam("qvec", type_=Vector())
+        cfg = sa.bindparam("config_id", type_=sa.String())
+        thr = sa.bindparam("threshold", type_=sa.Float())
+
+        # Distance expression
+        distance = sa.cast(PipelineEmbedding.embedding.op("<=>")(qvec), sa.Float).label(
+            "distance"
+        )
+
+        # Build the ANN CTE
+        inner = (
+            sa.select(
+                PipelineEmbedding.base_study_id,
+                distance,
+            )
+            .where(PipelineEmbedding.config_id == cfg)
+            .order_by(distance)
+            .limit(overall_cap)
+        )
+        nearest = inner.cte("nearest_results").prefix_with("MATERIALIZED")
+
+        # ensure qvec is a plain 1-D Python list of floats (pgvector requires 1-D)
+        qvec_value = np.asarray(user_vector).ravel().astype(float).tolist()
+
+        # Add the CTE join + filters to the *existing* query
+        q = (
+            q.with_entities(BaseStudy)
+            .join(nearest, BaseStudy.id == nearest.c.base_study_id)
+            .filter(nearest.c.distance < thr)
+            .order_by(nearest.c.distance)
+            .params(
+                qvec=qvec_value,
+                config_id=config_id,
+                threshold=distance_threshold,
+            )
+        )
+
+        # return the modified query object
+        return q
 
     def eager_load(self, q, args=None):
         args = args or {}
@@ -450,6 +673,42 @@ class BaseStudiesView(ObjectView, ListView):
         return q
 
     def view_search(self, q, args):
+        if args.get("semantic_search"):
+            pipeline_config_id = args.get("pipeline_config_id", None)
+            if pipeline_config_id is None:
+                row = db.session.execute(
+                    select(
+                        PipelineConfig.id, PipelineConfig.embedding_dimensions
+                    ).where(
+                        PipelineConfig.has_embeddings == True,  # noqa E712
+                        PipelineConfig.config_args["extractor_kwargs"][
+                            "extraction_model"
+                        ].astext
+                        == "text-embedding-3-small",
+                        PipelineConfig.config_args["extractor_kwargs"][
+                            "text_source"
+                        ].astext
+                        == "abstract",
+                    )
+                ).first()
+            else:
+                row = db.session.execute(
+                    select(
+                        PipelineConfig.id, PipelineConfig.embedding_dimensions
+                    ).where(PipelineConfig.id == pipeline_config_id)
+                ).first()
+            if row is None:
+                pipeline_config_id = None
+                dimensions = None
+            else:
+                pipeline_config_id, dimensions = row
+            user_vector = get_embedding(args["semantic_search"], dimensions=dimensions)
+            distance_threshold = args.get("distance_threshold", 0.5)
+            overall_cap = args.get("overall_cap", 3000)
+            q = self.ann_query_object(
+                q, user_vector, pipeline_config_id, distance_threshold, overall_cap
+            )
+
         # Spatial filter: x, y, z, radius must all be present to apply
         x = args.get("x")
         y = args.get("y")
@@ -462,7 +721,7 @@ class BaseStudiesView(ObjectView, ListView):
                 z = float(z)
                 radius = float(radius)
             except Exception:
-                abort(400, "Spatial parameters must be numeric.")
+                abort_validation("Spatial parameters must be numeric.")
             # Join BaseStudy -> Study -> Analysis -> Point
             q = q.join(Study, Study.base_study_id == self._model.id)
             q = q.join(Analysis, Analysis.study_id == Study.id)
@@ -483,7 +742,7 @@ class BaseStudiesView(ObjectView, ListView):
             # Only return distinct base studies
             q = q.distinct()
         elif any(v is not None for v in [x, y, z, radius]):
-            abort(400, "Spatial query requires x, y, z, and radius together.")
+            abort_validation("Spatial query requires x, y, z, and radius together.")
 
         # search studies for data_type
         if args.get("data_type"):
@@ -596,9 +855,10 @@ class BaseStudiesView(ObjectView, ListView):
                 invalid_filters.append({"filter": config_filter, "error": str(e)})
 
         if invalid_filters:
-            abort(
-                400, {"message": "Invalid feature filter(s)", "errors": invalid_filters}
+            field_err = make_field_error(
+                "feature_filters", invalid_filters, code="INVALID_FILTER"
             )
+            abort_validation("Invalid feature filter(s)", [field_err])
 
         # Create subqueries for each pipeline
         pipeline_subqueries = []
@@ -709,9 +969,13 @@ class BaseStudiesView(ObjectView, ListView):
 
         # If any filters were invalid, return 400 with error details
         if invalid_filters:
-            abort(
-                400, {"message": "Invalid feature filter(s)", "errors": invalid_filters}
+            field_err = make_field_error(
+                "feature_filters", invalid_filters, code="INVALID_FILTER"
             )
+            abort_validation("Invalid feature filter(s)", [field_err])
+        if args.get("semantic_search"):
+            q = q.filter(self._model.semantic_search == args["semantic_search"])
+
         return q
 
     def join_tables(self, q, args):
@@ -721,7 +985,6 @@ class BaseStudiesView(ObjectView, ListView):
         return super().join_tables(q, args)
 
     def post(self):
-
         # the request is either a list or a dict
         if isinstance(request.json, dict):
             return super().post()
@@ -1005,12 +1268,12 @@ class StudiesView(ObjectView, ListView):
         elif source == "pubmed":
             return cls.load_from_pubmed(source_id, data)
         else:
-            abort(
-                422,
-                {
-                    "message": "invalid source, choose from: 'neurostore', 'neurovault', 'pubmed'",
-                    "errors": f"source: {source}",
-                },
+            field_err = make_field_error(
+                "source", source, valid_options=["neurostore", "neurovault", "pubmed"]
+            )
+            abort_unprocessable(
+                "invalid source, choose from: 'neurostore', 'neurovault', 'pubmed'",
+                [field_err],
             )
 
     @classmethod
@@ -1018,12 +1281,16 @@ class StudiesView(ObjectView, ListView):
         q = cls._model.query.filter_by(id=source_id)
         q = cls().eager_load(q, {"nested": True})
 
-        study = q.first_or_404()
+        study = q.first()
+        if study is None:
+            abort_not_found(cls._model.__name__, source_id)
         parent_source_id = study.source_id
         parent_source = study.source
         while parent_source_id is not None and parent_source == "neurostore":
             source_id = parent_source_id
-            parent = cls._model.query.filter_by(id=source_id).first_or_404()
+            parent = cls._model.query.filter_by(id=source_id).first()
+            if parent is None:
+                abort_not_found(cls._model.__name__, source_id)
             parent_source = parent.source
             parent_source_id = parent.source_id
 
@@ -1492,7 +1759,9 @@ class AnnotationAnalysesView(ObjectView, ListView):
             with db.session.no_autoflush:
                 d = ids.get(input_record.id)
                 to_commit.append(
-                    self.__class__.update_or_create(d, id, record=input_record)
+                    self.__class__.update_or_create(
+                        d, id=input_record.id, record=input_record
+                    )
                 )
 
         db.session.add_all(to_commit)

@@ -2,7 +2,6 @@ import { IAlgorithmSelection } from 'pages/MetaAnalysis/components/CreateMetaAna
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import useGetProjectById from 'hooks/projects/useGetProjectById';
 import { useNavigate } from 'react-router-dom';
-import { ISleuthFileUploadStubs } from '../SleuthImport.helpers';
 import { useCreateAlgorithmSpecification } from 'hooks';
 import { EAnalysisType } from 'hooks/metaAnalyses/useCreateAlgorithmSpecification';
 import {
@@ -27,6 +26,7 @@ import { getWeightAndConditionsForSpecification } from 'pages/MetaAnalysis/compo
 import { EPropertyType } from 'components/EditMetadata/EditMetadata.types';
 import { useSnackbar } from 'notistack';
 import { useQueryClient } from 'react-query';
+import { ISleuthFileUploadStubs } from '../helpers';
 
 const SleuthImportWizardCreateMetaAnalyses: React.FC<{
     projectId: string;
@@ -34,21 +34,19 @@ const SleuthImportWizardCreateMetaAnalyses: React.FC<{
     annotationId: string;
     sleuthImports: ISleuthFileUploadStubs[];
 }> = ({ projectId, studysetId, annotationId, sleuthImports }) => {
-    const { isLoading: getProjectIsLoading, isError: getProjectIsError } =
-        useGetProjectById(projectId);
+    const { isLoading: getProjectIsLoading, isError: getProjectIsError } = useGetProjectById(projectId);
     const { createMetaAnalysis } = useCreateAlgorithmSpecification();
     const [buttonIsLoading, setButtonIsLoading] = useState(false);
     const { enqueueSnackbar } = useSnackbar();
     const navigate = useNavigate();
     const [shouldCreateMetaAnalyses, setShouldCreateMetaAnalyses] = useState<boolean>();
     const queryClient = useQueryClient();
-    const [selectedMetaAnalysisAlgorithm, setSelectedMetaAnalysisAlgorithm] =
-        useState<IAlgorithmSelection>({
-            estimator: null,
-            corrector: null,
-            estimatorArgs: {},
-            correctorArgs: {},
-        });
+    const [selectedMetaAnalysisAlgorithm, setSelectedMetaAnalysisAlgorithm] = useState<IAlgorithmSelection>({
+        estimator: null,
+        corrector: null,
+        estimatorArgs: {},
+        correctorArgs: {},
+    });
 
     const handleCreateMetaAnalysisDetails = async () => {
         if (!shouldCreateMetaAnalyses) {
@@ -62,21 +60,17 @@ const SleuthImportWizardCreateMetaAnalyses: React.FC<{
                 // https://github.com/handsontable/handsontable/issues/5439
                 //
                 // As a result, we should remove the period from the filename
-                const filenameReplacePeriodsWithUnderscores = sleuthImport.fileName.replaceAll(
-                    '.',
-                    '_'
-                );
+                const filenameReplacePeriodsWithUnderscores = sleuthImport.fileName.replaceAll('.', '_');
 
-                const { weights, conditions, databaseStudyset } =
-                    getWeightAndConditionsForSpecification(
-                        selectedMetaAnalysisAlgorithm.estimator,
-                        {
-                            selectionKey: filenameReplacePeriodsWithUnderscores,
-                            type: EPropertyType.BOOLEAN,
-                            selectionValue: true,
-                            referenceDataset: undefined,
-                        }
-                    );
+                const { weights, conditions, databaseStudyset } = getWeightAndConditionsForSpecification(
+                    selectedMetaAnalysisAlgorithm.estimator,
+                    {
+                        selectionKey: filenameReplacePeriodsWithUnderscores,
+                        type: EPropertyType.BOOLEAN,
+                        selectionValue: true,
+                        referenceDataset: undefined,
+                    }
+                );
 
                 await createMetaAnalysis(
                     projectId,
@@ -131,11 +125,10 @@ const SleuthImportWizardCreateMetaAnalyses: React.FC<{
                     Would you like to create a meta-analysis for each file you've uploaded?
                 </Typography>
                 <Typography gutterBottom sx={{ marginBottom: '1rem', color: 'muted.main' }}>
-                    This will automatically create a new meta-analysis specification for each
-                    separate file assuming they are distinct sets of coordinates.
+                    This will automatically create a new meta-analysis specification for each separate file assuming
+                    they are distinct sets of coordinates.
                     <br />
-                    This step is optional. You can skip this and create a custom meta-analysis
-                    later.
+                    This step is optional. You can skip this and create a custom meta-analysis later.
                 </Typography>
                 <Box>
                     <ToggleButtonGroup
@@ -167,22 +160,17 @@ const SleuthImportWizardCreateMetaAnalyses: React.FC<{
                     <Box>
                         <Typography variant="h6">Which algorithm would you like to use?</Typography>
                         <Typography gutterBottom color="muted.main">
-                            Default parameters will be used. If you are unsure, we suggest starting
-                            with MKDADensity. To replicate GingerALE, select ALE.
+                            Default parameters will be used. If you are unsure, we suggest starting with MKDADensity. To
+                            replicate GingerALE, select ALE.
                         </Typography>
                         <FormControl>
                             <RadioGroup
                                 onChange={(e) => {
                                     const value = e.target.value;
-                                    const correspondingOption = algorithmOptions.find(
-                                        (x) => x.label === value
-                                    );
+                                    const correspondingOption = algorithmOptions.find((x) => x.label === value);
                                     setSelectedMetaAnalysisAlgorithm({
                                         estimator: correspondingOption as IAutocompleteObject,
-                                        estimatorArgs: getDefaultValuesForTypeAndParameter(
-                                            EAnalysisType.CBMA,
-                                            value
-                                        ),
+                                        estimatorArgs: getDefaultValuesForTypeAndParameter(EAnalysisType.CBMA, value),
                                         corrector: null,
                                         correctorArgs: {},
                                     });
@@ -198,9 +186,7 @@ const SleuthImportWizardCreateMetaAnalyses: React.FC<{
                                         label={
                                             <Box>
                                                 <Typography>{algorithmOption.label}</Typography>
-                                                <Typography variant="body2">
-                                                    {algorithmOption.description}
-                                                </Typography>
+                                                <Typography variant="body2">{algorithmOption.description}</Typography>
                                             </Box>
                                         }
                                     />
@@ -210,12 +196,7 @@ const SleuthImportWizardCreateMetaAnalyses: React.FC<{
                     </Box>
                 )}
                 <Box sx={CurationImportBaseStyles.fixedContainer}>
-                    <Box
-                        sx={[
-                            CurationImportBaseStyles.fixedButtonsContainer,
-                            { justifyContent: 'flex-end' },
-                        ]}
-                    >
+                    <Box sx={[CurationImportBaseStyles.fixedButtonsContainer, { justifyContent: 'flex-end' }]}>
                         <LoadingButton
                             variant="contained"
                             isLoading={buttonIsLoading}

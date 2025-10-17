@@ -3,7 +3,7 @@ import { setUnloadHandler, unsetUnloadHandler } from 'helpers/BeforeUnload.helpe
 import useGetProjectById from 'hooks/projects/useGetProjectById';
 import { INeurosynthProject, INeurosynthProjectReturn, ISource, ITag } from 'hooks/projects/useGetProjects';
 import useUpdateProject from 'hooks/projects/useUpdateProject';
-import { OptionsObject, SnackbarKey, SnackbarMessage, useSnackbar } from 'notistack';
+import { useSnackbar } from 'notistack';
 import {
     addNewStubsHelper,
     addOrUpdateStudyListStatusHelper,
@@ -146,94 +146,107 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
             setUnloadHandler('project');
 
             const newTimeout = setTimeout(async () => {
-                const { data } = await API.NeurosynthServices.ProjectsService.projectsIdGet(
-                    oldDebouncedStoreData.id as string
-                );
-
-                // we use the latest data instead of oldDebouncedStoreData because we don't care whether
-                // the debounced last_updated is up to date, we just care that the overall store is up to date.
-
-                // This fixes a bug where we would get "out of sync" errors when a user updated the curation UI just as
-                // the anonymous setTimeout function executed from a previous update (probably during the GET above): the serverLastUpdated value was compared
-                // to the just recently out of date oldDebouncedStoreData last updated value which then caused the "out of sync" snackbar to appear
-                const latestStoreDataLastUpdated = get().updated_at;
-                const serverLastUpdated = data.updated_at;
-
-                if (
-                    serverLastUpdated &&
-                    latestStoreDataLastUpdated &&
-                    new Date(latestStoreDataLastUpdated).getTime() !== new Date(serverLastUpdated).getTime()
-                ) {
-                    const enqueueSnackbar = oldDebouncedStoreData.metadata.enqueueSnackbar;
-                    if (enqueueSnackbar) {
-                        enqueueSnackbar(
-                            'You are out of sync with the server and your changes will not be saved. Please refresh the page to get the latest data.',
-                            { variant: 'error', persist: true }
-                        );
-                    }
-                    unsetUnloadHandler('project');
-                    return;
+                let enqueueSnackbar = oldDebouncedStoreData.metadata.enqueueSnackbar;
+                if (!enqueueSnackbar) {
+                    // set some noop if func does not exist
+                    // note: this should never happen - something has gone wrong!
+                    enqueueSnackbar = (m: any, o: any) => 0;
+                    console.error('no snackbar function defined!');
                 }
 
-                const update: INeurosynthProject = {
-                    name: oldDebouncedStoreData.name,
-                    description: oldDebouncedStoreData.description,
-                    public: oldDebouncedStoreData.public,
-                    provenance: {
-                        ...oldDebouncedStoreData.provenance,
-                    },
-                };
+                try {
+                    const { data } = await API.NeurosynthServices.ProjectsService.projectsIdGet(
+                        oldDebouncedStoreData.id as string
+                    );
 
-                updateProject(
-                    { projectId: oldDebouncedStoreData.id as string, project: update },
-                    {
-                        onSuccess: (res) => {
-                            set((state) => ({
-                                ...state,
-                                updated_at: res.data.updated_at,
-                                metadata: {
-                                    ...state.metadata,
-                                    hasUnsavedChanges: false,
-                                },
-                            }));
-                        },
-                        onError: (err) => {
-                            let enqueueSnackbarFunc:
-                                | ((message: SnackbarMessage, options?: OptionsObject | undefined) => SnackbarKey)
-                                | undefined;
-                            if (oldDebouncedStoreData.metadata.enqueueSnackbar) {
-                                enqueueSnackbarFunc = oldDebouncedStoreData.metadata.enqueueSnackbar;
-                            } else {
-                                // set some noop if func does not exist
-                                // note: this should never happen - something has gone wrong!
-                                enqueueSnackbarFunc = (m: any, o: any) => 0;
-                                console.error('no snackbar function defined!');
-                            }
+                    // we use the latest data instead of oldDebouncedStoreData because we don't care whether
+                    // the debounced last_updated is up to date, we just care that the overall store is up to date.
 
-                            if (err?.response?.data?.code && err?.response?.data?.code === 'token_expired') {
-                                enqueueSnackbarFunc('Your login session has expired. We will now log you out.', {
-                                    variant: 'error',
-                                });
+                    // This fixes a bug where we would get "out of sync" errors when a user updated the curation UI just as
+                    // the anonymous setTimeout function executed from a previous update (probably during the GET above): the serverLastUpdated value was compared
+                    // to the just recently out of date oldDebouncedStoreData last updated value which then caused the "out of sync" snackbar to appear
+                    const latestStoreDataLastUpdated = get().updated_at;
+                    const serverLastUpdated = data.updated_at;
 
-                                setTimeout(() => {
-                                    const logout = oldDebouncedStoreData.metadata.logout;
-                                    if (logout) logout();
-                                }, 2000);
-                            } else if (err?.response?.data?.status && err?.response?.data?.status === 401) {
-                                enqueueSnackbarFunc('You must log in to make changes. Please log in and try again', {
-                                    variant: 'error',
-                                });
-                            } else {
-                                enqueueSnackbarFunc('There was an error updating the project.', {
-                                    variant: 'error',
-                                });
-                            }
-                        },
-                        onSettled: () => {
-                            unsetUnloadHandler('project');
-                        },
+                    if (
+                        serverLastUpdated &&
+                        latestStoreDataLastUpdated &&
+                        new Date(latestStoreDataLastUpdated).getTime() !== new Date(serverLastUpdated).getTime()
+                    ) {
+                        const enqueueSnackbar = oldDebouncedStoreData.metadata.enqueueSnackbar;
+                        if (enqueueSnackbar) {
+                            enqueueSnackbar(
+                                'You are out of sync with the server and your changes will not be saved. Please refresh the page to get the latest data.',
+                                { variant: 'error', persist: true }
+                            );
+                        }
+                        unsetUnloadHandler('project');
+                        return;
                     }
-                );
+
+                    const update: INeurosynthProject = {
+                        name: oldDebouncedStoreData.name,
+                        description: oldDebouncedStoreData.description,
+                        public: oldDebouncedStoreData.public,
+                        provenance: {
+                            ...oldDebouncedStoreData.provenance,
+                        },
+                    };
+
+                    updateProject(
+                        { projectId: oldDebouncedStoreData.id as string, project: update },
+                        {
+                            onSuccess: (res) => {
+                                set((state) => ({
+                                    ...state,
+                                    updated_at: res.data.updated_at,
+                                    metadata: {
+                                        ...state.metadata,
+                                        hasUnsavedChanges: false,
+                                    },
+                                }));
+                            },
+                            onError: (err) => {
+                                if (err?.response?.data?.code && err?.response?.data?.code === 'token_expired') {
+                                    enqueueSnackbar('Your login session has expired. We will now log you out.', {
+                                        variant: 'error',
+                                    });
+
+                                    setTimeout(() => {
+                                        const logout = oldDebouncedStoreData.metadata.logout;
+                                        if (logout) logout();
+                                    }, 2000);
+                                } else if (err?.response?.data?.status && err?.response?.data?.status === 401) {
+                                    enqueueSnackbar('You must log in to make changes. Please log in and try again', {
+                                        variant: 'error',
+                                    });
+                                } else {
+                                    console.error(err);
+                                    throw new Error(err.response?.data?.message);
+                                }
+                            },
+                            onSettled: () => {
+                                unsetUnloadHandler('project');
+                            },
+                        }
+                    );
+                } catch (e) {
+                    enqueueSnackbar(
+                        'There was an error updating the project. Please refresh the page, otherwise your changes will not be saved',
+                        { variant: 'error' }
+                    );
+
+                    set((state) => ({
+                        ...state,
+                        metadata: {
+                            ...state.metadata,
+                            isError: true,
+                            hasUnsavedChanges: true,
+                        },
+                    }));
+
+                    console.error(e);
+                }
             }, 2500);
 
             set((state) => ({
@@ -721,6 +734,29 @@ export const useProjectCurationImport = (importId: string) =>
     useProjectStore((state) =>
         state.provenance.curationMetadata.imports.find((curationImport) => curationImport.id === importId)
     );
+export const useProjectGetColumnForStub = (stubId: string) =>
+    useProjectStore((state) => {
+        const colIndex = state.provenance.curationMetadata.columns.findIndex((col) =>
+            col.stubStudies.find((stub) => stub.id === stubId)
+        );
+
+        if (colIndex < 0) {
+            return {
+                column: undefined,
+                columnIndex: -1,
+            };
+        }
+
+        return {
+            columnIndex: colIndex,
+            column: state.provenance.curationMetadata.columns[colIndex],
+        };
+    });
+export const useProjectCurationDuplicates = () =>
+    useProjectStore((state) => {
+        if (!state.provenance.curationMetadata.prismaConfig.isPrisma) return [];
+        return state.provenance.curationMetadata.columns[0].stubStudies.filter((x) => x.exclusionTag !== null);
+    });
 
 // curation updater hooks
 export const useUpdateProjectIsPublic = () => useProjectStore((state) => state.updateProjectIsPublic);

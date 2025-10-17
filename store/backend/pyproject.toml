@@ -11,17 +11,18 @@ authors = [
 ]
 license = { text = "MIT" }
 dependencies = [
-    "auth0-python~=3.16",
+    "auth0-python~=4.13",
     "authlib~=1.6",
-    "connexion[swagger-ui,uvicorn,flask]==3.2.0",
+    "connexion[swagger-ui,uvicorn,flask]==3.0.0",
     "flask~=3.1",
+    "flask-cors~=6.0",
     "flask-caching~=2.0",
     "flask-shell-ipython~=0.4",
     "flask-migrate~=4.1",
     "flask-sqlalchemy~=3.1", # fix multiple instance error: https://flask-sqlalchemy.palletsprojects.com/en/3.0.x/changes/#version-3-0-3
     "gunicorn~=23.0",
     "ipython~=8.18",
-    "marshmallow~=3.0",
+    "marshmallow~=4.0",
     "numpy<3.0.0",
     "pandas~=2.3",
     "psycopg2-binary~=2.8",
@@ -32,12 +33,15 @@ dependencies = [
     "sqlalchemy~=2.0",
     "sqlalchemy-utils",
     "sqltap",
-    "webargs~=7.0",
+    "webargs~=8.7",
     "wrapt~=1.12",
     "openapi-spec-validator~=0.3",
     "scipy~=1.9",
     "orjson~=3.8",
-    "flask_orjson~=2.0.0"
+    "flask_orjson~=2.0.0",
+    "pgvector~=0.4",
+    "openai~=2.3",
+    "tenacity~=9.1",
 ]
 
 [tool.setuptools.packages.find]
