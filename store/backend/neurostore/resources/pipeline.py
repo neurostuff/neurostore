@@ -96,8 +96,10 @@ class PipelineStudyResultsView(ObjectView, ListView):
         "feature_flatten": fields.Bool(load_default=False),
         "feature_display": fields.List(
             fields.String(),
-            description="List of pipeline results. format: pipeline_name[:version]",
             load_default=[],
+            metadata={
+                "description": "List of pipeline results. format: pipeline_name[:version]"
+            },
         ),
     }
 
