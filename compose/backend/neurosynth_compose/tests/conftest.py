@@ -9,7 +9,7 @@ from os.path import isfile
 from os import environ
 import pathlib
 
-from auth0.v3.authentication import GetToken
+from auth0.authentication import GetToken
 import pytest
 from nimare.results import MetaResult
 import sqlalchemy as sa

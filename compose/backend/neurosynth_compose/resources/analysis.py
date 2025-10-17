@@ -70,8 +70,8 @@ def _make_json_response(payload, status=200):
 
 
 def create_user():
-    from auth0.v3.authentication.users import Users
-    from auth0.v3.exceptions import Auth0Error
+    from auth0.authentication.users import Users
+    from auth0.exceptions import Auth0Error
 
     auth = request.headers.get("Authorization", None)
     if auth is None:
@@ -764,7 +764,7 @@ class ProjectsView(ObjectView, ListView):
 
         access_token = request.headers.get("Authorization")
         if not access_token:
-            from auth0.v3.authentication.get_token import GetToken
+            from auth0.authentication.get_token import GetToken
 
             domain = current_app.config["AUTH0_BASE_URL"].lstrip("https://")
             g_token = GetToken(domain)
@@ -1026,7 +1026,7 @@ def create_neurovault_collection(nv_collection):
 
 def create_or_update_neurostore_study(ns_study):
     from flask import request
-    from auth0.v3.authentication.get_token import GetToken
+    from auth0.authentication.get_token import GetToken
     from .neurostore import neurostore_session
 
     access_token = request.headers.get("Authorization")
