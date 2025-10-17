@@ -722,25 +722,33 @@ class BaseStudiesView(ObjectView, ListView):
                 radius = float(radius)
             except Exception:
                 abort_validation("Spatial parameters must be numeric.")
-            # Join BaseStudy -> Study -> Analysis -> Point
-            q = q.join(Study, Study.base_study_id == self._model.id)
-            q = q.join(Analysis, Analysis.study_id == Study.id)
-            q = q.join(Point, Point.analysis_id == Analysis.id)
-            # Box filter first, then Euclidean distance
-            q = q.filter(
-                Point.x <= x + radius,
-                Point.x >= x - radius,
-                Point.y <= y + radius,
-                Point.y >= y - radius,
-                Point.z <= z + radius,
-                Point.z >= z - radius,
-                (Point.x - x) * (Point.x - x)
-                + (Point.y - y) * (Point.y - y)
-                + (Point.z - z) * (Point.z - z)
-                <= radius * radius,
+            # Use EXISTS so we do not duplicate base studies when filtering by spatial criteria
+            spatial_point = aliased(Point)
+            spatial_analysis = aliased(Analysis)
+            spatial_study = aliased(Study)
+
+            spatial_filter = (
+                sa.select(sa.literal(True))
+                .select_from(spatial_study)
+                .join(spatial_analysis, spatial_analysis.study_id == spatial_study.id)
+                .join(spatial_point, spatial_point.analysis_id == spatial_analysis.id)
+                .where(
+                    spatial_study.base_study_id == self._model.id,
+                    spatial_point.x <= x + radius,
+                    spatial_point.x >= x - radius,
+                    spatial_point.y <= y + radius,
+                    spatial_point.y >= y - radius,
+                    spatial_point.z <= z + radius,
+                    spatial_point.z >= z - radius,
+                    (spatial_point.x - x) * (spatial_point.x - x)
+                    + (spatial_point.y - y) * (spatial_point.y - y)
+                    + (spatial_point.z - z) * (spatial_point.z - z)
+                    <= radius * radius,
+                )
+                .correlate(self._model)
+                .exists()
             )
-            # Only return distinct base studies
-            q = q.distinct()
+            q = q.filter(spatial_filter)
         elif any(v is not None for v in [x, y, z, radius]):
             abort_validation("Spatial query requires x, y, z, and radius together.")
 

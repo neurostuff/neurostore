@@ -160,26 +160,29 @@ class BaseView(MethodView):
         if not base_studies:
             return
 
-        # Subquery for new_has_coordinates
-        new_has_coordinates_subquery = (
-            sa.select(sa.func.count(Point.id) > 0)
-            .select_from(Study)
-            .join(Analysis, Analysis.study_id == Study.id)
-            .join(Point, Point.analysis_id == Analysis.id)
+        studies_for_base_study = (
+            sa.select(Study.id)
             .where(Study.base_study_id == BaseStudy.id)
             .correlate(BaseStudy)
             .scalar_subquery()
         )
 
-        # Subquery for new_has_images
+        # Subquery for new_has_coordinates using EXISTS for early exit
+        new_has_coordinates_subquery = (
+            sa.select(sa.literal(1))
+            .select_from(Analysis)
+            .join(Point, Point.analysis_id == Analysis.id)
+            .where(Analysis.study_id.in_(studies_for_base_study))
+            .exists()
+        )
+
+        # Subquery for new_has_images using EXISTS for early exit
         new_has_images_subquery = (
-            sa.select(sa.func.count(Image.id) > 0)
-            .select_from(Study)
-            .join(Analysis, Analysis.study_id == Study.id)
+            sa.select(sa.literal(1))
+            .select_from(Analysis)
             .join(Image, Image.analysis_id == Analysis.id)
-            .where(Study.base_study_id == BaseStudy.id)
-            .correlate(BaseStudy)
-            .scalar_subquery()
+            .where(Analysis.study_id.in_(studies_for_base_study))
+            .exists()
         )
 
         # Main query
