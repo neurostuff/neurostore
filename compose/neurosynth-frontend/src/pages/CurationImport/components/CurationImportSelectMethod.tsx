@@ -59,17 +59,16 @@ const CurationImportSelectMethod: React.FC<{
                     <FormControlLabel
                         sx={[
                             CurationImportSelectMethodStyles.radio,
-                            props.importMethod === EImportMode.MANUAL_CREATE
+                            props.importMethod === EImportMode.SLEUTH_IMPORT
                                 ? CurationImportSelectMethodStyles.selected
                                 : { border: '2px solid transparent' },
                         ]}
-                        value={EImportMode.MANUAL_CREATE}
+                        value={EImportMode.SLEUTH_IMPORT}
                         label={
                             <>
-                                <Typography variant="h6">Manually create a new study</Typography>
+                                <Typography variant="h6">Import Sleuth File</Typography>
                                 <Typography variant="body1" sx={{ color: 'muted.main' }}>
-                                    Create a new study from scratch, manually filling in the title, authors, PMID, DOI,
-                                    etc
+                                    Import studies from a sleuth file into your project
                                 </Typography>
                             </>
                         }
@@ -88,6 +87,25 @@ const CurationImportSelectMethod: React.FC<{
                                 <Typography variant="h6">Import via File Format</Typography>
                                 <Typography variant="body1" sx={{ color: 'muted.main' }}>
                                     Import studies from widely used standard formats such as RIS, endnote, or BibTex
+                                </Typography>
+                            </>
+                        }
+                        control={<Radio />}
+                    />
+                    <FormControlLabel
+                        sx={[
+                            CurationImportSelectMethodStyles.radio,
+                            props.importMethod === EImportMode.MANUAL_CREATE
+                                ? CurationImportSelectMethodStyles.selected
+                                : { border: '2px solid transparent' },
+                        ]}
+                        value={EImportMode.MANUAL_CREATE}
+                        label={
+                            <>
+                                <Typography variant="h6">Manually create a new study</Typography>
+                                <Typography variant="body1" sx={{ color: 'muted.main' }}>
+                                    Create a new study from scratch, manually filling in the title, authors, PMID, DOI,
+                                    etc
                                 </Typography>
                             </>
                         }

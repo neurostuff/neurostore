@@ -2,13 +2,18 @@ import { Warning } from '@mui/icons-material';
 import CloseIcon from '@mui/icons-material/Close';
 import FileUploadIcon from '@mui/icons-material/FileUpload';
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
-import { Box, Button, IconButton, Link, List, ListItem, ListItemIcon, ListItemText, Typography } from '@mui/material';
+import { Box, Button, IconButton, List, ListItem, ListItemIcon, ListItemText, Typography } from '@mui/material';
 import CurationImportBaseStyles from 'pages/CurationImport/components/CurationImport.styles';
 import React, { useMemo, useState } from 'react';
-import SleuthImportHelpDialog from './SleuthImportHelpDialog';
-import { ISleuthFileUploadStubs, normalizeLineEndings, sleuthUploadToStubs, validateFileContents } from '../helpers';
+import {
+    ISleuthFileUploadStubs,
+    normalizeLineEndings,
+    sleuthUploadToStubs,
+    validateFileContents,
+} from '../../CurationImport/helpers';
+import CurationImportSleuthHint from './CurationImportSleuthHint';
 
-const SleuthImportWizardUpload: React.FC<{
+const CurationImportSleuthUpload: React.FC<{
     onNext: (sleuthUploads: ISleuthFileUploadStubs[]) => void;
     onPrevious: () => void;
 }> = (props) => {
@@ -111,14 +116,12 @@ const SleuthImportWizardUpload: React.FC<{
     }, [sleuthFileUploads]);
 
     return (
-        <Box>
+        <Box mt={1}>
             <Box mb="1rem" sx={{ display: 'flex', alignItems: 'center' }}>
-                <Typography>
-                    Please ensure that your sleuth files are in the <Link>correct format</Link> before uploading
+                <Typography mr={1}>
+                    Please ensure that your sleuth files are in the correct format before uploading
                 </Typography>
-                <Box ml="10px">
-                    <SleuthImportHelpDialog />
-                </Box>
+                <CurationImportSleuthHint />
             </Box>
             <Box sx={{ display: 'flex', height: '350px', marginBottom: '6rem' }}>
                 <Box
@@ -196,13 +199,8 @@ const SleuthImportWizardUpload: React.FC<{
             </Box>
             <Box sx={CurationImportBaseStyles.fixedContainer}>
                 <Box sx={[CurationImportBaseStyles.fixedButtonsContainer, { justifyContent: 'space-between' }]}>
-                    <Button
-                        color="secondary"
-                        sx={CurationImportBaseStyles.nextButton}
-                        disableElevation
-                        onClick={() => onPrevious()}
-                    >
-                        previous
+                    <Button variant="outlined" disableElevation onClick={() => onPrevious()}>
+                        back
                     </Button>
                     <Button
                         variant="contained"
@@ -211,7 +209,7 @@ const SleuthImportWizardUpload: React.FC<{
                         disabled={nextButtonDisabled}
                         onClick={handleClickNext}
                     >
-                        create project
+                        next
                     </Button>
                 </Box>
             </Box>
@@ -219,4 +217,4 @@ const SleuthImportWizardUpload: React.FC<{
     );
 };
 
-export default SleuthImportWizardUpload;
+export default CurationImportSleuthUpload;

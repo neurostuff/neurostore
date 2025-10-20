@@ -18,12 +18,7 @@ const NavToolbar: React.FC<INav> = (props) => {
         <Toolbar disableGutters>
             <Box sx={NavbarStyles.toolbar}>
                 <Box component={NavLink} to="/" sx={NavbarStyles.logoContainer}>
-                    <Box
-                        component="img"
-                        sx={NavbarStyles.logo}
-                        alt="neurosynth compose logo"
-                        src="/static/synth.png"
-                    />
+                    <Box component="img" sx={NavbarStyles.logo} alt="neurosynth compose logo" src="/static/synth.png" />
                     <Typography sx={NavbarStyles.logoText}>neurosynth compose</Typography>
                 </Box>
 

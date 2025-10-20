@@ -1,8 +1,43 @@
 import { Alert, Typography } from '@mui/material';
 import CodeSnippet from 'components/CodeSnippet/CodeSnippet';
 import HelpDialog from 'components/Dialogs/HelpDialog';
+import React from 'react';
 
-const SleuthImportHelpDialog = () => {
+const hints = [
+    {
+        instruction:
+            'Begin the file with a Reference specifying coordinate space. This should only appear in the file once, at the top.',
+        example: '// Reference=MNI',
+    },
+    {
+        instruction:
+            'The next line should contain the DOI associated with the study. This field identifies the study that the data came from. At least one of either a DOI or a PubMedId is required.',
+        example: '// DOI=10.1016/1234567',
+    },
+    {
+        instruction:
+            'The next line should contain the PubMedId associated with the study. This field identifies the study that the data came from. At least one of either a DOI or a PubMedId is required.',
+        example: '// PubMedId=67123237',
+    },
+    {
+        instruction: 'The next line should contain the author followed by the experiment, separated by a colon.',
+        example: '// Smith et al., 2019: Working Memory vs Baseline',
+    },
+    {
+        instruction: 'The next line should contain the number of subjects.',
+        example: '// Subjects=23',
+    },
+    {
+        instruction: 'The following lines should contain the tab separated coordinates',
+        example: '-7.5/t-8.5/t-9.5',
+    },
+    {
+        instruction: 'Finally, a newline should be added as a delimiter, separating each of the studies in the file',
+        example: '',
+    },
+];
+
+const CurationImportSleuthHint: React.FC = () => {
     return (
         <HelpDialog dialogTitle="Compatible sleuth files">
             <Typography gutterBottom>Neurosynth Compose expects files in a specific format.</Typography>
@@ -12,40 +47,19 @@ const SleuthImportHelpDialog = () => {
             </Typography>
 
             <ul>
-                <li>
-                    Begin the file with a Reference specifying coordinate space. This should only appear in the file
-                    once, at the top.
-                    <br />
-                    ex: <b>// Reference=MNI"</b>
-                </li>
-                <li>
-                    The next line should contain the DOI associated with the study. This field identifies the study that
-                    the data came from. At least one of either a DOI or a PubMedId is required.
-                    <br />
-                    ex: <b>// DOI=1234567</b>
-                </li>
-                <li>
-                    The next line should contain the PubMedId associated with the study. This field identifies the study
-                    that the data came from. At least one of either a DOI or a PubMedId is required.
-                    <br />
-                    ex: <b>// PubMedId=1234567</b>
-                </li>
-                <li>
-                    The next line(s) should contain the author followed by the experiment, separated by a colon.
-                    <br />
-                    ex: <b>// Smith et al., 2019: Working Memory vs Baseline</b>
-                </li>
-                <li>
-                    The next line should contain the number of subjects.
-                    <br />
-                    ex: <b>// Subjects=23</b>
-                </li>
-                <li>
-                    The following lines should contain the tab separated coordinates
-                    <br />
-                    ex: <b>-7.5/t-8.5/t-9.5</b>
-                </li>
-                <li>Finally, a newline should be added as a delimiter, separating each of the studies in the file</li>
+                {hints.map((hint, index) => (
+                    <li key={index} style={{ marginBottom: '1rem' }}>
+                        {hint.instruction}
+                        <br />
+                        {hint.example && (
+                            <CodeSnippet
+                                linesOfCode={[hint.example]}
+                                noCopyButton
+                                sx={{ marginY: '4px', paddingY: '4px' }}
+                            />
+                        )}
+                    </li>
+                ))}
             </ul>
 
             <Typography mb="1rem">Files should be plain text files with a .txt suffix.</Typography>
@@ -85,4 +99,4 @@ const SleuthImportHelpDialog = () => {
     );
 };
 
-export default SleuthImportHelpDialog;
+export default CurationImportSleuthHint;

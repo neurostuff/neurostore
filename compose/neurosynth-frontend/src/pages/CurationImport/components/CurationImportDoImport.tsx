@@ -7,11 +7,11 @@ import CurationImportNeurostore from 'pages/CurationImport/components/CurationIm
 import CurationImportPMIDs from 'pages/CurationImport/components/CurationImportPMIDs';
 import CurationImportStandardFormat from './CurationImportStandardFormat';
 import { SearchCriteria } from 'pages/Study/Study.types';
+import CurationImportSleuth from './CurationImportSleuth';
 
 export interface IImportArgs {
     onNavigate: (button: ENavigationButton) => void;
     onImportStubs: (stubs: ICurationStubStudy[], unimportedStubs?: string[]) => void;
-    stubs: ICurationStubStudy[];
 }
 
 const CurationImportDoImport: React.FC<
@@ -20,23 +20,29 @@ const CurationImportDoImport: React.FC<
         onSetSearchCriteria: (searchCriteria: SearchCriteria) => void;
         onFileUpload: (fileName: string) => void;
     }
-> = ({ mode, stubs, onImportStubs, onNavigate, onSetSearchCriteria, onFileUpload }) => {
+> = ({ mode, onImportStubs, onNavigate, onSetSearchCriteria, onFileUpload }) => {
     switch (mode) {
         case EImportMode.NEUROSTORE_IMPORT:
             return (
                 <Box sx={{ marginTop: '1rem' }}>
                     <CurationImportNeurostore
-                        stubs={stubs}
                         onImportStubs={onImportStubs}
                         onSetSearchCriteria={onSetSearchCriteria}
                         onNavigate={onNavigate}
                     />
                 </Box>
             );
+        case EImportMode.SLEUTH_IMPORT:
+            return (
+                <CurationImportSleuth
+                    onImportStubs={onImportStubs}
+                    onNavigate={onNavigate}
+                    onFileUpload={onFileUpload}
+                />
+            );
         case EImportMode.PUBMED_IMPORT:
             return (
                 <CurationImportPMIDs
-                    stubs={stubs}
                     onImportStubs={onImportStubs}
                     onFileUpload={onFileUpload}
                     onNavigate={onNavigate}
