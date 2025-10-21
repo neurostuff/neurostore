@@ -21,7 +21,7 @@ dependencies = [
     "flask-migrate~=4.1",
     "flask-sqlalchemy~=3.1", # fix multiple instance error: https://flask-sqlalchemy.palletsprojects.com/en/3.0.x/changes/#version-3-0-3
     "gunicorn~=23.0",
-    "ipython~=8.18",
+    "ipython~=9.6",
     "marshmallow~=4.0",
     "numpy<3.0.0",
     "pandas~=2.3",
@@ -34,7 +34,7 @@ dependencies = [
     "sqlalchemy-utils",
     "sqltap",
     "webargs~=8.7",
-    "wrapt~=1.12",
+    "wrapt~=2.0",
     "openapi-spec-validator~=0.3",
     "scipy~=1.9",
     "orjson~=3.8",
