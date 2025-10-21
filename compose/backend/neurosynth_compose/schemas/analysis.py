@@ -399,6 +399,31 @@ class NeurovaultFileSchema(BaseSchema):
         return data
 
 
+class MetaAnalysisJobRequestSchema(Schema):
+    meta_analysis_id = fields.String(required=True)
+    no_upload = fields.Boolean(load_default=False)
+
+
+class MetaAnalysisJobLogSchema(Schema):
+    timestamp = fields.Float()
+    message = fields.String()
+
+
+class MetaAnalysisJobResponseSchema(Schema):
+    job_id = fields.String()
+    meta_analysis_id = fields.String()
+    artifact_prefix = fields.String(allow_none=True)
+    status = fields.String()
+    status_url = fields.String(allow_none=True)
+    environment = fields.String()
+    no_upload = fields.Boolean()
+    start_time = fields.String(allow_none=True)
+    output = fields.Dict(allow_none=True)
+    logs = fields.List(fields.Nested(MetaAnalysisJobLogSchema), allow_none=True)
+    created_at = fields.String(allow_none=True)
+    updated_at = fields.String(allow_none=True)
+
+
 class NeurovaultCollectionSchema(BaseSchema):
     collection_id = fields.String()
     url = fields.String(dump_only=True)
