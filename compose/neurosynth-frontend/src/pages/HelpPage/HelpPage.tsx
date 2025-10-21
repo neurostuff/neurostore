@@ -4,14 +4,6 @@ import EmailIcon from '@mui/icons-material/Email';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 
 const HelpPage: React.FC = () => {
-    const handleNeuroStarsClick = () => {
-        window.open('https://neurostars.org/tag/neurosynth-compose', '_blank', 'noopener,noreferrer');
-    };
-
-    const handleEmailClick = () => {
-        window.location.href = 'mailto:support@neurosynth.org';
-    };
-
     return (
         <Box
             sx={{
@@ -56,15 +48,15 @@ const HelpPage: React.FC = () => {
                                         marginBottom: '1rem',
                                     }}
                                 >
-                                    'Join our community on NeuroStars to ask questions, share insights, and connect with
+                                    Join our community on NeuroStars to ask questions, share insights, and connect with
                                     other researchers. Get answers from both the Neurosynth team and the wider
-                                    neuroscience community.',
+                                    neuroscience community.
                                 </Typography>
                             ),
                             icon: <ForumIcon sx={{ fontSize: '2rem', color: 'white' }} />,
                             button: {
                                 label: 'Visit NeuroStars',
-                                onClick: handleNeuroStarsClick,
+                                href: 'https://neurostars.org/tag/neurosynth-compose',
                             },
                         },
                         {
@@ -82,13 +74,13 @@ const HelpPage: React.FC = () => {
                                         neurosynthorg@gmail.com
                                     </Link>{' '}
                                     Our team will get back to you as soon as possible to help resolve your questions or
-                                    issues.,
+                                    issues.
                                 </Typography>
                             ),
                             icon: <EmailIcon sx={{ fontSize: '2rem', color: 'white' }} />,
                             button: {
                                 label: 'Send Email',
-                                onClick: handleEmailClick,
+                                href: 'mailto:neurosynthorg@gmail.com',
                             },
                         },
                     ].map(({ title, descriptionElement, icon, button }) => (
@@ -137,10 +129,13 @@ const HelpPage: React.FC = () => {
                                 <Box>{descriptionElement}</Box>
                                 <Button
                                     variant="contained"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
                                     size="large"
                                     disableElevation
                                     endIcon={<OpenInNewIcon />}
-                                    onClick={button.onClick}
+                                    href={button.href}
+                                    component="a"
                                     sx={{
                                         width: '230px',
                                         marginTop: 'auto',

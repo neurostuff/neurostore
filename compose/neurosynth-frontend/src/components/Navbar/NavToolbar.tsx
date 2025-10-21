@@ -61,7 +61,33 @@ const NavToolbar: React.FC<INav> = (props) => {
                         buttonLabel="explore"
                     />
 
-                    <Button
+                    <NavToolbarPopupSubMenu
+                        buttonProps={{
+                            sx: [
+                                NavToolbarStyles.menuItemColor,
+                                NavToolbarStyles.menuItemPadding,
+                                NavToolbarStyles.menuItem,
+                            ],
+                            endIcon: <KeyboardArrowDownIcon />,
+                        }}
+                        options={[
+                            {
+                                label: (
+                                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                        Documentation <OpenInNewIcon fontSize="small" sx={{ ml: 1 }} />
+                                    </Box>
+                                ),
+                                onClick: () => window.open('https://neurostuff.github.io/compose-docs/', '_blank'),
+                            },
+                            {
+                                label: 'Contact Us',
+                                onClick: () => navigate('/help'),
+                            },
+                        ]}
+                        buttonLabel="help"
+                    />
+
+                    {/* <Button
                         sx={[
                             NavToolbarStyles.menuItemColor,
                             NavToolbarStyles.menuItemPadding,
@@ -74,7 +100,7 @@ const NavToolbar: React.FC<INav> = (props) => {
                     >
                         DOCS
                         <OpenInNewIcon sx={{ marginLeft: '8px', fontSize: '1.2rem' }} />
-                    </Button>
+                    </Button> */}
                     <NeurosynthAvatar onLogout={props.onLogout} onLogin={props.onLogin} />
                 </Box>
             </Box>
