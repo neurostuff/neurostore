@@ -767,10 +767,12 @@ class ProjectsView(ObjectView, ListView):
             from auth0.authentication.get_token import GetToken
 
             domain = current_app.config["AUTH0_BASE_URL"].lstrip("https://")
-            g_token = GetToken(domain)
-            token_resp = g_token.client_credentials(
-                client_id=current_app.config["AUTH0_CLIENT_ID"],
+            g_token = GetToken(
+                domain,
+                current_app.config["AUTH0_CLIENT_ID"],
                 client_secret=current_app.config["AUTH0_CLIENT_SECRET"],
+            )
+            token_resp = g_token.client_credentials(
                 audience=current_app.config["AUTH0_API_AUDIENCE"],
             )
             access_token = " ".join(
@@ -1033,10 +1035,12 @@ def create_or_update_neurostore_study(ns_study):
     # use the client to authenticate if user credentials were not used
     if not access_token:
         domain = current_app.config["AUTH0_BASE_URL"].lstrip("https://")
-        g_token = GetToken(domain)
-        token_resp = g_token.client_credentials(
-            client_id=current_app.config["AUTH0_CLIENT_ID"],
+        g_token = GetToken(
+            domain,
+            current_app.config["AUTH0_CLIENT_ID"],
             client_secret=current_app.config["AUTH0_CLIENT_SECRET"],
+        )
+        token_resp = g_token.client_credentials(
             audience=current_app.config["AUTH0_API_AUDIENCE"],
         )
         access_token = " ".join([token_resp["token_type"], token_resp["access_token"]])

@@ -107,10 +107,12 @@ def create_or_update_neurostore_analysis(
         # use the client to authenticate if user credentials were not used
         if not access_token:
             domain = app.config["AUTH0_BASE_URL"].lstrip("https://")
-            g_token = GetToken(domain)
-            token_resp = g_token.client_credentials(
-                client_id=app.config["AUTH0_CLIENT_ID"],
+            g_token = GetToken(
+                domain,
+                app.config["AUTH0_CLIENT_ID"],
                 client_secret=app.config["AUTH0_CLIENT_SECRET"],
+            )
+            token_resp = g_token.client_credentials(
                 audience=app.config["AUTH0_API_AUDIENCE"],
             )
             access_token = " ".join(
