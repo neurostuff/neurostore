@@ -8,7 +8,7 @@ export const isCoordLine = (lineRaw: string) => {
     return /^\s*-?\d+(?:\.\d+)?\s+-?\d+(?:\.\d+)?\s+-?\d+(?:\.\d+)?\s*$/.test(line);
 };
 
-export const stringsAreValidFileFormat = (sleuthStudy: string): { isValid: boolean; errorMessage?: string } => {
+export const studyChunkIsValid = (sleuthStudy: string): { isValid: boolean; errorMessage?: string } => {
     let containsDOI = false;
     let containsPMID = false;
     let containsAtLeastOneExperimentName = false;
@@ -135,7 +135,7 @@ export const validateFileContents = (fileContents: string): { isValid: boolean; 
     if (chunk.length) studyChunks.push(chunk.join('\n'));
 
     for (const sleuthStudy of studyChunks) {
-        const { isValid, errorMessage = '' } = stringsAreValidFileFormat(sleuthStudy);
+        const { isValid, errorMessage = '' } = studyChunkIsValid(sleuthStudy);
         if (!isValid) {
             return {
                 isValid: false,

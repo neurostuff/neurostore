@@ -1,4 +1,8 @@
 import { stringToNumber } from 'helpers/utils';
+import { BaseStudy } from 'neurostore-typescript-sdk';
+import { ICurationStubStudy } from 'pages/Curation/Curation.types';
+import { defaultIdentificationSources } from 'pages/Project/store/ProjectStore.types';
+import { v4 as uuidv4 } from 'uuid';
 import {
     cleanLine,
     extractAuthorsFromString,
@@ -9,11 +13,6 @@ import {
     parseCoordinate,
     parseKeyVal,
 } from '.';
-import { v4 as uuidv4 } from 'uuid';
-import { ITag } from 'hooks/projects/useGetProjects';
-import { ICurationStubStudy } from 'pages/Curation/Curation.types';
-import { defaultIdentificationSources } from 'pages/Project/store/ProjectStore.types';
-import { BaseStudy } from 'neurostore-typescript-sdk';
 
 const extractStubFromSleuthStudy = (sleuthStudy: string): ISleuthStub => {
     const studyStrings = sleuthStudy.split('\n');
@@ -78,60 +77,45 @@ export const sleuthUploadToStubs = (sleuthFile: string): Omit<ISleuthFileUploadS
 };
 
 export const sleuthIngestedStudiesToStubs = (
-    uploads: {
-        fileName: string;
-        studyAnalysisList: { studyId: string; analysisId: string; doi: string; pmid: string }[];
-        baseStudySleuthstubsWithDetails: BaseStudy[];
-    }[]
+    studyAnalysisList: { studyId: string; analysisId: string; doi: string; pmid: string }[],
+    baseStudiesFromSleuthStubs: BaseStudy[]
 ) => {
-    // although we know that each individual upload is deduplicates,
-    // its possible that there are multiple uploads with the same study. We want to deduplicate
-    // studies across all uploads so we
     const allIdentifiersSet = new Set<string>();
-    const studyResponsesToStubs: ICurationStubStudy[] = [];
+    const sleuthBaseStudiesToStubs: ICurationStubStudy[] = [];
 
-    for (const { fileName, studyAnalysisList, baseStudySleuthstubsWithDetails } of uploads) {
-        const tag: ITag = {
-            label: fileName,
-            id: uuidv4(),
-            isExclusionTag: false,
-            isAssignable: true,
-        };
+    for (const { name, authors, pmid, pmcid, doi, year, publication, description } of baseStudiesFromSleuthStubs) {
+        // although we know that each individual upload is deduplicated,
+        // its possible that there are multiple uploads with the same study. We want to deduplicate
+        // studies across all uploads so we only allow a unique pmid or doi
+        if ((pmid && allIdentifiersSet.has(pmid)) || (doi && allIdentifiersSet.has(doi))) return;
 
-        baseStudySleuthstubsWithDetails.forEach(
-            ({ name, authors, pmid, pmcid, doi, year, publication, description }) => {
-                if ((pmid && allIdentifiersSet.has(pmid)) || (doi && allIdentifiersSet.has(doi))) {
-                    return;
-                }
+        if (pmid) allIdentifiersSet.add(pmid);
+        if (doi) allIdentifiersSet.add(doi);
 
-                if (pmid) allIdentifiersSet.add(pmid);
-                if (doi) allIdentifiersSet.add(doi);
-
-                const correspondingStudyId = studyAnalysisList.find(
-                    (studyAnalysisObject) => studyAnalysisObject.doi === doi || studyAnalysisObject.pmid === pmid
-                );
-
-                studyResponsesToStubs.push({
-                    id: uuidv4(),
-                    title: name || '',
-                    authors: authors || '',
-                    keywords: '',
-                    pmid: pmid || '',
-                    pmcid: pmcid || '',
-                    doi: doi || '',
-                    articleYear: year?.toString() || '',
-                    journal: publication || '',
-                    abstractText: description || '',
-                    articleLink: '',
-                    exclusionTag: null,
-                    identificationSource: defaultIdentificationSources.sleuth,
-                    tags: [tag],
-                    neurostoreId: correspondingStudyId?.studyId || '',
-                });
-            }
+        const correspondingStudyId = studyAnalysisList.find(
+            (studyAnalysisObject) => studyAnalysisObject.doi === doi || studyAnalysisObject.pmid === pmid
         );
+
+        sleuthBaseStudiesToStubs.push({
+            id: uuidv4(),
+            title: name || '',
+            authors: authors || '',
+            keywords: '',
+            pmid: pmid || '',
+            pmcid: pmcid || '',
+            doi: doi || '',
+            articleYear: year?.toString() || '',
+            journal: publication || '',
+            abstractText: description || '',
+            articleLink: '',
+            exclusionTag: null,
+            identificationSource: defaultIdentificationSources.sleuth,
+            tags: [],
+            neurostoreId: correspondingStudyId?.studyId || '',
+        });
     }
-    return studyResponsesToStubs;
+
+    return sleuthBaseStudiesToStubs;
 };
 
 export const sleuthStubsToBaseStudies = (sleuthStubs: ISleuthStub[]) => {

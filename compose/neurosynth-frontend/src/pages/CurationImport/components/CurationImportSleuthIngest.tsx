@@ -1,27 +1,22 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import { Box, Button, CircularProgress, LinearProgress, Typography } from '@mui/material';
-import { EPropertyType } from 'components/EditMetadata/EditMetadata.types';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
-import { useCreateAnnotation, useCreateProject, useCreateStudyset, useUpdateStudy } from 'hooks';
 import useGetPubMedIdFromDOI from 'hooks/external/useGetPubMedIdFromDOI';
 import useGetPubmedIDs from 'hooks/external/useGetPubMedIds';
 import useIngest from 'hooks/studies/useIngest';
-import { BaseStudy, NoteCollectionReturn } from 'neurostore-typescript-sdk';
-import { EExtractionStatus } from 'pages/Extraction/ExtractionPage';
+import { BaseStudy } from 'neurostore-typescript-sdk';
+import CurationImportStyles from 'pages/CurationImport/components/CurationImport.styles';
 import { useEffect, useRef, useState } from 'react';
 import {
     applyPubmedStudyDetailsToBaseStudiesAndRemoveDuplicates,
-    createProjectHelper,
-    generateAnnotationForSleuthImport,
-} from '../helpers';
-import CurationImportStyles from 'pages/CurationImport/components/CurationImport.styles';
-import {
     ingestBaseStudies,
     ISleuthFileUploadStubs,
     lookForPMIDsAndFetchStudyDetails,
+    sleuthIngestedStudiesToStubs,
     sleuthStubsToBaseStudies,
-} from '../helpers';
+} from '../../CurationImport/helpers';
+import { ICurationStubStudy } from 'pages/Curation/Curation.types';
 
 const updateUploadSummary = (sleuthUpload: ISleuthFileUploadStubs) => {
     const numCoordinatesImported = sleuthUpload.sleuthStubs.reduce((acc, curr) => {
@@ -34,39 +29,27 @@ const updateUploadSummary = (sleuthUpload: ISleuthFileUploadStubs) => {
     };
 };
 
-const SleuthImportWizardBuild: React.FC<{
+const CurationImportSleuthIngest: React.FC<{
     sleuthUploads: ISleuthFileUploadStubs[];
-    onNext: (projectId: string, studysetId: string, annotationId: string) => void;
-}> = (props) => {
+    onStubsUploaded: (stubs: ICurationStubStudy[]) => void;
+}> = ({ sleuthUploads, onStubsUploaded }) => {
     const { user } = useAuth0();
-    const { queryImperatively } = useGetPubmedIDs([], false);
+    const { queryImperatively: getPubmedIds } = useGetPubmedIDs([], false);
     const { mutateAsync: getPubMedIdFromDOI } = useGetPubMedIdFromDOI();
-    const [progressValue, setProgressValue] = useState(0);
-    const [progressText, setProgressText] = useState('');
     const { mutateAsync: ingestAsync } = useIngest();
-    const { mutateAsync: updateStudy } = useUpdateStudy();
-    const { mutateAsync: createStudyset } = useCreateStudyset();
-    const { mutateAsync: createAnnotation } = useCreateAnnotation();
-    const { mutateAsync: createProject } = useCreateProject();
-    const loadingState = useRef<{
-        started: boolean;
-    }>({
-        started: false,
-    });
-    const { sleuthUploads, onNext } = props;
-    const [createdProjectComponents, setCreatedProjectComponents] = useState({
-        projectId: '',
-        studysetId: '',
-        annotationId: '',
-    });
+
+    const hasStarted = useRef<boolean>(false);
+    const [sleuthStudyStubs, setSleuthStudyStubs] = useState<ICurationStubStudy[] | undefined>([]);
     const [isLoadingState, setIsLoadingState] = useState(true);
     const [isError, setIsError] = useState(false);
+    const [progressText, setProgressText] = useState('');
+    const [progressValue, setProgressValue] = useState(0);
 
     useEffect(() => {
         if (sleuthUploads.length === 0) return;
-        if (loadingState.current.started) return;
+        if (hasStarted.current) return;
 
-        loadingState.current.started = true;
+        hasStarted.current = true;
         setIsLoadingState(true);
 
         const build = async (sleuthUploads: ISleuthFileUploadStubs[]) => {
@@ -76,23 +59,16 @@ const SleuthImportWizardBuild: React.FC<{
                 setProgressValue(0);
                 setProgressText('Starting upload...');
 
-                const allAnnotationNotes: NoteCollectionReturn[] = [];
-                let allAnnotationNoteKeys: { [key: string]: EPropertyType } = {
-                    included: EPropertyType.BOOLEAN,
-                };
-                const uploads: {
-                    fileName: string;
-                    studyAnalysisList: {
-                        studyId: string;
-                        analysisId: string;
-                        doi: string;
-                        pmid: string;
-                    }[];
-                    baseStudySleuthstubsWithDetails: BaseStudy[];
+                const studyAnalysisList: {
+                    studyId: string;
+                    analysisId: string;
+                    doi: string;
+                    pmid: string;
                 }[] = [];
+                const baseStudiesFromSleuthStubs: BaseStudy[] = [];
 
                 let index = 0;
-                const percentageIncrement = 80 / sleuthUploads.length;
+                const percentageIncrement = 100 / sleuthUploads.length;
                 for (const sleuthUpload of sleuthUploads) {
                     setProgressText(
                         `Fetching study details for studies within ${sleuthUpload.fileName} (if they exist)...`
@@ -110,10 +86,10 @@ const SleuthImportWizardBuild: React.FC<{
                                 Math.round((progress / 100) * (percentageIncrement / 2) + percentageAlreadyComplete)
                             );
                         },
-                        queryImperatively
+                        getPubmedIds
                     );
 
-                    setProgressText(`Adding studies from ${sleuthUpload.fileName} into the database...`);
+                    setProgressText(`Adding ${sleuthUpload.fileName} studies into the database...`);
 
                     // 3. From the previous step, take our initial undetailed base studies and add details from pubmed
                     // Remove duplicates. The ingestion endpoint will take these base studies and either
@@ -125,6 +101,7 @@ const SleuthImportWizardBuild: React.FC<{
                         );
 
                     // 4. ingest the base studies and consolidate the sleuth stubs into Studies.
+                    // We could potentially have multiple of the same study across the uploads
                     // If N sleuth stubs have the same DOI/PMID, then a study object is created, with N analyses representing each sleuth stub
                     const studyAnalysisObjects = await ingestBaseStudies(
                         baseStudiesWithPubmedDetailsNoDuplicates,
@@ -140,81 +117,13 @@ const SleuthImportWizardBuild: React.FC<{
                             );
                         }
                     );
-
-                    const { noteKeys, notes } = generateAnnotationForSleuthImport(
-                        studyAnalysisObjects,
-                        sleuthUpload.fileName
-                    );
-                    allAnnotationNoteKeys = { ...allAnnotationNoteKeys, ...noteKeys };
-                    allAnnotationNotes.push(...notes);
-
-                    uploads.push({
-                        fileName: sleuthUpload.fileName,
-                        studyAnalysisList: studyAnalysisObjects,
-                        baseStudySleuthstubsWithDetails: baseStudiesWithPubmedDetailsNoDuplicates,
-                    });
+                    studyAnalysisList.push(...studyAnalysisObjects);
+                    baseStudiesFromSleuthStubs.push(...baseStudiesWithPubmedDetailsNoDuplicates);
                     index++;
                 }
 
-                // for multiple files, some annotation notes do not have all of the keys in the note object set, however
-                // the backend expects all note objects to have the properties that exist within noteKeys
-                Object.keys(allAnnotationNoteKeys).forEach((key) => {
-                    allAnnotationNotes.forEach((noteObject) => {
-                        const note = noteObject.note as { [key: string]: boolean };
-                        if (!note[key]) {
-                            note[key] = false;
-                        }
-                    });
-                });
-
-                setProgressValue(85);
-                setProgressText('Creating studyset...');
-
-                const createdStudyset = await createStudyset({
-                    name: `Studyset for Untitled sleuth project`,
-                    description: '',
-                    studies: uploads.reduce((acc, curr) => {
-                        return [...acc, ...curr.studyAnalysisList.map((study) => study.studyId)];
-                    }, [] as string[]),
-                });
-                if (!createdStudyset.data.id) throw new Error('Created studyset but found no ID');
-
-                setProgressValue(90);
-                setProgressText('Creating annotation...');
-
-                const createdAnnotation = await createAnnotation({
-                    source: 'neurosynth',
-                    sourceId: undefined,
-                    annotation: {
-                        name: 'Annotation for Untitled sleuth project',
-                        description: '',
-                        note_keys: allAnnotationNoteKeys,
-                        notes: allAnnotationNotes,
-                        studyset: createdStudyset.data.id,
-                    },
-                });
-                if (!createdAnnotation.data.id) throw new Error('Created annotation but found no ID');
-
-                setProgressValue(95);
-                setProgressText('Finalizing project...');
-
-                const createdProject = await createProjectHelper(
-                    createdStudyset.data.id,
-                    createdAnnotation.data.id,
-                    uploads,
-                    createProject
-                );
-                if (!createdProject.data.id) throw new Error('Created project but found no ID');
-
-                setCreatedProjectComponents({
-                    projectId: createdProject.data.id,
-                    studysetId: createdStudyset.data.id,
-                    annotationId: createdAnnotation.data.id,
-                });
-
-                // set chip to completed in extraction page so that user is automatically brought to completed studies by default
-                const selectedChipLocalStorageKey = `SELECTED_CHIP-${createdProject.data.id}`;
-                localStorage.setItem(selectedChipLocalStorageKey, EExtractionStatus.COMPLETED);
+                const stubs = sleuthIngestedStudiesToStubs(studyAnalysisList, baseStudiesFromSleuthStubs);
+                setSleuthStudyStubs(stubs);
 
                 setProgressValue(100);
                 setProgressText('Complete...');
@@ -226,37 +135,16 @@ const SleuthImportWizardBuild: React.FC<{
         };
 
         build(sleuthUploads);
-    }, [
-        createProject,
-        createStudyset,
-        ingestAsync,
-        onNext,
-        updateStudy,
-        createAnnotation,
-        sleuthUploads,
-        user,
-        queryImperatively,
-        getPubMedIdFromDOI,
-    ]);
+    }, [ingestAsync, onStubsUploaded, sleuthUploads, user, getPubmedIds, getPubMedIdFromDOI]);
 
     const handleNext = () => {
-        if (
-            !createdProjectComponents.projectId ||
-            !createdProjectComponents.studysetId ||
-            !createdProjectComponents.annotationId
-        )
-            return;
-
-        onNext(
-            createdProjectComponents.projectId,
-            createdProjectComponents.studysetId,
-            createdProjectComponents.annotationId
-        );
+        if (!sleuthStudyStubs) throw new Error('No sleuth study stubs found');
+        onStubsUploaded(sleuthStudyStubs);
     };
 
     return (
         <StateHandlerComponent isLoading={false} isError={isError}>
-            <Box>
+            <Box my={2}>
                 {isLoadingState ? (
                     <Box
                         sx={{
@@ -336,4 +224,4 @@ const SleuthImportWizardBuild: React.FC<{
     );
 };
 
-export default SleuthImportWizardBuild;
+export default CurationImportSleuthIngest;
