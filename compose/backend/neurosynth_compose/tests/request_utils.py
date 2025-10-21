@@ -85,7 +85,12 @@ class Client(object):
                     kwargs["files"] = data
                     kwargs["headers"].pop("Content-Type", None)
                 else:
-                    kwargs["data"] = data
+                    payload = data
+                    if json_dump and isinstance(payload, (dict, list)):
+                        payload = json.dumps(payload)
+                    if isinstance(payload, str):
+                        payload = payload.encode("utf-8")
+                    kwargs["content"] = payload
             response = request_function(route, **kwargs)
             return ResponseWrapper(response)
 
