@@ -26,14 +26,6 @@ const NavDrawer: React.FC<INav> = (props) => {
     const [isOpen, setIsOpen] = useState(false);
     const navigate = useNavigate();
 
-    const handleOpenDrawer = (_event: React.MouseEvent<HTMLElement>) => {
-        setIsOpen(true);
-    };
-
-    const handleCloseDrawer = (_event: React.MouseEvent) => {
-        setIsOpen(false);
-    };
-
     return (
         <Toolbar>
             <Box
@@ -41,19 +33,15 @@ const NavDrawer: React.FC<INav> = (props) => {
                 to="/"
                 sx={[NavbarStyles.logoContainer, { flexGrow: 1, justifyContent: 'flex-end' }]}
             >
-                <img
-                    style={NavbarStyles.logo as any}
-                    alt="neurosynth compose logo"
-                    src="/static/synth.png"
-                />
+                <img style={NavbarStyles.logo as any} alt="neurosynth compose logo" src="/static/synth.png" />
                 <Typography sx={NavbarStyles.logoText}>neurosynth compose</Typography>
             </Box>
             <Box sx={{ flexGrow: 1, justifyContent: 'flex-end', display: 'flex' }}>
-                <IconButton onClick={handleOpenDrawer}>
+                <IconButton onClick={() => setIsOpen(true)}>
                     <MenuIcon />
                 </IconButton>
             </Box>
-            <Drawer anchor="right" open={isOpen} onClose={handleCloseDrawer}>
+            <Drawer anchor="right" open={isOpen} onClose={() => setIsOpen(false)}>
                 <List>
                     {isAuthenticated && (
                         <>
@@ -62,10 +50,7 @@ const NavDrawer: React.FC<INav> = (props) => {
                                     <ListItemIcon>
                                         <AddCircleOutlineIcon color="secondary" />
                                     </ListItemIcon>
-                                    <ListItemText
-                                        sx={{ color: 'secondary.main' }}
-                                        primary="NEW PROJECT"
-                                    />
+                                    <ListItemText sx={{ color: 'secondary.main' }} primary="NEW PROJECT" />
                                 </ListItemButton>
                             </ListItem>
                             <ListItem>
@@ -92,7 +77,27 @@ const NavDrawer: React.FC<INav> = (props) => {
                             </ListItem>
                         </List>
                     </DrawerToggleMenu>
-                    <ListItem>
+                    <DrawerToggleMenu labelText="Help">
+                        <List>
+                            <ListItem>
+                                <ListItemButton
+                                    onClick={() => window.open('https://neurostuff.github.io/compose-docs/', '_blank')}
+                                >
+                                    <ListItemIcon />
+                                    <ListItemText primaryTypographyProps={{ display: 'flex', alignItems: 'center' }}>
+                                        Documentation <OpenInNewIcon fontSize="small" sx={{ ml: 1 }} />
+                                    </ListItemText>
+                                </ListItemButton>
+                            </ListItem>
+                            <ListItem>
+                                <ListItemButton onClick={() => navigate('/help')}>
+                                    <ListItemIcon />
+                                    <ListItemText primary="Get Help" />
+                                </ListItemButton>
+                            </ListItem>
+                        </List>
+                    </DrawerToggleMenu>
+                    {/* <ListItem>
                         <Button
                             sx={{ display: 'flex', padding: '8px 16px', width: '100%' }}
                             target="_blank"
@@ -104,11 +109,15 @@ const NavDrawer: React.FC<INav> = (props) => {
                             </ListItemIcon>
                             <ListItemText primary="DOCS" sx={{ color: 'black' }} />
                         </Button>
-                    </ListItem>
+                    </ListItem> */}
                     <ListItem>
                         <ListItemButton
                             onClick={() => {
-                                isAuthenticated ? props.onLogout() : props.onLogin();
+                                if (isAuthenticated) {
+                                    props.onLogout();
+                                } else {
+                                    props.onLogin();
+                                }
                             }}
                         >
                             <ListItemIcon />

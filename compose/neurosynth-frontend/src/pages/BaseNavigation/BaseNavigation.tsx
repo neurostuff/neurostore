@@ -19,6 +19,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import LandingPage from '../LandingPage/LandingPage';
 import BaseNavigationStyles from './BaseNavigation.styles';
 import ProtectedRoute from './components/ProtectedRoute';
+import HelpPage from 'pages/HelpPage/HelpPage';
 
 const EditStudyPage = React.lazy(() => import('pages/Study/EditStudyPage'));
 const ProjectStudyPage = React.lazy(() => import('pages/Study/ProjectStudyPage'));
@@ -215,6 +216,7 @@ const BaseNavigation: React.FC = () => {
                             </ProtectedRoute>
                         }
                     />
+                    <Route path="/help" element={<HelpPage />} />
                     <Route
                         path="/forbidden"
                         element={

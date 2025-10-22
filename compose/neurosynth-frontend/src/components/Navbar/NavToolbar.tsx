@@ -61,20 +61,31 @@ const NavToolbar: React.FC<INav> = (props) => {
                         buttonLabel="explore"
                     />
 
-                    <Button
-                        sx={[
-                            NavToolbarStyles.menuItemColor,
-                            NavToolbarStyles.menuItemPadding,
-                            NavToolbarStyles.menuItem,
+                    <NavToolbarPopupSubMenu
+                        buttonProps={{
+                            sx: [
+                                NavToolbarStyles.menuItemColor,
+                                NavToolbarStyles.menuItemPadding,
+                                NavToolbarStyles.menuItem,
+                            ],
+                            endIcon: <KeyboardArrowDownIcon />,
+                        }}
+                        options={[
+                            {
+                                label: (
+                                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                        Documentation <OpenInNewIcon fontSize="small" sx={{ ml: 1 }} />
+                                    </Box>
+                                ),
+                                onClick: () => window.open('https://neurostuff.github.io/compose-docs/', '_blank'),
+                            },
+                            {
+                                label: 'Get Help',
+                                onClick: () => navigate('/help'),
+                            },
                         ]}
-                        variant="outlined"
-                        target="_blank"
-                        rel="noreferrer"
-                        href="https://neurostuff.github.io/compose-docs/"
-                    >
-                        DOCS
-                        <OpenInNewIcon sx={{ marginLeft: '8px', fontSize: '1.2rem' }} />
-                    </Button>
+                        buttonLabel="help"
+                    />
                     <NeurosynthAvatar onLogout={props.onLogout} onLogin={props.onLogin} />
                 </Box>
             </Box>
