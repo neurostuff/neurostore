@@ -11,8 +11,7 @@ const EditStudyAnnotationsHotTable: React.FC<{ readonly?: boolean }> = ({ readon
     const hotTableRef = useRef<HotTable>(null);
     const noteKeys = useAnnotationNoteKeys();
     const updateNotes = useUpdateAnnotationNotes();
-    const { colWidths, colHeaders, columns, hiddenRows, data, height } =
-        useEditStudyAnnotationsHotTable(readonly);
+    const { colWidths, colHeaders, columns, hiddenRows, data } = useEditStudyAnnotationsHotTable(readonly);
 
     const handleAfterChange = (changes: CellChange[] | null, source: ChangeSource) => {
         if (!data || !noteKeys || !changes) return;
@@ -49,12 +48,13 @@ const EditStudyAnnotationsHotTable: React.FC<{ readonly?: boolean }> = ({ readon
     }, [data]);
 
     return (
-        <Box sx={{ width: '100%' }}>
+        <Box sx={{ width: '100%', height: '100%' }}>
             <HotTable
                 {...HotSettings}
                 afterChange={handleAfterChange}
                 beforePaste={handleBeforePaste}
-                height={`${height}px`}
+                width="100%"
+                height="auto"
                 hiddenRows={{
                     rows: hiddenRows,
                     indicators: false,

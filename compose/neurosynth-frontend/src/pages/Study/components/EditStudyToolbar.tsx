@@ -3,7 +3,16 @@ import BookmarkIcon from '@mui/icons-material/Bookmark';
 import DoneAllIcon from '@mui/icons-material/DoneAll';
 import QuestionMark from '@mui/icons-material/QuestionMark';
 import SaveIcon from '@mui/icons-material/Save';
-import { Box, Button, ButtonGroup, CircularProgress, IconButton, Tooltip } from '@mui/material';
+import {
+    Box,
+    Button,
+    ButtonGroup,
+    CircularProgress,
+    IconButton,
+    Tooltip,
+    useTheme,
+    useMediaQuery,
+} from '@mui/material';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import ProgressLoader from 'components/ProgressLoader';
 import GlobalStyles from 'global.styles';
@@ -30,7 +39,7 @@ import useSaveStudy from 'pages/Study/hooks/useSaveStudy';
 import EditStudySwapVersionButton from 'pages/Study/components/EditStudySwapVersionButton';
 import EditStudyToolbarStyles from './EditStudyToolbar.styles';
 
-const EditStudyToolbar: React.FC<{ isViewOnly?: boolean }> = ({ isViewOnly = false }) => {
+const EditStudyToolbar: React.FC = () => {
     const [confirmationDialogState, setConfirmationDialogState] = useState<{
         isOpen: boolean;
         action: 'PREV' | 'NEXT' | 'COMPLETE' | undefined;
@@ -49,6 +58,9 @@ const EditStudyToolbar: React.FC<{ isViewOnly?: boolean }> = ({ isViewOnly = fal
 
     const user = useProjectUser();
     const canEdit = useUserCanEdit(user ?? undefined);
+
+    const theme = useTheme();
+    const mdDown = useMediaQuery(theme.breakpoints.down('md'));
 
     const studysetId = useProjectExtractionStudysetId();
     const { data, isLoading, isError } = useGetStudysetById(studysetId || '', true);
@@ -201,181 +213,183 @@ const EditStudyToolbar: React.FC<{ isViewOnly?: boolean }> = ({ isViewOnly = fal
     }, [extractionTableState.studies, studyId]);
 
     return (
-        <Box sx={EditStudyToolbarStyles.stickyContainer}>
-            {!isViewOnly && (
-                <Box sx={EditStudyToolbarStyles.toolbarContainer}>
-                    <ConfirmationDialog
-                        isOpen={confirmationDialogState.isOpen}
-                        dialogTitle="You have unsaved changes"
-                        dialogMessage="Are you sure you want to continue? You'll lose your unsaved changes"
-                        onCloseDialog={handleConfirmationDialogClose}
-                        rejectText="Cancel"
-                        confirmText="Continue"
-                    />
-                    <Box sx={EditStudyToolbarStyles.header}>Toolbar</Box>
-                    <Box
+        <Box sx={EditStudyToolbarStyles.toolbarContainer}>
+            <ConfirmationDialog
+                isOpen={confirmationDialogState.isOpen}
+                dialogTitle="You have unsaved changes"
+                dialogMessage="Are you sure you want to continue? You'll lose your unsaved changes"
+                onCloseDialog={handleConfirmationDialogClose}
+                rejectText="Cancel"
+                confirmText="Continue"
+            />
+            <Box sx={EditStudyToolbarStyles.header}>Toolbar</Box>
+            <Box sx={EditStudyToolbarStyles.contentsContainer}>
+                <Box
+                    sx={{
+                        marginBottom: {
+                            xs: '0px',
+                            md: '1rem',
+                        },
+                        height: '40px',
+                        width: '40px',
+                    }}
+                >
+                    {isComplete ? (
+                        <Tooltip placement="left" title="You're done! Click this button to continue to the next phase">
+                            <Box>
+                                <IconButton onClick={handleMoveToComplete} sx={GlobalStyles.colorPulseAnimation}>
+                                    <DoneAllIcon color="success" />
+                                </IconButton>
+                            </Box>
+                        </Tooltip>
+                    ) : (
+                        <Tooltip placement="left" title={`${percentageCompleteString} studies marked as complete`}>
+                            <Box>
+                                <Box sx={EditStudyToolbarStyles.showProgress}>{percentageComplete}%</Box>
+
+                                <CircularProgress
+                                    sx={{
+                                        backgroundColor: '#ededed',
+                                        borderRadius: '50%',
+                                        height: '40px',
+                                        width: '40px',
+                                    }}
+                                    variant="determinate"
+                                    value={percentageComplete}
+                                />
+                            </Box>
+                        </Tooltip>
+                    )}
+                </Box>
+
+                <Box>
+                    <ButtonGroup
+                        color="info"
+                        orientation={mdDown ? 'horizontal' : 'vertical'}
                         sx={{
-                            padding: '10px',
+                            minWidth: '0px',
+                            marginBottom: {
+                                xs: '0px',
+                                md: '1rem',
+                            },
                         }}
                     >
-                        <Box sx={{ marginBottom: '1rem' }}>
-                            {isComplete ? (
-                                <Tooltip
-                                    placement="left"
-                                    title="You're done! Click this button to continue to the next phase"
-                                >
-                                    <Box>
-                                        <IconButton
-                                            onClick={handleMoveToComplete}
-                                            sx={GlobalStyles.colorPulseAnimation}
-                                        >
-                                            <DoneAllIcon color="success" />
-                                        </IconButton>
-                                    </Box>
-                                </Tooltip>
-                            ) : (
-                                <Tooltip
-                                    placement="left"
-                                    title={`${percentageCompleteString} studies marked as complete`}
-                                >
-                                    <Box>
-                                        <Box sx={EditStudyToolbarStyles.showProgress}>{percentageComplete}%</Box>
-
-                                        <CircularProgress
-                                            sx={{
-                                                backgroundColor: '#ededed',
-                                                borderRadius: '50%',
-                                            }}
-                                            variant="determinate"
-                                            value={percentageComplete}
-                                        />
-                                    </Box>
-                                </Tooltip>
-                            )}
-                        </Box>
-
-                        <Box>
-                            <ButtonGroup
-                                color="info"
-                                orientation="vertical"
-                                sx={{ minWidth: '0px', marginBottom: '1rem' }}
+                        <Tooltip title="Mark as uncategorized" placement="left">
+                            <Button
+                                onClick={() => handleUpdateExtractionStatus(EExtractionStatus.UNCATEGORIZED)}
+                                sx={{ minWidth: '0', width: '40px', height: '40px' }}
+                                disableElevation
+                                color="warning"
+                                variant={
+                                    extractionStatus?.status === EExtractionStatus.UNCATEGORIZED
+                                        ? 'contained'
+                                        : 'outlined'
+                                }
                             >
-                                <Tooltip title="Mark as uncategorized" placement="left">
-                                    <Button
-                                        onClick={() => handleUpdateExtractionStatus(EExtractionStatus.UNCATEGORIZED)}
-                                        sx={{ minWidth: '0', width: '40px', height: '40px' }}
-                                        disableElevation
-                                        color="warning"
-                                        variant={
-                                            extractionStatus?.status === EExtractionStatus.UNCATEGORIZED
-                                                ? 'contained'
-                                                : 'outlined'
-                                        }
-                                    >
-                                        <QuestionMark />
-                                    </Button>
-                                </Tooltip>
-                                <Tooltip title="Save for later" placement="left">
-                                    <Button
-                                        onClick={() => handleUpdateExtractionStatus(EExtractionStatus.SAVEDFORLATER)}
-                                        sx={{ minWidth: '0', width: '40px', height: '40px' }}
-                                        disableElevation
-                                        variant={
-                                            extractionStatus?.status === EExtractionStatus.SAVEDFORLATER
-                                                ? 'contained'
-                                                : 'outlined'
-                                        }
-                                    >
-                                        <BookmarkIcon />
-                                    </Button>
-                                </Tooltip>
-                                <Tooltip title="Complete" placement="left">
-                                    <Button
-                                        onClick={() => handleUpdateExtractionStatus(EExtractionStatus.COMPLETED)}
-                                        sx={{ minWidth: '0', width: '40px', height: '40px' }}
-                                        disableElevation
-                                        color="success"
-                                        variant={
-                                            extractionStatus?.status === EExtractionStatus.COMPLETED
-                                                ? 'contained'
-                                                : 'outlined'
-                                        }
-                                    >
-                                        <Check />
-                                    </Button>
-                                </Tooltip>
-                            </ButtonGroup>
-                        </Box>
-
-                        <Box sx={{ marginBottom: '4px' }}>
-                            <EditStudySwapVersionButton />
-                        </Box>
-                        <Box sx={{ marginBottom: '1rem' }}>
-                            <Tooltip title={!hasEdits ? 'No edits to save' : 'Save'} placement="left">
-                                <Box>
-                                    <Button
-                                        disabled={!hasEdits}
-                                        disableElevation
-                                        onClick={handleSave}
-                                        variant="contained"
-                                        color="primary"
-                                        sx={{
-                                            width: '40px',
-                                            maxWidth: '40px',
-                                            minWidth: '40px',
-                                            height: '40px',
-                                            padding: 0,
-                                        }}
-                                    >
-                                        {saveStudyIsLoading ? (
-                                            <ProgressLoader color="secondary" size={20} />
-                                        ) : (
-                                            <SaveIcon />
-                                        )}
-                                    </Button>
-                                </Box>
-                            </Tooltip>
-                        </Box>
-
-                        <Box>
-                            <ButtonGroup color="info" orientation="vertical" sx={{ minWidth: '0px' }}>
-                                <Tooltip
-                                    placement="right"
-                                    title={hasPrevStudies ? `go to previous study` : `no more studies`}
-                                >
-                                    {/* need this box as a wrapper because tooltip will not act on a disabled element */}
-                                    <Box>
-                                        <Button
-                                            onClick={handleMoveToPreviousStudy}
-                                            disableElevation
-                                            disabled={!hasPrevStudies}
-                                            sx={{ height: '40px', width: '40px', minWidth: '0' }}
-                                        >
-                                            <KeyboardArrowLeft />
-                                        </Button>
-                                    </Box>
-                                </Tooltip>
-                                <Tooltip
-                                    placement="right"
-                                    title={hasNextStudies ? `go to next study` : `no more studies`}
-                                >
-                                    {/* need this box as a wrapper because tooltip will not act on a disabled element */}
-                                    <Box>
-                                        <Button
-                                            onClick={handleMoveToNextStudy}
-                                            disableElevation
-                                            disabled={!hasNextStudies}
-                                            sx={{ height: '40px', width: '40px', minWidth: '0' }}
-                                        >
-                                            <KeyboardArrowRight />
-                                        </Button>
-                                    </Box>
-                                </Tooltip>
-                            </ButtonGroup>
-                        </Box>
-                    </Box>
+                                <QuestionMark />
+                            </Button>
+                        </Tooltip>
+                        <Tooltip title="Save for later" placement="left">
+                            <Button
+                                onClick={() => handleUpdateExtractionStatus(EExtractionStatus.SAVEDFORLATER)}
+                                sx={{ minWidth: '0', width: '40px', height: '40px' }}
+                                disableElevation
+                                variant={
+                                    extractionStatus?.status === EExtractionStatus.SAVEDFORLATER
+                                        ? 'contained'
+                                        : 'outlined'
+                                }
+                            >
+                                <BookmarkIcon />
+                            </Button>
+                        </Tooltip>
+                        <Tooltip title="Complete" placement="left">
+                            <Button
+                                onClick={() => handleUpdateExtractionStatus(EExtractionStatus.COMPLETED)}
+                                sx={{ minWidth: '0', width: '40px', height: '40px' }}
+                                disableElevation
+                                color="success"
+                                variant={
+                                    extractionStatus?.status === EExtractionStatus.COMPLETED ? 'contained' : 'outlined'
+                                }
+                            >
+                                <Check />
+                            </Button>
+                        </Tooltip>
+                    </ButtonGroup>
                 </Box>
-            )}
+
+                <Box
+                    sx={{
+                        marginBottom: {
+                            xs: '0px',
+                            md: '4px',
+                        },
+                    }}
+                >
+                    <EditStudySwapVersionButton />
+                </Box>
+                <Box
+                    sx={{
+                        marginBottom: {
+                            xs: '0px',
+                            md: '1rem',
+                        },
+                    }}
+                >
+                    <Tooltip title={!hasEdits ? 'No edits to save' : 'Save'} placement="left">
+                        <Box>
+                            <Button
+                                disabled={!hasEdits}
+                                disableElevation
+                                onClick={handleSave}
+                                variant="contained"
+                                color="primary"
+                                sx={{
+                                    width: '40px',
+                                    maxWidth: '40px',
+                                    minWidth: '40px',
+                                    height: '40px',
+                                    padding: 0,
+                                }}
+                            >
+                                {saveStudyIsLoading ? <ProgressLoader color="secondary" size={20} /> : <SaveIcon />}
+                            </Button>
+                        </Box>
+                    </Tooltip>
+                </Box>
+
+                <Box>
+                    <ButtonGroup color="info" orientation={mdDown ? 'horizontal' : 'vertical'} sx={{ minWidth: '0px' }}>
+                        <Tooltip placement="right" title={hasPrevStudies ? `go to previous study` : `no more studies`}>
+                            {/* need this box as a wrapper because tooltip will not act on a disabled element */}
+                            <Box>
+                                <Button
+                                    onClick={handleMoveToPreviousStudy}
+                                    disableElevation
+                                    disabled={!hasPrevStudies}
+                                    sx={{ height: '40px', width: '40px', minWidth: '0' }}
+                                >
+                                    <KeyboardArrowLeft />
+                                </Button>
+                            </Box>
+                        </Tooltip>
+                        <Tooltip placement="right" title={hasNextStudies ? `go to next study` : `no more studies`}>
+                            {/* need this box as a wrapper because tooltip will not act on a disabled element */}
+                            <Box>
+                                <Button
+                                    onClick={handleMoveToNextStudy}
+                                    disableElevation
+                                    disabled={!hasNextStudies}
+                                    sx={{ height: '40px', width: '40px', minWidth: '0' }}
+                                >
+                                    <KeyboardArrowRight />
+                                </Button>
+                            </Box>
+                        </Tooltip>
+                    </ButtonGroup>
+                </Box>
+            </Box>
         </Box>
     );
 };

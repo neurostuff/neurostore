@@ -1,15 +1,6 @@
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
-import {
-    Box,
-    Button,
-    ButtonGroup,
-    ListItem,
-    ListItemButton,
-    Menu,
-    Tooltip,
-    Typography,
-} from '@mui/material';
+import { Box, Button, ButtonGroup, ListItem, ListItemButton, Menu, Tooltip, Typography } from '@mui/material';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import ProgressLoader from 'components/ProgressLoader';
 import { setAnalysesInAnnotationAsIncluded } from 'helpers/Annotation.helpers';
@@ -24,16 +15,12 @@ import {
     useProjectExtractionStudysetId,
     useProjectId,
 } from 'pages/Project/store/ProjectStore';
-import {
-    useStudyBaseStudyId,
-    useStudyId,
-    useUpdateStudyDetails,
-} from 'pages/Study/store/StudyStore';
+import { useStudyBaseStudyId, useStudyId, useUpdateStudyDetails } from 'pages/Study/store/StudyStore';
 import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAnnotationId } from 'stores/AnnotationStore.getters';
 
-const EditStudySwapVersionButton: React.FC = (props) => {
+const EditStudySwapVersionButton: React.FC = () => {
     const [anchorEl, setAnchorEl] = useState<null | HTMLButtonElement>(null);
     const open = Boolean(anchorEl);
     const baseStudyId = useStudyBaseStudyId();
@@ -89,8 +76,7 @@ const EditStudySwapVersionButton: React.FC = (props) => {
      * @param {string} versionToSwapTo - the id of the version to swap to
      */
     const handleSwapStudy = async (versionToSwapTo?: string) => {
-        if (!annotationId || !studyId || !studysetId || !versionToSwapTo || !studyset?.studies)
-            return;
+        if (!annotationId || !studyId || !studysetId || !versionToSwapTo || !studyset?.studies) return;
         if (versionToSwapTo === studyId) {
             handleCloseNavMenu();
             return;
@@ -100,9 +86,7 @@ const EditStudySwapVersionButton: React.FC = (props) => {
             handleCloseNavMenu();
             const updatedStudyset = [...(studyset.studies as string[])];
 
-            const currentStudyBeingEditedIndex = updatedStudyset.findIndex(
-                (study) => study === studyId
-            );
+            const currentStudyBeingEditedIndex = updatedStudyset.findIndex((study) => study === studyId);
             if (currentStudyBeingEditedIndex < 0) throw new Error('study not found in studyset');
 
             updatedStudyset[currentStudyBeingEditedIndex] = versionToSwapTo;
@@ -185,11 +169,7 @@ const EditStudySwapVersionButton: React.FC = (props) => {
                             padding: 0,
                         }}
                     >
-                        {isSwapping ? (
-                            <ProgressLoader color="secondary" size={20} />
-                        ) : (
-                            <SwapHorizIcon />
-                        )}
+                        {isSwapping ? <ProgressLoader color="secondary" size={20} /> : <SwapHorizIcon />}
                     </Button>
                 </Tooltip>
             </Box>
@@ -202,8 +182,7 @@ const EditStudySwapVersionButton: React.FC = (props) => {
                             {confirmationDialogState.selectedVersion || ''}
                         </Typography>
                         <Typography gutterBottom sx={{ color: 'error.main', marginBottom: '1rem' }}>
-                            Warning: switching versions will remove any annotations you have created
-                            for this study.
+                            Warning: switching versions will remove any annotations you have created for this study.
                         </Typography>
                     </>
                 }
@@ -222,15 +201,13 @@ const EditStudySwapVersionButton: React.FC = (props) => {
                 open={open}
                 onClose={handleCloseNavMenu}
                 anchorEl={anchorEl}
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-                transformOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                // anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                // transformOrigin={{ vertical: 'bottom', horizontal: 'right' }}
             >
                 {baseStudyVersions.map((version) => {
                     const isCurrentlySelected = version.id === studyId;
                     const username = version.username ? version.username : 'neurosynth';
-                    const lastUpdated = new Date(
-                        version.updated_at || version.created_at || ''
-                    ).toLocaleString();
+                    const lastUpdated = new Date(version.updated_at || version.created_at || '').toLocaleString();
 
                     return (
                         <ListItem key={version.id} sx={{ padding: '0.2rem 1rem' }}>

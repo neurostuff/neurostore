@@ -28,3 +28,10 @@ code {
         -moz-appearance: textfield;
     }
 }
+
+.line-clamp-1 {
+    -webkit-line-clamp: 1 !important;
+    -webkit-box-orient: vertical !important;
+    display: -webkit-box !important;
+    overflow: hidden !important;
+}

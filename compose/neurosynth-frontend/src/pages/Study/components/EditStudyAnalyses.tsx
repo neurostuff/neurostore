@@ -66,9 +66,7 @@ const EditStudyAnalyses: React.FC = React.memo(() => {
             expandIconColor="secondary.main"
             sx={[EditStudyComponentsStyles.accordion]}
             accordionSummarySx={EditStudyComponentsStyles.accordionSummary}
-            TitleElement={
-                <Typography sx={EditStudyComponentsStyles.accordionTitle}>Analyses</Typography>
-            }
+            TitleElement={<Typography sx={EditStudyComponentsStyles.accordionTitle}>Analyses</Typography>}
         >
             <Box sx={{ width: '100%', margin: '0.5rem 0' }}>
                 <Box sx={{ marginBottom: '1rem' }}>
@@ -99,7 +97,7 @@ const EditStudyAnalyses: React.FC = React.memo(() => {
                             <Box
                                 sx={{
                                     padding: '1rem 0 1rem 1rem',
-                                    width: 'calc(100% - 250px - 1rem)',
+                                    // width: 'calc(100% - 250px - 1rem)',
                                 }}
                             >
                                 <EditStudyAnalysis

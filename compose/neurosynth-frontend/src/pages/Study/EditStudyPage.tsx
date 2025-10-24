@@ -1,4 +1,4 @@
-import { Box, Button } from '@mui/material';
+import { Box, Button, useMediaQuery, useTheme } from '@mui/material';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { hasUnsavedStudyChanges, unsetUnloadHandler } from 'helpers/BeforeUnload.helpers';
@@ -16,8 +16,10 @@ import { useClearAnnotationStore, useInitAnnotationStore } from 'stores/Annotati
 import { useAnnotationId, useGetAnnotationIsLoading } from 'stores/AnnotationStore.getters';
 import DisplayExtractionTableState from './components/DisplayExtractionTableState';
 import EditStudyCompleteButton from './components/EditStudyCompleteButton';
+import EditStudyToolbar from './components/EditStudyToolbar';
+import { ArrowBack } from '@mui/icons-material';
 
-const EditStudyPage: React.FC = (props) => {
+const EditStudyPage: React.FC = () => {
     const { projectId, studyId } = useParams<{ projectId: string; studyId: string }>();
 
     const navigate = useNavigate();
@@ -32,6 +34,9 @@ const EditStudyPage: React.FC = (props) => {
     const clearAnnotationStore = useClearAnnotationStore();
     const initAnnotationStore = useInitAnnotationStore();
     const getAnnotationIsLoading = useGetAnnotationIsLoading();
+
+    const theme = useTheme();
+    const mdDown = useMediaQuery(theme.breakpoints.down('md'));
 
     // instead of the useInitStudyStoreIfRequired hook we call these funcitons in a useEffect as
     // we want to clear and init the study store every time in case the user wants to refresh the page and cancel their edits
@@ -69,47 +74,78 @@ const EditStudyPage: React.FC = (props) => {
             isError={false}
             isLoading={!studyStoreId || !annotationStoreId || getStudyIsLoading || getAnnotationIsLoading}
         >
-            <Box>
-                <EditStudyPageHeader />
-                <EditStudyAnnotations />
-                <EditStudyAnalyses />
-                <EditStudyDetails />
-                <Box sx={{ marginBottom: '5rem' }}>
-                    <EditStudyMetadata />
-                </Box>
-                <Box sx={[EditStudyPageStyles.loadingButtonContainer]}>
-                    <Box sx={{ width: '20%', justifyContent: 'flex-start' }}>
-                        <ConfirmationDialog
-                            isOpen={confirmationDialogIsOpen}
-                            dialogTitle="You have unsaved changes"
-                            dialogMessage="Are you sure you want to continue? You'll lose your unsaved changes"
-                            onCloseDialog={handleCloseConfirmationDialog}
-                            rejectText="Cancel"
-                            confirmText="Continue"
-                        />
-                        <Button
-                            color="secondary"
-                            disableElevation
-                            size="small"
-                            sx={{ width: '160px' }}
-                            variant="contained"
-                            onClick={handleBackToExtraction}
+            <EditStudyPageHeader />
+            <Box
+                sx={{
+                    display: 'flex',
+                    flexDirection: {
+                        xs: 'column-reverse',
+                        md: 'row',
+                    },
+                    boxSizing: 'border-box',
+                }}
+            >
+                <Box
+                    sx={{
+                        flexGrow: 1,
+                        mr: {
+                            xs: 0,
+                            md: 2,
+                        },
+                    }}
+                >
+                    <EditStudyAnnotations />
+                    <EditStudyAnalyses />
+                    <EditStudyDetails />
+                    <Box sx={{ marginBottom: '5rem' }}>
+                        <EditStudyMetadata />
+                    </Box>
+                    <Box sx={[EditStudyPageStyles.loadingButtonContainer]}>
+                        <Box sx={{ width: '20%', justifyContent: 'flex-start' }}>
+                            <ConfirmationDialog
+                                isOpen={confirmationDialogIsOpen}
+                                dialogTitle="You have unsaved changes"
+                                dialogMessage="Are you sure you want to continue? You'll lose your unsaved changes"
+                                onCloseDialog={handleCloseConfirmationDialog}
+                                rejectText="Cancel"
+                                confirmText="Continue"
+                            />
+                            <Button
+                                color="secondary"
+                                disableElevation
+                                size="small"
+                                sx={{ width: mdDown ? '40px' : '160px' }}
+                                variant="contained"
+                                onClick={handleBackToExtraction}
+                            >
+                                {mdDown ? <ArrowBack /> : 'Back to extraction'}
+                            </Button>
+                        </Box>
+                        <Box
+                            sx={{
+                                width: '60%',
+                                display: 'flex',
+                                justifyContent: 'center',
+                            }}
                         >
-                            Back to extraction
-                        </Button>
+                            <DisplayExtractionTableState />
+                        </Box>
+                        <Box sx={{ width: '20%', display: 'flex', justifyContent: 'flex-end' }}>
+                            <EditStudyCompleteButton />
+                        </Box>
                     </Box>
-                    <Box
-                        sx={{
-                            width: '60%',
-                            display: 'flex',
-                            justifyContent: 'center',
-                        }}
-                    >
-                        <DisplayExtractionTableState />
-                    </Box>
-                    <Box sx={{ width: '20%', display: 'flex', justifyContent: 'flex-end' }}>
-                        <EditStudyCompleteButton />
-                    </Box>
+                </Box>
+                <Box
+                    sx={{
+                        position: 'sticky', // this is needed when the toolbar is on top of the eidt study content
+                        top: '0',
+                        pt: 1,
+                        backgroundColor: 'white',
+                        zIndex: 1000,
+                        mb: 1,
+                    }}
+                >
+                    <EditStudyToolbar />
                 </Box>
             </Box>
         </StateHandlerComponent>

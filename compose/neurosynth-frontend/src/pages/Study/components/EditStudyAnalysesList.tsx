@@ -22,12 +22,18 @@ const EditStudyAnalysesList: React.FC<{
             sx={{
                 borderLeft: '1px solid lightgray',
                 borderRight: '1px solid lightgray',
-                width: '250px',
+                width: {
+                    xs: '150px',
+                    md: '250px',
+                },
             }}
         >
             <List
                 sx={{
-                    width: '250px',
+                    width: {
+                        xs: '150px',
+                        md: '250px',
+                    },
                     maxHeight: '946px',
                     overflow: 'auto',
                 }}

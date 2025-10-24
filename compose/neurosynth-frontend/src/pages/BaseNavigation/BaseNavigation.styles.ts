@@ -1,4 +1,3 @@
-import { NAVBAR_HEIGHT } from 'components/Navbar/Navbar';
 import { Style } from '../..';
 
 const curationPageMargin = 2;

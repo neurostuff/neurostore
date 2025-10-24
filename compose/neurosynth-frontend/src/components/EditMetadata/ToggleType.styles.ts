@@ -41,11 +41,6 @@ const ToggleTypeStyles: Style = {
         minWidth: '118px',
         height: '40px',
     },
-    toggleItemContainer: {
-        height: '100%',
-        display: 'table-cell',
-        verticalAlign: 'middle',
-    },
 };
 
 export default ToggleTypeStyles;

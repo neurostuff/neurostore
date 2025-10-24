@@ -1,5 +1,5 @@
 import { ArrowLeft, ArrowRight } from '@mui/icons-material';
-import { Box, Button, Tooltip, Typography } from '@mui/material';
+import { Box, Button, Tooltip, Typography, useMediaQuery, useTheme } from '@mui/material';
 import { useGetStudyById, useGetStudysetById, useUserCanEdit } from 'hooks';
 import { retrieveExtractionTableState } from 'pages/Extraction/components/ExtractionTable.helpers';
 import { useProjectExtractionStudysetId, useProjectId, useProjectUser } from 'pages/Project/store/ProjectStore';
@@ -10,7 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import React from 'react';
 
-const DisplayExtractionTableState: React.FC = (props) => {
+const DisplayExtractionTableState: React.FC = () => {
     const projectId = useProjectId();
     const studyId = useStudyId();
     const studysetId = useProjectExtractionStudysetId();
@@ -98,6 +98,9 @@ const DisplayExtractionTableState: React.FC = (props) => {
         }
     };
 
+    const theme = useTheme();
+    const mdDown = useMediaQuery(theme.breakpoints.down('md'));
+
     const filterStr = (extractionTableState?.columnFilters || []).reduce((acc, curr, index) => {
         if (index === 0) return `Filtering by ${curr.id}: ${curr.value || 'All'}`;
         return `${acc}, ${curr.id}: ${curr.value || 'All'}`;
@@ -133,20 +136,22 @@ const DisplayExtractionTableState: React.FC = (props) => {
                             ':hover': { backgroundColor: 'lightblue' },
                         }}
                     >
-                        <Typography
-                            sx={{
-                                textOverflow: 'ellipsis',
-                                maxWidth: '100px',
-                                width: '100px',
-                                fontSize: '8px',
-                                whiteSpace: 'nowrap',
-                                overflow: 'hidden',
-                                textAlign: 'start',
-                            }}
-                            fontSize="0.6rem"
-                        >
-                            {prevStudyIsLoading ? 'Loading...' : prevStudy?.name || ''}
-                        </Typography>
+                        {!mdDown && (
+                            <Typography
+                                sx={{
+                                    textOverflow: 'ellipsis',
+                                    maxWidth: '100px',
+                                    width: '100px',
+                                    fontSize: '8px',
+                                    whiteSpace: 'nowrap',
+                                    overflow: 'hidden',
+                                    textAlign: 'start',
+                                }}
+                                fontSize="0.6rem"
+                            >
+                                {prevStudyIsLoading ? 'Loading...' : prevStudy?.name || ''}
+                            </Typography>
+                        )}
                     </Button>
                 </Tooltip>
             ) : (
@@ -208,20 +213,22 @@ const DisplayExtractionTableState: React.FC = (props) => {
                             ':hover': { backgroundColor: 'lightblue' },
                         }}
                     >
-                        <Typography
-                            sx={{
-                                textOverflow: 'ellipsis',
-                                maxWidth: '100px',
-                                width: '100px',
-                                fontSize: '8px',
-                                whiteSpace: 'nowrap',
-                                overflow: 'hidden',
-                                textAlign: 'end',
-                            }}
-                            fontSize="0.6rem"
-                        >
-                            {nextStudyIsLoading ? 'Loading...' : nextStudy?.name || ''}
-                        </Typography>
+                        {!mdDown && (
+                            <Typography
+                                sx={{
+                                    textOverflow: 'ellipsis',
+                                    maxWidth: '100px',
+                                    width: '100px',
+                                    fontSize: '8px',
+                                    whiteSpace: 'nowrap',
+                                    overflow: 'hidden',
+                                    textAlign: 'end',
+                                }}
+                                fontSize="0.6rem"
+                            >
+                                {nextStudyIsLoading ? 'Loading...' : nextStudy?.name || ''}
+                            </Typography>
+                        )}
                     </Button>
                 </Tooltip>
             ) : (
