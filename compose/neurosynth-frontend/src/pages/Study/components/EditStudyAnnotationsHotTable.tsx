@@ -11,7 +11,7 @@ const EditStudyAnnotationsHotTable: React.FC<{ readonly?: boolean }> = ({ readon
     const hotTableRef = useRef<HotTable>(null);
     const noteKeys = useAnnotationNoteKeys();
     const updateNotes = useUpdateAnnotationNotes();
-    const { colWidths, colHeaders, columns, hiddenRows, data } = useEditStudyAnnotationsHotTable(readonly);
+    const { colWidths, colHeaders, columns, hiddenRows, data } = useEditStudyAnnotationsHotTable(hotTableRef, readonly);
 
     const handleAfterChange = (changes: CellChange[] | null, source: ChangeSource) => {
         if (!data || !noteKeys || !changes) return;

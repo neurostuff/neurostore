@@ -82,12 +82,14 @@ const EditStudyPage: React.FC = () => {
                         xs: 'column-reverse',
                         md: 'row',
                     },
-                    boxSizing: 'border-box',
                 }}
             >
                 <Box
                     sx={{
-                        flexGrow: 1,
+                        width: {
+                            xs: '100%',
+                            md: 'calc(100% - 62px - 1rem)',
+                        },
                         mr: {
                             xs: 0,
                             md: 2,
@@ -137,11 +139,9 @@ const EditStudyPage: React.FC = () => {
                 </Box>
                 <Box
                     sx={{
-                        position: 'sticky', // this is needed when the toolbar is on top of the eidt study content
+                        position: 'sticky', // this is needed when the toolbar is on top of the edit study content
                         top: '0',
-                        pt: 1,
-                        backgroundColor: 'white',
-                        zIndex: 1000,
+                        zIndex: 999,
                         mb: 1,
                     }}
                 >

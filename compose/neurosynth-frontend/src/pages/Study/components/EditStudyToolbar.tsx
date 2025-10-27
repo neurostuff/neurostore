@@ -77,7 +77,7 @@ const EditStudyToolbar: React.FC = () => {
         if (isLoading || isError) return;
         const stateFromSessionStorage = retrieveExtractionTableState(projectId);
 
-        if (!stateFromSessionStorage?.studies) {
+        if (!stateFromSessionStorage || stateFromSessionStorage.studies.length === 0) {
             setExtractionTableState((prev) => ({
                 ...prev,
                 studies: (data?.studies || []).map((study) => (study as StudyReturn).id as string),
@@ -235,7 +235,10 @@ const EditStudyToolbar: React.FC = () => {
                     }}
                 >
                     {isComplete ? (
-                        <Tooltip placement="left" title="You're done! Click this button to continue to the next phase">
+                        <Tooltip
+                            placement={mdDown ? 'bottom' : 'left'}
+                            title="You're done! Click this button to continue to the next phase"
+                        >
                             <Box>
                                 <IconButton onClick={handleMoveToComplete} sx={GlobalStyles.colorPulseAnimation}>
                                     <DoneAllIcon color="success" />
@@ -243,7 +246,10 @@ const EditStudyToolbar: React.FC = () => {
                             </Box>
                         </Tooltip>
                     ) : (
-                        <Tooltip placement="left" title={`${percentageCompleteString} studies marked as complete`}>
+                        <Tooltip
+                            placement={mdDown ? 'bottom' : 'left'}
+                            title={`${percentageCompleteString} studies marked as complete`}
+                        >
                             <Box>
                                 <Box sx={EditStudyToolbarStyles.showProgress}>{percentageComplete}%</Box>
 
@@ -274,7 +280,7 @@ const EditStudyToolbar: React.FC = () => {
                             },
                         }}
                     >
-                        <Tooltip title="Mark as uncategorized" placement="left">
+                        <Tooltip title="Mark as uncategorized" placement={mdDown ? 'bottom' : 'left'}>
                             <Button
                                 onClick={() => handleUpdateExtractionStatus(EExtractionStatus.UNCATEGORIZED)}
                                 sx={{ minWidth: '0', width: '40px', height: '40px' }}
@@ -289,7 +295,7 @@ const EditStudyToolbar: React.FC = () => {
                                 <QuestionMark />
                             </Button>
                         </Tooltip>
-                        <Tooltip title="Save for later" placement="left">
+                        <Tooltip title="Save for later" placement={mdDown ? 'bottom' : 'left'}>
                             <Button
                                 onClick={() => handleUpdateExtractionStatus(EExtractionStatus.SAVEDFORLATER)}
                                 sx={{ minWidth: '0', width: '40px', height: '40px' }}
@@ -303,7 +309,7 @@ const EditStudyToolbar: React.FC = () => {
                                 <BookmarkIcon />
                             </Button>
                         </Tooltip>
-                        <Tooltip title="Complete" placement="left">
+                        <Tooltip title="Complete" placement={mdDown ? 'bottom' : 'left'}>
                             <Button
                                 onClick={() => handleUpdateExtractionStatus(EExtractionStatus.COMPLETED)}
                                 sx={{ minWidth: '0', width: '40px', height: '40px' }}
@@ -337,7 +343,7 @@ const EditStudyToolbar: React.FC = () => {
                         },
                     }}
                 >
-                    <Tooltip title={!hasEdits ? 'No edits to save' : 'Save'} placement="left">
+                    <Tooltip title={!hasEdits ? 'No edits to save' : 'Save'} placement={mdDown ? 'bottom' : 'left'}>
                         <Box>
                             <Button
                                 disabled={!hasEdits}
@@ -361,7 +367,10 @@ const EditStudyToolbar: React.FC = () => {
 
                 <Box>
                     <ButtonGroup color="info" orientation={mdDown ? 'horizontal' : 'vertical'} sx={{ minWidth: '0px' }}>
-                        <Tooltip placement="right" title={hasPrevStudies ? `go to previous study` : `no more studies`}>
+                        <Tooltip
+                            placement={mdDown ? 'bottom' : 'left'}
+                            title={hasPrevStudies ? `go to previous study` : `no more studies`}
+                        >
                             {/* need this box as a wrapper because tooltip will not act on a disabled element */}
                             <Box>
                                 <Button
@@ -374,7 +383,10 @@ const EditStudyToolbar: React.FC = () => {
                                 </Button>
                             </Box>
                         </Tooltip>
-                        <Tooltip placement="right" title={hasNextStudies ? `go to next study` : `no more studies`}>
+                        <Tooltip
+                            placement={mdDown ? 'bottom' : 'left'}
+                            title={hasNextStudies ? `go to next study` : `no more studies`}
+                        >
                             {/* need this box as a wrapper because tooltip will not act on a disabled element */}
                             <Box>
                                 <Button

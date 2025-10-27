@@ -10,8 +10,10 @@ import {
 } from './EditStudyAnnotationsHotTable.types';
 import { IStoreNoteCollectionReturn } from 'stores/AnnotationStore.types';
 import { IStoreAnalysis } from '../store/StudyStore.helpers';
+import HotTable from '@handsontable/react/hotTable';
+import useGetWindowWidth from 'hooks/useGetWindowWidth';
 
-const useEditStudyAnnotationsHotTable = (readonly?: boolean) => {
+const useEditStudyAnnotationsHotTable = (hotTableRef: React.RefObject<HotTable>, readonly?: boolean) => {
     const studyId = useStudyId();
     const debouncedAnalyses = useDebouncedStudyAnalyses();
     const noteKeys = useAnnotationNoteKeys();
@@ -65,6 +67,14 @@ const useEditStudyAnnotationsHotTable = (readonly?: boolean) => {
             colWidths: createColWidths(noteKeys || [], 200, 200, 150),
         };
     }, [noteKeys, readonly]);
+
+    const windowWidth = useGetWindowWidth();
+    useEffect(() => {
+        if (windowWidth && hotTableRef.current?.hotInstance) {
+            hotTableRef.current.hotInstance.refreshDimensions();
+            hotTableRef.current.hotInstance.render();
+        }
+    }, [windowWidth, hotTableRef]);
 
     return {
         hiddenRows,

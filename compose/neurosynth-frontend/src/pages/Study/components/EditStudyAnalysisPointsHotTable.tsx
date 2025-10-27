@@ -24,8 +24,8 @@ import EditStudyAnalysisPointsHotTableToolbar from './EditStudyAnalysisPointsHot
 
 registerAllModules();
 
-const EditStudyAnalysisPointsHotTable: React.FC<{ analysisId?: string; readOnly?: boolean }> =
-    React.memo(({ analysisId, readOnly = false }) => {
+const EditStudyAnalysisPointsHotTable: React.FC<{ analysisId?: string; readOnly?: boolean }> = React.memo(
+    ({ analysisId, readOnly = false }) => {
         const points = useStudyAnalysisPoints(analysisId) as IStorePoint[] | null;
         const updatePoints = useUpdateAnalysisPoints();
         const createPoint = useCreateAnalysisPoints();
@@ -38,8 +38,11 @@ const EditStudyAnalysisPointsHotTable: React.FC<{ analysisId?: string; readOnly?
             insertRowsAbove: false,
             insertedRowsViaPaste: [],
         });
-        const { height, insertRowsDialogIsOpen, openInsertRowsDialog, closeInsertRowsDialog } =
-            useEditAnalysisPointsHotTable(analysisId, hotTableRef, hotTableMetadata);
+        const { insertRowsDialogIsOpen, openInsertRowsDialog, closeInsertRowsDialog } = useEditAnalysisPointsHotTable(
+            analysisId,
+            hotTableRef,
+            hotTableMetadata
+        );
 
         // handsontable binds and updates to the data references themselves which means the original data is being mutated.
         // as we use zustand, this may not be a good idea, so we implement handleAfterChange to
@@ -104,11 +107,7 @@ const EditStudyAnalysisPointsHotTable: React.FC<{ analysisId?: string; readOnly?
         // This is somewhat problematic as it modifies the zustand store object directly instead of calling set, which is exactly why we've been returning false everywhere.
         // However, there doesn't seem to be any issue with this because a proper zustand update still occurs when a new row
         // is created (via createPoint), and handleAfterChange is then called which creates another proper zustand update (updatePoints)
-        const handleBeforeCreateRow = (
-            index: number,
-            amount: number,
-            source?: ChangeSource | undefined
-        ) => {
+        const handleBeforeCreateRow = (index: number, amount: number, source?: ChangeSource | undefined) => {
             if (analysisId && source === 'CopyPaste.paste') {
                 createPoint(
                     analysisId,
@@ -157,17 +156,14 @@ const EditStudyAnalysisPointsHotTable: React.FC<{ analysisId?: string; readOnly?
                     selectedCoords = [[0, 0, (points || []).length - 1, 2]];
                 }
 
-                const { insertAboveIndex, insertBelowIndex } =
-                    getHotTableInsertionIndices(selectedCoords);
+                const { insertAboveIndex, insertBelowIndex } = getHotTableInsertionIndices(selectedCoords);
                 createPoint(
                     analysisId,
                     [...Array(numRows).keys()].map((num) => ({
                         value: undefined,
                         isNew: true,
                     })),
-                    hotTableMetadata.current.insertRowsAbove
-                        ? insertAboveIndex
-                        : insertBelowIndex + 1
+                    hotTableMetadata.current.insertRowsAbove ? insertAboveIndex : insertBelowIndex + 1
                 );
                 closeInsertRowsDialog();
             }
@@ -221,46 +217,66 @@ const EditStudyAnalysisPointsHotTable: React.FC<{ analysisId?: string; readOnly?
          * 5) handleAfterChange
          */
         return (
-            <Box sx={{ width: '100%' }}>
-                <InputNumberDialog
-                    isOpen={insertRowsDialogIsOpen}
-                    dialogTitle="Enter number of rows to insert"
-                    onCloseDialog={() => closeInsertRowsDialog()}
-                    onSubmit={(val) => handleInsertRows(val)}
-                    dialogDescription=""
+            <Box sx={{ width: '100%', height: '100%' }}>
+                <HotTable
+                    {...EditStudyAnalysisPointsDefaultConfig}
+                    afterChange={handleAfterChange} // beforeChange results in weird update issues so we use afterChange
+                    beforePaste={handleBeforePaste}
+                    width="100%"
+                    height="auto"
+                    beforeCreateRow={handleBeforeCreateRow}
+                    beforeRemoveRow={handleBeforeRemoveRow}
+                    afterAutofill={handleAfterAutofill}
+                    columns={hotTableColumnSettings}
+                    colHeaders={hotTableColHeaders}
+                    data={[...(points || [])]}
+                    ref={hotTableRef}
                 />
-                <Box sx={{ display: 'flex' }}>
-                    <Box
-                        sx={{
-                            width: '40px',
-                            height: '120px',
-                            marginRight: '0.5rem',
-                        }}
-                    >
-                        <EditStudyAnalysisPointsHotTableToolbar
-                            onAddRow={handleAddRow}
-                            onAddRows={handleAddRows}
-                            onDeleteRows={handleDeleteRows}
-                        />
-                    </Box>
-                    <Box sx={{ height: height, width: '567px' }}>
-                        <HotTable
-                            {...EditStudyAnalysisPointsDefaultConfig}
-                            ref={hotTableRef}
-                            afterChange={handleAfterChange} // beforeChange results in weird update issues so we use afterChange
-                            beforePaste={handleBeforePaste}
-                            beforeCreateRow={handleBeforeCreateRow}
-                            beforeRemoveRow={handleBeforeRemoveRow}
-                            afterAutofill={handleAfterAutofill}
-                            height={height}
-                            columns={hotTableColumnSettings}
-                            colHeaders={hotTableColHeaders}
-                            data={[...(points || [])]}
-                        />
-                    </Box>
-                </Box>
             </Box>
         );
-    });
+        // return (
+        //     <Box>
+        //         <InputNumberDialog
+        //             isOpen={insertRowsDialogIsOpen}
+        //             dialogTitle="Enter number of rows to insert"
+        //             onCloseDialog={() => closeInsertRowsDialog()}
+        //             onSubmit={(val) => handleInsertRows(val)}
+        //             dialogDescription=""
+        //         />
+        //         <Box>
+        //             {/* <Box
+        //                 sx={{
+        //                     width: '40px',
+        //                     height: '120px',
+        //                     marginRight: '0.5rem',
+        //                 }}
+        //             >
+        //                 <EditStudyAnalysisPointsHotTableToolbar
+        //                     onAddRow={handleAddRow}
+        //                     onAddRows={handleAddRows}
+        //                     onDeleteRows={handleDeleteRows}
+        //                 />
+        //             </Box> */}
+        //             <Box sx={{ width: '100%', height: '100%' }}>
+        //                 <HotTable
+        //                     {...EditStudyAnalysisPointsDefaultConfig}
+        //                     ref={hotTableRef}
+        //                     afterChange={handleAfterChange} // beforeChange results in weird update issues so we use afterChange
+        //                     beforePaste={handleBeforePaste}
+        //                     beforeCreateRow={handleBeforeCreateRow}
+        //                     height="auto"
+        //                     width="100%"
+        //                     beforeRemoveRow={handleBeforeRemoveRow}
+        //                     afterAutofill={handleAfterAutofill}
+        //                     columns={hotTableColumnSettings}
+        //                     colHeaders={hotTableColHeaders}
+        //                     data={[...(points || [])]}
+        //                 />
+        //             </Box>
+        //         </Box>
+        //     </Box>
+        // );
+    }
+);
 
 export default EditStudyAnalysisPointsHotTable;

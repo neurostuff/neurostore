@@ -3,12 +3,6 @@ import { Box, Typography } from '@mui/material';
 import LoadingButton from 'components/Buttons/LoadingButton';
 import { IMetadataRowModel, getType } from 'components/EditMetadata/EditMetadata.types';
 import AddMetadataRow from 'components/EditMetadata/AddMetadataRow';
-import {
-    createColumns,
-    hotDataToAnnotationNotes,
-    hotSettings,
-} from 'pages/Annotations/components/EditAnnotationsHotTable.helpers';
-import AnnotationsHotTableStyles from 'pages/Annotations/components/EditAnnotationsHotTable.styles';
 import useEditAnnotationsHotTable from 'pages/Annotations/hooks/useEditAnnotationsHotTable';
 import { noteKeyArrToObj } from 'components/HotTables/HotTables.utils';
 import { CellCoords } from 'handsontable';
@@ -20,14 +14,13 @@ import useUserCanEdit from 'hooks/useUserCanEdit';
 import { useSnackbar } from 'notistack';
 import { useProjectUser } from 'pages/Project/store/ProjectStore';
 import React, { useEffect, useRef } from 'react';
+import { createColumns, hotDataToAnnotationNotes, hotSettings } from './EditAnnotationsHotTable.helpers';
 
 registerAllModules();
 
 const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((props) => {
     const { enqueueSnackbar } = useSnackbar();
-    const { mutate, isLoading: updateAnnotationIsLoading } = useUpdateAnnotationById(
-        props.annotationId
-    );
+    const { mutate, isLoading: updateAnnotationIsLoading } = useUpdateAnnotationById(props.annotationId);
     const projectUser = useProjectUser();
     const canEdit = useUserCanEdit(projectUser || undefined);
     const hotTableRef = useRef<HotTable>(null);
@@ -47,7 +40,7 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
     } = useEditAnnotationsHotTable(props.annotationId, !canEdit);
 
     useEffect(() => {
-        let timeout: any = setTimeout(() => {
+        const timeout: any = setTimeout(() => {
             if (!hotTableRef.current?.hotInstance) return;
             const sizes = [
                 '64px', // NAV_HEIGHT
@@ -88,11 +81,7 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
             return;
         }
 
-        const updatedAnnotationNotes = hotDataToAnnotationNotes(
-            hotData,
-            hotDataToStudyMapping,
-            noteKeys
-        );
+        const updatedAnnotationNotes = hotDataToAnnotationNotes(hotData, hotDataToStudyMapping, noteKeys);
         const updatedNoteKeyObj = noteKeyArrToObj(noteKeys);
 
         mutate(
@@ -138,11 +127,7 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
         });
     };
 
-    const handleCellMouseUp = (
-        event: MouseEvent,
-        coords: CellCoords,
-        TD: HTMLTableCellElement
-    ): void => {
+    const handleCellMouseUp = (event: MouseEvent, coords: CellCoords, TD: HTMLTableCellElement): void => {
         const target = event.target as HTMLButtonElement;
         if (coords.row < 0 && (target.tagName === 'svg' || target.tagName === 'path')) {
             handleRemoveHotColumn(TD.innerText);
@@ -179,10 +164,7 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
         if (noteKeys.find((x) => x.key === trimmedKey)) return false;
 
         setAnnotationsHotState((prev) => {
-            const updatedNoteKeys = [
-                { key: trimmedKey, type: getType(row.metadataValue) },
-                ...prev.noteKeys,
-            ];
+            const updatedNoteKeys = [{ key: trimmedKey, type: getType(row.metadataValue) }, ...prev.noteKeys];
 
             return {
                 ...prev,
@@ -227,8 +209,17 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
         <Box>
             {theUserOwnsThisAnnotation && canEdit && (
                 <Box
-                    className="neurosynth-annotation-component"
-                    sx={[AnnotationsHotTableStyles.addMetadataRow]}
+                    sx={{
+                        mb: 1,
+                        width: {
+                            xs: '100%',
+                            md: '60%',
+                            lg: '50%',
+                        },
+                        display: 'grid',
+                        gridTemplateColumns: 'auto 1fr auto',
+                        gap: 4,
+                    }}
                 >
                     <AddMetadataRow
                         keyPlaceholderText="New Annotation Key"
@@ -258,8 +249,7 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
                     />
                 ) : (
                     <Typography sx={{ color: 'warning.dark' }}>
-                        There are no analyses to annotate. Get started by adding analyses to your
-                        studies.
+                        There are no analyses to annotate. Get started by adding analyses to your studies.
                     </Typography>
                 )}
             </Box>
@@ -275,7 +265,7 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
                         xs: '90%',
                         md: '80%',
                     },
-                    zIndex: 1000,
+                    zIndex: 999,
                 }}
             >
                 <LoadingButton

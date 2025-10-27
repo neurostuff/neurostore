@@ -1,4 +1,4 @@
-import { Box, List } from '@mui/material';
+import { List } from '@mui/material';
 import { IStoreAnalysis } from 'pages/Study/store/StudyStore.helpers';
 import { useCallback } from 'react';
 import StudyAnalysesListItem from './StudyAnalysesListItem';
@@ -18,7 +18,7 @@ const EditStudyAnalysesList: React.FC<{
     );
 
     return (
-        <Box
+        <List
             sx={{
                 borderLeft: '1px solid lightgray',
                 borderRight: '1px solid lightgray',
@@ -26,29 +26,20 @@ const EditStudyAnalysesList: React.FC<{
                     xs: '150px',
                     md: '250px',
                 },
+                maxHeight: '946px',
+                overflow: 'auto',
             }}
+            disablePadding
         >
-            <List
-                sx={{
-                    width: {
-                        xs: '150px',
-                        md: '250px',
-                    },
-                    maxHeight: '946px',
-                    overflow: 'auto',
-                }}
-                disablePadding
-            >
-                {analyses.map((analysis) => (
-                    <StudyAnalysesListItem
-                        key={analysis.id}
-                        analysis={analysis}
-                        onSelectAnalysis={handleSelectAnalysis}
-                        selected={(analysis.id || null) === (selectedAnalysisId || undefined)}
-                    />
-                ))}
-            </List>
-        </Box>
+            {analyses.map((analysis) => (
+                <StudyAnalysesListItem
+                    key={analysis.id}
+                    analysis={analysis}
+                    onSelectAnalysis={handleSelectAnalysis}
+                    selected={(analysis.id || null) === (selectedAnalysisId || undefined)}
+                />
+            ))}
+        </List>
     );
 };
 

@@ -5,7 +5,7 @@ const EditStudyToolbarStyles: Style = {
         position: 'sticky', // this is needed for when the toolbar is next to the edit study content
         top: '1rem',
         backgroundColor: 'white',
-        zIndex: 1000,
+        zIndex: 999,
         borderRadius: '4px',
         border: '1px solid',
         borderColor: 'primary.main',

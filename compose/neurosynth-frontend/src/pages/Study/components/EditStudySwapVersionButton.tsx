@@ -1,6 +1,17 @@
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
-import { Box, Button, ButtonGroup, ListItem, ListItemButton, Menu, Tooltip, Typography } from '@mui/material';
+import {
+    Box,
+    Button,
+    ButtonGroup,
+    ListItem,
+    ListItemButton,
+    Menu,
+    Tooltip,
+    Typography,
+    useMediaQuery,
+    useTheme,
+} from '@mui/material';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import ProgressLoader from 'components/ProgressLoader';
 import { setAnalysesInAnnotationAsIncluded } from 'helpers/Annotation.helpers';
@@ -151,10 +162,13 @@ const EditStudySwapVersionButton: React.FC = () => {
         return baseVersions.sort(lastUpdatedAtSortFn).reverse();
     }, [baseStudy?.versions]);
 
+    const theme = useTheme();
+    const mdDown = useMediaQuery(theme.breakpoints.down('md'));
+
     return (
         <>
             <Box>
-                <Tooltip title="Swap study version" placement="left">
+                <Tooltip title="Swap study version" placement={mdDown ? 'bottom' : 'left'}>
                     <Button
                         color="secondary"
                         disableElevation

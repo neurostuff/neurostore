@@ -30,7 +30,7 @@ const EditStudyAnalysis: React.FC<{
     };
 
     return (
-        <Box sx={{ marginBottom: '2rem', width: '100%' }}>
+        <Box sx={{ marginBottom: '2rem' }}>
             <StudyAnalysisWarnings analysisId={props.analysisId} />
             <EditStudyAnalysisDetails analysisId={props.analysisId} />
             <EditStudyAnalysisPoints analysisId={props.analysisId} />
