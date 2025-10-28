@@ -637,6 +637,13 @@ class AnnotationAnalysisSchema(BaseSchema):
         return data
 
 
+class AnnotationPipelineSchema(BaseSchema):
+    name = fields.String(required=True)
+    version = fields.String(load_default=None, allow_none=True)
+    config_id = fields.String(load_default=None, allow_none=True)
+    columns = fields.List(fields.String(), required=True)
+
+
 class AnnotationSchema(BaseDataSchema):
     # serialization
     studyset_id = fields.String(data_key="studyset")
@@ -655,6 +662,9 @@ class AnnotationSchema(BaseDataSchema):
     metadata_ = fields.Dict(data_key="metadata", load_only=True, allow_none=True)
     name = fields.String(allow_none=True)
     description = fields.String(allow_none=True)
+    pipelines = fields.List(
+        fields.Nested(AnnotationPipelineSchema), load_only=True, required=False
+    )
 
     @pre_load
     def add_studyset_id(self, data, **kwargs):

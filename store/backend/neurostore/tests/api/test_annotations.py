@@ -1,4 +1,74 @@
-from ...models import Studyset, Annotation, User
+from datetime import datetime, timezone
+
+from ...models import (
+    Studyset,
+    Annotation,
+    User,
+    BaseStudy,
+    Study,
+    Analysis,
+    StudysetStudy,
+    AnnotationAnalysis,
+    Pipeline,
+    PipelineConfig,
+    PipelineStudyResult,
+)
+
+
+def _create_annotation_with_two_analyses(session, user):
+    base_study = BaseStudy(name="Test Base Study", level="group", user=user)
+    study = Study(
+        name="Test Study",
+        level="group",
+        base_study=base_study,
+        user=user,
+    )
+    analysis1 = Analysis(name="Analysis 1", study=study, user=user)
+    analysis2 = Analysis(name="Analysis 2", study=study, user=user)
+
+    studyset = Studyset(name="Test Studyset", user=user)
+
+    session.add_all([base_study, study, analysis1, analysis2, studyset])
+    session.flush()
+
+    studyset_study = StudysetStudy(study_id=study.id, studyset_id=studyset.id)
+    session.add(studyset_study)
+    session.flush()
+
+    annotation = Annotation(
+        name="Test Annotation",
+        studyset=studyset,
+        user=user,
+        note_keys={"existing": "string"},
+    )
+
+    session.add(annotation)
+    session.flush()
+
+    annotation.annotation_analyses = [
+        AnnotationAnalysis(
+            analysis=analysis1,
+            studyset_study=studyset_study,
+            annotation=annotation,
+            note={"existing": "A1"},
+            user=user,
+            study_id=analysis1.study_id,
+            studyset_id=studyset_study.studyset_id,
+        ),
+        AnnotationAnalysis(
+            analysis=analysis2,
+            studyset_study=studyset_study,
+            annotation=annotation,
+            note={"existing": "A2"},
+            user=user,
+            study_id=analysis2.study_id,
+            studyset_id=studyset_study.studyset_id,
+        ),
+    ]
+
+    session.add_all(annotation.annotation_analyses)
+    session.commit()
+    return annotation, base_study
 
 
 def test_post_blank_annotation(auth_client, ingest_neurosynth, session):
@@ -402,6 +472,148 @@ def test_correct_note_overwrite(auth_client, ingest_neurosynth, session):
     )
 
 
+def test_put_annotation_applies_pipeline_columns(auth_client, session):
+    user = User.query.filter_by(external_id=auth_client.username).first()
+    annotation, base_study = _create_annotation_with_two_analyses(session, user)
+
+    pipeline = Pipeline(name="DemoPipeline")
+    config = PipelineConfig(
+        pipeline=pipeline,
+        version="1.0.0",
+        config_hash="demo_hash",
+        config_args={},
+    )
+    result = PipelineStudyResult(
+        base_study=base_study,
+        config=config,
+        status="SUCCESS",
+        date_executed=datetime(2024, 1, 1, tzinfo=timezone.utc),
+        result_data={
+            "string_field": "demo",
+            "numeric_field": 42,
+            "array_field": [
+                {"name": "a"},
+                {"name": "b"},
+            ],
+        },
+        file_inputs={},
+    )
+    session.add_all([pipeline, config, result])
+    session.commit()
+
+    payload = {
+        "pipelines": [
+            {
+                "name": pipeline.name,
+                "columns": ["string_field", "numeric_field", "name"],
+            }
+        ]
+    }
+
+    resp = auth_client.put(f"/api/annotations/{annotation.id}", data=payload)
+    assert resp.status_code == 200
+    body = resp.json()
+
+    assert body["note_keys"]["existing"] == "string"
+    assert body["note_keys"]["string_field"] == "string"
+    assert body["note_keys"]["numeric_field"] == "number"
+    assert body["note_keys"]["name"] == "string"
+
+    notes = body["notes"]
+    assert len(notes) == 2
+    for entry in notes:
+        note = entry["note"]
+        assert note["existing"] in {"A1", "A2"}
+        assert note["string_field"] == "demo"
+        assert note["numeric_field"] == 42
+        assert note["name"] == "a,b"
+
+
+def test_put_annotation_pipeline_column_conflict_suffix(auth_client, session):
+    user = User.query.filter_by(external_id=auth_client.username).first()
+    annotation, base_study = _create_annotation_with_two_analyses(session, user)
+
+    pipeline_one = Pipeline(name="PipelineOne")
+    config_one = PipelineConfig(
+        pipeline=pipeline_one,
+        version="1.0.0",
+        config_hash="hash_one",
+        config_args={},
+    )
+    result_one = PipelineStudyResult(
+        base_study=base_study,
+        config=config_one,
+        status="SUCCESS",
+        date_executed=datetime(2024, 1, 1, tzinfo=timezone.utc),
+        result_data={
+            "string_field": "primary",
+            "array_field": [
+                {"name": "a"},
+                {"name": "b"},
+            ],
+        },
+        file_inputs={},
+    )
+
+    pipeline_two = Pipeline(name="PipelineTwo")
+    config_two = PipelineConfig(
+        pipeline=pipeline_two,
+        version="2.0.0",
+        config_hash="hash_two",
+        config_args={},
+    )
+    result_two = PipelineStudyResult(
+        base_study=base_study,
+        config=config_two,
+        status="SUCCESS",
+        date_executed=datetime(2024, 1, 2, tzinfo=timezone.utc),
+        result_data={"string_field": "secondary"},
+        file_inputs={},
+    )
+
+    session.add_all(
+        [
+            pipeline_one,
+            config_one,
+            result_one,
+            pipeline_two,
+            config_two,
+            result_two,
+        ]
+    )
+    session.commit()
+
+    payload = {
+        "pipelines": [
+            {"name": pipeline_one.name, "columns": ["string_field", "name"]},
+            {
+                "name": pipeline_two.name,
+                "columns": ["string_field"],
+                "version": "2.0.0",
+            },
+        ]
+    }
+
+    resp = auth_client.put(f"/api/annotations/{annotation.id}", data=payload)
+    assert resp.status_code == 200
+    body = resp.json()
+
+    key_one = f"string_field_{pipeline_one.name}_{config_one.version}_{config_one.id}"
+    key_two = f"string_field_{pipeline_two.name}_{config_two.version}_{config_two.id}"
+
+    assert key_one in body["note_keys"]
+    assert key_two in body["note_keys"]
+    assert body["note_keys"][key_one] == "string"
+    assert body["note_keys"][key_two] == "string"
+    assert body["note_keys"]["name"] == "string"
+
+    for entry in body["notes"]:
+        note = entry["note"]
+        assert note[key_one] == "primary"
+        assert note[key_two] == "secondary"
+        assert note["name"] == "a,b"
+
+
 def test_annotation_analyses_post(auth_client, ingest_neurosynth, session):
     dset = Studyset.query.first()
     # y for x in non_flat for y in x
@@ -434,8 +646,11 @@ def test_annotation_analyses_post(auth_client, ingest_neurosynth, session):
     get_resp = auth_client.get(f"/api/annotations/{annot.json()['id']}")
 
     assert len(post_resp.json()) == 2  # third input did not have proper id
-    assert (
-        get_resp.json()["notes"][1]["note"]["doo"]
-        == post_resp.json()[1]["note"]["doo"]
-        == new_value
-    )
+    updated_by_analysis = {
+        note["analysis"]: note["note"]["doo"] for note in post_resp.json()
+    }
+    current_by_analysis = {
+        note["analysis"]: note["note"]["doo"] for note in get_resp.json()["notes"]
+    }
+    for analysis_id, value in updated_by_analysis.items():
+        assert current_by_analysis[analysis_id] == value == new_value
