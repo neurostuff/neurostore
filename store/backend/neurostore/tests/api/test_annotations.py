@@ -488,7 +488,14 @@ def test_put_annotation_applies_pipeline_columns(auth_client, session):
         config=config,
         status="SUCCESS",
         date_executed=datetime(2024, 1, 1, tzinfo=timezone.utc),
-        result_data={"string_field": "demo", "numeric_field": 42},
+        result_data={
+            "string_field": "demo",
+            "numeric_field": 42,
+            "array_field": [
+                {"name": "a"},
+                {"name": "b"},
+            ],
+        },
         file_inputs={},
     )
     session.add_all([pipeline, config, result])
@@ -498,7 +505,7 @@ def test_put_annotation_applies_pipeline_columns(auth_client, session):
         "pipelines": [
             {
                 "name": pipeline.name,
-                "columns": ["string_field", "numeric_field"],
+                "columns": ["string_field", "numeric_field", "name"],
             }
         ]
     }
@@ -510,6 +517,7 @@ def test_put_annotation_applies_pipeline_columns(auth_client, session):
     assert body["note_keys"]["existing"] == "string"
     assert body["note_keys"]["string_field"] == "string"
     assert body["note_keys"]["numeric_field"] == "number"
+    assert body["note_keys"]["name"] == "string"
 
     notes = body["notes"]
     assert len(notes) == 2
@@ -518,6 +526,7 @@ def test_put_annotation_applies_pipeline_columns(auth_client, session):
         assert note["existing"] in {"A1", "A2"}
         assert note["string_field"] == "demo"
         assert note["numeric_field"] == 42
+        assert note["name"] == "a,b"
 
 
 def test_put_annotation_pipeline_column_conflict_suffix(auth_client, session):
@@ -536,7 +545,13 @@ def test_put_annotation_pipeline_column_conflict_suffix(auth_client, session):
         config=config_one,
         status="SUCCESS",
         date_executed=datetime(2024, 1, 1, tzinfo=timezone.utc),
-        result_data={"string_field": "primary"},
+        result_data={
+            "string_field": "primary",
+            "array_field": [
+                {"name": "a"},
+                {"name": "b"},
+            ],
+        },
         file_inputs={},
     )
 
@@ -570,7 +585,7 @@ def test_put_annotation_pipeline_column_conflict_suffix(auth_client, session):
 
     payload = {
         "pipelines": [
-            {"name": pipeline_one.name, "columns": ["string_field"]},
+            {"name": pipeline_one.name, "columns": ["string_field", "name"]},
             {
                 "name": pipeline_two.name,
                 "columns": ["string_field"],
@@ -590,11 +605,13 @@ def test_put_annotation_pipeline_column_conflict_suffix(auth_client, session):
     assert key_two in body["note_keys"]
     assert body["note_keys"][key_one] == "string"
     assert body["note_keys"][key_two] == "string"
+    assert body["note_keys"]["name"] == "string"
 
     for entry in body["notes"]:
         note = entry["note"]
         assert note[key_one] == "primary"
         assert note[key_two] == "secondary"
+        assert note["name"] == "a,b"
 
 
 def test_annotation_analyses_post(auth_client, ingest_neurosynth, session):
@@ -629,8 +646,11 @@ def test_annotation_analyses_post(auth_client, ingest_neurosynth, session):
     get_resp = auth_client.get(f"/api/annotations/{annot.json()['id']}")
 
     assert len(post_resp.json()) == 2  # third input did not have proper id
-    assert (
-        get_resp.json()["notes"][1]["note"]["doo"]
-        == post_resp.json()[1]["note"]["doo"]
-        == new_value
-    )
+    updated_by_analysis = {
+        note["analysis"]: note["note"]["doo"] for note in post_resp.json()
+    }
+    current_by_analysis = {
+        note["analysis"]: note["note"]["doo"] for note in get_resp.json()["notes"]
+    }
+    for analysis_id, value in updated_by_analysis.items():
+        assert current_by_analysis[analysis_id] == value == new_value

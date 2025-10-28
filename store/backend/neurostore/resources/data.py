@@ -599,6 +599,30 @@ class AnnotationsView(ObjectView, ListView):
             return analysis.get("id")
         return analysis
 
+    @staticmethod
+    def _collect_column_values(data, column):
+        collected = []
+
+        def _walk(obj):
+            if isinstance(obj, dict):
+                if column in obj and not isinstance(obj[column], (dict, list)):
+                    collected.append(obj[column])
+                for value in obj.values():
+                    _walk(value)
+            elif isinstance(obj, list):
+                dict_items = [item for item in obj if isinstance(item, dict)]
+                if dict_items and all(column in item for item in dict_items):
+                    for item in dict_items:
+                        value = item.get(column)
+                        if not isinstance(value, (dict, list)):
+                            collected.append(value)
+                else:
+                    for item in obj:
+                        _walk(item)
+
+        _walk(data)
+        return collected
+
     def _normalize_pipeline_specs(self, pipelines):
         specs = []
         column_counter = Counter()
@@ -803,6 +827,7 @@ class AnnotationsView(ObjectView, ListView):
                 )
                 per_base[row.base_study_id] = {
                     "flat": flattened,
+                    "raw": result_data if isinstance(result_data, dict) else {},
                     "config_id": row.config_id,
                     "version": row.version,
                     "timestamp": timestamp,
@@ -881,6 +906,24 @@ class AnnotationsView(ObjectView, ListView):
                     entry = pipeline_data.get(base_study_id)
                     flat_values = entry["flat"] if entry else {}
                     value = flat_values.get(column)
+                    if isinstance(value, list):
+                        flattened_value = ",".join(
+                            str(item) for item in value if item is not None
+                        )
+                        value = flattened_value if flattened_value else None
+                    if value is None and entry:
+                        raw_values = [
+                            v
+                            for v in self._collect_column_values(
+                                entry.get("raw", {}), column
+                            )
+                            if v is not None
+                        ]
+                        if raw_values:
+                            if len(raw_values) == 1:
+                                value = str(raw_values[0])
+                            else:
+                                value = ",".join(str(v) for v in raw_values)
 
                     payload.setdefault("note", {})
                     payload["note"][key_name] = value
