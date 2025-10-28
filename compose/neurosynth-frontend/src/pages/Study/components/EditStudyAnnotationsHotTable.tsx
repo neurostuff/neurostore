@@ -55,6 +55,7 @@ const EditStudyAnnotationsHotTable: React.FC<{ readonly?: boolean }> = ({ readon
                 beforePaste={handleBeforePaste}
                 width="100%"
                 height="auto"
+                stretchH="all"
                 hiddenRows={{
                     rows: hiddenRows,
                     indicators: false,

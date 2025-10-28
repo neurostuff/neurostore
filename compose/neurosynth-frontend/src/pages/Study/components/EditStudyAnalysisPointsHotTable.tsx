@@ -38,11 +38,8 @@ const EditStudyAnalysisPointsHotTable: React.FC<{ analysisId?: string; readOnly?
             insertRowsAbove: false,
             insertedRowsViaPaste: [],
         });
-        const { insertRowsDialogIsOpen, openInsertRowsDialog, closeInsertRowsDialog } = useEditAnalysisPointsHotTable(
-            analysisId,
-            hotTableRef,
-            hotTableMetadata
-        );
+        const { insertRowsDialogIsOpen, openInsertRowsDialog, closeInsertRowsDialog, height } =
+            useEditAnalysisPointsHotTable(analysisId, hotTableRef, hotTableMetadata);
 
         // handsontable binds and updates to the data references themselves which means the original data is being mutated.
         // as we use zustand, this may not be a good idea, so we implement handleAfterChange to
@@ -216,66 +213,54 @@ const EditStudyAnalysisPointsHotTable: React.FC<{ analysisId?: string; readOnly?
          * 4) handleBeforeCreateRow
          * 5) handleAfterChange
          */
+
         return (
-            <Box sx={{ width: '100%', height: '100%' }}>
-                <HotTable
-                    {...EditStudyAnalysisPointsDefaultConfig}
-                    afterChange={handleAfterChange} // beforeChange results in weird update issues so we use afterChange
-                    beforePaste={handleBeforePaste}
-                    width="100%"
-                    height="auto"
-                    beforeCreateRow={handleBeforeCreateRow}
-                    beforeRemoveRow={handleBeforeRemoveRow}
-                    afterAutofill={handleAfterAutofill}
-                    columns={hotTableColumnSettings}
-                    colHeaders={hotTableColHeaders}
-                    data={[...(points || [])]}
-                    ref={hotTableRef}
+            <Box>
+                <InputNumberDialog
+                    isOpen={insertRowsDialogIsOpen}
+                    dialogTitle="Enter number of rows to insert"
+                    onCloseDialog={() => closeInsertRowsDialog()}
+                    onSubmit={(val) => handleInsertRows(val)}
+                    dialogDescription=""
                 />
+                <Box sx={{ display: 'flex' }}>
+                    <Box
+                        sx={{
+                            width: '40px',
+                            height: '120px',
+                            marginRight: '0.5rem',
+                        }}
+                    >
+                        <EditStudyAnalysisPointsHotTableToolbar
+                            onAddRow={handleAddRow}
+                            onAddRows={handleAddRows}
+                            onDeleteRows={handleDeleteRows}
+                        />
+                    </Box>
+                    <Box
+                        sx={{
+                            width: 'calc(100% - 0.5rem - 40px)',
+                            height: height,
+                        }}
+                    >
+                        <HotTable
+                            {...EditStudyAnalysisPointsDefaultConfig}
+                            ref={hotTableRef}
+                            afterChange={handleAfterChange} // beforeChange results in weird update issues so we use afterChange
+                            beforePaste={handleBeforePaste}
+                            beforeCreateRow={handleBeforeCreateRow}
+                            height={height}
+                            stretchH="all"
+                            beforeRemoveRow={handleBeforeRemoveRow}
+                            afterAutofill={handleAfterAutofill}
+                            columns={hotTableColumnSettings}
+                            colHeaders={hotTableColHeaders}
+                            data={[...(points || [])]}
+                        />
+                    </Box>
+                </Box>
             </Box>
         );
-        // return (
-        //     <Box>
-        //         <InputNumberDialog
-        //             isOpen={insertRowsDialogIsOpen}
-        //             dialogTitle="Enter number of rows to insert"
-        //             onCloseDialog={() => closeInsertRowsDialog()}
-        //             onSubmit={(val) => handleInsertRows(val)}
-        //             dialogDescription=""
-        //         />
-        //         <Box>
-        //             {/* <Box
-        //                 sx={{
-        //                     width: '40px',
-        //                     height: '120px',
-        //                     marginRight: '0.5rem',
-        //                 }}
-        //             >
-        //                 <EditStudyAnalysisPointsHotTableToolbar
-        //                     onAddRow={handleAddRow}
-        //                     onAddRows={handleAddRows}
-        //                     onDeleteRows={handleDeleteRows}
-        //                 />
-        //             </Box> */}
-        //             <Box sx={{ width: '100%', height: '100%' }}>
-        //                 <HotTable
-        //                     {...EditStudyAnalysisPointsDefaultConfig}
-        //                     ref={hotTableRef}
-        //                     afterChange={handleAfterChange} // beforeChange results in weird update issues so we use afterChange
-        //                     beforePaste={handleBeforePaste}
-        //                     beforeCreateRow={handleBeforeCreateRow}
-        //                     height="auto"
-        //                     width="100%"
-        //                     beforeRemoveRow={handleBeforeRemoveRow}
-        //                     afterAutofill={handleAfterAutofill}
-        //                     columns={hotTableColumnSettings}
-        //                     colHeaders={hotTableColHeaders}
-        //                     data={[...(points || [])]}
-        //                 />
-        //             </Box>
-        //         </Box>
-        //     </Box>
-        // );
     }
 );
 

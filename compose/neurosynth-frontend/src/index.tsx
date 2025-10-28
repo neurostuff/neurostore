@@ -66,43 +66,6 @@ let theme = createTheme({
 
 theme = responsiveFontSizes(theme);
 
-// theme.typography.h3 = {
-//     ...theme.typography.h3,
-//     [theme.breakpoints.down('md')]: {
-//         fontSize: '1.5rem',
-//     },
-//     [theme.breakpoints.up('md')]: {
-//         fontSize: '3rem',
-//     },
-// };
-// theme.typography.h4 = {
-//     ...theme.typography.h4,
-//     [theme.breakpoints.down('md')]: {
-//         fontSize: '1.25rem',
-//     },
-//     [theme.breakpoints.up('md')]: {
-//         fontSize: '2.125',
-//     },
-// };
-// theme.typography.h5 = {
-//     ...theme.typography.h5,
-//     [theme.breakpoints.down('md')]: {
-//         fontSize: '1.125rem',
-//     },
-//     [theme.breakpoints.up('md')]: {
-//         fontSize: '1.25rem',
-//     },
-// };
-// theme.typography.h6 = {
-//     ...theme.typography.h6,
-//     [theme.breakpoints.down('md')]: {
-//         fontSize: '1rem',
-//     },
-//     [theme.breakpoints.up('md')]: {
-//         fontSize: '1.25rem',
-//     },
-// };
-
 const domain = import.meta.env.VITE_APP_AUTH0_DOMAIN as string;
 const clientId = import.meta.env.VITE_APP_AUTH0_CLIENT_ID as string;
 const audience = import.meta.env.VITE_APP_AUTH0_AUDIENCE as string;

@@ -15,7 +15,7 @@ const EditStudyAnalysisPoints: React.FC<{ analysisId?: string }> = (props) => {
                     <HelpIcon color="primary" />
                 </Tooltip>
             </Box>
-            {/* <EditStudyAnalysisPointSpaceAndStatistic analysisId={props.analysisId} /> */}
+            <EditStudyAnalysisPointSpaceAndStatistic analysisId={props.analysisId} />
             <EditStudyAnalysisPointsHotTable analysisId={props.analysisId} />
         </Box>
     );

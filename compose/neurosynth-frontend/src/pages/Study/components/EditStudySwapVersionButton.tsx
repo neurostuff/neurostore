@@ -211,13 +211,7 @@ const EditStudySwapVersionButton: React.FC = () => {
                 isOpen={unsavedChangesConfirmationDialog}
                 rejectText="Cancel"
             />
-            <Menu
-                open={open}
-                onClose={handleCloseNavMenu}
-                anchorEl={anchorEl}
-                // anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                // transformOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-            >
+            <Menu open={open} onClose={handleCloseNavMenu} anchorEl={anchorEl}>
                 {baseStudyVersions.map((version) => {
                     const isCurrentlySelected = version.id === studyId;
                     const username = version.username ? version.username : 'neurosynth';

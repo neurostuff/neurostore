@@ -1,7 +1,7 @@
 import HotTable from '@handsontable/react';
 import { useStudyAnalysisPoints } from 'pages/Study/store/StudyStore';
 import { IStorePoint } from 'pages/Study/store/StudyStore.helpers';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 const useAnalysisPointsHotTable = (
     aanlysisId: string | undefined,
@@ -71,7 +71,14 @@ const useAnalysisPointsHotTable = (
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [hotTableRef]);
 
+    const height = useMemo(() => {
+        const totalHeight = 26 + (points?.length || 0) * 24;
+        const height = totalHeight > 600 ? 600 : totalHeight;
+        return height;
+    }, [points]);
+
     return {
+        height,
         insertRowsDialogIsOpen,
         openInsertRowsDialog,
         closeInsertRowsDialog,
