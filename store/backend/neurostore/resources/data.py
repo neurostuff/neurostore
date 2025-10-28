@@ -1,5 +1,7 @@
 import string
+from collections import Counter, OrderedDict
 from copy import deepcopy
+from datetime import datetime
 from sqlalchemy import func, text
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -47,7 +49,7 @@ from ..models import (
     PipelineConfig,
     Pipeline,
 )
-from ..models.data import StudysetStudy, BaseStudy
+from ..models.data import StudysetStudy, BaseStudy, _check_type
 from ..utils import parse_json_filter, build_jsonpath
 
 
@@ -56,6 +58,7 @@ from ..schemas import (
     AnalysisConditionSchema,
     StudysetStudySchema,
     EntitySchema,
+    PipelineStudyResultSchema,
 )
 from ..schemas.data import StudysetSnapshot
 
@@ -543,6 +546,365 @@ class AnnotationsView(ObjectView, ListView):
             abort_validation(
                 "annotation request must contain all analyses from the studyset."
             )
+
+    def put(self, id):
+        request_data = self.insert_data(id, request.json)
+        schema = self._schema()
+        data = schema.load(request_data)
+
+        pipeline_payload = data.pop("pipelines", [])
+
+        args = {}
+        if set(self._o2m.keys()).intersection(set(data.keys())):
+            args["nested"] = True
+
+        q = self._model.query.filter_by(id=id)
+        q = self.eager_load(q, args)
+        input_record = q.one()
+
+        if pipeline_payload:
+            specs, column_counter = self._normalize_pipeline_specs(pipeline_payload)
+            self._apply_pipeline_columns(input_record, data, specs, column_counter)
+
+        self.db_validation(input_record, data)
+
+        with db.session.no_autoflush:
+            record = self.__class__.update_or_create(data, id, record=input_record)
+
+        with db.session.no_autoflush:
+            unique_ids = self.get_affected_ids([id])
+            clear_cache(unique_ids)
+
+        try:
+            self.update_base_studies(unique_ids.get("base-studies"))
+            self.update_annotations(unique_ids.get("annotations"))
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            abort_validation(str(e))
+
+        db.session.flush()
+
+        response = schema.dump(record)
+
+        db.session.commit()
+
+        return response
+
+    @staticmethod
+    def _extract_analysis_id(note):
+        if not isinstance(note, dict):
+            return None
+        analysis = note.get("analysis")
+        if isinstance(analysis, dict):
+            return analysis.get("id")
+        return analysis
+
+    def _normalize_pipeline_specs(self, pipelines):
+        specs = []
+        column_counter = Counter()
+
+        if not isinstance(pipelines, list):
+            field_err = make_field_error("pipelines", pipelines, code="INVALID_FORMAT")
+            abort_validation(
+                "`pipelines` must be provided as a list of pipeline descriptors.",
+                [field_err],
+            )
+
+        for idx, payload in enumerate(pipelines):
+            if not isinstance(payload, dict):
+                field_err = make_field_error(
+                    f"pipelines[{idx}]", payload, code="INVALID_VALUE"
+                )
+                abort_validation(
+                    "Each pipeline descriptor must be an object.", [field_err]
+                )
+
+            name = payload.get("name")
+            if not isinstance(name, str) or not name.strip():
+                field_err = make_field_error(
+                    f"pipelines[{idx}].name", name, code="MISSING_VALUE"
+                )
+                abort_validation(
+                    "Pipeline entries must include a non-empty `name`.", [field_err]
+                )
+            name = name.strip()
+
+            columns = payload.get("columns")
+            if not isinstance(columns, (list, tuple)) or not columns:
+                field_err = make_field_error(
+                    f"pipelines[{idx}].columns", columns, code="MISSING_VALUE"
+                )
+                abort_validation(
+                    "Pipeline entries must include a non-empty `columns` list.",
+                    [field_err],
+                )
+            normalized_columns = []
+            for column in columns:
+                if isinstance(column, str) and column.strip():
+                    col = column.strip()
+                    if col not in normalized_columns:
+                        normalized_columns.append(col)
+            if not normalized_columns:
+                field_err = make_field_error(
+                    f"pipelines[{idx}].columns", columns, code="INVALID_VALUE"
+                )
+                abort_validation(
+                    "Columns must contain at least one non-empty string.", [field_err]
+                )
+
+            version = payload.get("version")
+            if version is not None and not isinstance(version, str):
+                field_err = make_field_error(
+                    f"pipelines[{idx}].version", version, code="INVALID_VALUE"
+                )
+                abort_validation(
+                    "`version` must be a string when provided.", [field_err]
+                )
+            config_id = payload.get("config_id")
+            if config_id is not None and not isinstance(config_id, str):
+                field_err = make_field_error(
+                    f"pipelines[{idx}].config_id", config_id, code="INVALID_VALUE"
+                )
+                abort_validation(
+                    "`config_id` must be a string when provided.", [field_err]
+                )
+
+            spec = {
+                "name": name,
+                "columns": normalized_columns,
+                "version": version.strip() if isinstance(version, str) else None,
+                "config_id": config_id.strip() if isinstance(config_id, str) else None,
+            }
+            specs.append(spec)
+
+            for column in normalized_columns:
+                column_counter[column] += 1
+
+        return specs, column_counter
+
+    def _build_note_map(self, annotation, incoming_notes):
+        note_map = OrderedDict()
+        analysis_context = {}
+
+        for aa in annotation.annotation_analyses:
+            studyset_study = getattr(aa, "studyset_study", None)
+            study = getattr(studyset_study, "study", None) if studyset_study else None
+            if study is None and aa.analysis:
+                study = aa.analysis.study
+            base_study_id = getattr(study, "base_study_id", None)
+            analysis_context[aa.analysis_id] = {
+                "base_study_id": base_study_id,
+                "study_id": aa.study_id,
+                "studyset_id": aa.studyset_id,
+            }
+            note_map[aa.analysis_id] = {
+                "id": aa.id,
+                "analysis": {"id": aa.analysis_id},
+                "studyset_study": {
+                    "study": {"id": aa.study_id},
+                    "studyset": {"id": aa.studyset_id},
+                },
+                "note": dict(aa.note or {}),
+            }
+
+        for note in incoming_notes or []:
+            if not isinstance(note, dict):
+                continue
+            analysis_id = self._extract_analysis_id(note)
+            if not analysis_id:
+                continue
+            if analysis_id in note_map:
+                merged = note_map[analysis_id]
+                if "note" in note and isinstance(note["note"], dict):
+                    merged["note"] = dict(note["note"])
+                if "studyset_study" in note and note["studyset_study"]:
+                    merged["studyset_study"] = note["studyset_study"]
+                if "analysis" in note and note["analysis"]:
+                    merged["analysis"] = note["analysis"]
+                if "id" in note and note["id"]:
+                    merged["id"] = note["id"]
+            else:
+                note_map[analysis_id] = note
+                analysis_context.setdefault(
+                    analysis_id,
+                    {"base_study_id": None, "study_id": None, "studyset_id": None},
+                )
+
+        return note_map, analysis_context
+
+    def _fetch_pipeline_data(self, spec, base_study_ids):
+        pipeline = Pipeline.query.filter_by(name=spec["name"]).first()
+        if not pipeline:
+            field_err = make_field_error("pipeline", spec["name"], code="NOT_FOUND")
+            abort_validation(f"Pipeline '{spec['name']}' does not exist.", [field_err])
+
+        config_query = PipelineConfig.query.filter_by(pipeline_id=pipeline.id)
+
+        resolved_config = None
+        if spec["config_id"]:
+            resolved_config = config_query.filter_by(id=spec["config_id"]).first()
+            if not resolved_config:
+                field_err = make_field_error(
+                    "config_id", spec["config_id"], code="NOT_FOUND"
+                )
+                abort_validation(
+                    f"Pipeline '{spec['name']}' does not have config '{spec['config_id']}'.",
+                    [field_err],
+                )
+
+        configs_for_version = []
+        if spec["version"]:
+            configs_for_version = config_query.filter_by(version=spec["version"]).all()
+            if not configs_for_version:
+                field_err = make_field_error(
+                    "version", spec["version"], code="NOT_FOUND"
+                )
+                abort_validation(
+                    f"Pipeline '{spec['name']}' does not have version '{spec['version']}'.",
+                    [field_err],
+                )
+            if not resolved_config and len(configs_for_version) == 1:
+                resolved_config = configs_for_version[0]
+
+        query = (
+            db.session.query(
+                PipelineStudyResult.base_study_id,
+                PipelineStudyResult.result_data,
+                PipelineStudyResult.date_executed,
+                PipelineStudyResult.created_at,
+                PipelineStudyResult.config_id,
+                PipelineConfig.version,
+            )
+            .join(PipelineConfig, PipelineStudyResult.config_id == PipelineConfig.id)
+            .filter(PipelineConfig.pipeline_id == pipeline.id)
+        )
+
+        if base_study_ids:
+            query = query.filter(PipelineStudyResult.base_study_id.in_(base_study_ids))
+        if spec["config_id"]:
+            query = query.filter(PipelineConfig.id == spec["config_id"])
+        if spec["version"]:
+            query = query.filter(PipelineConfig.version == spec["version"])
+
+        rows = query.all()
+
+        per_base = {}
+        for row in rows:
+            timestamp = row.date_executed or row.created_at or datetime.min
+            existing = per_base.get(row.base_study_id)
+            if existing is None or timestamp > existing["timestamp"]:
+                result_data = (
+                    row.result_data if isinstance(row.result_data, dict) else {}
+                )
+                flattened = (
+                    PipelineStudyResultSchema.flatten_dict(result_data)
+                    if isinstance(result_data, dict)
+                    else {}
+                )
+                per_base[row.base_study_id] = {
+                    "flat": flattened,
+                    "config_id": row.config_id,
+                    "version": row.version,
+                    "timestamp": timestamp,
+                }
+
+        if not resolved_config and per_base:
+            config_ids = {
+                entry["config_id"] for entry in per_base.values() if entry["config_id"]
+            }
+            if len(config_ids) == 1:
+                resolved_config = PipelineConfig.query.filter_by(
+                    id=config_ids.pop()
+                ).first()
+
+        resolved_version = spec["version"]
+        if not resolved_version:
+            versions = {
+                entry["version"] for entry in per_base.values() if entry["version"]
+            }
+            if len(versions) == 1:
+                resolved_version = versions.pop()
+            elif len(versions) > 1:
+                resolved_version = sorted(versions)[-1]
+            elif resolved_config:
+                resolved_version = resolved_config.version
+
+        resolved_config_id = spec["config_id"]
+        if not resolved_config_id:
+            if resolved_config:
+                resolved_config_id = resolved_config.id
+            else:
+                config_ids = {
+                    entry["config_id"]
+                    for entry in per_base.values()
+                    if entry["config_id"]
+                }
+                if len(config_ids) == 1:
+                    resolved_config_id = config_ids.pop()
+
+        return (
+            per_base,
+            resolved_version or "latest",
+            resolved_config_id or "latest",
+        )
+
+    def _apply_pipeline_columns(self, annotation, data, specs, column_counter):
+        incoming_notes = data.get("annotation_analyses") or []
+        note_map, analysis_context = self._build_note_map(annotation, incoming_notes)
+
+        base_study_ids = {
+            ctx["base_study_id"]
+            for ctx in analysis_context.values()
+            if ctx.get("base_study_id")
+        }
+
+        column_types = {}
+
+        for spec in specs:
+            if not base_study_ids:
+                continue
+            pipeline_data, resolved_version, resolved_config_id = (
+                self._fetch_pipeline_data(spec, base_study_ids)
+            )
+            version_label = str(resolved_version or "latest").replace(" ", "_")
+            config_label = str(resolved_config_id or "latest").replace(" ", "_")
+            suffix_label = f"{spec['name']}_{version_label}_{config_label}"
+
+            for column in spec["columns"]:
+                key_name = column
+                if column_counter[column] > 1:
+                    key_name = f"{column}_{suffix_label}"
+
+                for analysis_id, payload in note_map.items():
+                    context = analysis_context.get(analysis_id) or {}
+                    base_study_id = context.get("base_study_id")
+                    entry = pipeline_data.get(base_study_id)
+                    flat_values = entry["flat"] if entry else {}
+                    value = flat_values.get(column)
+
+                    payload.setdefault("note", {})
+                    payload["note"][key_name] = value
+
+                    detected_type = _check_type(value)
+                    existing_type = column_types.get(key_name)
+                    if detected_type:
+                        if existing_type and existing_type != detected_type:
+                            column_types[key_name] = "string"
+                        else:
+                            column_types[key_name] = detected_type
+                    elif existing_type is None:
+                        column_types[key_name] = "string"
+
+        if column_types:
+            if data.get("note_keys") is None:
+                note_keys = dict(annotation.note_keys or {})
+            else:
+                note_keys = dict(data["note_keys"])
+            for key, value_type in column_types.items():
+                note_keys[key] = value_type or "string"
+            data["note_keys"] = note_keys
+
+        data["annotation_analyses"] = list(note_map.values())
 
 
 @view_maker
