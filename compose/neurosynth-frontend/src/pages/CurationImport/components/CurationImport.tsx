@@ -82,7 +82,6 @@ const CurationImport: React.FC = () => {
                 )}
                 {activeStep === 1 && (
                     <CurationImportDoImport
-                        stubs={stubs}
                         onImportStubs={handleImportStubs}
                         onSetSearchCriteria={setSearchCriteria}
                         onFileUpload={setFileName}

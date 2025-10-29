@@ -1,20 +1,24 @@
 from collections import ChainMap
+from copy import deepcopy
+import json
 import pathlib
 from operator import itemgetter
+from urllib.parse import urlencode
 
 import connexion
-from flask import abort, request, jsonify, current_app
+from connexion.lifecycle import ConnexionResponse
+from flask import abort, request, current_app
 from flask.views import MethodView
 
 # from sqlalchemy.ext.associationproxy import ColumnAssociationProxyInstance
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import selectinload
 from marshmallow.exceptions import ValidationError
 import sqlalchemy.sql.expression as sae
-from sqlalchemy import func
+from sqlalchemy import func, select
 from webargs.flaskparser import parser
 from webargs import fields
 
-from ..database import db
+from ..database import db, commit_session
 from ..models.analysis import (  # noqa E401
     Condition,
     SpecificationCondition,
@@ -48,12 +52,26 @@ from ..schemas import (  # noqa E401
     NeurostoreStudySchema,
     ProjectSchema,
 )
+from .neurostore import neurostore_session
 from .singular import singularize
 
 
+def _make_json_response(payload, status=200):
+    return ConnexionResponse(
+        body=json.dumps(payload),
+        status_code=status,
+        # Explicitly set both mimetype and content type because Connexion
+        # populates the header from ``content_type`` only; otherwise the
+        # response header becomes ``Content-Type: None`` and Connexion's
+        # response validation rejects it.
+        mimetype="application/json",
+        content_type="application/json",
+    )
+
+
 def create_user():
-    from auth0.v3.authentication.users import Users
-    from auth0.v3.exceptions import Auth0Error
+    from auth0.authentication.users import Users
+    from auth0.exceptions import Auth0Error
 
     auth = request.headers.get("Authorization", None)
     if auth is None:
@@ -74,15 +92,17 @@ def create_user():
     if "@" in name:
         name = profile_info.get("nickname", "Unknown")
 
-    current_user = User(external_id=connexion.context["user"], name=name)
+    current_user = User(external_id=connexion.context.context["user"], name=name)
 
     return current_user
 
 
 def get_current_user():
-    user = connexion.context.get("user")
+    user = connexion.context.context.get("user")
     if user:
-        return User.query.filter_by(external_id=connexion.context["user"]).first()
+        return User.query.filter_by(
+            external_id=connexion.context.context["user"]
+        ).first()
     return None
 
 
@@ -134,14 +154,22 @@ class BaseView(MethodView):
 
         if cls._model is Condition:
             record = (
-                cls._model.query.filter_by(name=data.get("name")).first()
+                db.session.execute(
+                    select(cls._model)
+                    .where(cls._model.name == data.get("name"))
+                    .limit(1)
+                )
+                .scalars()
+                .first()
                 or cls._model()
             )
         if id is None:
             record = cls._model()
             record.user = current_user
         else:
-            record = cls._model.query.filter_by(id=id).first()
+            record = db.session.execute(
+                select(cls._model).where(cls._model.id == id)
+            ).scalar_one_or_none()
             if record is None and cls._model in (
                 StudysetReference,
                 AnnotationReference,
@@ -157,7 +185,7 @@ class BaseView(MethodView):
 
                 if commit:
                     db.session.add_all(to_commit)
-                    db.session.commit()
+                    commit_session()
 
                 return record
 
@@ -224,7 +252,7 @@ class BaseView(MethodView):
 
         if commit:
             db.session.add_all(to_commit)
-            db.session.commit()
+            commit_session()
 
         return record
 
@@ -232,10 +260,15 @@ class BaseView(MethodView):
 class ObjectView(BaseView):
     def get(self, id):
         id = id.replace("\x00", "\uFFFD")
-        record = self._model.query.filter_by(id=id).first_or_404()
+        record = db.session.execute(
+            select(self._model).where(self._model.id == id)
+        ).scalar_one_or_none()
+        if record is None:
+            abort(404)
         args = parser.parse(self._user_args, request, location="query")
 
-        return self.__class__._schema(context=args).dump(record)
+        payload = self.__class__._schema(context=args).dump(record)
+        return _make_json_response(payload)
 
     def put(self, id):
         id = id.replace("\x00", "\uFFFD")
@@ -248,11 +281,21 @@ class ObjectView(BaseView):
         with db.session.no_autoflush:
             record = self.__class__.update_or_create(data, id)
 
-        return self.__class__._schema().dump(record)
+        payload = self.__class__._schema().dump(record)
+        return _make_json_response(payload)
 
     def delete(self, id):
         id = id.replace("\x00", "\uFFFD")
-        record = self.__class__._model.query.filter_by(id=id).first()
+        record = db.session.execute(
+            select(self.__class__._model).where(self.__class__._model.id == id)
+        ).scalar_one_or_none()
+        if record is None:
+            abort(404)
+
+        # Run DB-level validation first so constraint errors (e.g. existing results)
+        # are surfaced as 409 regardless of caller identity. Keep ownership check
+        # to prevent unauthorized mutation after validation.
+        self.db_validation({"id": id})
 
         current_user = get_current_user()
         if record.user_id != current_user.external_id:
@@ -263,34 +306,32 @@ class ObjectView(BaseView):
                     f"record owned by {record.user_id}."
                 ),
             )
-        else:
-            self.db_validation({"id": id})
-            db.session.delete(record)
 
-        db.session.commit()
+        db.session.delete(record)
+        commit_session()
 
-        return 204
+        return "", 204
 
     def insert_data(self, id, data):
         return data
 
 
 LIST_USER_ARGS = {
-    "search": fields.String(missing=None),
-    "sort": fields.String(missing="created_at"),
-    "page": fields.Int(missing=1),
-    "desc": fields.Boolean(missing=True),
-    "page_size": fields.Int(missing=20, validate=lambda val: val < 100),
-    "source_id": fields.String(missing=None),
-    "source": fields.String(missing=None),
-    "unique": fields.Boolean(missing=False),
-    "nested": fields.Boolean(missing=False),
-    "user_id": fields.String(missing=None),
-    "dataset_id": fields.String(missing=None),
-    "export": fields.Boolean(missing=False),
-    "data_type": fields.String(missing=None),
-    "info": fields.Boolean(missing=False),
-    "ids": fields.List(fields.String(), missing=None),
+    "search": fields.String(load_default=None),
+    "sort": fields.String(load_default="created_at"),
+    "page": fields.Int(load_default=1),
+    "desc": fields.Boolean(load_default=True),
+    "page_size": fields.Int(load_default=20, validate=lambda val: val < 100),
+    "source_id": fields.String(load_default=None),
+    "source": fields.String(load_default=None),
+    "unique": fields.Boolean(load_default=False),
+    "nested": fields.Boolean(load_default=False),
+    "user_id": fields.String(load_default=None),
+    "dataset_id": fields.String(load_default=None),
+    "export": fields.Boolean(load_default=False),
+    "data_type": fields.String(load_default=None),
+    "info": fields.Boolean(load_default=False),
+    "ids": fields.List(fields.String(), load_default=None),
 }
 
 
@@ -368,25 +409,19 @@ class ListView(BaseView):
         #     q = q.join(*attr.attr)
         q = q.order_by(getattr(attr, desc)(), getattr(m.id, desc)())
 
-        pagination_query = q.paginate(
-            page=args["page"],
-            per_page=args["page_size"],
-            error_out=False,
+        page = args["page"]
+        page_size = args["page_size"]
+        total = q.count()
+        offset = (page - 1) * page_size
+        records = q.offset(offset).limit(page_size).all()
+        metadata = {"total_count": total}
+        content = self.__class__._schema(only=self._only, many=True, context=args).dump(
+            records
         )
-        records = pagination_query.items
-        metadata = {"total_count": pagination_query.total}
-        content = self.__class__._schema(
-            only=self._only,
-            many=True,
-            context=args,
-        ).dump(records)
 
-        response = {
-            "metadata": metadata,
-            "results": content,
-        }
+        response = {"metadata": metadata, "results": content}
 
-        return jsonify(response), 200
+        return _make_json_response(response)
 
     def post(self):
         # TODO: check to make sure current user hasn't already created a
@@ -403,7 +438,8 @@ class ListView(BaseView):
         with db.session.no_autoflush:
             record = self.__class__.update_or_create(data)
 
-        return self.__class__._schema().dump(record)
+        payload = self.__class__._schema().dump(record)
+        return _make_json_response(payload)
 
 
 # Individual resource views
@@ -419,12 +455,12 @@ class MetaAnalysesView(ObjectView, ListView):
     }
 
     def db_validation(self, data):
-        ma = (
-            MetaAnalysis.query.options(joinedload(MetaAnalysis.results))
-            .filter_by(id=data["id"])
-            .one()
-        )
-        if ma.results:
+        ma = db.session.execute(
+            select(MetaAnalysis)
+            .options(selectinload(MetaAnalysis.results))
+            .where(MetaAnalysis.id == data["id"])
+        ).scalar_one_or_none()
+        if ma and ma.results:
             abort(
                 409,
                 description="this meta-analysis already has results and cannot be deleted.",
@@ -443,8 +479,9 @@ class MetaAnalysesView(ObjectView, ListView):
                 meta_analysis=record, neurostore_study=record.project.neurostore_study
             )
             db.session.add(ns_analysis)
-            db.session.commit()
-        return self.__class__._schema().dump(record)
+            commit_session()
+        payload = self.__class__._schema().dump(record)
+        return _make_json_response(payload)
 
 
 @view_maker
@@ -503,10 +540,22 @@ class MetaAnalysisResultsView(ObjectView, ListView):
         except ValidationError as e:
             abort(422, description=f"input does not conform to specification: {str(e)}")
 
+        token_info = connexion.context.request.context.get("token_info", {})
+        upload_meta_id = token_info.get("meta_analysis_id")
+
         with db.session.no_autoflush:
             # add snapshots to cached_studyset/annotation (if not already set)
-            meta = MetaAnalysis.query.filter_by(id=data["meta_analysis_id"]).one()
-            if meta.studyset.snapshot is None or meta.annotation.snapshot is None:
+            meta = db.session.execute(
+                select(MetaAnalysis).where(MetaAnalysis.id == data["meta_analysis_id"])
+            ).scalar_one_or_none()
+            if upload_meta_id is not None and meta and meta.id != upload_meta_id:
+                abort(
+                    401,
+                    description="Upload key does not match the target meta-analysis.",
+                )
+            if meta and (
+                meta.studyset.snapshot is None or meta.annotation.snapshot is None
+            ):
                 meta.studyset.snapshot = data.pop("studyset_snapshot", None)
                 meta.annotation.snapshot = data.pop("annotation_snapshot", None)
                 db.session.add(meta)
@@ -514,17 +563,44 @@ class MetaAnalysisResultsView(ObjectView, ListView):
             # create neurovault collection
             nv_collection = NeurovaultCollection(result=record)
             create_neurovault_collection(nv_collection)
-            meta.project.draft = False
-            db.session.add(meta)
+            # avoid inserting duplicate NeurovaultCollection if one with same collection_id exists
+            existing = db.session.execute(
+                select(NeurovaultCollection).where(
+                    NeurovaultCollection.collection_id == nv_collection.collection_id
+                )
+            ).scalar_one_or_none()
+            if existing is not None:
+                nv_collection = existing
+                nv_collection.result = record
+            # Only update project draft flag if project is present
+            if meta and getattr(meta, "project", None):
+                meta.project.draft = False
+                db.session.add(meta)
             db.session.add(nv_collection)
-            db.session.commit()
-        return self.__class__._schema().dump(record)
+            commit_session()
+        payload = self.__class__._schema().dump(record)
+        return _make_json_response(payload)
 
     def put(self, id):
         from .tasks import file_upload_neurovault, create_or_update_neurostore_analysis
         from celery import group
 
-        result = self._model.query.filter_by(id=id).one()
+        token_info = connexion.context.request.context.get("token_info", {})
+        upload_meta_id = token_info.get("meta_analysis_id")
+
+        result = db.session.execute(
+            select(self._model).where(self._model.id == id)
+        ).scalar_one()
+
+        if (
+            upload_meta_id is not None
+            and result.meta_analysis
+            and result.meta_analysis.id != upload_meta_id
+        ):
+            abort(
+                401,
+                description="Upload key does not match the target meta-analysis.",
+            )
 
         if request.files:
             stat_maps = request.files.getlist("statistical_maps")
@@ -546,7 +622,7 @@ class MetaAnalysisResultsView(ObjectView, ListView):
                 records.append(result)
 
             db.session.add_all(records)
-            db.session.commit()
+            commit_session()
 
             # get the neurostore analysis
             if result.meta_analysis.neurostore_analysis:
@@ -557,7 +633,7 @@ class MetaAnalysisResultsView(ObjectView, ListView):
                     meta_analysis=result.meta_analysis,
                 )
                 db.session.add(ns_analysis)
-                db.session.commit()
+                commit_session()
 
             # upload the individual statistical maps
             nv_upload_tasks = []
@@ -577,7 +653,8 @@ class MetaAnalysisResultsView(ObjectView, ListView):
                 access_token=access_token,
             )
             _ = (nv_upload_group | neurostore_analysis_upload).delay()
-        return self.__class__._schema().dump(result)
+        payload = self.__class__._schema().dump(result)
+        return _make_json_response(payload)
 
 
 @view_maker
@@ -599,23 +676,45 @@ class NeurostoreStudiesView(ObjectView, ListView):
 class ProjectsView(ObjectView, ListView):
     _search_fields = ("name", "description")
     _nested = {
+        "studyset": "StudysetsView",
+        "annotation": "AnnotationsView",
         "meta_analyses": "MetaAnalysesView",
     }
 
     def db_validation(self, data):
-        q = Project.query.filter_by(id=data["id"])
-        q = q.options(
-            joinedload(Project.meta_analyses).options(joinedload(MetaAnalysis.results))
-        )
-        proj = q.one()
-        for ma in proj.meta_analyses:
-            if ma.results:
-                abort(
-                    409,
-                    description="this project already has results and cannot be deleted.",
+        proj = db.session.execute(
+            select(Project)
+            .options(
+                selectinload(Project.meta_analyses).options(
+                    selectinload(MetaAnalysis.results)
                 )
+            )
+            .where(Project.id == data["id"])
+        ).scalar_one_or_none()
+        if proj:
+            for ma in proj.meta_analyses:
+                if ma.results:
+                    abort(
+                        409,
+                        description="this project already has results and cannot be deleted.",
+                    )
 
     def post(self):
+        clone_args = parser.parse(
+            {
+                "source_id": fields.String(load_default=None),
+                "copy_annotations": fields.Boolean(load_default=True),
+            },
+            request,
+            location="query",
+        )
+
+        source_id = clone_args.get("source_id")
+        if source_id:
+            return self._clone_project(
+                source_id, clone_args.get("copy_annotations", True)
+            )
+
         try:
             data = parser.parse(self.__class__._schema, request)
         except ValidationError as e:
@@ -623,14 +722,275 @@ class ProjectsView(ObjectView, ListView):
 
         with db.session.no_autoflush:
             record = self.__class__.update_or_create(data)
-            # create neurostore study
             ns_study = NeurostoreStudy(project=record)
             db.session.add(ns_study)
-            db.session.commit()
+            commit_session()
             create_or_update_neurostore_study(ns_study)
             db.session.add(ns_study)
-            db.session.commit()
-        return self.__class__._schema().dump(record)
+            commit_session()
+        payload = self.__class__._schema().dump(record)
+        return _make_json_response(payload)
+
+    def _clone_project(self, source_id, copy_annotations):
+        current_user = self._ensure_current_user()
+
+        source_project = db.session.execute(
+            select(Project)
+            .options(
+                selectinload(Project.studyset).options(
+                    selectinload(Studyset.studyset_reference)
+                ),
+                selectinload(Project.annotation).options(
+                    selectinload(Annotation.annotation_reference)
+                ),
+                selectinload(Project.meta_analyses).options(
+                    selectinload(MetaAnalysis.specification).options(
+                        selectinload(Specification.specification_conditions)
+                    ),
+                    selectinload(MetaAnalysis.results),
+                ),
+            )
+            .where(Project.id == source_id)
+        ).scalar_one_or_none()
+
+        if source_project is None:
+            abort(404)
+
+        if (
+            not source_project.public
+            and source_project.user_id != current_user.external_id
+        ):
+            abort(403, description="project is not public")
+
+        access_token = request.headers.get("Authorization")
+        if not access_token:
+            from auth0.authentication.get_token import GetToken
+
+            domain = current_app.config["AUTH0_BASE_URL"].lstrip("https://")
+            g_token = GetToken(
+                domain,
+                current_app.config["AUTH0_CLIENT_ID"],
+                client_secret=current_app.config["AUTH0_CLIENT_SECRET"],
+            )
+            token_resp = g_token.client_credentials(
+                audience=current_app.config["AUTH0_API_AUDIENCE"],
+            )
+            access_token = " ".join(
+                [token_resp["token_type"], token_resp["access_token"]]
+            )
+
+        ns_session = neurostore_session(access_token)
+
+        with db.session.no_autoflush:
+            new_studyset, new_annotation = self._clone_studyset_and_annotation(
+                ns_session, source_project, current_user, copy_annotations
+            )
+
+            cloned_project = Project(
+                name=source_project.name + " Copy",
+                description=source_project.description,
+                provenance=self._clone_provenance(
+                    source_project.provenance,
+                    new_studyset.studyset_reference.id if new_studyset else None,
+                    new_annotation.annotation_reference.id if new_annotation else None,
+                ),
+                user=current_user,
+                public=False,
+                draft=True,
+                studyset=new_studyset,
+                annotation=new_annotation,
+            )
+
+            cloned_metas = []
+            for meta in source_project.meta_analyses:
+                cloned_meta = self._clone_meta_analysis(
+                    meta,
+                    current_user,
+                    cloned_project,
+                    new_studyset,
+                    new_annotation,
+                )
+                cloned_metas.append(cloned_meta)
+
+            cloned_project.meta_analyses = cloned_metas
+
+            db.session.add(cloned_project)
+            for meta in cloned_metas:
+                db.session.add(meta)
+
+            commit_session()
+
+            ns_study = NeurostoreStudy(project=cloned_project)
+            db.session.add(ns_study)
+            commit_session()
+            create_or_update_neurostore_study(ns_study)
+            db.session.add(ns_study)
+            commit_session()
+
+        payload = self.__class__._schema().dump(cloned_project)
+        return _make_json_response(payload)
+
+    def _ensure_current_user(self):
+        current_user = get_current_user()
+        if current_user:
+            return current_user
+        current_user = create_user()
+        if current_user:
+            db.session.add(current_user)
+            commit_session()
+            return current_user
+        abort(401, description="user authentication required")
+
+    def _clone_studyset_and_annotation(
+        self, ns_session, source_project, current_user, copy_annotations
+    ):
+        source_studyset = getattr(source_project, "studyset", None)
+        new_studyset = None
+        new_annotation = None
+
+        if source_studyset and source_studyset.studyset_reference:
+            query_params = {
+                "source_id": source_studyset.studyset_reference.id,
+            }
+            if copy_annotations is not None:
+                query_params["copy_annotations"] = str(bool(copy_annotations)).lower()
+
+            path = "/api/studysets/"
+            if query_params:
+                path = f"{path}?{urlencode(query_params)}"
+
+            ns_response = ns_session.post(path, json={})
+            ns_payload = ns_response.json()
+
+            ss_ref = self._get_or_create_reference(
+                StudysetReference, ns_payload.get("id")
+            )
+            new_studyset = Studyset(
+                user=current_user,
+                snapshot=None,
+                version=source_studyset.version,
+                studyset_reference=ss_ref,
+            )
+            db.session.add(new_studyset)
+
+            source_annotation = getattr(source_project, "annotation", None)
+            annotations_payload = ns_payload.get("annotations") or []
+            annotation_id = None
+            if annotations_payload:
+                annotation_id = annotations_payload[0].get("id")
+            if source_annotation and copy_annotations and annotation_id:
+                annot_ref = self._get_or_create_reference(
+                    AnnotationReference, annotation_id
+                )
+                new_annotation = Annotation(
+                    user=current_user,
+                    snapshot=None,
+                    annotation_reference=annot_ref,
+                    studyset=new_studyset,
+                )
+                db.session.add(new_annotation)
+
+        return new_studyset, new_annotation
+
+    def _clone_meta_analysis(self, meta, user, project, new_studyset, new_annotation):
+        cloned_spec = self._clone_specification(meta.specification, user)
+        cloned_meta = MetaAnalysis(
+            name=meta.name,
+            description=meta.description,
+            specification=cloned_spec,
+            studyset=new_studyset,
+            annotation=new_annotation,
+            user=user,
+            project=project,
+            provenance=self._clone_meta_provenance(
+                meta.provenance,
+                new_studyset.studyset_reference.id if new_studyset else None,
+                new_annotation.annotation_reference.id if new_annotation else None,
+            ),
+        )
+
+        if new_studyset and new_studyset.studyset_reference:
+            cloned_meta.neurostore_studyset_id = new_studyset.studyset_reference.id
+            cloned_meta.cached_studyset = new_studyset
+
+        if new_annotation and new_annotation.annotation_reference:
+            cloned_meta.neurostore_annotation_id = (
+                new_annotation.annotation_reference.id
+            )
+            cloned_meta.cached_annotation = new_annotation
+
+        return cloned_meta
+
+    @staticmethod
+    def _clone_specification(specification, user):
+        if specification is None:
+            return None
+        cloned_spec = Specification(
+            type=specification.type,
+            estimator=deepcopy(specification.estimator),
+            database_studyset=specification.database_studyset,
+            filter=specification.filter,
+            corrector=deepcopy(specification.corrector),
+            user=user,
+        )
+        for spec_cond in specification.specification_conditions:
+            cloned_cond = SpecificationCondition(
+                weight=spec_cond.weight,
+                condition=spec_cond.condition,
+                user=user,
+            )
+            cloned_spec.specification_conditions.append(cloned_cond)
+        return cloned_spec
+
+    @staticmethod
+    def _clone_provenance(provenance, studyset_id, annotation_id):
+        if provenance is None:
+            return None
+        cloned = deepcopy(provenance)
+        extraction = cloned.get("extractionMetadata", {})
+        if studyset_id:
+            extraction["studysetId"] = studyset_id
+        if annotation_id:
+            extraction["annotationId"] = annotation_id
+        cloned["extractionMetadata"] = extraction
+
+        meta_meta = cloned.get("metaAnalysisMetadata")
+        if isinstance(meta_meta, dict):
+            meta_meta["canEditMetaAnalyses"] = True
+            cloned["metaAnalysisMetadata"] = meta_meta
+
+        return cloned
+
+    @staticmethod
+    def _clone_meta_provenance(provenance, studyset_id, annotation_id):
+        if provenance is None:
+            return None
+        cloned = deepcopy(provenance)
+        if studyset_id:
+            for key in ("studysetId", "studyset_id"):
+                if key in cloned:
+                    cloned[key] = studyset_id
+        if annotation_id:
+            for key in ("annotationId", "annotation_id"):
+                if key in cloned:
+                    cloned[key] = annotation_id
+        for key in ("hasResults", "has_results"):
+            if key in cloned:
+                cloned[key] = False
+        return cloned
+
+    @staticmethod
+    def _get_or_create_reference(model_cls, identifier):
+        if identifier is None:
+            return None
+        existing = db.session.execute(
+            select(model_cls).where(model_cls.id == identifier)
+        ).scalar_one_or_none()
+        if existing:
+            return existing
+        reference = model_cls(id=identifier)
+        db.session.add(reference)
+        return reference
 
 
 def create_neurovault_collection(nv_collection):
@@ -668,17 +1028,19 @@ def create_neurovault_collection(nv_collection):
 
 def create_or_update_neurostore_study(ns_study):
     from flask import request
-    from auth0.v3.authentication.get_token import GetToken
+    from auth0.authentication.get_token import GetToken
     from .neurostore import neurostore_session
 
     access_token = request.headers.get("Authorization")
     # use the client to authenticate if user credentials were not used
     if not access_token:
         domain = current_app.config["AUTH0_BASE_URL"].lstrip("https://")
-        g_token = GetToken(domain)
-        token_resp = g_token.client_credentials(
-            client_id=current_app.config["AUTH0_CLIENT_ID"],
+        g_token = GetToken(
+            domain,
+            current_app.config["AUTH0_CLIENT_ID"],
             client_secret=current_app.config["AUTH0_CLIENT_SECRET"],
+        )
+        token_resp = g_token.client_credentials(
             audience=current_app.config["AUTH0_API_AUDIENCE"],
         )
         access_token = " ".join([token_resp["token_type"], token_resp["access_token"]])
@@ -736,8 +1098,18 @@ def parse_upload_files(result, stat_maps, cluster_tables, diagnostic_tables):
     else:
         nv_collection = NeurovaultCollection(result=result)
         create_neurovault_collection(nv_collection)
-        # append the collection to be committed
-        records.append(nv_collection)
+        # avoid inserting duplicate NeurovaultCollection if one with same collection_id exists
+        existing = db.session.execute(
+            select(NeurovaultCollection).where(
+                NeurovaultCollection.collection_id == nv_collection.collection_id
+            )
+        ).scalar_one_or_none()
+        if existing is not None:
+            nv_collection = existing
+            nv_collection.result = result
+        else:
+            # append the collection to be committed
+            records.append(nv_collection)
 
     # append the existing NeurovaultFiles to be committed
     for record in stat_map_fnames.values():

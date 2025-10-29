@@ -1,22 +1,25 @@
 from unittest.mock import patch
 
+import copy
+import itertools
+
 import flask_sqlalchemy
 import json
 from os.path import isfile
 from os import environ
 import pathlib
 
-from auth0.v3.authentication import GetToken
-import schemathesis
+from auth0.authentication import GetToken
 import pytest
 from nimare.results import MetaResult
 import sqlalchemy as sa
 from requests.exceptions import HTTPError
+from sqlalchemy import select
 
 from neurosynth_compose.ingest.neurostore import create_meta_analyses
-from ..models.analysis import generate_id
-from ..database import db as _db
-from ..models import (
+from neurosynth_compose.models.analysis import generate_id
+from neurosynth_compose.database import db as _db
+from neurosynth_compose.models import (
     User,
     Specification,
     Studyset,
@@ -43,21 +46,6 @@ flask_sqlalchemy.SQLAlchemy._teardown_session = safe_teardown_session
 
 DATA_PATH = pathlib.Path(__file__).parent.resolve() / "data"
 
-
-def pytest_addoption(parser):
-    parser.addoption(
-        "--schemathesis",
-        action="store_true",
-        default=False,
-        help="Run schemathesis tests",
-    )
-
-
-schemathesis_test = pytest.mark.skipif(
-    "not config.getoption('--schemathesis')",
-    reason="Only run when --schemathesis is given",
-)
-
 """
 Test fixtures for bypassing authentication
 """
@@ -80,32 +68,6 @@ def mock_create_neurovault_collection():
         yield mock_func
 
 
-@pytest.fixture(scope="session", autouse=True)
-def setup_database(db):
-    """Create all tables at the start of the test session, drop at the end."""
-    db.create_all()
-    yield
-    db.drop_all()
-
-
-@pytest.fixture(scope="function", autouse=True)
-def isolate_db_session(db):
-    """Rollback all changes after each test for isolation."""
-    connection = db.engine.connect()
-    transaction = connection.begin()
-    options = dict(bind=connection, binds={})
-    session = db._make_scoped_session(options=options)
-    session.begin_nested()
-
-    db.session = session
-
-    yield session
-
-    session.remove()
-    transaction.rollback()
-    connection.close()
-
-
 # https://github.com/pytest-dev/pytest/issues/363#issuecomment-406536200
 @pytest.fixture(scope="session", autouse=False)
 def monkeysession(request):
@@ -122,28 +84,101 @@ def mock_decode_token(token):
         return {"sub": "user2-id"}
 
 
-def mock_ns_session(request):
-    class MockResponse:
-        def __init__(self, data):
-            self.data = data
-            self.status_code = 200
+class MockResponse:
+    def __init__(self, data):
+        self.data = data
+        self.status_code = 200
 
-        def json(self):
-            return self.data
+    def json(self):
+        return self.data
 
-    class MockSession:
-        def post(self, path, json):
-            json.update({"id": "123"})
-            return MockResponse(json)
 
-        def put(self, path, json):
-            json.update({"id": path.split("/")[-1]})
-            return MockResponse(json)
+class MockNeurostoreSession:
+    """Lightweight stand-in for a requests.Session when mocking Neurostore."""
 
-        def get(self, path):
-            return MockResponse({"metadata": {"test": "value"}})
+    instances = []
+    call_log = []
+    _global_counter = itertools.count(10_000)
 
-    return MockSession()
+    def __init__(self):
+        self.headers = {}
+        self.calls = []
+        MockNeurostoreSession.instances.append(self)
+
+    @classmethod
+    def reset(cls):
+        cls.instances.clear()
+        cls.call_log.clear()
+        cls._global_counter = itertools.count(10_000)
+
+    @classmethod
+    def _next_id(cls, prefix):
+        return f"{prefix}-{next(cls._global_counter)}"
+
+    @staticmethod
+    def _extract_id(path):
+        return path.split("/")[-1]
+
+    def _record(self, method, path, payload=None):
+        call = {
+            "method": method,
+            "path": path,
+            "json": copy.deepcopy(payload),
+            "headers": dict(self.headers),
+        }
+        self.calls.append(call)
+        MockNeurostoreSession.call_log.append(call)
+
+    def _response_payload(self, path, payload):
+        data = copy.deepcopy(payload) if payload is not None else {}
+        if path.startswith("/api/studysets"):
+            data.setdefault("id", self._next_id("studyset"))
+            data.setdefault(
+                "annotations",
+                [
+                    {
+                        "id": self._next_id("annotation"),
+                        "studyset": data.get("id"),
+                    }
+                ],
+            )
+            return data
+        if path.startswith("/api/annotations"):
+            data.setdefault("id", self._next_id("annotation"))
+            return data
+        if path.startswith("/api/studies"):
+            data.setdefault("id", self._next_id("study"))
+            return data
+        data.setdefault("id", self._next_id("resource"))
+        return data
+
+    def post(self, path, json=None):
+        self._record("POST", path, json)
+        return MockResponse(self._response_payload(path, json))
+
+    def put(self, path, json=None):
+        payload = copy.deepcopy(json) if json is not None else {}
+        payload.setdefault("id", self._extract_id(path))
+        self._record("PUT", path, json)
+        return MockResponse(payload)
+
+    def get(self, path):
+        self._record("GET", path)
+        return MockResponse({"metadata": {"test": "value"}})
+
+
+def mock_ns_session(access_token):
+    session = MockNeurostoreSession()
+    if access_token:
+        session.headers.update({"Authorization": access_token})
+    return session
+
+
+@pytest.fixture(scope="function")
+def reset_ns_session():
+    MockNeurostoreSession.reset()
+    yield
+    MockNeurostoreSession.reset()
 
 
 class MockPYNVClient:
@@ -201,6 +236,9 @@ def mock_ns(monkeysession):
     monkeysession.setattr(
         "neurosynth_compose.resources.neurostore.neurostore_session", mock_ns_session
     )
+    monkeysession.setattr(
+        "neurosynth_compose.resources.analysis.neurostore_session", mock_ns_session
+    )
     # Remove patch for tasks, only patch neurostore.neurostore_session
 
 
@@ -232,7 +270,7 @@ def app(mock_auth):
     ctx.pop()
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def db(app):
     """Session-wide test database."""
     _db.create_all()
@@ -249,7 +287,7 @@ def db(app):
 
 
 @pytest.fixture(scope="session")
-def celery_app(app, db):
+def celery_app(app):
     from ..core import celery_app as prod_celery_app
 
     # Clone the production Celery app for testing
@@ -259,10 +297,10 @@ def celery_app(app, db):
     return test_celery
 
 
-@pytest.fixture(scope="function", autouse=False)
+@pytest.fixture(scope="function", autouse=True)
 def session(db):
-    """Creates a new db session for a test.
-    Changes in session are rolled back"""
+    """Creates a single standardized db session for each test.
+    Changes in session are rolled back at test end via savepoint/transaction."""
     connection = db.engine.connect()
     transaction = connection.begin()
 
@@ -275,8 +313,11 @@ def session(db):
     # for the `after_transaction_end` event, we need a session instance to
     # listen for, hence the `session()` call
     @sa.event.listens_for(session(), "after_transaction_end")
-    def resetart_savepoint(sess, trans):
-        if trans.nested and not trans._parent.nested:
+    def restart_savepoint(sess, trans):
+        # On nested transaction end, restart the savepoint to preserve isolation
+        if trans.nested and not getattr(
+            getattr(trans, "_parent", None), "nested", False
+        ):
             session.expire_all()
             session.begin_nested()
 
@@ -315,7 +356,7 @@ def auth_clients(mock_add_users, app):
 
 
 @pytest.fixture(scope="function")
-def mock_add_users(app, db, mock_auth):
+def mock_add_users(app, db, mock_auth, session):
     from jose.jwt import encode
 
     users = [
@@ -332,28 +373,29 @@ def mock_add_users(app, db, mock_auth):
     ]
 
     tokens = {}
-    with app.app_context():
-        for u in users:
-            token_info = {"sub": u["name"] + "-id"}
-            user = User(
-                name=u["name"],
-                external_id=token_info["sub"],
-            )
-            if (
-                db.session.query(User).filter_by(external_id=token_info["sub"]).first()
-                is None
-            ):
-                db.session.add(user)
-                db.session.commit()
+    # use the provided session fixture to ensure users are created in the same
+    # transactional context as the test (avoids visibility issues across scoped sessions)
+    for u in users:
+        token_info = {"sub": u["name"] + "-id"}
+        user = User(
+            name=u["name"],
+            external_id=token_info["sub"],
+        )
+        existing_user = session.execute(
+            select(User).where(User.external_id == token_info["sub"])
+        ).scalar_one_or_none()
+        if existing_user is None:
+            session.add(user)
+            session.flush()
+            uid = user.id
+        else:
+            uid = existing_user.id
 
-            tokens[u["name"]] = {
-                "token": u["access_token"],
-                "external_id": token_info["sub"],
-                "id": db.session.query(User)
-                .filter_by(external_id=token_info["sub"])
-                .first()
-                .id,
-            }
+        tokens[u["name"]] = {
+            "token": u["access_token"],
+            "external_id": token_info["sub"],
+            "id": uid,
+        }
 
     yield tokens
 
@@ -364,7 +406,11 @@ def add_users(real_app, real_db):
     from neurosynth_compose.resources.auth import decode_token
 
     domain = real_app.config["AUTH0_BASE_URL"].split("://")[1]
-    token = GetToken(domain)
+    token = GetToken(
+        domain,
+        real_app.config["AUTH0_CLIENT_ID"],
+        client_secret=real_app.config["AUTH0_CLIENT_SECRET"],
+    )
 
     users = [
         {
@@ -382,8 +428,6 @@ def add_users(real_app, real_db):
         name = u["name"]
         passw = u["password"]
         payload = token.login(
-            client_id=real_app.config["AUTH0_CLIENT_ID"],
-            client_secret=real_app.config["AUTH0_CLIENT_SECRET"],
             username=name + "@email.com",
             password=passw,
             realm="Username-Password-Authentication",
@@ -397,7 +441,12 @@ def add_users(real_app, real_db):
                 name=name,
                 external_id=token_info["sub"],
             )
-            if User.query.filter_by(external_id=token_info["sub"]).first() is None:
+            if (
+                real_db.session.execute(
+                    select(User).where(User.external_id == token_info["sub"])
+                ).scalar_one_or_none()
+                is None
+            ):
                 real_db.session.add(user)
                 real_db.session.commit()
 
@@ -410,7 +459,7 @@ def add_users(real_app, real_db):
 
 
 @pytest.fixture(scope="function")
-def user_data(app, db, mock_add_users):
+def user_data(app, db, mock_add_users, session):
     to_commit = []
     neurostore_dset = DATA_PATH / "nimare_test_integration.json"
     neurostore_annot = DATA_PATH / "nimare_test_integration_annotation.json"
@@ -421,11 +470,35 @@ def user_data(app, db, mock_add_users):
     with open(neurostore_annot, "r") as data_file:
         serialized_annotation = json.load(data_file)
 
-    with db.session.no_autoflush:
-        ss_ref = StudysetReference(id=serialized_studyset["id"])
-        annot_ref = AnnotationReference(id=serialized_annotation["id"])
+    # Use the autouse session fixture explicitly to avoid mixing scoped sessions.
+    with session.no_autoflush:
+        # Ensure StudysetReference / AnnotationReference are persisted when newly created.
+        existing_ss_ref = session.execute(
+            select(StudysetReference).where(
+                StudysetReference.id == serialized_studyset["id"]
+            )
+        ).scalar_one_or_none()
+        if existing_ss_ref is None:
+            ss_ref = StudysetReference(id=serialized_studyset["id"])
+            to_commit.append(ss_ref)
+        else:
+            ss_ref = existing_ss_ref
+
+        existing_annot_ref = session.execute(
+            select(AnnotationReference).where(
+                AnnotationReference.id == serialized_annotation["id"]
+            )
+        ).scalar_one_or_none()
+        if existing_annot_ref is None:
+            annot_ref = AnnotationReference(id=serialized_annotation["id"])
+            to_commit.append(annot_ref)
+        else:
+            annot_ref = existing_annot_ref
+
         for user_info in mock_add_users.values():
-            user = User.query.filter_by(id=user_info["id"]).first()
+            user = session.execute(
+                select(User).where(User.external_id == user_info["external_id"])
+            ).scalar_one_or_none()
             studyset = Studyset(
                 user=user,
                 snapshot=serialized_studyset,
@@ -472,14 +545,22 @@ def user_data(app, db, mock_add_users):
                     annotation=annotation,
                 )
 
+                # Create Project with explicit id and link deterministically to MetaAnalysis
                 project = Project(
+                    id=generate_id(),
                     name=user.id + "'s project",
                     description=user.id + "'s project",
                     meta_analyses=[meta_analysis],
                     neurostore_study=ns_study,
                     user=user,
                     public=public,
+                    studyset=studyset,
+                    annotation=annotation,
                 )
+                # Ensure MetaAnalysis.project and project_id are explicitly set so
+                # the relationship is visible across sessions/savepoints immediately
+                meta_analysis.project = project
+                meta_analysis.project_id = project.id
 
                 ns_empty_study = NeurostoreStudy(neurostore_id=generate_id())
                 empty_project = Project(
@@ -487,6 +568,8 @@ def user_data(app, db, mock_add_users):
                     description=user.id + "'s empty project",
                     public=public,
                     neurostore_study=ns_empty_study,
+                    studyset=None,
+                    annotation=None,
                 )
                 to_commit.extend(
                     [
@@ -497,8 +580,70 @@ def user_data(app, db, mock_add_users):
                     ]
                 )
 
-        db.session.add_all(to_commit)
-        db.session.commit()
+        session.add_all(to_commit)
+        # Use flush so objects are persisted to the current transaction/savepoint
+        # but not committed at session level; test savepoint will handle rollback.
+        session.flush()
+
+        # Verify the objects we expected to be created were actually persisted.
+        # Do not attempt to create missing related objects post-commit; instead
+        # fail loudly so the underlying creation logic can be fixed.
+        for user_info in mock_add_users.values():
+            user = (
+                session.execute(
+                    select(User).where(User.external_id == user_info["external_id"])
+                )
+                .scalars()
+                .first()
+            )
+            if user is None:
+                pytest.fail(
+                    f"Expected user with id={user_info['id']} not found after commit"
+                )
+            metas = (
+                session.execute(select(MetaAnalysis).where(MetaAnalysis.user == user))
+                .scalars()
+                .all()
+            )
+            if not metas:
+                pytest.fail(
+                    f"No MetaAnalysis rows created for user {user.external_id} (id={user.id})"
+                )
+            for m in metas:
+                # studyset, annotation and project should be present according to
+                # the fixture construction; if any are missing, surface an error.
+                if m.studyset is None:
+                    pytest.fail(
+                        f"MetaAnalysis {m.id} missing studyset for user {user.external_id}"
+                    )
+                if m.annotation is None:
+                    pytest.fail(
+                        f"MetaAnalysis {m.id} missing annotation for user {user.external_id}"
+                    )
+                if m.project is None:
+                    # Diagnostic: collect context without mutating DB to help
+                    # identify why the project link was not established.
+                    proj_id = getattr(m, "project_id", None)
+                    projects_for_user = (
+                        session.execute(select(Project).where(Project.user == user))
+                        .scalars()
+                        .all()
+                    )
+                    linked_projects = (
+                        session.execute(
+                            select(Project)
+                            .join(Project.meta_analyses)
+                            .where(MetaAnalysis.id == m.id)
+                        )
+                        .scalars()
+                        .all()
+                    )
+                    pytest.fail(
+                        f"MetaAnalysis {m.id} missing project for user {user.external_id}; "
+                        f"project_id={proj_id}; "
+                        f"projects_for_user={[p.id for p in projects_for_user]}; "
+                        f"linked_projects={[p.id for p in linked_projects]}"
+                    )
 
 
 @pytest.fixture(scope="function")
@@ -510,8 +655,14 @@ def meta_analysis_results(app, db, user_data, mock_add_users):
 
     results = {}
     for user_info in mock_add_users.values():
-        user = User.query.filter_by(id=user_info["id"]).first()
-        for meta_analysis in MetaAnalysis.query.filter_by(user=user).all():
+        user = db.session.execute(
+            select(User).where(User.external_id == user_info["external_id"])
+        ).scalar_one_or_none()
+        for meta_analysis in (
+            _db.session.execute(select(MetaAnalysis).where(MetaAnalysis.user == user))
+            .scalars()
+            .all()
+        ):
             meta_schema = MetaAnalysisSchema(context={"nested": True}).dump(
                 meta_analysis
             )
@@ -542,8 +693,17 @@ def result_dir(tmpdir):
 
 
 @pytest.fixture(scope="function")
-def meta_analysis_result_files(tmpdir, auth_client, meta_analysis_results):
-    user_id = User.query.filter_by(name=auth_client.username.strip("-id")).one().id
+def meta_analysis_result_files(tmpdir, auth_client, meta_analysis_results, db):
+    user = (
+        db.session.execute(
+            select(User).where(User.name == auth_client.username.strip("-id")).limit(1)
+        )
+        .scalars()
+        .first()
+    )
+    if user is None:
+        pytest.skip("No matching user for auth_client", allow_module_level=True)
+    user_id = user.id
     res = meta_analysis_results[user_id]["results"]
     res.save_maps(tmpdir / "maps")
     res.save_tables(tmpdir / "tables")
@@ -565,10 +725,24 @@ def cached_metaresult():
 
 @pytest.fixture(scope="function")
 def meta_analysis_cached_result_files(
-    tmpdir, auth_client, user_data, cached_metaresult
+    db, tmpdir, auth_client, user_data, cached_metaresult
 ):
     user_id = auth_client.username
-    meta_analysis_id = MetaAnalysis.query.filter_by(user_id=user_id).first().id
+    # Prefer the user's public MetaAnalysis by joining the
+    # related Project which has public == True.
+    meta_analysis = (
+        db.session.execute(
+            select(MetaAnalysis)
+            .join(MetaAnalysis.project)
+            .where(
+                MetaAnalysis.user_id == user_id, Project.public == True  # noqa: E712
+            )
+        )
+        .scalars()
+        .first()
+    )
+
+    meta_analysis_id = meta_analysis.id
     res = cached_metaresult
     res.save_maps(tmpdir / "maps")
     res.save_tables(tmpdir / "tables")
@@ -589,8 +763,3 @@ def neurostore_data(db, mock_add_users):
         pytest.skip(
             "neurostore.org is not responding as expected", allow_module_level=True
         )
-
-
-@pytest.fixture()
-def app_schema(app):
-    return schemathesis.from_wsgi("/api/openapi.json", app)

@@ -9,7 +9,7 @@ const isNotBrowserOrIsFirefox = typeof window === 'undefined' || navigator.userA
 
 const CurationBoardAIInterfaceCuratorTableBody: React.FC<{
     table: Table<ICurationTableStudy>;
-    onSelect: (id: string) => void;
+    onSelect: (id: string | undefined) => void;
     tableContainerRef: RefObject<HTMLDivElement | null>;
     selectedStub: ICurationTableStudy | undefined;
 }> = ({ table, onSelect, tableContainerRef, selectedStub }) => {
@@ -27,8 +27,11 @@ const CurationBoardAIInterfaceCuratorTableBody: React.FC<{
         setTimeout(() => {
             const rowIndex = rows.findIndex((r) => r.original.id === selectedStub.id);
             virtualizer.scrollToIndex(rowIndex, { align: 'start' });
+            // reset the selected stub as we are back in table view and we dont want to
+            // scroll to this stub anymore
+            onSelect(undefined);
         }, 0);
-    }, [rows, selectedStub, virtualizer]);
+    }, [rows, selectedStub, virtualizer, onSelect]);
 
     return (
         <TableBody style={{ display: 'grid', height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>

@@ -5,6 +5,7 @@ from flask import current_app as app
 
 from ..core import celery_app
 from ..database import db
+from sqlalchemy import select
 from ..models import NeurovaultFile, NeurovaultCollection, NeurostoreAnalysis
 
 
@@ -13,10 +14,14 @@ def file_upload_neurovault(self, fpath, id):
     from pynv import Client
 
     try:
-        record = NeurovaultFile.query.filter_by(id=id).one()
+        record = db.session.execute(
+            select(NeurovaultFile).where(NeurovaultFile.id == id)
+        ).scalar_one()
     except:  # noqa: E722
         db.session.rollback()
-        record = NeurovaultFile.query.filter_by(id=id).one()
+        record = db.session.execute(
+            select(NeurovaultFile).where(NeurovaultFile.id == id)
+        ).scalar_one()
 
     # record = NeurovaultFile.query.filter_by(id=id).one()
     api = Client(access_token=app.config["NEUROVAULT_ACCESS_TOKEN"])
@@ -85,21 +90,29 @@ def file_upload_neurovault(self, fpath, id):
 def create_or_update_neurostore_analysis(
     self, ns_analysis_id, cluster_table, nv_collection_id, access_token
 ):
-    from auth0.v3.authentication.get_token import GetToken
+    from auth0.authentication.get_token import GetToken
     import pandas as pd
     from .neurostore import neurostore_session
 
     try:
-        ns_analysis = NeurostoreAnalysis.query.filter_by(id=ns_analysis_id).one()
-        nv_collection = NeurovaultCollection.query.filter_by(id=nv_collection_id).one()
+        ns_analysis = db.session.execute(
+            select(NeurostoreAnalysis).where(NeurostoreAnalysis.id == ns_analysis_id)
+        ).scalar_one()
+        nv_collection = db.session.execute(
+            select(NeurovaultCollection).where(
+                NeurovaultCollection.id == nv_collection_id
+            )
+        ).scalar_one()
 
         # use the client to authenticate if user credentials were not used
         if not access_token:
             domain = app.config["AUTH0_BASE_URL"].lstrip("https://")
-            g_token = GetToken(domain)
-            token_resp = g_token.client_credentials(
-                client_id=app.config["AUTH0_CLIENT_ID"],
+            g_token = GetToken(
+                domain,
+                app.config["AUTH0_CLIENT_ID"],
                 client_secret=app.config["AUTH0_CLIENT_SECRET"],
+            )
+            token_resp = g_token.client_credentials(
                 audience=app.config["AUTH0_API_AUDIENCE"],
             )
             access_token = " ".join(

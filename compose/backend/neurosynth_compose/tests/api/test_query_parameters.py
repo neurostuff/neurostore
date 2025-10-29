@@ -1,6 +1,7 @@
 import pytest
 
 from neurosynth_compose.models import MetaAnalysis, Project
+from sqlalchemy import select
 
 
 @pytest.mark.parametrize(
@@ -10,8 +11,8 @@ from neurosynth_compose.models import MetaAnalysis, Project
         ("projects", Project),
     ],
 )
-def test_page_and_page_size(session, app, auth_client, user_data, endpoint, model):
-    objects = model.query.all()
+def test_page_and_page_size(session, app, auth_client, user_data, db, endpoint, model):
+    objects = db.session.execute(select(model)).scalars().all()
     if hasattr(model, "public"):
         object_ids = set(
             [

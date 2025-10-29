@@ -6,7 +6,9 @@ from marshmallow import (
     pre_dump,
     pre_load,
     post_load,
+    validates_schema,
     EXCLUDE,
+    ValidationError,
 )
 
 from sqlalchemy import func
@@ -20,6 +22,7 @@ from neurostore.models import Analysis, Point
 # nested: serialize nested objects (true or false)
 # flat: do not display any relationships
 # info: only display info fields
+# preserve_on_clone: field metadata to preserve original values when cloning
 
 
 class BooleanOrString(fields.Field):
@@ -41,18 +44,41 @@ class BooleanOrString(fields.Field):
 
 class ObjToString(fields.Field):
     def __init__(self, *args, **kwargs):
+        self.many = kwargs.pop("many", False)
         super().__init__(*args, **kwargs)
-        self.many = kwargs.get("many", False)
+
+    def _serialize_single(self, value):
+        if value is None:
+            return None
+        if isinstance(value, dict):
+            # Already serialized payload
+            return value.get("id") if "id" in value else value
+        if hasattr(value, "id"):
+            return str(value.id)
+        return str(value)
 
     def _serialize(self, value, attr, obj, **kwargs):
         if self.many:
-            return [v.id for v in value]
-        return str(value.id)
+            return [self._serialize_single(v) for v in value]
+        return self._serialize_single(value)
 
     def _deserialize(self, value, attr, data, **kwargs):
         if self.many:
-            return [{"id": v} if isinstance(v, str) else v for v in value]
-        return {"id": value} if isinstance(value, str) else value
+            return [
+                (
+                    {"id": v}
+                    if isinstance(v, (str, int))
+                    else (v if isinstance(v, dict) else {"id": getattr(v, "id", v)})
+                )
+                for v in value
+            ]
+        if isinstance(value, (str, int)):
+            return {"id": value}
+        if isinstance(value, dict):
+            return value
+        if hasattr(value, "id"):
+            return {"id": value.id}
+        return {"id": value}
 
 
 class StringOrNested(fields.Nested):
@@ -61,19 +87,56 @@ class StringOrNested(fields.Nested):
     def __init__(self, nested, *args, **kwargs):
         super().__init__(nested, **kwargs)
         self.string_field = ObjToString(*args, **kwargs)
+        self._explicit_context = {}
+
+    @property
+    def context(self):
+        if self._explicit_context:
+            return self._explicit_context
+        parent = getattr(self, "parent", None)
+        if parent is not None and hasattr(parent, "context"):
+            return parent.context
+        return {}
+
+    @context.setter
+    def context(self, value):
+        self._explicit_context = value or {}
 
     def _modify_schema(self):
         """Only relevant when nested=True"""
         schema = self.schema
         schema.context = self.context
         if self.context.get("clone"):
-            id_fields = [
-                field
-                for field, f_obj in schema._declared_fields.items()
-                if f_obj.metadata.get("id_field")
-            ]
-            for f in id_fields:
-                schema.exclude.add(f)
+            # Check if this schema has preserve_on_clone set for any id field
+            has_preserve_on_clone = any(
+                f_obj.metadata.get("id_field")
+                and f_obj.metadata.get("preserve_on_clone")
+                for f_obj in schema._declared_fields.values()
+            )
+
+            if has_preserve_on_clone:
+                # For schemas with preserve_on_clone,
+                # include ONLY id fields with preserve_on_clone=True
+                preserve_fields = [
+                    field
+                    for field, f_obj in schema._declared_fields.items()
+                    if f_obj.metadata.get("id_field")
+                    and f_obj.metadata.get("preserve_on_clone")
+                ]
+                if preserve_fields:
+                    schema.only = schema.set_class(preserve_fields)
+                    schema.exclude = schema.set_class()
+            else:
+                # Normal cloning behavior: exclude id fields without preserve_on_clone
+                id_fields = [
+                    field
+                    for field, f_obj in schema._declared_fields.items()
+                    if f_obj.metadata.get("id_field")
+                    and not f_obj.metadata.get("preserve_on_clone")
+                ]
+                for f in id_fields:
+                    schema.exclude.add(f)
+
         if self.context.get("info"):
             info_fields = [
                 field
@@ -131,16 +194,39 @@ class BaseSchemaOpts(SchemaOpts):
 class BaseSchema(Schema):
     def __init__(self, *args, **kwargs):
         exclude = kwargs.get("exclude") or self.opts.exclude
-        context = kwargs.get("context", {})
-        # if cloning and not only id, exclude id fields
-        if context.get("clone") and kwargs.get("only") != ("id",):
-            id_fields = [
-                field
-                for field, f_obj in self._declared_fields.items()
-                if f_obj.metadata.get("id_field")
-            ]
-            for f in id_fields:
-                exclude += (f,)
+        context = kwargs.pop("context", {})
+        only = kwargs.get("only")
+
+        # if cloning and not only id, exclude id fields (unless preserve_on_clone is True)
+        if context.get("clone") and only != ("id",):
+            # Check if this schema has preserve_on_clone set for any id field
+            has_preserve_on_clone = any(
+                f_obj.metadata.get("id_field")
+                and f_obj.metadata.get("preserve_on_clone")
+                for f_obj in self._declared_fields.values()
+            )
+
+            if has_preserve_on_clone:
+                # For schemas with preserve_on_clone,
+                # include ONLY id fields with preserve_on_clone=True
+                preserve_fields = [
+                    field
+                    for field, f_obj in self._declared_fields.items()
+                    if f_obj.metadata.get("id_field")
+                    and f_obj.metadata.get("preserve_on_clone")
+                ]
+                if preserve_fields and only is None:
+                    kwargs["only"] = tuple(preserve_fields)
+            else:
+                # Normal cloning behavior: exclude id fields
+                id_fields = [
+                    field
+                    for field, f_obj in self._declared_fields.items()
+                    if f_obj.metadata.get("id_field")
+                ]
+                for f in id_fields:
+                    exclude += (f,)
+
         if context.get("flat"):
             relationships = [
                 field
@@ -151,6 +237,7 @@ class BaseSchema(Schema):
                 exclude += (f,)
         kwargs["exclude"] = exclude
         super().__init__(*args, **kwargs)
+        self.context = context or {}
 
     OPTIONS_CLASS = BaseSchemaOpts
     # normal return key
@@ -171,24 +258,27 @@ class BaseDataSchema(BaseSchema):
         attribute="user.name",
         dump_only=True,
         metadata={"info_field": True},
-        default=None,
+        dump_default=None,
     )
     created_at = fields.DateTime(dump_only=True, metadata={"info_field": True})
     updated_at = fields.DateTime(dump_only=True, metadata={"info_field": True})
 
 
 class ConditionSchema(BaseDataSchema):
-    class Meta:
-        additional = ("name", "description")
-        allow_none = ("name", "description")
+    name = fields.String(allow_none=True)
+    description = fields.String(allow_none=True)
+
+    # Override the id field to preserve it during cloning
+    id = fields.String(
+        metadata={"info_field": True, "id_field": True, "preserve_on_clone": True}
+    )
 
 
 class EntitySchema(BaseDataSchema):
     analysis_id = fields.String(data_key="analysis", metadata={"id_field": True})
 
-    class Meta:
-        additional = ("level", "label")
-        allow_none = ("level", "label")
+    level = fields.String(allow_none=True)
+    label = fields.String(allow_none=True)
 
 
 class ImageSchema(BaseDataSchema):
@@ -197,15 +287,15 @@ class ImageSchema(BaseDataSchema):
     # analysis = fields.Pluck("AnalysisSchema", "id", metadata={"id_field": True})
     analysis_name = fields.String(allow_none=True, dump_only=True)
     add_date = fields.DateTime(dump_only=True)
-
-    class Meta:
-        additional = ("url", "filename", "space", "value_type")
-        allow_none = ("url", "filename", "space", "value_type")
+    url = fields.String(allow_none=True)
+    filename = fields.String(allow_none=True)
+    space = fields.String(allow_none=True)
+    value_type = fields.String(allow_none=True)
 
 
 class PointValueSchema(BaseSchema):
-    class Meta:
-        additional = allow_none = ("kind", "value")
+    kind = fields.String(allow_none=True)
+    value = fields.Float(allow_none=True)
 
 
 class PointSchema(BaseDataSchema):
@@ -216,31 +306,57 @@ class PointSchema(BaseDataSchema):
     entities = fields.Nested(EntitySchema, many=True, load_only=True)
     cluster_size = fields.Float(allow_none=True)
     subpeak = fields.Boolean(allow_none=True)
-    deactivation = fields.Boolean(missing=False, allow_none=True)
+    deactivation = fields.Boolean(load_default=False, allow_none=True)
     order = fields.Integer()
     coordinates = fields.List(fields.Float(), dump_only=True)
+    kind = fields.String(allow_none=True)
+    space = fields.String(allow_none=True)
+    image = fields.String(allow_none=True)
+    label_id = fields.Float(allow_none=True)
 
     # deserialization
-    x = fields.Float(load_only=True)
-    y = fields.Float(load_only=True)
-    z = fields.Float(load_only=True)
-
-    class Meta:
-        additional = ("kind", "space", "image", "label_id")
-        allow_none = ("kind", "space", "image", "label_id")
+    x = fields.Float(load_only=True, allow_none=True)
+    y = fields.Float(load_only=True, allow_none=True)
+    z = fields.Float(load_only=True, allow_none=True)
 
     @pre_load
     def process_values(self, data, **kwargs):
-        # PointValues need special handling
-        if data.get("coordinates"):
-            coords = [float(c) for c in data.pop("coordinates")]
-            data["x"], data["y"], data["z"] = coords
+        # Handle case where data might be a string ID instead of dict
+        if not isinstance(data, dict):
+            return data
+
+        # Only process coordinates if they exist in the data
+        if "coordinates" in data and data["coordinates"] is not None:
+            coords = data.pop("coordinates")
+
+            # Check if all coordinates are null
+            if all(c is None for c in coords):
+                # During cloning, allow null coordinates but store them as None
+                if self.context.get("clone"):
+                    data["x"], data["y"], data["z"] = None, None, None
+                else:
+                    # Don't save points with all null coordinates to database
+                    raise ValidationError("Points cannot have all null coordinates")
+            else:
+                # Convert coordinates to float, handling potential null values
+                try:
+                    converted_coords = [
+                        float(c) if c is not None else None for c in coords
+                    ]
+                    data["x"], data["y"], data["z"] = converted_coords
+                except (TypeError, ValueError) as e:
+                    raise ValidationError(f"Invalid coordinate values: {e}")
 
         if data.get("order") is None:
-            if data.get("analysis_id") is not None:
+            # Extract analysis_id first, then check if it exists
+            analysis_id = data.get("analysis_id") or (
+                data.get("analysis") if isinstance(data.get("analysis"), str) else None
+            )
+
+            if analysis_id:
                 max_order = (
                     db.session.query(func.max(Point.order))
-                    .filter_by(analysis_id=data["analysis_id"])
+                    .filter_by(analysis_id=analysis_id)
                     .scalar()
                 )
                 data["order"] = 1 if max_order is None else max_order + 1
@@ -286,10 +402,8 @@ class AnalysisSchema(BaseDataSchema):
     points = StringOrNested(PointSchema, many=True)
     weights = fields.List(fields.Float())
     entities = fields.Nested(EntitySchema, many=True, load_only=True)
-
-    class Meta:
-        additional = ("name", "description")
-        allow_none = ("name", "description")
+    name = fields.String(allow_none=True)
+    description = fields.String(allow_none=True)
 
     @pre_load
     def load_values(self, data, **kwargs):
@@ -339,6 +453,15 @@ class StudySetStudyInfoSchema(Schema):
 class BaseStudySchema(BaseDataSchema):
     metadata = fields.Dict(attribute="metadata_", dump_only=True)
     metadata_ = fields.Dict(data_key="metadata", load_only=True, allow_none=True)
+    name = fields.String(allow_none=True)
+    description = fields.String(allow_none=True)
+    publication = fields.String(allow_none=True)
+    doi = fields.String(allow_none=True)
+    pmid = fields.String(allow_none=True)
+    pmcid = fields.String(allow_none=True)
+    authors = fields.String(allow_none=True)
+    year = fields.Integer(allow_none=True)
+    level = fields.String(allow_none=True)
     versions = StringOrNested("StudySchema", many=True)
     features = fields.Method("get_features")
     ace_fulltext = fields.String(load_only=True, allow_none=True)
@@ -367,30 +490,6 @@ class BaseStudySchema(BaseDataSchema):
             return flattened_features
 
         return features
-
-    class Meta:
-        additional = (
-            "name",
-            "description",
-            "publication",
-            "doi",
-            "pmid",
-            "pmcid",
-            "authors",
-            "year",
-            "level",
-        )
-        allow_none = (
-            "name",
-            "description",
-            "publication",
-            "doi",
-            "pmid",
-            "pmcid",
-            "authors",
-            "year",
-            "level",
-        )
 
     @pre_load
     def check_nulls(self, data, **kwargs):
@@ -432,6 +531,15 @@ class BaseStudySchema(BaseDataSchema):
 class StudySchema(BaseDataSchema):
     metadata = fields.Dict(attribute="metadata_", dump_only=True)
     metadata_ = fields.Dict(data_key="metadata", load_only=True, allow_none=True)
+    name = fields.String(allow_none=True)
+    description = fields.String(allow_none=True)
+    publication = fields.String(allow_none=True)
+    doi = fields.String(allow_none=True)
+    pmid = fields.String(allow_none=True)
+    pmcid = fields.String(allow_none=True)
+    authors = fields.String(allow_none=True)
+    year = fields.Integer(allow_none=True)
+    level = fields.String(allow_none=True)
     analyses = StringOrNested(AnalysisSchema, many=True)
     source = fields.String(
         dump_only=True, metadata={"info_field": True}, allow_none=True
@@ -452,28 +560,6 @@ class StudySchema(BaseDataSchema):
     class Meta:
         # by default exclude this
         exclude = ("has_coordinates", "has_images", "studysets")
-        additional = (
-            "name",
-            "description",
-            "publication",
-            "doi",
-            "pmid",
-            "pmcid",
-            "authors",
-            "year",
-            "level",
-        )
-        allow_none = (
-            "name",
-            "description",
-            "publication",
-            "doi",
-            "pmid",
-            "pmcid",
-            "authors",
-            "year",
-            "level",
-        )
 
     @pre_load
     def check_nulls(self, data, **kwargs):
@@ -490,10 +576,16 @@ class StudysetSchema(BaseDataSchema):
     studies = StringOrNested(
         StudySchema, many=True
     )  # This needs to be nested, but not cloned
+    source = fields.String(dump_only=True, allow_none=True)
+    source_id = fields.String(dump_only=True, allow_none=True)
+    source_updated_at = fields.DateTime(dump_only=True, allow_none=True)
+    name = fields.String(allow_none=True)
+    description = fields.String(allow_none=True)
+    publication = fields.String(allow_none=True)
+    doi = fields.String(allow_none=True)
+    pmid = fields.String(allow_none=True)
 
     class Meta:
-        additional = ("name", "description", "publication", "doi", "pmid")
-        allow_none = ("name", "description", "publication", "doi", "pmid")
         render_module = orjson
 
 
@@ -545,6 +637,13 @@ class AnnotationAnalysisSchema(BaseSchema):
         return data
 
 
+class AnnotationPipelineSchema(BaseSchema):
+    name = fields.String(required=True)
+    version = fields.String(load_default=None, allow_none=True)
+    config_id = fields.String(load_default=None, allow_none=True)
+    columns = fields.List(fields.String(), required=True)
+
+
 class AnnotationSchema(BaseDataSchema):
     # serialization
     studyset_id = fields.String(data_key="studyset")
@@ -561,10 +660,11 @@ class AnnotationSchema(BaseDataSchema):
     metadata = fields.Dict(attribute="metadata_", dump_only=True)
     # deserialization
     metadata_ = fields.Dict(data_key="metadata", load_only=True, allow_none=True)
-
-    class Meta:
-        additional = ("name", "description")
-        allow_none = ("name", "description")
+    name = fields.String(allow_none=True)
+    description = fields.String(allow_none=True)
+    pipelines = fields.List(
+        fields.Nested(AnnotationPipelineSchema), load_only=True, required=False
+    )
 
     @pre_load
     def add_studyset_id(self, data, **kwargs):
@@ -579,6 +679,19 @@ class AnnotationSchema(BaseDataSchema):
         if isinstance(data.get("studyset_id"), str):
             data["studyset"] = {"id": data.pop("studyset_id")}
         return data
+
+    @validates_schema
+    def validate_notes(self, data, **kwargs):
+        notes = data.get("annotation_analyses") or []
+        invalid = {}
+
+        for idx, note in enumerate(notes):
+            note_payload = note.get("note") if isinstance(note, dict) else None
+            if not isinstance(note_payload, dict) or len(note_payload) == 0:
+                invalid[idx] = ["note must include at least one field"]
+
+        if invalid:
+            raise ValidationError({"notes": invalid})
 
 
 class BaseSnapshot(object):

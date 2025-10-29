@@ -111,7 +111,7 @@ const CurationBoardAIInterfaceCuratorTable: React.FC<ICurationBoardAIInterfaceCu
 
     return (
         <Box sx={{ padding: '0 1rem 2rem 1rem', height: '100%' }}>
-            <Box sx={{ display: 'flex', justifyContent: 'flex-start', paddingBottom: '4px' }}>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-start', paddingBottom: '8px' }}>
                 {numRowsSelected > 0 && (
                     <CurationBoardAIInterfaceCuratorTableSelectedRowsActions table={table} columnIndex={columnIndex} />
                 )}
@@ -122,14 +122,8 @@ const CurationBoardAIInterfaceCuratorTable: React.FC<ICurationBoardAIInterfaceCu
                     allowAIColumns={prismaPhase !== 'identification'}
                 />
             </Box>
-            <Box
-                sx={{
-                    maxWidth: '100%',
-                    width: '100%',
-                    overflow: 'hidden',
-                }}
-            >
-                <Box sx={{ display: 'flex', overflowX: 'scroll', scrollbarColor: '#c1c1c1 white' }}>
+            <Box sx={{ maxWidth: '100%', width: '100%', overflow: 'hidden' }}>
+                <Box sx={{ display: 'flex', overflowX: 'auto', scrollbarColor: '#c1c1c1 white' }}>
                     {columnFilters
                         .filter((filter) => !!filter.value)
                         .map((filter) => (

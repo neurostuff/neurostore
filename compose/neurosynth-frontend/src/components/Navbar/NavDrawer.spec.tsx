@@ -36,7 +36,7 @@ describe('NavDrawer component', () => {
         expect(screen.queryByText('LOGOUT')).not.toBeInTheDocument();
 
         expect(screen.queryByText('EXPLORE')).toBeInTheDocument();
-        expect(screen.queryByText('DOCS')).toBeInTheDocument();
+        expect(screen.queryByText('Help')).toBeInTheDocument();
         expect(screen.queryByText('SIGN IN/SIGN UP')).toBeInTheDocument();
     });
 
@@ -49,7 +49,7 @@ describe('NavDrawer component', () => {
         expect(screen.queryByText('MY PROJECTS')).toBeInTheDocument();
         expect(screen.queryByText('LOGOUT')).toBeInTheDocument();
         expect(screen.queryByText('EXPLORE')).toBeInTheDocument();
-        expect(screen.queryByText('DOCS')).toBeInTheDocument();
+        expect(screen.queryByText('Help')).toBeInTheDocument();
     });
 
     it('should login', () => {

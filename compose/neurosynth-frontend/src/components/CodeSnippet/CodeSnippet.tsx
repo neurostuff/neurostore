@@ -1,11 +1,12 @@
 import { Box, Button } from '@mui/material';
+import { SystemStyleObject } from '@mui/system';
 import { useState } from 'react';
 import CodeSnippetStyles from './CodeSnippet.styles';
 
-const CodeSnippet: React.FC<{ linesOfCode: string[] }> = (props) => {
+const CodeSnippet: React.FC<{ linesOfCode: string[]; noCopyButton?: boolean; sx?: SystemStyleObject }> = (props) => {
     const [copied, setCopied] = useState(false);
 
-    const copyToClipboard = (_event: React.MouseEvent) => {
+    const copyToClipboard = () => {
         setCopied(true);
         const codeString = props.linesOfCode.reduce((prev, curr, index) => {
             return index === 0 ? curr : `${prev}\n${curr}`;
@@ -17,7 +18,7 @@ const CodeSnippet: React.FC<{ linesOfCode: string[] }> = (props) => {
     };
 
     return (
-        <Box sx={[CodeSnippetStyles.codeBlock, { display: 'flex', flexWrap: 'wrap' }]}>
+        <Box sx={[CodeSnippetStyles.codeBlock, { display: 'flex', flexWrap: 'wrap' }, props.sx ?? {}]}>
             <Box sx={{ flexGrow: 1 }}>
                 {props.linesOfCode.map((code, index) => (
                     <Box key={index} sx={{ marginBottom: '3px', minHeight: '15px' }}>
@@ -25,11 +26,13 @@ const CodeSnippet: React.FC<{ linesOfCode: string[] }> = (props) => {
                     </Box>
                 ))}
             </Box>
-            <Box>
-                <Button onClick={copyToClipboard} disableElevation variant="contained">
-                    {copied ? 'copied!' : 'copy'}
-                </Button>
-            </Box>
+            {!props.noCopyButton && (
+                <Box>
+                    <Button onClick={copyToClipboard} disableElevation variant="contained">
+                        {copied ? 'copied!' : 'copy'}
+                    </Button>
+                </Box>
+            )}
         </Box>
     );
 };

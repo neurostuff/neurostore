@@ -1,9 +1,8 @@
 import { KeyboardArrowRight } from '@mui/icons-material';
-import { ListItem, ListItemButton, ListItemIcon, ListItemText, Chip, Collapse, Box, Tooltip } from '@mui/material';
+import { Box, Chip, Collapse, ListItem, ListItemButton, ListItemIcon, ListItemText, Tooltip } from '@mui/material';
+import React, { useState } from 'react';
 import CurationBoardAIGroupsStyles from './CurationBoardAIGroups.styles';
 import { IGroupListItem } from './CurationBoardAIGroupsList';
-import { useState } from 'react';
-import React from 'react';
 
 const CurationBoardAIGroupsListItem: React.FC<{
     selectedGroupId: string | undefined;
@@ -51,7 +50,6 @@ const CurationBoardAIGroupsListItem: React.FC<{
                         )}
                         <ListItemText
                             sx={{
-                                textTransform: 'capitalize',
                                 '.MuiListItemText-primary': {
                                     fontSize: '14px',
                                     ...CurationBoardAIGroupsStyles.lineClamp3,
@@ -61,7 +59,9 @@ const CurationBoardAIGroupsListItem: React.FC<{
                             primary={group.label}
                             secondary={group.secondaryLabel}
                         />
-                        {!expanded && <Chip label={group.count} sx={{ fontSize: '12px', height: '20px' }} />}
+                        {!expanded && group.count !== null && (
+                            <Chip label={group.count} sx={{ fontSize: '12px', height: '20px' }} />
+                        )}
                     </ListItemButton>
                 </ListItem>
             </Tooltip>

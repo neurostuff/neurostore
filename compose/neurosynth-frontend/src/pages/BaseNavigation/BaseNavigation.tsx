@@ -1,26 +1,26 @@
 import { Box, Link, Typography } from '@mui/material';
+import { ErrorBoundary } from '@sentry/react';
 import ProgressLoader from 'components/ProgressLoader';
 import AnnotationsPage from 'pages/Annotations/AnnotationsPage';
+import ProtectedMetaAnalysesRoute from 'pages/BaseNavigation/components/ProtectedMetaAnalysesRoute';
+import ProtectedProjectRoute from 'pages/BaseNavigation/components/ProtectedProjectRoute';
 import CurationImportPage from 'pages/CurationImport/CurationImportPage';
 import ExtractionPage from 'pages/Extraction/ExtractionPage';
+import ForbiddenPage from 'pages/Forbidden/Forbidden';
 import NotFoundPage from 'pages/NotFound/NotFoundPage';
+import ProjectEditMetaAnalyses from 'pages/Project/components/ProjectEditMetaAnalyses';
+import ProjectViewMetaAnalyses from 'pages/Project/components/ProjectViewMetaAnalyses';
 import ProjectPage from 'pages/Project/ProjectPage';
 import BaseStudyPage from 'pages/Study/BaseStudyPage';
+import TermsAndConditions from 'pages/TermsAndConditions/TermsAndConditions';
 import UserProfilePage from 'pages/UserProfile/UserProfilePage';
 import React, { Suspense } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import LandingPage from '../LandingPage/LandingPage';
 import BaseNavigationStyles from './BaseNavigation.styles';
-import ForbiddenPage from 'pages/Forbidden/Forbidden';
-import TermsAndConditions from 'pages/TermsAndConditions/TermsAndConditions';
-import ProjectEditMetaAnalyses from 'pages/Project/components/ProjectEditMetaAnalyses';
-import ProjectViewMetaAnalyses from 'pages/Project/components/ProjectViewMetaAnalyses';
-import ProtectedProjectRoute from 'pages/BaseNavigation/components/ProtectedProjectRoute';
 import ProtectedRoute from './components/ProtectedRoute';
-import ProtectedMetaAnalysesRoute from 'pages/BaseNavigation/components/ProtectedMetaAnalysesRoute';
-import { ErrorBoundary } from '@sentry/react';
+import HelpPage from 'pages/HelpPage/HelpPage';
 
-const ImportSleuthPage = React.lazy(() => import('pages/SleuthImport/SleuthImportPage'));
 const EditStudyPage = React.lazy(() => import('pages/Study/EditStudyPage'));
 const ProjectStudyPage = React.lazy(() => import('pages/Study/ProjectStudyPage'));
 const StudiesPage = React.lazy(() => import('pages/Studies/StudiesPage'));
@@ -70,16 +70,6 @@ const BaseNavigation: React.FC = () => {
                             <ProtectedRoute errorMessage="Please log in or sign up to access your projects">
                                 <Box sx={BaseNavigationStyles.pagesContainer}>
                                     <ProjectsPage />
-                                </Box>
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route
-                        path="/projects/new/sleuth"
-                        element={
-                            <ProtectedRoute errorMessage="Please log in or sign up to begin importing a sleuth file into your project.">
-                                <Box sx={BaseNavigationStyles.pagesContainer}>
-                                    <ImportSleuthPage />
                                 </Box>
                             </ProtectedRoute>
                         }
@@ -226,6 +216,7 @@ const BaseNavigation: React.FC = () => {
                             </ProtectedRoute>
                         }
                     />
+                    <Route path="/help" element={<HelpPage />} />
                     <Route
                         path="/forbidden"
                         element={

@@ -1,4 +1,4 @@
-import { Autocomplete, Box, Chip, ListItem, ListItemText, TextField } from '@mui/material';
+import { Autocomplete, Box, Chip, ListItem, ListItemText, TextField, Tooltip } from '@mui/material';
 import { AccessorFn, Row } from '@tanstack/react-table';
 import { useMemo, useState } from 'react';
 import { flattenColumnValues } from '../hooks/useCuratorTableState.helpers';
@@ -41,7 +41,7 @@ const CurationBoardAIInterfaceCuratorTableHeaderFilterNestedAutocomplete: React.
                 size="small"
                 open
                 renderInput={(params) => (
-                    <TextField {...params} sx={{ width: '200px', input: { fontSize: '12px' } }} placeholder="filter" />
+                    <TextField {...params} sx={{ width: '300px', input: { fontSize: '12px' } }} placeholder="filter" />
                 )}
                 onChange={(_event, value) => {
                     onChange(value.length === 0 ? undefined : value);
@@ -63,7 +63,19 @@ const CurationBoardAIInterfaceCuratorTableHeaderFilterNestedAutocomplete: React.
                 }}
                 renderTags={(value, getTagProps) =>
                     value.map((option, index) => (
-                        <Chip label={option} sx={{ fontSize: '12px' }} size="small" {...getTagProps({ index })} />
+                        <Tooltip title={option} slotProps={{ popper: { disablePortal: true } }} placement="top">
+                            <Chip
+                                label={option}
+                                sx={{
+                                    fontSize: '12px',
+                                    maxWidth: '70px !important',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                }}
+                                size="small"
+                                {...getTagProps({ index })}
+                            />
+                        </Tooltip>
                     ))
                 }
                 renderOption={(props, option) => (

@@ -34,7 +34,10 @@ def test_create_and_get_spec(session, app, auth_client, user_data, specification
 
     view_spec = auth_client.get(f"/api/specifications/{create_spec.json['id']}")
 
-    assert create_spec.json == view_spec.json
+    create_payload = create_spec.json()
+    view_payload = view_spec.json()
+
+    assert create_payload == view_payload
 
 
 @pytest.mark.parametrize(

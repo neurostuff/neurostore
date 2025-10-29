@@ -1,5 +1,6 @@
 from ...models import User, Studyset
 from ...schemas import StudysetSchema
+from sqlalchemy import select
 
 
 def test_get_studysets(session, auth_client, user_data):
@@ -7,9 +8,13 @@ def test_get_studysets(session, auth_client, user_data):
     assert get.status_code == 200
 
 
-def test_post_studyset_with_new_neurostore_id(session, auth_client, user_data):
-    user = User.query.filter_by(name="user1").first()
-    example = Studyset.query.filter_by(user=user).first()
+def test_post_studyset_with_new_neurostore_id(session, auth_client, user_data, db):
+    user = db.session.execute(
+        select(User).where(User.name == "user1")
+    ).scalar_one_or_none()
+    example = db.session.execute(
+        select(Studyset).where(Studyset.user == user)
+    ).scalar_one_or_none()
     schema = StudysetSchema()
     payload = schema.dump(example)
     payload.pop("url")
