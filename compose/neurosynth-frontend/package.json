@@ -106,5 +106,8 @@
         "typescript-eslint": "^8.13.0",
         "vite-tsconfig-paths": "^5.1.4",
         "vitest": "^3.0.7"
+    },
+    "optionalDependencies": {
+        "@rollup/rollup-linux-x64-musl": "4.9.5"
     }
 }
