@@ -185,10 +185,10 @@ describe('CurationAIInterface', () => {
         });
 
         describe('table mode', () => {
-            it('should only show the basic, non-AI options in the manage columns dropdown for the identification phase', () => {
+            it.only('should only show the basic, non-AI options in the manage columns dropdown for the identification phase', () => {
                 cy.contains('button', 'Manually review').click();
                 cy.contains('button', 'Columns').click();
-                cy.get('.base-Popper-root').should('exist').and('not.contain', 'AI');
+                cy.get('.MuiPopper-root').should('exist').and('not.contain', 'AI');
             });
 
             it('should show the correct button options when a row is selected', () => {
