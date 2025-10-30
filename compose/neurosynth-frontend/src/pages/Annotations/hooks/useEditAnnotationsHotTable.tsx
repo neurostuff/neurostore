@@ -49,8 +49,8 @@ const useEditAnnotationsHotTable = (annotationId?: string, disableEdit?: boolean
                     annotationNote.study_name && annotationNote.study_year
                         ? `(${annotationNote.study_year}) ${annotationNote.study_name}`
                         : annotationNote.study_name
-                        ? annotationNote.study_name
-                        : '';
+                          ? annotationNote.study_name
+                          : '';
 
                 const analysisName = annotationNote.analysis_name || '';
 

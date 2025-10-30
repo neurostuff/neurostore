@@ -22,6 +22,7 @@ export type AnnotationStoreActions = {
     setAnnotationIsEdited: (isEdited: boolean) => void;
     clearAnnotationStore: () => void;
     updateNotes: (updatedNotes: Array<NoteCollectionReturn>) => void;
+    createAnnotationColumn: (noteKey: NoteKeyType) => void;
     updateAnnotationInDB: () => Promise<void>;
     createAnnotationNote: (analysisId: string, studyId: string, analysisName: string) => void;
     deleteAnnotationNote: (analysisId: string) => void;
