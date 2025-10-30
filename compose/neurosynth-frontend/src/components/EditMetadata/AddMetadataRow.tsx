@@ -1,8 +1,8 @@
 import { Box, Button, TextField } from '@mui/material';
 import React, { useCallback, useState } from 'react';
-import { IAddMetadataRowModel, EPropertyType, IMetadataRowModel } from './EditMetadata.types';
-import EditMetadataValue from './EditMetadataValue';
+import { EPropertyType, IAddMetadataRowModel, IMetadataRowModel } from './EditMetadata.types';
 import EditMetadataRowStyles from './EditMetadataRow.styles';
+import EditMetadataValue from './EditMetadataValue';
 import ToggleType from './ToggleType';
 
 export const getStartValFromType = (type: EPropertyType): boolean | number | string | null => {
@@ -50,7 +50,7 @@ const AddMetadataRow: React.FC<IAddMetadataRowModel> = (props) => {
         setCurrType(newType);
     }, []);
 
-    const handleAdd = (event: React.MouseEvent) => {
+    const handleAdd = () => {
         if (metadataRow.metadataKey.length > 0) {
             const wasAdded = onAddMetadataRow(metadataRow);
 
@@ -66,9 +66,7 @@ const AddMetadataRow: React.FC<IAddMetadataRowModel> = (props) => {
         }
     };
 
-    const handleMetadataKeyChange = (
-        event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-    ) => {
+    const handleMetadataKeyChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         setIsValid(true);
         setMetadataRow((prevVal) => {
             return {
@@ -88,8 +86,8 @@ const AddMetadataRow: React.FC<IAddMetadataRowModel> = (props) => {
     };
 
     return (
-        <Box sx={EditMetadataRowStyles.tableRow}>
-            {showToggleType && (
+        <>
+            {showToggleType ? (
                 <Box
                     sx={{
                         display: 'flex',
@@ -106,14 +104,10 @@ const AddMetadataRow: React.FC<IAddMetadataRowModel> = (props) => {
                         disabled={disabled}
                     />
                 </Box>
+            ) : (
+                <Box></Box>
             )}
-            <Box
-                sx={[
-                    EditMetadataRowStyles.tableCell,
-                    EditMetadataRowStyles.key,
-                    { verticalAlign: 'baseline' },
-                ]}
-            >
+            <Box>
                 <TextField
                     size="small"
                     disabled={disabled}
@@ -130,13 +124,7 @@ const AddMetadataRow: React.FC<IAddMetadataRowModel> = (props) => {
                 {/* {isValid && <Box sx={{ height: '22px' }}></Box>} */}
             </Box>
             {showMetadataValueInput && (
-                <Box
-                    sx={[
-                        EditMetadataRowStyles.tableCell,
-                        EditMetadataRowStyles.key,
-                        { width: '100%' },
-                    ]}
-                >
+                <Box>
                     <EditMetadataValue
                         placeholderText={valuePlaceholderText}
                         onEditMetadataValue={handleMetadataValueChange}
@@ -147,7 +135,7 @@ const AddMetadataRow: React.FC<IAddMetadataRowModel> = (props) => {
                     {/* <Box sx={{ height: '22px' }}></Box> */}
                 </Box>
             )}
-            <Box sx={EditMetadataRowStyles.tableCell}>
+            <Box>
                 <Button
                     sx={EditMetadataRowStyles.updateButton}
                     disabled={!(metadataRow.metadataKey.length > 0) || disabled}
@@ -160,7 +148,7 @@ const AddMetadataRow: React.FC<IAddMetadataRowModel> = (props) => {
                 {/* This component is added so that the error message doesn't mess up the row alignment */}
                 {/* <Box sx={{ height: '22px' }}></Box> */}
             </Box>
-        </Box>
+        </>
     );
 };
 

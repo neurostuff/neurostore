@@ -4,7 +4,7 @@ import { ColorOptions } from 'index';
 
 const LoadingButton: React.FC<
     ButtonProps & {
-        text: string;
+        text: string | React.ReactNode;
         isLoading?: boolean;
         loaderColor?: ColorOptions;
     }

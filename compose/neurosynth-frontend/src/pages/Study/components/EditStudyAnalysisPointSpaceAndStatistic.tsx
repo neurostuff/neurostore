@@ -1,14 +1,7 @@
 import { Box, FormControl, InputLabel, MenuItem, Select, SelectChangeEvent } from '@mui/material';
 import { useAddOrUpdateAnalysis } from 'pages/Study/store/StudyStore';
-import {
-    useStudyAnalysisPointSpace,
-    useStudyAnalysisPointStatistic,
-} from 'pages/Study/store/StudyStore';
-import {
-    DefaultMapTypes,
-    DefaultSpaceTypes,
-    MapOrSpaceType,
-} from 'pages/Study/store/StudyStore.helpers';
+import { useStudyAnalysisPointSpace, useStudyAnalysisPointStatistic } from 'pages/Study/store/StudyStore';
+import { DefaultMapTypes, DefaultSpaceTypes, MapOrSpaceType } from 'pages/Study/store/StudyStore.helpers';
 
 const statisticTypeOptions: MapOrSpaceType[] = Object.keys(DefaultMapTypes).map((key) => {
     return {
@@ -54,18 +47,14 @@ const EditStudyAnalysisPointSpaceAndStatistic: React.FC<{
             sx={{
                 margin: '1rem 0',
                 display: 'flex',
+                gap: 1,
                 justifyContent: 'space-between',
                 width: '100%',
-                maxWidth: '550px',
             }}
         >
-            <FormControl sx={{ width: '250px' }} size="small" fullWidth>
+            <FormControl size="small" fullWidth>
                 <InputLabel id="num-col-label">Statistic</InputLabel>
-                <Select
-                    onChange={handleSelectStatistic}
-                    value={analysisPointStatistic?.value || ''}
-                    label="Statistic"
-                >
+                <Select onChange={handleSelectStatistic} value={analysisPointStatistic?.value || ''} label="Statistic">
                     {statisticTypeOptions.map((mapTypeOption) => (
                         <MenuItem key={mapTypeOption.value} value={mapTypeOption.value}>
                             {mapTypeOption.label}
@@ -73,13 +62,9 @@ const EditStudyAnalysisPointSpaceAndStatistic: React.FC<{
                     ))}
                 </Select>
             </FormControl>
-            <FormControl sx={{ width: '250px' }} size="small" fullWidth>
+            <FormControl size="small" fullWidth>
                 <InputLabel id="num-col-label">Space</InputLabel>
-                <Select
-                    onChange={handleSelectSpace}
-                    value={analysisPointSpace?.value || ''}
-                    label="Space"
-                >
+                <Select onChange={handleSelectSpace} value={analysisPointSpace?.value || ''} label="Space">
                     {spaceTypeOptions.map((spaceTypeOption) => (
                         <MenuItem key={spaceTypeOption.value} value={spaceTypeOption.value}>
                             {spaceTypeOption.label}

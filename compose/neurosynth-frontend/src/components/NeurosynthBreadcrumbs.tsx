@@ -1,4 +1,4 @@
-import { Box, Breadcrumbs, Link, Typography } from '@mui/material';
+import { Box, Breadcrumbs, Link, Tooltip, Typography } from '@mui/material';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import { hasUnsavedStudyChanges, unsetUnloadHandler } from 'helpers/BeforeUnload.helpers';
 import React, { useState } from 'react';
@@ -43,7 +43,7 @@ const NeurosynthBreadcrumbs: React.FC<{ breadcrumbItems: INeurosynthBreadcrumbs[
     };
 
     return (
-        <Box sx={{ display: 'flex' }}>
+        <Box>
             <ConfirmationDialog
                 isOpen={confirmationDialogState.isOpen}
                 dialogTitle="You have unsaved changes"
@@ -53,45 +53,37 @@ const NeurosynthBreadcrumbs: React.FC<{ breadcrumbItems: INeurosynthBreadcrumbs[
                 confirmText="Continue"
             />
 
-            <Breadcrumbs>
+            <Breadcrumbs sx={{ ol: { display: 'flex', flexWrap: 'nowrap' } }}>
                 {props.breadcrumbItems.map((breadcrumb, index) =>
                     breadcrumb.isCurrentPage ? (
-                        <Typography
-                            key={index}
-                            color="secondary"
-                            variant="h6"
-                            sx={{
-                                maxWidth: '200px',
-                                textOverflow: 'ellipsis',
-                                display: 'block',
-                                overflow: 'hidden',
-                                whiteSpace: 'nowrap',
-                            }}
-                        >
-                            {breadcrumb.text}
-                        </Typography>
+                        <Tooltip placement="top" key={index} title={breadcrumb.text}>
+                            <Typography
+                                key={index}
+                                color="secondary"
+                                sx={{ maxWidth: '250px' }}
+                                variant="h5"
+                                className="line-clamp-1"
+                            >
+                                {breadcrumb.text}
+                            </Typography>
+                        </Tooltip>
                     ) : (
-                        <Link
-                            key={index}
-                            component={NavLink}
-                            to={breadcrumb.link}
-                            onClick={(e) => {
-                                e.preventDefault();
-                                handleNavigate(breadcrumb.link);
-                            }}
-                            sx={{
-                                fontSize: '1.25rem',
-                                cursor: 'pointer',
-                                maxWidth: '200px',
-                                textOverflow: 'ellipsis',
-                                display: 'block',
-                                overflow: 'hidden',
-                                whiteSpace: 'nowrap',
-                            }}
-                            underline="hover"
-                        >
-                            {breadcrumb.text}
-                        </Link>
+                        <Tooltip placement="top" key={index} title={breadcrumb.text}>
+                            <Link
+                                component={NavLink}
+                                to={breadcrumb.link}
+                                variant="h5"
+                                sx={{ maxWidth: '250px' }}
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    handleNavigate(breadcrumb.link);
+                                }}
+                                className="line-clamp-1"
+                                underline="hover"
+                            >
+                                {breadcrumb.text}
+                            </Link>
+                        </Tooltip>
                     )
                 )}
             </Breadcrumbs>

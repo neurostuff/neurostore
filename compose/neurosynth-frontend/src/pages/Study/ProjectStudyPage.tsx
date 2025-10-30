@@ -1,4 +1,5 @@
 import { Box } from '@mui/material';
+import LoadingStateIndicatorProject from 'components/LoadingStateIndicator/LoadingStateIndicatorProject';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { useGetStudyById } from 'hooks';
@@ -8,11 +9,9 @@ import Study from 'pages/Study/components/Study';
 import { useInitStudyStore } from 'pages/Study/store/StudyStore';
 import React, { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import EditStudyToolbar from './components/EditStudyToolbar';
 import { studyAnalysesToStoreAnalyses } from './store/StudyStore.helpers';
-import LoadingStateIndicatorProject from 'components/LoadingStateIndicator/LoadingStateIndicatorProject';
 
-const ProjectStudyPage: React.FC = (props) => {
+const ProjectStudyPage: React.FC = () => {
     const initStudyStore = useInitStudyStore();
 
     const getProjectIsLoading = useGetProjectIsLoading();
@@ -42,7 +41,6 @@ const ProjectStudyPage: React.FC = (props) => {
             isLoading={studyIsLoading || getProjectIsLoading}
             isError={studyIsError}
         >
-            <EditStudyToolbar isViewOnly />
             <Box mb="1rem" sx={{ display: 'flex', alignItems: 'center' }}>
                 <NeurosynthBreadcrumbs
                     breadcrumbItems={[

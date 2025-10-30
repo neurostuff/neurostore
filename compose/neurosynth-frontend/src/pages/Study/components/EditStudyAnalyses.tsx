@@ -1,7 +1,7 @@
 import { Add } from '@mui/icons-material';
 import { Box, Button, Divider, Typography } from '@mui/material';
-import EditStudyComponentsStyles from 'pages/Study/components/EditStudyComponents.styles';
 import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
+import EditStudyComponentsStyles from 'pages/Study/components/EditStudyComponents.styles';
 import { useAddOrUpdateAnalysis, useStudyAnalyses, useStudyId } from 'pages/Study/store/StudyStore';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useCreateAnnotationNote } from 'stores/AnnotationStore.actions';
@@ -66,11 +66,9 @@ const EditStudyAnalyses: React.FC = React.memo(() => {
             expandIconColor="secondary.main"
             sx={[EditStudyComponentsStyles.accordion]}
             accordionSummarySx={EditStudyComponentsStyles.accordionSummary}
-            TitleElement={
-                <Typography sx={EditStudyComponentsStyles.accordionTitle}>Analyses</Typography>
-            }
+            TitleElement={<Typography sx={EditStudyComponentsStyles.accordionTitle}>Analyses</Typography>}
         >
-            <Box sx={{ width: '100%', margin: '0.5rem 0' }}>
+            <Box sx={{ padding: '0.5rem 0' }}>
                 <Box sx={{ marginBottom: '1rem' }}>
                     {analyses.length === 0 && (
                         <Typography sx={{ color: 'warning.dark' }} gutterBottom>
@@ -91,15 +89,21 @@ const EditStudyAnalyses: React.FC = React.memo(() => {
                     <>
                         <Divider />
                         <Box sx={{ display: 'flex' }}>
-                            <EditStudyAnalysesList
-                                analyses={analyses}
-                                selectedAnalysisId={selectedAnalysisId}
-                                onSelectAnalysis={handleSelectAnalysis}
-                            />
+                            <Box>
+                                <EditStudyAnalysesList
+                                    analyses={analyses}
+                                    selectedAnalysisId={selectedAnalysisId}
+                                    onSelectAnalysis={handleSelectAnalysis}
+                                />
+                            </Box>
                             <Box
                                 sx={{
+                                    boxSizing: 'border-box',
                                     padding: '1rem 0 1rem 1rem',
-                                    width: 'calc(100% - 250px - 1rem)',
+                                    width: {
+                                        xs: 'calc(100% - 150px)',
+                                        md: 'calc(100% - 250px)',
+                                    },
                                 }}
                             >
                                 <EditStudyAnalysis
