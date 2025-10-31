@@ -16,8 +16,8 @@ RUN npm install -g yarn
 RUN pip install --upgrade pip
 
 COPY pyproject.toml /store/backend/
-RUN pip install --no-cache-dir .[dev]
+RUN pip install --no-cache-dir -e .[dev]
 
 COPY . /store/backend/
 
-RUN pip install --no-cache-dir .
+RUN pip install --no-cache-dir -e .
