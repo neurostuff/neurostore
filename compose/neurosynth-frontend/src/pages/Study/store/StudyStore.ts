@@ -657,6 +657,7 @@ export const useDebouncedStudyAnalyses = () => {
         const unsub = useStudyStore.subscribe((state) => {
             if (debounce) clearTimeout(debounce);
             debounce = setTimeout(() => {
+                console.log({ state });
                 setDebouncedAnalyses(state.study.analyses);
             }, 400);
         });
