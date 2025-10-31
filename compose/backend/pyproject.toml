@@ -51,3 +51,6 @@ dev = [
 
 [tool.setuptools.packages.find]
 include = ["neurosynth_compose*"]
+
+[tool.setuptools.package-data]
+neurosynth_compose = ["openapi/**/*"]
