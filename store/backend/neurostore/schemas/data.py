@@ -462,6 +462,7 @@ class BaseStudySchema(BaseDataSchema):
     authors = fields.String(allow_none=True)
     year = fields.Integer(allow_none=True)
     level = fields.String(allow_none=True)
+    is_oa = fields.Boolean(allow_none=True)
     versions = StringOrNested("StudySchema", many=True)
     features = fields.Method("get_features")
     ace_fulltext = fields.String(load_only=True, allow_none=True)
