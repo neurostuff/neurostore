@@ -420,6 +420,64 @@ def test_has_coordinates_images(auth_client, session):
     assert base_study_2.has_images is False
 
 
+def test_filter_by_is_oa(auth_client, session):
+    base_true = BaseStudy(
+        name="Open Access Study",
+        doi="10.1234/oa-study",
+        pmid="111111",
+        is_oa=True,
+        public=True,
+        level="group",
+    )
+    base_false = BaseStudy(
+        name="Closed Access Study",
+        doi="10.1234/closed-study",
+        pmid="222222",
+        is_oa=False,
+        public=True,
+        level="group",
+    )
+    base_unknown = BaseStudy(
+        name="Unknown Access Study",
+        doi="10.1234/unknown-study",
+        pmid="333333",
+        is_oa=None,
+        public=True,
+        level="group",
+    )
+    session.add_all([base_true, base_false, base_unknown])
+    session.commit()
+
+    assert session.query(BaseStudy).count() == 3
+
+    all_resp = auth_client.get("/api/base-studies/")
+    assert all_resp.status_code == 200
+    all_names = {result["name"] for result in all_resp.json()["results"]}
+    assert {
+        "Open Access Study",
+        "Closed Access Study",
+        "Unknown Access Study",
+    }.issubset(all_names)
+
+    true_resp = auth_client.get("/api/base-studies/?is_oa=true")
+    assert true_resp.status_code == 200
+    true_results = true_resp.json()["results"]
+    assert all(result["is_oa"] is True for result in true_results)
+    true_names = {result["name"] for result in true_results}
+    assert "Open Access Study" in true_names
+    assert "Closed Access Study" not in true_names
+    assert "Unknown Access Study" not in true_names
+
+    false_resp = auth_client.get("/api/base-studies/?is_oa=false")
+    assert false_resp.status_code == 200
+    false_results = false_resp.json()["results"]
+    assert all(result["is_oa"] is False for result in false_results)
+    false_names = {result["name"] for result in false_results}
+    assert "Closed Access Study" in false_names
+    assert "Open Access Study" not in false_names
+    assert "Unknown Access Study" not in false_names
+
+
 def test_config_and_feature_filters(auth_client, ingest_demographic_features, session):
     """Test filtering by both config args and feature results with version specification"""
     # Test combined feature and config filtering

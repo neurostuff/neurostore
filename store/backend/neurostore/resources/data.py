@@ -964,6 +964,7 @@ class BaseStudiesView(ObjectView, ListView):
         "flat": fields.Boolean(load_default=False),
         "info": fields.Boolean(load_default=False),
         "data_type": fields.String(load_default=None),
+        "is_oa": fields.Boolean(load_default=None, allow_none=True),
         "feature_filter": fields.List(fields.String(load_default=None)),
         "pipeline_config": fields.List(fields.String(load_default=None)),
         "feature_display": fields.List(fields.String(load_default=None)),
@@ -1187,6 +1188,11 @@ class BaseStudiesView(ObjectView, ListView):
                         self._model.has_images.is_(True),
                     ),
                 )
+        is_oa = args.get("is_oa", None)
+        if is_oa is not None and not isinstance(is_oa, bool):
+            abort_validation("is_oa must be a boolean.")
+        if is_oa is not None:
+            q = q.filter(self._model.is_oa.is_(is_oa))
         # filter by year range
         year_min = args.get("year_min")
         year_max = args.get("year_max")
