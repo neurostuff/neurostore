@@ -51,7 +51,7 @@ from ..models import (
 )
 from ..models.data import StudysetStudy, BaseStudy, _check_type
 from ..utils import parse_json_filter, build_jsonpath
-
+from ..utils import normalize_note_keys
 
 from ..schemas import (
     BooleanOrString,
@@ -330,7 +330,9 @@ class StudysetsView(ObjectView, ListView):
                 ),
                 public=annotation.public,
                 note_keys=(
-                    deepcopy(annotation.note_keys) if annotation.note_keys else {}
+                    normalize_note_keys(annotation.note_keys)
+                    if annotation.note_keys
+                    else {}
                 ),
             )
             clone_annotation.studyset = cloned_record
@@ -944,8 +946,13 @@ class AnnotationsView(ObjectView, ListView):
             else:
                 note_keys = dict(data["note_keys"])
             for key, value_type in column_types.items():
-                note_keys[key] = value_type or "string"
-            data["note_keys"] = note_keys
+                existing_value = note_keys.get(key)
+                normalized_type = value_type or "string"
+                if isinstance(existing_value, dict):
+                    existing_value["type"] = normalized_type
+                else:
+                    note_keys[key] = {"type": normalized_type}
+            data["note_keys"] = normalize_note_keys(note_keys)
 
         data["annotation_analyses"] = list(note_map.values())
 

@@ -3,6 +3,8 @@ General utility functions
 """
 
 import re
+from copy import deepcopy
+from typing import Any, Dict, Iterable, Tuple
 
 
 def determine_value_type(value: str):
@@ -203,3 +205,84 @@ def parse_json_filter(filter_str: str) -> tuple:
             raise ValueError(f"Invalid numeric value '{value}' for operator {operator}")
 
     return pipeline_name, version, field_path, operator, value
+
+
+DEFAULT_NOTE_KEY_TYPE = "string"
+
+
+def _extract_note_key_type(value: Any) -> str:
+    """Derive the type string from a note_keys entry."""
+    if isinstance(value, dict):
+        for candidate in ("type", "value_type", "data_type", "datatype"):
+            candidate_value = value.get(candidate)
+            if candidate_value is not None:
+                return str(candidate_value)
+        return DEFAULT_NOTE_KEY_TYPE
+    if value is None:
+        return DEFAULT_NOTE_KEY_TYPE
+    return str(value)
+
+
+def _hydrate_note_key_entry(
+    key: str, value: Any, original_index: int
+) -> Tuple[str, Dict[str, Any], int, int]:
+    """
+    Build a normalized representation of a note_key entry while delaying order assignment.
+
+    Returns a tuple of:
+      - key name
+      - entry dict (deep copied when applicable)
+      - provided order (or None)
+      - original index (for stability when order is missing)
+    """
+    if isinstance(value, dict):
+        entry = deepcopy(value)
+        provided_order = entry.get("order")
+    else:
+        entry = {}
+        provided_order = None
+
+    entry["type"] = _extract_note_key_type(value)
+    if provided_order is not None:
+        try:
+            provided_order = int(provided_order)
+        except (ValueError, TypeError):
+            provided_order = None
+
+    return key, entry, provided_order, original_index
+
+
+def normalize_note_keys(note_keys: Any) -> Dict[str, Dict[str, Any]]:
+    """
+    Ensure note_keys are stored as an ordered mapping of key -> metadata, where
+    metadata includes a ``type`` and zero-based ``order`` attribute.
+
+    The returned mapping preserves any additional attributes present on each
+    entry and reindexes orders sequentially starting at 0. When no explicit
+    order is supplied, the original insertion order is used.
+    """
+    if not isinstance(note_keys, dict) or not note_keys:
+        return {}
+
+    hydrated_entries: Iterable[Tuple[str, Dict[str, Any], int, int]] = [
+        _hydrate_note_key_entry(key, value, original_index)
+        for original_index, (key, value) in enumerate(note_keys.items())
+    ]
+
+    sorted_entries = sorted(
+        hydrated_entries,
+        key=lambda item: (
+            item[2] is None,
+            item[2] if item[2] is not None else item[3],
+            item[0],
+        ),
+    )
+
+    normalized: Dict[str, Dict[str, Any]] = {}
+    for new_order, (key, entry, _provided_order, _original_index) in enumerate(
+        sorted_entries
+    ):
+        entry["order"] = new_order
+        normalized[key] = entry
+
+    return normalized

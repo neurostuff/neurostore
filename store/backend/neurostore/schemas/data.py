@@ -16,6 +16,7 @@ import orjson
 
 from neurostore.core import db
 from neurostore.models import Analysis, Point
+from neurostore.utils import normalize_note_keys
 
 # context parameters
 # clone: create a new object with new ids (true or false)
@@ -668,6 +669,12 @@ class AnnotationSchema(BaseDataSchema):
     )
 
     @pre_load
+    def normalize_note_keys_field(self, data, **kwargs):
+        if data.get("note_keys") is not None:
+            data["note_keys"] = normalize_note_keys(data["note_keys"])
+        return data
+
+    @pre_load
     def add_studyset_id(self, data, **kwargs):
         if data.get("studyset") and data.get("notes"):
             for note in data["notes"]:
@@ -693,6 +700,12 @@ class AnnotationSchema(BaseDataSchema):
 
         if invalid:
             raise ValidationError({"notes": invalid})
+
+    @post_dump
+    def ensure_note_keys_order(self, data, **kwargs):
+        if data.get("note_keys"):
+            data["note_keys"] = normalize_note_keys(data["note_keys"])
+        return data
 
 
 class BaseSnapshot(object):

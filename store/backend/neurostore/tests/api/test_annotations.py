@@ -15,6 +15,16 @@ from ...models import (
 )
 
 
+def _assert_note_keys(note_keys, expected_entries):
+    keys = list(note_keys.keys())
+    expected_keys = [key for key, _ in expected_entries]
+    assert keys == expected_keys
+    for order, (key, expected_type) in enumerate(expected_entries):
+        entry = note_keys[key]
+        assert entry["type"] == expected_type
+        assert entry["order"] == order
+
+
 def _create_annotation_with_two_analyses(session, user):
     base_study = BaseStudy(name="Test Base Study", level="group", user=user)
     study = Study(
@@ -514,10 +524,15 @@ def test_put_annotation_applies_pipeline_columns(auth_client, session):
     assert resp.status_code == 200
     body = resp.json()
 
-    assert body["note_keys"]["existing"] == "string"
-    assert body["note_keys"]["string_field"] == "string"
-    assert body["note_keys"]["numeric_field"] == "number"
-    assert body["note_keys"]["name"] == "string"
+    _assert_note_keys(
+        body["note_keys"],
+        [
+            ("existing", "string"),
+            ("string_field", "string"),
+            ("numeric_field", "number"),
+            ("name", "string"),
+        ],
+    )
 
     notes = body["notes"]
     assert len(notes) == 2
@@ -601,11 +616,15 @@ def test_put_annotation_pipeline_column_conflict_suffix(auth_client, session):
     key_one = f"string_field_{pipeline_one.name}_{config_one.version}_{config_one.id}"
     key_two = f"string_field_{pipeline_two.name}_{config_two.version}_{config_two.id}"
 
-    assert key_one in body["note_keys"]
-    assert key_two in body["note_keys"]
-    assert body["note_keys"][key_one] == "string"
-    assert body["note_keys"][key_two] == "string"
-    assert body["note_keys"]["name"] == "string"
+    _assert_note_keys(
+        body["note_keys"],
+        [
+            ("existing", "string"),
+            (key_one, "string"),
+            ("name", "string"),
+            (key_two, "string"),
+        ],
+    )
 
     for entry in body["notes"]:
         note = entry["note"]

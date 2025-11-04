@@ -14,6 +14,7 @@ import shortuuid
 from .migration_types import TSVector, VectorType
 from ..database import db
 from ..utils import parse_json_filter, build_jsonpath
+from ..utils import normalize_note_keys
 
 # status of pipeline run
 STATUS_ENUM = PGEnum(
@@ -128,6 +129,12 @@ class Annotation(BaseMixin, db.Model):
         cascade="all, delete-orphan",
         cascade_backrefs=False,
     )
+
+    @validates("note_keys")
+    def _validate_note_keys(self, key, value):
+        if isinstance(value, dict):
+            return normalize_note_keys(value)
+        return value
 
 
 class AnnotationAnalysis(db.Model):

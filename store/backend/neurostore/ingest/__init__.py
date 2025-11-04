@@ -28,6 +28,7 @@ from neurostore.models import (
     Entity,
 )
 from neurostore.models.data import StudysetStudy, _check_type
+from neurostore.utils import normalize_note_keys
 
 META_ANALYSIS_WORDS = ["meta analysis", "meta-analysis", "systematic review"]
 
@@ -356,9 +357,9 @@ def ingest_neurosynth(max_rows=None):
                 notes.append(aa)
 
         # add notes to annotation
-        annot.note_keys = {
-            k: _check_type(v) for k, v in annotation_row._asdict().items()
-        }
+        annot.note_keys = normalize_note_keys(
+            {k: _check_type(v) for k, v in annotation_row._asdict().items()}
+        )
         annot.annotation_analyses = notes
         for note in notes:
             to_commit.append(note.analysis)
