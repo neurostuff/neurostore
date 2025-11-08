@@ -27,6 +27,7 @@ export type AnnotationStoreActions = {
     createAnnotationNote: (analysisId: string, studyId: string, analysisName: string) => void;
     deleteAnnotationNote: (analysisId: string) => void;
     updateAnnotationNoteName: (analysis: Partial<IStoreNoteCollectionReturn>) => void;
+    removeAnnotationColumn: (noteKey: string) => void;
 };
 
 export type AnnotationNoteType = {

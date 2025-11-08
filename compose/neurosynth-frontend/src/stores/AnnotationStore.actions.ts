@@ -12,6 +12,8 @@ export const useUpdateAnnotationNotes = () => useAnnotationStore((state) => stat
 
 export const useCreateAnnotationColumn = () => useAnnotationStore((state) => state.createAnnotationColumn);
 
+export const useRemoveAnnotationColumn = () => useAnnotationStore((state) => state.removeAnnotationColumn);
+
 export const useUpdateAnnotationInDB = () => useAnnotationStore((state) => state.updateAnnotationInDB);
 
 export const useCreateAnnotationNote = () => useAnnotationStore((state) => state.createAnnotationNote);

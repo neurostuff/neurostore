@@ -137,7 +137,7 @@ export const createColumnHeader = (colKey: string, colType: EPropertyType, allow
 
     return (
         `<div title="${colKey}" style="display: flex; align-items: center; justify-content: center;">` +
-        `<div class="${styles[colType]} ${styles.truncate}" style="width: 150px">${colKey}</div>` +
+        `<div class="${styles[colType]} ${styles.truncate}" style="width: 100px">${colKey}</div>` +
         allowRemove +
         `</div>`
     );

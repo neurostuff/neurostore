@@ -168,6 +168,32 @@ export const useAnnotationStore = create<
                 },
             }));
         },
+        removeAnnotationColumn: (noteKey) => {
+            setUnloadHandler('annotation');
+            set((state) => {
+                if (!state.annotation.note_keys || !state.annotation.notes) return state;
+                const updatedNoteKeys = state.annotation.note_keys.filter((x) => x.key !== noteKey);
+                const updatedNotes = [...state.annotation.notes];
+                updatedNotes.forEach((note) => {
+                    const typedNote = note.note as Record<string, string | boolean | number | null> | undefined;
+                    if (!typedNote) return;
+                    delete typedNote[noteKey];
+                });
+
+                return {
+                    ...state,
+                    annotation: {
+                        ...state.annotation,
+                        note_keys: updatedNoteKeys,
+                        notes: updatedNotes,
+                    },
+                    storeMetadata: {
+                        ...state.storeMetadata,
+                        annotationIsEdited: true,
+                    },
+                };
+            });
+        },
         updateAnnotationNoteName: (note) => {
             set((state) => ({
                 ...state,
