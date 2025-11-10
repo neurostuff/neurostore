@@ -84,8 +84,8 @@ function useCurationBoardGroupsState() {
                     groupListItems.push({
                         id: defaultExclusionTags.duplicate.id,
                         type: 'LISTITEM',
-                        label: `${defaultExclusionTags.duplicate.label} (${curationDuplicates.length})`,
-                        count: null,
+                        label: `${defaultExclusionTags.duplicate.label}`,
+                        count: curationDuplicates.length,
                         UI: ECurationBoardAIInterface.EXCLUDE,
                         listItemStyles: {
                             '& .MuiListItemButton-root': {

@@ -175,7 +175,8 @@ const CurationEditableStubSummary: React.FC<ICurationEditableStubSummary> = ({
                 {stub.keywords || 'No Keywords'}
             </Typography>
 
-            <TextExpansion text={stub.abstractText} textSx={{ typography: 'body2' }}></TextExpansion>
+            {/* add a key to the text expansion to force a re-render when the stub changes */}
+            <TextExpansion key={stub.id} text={stub.abstractText} textSx={{ typography: 'body2' }}></TextExpansion>
 
             <Box>{children}</Box>
         </Box>
