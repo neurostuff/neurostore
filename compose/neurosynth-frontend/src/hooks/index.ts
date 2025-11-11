@@ -4,6 +4,7 @@ import useGetToken from './useGetToken';
 import useGuard from './useGuard';
 import useGetTour from './useGetTour';
 import useGetWindowHeight from './useGetWindowHeight';
+import useMeasure from './useMeasure';
 
 import useCreateAlgorithmSpecification from './metaAnalyses/useCreateAlgorithmSpecification';
 import useGetMetaAnalysesByIds from './metaAnalyses/useGetMetaAnalysesByIds';
@@ -50,6 +51,7 @@ export {
     useGuard,
     useGetTour,
     useGetWindowHeight,
+    useMeasure,
     useGetFullText,
     useUserCanEdit,
     useGetBaseStudyById,

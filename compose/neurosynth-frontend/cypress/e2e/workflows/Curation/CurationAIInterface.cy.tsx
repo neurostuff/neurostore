@@ -185,7 +185,7 @@ describe('CurationAIInterface', () => {
         });
 
         describe('table mode', () => {
-            it.only('should only show the basic, non-AI options in the manage columns dropdown for the identification phase', () => {
+            it('should only show the basic, non-AI options in the manage columns dropdown for the identification phase', () => {
                 cy.contains('button', 'Manually review').click();
                 cy.contains('button', 'Columns').click();
                 cy.get('.MuiPopper-root').should('exist').and('not.contain', 'AI');
@@ -287,8 +287,8 @@ describe('CurationAIInterface', () => {
         it('should show 1 duplicate identified message when one duplicate exists project-wide', () => {
             cy.fixture('projects/projectCurationPRISMAWithStudies').then((projectFixture: INeurosynthProjectReturn) => {
                 // add a duplicate tag to the first identification phase stub
-                projectFixture.provenance.curationMetadata.columns[0].stubStudies[0].exclusionTag =
-                    defaultExclusionTags.duplicate;
+                projectFixture.provenance.curationMetadata.columns[0].stubStudies[0].exclusionTagId =
+                    defaultExclusionTags.duplicate.id;
 
                 cy.intercept('GET', '**/api/projects/*', {
                     ...projectFixture,
@@ -305,12 +305,12 @@ describe('CurationAIInterface', () => {
 
         it('should show the correct number of duplicates identified message when multiple duplicates exist project-wide', () => {
             cy.fixture('projects/projectCurationPRISMAWithStudies').then((projectFixture: INeurosynthProjectReturn) => {
-                projectFixture.provenance.curationMetadata.columns[0].stubStudies[0].exclusionTag =
-                    defaultExclusionTags.duplicate;
-                projectFixture.provenance.curationMetadata.columns[0].stubStudies[1].exclusionTag =
-                    defaultExclusionTags.duplicate;
-                projectFixture.provenance.curationMetadata.columns[0].stubStudies[2].exclusionTag =
-                    defaultExclusionTags.duplicate;
+                projectFixture.provenance.curationMetadata.columns[0].stubStudies[0].exclusionTagId =
+                    defaultExclusionTags.duplicate.id;
+                projectFixture.provenance.curationMetadata.columns[0].stubStudies[1].exclusionTagId =
+                    defaultExclusionTags.duplicate.id;
+                projectFixture.provenance.curationMetadata.columns[0].stubStudies[2].exclusionTagId =
+                    defaultExclusionTags.duplicate.id;
 
                 cy.intercept('GET', '**/api/projects/*', {
                     ...projectFixture,
@@ -329,7 +329,7 @@ describe('CurationAIInterface', () => {
             cy.fixture('projects/projectCurationPRISMAWithStudies').then((projectFixture: INeurosynthProjectReturn) => {
                 // exclude all studies in the first column
                 projectFixture.provenance.curationMetadata.columns[0].stubStudies.forEach((stub) => {
-                    stub.exclusionTag = defaultExclusionTags.duplicate;
+                    stub.exclusionTagId = defaultExclusionTags.duplicate.id;
                 });
 
                 cy.intercept('GET', '**/api/projects/*', {
@@ -1043,29 +1043,21 @@ describe('CurationAIInterface', () => {
         });
     });
 
-    describe('exclusions', () => {
+    describe.only('exclusions', () => {
         it('should show empty when in the exclusions view and there are no studies', () => {
             cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
             cy.contains('li', 'Excluded').click();
             cy.contains('Duplicate').click();
-            cy.contains('No studies for this exclusion').should('exist');
+            cy.contains('No studies have been marked as').should('exist');
         });
 
         it('should show excluded studies in the exclusions view', () => {
             cy.fixture('projects/projectCurationSimpleWithStudies').then((projectFixture: INeurosynthProjectReturn) => {
-                projectFixture.provenance.curationMetadata.columns[0].stubStudies[0].exclusionTag = {
-                    id: defaultExclusionTags.duplicate.id,
-                    label: defaultExclusionTags.duplicate.label,
-                    isAssignable: false,
-                    isExclusionTag: true,
-                };
+                projectFixture.provenance.curationMetadata.columns[0].stubStudies[0].exclusionTagId =
+                    defaultExclusionTags.duplicate.id;
 
-                projectFixture.provenance.curationMetadata.columns[0].stubStudies[1].exclusionTag = {
-                    id: defaultExclusionTags.duplicate.id,
-                    label: defaultExclusionTags.duplicate.label,
-                    isAssignable: false,
-                    isExclusionTag: true,
-                };
+                projectFixture.provenance.curationMetadata.columns[0].stubStudies[1].exclusionTagId =
+                    defaultExclusionTags.duplicate.id;
 
                 cy.intercept('GET', '**/api/projects/*', {
                     ...projectFixture,
@@ -1081,19 +1073,11 @@ describe('CurationAIInterface', () => {
 
         it('should unexclude the study', () => {
             cy.fixture('projects/projectCurationSimpleWithStudies').then((projectFixture: INeurosynthProjectReturn) => {
-                projectFixture.provenance.curationMetadata.columns[0].stubStudies[0].exclusionTag = {
-                    id: defaultExclusionTags.duplicate.id,
-                    label: defaultExclusionTags.duplicate.label,
-                    isAssignable: false,
-                    isExclusionTag: true,
-                };
+                projectFixture.provenance.curationMetadata.columns[0].stubStudies[0].exclusionTagId =
+                    defaultExclusionTags.duplicate.id;
 
-                projectFixture.provenance.curationMetadata.columns[0].stubStudies[1].exclusionTag = {
-                    id: defaultExclusionTags.duplicate.id,
-                    label: defaultExclusionTags.duplicate.label,
-                    isAssignable: false,
-                    isExclusionTag: true,
-                };
+                projectFixture.provenance.curationMetadata.columns[0].stubStudies[1].exclusionTagId =
+                    defaultExclusionTags.duplicate.id;
 
                 cy.intercept('GET', '**/api/projects/*', {
                     ...projectFixture,
@@ -1108,6 +1092,32 @@ describe('CurationAIInterface', () => {
                 cy.get('[data-testid="CancelIcon"]').click();
                 cy.get('.MuiListItem-root .MuiTypography-root').get('li:contains(Duplicate)').should('have.length', 2); // includes the Duplicate exclusion group list item
             });
+        });
+
+        it('should allow the user to edit an exclusion', () => {
+            cy.fixture('projects/projectCurationSimpleWithStudies').then((projectFixture: INeurosynthProjectReturn) => {
+                projectFixture.user = 'auth0|62e0e6c9dd47048572613b4d'; // this user can edit the project
+
+                projectFixture.provenance.curationMetadata.columns[0].stubStudies[0].exclusionTagId =
+                    'my-custom-exclusion';
+
+                cy.intercept('GET', '**/api/projects/*', {
+                    ...projectFixture,
+                } as INeurosynthProjectReturn).as('projectFixture');
+            });
+
+            cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
+
+            cy.contains('li', 'Excluded').click();
+            cy.contains('My Custom Exclusion').click(); // open Duplicate exclusion group
+
+            cy.contains('h4', 'My Custom Exclusion').parent().find('[data-testid="EditIcon"]').click();
+
+            cy.get('input[type="text"]').clear();
+            cy.get('input[type="text"]').type('New My Custom Exclusion');
+
+            cy.contains('button', 'Save').click();
+            cy.contains('h4', 'New My Custom Exclusion').should('exist');
         });
     });
 });

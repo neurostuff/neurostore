@@ -584,7 +584,7 @@ const mockProject: () => ProjectReturn = () => ({
                             articleYear: '2',
                             authors: 'Ragland J D,',
                             doi: '10.1037/0894-4105.16.3.370',
-                            exclusionTag: null,
+                            exclusionTagId: null,
                             id: '277d4844-60e1-48c8-9a42-3b46ff4c9e64',
                             identificationSource: {
                                 id: 'neurosynth_sleuth_id_source',
@@ -612,7 +612,7 @@ const mockProject: () => ProjectReturn = () => ({
                             articleYear: '2',
                             authors: 'Rama P,',
                             doi: '10.1006/nimg.2001.0777',
-                            exclusionTag: null,
+                            exclusionTagId: null,
                             id: 'b9f6b007-65c2-46f4-8f54-b59c759de152',
                             identificationSource: {
                                 id: 'neurosynth_sleuth_id_source',
@@ -640,7 +640,7 @@ const mockProject: () => ProjectReturn = () => ({
                             articleYear: '1',
                             authors: 'Schumacher E H,',
                             doi: '10.1006/nimg.1996.0009',
-                            exclusionTag: null,
+                            exclusionTagId: null,
                             id: 'e10e6c55-095b-4a90-9032-ea86ccf93fb1',
                             identificationSource: {
                                 id: 'neurosynth_sleuth_id_source',
@@ -668,7 +668,7 @@ const mockProject: () => ProjectReturn = () => ({
                             articleYear: '1',
                             authors: 'Smith E E,',
                             doi: '10.1093/cercor/6.1.11',
-                            exclusionTag: null,
+                            exclusionTagId: null,
                             id: 'a4c7e222-9b0e-49a9-aca1-8fe70dc50645',
                             identificationSource: {
                                 id: 'neurosynth_sleuth_id_source',

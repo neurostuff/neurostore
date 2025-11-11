@@ -23,7 +23,7 @@ describe(PAGE_NAME, () => {
         cy.login('mocked').visit(PATH);
     });
 
-    it.only('should load', () => {
+    it('should load', () => {
         cy.visit(PATH)
             .wait('@studyFixture')
             .wait('@projectFixture')

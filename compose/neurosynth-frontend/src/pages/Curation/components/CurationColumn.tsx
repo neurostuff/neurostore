@@ -26,11 +26,11 @@ const getVisibility = (stub: ICurationStubStudy, selectedTag: ITag | undefined):
     if (!selectedTag) {
         isVisible = true;
     } else if (selectedTag.isExclusionTag) {
-        isVisible = selectedTag.id === stub.exclusionTag?.id;
+        isVisible = selectedTag.id === stub.exclusionTagId;
     } else if (selectedTag.id === ENeurosynthTagIds.UNTAGGED_TAG_ID) {
-        isVisible = stub.tags.length === 0 && stub?.exclusionTag === null;
+        isVisible = stub.tags.length === 0 && stub?.exclusionTagId === null;
     } else if (selectedTag.id === ENeurosynthTagIds.UNCATEGORIZED_ID) {
-        isVisible = stub?.exclusionTag === null;
+        isVisible = stub?.exclusionTagId === null;
     } else {
         isVisible = stub.tags.some((tag) => tag.id === selectedTag.id);
     }
@@ -53,7 +53,7 @@ const FixedSizeListRow: React.FC<
         <Draggable
             draggableId={stub.id}
             index={props.index}
-            isDragDisabled={!!stub?.exclusionTag || !canEdit}
+            isDragDisabled={!!stub?.exclusionTagId || !canEdit}
             key={stub.id}
         >
             {(provided, snapshot) => (
@@ -132,7 +132,7 @@ const CurationColumn: React.FC<{ columnIndex: number }> = React.memo((props) => 
         return column.stubStudies.filter((stub) => getVisibility(stub, selectedTag));
     }, [column.stubStudies, selectedTag]);
 
-    const hasUncategorizedStudies = column.stubStudies.some((x) => x.exclusionTag === null);
+    const hasUncategorizedStudies = column.stubStudies.some((x) => x.exclusionTagId === null);
 
     return (
         <Box sx={CurationColumnStyles.columnContainer}>

@@ -10,6 +10,7 @@ import {
     useCreateNewExclusion,
     useDemoteStub,
     useProjectCurationPrismaConfig,
+    useProjectExclusionTag,
     usePromoteStub,
     useSetExclusionForStub,
 } from 'pages/Project/store/ProjectStore';
@@ -40,6 +41,8 @@ const CurationEditableStubSummaryHeader: React.FC<ICurationEditableStubSummaryHe
     const setExclusionForStub = useSetExclusionForStub();
 
     const isStepBeforeInclude = prismaPhase === 'eligibility' || (!prismaConfig.isPrisma && props.columnIndex === 0);
+
+    const exclusionTag = useProjectExclusionTag(props.stub.exclusionTagId);
 
     const handleAddTag = (tag: ITag) => {
         if (props.stub) {
@@ -77,7 +80,7 @@ const CurationEditableStubSummaryHeader: React.FC<ICurationEditableStubSummaryHe
 
     const handleAddExclusion = (exclusionTag: ITag) => {
         if (props.stub?.id) {
-            setExclusionForStub(props.columnIndex, props.stub.id, exclusionTag);
+            setExclusionForStub(props.columnIndex, props.stub.id, exclusionTag.id);
             setExclusionTagSelectorIsOpen(false);
             props.onMoveToNextStub();
         }
@@ -102,7 +105,7 @@ const CurationEditableStubSummaryHeader: React.FC<ICurationEditableStubSummaryHe
                 <Chip
                     sx={{ fontSize: '1.2rem', borderRadius: '4px' }}
                     onDelete={handleRemoveExclusion}
-                    label={props.stub.exclusionTag?.label || 'Excluded'}
+                    label={exclusionTag?.label || 'Excluded'}
                     size="medium"
                     color="error"
                 />
