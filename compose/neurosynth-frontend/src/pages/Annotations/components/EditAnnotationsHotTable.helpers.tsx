@@ -119,11 +119,7 @@ export const annotationNotesToHotData = (
     };
 };
 
-export const createColumnHeader = (
-    colKey: string,
-    colType: EPropertyType,
-    allowRemoveColumn: boolean
-) => {
+export const createColumnHeader = (colKey: string, colType: EPropertyType, allowRemoveColumn: boolean) => {
     const allowRemove = allowRemoveColumn
         ? `<div style="width: 50px; display: flex; align-items: center; justify-content: center">
         ${renderToString(
@@ -141,7 +137,7 @@ export const createColumnHeader = (
 
     return (
         `<div title="${colKey}" style="display: flex; align-items: center; justify-content: center;">` +
-        `<div class="${styles[colType]} ${styles.truncate}" style="width: 150px">${colKey}</div>` +
+        `<div class="${styles[colType]} ${styles.truncate}" style="width: 100px">${colKey}</div>` +
         allowRemove +
         `</div>`
     );
@@ -168,17 +164,15 @@ export const createColumns = (noteKeys: NoteKeyType[], disable?: boolean) =>
                     x.type === EPropertyType.NUMBER
                         ? numericValidator
                         : x.type === EPropertyType.BOOLEAN
-                        ? booleanValidator
-                        : undefined,
+                          ? booleanValidator
+                          : undefined,
             } as ColumnSettings;
         }),
     ] as ColumnSettings[];
 
 // we can assume that the hashmap maintains order and is sorted by key
 // this function gets all merge cells and only merge cells. If a cell does not need to be merged, a mergeCellObj is not creatd
-export const getMergeCells = (
-    hotDataToStudyMapping: Map<number, { studyId: string; analysisId: string }>
-) => {
+export const getMergeCells = (hotDataToStudyMapping: Map<number, { studyId: string; analysisId: string }>) => {
     const mergeCells: MergeCellsSettings[] = [];
 
     let studyId: string;
