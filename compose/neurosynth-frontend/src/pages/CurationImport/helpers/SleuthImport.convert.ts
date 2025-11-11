@@ -108,7 +108,7 @@ export const sleuthIngestedStudiesToStubs = (
             journal: publication || '',
             abstractText: description || '',
             articleLink: '',
-            exclusionTag: null,
+            exclusionTagId: null,
             identificationSource: defaultIdentificationSources.sleuth,
             tags: [],
             neurostoreId: correspondingStudyId?.studyId || '',

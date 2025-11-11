@@ -61,7 +61,7 @@ function useCurationBoardGroupsState() {
                     id: column.id,
                     type: 'LISTITEM',
                     label: `${index + 1}. ${column.name}`,
-                    count: column.stubStudies.filter((x) => x.exclusionTag === null).length,
+                    count: column.stubStudies.filter((x) => x.exclusionTagId === null).length,
                     UI: ECurationBoardAIInterface.CURATOR,
                     children: [],
                 });
@@ -103,14 +103,14 @@ function useCurationBoardGroupsState() {
                         id: `excluded_${column.id}`,
                         type: 'LISTITEM',
                         label: 'Excluded',
-                        count: column.stubStudies.filter((x) => x.exclusionTag !== null).length,
+                        count: column.stubStudies.filter((x) => x.exclusionTagId !== null).length,
                         UI: ECurationBoardAIInterface.EXCLUDE,
                         listItemStyles: excludedListItemStyles,
                         children: prismaConfig[prismaPhase].exclusionTags.map((exclusionTag) => ({
                             id: exclusionTag.id,
                             type: 'LISTITEM',
                             label: exclusionTag.label,
-                            count: column.stubStudies.filter((x) => x.exclusionTag?.id === exclusionTag.id).length,
+                            count: column.stubStudies.filter((x) => x.exclusionTagId === exclusionTag.id).length,
                             UI: ECurationBoardAIInterface.EXCLUDE,
                             listItemStyles: excludedListItemStylesChildren,
                             children: [],
@@ -145,7 +145,7 @@ function useCurationBoardGroupsState() {
                     id: unreviewedColumn.id,
                     type: 'LISTITEM',
                     label: `1. ${unreviewedColumn.name}`,
-                    count: unreviewedColumn.stubStudies.filter((x) => x.exclusionTag === null).length,
+                    count: unreviewedColumn.stubStudies.filter((x) => x.exclusionTagId === null).length,
                     UI: ECurationBoardAIInterface.CURATOR,
                     children: [],
                 },
@@ -153,14 +153,13 @@ function useCurationBoardGroupsState() {
                     id: 'excluded_studies_column',
                     type: 'LISTITEM',
                     label: 'Excluded',
-                    count: unreviewedColumn.stubStudies.filter((x) => x.exclusionTag !== null).length,
+                    count: unreviewedColumn.stubStudies.filter((x) => x.exclusionTagId !== null).length,
                     UI: ECurationBoardAIInterface.EXCLUDE,
                     listItemStyles: excludedListItemStyles,
                     children: excludedGroups.map((excludedGroup) => {
                         const numExcludedInGroup = curationColumns.reduce((acc, curr) => {
                             return (
-                                acc +
-                                curr.stubStudies.filter((study) => study.exclusionTag?.id === excludedGroup.id).length
+                                acc + curr.stubStudies.filter((study) => study.exclusionTagId === excludedGroup.id).length
                             );
                         }, 0);
 
@@ -178,7 +177,7 @@ function useCurationBoardGroupsState() {
                     id: includedColumn.id,
                     type: 'LISTITEM',
                     label: `2. ${includedColumn.name}`,
-                    count: includedColumn.stubStudies.filter((x) => x.exclusionTag === null).length,
+                    count: includedColumn.stubStudies.filter((x) => x.exclusionTagId === null).length,
                     UI: ECurationBoardAIInterface.CURATOR,
                     children: [],
                 },

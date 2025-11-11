@@ -79,7 +79,7 @@ const CurationPage: React.FC = () => {
             for (let i = 0; i < columns.length - 1; i++) {
                 // skip the last column as it is included
                 const column = columns[i];
-                const numUncategorized = column.stubStudies.filter((s) => s.exclusionTag === null).length;
+                const numUncategorized = column.stubStudies.filter((s) => s.exclusionTagId === null).length;
                 if (numUncategorized > 0) {
                     existingIssues.push({ phase: column.name, colId: column.id, numUncategorized });
                 }

@@ -1,6 +1,11 @@
 import { Box, Typography } from '@mui/material';
 import { useGetWindowHeight, useMeasure, useUserCanEdit } from 'hooks';
-import { useProjectCurationColumns, useProjectUser } from 'pages/Project/store/ProjectStore';
+import {
+    useProjectCurationColumns,
+    useProjectExclusionTag,
+    useProjectUser,
+    useUpdateExclusionTag,
+} from 'pages/Project/store/ProjectStore';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FixedSizeList } from 'react-window';
 import { ICurationStubStudy } from '../Curation.types';
@@ -8,6 +13,7 @@ import { IGroupListItem } from './CurationBoardAIGroupsList';
 import CurationEditableStubSummary from './CurationEditableStubSummary';
 import CurationStubListItemVirtualizedContainer from './CurationStubListItemVirtualizedContainer';
 import TextEdit from 'components/TextEdit/TextEdit';
+import { ENeurosynthTagIds } from 'pages/Project/store/ProjectStore.types';
 
 const CurationBoardAIInterfaceExclude: React.FC<{
     group: IGroupListItem;
@@ -19,13 +25,21 @@ const CurationBoardAIInterfaceExclude: React.FC<{
     const columns = useProjectCurationColumns();
     const projectUser = useProjectUser();
     const canEdit = useUserCanEdit(projectUser || undefined);
+    const exclusionTag = useProjectExclusionTag(group.id);
+    const updateExclusionTag = useUpdateExclusionTag();
+
+    // Check if this is a default exclusion tag
+    const isDefaultExclusion = useMemo(() => {
+        const defaultExclusionIds = Object.values(ENeurosynthTagIds).filter((id) => id.includes('_exclusion'));
+        return defaultExclusionIds.some((defaultExclusionId) => defaultExclusionId === exclusionTag?.id);
+    }, [exclusionTag]);
 
     const stubs = useMemo(() => {
         const allStudies = columns.reduce((acc, curr) => [...acc, ...curr.stubStudies], [] as ICurationStubStudy[]);
         return allStudies
-            .filter((study) => study.exclusionTag && study.exclusionTag.id === group.id)
+            .filter((study) => study.exclusionTagId && study.exclusionTagId === exclusionTag?.id)
             .sort((a, b) => (a.title || '').toLocaleLowerCase().localeCompare((b.title || '').toLocaleLowerCase()));
-    }, [columns, group.id]);
+    }, [columns, exclusionTag?.id]);
 
     const selectedStub: ICurationStubStudy | undefined = useMemo(
         () => (stubs || []).find((stub) => stub.id === selectedStubId),
@@ -46,6 +60,14 @@ const CurationBoardAIInterfaceExclude: React.FC<{
         if (!nextStub) return;
         setSelectedStubId(nextStub.id);
     }, [selectedStub?.id, stubs]);
+
+    const handleUpdateExclusionTag = useCallback(
+        (newName: string) => {
+            if (!exclusionTag?.id) return;
+            updateExclusionTag(exclusionTag.id, newName);
+        },
+        [exclusionTag?.id, updateExclusionTag]
+    );
 
     const { ref: labelContainerRef, height: labelContainerHeight } = useMeasure<HTMLDivElement>();
     const pxInVh = Math.round(windowHeight - 220 - labelContainerHeight);
@@ -72,60 +94,58 @@ const CurationBoardAIInterfaceExclude: React.FC<{
         }
     }, [selectedStub?.id]);
 
-    if (stubs.length === 0) {
-        return (
-            <Box sx={{ display: 'flex', padding: '1rem' }}>
-                <Typography color="warning.dark">No studies for this exclusion.</Typography>
-            </Box>
-        );
-    }
-
     return (
         <Box sx={{ padding: '1rem' }}>
             <Box mb={2} ref={labelContainerRef}>
                 <TextEdit
                     textFieldSx={{ input: { fontSize: '1.25rem' } }}
-                    onSave={() => {}}
+                    onSave={(updatedText) => handleUpdateExclusionTag(updatedText)}
                     label="Group Label"
-                    textToEdit={group.id}
-                    editIconIsVisible={canEdit}
+                    textToEdit={exclusionTag?.label || ''}
+                    editIconIsVisible={canEdit && !isDefaultExclusion}
                 >
                     <Typography variant="h4" sx={{ color: 'error.dark' }}>
-                        {group.label}
+                        {exclusionTag?.label || ''}
                     </Typography>
                 </TextEdit>
                 <Typography variant="body2" color="text.secondary">
-                    These studies have been excluded due to the following reason: {group.label}
+                    These studies have been excluded due to the following reason: {group?.label || ''}
                 </Typography>
             </Box>
-            <Box sx={{ display: 'flex' }}>
-                <Box>
-                    <FixedSizeList
-                        height={pxInVh}
-                        itemCount={stubs.length || 0}
-                        width={260}
-                        itemSize={90}
-                        itemKey={(index, data) => data.stubs[index]?.id}
-                        itemData={{
-                            stubs: stubs,
-                            selectedStubId: selectedStub?.id,
-                            onSetSelectedStub: setSelectedStubId,
-                        }}
-                        layout="vertical"
-                        overscanCount={5}
-                        ref={listRef}
-                    >
-                        {CurationStubListItemVirtualizedContainer}
-                    </FixedSizeList>
+            {stubs.length === 0 ? (
+                <Box sx={{ display: 'flex' }}>
+                    <Typography color="warning.dark">No studies have been marked as {group?.label || ''}.</Typography>
                 </Box>
-                <Box ref={scrollableBoxRef} sx={{ overflowY: 'auto', width: '100%', height: `${pxInVh}px` }}>
-                    <CurationEditableStubSummary
-                        onMoveToNextStub={handleMoveToNextStub}
-                        columnIndex={selectedColumnIndex || 0}
-                        stub={selectedStub}
-                    />
+            ) : (
+                <Box sx={{ display: 'flex' }}>
+                    <Box>
+                        <FixedSizeList
+                            height={pxInVh}
+                            itemCount={stubs.length || 0}
+                            width={260}
+                            itemSize={90}
+                            itemKey={(index, data) => data.stubs[index]?.id}
+                            itemData={{
+                                stubs: stubs,
+                                selectedStubId: selectedStub?.id,
+                                onSetSelectedStub: setSelectedStubId,
+                            }}
+                            layout="vertical"
+                            overscanCount={5}
+                            ref={listRef}
+                        >
+                            {CurationStubListItemVirtualizedContainer}
+                        </FixedSizeList>
+                    </Box>
+                    <Box ref={scrollableBoxRef} sx={{ overflowY: 'auto', width: '100%', height: `${pxInVh}px` }}>
+                        <CurationEditableStubSummary
+                            onMoveToNextStub={handleMoveToNextStub}
+                            columnIndex={selectedColumnIndex || 0}
+                            stub={selectedStub}
+                        />
+                    </Box>
                 </Box>
-            </Box>
+            )}
         </Box>
     );
 };

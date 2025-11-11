@@ -18,7 +18,7 @@ export const getCurationSummary = (curationColumns: ICurationColumn[]) => {
     const includedStudiesCol = curationColumns[curationColumns.length - 1];
     const numIncludedStudes = !includedStudiesCol ? 0 : includedStudiesCol.stubStudies.length;
     const numExcludedStudies = curationColumns.reduce(
-        (acc, curr) => acc + curr.stubStudies.filter((study) => !!study.exclusionTag).length,
+        (acc, curr) => acc + curr.stubStudies.filter((study) => !!study.exclusionTagId).length,
         0
     );
     const numNeedsReviewStudies = curationColumns.reduce(

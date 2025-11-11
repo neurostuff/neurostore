@@ -18,7 +18,7 @@ export interface ICurationStubStudy {
     journal: string;
     abstractText: string;
     articleLink: string;
-    exclusionTag: ITag | null;
+    exclusionTagId: string | null;
     identificationSource: ISource;
     tags: ITag[];
     neurostoreId?: string;

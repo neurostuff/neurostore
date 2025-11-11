@@ -31,7 +31,7 @@
                             "articleYear": "1998",
                             "authors": "Corbetta M, Akbudak E, Conturo TE, Snyder AZ, Ollinger JM, Drury HA, Linenweber MR, Petersen SE, Raichle ME, Van Essen DC, Shulman GL",
                             "doi": "10.1016/S0896-6273(00)80593-0",
-                            "exclusionTag": null,
+                            "exclusionTagId": null,
                             "id": "1",
                             "identificationSource": {
                                 "id": "neurosynth_neurostore_id_source",
@@ -52,7 +52,7 @@
                             "articleYear": "",
                             "authors": "Silvia U. Maier, Aidan B. Makwana and Todd A. Hare",
                             "doi": "10.1016/j.neuron.2015.07.005",
-                            "exclusionTag": null,
+                            "exclusionTagId": null,
                             "id": "2",
                             "identificationSource": {
                                 "id": "neurosynth_neurostore_id_source",
@@ -73,7 +73,7 @@
                             "articleYear": "",
                             "authors": "Ethan M. McCormick, Yang Qu and Eva H. Telzer",
                             "doi": "10.3389/fnhum.2017.00141",
-                            "exclusionTag": null,
+                            "exclusionTagId": null,
                             "id": "3",
                             "identificationSource": {
                                 "id": "neurosynth_neurostore_id_source",

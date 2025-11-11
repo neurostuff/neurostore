@@ -32,7 +32,7 @@
                             "articleYear": "1977",
                             "authors": "R Nilius",
                             "doi": "",
-                            "exclusionTag": null,
+                            "exclusionTagId": null,
                             "id": "42585725-16a8-49ea-9cb6-0919d437fef3",
                             "identificationSource": {
                                 "id": "neurosynth_pubmed_id_source",
@@ -58,7 +58,7 @@
                             "articleYear": "1975",
                             "authors": "I Furuno, H Matsudaira",
                             "doi": "10.1016/0014-4827(75)90509-1",
-                            "exclusionTag": null,
+                            "exclusionTagId": null,
                             "id": "b2d7125b-6665-43b9-882e-652d0f1f0060",
                             "identificationSource": {
                                 "id": "neurosynth_pubmed_id_source",
@@ -84,7 +84,7 @@
                             "articleYear": "1976",
                             "authors": "W Bleifeld",
                             "doi": "",
-                            "exclusionTag": null,
+                            "exclusionTagId": null,
                             "id": "aadf6f13-8f83-4787-ad34-a6a4bfadfbd2",
                             "identificationSource": {
                                 "id": "neurosynth_pubmed_id_source",
@@ -110,7 +110,7 @@
                             "articleYear": "1976",
                             "authors": "W J van der Gulden, A J van Aspert-van Erp",
                             "doi": "10.1016/0014-4894(76)90008-4",
-                            "exclusionTag": null,
+                            "exclusionTagId": null,
                             "id": "be4f6821-7467-4d6e-ab86-ef9a2390d32c",
                             "identificationSource": {
                                 "id": "neurosynth_pubmed_id_source",

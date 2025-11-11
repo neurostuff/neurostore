@@ -32,7 +32,7 @@
                             "articleYear": "",
                             "authors": "",
                             "doi": "",
-                            "exclusionTag": null,
+                            "exclusionTagId": null,
                             "id": "c70a3df6-dd10-4789-b3f3-41743061fb6f",
                             "identificationSource": {
                                 "id": "neurosynth_pubmed_id_source",
