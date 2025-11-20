@@ -645,6 +645,68 @@ class AnnotationPipelineSchema(BaseSchema):
     columns = fields.List(fields.String(), required=True)
 
 
+class NoteKeysField(fields.Field):
+    allowed_types = {"string", "number", "boolean"}
+
+    def _serialize(self, value, attr, obj, **kwargs):
+        if not value:
+            return {}
+        serialized = {}
+        for key, descriptor in value.items():
+            if not isinstance(descriptor, dict):
+                continue
+            serialized[key] = {
+                "type": descriptor.get("type"),
+                "order": descriptor.get("order"),
+            }
+        return serialized
+
+    def _deserialize(self, value, attr, data, **kwargs):
+        if value is None:
+            return {}
+        if not isinstance(value, dict):
+            raise ValidationError("`note_keys` must be an object.")
+
+        normalized = {}
+        used_orders = set()
+        explicit_orders = []
+        for descriptor in value.values():
+            if isinstance(descriptor, dict) and isinstance(descriptor.get("order"), int):
+                explicit_orders.append(descriptor["order"])
+        next_order = max(explicit_orders, default=-1) + 1
+
+        for key, descriptor in value.items():
+            if not isinstance(descriptor, dict):
+                raise ValidationError("Each note key must map to an object.")
+
+            note_type = descriptor.get("type")
+            if note_type not in self.allowed_types:
+                raise ValidationError(
+                    f"Invalid note type for '{key}', choose from: {sorted(self.allowed_types)}"
+                )
+
+            order = descriptor.get("order")
+            if isinstance(order, bool) or (
+                order is not None and not isinstance(order, int)
+            ):
+                order = None
+
+            if isinstance(order, int) and order not in used_orders:
+                used_orders.add(order)
+                if order >= next_order:
+                    next_order = order + 1
+            else:
+                while next_order in used_orders:
+                    next_order += 1
+                order = next_order
+                used_orders.add(order)
+                next_order += 1
+
+            normalized[key] = {"type": note_type, "order": order}
+
+        return normalized
+
+
 class AnnotationSchema(BaseDataSchema):
     # serialization
     studyset_id = fields.String(data_key="studyset")
@@ -657,7 +719,7 @@ class AnnotationSchema(BaseDataSchema):
     source_id = fields.String(dump_only=True, allow_none=True)
     source_updated_at = fields.DateTime(dump_only=True, allow_none=True)
 
-    note_keys = fields.Dict()
+    note_keys = NoteKeysField()
     metadata = fields.Dict(attribute="metadata_", dump_only=True)
     # deserialization
     metadata_ = fields.Dict(data_key="metadata", load_only=True, allow_none=True)

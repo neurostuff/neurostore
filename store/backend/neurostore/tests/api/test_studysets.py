@@ -164,7 +164,7 @@ def _create_studyset_with_annotation(auth_client, study_ids, name="clone-source"
 
     annotation_payload = {
         "studyset": studyset_id,
-        "note_keys": {"include": "boolean"},
+        "note_keys": {"include": {"type": "boolean", "order": 0}},
         "name": "annotation for clone",
     }
     annotation_resp = auth_client.post("/api/annotations/", data=annotation_payload)
