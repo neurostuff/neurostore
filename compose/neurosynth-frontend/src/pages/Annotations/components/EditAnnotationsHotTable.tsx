@@ -225,7 +225,6 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
                         keyPlaceholderText="New Annotation Key"
                         onAddMetadataRow={handleAddHotColumn}
                         showMetadataValueInput={false}
-                        allowNumber={false}
                         allowNone={false}
                         errorMessage="can't add column (key already exists)"
                     />
