@@ -16,6 +16,7 @@ from sqlalchemy import or_
 from neurostore.database import db
 from neurostore.models import (
     Analysis,
+    Table,
     AnalysisConditions,
     AnnotationAnalysis,
     Annotation,
@@ -296,9 +297,14 @@ def ingest_neurosynth(max_rows=None):
             )
             analyses = []
             points = []
+            tables = {}
 
             for order, (t_id, df) in enumerate(study_coord_data.groupby("table_id")):
-                a = Analysis(name=str(t_id), study=s, order=order, table_id=str(t_id))
+                table = tables.get(t_id) or Table(
+                    t_id=str(t_id), name=str(t_id), study=s, user_id=s.user_id
+                )
+                tables[t_id] = table
+                a = Analysis(name=str(t_id), study=s, order=order, table=table)
                 analyses.append(a)
                 point_idx = 0
                 for _, p in df.iterrows():
@@ -314,6 +320,7 @@ def ingest_neurosynth(max_rows=None):
                     )
                     points.append(point)
                     point_idx += 1
+            to_commit.extend(tables.values())
             to_commit.extend(points)
             to_commit.extend(analyses)
             studies.append(s)
@@ -413,9 +420,14 @@ def ingest_neuroquery(max_rows=None):
         )
         analyses = []
         points = []
+        tables = {}
 
         for order, (t_id, df) in enumerate(study_coord_data.groupby("table_id")):
-            a = Analysis(name=str(t_id), table_id=str(t_id), order=order, study=s)
+            table = tables.get(t_id) or Table(
+                t_id=str(t_id), name=str(t_id), study=s, user_id=s.user_id
+            )
+            tables[t_id] = table
+            a = Analysis(name=str(t_id), table=table, order=order, study=s)
             analyses.append(a)
             point_idx = 0
             for _, p in df.iterrows():
@@ -432,7 +444,9 @@ def ingest_neuroquery(max_rows=None):
                 points.append(point)
                 point_idx += 1
 
-        db.session.add_all([s] + analyses + points + [base_study])
+        db.session.add_all(
+            [s] + analyses + points + list(tables.values()) + [base_study]
+        )
         # db.session.commit()
 
     # make a neuroquery studyset
@@ -556,20 +570,34 @@ def ace_ingestion_logic(coordinates_df, metadata_df, text_df, skip_existing=Fals
     def process_coordinates(id_, s, metadata_row):
         analyses = []
         points = []
+        tables = []
         try:
             study_coord_data = coordinates_df.loc[[id_]]
         except KeyError:
             print(f"pmid: {id_} has no coordinates")
             return analyses, points
         for order, (t_id, df) in enumerate(study_coord_data.groupby("table_id")):
-            a = (
-                Analysis.query.filter_by(
-                    table_id=str(t_id), study_id=s.id
-                ).one_or_none()
-                or Analysis()
+            table = Table.query.filter_by(
+                t_id=str(t_id), study_id=s.id
+            ).one_or_none() or Table(t_id=str(t_id), study=s, user_id=s.user_id)
+            if table not in tables:
+                tables.append(table)
+            if not table.name:
+                table.name = df["table_label"][0] or str(t_id)
+            if table.caption is None:
+                table.caption = (
+                    df["table_caption"][0]
+                    if not df["table_caption"].isna()[0]
+                    else None
+                )
+            existing_analysis = (
+                Analysis.query.filter_by(table_id=table.id, study_id=s.id).one_or_none()
+                if table.id
+                else None
             )
+            a = existing_analysis or Analysis()
             a.name = df["table_label"][0] or str(t_id)
-            a.table_id = str(t_id)
+            a.table = table
             a.order = a.order or order
             a.description = (
                 df["table_caption"][0] if not df["table_caption"].isna()[0] else None
@@ -594,7 +622,7 @@ def ace_ingestion_logic(coordinates_df, metadata_df, text_df, skip_existing=Fals
                 )
                 points.append(point)
                 point_idx += 1
-        return analyses, points
+        return analyses, points, tables
 
     to_commit = []
     all_base_studies = []
@@ -663,9 +691,10 @@ def ace_ingestion_logic(coordinates_df, metadata_df, text_df, skip_existing=Fals
             s = all_studies.get(pmid, Study())
             update_study_info(s, metadata_row, text_row, doi, pmcid, year, level)
 
-            analyses, points = process_coordinates(pmid, s, metadata_row)
+            analyses, points, tables = process_coordinates(pmid, s, metadata_row)
             to_commit.extend(points)
             to_commit.extend(analyses)
+            to_commit.extend(tables)
             base_study.versions.append(s)
 
     db.session.add_all(to_commit)
