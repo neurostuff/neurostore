@@ -393,6 +393,84 @@ class AnnotationsView(ObjectView, ListView):
         }
         return unique_ids
 
+    @staticmethod
+    def _ordered_note_keys(note_keys):
+        if not note_keys:
+            return []
+        keys = list(note_keys.keys())
+        alphabetical = sorted(keys)
+        if keys == alphabetical:
+            return alphabetical
+        return keys
+
+    @classmethod
+    def _normalize_note_keys(cls, note_keys):
+        if note_keys is None:
+            return None
+        if not isinstance(note_keys, dict):
+            abort_validation("`note_keys` must be an object.")
+
+        ordered_keys = cls._ordered_note_keys(note_keys)
+        normalized = OrderedDict()
+        used_orders = set()
+        next_order = 0
+
+        for key in ordered_keys:
+            descriptor = note_keys.get(key) or {}
+            note_type = descriptor.get("type")
+            if note_type not in {"string", "number", "boolean"}:
+                abort_validation(
+                    "Invalid `type` for note_keys entry "
+                    f"'{key}', choose from: ['boolean', 'number', 'string']."
+                )
+
+            order = descriptor.get("order")
+            if isinstance(order, bool) or (
+                order is not None and not isinstance(order, int)
+            ):
+                order = None
+
+            if isinstance(order, int) and order not in used_orders:
+                used_orders.add(order)
+                if order >= next_order:
+                    next_order = order + 1
+            else:
+                while next_order in used_orders:
+                    next_order += 1
+                order = next_order
+                used_orders.add(order)
+                next_order += 1
+
+            normalized[key] = {"type": note_type, "order": order}
+
+        return normalized
+
+    @classmethod
+    def _merge_note_keys(cls, existing, additions):
+        """
+        additions is a mapping of key -> type
+        """
+        base = cls._normalize_note_keys(existing or {}) or OrderedDict()
+        used_orders = {v.get("order") for v in base.values() if isinstance(v, dict)}
+        used_orders = {o for o in used_orders if isinstance(o, int)}
+        next_order = max(used_orders, default=-1) + 1
+
+        for key, value_type in additions.items():
+            if key in base:
+                descriptor = base[key] or {}
+                descriptor["type"] = value_type or descriptor.get("type") or "string"
+                base[key] = descriptor
+                continue
+
+            descriptor = {
+                "type": value_type or "string",
+                "order": next_order,
+            }
+            base[key] = descriptor
+            next_order += 1
+
+        return base
+
     @classmethod
     def load_nested_records(cls, data, record=None):
         if not data:
@@ -553,6 +631,9 @@ class AnnotationsView(ObjectView, ListView):
         request_data = self.insert_data(id, request.json)
         schema = self._schema()
         data = schema.load(request_data)
+
+        if "note_keys" in data:
+            data["note_keys"] = self._normalize_note_keys(data["note_keys"])
 
         pipeline_payload = data.pop("pipelines", [])
 
@@ -942,12 +1023,10 @@ class AnnotationsView(ObjectView, ListView):
 
         if column_types:
             if data.get("note_keys") is None:
-                note_keys = dict(annotation.note_keys or {})
+                note_keys = self._normalize_note_keys(annotation.note_keys or {})
             else:
-                note_keys = dict(data["note_keys"])
-            for key, value_type in column_types.items():
-                note_keys[key] = value_type or "string"
-            data["note_keys"] = note_keys
+                note_keys = self._normalize_note_keys(data["note_keys"])
+            data["note_keys"] = self._merge_note_keys(note_keys, column_types)
 
         data["annotation_analyses"] = list(note_map.values())
 
