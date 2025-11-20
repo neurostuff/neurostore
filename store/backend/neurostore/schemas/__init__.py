@@ -14,6 +14,7 @@ from .data import (
     StudysetSnapshot,
     EntitySchema,
     BooleanOrString,
+    TableSchema,
 )
 
 from .auth import UserSchema
@@ -42,6 +43,7 @@ __all__ = [
     "StudysetSnapshot",
     "EntitySchema",
     "BooleanOrString",
+    "TableSchema",
     "PipelineSchema",
     "PipelineConfigSchema",
     "PipelineStudyResultSchema",
