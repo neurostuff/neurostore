@@ -689,7 +689,9 @@ class NoteKeysField(fields.Field):
         used_orders = set()
         explicit_orders = []
         for descriptor in value.values():
-            if isinstance(descriptor, dict) and isinstance(descriptor.get("order"), int):
+            if isinstance(descriptor, dict) and isinstance(
+                descriptor.get("order"), int
+            ):
                 explicit_orders.append(descriptor["order"])
         next_order = max(explicit_orders, default=-1) + 1
 
