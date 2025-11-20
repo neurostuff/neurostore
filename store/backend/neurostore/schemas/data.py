@@ -392,6 +392,9 @@ class StudysetStudySchema(BaseDataSchema):
 class AnalysisSchema(BaseDataSchema):
     # serialization
     study_id = fields.String(data_key="study", metadata={"id_field": True})
+    table_id = fields.String(
+        data_key="table_id", allow_none=True, metadata={"id_field": True}
+    )
     metadata = fields.Dict(attribute="metadata_", dump_only=True)
     metadata_ = fields.Dict(data_key="metadata", load_only=True, allow_none=True)
     # study = fields.Pluck("StudySchema", "id", metadata={"id_field": True})
@@ -442,6 +445,15 @@ class AnalysisSchema(BaseDataSchema):
         data.pop("analysis_conditions", None)
 
         return data
+
+
+class TableSchema(BaseDataSchema):
+    study_id = fields.String(data_key="study", metadata={"id_field": True})
+    t_id = fields.String(allow_none=True)
+    name = fields.String(allow_none=True)
+    footer = fields.String(allow_none=True)
+    caption = fields.String(allow_none=True)
+    analyses = StringOrNested(AnalysisSchema, many=True, dump_only=True)
 
 
 class StudySetStudyInfoSchema(Schema):
@@ -542,6 +554,7 @@ class StudySchema(BaseDataSchema):
     year = fields.Integer(allow_none=True)
     level = fields.String(allow_none=True)
     analyses = StringOrNested(AnalysisSchema, many=True)
+    tables = fields.Method("get_table_ids", dump_only=True)
     source = fields.String(
         dump_only=True, metadata={"info_field": True}, allow_none=True
     )
@@ -570,6 +583,11 @@ class StudySchema(BaseDataSchema):
             if val is not None and (val == "" or val.isspace()):
                 data[attr] = None
         return data
+
+    def get_table_ids(self, obj):
+        if not getattr(obj, "tables", None):
+            return []
+        return [getattr(table, "id", table) for table in obj.tables]
 
 
 class StudysetSchema(BaseDataSchema):

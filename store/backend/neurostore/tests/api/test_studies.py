@@ -41,7 +41,7 @@ def test_get_studies(auth_client, ingest_neurosynth, ingest_neuroquery, session)
     full_study = resp.json()
 
     # Check extra keys
-    for k in ["analyses", "created_at", "doi", "name"]:
+    for k in ["analyses", "created_at", "doi", "name", "tables"]:
         assert k in full_study
 
     assert full_study["doi"] == Study.query.filter_by(id=s_id).first().doi

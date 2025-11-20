@@ -473,6 +473,14 @@ class Study(BaseMixin, db.Model):
         passive_deletes=True,
         cascade="all, delete-orphan",
     )
+    tables = relationship(
+        "Table",
+        back_populates="study",
+        passive_deletes=True,
+        cascade="all, delete-orphan",
+        cascade_backrefs=False,
+        lazy="selectin",
+    )
 
     __table_args__ = (
         db.CheckConstraint(level.in_(["group", "meta"])),
@@ -510,18 +518,45 @@ class StudysetStudy(db.Model):
     )
 
 
+class Table(BaseMixin, db.Model):
+    __tablename__ = "tables"
+
+    study_id = db.Column(
+        db.Text, db.ForeignKey("studies.id", ondelete="CASCADE"), index=True
+    )
+    t_id = db.Column(db.Text)
+    name = db.Column(db.Text)
+    footer = db.Column(db.Text)
+    caption = db.Column(db.Text)
+    user_id = db.Column(db.Text, db.ForeignKey("users.external_id"), index=True)
+
+    study = relationship(
+        "Study",
+        back_populates="tables",
+        passive_deletes=True,
+    )
+    user = relationship(
+        "User", backref=backref("tables", cascade_backrefs=False, passive_deletes=True)
+    )
+
+    __table_args__ = (
+        db.UniqueConstraint("study_id", "t_id", name="uq_tables_study_t_id"),
+    )
+
+
 class Analysis(BaseMixin, db.Model):
     __tablename__ = "analyses"
 
     study_id = db.Column(
         db.Text, db.ForeignKey("studies.id", ondelete="CASCADE"), index=True
     )
+    table_id = db.Column(
+        db.Text, db.ForeignKey("tables.id", ondelete="SET NULL"), index=True
+    )
     name = db.Column(db.String)
     description = db.Column(db.String)
     metadata_ = db.Column(JSONB)
     order = db.Column(db.Integer)
-    # used to keep track of neurosynth analyses (in case of neurosynth/ace updates)
-    table_id = db.Column(db.String)
     points = relationship(
         "Point",
         backref=backref("analysis", passive_deletes=True),
@@ -552,6 +587,12 @@ class Analysis(BaseMixin, db.Model):
         passive_deletes=True,
         cascade="all, delete-orphan",
         cascade_backrefs=False,
+    )
+    table = relationship(
+        "Table",
+        backref=backref("analyses", cascade_backrefs=False, passive_deletes=True),
+        foreign_keys=[table_id],
+        passive_deletes=True,
     )
 
 
