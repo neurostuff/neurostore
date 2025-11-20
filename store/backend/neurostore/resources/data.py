@@ -60,7 +60,6 @@ from ..schemas import (
     StudysetStudySchema,
     EntitySchema,
     PipelineStudyResultSchema,
-    TableSchema,
 )
 from ..schemas.data import StudysetSnapshot
 
