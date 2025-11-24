@@ -25,10 +25,10 @@ const CurationImportFinalizeReview: React.FC<{
 }> = React.memo((props) => {
     const { stubs, unimportedStubs } = props;
     const nonExcludedStubs = useMemo(() => {
-        return stubs.filter((x) => !x.exclusionTag);
+        return stubs.filter((x) => !x.exclusionTagId);
     }, [stubs]);
     const excludedStubs = useMemo(() => {
-        return stubs.filter((x) => !!x.exclusionTag);
+        return stubs.filter((x) => !!x.exclusionTagId);
     }, [stubs]);
 
     const windowHeight = useGetWindowHeight();

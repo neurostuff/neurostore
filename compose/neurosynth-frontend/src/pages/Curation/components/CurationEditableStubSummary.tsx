@@ -118,7 +118,7 @@ const CurationEditableStubSummary: React.FC<ICurationEditableStubSummary> = ({
                     {stub.title && <DisplayStudyLinkFullText studyName={stub.title} />}
                 </Box>
                 <CurationEditableStubSummaryHeader
-                    type={isLastColumn ? 'included' : stub.exclusionTag ? 'excluded' : 'default'}
+                    type={isLastColumn ? 'included' : stub.exclusionTagId ? 'excluded' : 'default'}
                     stub={stub}
                     columnIndex={columnIndex}
                     onMoveToNextStub={onMoveToNextStub}
@@ -175,7 +175,8 @@ const CurationEditableStubSummary: React.FC<ICurationEditableStubSummary> = ({
                 {stub.keywords || 'No Keywords'}
             </Typography>
 
-            <TextExpansion text={stub.abstractText} textSx={{ typography: 'body2' }}></TextExpansion>
+            {/* add a key to the text expansion to force a re-render when the stub changes */}
+            <TextExpansion key={stub.id} text={stub.abstractText} textSx={{ typography: 'body2' }}></TextExpansion>
 
             <Box>{children}</Box>
         </Box>

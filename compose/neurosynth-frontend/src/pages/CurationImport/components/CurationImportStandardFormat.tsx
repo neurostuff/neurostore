@@ -132,7 +132,7 @@ const CurationImportStandardFormat: React.FC<{
                     journal: articleJournal ?? '',
                     abstractText: normalize(articleAbstract),
                     articleLink: articleLink,
-                    exclusionTag: null,
+                    exclusionTagId: null,
                     identificationSource: source,
                     tags: [],
                 };
@@ -163,7 +163,7 @@ const CurationImportStandardFormat: React.FC<{
             }));
 
             const reader = new FileReader();
-            reader.onload = function (e) {
+            reader.onload = function () {
                 const content = reader.result;
 
                 if (content && typeof content === 'string') {

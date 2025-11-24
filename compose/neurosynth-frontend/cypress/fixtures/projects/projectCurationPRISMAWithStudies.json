@@ -27,7 +27,7 @@
               "articleYear": "",
               "authors": "Kanayama G, Rogowska J, Pope HG, Gruber SA, Yurgelun-Todd DA",
               "doi": "10.1007/s00213-004-1885-8",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "5e3fba07-e21d-41fd-80c0-abddd16cb0b3",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -48,7 +48,7 @@
               "articleYear": "",
               "authors": "Tomasi D, Wang GJ, Volkow ND",
               "doi": "10.1002/hbm.22834",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "7c545ab0-97a7-469b-aac5-bd79d46fb4ab",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -69,7 +69,7 @@
               "articleYear": "",
               "authors": "",
               "doi": "",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "cccf425e-0eb8-4233-aac3-9904d99c3fe4",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -90,7 +90,7 @@
               "articleYear": "",
               "authors": "van Hell HH, Vink M, Ossewaarde L, Jager G, Kahn RS, Ramsey NF",
               "doi": "10.1016/j.euroneuro.2009.11.010",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "353d6044-86aa-44d0-a943-ea08985f3a43",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -111,7 +111,7 @@
               "articleYear": "",
               "authors": "King GR, Ernst T, Deng W, Stenger A, Gonzales RM, Nakama H, Chang L",
               "doi": "10.1523/JNEUROSCI.4148-11.2011",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "04ba58c6-140b-4d63-9d9a-abe3792af26c",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -132,7 +132,7 @@
               "articleYear": "",
               "authors": "Charboneau EJ, Dietrich MS, Park S, Cao A, Watkins TJ, Blackford JU, Benningfield MM, Martin PR, Buchowski MS, Cowan RL",
               "doi": "10.1016/j.pscychresns.2013.06.005",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "82d93823-75bc-4142-b324-b6077fafc257",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -153,7 +153,7 @@
               "articleYear": "",
               "authors": "Enzi B, Lissek S, Edel MA, Tegenthoff M, Nicolas V, Scherbaum N, Juckel G, Roser P",
               "doi": "10.1371/journal.pone.0119150",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "32b2c369-1479-44e1-a481-1bb412754d50",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -174,7 +174,7 @@
               "articleYear": "",
               "authors": "De Bellis MD, Wang L, Bergman SR, Yaxley RH, Hooper SR, Huettel SA",
               "doi": "10.1016/j.drugalcdep.2013.05.020",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "95ae7a02-4a8d-4631-be19-5dfc3065b286",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -195,7 +195,7 @@
               "articleYear": "",
               "authors": "",
               "doi": "",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "7e18c9c8-f6f4-485c-9ac4-60171669acda",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -216,7 +216,7 @@
               "articleYear": "",
               "authors": "Jacobsen LK, Pugh KR, Constable RT, Westerveld M, Mencl WE",
               "doi": "10.1016/j.biopsych.2006.02.014",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "6e240c4e-93d3-4e55-8321-ed41e7574c97",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -237,7 +237,7 @@
               "articleYear": "",
               "authors": "",
               "doi": "",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "eebbd173-8808-454f-9163-f576991e96ab",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -258,7 +258,7 @@
               "articleYear": "",
               "authors": "Roser P, Lissek S, Tegenthoff M, Nicolas V, Juckel G, Brune M",
               "doi": "10.1016/j.schres.2012.05.020",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "fce09616-f180-49bb-8900-62c0977405cf",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -279,7 +279,7 @@
               "articleYear": "",
               "authors": "Jacobus J, Goldenberg D, Wierenga CE, Tolentino NJ, Liu TT, Tapert SF",
               "doi": "10.1007/s00213-012-2674-4",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "7e15efb2-ef21-4c69-abb6-722df077d4b2",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -300,7 +300,7 @@
               "articleYear": "",
               "authors": "Ramaekers JG, van Wel JH, Spronk D, Franke B, Kenis G, Toennes SW, Kuypers KP, Theunissen EL, Stiers P, Verkes RJ",
               "doi": "10.1007/s11682-015-9488-z",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "e5348814-fed9-4a71-8436-ba6f8d8c2230",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -321,7 +321,7 @@
               "articleYear": "",
               "authors": "",
               "doi": "",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "8822f2e2-743c-4036-8044-d0fc47238242",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -342,7 +342,7 @@
               "articleYear": "",
               "authors": "Maartje Luijten, Arnt F. Schellekens, Simone K\u00fchn, Marise W. J. Machielse and Guillaume Sescousse",
               "doi": "10.1001/jamapsychiatry.2016.3084",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "e782068b-8a4a-4951-9461-5c14717653c7",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -363,7 +363,7 @@
               "articleYear": "",
               "authors": "",
               "doi": "",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "b061d39a-c626-4ea5-a995-822942f776e0",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -384,7 +384,7 @@
               "articleYear": "",
               "authors": "Lee MC, Ploner M, Wiech K, Bingel U, Wanigasekera V, Brooks J, Menon DK, Tracey I",
               "doi": "10.1016/j.pain.2012.09.017",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "b09862b3-beed-46e7-8bb2-510932edcd8b",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -405,7 +405,7 @@
               "articleYear": "",
               "authors": "Hill SY, Sharma V, Jones BL",
               "doi": "10.1016/j.pscychresns.2016.05.009",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "8c2de0fd-196c-4929-b428-359419c4566e",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -426,7 +426,7 @@
               "articleYear": "",
               "authors": "Roberts GM, Garavan H",
               "doi": "10.1016/j.neuroimage.2010.04.192",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "0a6ac708-d0a5-4764-bb2d-3f30e8a17f8d",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -447,7 +447,7 @@
               "articleYear": "",
               "authors": "Carey SE, Nestor L, Jones J, Garavan H, Hester R",
               "doi": "10.1016/j.drugalcdep.2015.07.671",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "cc6d457e-b196-48ac-baa5-c33ad041aa52",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -468,7 +468,7 @@
               "articleYear": "",
               "authors": "Spechler PA, Orr CA, Chaarani B, Kan KJ, Mackey S, Morton A, Snowe MP, Hudson KE, Althoff RR, Higgins ST, Cattrell A, Flor H, Nees F, Banaschewski T, Bokde ALW, Whelan R, Buchel C, Bromberg U, Conrod P, Frouin V, Papadopoulos D, Gallinat J, Heinz A, Walter H, Ittermann B, Gowland P, Paus T, Poustka L, Martinot JL, Artiges E, Smolka MN, Schumann G, Garavan H",
               "doi": "10.1016/j.dcn.2015.08.007",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "3710ca96-11a2-4908-ac53-13d55b422a2b",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -489,7 +489,7 @@
               "articleYear": "",
               "authors": "",
               "doi": "",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "5ba6b77c-dd1c-4409-bfdc-df70ccaddff0",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -510,7 +510,7 @@
               "articleYear": "",
               "authors": "Nestor L, Hester R, Garavan H",
               "doi": "10.1016/j.neuroimage.2009.07.022",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "cf06ecef-0978-4899-9dc8-76b2386503e4",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -531,7 +531,7 @@
               "articleYear": "",
               "authors": "Jager G, Van Hell HH, De Win MM, Kahn RS, Van Den Brink W, Van Ree JM, Ramsey NF",
               "doi": "10.1016/j.euroneuro.2006.10.003",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "46c03505-0a67-4a8e-b293-058a29b2a9f8",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -552,7 +552,7 @@
               "articleYear": "",
               "authors": "",
               "doi": "",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "a421e899-c111-46ea-bcb4-359a21923845",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -573,7 +573,7 @@
               "articleYear": "",
               "authors": "",
               "doi": "",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "77b5b283-d277-4443-83bb-efd5d520a9b3",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -594,7 +594,7 @@
               "articleYear": "",
               "authors": "",
               "doi": "",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "88dbfc56-02d4-4ad9-9beb-1048d23fe844",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -615,7 +615,7 @@
               "articleYear": "",
               "authors": "",
               "doi": "",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "1576c6c5-1dfe-4119-8e75-ffa15fb07608",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -636,7 +636,7 @@
               "articleYear": "",
               "authors": "",
               "doi": "",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "82c94d44-43a8-4555-bc4f-f04f81e160dd",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -657,7 +657,7 @@
               "articleYear": "",
               "authors": "Pillay SS, Rogowska J, Kanayama G, Jon DI, Gruber S, Simpson N, Cherayil M, Pope HG, Yurgelun-Todd DA",
               "doi": "10.1016/j.drugalcdep.2004.05.009",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "89b761e9-89b5-47b6-9d87-35022360d0bc",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -678,7 +678,7 @@
               "articleYear": "",
               "authors": "",
               "doi": "",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "418bbc7e-3afb-4955-94fa-3f2124b8c96d",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -699,7 +699,7 @@
               "articleYear": "",
               "authors": "",
               "doi": "",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "fe279a21-dd07-404a-ba3e-52f5ba6b532a",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -720,7 +720,7 @@
               "articleYear": "",
               "authors": "Cousijn J, Goudriaan AE, Ridderinkhof KR, van den Brink W, Veltman DJ, Wiers RW",
               "doi": "10.1371/journal.pone.0042394",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "44e5a2bc-8334-4ab0-b0bf-114f22a1ff97",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -741,7 +741,7 @@
               "articleYear": "",
               "authors": "Cousijn J, Wiers RW, Ridderinkhof KR, van den Brink W, Veltman DJ, Goudriaan AE",
               "doi": "10.1002/hbm.22342",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "9b43985b-77f0-4548-b142-1ee7183444eb",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -762,7 +762,7 @@
               "articleYear": "",
               "authors": "Jessica S. Flannery, Michael C. Riedel, Taylor Salo, Ranjita Poudel, Angela R. Laird, Raul Gonzalez and Matthew T. Sutherland",
               "doi": "10.1016/j.pnpbp.2021.110398",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "201ee9ac-43d2-4dd9-942b-db3e1a6b74ff",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -783,7 +783,7 @@
               "articleYear": "",
               "authors": "",
               "doi": "",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "8da5f9fe-69e6-4431-9c18-b1dca84c8299",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -804,7 +804,7 @@
               "articleYear": "",
               "authors": "Romero K, Pavisian B, Staines WR, Feinstein A",
               "doi": "10.1016/j.nicl.2015.04.006",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "b8a75332-569a-42bb-956b-225c351e6251",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -825,7 +825,7 @@
               "articleYear": "",
               "authors": "",
               "doi": "",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "946df81b-7340-487c-8192-010563c91387",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -846,7 +846,7 @@
               "articleYear": "",
               "authors": "",
               "doi": "",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "82e5ea8c-ef3f-4730-b437-b7a9d1575906",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -867,7 +867,7 @@
               "articleYear": "",
               "authors": "Julio A Yanes, Michael C Riedel, Kimberly L Ray, Anna E Kirkland, Ryan T Bird, Emily R Boeving, Meredith A Reid, Raul Gonzalez, Jennifer L Robinson, Angela R Laird and Matthew T Sutherland",
               "doi": "10.1177/0269881117744995",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "3e2636be-cd64-4e99-9959-955adf5ed8d4",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -888,7 +888,7 @@
               "articleYear": "",
               "authors": "Becker B, Wagner D, Gouzoulis-Mayfrank E, Spuentrup E, Daumann J",
               "doi": "10.1007/s00213-010-1805-z",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "c87ee390-1266-41ca-8c30-f4c2f7127cd9",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -909,7 +909,7 @@
               "articleYear": "",
               "authors": "",
               "doi": "",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "5f26aafb-7e20-4d54-be42-cf29fa39009a",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -930,7 +930,7 @@
               "articleYear": "",
               "authors": "Jager G, Kahn RS, Van Den Brink W, Van Ree JM, Ramsey NF",
               "doi": "10.1007/s00213-005-0298-7",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "241e9410-3feb-4291-9789-3e0721af8587",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -951,7 +951,7 @@
               "articleYear": "",
               "authors": "Gilman JM, Kuster JK, Lee S, Lee MJ, Kim BW, Makris N, van der Kouwe A, Blood AJ, Breiter HC",
               "doi": "10.1523/JNEUROSCI.4745-13.2014",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "729de3a5-d159-476c-a0e2-33aa988287cf",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -972,7 +972,7 @@
               "articleYear": "",
               "authors": "Heitzeg MM, Cope LM, Martz ME, Hardee JE, Zucker RA",
               "doi": "10.1016/j.dcn.2015.09.003",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "bc0cf532-63c7-4193-86ef-a03e57df58a3",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -993,7 +993,7 @@
               "articleYear": "",
               "authors": "",
               "doi": "",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "c7b2a9fe-4e88-4653-8345-0aabaa2ab932",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -1014,7 +1014,7 @@
               "articleYear": "",
               "authors": "Bolla KI, Eldreth DA, Matochik JA, Cadet JL",
               "doi": "10.1016/j.neuroimage.2005.02.012",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "dc999e9d-462f-4d83-9b97-07a9efb81968",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -1035,7 +1035,7 @@
               "articleYear": "",
               "authors": "Gruber SA, Dahlgren MK, Sagar KA, Gonenc A, Killgore WD",
               "doi": "10.1037/a0026269",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "ebe55a33-5882-4be2-a8b1-4d49331e1364",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -1056,7 +1056,7 @@
               "articleYear": "",
               "authors": "Lopez-Larson MP, Rogowska J, Bogorodzki P, Bueler CE, McGlade EC, Yurgelun-Todd DA",
               "doi": "10.1016/j.pscychresns.2011.11.005",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "7f52386a-7673-4b1a-b29b-efd63b93e5fc",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -1077,7 +1077,7 @@
               "articleYear": "",
               "authors": "",
               "doi": "",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "9f4ba221-e5f0-4077-bb23-db7ebf482047",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -1098,7 +1098,7 @@
               "articleYear": "",
               "authors": "",
               "doi": "",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "5ed0cf8f-75f8-4229-bf16-94ec0c7c0ea3",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -1119,7 +1119,7 @@
               "articleYear": "",
               "authors": "Filbey FM, Schacht JP, Myers US, Chavez RS, Hutchison KE",
               "doi": "10.1073/pnas.0903863106",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "ab1dd6b0-7e66-4853-9484-d3fa100ddb87",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -1140,7 +1140,7 @@
               "articleYear": "",
               "authors": "",
               "doi": "",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "a1390234-726b-4ddb-bdb4-e75dc07f49e8",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -1161,7 +1161,7 @@
               "articleYear": "",
               "authors": "Matochik JA, Eldreth DA, Cadet JL, Bolla KI",
               "doi": "10.1016/j.drugalcdep.2004.06.011",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "cfc1c1a7-1f16-4b44-8a5e-bd7435ba0ae1",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -1182,7 +1182,7 @@
               "articleYear": "",
               "authors": "",
               "doi": "",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "9217c2ed-c5be-4468-8643-5f83028f5acb",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -1203,7 +1203,7 @@
               "articleYear": "",
               "authors": "Schweinsburg AD, Schweinsburg BC, Cheung EH, Brown GG, Brown SA, Tapert SF",
               "doi": "10.1016/j.drugalcdep.2005.01.009",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "717eb7fe-3d9a-4e0b-894d-d5293bc4b77d",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -1224,7 +1224,7 @@
               "articleYear": "",
               "authors": "Claus ED, Feldstein Ewing SW, Magnan RE, Montanaro E, Hutchison KE, Bryan AD",
               "doi": "10.1007/s11682-017-9723-x",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "ae1a54fa-70c1-49fc-9f65-7cce30f659e3",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -1245,7 +1245,7 @@
               "articleYear": "",
               "authors": "Wesley MJ, Hanlon CA, Porrino LJ",
               "doi": "10.1016/j.pscychresns.2010.10.002",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "8b679b7d-52f6-4678-a01a-0b2e5143cb78",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -1266,7 +1266,7 @@
               "articleYear": "",
               "authors": "Lopez-Larson MP, Rogowska J, Yurgelun-Todd D",
               "doi": "10.1016/j.dcn.2015.08.002",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "01498d29-5d73-4861-a2aa-f8ac94363d45",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -1287,7 +1287,7 @@
               "articleYear": "",
               "authors": "Sagar KA, Dahlgren MK, Gonenc A, Racine MT, Dreman MW, Gruber SA",
               "doi": "10.1016/j.dcn.2015.03.003",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "391c2729-88b5-4f94-a640-eabec70898cf",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -1308,7 +1308,7 @@
               "articleYear": "",
               "authors": "",
               "doi": "",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "0837ced9-713c-4dce-91d8-8b52a09f4188",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -1329,7 +1329,7 @@
               "articleYear": "",
               "authors": "Gruber SA, Rogowska J, Yurgelun-Todd DA",
               "doi": "10.1016/j.drugalcdep.2009.06.019",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "45c647f3-7ed1-46b4-a6d1-b9e15c95f207",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -1350,7 +1350,7 @@
               "articleYear": "",
               "authors": "Filbey FM, McQueeny T, DeWitt SJ, Mishra V",
               "doi": "10.1016/j.dcn.2015.10.001",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "ffb0e183-1980-4072-bb86-bf39260324bd",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -1371,7 +1371,7 @@
               "articleYear": "",
               "authors": "Chang L, Yakupov R, Cloak C, Ernst T",
               "doi": "10.1093/brain/awl064",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "63e11b26-5ad7-4756-884a-ad0363d5bd73",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -1392,7 +1392,7 @@
               "articleYear": "",
               "authors": "Schweinsburg AD, Nagel BJ, Schweinsburg BC, Park A, Theilmann RJ, Tapert SF",
               "doi": "10.1016/j.pscychresns.2007.04.018",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "8be714eb-c31a-4be2-8428-76c1156bcd4e",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -1413,7 +1413,7 @@
               "articleYear": "",
               "authors": "Gruber SA, Yurgelun-Todd DA",
               "doi": "10.1016/j.cogbrainres.2005.02.016",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "57690aa6-d5d4-4fe6-8499-909531fe7bfb",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -1434,7 +1434,7 @@
               "articleYear": "",
               "authors": "Lopez-Larson MP, Bogorodzki P, Rogowska J, McGlade E, King JB, Terry J, Yurgelun-Todd D",
               "doi": "10.1016/j.bbr.2011.02.001",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "ce3531c8-d3e0-4a68-a4e3-9b1e72ec9e2a",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -1455,7 +1455,7 @@
               "articleYear": "",
               "authors": "",
               "doi": "",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "d14072cd-1c1c-4420-8005-32461f1e2421",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -1476,7 +1476,7 @@
               "articleYear": "",
               "authors": "",
               "doi": "",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "c7fc4204-b7de-4525-8da4-9d5250ef5864",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -1497,7 +1497,7 @@
               "articleYear": "",
               "authors": "Filbey FM, Dunlop J, Myers US",
               "doi": "10.1371/journal.pone.0061470",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "57d9dd6e-d788-46ca-b037-c8f2c9344ee7",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -1518,7 +1518,7 @@
               "articleYear": "",
               "authors": "L Ames S, Grenard JL, W Stacy A, Xiao L, He Q, Wong SW, Xue G, W Wiers R, Bechara A",
               "doi": "10.1037/a0027640",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "933ede88-7653-4319-931c-01cd0c0a545d",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -1539,7 +1539,7 @@
               "articleYear": "",
               "authors": "",
               "doi": "",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "c9718f05-d33b-4ec9-b42b-a321d562da91",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -1560,7 +1560,7 @@
               "articleYear": "",
               "authors": "",
               "doi": "",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "40f9880a-d2c5-459a-9be5-a65df94c7ce3",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -1581,7 +1581,7 @@
               "articleYear": "",
               "authors": "Filbey FM, Dunlop J",
               "doi": "10.1016/j.drugalcdep.2014.04.002",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "f3005b4c-d72c-465e-87e9-85bb2e51b57c",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -1602,7 +1602,7 @@
               "articleYear": "",
               "authors": "Bourque J, Mendrek A, Durand M, Lakis N, Lipp O, Stip E, Lalonde P, Grignon S, Potvin S",
               "doi": "10.1016/j.pscychresns.2013.05.012",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "2aeaa0ac-3979-447b-a95b-a6d26db01deb",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -1623,7 +1623,7 @@
               "articleYear": "",
               "authors": "Wetherill RR, Childress AR, Jagannathan K, Bender J, Young KA, Suh JJ, O'Brien CP, Franklin TR",
               "doi": "10.1007/s00213-013-3342-z",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "ff0e593b-ebf8-431d-9cdc-b5ae34d3b6f7",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -1644,7 +1644,7 @@
               "articleYear": "",
               "authors": "Tervo-Clemmens B, Simmonds D, Calabro FJ, Day NL, Richardson GA, Luna B",
               "doi": "10.1016/j.neuroimage.2017.12.041",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "7a42c01d-57db-46e2-aa9e-f393f69216ff",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -1665,7 +1665,7 @@
               "articleYear": "",
               "authors": "Battistella G, Fornari E, Thomas A, Mall JF, Chtioui H, Appenzeller M, Annoni JM, Favrat B, Maeder P, Giroud C",
               "doi": "10.1371/journal.pone.0052545",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "69f61142-0069-499d-a309-870de6b25603",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -1686,7 +1686,7 @@
               "articleYear": "",
               "authors": "Battistella G, Fornari E, Thomas A, Mall JF, Chtioui H, Appenzeller M, Annoni JM, Favrat B, Maeder P, Giroud C",
               "doi": "10.1371/journal.pone.0052545",
-              "exclusionTag": null,
+              "exclusionTagId": null,
               "id": "2d43c0b1-2358-40bc-b253-00dea1cea5c6",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
