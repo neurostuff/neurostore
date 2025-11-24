@@ -29,6 +29,7 @@ import shortuuid
 import vcr
 
 import logging
+from .utils import ordered_note_keys
 
 LOGGER = logging.getLogger(__name__)
 
@@ -602,7 +603,7 @@ def user_data(session, mock_add_users):
             annotation = Annotation(
                 name=name + "annotation",
                 source="neurostore",
-                note_keys={"food": "string"},
+                note_keys=ordered_note_keys({"food": "string"}),
                 studyset=studyset,
                 user=user,
             )
@@ -639,13 +640,13 @@ def simple_neurosynth_annotation(session, ingest_neurosynth):
                 )
             )
 
-        smol_annot = Annotation(
-            name="smol " + annot.name,
-            source="neurostore",
-            studyset=annot.studyset,
-            note_keys={"animal": "number"},
-            annotation_analyses=smol_notes,
-        )
+            smol_annot = Annotation(
+                name="smol " + annot.name,
+                source="neurostore",
+                studyset=annot.studyset,
+                note_keys=ordered_note_keys({"animal": "number"}),
+                annotation_analyses=smol_notes,
+            )
     session.add(smol_annot)
     session.commit()
 

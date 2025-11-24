@@ -13,6 +13,7 @@ from ...models import (
     PipelineConfig,
     PipelineStudyResult,
 )
+from ..utils import ordered_note_keys
 
 
 def _create_annotation_with_two_analyses(session, user):
@@ -39,7 +40,7 @@ def _create_annotation_with_two_analyses(session, user):
         name="Test Annotation",
         studyset=studyset,
         user=user,
-        note_keys={"existing": "string"},
+        note_keys=ordered_note_keys({"existing": "string"}),
     )
 
     session.add(annotation)
@@ -92,7 +93,7 @@ def test_blank_annotation_populates_note_fields(
     auth_client, ingest_neurosynth, session
 ):
     dset = Studyset.query.first()
-    note_keys = {"included": "boolean", "quality": "string"}
+    note_keys = ordered_note_keys({"included": "boolean", "quality": "string"})
     payload = {
         "studyset": dset.id,
         "note_keys": note_keys,
@@ -121,7 +122,7 @@ def test_annotation_rejects_empty_note(auth_client, ingest_neurosynth, session):
                 "note": {},
             }
         ],
-        "note_keys": {"included": "boolean"},
+        "note_keys": ordered_note_keys({"included": "boolean"}),
         "name": "invalid annotation",
     }
 
@@ -143,7 +144,7 @@ def test_post_annotation(auth_client, ingest_neurosynth, session):
     payload = {
         "studyset": dset.id,
         "notes": data,
-        "note_keys": {"foo": "string"},
+        "note_keys": ordered_note_keys({"foo": "string"}),
         "name": "mah notes",
     }
     resp = auth_client.post("/api/annotations/", data=payload)
@@ -280,7 +281,7 @@ def test_blank_slate_creation(auth_client, session):
     # create annotation
     annotation_data = {
         "studyset": ss_id,
-        "note_keys": {"include": "boolean"},
+        "note_keys": ordered_note_keys({"include": "boolean"}),
         "name": "mah notes",
     }
     annotation_post = auth_client.post("/api/annotations/", data=annotation_data)
@@ -342,7 +343,7 @@ def test_mismatched_notes(auth_client, ingest_neurosynth, session):
         for s in dset.studies
         for a in s.analyses
     ]
-    note_keys = {"foo": "string", "doo": "string"}
+    note_keys = ordered_note_keys({"foo": "string", "doo": "string"})
     payload = {
         "studyset": dset.id,
         "notes": data,
@@ -377,7 +378,7 @@ def test_put_nonexistent_analysis(auth_client, ingest_neurosynth, session):
         for s in dset.studies
         for a in s.analyses
     ]
-    note_keys = {"foo": "string", "doo": "string"}
+    note_keys = ordered_note_keys({"foo": "string", "doo": "string"})
     payload = {
         "studyset": dset.id,
         "notes": data,
@@ -412,7 +413,7 @@ def test_post_put_subset_of_analyses(auth_client, ingest_neurosynth, session):
     # remove last note
     data.pop()
 
-    note_keys = {"foo": "string", "doo": "string"}
+    note_keys = ordered_note_keys({"foo": "string", "doo": "string"})
     payload = {
         "studyset": dset.id,
         "notes": data,
@@ -444,7 +445,7 @@ def test_correct_note_overwrite(auth_client, ingest_neurosynth, session):
     payload = {
         "studyset": dset.id,
         "notes": data,
-        "note_keys": {"foo": "string", "doo": "string"},
+        "note_keys": ordered_note_keys({"foo": "string", "doo": "string"}),
         "name": "mah notes",
     }
 
@@ -514,10 +515,10 @@ def test_put_annotation_applies_pipeline_columns(auth_client, session):
     assert resp.status_code == 200
     body = resp.json()
 
-    assert body["note_keys"]["existing"] == "string"
-    assert body["note_keys"]["string_field"] == "string"
-    assert body["note_keys"]["numeric_field"] == "number"
-    assert body["note_keys"]["name"] == "string"
+    assert body["note_keys"]["existing"]["type"] == "string"
+    assert body["note_keys"]["string_field"]["type"] == "string"
+    assert body["note_keys"]["numeric_field"]["type"] == "number"
+    assert body["note_keys"]["name"]["type"] == "string"
 
     notes = body["notes"]
     assert len(notes) == 2
@@ -603,9 +604,9 @@ def test_put_annotation_pipeline_column_conflict_suffix(auth_client, session):
 
     assert key_one in body["note_keys"]
     assert key_two in body["note_keys"]
-    assert body["note_keys"][key_one] == "string"
-    assert body["note_keys"][key_two] == "string"
-    assert body["note_keys"]["name"] == "string"
+    assert body["note_keys"][key_one]["type"] == "string"
+    assert body["note_keys"][key_two]["type"] == "string"
+    assert body["note_keys"]["name"]["type"] == "string"
 
     for entry in body["notes"]:
         note = entry["note"]
@@ -625,7 +626,7 @@ def test_annotation_analyses_post(auth_client, ingest_neurosynth, session):
     payload = {
         "studyset": dset.id,
         "notes": data,
-        "note_keys": {"foo": "string", "doo": "string"},
+        "note_keys": ordered_note_keys({"foo": "string", "doo": "string"}),
         "name": "mah notes",
     }
 

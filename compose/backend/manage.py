@@ -14,6 +14,9 @@ app = create_app()
 from neurosynth_compose.database import db
 from neurosynth_compose import models
 from neurosynth_compose.ingest import neurostore as ingest_nstore
+from neurosynth_compose.backfill_extraction_metadata import (
+    add_missing_extraction_ids,
+)
 
 
 app.config.from_object(os.environ["APP_SETTINGS"])
@@ -44,3 +47,12 @@ def create_meta_analyses(n_studysets, neurostore_url):
     if n_studysets is not None:
         n_studysets = int(n_studysets)
     ingest_nstore.create_meta_analyses(url=neurostore_url, n_studysets=n_studysets)
+
+
+@app.cli.command("backfill-extraction-metadata")
+def backfill_extraction_metadata():
+    """Add missing extractionMetadata ids to project provenance."""
+    updated, skipped = add_missing_extraction_ids()
+    click.echo(
+        f"Updated {updated} project(s); skipped {skipped} project(s) with no changes."
+    )

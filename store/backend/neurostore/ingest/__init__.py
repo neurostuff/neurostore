@@ -364,7 +364,8 @@ def ingest_neurosynth(max_rows=None):
 
         # add notes to annotation
         annot.note_keys = {
-            k: _check_type(v) for k, v in annotation_row._asdict().items()
+            k: {"type": _check_type(v) or "string", "order": idx}
+            for idx, (k, v) in enumerate(annotation_row._asdict().items())
         }
         annot.annotation_analyses = notes
         for note in notes:
