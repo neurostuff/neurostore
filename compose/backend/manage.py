@@ -14,7 +14,7 @@ app = create_app()
 from neurosynth_compose.database import db
 from neurosynth_compose import models
 from neurosynth_compose.ingest import neurostore as ingest_nstore
-from compose.backend.neurosynth_compose.scripts.backfill_extraction_metadata import (
+from neurosynth_compose.scripts.backfill_extraction_metadata import (
     add_missing_extraction_ids,
 )
 
