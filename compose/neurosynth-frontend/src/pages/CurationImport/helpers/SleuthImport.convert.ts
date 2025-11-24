@@ -87,7 +87,7 @@ export const sleuthIngestedStudiesToStubs = (
         // although we know that each individual upload is deduplicated,
         // its possible that there are multiple uploads with the same study. We want to deduplicate
         // studies across all uploads so we only allow a unique pmid or doi
-        if ((pmid && allIdentifiersSet.has(pmid)) || (doi && allIdentifiersSet.has(doi))) return;
+        if ((pmid && allIdentifiersSet.has(pmid)) || (doi && allIdentifiersSet.has(doi))) continue;
 
         if (pmid) allIdentifiersSet.add(pmid);
         if (doi) allIdentifiersSet.add(doi);
