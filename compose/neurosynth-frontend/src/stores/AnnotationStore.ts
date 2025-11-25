@@ -240,6 +240,30 @@ export const useAnnotationStore = create<
                 };
             });
         },
+        reorderAnnotationColumnsByOrder: (order) => {
+            setUnloadHandler('annotation');
+            set((state) => {
+                if (!state.annotation.note_keys || !order.length) return state;
+                const ordered = order
+                    .map((idx) => state.annotation.note_keys?.[idx])
+                    .filter((x): x is NoteKeyType => !!x)
+                    .map((noteKey, idx) => ({ ...noteKey, order: idx }));
+
+                if (!ordered.length) return state;
+
+                return {
+                    ...state,
+                    annotation: {
+                        ...state.annotation,
+                        note_keys: ordered,
+                    },
+                    storeMetadata: {
+                        ...state.storeMetadata,
+                        annotationIsEdited: true,
+                    },
+                };
+            });
+        },
         createAnnotationNote: (analysisId, studyId, analysisName) => {
             setUnloadHandler('annotation');
             set((state) => {

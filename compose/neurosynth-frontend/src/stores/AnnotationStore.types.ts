@@ -29,6 +29,7 @@ export type AnnotationStoreActions = {
     updateAnnotationNoteName: (analysis: Partial<IStoreNoteCollectionReturn>) => void;
     removeAnnotationColumn: (noteKey: string) => void;
     reorderAnnotationColumns: (fromIndex: number, toIndex: number) => void;
+    reorderAnnotationColumnsByOrder: (order: number[]) => void;
 };
 
 export type AnnotationNoteType = {

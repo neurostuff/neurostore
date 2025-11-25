@@ -17,6 +17,7 @@ import {
     useCreateAnnotationColumn,
     useRemoveAnnotationColumn,
     useReorderAnnotationColumns,
+    useReorderAnnotationColumnsByOrder,
     useUpdateAnnotationNotes,
 } from 'stores/AnnotationStore.actions';
 
@@ -29,6 +30,7 @@ const EditStudyAnnotationsHotTable: React.FC<{ readonly?: boolean }> = ({ readon
     const createAnnotationColumn = useCreateAnnotationColumn();
     const removeAnnotationColumn = useRemoveAnnotationColumn();
     const reorderAnnotationColumns = useReorderAnnotationColumns();
+    const reorderAnnotationColumnsByOrder = useReorderAnnotationColumnsByOrder();
     const { colWidths, colHeaders, columns, hiddenRows, data } = useEditStudyAnnotationsHotTable(readonly);
     const projectUser = useProjectUser();
     const canEdit = useUserCanEdit(projectUser || undefined);
@@ -105,9 +107,16 @@ const EditStudyAnnotationsHotTable: React.FC<{ readonly?: boolean }> = ({ readon
         }
     };
 
-    const handleColumnMove = (movedColumns: number[], finalIndex: number) => {
+    const handleColumnMove = (
+        movedColumns: number[],
+        finalIndex: number,
+        _dropIndex?: number,
+        movePossible?: boolean,
+        orderOfColumns?: number[]
+    ) => {
         if (readonly || !canEdit) return;
         if (!movedColumns.length) return;
+        if (movePossible === false) return;
 
         const fromVisualIndex = movedColumns[0];
         const toVisualIndex = finalIndex;
@@ -115,18 +124,45 @@ const EditStudyAnnotationsHotTable: React.FC<{ readonly?: boolean }> = ({ readon
         // first two columns are static (analysis name/description)
         if (fromVisualIndex < 2 || toVisualIndex < 2) return;
 
-        const from = fromVisualIndex - 2;
-        let to = toVisualIndex - 2;
-
         if (!noteKeys) return;
-        if (to >= noteKeys.length) to = noteKeys.length - 1;
+        if (Array.isArray(orderOfColumns) && orderOfColumns.length >= 2) {
+            const noteOrder = orderOfColumns.filter((colIdx) => colIdx >= 2).map((colIdx) => colIdx - 2);
+            if (!noteOrder.length) return;
+            reorderAnnotationColumnsByOrder(noteOrder);
+        } else {
+            const from = fromVisualIndex - 2;
+            let to = toVisualIndex - 2;
+            if (to >= noteKeys.length) to = noteKeys.length - 1;
+            reorderAnnotationColumns(from, to);
+        }
+    };
 
-        reorderAnnotationColumns(from, to);
+    const handleBeforeColumnMove = (movedColumns: number[], finalIndex: number) => {
+        if (readonly || !canEdit) return true;
+        if (!movedColumns.length) return true;
+        if (movedColumns[0] < 2 || finalIndex < 2) return false;
+        return true;
     };
 
     const memoizedData = useMemo(() => {
         return JSON.parse(JSON.stringify(data || []));
     }, [data]);
+
+    const handleBeforeOnCellMouseDown = (
+        event: MouseEvent,
+        coords: CellCoords,
+        TD: HTMLTableCellElement
+    ) => {
+        if (coords.row < 0) {
+            const target = event.target as HTMLElement;
+            const isDragHandle = target?.closest('[data-drag-handle="true"]');
+            if (isDragHandle) {
+                event.stopImmediatePropagation();
+                event.preventDefault();
+                return;
+            }
+        }
+    };
 
     return (
         <Box>
@@ -173,8 +209,10 @@ const EditStudyAnnotationsHotTable: React.FC<{ readonly?: boolean }> = ({ readon
                         rows: hiddenRows,
                         indicators: false,
                     }}
+                    beforeOnCellMouseDown={handleBeforeOnCellMouseDown}
                     afterOnCellMouseUp={handleCellMouseUp}
-                    manualColumnMove={!readonly && canEdit}
+                    manualColumnMove={!readonly && canEdit ? Array.from({ length: 2 + (noteKeys?.length || 0) }, (_v, idx) => idx) : false}
+                    beforeColumnMove={handleBeforeColumnMove}
                     afterColumnMove={handleColumnMove}
                     colWidths={colWidths}
                     columns={columns}

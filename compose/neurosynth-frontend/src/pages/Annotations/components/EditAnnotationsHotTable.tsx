@@ -13,7 +13,7 @@ import { useGetWindowHeight, useUpdateAnnotationById } from 'hooks';
 import useUserCanEdit from 'hooks/useUserCanEdit';
 import { useSnackbar } from 'notistack';
 import { useProjectUser } from 'pages/Project/store/ProjectStore';
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { createColumns, hotDataToAnnotationNotes, hotSettings } from './EditAnnotationsHotTable.helpers';
 
 registerAllModules();
@@ -38,6 +38,11 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
         isEdited,
         rowHeights,
     } = useEditAnnotationsHotTable(props.annotationId, !canEdit);
+
+    const manualColumnMoveOrder = useMemo(() => {
+        const totalCols = 2 + (noteKeys?.length || 0);
+        return canEdit ? Array.from({ length: totalCols }, (_v, idx) => idx) : false;
+    }, [noteKeys?.length, canEdit]);
 
     useEffect(() => {
         const timeout: any = setTimeout(() => {
@@ -151,18 +156,49 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
         return updated;
     };
 
-    const handleColumnMove = (movedColumns: number[], finalIndex: number) => {
+    const handleColumnMove = (
+        movedColumns: number[],
+        finalIndex: number,
+        _dropIndex?: number,
+        movePossible?: boolean,
+        orderOfColumns?: number[]
+    ) => {
         if (!canEdit) return;
         if (!movedColumns.length) return;
+        if (movePossible === false) return;
         const fromVisualIndex = movedColumns[0];
         const toVisualIndex = finalIndex;
 
         if (fromVisualIndex < 2 || toVisualIndex < 2) return; // lock study/analysis columns
 
-        const from = fromVisualIndex - 2;
-        let to = toVisualIndex - 2;
-
         setAnnotationsHotState((prev) => {
+            if (!prev.noteKeys?.length) return prev;
+
+            // If Handsontable provides the full order, use it to derive shifted positions
+            if (Array.isArray(orderOfColumns) && orderOfColumns.length >= 2) {
+                const noteOrder = orderOfColumns.filter((colIdx) => colIdx >= 2).map((colIdx) => colIdx - 2);
+                const updatedNoteKeys = noteOrder.map((nkIdx, idx) => ({
+                    ...prev.noteKeys[nkIdx],
+                    order: idx,
+                }));
+
+                const updatedHotData = prev.hotData.map((row) => {
+                    const meta = row.slice(0, 2);
+                    const noteVals = orderOfColumns.filter((colIdx) => colIdx >= 2).map((colIdx) => row[colIdx]);
+                    return [...meta, ...noteVals];
+                });
+
+                return {
+                    ...prev,
+                    isEdited: true,
+                    noteKeys: updatedNoteKeys,
+                    hotColumns: createColumns(updatedNoteKeys, !canEdit),
+                    hotData: updatedHotData,
+                };
+            }
+
+            const from = fromVisualIndex - 2;
+            let to = toVisualIndex - 2;
             if (from >= prev.noteKeys.length) return prev;
             if (to >= prev.noteKeys.length) to = prev.noteKeys.length - 1;
 
@@ -185,8 +221,13 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
                 hotData: updatedHotData,
             };
         });
+    };
 
-        // Avoid leaving drag artifacts; Handsontable plugin manages its own state
+    const handleBeforeColumnMove = (movedColumns: number[], finalIndex: number) => {
+        if (!canEdit) return true;
+        if (!movedColumns.length) return true;
+        if (movedColumns[0] < 2 || finalIndex < 2) return false; // prevent mixing with fixed cols
+        return true;
     };
 
     /**
@@ -207,6 +248,15 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
         TD: HTMLTableCellElement,
         controller: SelectionController
     ): void => {
+        if (coords.row < 0) {
+            const target = event.target as HTMLElement;
+            const isDragHandle = target?.closest('[data-drag-handle="true"]');
+            if (isDragHandle) {
+                event.stopImmediatePropagation();
+                event.preventDefault();
+                return;
+            }
+        }
         const isRowHeader = coords.col === -1 || coords.col === 0;
         if (isRowHeader) {
             event.stopImmediatePropagation();
@@ -296,7 +346,8 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
                         mergeCells={mergeCells}
                         disableVisualSelection={!canEdit}
                         colHeaders={hotColumnHeaders}
-                        manualColumnMove={canEdit}
+                        manualColumnMove={manualColumnMoveOrder}
+                        beforeColumnMove={handleBeforeColumnMove}
                         colWidths={colWidths}
                         rowHeights={rowHeights}
                         columns={hotColumns}
