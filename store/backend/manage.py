@@ -82,6 +82,7 @@ def backfill_note_keys(limit, dry_run):
     updated = 0
     checked = 0
 
+    # Collect note keys across analyses first, then write back once per annotation.
     q = models.Annotation.query.order_by(models.Annotation.created_at)
     if limit:
         q = q.limit(limit)
@@ -94,13 +95,20 @@ def backfill_note_keys(limit, dry_run):
 
         inferred: OrderedDict[str, dict] = OrderedDict()
 
+        # First pass: collect all keys present in any note with their first-seen order.
+        for aa in annotation.annotation_analyses:
+            note = aa.note or {}
+            for key in note.keys():
+                if key not in inferred:
+                    inferred[key] = {"type": None, "order": len(inferred)}
+
+        # Second pass: try to find a non-null sample for each key to set its type.
         for aa in annotation.annotation_analyses:
             note = aa.note or {}
             for key, value in note.items():
-                if key not in inferred:
-                    inferred[key] = {"type": None, "order": len(inferred)}
-                # Keep searching until we see a non-null sample for this key
-                if value is None or inferred[key]["type"] is not None:
+                if key not in inferred or inferred[key]["type"] is not None:
+                    continue
+                if value is None:
                     continue
                 if isinstance(value, bool):
                     inferred[key]["type"] = "boolean"
