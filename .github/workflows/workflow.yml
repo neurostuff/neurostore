@@ -411,6 +411,9 @@ jobs:
       run: |
         cp compose/.env.example compose/.env
         cp store/.env.example store/.env
+        # Ensure compose uses the test DB config when applying migrations
+        echo "APP_SETTINGS=neurosynth_compose.config.DockerTestConfig" >> compose/.env
+        echo "POSTGRES_DB=test_db" >> compose/.env
     -
       name: load compose images
       uses: docker/bake-action@v6.0.0
@@ -506,7 +509,9 @@ jobs:
       name: Apply Compose migrations
       run: |
         cd compose
-        docker compose exec -T compose flask db upgrade
+        docker compose exec -T \
+          -e APP_SETTINGS=neurosynth_compose.config.DockerTestConfig \
+          compose flask db upgrade
     -
       name: Apply Store migrations
       run: |
