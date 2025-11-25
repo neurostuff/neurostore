@@ -186,7 +186,7 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
             };
         });
 
-        hotTableRef.current?.hotInstance?.getPlugin('manualColumnMove').clearMoves();
+        // Avoid leaving drag artifacts; Handsontable plugin manages its own state
     };
 
     /**

@@ -122,7 +122,6 @@ const EditStudyAnnotationsHotTable: React.FC<{ readonly?: boolean }> = ({ readon
         if (to >= noteKeys.length) to = noteKeys.length - 1;
 
         reorderAnnotationColumns(from, to);
-        hotTableRef.current?.hotInstance?.getPlugin('manualColumnMove').clearMoves();
     };
 
     const memoizedData = useMemo(() => {
