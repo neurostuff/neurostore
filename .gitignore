@@ -71,7 +71,7 @@ instance/
 .webassets-cache
 
 # Postgres Python migrations:
-**/backend/migrations/versions/*
+# **/backend/migrations/versions/*
 
 # Scrapy stuff:
 .scrapy
