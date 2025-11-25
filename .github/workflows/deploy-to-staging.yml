@@ -70,11 +70,7 @@ jobs:
 
           # Wait for PostgreSQL to be ready
           until docker compose exec store-pgsql pg_isready; do sleep 5; done
-          docker compose exec neurostore bash -c \
-            "flask db merge heads && \
-             flask db stamp head && \
-             flask db migrate && \
-             flask db upgrade"
+          docker compose exec neurostore flask db upgrade
         '
 
     - name: Run Docker commands in compose directory if changes detected
@@ -89,11 +85,7 @@ jobs:
           # Wait for PostgreSQL to be ready
           until docker compose exec compose_pgsql pg_isready; do sleep 5; done
 
-           docker compose exec compose bash -c \
-            "flask db merge heads && \
-             flask db stamp head && \
-             flask db migrate && \
-             flask db upgrade"
+           docker compose exec compose flask db upgrade
         '
 
     - name: Skip Docker commands and run frontend build if only frontend changes detected
