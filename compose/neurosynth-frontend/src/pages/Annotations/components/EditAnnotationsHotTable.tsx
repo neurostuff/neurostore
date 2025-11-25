@@ -106,18 +106,23 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
     };
 
     const handleRemoveHotColumn = (colKey: string) => {
+        if (!canEdit) return;
         const foundIndex = noteKeys.findIndex((x) => x.key === colKey && x.key !== 'included');
         if (foundIndex < 0) return;
 
         setAnnotationsHotState((prev) => {
             const updatedNoteKeys = [...prev.noteKeys];
             updatedNoteKeys.splice(foundIndex, 1);
+            const reindexedNoteKeys = updatedNoteKeys.map((noteKey, index) => ({
+                ...noteKey,
+                order: index,
+            }));
 
             return {
                 ...prev,
                 isEdited: true,
-                noteKeys: updatedNoteKeys,
-                hotColumns: createColumns(updatedNoteKeys),
+                noteKeys: reindexedNoteKeys,
+                hotColumns: createColumns(reindexedNoteKeys, !canEdit),
                 hotData: [...prev.hotData].map((row) => {
                     const updatedRow = [...row];
                     updatedRow.splice(foundIndex + 2, 1);
@@ -132,6 +137,52 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
         if (coords.row < 0 && (target.tagName === 'svg' || target.tagName === 'path')) {
             handleRemoveHotColumn(TD.innerText);
         }
+    };
+
+    const reorderArray = <T,>(arr: T[], from: number, to: number) => {
+        if (from === to) return [...arr];
+        const updated = [...arr];
+        const [removed] = updated.splice(from, 1);
+        updated.splice(to, 0, removed);
+        return updated;
+    };
+
+    const handleColumnMove = (movedColumns: number[], finalIndex: number) => {
+        if (!canEdit) return;
+        if (!movedColumns.length) return;
+        const fromVisualIndex = movedColumns[0];
+        const toVisualIndex = finalIndex;
+
+        if (fromVisualIndex < 2 || toVisualIndex < 2) return; // lock study/analysis columns
+
+        const from = fromVisualIndex - 2;
+        let to = toVisualIndex - 2;
+
+        setAnnotationsHotState((prev) => {
+            if (from >= prev.noteKeys.length) return prev;
+            if (to >= prev.noteKeys.length) to = prev.noteKeys.length - 1;
+
+            const updatedNoteKeys = reorderArray(prev.noteKeys, from, to).map((noteKey, index) => ({
+                ...noteKey,
+                order: index,
+            }));
+
+            const updatedHotData = prev.hotData.map((row) => {
+                const metadataCols = row.slice(0, 2);
+                const noteCols = reorderArray(row.slice(2), from, to);
+                return [...metadataCols, ...noteCols];
+            });
+
+            return {
+                ...prev,
+                isEdited: true,
+                noteKeys: updatedNoteKeys,
+                hotColumns: createColumns(updatedNoteKeys, !canEdit),
+                hotData: updatedHotData,
+            };
+        });
+
+        hotTableRef.current?.hotInstance?.getPlugin('manualColumnMove').clearMoves();
     };
 
     /**
@@ -164,13 +215,15 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
         if (noteKeys.find((x) => x.key === trimmedKey)) return false;
 
         setAnnotationsHotState((prev) => {
-            const updatedNoteKeys = [{ key: trimmedKey, type: getType(row.metadataValue) }, ...prev.noteKeys];
+            const updatedNoteKeys = [{ key: trimmedKey, type: getType(row.metadataValue), order: 0 }, ...prev.noteKeys].map(
+                (noteKey, index) => ({ ...noteKey, order: index })
+            );
 
             return {
                 ...prev,
                 isEdited: true,
                 noteKeys: updatedNoteKeys,
-                hotColumns: createColumns(updatedNoteKeys),
+                hotColumns: createColumns(updatedNoteKeys, !canEdit),
                 hotData: [...prev.hotData].map((row) => {
                     const updatedRow = [...row];
                     updatedRow.splice(2, 0, null);
@@ -239,12 +292,14 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
                         mergeCells={mergeCells}
                         disableVisualSelection={!canEdit}
                         colHeaders={hotColumnHeaders}
+                        manualColumnMove={canEdit}
                         colWidths={colWidths}
                         rowHeights={rowHeights}
                         columns={hotColumns}
                         data={JSON.parse(JSON.stringify(hotData))}
                         afterOnCellMouseUp={handleCellMouseUp}
                         beforeOnCellMouseDown={handleCellMouseDown}
+                        afterColumnMove={handleColumnMove}
                     />
                 ) : (
                     <Typography sx={{ color: 'warning.dark' }}>

@@ -5,6 +5,7 @@ import {
     storeNotesToDBNotes,
     updateNoteNameHelper,
 } from 'stores/AnnotationStore.helpers';
+import { NoteKeyType } from 'components/HotTables/HotTables.types';
 import API from 'utils/api';
 import { create } from 'zustand';
 import {
@@ -15,6 +16,8 @@ import {
 } from 'stores/AnnotationStore.types';
 import { setUnloadHandler } from 'helpers/BeforeUnload.helpers';
 import { noteKeyArrToObj } from 'components/HotTables/HotTables.utils';
+
+const normalizeNoteKeyOrder = (noteKeys: NoteKeyType[]) => noteKeys.map((noteKey, index) => ({ ...noteKey, order: index }));
 
 export const useAnnotationStore = create<
     {
@@ -153,7 +156,7 @@ export const useAnnotationStore = create<
                 ...state,
                 annotation: {
                     ...state.annotation,
-                    note_keys: [{ ...noteKey }, ...(state.annotation.note_keys ?? [])],
+                    note_keys: normalizeNoteKeyOrder([{ ...noteKey }, ...(state.annotation.note_keys ?? [])]),
                     notes: (state.annotation.notes ?? []).map((note) => ({
                         ...note,
                         note: {
@@ -172,7 +175,9 @@ export const useAnnotationStore = create<
             setUnloadHandler('annotation');
             set((state) => {
                 if (!state.annotation.note_keys || !state.annotation.notes) return state;
-                const updatedNoteKeys = state.annotation.note_keys.filter((x) => x.key !== noteKey);
+                const updatedNoteKeys = normalizeNoteKeyOrder(
+                    state.annotation.note_keys.filter((x) => x.key !== noteKey)
+                );
                 const updatedNotes = [...state.annotation.notes];
                 updatedNotes.forEach((note) => {
                     const typedNote = note.note as Record<string, string | boolean | number | null> | undefined;

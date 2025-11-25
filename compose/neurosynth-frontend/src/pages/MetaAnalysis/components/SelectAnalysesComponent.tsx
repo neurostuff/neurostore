@@ -17,6 +17,7 @@ import {
 import { DEFAULT_REFERENCE_DATASETS } from './SelectAnalysesComponent.types';
 import SelectAnalysesComponentTable from './SelectAnalysesComponentTable';
 import SelectAnalysesStringValue from './SelectAnalysesStringValue';
+import { noteKeyObjToArr } from 'components/HotTables/HotTables.utils';
 
 const SelectAnalysesComponent: React.FC<{
     annotationId: string;
@@ -58,10 +59,10 @@ const SelectAnalysesComponent: React.FC<{
     ]);
 
     const options = useMemo(() => {
-        return Object.entries(annotation?.note_keys || {})
-            .map(([key, value]) => ({
+        return noteKeyObjToArr(annotation?.note_keys)
+            .map(({ key, type }) => ({
                 selectionKey: key,
-                type: value as EPropertyType,
+                type,
                 selectionValue: undefined,
                 referenceDataset: undefined,
             }))
