@@ -10,6 +10,7 @@ from flask_migrate import Migrate
 from neurostore.core import app, db
 from neurostore import ingest
 from neurostore import models
+from collections import OrderedDict
 
 if not getattr(app, "config", None):
     app = app._app
@@ -71,3 +72,53 @@ def ingest_neuroquery(max_rows):
     if max_rows is not None:
         max_rows = int(max_rows)
     ingest.ingest_neuroquery(max_rows=max_rows)
+
+
+@app.cli.command("backfill-note-keys")
+@click.option("--limit", default=None, type=int, help="limit number of annotations to process")
+@click.option("--dry-run", is_flag=True, help="do not persist changes")
+def backfill_note_keys(limit, dry_run):
+    """Infer missing note_keys from existing annotation notes."""
+    updated = 0
+    checked = 0
+
+    q = models.Annotation.query.order_by(models.Annotation.created_at)
+    if limit:
+        q = q.limit(limit)
+
+    for annotation in q:
+        checked += 1
+        current = annotation.note_keys if isinstance(annotation.note_keys, dict) else {}
+        if current:
+            continue
+
+        inferred: OrderedDict[str, dict] = OrderedDict()
+
+        for aa in annotation.annotation_analyses:
+            note = aa.note or {}
+            for key, value in note.items():
+                if key not in inferred:
+                    inferred[key] = {"type": None, "order": len(inferred)}
+                # Keep searching until we see a non-null sample for this key
+                if value is None or inferred[key]["type"] is not None:
+                    continue
+                if isinstance(value, bool):
+                    inferred[key]["type"] = "boolean"
+                elif isinstance(value, (int, float)) and not isinstance(value, bool):
+                    inferred[key]["type"] = "number"
+                else:
+                    inferred[key]["type"] = "string"
+
+        # Default any keys that never had a non-null sample to string
+        for key, descriptor in inferred.items():
+            if descriptor["type"] is None:
+                descriptor["type"] = "string"
+
+        if inferred:
+            annotation.note_keys = inferred
+            updated += 1
+
+    if updated and not dry_run:
+        db.session.commit()
+
+    click.echo(f"Checked {checked} annotations; updated {updated} (dry_run={dry_run}).")
