@@ -6,6 +6,7 @@ import { getType, IMetadataRowModel } from 'components/EditMetadata/EditMetadata
 import { sanitizePaste } from 'components/HotTables/HotTables.utils';
 import CellCoords from 'handsontable/3rdparty/walkontable/src/cell/coords';
 import { CellChange } from 'handsontable/common';
+import { registerAllModules } from 'handsontable/registry';
 import { useUserCanEdit } from 'hooks';
 import { useProjectUser } from 'pages/Project/store/ProjectStore';
 import { HotSettings } from 'pages/Study/components/EditStudyAnnotationsHotTable.helpers';
@@ -18,6 +19,8 @@ import {
     useReorderAnnotationColumns,
     useUpdateAnnotationNotes,
 } from 'stores/AnnotationStore.actions';
+
+registerAllModules();
 
 const EditStudyAnnotationsHotTable: React.FC<{ readonly?: boolean }> = ({ readonly = false }) => {
     const hotTableRef = useRef<HotTable>(null);
@@ -122,17 +125,6 @@ const EditStudyAnnotationsHotTable: React.FC<{ readonly?: boolean }> = ({ readon
         hotTableRef.current?.hotInstance?.getPlugin('manualColumnMove').clearMoves();
     };
 
-    const handleBeforeOnCellMouseDown = (event: MouseEvent, coords: CellCoords) => {
-        if (coords.row < 0) {
-            const target = event.target as HTMLElement;
-            const isDragHandle = target?.closest('[data-drag-handle="true"]');
-            if (isDragHandle) {
-                // allow drag to proceed; prevent default selection highlighting
-                event.preventDefault();
-            }
-        }
-    };
-
     const memoizedData = useMemo(() => {
         return JSON.parse(JSON.stringify(data || []));
     }, [data]);
@@ -183,7 +175,6 @@ const EditStudyAnnotationsHotTable: React.FC<{ readonly?: boolean }> = ({ readon
                         indicators: false,
                     }}
                     afterOnCellMouseUp={handleCellMouseUp}
-                    beforeOnCellMouseDown={handleBeforeOnCellMouseDown}
                     manualColumnMove={!readonly && canEdit}
                     afterColumnMove={handleColumnMove}
                     colWidths={colWidths}
