@@ -50,8 +50,11 @@
     user-select: none;
     font-size: 16px;
     line-height: 1;
+    color: #555;
+    font-weight: 700;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 2px 4px;
+    min-width: 12px;
 }

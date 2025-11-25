@@ -58,7 +58,7 @@ const useEditStudyAnnotationsHotTable = (readonly?: boolean) => {
             colHeaders: [
                 'Analysis Name',
                 'Analysis Description',
-                ...(noteKeys ?? []).map((x) => createColumnHeader(x.key, x.type, true, false)),
+                ...(noteKeys ?? []).map((x) => createColumnHeader(x.key, x.type, true, !readonly)),
             ],
             colWidths: createColWidths(noteKeys || [], 150, 150, 150),
         };
