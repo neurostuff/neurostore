@@ -49,7 +49,9 @@ def upgrade():
     op.drop_column('specifications', 'contrast')
     op.add_column('studyset_references', sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True))
     op.add_column('studyset_references', sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True))
-    op.add_column('studysets', sa.Column('version', sa.Text(), nullable=True))
+    existing_cols = {col["name"] for col in inspector.get_columns('studysets')} if inspector.has_table('studysets') else set()
+    if 'version' not in existing_cols and inspector.has_table('studysets'):
+        op.add_column('studysets', sa.Column('version', sa.Text(), nullable=True))
     # ### end Alembic commands ###
 
 

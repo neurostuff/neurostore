@@ -117,6 +117,22 @@ def upgrade():
     for table_name, creator in tables.items():
         if not inspector.has_table(table_name):
             creator()
+
+    # Backfill columns on existing tables to match current models.
+    studyset_cols = set(col["name"] for col in inspector.get_columns("studysets")) if inspector.has_table("studysets") else set()
+    if inspector.has_table("studysets"):
+        if "snapshot" not in studyset_cols:
+            op.add_column("studysets", sa.Column("snapshot", sa.JSON(), nullable=True))
+        if "version" not in studyset_cols:
+            op.add_column("studysets", sa.Column("version", sa.Text(), nullable=True))
+
+    annotation_cols = set(col["name"] for col in inspector.get_columns("annotations")) if inspector.has_table("annotations") else set()
+    if inspector.has_table("annotations"):
+        if "snapshot" not in annotation_cols:
+            op.add_column("annotations", sa.Column("snapshot", sa.JSON(), nullable=True))
+        if "cached_studyset_id" not in annotation_cols:
+            op.add_column("annotations", sa.Column("cached_studyset_id", sa.Text(), nullable=True))
+            op.create_foreign_key(None, "annotations", "studysets", ["cached_studyset_id"], ["id"])
     # ### end Alembic commands ###
 
 
