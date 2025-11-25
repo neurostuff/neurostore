@@ -105,7 +105,7 @@ const MoveToExtractionDialog: React.FC<IDialog> = (props) => {
                     annotation: {
                         name: `Annotation for studyset ${newStudysetId}`,
                         description: '',
-                        note_keys: { included: EPropertyType.BOOLEAN },
+                        note_keys: { included: { type: EPropertyType.BOOLEAN, order: 0 } },
                         studyset: newStudysetId,
                     },
                 });

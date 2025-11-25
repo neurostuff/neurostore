@@ -5,8 +5,14 @@
     "metadata": null,
     "name": "Annotation for studyset 73HRs8HaJbR8",
     "note_keys": {
-      "included": "boolean",
-      "string_key": "string"
+      "included": {
+        "type": "boolean",
+        "order": 0
+      },
+      "string_key": {
+        "type": "string",
+        "order": 1
+      }
     },
     "notes": [
       {

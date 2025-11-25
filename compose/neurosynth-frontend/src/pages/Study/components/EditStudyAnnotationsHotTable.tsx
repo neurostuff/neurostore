@@ -1,17 +1,20 @@
 import { HotTable } from '@handsontable/react';
 import { Box } from '@mui/material';
+import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import AddMetadataRow from 'components/EditMetadata/AddMetadataRow';
 import { getType, IMetadataRowModel } from 'components/EditMetadata/EditMetadata.types';
 import { sanitizePaste } from 'components/HotTables/HotTables.utils';
+import CellCoords from 'handsontable/3rdparty/walkontable/src/cell/coords';
 import { CellChange } from 'handsontable/common';
 import { useUserCanEdit } from 'hooks';
 import { useProjectUser } from 'pages/Project/store/ProjectStore';
 import { HotSettings } from 'pages/Study/components/EditStudyAnnotationsHotTable.helpers';
 import useEditStudyAnnotationsHotTable from 'pages/Study/hooks/useEditStudyAnnotationsHotTable';
-import { useMemo, useRef } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import {
     useAnnotationNoteKeys,
     useCreateAnnotationColumn,
+    useRemoveAnnotationColumn,
     useUpdateAnnotationNotes,
 } from 'stores/AnnotationStore.actions';
 
@@ -20,9 +23,14 @@ const EditStudyAnnotationsHotTable: React.FC<{ readonly?: boolean }> = ({ readon
     const noteKeys = useAnnotationNoteKeys();
     const updateNotes = useUpdateAnnotationNotes();
     const createAnnotationColumn = useCreateAnnotationColumn();
+    const removeAnnotationColumn = useRemoveAnnotationColumn();
     const { colWidths, colHeaders, columns, hiddenRows, data } = useEditStudyAnnotationsHotTable(readonly);
     const projectUser = useProjectUser();
     const canEdit = useUserCanEdit(projectUser || undefined);
+    const [confirmationDialogState, setConfirmationDialogState] = useState({
+        isOpen: false,
+        colKey: '',
+    });
 
     const handleAfterChange = (changes: CellChange[] | null) => {
         if (!data || !noteKeys || !changes) return;
@@ -67,6 +75,26 @@ const EditStudyAnnotationsHotTable: React.FC<{ readonly?: boolean }> = ({ readon
         return true;
     };
 
+    const handleConfirmationDialogClose = (confirm: boolean | undefined) => {
+        if (confirm) {
+            removeAnnotationColumn(confirmationDialogState.colKey);
+        }
+        setConfirmationDialogState({
+            isOpen: false,
+            colKey: '',
+        });
+    };
+
+    const handleCellMouseUp = (event: MouseEvent, coords: CellCoords, TD: HTMLTableCellElement) => {
+        const target = event.target as HTMLButtonElement;
+        if (coords.row < 0 && (target.tagName === 'svg' || target.tagName === 'path')) {
+            setConfirmationDialogState({
+                isOpen: true,
+                colKey: TD.innerText,
+            });
+        }
+    };
+
     const memoizedData = useMemo(() => {
         return JSON.parse(JSON.stringify(data || []));
     }, [data]);
@@ -91,13 +119,20 @@ const EditStudyAnnotationsHotTable: React.FC<{ readonly?: boolean }> = ({ readon
                         keyPlaceholderText="New Column"
                         onAddMetadataRow={handleAddHotColumn}
                         showMetadataValueInput={false}
-                        allowNumber={false}
                         allowNone={false}
                         errorMessage="can't add column (key already exists)"
                     />
                 </Box>
             )}
             <Box sx={{ width: '100%', height: '100%' }}>
+                <ConfirmationDialog
+                    isOpen={confirmationDialogState.isOpen}
+                    onCloseDialog={handleConfirmationDialogClose}
+                    dialogTitle="Are you sure you want to remove this column?"
+                    dialogMessage={`This will remove annotation data in all other studies for ${confirmationDialogState.colKey}`}
+                    confirmText="Remove"
+                    rejectText="Cancel"
+                />
                 <HotTable
                     {...HotSettings}
                     afterChange={handleAfterChange}
@@ -109,6 +144,7 @@ const EditStudyAnnotationsHotTable: React.FC<{ readonly?: boolean }> = ({ readon
                         rows: hiddenRows,
                         indicators: false,
                     }}
+                    afterOnCellMouseUp={handleCellMouseUp}
                     colWidths={colWidths}
                     columns={columns}
                     colHeaders={colHeaders}

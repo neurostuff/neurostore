@@ -10,7 +10,10 @@
     "source_id": null,
     "source_updated_at": null,
     "note_keys": {
-        "included": "boolean"
+        "included": {
+            "type": "boolean",
+            "order": 0
+        }
     },
     "metadata": null,
     "name": "Annotation for studyset hQFjozWL9v8Q",
