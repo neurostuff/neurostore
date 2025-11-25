@@ -22,100 +22,101 @@ def upgrade():
     bind = op.get_bind()
     inspector = sa.inspect(bind)
 
-    if not inspector.has_table('annotation_references'):
-        op.create_table('annotation_references',
-        sa.Column('id', sa.Text(), nullable=False),
-        sa.PrimaryKeyConstraint('id')
-        )
-    if not inspector.has_table('roles'):
-        op.create_table('roles',
-        sa.Column('id', sa.Text(), nullable=False),
-        sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
-        sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),
-        sa.Column('name', sa.Text(), nullable=True),
-        sa.Column('description', sa.Text(), nullable=True),
-        sa.PrimaryKeyConstraint('id'),
-        sa.UniqueConstraint('name')
-        )
-    if not inspector.has_table('studyset_references'):
-        op.create_table('studyset_references',
-        sa.Column('id', sa.Text(), nullable=False),
-        sa.PrimaryKeyConstraint('id')
-        )
-    if not inspector.has_table('users'):
-        op.create_table('users',
-        sa.Column('id', sa.Text(), nullable=False),
-        sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
-        sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),
-        sa.Column('active', sa.Boolean(), nullable=True),
-        sa.Column('name', sa.Text(), nullable=True),
-        sa.Column('external_id', sa.Text(), nullable=True),
-        sa.PrimaryKeyConstraint('id'),
-        sa.UniqueConstraint('external_id')
-        )
-    if not inspector.has_table('roles_users'):
-        op.create_table('roles_users',
-        sa.Column('user_id', sa.Text(), nullable=True),
-        sa.Column('role_id', sa.Text(), nullable=True),
-        sa.ForeignKeyConstraint(['role_id'], ['roles.id'], ),
-        sa.ForeignKeyConstraint(['user_id'], ['users.id'], )
-        )
-    op.create_table('specifications',
-    sa.Column('id', sa.Text(), nullable=False),
-    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
-    sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),
-    sa.Column('type', sa.Text(), nullable=True),
-    sa.Column('estimator', sa.JSON(), nullable=True),
-    sa.Column('filter', sa.Text(), nullable=True),
-    sa.Column('contrast', sa.JSON(), nullable=True),
-    sa.Column('corrector', sa.JSON(), nullable=True),
-    sa.Column('public', sa.Boolean(), nullable=True),
-    sa.Column('user_id', sa.Text(), nullable=True),
-    sa.ForeignKeyConstraint(['user_id'], ['users.external_id'], ),
-    sa.PrimaryKeyConstraint('id')
-    )
-    op.create_table('studysets',
-    sa.Column('id', sa.Text(), nullable=False),
-    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
-    sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),
-    sa.Column('snapshot', sa.JSON(), nullable=True),
-    sa.Column('public', sa.Boolean(), nullable=True),
-    sa.Column('user_id', sa.Text(), nullable=True),
-    sa.Column('neurostore_id', sa.Text(), nullable=True),
-    sa.ForeignKeyConstraint(['neurostore_id'], ['studyset_references.id'], ),
-    sa.ForeignKeyConstraint(['user_id'], ['users.external_id'], ),
-    sa.PrimaryKeyConstraint('id')
-    )
-    op.create_table('annotations',
-    sa.Column('id', sa.Text(), nullable=False),
-    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
-    sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),
-    sa.Column('snapshot', sa.JSON(), nullable=True),
-    sa.Column('public', sa.Boolean(), nullable=True),
-    sa.Column('user_id', sa.Text(), nullable=True),
-    sa.Column('neurostore_id', sa.Text(), nullable=True),
-    sa.Column('internal_studyset_id', sa.Text(), nullable=True),
-    sa.ForeignKeyConstraint(['internal_studyset_id'], ['studysets.id'], ),
-    sa.ForeignKeyConstraint(['neurostore_id'], ['annotation_references.id'], ),
-    sa.ForeignKeyConstraint(['user_id'], ['users.external_id'], ),
-    sa.PrimaryKeyConstraint('id')
-    )
-    op.create_table('meta_analyses',
-    sa.Column('id', sa.Text(), nullable=False),
-    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
-    sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),
-    sa.Column('name', sa.Text(), nullable=True),
-    sa.Column('description', sa.Text(), nullable=True),
-    sa.Column('specification_id', sa.Text(), nullable=True),
-    sa.Column('internal_studyset_id', sa.Text(), nullable=True),
-    sa.Column('internal_annotation_id', sa.Text(), nullable=True),
-    sa.Column('user_id', sa.Text(), nullable=True),
-    sa.ForeignKeyConstraint(['internal_annotation_id'], ['annotations.id'], ),
-    sa.ForeignKeyConstraint(['internal_studyset_id'], ['studysets.id'], ),
-    sa.ForeignKeyConstraint(['specification_id'], ['specifications.id'], ),
-    sa.ForeignKeyConstraint(['user_id'], ['users.external_id'], ),
-    sa.PrimaryKeyConstraint('id')
-    )
+    tables = {
+        'annotation_references': lambda: op.create_table('annotation_references',
+            sa.Column('id', sa.Text(), nullable=False),
+            sa.PrimaryKeyConstraint('id')
+        ),
+        'roles': lambda: op.create_table('roles',
+            sa.Column('id', sa.Text(), nullable=False),
+            sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
+            sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),
+            sa.Column('name', sa.Text(), nullable=True),
+            sa.Column('description', sa.Text(), nullable=True),
+            sa.PrimaryKeyConstraint('id'),
+            sa.UniqueConstraint('name')
+        ),
+        'studyset_references': lambda: op.create_table('studyset_references',
+            sa.Column('id', sa.Text(), nullable=False),
+            sa.PrimaryKeyConstraint('id')
+        ),
+        'users': lambda: op.create_table('users',
+            sa.Column('id', sa.Text(), nullable=False),
+            sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
+            sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),
+            sa.Column('active', sa.Boolean(), nullable=True),
+            sa.Column('name', sa.Text(), nullable=True),
+            sa.Column('external_id', sa.Text(), nullable=True),
+            sa.PrimaryKeyConstraint('id'),
+            sa.UniqueConstraint('external_id')
+        ),
+        'roles_users': lambda: op.create_table('roles_users',
+            sa.Column('user_id', sa.Text(), nullable=True),
+            sa.Column('role_id', sa.Text(), nullable=True),
+            sa.ForeignKeyConstraint(['role_id'], ['roles.id'], ),
+            sa.ForeignKeyConstraint(['user_id'], ['users.id'], )
+        ),
+        'specifications': lambda: op.create_table('specifications',
+            sa.Column('id', sa.Text(), nullable=False),
+            sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
+            sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),
+            sa.Column('type', sa.Text(), nullable=True),
+            sa.Column('estimator', sa.JSON(), nullable=True),
+            sa.Column('filter', sa.Text(), nullable=True),
+            sa.Column('contrast', sa.JSON(), nullable=True),
+            sa.Column('corrector', sa.JSON(), nullable=True),
+            sa.Column('public', sa.Boolean(), nullable=True),
+            sa.Column('user_id', sa.Text(), nullable=True),
+            sa.ForeignKeyConstraint(['user_id'], ['users.external_id'], ),
+            sa.PrimaryKeyConstraint('id')
+        ),
+        'studysets': lambda: op.create_table('studysets',
+            sa.Column('id', sa.Text(), nullable=False),
+            sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
+            sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),
+            sa.Column('snapshot', sa.JSON(), nullable=True),
+            sa.Column('public', sa.Boolean(), nullable=True),
+            sa.Column('user_id', sa.Text(), nullable=True),
+            sa.Column('neurostore_id', sa.Text(), nullable=True),
+            sa.ForeignKeyConstraint(['neurostore_id'], ['studyset_references.id'], ),
+            sa.ForeignKeyConstraint(['user_id'], ['users.external_id'], ),
+            sa.PrimaryKeyConstraint('id')
+        ),
+        'annotations': lambda: op.create_table('annotations',
+            sa.Column('id', sa.Text(), nullable=False),
+            sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
+            sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),
+            sa.Column('snapshot', sa.JSON(), nullable=True),
+            sa.Column('public', sa.Boolean(), nullable=True),
+            sa.Column('user_id', sa.Text(), nullable=True),
+            sa.Column('neurostore_id', sa.Text(), nullable=True),
+            sa.Column('internal_studyset_id', sa.Text(), nullable=True),
+            sa.ForeignKeyConstraint(['internal_studyset_id'], ['studysets.id'], ),
+            sa.ForeignKeyConstraint(['neurostore_id'], ['annotation_references.id'], ),
+            sa.ForeignKeyConstraint(['user_id'], ['users.external_id'], ),
+            sa.PrimaryKeyConstraint('id')
+        ),
+        'meta_analyses': lambda: op.create_table('meta_analyses',
+            sa.Column('id', sa.Text(), nullable=False),
+            sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
+            sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),
+            sa.Column('name', sa.Text(), nullable=True),
+            sa.Column('description', sa.Text(), nullable=True),
+            sa.Column('specification_id', sa.Text(), nullable=True),
+            sa.Column('internal_studyset_id', sa.Text(), nullable=True),
+            sa.Column('internal_annotation_id', sa.Text(), nullable=True),
+            sa.Column('user_id', sa.Text(), nullable=True),
+            sa.ForeignKeyConstraint(['internal_annotation_id'], ['annotations.id'], ),
+            sa.ForeignKeyConstraint(['internal_studyset_id'], ['studysets.id'], ),
+            sa.ForeignKeyConstraint(['specification_id'], ['specifications.id'], ),
+            sa.ForeignKeyConstraint(['user_id'], ['users.external_id'], ),
+            sa.PrimaryKeyConstraint('id')
+        ),
+    }
+
+    for table_name, creator in tables.items():
+        if not inspector.has_table(table_name):
+            creator()
     # ### end Alembic commands ###
 
 
