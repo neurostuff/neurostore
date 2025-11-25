@@ -208,6 +208,38 @@ export const useAnnotationStore = create<
                 },
             }));
         },
+        reorderAnnotationColumns: (fromIndex, toIndex) => {
+            setUnloadHandler('annotation');
+            set((state) => {
+                if (!state.annotation.note_keys) return state;
+                if (fromIndex === toIndex) return state;
+                const noteKeysOnly = [...state.annotation.note_keys];
+                if (fromIndex < 0 || fromIndex >= noteKeysOnly.length) return state;
+                if (toIndex < 0 || toIndex >= noteKeysOnly.length) return state;
+
+                const updatedNoteKeys = normalizeNoteKeyOrder(
+                    noteKeysOnly.reduce((acc, curr, idx) => {
+                        acc.push(curr);
+                        return acc;
+                    }, [] as NoteKeyType[])
+                );
+
+                const [removed] = updatedNoteKeys.splice(fromIndex, 1);
+                updatedNoteKeys.splice(toIndex, 0, removed);
+
+                return {
+                    ...state,
+                    annotation: {
+                        ...state.annotation,
+                        note_keys: normalizeNoteKeyOrder(updatedNoteKeys),
+                    },
+                    storeMetadata: {
+                        ...state.storeMetadata,
+                        annotationIsEdited: true,
+                    },
+                };
+            });
+        },
         createAnnotationNote: (analysisId, studyId, analysisName) => {
             setUnloadHandler('annotation');
             set((state) => {

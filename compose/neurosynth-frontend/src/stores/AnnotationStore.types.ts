@@ -28,6 +28,7 @@ export type AnnotationStoreActions = {
     deleteAnnotationNote: (analysisId: string) => void;
     updateAnnotationNoteName: (analysis: Partial<IStoreNoteCollectionReturn>) => void;
     removeAnnotationColumn: (noteKey: string) => void;
+    reorderAnnotationColumns: (fromIndex: number, toIndex: number) => void;
 };
 
 export type AnnotationNoteType = {

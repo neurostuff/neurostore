@@ -15,6 +15,7 @@ import {
     useAnnotationNoteKeys,
     useCreateAnnotationColumn,
     useRemoveAnnotationColumn,
+    useReorderAnnotationColumns,
     useUpdateAnnotationNotes,
 } from 'stores/AnnotationStore.actions';
 
@@ -24,6 +25,7 @@ const EditStudyAnnotationsHotTable: React.FC<{ readonly?: boolean }> = ({ readon
     const updateNotes = useUpdateAnnotationNotes();
     const createAnnotationColumn = useCreateAnnotationColumn();
     const removeAnnotationColumn = useRemoveAnnotationColumn();
+    const reorderAnnotationColumns = useReorderAnnotationColumns();
     const { colWidths, colHeaders, columns, hiddenRows, data } = useEditStudyAnnotationsHotTable(readonly);
     const projectUser = useProjectUser();
     const canEdit = useUserCanEdit(projectUser || undefined);
@@ -87,11 +89,47 @@ const EditStudyAnnotationsHotTable: React.FC<{ readonly?: boolean }> = ({ readon
 
     const handleCellMouseUp = (event: MouseEvent, coords: CellCoords, TD: HTMLTableCellElement) => {
         const target = event.target as HTMLButtonElement;
-        if (coords.row < 0 && (target.tagName === 'svg' || target.tagName === 'path')) {
-            setConfirmationDialogState({
-                isOpen: true,
-                colKey: TD.innerText,
-            });
+        if (coords.row < 0) {
+            const removeTarget = (target as HTMLElement).closest('[data-remove-col="true"]');
+            if (removeTarget) {
+                const colKey = (target as HTMLElement).closest('[data-col-key]')?.getAttribute('data-col-key');
+                if (!colKey) return;
+                setConfirmationDialogState({
+                    isOpen: true,
+                    colKey: colKey,
+                });
+            }
+        }
+    };
+
+    const handleColumnMove = (movedColumns: number[], finalIndex: number) => {
+        if (readonly || !canEdit) return;
+        if (!movedColumns.length) return;
+
+        const fromVisualIndex = movedColumns[0];
+        const toVisualIndex = finalIndex;
+
+        // first two columns are static (analysis name/description)
+        if (fromVisualIndex < 2 || toVisualIndex < 2) return;
+
+        const from = fromVisualIndex - 2;
+        let to = toVisualIndex - 2;
+
+        if (!noteKeys) return;
+        if (to >= noteKeys.length) to = noteKeys.length - 1;
+
+        reorderAnnotationColumns(from, to);
+        hotTableRef.current?.hotInstance?.getPlugin('manualColumnMove').clearMoves();
+    };
+
+    const handleBeforeOnCellMouseDown = (event: MouseEvent, coords: CellCoords) => {
+        if (coords.row < 0) {
+            const target = event.target as HTMLElement;
+            const isDragHandle = target?.closest('[data-drag-handle="true"]');
+            if (isDragHandle) {
+                // allow drag to proceed; prevent default selection highlighting
+                event.preventDefault();
+            }
         }
     };
 
@@ -145,6 +183,9 @@ const EditStudyAnnotationsHotTable: React.FC<{ readonly?: boolean }> = ({ readon
                         indicators: false,
                     }}
                     afterOnCellMouseUp={handleCellMouseUp}
+                    beforeOnCellMouseDown={handleBeforeOnCellMouseDown}
+                    manualColumnMove={!readonly && canEdit}
+                    afterColumnMove={handleColumnMove}
                     colWidths={colWidths}
                     columns={columns}
                     colHeaders={colHeaders}

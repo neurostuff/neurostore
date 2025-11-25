@@ -20,3 +20,4 @@ export const useCreateAnnotationNote = () => useAnnotationStore((state) => state
 
 export const useDeleteAnnotationNote = () => useAnnotationStore((state) => state.deleteAnnotationNote);
 export const useUpdateAnnotationNoteName = () => useAnnotationStore((state) => state.updateAnnotationNoteName);
+export const useReorderAnnotationColumns = () => useAnnotationStore((state) => state.reorderAnnotationColumns);
