@@ -9,7 +9,6 @@ export const noteKeyObjToArr = (noteKeys?: object | null): NoteKeyType[] => {
         .map(([key, descriptor]) => {
             if (!descriptor?.type) throw new Error('Invalid note_keys descriptor: missing type');
             return {
-                // rely on new descriptor shape (type + order)
                 type: descriptor.type,
                 key,
                 order: descriptor.order ?? 0,
@@ -23,25 +22,23 @@ export const noteKeyObjToArr = (noteKeys?: object | null): NoteKeyType[] => {
 export const noteKeyArrToObj = (
     noteKeyArr: NoteKeyType[]
 ): { [key: string]: { type: EPropertyType; order: number } } => {
-    const noteKeyObj = noteKeyArr.reduce((acc, curr, index) => {
-        acc[curr.key] = {
-            type: curr.type,
-            order: curr.order ?? index,
-        };
-        return acc;
-    }, {} as { [key: string]: { type: EPropertyType; order: number } });
+    const noteKeyObj = noteKeyArr.reduce(
+        (acc, curr, index) => {
+            acc[curr.key] = {
+                type: curr.type,
+                order: curr.order ?? index,
+            };
+            return acc;
+        },
+        {} as { [key: string]: { type: EPropertyType; order: number } }
+    );
 
     return noteKeyObj;
 };
 
 export const booleanValidator = (value: CellValue, callback: (isValid: boolean) => void) => {
     const isValid =
-        value === true ||
-        value === false ||
-        value === 'true' ||
-        value === 'false' ||
-        value === null ||
-        value === '';
+        value === true || value === false || value === 'true' || value === 'false' || value === null || value === '';
     callback(isValid);
 };
 
@@ -54,7 +51,7 @@ export const replaceString = (val: string) => {
 export const stripTags = (stringWhichMayHaveHTML: any) => {
     if (typeof stringWhichMayHaveHTML !== 'string') return '';
 
-    let doc = new DOMParser().parseFromString(stringWhichMayHaveHTML, 'text/html');
+    const doc = new DOMParser().parseFromString(stringWhichMayHaveHTML, 'text/html');
     return doc.body.textContent || '';
 };
 

@@ -17,7 +17,8 @@ import {
 import { setUnloadHandler } from 'helpers/BeforeUnload.helpers';
 import { noteKeyArrToObj } from 'components/HotTables/HotTables.utils';
 
-const normalizeNoteKeyOrder = (noteKeys: NoteKeyType[]) => noteKeys.map((noteKey, index) => ({ ...noteKey, order: index }));
+const normalizeNoteKeyOrder = (noteKeys: NoteKeyType[]) =>
+    noteKeys.map((noteKey, index) => ({ ...noteKey, order: index }));
 
 export const useAnnotationStore = create<
     {

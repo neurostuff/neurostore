@@ -139,52 +139,6 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
         }
     };
 
-    const reorderArray = <T,>(arr: T[], from: number, to: number) => {
-        if (from === to) return [...arr];
-        const updated = [...arr];
-        const [removed] = updated.splice(from, 1);
-        updated.splice(to, 0, removed);
-        return updated;
-    };
-
-    const handleColumnMove = (movedColumns: number[], finalIndex: number) => {
-        if (!canEdit) return;
-        if (!movedColumns.length) return;
-        const fromVisualIndex = movedColumns[0];
-        const toVisualIndex = finalIndex;
-
-        if (fromVisualIndex < 2 || toVisualIndex < 2) return; // lock study/analysis columns
-
-        const from = fromVisualIndex - 2;
-        let to = toVisualIndex - 2;
-
-        setAnnotationsHotState((prev) => {
-            if (from >= prev.noteKeys.length) return prev;
-            if (to >= prev.noteKeys.length) to = prev.noteKeys.length - 1;
-
-            const updatedNoteKeys = reorderArray(prev.noteKeys, from, to).map((noteKey, index) => ({
-                ...noteKey,
-                order: index,
-            }));
-
-            const updatedHotData = prev.hotData.map((row) => {
-                const metadataCols = row.slice(0, 2);
-                const noteCols = reorderArray(row.slice(2), from, to);
-                return [...metadataCols, ...noteCols];
-            });
-
-            return {
-                ...prev,
-                isEdited: true,
-                noteKeys: updatedNoteKeys,
-                hotColumns: createColumns(updatedNoteKeys, !canEdit),
-                hotData: updatedHotData,
-            };
-        });
-
-        hotTableRef.current?.hotInstance?.getPlugin('manualColumnMove').clearMoves();
-    };
-
     /**
      * NOTE: there is a bug where fixed, mergedCells (such as the cells showing our studies) get messed up when you scroll to the right. I think that this is
      * due to virtualization - as we scroll to the right, the original heights of the cells are no longer in the DOM and so the calculated row heights are lost and
@@ -215,9 +169,10 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
         if (noteKeys.find((x) => x.key === trimmedKey)) return false;
 
         setAnnotationsHotState((prev) => {
-            const updatedNoteKeys = [{ key: trimmedKey, type: getType(row.metadataValue), order: 0 }, ...prev.noteKeys].map(
-                (noteKey, index) => ({ ...noteKey, order: index })
-            );
+            const updatedNoteKeys = [
+                { key: trimmedKey, type: getType(row.metadataValue), order: 0 },
+                ...prev.noteKeys,
+            ].map((noteKey, index) => ({ ...noteKey, order: index }));
 
             return {
                 ...prev,
@@ -292,14 +247,12 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
                         mergeCells={mergeCells}
                         disableVisualSelection={!canEdit}
                         colHeaders={hotColumnHeaders}
-                        manualColumnMove={canEdit}
                         colWidths={colWidths}
                         rowHeights={rowHeights}
                         columns={hotColumns}
                         data={JSON.parse(JSON.stringify(hotData))}
                         afterOnCellMouseUp={handleCellMouseUp}
                         beforeOnCellMouseDown={handleCellMouseDown}
-                        afterColumnMove={handleColumnMove}
                     />
                 ) : (
                     <Typography sx={{ color: 'warning.dark' }}>

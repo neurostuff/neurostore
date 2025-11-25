@@ -10,10 +10,7 @@ import {
     IAlgorithmSelection,
     IAnalysesSelection,
 } from 'pages/MetaAnalysis/components/CreateMetaAnalysisSpecificationDialogBase.types';
-import {
-    isMultiGroupAlgorithm,
-    selectedReferenceDatasetIsDefaultDataset,
-} from './SelectAnalysesComponent.helpers';
+import { isMultiGroupAlgorithm, selectedReferenceDatasetIsDefaultDataset } from './SelectAnalysesComponent.helpers';
 import { DEFAULT_REFERENCE_DATASETS } from './SelectAnalysesComponent.types';
 import SelectAnalysesComponentTable from './SelectAnalysesComponentTable';
 import SelectAnalysesStringValue from './SelectAnalysesStringValue';
@@ -50,13 +47,7 @@ const SelectAnalysesComponent: React.FC<{
             onSelectValue(initialVal);
             selectionOccurred.current = true;
         }
-    }, [
-        selectedValue.selectionKey,
-        annotation,
-        onSelectValue,
-        selectionOccurred,
-        algorithm?.estimator,
-    ]);
+    }, [selectedValue.selectionKey, annotation, onSelectValue, selectionOccurred, algorithm?.estimator]);
 
     const options = useMemo(() => {
         return noteKeyObjToArr(annotation?.note_keys)
@@ -77,17 +68,13 @@ const SelectAnalysesComponent: React.FC<{
     const handleSelectColumn = (newVal: IAnalysesSelection | undefined) => {
         if (newVal?.selectionKey === selectedValue.selectionKey) return; // we selected the same option that is already selected
 
-        const referenceDatasetIsNowInvalid = !selectedReferenceDatasetIsDefaultDataset(
-            selectedValue.referenceDataset
-        );
+        const referenceDatasetIsNowInvalid = !selectedReferenceDatasetIsDefaultDataset(selectedValue.referenceDataset);
         if (!newVal) {
             onSelectValue({
                 selectionKey: undefined,
                 type: undefined,
                 selectionValue: undefined,
-                referenceDataset: referenceDatasetIsNowInvalid
-                    ? undefined
-                    : selectedValue.referenceDataset,
+                referenceDataset: referenceDatasetIsNowInvalid ? undefined : selectedValue.referenceDataset,
             });
             return;
         }
@@ -96,9 +83,7 @@ const SelectAnalysesComponent: React.FC<{
             selectionKey: newVal.selectionKey,
             type: newVal.type,
             selectionValue: newVal.type === EPropertyType.BOOLEAN ? true : undefined,
-            referenceDataset: referenceDatasetIsNowInvalid
-                ? undefined
-                : selectedValue.referenceDataset,
+            referenceDataset: referenceDatasetIsNowInvalid ? undefined : selectedValue.referenceDataset,
         };
         onSelectValue(update);
     };
@@ -109,9 +94,7 @@ const SelectAnalysesComponent: React.FC<{
                 sx={CreateMetaAnalysisSpecificationDialogBaseStyles.highlightInput}
                 label="Inclusion Column"
                 shouldDisable={false}
-                isOptionEqualToValue={(option, value) =>
-                    option?.selectionKey === value?.selectionKey
-                }
+                isOptionEqualToValue={(option, value) => option?.selectionKey === value?.selectionKey}
                 value={selectedValue?.selectionKey ? selectedValue : undefined}
                 size="medium"
                 inputPropsSx={{
