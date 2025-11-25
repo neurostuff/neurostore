@@ -57,7 +57,7 @@ const CurationImportPMIDsFetch: React.FC<{
                 articleYear: x.articleYear,
                 abstractText: x.abstractText,
                 articleLink: x.articleLink,
-                exclusionTag: null,
+                exclusionTagId: null,
                 tags: [],
                 identificationSource: defaultIdentificationSources.pubmed,
             } as ICurationStubStudy;

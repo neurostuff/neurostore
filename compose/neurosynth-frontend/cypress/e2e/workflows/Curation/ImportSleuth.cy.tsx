@@ -4,6 +4,7 @@ import baseStudiesSingleSleuthStudyResponse from '../../../fixtures/ImportSleuth
 
 describe('ImportSleuthDialog', () => {
     const neurostoreAPIBaseURL = Cypress.env('neurostoreAPIBaseURL');
+    console.log('neurostoreAPIBaseURL', neurostoreAPIBaseURL);
 
     beforeEach(() => {
         cy.clearLocalStorage();

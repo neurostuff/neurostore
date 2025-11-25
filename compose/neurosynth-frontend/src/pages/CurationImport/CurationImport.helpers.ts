@@ -79,7 +79,7 @@ export const automaticallyResolveDuplicates = (stubs: ICurationStubStudy[]) => {
             const duplicate = orderByRichness[i];
             const foundStub = updatedStubs.find((x) => x.id === duplicate.id);
             if (!foundStub) return;
-            foundStub.exclusionTag = { ...defaultExclusionTags.duplicate };
+            foundStub.exclusionTagId = defaultExclusionTags.duplicate.id;
         }
     });
     return updatedStubs;
