@@ -39,10 +39,7 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
         rowHeights,
     } = useEditAnnotationsHotTable(props.annotationId, !canEdit);
 
-    const manualColumnMoveOrder = useMemo(() => {
-        const totalCols = 2 + (noteKeys?.length || 0);
-        return canEdit ? Array.from({ length: totalCols }, (_v, idx) => idx) : false;
-    }, [noteKeys?.length, canEdit]);
+    const tableKey = useMemo(() => noteKeys.map((nk) => nk.key).join('|'), [noteKeys]);
 
     useEffect(() => {
         const timeout: any = setTimeout(() => {
@@ -221,6 +218,9 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
                 hotData: updatedHotData,
             };
         });
+
+        // clear any selection highlight after move
+        hotTableRef.current?.hotInstance?.deselectCell?.();
     };
 
     const handleBeforeColumnMove = (movedColumns: number[], finalIndex: number) => {
@@ -248,15 +248,6 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
         TD: HTMLTableCellElement,
         controller: SelectionController
     ): void => {
-        if (coords.row < 0) {
-            const target = event.target as HTMLElement;
-            const isDragHandle = target?.closest('[data-drag-handle="true"]');
-            if (isDragHandle) {
-                event.stopImmediatePropagation();
-                event.preventDefault();
-                return;
-            }
-        }
         const isRowHeader = coords.col === -1 || coords.col === 0;
         if (isRowHeader) {
             event.stopImmediatePropagation();
@@ -342,11 +333,12 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
                     <HotTable
                         {...hotSettings}
                         afterChange={handleChangeOccurred}
+                        key={tableKey}
                         ref={hotTableRef}
                         mergeCells={mergeCells}
                         disableVisualSelection={!canEdit}
                         colHeaders={hotColumnHeaders}
-                        manualColumnMove={manualColumnMoveOrder}
+                        manualColumnMove={canEdit}
                         beforeColumnMove={handleBeforeColumnMove}
                         colWidths={colWidths}
                         rowHeights={rowHeights}

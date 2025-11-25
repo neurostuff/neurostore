@@ -128,12 +128,14 @@ const EditStudyAnnotationsHotTable: React.FC<{ readonly?: boolean }> = ({ readon
         if (Array.isArray(orderOfColumns) && orderOfColumns.length >= 2) {
             const noteOrder = orderOfColumns.filter((colIdx) => colIdx >= 2).map((colIdx) => colIdx - 2);
             if (!noteOrder.length) return;
-            reorderAnnotationColumnsByOrder(noteOrder);
+        reorderAnnotationColumnsByOrder(noteOrder);
+        hotTableRef.current?.hotInstance?.deselectCell?.();
         } else {
             const from = fromVisualIndex - 2;
             let to = toVisualIndex - 2;
             if (to >= noteKeys.length) to = noteKeys.length - 1;
             reorderAnnotationColumns(from, to);
+            hotTableRef.current?.hotInstance?.deselectCell?.();
         }
     };
 
@@ -148,6 +150,8 @@ const EditStudyAnnotationsHotTable: React.FC<{ readonly?: boolean }> = ({ readon
         return JSON.parse(JSON.stringify(data || []));
     }, [data]);
 
+    const tableKey = useMemo(() => (noteKeys || []).map((nk) => nk.key).join('|'), [noteKeys]);
+
     const handleBeforeOnCellMouseDown = (
         event: MouseEvent,
         coords: CellCoords,
@@ -157,8 +161,7 @@ const EditStudyAnnotationsHotTable: React.FC<{ readonly?: boolean }> = ({ readon
             const target = event.target as HTMLElement;
             const isDragHandle = target?.closest('[data-drag-handle="true"]');
             if (isDragHandle) {
-                event.stopImmediatePropagation();
-                event.preventDefault();
+                // allow drag to proceed without selecting cells
                 return;
             }
         }
@@ -202,6 +205,7 @@ const EditStudyAnnotationsHotTable: React.FC<{ readonly?: boolean }> = ({ readon
                     {...HotSettings}
                     afterChange={handleAfterChange}
                     beforePaste={handleBeforePaste}
+                    key={tableKey}
                     width="100%"
                     height="auto"
                     stretchH="all"
@@ -211,7 +215,7 @@ const EditStudyAnnotationsHotTable: React.FC<{ readonly?: boolean }> = ({ readon
                     }}
                     beforeOnCellMouseDown={handleBeforeOnCellMouseDown}
                     afterOnCellMouseUp={handleCellMouseUp}
-                    manualColumnMove={!readonly && canEdit ? Array.from({ length: 2 + (noteKeys?.length || 0) }, (_v, idx) => idx) : false}
+                    manualColumnMove={!readonly && canEdit}
                     beforeColumnMove={handleBeforeColumnMove}
                     afterColumnMove={handleColumnMove}
                     colWidths={colWidths}
