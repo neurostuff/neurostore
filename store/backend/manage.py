@@ -78,33 +78,49 @@ def ingest_neuroquery(max_rows):
 @click.option("--limit", default=None, type=int, help="limit number of annotations to process")
 @click.option("--dry-run", is_flag=True, help="do not persist changes")
 def backfill_note_keys(limit, dry_run):
-    """Infer missing note_keys from existing annotation notes."""
+    """Infer missing note_keys from existing annotation notes.
+
+    We target annotations whose note_keys is null/empty, collect all keys present
+    in their annotation_analyses.note payloads, assign order by first appearance,
+    and infer type from the first non-null sample (defaulting to string).
+    """
     updated = 0
     checked = 0
 
-    # Collect note keys across analyses first, then write back once per annotation.
-    q = models.Annotation.query.order_by(models.Annotation.created_at)
+    conn = db.session.connection()
+    ids_sql = """
+        SELECT id
+        FROM annotations
+        WHERE note_keys IS NULL OR note_keys = '{}'::jsonb
+        ORDER BY created_at
+    """
     if limit:
-        q = q.limit(limit)
+        ids_sql += " LIMIT :limit"
+    ids = [row.id for row in conn.execute(sa.text(ids_sql), {"limit": limit} if limit else {})]
 
-    for annotation in q:
+    for annot_id in ids:
         checked += 1
-        current = annotation.note_keys if isinstance(annotation.note_keys, dict) else {}
-        if current:
-            continue
+        notes = conn.execute(
+            sa.text("SELECT note FROM annotation_analyses WHERE annotation_id = :id"),
+            {"id": annot_id},
+        ).fetchall()
 
         inferred: OrderedDict[str, dict] = OrderedDict()
 
-        # First pass: collect all keys present in any note with their first-seen order.
-        for aa in annotation.annotation_analyses:
-            note = aa.note or {}
+        # First pass: record all keys in order of first appearance across notes
+        for row in notes:
+            note = row.note or {}
+            if not isinstance(note, dict):
+                continue
             for key in note.keys():
                 if key not in inferred:
                     inferred[key] = {"type": None, "order": len(inferred)}
 
-        # Second pass: try to find a non-null sample for each key to set its type.
-        for aa in annotation.annotation_analyses:
-            note = aa.note or {}
+        # Second pass: find first non-null sample for each key to determine type
+        for row in notes:
+            note = row.note or {}
+            if not isinstance(note, dict):
+                continue
             for key, value in note.items():
                 if key not in inferred or inferred[key]["type"] is not None:
                     continue
@@ -123,8 +139,12 @@ def backfill_note_keys(limit, dry_run):
                 descriptor["type"] = "string"
 
         if inferred:
-            annotation.note_keys = inferred
             updated += 1
+            if not dry_run:
+                conn.execute(
+                    sa.text("UPDATE annotations SET note_keys = :note_keys WHERE id = :id"),
+                    {"id": annot_id, "note_keys": inferred},
+                )
 
     if updated and not dry_run:
         db.session.commit()
