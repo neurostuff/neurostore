@@ -473,7 +473,7 @@ jobs:
 
         docker compose exec -T \
         compose_pgsql17 \
-        psql -U postgres -c "create database test_db"
+        psql -U postgres -c "DROP DATABASE IF EXISTS test_db; CREATE DATABASE test_db;"
     -
       name: Create Store Database
       run: |
@@ -481,7 +481,7 @@ jobs:
 
         docker compose exec -T \
         store-pgsql17 \
-        psql -U postgres -c "create database test_db"
+        psql -U postgres -c "DROP DATABASE IF EXISTS test_db; CREATE DATABASE test_db;"
 
         docker compose exec -T \
         store-pgsql17 \
