@@ -1,7 +1,7 @@
 """add tables model and link analyses
 
 Revision ID: acdc4f0fbb22
-Revises: 11b946f76b6f
+Revises: 9f072fcaec39
 Create Date: 2025-02-14 00:00:00.000000
 
 """
@@ -13,7 +13,7 @@ import neurostore.models.migration_types  # noqa: F401
 
 # revision identifiers, used by Alembic.
 revision = "acdc4f0fbb22"
-down_revision = "11b946f76b6f"
+down_revision = "9f072fcaec39"
 branch_labels = None
 depends_on = None
 
