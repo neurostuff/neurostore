@@ -119,9 +119,18 @@ export const annotationNotesToHotData = (
     };
 };
 
-export const createColumnHeader = (colKey: string, colType: EPropertyType, allowRemoveColumn: boolean) => {
+export const createColumnHeader = (
+    colKey: string,
+    colType: EPropertyType,
+    allowRemoveColumn: boolean,
+    showDragHandle = false
+) => {
+    const dragHandle = showDragHandle
+        ? `<div data-drag-handle="true" class="${styles['drag-handle']}" title="Drag to reorder">&#8942;</div>`
+        : '<div style="width: 12px;"></div>';
+
     const allowRemove = allowRemoveColumn
-        ? `<div style="width: 50px; display: flex; align-items: center; justify-content: center">
+        ? `<div data-remove-col="true" style="width: 50px; display: flex; align-items: center; justify-content: center">
         ${renderToString(
             <Cancel
                 sx={{
@@ -133,10 +142,11 @@ export const createColumnHeader = (colKey: string, colType: EPropertyType, allow
             />
         )}
           </div>`
-        : '<div></div>';
+        : '<div style="width: 50px;"></div>';
 
     return (
-        `<div title="${colKey}" style="display: flex; align-items: center; justify-content: center;">` +
+        `<div data-col-key="${colKey}" title="${colKey}" style="display: flex; align-items: center; justify-content: center; gap: 6px;">` +
+        dragHandle +
         `<div class="${styles[colType]} ${styles.truncate}" style="width: 100px">${colKey}</div>` +
         allowRemove +
         `</div>`

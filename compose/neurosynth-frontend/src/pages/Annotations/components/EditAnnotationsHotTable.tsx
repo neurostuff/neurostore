@@ -134,8 +134,12 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
 
     const handleCellMouseUp = (event: MouseEvent, coords: CellCoords, TD: HTMLTableCellElement): void => {
         const target = event.target as HTMLButtonElement;
-        if (coords.row < 0 && (target.tagName === 'svg' || target.tagName === 'path')) {
-            handleRemoveHotColumn(TD.innerText);
+        if (coords.row < 0) {
+            const removeTarget = (target as HTMLElement).closest('[data-remove-col="true"]');
+            if (removeTarget) {
+                const colKey = (target as HTMLElement).closest('[data-col-key]')?.getAttribute('data-col-key');
+                if (colKey) handleRemoveHotColumn(colKey);
+            }
         }
     };
 

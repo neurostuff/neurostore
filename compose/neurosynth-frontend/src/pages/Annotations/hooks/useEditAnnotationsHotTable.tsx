@@ -77,10 +77,10 @@ const useEditAnnotationsHotTable = (annotationId?: string, disableEdit?: boolean
             ...['Study', 'Analysis'],
             ...annotationsHotState.noteKeys.map((col) => {
                 const allowRemoveColumn = col.key !== 'included';
-                return createColumnHeader(col.key, col.type, allowRemoveColumn);
+                return createColumnHeader(col.key, col.type, allowRemoveColumn, !disableEdit);
             }),
         ];
-    }, [annotationsHotState.noteKeys]);
+    }, [annotationsHotState.noteKeys, disableEdit]);
 
     const colWidths = useMemo(() => {
         return createColWidths(annotationsHotState.noteKeys, 300, 150, 150);

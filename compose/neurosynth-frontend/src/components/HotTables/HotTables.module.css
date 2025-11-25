@@ -44,3 +44,14 @@
     color: gray !important;
     text-align: center !important;
 }
+
+.drag-handle {
+    cursor: grab;
+    user-select: none;
+    font-size: 16px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px 4px;
+}
