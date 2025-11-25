@@ -5,6 +5,7 @@
 import os
 
 import click
+import sqlalchemy as sa
 from flask_migrate import Migrate
 
 from neurostore.core import app, db
@@ -91,7 +92,7 @@ def backfill_note_keys(limit, dry_run):
     ids_sql = """
         SELECT id
         FROM annotations
-        WHERE note_keys IS NULL OR note_keys = '{}'::jsonb
+        WHERE note_keys IS NULL OR note_keys::text = '{}'
         ORDER BY created_at
     """
     if limit:
