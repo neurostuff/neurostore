@@ -108,16 +108,23 @@ def upgrade():
         sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),
         sa.Column('name', sa.Text(), nullable=True),
         sa.Column('description', sa.Text(), nullable=True),
-        sa.Column('specification_id', sa.Text(), nullable=False),
-        sa.Column('studyset_id', sa.Text(), nullable=False),
-        sa.Column('annotation_id', sa.Text(), nullable=False),
+        sa.Column('specification_id', sa.Text(), nullable=True),
+        sa.Column('studyset_id', sa.Text(), nullable=True),
+        sa.Column('annotation_id', sa.Text(), nullable=True),
         sa.Column('user_id', sa.Text(), nullable=True),
         sa.ForeignKeyConstraint(['annotation_id'], ['annotations.id'], ),
         sa.ForeignKeyConstraint(['specification_id'], ['specifications.id'], ),
         sa.ForeignKeyConstraint(['studyset_id'], ['studysets.id'], ),
         sa.ForeignKeyConstraint(['user_id'], ['users.external_id'], ),
-        sa.PrimaryKeyConstraint('id', 'specification_id', 'studyset_id', 'annotation_id')
+        sa.PrimaryKeyConstraint('id')
         )
+    else:
+        existing_uniques = {
+            tuple(constraint.get("column_names", []))
+            for constraint in inspector.get_unique_constraints('meta_analyses')
+        }
+        if ('id',) not in existing_uniques:
+            op.create_unique_constraint('uq_meta_analyses_id', 'meta_analyses', ['id'])
     # ### end Alembic commands ###
 
 
