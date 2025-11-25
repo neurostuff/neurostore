@@ -142,10 +142,14 @@ def backfill_note_keys(limit, dry_run):
         if inferred:
             updated += 1
             if not dry_run:
-                conn.execute(
-                    sa.text("UPDATE annotations SET note_keys = :note_keys WHERE id = :id"),
-                    {"id": annot_id, "note_keys": inferred},
+                payload = {k: v for k, v in inferred.items()}
+                stmt = sa.text(
+                    "UPDATE annotations SET note_keys = :note_keys WHERE id = :id"
+                ).bindparams(
+                    sa.bindparam("note_keys", type_=sa.JSON),
+                    sa.bindparam("id"),
                 )
+                conn.execute(stmt, {"id": annot_id, "note_keys": payload})
 
     if updated and not dry_run:
         db.session.commit()
