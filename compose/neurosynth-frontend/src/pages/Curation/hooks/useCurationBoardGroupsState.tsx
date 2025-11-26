@@ -84,8 +84,8 @@ function useCurationBoardGroupsState() {
                     groupListItems.push({
                         id: defaultExclusionTags.duplicate.id,
                         type: 'LISTITEM',
-                        label: `${defaultExclusionTags.duplicate.label} (${curationDuplicates.length})`,
-                        count: null,
+                        label: `${defaultExclusionTags.duplicate.label}`,
+                        count: curationDuplicates.length,
                         UI: ECurationBoardAIInterface.EXCLUDE,
                         listItemStyles: {
                             '& .MuiListItemButton-root': {
@@ -110,7 +110,7 @@ function useCurationBoardGroupsState() {
                             id: exclusionTag.id,
                             type: 'LISTITEM',
                             label: exclusionTag.label,
-                            count: column.stubStudies.filter((x) => x.exclusionTag?.id === exclusionTag.id).length,
+                            count: column.stubStudies.filter((x) => x.exclusionTag === exclusionTag.id).length,
                             UI: ECurationBoardAIInterface.EXCLUDE,
                             listItemStyles: excludedListItemStylesChildren,
                             children: [],
@@ -159,8 +159,7 @@ function useCurationBoardGroupsState() {
                     children: excludedGroups.map((excludedGroup) => {
                         const numExcludedInGroup = curationColumns.reduce((acc, curr) => {
                             return (
-                                acc +
-                                curr.stubStudies.filter((study) => study.exclusionTag?.id === excludedGroup.id).length
+                                acc + curr.stubStudies.filter((study) => study.exclusionTag === excludedGroup.id).length
                             );
                         }, 0);
 

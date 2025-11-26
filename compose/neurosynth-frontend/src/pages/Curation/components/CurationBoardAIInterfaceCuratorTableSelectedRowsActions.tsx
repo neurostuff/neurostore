@@ -30,7 +30,7 @@ const CurationBoardAIInterfaceCuratorTableSelectedRowsActions: React.FC<{
 
     const handleAddExclusionForRows = (exclusionTag: ITag) => {
         rows.forEach((stub) => {
-            setExclusionForStub(columnIndex, stub.id, exclusionTag);
+            setExclusionForStub(columnIndex, stub.id, exclusionTag.id);
         });
         table.resetRowSelection();
     };

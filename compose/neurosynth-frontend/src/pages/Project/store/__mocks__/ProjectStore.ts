@@ -22,6 +22,8 @@ const useProjectCurationColumns = vi.fn();
 
 const useProjectExtractionReplaceStudyListStatusId = vi.fn().mockReturnValue(vi.fn());
 
+const useProjectExclusionTags = vi.fn().mockReturnValue(vi.fn());
+
 export {
     useProjectExtractionAnnotationId,
     useProjectExtractionStudysetId,
@@ -34,4 +36,5 @@ export {
     useProjectName,
     useProjectCurationColumns,
     useProjectExtractionReplaceStudyListStatusId,
+    useProjectExclusionTags,
 };

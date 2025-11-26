@@ -125,6 +125,12 @@
           "isAssignable": true,
           "isExclusionTag": true,
           "label": "Duplicate"
+        },
+        {
+          "id": "my-custom-exclusion",
+          "isAssignable": true,
+          "isExclusionTag": true,
+          "label": "My Custom Exclusion"
         }
       ],
       "identificationSources": [

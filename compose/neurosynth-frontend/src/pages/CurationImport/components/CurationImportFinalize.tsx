@@ -149,11 +149,11 @@ const CurationImportFinalize: React.FC<{
             if (importedStub.exclusionTag !== null) return;
             const formattedTitle = importedStub.title.toLocaleLowerCase().trim();
             if (importedStub.doi && duplicateMapping.has(importedStub.doi)) {
-                importedStub.exclusionTag = defaultExclusionTags.duplicate;
+                importedStub.exclusionTag = defaultExclusionTags.duplicate.id;
             } else if (importedStub.pmid && duplicateMapping.has(importedStub.pmid)) {
-                importedStub.exclusionTag = defaultExclusionTags.duplicate;
+                importedStub.exclusionTag = defaultExclusionTags.duplicate.id;
             } else if (importedStub.title && duplicateMapping.has(formattedTitle)) {
-                importedStub.exclusionTag = defaultExclusionTags.duplicate;
+                importedStub.exclusionTag = defaultExclusionTags.duplicate.id;
             }
         });
 

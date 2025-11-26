@@ -26,7 +26,7 @@ const getVisibility = (stub: ICurationStubStudy, selectedTag: ITag | undefined):
     if (!selectedTag) {
         isVisible = true;
     } else if (selectedTag.isExclusionTag) {
-        isVisible = selectedTag.id === stub.exclusionTag?.id;
+        isVisible = selectedTag.id === stub.exclusionTag;
     } else if (selectedTag.id === ENeurosynthTagIds.UNTAGGED_TAG_ID) {
         isVisible = stub.tags.length === 0 && stub?.exclusionTag === null;
     } else if (selectedTag.id === ENeurosynthTagIds.UNCATEGORIZED_ID) {
