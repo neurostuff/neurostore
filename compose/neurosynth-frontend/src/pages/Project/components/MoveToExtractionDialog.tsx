@@ -42,7 +42,6 @@ const MoveToExtractionDialog: React.FC<IDialog> = (props) => {
 
     const navigate = useNavigate();
 
-    const [isLoadingPhase, setIsLoadingPhase] = useState(false);
     const [isError, setIsError] = useState(false);
     const [loadingStatus, setLoadingStatus] = useState<{
         createdStudyset: boolean;
@@ -55,7 +54,6 @@ const MoveToExtractionDialog: React.FC<IDialog> = (props) => {
     });
 
     const handleCloseDialog = () => {
-        setIsLoadingPhase(false);
         setLoadingStatus({
             createdAnnotations: false,
             createdStudyset: false,

@@ -215,9 +215,10 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
         if (noteKeys.find((x) => x.key === trimmedKey)) return false;
 
         setAnnotationsHotState((prev) => {
-            const updatedNoteKeys = [{ key: trimmedKey, type: getType(row.metadataValue), order: 0 }, ...prev.noteKeys].map(
-                (noteKey, index) => ({ ...noteKey, order: index })
-            );
+            const updatedNoteKeys = [
+                { key: trimmedKey, type: getType(row.metadataValue), order: 0 },
+                ...prev.noteKeys,
+            ].map((noteKey, index) => ({ ...noteKey, order: index }));
 
             return {
                 ...prev,
