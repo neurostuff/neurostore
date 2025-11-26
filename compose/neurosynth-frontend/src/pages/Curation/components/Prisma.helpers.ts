@@ -86,7 +86,7 @@ class NeurosynthPRISMAHelper {
         const nonIncludedCols = [...cols];
         nonIncludedCols.pop();
         const studies: ICurationStubStudy[] = nonIncludedCols.reduce((acc, curr) => {
-            acc.push(...curr.stubStudies.filter((x) => !!x.exclusionTagId));
+            acc.push(...curr.stubStudies.filter((x) => !!x.exclusionTag));
             return acc;
         }, [] as ICurationStubStudy[]);
         studies.push(...cols[3].stubStudies);
@@ -123,18 +123,18 @@ class NeurosynthPRISMAHelper {
         const map = new Map<string, { exclusion: ITag; count: number }>();
 
         studies.forEach((study) => {
-            if (!study.exclusionTagId) return;
-            const mapObj = map.get(study.exclusionTagId);
+            if (!study.exclusionTag) return;
+            const mapObj = map.get(study.exclusionTag);
 
             if (mapObj) {
-                map.set(study.exclusionTagId, {
+                map.set(study.exclusionTag, {
                     ...mapObj,
                     count: mapObj.count + 1,
                 });
             } else {
-                const exclusion = exclusions.find((x) => x.id === study.exclusionTagId);
+                const exclusion = exclusions.find((x) => x.id === study.exclusionTag);
                 if (!exclusion) return;
-                map.set(study.exclusionTagId, {
+                map.set(study.exclusionTag, {
                     exclusion: exclusion,
                     count: 1,
                 });
@@ -715,7 +715,7 @@ class NeurosynthPRISMAHelper {
             );
             prismaWorkflow.identification.exclusions = this.getExclusionsFromCol(identificationColumn, exclusionTags);
             prismaWorkflow.identification.numUncategorized = identificationColumn.stubStudies.filter(
-                (x) => !x.exclusionTagId
+                (x) => !x.exclusionTag
             ).length;
 
             // SCREENING STEP
@@ -731,7 +731,7 @@ class NeurosynthPRISMAHelper {
             // set values
             prismaWorkflow.screening.exclusions = this.getExclusionsFromCol(screeningCol, exclusionTags);
             prismaWorkflow.screening.numRecordsToScreen = numRecordsIdentified - numIdentificationRecordsExcluded;
-            prismaWorkflow.screening.numUncategorized = screeningCol.stubStudies.filter((x) => !x.exclusionTagId).length;
+            prismaWorkflow.screening.numUncategorized = screeningCol.stubStudies.filter((x) => !x.exclusionTag).length;
 
             // ELIGIBILITY STEP
             // predefine variables
@@ -743,7 +743,7 @@ class NeurosynthPRISMAHelper {
             prismaWorkflow.eligibility.recordsSoughtForRetrieval = numRecordsToScreen - screeningStepNumRecordsExcluded;
             prismaWorkflow.eligibility.recordsNotRetrieved = (
                 eligibilityCol.stubStudies.filter(
-                    (x) => x.exclusionTagId === ENeurosynthTagIds.REPORTS_NOT_RETRIEVED_EXCLUSION_ID
+                    (x) => x.exclusionTag === ENeurosynthTagIds.REPORTS_NOT_RETRIEVED_EXCLUSION_ID
                 ) || []
             ).length;
             prismaWorkflow.eligibility.recordsAssessedForEligibility =
@@ -752,7 +752,7 @@ class NeurosynthPRISMAHelper {
                 (x) => x.id !== ENeurosynthTagIds.REPORTS_NOT_RETRIEVED_EXCLUSION_ID
             );
             prismaWorkflow.eligibility.numUncategorized = curationMetadata.columns[2].stubStudies.filter(
-                (x) => !x.exclusionTagId
+                (x) => !x.exclusionTag
             ).length;
 
             // INCLUDED STEP

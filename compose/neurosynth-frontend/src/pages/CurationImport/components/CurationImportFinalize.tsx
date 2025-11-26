@@ -146,14 +146,14 @@ const CurationImportFinalize: React.FC<{
         );
         const { duplicateMapping } = createDuplicateMap(allStubsInProject);
         deduplicatedStubs.forEach((importedStub) => {
-            if (importedStub.exclusionTagId !== null) return;
+            if (importedStub.exclusionTag !== null) return;
             const formattedTitle = importedStub.title.toLocaleLowerCase().trim();
             if (importedStub.doi && duplicateMapping.has(importedStub.doi)) {
-                importedStub.exclusionTagId = defaultExclusionTags.duplicate.id;
+                importedStub.exclusionTag = defaultExclusionTags.duplicate.id;
             } else if (importedStub.pmid && duplicateMapping.has(importedStub.pmid)) {
-                importedStub.exclusionTagId = defaultExclusionTags.duplicate.id;
+                importedStub.exclusionTag = defaultExclusionTags.duplicate.id;
             } else if (importedStub.title && duplicateMapping.has(formattedTitle)) {
-                importedStub.exclusionTagId = defaultExclusionTags.duplicate.id;
+                importedStub.exclusionTag = defaultExclusionTags.duplicate.id;
             }
         });
 

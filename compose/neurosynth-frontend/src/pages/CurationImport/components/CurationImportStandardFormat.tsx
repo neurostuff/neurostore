@@ -132,7 +132,7 @@ const CurationImportStandardFormat: React.FC<{
                     journal: articleJournal ?? '',
                     abstractText: normalize(articleAbstract),
                     articleLink: articleLink,
-                    exclusionTagId: null,
+                    exclusionTag: null,
                     identificationSource: source,
                     tags: [],
                 };

@@ -246,7 +246,7 @@ export const promoteAllUncategorizedHelper = (state: ICurationColumn[]): ICurati
 
     for (let i = 0; i < updatedFirstColStubStudies.length; i++) {
         const stub = updatedFirstColStubStudies[i];
-        if (stub.exclusionTagId === null) {
+        if (stub.exclusionTag === null) {
             updatedFirstColStubStudies.splice(i, 1);
             updatedSecondColStubStudies.push({
                 ...stub,
@@ -334,7 +334,7 @@ export const setExclusionForStubHelper = (
 
     updatedStubsForColumn[stubToUpdateIndex] = {
         ...updatedStubsForColumn[stubToUpdateIndex],
-        exclusionTagId: exclusionId,
+        exclusionTag: exclusionId,
     };
 
     updatedState[columnIndex] = {

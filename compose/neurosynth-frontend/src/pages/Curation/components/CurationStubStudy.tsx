@@ -10,19 +10,19 @@ const CurationStubStudy: React.FC<
     }
 > = React.memo((props) => {
     const isLastColumn = useProjectCurationIsLastColumn(props.columnIndex);
-    const exclusionTag = useProjectExclusionTag(props.exclusionTagId);
+    const exclusionTag = useProjectExclusionTag(props.exclusionTag);
 
     return (
         <Box sx={{ width: 'calc(100% - 35px)' }}>
             <Typography
                 variant="body2"
                 sx={{
-                    fontWeight: props.exclusionTagId ? 'bold' : undefined,
+                    fontWeight: props.exclusionTag ? 'bold' : undefined,
                     marginBottom: '0',
-                    color: isLastColumn ? 'success.main' : props.exclusionTagId ? 'error.dark' : 'warning.main',
+                    color: isLastColumn ? 'success.main' : props.exclusionTag ? 'error.dark' : 'warning.main',
                 }}
             >
-                {isLastColumn ? 'included' : props.exclusionTagId ? exclusionTag?.label : 'uncategorized'}
+                {isLastColumn ? 'included' : props.exclusionTag ? exclusionTag?.label : 'uncategorized'}
             </Typography>
             <Box sx={{ display: 'flex' }}>
                 {props.articleYear && (

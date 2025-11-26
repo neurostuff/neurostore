@@ -42,7 +42,7 @@ const CurationEditableStubSummaryHeader: React.FC<ICurationEditableStubSummaryHe
 
     const isStepBeforeInclude = prismaPhase === 'eligibility' || (!prismaConfig.isPrisma && props.columnIndex === 0);
 
-    const exclusionTag = useProjectExclusionTag(props.stub.exclusionTagId);
+    const exclusionTag = useProjectExclusionTag(props.stub.exclusionTag);
 
     const handleAddTag = (tag: ITag) => {
         if (props.stub) {

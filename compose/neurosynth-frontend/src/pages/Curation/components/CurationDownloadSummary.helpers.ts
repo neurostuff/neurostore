@@ -13,7 +13,7 @@ export const stubsToCSV = (curationColumns: ICurationColumn[], exclusionTags: IT
     );
 
     const mappedCSVStudyObjs = allStudies.map((stub) => {
-        const exclusionTag = exclusionTags.find((tag) => tag.id === stub.exclusionTagId);
+        const exclusionTag = exclusionTags.find((tag) => tag.id === stub.exclusionTag);
 
         return {
             title: stub.title || '',
@@ -66,7 +66,7 @@ export const stubsToBibtex = (curationColumns: ICurationColumn[], exclusionTags:
         (acc, curr) => [
             ...acc,
             ...curr.stubStudies.map((stub) => {
-                const exclusionTag = exclusionTags.find((tag) => tag.id === stub.exclusionTagId);
+                const exclusionTag = exclusionTags.find((tag) => tag.id === stub.exclusionTag);
                 return {
                     ...stub,
                     status: curr.name,

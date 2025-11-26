@@ -32,7 +32,7 @@
                 "articleYear": "1996",
                 "authors": "Henrich J,",
                 "doi": "10.3390/ani13213332",
-                "exclusionTagId": null,
+                "exclusionTag": null,
                 "id": "0101befe-ec93-4720-82e3-790c0d53ad4f",
                 "identificationSource": {
                   "id": "neurosynth_sleuth_id_source",

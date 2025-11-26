@@ -287,7 +287,7 @@ describe('CurationAIInterface', () => {
         it('should show 1 duplicate identified message when one duplicate exists project-wide', () => {
             cy.fixture('projects/projectCurationPRISMAWithStudies').then((projectFixture: INeurosynthProjectReturn) => {
                 // add a duplicate tag to the first identification phase stub
-                projectFixture.provenance.curationMetadata.columns[0].stubStudies[0].exclusionTagId =
+                projectFixture.provenance.curationMetadata.columns[0].stubStudies[0].exclusionTag =
                     defaultExclusionTags.duplicate.id;
 
                 cy.intercept('GET', '**/api/projects/*', {
@@ -305,11 +305,11 @@ describe('CurationAIInterface', () => {
 
         it('should show the correct number of duplicates identified message when multiple duplicates exist project-wide', () => {
             cy.fixture('projects/projectCurationPRISMAWithStudies').then((projectFixture: INeurosynthProjectReturn) => {
-                projectFixture.provenance.curationMetadata.columns[0].stubStudies[0].exclusionTagId =
+                projectFixture.provenance.curationMetadata.columns[0].stubStudies[0].exclusionTag =
                     defaultExclusionTags.duplicate.id;
-                projectFixture.provenance.curationMetadata.columns[0].stubStudies[1].exclusionTagId =
+                projectFixture.provenance.curationMetadata.columns[0].stubStudies[1].exclusionTag =
                     defaultExclusionTags.duplicate.id;
-                projectFixture.provenance.curationMetadata.columns[0].stubStudies[2].exclusionTagId =
+                projectFixture.provenance.curationMetadata.columns[0].stubStudies[2].exclusionTag =
                     defaultExclusionTags.duplicate.id;
 
                 cy.intercept('GET', '**/api/projects/*', {
@@ -329,7 +329,7 @@ describe('CurationAIInterface', () => {
             cy.fixture('projects/projectCurationPRISMAWithStudies').then((projectFixture: INeurosynthProjectReturn) => {
                 // exclude all studies in the first column
                 projectFixture.provenance.curationMetadata.columns[0].stubStudies.forEach((stub) => {
-                    stub.exclusionTagId = defaultExclusionTags.duplicate.id;
+                    stub.exclusionTag = defaultExclusionTags.duplicate.id;
                 });
 
                 cy.intercept('GET', '**/api/projects/*', {
@@ -1043,7 +1043,7 @@ describe('CurationAIInterface', () => {
         });
     });
 
-    describe.only('exclusions', () => {
+    describe('exclusions', () => {
         it('should show empty when in the exclusions view and there are no studies', () => {
             cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
             cy.contains('li', 'Excluded').click();
@@ -1053,10 +1053,10 @@ describe('CurationAIInterface', () => {
 
         it('should show excluded studies in the exclusions view', () => {
             cy.fixture('projects/projectCurationSimpleWithStudies').then((projectFixture: INeurosynthProjectReturn) => {
-                projectFixture.provenance.curationMetadata.columns[0].stubStudies[0].exclusionTagId =
+                projectFixture.provenance.curationMetadata.columns[0].stubStudies[0].exclusionTag =
                     defaultExclusionTags.duplicate.id;
 
-                projectFixture.provenance.curationMetadata.columns[0].stubStudies[1].exclusionTagId =
+                projectFixture.provenance.curationMetadata.columns[0].stubStudies[1].exclusionTag =
                     defaultExclusionTags.duplicate.id;
 
                 cy.intercept('GET', '**/api/projects/*', {
@@ -1073,10 +1073,10 @@ describe('CurationAIInterface', () => {
 
         it('should unexclude the study', () => {
             cy.fixture('projects/projectCurationSimpleWithStudies').then((projectFixture: INeurosynthProjectReturn) => {
-                projectFixture.provenance.curationMetadata.columns[0].stubStudies[0].exclusionTagId =
+                projectFixture.provenance.curationMetadata.columns[0].stubStudies[0].exclusionTag =
                     defaultExclusionTags.duplicate.id;
 
-                projectFixture.provenance.curationMetadata.columns[0].stubStudies[1].exclusionTagId =
+                projectFixture.provenance.curationMetadata.columns[0].stubStudies[1].exclusionTag =
                     defaultExclusionTags.duplicate.id;
 
                 cy.intercept('GET', '**/api/projects/*', {
@@ -1098,7 +1098,7 @@ describe('CurationAIInterface', () => {
             cy.fixture('projects/projectCurationSimpleWithStudies').then((projectFixture: INeurosynthProjectReturn) => {
                 projectFixture.user = 'auth0|62e0e6c9dd47048572613b4d'; // this user can edit the project
 
-                projectFixture.provenance.curationMetadata.columns[0].stubStudies[0].exclusionTagId =
+                projectFixture.provenance.curationMetadata.columns[0].stubStudies[0].exclusionTag =
                     'my-custom-exclusion';
 
                 cy.intercept('GET', '**/api/projects/*', {

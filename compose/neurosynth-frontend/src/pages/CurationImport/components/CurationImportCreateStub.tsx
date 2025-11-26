@@ -87,7 +87,7 @@ const CurationImportCreateStub: React.FC<{
                     articleYear: form.articleYear,
                     abstractText: form.abstract,
                     articleLink: form.articleLink,
-                    exclusionTagId: null,
+                    exclusionTag: null,
                     tags: [],
                     identificationSource: form.identificationSource as ISource,
                 },

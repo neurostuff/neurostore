@@ -118,7 +118,7 @@ const CurationEditableStubSummary: React.FC<ICurationEditableStubSummary> = ({
                     {stub.title && <DisplayStudyLinkFullText studyName={stub.title} />}
                 </Box>
                 <CurationEditableStubSummaryHeader
-                    type={isLastColumn ? 'included' : stub.exclusionTagId ? 'excluded' : 'default'}
+                    type={isLastColumn ? 'included' : stub.exclusionTag ? 'excluded' : 'default'}
                     stub={stub}
                     columnIndex={columnIndex}
                     onMoveToNextStub={onMoveToNextStub}

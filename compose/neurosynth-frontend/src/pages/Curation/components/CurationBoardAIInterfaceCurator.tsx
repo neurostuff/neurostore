@@ -59,7 +59,7 @@ const CurationBoardAIInterfaceCurator: React.FC<{
     const stubsInColumn = useMemo(() => {
         if (!column) return [];
         if (isIdentificationPhase) return column.stubStudies; // we want to include the excluded studies
-        return column.stubStudies.filter((x) => x.exclusionTagId === null);
+        return column.stubStudies.filter((x) => x.exclusionTag === null);
     }, [column, isIdentificationPhase]);
 
     const { table } = useCuratorTableState(projectId, stubsInColumn, !isLastColumn, prismaPhase !== 'identification');
@@ -235,7 +235,7 @@ const CurationBoardAIInterfaceCurator: React.FC<{
                     />
                 ) : UIMode === 'IDENTIFICATION_OVERVIEW' ? (
                     <CurationBoardAIInterfaceIdentificationUI
-                        hasUncategorizedStudies={stubsInColumn.filter((x) => x.exclusionTagId === null).length > 0}
+                        hasUncategorizedStudies={stubsInColumn.filter((x) => x.exclusionTag === null).length > 0}
                         onManuallyReview={handleManuallyReview}
                         onPromoteAllUncategorized={handleCompletePromoteAllUncategorized}
                     />

@@ -12,9 +12,9 @@ interface ICurationStubListItem {
 }
 
 const CurationStubListItem: React.FC<ICurationStubListItem> = React.memo((props) => {
-    const exclusionTag = useProjectExclusionTag(props.stub.exclusionTagId);
+    const exclusionTag = useProjectExclusionTag(props.stub.exclusionTag);
 
-    const itemColor = props.stub.exclusionTagId
+    const itemColor = props.stub.exclusionTag
         ? '#fff3f3'
         : props.stub.tags.some((x) => x.id === ENeurosynthTagIds.NEEDS_REVIEW_TAG_ID)
           ? '#fff0b8'
@@ -42,7 +42,7 @@ const CurationStubListItem: React.FC<ICurationStubListItem> = React.memo((props)
                     width: '280px',
                 }}
             >
-                {props.stub.exclusionTagId && (
+                {props.stub.exclusionTag && (
                     <Typography sx={{ color: 'error.dark', fontWeight: 'bold' }} variant="body2">
                         {exclusionTag?.label}
                     </Typography>

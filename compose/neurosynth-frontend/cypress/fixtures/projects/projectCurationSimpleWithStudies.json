@@ -27,7 +27,7 @@
               "articleYear": "",
               "authors": "Konstantinos Bromis, Maria Calem, Antje A.T.S. Reinders, Steven C.R. Williams and Matthew J. Kempton",
               "doi": "10.1176/appi.ajp.2018.17111199",
-              "exclusionTagId": null,
+              "exclusionTag": null,
               "id": "413b53a1-ed75-49ee-a7ae-04a880dff623",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -48,7 +48,7 @@
               "articleYear": "",
               "authors": "Hou C, Liu J, Wang K, Li L, Liang M, He Z, Liu Y, Zhang Y, Li W, Jiang T",
               "doi": "10.1016/j.brainres.2007.01.089",
-              "exclusionTagId": null,
+              "exclusionTag": null,
               "id": "512e0ca2-0e1c-442f-9cdd-9fdcf8dff49f",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -69,7 +69,7 @@
               "articleYear": "",
               "authors": "Grant MM, White D, Hadley J, Hutcheson N, Shelton R, Sreenivasan K, Deshpande G",
               "doi": "10.1002/hbm.22514",
-              "exclusionTagId": null,
+              "exclusionTag": null,
               "id": "4cb0bfaa-cf12-4a96-b40a-4ce20614df02",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",
@@ -90,7 +90,7 @@
               "articleYear": "",
               "authors": "",
               "doi": "",
-              "exclusionTagId": null,
+              "exclusionTag": null,
               "id": "a1288bc8-81cf-4116-9153-ec955c53e5b4",
               "identificationSource": {
                 "id": "neurosynth_neurostore_id_source",

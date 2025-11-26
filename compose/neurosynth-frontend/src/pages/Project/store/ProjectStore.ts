@@ -777,7 +777,7 @@ export const useProjectGetColumnForStub = (stubId: string) =>
 export const useProjectCurationDuplicates = () =>
     useProjectStore((state) => {
         if (!state.provenance.curationMetadata.prismaConfig.isPrisma) return [];
-        return state.provenance.curationMetadata.columns[0].stubStudies.filter((x) => x.exclusionTagId !== null);
+        return state.provenance.curationMetadata.columns[0].stubStudies.filter((x) => x.exclusionTag !== null);
     });
 
 // curation updater hooks

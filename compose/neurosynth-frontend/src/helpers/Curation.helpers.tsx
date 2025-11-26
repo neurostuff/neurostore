@@ -20,7 +20,7 @@ export const studiesToStubs = (studies: BaseStudyReturn[]): ICurationStubStudy[]
             journal: study.publication || '',
             abstractText: study.description || '',
             articleLink: study.pmid ? `https://pubmed.ncbi.nlm.nih.gov/${study.pmid}` : '',
-            exclusionTagId: null,
+            exclusionTag: null,
             identificationSource: defaultIdentificationSources.neurostore,
             tags: [],
             neurostoreId: study.id,

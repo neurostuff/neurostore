@@ -18,7 +18,7 @@ export const CuratorTableSelectCell: React.FC<CellContext<ICurationTableStudy, u
     };
 
     // only for the PRISMA identification column - other columns have their excluded studies filtered out
-    const isExcluded = props.row.original.exclusionTagId !== null;
+    const isExcluded = props.row.original.exclusionTag !== null;
 
     if (isExcluded) {
         return (

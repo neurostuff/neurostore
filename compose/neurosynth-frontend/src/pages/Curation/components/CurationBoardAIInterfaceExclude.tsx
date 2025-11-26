@@ -37,7 +37,7 @@ const CurationBoardAIInterfaceExclude: React.FC<{
     const stubs = useMemo(() => {
         const allStudies = columns.reduce((acc, curr) => [...acc, ...curr.stubStudies], [] as ICurationStubStudy[]);
         return allStudies
-            .filter((study) => study.exclusionTagId && study.exclusionTagId === exclusionTag?.id)
+            .filter((study) => study.exclusionTag && study.exclusionTag === exclusionTag?.id)
             .sort((a, b) => (a.title || '').toLocaleLowerCase().localeCompare((b.title || '').toLocaleLowerCase()));
     }, [columns, exclusionTag?.id]);
 

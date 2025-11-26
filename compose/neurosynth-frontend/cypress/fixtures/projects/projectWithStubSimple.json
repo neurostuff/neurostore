@@ -28,7 +28,7 @@
                 "articleYear": "2010",
                 "authors": "Nelson, Steven M, Dosenbach, Nico UF, Cohen, Alexander L, Wheeler, Mark E, Schlaggar, Bradley L, Petersen, Steven E",
                 "doi": "https://doi.org/10.1007%2Fs00429-010-0260-2",
-                "exclusionTagId": null,
+                "exclusionTag": null,
                 "id": "15799890-70d5-4f90-aa5f-92fba8ea165b",
                 "identificationSource": {
                   "id": "neurosynth_neurostore_id_source",
