@@ -221,9 +221,9 @@ const mockAnnotations: () => NeurostoreAnnotation[] = () => [
         source: null,
         source_id: null,
         note_keys: {
-            inclusion_col: 'boolean',
-            aergegr: 'number',
-            aberg: 'string',
+            inclusion_col: { type: 'boolean', order: 0 },
+            aergegr: { type: 'number', order: 1 },
+            aberg: { type: 'string', order: 2 },
         },
         metadata: null,
         id: '62RUsQpwdouU',

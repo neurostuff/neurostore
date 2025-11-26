@@ -49,8 +49,8 @@ const useEditAnnotationsHotTable = (annotationId?: string, disableEdit?: boolean
                     annotationNote.study_name && annotationNote.study_year
                         ? `(${annotationNote.study_year}) ${annotationNote.study_name}`
                         : annotationNote.study_name
-                        ? annotationNote.study_name
-                        : '';
+                          ? annotationNote.study_name
+                          : '';
 
                 const analysisName = annotationNote.analysis_name || '';
 
@@ -83,7 +83,7 @@ const useEditAnnotationsHotTable = (annotationId?: string, disableEdit?: boolean
     }, [annotationsHotState.noteKeys]);
 
     const colWidths = useMemo(() => {
-        return createColWidths(annotationsHotState.noteKeys, 300, 150, 200);
+        return createColWidths(annotationsHotState.noteKeys, 300, 150, 150);
     }, [annotationsHotState.noteKeys]);
 
     const rowHeights = useMemo(() => {

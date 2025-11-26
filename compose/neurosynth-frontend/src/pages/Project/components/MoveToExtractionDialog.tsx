@@ -42,7 +42,6 @@ const MoveToExtractionDialog: React.FC<IDialog> = (props) => {
 
     const navigate = useNavigate();
 
-    const [isLoadingPhase, setIsLoadingPhase] = useState(false);
     const [isError, setIsError] = useState(false);
     const [loadingStatus, setLoadingStatus] = useState<{
         createdStudyset: boolean;
@@ -55,7 +54,6 @@ const MoveToExtractionDialog: React.FC<IDialog> = (props) => {
     });
 
     const handleCloseDialog = () => {
-        setIsLoadingPhase(false);
         setLoadingStatus({
             createdAnnotations: false,
             createdStudyset: false,
@@ -105,7 +103,7 @@ const MoveToExtractionDialog: React.FC<IDialog> = (props) => {
                     annotation: {
                         name: `Annotation for studyset ${newStudysetId}`,
                         description: '',
-                        note_keys: { included: EPropertyType.BOOLEAN },
+                        note_keys: { included: { type: EPropertyType.BOOLEAN, order: 0 } },
                         studyset: newStudysetId,
                     },
                 });

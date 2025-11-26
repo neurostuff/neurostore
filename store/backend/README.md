@@ -27,22 +27,11 @@ The server should now be running at http://localhost/
 
 Create the database for neurostore:
 
-    docker-compose exec store-pgsql psql -U postgres -c "create database neurostore"
+    docker-compose exec store-pgsql17 psql -U postgres -c "create database neurostore"
 
-Next, migrate and upgrade the database migrations.
+Next, apply the existing migrations (they are the canonical definition of the schema).
 
-    docker-compose exec neurostore \
-        bash -c \
-            "flask db merge heads && \
-             flask db stamp head && \
-             flask db migrate && \
-             flask db upgrade"
-
-**Note**: `flask db merge heads` is not strictly necessary
-unless you have multiple schema versions that are not from the same history
-(e.g., multiple files in the `versions` directory).
-However, `flask db merge heads` makes the migration more robust
-when there are multiple versions from different histories.
+    docker-compose exec neurostore flask db upgrade
 
 Finally ingest data
 
@@ -55,10 +44,39 @@ If you make a change to neurostore, you should be able to simply restart the ser
 
     docker-compose restart neurostore
 
-If you need to upgrade the db after changing any models:
+If you change any models, generate a new Alembic migration and migrate the database (commit the generated revision file so it becomes the new source of truth):
 
     docker-compose exec neurostore flask db migrate
     docker-compose exec neurostore flask db upgrade
+
+
+## Database migrations
+
+The migrations stored in `backend/migrations` are the **only** source of truth for the schema—avoid merging heads, stamping, or manually altering the history. Always move the database forward (or rebuilt-from-scratch) by applying the tracked revisions.
+
+### Applying migrations after pulling a branch
+
+Any time you start the backend or pull the latest changes, bring the database to the expected state with:
+
+```sh
+docker-compose exec neurostore flask db upgrade
+```
+
+`upgrade` is idempotent, so rerunning it is harmless; it only applies migrations that have not been run yet.
+
+### Resetting the database when switching branches
+
+Because each branch might change the schema independently, recreate the database before starting work on a different branch so that Alembic can replay only the migrations that exist on that branch.
+
+```sh
+docker-compose stop neurostore
+docker-compose exec store-pgsql17 psql -U postgres -c "DROP DATABASE IF EXISTS neurostore;"
+docker-compose exec store-pgsql17 psql -U postgres -c "CREATE DATABASE neurostore;"
+docker-compose start neurostore
+docker-compose exec neurostore flask db upgrade
+```
+
+If you're using the legacy Postgres container, replace `store-pgsql17` with `store-pgsql` in the commands above. Re-run any ingestion or seed scripts your branch requires once the upgrade completes.
 
 
 ## Running tests

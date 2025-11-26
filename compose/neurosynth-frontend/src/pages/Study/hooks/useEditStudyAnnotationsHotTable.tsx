@@ -3,14 +3,12 @@ import { useDebouncedStudyAnalyses, useStudyId } from 'pages/Study/store/StudySt
 import { useEffect, useMemo, useState } from 'react';
 import { useAnnotationNoteKeys } from 'stores/AnnotationStore.actions';
 import { useAnnotationNotes } from 'stores/AnnotationStore.getters';
-import {
-    createStudyAnnotationColHeaders,
-    createStudyAnnotationColumns,
-} from 'pages/Study/components/EditStudyAnnotationsHotTable.helpers';
+import { createStudyAnnotationColumns } from '../components/EditStudyAnnotationsHotTable.helpers';
 import {
     EditStudyAnnotationsNoteCollectionReturn,
     IEditStudyAnnotationsDataRef,
-} from 'pages/Study/components/EditStudyAnnotationsHotTable.types';
+} from '../components/EditStudyAnnotationsHotTable.types';
+import { createColumnHeader } from 'pages/Annotations/components/EditAnnotationsHotTable.helpers';
 
 const useEditStudyAnnotationsHotTable = (readonly?: boolean) => {
     const studyId = useStudyId();
@@ -22,16 +20,7 @@ const useEditStudyAnnotationsHotTable = (readonly?: boolean) => {
 
     useEffect(() => {
         if (!notes) return;
-
-        setData((prev) => {
-            if (!prev) return [...notes];
-
-            const update = [...prev].map((updateItem, index) => ({
-                ...updateItem,
-                ...notes[index],
-            }));
-            return update;
-        });
+        setData([...notes]);
     }, [notes]);
 
     /**
@@ -41,11 +30,9 @@ const useEditStudyAnnotationsHotTable = (readonly?: boolean) => {
     useEffect(() => {
         setData((prev) => {
             if (!prev) return prev;
-            const update: EditStudyAnnotationsNoteCollectionReturn[] = [...(notes || [])];
+            const update = [...prev];
             debouncedAnalyses.forEach((analysis) => {
-                const foundNoteIndex = update.findIndex(
-                    (updateNote) => updateNote.analysis === analysis.id
-                );
+                const foundNoteIndex = update.findIndex((updateNote) => updateNote.analysis === analysis.id);
                 if (foundNoteIndex < 0) return;
 
                 update[foundNoteIndex] = {
@@ -56,9 +43,9 @@ const useEditStudyAnnotationsHotTable = (readonly?: boolean) => {
             });
             return update;
         });
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [debouncedAnalyses]);
 
+    // only show the indices for rows that we want to hide
     const hiddenRows = useMemo(() => {
         return (notes || [])
             .map((x, index) => (x.study !== studyId ? index : null))
@@ -68,26 +55,14 @@ const useEditStudyAnnotationsHotTable = (readonly?: boolean) => {
     const { columns, colHeaders, colWidths } = useMemo<IEditStudyAnnotationsDataRef>(() => {
         return {
             columns: createStudyAnnotationColumns(noteKeys || [], !!readonly),
-            colHeaders: createStudyAnnotationColHeaders(noteKeys || []),
-            colWidths: createColWidths(noteKeys || [], 200, 250, 150),
+            colHeaders: [
+                'Analysis Name',
+                'Analysis Description',
+                ...(noteKeys ?? []).map((x) => createColumnHeader(x.key, x.type, true)),
+            ],
+            colWidths: createColWidths(noteKeys || [], 150, 150, 150),
         };
     }, [noteKeys, readonly]);
-
-    const height = useMemo(() => {
-        const MIN_HEIGHT_PX = 100;
-        const MAX_HEIGHT_PX = 500;
-        const HEADER_HEIGHT_PX = 26;
-        const ROW_HEIGHT_PX = 24; // +24 to padd row height a little bit
-
-        const visibleNotes = (notes || []).filter((x) => x.study === studyId);
-
-        const TABLE_HEIGHT_PX = HEADER_HEIGHT_PX + visibleNotes.length * ROW_HEIGHT_PX;
-        return TABLE_HEIGHT_PX < MIN_HEIGHT_PX
-            ? MIN_HEIGHT_PX
-            : TABLE_HEIGHT_PX > MAX_HEIGHT_PX
-            ? MAX_HEIGHT_PX
-            : TABLE_HEIGHT_PX;
-    }, [notes, studyId]);
 
     return {
         hiddenRows,
@@ -95,7 +70,6 @@ const useEditStudyAnnotationsHotTable = (readonly?: boolean) => {
         colHeaders,
         colWidths,
         data: data || [],
-        height,
     };
 };
 
