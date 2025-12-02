@@ -2,9 +2,8 @@ import json
 from contextlib import contextmanager
 from urllib.request import urlopen
 
-from flask import jsonify, request
+from flask import current_app, has_app_context, jsonify, request
 from jose import jwt
-from flask import current_app
 from werkzeug.local import LocalProxy
 from connexion.security import NO_VALUE
 from ..database import db
@@ -73,23 +72,26 @@ def init_app(app):
 
 
 def _get_current_app():
-    try:
+    if has_app_context():
         return current_app._get_current_object()
-    except RuntimeError as exc:  # pragma: no cover - defensive
-        if _flask_app is not None and "application context" in str(exc).lower():
-            return _flask_app
-        raise
+    if _flask_app is not None:  # pragma: no cover - defensive
+        return _flask_app
+    raise RuntimeError("No Flask application is configured for authentication helpers.")
 
 
 @contextmanager
 def _ensure_app_context():
-    try:
+    if has_app_context():
         yield current_app._get_current_object()
-    except RuntimeError as exc:
-        if _flask_app is None or "application context" not in str(exc).lower():
-            raise
-        with _flask_app.app_context():
-            yield _flask_app
+        return
+
+    if _flask_app is None:  # pragma: no cover - defensive
+        raise RuntimeError(
+            "No Flask application is configured for authentication helpers."
+        )
+
+    with _flask_app.app_context():
+        yield _flask_app
 
 
 app = LocalProxy(_get_current_app)
