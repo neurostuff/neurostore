@@ -1056,6 +1056,7 @@ class BaseStudiesView(ObjectView, ListView):
         "y": fields.Float(required=False, allow_none=True),
         "z": fields.Float(required=False, allow_none=True),
         "radius": fields.Float(required=False, allow_none=True),
+        **LIST_NESTED_ARGS,
     }
 
     _multi_search = ("name", "description")
@@ -1148,7 +1149,51 @@ class BaseStudiesView(ObjectView, ListView):
             )
 
         # Handle version and user loading
-        if args.get("info"):
+        if args.get("nested"):
+            q = q.options(
+                selectinload(BaseStudy.versions).options(
+                    selectinload(Study.user)
+                    .load_only(User.name, User.external_id)
+                    .options(raiseload("*", sql_only=True)),
+                    selectinload(Study.tables)
+                    .load_only(Table.id)
+                    .options(raiseload("*", sql_only=True)),
+                    selectinload(Study.analyses).options(
+                        raiseload("*", sql_only=True),
+                        selectinload(Analysis.user)
+                        .load_only(User.name, User.external_id)
+                        .options(raiseload("*", sql_only=True)),
+                        selectinload(Analysis.images).options(
+                            raiseload("*", sql_only=True),
+                            selectinload(Image.user)
+                            .load_only(User.name, User.external_id)
+                            .options(raiseload("*", sql_only=True)),
+                        ),
+                        selectinload(Analysis.points).options(
+                            raiseload("*", sql_only=True),
+                            selectinload(Point.user)
+                            .load_only(User.name, User.external_id)
+                            .options(raiseload("*", sql_only=True)),
+                            selectinload(Point.values).options(
+                                raiseload("*", sql_only=True)
+                            ),
+                        ),
+                        selectinload(Analysis.analysis_conditions).options(
+                            raiseload("*", sql_only=True),
+                            selectinload(AnalysisConditions.condition).options(
+                                raiseload("*", sql_only=True),
+                                selectinload(Condition.user)
+                                .load_only(User.name, User.external_id)
+                                .options(raiseload("*", sql_only=True)),
+                            ),
+                        ),
+                    ),
+                ),
+                joinedload(BaseStudy.user)
+                .load_only(User.name, User.external_id)
+                .options(raiseload("*", sql_only=True)),
+            )
+        elif args.get("info"):
             q = q.options(
                 joinedload(BaseStudy.versions).options(
                     raiseload("*", sql_only=True),
