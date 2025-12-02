@@ -21,13 +21,13 @@ def add_missing_extraction_ids(session=None) -> Tuple[int, int]:
     for project in projects:
         provenance = dict(project.provenance or {})
         extraction_metadata_raw = provenance.get("extractionMetadata")
-        if not isinstance(extraction_metadata_raw, dict):
-            skipped += 1
-            continue
-
-        extraction_metadata = dict(extraction_metadata_raw)
-
         changed = False
+
+        if isinstance(extraction_metadata_raw, dict):
+            extraction_metadata = dict(extraction_metadata_raw)
+        else:
+            extraction_metadata = {}
+            changed = True
 
         if "studysetId" not in extraction_metadata:
             extraction_metadata["studysetId"] = None
