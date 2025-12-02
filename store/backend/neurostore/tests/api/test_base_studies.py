@@ -232,6 +232,26 @@ def test_info_base_study(auth_client, ingest_neurosynth, session):
     assert isinstance(single_reg_resp.json()["versions"][0], str)
 
 
+def test_nested_base_study(auth_client, ingest_neurosynth, session):
+    resp = auth_client.get("/api/base-studies/?nested=true")
+    assert resp.status_code == 200
+
+    first_result = resp.json()["results"][0]
+    first_version = first_result["versions"][0]
+
+    assert isinstance(first_version, dict)
+    # username/user fields are present when user relationship is loaded
+    assert "username" in first_version
+    assert "user" in first_version
+
+    # Nested analyses should also render as full objects
+    if first_version.get("analyses"):
+        first_analysis = first_version["analyses"][0]
+        assert isinstance(first_analysis, dict)
+        assert "username" in first_analysis
+        assert "user" in first_analysis
+
+
 def test_has_coordinates_images(auth_client, session):
     # create an empty study
     doi_a = "abcd"
