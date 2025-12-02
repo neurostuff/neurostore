@@ -2,6 +2,7 @@ import logging
 from typing import Tuple
 
 from sqlalchemy import select
+from sqlalchemy.orm.attributes import flag_modified
 
 from neurosynth_compose.database import db
 from neurosynth_compose.models.analysis import Project
@@ -18,12 +19,13 @@ def add_missing_extraction_ids(session=None) -> Tuple[int, int]:
     projects = sess.scalars(select(Project)).all()
 
     for project in projects:
-        provenance = project.provenance or {}
-        extraction_metadata = provenance.get("extractionMetadata")
-
-        if not isinstance(extraction_metadata, dict):
+        provenance = dict(project.provenance or {})
+        extraction_metadata_raw = provenance.get("extractionMetadata")
+        if not isinstance(extraction_metadata_raw, dict):
             skipped += 1
             continue
+
+        extraction_metadata = dict(extraction_metadata_raw)
 
         changed = False
 
@@ -38,6 +40,7 @@ def add_missing_extraction_ids(session=None) -> Tuple[int, int]:
         if changed:
             provenance["extractionMetadata"] = extraction_metadata
             project.provenance = provenance
+            flag_modified(project, "provenance")
             updated += 1
         else:
             skipped += 1
