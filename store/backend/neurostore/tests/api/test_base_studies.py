@@ -240,11 +240,9 @@ def test_nested_base_study(auth_client, ingest_neurosynth, session):
     first_version = first_result["versions"][0]
 
     assert isinstance(first_version, dict)
-    # username/user fields are present when user relationship is loaded
     assert "username" in first_version
     assert "user" in first_version
 
-    # Nested analyses should also render as full objects
     if first_version.get("analyses"):
         first_analysis = first_version["analyses"][0]
         assert isinstance(first_analysis, dict)
