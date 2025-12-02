@@ -571,6 +571,29 @@ def test_feature_display_and_pipeline_config(auth_client, ingest_demographic_fea
     assert len(mismatch_response.json()["results"]) == 0
 
 
+def test_pipeline_config_with_quoted_value(
+    auth_client, ingest_demographic_features
+):
+    """Ensure quoted config filter values do not break jsonpath parsing."""
+    quoted_resp = auth_client.get(
+        "/api/base-studies/?"
+        'pipeline_config=ParticipantDemographicsExtractor:1.0.0:'
+        'extractor_kwargs.extraction_model="gpt-4-turbo"'
+    )
+    assert quoted_resp.status_code == 200
+
+    unquoted_resp = auth_client.get(
+        "/api/base-studies/?"
+        "pipeline_config=ParticipantDemographicsExtractor:1.0.0:"
+        "extractor_kwargs.extraction_model=gpt-4-turbo"
+    )
+    assert unquoted_resp.status_code == 200
+
+    quoted_ids = {result["id"] for result in quoted_resp.json()["results"]}
+    unquoted_ids = {result["id"] for result in unquoted_resp.json()["results"]}
+    assert quoted_ids == unquoted_ids
+
+
 def test_feature_flatten(auth_client, ingest_demographic_features):
     """Test flattening nested feature objects into dot notation"""
     # Get response without flattening
