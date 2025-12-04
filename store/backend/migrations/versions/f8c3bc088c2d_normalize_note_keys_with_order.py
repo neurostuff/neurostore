@@ -82,26 +82,32 @@ def _downgrade_note_keys(note_keys):
 def upgrade():
     conn = op.get_bind()
     rows = conn.execute(sa.text("SELECT id, note_keys FROM annotations")).fetchall()
+    update_stmt = sa.text(
+        "UPDATE annotations SET note_keys = :note_keys WHERE id = :id"
+    ).bindparams(
+        sa.bindparam("note_keys", type_=sa.JSON()),
+        sa.bindparam("id", type_=sa.Text()),
+    )
     for row in rows:
         nk = row.note_keys
         if not nk:
             continue
         normalized = _normalize_note_keys(nk)
-        conn.execute(
-            sa.text("UPDATE annotations SET note_keys = :note_keys WHERE id = :id"),
-            {"id": row.id, "note_keys": normalized},
-        )
+        conn.execute(update_stmt, {"id": row.id, "note_keys": normalized})
 
 
 def downgrade():
     conn = op.get_bind()
     rows = conn.execute(sa.text("SELECT id, note_keys FROM annotations")).fetchall()
+    update_stmt = sa.text(
+        "UPDATE annotations SET note_keys = :note_keys WHERE id = :id"
+    ).bindparams(
+        sa.bindparam("note_keys", type_=sa.JSON()),
+        sa.bindparam("id", type_=sa.Text()),
+    )
     for row in rows:
         nk = row.note_keys
         if not nk:
             continue
         downgraded = _downgrade_note_keys(nk)
-        conn.execute(
-            sa.text("UPDATE annotations SET note_keys = :note_keys WHERE id = :id"),
-            {"id": row.id, "note_keys": downgraded},
-        )
+        conn.execute(update_stmt, {"id": row.id, "note_keys": downgraded})
