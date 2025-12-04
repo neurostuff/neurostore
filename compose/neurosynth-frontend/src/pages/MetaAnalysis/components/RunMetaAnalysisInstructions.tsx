@@ -1,9 +1,44 @@
 import { OpenInNew } from '@mui/icons-material';
-import { Button, Card, CardActions, CardContent, CardHeader, Link, Typography } from '@mui/material';
+import {
+    Button,
+    Card,
+    CardActions,
+    CardContent,
+    CardHeader,
+    Checkbox,
+    FormControlLabel,
+    Link,
+    Typography,
+} from '@mui/material';
 import { Box } from '@mui/system';
 import CodeSnippet from 'components/CodeSnippet/CodeSnippet';
+import useSubmitMetaAnalysisJob from '../hooks/useSubmitMetaAnalysisJob';
+import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
+import { useState } from 'react';
+import { useSnackbar } from 'notistack';
 
 const RunMetaAnalysisInstructions: React.FC<{ metaAnalysisId: string }> = ({ metaAnalysisId }) => {
+    const { mutate: submitMetaAnalysisJob, isLoading: submitMetaAnalysisJobIsLoading } = useSubmitMetaAnalysisJob();
+    const { enqueueSnackbar } = useSnackbar();
+    const [showConfirmationDialog, setShowConfirmationDialog] = useState(false);
+    const [uploadResults, setUploadResults] = useState(true);
+    const handleCloseConfirmationDialog = (confirm: boolean | undefined) => {
+        if (confirm) {
+            submitMetaAnalysisJob(
+                { meta_analysis_id: metaAnalysisId, no_upload: false },
+                {
+                    onSuccess: () => {
+                        enqueueSnackbar('Meta-analysis job submitted successfully', { variant: 'success' });
+                        setShowConfirmationDialog(false);
+                    },
+                }
+            );
+            return;
+        } else {
+            setShowConfirmationDialog(false);
+        }
+    };
+
     return (
         <Box sx={{ marginBottom: '4rem' }}>
             <Typography variant="h5" sx={{ fontWeight: 'bold' }} my={3}>
@@ -11,6 +46,38 @@ const RunMetaAnalysisInstructions: React.FC<{ metaAnalysisId: string }> = ({ met
             </Typography>
             <Box sx={{ display: 'flex', gap: 4 }}>
                 <Card elevation={2} sx={{ padding: 1, display: 'flex', flexDirection: 'column', flex: '1 1 0' }}>
+                    <ConfirmationDialog
+                        isOpen={showConfirmationDialog}
+                        confirmText="Run meta-analysis"
+                        confirmButtonProps={{
+                            isLoading: submitMetaAnalysisJobIsLoading,
+                            loaderColor: 'secondary',
+                        }}
+                        rejectText="Cancel"
+                        dialogTitle="You are about to run your meta-analysis online via AWS."
+                        dialogMessage={
+                            <Box>
+                                <Typography variant="body1" gutterBottom>
+                                    Keep the checkbox below checked to upload results to neurostore/neurovault, or
+                                    uncheck it to skip uploading results.
+                                </Typography>
+                                <FormControlLabel
+                                    control={
+                                        <Checkbox
+                                            checked={uploadResults}
+                                            onChange={(e) => setUploadResults(e.target.checked)}
+                                        />
+                                    }
+                                    label={
+                                        uploadResults
+                                            ? 'Neurosynth Compose will upload results to neurostore/neurovault.'
+                                            : 'Neurosynth Compose will not upload results to neurostore/neurovault.'
+                                    }
+                                />
+                            </Box>
+                        }
+                        onCloseDialog={handleCloseConfirmationDialog}
+                    />
                     <CardHeader
                         title="1. Online via Amazon Web Services"
                         titleTypographyProps={{
@@ -28,7 +95,7 @@ const RunMetaAnalysisInstructions: React.FC<{ metaAnalysisId: string }> = ({ met
                         </Typography>
                     </CardContent>
                     <CardActions sx={{ padding: '0 1rem 1rem 1rem' }}>
-                        <Button variant="contained" fullWidth>
+                        <Button variant="contained" fullWidth onClick={() => setShowConfirmationDialog(true)}>
                             run meta-analysis
                         </Button>
                     </CardActions>
@@ -84,97 +151,6 @@ const RunMetaAnalysisInstructions: React.FC<{ metaAnalysisId: string }> = ({ met
             </Box>
         </Box>
     );
-
-    // return (
-    //     <Paper
-    //         sx={{
-    //             marginBottom: '1rem',
-    //             padding: '1rem',
-    //             backgroundColor: 'info.light',
-    //         }}
-    //     >
-    //         <Box
-    //             sx={{
-    //                 margin: '0rem 0 1rem 1rem',
-    //                 display: 'flex',
-    //                 alignItems: 'center',
-    //             }}
-    //         >
-    //             <Box sx={{ marginRight: '1rem' }}>
-    //                 <ErrorOutlineIcon sx={{ fontSize: '2rem', color: 'white' }} />
-    //             </Box>
-    //             <Box>
-    //                 <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'white' }}>
-    //                     Run your meta-analysis via one of the following methods.
-    //                 </Typography>
-    //             </Box>
-    //         </Box>
-
-    //         <Box
-    //             sx={{
-    //                 display: 'flex',
-    //                 justifyContent: 'space-between',
-    //             }}
-    //         >
-    //             <Box
-    //                 sx={[MetaAnalysisPageStyles.runMethodContainer, { marginRight: '0.5rem' }]}
-    //                 data-tour="MetaAnalysisPage-2"
-    //             >
-    //                 <Typography
-    //                     variant="h6"
-    //                     sx={{
-    //                         fontWeight: 'bold',
-    //                         marginBottom: '1rem',
-    //                     }}
-    //                 >
-    //                     Online via google colab
-    //                 </Typography>
-    //                 <Typography sx={{ marginBottom: '0.5rem' }}>
-    //                     copy the meta-analysis id below and then click the button to open google collab
-    //                 </Typography>
-    //                 <Box>
-    //                     <CodeSnippet linesOfCode={[`${metaAnalysisId}`]} />
-    //                 </Box>
-    //                 <Box>
-    //                     <Button
-    //                         sx={{ marginTop: '1rem' }}
-    //                         variant="contained"
-    //                         component={Link}
-    //                         target="_blank"
-    //                         rel="noopener"
-    //                         href="https://githubtocolab.com/neurostuff/neurosynth-compose-notebook/blob/main/run_and_explore.ipynb"
-    //                     >
-    //                         open google collab
-    //                     </Button>
-    //                 </Box>
-    //             </Box>
-    //             <Box
-    //                 sx={[MetaAnalysisPageStyles.runMethodContainer, { marginLeft: '0.5rem' }]}
-    //                 data-tour="MetaAnalysisPage-3"
-    //             >
-    //                 <Typography
-    //                     variant="h6"
-    //                     sx={{
-    //                         fontWeight: 'bold',
-    //                         marginBottom: '1rem',
-    //                     }}
-    //                 >
-    //                     Locally via docker
-    //                 </Typography>
-    //                 <Typography sx={{ marginBottom: '0.5rem' }}>
-    //                     copy the docker command below to run this meta-analysis locally
-    //                 </Typography>
-    //                 <Box>
-    //                     <CodeSnippet
-    //                         linesOfCode={[
-    //                             `docker run ghcr.io/neurostuff/nsc-runner:latest ${metaAnalysisId} --n-cores 1`,
-    //                         ]}
-    //                     />
-    //                 </Box>
-    //             </Box>
-    //         </Box>
-    //     </Paper>
-    // );
 };
 
 export default RunMetaAnalysisInstructions;

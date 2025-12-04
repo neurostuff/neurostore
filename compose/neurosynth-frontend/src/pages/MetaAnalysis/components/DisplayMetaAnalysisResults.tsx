@@ -1,5 +1,5 @@
-import { Box, Button, Link, List, ListItemButton, ListItemText, Typography } from '@mui/material';
 import { OpenInNew } from '@mui/icons-material';
+import { Box, Button, Link, List, ListItemButton, ListItemText, Typography } from '@mui/material';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import NiiVueVisualizer from 'components/Visualizer/NiiVueVisualizer';
 import { useGetMetaAnalysisResultById, useGetNeurovaultImages } from 'hooks';
@@ -8,7 +8,6 @@ import { MetaAnalysisReturn, NeurovaultFile, ResultReturn, Specification } from 
 import { useEffect, useMemo, useState } from 'react';
 import { NimareOutputs, parseNimareFileName } from '../Nimare.helpers';
 import DisplayParsedNiMareFile from './DisplayParsedNiMareFile';
-import MetaAnalysisResultStatusAlert from './MetaAnalysisResultStatusAlert';
 
 const DisplayMetaAnalysisResults: React.FC<{
     metaAnalysis: MetaAnalysisReturn | undefined;
@@ -125,7 +124,6 @@ const DisplayMetaAnalysisResults: React.FC<{
             isLoading={isLoading || neurovaultFilesIsLoading}
             isError={isError || neurovaultFilesIsError}
         >
-            <MetaAnalysisResultStatusAlert metaAnalysis={metaAnalysis} metaAnalysisResult={data} />
             <Box display="flex" sx={{ height: '100%', minHeight: '600px' }}>
                 <Box sx={{ width: '27%', maxHeight: '650px', overflowY: 'auto' }}>
                     <List sx={{ padding: 0 }}>

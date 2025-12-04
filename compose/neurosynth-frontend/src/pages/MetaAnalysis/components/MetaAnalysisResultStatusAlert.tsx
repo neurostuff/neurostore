@@ -1,6 +1,6 @@
 import { Alert } from '@mui/material';
 import { getResultStatus } from 'helpers/MetaAnalysis.helpers';
-import { MetaAnalysisReturn, ResultReturn } from 'neurosynth-compose-typescript-sdk';
+import { MetaAnalysisJobResponse, MetaAnalysisReturn, ResultReturn } from 'neurosynth-compose-typescript-sdk';
 import { useEffect, useMemo, useState } from 'react';
 
 const localStorageResultAlertKey = 'hide-meta-analysis-result-alert';
@@ -8,11 +8,11 @@ const localStorageResultAlertKey = 'hide-meta-analysis-result-alert';
 const MetaAnalysisResultStatusAlert: React.FC<{
     metaAnalysis?: MetaAnalysisReturn;
     metaAnalysisResult?: ResultReturn;
-}> = ({ metaAnalysis, metaAnalysisResult }) => {
-    console.log({ metaAnalysisResult });
+    metaAnalysisJobs?: Array<MetaAnalysisJobResponse>;
+}> = ({ metaAnalysis, metaAnalysisResult, metaAnalysisJobs }) => {
     const resultStatus = useMemo(() => {
-        return getResultStatus(metaAnalysis, metaAnalysisResult);
-    }, [metaAnalysis, metaAnalysisResult]);
+        return getResultStatus(metaAnalysis, metaAnalysisResult, metaAnalysisJobs);
+    }, [metaAnalysis, metaAnalysisJobs, metaAnalysisResult]);
 
     const [hideAlert, setHideAlert] = useState<boolean>();
 

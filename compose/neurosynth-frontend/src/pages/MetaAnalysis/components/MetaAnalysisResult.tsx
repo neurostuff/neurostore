@@ -11,14 +11,30 @@ import MetaAnalysisResultStatusAlert from './MetaAnalysisResultStatusAlert';
 import DisplayMetaAnalysisSpecification from './MetaAnalysisSpecification';
 import RunMetaAnalysisInstructions from './RunMetaAnalysisInstructions';
 import { ResultReturn } from 'neurosynth-compose-typescript-sdk';
+import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
+import useGetMetaAnalysisJobs from '../hooks/useGetMetaAnalysisJobs';
+import MetaAnalysisJob from './MetaAnalysisJob';
 
 function MetaAnalysisResult() {
     const { projectId, metaAnalysisId } = useParams<{
         projectId: string;
         metaAnalysisId: string;
     }>();
-    const { data: metaAnalysis } = useGetMetaAnalysisById(metaAnalysisId);
-    const { data: metaAnalysisResult } = useGetMetaAnalysisResultById(
+    const {
+        data: metaAnalysis,
+        isLoading: metaAnalysisIsLoading,
+        isError: metaAnalysisIsError,
+    } = useGetMetaAnalysisById(metaAnalysisId);
+    const {
+        data: metaAnalysisJobs,
+        isLoading: metaAnalysisJobsIsLoading,
+        isError: metaAnalysisJobsIsError,
+    } = useGetMetaAnalysisJobs();
+    const {
+        data: metaAnalysisResult,
+        isLoading: metaAnalysisResultIsLoading,
+        isError: metaAnalysisResultIsError,
+    } = useGetMetaAnalysisResultById(
         metaAnalysis?.results?.length
             ? (metaAnalysis.results[metaAnalysis.results.length - 1] as ResultReturn)?.id
             : undefined
@@ -29,10 +45,18 @@ function MetaAnalysisResult() {
     const [tab, setTab] = useState(0);
 
     const hasResults = (metaAnalysis?.results?.length ?? 0) > 0;
+    const hasJobs = (metaAnalysisJobs?.results?.length ?? 0) > 0;
 
     return (
-        <Box>
-            <MetaAnalysisResultStatusAlert metaAnalysis={metaAnalysis} metaAnalysisResult={metaAnalysisResult} />
+        <StateHandlerComponent
+            isLoading={metaAnalysisIsLoading || metaAnalysisResultIsLoading || metaAnalysisJobsIsLoading}
+            isError={metaAnalysisIsError || metaAnalysisResultIsError || metaAnalysisJobsIsError}
+        >
+            <MetaAnalysisResultStatusAlert
+                metaAnalysis={metaAnalysis}
+                metaAnalysisResult={metaAnalysisResult}
+                metaAnalysisJobs={metaAnalysisJobs?.results}
+            />
             <Tabs
                 sx={{
                     mt: 2,
@@ -66,7 +90,9 @@ function MetaAnalysisResult() {
             </Tabs>
             <Box mt={2}>
                 {tab === 0 ? (
-                    hasResults ? (
+                    hasJobs ? (
+                        <MetaAnalysisJob metaAnalysisJobs={metaAnalysisJobs?.results ?? []} />
+                    ) : hasResults ? (
                         <DisplayMetaAnalysisResults metaAnalysis={metaAnalysis} />
                     ) : (
                         <RunMetaAnalysisInstructions metaAnalysisId={metaAnalysisId || ''} />
@@ -121,7 +147,7 @@ function MetaAnalysisResult() {
                     <Box>{!hasResults && <MetaAnalysisDangerZone metaAnalysisId={metaAnalysisId} />}</Box>
                 )}
             </Box>
-        </Box>
+        </StateHandlerComponent>
     );
 }
 

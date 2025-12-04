@@ -1,15 +1,29 @@
-import { MetaAnalysisReturn, NeurovaultFile, ResultReturn } from 'neurosynth-compose-typescript-sdk';
+import {
+    MetaAnalysisJobResponse,
+    MetaAnalysisReturn,
+    NeurovaultFile,
+    ResultReturn,
+} from 'neurosynth-compose-typescript-sdk';
 
 export const getResultStatus = (
     metaAnalysisObj: MetaAnalysisReturn | undefined,
-    metaAnalysisResult: ResultReturn | undefined
+    metaAnalysisResult: ResultReturn | undefined,
+    metaAnalysisJobs: Array<MetaAnalysisJobResponse> | undefined
 ): {
     statusText: string;
     color: 'success' | 'info' | 'warning' | 'error';
     severity: 'success' | 'info' | 'warning' | 'error';
 } => {
-    if ((metaAnalysisObj?.results || []).length === 0)
+    if ((metaAnalysisObj?.results || []).length === 0 && (metaAnalysisJobs || []).length === 0)
         return { statusText: 'No run detected', color: 'info', severity: 'info' };
+
+    if ((metaAnalysisJobs || []).length > 0) {
+        return {
+            statusText: 'Run in progress',
+            color: 'info',
+            severity: 'info',
+        };
+    }
 
     if (!metaAnalysisResult)
         return {
