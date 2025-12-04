@@ -40,15 +40,7 @@ const ExtractionOutOfSync: React.FC = (props) => {
         const stubsToBaseStudies: Array<
             Pick<
                 BaseStudy,
-                | 'name'
-                | 'doi'
-                | 'pmid'
-                | 'pmcid'
-                | 'year'
-                | 'description'
-                | 'publication'
-                | 'authors'
-                | 'level'
+                'name' | 'doi' | 'pmid' | 'pmcid' | 'year' | 'description' | 'publication' | 'authors' | 'level'
             >
         > = curationIncludedStudies.stubStudies.map((stub) => ({
             name: stub.title,
@@ -68,8 +60,7 @@ const ExtractionOutOfSync: React.FC = (props) => {
         });
 
         try {
-            const returnedBaseStudies = (await ingest(stubsToBaseStudies))
-                .data as Array<BaseStudyReturn>;
+            const returnedBaseStudies = (await ingest(stubsToBaseStudies)).data as Array<BaseStudyReturn>;
 
             const existingStudies: Array<string> = [];
             const newBaseStudiesToAdd: Array<BaseStudyReturn> = [];
@@ -118,12 +109,11 @@ const ExtractionOutOfSync: React.FC = (props) => {
                         <b>This studyset is out of sync</b>
                     </Typography>
                     <Typography>
-                        The curation phase was updated and no longer reflects what is in the
-                        studyset.
+                        The curation phase was updated and no longer reflects what is in the studyset.
                     </Typography>
                     <Typography>
-                        Click "FIX THIS ISSUE" in order to update the studyset with the studies
-                        included in the curation phase.
+                        Click "FIX THIS ISSUE" in order to update the studyset with the studies included in the curation
+                        phase.
                     </Typography>
                 </Box>
             </Box>

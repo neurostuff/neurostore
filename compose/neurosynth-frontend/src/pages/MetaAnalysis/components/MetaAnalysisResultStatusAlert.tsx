@@ -9,6 +9,7 @@ const MetaAnalysisResultStatusAlert: React.FC<{
     metaAnalysis?: MetaAnalysisReturn;
     metaAnalysisResult?: ResultReturn;
 }> = ({ metaAnalysis, metaAnalysisResult }) => {
+    console.log({ metaAnalysisResult });
     const resultStatus = useMemo(() => {
         return getResultStatus(metaAnalysis, metaAnalysisResult);
     }, [metaAnalysis, metaAnalysisResult]);
@@ -41,10 +42,6 @@ const MetaAnalysisResultStatusAlert: React.FC<{
                             `${localStorageResultAlertKey}-${resultStatus?.severity}-${metaAnalysis?.id}`,
                             'true'
                         );
-                    }}
-                    sx={{
-                        padding: '4px 10px',
-                        alignItems: 'center',
                     }}
                 >
                     {resultStatus.statusText}

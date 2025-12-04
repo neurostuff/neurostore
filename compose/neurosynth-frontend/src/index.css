@@ -35,3 +35,23 @@ code {
     display: -webkit-box !important;
     overflow: hidden !important;
 }
+
+.sleek-scrollbar {
+    &::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+        background-color: transparent;
+    }
+    &::-webkit-scrollbar-thumb {
+        background-color: #d1d5db;
+        border-radius: 3px;
+    }
+    &::-webkit-scrollbar-thumb:hover {
+        background-color: #9ca3af;
+        cursor: pointer;
+    }
+    &::-webkit-scrollbar-thumb:active {
+        background-color: #7f8590;
+        cursor: pointer;
+    }
+}

@@ -273,6 +273,7 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
                         display: 'grid',
                         gridTemplateColumns: 'auto 1fr auto',
                         gap: 4,
+                        height: '70px',
                     }}
                 >
                     <AddMetadataRow

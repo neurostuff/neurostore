@@ -4,10 +4,10 @@ import { useGetMetaAnalysisById } from 'hooks';
 import useGetSpecificationById from 'hooks/metaAnalyses/useGetSpecificationById';
 import { Annotation, Specification, SpecificationReturn, Studyset } from 'neurosynth-compose-typescript-sdk';
 import React, { useMemo } from 'react';
+import { Link as RouterLink } from 'react-router-dom';
 import { getAnalysisTypeDescription, getEstimatorDescription } from '../MetaAnalysisPage.helpers';
 import { IDynamicValueType } from './DynamicForm.types';
 import DynamicInputDisplay from './DynamicInputDisplay';
-import MetaAnalysisSummaryRow from './MetaAnalysisSummaryRow';
 import { isMultiGroupAlgorithm } from './SelectAnalysesComponent.helpers';
 import SelectAnalysesSummaryComponent from './SelectAnalysesSummaryComponent';
 
@@ -52,30 +52,36 @@ const DisplayMetaAnalysisSpecification: React.FC<{ projectId: string; metaAnalys
 
     return (
         <Box>
-            <Box>
-                <Typography sx={{ fontWeight: 'bold' }}>Data</Typography>
+            <Box sx={{ display: 'grid', gridTemplateColumns: 'auto 1fr', rowGap: 2, columnGap: 8 }}>
+                <Typography variant="h5">Data</Typography>
+                <Box></Box>
 
-                <MetaAnalysisSummaryRow
-                    title="analysis type"
-                    value={metaAnalysisSpecification?.type || ''}
-                    caption={metaAnalysisTypeDescription}
-                />
+                <Typography color="primary.dark" variant="body1">
+                    Analysis Type
+                </Typography>
+                <Box>
+                    <Typography variant="body1">{metaAnalysisSpecification?.type || ''}</Typography>
+                    <Typography variant="body2">{metaAnalysisTypeDescription}</Typography>
+                </Box>
 
-                <MetaAnalysisSummaryRow
-                    title="studyset id"
-                    value={
-                        <Link
-                            sx={{ cursor: 'pointer' }}
-                            onClick={() => {
-                                window.open(`/projects/${projectId}/extraction`, '_blank');
-                            }}
-                        >
-                            {metaAnalysisStudyset?.neurostore_id || ''}
-                        </Link>
-                    }
-                />
+                <Typography color="primary.dark" variant="body1">
+                    Studyset ID
+                </Typography>
+                <Link
+                    component={RouterLink}
+                    variant="body1"
+                    underline="hover"
+                    to={`/projects/${projectId}/extraction`}
+                    target="_blank"
+                >
+                    {metaAnalysisStudyset?.neurostore_id || ''}
+                </Link>
 
-                <MetaAnalysisSummaryRow title="selection" value={selectionText}>
+                <Typography color="primary.dark" variant="body1">
+                    Selection
+                </Typography>
+                <Box>
+                    <Typography variant="body1">{selectionText}</Typography>
                     {referenceDataset && (
                         <>
                             <SelectAnalysesSummaryComponent
@@ -97,27 +103,34 @@ const DisplayMetaAnalysisSpecification: React.FC<{ projectId: string; metaAnalys
                             </Typography>
                         </>
                     )}
-                </MetaAnalysisSummaryRow>
-            </Box>
+                </Box>
 
-            <Box>
-                <Typography sx={{ fontWeight: 'bold' }}>Algorithm</Typography>
+                <Typography variant="h5">Algorithm</Typography>
+                <Box></Box>
 
-                <MetaAnalysisSummaryRow
-                    title="algorithm and optional arguments"
-                    value={specification?.estimator?.type || ''}
-                    caption={getEstimatorDescription(metaAnalysisSpecification?.type, specification?.estimator?.type)}
-                >
+                <Typography color="primary.dark" variant="body1">
+                    Algorithm and optional arguments
+                </Typography>
+                <Box>
+                    <Typography variant="body1">{specification?.estimator?.type || ''}</Typography>
+                    <Typography variant="body2">
+                        {getEstimatorDescription(metaAnalysisSpecification?.type, specification?.estimator?.type)}
+                    </Typography>
                     <DynamicInputDisplay dynamicArg={(specification?.estimator?.args || {}) as IDynamicValueType} />
-                </MetaAnalysisSummaryRow>
+                </Box>
 
                 {specification?.corrector?.type && (
-                    <MetaAnalysisSummaryRow
-                        title="corrector and optional arguments"
-                        value={specification?.corrector?.type || ''}
-                    >
-                        <DynamicInputDisplay dynamicArg={(specification?.corrector?.args || {}) as IDynamicValueType} />
-                    </MetaAnalysisSummaryRow>
+                    <>
+                        <Typography color="primary.dark" variant="body1">
+                            Corrector and optional arguments
+                        </Typography>
+                        <Box>
+                            <Typography variant="body1">{specification?.corrector?.type || ''}</Typography>
+                            <DynamicInputDisplay
+                                dynamicArg={(specification?.corrector?.args || {}) as IDynamicValueType}
+                            />
+                        </Box>
+                    </>
                 )}
             </Box>
         </Box>

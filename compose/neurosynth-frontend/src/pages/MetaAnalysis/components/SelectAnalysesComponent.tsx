@@ -119,7 +119,7 @@ const SelectAnalysesComponent: React.FC<{
                 <Box
                     sx={{
                         padding: '1rem 0 2rem 3rem',
-                        borderLeft: '6px solid',
+                        borderLeft: '2px solid',
                         borderColor: 'secondary.main',
                     }}
                 >
