@@ -46,8 +46,11 @@ const MetaAnalysisDangerZone: React.FC<{ metaAnalysisId: string | undefined }> =
                 marginTop: '2rem',
             }}
         >
-            <Typography gutterBottom variant="h6" sx={{ color: 'error.main' }}>
+            <Typography gutterBottom variant="h5" sx={{ color: 'error.main' }}>
                 Danger zone
+            </Typography>
+            <Typography gutterBottom variant="body1" sx={{ color: 'error.main' }}>
+                Note: Once you have run your meta-analysis, you will not be able to delete it.
             </Typography>
             <ConfirmationDialog
                 isOpen={confirmationDialogIsOpen}

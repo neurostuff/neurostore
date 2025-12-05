@@ -3,7 +3,12 @@ import { SystemStyleObject } from '@mui/system';
 import { useState } from 'react';
 import CodeSnippetStyles from './CodeSnippet.styles';
 
-const CodeSnippet: React.FC<{ linesOfCode: string[]; noCopyButton?: boolean; sx?: SystemStyleObject }> = (props) => {
+const CodeSnippet: React.FC<{
+    linesOfCode: string[];
+    noCopyButton?: boolean;
+    sx?: SystemStyleObject;
+    title?: string;
+}> = (props) => {
     const [copied, setCopied] = useState(false);
 
     const copyToClipboard = () => {
@@ -21,7 +26,7 @@ const CodeSnippet: React.FC<{ linesOfCode: string[]; noCopyButton?: boolean; sx?
         <Box sx={{ display: 'flex', flexDirection: 'column' }}>
             <Box sx={CodeSnippetStyles.codeBlockHeader}>
                 <Box>
-                    <Typography variant="body2">Code Snippet</Typography>
+                    <Typography variant="body2">{props.title ?? 'Code Snippet'}</Typography>
                 </Box>
                 {props.noCopyButton ? null : (
                     <Box>

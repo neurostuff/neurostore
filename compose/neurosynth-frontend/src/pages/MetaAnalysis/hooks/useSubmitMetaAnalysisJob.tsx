@@ -12,8 +12,8 @@ const useSubmitMetaAnalysisJob = () => {
                 metaAnalysisJobRequest
             ),
         {
-            onSuccess: () => {
-                queryClient.invalidateQueries(['meta-analysis-jobs']);
+            onSuccess: async () => {
+                await queryClient.invalidateQueries('meta-analysis-jobs');
             },
             onError: () => {
                 enqueueSnackbar('There was an error creating the meta analysis job', { variant: 'error' });

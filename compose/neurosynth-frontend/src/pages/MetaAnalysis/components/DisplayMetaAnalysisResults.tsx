@@ -13,10 +13,10 @@ const DisplayMetaAnalysisResults: React.FC<{
     metaAnalysis: MetaAnalysisReturn | undefined;
 }> = ({ metaAnalysis }) => {
     // Each result represents a run. We just need to get the last item to get the latest run
-    const metaAnalysisResults = (metaAnalysis?.results || []) as ResultReturn[];
-    const { data, isLoading, isError } = useGetMetaAnalysisResultById(
-        metaAnalysisResults[metaAnalysisResults.length - 1]?.id
-    );
+    const metaAnalysisResults = (metaAnalysis?.results ?? []) as ResultReturn[];
+    const latestResult =
+        metaAnalysisResults.length > 0 ? metaAnalysisResults[metaAnalysisResults.length - 1] : undefined;
+    const { data, isLoading, isError } = useGetMetaAnalysisResultById(latestResult?.id);
     const neurovaultCollectionLink = data?.neurovault_collection?.url || '';
 
     const neurovaultFileURLs = ((data?.neurovault_collection?.files || []) as NeurovaultFile[]).map(

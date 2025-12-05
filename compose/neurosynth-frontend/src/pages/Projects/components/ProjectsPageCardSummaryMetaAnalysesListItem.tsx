@@ -2,6 +2,8 @@ import { ListItem, ListItemButton, ListItemIcon, ListItemProps, ListItemText, Sk
 import { getResultStatus } from 'helpers/MetaAnalysis.helpers';
 import { useGetMetaAnalysisResultById } from 'hooks';
 import { MetaAnalysisReturn, ResultReturn } from 'neurosynth-compose-typescript-sdk';
+import useGetMetaAnalysisJobById from 'pages/MetaAnalysis/hooks/useGetMetaAnalysisJobById';
+import useGetMetaAnalysisJobsByMetaAnalysisId from 'pages/MetaAnalysis/hooks/useGetMetaAnalysisJobsByMetaAnalysisId';
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 
@@ -16,11 +18,18 @@ const ProjectsPageCardSummaryMetaAnalysesListItem: React.FC<ListItemProps & { me
             : undefined
     );
 
-    const resultStatus = useMemo(() => {
-        return getResultStatus(metaAnalysis, metaAnalysisResult);
-    }, [metaAnalysis, metaAnalysisResult]);
+    const { data: metaAnalysisJobs, isLoading: metaAnalysisJobsIsLoading } = useGetMetaAnalysisJobsByMetaAnalysisId(
+        metaAnalysis?.id
+    );
+    const jobs = metaAnalysisJobs ?? [];
+    const latestJob = jobs.length > 0 ? jobs[jobs.length - 1] : undefined;
+    const { data: latestMetaAnalysisJob, isLoading: latestJobIsLoading } = useGetMetaAnalysisJobById(latestJob?.job_id);
 
-    if (getMetaAnalysisResultIsLoading) {
+    const resultStatus = useMemo(() => {
+        return getResultStatus(metaAnalysis, metaAnalysisResult, latestMetaAnalysisJob);
+    }, [metaAnalysis, metaAnalysisResult, latestMetaAnalysisJob]);
+
+    if (getMetaAnalysisResultIsLoading || metaAnalysisJobsIsLoading || latestJobIsLoading) {
         return (
             <ListItem {...listItemProps} divider disableGutters disablePadding>
                 <ListItemButton>

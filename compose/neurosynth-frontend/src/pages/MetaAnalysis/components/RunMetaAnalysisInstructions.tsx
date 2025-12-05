@@ -16,8 +16,12 @@ import useSubmitMetaAnalysisJob from '../hooks/useSubmitMetaAnalysisJob';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import { useState } from 'react';
 import { useSnackbar } from 'notistack';
+import { localStorageResultAlertKey } from './MetaAnalysisResultStatusAlert';
 
-const RunMetaAnalysisInstructions: React.FC<{ metaAnalysisId: string }> = ({ metaAnalysisId }) => {
+const RunMetaAnalysisInstructions: React.FC<{
+    metaAnalysisId: string;
+    onSubmitMetaAnalysisJob?: () => void;
+}> = ({ metaAnalysisId, onSubmitMetaAnalysisJob = () => {} }) => {
     const { mutate: submitMetaAnalysisJob, isLoading: submitMetaAnalysisJobIsLoading } = useSubmitMetaAnalysisJob();
     const { enqueueSnackbar } = useSnackbar();
     const [showConfirmationDialog, setShowConfirmationDialog] = useState(false);
@@ -30,6 +34,12 @@ const RunMetaAnalysisInstructions: React.FC<{ metaAnalysisId: string }> = ({ met
                     onSuccess: () => {
                         enqueueSnackbar('Meta-analysis job submitted successfully', { variant: 'success' });
                         setShowConfirmationDialog(false);
+                        onSubmitMetaAnalysisJob();
+                        // show the alert in case the user has previously hidden it as it contains important info about the job status.
+                        // we show the alert by removing the item from the localStorage
+                        if (localStorage.getItem(`${localStorageResultAlertKey}-${metaAnalysisId}`)) {
+                            localStorage.removeItem(`${localStorageResultAlertKey}-${metaAnalysisId}`);
+                        }
                     },
                 }
             );
@@ -44,8 +54,15 @@ const RunMetaAnalysisInstructions: React.FC<{ metaAnalysisId: string }> = ({ met
             <Typography variant="h5" sx={{ fontWeight: 'bold' }} my={3}>
                 Run your meta-analysis via one of the following methods:
             </Typography>
-            <Box sx={{ display: 'flex', gap: 4 }}>
-                <Card elevation={2} sx={{ padding: 1, display: 'flex', flexDirection: 'column', flex: '1 1 0' }}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 4 }}>
+                <Card
+                    elevation={2}
+                    sx={{
+                        padding: 1,
+                        display: 'flex',
+                        flexDirection: 'column',
+                    }}
+                >
                     <ConfirmationDialog
                         isOpen={showConfirmationDialog}
                         confirmText="Run meta-analysis"
@@ -100,7 +117,7 @@ const RunMetaAnalysisInstructions: React.FC<{ metaAnalysisId: string }> = ({ met
                         </Button>
                     </CardActions>
                 </Card>
-                <Card elevation={2} sx={{ padding: 1, display: 'flex', flexDirection: 'column', flex: '1 1 0' }}>
+                <Card elevation={2} sx={{ padding: 1, display: 'flex', flexDirection: 'column' }}>
                     <CardHeader
                         title="2. Online via Google Colab Notebook"
                         titleTypographyProps={{
@@ -128,7 +145,7 @@ const RunMetaAnalysisInstructions: React.FC<{ metaAnalysisId: string }> = ({ met
                         </Button>
                     </CardActions>
                 </Card>
-                <Card elevation={2} sx={{ padding: 1, display: 'flex', flexDirection: 'column', flex: '1 1 0' }}>
+                <Card elevation={2} sx={{ padding: 1, display: 'flex', flexDirection: 'column' }}>
                     <CardHeader
                         title="3. Locally via Docker"
                         titleTypographyProps={{

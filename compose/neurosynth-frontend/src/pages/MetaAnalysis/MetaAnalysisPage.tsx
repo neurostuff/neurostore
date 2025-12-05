@@ -10,7 +10,7 @@ import MetaAnalysisPageStyles from 'pages/MetaAnalysis/MetaAnalysisPage.styles';
 import { useProjectName, useProjectUser } from 'pages/Project/store/ProjectStore';
 import { useParams } from 'react-router-dom';
 import { NeurostoreAnnotation } from 'utils/api';
-import MetaAnalysisResult from './components/MetaAnalysisResult';
+import MetaAnalysisDetails from './components/MetaAnalysisDetails';
 
 const MetaAnalysisPage: React.FC = () => {
     // const { startTour } = useGetTour('MetaAnalysisPage');
@@ -160,7 +160,7 @@ const MetaAnalysisPage: React.FC = () => {
                     </Box>
                 </Box>
 
-                <MetaAnalysisResult />
+                <MetaAnalysisDetails />
             </StateHandlerComponent>
         </>
     );
