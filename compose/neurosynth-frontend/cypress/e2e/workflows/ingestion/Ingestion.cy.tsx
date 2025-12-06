@@ -27,13 +27,13 @@ describe('Ingestion', () => {
             fixture: 'IngestionFixtures/studysetFixture',
         }).as('studysetFixture');
 
-        cy.intercept('POST', `**/api/annotations/*`, {
+        cy.intercept('POST', `**/api/annotations/**`, {
             fixture: 'IngestionFixtures/annotationsFixture',
         }).as('annotationFixture');
-        cy.intercept('PUT', `**/api/annotations/*`, {
+        cy.intercept('PUT', `**/api/annotations/**`, {
             fixture: 'IngestionFixtures/annotationsPutFixture',
         }).as('annotationPutFixture');
-        cy.intercept('GET', `**/api/annotations/*`, {
+        cy.intercept('GET', `**/api/annotations/**`, {
             fixture: 'IngestionFixtures/annotationsPutFixture',
         }).as('annotationFixture');
 
