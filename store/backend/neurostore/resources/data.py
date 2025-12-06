@@ -134,18 +134,6 @@ class StudysetsView(ObjectView, ListView):
 
         return unique_ids
 
-    def eager_load(self, q, args=None):
-        q = q.options(
-            selectinload(Studyset.studyset_studies).options(
-                load_only(
-                    StudysetStudy.study_id,
-                    StudysetStudy.studyset_id,
-                    StudysetStudy.curation_stub_uuid,
-                )
-            )
-        )
-        return super().eager_load(q, args)
-
     @classmethod
     def load_nested_records(cls, data, record=None):
         if not data or not data.get("studies"):
@@ -173,6 +161,15 @@ class StudysetsView(ObjectView, ListView):
 
     def eager_load(self, q, args=None):
         args = args or {}
+        q = q.options(
+            selectinload(Studyset.studyset_studies).options(
+                load_only(
+                    StudysetStudy.study_id,
+                    StudysetStudy.studyset_id,
+                    StudysetStudy.curation_stub_uuid,
+                )
+            )
+        )
         if args.get("nested"):
             q = q.options(
                 selectinload(Studyset.studies).options(

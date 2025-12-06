@@ -28,12 +28,21 @@ export const mapStubsToStudysetPayload = (
 ): Array<{ id: string; curation_stub_uuid: string }> => {
     const payload: Array<{ id: string; curation_stub_uuid: string }> = [];
 
-    baseStudies.forEach((baseStudy, idx) => {
-        const stub = stubs[idx];
-        if (!stub) return;
+    stubs.forEach((stub, idx) => {
+        const targetStudyId = stubToStudyId?.get(stub.id);
+
+        // Prefer a base study that actually contains the mapped study version.
+        const baseStudy =
+            (targetStudyId &&
+                baseStudies.find((bs) =>
+                    (bs.versions || []).some((version) => version.id === targetStudyId)
+                )) ||
+            baseStudies[idx];
+
+        if (!baseStudy) return;
 
         const versions = (baseStudy.versions || []) as Array<StudyReturn>;
-        const existingForStub = stubToStudyId?.get(stub.id);
+        const existingForStub = targetStudyId;
 
         // Prefer a version that matches the study currently linked to this stub
         const foundVersion =

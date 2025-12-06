@@ -15,6 +15,7 @@ import json
 import sys
 from typing import Iterable, Mapping
 
+from neurostore.core import app
 from neurostore.database import db
 from neurostore.models import StudysetStudy
 
@@ -36,28 +37,29 @@ def main(path: str):
     updated = 0
     missing = 0
 
-    for entry in iter_mappings(payload):
-        studyset_id = entry.get("studyset_id")
-        study_id = entry.get("study_id")
-        stub = entry.get("curation_stub_uuid")
-        if not (studyset_id and study_id and stub):
-            missing += 1
-            continue
+    with app.app_context():
+        for entry in iter_mappings(payload):
+            studyset_id = entry.get("studyset_id")
+            study_id = entry.get("study_id")
+            stub = entry.get("curation_stub_uuid")
+            if not (studyset_id and study_id and stub):
+                missing += 1
+                continue
 
-        sss = (
-            StudysetStudy.query.filter_by(
-                studyset_id=studyset_id,
-                study_id=study_id,
-            ).first()
-        )
-        if not sss:
-            missing += 1
-            continue
+            sss = (
+                StudysetStudy.query.filter_by(
+                    studyset_id=studyset_id,
+                    study_id=study_id,
+                ).first()
+            )
+            if not sss:
+                missing += 1
+                continue
 
-        sss.curation_stub_uuid = stub
-        updated += 1
+            sss.curation_stub_uuid = stub
+            updated += 1
 
-    db.session.commit()
+        db.session.commit()
     print(f"Updated {updated} studyset-studies; {missing} entries had no matching row.")
 
 

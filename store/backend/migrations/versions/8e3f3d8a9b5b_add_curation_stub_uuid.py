@@ -1,7 +1,7 @@
 """add curation_stub_uuid to studyset_studies
 
 Revision ID: 8e3f3d8a9b5b
-Revises: 1473078c723e
+Revises: f8c3bc088c2d
 Create Date: 2025-10-14 00:00:00.000000
 
 """
