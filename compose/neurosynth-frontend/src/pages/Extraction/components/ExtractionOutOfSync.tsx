@@ -16,7 +16,7 @@ import { setAnalysesInAnnotationAsIncluded } from 'helpers/Annotation.helpers';
 import { useState } from 'react';
 import { useIsFetching, useQueryClient } from 'react-query';
 import ExtractionOutOfSyncStyles from './ExtractionOutOfSync.styles';
-import { selectBestVersionsForStudyset } from 'helpers/Extraction.helpers';
+import { mapStubsToStudysetPayload } from 'helpers/Extraction.helpers';
 
 const ExtractionOutOfSync: React.FC = (props) => {
     const studysetId = useProjectExtractionStudysetId();
@@ -62,25 +62,16 @@ const ExtractionOutOfSync: React.FC = (props) => {
         try {
             const returnedBaseStudies = (await ingest(stubsToBaseStudies)).data as Array<BaseStudyReturn>;
 
-            const existingStudies: Array<string> = [];
-            const newBaseStudiesToAdd: Array<BaseStudyReturn> = [];
+            const studiesPayload = mapStubsToStudysetPayload(
+                curationIncludedStudies.stubStudies,
+                returnedBaseStudies,
+                studiesInStudyset
+            );
 
-            returnedBaseStudies.forEach((baseStudy) => {
-                const foundVersion = (baseStudy.versions as StudyReturn[]).find((studyVersion) =>
-                    studiesInStudyset.has(studyVersion.id || '')
-                );
-                if (foundVersion && foundVersion.id) {
-                    existingStudies.push(foundVersion.id);
-                } else {
-                    newBaseStudiesToAdd.push(baseStudy);
-                }
-            });
-
-            const selectedVersions = selectBestVersionsForStudyset(newBaseStudiesToAdd);
             const updatedStudyset = await updateStudyset({
                 studysetId: studysetId,
                 studyset: {
-                    studies: [...existingStudies, ...selectedVersions],
+                    studies: studiesPayload,
                 },
             });
 

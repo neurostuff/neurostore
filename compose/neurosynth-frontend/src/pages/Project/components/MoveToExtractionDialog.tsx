@@ -3,10 +3,10 @@ import BaseDialog, { IDialog } from 'components/Dialogs/BaseDialog';
 import { EPropertyType } from 'components/EditMetadata/EditMetadata.types';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { setAnalysesInAnnotationAsIncluded } from 'helpers/Annotation.helpers';
-import { selectBestVersionsForStudyset } from 'helpers/Extraction.helpers';
+import { mapStubsToStudysetPayload, selectBestBaseStudyVersion } from 'helpers/Extraction.helpers';
 import { useCreateAnnotation, useCreateStudyset, useUpdateStudyset } from 'hooks';
 import useIngest from 'hooks/studies/useIngest';
-import { BaseStudy, BaseStudyReturn } from 'neurostore-typescript-sdk';
+import { BaseStudy, BaseStudyReturn, StudyReturn } from 'neurostore-typescript-sdk';
 import { useSnackbar } from 'notistack';
 import {
     useProjectCurationColumn,
@@ -149,11 +149,15 @@ const MoveToExtractionDialog: React.FC<IDialog> = (props) => {
             const res = await asyncIngest(stubsToBaseStudies);
             const returnedBaseStudies = res.data as Array<BaseStudyReturn>;
 
-            const selectedStudyIds = selectBestVersionsForStudyset(returnedBaseStudies);
+            const studiesPayload = mapStubsToStudysetPayload(
+                includedStubs,
+                returnedBaseStudies
+            );
+
             await asyncUpdateStudyset({
                 studysetId: newStudysetId,
                 studyset: {
-                    studies: selectedStudyIds,
+                    studies: studiesPayload,
                 },
             });
 
