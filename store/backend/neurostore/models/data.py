@@ -87,8 +87,13 @@ class Studyset(BaseMixin, db.Model):
     studies = relationship(
         "Study",
         secondary="studyset_studies",
-        backref=backref("studysets", lazy="dynamic"),
+        backref=backref(
+            "studysets",
+            lazy="dynamic",
+            overlaps="studyset_studies,studyset",
+        ),
         passive_deletes=True,
+        overlaps="studyset_studies,studyset",
     )
     annotations = relationship(
         "Annotation",
