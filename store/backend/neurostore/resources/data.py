@@ -277,15 +277,20 @@ class StudysetsView(ObjectView, ListView):
         Extend base behavior to attach optional curation_stub_uuid to studyset-study links.
         """
         stub_map = data.pop("curation_stub_map", {}) or {}
-        record = super().update_or_create(
-            data, id=id, user=user, record=record, flush=flush
-        )
+        record = super().update_or_create(data, id=id, user=user, record=record, flush=flush)
 
         if stub_map and getattr(record, "studyset_studies", None):
             for association in record.studyset_studies:
-                stub = stub_map.get(association.study_id)
-                if stub:
-                    association.curation_stub_uuid = stub
+                # If we got a stub for this study_id, update the mapping
+                if association.study_id in stub_map:
+                    association.curation_stub_uuid = stub_map.get(association.study_id)
+                else:
+                    # If this study_id matches a previously mapped stub, ensure we carry it over
+                    # so that switching versions keeps the same stub UUID.
+                    for prev_study_id, stub in stub_map.items():
+                        if stub == association.curation_stub_uuid:
+                            association.curation_stub_uuid = stub
+                            break
 
         return record
 
