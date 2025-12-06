@@ -500,15 +500,25 @@ class StudysetStudy(db.Model):
     studyset_id = db.Column(
         db.ForeignKey("studysets.id", ondelete="CASCADE"), index=True, primary_key=True
     )
+    curation_stub_uuid = db.Column(db.Text, nullable=True, index=True)
     study = relationship(
         "Study",
         backref=backref("studyset_studies"),
-        viewonly=True,
     )
     studyset = relationship(
         "Studyset",
-        backref=backref("studyset_studies"),
-        viewonly=True,
+        backref=backref(
+            "studyset_studies",
+            cascade="all, delete-orphan",
+            passive_deletes=True,
+        ),
+    )
+    __table_args__ = (
+        db.UniqueConstraint(
+            "studyset_id",
+            "curation_stub_uuid",
+            name="uq_studyset_stub_uuid",
+        ),
     )
     annotation_analyses = relationship(
         "AnnotationAnalysis",
