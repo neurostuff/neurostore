@@ -23,7 +23,8 @@ type StubLike = Pick<ICurationStubStudy, 'id'>;
 export const mapStubsToStudysetPayload = (
     stubs: Array<StubLike>,
     baseStudies: Array<BaseStudyReturn>,
-    existingStudyIds?: Set<string>
+    existingStudyIds?: Set<string>,
+    stubToStudyId?: Map<string, string>
 ): Array<{ id: string; curation_stub_uuid: string }> => {
     const payload: Array<{ id: string; curation_stub_uuid: string }> = [];
 
@@ -32,7 +33,13 @@ export const mapStubsToStudysetPayload = (
         if (!stub) return;
 
         const versions = (baseStudy.versions || []) as Array<StudyReturn>;
-        const foundVersion = versions.find((studyVersion) => existingStudyIds?.has(studyVersion.id || ''));
+        const existingForStub = stubToStudyId?.get(stub.id);
+
+        // Prefer a version that matches the study currently linked to this stub
+        const foundVersion =
+            versions.find((studyVersion) => studyVersion.id === existingForStub) ||
+            versions.find((studyVersion) => existingStudyIds?.has(studyVersion.id || ''));
+
         const chosenVersion = foundVersion || selectBestBaseStudyVersion(versions);
 
         if (chosenVersion?.id) {

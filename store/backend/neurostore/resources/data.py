@@ -21,6 +21,7 @@ from sqlalchemy.orm import (
     defaultload,
     raiseload,
     selectinload,
+    load_only,
 )
 import sqlalchemy as sa
 from sqlalchemy import select
@@ -132,6 +133,18 @@ class StudysetsView(ObjectView, ListView):
                 unique_ids["annotations"].add(annotation_id)
 
         return unique_ids
+
+    def eager_load(self, q, args=None):
+        q = q.options(
+            selectinload(Studyset.studyset_studies).options(
+                load_only(
+                    StudysetStudy.study_id,
+                    StudysetStudy.studyset_id,
+                    StudysetStudy.curation_stub_uuid,
+                )
+            )
+        )
+        return super().eager_load(q, args)
 
     @classmethod
     def load_nested_records(cls, data, record=None):

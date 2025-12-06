@@ -392,9 +392,11 @@ class AnalysisConditionSchema(BaseDataSchema):
 
 
 class StudysetStudySchema(BaseDataSchema):
-    studyset_id = fields.String()  # primary key needed (no id_field)
-    study_id = fields.String()  # primary key needed (no id_field)
-    curation_stub_uuid = fields.String(load_only=True, allow_none=True)
+    # expose only the study id and optional stub mapping; keep everything else load-only
+    id = fields.Function(lambda obj: getattr(obj, "study_id", None), dump_only=True)
+    study_id = fields.String(load_only=True)  # primary key needed (no id_field)
+    studyset_id = fields.String(load_only=True)  # primary key needed (no id_field)
+    curation_stub_uuid = fields.String(allow_none=True)
 
 
 class AnalysisSchema(BaseDataSchema):
@@ -605,6 +607,8 @@ class StudysetSchema(BaseDataSchema):
     studies = StringOrNested(
         StudySchema, many=True
     )  # This needs to be nested, but not cloned
+    # expose association records for stub mapping
+    studyset_studies = fields.Nested("StudysetStudySchema", many=True, dump_only=True)
     curation_stub_map = fields.Dict(load_only=True)
     source = fields.String(dump_only=True, allow_none=True)
     source_id = fields.String(dump_only=True, allow_none=True)
@@ -642,6 +646,24 @@ class StudysetSchema(BaseDataSchema):
         if stub_map:
             data["curation_stub_map"] = stub_map
 
+        return data
+
+    @post_dump
+    def normalize_studyset_studies(self, data, **kwargs):
+        """
+        Emit minimal association records with id and optional curation_stub_uuid.
+        If there is no stub mapping, return the study id with curation_stub_uuid as null.
+        """
+        if "studyset_studies" in data and data["studyset_studies"] is not None:
+            normalized = []
+            for assoc in data["studyset_studies"]:
+                normalized.append(
+                    {
+                        "id": assoc.get("id") or assoc.get("study_id"),
+                        "curation_stub_uuid": assoc.get("curation_stub_uuid"),
+                    }
+                )
+            data["studyset_studies"] = normalized
         return data
 
 

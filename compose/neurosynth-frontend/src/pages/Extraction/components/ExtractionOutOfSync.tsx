@@ -55,8 +55,15 @@ const ExtractionOutOfSync: React.FC = (props) => {
         }));
 
         const studiesInStudyset = new Set<string>();
+        const stubMap = new Map<string, string>();
         ((studyset?.studies || []) as Array<StudyReturn>).forEach((study) => {
             if (study.id) studiesInStudyset.add(study.id);
+        });
+        // build stub -> study id map from studyset_studies if available
+        (studyset?.studyset_studies || []).forEach((assoc) => {
+            if (assoc.curation_stub_uuid && assoc.id) {
+                stubMap.set(assoc.curation_stub_uuid, assoc.id);
+            }
         });
 
         try {
@@ -65,7 +72,8 @@ const ExtractionOutOfSync: React.FC = (props) => {
             const studiesPayload = mapStubsToStudysetPayload(
                 curationIncludedStudies.stubStudies,
                 returnedBaseStudies,
-                studiesInStudyset
+                studiesInStudyset,
+                stubMap
             );
 
             const updatedStudyset = await updateStudyset({

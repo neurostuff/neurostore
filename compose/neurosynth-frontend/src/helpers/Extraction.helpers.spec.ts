@@ -35,4 +35,13 @@ describe('mapStubsToStudysetPayload', () => {
         const payload = mapStubsToStudysetPayload(stubs, baseStudies, existing);
         expect(payload[0]).toEqual({ id: 'existing-id', curation_stub_uuid: 'stub-1' });
     });
+
+    it('prefers the study mapped to the stub when provided', () => {
+        const stubs = [{ id: 'stub-1' }];
+        const baseStudies: Array<BaseStudyReturn> = [makeBaseStudy('bs1', ['old-id', 'new-id'])];
+        const stubMap = new Map<string, string>([['stub-1', 'new-id']]);
+
+        const payload = mapStubsToStudysetPayload(stubs, baseStudies, undefined, stubMap);
+        expect(payload[0]).toEqual({ id: 'new-id', curation_stub_uuid: 'stub-1' });
+    });
 });
