@@ -37,7 +37,7 @@ describe('Ingestion', () => {
             fixture: 'IngestionFixtures/annotationsPutFixture',
         }).as('annotationFixture');
 
-        cy.intercept('POST', `**/api/base-studies/`, {
+        cy.intercept('POST', `**/api/base-studies*`, {
             fixture: 'IngestionFixtures/baseStudiesFixture',
         }).as('baseStudiesFixture');
     });
@@ -48,8 +48,10 @@ describe('Ingestion', () => {
         cy.contains('button', 'NEXT').click();
         cy.contains('button', 'START').click();
 
-        cy.get('@baseStudiesFixture').its('request.body').should('not.have.a.property', 'doi');
-        cy.get('@baseStudiesFixture').its('request.body').should('not.have.a.property', 'pmid');
-        cy.get('@baseStudiesFixture').its('request.body').should('not.have.a.property', 'pmcid');
+        cy.wait('@baseStudiesFixture')
+            .its('request.body')
+            .should('not.have.a.property', 'doi')
+            .and('not.have.a.property', 'pmid')
+            .and('not.have.a.property', 'pmcid');
     });
 });
