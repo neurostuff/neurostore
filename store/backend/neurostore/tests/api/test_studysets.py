@@ -1,6 +1,6 @@
 import random
 import string
-from neurostore.models import Studyset, Study
+from neurostore.models import Studyset, Study, StudysetStudy
 
 
 def test_post_and_get_studysets(auth_client, ingest_neurosynth, session):
@@ -249,3 +249,42 @@ def test_clone_studyset_without_annotations_when_disabled(
     )
     assert cloned_annotations.status_code == 200
     assert cloned_annotations.json()["results"] == []
+
+
+def test_studyset_studies_capture_curation_stub_uuid(auth_client, ingest_neurosynth, session):
+    payload = auth_client.get("/api/studies/?page_size=2").json()
+    study_ids = [study["id"] for study in payload["results"]]
+    stub_uuid = "123e4567-e89b-12d3-a456-426614174000"
+
+    create_resp = auth_client.post(
+        "/api/studysets/",
+        data={
+            "name": "stubbed",
+            "studies": [
+                {"id": study_ids[0], "curation_stub_uuid": stub_uuid},
+                study_ids[1],
+            ],
+        },
+    )
+    assert create_resp.status_code == 200
+    studyset_id = create_resp.json()["id"]
+
+    assoc = (
+        session.query(StudysetStudy)
+        .filter_by(studyset_id=studyset_id, study_id=study_ids[0])
+        .one()
+    )
+    assert assoc.curation_stub_uuid == stub_uuid
+
+    # If the caller omits the stub on update, we preserve the existing mapping
+    update_resp = auth_client.put(
+        f"/api/studysets/{studyset_id}",
+        data={"studies": [study_ids[0], study_ids[1]]},
+    )
+    assert update_resp.status_code == 200
+    assoc_after = (
+        session.query(StudysetStudy)
+        .filter_by(studyset_id=studyset_id, study_id=study_ids[0])
+        .one()
+    )
+    assert assoc_after.curation_stub_uuid == stub_uuid
