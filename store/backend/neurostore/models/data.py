@@ -503,7 +503,14 @@ class StudysetStudy(db.Model):
     curation_stub_uuid = db.Column(db.Text, nullable=True, index=True)
     study = relationship(
         "Study",
-        backref=backref("studyset_studies"),
+        backref=backref(
+            "studyset_studies",
+            cascade="all, delete-orphan",
+            passive_deletes=True,
+            overlaps="studysets",
+        ),
+        passive_deletes=True,
+        overlaps="studysets",
     )
     studyset = relationship(
         "Studyset",
@@ -511,7 +518,10 @@ class StudysetStudy(db.Model):
             "studyset_studies",
             cascade="all, delete-orphan",
             passive_deletes=True,
+            overlaps="studies",
         ),
+        passive_deletes=True,
+        overlaps="studies",
     )
     __table_args__ = (
         db.UniqueConstraint(
