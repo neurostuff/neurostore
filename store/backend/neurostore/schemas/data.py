@@ -387,6 +387,7 @@ class AnalysisConditionSchema(BaseDataSchema):
 class StudysetStudySchema(BaseDataSchema):
     studyset_id = fields.String()  # primary key needed (no id_field)
     study_id = fields.String()  # primary key needed (no id_field)
+    curation_stub_uuid = fields.String(load_only=True, allow_none=True)
 
 
 class AnalysisSchema(BaseDataSchema):
@@ -595,6 +596,7 @@ class StudysetSchema(BaseDataSchema):
     studies = StringOrNested(
         StudySchema, many=True
     )  # This needs to be nested, but not cloned
+    curation_stub_map = fields.Dict(load_only=True)
     source = fields.String(dump_only=True, allow_none=True)
     source_id = fields.String(dump_only=True, allow_none=True)
     source_updated_at = fields.DateTime(dump_only=True, allow_none=True)
@@ -606,6 +608,32 @@ class StudysetSchema(BaseDataSchema):
 
     class Meta:
         render_module = orjson
+
+    @pre_load
+    def capture_curation_stub_uuids(self, data, **kwargs):
+        if not isinstance(data, dict):
+            return data
+        studies = data.get("studies")
+        if not studies:
+            return data
+
+        stub_map = {}
+        cleaned = []
+        for item in studies:
+            if isinstance(item, dict):
+                stub = item.get("curation_stub_uuid")
+                study_id = item.get("id") or item.get("study_id") or item.get("study")
+                if stub and study_id:
+                    stub_map[study_id] = stub
+                cleaned.append({k: v for k, v in item.items() if k != "curation_stub_uuid"})
+            else:
+                cleaned.append(item)
+
+        data["studies"] = cleaned
+        if stub_map:
+            data["curation_stub_map"] = stub_map
+
+        return data
 
 
 class AnnotationAnalysisSchema(BaseSchema):

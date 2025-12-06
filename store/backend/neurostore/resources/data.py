@@ -271,6 +271,24 @@ class StudysetsView(ObjectView, ListView):
 
         return response
 
+    @classmethod
+    def update_or_create(cls, data, id=None, user=None, record=None, flush=True):
+        """
+        Extend base behavior to attach optional curation_stub_uuid to studyset-study links.
+        """
+        stub_map = data.pop("curation_stub_map", {}) or {}
+        record = super().update_or_create(
+            data, id=id, user=user, record=record, flush=flush
+        )
+
+        if stub_map and getattr(record, "studyset_studies", None):
+            for association in record.studyset_studies:
+                stub = stub_map.get(association.study_id)
+                if stub:
+                    association.curation_stub_uuid = stub
+
+        return record
+
     def _build_clone_payload(self, source_id, override_data):
         source_record = (
             Studyset.query.options(
