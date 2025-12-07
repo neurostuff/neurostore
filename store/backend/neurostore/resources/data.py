@@ -287,11 +287,15 @@ class StudysetsView(ObjectView, ListView):
         Extend base behavior to attach optional curation_stub_uuid to studyset-study links.
         """
         stub_map = data.pop("curation_stub_map", {}) or {}
-        record = super().update_or_create(data, id=id, user=user, record=record, flush=flush)
+        record = super().update_or_create(
+            data, id=id, user=user, record=record, flush=flush
+        )
 
         if getattr(record, "studyset_studies", None) is not None:
             # Ensure associations match the current studies and apply stub mappings.
-            current_ids = {s.id for s in getattr(record, "studies", []) if getattr(s, "id", None)}
+            current_ids = {
+                s.id for s in getattr(record, "studies", []) if getattr(s, "id", None)
+            }
 
             # Load existing associations directly to avoid duplicate pending rows in the relationship.
             existing = {
@@ -316,7 +320,9 @@ class StudysetsView(ObjectView, ListView):
                 assoc = existing.get(study_id)
                 if not assoc:
                     assoc = StudysetStudy(
-                        study_id=study_id, studyset_id=record.id, curation_stub_uuid=None
+                        study_id=study_id,
+                        studyset_id=record.id,
+                        curation_stub_uuid=None,
                     )
                     db.session.add(assoc)
                     existing[study_id] = assoc

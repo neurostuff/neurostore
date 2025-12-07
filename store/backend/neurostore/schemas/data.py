@@ -629,7 +629,9 @@ class StudysetSchema(BaseDataSchema):
                 study_id = item.get("id") or item.get("study_id") or item.get("study")
                 if stub and study_id:
                     stub_map[study_id] = stub
-                cleaned.append({k: v for k, v in item.items() if k != "curation_stub_uuid"})
+                cleaned.append(
+                    {k: v for k, v in item.items() if k != "curation_stub_uuid"}
+                )
             else:
                 cleaned.append(item)
 
