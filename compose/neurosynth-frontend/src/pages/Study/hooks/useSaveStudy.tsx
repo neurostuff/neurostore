@@ -175,6 +175,14 @@ const useSaveStudy = () => {
             const currentStudyBeingEditedIndex = studyset.studies.findIndex((study) => study === storeStudy.id);
             if (currentStudyBeingEditedIndex < 0) throw new Error('study not found in studyset');
 
+            // Build a mapping of study ID -> stub UUID so we can preserve curation linkage when swapping versions.
+            const studyToStub = new Map<string, string>();
+            (studyset.studyset_studies || []).forEach((assoc: any) => {
+                if (assoc?.id && assoc?.curation_stub_uuid) {
+                    studyToStub.set(assoc.id, assoc.curation_stub_uuid);
+                }
+            });
+
             // 1. clone the study
             const clonedStudy = (await createStudy({ sourceId: storeStudy.id, data: getNewScrubbedStudyFromStore() }))
                 .data;
@@ -186,10 +194,23 @@ const useSaveStudy = () => {
             // 3. update the studyset containing the study with our new clone
             const updatedStudies = [...(studyset.studies as string[])];
             updatedStudies[currentStudyBeingEditedIndex] = clonedStudyId;
+
+            // Preserve the stub UUID from the original study on the new version, and keep other stubs intact.
+            const stubForOriginal = studyToStub.get(storeStudy.id);
+            if (stubForOriginal) {
+                studyToStub.delete(storeStudy.id);
+                studyToStub.set(clonedStudyId, stubForOriginal);
+            }
+
+            const studiesPayload = updatedStudies.map((id) => {
+                const stub = studyToStub.get(id);
+                return stub ? { id, curation_stub_uuid: stub } : { id };
+            });
+
             await updateStudyset({
                 studysetId: studysetId,
                 studyset: {
-                    studies: updatedStudies,
+                    studies: studiesPayload,
                 },
             });
             queryClient.invalidateQueries(STUDYSET_QUERY_STRING);
