@@ -17,6 +17,7 @@ import { useState } from 'react';
 import { useIsFetching, useQueryClient } from 'react-query';
 import ExtractionOutOfSyncStyles from './ExtractionOutOfSync.styles';
 import { mapStubsToStudysetPayload } from 'helpers/Extraction.helpers';
+import { STUDYSET_QUERY_STRING } from 'hooks/studysets/useGetStudysets';
 
 const ExtractionOutOfSync: React.FC = (props) => {
     const studysetId = useProjectExtractionStudysetId();
@@ -87,6 +88,9 @@ const ExtractionOutOfSync: React.FC = (props) => {
                     curation_stub_map: curationStubMap,
                 },
             });
+
+            // Ensure cached studyset data is refreshed so curation/extraction stay aligned.
+            await queryClient.invalidateQueries(STUDYSET_QUERY_STRING);
 
             queryClient.invalidateQueries('annotations');
 
