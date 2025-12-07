@@ -15,6 +15,7 @@ from ..models import (
     Annotation,
     AnnotationAnalysis,
     AnalysisConditions,
+    StudysetStudy,
     Point,
     Image,
     Entity,
@@ -570,8 +571,8 @@ def user_data(session, mock_add_users):
                     # put together the study
                     study.analyses = [analysis]
 
-                    # put together the studyset
-                    studyset.studies = [study]
+                    # put together the studyset via association rows
+                    studyset.studyset_studies = [StudysetStudy(study=study)]
 
                     if public:
                         public_studies.append(study)
@@ -581,7 +582,9 @@ def user_data(session, mock_add_users):
                     to_commit.append(base_study)
 
         # add public studyset to commit
-        public_studyset.studies = public_studies
+        public_studyset.studyset_studies = [
+            StudysetStudy(study=study) for study in public_studies
+        ]
         to_commit.append(public_studyset)
 
         session.add_all(to_commit)
