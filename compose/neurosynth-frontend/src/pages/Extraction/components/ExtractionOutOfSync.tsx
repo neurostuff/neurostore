@@ -75,11 +75,16 @@ const ExtractionOutOfSync: React.FC = (props) => {
                 studiesInStudyset,
                 stubMap
             );
+            const curationStubMap = studiesPayload.reduce<Record<string, string>>((acc, item) => {
+                if (item.curation_stub_uuid) acc[item.id] = item.curation_stub_uuid;
+                return acc;
+            }, {});
 
             const updatedStudyset = await updateStudyset({
                 studysetId: studysetId,
                 studyset: {
                     studies: studiesPayload,
+                    curation_stub_map: curationStubMap,
                 },
             });
 

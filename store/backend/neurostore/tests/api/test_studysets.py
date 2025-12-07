@@ -288,3 +288,40 @@ def test_studyset_studies_capture_curation_stub_uuid(auth_client, ingest_neurosy
         .one()
     )
     assert assoc_after.curation_stub_uuid == stub_uuid
+
+
+def test_non_nested_studyset_includes_studyset_studies(auth_client, ingest_neurosynth):
+    payload = auth_client.get("/api/studies/?page_size=1").json()
+    study_id = payload["results"][0]["id"]
+    stub_uuid = "123e4567-e89b-12d3-a456-426614174999"
+
+    create_resp = auth_client.post(
+        "/api/studysets/",
+        data={
+            "name": "stubbed-non-nested",
+            "studies": [
+                {"id": study_id, "curation_stub_uuid": stub_uuid},
+            ],
+        },
+    )
+    assert create_resp.status_code == 200
+    studyset_id = create_resp.json()["id"]
+
+    get_resp = auth_client.get(f"/api/studysets/{studyset_id}?nested=false")
+    assert get_resp.status_code == 200
+    data = get_resp.json()
+    assert "studyset_studies" in data
+    assert any(
+        assoc.get("id") == study_id and assoc.get("curation_stub_uuid") == stub_uuid
+        for assoc in data.get("studyset_studies") or []
+    )
+
+    # Nested=True should also include studyset_studies
+    nested_resp = auth_client.get(f"/api/studysets/{studyset_id}?nested=true")
+    assert nested_resp.status_code == 200
+    nested_data = nested_resp.json()
+    assert "studyset_studies" in nested_data
+    assert any(
+        assoc.get("id") == study_id and assoc.get("curation_stub_uuid") == stub_uuid
+        for assoc in nested_data.get("studyset_studies") or []
+    )

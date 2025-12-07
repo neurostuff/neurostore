@@ -950,4 +950,12 @@ class StudysetSnapshot(BaseSnapshot):
             "created_at": self._serialize_dt(studyset.created_at),
             "updated_at": self._serialize_dt(studyset.updated_at),
             "studies": [s_schema.dump(s) for s in studyset.studies],
+            # Include association records so the frontend can maintain stub mappings even in nested responses.
+            "studyset_studies": [
+                {
+                    "id": assoc.study_id,
+                    "curation_stub_uuid": getattr(assoc, "curation_stub_uuid", None),
+                }
+                for assoc in getattr(studyset, "studyset_studies", []) or []
+            ],
         }
