@@ -6,7 +6,7 @@ import API from 'utils/api';
 const useCreateStudyset = () => {
     const queryClient = useQueryClient();
     return useMutation<AxiosResponse<StudysetReturn>, AxiosError, StudysetRequest, unknown>(
-        (studyset) => API.NeurostoreServices.StudySetsService.studysetsPost(studyset),
+        (studyset) => API.NeurostoreServices.StudySetsService.studysetsPost(undefined, undefined, undefined, studyset),
         {
             onSuccess: () => {
                 // update study
