@@ -297,7 +297,8 @@ class StudysetsView(ObjectView, ListView):
                 s.id for s in getattr(record, "studies", []) if getattr(s, "id", None)
             }
 
-            # Load existing associations directly to avoid duplicate pending rows in the relationship.
+            # Load existing associations directly to avoid
+            # duplicate pending rows in the relationship.
             existing = {
                 assoc.study_id: assoc
                 for assoc in StudysetStudy.query.filter_by(studyset_id=record.id).all()
