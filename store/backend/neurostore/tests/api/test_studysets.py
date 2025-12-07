@@ -430,3 +430,44 @@ def test_studyset_studies_survive_multiple_updates(auth_client, ingest_neurosynt
     final = final_resp.json()
     assert final.get("studyset_studies")
     assert set(s.get("id") for s in final.get("studyset_studies")) == {study_ids[0], study_ids[1]}
+
+
+def test_stub_mapping_updates_when_switching_versions(auth_client, ingest_neurosynth, session):
+    """
+    If a stub is re-linked to a different study version, the mapping should move to the new study_id.
+    """
+    payload = auth_client.get("/api/studies/?page_size=3").json()
+    study_ids = [study["id"] for study in payload["results"]]
+    stub_uuid = "aaaaaaaa-1111-2222-3333-aaaaaaaa1111"
+
+    # Initial create with study_ids[0] mapped to stub_uuid
+    create_resp = auth_client.post(
+        "/api/studysets/",
+        data={
+            "name": "switch-version",
+            "studies": [{"id": study_ids[0], "curation_stub_uuid": stub_uuid}],
+        },
+    )
+    assert create_resp.status_code == 200
+    studyset_id = create_resp.json()["id"]
+
+    # Update to point the same stub to a different study_id (study_ids[1])
+    update_resp = auth_client.put(
+        f"/api/studysets/{studyset_id}",
+        data={
+            "studies": [{"id": study_ids[1], "curation_stub_uuid": stub_uuid}],
+            "curation_stub_map": {study_ids[1]: stub_uuid},
+        },
+    )
+    assert update_resp.status_code == 200
+    data = update_resp.json()
+
+    # Ensure the mapping moved to the new study id and the old association was removed.
+    assert any(
+        assoc.get("id") == study_ids[1] and assoc.get("curation_stub_uuid") == stub_uuid
+        for assoc in data.get("studyset_studies") or []
+    )
+    assert not any(
+        assoc.get("id") == study_ids[0] and assoc.get("curation_stub_uuid") == stub_uuid
+        for assoc in data.get("studyset_studies") or []
+    )

@@ -90,10 +90,10 @@ class Studyset(BaseMixin, db.Model):
         backref=backref(
             "studysets",
             lazy="dynamic",
-            overlaps="studyset_studies,studyset",
+            overlaps="studyset_studies,studyset,study",
         ),
         passive_deletes=True,
-        overlaps="studyset_studies,studyset",
+        overlaps="studyset_studies,studyset,study",
     )
     annotations = relationship(
         "Annotation",
@@ -512,10 +512,10 @@ class StudysetStudy(db.Model):
             "studyset_studies",
             cascade="all, delete-orphan",
             passive_deletes=True,
-            overlaps="studysets",
+            overlaps="studysets,studies",
         ),
         passive_deletes=True,
-        overlaps="studysets",
+        overlaps="studysets,studies",
     )
     studyset = relationship(
         "Studyset",
@@ -523,10 +523,10 @@ class StudysetStudy(db.Model):
             "studyset_studies",
             cascade="all, delete-orphan",
             passive_deletes=True,
-            overlaps="studies",
+            overlaps="studies,study",
         ),
         passive_deletes=True,
-        overlaps="studies",
+        overlaps="studies,study",
     )
     __table_args__ = (
         db.UniqueConstraint(

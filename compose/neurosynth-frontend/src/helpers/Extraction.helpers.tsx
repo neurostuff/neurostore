@@ -51,7 +51,9 @@ export const mapStubsToStudysetPayload = (
 
         if (!baseStudy) return;
 
-        const versions = (baseStudy.versions || []) as Array<StudyReturn>;
+        const versions = Array.isArray(baseStudy.versions)
+            ? (baseStudy.versions as Array<StudyReturn>)
+            : [];
         const existingForStub = targetStudyId;
 
         // Prefer a version that matches the study currently linked to this stub

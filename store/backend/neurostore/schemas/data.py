@@ -628,7 +628,7 @@ class StudysetSchema(BaseDataSchema):
         for item in studies:
             if isinstance(item, dict):
                 stub = item.get("curation_stub_uuid")
-                study_id = item.get("id") or item.get("study_id") or item.get("study")
+                study_id = item.get("id")
                 if stub and study_id:
                     stub_map[study_id] = stub
                 cleaned.append(
