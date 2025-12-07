@@ -360,3 +360,73 @@ def test_non_nested_studyset_includes_studyset_studies(auth_client, ingest_neuro
         assoc.get("id") == study_ids[1] and assoc.get("curation_stub_uuid") == stub_uuid_2
         for assoc in final_data.get("studyset_studies") or []
     )
+
+
+def test_studyset_studies_survive_multiple_updates(auth_client, ingest_neurosynth):
+    """
+    Emulate the curation -> extraction sync sequence where the studyset is updated
+    multiple times. Ensure associations are returned after successive PUTs.
+    """
+    payload = auth_client.get("/api/studies/?page_size=3").json()
+    study_ids = [study["id"] for study in payload["results"]]
+    stub_a = "aaaaaaaa-0000-0000-0000-aaaaaaaa0000"
+    stub_b = "bbbbbbbb-1111-1111-1111-bbbbbbbb1111"
+
+    # Initial create with one study
+    create_resp = auth_client.post(
+        "/api/studysets/",
+        data={
+            "name": "multi-update",
+            "studies": [{"id": study_ids[0], "curation_stub_uuid": stub_a}],
+        },
+    )
+    assert create_resp.status_code == 200
+    studyset_id = create_resp.json()["id"]
+
+    # First update: swap to a different study with a new stub
+    update_resp_1 = auth_client.put(
+        f"/api/studysets/{studyset_id}",
+        data={
+            "studies": [{"id": study_ids[1], "curation_stub_uuid": stub_b}],
+            "curation_stub_map": {study_ids[1]: stub_b},
+        },
+    )
+    assert update_resp_1.status_code == 200
+    data_1 = update_resp_1.json()
+    assert data_1.get("studyset_studies")
+    assert any(
+        assoc.get("id") == study_ids[1] and assoc.get("curation_stub_uuid") == stub_b
+        for assoc in data_1.get("studyset_studies") or []
+    )
+
+    # Second update: include both studies with their respective stubs
+    update_resp_2 = auth_client.put(
+        f"/api/studysets/{studyset_id}",
+        data={
+            "studies": [
+                {"id": study_ids[0], "curation_stub_uuid": stub_a},
+                {"id": study_ids[1], "curation_stub_uuid": stub_b},
+            ],
+            "curation_stub_map": {
+                study_ids[0]: stub_a,
+                study_ids[1]: stub_b,
+            },
+        },
+    )
+    assert update_resp_2.status_code == 200
+    data_2 = update_resp_2.json()
+    assert any(
+        assoc.get("id") == study_ids[0] and assoc.get("curation_stub_uuid") == stub_a
+        for assoc in data_2.get("studyset_studies") or []
+    )
+    assert any(
+        assoc.get("id") == study_ids[1] and assoc.get("curation_stub_uuid") == stub_b
+        for assoc in data_2.get("studyset_studies") or []
+    )
+
+    # Final non-nested GET should reflect both associations, not an empty array.
+    final_resp = auth_client.get(f"/api/studysets/{studyset_id}?nested=false")
+    assert final_resp.status_code == 200
+    final = final_resp.json()
+    assert final.get("studyset_studies")
+    assert set(s.get("id") for s in final.get("studyset_studies")) == {study_ids[0], study_ids[1]}
