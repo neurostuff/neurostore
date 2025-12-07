@@ -329,12 +329,6 @@ class StudysetsView(ObjectView, ListView):
                     existing[study_id] = assoc
                 if study_id in stub_map:
                     assoc.curation_stub_uuid = stub_map[study_id]
-                else:
-                    # If this study_id matches a previously mapped stub, ensure we carry it over
-                    for prev_study_id, stub in stub_map.items():
-                        if stub == assoc.curation_stub_uuid:
-                            assoc.curation_stub_uuid = stub
-                            break
 
             # Sync the relationship collection to the de-duplicated set for serialization.
             record.studyset_studies = list(existing.values())
