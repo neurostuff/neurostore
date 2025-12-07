@@ -21,12 +21,6 @@ def upgrade():
         "studyset_studies",
         sa.Column("curation_stub_uuid", sa.Text(), nullable=True),
     )
-    op.create_index(
-        "ix_studyset_studies_curation_stub_uuid",
-        "studyset_studies",
-        ["curation_stub_uuid"],
-        unique=False,
-    )
     op.create_unique_constraint(
         "uq_studyset_stub_uuid",
         "studyset_studies",
