@@ -435,7 +435,8 @@ def test_studyset_studies_survive_multiple_updates(auth_client, ingest_neurosynt
 
 def test_stub_mapping_updates_when_switching_versions(auth_client, ingest_neurosynth, session):
     """
-    If a stub is re-linked to a different study version, the mapping should move to the new study_id.
+    If a stub is re-linked to a different study version,
+    the mapping should move to the new study_id.
     """
     payload = auth_client.get("/api/studies/?page_size=3").json()
     study_ids = [study["id"] for study in payload["results"]]
