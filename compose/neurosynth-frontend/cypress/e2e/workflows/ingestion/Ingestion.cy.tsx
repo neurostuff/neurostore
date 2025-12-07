@@ -27,40 +27,29 @@ describe('Ingestion', () => {
             fixture: 'IngestionFixtures/studysetFixture',
         }).as('studysetFixture');
 
-        cy.intercept('POST', `**/api/annotations/**`, {
+        cy.intercept('POST', `**/api/annotations/*`, {
             fixture: 'IngestionFixtures/annotationsFixture',
         }).as('annotationFixture');
-        cy.intercept('PUT', `**/api/annotations/**`, {
+        cy.intercept('PUT', `**/api/annotations/*`, {
             fixture: 'IngestionFixtures/annotationsPutFixture',
         }).as('annotationPutFixture');
-        cy.intercept('GET', `**/api/annotations/**`, {
+        cy.intercept('GET', `**/api/annotations/*`, {
             fixture: 'IngestionFixtures/annotationsPutFixture',
         }).as('annotationFixture');
 
-        cy.intercept('POST', /.*\/api\/base-studies.*/, {
+        cy.intercept('POST', `**/api/base-studies/`, {
             fixture: 'IngestionFixtures/baseStudiesFixture',
         }).as('baseStudiesFixture');
     });
 
     it('should show the dialog', () => {
-        cy.login('mocked').visit(PATH).wait('@projectFixture');
+        cy.login('mocked').visit(PATH);
+        cy.contains('button', 'start extraction').click(); // popup should open automatically as extraction has not been initialized in this mock
+        cy.contains('button', 'NEXT').click();
+        cy.contains('button', 'START').click();
 
-        cy.contains('button', 'start extraction')
-            .should('be.visible')
-            .click({ force: true });
-
-        cy.location('pathname', { timeout: 10000 }).then((path) => {
-            if (path.includes('/extraction')) {
-                // already initialized; just assert we landed on extraction
-                cy.contains(/extraction/i);
-                return;
-            }
-
-            // dialog flow: open from project page card
-            cy.contains('button', 'extraction: get started', { timeout: 10000 }).click({ force: true });
-            cy.contains('button', 'NEXT').click();
-            cy.contains('button', 'START').click();
-            cy.contains('button', 'START').should('not.exist');
-        });
+        cy.get('@baseStudiesFixture').its('request.body').should('not.have.a.property', 'doi');
+        cy.get('@baseStudiesFixture').its('request.body').should('not.have.a.property', 'pmid');
+        cy.get('@baseStudiesFixture').its('request.body').should('not.have.a.property', 'pmcid');
     });
 });

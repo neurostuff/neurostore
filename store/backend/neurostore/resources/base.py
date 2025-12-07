@@ -293,7 +293,6 @@ class BaseView(MethodView):
 
         if (
             not sa.inspect(record).pending
-            and record.user is not None
             and record.user != current_user
             and not only_ids
             and current_user.external_id != compose_bot
@@ -335,14 +334,7 @@ class BaseView(MethodView):
                 v = PrtCls._model.query.filter_by(id=v["id"]).first()
                 if PrtCls._model is BaseStudy:
                     pass
-                elif cls._model is Analysis:
-                    pass
-                elif (
-                    v is not None
-                    and v.user_id is not None
-                    and v.user_id != current_user.external_id
-                    and current_user.external_id != compose_bot
-                ):
+                elif current_user != v.user and current_user.external_id != compose_bot:
                     abort_permission(
                         "You do not have permission to link to this parent record. "
                         "You must own the parent record or be the compose bot."
@@ -522,8 +514,7 @@ class ObjectView(BaseView):
         if self._model is Studyset:
             args["load_annotations"] = True
 
-        # populate_existing ensures we don't serve stale relationship state from the identity map
-        q = self._model.query.filter_by(id=id).populate_existing()
+        q = self._model.query.filter_by(id=id)
         q = self.eager_load(q, args)
         input_record = q.one()
         self.db_validation(input_record, data)
