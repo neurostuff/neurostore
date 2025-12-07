@@ -635,7 +635,9 @@ class StudysetSchema(BaseDataSchema):
                     {k: v for k, v in item.items() if k != "curation_stub_uuid"}
                 )
             else:
-                # normalize string IDs to object form so downstream schemas can deserialize
+                # Downstream schemas (e.g., StudySchema) expect each study to be an object with at least an 'id' key.
+                # This normalization ensures that string study IDs are converted to the required object form,
+                # enabling proper deserialization and validation by those schemas.
                 cleaned.append({"id": item})
 
         data["studies"] = cleaned

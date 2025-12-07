@@ -103,7 +103,8 @@ const ExtractionOutOfSync: React.FC = (props) => {
                 },
             });
 
-            // Ensure cached studyset data is refreshed so curation/extraction stay aligned.
+            // Invalidate cached studyset data to ensure subsequent queries reflect the newly updated stub mappings,
+            // keeping curation and extraction aligned.
             await queryClient.invalidateQueries(STUDYSET_QUERY_STRING);
 
             queryClient.invalidateQueries('annotations');
