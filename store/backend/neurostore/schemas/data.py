@@ -167,14 +167,7 @@ class StringOrNested(fields.Nested):
         return schema.dump(value, many=self.many)
 
     def _deserialize(self, value, attr, data, **kwargs):
-        if self.many and isinstance(value, list):
-            normalized = []
-            for v in value:
-                if isinstance(v, str):
-                    normalized.append({"id": v})
-                else:
-                    normalized.append(v)
-            value = normalized
+        if self.many:
             value_instance = value[0] if len(value) > 0 else None
         else:
             value_instance = value
@@ -642,7 +635,8 @@ class StudysetSchema(BaseDataSchema):
                     {k: v for k, v in item.items() if k != "curation_stub_uuid"}
                 )
             else:
-                cleaned.append(item)
+                # normalize string IDs to object form so downstream schemas can deserialize
+                cleaned.append({"id": item})
 
         data["studies"] = cleaned
         if stub_map:
@@ -952,7 +946,8 @@ class StudysetSnapshot(BaseSnapshot):
             "created_at": self._serialize_dt(studyset.created_at),
             "updated_at": self._serialize_dt(studyset.updated_at),
             "studies": [s_schema.dump(s) for s in studyset.studies],
-            # Include association records so the frontend can maintain stub mappings even in nested responses.
+            # Include association records so the frontend can
+            # maintain stub mappings even in nested responses.
             "studyset_studies": [
                 {
                     "id": assoc.study_id,

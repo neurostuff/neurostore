@@ -37,7 +37,7 @@ describe('Ingestion', () => {
             fixture: 'IngestionFixtures/annotationsPutFixture',
         }).as('annotationFixture');
 
-        cy.intercept('POST', `**/api/base-studies/`, {
+        cy.intercept('POST', /.*\/api\/base-studies.*/, {
             fixture: 'IngestionFixtures/baseStudiesFixture',
         }).as('baseStudiesFixture');
     });
