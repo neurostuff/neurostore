@@ -38,12 +38,29 @@ const ExtractionOutOfSync: React.FC = (props) => {
         if (!studysetId || !annotationId) return;
         setIsLoading(true);
 
+        const stubToStudyId = new Map<string, string>();
+        (studyset?.studyset_studies || []).forEach((assoc) => {
+            if (assoc.curation_stub_uuid && assoc.id) {
+                stubToStudyId.set(assoc.curation_stub_uuid, assoc.id);
+            }
+        });
+
+        const stubsNeedingIngest = curationIncludedStudies.stubStudies.filter(
+            (stub) => !stubToStudyId.has(stub.id)
+        );
+        const existingStubPayload = curationIncludedStudies.stubStudies
+            .filter((stub) => stubToStudyId.has(stub.id))
+            .map((stub) => ({
+                id: stubToStudyId.get(stub.id) as string,
+                curation_stub_uuid: stub.id,
+            }));
+
         const stubsToBaseStudies: Array<
             Pick<
                 BaseStudy,
                 'name' | 'doi' | 'pmid' | 'pmcid' | 'year' | 'description' | 'publication' | 'authors' | 'level'
             >
-        > = curationIncludedStudies.stubStudies.map((stub) => ({
+        > = stubsNeedingIngest.map((stub) => ({
             name: stub.title,
             doi: stub.doi ? stub.doi : undefined,
             pmid: stub.pmid ? stub.pmid : undefined,
@@ -56,26 +73,23 @@ const ExtractionOutOfSync: React.FC = (props) => {
         }));
 
         const studiesInStudyset = new Set<string>();
-        const stubMap = new Map<string, string>();
         ((studyset?.studies || []) as Array<StudyReturn>).forEach((study) => {
             if (study.id) studiesInStudyset.add(study.id);
         });
-        // build stub -> study id map from studyset_studies if available
-        (studyset?.studyset_studies || []).forEach((assoc) => {
-            if (assoc.curation_stub_uuid && assoc.id) {
-                stubMap.set(assoc.curation_stub_uuid, assoc.id);
-            }
-        });
 
         try {
-            const returnedBaseStudies = (await ingest(stubsToBaseStudies)).data as Array<BaseStudyReturn>;
+            const returnedBaseStudies = stubsToBaseStudies.length
+                ? ((await ingest(stubsToBaseStudies)).data as Array<BaseStudyReturn>)
+                : [];
 
-            const studiesPayload = mapStubsToStudysetPayload(
-                curationIncludedStudies.stubStudies,
+            const newStubPayload = mapStubsToStudysetPayload(
+                stubsNeedingIngest,
                 returnedBaseStudies,
                 studiesInStudyset,
-                stubMap
+                undefined,
+                stubToStudyId
             );
+            const studiesPayload = [...existingStubPayload, ...newStubPayload];
             const curationStubMap = studiesPayload.reduce<Record<string, string>>((acc, item) => {
                 if (item.curation_stub_uuid) acc[item.id] = item.curation_stub_uuid;
                 return acc;

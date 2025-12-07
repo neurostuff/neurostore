@@ -24,11 +24,21 @@ export const mapStubsToStudysetPayload = (
     stubs: Array<StubLike>,
     baseStudies: Array<BaseStudyReturn>,
     existingStudyIds?: Set<string>,
-    stubToStudyId?: Map<string, string>
+    stubToStudyId?: Map<string, string>,
+    lockedStubToStudyId?: Map<string, string>
 ): Array<{ id: string; curation_stub_uuid: string }> => {
     const payload: Array<{ id: string; curation_stub_uuid: string }> = [];
 
     stubs.forEach((stub, idx) => {
+        const lockedStudyId = lockedStubToStudyId?.get(stub.id);
+        if (lockedStudyId) {
+            payload.push({
+                id: lockedStudyId,
+                curation_stub_uuid: stub.id,
+            });
+            return;
+        }
+
         const targetStudyId = stubToStudyId?.get(stub.id);
 
         // Prefer a base study that actually contains the mapped study version.
