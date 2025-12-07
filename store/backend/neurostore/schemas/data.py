@@ -167,7 +167,14 @@ class StringOrNested(fields.Nested):
         return schema.dump(value, many=self.many)
 
     def _deserialize(self, value, attr, data, **kwargs):
-        if self.many:
+        if self.many and isinstance(value, list):
+            normalized = []
+            for v in value:
+                if isinstance(v, str):
+                    normalized.append({"id": v})
+                else:
+                    normalized.append(v)
+            value = normalized
             value_instance = value[0] if len(value) > 0 else None
         else:
             value_instance = value
@@ -581,6 +588,8 @@ class StudySchema(BaseDataSchema):
     @pre_load
     def check_nulls(self, data, **kwargs):
         """ensure data is not empty string or whitespace"""
+        if not isinstance(data, dict):
+            return data
         for attr in ["pmid", "pmcid", "doi"]:
             val = data.get(attr, None)
             if val is not None and (val == "" or val.isspace()):
