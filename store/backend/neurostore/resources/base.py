@@ -522,7 +522,8 @@ class ObjectView(BaseView):
         if self._model is Studyset:
             args["load_annotations"] = True
 
-        q = self._model.query.filter_by(id=id)
+        # populate_existing ensures we don't serve stale relationship state from the identity map
+        q = self._model.query.filter_by(id=id).populate_existing()
         q = self.eager_load(q, args)
         input_record = q.one()
         self.db_validation(input_record, data)
