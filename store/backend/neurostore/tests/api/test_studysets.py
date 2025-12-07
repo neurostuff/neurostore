@@ -395,7 +395,8 @@ def test_studyset_studies_survive_multiple_updates(auth_client, ingest_neurosynt
     data_1 = update_resp_1.json()
     assert data_1.get("studyset_studies")
     assert any(
-        assoc.get("id") == study_ids[1] and assoc.get("curation_stub_uuid") == stub_b
+        assoc.get("id") == study_ids[1] and
+        assoc.get("curation_stub_uuid") == stub_b
         for assoc in data_1.get("studyset_studies") or []
     )
 
