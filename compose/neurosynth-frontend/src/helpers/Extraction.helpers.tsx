@@ -9,9 +9,7 @@ export const selectBestBaseStudyVersion = (baseStudyVersions: Array<StudyReturn>
 
 export const selectBestVersionsForStudyset = (baseStudies: Array<BaseStudy>): string[] => {
     const selectedVersions = baseStudies.map((baseStudy) => {
-        const studyVersion = selectBestBaseStudyVersion(
-            (baseStudy?.versions || []) as StudyReturn[]
-        );
+        const studyVersion = selectBestBaseStudyVersion((baseStudy?.versions || []) as StudyReturn[]);
         return studyVersion.id as string;
     });
 
@@ -44,16 +42,12 @@ export const mapStubsToStudysetPayload = (
         // Prefer a base study that actually contains the mapped study version.
         const baseStudy =
             (targetStudyId &&
-                baseStudies.find((bs) =>
-                    (bs.versions || []).some((version) => version.id === targetStudyId)
-                )) ||
+                baseStudies.find((bs) => (bs.versions || []).some((version) => version.id === targetStudyId))) ||
             baseStudies[idx];
 
         if (!baseStudy) return;
 
-        const versions = Array.isArray(baseStudy.versions)
-            ? (baseStudy.versions as Array<StudyReturn>)
-            : [];
+        const versions = Array.isArray(baseStudy.versions) ? (baseStudy.versions as Array<StudyReturn>) : [];
         const existingForStub = targetStudyId;
 
         // Prefer a version that matches the study currently linked to this stub

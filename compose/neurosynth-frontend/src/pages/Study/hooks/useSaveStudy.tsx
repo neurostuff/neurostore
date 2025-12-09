@@ -2,7 +2,11 @@ import { useAuth0 } from '@auth0/auth0-react';
 import { unsetUnloadHandler } from 'helpers/BeforeUnload.helpers';
 import { useCreateStudy, useGetStudysetById, useUpdateAnnotationById, useUpdateStudyset } from 'hooks';
 import { STUDYSET_QUERY_STRING } from 'hooks/studysets/useGetStudysets';
-import { AnalysisReturn, StudyRequest } from 'neurostore-typescript-sdk';
+import {
+    AnalysisReturn,
+    StudyRequest,
+    StudysetReturnRelationshipsStudysetStudiesInner,
+} from 'neurostore-typescript-sdk';
 import { useSnackbar } from 'notistack';
 import {
     useProjectExtractionAnnotationId,
@@ -177,7 +181,7 @@ const useSaveStudy = () => {
 
             // Build a mapping of study ID -> stub UUID so we can preserve curation linkage when swapping versions.
             const studyToStub = new Map<string, string>();
-            (studyset.studyset_studies || []).forEach((assoc: any) => {
+            (studyset.studyset_studies || []).forEach((assoc: StudysetReturnRelationshipsStudysetStudiesInner) => {
                 if (assoc?.id && assoc?.curation_stub_uuid) {
                     studyToStub.set(assoc.id, assoc.curation_stub_uuid);
                 }

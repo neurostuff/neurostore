@@ -13,10 +13,7 @@ const makeBaseStudy = (id: string, versionIds: string[]): BaseStudyReturn => ({
 describe('mapStubsToStudysetPayload', () => {
     it('zips stubs to base studies by index and carries stub UUIDs', () => {
         const stubs = [{ id: 'stub-1' }, { id: 'stub-2' }];
-        const baseStudies: Array<BaseStudyReturn> = [
-            makeBaseStudy('bs1', ['v1a']),
-            makeBaseStudy('bs2', ['v2a']),
-        ];
+        const baseStudies: Array<BaseStudyReturn> = [makeBaseStudy('bs1', ['v1a']), makeBaseStudy('bs2', ['v2a'])];
 
         const payload = mapStubsToStudysetPayload(stubs, baseStudies);
         expect(payload).toEqual([
@@ -28,9 +25,7 @@ describe('mapStubsToStudysetPayload', () => {
     it('prefers an existing study ID when present', () => {
         const stubs = [{ id: 'stub-1' }];
         const existing = new Set<string>(['existing-id']);
-        const baseStudies: Array<BaseStudyReturn> = [
-            makeBaseStudy('bs1', ['existing-id', 'new-id']),
-        ];
+        const baseStudies: Array<BaseStudyReturn> = [makeBaseStudy('bs1', ['existing-id', 'new-id'])];
 
         const payload = mapStubsToStudysetPayload(stubs, baseStudies, existing);
         expect(payload[0]).toEqual({ id: 'existing-id', curation_stub_uuid: 'stub-1' });
@@ -51,13 +46,7 @@ describe('mapStubsToStudysetPayload', () => {
         const baseStudies: Array<BaseStudyReturn> = [makeBaseStudy('bs1', ['different-id'])];
         const lockedMap = new Map<string, string>([['stub-1', 'existing-id']]);
 
-        const payload = mapStubsToStudysetPayload(
-            stubs,
-            baseStudies,
-            undefined,
-            undefined,
-            lockedMap
-        );
+        const payload = mapStubsToStudysetPayload(stubs, baseStudies, undefined, undefined, lockedMap);
         expect(payload[0]).toEqual({ id: 'existing-id', curation_stub_uuid: 'stub-1' });
     });
 });

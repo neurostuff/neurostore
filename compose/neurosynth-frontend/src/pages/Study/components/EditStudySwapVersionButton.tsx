@@ -18,7 +18,7 @@ import { setAnalysesInAnnotationAsIncluded } from 'helpers/Annotation.helpers';
 import { hasUnsavedStudyChanges, unsetUnloadHandler } from 'helpers/BeforeUnload.helpers';
 import { lastUpdatedAtSortFn } from 'helpers/utils';
 import { useGetStudysetById, useUpdateStudyset, useGetBaseStudyById } from 'hooks';
-import { StudyReturn } from 'neurostore-typescript-sdk';
+import { StudyReturn, StudysetReturnRelationshipsStudysetStudiesInner } from 'neurostore-typescript-sdk';
 import { useSnackbar } from 'notistack';
 import { updateExtractionTableStateStudySwapInStorage } from 'pages/Extraction/components/ExtractionTable.helpers';
 import {
@@ -104,7 +104,7 @@ const EditStudySwapVersionButton: React.FC = () => {
 
             // Preserve curation stub linkage when swapping versions.
             const studyToStub = new Map<string, string>();
-            (studyset.studyset_studies || []).forEach((assoc: any) => {
+            (studyset.studyset_studies || []).forEach((assoc: StudysetReturnRelationshipsStudysetStudiesInner) => {
                 if (assoc?.id && assoc?.curation_stub_uuid) {
                     studyToStub.set(assoc.id, assoc.curation_stub_uuid);
                 }

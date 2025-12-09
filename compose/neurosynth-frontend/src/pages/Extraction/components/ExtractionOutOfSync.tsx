@@ -19,7 +19,7 @@ import ExtractionOutOfSyncStyles from './ExtractionOutOfSync.styles';
 import { mapStubsToStudysetPayload } from 'helpers/Extraction.helpers';
 import { STUDYSET_QUERY_STRING } from 'hooks/studysets/useGetStudysets';
 
-const ExtractionOutOfSync: React.FC = (props) => {
+const ExtractionOutOfSync: React.FC = () => {
     const studysetId = useProjectExtractionStudysetId();
     const annotationId = useProjectExtractionAnnotationId();
     const { data: studyset } = useGetStudysetById(studysetId, true); // set this to true as it is already cached in extractionPage
@@ -45,9 +45,7 @@ const ExtractionOutOfSync: React.FC = (props) => {
             }
         });
 
-        const stubsNeedingIngest = curationIncludedStudies.stubStudies.filter(
-            (stub) => !stubToStudyId.has(stub.id)
-        );
+        const stubsNeedingIngest = curationIncludedStudies.stubStudies.filter((stub) => !stubToStudyId.has(stub.id));
         const existingStubPayload = curationIncludedStudies.stubStudies
             .filter((stub) => stubToStudyId.has(stub.id))
             .map((stub) => ({

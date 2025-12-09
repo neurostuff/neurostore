@@ -3,10 +3,10 @@ import BaseDialog, { IDialog } from 'components/Dialogs/BaseDialog';
 import { EPropertyType } from 'components/EditMetadata/EditMetadata.types';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { setAnalysesInAnnotationAsIncluded } from 'helpers/Annotation.helpers';
-import { mapStubsToStudysetPayload, selectBestBaseStudyVersion } from 'helpers/Extraction.helpers';
+import { mapStubsToStudysetPayload } from 'helpers/Extraction.helpers';
 import { useCreateAnnotation, useCreateStudyset, useUpdateStudyset } from 'hooks';
 import useIngest from 'hooks/studies/useIngest';
-import { BaseStudy, BaseStudyReturn, StudyReturn } from 'neurostore-typescript-sdk';
+import { BaseStudy, BaseStudyReturn } from 'neurostore-typescript-sdk';
 import { useSnackbar } from 'notistack';
 import {
     useProjectCurationColumn,
@@ -149,10 +149,7 @@ const MoveToExtractionDialog: React.FC<IDialog> = (props) => {
             const res = await asyncIngest(stubsToBaseStudies);
             const returnedBaseStudies = res.data as Array<BaseStudyReturn>;
 
-            const studiesPayload = mapStubsToStudysetPayload(
-                includedStubs,
-                returnedBaseStudies
-            );
+            const studiesPayload = mapStubsToStudysetPayload(includedStubs, returnedBaseStudies);
             const curationStubMap = studiesPayload.reduce<Record<string, string>>((acc, item) => {
                 if (item.curation_stub_uuid) acc[item.id] = item.curation_stub_uuid;
                 return acc;
