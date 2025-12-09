@@ -1,9 +1,10 @@
-import { Box } from '@mui/material';
+import { ExpandMoreOutlined } from '@mui/icons-material';
+import { Accordion, AccordionDetails, AccordionSummary, Box, Typography } from '@mui/material';
 import CodeSnippet from 'components/CodeSnippet/CodeSnippet';
-import { useEffect } from 'react';
-import useGetMetaAnalysisJobById from '../hooks/useGetMetaAnalysisJobById';
 import { MetaAnalysisJobResponse } from 'neurosynth-compose-typescript-sdk';
+import { useEffect } from 'react';
 import { useQueryClient } from 'react-query';
+import useGetMetaAnalysisJobById from '../hooks/useGetMetaAnalysisJobById';
 
 const MetaAnalysisJob: React.FC<{
     metaAnalysisJobData?: MetaAnalysisJobResponse;
@@ -31,12 +32,33 @@ const MetaAnalysisJob: React.FC<{
 
     const logs = metaAnalysisJobData?.logs ?? [];
 
+    const startTime = metaAnalysisJobData?.start_time
+        ? new Date(metaAnalysisJobData.start_time.toString()).toDateString()
+        : 'No Start Date Available';
+
     return (
         <Box>
-            <CodeSnippet
-                title="Logs"
-                linesOfCode={[...logs.map((log) => `${log.timestamp}: ${log.message}`), 'Running...']}
-            />
+            <Accordion elevation={1} defaultExpanded={false}>
+                <AccordionSummary
+                    sx={{
+                        ':hover': {
+                            backgroundColor: '#f2f2f2',
+                            transition: '200ms ease-in-out',
+                        },
+                    }}
+                    expandIcon={<ExpandMoreOutlined />}
+                    aria-controls="panel1-content"
+                    id="panel1-header"
+                >
+                    <Typography component="span">Click to view logs</Typography>
+                </AccordionSummary>
+                <AccordionDetails sx={{ padding: '1rem' }}>
+                    <CodeSnippet
+                        title={startTime}
+                        linesOfCode={[...logs.map((log) => `${log.timestamp}: ${log.message}`), 'Running...']}
+                    />
+                </AccordionDetails>
+            </Accordion>
         </Box>
     );
 };

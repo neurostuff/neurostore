@@ -1,34 +1,24 @@
 import { OpenInNew } from '@mui/icons-material';
-import {
-    Button,
-    Card,
-    CardActions,
-    CardContent,
-    CardHeader,
-    Checkbox,
-    FormControlLabel,
-    Link,
-    Typography,
-} from '@mui/material';
+import { Button, Card, CardActions, CardContent, CardHeader, Link, Typography } from '@mui/material';
 import { Box } from '@mui/system';
 import CodeSnippet from 'components/CodeSnippet/CodeSnippet';
 import useSubmitMetaAnalysisJob from '../hooks/useSubmitMetaAnalysisJob';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import { useState } from 'react';
 import { useSnackbar } from 'notistack';
-import { localStorageResultAlertKey } from './MetaAnalysisResultStatusAlert';
+import { localStorageStatusAlertKey } from './MetaAnalysisStatusAlert';
 
-const RunMetaAnalysisInstructions: React.FC<{
+const MetaAnalysisInstructions: React.FC<{
     metaAnalysisId: string;
     onSubmitMetaAnalysisJob?: () => void;
 }> = ({ metaAnalysisId, onSubmitMetaAnalysisJob = () => {} }) => {
     const { mutate: submitMetaAnalysisJob, isLoading: submitMetaAnalysisJobIsLoading } = useSubmitMetaAnalysisJob();
     const { enqueueSnackbar } = useSnackbar();
     const [showConfirmationDialog, setShowConfirmationDialog] = useState(false);
-    const [uploadResults, setUploadResults] = useState(true);
     const handleCloseConfirmationDialog = (confirm: boolean | undefined) => {
         if (confirm) {
             submitMetaAnalysisJob(
+                // we want everyone to upload results to neurostore/neurovault
                 { meta_analysis_id: metaAnalysisId, no_upload: false },
                 {
                     onSuccess: () => {
@@ -37,8 +27,8 @@ const RunMetaAnalysisInstructions: React.FC<{
                         onSubmitMetaAnalysisJob();
                         // show the alert in case the user has previously hidden it as it contains important info about the job status.
                         // we show the alert by removing the item from the localStorage
-                        if (localStorage.getItem(`${localStorageResultAlertKey}-${metaAnalysisId}`)) {
-                            localStorage.removeItem(`${localStorageResultAlertKey}-${metaAnalysisId}`);
+                        if (localStorage.getItem(`${localStorageStatusAlertKey}-${metaAnalysisId}`)) {
+                            localStorage.removeItem(`${localStorageStatusAlertKey}-${metaAnalysisId}`);
                         }
                     },
                 }
@@ -72,27 +62,7 @@ const RunMetaAnalysisInstructions: React.FC<{
                         }}
                         rejectText="Cancel"
                         dialogTitle="You are about to run your meta-analysis online via AWS."
-                        dialogMessage={
-                            <Box>
-                                <Typography variant="body1" gutterBottom>
-                                    Keep the checkbox below checked to upload results to neurostore/neurovault, or
-                                    uncheck it to skip uploading results.
-                                </Typography>
-                                <FormControlLabel
-                                    control={
-                                        <Checkbox
-                                            checked={uploadResults}
-                                            onChange={(e) => setUploadResults(e.target.checked)}
-                                        />
-                                    }
-                                    label={
-                                        uploadResults
-                                            ? 'Neurosynth Compose will upload results to neurostore/neurovault.'
-                                            : 'Neurosynth Compose will not upload results to neurostore/neurovault.'
-                                    }
-                                />
-                            </Box>
-                        }
+                        dialogMessage="Note: once you run and produce a result, you will not be able to delete this meta-analysis."
                         onCloseDialog={handleCloseConfirmationDialog}
                     />
                     <CardHeader
@@ -170,4 +140,4 @@ const RunMetaAnalysisInstructions: React.FC<{
     );
 };
 
-export default RunMetaAnalysisInstructions;
+export default MetaAnalysisInstructions;

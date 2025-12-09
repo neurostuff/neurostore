@@ -8,7 +8,7 @@ import API from 'utils/api';
  * ...though maybe this wont be an issue if the data is purged after a certain amount of time.
  */
 
-const useGetMetaAnalysisJobsByMetaAnalysisId = (metaAnalysisId: string | undefined) => {
+const useGetMetaAnalysisJobsByMetaAnalysisId = (metaAnalysisId: string | undefined, enabled: boolean = true) => {
     return useQuery(
         ['meta-analysis-jobs', metaAnalysisId],
         async () => {
@@ -19,7 +19,7 @@ const useGetMetaAnalysisJobsByMetaAnalysisId = (metaAnalysisId: string | undefin
                 .sort((a, b) => new Date(a.created_at ?? '').getTime() - new Date(b.created_at ?? '').getTime());
         },
         {
-            enabled: !!metaAnalysisId,
+            enabled: enabled && !!metaAnalysisId,
         }
     );
 };

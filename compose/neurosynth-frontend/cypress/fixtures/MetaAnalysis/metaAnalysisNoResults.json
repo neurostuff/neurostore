@@ -1,0 +1,71 @@
+{
+    "annotation": {
+        "created_at": "2023-11-27T21:45:53.007789+00:00",
+        "id": "mock-annotation-id",
+        "neurostore_id": "mock-neurostore-id",
+        "snapshot": null,
+        "studyset": "mock-studyset-id",
+        "updated_at": null,
+    "url": "https://neurostore.org/api/annotations/mock-neurostore-id",
+    "user": "auth0|62e0e6c9dd47048572613b4d",
+    "username": "mock-username"
+    },
+    "cached_annotation": "mock-cached-annotation-id",
+    "cached_studyset": "mock-cached-studyset-id",
+    "created_at": "2023-11-27T21:45:53.258233+00:00",
+    "description": "ALE meta analysis",
+    "id": "mock-meta-analysis-id",
+    "name": "THIS IS MY TEST META ANALYSIS",
+    "neurostore_analysis": {
+        "created_at": "2023-11-27T21:45:53.280363+00:00",
+        "exception": null,
+        "id": "mock-neurostore-analysis-id",
+        "neurostore_id": null,
+        "status": "PENDING",
+        "traceback": null,
+        "updated_at": null
+    },
+    "neurostore_url": null,
+    "project": "mock-project-id",
+    "provenance": null,
+    "results": [],
+    "run_key": "mock-run-key",
+    "specification": {
+        "conditions": [
+            "ABC"
+        ],
+        "corrector": null,
+        "created_at": "2023-11-27T21:45:52.407039+00:00",
+        "database_studyset": "Neurostore Dataset",
+        "estimator": {
+            "args": {
+                "**kwargs": {},
+                "kernel__fwhm": null,
+                "kernel__sample_size": null,
+                "n_iters": 10000
+            },
+            "type": "ALESubtraction"
+        },
+        "filter": "some key",
+        "id": "mock-specification-id",
+        "type": "CBMA",
+    "updated_at": "2023-11-28T02:43:14.502324+00:00",
+    "user": "auth0|62e0e6c9dd47048572613b4d",
+    "username": "mock-username",
+        "weights": [1.0]
+    },
+    "studyset": {
+        "created_at": "2023-11-27T21:45:52.785294+00:00",
+        "id": "mock-studyset-id",
+        "neurostore_id": "mock-neurostore-studyset-id",
+        "snapshot": null,
+        "updated_at": null,
+    "url": "https://neurostore.org/api/studysets/mock-neurostore-studyset-id",
+    "user": "auth0|62e0e6c9dd47048572613b4d",
+    "username": "Nicholas Lee",
+        "version": null
+    },
+  "updated_at": null,
+  "user": "auth0|62e0e6c9dd47048572613b4d",
+  "username": "mock-username"
+}

@@ -8,11 +8,8 @@ const ProtectedMetaAnalysesRoute: React.FC<{
     errorMessage?: string;
 }> = ({ errorMessage = '', children }) => {
     const { metaAnalysisId } = useParams<{ metaAnalysisId: string }>();
-    const { data: metaAnalysis, isLoading: getMetaAnalysisIsLoading } =
-        useGetMetaAnalysisById(metaAnalysisId);
-    const { data: project, isLoading: getProjectIsLoading } = useGetProjectById(
-        metaAnalysis?.project ?? undefined
-    );
+    const { data: metaAnalysis, isLoading: getMetaAnalysisIsLoading } = useGetMetaAnalysisById(metaAnalysisId);
+    const { data: project, isLoading: getProjectIsLoading } = useGetProjectById(metaAnalysis?.project ?? undefined);
     const { isLoading: getAuthIsLoading } = useAuth0();
     const { pathname } = useLocation();
     const userCanEdit = useUserCanEdit(project?.user ?? undefined);

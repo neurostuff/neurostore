@@ -5,9 +5,9 @@ import { MetaAnalysisJobResponse, MetaAnalysisReturn, ResultReturn } from 'neuro
 import { useEffect, useMemo, useState } from 'react';
 import useGetMetaAnalysisJobById from '../hooks/useGetMetaAnalysisJobById';
 
-export const localStorageResultAlertKey = 'hide-meta-analysis-result-alert';
+export const localStorageStatusAlertKey = 'hide-meta-analysis-status-alert';
 
-const MetaAnalysisResultStatusAlert: React.FC<{
+const MetaAnalysisStatusAlert: React.FC<{
     metaAnalysis?: MetaAnalysisReturn;
     metaAnalysisJobs?: Array<MetaAnalysisJobResponse>;
 }> = ({ metaAnalysis, metaAnalysisJobs }) => {
@@ -35,7 +35,7 @@ const MetaAnalysisResultStatusAlert: React.FC<{
 
     useEffect(() => {
         if (!resultStatus || !metaAnalysis?.id) return;
-        const shouldHide = !!localStorage.getItem(`${localStorageResultAlertKey}-${metaAnalysis?.id}`);
+        const shouldHide = !!localStorage.getItem(`${localStorageStatusAlertKey}-${metaAnalysis?.id}`);
         setHideAlert(shouldHide);
     }, [metaAnalysis?.id, resultStatus]);
 
@@ -57,7 +57,7 @@ const MetaAnalysisResultStatusAlert: React.FC<{
                     color={resultStatus.color}
                     onClose={() => {
                         setHideAlert(true);
-                        localStorage.setItem(`${localStorageResultAlertKey}-${metaAnalysis?.id}`, 'true');
+                        localStorage.setItem(`${localStorageStatusAlertKey}-${metaAnalysis?.id}`, 'true');
                     }}
                 >
                     <Typography variant="h6">{resultStatus.statusText}</Typography>
@@ -68,4 +68,4 @@ const MetaAnalysisResultStatusAlert: React.FC<{
     );
 };
 
-export default MetaAnalysisResultStatusAlert;
+export default MetaAnalysisStatusAlert;

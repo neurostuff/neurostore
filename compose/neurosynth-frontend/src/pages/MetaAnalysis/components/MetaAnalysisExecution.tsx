@@ -1,11 +1,12 @@
-import { MetaAnalysisJobResponse, MetaAnalysisReturn, ResultReturn } from 'neurosynth-compose-typescript-sdk';
-import RunMetaAnalysisInstructions from './RunMetaAnalysisInstructions';
-import MetaAnalysisJob from './MetaAnalysisJob';
-import DisplayMetaAnalysisResults from './DisplayMetaAnalysisResults';
-import { useGetMetaAnalysisResultById } from 'hooks';
-import useGetMetaAnalysisJobById from '../hooks/useGetMetaAnalysisJobById';
-import ProgressLoader from 'components/ProgressLoader';
 import { Box, Typography } from '@mui/material';
+import ProgressLoader from 'components/ProgressLoader';
+import { useGetMetaAnalysisResultById } from 'hooks';
+import { MetaAnalysisJobResponse, MetaAnalysisReturn, ResultReturn } from 'neurosynth-compose-typescript-sdk';
+import { useParams } from 'react-router-dom';
+import useGetMetaAnalysisJobById from '../hooks/useGetMetaAnalysisJobById';
+import DisplayMetaAnalysisResults from './DisplayMetaAnalysisResults';
+import MetaAnalysisInstructions from './MetaAnalysisInstructions';
+import MetaAnalysisJob from './MetaAnalysisJob';
 
 function MetaAnalysisExecution({
     metaAnalysis,
@@ -14,6 +15,8 @@ function MetaAnalysisExecution({
     metaAnalysis?: MetaAnalysisReturn;
     metaAnalysisJobs?: Array<MetaAnalysisJobResponse>;
 }) {
+    const { projectId } = useParams<{ projectId: string }>();
+
     const results = (metaAnalysis?.results ?? []) as ResultReturn[];
     const jobs = metaAnalysisJobs ?? [];
     const latestJob = jobs.length > 0 ? jobs[jobs.length - 1] : undefined;
@@ -30,6 +33,8 @@ function MetaAnalysisExecution({
         isError: latestJobIsError,
     } = useGetMetaAnalysisJobById(latestJob?.job_id);
 
+    const isViewingThisPageFromProject = !projectId;
+
     if (latestResultIsLoading || latestJobIsLoading) {
         return (
             <Box sx={{ display: 'flex', justifyContent: 'center' }}>
@@ -40,6 +45,15 @@ function MetaAnalysisExecution({
 
     if (latestResultIsError || latestJobIsError) {
         return <Typography color="error">Error loading latest result or job</Typography>;
+    }
+
+    // for users that do not own the meta-analysis/project
+    if (isViewingThisPageFromProject) {
+        return latestResult ? (
+            <DisplayMetaAnalysisResults metaAnalysis={metaAnalysis} />
+        ) : (
+            <Typography>No results for this meta-analysis yet</Typography>
+        );
     }
 
     if (latestJob && !latestResult) {
@@ -59,7 +73,7 @@ function MetaAnalysisExecution({
         }
     } else {
         // no job and no result
-        return <RunMetaAnalysisInstructions metaAnalysisId={metaAnalysis?.id ?? ''} />;
+        return <MetaAnalysisInstructions metaAnalysisId={metaAnalysis?.id ?? ''} />;
     }
 }
 
