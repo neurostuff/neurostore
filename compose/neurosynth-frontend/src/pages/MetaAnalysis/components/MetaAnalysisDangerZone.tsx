@@ -49,14 +49,17 @@ const MetaAnalysisDangerZone: React.FC<{ metaAnalysisId: string | undefined }> =
             <Typography gutterBottom variant="h5" sx={{ color: 'error.main' }}>
                 Danger zone
             </Typography>
-            <Typography gutterBottom variant="body1" sx={{ color: 'error.main' }}>
+            <Typography variant="body2" sx={{ color: 'error.main' }}>
                 Note: Once you have run your meta-analysis, you will not be able to delete it.
+            </Typography>
+            <Typography variant="body2" sx={{ color: 'error.main', mb: 2 }}>
+                If you are currently running a meta-analysis, deleting will cause your upload to fail.
             </Typography>
             <ConfirmationDialog
                 isOpen={confirmationDialogIsOpen}
                 rejectText="Cancel"
                 dialogTitle="Are you sure you want to delete the meta-analysis?"
-                dialogMessage="This action cannot be undone"
+                dialogMessage="This action cannot be undone. If you are currently running a meta-analysis, deleting will cause your upload to fail."
                 onCloseDialog={handleDeleteMetaAnalysis}
                 confirmText="Confirm"
             />
