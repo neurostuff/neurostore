@@ -30,5 +30,4 @@ def upgrade():
 
 def downgrade():
     op.drop_constraint("uq_studyset_stub_uuid", "studyset_studies", type_="unique")
-    op.drop_index("ix_studyset_studies_curation_stub_uuid", table_name="studyset_studies")
     op.drop_column("studyset_studies", "curation_stub_uuid")
