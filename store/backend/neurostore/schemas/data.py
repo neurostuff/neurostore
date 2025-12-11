@@ -619,6 +619,9 @@ class StudysetSchema(BaseDataSchema):
     def capture_curation_stub_uuids(self, data, **kwargs):
         if not isinstance(data, dict):
             return data
+
+        # Always derive stub mapping from inline study payload; ignore any incoming map.
+        data.pop("curation_stub_map", None)
         studies = data.get("studies")
         if not studies:
             return data

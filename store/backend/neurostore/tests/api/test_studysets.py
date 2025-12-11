@@ -335,10 +335,6 @@ def test_non_nested_studyset_includes_studyset_studies(auth_client, ingest_neuro
                 {"id": study_ids[0], "curation_stub_uuid": stub_uuid},
                 {"id": study_ids[1], "curation_stub_uuid": stub_uuid_2},
             ],
-            "curation_stub_map": {
-                study_ids[0]: stub_uuid,
-                study_ids[1]: stub_uuid_2,
-            },
         },
     )
     assert update_resp.status_code == 200
@@ -388,7 +384,6 @@ def test_studyset_studies_survive_multiple_updates(auth_client, ingest_neurosynt
         f"/api/studysets/{studyset_id}",
         data={
             "studies": [{"id": study_ids[1], "curation_stub_uuid": stub_b}],
-            "curation_stub_map": {study_ids[1]: stub_b},
         },
     )
     assert update_resp_1.status_code == 200
@@ -408,10 +403,6 @@ def test_studyset_studies_survive_multiple_updates(auth_client, ingest_neurosynt
                 {"id": study_ids[0], "curation_stub_uuid": stub_a},
                 {"id": study_ids[1], "curation_stub_uuid": stub_b},
             ],
-            "curation_stub_map": {
-                study_ids[0]: stub_a,
-                study_ids[1]: stub_b,
-            },
         },
     )
     assert update_resp_2.status_code == 200
@@ -458,7 +449,6 @@ def test_stub_mapping_updates_when_switching_versions(auth_client, ingest_neuros
         f"/api/studysets/{studyset_id}",
         data={
             "studies": [{"id": study_ids[1], "curation_stub_uuid": stub_uuid}],
-            "curation_stub_map": {study_ids[1]: stub_uuid},
         },
     )
     assert update_resp.status_code == 200

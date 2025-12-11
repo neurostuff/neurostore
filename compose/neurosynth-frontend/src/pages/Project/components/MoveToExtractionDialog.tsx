@@ -150,16 +150,11 @@ const MoveToExtractionDialog: React.FC<IDialog> = (props) => {
             const returnedBaseStudies = res.data as Array<BaseStudyReturn>;
 
             const studiesPayload = mapStubsToStudysetPayload(includedStubs, returnedBaseStudies);
-            const curationStubMap = studiesPayload.reduce<Record<string, string>>((acc, item) => {
-                if (item.curation_stub_uuid) acc[item.id] = item.curation_stub_uuid;
-                return acc;
-            }, {});
 
             await asyncUpdateStudyset({
                 studysetId: newStudysetId,
                 studyset: {
                     studies: studiesPayload,
-                    curation_stub_map: curationStubMap,
                 },
             });
 

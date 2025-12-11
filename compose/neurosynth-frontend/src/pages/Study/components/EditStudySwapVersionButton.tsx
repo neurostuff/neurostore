@@ -118,16 +118,11 @@ const EditStudySwapVersionButton: React.FC = () => {
                 const stub = studyToStub.get(id);
                 return { id, curation_stub_uuid: stub };
             });
-            const curationStubMap = studiesPayload.reduce<Record<string, string>>((acc, item) => {
-                if (item.curation_stub_uuid) acc[item.id] = item.curation_stub_uuid;
-                return acc;
-            }, {});
 
             await updateStudyset({
                 studysetId: studysetId,
                 studyset: {
                     studies: studiesPayload,
-                    curation_stub_map: curationStubMap,
                 },
             });
             updateStudyListStatusWithNewStudyId(studyId, versionToSwapTo);
