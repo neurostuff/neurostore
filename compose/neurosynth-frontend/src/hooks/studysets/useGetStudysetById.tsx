@@ -3,7 +3,8 @@ import { StudyReturn, StudysetReturn } from 'neurostore-typescript-sdk';
 import { useSnackbar } from 'notistack';
 import { useQuery } from 'react-query';
 import API from 'utils/api';
-import { STUDYSET_QUERY_STRING } from './useGetStudysets';
+
+export const STUDYSET_QUERY_STRING = 'studysets';
 
 const useGetStudysetById = (studysetId?: string, nested?: boolean) => {
     const { enqueueSnackbar } = useSnackbar();
@@ -17,7 +18,7 @@ const useGetStudysetById = (studysetId?: string, nested?: boolean) => {
         () => API.NeurostoreServices.StudySetsService.studysetsIdGet(studysetId || '', nested),
         {
             enabled: !!studysetId,
-            onError: (err) => {
+            onError: () => {
                 enqueueSnackbar('there was an error retrieving the studyset', { variant: 'error' });
             },
             select: (res) => {

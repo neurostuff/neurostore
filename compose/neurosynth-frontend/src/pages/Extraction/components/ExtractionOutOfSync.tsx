@@ -17,7 +17,7 @@ import { useState } from 'react';
 import { useIsFetching, useQueryClient } from 'react-query';
 import ExtractionOutOfSyncStyles from './ExtractionOutOfSync.styles';
 import { mapStubsToStudysetPayload } from 'helpers/Extraction.helpers';
-import { STUDYSET_QUERY_STRING } from 'hooks/studysets/useGetStudysets';
+import { STUDYSET_QUERY_STRING } from 'hooks/studysets/useGetStudysetById';
 
 const ExtractionOutOfSync: React.FC = () => {
     const studysetId = useProjectExtractionStudysetId();
@@ -38,14 +38,22 @@ const ExtractionOutOfSync: React.FC = () => {
         if (!studysetId || !annotationId) return;
         setIsLoading(true);
 
+        // create stub to study version mapping
         const stubToStudyId = new Map<string, string>();
-        (studyset?.studyset_studies || []).forEach((assoc) => {
-            if (assoc.curation_stub_uuid && assoc.id) {
-                stubToStudyId.set(assoc.curation_stub_uuid, assoc.id);
+        // studyset.studyset_studies is the backend mapping of study IDs to curation stub IDs
+        (studyset?.studyset_studies || []).forEach((studysetStudy) => {
+            if (studysetStudy.curation_stub_uuid && studysetStudy.id) {
+                stubToStudyId.set(studysetStudy.curation_stub_uuid, studysetStudy.id);
             }
         });
 
-        const stubsNeedingIngest = curationIncludedStudies.stubStudies.filter((stub) => !stubToStudyId.has(stub.id));
+        // create set of all study versions in the studyset
+        const studiesInStudyset = new Set<string>();
+        ((studyset?.studies || []) as Array<StudyReturn>).forEach((study) => {
+            if (study.id) studiesInStudyset.add(study.id);
+        });
+
+        // get stubs that are in the studyset
         const existingStubPayload = curationIncludedStudies.stubStudies
             .filter((stub) => stubToStudyId.has(stub.id))
             .map((stub) => ({
@@ -53,26 +61,26 @@ const ExtractionOutOfSync: React.FC = () => {
                 curation_stub_uuid: stub.id,
             }));
 
+        // get stubs that are not in the studyset (and need to be ingested). Convert to base study payload.
+        const stubsNeedingIngest = curationIncludedStudies.stubStudies.filter((stub) => !stubToStudyId.has(stub.id));
         const stubsToBaseStudies: Array<
             Pick<
                 BaseStudy,
                 'name' | 'doi' | 'pmid' | 'pmcid' | 'year' | 'description' | 'publication' | 'authors' | 'level'
             >
-        > = stubsNeedingIngest.map((stub) => ({
-            name: stub.title,
-            doi: stub.doi ? stub.doi : undefined,
-            pmid: stub.pmid ? stub.pmid : undefined,
-            pmcid: stub.pmcid ? stub.pmcid : undefined,
-            year: Number(stub.articleYear),
-            description: stub.abstractText,
-            publication: stub.journal,
-            authors: stub.authors,
-            level: 'group',
-        }));
-
-        const studiesInStudyset = new Set<string>();
-        ((studyset?.studies || []) as Array<StudyReturn>).forEach((study) => {
-            if (study.id) studiesInStudyset.add(study.id);
+        > = stubsNeedingIngest.map((stub) => {
+            const year = Number(stub.articleYear);
+            return {
+                name: stub.title,
+                doi: stub.doi || undefined,
+                pmid: stub.pmid || undefined,
+                pmcid: stub.pmcid || undefined,
+                year: isNaN(year) ? undefined : year,
+                description: stub.abstractText,
+                publication: stub.journal,
+                authors: stub.authors,
+                level: 'group',
+            };
         });
 
         try {
@@ -84,7 +92,6 @@ const ExtractionOutOfSync: React.FC = () => {
                 stubsNeedingIngest,
                 returnedBaseStudies,
                 studiesInStudyset,
-                undefined,
                 stubToStudyId
             );
             const studiesPayload = [...existingStubPayload, ...newStubPayload];

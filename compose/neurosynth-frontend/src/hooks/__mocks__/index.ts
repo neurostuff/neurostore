@@ -67,19 +67,6 @@ const useCreateMetaAnalysis = vi.fn().mockReturnValue({
     createMetaAnalysis: vi.fn().mockReturnValue(Promise.resolve()),
 });
 
-const useGetStudysets = vi.fn().mockReturnValue({
-    error: undefined,
-    isLoading: false,
-    isError: false,
-    data: {
-        metadata: {
-            total_count: 100,
-            unique_count: 100,
-        },
-        results: mockStudysets(),
-    },
-});
-
 const useCreateStudyset = vi.fn().mockReturnValue({
     // isLoading: false,
     // isError: false,
@@ -211,7 +198,6 @@ export {
     useGetFullText,
     useGetStudyById,
     useGetStudysetById,
-    useGetStudysets,
     useInputValidation,
     useIsMounted,
     useUpdateAnalysis,

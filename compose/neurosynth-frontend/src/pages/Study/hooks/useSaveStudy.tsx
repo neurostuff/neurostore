@@ -1,7 +1,6 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import { unsetUnloadHandler } from 'helpers/BeforeUnload.helpers';
 import { useCreateStudy, useGetStudysetById, useUpdateAnnotationById, useUpdateStudyset } from 'hooks';
-import { STUDYSET_QUERY_STRING } from 'hooks/studysets/useGetStudysets';
 import {
     AnalysisReturn,
     StudyRequest,
@@ -37,6 +36,7 @@ import {
 import { storeAnalysesToStudyAnalyses } from '../store/StudyStore.helpers';
 import { hasDuplicateStudyAnalysisNames, hasEmptyStudyPoints } from './useSaveStudy.helpers';
 import { updateExtractionTableStateStudySwapInStorage } from 'pages/Extraction/components/ExtractionTable.helpers';
+import { STUDYSET_QUERY_STRING } from 'hooks/studysets/useGetStudysetById';
 
 const useSaveStudy = () => {
     const { user } = useAuth0();
@@ -181,7 +181,7 @@ const useSaveStudy = () => {
 
             // Build a mapping of study ID -> stub UUID so we can preserve curation linkage when swapping versions.
             const studyToStub = new Map<string, string>();
-            (studyset.studyset_studies || []).forEach((assoc: StudysetReturnRelationshipsStudysetStudiesInner) => {
+            (studyset.studyset_studies || []).forEach((assoc) => {
                 if (assoc?.id && assoc?.curation_stub_uuid) {
                     studyToStub.set(assoc.id, assoc.curation_stub_uuid);
                 }
@@ -208,7 +208,7 @@ const useSaveStudy = () => {
 
             const studiesPayload = updatedStudies.map((id) => {
                 const stub = studyToStub.get(id);
-                return stub ? { id, curation_stub_uuid: stub } : { id };
+                return { id, curation_stub_uuid: stub };
             });
             const curationStubMap = studiesPayload.reduce<Record<string, string>>((acc, item) => {
                 if (item.curation_stub_uuid) acc[item.id] = item.curation_stub_uuid;

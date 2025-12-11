@@ -20,9 +20,8 @@ type StubLike = Pick<ICurationStubStudy, 'id'>;
 
 export const mapStubsToStudysetPayload = (
     stubs: Array<StubLike>,
-    baseStudies: Array<BaseStudyReturn>,
+    stubBaseStudies: Array<BaseStudyReturn>,
     existingStudyIds?: Set<string>,
-    stubToStudyId?: Map<string, string>,
     lockedStubToStudyId?: Map<string, string>
 ): Array<{ id: string; curation_stub_uuid: string }> => {
     const payload: Array<{ id: string; curation_stub_uuid: string }> = [];
@@ -37,23 +36,13 @@ export const mapStubsToStudysetPayload = (
             return;
         }
 
-        const targetStudyId = stubToStudyId?.get(stub.id);
+        const stubBaseStudy = stubBaseStudies[idx];
+        if (!stubBaseStudy) return;
 
-        // Prefer a base study that actually contains the mapped study version.
-        const baseStudy =
-            (targetStudyId &&
-                baseStudies.find((bs) => (bs.versions || []).some((version) => version.id === targetStudyId))) ||
-            baseStudies[idx];
+        const versions = Array.isArray(stubBaseStudy.versions) ? (stubBaseStudy.versions as Array<StudyReturn>) : [];
 
-        if (!baseStudy) return;
-
-        const versions = Array.isArray(baseStudy.versions) ? (baseStudy.versions as Array<StudyReturn>) : [];
-        const existingForStub = targetStudyId;
-
-        // Prefer a version that matches the study currently linked to this stub
-        const foundVersion =
-            versions.find((studyVersion) => studyVersion.id === existingForStub) ||
-            versions.find((studyVersion) => existingStudyIds?.has(studyVersion.id || ''));
+        // Prefer a version that already exists in the studyset
+        const foundVersion = versions.find((studyVersion) => existingStudyIds?.has(studyVersion.id || ''));
 
         const chosenVersion = foundVersion || selectBestBaseStudyVersion(versions);
 

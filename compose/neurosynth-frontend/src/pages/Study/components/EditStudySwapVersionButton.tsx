@@ -104,7 +104,7 @@ const EditStudySwapVersionButton: React.FC = () => {
 
             // Preserve curation stub linkage when swapping versions.
             const studyToStub = new Map<string, string>();
-            (studyset.studyset_studies || []).forEach((assoc: StudysetReturnRelationshipsStudysetStudiesInner) => {
+            (studyset.studyset_studies || []).forEach((assoc) => {
                 if (assoc?.id && assoc?.curation_stub_uuid) {
                     studyToStub.set(assoc.id, assoc.curation_stub_uuid);
                 }
@@ -116,7 +116,7 @@ const EditStudySwapVersionButton: React.FC = () => {
             }
             const studiesPayload = updatedStudyset.map((id) => {
                 const stub = studyToStub.get(id);
-                return stub ? { id, curation_stub_uuid: stub } : { id };
+                return { id, curation_stub_uuid: stub };
             });
             const curationStubMap = studiesPayload.reduce<Record<string, string>>((acc, item) => {
                 if (item.curation_stub_uuid) acc[item.id] = item.curation_stub_uuid;
