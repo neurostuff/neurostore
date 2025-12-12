@@ -38,15 +38,12 @@ const SelectAnalysesSummaryComponent: React.FC<{
                 filteredAnnotationsStudyIdSet.add(filteredAnnotation.study);
             }
             if (filteredAnnotation.analysis) {
-                filteredAnnotationsAnalysisIdToNoteMap.set(
-                    filteredAnnotation.analysis,
-                    filteredAnnotation
-                );
+                filteredAnnotationsAnalysisIdToNoteMap.set(filteredAnnotation.analysis, filteredAnnotation);
             }
         }
 
         let numStudiesSelected = 0;
-        let numAnalysesSelected = filteredAnnotations.length;
+        const numAnalysesSelected = filteredAnnotations.length;
         let numCoordinatesSelected = 0;
         (studyset.studies as StudyReturn[]).forEach((study) => {
             if (!study.id || !filteredAnnotationsStudyIdSet.has(study.id)) return;
@@ -67,27 +64,22 @@ const SelectAnalysesSummaryComponent: React.FC<{
             analyses: numAnalysesSelected,
             coordinates: numCoordinatesSelected,
         });
-    }, [
-        annotation?.notes,
-        props.selectedValue,
-        props.selectedValue?.selectionKey,
-        studyset?.studies,
-    ]);
+    }, [annotation?.notes, props.selectedValue, props.selectedValue?.selectionKey, studyset?.studies]);
 
     return (
         <Box sx={{ display: 'flex' }}>
             <Typography sx={{ marginRight: '0.5rem' }} variant="caption">
                 Included:
             </Typography>{' '}
-            <Typography sx={{ marginRight: '0.5rem' }} variant="caption">
+            <Typography sx={{ marginRight: '0.5rem', whiteSpace: 'nowrap' }} variant="caption">
                 {count.studies} studies
             </Typography>{' '}
             |
-            <Typography sx={{ margin: '0 0.5rem' }} variant="caption">
+            <Typography sx={{ margin: '0 0.5rem', whiteSpace: 'nowrap' }} variant="caption">
                 {count.analyses} analyses
             </Typography>{' '}
             |
-            <Typography sx={{ marginLeft: '0.5rem' }} variant="caption">
+            <Typography sx={{ marginLeft: '0.5rem', whiteSpace: 'nowrap' }} variant="caption">
                 {count.coordinates} coordinates
             </Typography>
         </Box>

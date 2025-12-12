@@ -4,9 +4,7 @@ describe('CreateSpecificationDialog', () => {
     beforeEach(() => {
         cy.clearLocalStorage();
         cy.intercept('GET', 'https://api.appzi.io/**', { fixture: 'appzi' }).as('appziFixture');
-        cy.intercept('GET', `**/api/meta-analyses*`, { fixture: 'metaAnalyses' }).as(
-            'metaAnalysesFixture'
-        );
+        cy.intercept('GET', `**/api/meta-analyses*`, { fixture: 'metaAnalyses' }).as('metaAnalysesFixture');
         cy.intercept('GET', '**/api/meta-analysis-results/**', {
             fixture: 'metaAnalysisResults',
         }).as('metaAnalysisResultsFixture');
@@ -14,15 +12,12 @@ describe('CreateSpecificationDialog', () => {
             fixture: 'projects/projectCanCreateSpecification',
         }).as('projectFixture');
         cy.intercept('GET', `**/api/studysets/*`, { fixture: 'studyset' }).as('studysetFixture');
-        cy.intercept('GET', '**/api/annotations/*', { fixture: 'annotation' }).as(
-            'annotationFixture'
-        );
+        cy.intercept('GET', '**/api/annotations/*', { fixture: 'annotation' }).as('annotationFixture');
+        cy.intercept('GET', '**/api/meta-analysis-jobs', { fixture: 'MetaAnalysis/jobs/noJobs' }).as('jobsFixture');
     });
 
     it('should show the dialog', () => {
-        cy.login('mocked', { sub: 'github|26612023' })
-            .visit('/projects/abc123')
-            .wait('@projectFixture');
+        cy.login('mocked', { sub: 'github|26612023' }).visit('/projects/abc123').wait('@projectFixture');
         cy.contains('button', 'Meta-Analyses').click();
         cy.contains('button', 'Meta-Analysis Specification').click();
         cy.get('.MuiDialog-container').should('be.visible');
@@ -30,9 +25,7 @@ describe('CreateSpecificationDialog', () => {
     });
 
     it('should set the default specification values', () => {
-        cy.login('mocked', { sub: 'github|26612023' })
-            .visit('/projects/abc123')
-            .wait('@projectFixture');
+        cy.login('mocked', { sub: 'github|26612023' }).visit('/projects/abc123').wait('@projectFixture');
         cy.contains('button', 'Meta-Analyses').click();
         cy.contains('button', 'Meta-Analysis Specification').click();
         cy.get('.MuiDialog-container').should('be.visible');
@@ -55,16 +48,14 @@ describe('CreateSpecificationDialog', () => {
             specification: {},
         });
         cy.intercept('GET', '**/api/specifications/*', {
-            fixture: 'specification',
+            fixture: 'MetaAnalysis/specification',
         });
 
         cy.intercept('GET', '**/api/meta-analyses/mockedMetaAnalysisId*', {
-            fixture: 'metaAnalysis',
-        }).as('metaAnalysesFixture');
+            fixture: 'MetaAnalysis/metaAnalysis',
+        }).as('MetaAnalysis/metaAnalysesFixture');
 
-        cy.login('mocked', { sub: 'github|26612023' })
-            .visit('/projects/abc123')
-            .wait('@projectFixture');
+        cy.login('mocked', { sub: 'github|26612023' }).visit('/projects/abc123').wait('@projectFixture');
         cy.contains('button', 'Meta-Analyses').click();
         cy.contains('button', 'Meta-Analysis Specification').click();
         cy.contains('Next').click();

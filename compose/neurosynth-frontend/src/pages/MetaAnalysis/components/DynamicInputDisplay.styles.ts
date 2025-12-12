@@ -2,8 +2,7 @@ import { Style } from 'index';
 
 const DynamicInputDisplayStyles: Style = {
     dynamicInputSection: {
-        marginTop: '1rem',
-        fontWeight: 'bold',
+        marginY: '0.5rem',
     },
     valuesListContainer: {
         display: 'block',

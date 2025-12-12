@@ -1,19 +1,15 @@
 import { Box, Link, Paper, Typography } from '@mui/material';
-import { MetaAnalysisReturn, ResultReturn } from 'neurosynth-compose-typescript-sdk';
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
-import useGetAnalysisById from 'hooks/analyses/useGetAnalysisById';
-import StudyPoints from 'pages/Study/components/StudyPoints';
-import { PointReturn } from 'neurostore-typescript-sdk';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
+import useGetAnalysisById from 'hooks/analyses/useGetAnalysisById';
+import { PointReturn } from 'neurostore-typescript-sdk';
+import { MetaAnalysisReturn, ResultReturn } from 'neurosynth-compose-typescript-sdk';
+import StudyPoints from 'pages/Study/components/StudyPoints';
 import { studyPointsToStorePoints } from 'pages/Study/store/StudyStore.helpers';
-import { getResultStatus } from 'helpers/MetaAnalysis.helpers';
 
 const DisplayMetaAnalysisResult: React.FC<{
     metaAnalysis: MetaAnalysisReturn | undefined;
     metaAnalysisResult: ResultReturn | undefined;
 }> = (props) => {
-    const resultStatus = getResultStatus(props.metaAnalysis, props.metaAnalysisResult);
-
     const { data, isLoading, isError } = useGetAnalysisById(
         props.metaAnalysis?.neurostore_analysis?.neurostore_id || undefined
     );
@@ -31,12 +27,6 @@ const DisplayMetaAnalysisResult: React.FC<{
                 <Typography sx={{ marginBottom: '1rem' }} variant="h5">
                     Result
                 </Typography>
-                {resultStatus.color === 'error' && (
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <ErrorOutlineIcon color="error" sx={{ marginRight: '10px' }} />
-                        <Typography sx={{ color: 'error.main' }}>{resultStatus.statusText}</Typography>
-                    </Box>
-                )}
             </Box>
             <Box sx={{ marginBottom: '1rem' }}>
                 <Typography sx={{ fontWeight: 'bold' }} gutterBottom>

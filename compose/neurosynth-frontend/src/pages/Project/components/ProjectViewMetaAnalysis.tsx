@@ -4,6 +4,8 @@ import { getResultStatus } from 'helpers/MetaAnalysis.helpers';
 import { useGetMetaAnalysisResultById } from 'hooks';
 import useUserCanEdit from 'hooks/useUserCanEdit';
 import { MetaAnalysisReturn, ResultReturn } from 'neurosynth-compose-typescript-sdk';
+import useGetMetaAnalysisJobById from 'pages/MetaAnalysis/hooks/useGetMetaAnalysisJobById';
+import useGetMetaAnalysisJobsByMetaAnalysisId from 'pages/MetaAnalysis/hooks/useGetMetaAnalysisJobsByMetaAnalysisId';
 import { useProjectUser } from 'pages/Project/store/ProjectStore';
 import { useNavigate } from 'react-router-dom';
 
@@ -13,12 +15,24 @@ const ProjectViewMetaAnalysis: React.FC<MetaAnalysisReturn> = (props) => {
     const canEdit = useUserCanEdit(projectUser || undefined);
 
     const {
+        data: metaAnalysisJobs,
+        isLoading: metaAnalysisJobsIsLoading,
+        isError: metaAnalysisJobsIsError,
+    } = useGetMetaAnalysisJobsByMetaAnalysisId(id);
+    const jobs = metaAnalysisJobs ?? [];
+    const latestJob = jobs.length > 0 ? jobs[jobs.length - 1] : undefined;
+    const {
+        data: latestMetaAnalysisJob,
+        isLoading: latestJobIsLoading,
+        isError: latestJobIsError,
+    } = useGetMetaAnalysisJobById(latestJob?.job_id);
+    const allResults = (props.results ?? []) as ResultReturn[];
+    const latestResult = allResults.length > 0 ? allResults[allResults.length - 1] : undefined;
+    const {
         data: metaAnalysisResult,
         isLoading: getMetaAnalysisResultIsLoading,
         isError: getMetaAnalysisResultIsError,
-    } = useGetMetaAnalysisResultById(
-        results && results.length ? (results[results.length - 1] as ResultReturn).id : undefined
-    );
+    } = useGetMetaAnalysisResultById(latestResult?.id);
 
     const navigate = useNavigate();
 
@@ -31,7 +45,7 @@ const ProjectViewMetaAnalysis: React.FC<MetaAnalysisReturn> = (props) => {
         navigate(`/projects/${project}/meta-analyses/${id}`);
     };
 
-    const resultStatus = getResultStatus(props, metaAnalysisResult);
+    const resultStatus = getResultStatus(props, metaAnalysisResult, latestMetaAnalysisJob);
 
     return (
         <Card
@@ -46,8 +60,8 @@ const ProjectViewMetaAnalysis: React.FC<MetaAnalysisReturn> = (props) => {
         >
             <CardContent>
                 <StateHandlerComponent
-                    isError={getMetaAnalysisResultIsError}
-                    isLoading={getMetaAnalysisResultIsLoading}
+                    isError={getMetaAnalysisResultIsError || metaAnalysisJobsIsError || latestJobIsError}
+                    isLoading={getMetaAnalysisResultIsLoading || metaAnalysisJobsIsLoading || latestJobIsLoading}
                 >
                     <Box>
                         <Alert

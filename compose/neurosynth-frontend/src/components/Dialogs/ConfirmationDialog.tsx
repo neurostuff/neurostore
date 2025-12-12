@@ -11,6 +11,8 @@ import {
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import React, { ReactNode, useMemo } from 'react';
+import LoadingButton from 'components/Buttons/LoadingButton';
+import { ColorOptions } from 'index';
 
 export interface IConfirmationDialog {
     isOpen: boolean;
@@ -18,7 +20,7 @@ export interface IConfirmationDialog {
     dialogTitle: string;
     dialogMessage?: ReactNode | string;
     confirmText?: string;
-    confirmButtonProps?: ButtonProps;
+    confirmButtonProps?: ButtonProps & { isLoading?: boolean; loaderColor?: ColorOptions };
     rejectButtonProps?: ButtonProps;
     rejectText?: string;
 }
@@ -58,16 +60,17 @@ const ConfirmationDialog: React.FC<IConfirmationDialog> = (props) => {
                     >
                         {props.rejectText ? props.rejectText : 'Reject'}
                     </Button>
-                    <Button
+                    <LoadingButton
+                        text={props.confirmText || 'Confirm'}
+                        loaderColor={props.confirmButtonProps?.loaderColor}
+                        isLoading={props.confirmButtonProps?.isLoading}
                         sx={{ width: '250px' }}
                         onClick={() => props.onCloseDialog(true)}
                         variant="contained"
                         color="primary"
                         disableElevation
                         {...(props.confirmButtonProps || {})}
-                    >
-                        {props.confirmText ? props.confirmText : 'Confirm'}
-                    </Button>
+                    />
                 </Box>
             </DialogContent>
         </Dialog>

@@ -9,12 +9,10 @@ import RemoveCircle from '@mui/icons-material/RemoveCircle';
 import DynamicFormStyles from 'pages/MetaAnalysis/components//DynamicFormStyles';
 
 const DynamicFormKwargInput: React.FC<IDynamicFormInput> = (props) => {
-    const kwargList: { key: string; value: string }[] = Object.keys(props.value || {}).map(
-        (key) => ({
-            key: key,
-            value: props.value[key],
-        })
-    );
+    const kwargList: { key: string; value: string }[] = Object.keys(props.value || {}).map((key) => ({
+        key: key,
+        value: props.value[key],
+    }));
 
     const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
 
@@ -49,18 +47,14 @@ const DynamicFormKwargInput: React.FC<IDynamicFormInput> = (props) => {
             <Box sx={{ display: showAdvancedOptions ? 'block' : 'none' }}>
                 <Divider sx={{ marginBottom: '1rem' }} />
 
-                <MetaAnalysisDynamicFormTitle
-                    name={props.parameterName}
-                    description={props.parameter.description}
-                />
+                <MetaAnalysisDynamicFormTitle name={props.parameterName} description={props.parameter.description} />
 
                 <Box>
                     <Box
                         sx={{
-                            display: 'block',
-                            borderCollapse: 'separate',
-                            borderSpacing: '5px 0',
-                            height: '70px',
+                            display: 'grid',
+                            gridTemplateColumns: '0px 1fr 1fr 70px',
+                            gap: 1,
                         }}
                     >
                         <AddMetadataRow

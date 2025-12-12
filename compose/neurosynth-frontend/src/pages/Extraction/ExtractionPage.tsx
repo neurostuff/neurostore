@@ -158,7 +158,11 @@ const ExtractionPage: React.FC = () => {
                         </Tooltip>
                     </Box>
                 </Box>
-                {showReconcilePrompt && <ExtractionOutOfSync />}
+                {showReconcilePrompt && (
+                    <Box sx={{ my: 1 }}>
+                        <ExtractionOutOfSync />
+                    </Box>
+                )}
                 <Box sx={{ flexGrow: 1 }}>
                     <Box>
                         <TextEdit

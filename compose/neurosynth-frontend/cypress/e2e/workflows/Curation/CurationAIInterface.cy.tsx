@@ -19,11 +19,11 @@ describe('CurationAIInterface', () => {
         ).as('updateProject');
 
         cy.intercept('POST', `**/api/pipeline-study-results/?feature_display=TaskExtractor*`, {
-            fixture: 'pipeline-results/TaskExtraction',
+            fixture: 'PipelineResults/TaskExtraction',
         }).as('participantDemographicsExtraction');
 
         cy.intercept('POST', `**/api/pipeline-study-results/?feature_display=ParticipantDemographicsExtractor*`, {
-            fixture: 'pipeline-results/ParticipantDemographicsExtraction',
+            fixture: 'PipelineResults/ParticipantDemographicsExtraction',
         }).as('taskExtraction');
 
         // this is necessary to hide an info popup that appears for the first time in projects for the new curation UI
