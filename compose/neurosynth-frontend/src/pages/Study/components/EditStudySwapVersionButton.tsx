@@ -18,7 +18,7 @@ import { setAnalysesInAnnotationAsIncluded } from 'helpers/Annotation.helpers';
 import { hasUnsavedStudyChanges, unsetUnloadHandler } from 'helpers/BeforeUnload.helpers';
 import { lastUpdatedAtSortFn } from 'helpers/utils';
 import { useGetStudysetById, useUpdateStudyset, useGetBaseStudyById } from 'hooks';
-import { StudyReturn, StudysetReturnRelationshipsStudysetStudiesInner } from 'neurostore-typescript-sdk';
+import { StudyReturn } from 'neurostore-typescript-sdk';
 import { useSnackbar } from 'notistack';
 import { updateExtractionTableStateStudySwapInStorage } from 'pages/Extraction/components/ExtractionTable.helpers';
 import {

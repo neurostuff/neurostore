@@ -1,11 +1,7 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import { unsetUnloadHandler } from 'helpers/BeforeUnload.helpers';
 import { useCreateStudy, useGetStudysetById, useUpdateAnnotationById, useUpdateStudyset } from 'hooks';
-import {
-    AnalysisReturn,
-    StudyRequest,
-    StudysetReturnRelationshipsStudysetStudiesInner,
-} from 'neurostore-typescript-sdk';
+import { AnalysisReturn, StudyRequest } from 'neurostore-typescript-sdk';
 import { useSnackbar } from 'notistack';
 import {
     useProjectExtractionAnnotationId,
