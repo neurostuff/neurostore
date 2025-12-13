@@ -21,6 +21,7 @@ from sqlalchemy.orm import (
     defaultload,
     raiseload,
     selectinload,
+    load_only,
 )
 import sqlalchemy as sa
 from sqlalchemy import select
@@ -160,6 +161,15 @@ class StudysetsView(ObjectView, ListView):
 
     def eager_load(self, q, args=None):
         args = args or {}
+        q = q.options(
+            selectinload(Studyset.studyset_studies).options(
+                load_only(
+                    StudysetStudy.study_id,
+                    StudysetStudy.studyset_id,
+                    StudysetStudy.curation_stub_uuid,
+                )
+            )
+        )
         if args.get("nested"):
             q = q.options(
                 selectinload(Studyset.studies).options(
@@ -270,6 +280,60 @@ class StudysetsView(ObjectView, ListView):
         db.session.commit()
 
         return response
+
+    @classmethod
+    def update_or_create(cls, data, id=None, user=None, record=None, flush=True):
+        """
+        Extend base behavior to attach optional curation_stub_uuid to studyset-study links.
+        """
+        stub_map = data.pop("curation_stub_map", {}) or {}
+        record = super().update_or_create(
+            data, id=id, user=user, record=record, flush=flush
+        )
+
+        if getattr(record, "studyset_studies", None) is not None:
+            # Ensure associations match the current studies and apply stub mappings.
+            current_ids = {
+                s.id for s in getattr(record, "studies", []) if getattr(s, "id", None)
+            }
+
+            # Load existing associations directly to avoid
+            # duplicate pending rows in the relationship.
+            existing = {
+                assoc.study_id: assoc
+                for assoc in StudysetStudy.query.filter_by(studyset_id=record.id).all()
+            }
+
+            # Remove stale associations in bulk
+            if existing:
+                stale_ids = set(existing.keys()) - current_ids
+                if stale_ids:
+                    (
+                        StudysetStudy.query.filter_by(studyset_id=record.id)
+                        .filter(StudysetStudy.study_id.in_(stale_ids))
+                        .delete(synchronize_session=False)
+                    )
+                    for sid in stale_ids:
+                        existing.pop(sid, None)
+
+            # Ensure each study has an association and apply stub UUIDs
+            for study_id in current_ids:
+                assoc = existing.get(study_id)
+                if not assoc:
+                    assoc = StudysetStudy(
+                        study_id=study_id,
+                        studyset_id=record.id,
+                        curation_stub_uuid=None,
+                    )
+                    db.session.add(assoc)
+                    existing[study_id] = assoc
+                if study_id in stub_map:
+                    assoc.curation_stub_uuid = stub_map[study_id]
+
+            # Sync the relationship collection to the de-duplicated set for serialization.
+            record.studyset_studies = list(existing.values())
+
+        return record
 
     def _build_clone_payload(self, source_id, override_data):
         source_record = (

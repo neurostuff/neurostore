@@ -84,11 +84,19 @@ class Studyset(BaseMixin, db.Model):
     public = db.Column(db.Boolean, default=True)
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"), index=True)
     user = relationship("User", backref=backref("studysets", passive_deletes=True))
+    studyset_studies = relationship(
+        "StudysetStudy",
+        back_populates="studyset",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        lazy="selectin",
+    )
     studies = relationship(
         "Study",
         secondary="studyset_studies",
-        backref=backref("studysets", lazy="dynamic"),
-        passive_deletes=True,
+        back_populates="studysets",
+        lazy="selectin",
+        viewonly=True,
     )
     annotations = relationship(
         "Annotation",
@@ -481,6 +489,20 @@ class Study(BaseMixin, db.Model):
         cascade_backrefs=False,
         lazy="selectin",
     )
+    studyset_studies = relationship(
+        "StudysetStudy",
+        back_populates="study",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        lazy="selectin",
+    )
+    studysets = relationship(
+        "Studyset",
+        secondary="studyset_studies",
+        back_populates="studies",
+        lazy="dynamic",
+        viewonly=True,
+    )
 
     __table_args__ = (
         db.CheckConstraint(level.in_(["group", "meta"])),
@@ -500,15 +522,23 @@ class StudysetStudy(db.Model):
     studyset_id = db.Column(
         db.ForeignKey("studysets.id", ondelete="CASCADE"), index=True, primary_key=True
     )
+    curation_stub_uuid = db.Column(db.Text, nullable=True, index=True)
     study = relationship(
         "Study",
-        backref=backref("studyset_studies"),
-        viewonly=True,
+        back_populates="studyset_studies",
+        passive_deletes=True,
     )
     studyset = relationship(
         "Studyset",
-        backref=backref("studyset_studies"),
-        viewonly=True,
+        back_populates="studyset_studies",
+        passive_deletes=True,
+    )
+    __table_args__ = (
+        db.UniqueConstraint(
+            "studyset_id",
+            "curation_stub_uuid",
+            name="uq_studyset_stub_uuid",
+        ),
     )
     annotation_analyses = relationship(
         "AnnotationAnalysis",

@@ -325,9 +325,9 @@ def ingest_neurosynth(max_rows=None):
             to_commit.extend(analyses)
             studies.append(s)
 
-        # add studies to studyset
-        d.studies = studies
-        db.session.add_all([d] + studies + to_commit)
+        # add studies to studyset via association objects
+        d.studyset_studies = [StudysetStudy(study=s, studyset=d) for s in studies]
+        db.session.add_all([d] + studies + to_commit + d.studyset_studies)
         db.session.commit()
 
         # create annotation object

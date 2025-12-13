@@ -385,8 +385,11 @@ class AnalysisConditionSchema(BaseDataSchema):
 
 
 class StudysetStudySchema(BaseDataSchema):
-    studyset_id = fields.String()  # primary key needed (no id_field)
-    study_id = fields.String()  # primary key needed (no id_field)
+    # expose only the study id and optional stub mapping; keep everything else load-only
+    id = fields.Function(lambda obj: getattr(obj, "study_id", None), dump_only=True)
+    study_id = fields.String(load_only=True)  # primary key needed (no id_field)
+    studyset_id = fields.String(load_only=True)  # primary key needed (no id_field)
+    curation_stub_uuid = fields.String(allow_none=True)
 
 
 class AnalysisSchema(BaseDataSchema):
@@ -578,6 +581,8 @@ class StudySchema(BaseDataSchema):
     @pre_load
     def check_nulls(self, data, **kwargs):
         """ensure data is not empty string or whitespace"""
+        if not isinstance(data, dict):
+            return data
         for attr in ["pmid", "pmcid", "doi"]:
             val = data.get(attr, None)
             if val is not None and (val == "" or val.isspace()):
@@ -595,6 +600,9 @@ class StudysetSchema(BaseDataSchema):
     studies = StringOrNested(
         StudySchema, many=True
     )  # This needs to be nested, but not cloned
+    # expose association records for stub mapping
+    studyset_studies = fields.Nested("StudysetStudySchema", many=True, dump_only=True)
+    curation_stub_map = fields.Dict(load_only=True)
     source = fields.String(dump_only=True, allow_none=True)
     source_id = fields.String(dump_only=True, allow_none=True)
     source_updated_at = fields.DateTime(dump_only=True, allow_none=True)
@@ -606,6 +614,60 @@ class StudysetSchema(BaseDataSchema):
 
     class Meta:
         render_module = orjson
+
+    @pre_load
+    def capture_curation_stub_uuids(self, data, **kwargs):
+        if not isinstance(data, dict):
+            return data
+
+        # Always derive stub mapping from inline study payload; ignore any incoming map.
+        data.pop("curation_stub_map", None)
+        studies = data.get("studies")
+        if not studies:
+            return data
+
+        stub_map = {}
+        cleaned = []
+        for item in studies:
+            if isinstance(item, dict):
+                stub = item.get("curation_stub_uuid")
+                study_id = item.get("id")
+                if stub and study_id:
+                    stub_map[study_id] = stub
+                cleaned.append(
+                    {k: v for k, v in item.items() if k != "curation_stub_uuid"}
+                )
+            else:
+                # Downstream schemas (e.g., StudySchema) expect each study
+                # to be an object with at least an 'id' key.
+                # This normalization ensures that string study IDs
+                # are converted to the required object form,
+                # enabling proper deserialization and validation by those schemas.
+                cleaned.append({"id": item})
+
+        data["studies"] = cleaned
+        if stub_map:
+            data["curation_stub_map"] = stub_map
+
+        return data
+
+    @post_dump
+    def normalize_studyset_studies(self, data, **kwargs):
+        """
+        Emit minimal association records with id and optional curation_stub_uuid.
+        If there is no stub mapping, return the study id with curation_stub_uuid as null.
+        """
+        if "studyset_studies" in data and data["studyset_studies"] is not None:
+            normalized = []
+            for assoc in data["studyset_studies"]:
+                normalized.append(
+                    {
+                        "id": assoc.get("id") or assoc.get("study_id"),
+                        "curation_stub_uuid": assoc.get("curation_stub_uuid"),
+                    }
+                )
+            data["studyset_studies"] = normalized
+        return data
 
 
 class AnnotationAnalysisSchema(BaseSchema):
@@ -891,4 +953,13 @@ class StudysetSnapshot(BaseSnapshot):
             "created_at": self._serialize_dt(studyset.created_at),
             "updated_at": self._serialize_dt(studyset.updated_at),
             "studies": [s_schema.dump(s) for s in studyset.studies],
+            # Include association records so the frontend can
+            # maintain stub mappings even in nested responses.
+            "studyset_studies": [
+                {
+                    "id": assoc.study_id,
+                    "curation_stub_uuid": getattr(assoc, "curation_stub_uuid", None),
+                }
+                for assoc in getattr(studyset, "studyset_studies", []) or []
+            ],
         }

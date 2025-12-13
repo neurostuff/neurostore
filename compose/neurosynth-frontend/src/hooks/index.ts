@@ -29,7 +29,6 @@ import useGetStudysetById from './studysets/useGetStudysetById';
 import useCreateAnnotation from './analyses/useCreateAnnotation';
 import useCreateStudy from './studies/useCreateStudy';
 import useCreateProject from './projects/useCreateProject';
-import useGetStudysets from './studysets/useGetStudysets';
 import useDeleteStudyset from './studysets/useDeleteStudyset';
 import useGetBaseStudies from './studies/useGetBaseStudies';
 import useGetStudyById from './studies/useGetStudyById';
@@ -69,7 +68,6 @@ export {
     // META-ANALYSIS RESULTS
     useGetMetaAnalysisResultById,
     // STUDYSETS
-    useGetStudysets,
     useGetStudysetById,
     useCreateStudyset,
     useDeleteStudyset,

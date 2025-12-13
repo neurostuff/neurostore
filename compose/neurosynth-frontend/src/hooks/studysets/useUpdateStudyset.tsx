@@ -15,18 +15,14 @@ const useUpdateStudyset = () => {
             studyset: StudysetRequest;
         },
         unknown
-    >(
-        (args) =>
-            API.NeurostoreServices.StudySetsService.studysetsIdPut(args.studysetId, args.studyset),
-        {
-            onSuccess: () => {
-                queryClient.invalidateQueries('studysets');
-            },
-            onError: () => {
-                enqueueSnackbar('there was an error updating the studyset', { variant: 'error' });
-            },
-        }
-    );
+    >((args) => API.NeurostoreServices.StudySetsService.studysetsIdPut(args.studysetId, args.studyset), {
+        onSuccess: () => {
+            queryClient.invalidateQueries('studysets');
+        },
+        onError: () => {
+            enqueueSnackbar('there was an error updating the studyset', { variant: 'error' });
+        },
+    });
 };
 
 export default useUpdateStudyset;

@@ -16,9 +16,10 @@ import { setAnalysesInAnnotationAsIncluded } from 'helpers/Annotation.helpers';
 import { useState } from 'react';
 import { useIsFetching, useQueryClient } from 'react-query';
 import ExtractionOutOfSyncStyles from './ExtractionOutOfSync.styles';
-import { selectBestVersionsForStudyset } from 'helpers/Extraction.helpers';
+import { mapStubsToStudysetPayload } from 'helpers/Extraction.helpers';
+import { STUDYSET_QUERY_STRING } from 'hooks/studysets/useGetStudysetById';
 
-const ExtractionOutOfSync: React.FC = (props) => {
+const ExtractionOutOfSync: React.FC = () => {
     const studysetId = useProjectExtractionStudysetId();
     const annotationId = useProjectExtractionAnnotationId();
     const { data: studyset } = useGetStudysetById(studysetId, true); // set this to true as it is already cached in extractionPage
@@ -37,52 +38,74 @@ const ExtractionOutOfSync: React.FC = (props) => {
         if (!studysetId || !annotationId) return;
         setIsLoading(true);
 
-        const stubsToBaseStudies: Array<
-            Pick<
-                BaseStudy,
-                'name' | 'doi' | 'pmid' | 'pmcid' | 'year' | 'description' | 'publication' | 'authors' | 'level'
-            >
-        > = curationIncludedStudies.stubStudies.map((stub) => ({
-            name: stub.title,
-            doi: stub.doi ? stub.doi : undefined,
-            pmid: stub.pmid ? stub.pmid : undefined,
-            pmcid: stub.pmcid ? stub.pmcid : undefined,
-            year: Number(stub.articleYear),
-            description: stub.abstractText,
-            publication: stub.journal,
-            authors: stub.authors,
-            level: 'group',
-        }));
+        // create stub to study version mapping
+        const stubToStudyId = new Map<string, string>();
+        // studyset.studyset_studies is the backend mapping of study IDs to curation stub IDs
+        (studyset?.studyset_studies || []).forEach((studysetStudy) => {
+            if (studysetStudy.curation_stub_uuid && studysetStudy.id) {
+                stubToStudyId.set(studysetStudy.curation_stub_uuid, studysetStudy.id);
+            }
+        });
 
+        // create set of all study versions in the studyset
         const studiesInStudyset = new Set<string>();
         ((studyset?.studies || []) as Array<StudyReturn>).forEach((study) => {
             if (study.id) studiesInStudyset.add(study.id);
         });
 
+        // get stubs that are in the studyset
+        const existingStubPayload = curationIncludedStudies.stubStudies
+            .filter((stub) => stubToStudyId.has(stub.id))
+            .map((stub) => ({
+                id: stubToStudyId.get(stub.id) as string,
+                curation_stub_uuid: stub.id,
+            }));
+
+        // get stubs that are not in the studyset (and need to be ingested). Convert to base study payload.
+        const stubsNeedingIngest = curationIncludedStudies.stubStudies.filter((stub) => !stubToStudyId.has(stub.id));
+        const stubsToBaseStudies: Array<
+            Pick<
+                BaseStudy,
+                'name' | 'doi' | 'pmid' | 'pmcid' | 'year' | 'description' | 'publication' | 'authors' | 'level'
+            >
+        > = stubsNeedingIngest.map((stub) => {
+            const year = Number(stub.articleYear);
+            return {
+                name: stub.title,
+                doi: stub.doi || undefined,
+                pmid: stub.pmid || undefined,
+                pmcid: stub.pmcid || undefined,
+                year: isNaN(year) ? undefined : year,
+                description: stub.abstractText,
+                publication: stub.journal,
+                authors: stub.authors,
+                level: 'group',
+            };
+        });
+
         try {
-            const returnedBaseStudies = (await ingest(stubsToBaseStudies)).data as Array<BaseStudyReturn>;
+            const returnedBaseStudies = stubsToBaseStudies.length
+                ? ((await ingest(stubsToBaseStudies)).data as Array<BaseStudyReturn>)
+                : [];
 
-            const existingStudies: Array<string> = [];
-            const newBaseStudiesToAdd: Array<BaseStudyReturn> = [];
+            const newStubPayload = mapStubsToStudysetPayload(
+                stubsNeedingIngest,
+                returnedBaseStudies,
+                studiesInStudyset,
+                stubToStudyId
+            );
+            const studiesPayload = [...existingStubPayload, ...newStubPayload];
 
-            returnedBaseStudies.forEach((baseStudy) => {
-                const foundVersion = (baseStudy.versions as StudyReturn[]).find((studyVersion) =>
-                    studiesInStudyset.has(studyVersion.id || '')
-                );
-                if (foundVersion && foundVersion.id) {
-                    existingStudies.push(foundVersion.id);
-                } else {
-                    newBaseStudiesToAdd.push(baseStudy);
-                }
-            });
-
-            const selectedVersions = selectBestVersionsForStudyset(newBaseStudiesToAdd);
             const updatedStudyset = await updateStudyset({
                 studysetId: studysetId,
                 studyset: {
-                    studies: [...existingStudies, ...selectedVersions],
+                    studies: studiesPayload,
                 },
             });
+
+            // Invalidate cached studyset data to ensure subsequent queries reflect the newly updated stub mappings,
+            // keeping curation and extraction aligned.
+            await queryClient.invalidateQueries(STUDYSET_QUERY_STRING);
 
             queryClient.invalidateQueries('annotations');
 
