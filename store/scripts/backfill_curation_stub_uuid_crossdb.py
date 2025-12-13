@@ -55,34 +55,32 @@ def load_env_file(path: Path) -> dict:
 def load_db_config(env: dict, label: str) -> DbConfig:
     """
     Build DbConfig from a single, canonical set of keys in the provided env mapping.
-    Required keys: POSTGRES_HOST, POSTGRES_DB, POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_PORT.
-    No other fallbacks are supported.
+    Required keys: POSTGRES_HOST, POSTGRES_DB, POSTGRES_USER, POSTGRES_PASSWORD.
+    Optional: POSTGRES_PORT (defaults to 5432, matching the app config).
     """
-    required = {
+    required_present = {
         "host": "POSTGRES_HOST",
         "dbname": "POSTGRES_DB",
         "user": "POSTGRES_USER",
         "password": "POSTGRES_PASSWORD",
-        "port": "POSTGRES_PORT",
     }
-    missing = [env_key for env_key in required.values() if not env.get(env_key)]
-    if missing:
+    missing_required = [env_key for env_key in required_present.values() if not env.get(env_key)]
+    if missing_required:
         raise RuntimeError(
-            f"Missing required environment variables for {label} database: {', '.join(missing)}"
+            f"Missing required environment variables for {label} database: {', '.join(missing_required)}"
         )
 
+    port_raw = env.get("POSTGRES_PORT", "5432")
     try:
-        port = int(env[required["port"]])
+        port = int(port_raw)
     except ValueError as exc:
-        raise RuntimeError(
-            f"Invalid port for {label} database; expected integer in {required['port']}"
-        ) from exc
+        raise RuntimeError(f"Invalid port for {label} database; expected integer in POSTGRES_PORT") from exc
 
     return DbConfig(
-        host=env[required["host"]],
-        dbname=env[required["dbname"]],
-        user=env[required["user"]],
-        password=env[required["password"]],
+        host=env[required_present["host"]],
+        dbname=env[required_present["dbname"]],
+        user=env[required_present["user"]],
+        password=env[required_present["password"]],
         port=port,
     )
 
@@ -104,12 +102,17 @@ def fetch_compose_stubs(cur) -> List[dict]:
     """
     Returns rows with: project_id, studyset_id, stub_id, pmid, doi, pmcid, title(name)
     """
+    cur.execute("SELECT to_regclass('public.projects')")
+    if not cur.fetchone()[0]:
+        print("Compose DB: no projects table found; skipping stub fetch.")
+        return []
+
     sql = """
     WITH proj AS (
         SELECT
             id AS project_id,
             provenance->'extractionMetadata'->>'studysetId' AS studyset_id,
-            jsonb_array_elements(provenance->'curationMetadata'->'columns') AS col
+            jsonb_array_elements(COALESCE(provenance->'curationMetadata'->'columns', '[]'::jsonb)) AS col
         FROM projects
     )
     SELECT
@@ -133,6 +136,12 @@ def fetch_neurostore_missing(cur) -> List[dict]:
     Returns rows with: studyset_id, study_id, pmid, doi, pmcid, name
     Only where curation_stub_uuid is NULL.
     """
+    cur.execute("SELECT to_regclass('public.studyset_studies'), to_regclass('public.studies')")
+    ss_table, s_table = cur.fetchone()
+    if not ss_table or not s_table:
+        print("Neurostore DB: required tables missing; skipping missing-stub fetch.")
+        return []
+
     sql = """
     SELECT
         ss.studyset_id,
