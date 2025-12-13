@@ -8,7 +8,14 @@ const useCreateProject = () => {
     const queryClient = useQueryClient();
     const { enqueueSnackbar } = useSnackbar();
     return useMutation<AxiosResponse<ProjectReturn>, AxiosError, Project, unknown>(
-        (project) => API.NeurosynthServices.ProjectsService.projectsPost(project),
+        (project) =>
+            // Signature: projectsPost(sourceId?, copyAnnotations?, project)
+            // Explicitly pass `undefined` for the optional query params so the payload is treated as the body argument.
+            API.NeurosynthServices.ProjectsService.projectsPost(
+                undefined, // sourceId
+                undefined, // copyAnnotations
+                project
+            ),
         {
             onSuccess: () => {
                 // update queries
