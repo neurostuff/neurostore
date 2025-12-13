@@ -17,9 +17,9 @@ Suggested invocation (run from repo root; containers must be up):
 from __future__ import annotations
 
 import argparse
-import os
 from collections import defaultdict
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Set, Tuple
 
 import psycopg2
@@ -34,17 +34,56 @@ class DbConfig:
     dbname: str
     user: str
     password: str
-    port: int = 5432
+    port: int
 
 
-def load_db_config(prefix: str, defaults: Optional[dict] = None) -> DbConfig:
-    defaults = defaults or {}
+def load_env_file(path: Path) -> dict:
+    """Minimal .env parser (no dependency on python-dotenv)."""
+    env = {}
+    if not path.exists():
+        return env
+    with path.open() as handle:
+        for raw_line in handle:
+            line = raw_line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, val = line.split("=", 1)
+            env[key.strip()] = val.strip().strip('"').strip("'")
+    return env
+
+
+def load_db_config(env: dict, label: str) -> DbConfig:
+    """
+    Build DbConfig from a single, canonical set of keys in the provided env mapping.
+    Required keys: POSTGRES_HOST, POSTGRES_DB, POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_PORT.
+    No other fallbacks are supported.
+    """
+    required = {
+        "host": "POSTGRES_HOST",
+        "dbname": "POSTGRES_DB",
+        "user": "POSTGRES_USER",
+        "password": "POSTGRES_PASSWORD",
+        "port": "POSTGRES_PORT",
+    }
+    missing = [env_key for env_key in required.values() if not env.get(env_key)]
+    if missing:
+        raise RuntimeError(
+            f"Missing required environment variables for {label} database: {', '.join(missing)}"
+        )
+
+    try:
+        port = int(env[required["port"]])
+    except ValueError as exc:
+        raise RuntimeError(
+            f"Invalid port for {label} database; expected integer in {required['port']}"
+        ) from exc
+
     return DbConfig(
-        host=os.environ.get(f"{prefix}_HOST", defaults.get("host", "")),
-        dbname=os.environ.get(f"{prefix}_DB", defaults.get("dbname", "")),
-        user=os.environ.get(f"{prefix}_USER", defaults.get("user", "")),
-        password=os.environ.get(f"{prefix}_PASSWORD", defaults.get("password", "")),
-        port=int(os.environ.get(f"{prefix}_PORT", defaults.get("port", 5432))),
+        host=env[required["host"]],
+        dbname=env[required["dbname"]],
+        user=env[required["user"]],
+        password=env[required["password"]],
+        port=port,
     )
 
 
@@ -192,31 +231,31 @@ def apply_updates(cur, updates, execute: bool):
 # Main ----------------------------------------------------------------------
 
 
+def find_repo_root() -> Path:
+    """Locate repo root by walking parents until both compose/ and store/ are found."""
+    current = Path(__file__).resolve()
+    for parent in current.parents:
+        if (parent / "store").is_dir() and (parent / "compose").is_dir():
+            return parent
+    return current.parents[2]
+
+
 def main():
     parser = argparse.ArgumentParser(description="Backfill curation_stub_uuid from compose stubs")
     parser.add_argument("--execute", action="store_true", help="Apply updates (otherwise dry-run)")
     args = parser.parse_args()
 
-    compose_cfg = load_db_config(
-        "COMPOSE_DB",
-        defaults={
-            "host": "compose_pgsql17",
-            "dbname": os.environ.get("COMPOSE_DB", "compose"),
-            "user": os.environ.get("POSTGRES_USER", "postgres"),
-            "password": os.environ.get("POSTGRES_PASSWORD", "postgres"),
-            "port": 5432,
-        },
-    )
-    neuro_cfg = load_db_config(
-        "NEUROSTORE_DB",
-        defaults={
-            "host": "store-pgsql17",
-            "dbname": os.environ.get("POSTGRES_DB", "neurostore"),
-            "user": os.environ.get("POSTGRES_USER", "postgres"),
-            "password": os.environ.get("POSTGRES_PASSWORD", "postgres"),
-            "port": 5432,
-        },
-    )
+    repo_root = find_repo_root()
+    compose_env = load_env_file(repo_root / "compose" / ".env")
+    store_env = load_env_file(repo_root / "store" / ".env")
+
+    if not compose_env:
+        raise RuntimeError("compose/.env is required to configure the compose database connection.")
+    if not store_env:
+        raise RuntimeError("store/.env is required to configure the neurostore database connection.")
+
+    compose_cfg = load_db_config(compose_env, "compose")
+    neuro_cfg = load_db_config(store_env, "neurostore")
 
     with connect(compose_cfg) as compose_conn, connect(neuro_cfg) as neuro_conn:
         with compose_conn.cursor() as ccur:
