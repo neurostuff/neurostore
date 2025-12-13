@@ -10,8 +10,9 @@ Requires network access to both databases (same docker network). By default this
 script runs in dry-run mode; pass `--execute` to write changes.
 
 Suggested invocation (run from repo root; containers must be up):
-    docker compose -f store/docker-compose.yml run --rm neurostore \
-        python /store/scripts/backfill_curation_stub_uuid_crossdb.py --execute
+    docker compose -f store/docker-compose.yml run --rm \
+        -v "$(pwd)":/workspace -w /workspace   neurostore \
+            python store/scripts/backfill_curation_stub_uuid_crossdb.py
 """
 
 from __future__ import annotations
@@ -112,7 +113,9 @@ def fetch_compose_stubs(cur) -> List[dict]:
         SELECT
             id AS project_id,
             provenance->'extractionMetadata'->>'studysetId' AS studyset_id,
-            jsonb_array_elements(COALESCE(provenance->'curationMetadata'->'columns', '[]'::jsonb)) AS col
+            jsonb_array_elements(
+                COALESCE((provenance->'curationMetadata'->'columns')::jsonb, '[]'::jsonb)
+            ) AS col
         FROM projects
     )
     SELECT
@@ -124,7 +127,7 @@ def fetch_compose_stubs(cur) -> List[dict]:
         lower(nullif(stub->>'pmcid','')) AS pmcid,
         lower(nullif(stub->>'title','')) AS title
     FROM proj
-    CROSS JOIN LATERAL jsonb_array_elements(COALESCE(col->'stubStudies','[]')) stub;
+    CROSS JOIN LATERAL jsonb_array_elements(COALESCE(col->'stubStudies','[]'::jsonb)) stub;
     """
     cur.execute(sql)
     cols = [c.name for c in cur.description]
@@ -169,16 +172,14 @@ def norm(val: Optional[str]) -> Optional[str]:
     return val.lower() if val else None
 
 
-def pick_key(row: dict) -> Optional[Tuple[str, str]]:
+def iter_keys(row: dict):
     """
-    Choose the best identifier key based on priority pmid -> doi -> pmcid -> name.
-    Returns (field, value) or None.
+    Yield available identifier keys in priority order.
     """
     for field in ("pmid", "doi", "pmcid", "name"):
         v = norm(row.get(field))
         if v:
-            return (field, v)
-    return None
+            yield field, v
 
 
 def build_stub_map(stubs: Iterable[dict]) -> Dict[str, Dict[Tuple[str, str], Set[str]]]:
@@ -191,15 +192,13 @@ def build_stub_map(stubs: Iterable[dict]) -> Dict[str, Dict[Tuple[str, str], Set
         stub_id = stub.get("stub_id")
         if not studyset_id or not stub_id:
             continue
-        key = pick_key(
-            {
-                "pmid": stub.get("pmid"),
-                "doi": stub.get("doi"),
-                "pmcid": stub.get("pmcid"),
-                "name": stub.get("title"),
-            }
-        )
-        if key:
+        stub_keys = {
+            "pmid": stub.get("pmid"),
+            "doi": stub.get("doi"),
+            "pmcid": stub.get("pmcid"),
+            "name": stub.get("title"),
+        }
+        for key in iter_keys(stub_keys):
             out[studyset_id][key].add(stub_id)
     return out
 
@@ -209,17 +208,27 @@ def plan_updates(stub_map, missing_rows):
     skipped = []
     for row in missing_rows:
         ssid = row["studyset_id"]
-        key = pick_key(row)
-        if not ssid or not key:
+        if not ssid:
             skipped.append((row, "no_key"))
             continue
-        candidates = stub_map.get(ssid, {}).get(key, set())
-        if len(candidates) == 1:
-            stub_uuid = next(iter(candidates))
-            updates.append((stub_uuid, ssid, row["study_id"]))
-        else:
-            reason = "ambiguous" if candidates else "no_match"
-            skipped.append((row, reason))
+        keys = list(iter_keys(row))
+        if not keys:
+            skipped.append((row, "no_key"))
+            continue
+        matched = False
+        saw_ambiguous = False
+        key_map = stub_map.get(ssid, {})
+        for key in keys:
+            candidates = key_map.get(key, set())
+            if len(candidates) == 1:
+                stub_uuid = next(iter(candidates))
+                updates.append((stub_uuid, ssid, row["study_id"]))
+                matched = True
+                break
+            if len(candidates) > 1:
+                saw_ambiguous = True
+        if not matched:
+            skipped.append((row, "ambiguous" if saw_ambiguous else "no_match"))
     return updates, skipped
 
 
