@@ -16,7 +16,7 @@ import {
 } from 'pages/Study/store/StudyStore.helpers';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import API from 'utils/api';
+import API from 'api/api.config';
 import { v4 as uuid } from 'uuid';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';

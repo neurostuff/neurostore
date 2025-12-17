@@ -1,7 +1,7 @@
 import { MetaAnalysisJobRequest } from 'neurosynth-compose-typescript-sdk';
 import { useSnackbar } from 'notistack';
 import { useMutation, useQueryClient } from 'react-query';
-import API from 'utils/api';
+import API from 'api/api.config';
 
 const useSubmitMetaAnalysisJob = () => {
     const queryClient = useQueryClient();

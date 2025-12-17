@@ -25,7 +25,7 @@ import {
 import { useEffect } from 'react';
 import { useQueryClient } from 'react-query';
 import { useParams } from 'react-router-dom';
-import API from 'utils/api';
+import API from 'api/api.config';
 import { create } from 'zustand';
 import { TProjectStore } from './ProjectStore.types';
 

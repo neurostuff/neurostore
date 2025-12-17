@@ -1,5 +1,5 @@
 import { useQuery } from 'react-query';
-import API from 'utils/api';
+import API from 'api/api.config';
 
 /**
  * TODO: We may need to add a backend fix that only retrieves jobs for a specific

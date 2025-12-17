@@ -1,7 +1,7 @@
 import { AxiosError, AxiosResponse } from 'axios';
 import { StudysetRequest, StudysetReturn } from 'neurostore-typescript-sdk';
 import { useMutation, useQueryClient } from 'react-query';
-import API from 'utils/api';
+import API from 'api/api.config';
 
 const useCreateStudyset = () => {
     const queryClient = useQueryClient();

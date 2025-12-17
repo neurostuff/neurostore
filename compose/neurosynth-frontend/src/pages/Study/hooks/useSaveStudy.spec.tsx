@@ -1,4 +1,4 @@
-import { vi, Mock} from 'vitest';
+import { vi, Mock } from 'vitest';
 import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useCreateStudy, useUpdateAnnotationById, useUpdateStudyset } from 'hooks';
@@ -30,7 +30,7 @@ vi.mock('pages/Study/store/StudyStore');
 vi.mock('stores/AnnotationStore.getters');
 vi.mock('stores/AnnotationStore.actions');
 vi.mock('hooks');
-vi.mock('utils/api');
+vi.mock('api/api.config');
 
 // Using a dummy component in order to test a custom hook
 const DummyComponent = () => {
@@ -54,10 +54,7 @@ describe('useSaveStudy hook', () => {
 
     it('should throw an error for duplicate analyses', async () => {
         const mockAnalysesWithDuplicates = mockAnalyses();
-        (useStudyAnalyses as Mock).mockReturnValue([
-            ...mockAnalysesWithDuplicates,
-            mockAnalysesWithDuplicates[0],
-        ]);
+        (useStudyAnalyses as Mock).mockReturnValue([...mockAnalysesWithDuplicates, mockAnalysesWithDuplicates[0]]);
 
         render(<DummyComponent />);
 
@@ -150,9 +147,9 @@ describe('useSaveStudy hook', () => {
     });
 
     it('should clone the study if user does not own the study and it has been edited', async () => {
-        const nestedMockStudyset = mockStudysetNotNested();
+        const nonNestedMockStudyset = mockStudysetNotNested();
         const mockStudyWithSameIdInStudyset = mockStoreStudy();
-        mockStudyWithSameIdInStudyset.id = (nestedMockStudyset.studies as string[])[0];
+        mockStudyWithSameIdInStudyset.id = (nonNestedMockStudyset.studies as string[])[0];
         (useStudy as Mock).mockReturnValue(mockStudyWithSameIdInStudyset);
         (useStudyHasBeenEdited as Mock).mockReturnValue(true);
         (useStudyUser as Mock).mockReturnValue('different-user');

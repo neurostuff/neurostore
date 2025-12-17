@@ -6,7 +6,7 @@ import {
     updateNoteNameHelper,
 } from 'stores/AnnotationStore.helpers';
 import { NoteKeyType } from 'components/HotTables/HotTables.types';
-import API from 'utils/api';
+import API from 'api/api.config';
 import { create } from 'zustand';
 import {
     AnnotationStoreActions,

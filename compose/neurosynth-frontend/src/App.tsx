@@ -8,7 +8,7 @@ import BaseNavigation from 'pages/BaseNavigation/BaseNavigation';
 import { useEffect, useRef } from 'react';
 import { QueryCache, QueryClient, QueryClientProvider } from 'react-query';
 import { useLocation } from 'react-router-dom';
-import useGetToken from './hooks/useGetToken';
+import useConfigureAPIWithAuth from './hooks/useConfigureAPIWithAuth';
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -41,7 +41,7 @@ declare global {
 
 function App() {
     const notistackRef = useRef<SnackbarProvider>(null);
-    useGetToken();
+    useConfigureAPIWithAuth();
     useGoogleAnalytics();
 
     const location = useLocation();

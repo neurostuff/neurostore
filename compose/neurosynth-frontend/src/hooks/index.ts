@@ -1,6 +1,6 @@
 import useIsMounted from './useIsMounted';
 import useInputValidation from './useInputValidation';
-import useGetToken from './useGetToken';
+import useConfigureAPIWithAuth from './useConfigureAPIWithAuth';
 import useGuard from './useGuard';
 import useGetTour from './useGetTour';
 import useGetWindowHeight from './useGetWindowHeight';
@@ -46,7 +46,7 @@ export {
     useGetExtractionSummary,
     useIsMounted,
     useInputValidation,
-    useGetToken,
+    useConfigureAPIWithAuth as useGetToken,
     useGuard,
     useGetTour,
     useGetWindowHeight,

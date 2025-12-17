@@ -9,7 +9,7 @@ import { ResultReturn, SpecificationReturn, StudysetReturn } from 'neurosynth-co
 import MetaAnalysisPageStyles from 'pages/MetaAnalysis/MetaAnalysisPage.styles';
 import { useProjectName, useProjectUser } from 'pages/Project/store/ProjectStore';
 import { useParams } from 'react-router-dom';
-import { NeurostoreAnnotation } from 'utils/api';
+import { NeurostoreAnnotation } from 'api/api.config';
 import MetaAnalysisDetails from './components/MetaAnalysisDetails';
 
 const MetaAnalysisPage: React.FC = () => {

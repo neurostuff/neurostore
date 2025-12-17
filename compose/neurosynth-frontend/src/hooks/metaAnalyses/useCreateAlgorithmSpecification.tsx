@@ -12,7 +12,7 @@ import {
     StudysetReturn,
 } from 'neurosynth-compose-typescript-sdk';
 import { useMutation, useQueryClient } from 'react-query';
-import API, { NeurostoreAnnotation } from 'utils/api';
+import API, { NeurostoreAnnotation } from 'api/api.config';
 
 export enum EAnalysisType {
     CBMA = 'CBMA',

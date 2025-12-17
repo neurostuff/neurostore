@@ -1,6 +1,6 @@
 import { SearchCriteria, SearchDataType, SortBy } from 'pages/Study/Study.types';
 import { useQuery } from 'react-query';
-import API from 'utils/api';
+import API from 'api/api.config';
 
 export const baseStudiesSearchHelper = (searchCriteria: Partial<SearchCriteria>) => {
     return API.NeurostoreServices.StudiesService.baseStudiesGet(

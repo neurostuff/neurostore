@@ -1,5 +1,5 @@
 import { useQuery } from 'react-query';
-import API from 'utils/api';
+import API from 'api/api.config';
 
 const useGetConditions = () => {
     return useQuery('conditions', () => API.NeurostoreServices.ConditionsService.conditionsGet(), {
