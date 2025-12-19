@@ -16,13 +16,13 @@
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { AxiosError, AxiosHeaders, AxiosInstance, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
-import * as jwtDecodeModule from 'jwt-decode';
+import * as jose from 'jose';
 // Import after mocking
 import * as apiState from './api.state';
 import { CustomAxiosRequestConfig, handleError, handleResponse } from './axios.config';
 
 vi.mock('notistack');
-vi.mock('jwt-decode');
+vi.mock('jose');
 
 // Mock api.state module - need to provide inline mock
 vi.mock('./api.state', () => {
@@ -162,7 +162,7 @@ describe('axios.config', () => {
         });
 
         it('should reject if token is not expired and pass through the original error', async () => {
-            const mockJwtDecode = vi.mocked(jwtDecodeModule.jwtDecode);
+            const mockJwtDecode = vi.mocked(jose.decodeJwt);
             mockJwtDecode.mockReturnValue(createValidToken());
 
             const error = createMockError(500, 'valid.token.here');
@@ -172,7 +172,7 @@ describe('axios.config', () => {
         });
 
         it('should reject if request was already retried', async () => {
-            const mockJwtDecode = vi.mocked(jwtDecodeModule.jwtDecode);
+            const mockJwtDecode = vi.mocked(jose.decodeJwt);
             mockJwtDecode.mockReturnValue(createExpiredToken());
 
             const error = createMockError(500, 'expired.token.here', true);
@@ -181,7 +181,7 @@ describe('axios.config', () => {
         });
 
         it('should reject if getAccessTokenSilentlyFunc is not set', async () => {
-            const mockJwtDecode = vi.mocked(jwtDecodeModule.jwtDecode);
+            const mockJwtDecode = vi.mocked(jose.decodeJwt);
             mockJwtDecode.mockReturnValue(createExpiredToken());
 
             const error = createMockError(500, 'expired.token.here');
@@ -192,7 +192,7 @@ describe('axios.config', () => {
         });
 
         it('should refresh token and retry request with expired token', async () => {
-            const mockJwtDecode = vi.mocked(jwtDecodeModule.jwtDecode);
+            const mockJwtDecode = vi.mocked(jose.decodeJwt);
             mockJwtDecode.mockReturnValue(createExpiredToken());
 
             const newToken = 'new.fresh.token';
@@ -221,7 +221,7 @@ describe('axios.config', () => {
         });
 
         it('should reject if token refresh fails', async () => {
-            const mockJwtDecode = vi.mocked(jwtDecodeModule.jwtDecode);
+            const mockJwtDecode = vi.mocked(jose.decodeJwt);
             mockJwtDecode.mockReturnValue(createExpiredToken());
 
             const refreshError = new Error('Token refresh failed');
@@ -237,7 +237,7 @@ describe('axios.config', () => {
         });
 
         it('should queue multiple requests while token is refreshing', async () => {
-            const mockJwtDecode = vi.mocked(jwtDecodeModule.jwtDecode);
+            const mockJwtDecode = vi.mocked(jose.decodeJwt);
             mockJwtDecode.mockReturnValue(createExpiredToken());
 
             const newToken = 'new.fresh.token';
@@ -293,7 +293,7 @@ describe('axios.config', () => {
         });
 
         it('should reject queued requests if token refresh fails', async () => {
-            const mockJwtDecode = vi.mocked(jwtDecodeModule.jwtDecode);
+            const mockJwtDecode = vi.mocked(jose.decodeJwt);
             mockJwtDecode.mockReturnValue(createExpiredToken());
 
             const refreshError = new Error('Token refresh failed');
@@ -327,7 +327,7 @@ describe('axios.config', () => {
         });
 
         it('should handle token without exp claim', async () => {
-            const mockJwtDecode = vi.mocked(jwtDecodeModule.jwtDecode);
+            const mockJwtDecode = vi.mocked(jose.decodeJwt);
             mockJwtDecode.mockReturnValue({}); // No exp claim
 
             const error = createMockError(500, 'token.without.exp');
@@ -338,7 +338,7 @@ describe('axios.config', () => {
         });
 
         it('should handle invalid JWT token', async () => {
-            const mockJwtDecode = vi.mocked(jwtDecodeModule.jwtDecode);
+            const mockJwtDecode = vi.mocked(jose.decodeJwt);
             mockJwtDecode.mockImplementation(() => {
                 throw new Error('Invalid token');
             });
@@ -351,7 +351,7 @@ describe('axios.config', () => {
         });
 
         it('should consider token expired if expiring within 30 seconds', async () => {
-            const mockJwtDecode = vi.mocked(jwtDecodeModule.jwtDecode);
+            const mockJwtDecode = vi.mocked(jose.decodeJwt);
             const soonToExpireTime = Math.floor(Date.now() / 1000) + 20; // expires in 20 seconds
             mockJwtDecode.mockReturnValue({ exp: soonToExpireTime });
 
@@ -378,7 +378,7 @@ describe('axios.config', () => {
         });
 
         it('should reject errors with other status codes even with expired token', async () => {
-            const mockJwtDecode = vi.mocked(jwtDecodeModule.jwtDecode);
+            const mockJwtDecode = vi.mocked(jose.decodeJwt);
             mockJwtDecode.mockReturnValue(createExpiredToken());
 
             const error = createMockError(403, 'expired.token.here'); // 500 error

@@ -1,5 +1,5 @@
 import { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
-import { jwtDecode } from 'jwt-decode';
+import * as jose from 'jose';
 import { enqueueSnackbar } from 'notistack';
 import { _getAccessTokenSilentlyFunc, _updateServicesWithToken, axiosInstance } from './api.state';
 
@@ -23,7 +23,7 @@ const isTokenExpired = (token: string | undefined): boolean => {
     if (!token) return true;
 
     try {
-        const decoded = jwtDecode<{ exp?: number }>(token);
+        const decoded = jose.decodeJwt(token);
 
         // Check if exp claim exists
         if (!decoded.exp) return true;
