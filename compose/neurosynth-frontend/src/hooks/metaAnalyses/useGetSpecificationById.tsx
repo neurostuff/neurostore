@@ -1,5 +1,5 @@
 import { useQuery } from 'react-query';
-import API from 'utils/api';
+import API from 'api/api.config';
 
 const useGetSpecificationById = (specificationId?: string) => {
     return useQuery(

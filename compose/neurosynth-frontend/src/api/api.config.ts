@@ -1,6 +1,5 @@
-import axios from 'axios';
+import { axiosInstance, neurostoreConfig, neurosynthConfig } from './api.state';
 import {
-    Configuration,
     StudiesApi,
     ConditionsApi,
     StudysetsApi as NeurostoreStudysetsApi,
@@ -35,28 +34,14 @@ export type NeurostoreAnnotation = AnnotationBase &
     AnnotationReturnRelationships &
     AnnotationCommon;
 
-const env = import.meta.env.VITE_APP_ENV as 'DEV' | 'STAGING' | 'PROD';
-
-const NEUROSTORE_API_DOMAIN = import.meta.env.VITE_APP_NEUROSTORE_API_DOMAIN as string;
-const NEUROSYNTH_API_DOMAIN = import.meta.env.VITE_APP_NEUROSYNTH_API_DOMAIN as string;
-
-const neurostoreConfig: Configuration = new Configuration({
-    basePath: NEUROSTORE_API_DOMAIN,
-    accessToken: '',
-});
-const neurosynthConfig: Configuration = new Configuration({
-    basePath: NEUROSYNTH_API_DOMAIN,
-    accessToken: '',
-});
-
 const NeurostoreServices = {
-    StudiesService: new StudiesApi(neurostoreConfig),
-    AnalysesService: new AnalysesApi(neurostoreConfig),
-    ConditionsService: new ConditionsApi(neurostoreConfig),
-    StudySetsService: new NeurostoreStudysetsApi(neurostoreConfig),
-    ImagesService: new ImagesApi(neurostoreConfig),
-    PointsService: new PointsApi(neurostoreConfig),
-    UsersService: new UserApi(neurostoreConfig),
+    StudiesService: new StudiesApi(neurostoreConfig, undefined, axiosInstance),
+    AnalysesService: new AnalysesApi(neurostoreConfig, undefined, axiosInstance),
+    ConditionsService: new ConditionsApi(neurostoreConfig, undefined, axiosInstance),
+    StudySetsService: new NeurostoreStudysetsApi(neurostoreConfig, undefined, axiosInstance),
+    ImagesService: new ImagesApi(neurostoreConfig, undefined, axiosInstance),
+    PointsService: new PointsApi(neurostoreConfig, undefined, axiosInstance),
+    UsersService: new UserApi(neurostoreConfig, undefined, axiosInstance),
     ExtractedDataResultsService: {
         getAllExtractedDataResults: (extractors: EAIExtractors[], baseStudyIds?: string[]) => {
             const extractorsSegment = extractors.reduce((acc, curr, index) => {
@@ -69,7 +54,7 @@ const NeurostoreServices = {
                 return `${acc}&study_id=${curr}`;
             }, '');
 
-            return axios.post<{
+            return axiosInstance.post<{
                 metadata: {
                     total_count: number;
                 };
@@ -94,28 +79,21 @@ const NeurostoreServices = {
             );
         },
     },
-    AnnotationsService: new NeurostoreAnnotationsApi(neurostoreConfig),
+    AnnotationsService: new NeurostoreAnnotationsApi(neurostoreConfig, undefined, axiosInstance),
 };
 
 const NeurosynthServices = {
-    MetaAnalysisService: new MetaAnalysesApi(neurosynthConfig),
-    SpecificationsService: new SpecificationsApi(neurosynthConfig),
-    StudysetsService: new NeurosynthStudysetApi(neurosynthConfig),
-    AnnotationsService: new NeurosynthAnnotationApi(neurosynthConfig),
-    ProjectsService: new ProjectsApi(neurosynthConfig),
-    NeurosynthDefaultApi: new NeurosynthDefaultApi(neurosynthConfig),
-};
-
-const UpdateServicesWithToken = (token: string) => {
-    if (env === 'DEV' || env === 'STAGING') console.log(token);
-    neurostoreConfig.accessToken = token;
-    neurosynthConfig.accessToken = token;
+    MetaAnalysisService: new MetaAnalysesApi(neurosynthConfig, undefined, axiosInstance),
+    SpecificationsService: new SpecificationsApi(neurosynthConfig, undefined, axiosInstance),
+    StudysetsService: new NeurosynthStudysetApi(neurosynthConfig, undefined, axiosInstance),
+    AnnotationsService: new NeurosynthAnnotationApi(neurosynthConfig, undefined, axiosInstance),
+    ProjectsService: new ProjectsApi(neurosynthConfig, undefined, axiosInstance),
+    NeurosynthDefaultApi: new NeurosynthDefaultApi(neurosynthConfig, undefined, axiosInstance),
 };
 
 const API = {
     NeurostoreServices,
     NeurosynthServices,
-    UpdateServicesWithToken,
 };
 
 export default API;

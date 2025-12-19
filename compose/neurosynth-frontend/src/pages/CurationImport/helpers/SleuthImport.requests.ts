@@ -11,7 +11,7 @@ import {
 } from 'neurostore-typescript-sdk';
 import { ISleuthFileUploadStubs, PUBMED_API_KEY } from '.';
 import { DefaultSpaceTypes, IStudyVersion } from 'pages/Study/store/StudyStore.helpers';
-import API from 'utils/api';
+import API from 'api/api.config';
 import { selectBestBaseStudyVersion } from 'helpers/Extraction.helpers';
 import { IESearchResult } from 'hooks/external/useGetPubMedIdFromDOI';
 import { INeurosynthParsedPubmedArticle } from 'hooks/external/useGetPubMedIds';

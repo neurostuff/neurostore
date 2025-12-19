@@ -74,7 +74,6 @@ const MockAPI = {
             annotationsIdDelete: vi.fn(),
         },
     },
-    UpdateServicesWithToken: vi.fn(),
 };
 
 export default MockAPI;

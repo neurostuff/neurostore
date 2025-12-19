@@ -1,9 +1,8 @@
-import { useAuth0 } from '@auth0/auth0-react';
 import { AppBar, Box } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
 import NavDrawer from 'components/Navbar/NavDrawer';
 import NavToolbar from 'components/Navbar/NavToolbar';
 import NavbarStyles from 'components/Navbar/Navbar.styles';
+import useAuthenticate from 'hooks/useAuthenticate';
 
 export interface INav {
     onLogin: () => Promise<void>;
@@ -11,25 +10,9 @@ export interface INav {
 }
 
 export const NAVBAR_HEIGHT = 64;
-const AUTH0_AUDIENCE = import.meta.env.VITE_APP_AUTH0_AUDIENCE;
 
-const Navbar: React.FC = (_props) => {
-    const navigate = useNavigate();
-    const { loginWithPopup, logout } = useAuth0();
-    const handleLogin = async () => {
-        await loginWithPopup({
-            audience: AUTH0_AUDIENCE,
-            scope: 'openid profile email offline_access',
-        });
-
-        if (window.gtag) {
-            window.gtag('event', 'login');
-        }
-
-        navigate('/');
-    };
-
-    const handleLogout = () => logout({ returnTo: window.location.origin });
+const Navbar: React.FC = () => {
+    const { handleLogin, handleLogout } = useAuthenticate();
 
     return (
         // declare size as this is used to calculate height of other views such as the curation board

@@ -19,7 +19,7 @@ import {
     useUpdateAnnotationIsLoading,
 } from 'stores/AnnotationStore.getters';
 import { storeNotesToDBNotes } from 'stores/AnnotationStore.helpers';
-import API from 'utils/api';
+import API from 'api/api.config';
 import { arrayToMetadata } from '../components/EditStudyMetadata';
 import {
     useStudy,

@@ -2,7 +2,6 @@
 
 import { MetaAnalysisJobList, MetaAnalysisJobResponse, ResultReturn } from 'neurosynth-compose-typescript-sdk';
 
-const PATH = '/meta-analyses/mock-meta-analysis-id';
 const PAGE_NAME = 'MetaAnalysisPage';
 const PROJECT_PATH = '/projects/mock-project-id/meta-analyses/mock-meta-analysis-id';
 
@@ -16,23 +15,6 @@ describe(PAGE_NAME, () => {
     });
 
     describe('Basic page load', () => {
-        it('should load successfully without project context', () => {
-            cy.intercept('GET', `**/api/specifications/**`, { fixture: 'MetaAnalysis/specification' }).as(
-                'specificationFixture'
-            );
-            cy.intercept('GET', `**/api/meta-analyses/**`, {
-                fixture: 'MetaAnalysis/metaAnalysisNoResults',
-            }).as('metaAnalysisFixture');
-            cy.intercept('GET', `**/api/meta-analysis-jobs`, {
-                fixture: 'MetaAnalysis/jobs/noJobs',
-            }).as('jobsFixture');
-
-            cy.login('mocked').visit(PATH).wait('@metaAnalysisFixture');
-
-            cy.contains('THIS IS MY TEST META ANALYSIS').should('exist');
-            cy.contains('No results for this meta-analysis yet').should('exist');
-        });
-
         it('should load successfully with project context', () => {
             cy.intercept('GET', `**/api/specifications/**`, { fixture: 'MetaAnalysis/specification' }).as(
                 'specificationFixture'
@@ -456,7 +438,7 @@ describe(PAGE_NAME, () => {
                 fixture: 'MetaAnalysis/jobs/noJobs',
             }).as('jobsFixture');
 
-            cy.login('mocked').visit(PATH).wait('@metaAnalysisFixture');
+            cy.login('mocked').visit(PROJECT_PATH).wait('@metaAnalysisFixture');
             cy.contains('View Specification').click();
             cy.get('button').contains('Edit Specification').should('be.disabled');
         });

@@ -2,6 +2,7 @@ import { useAuth0 } from '@auth0/auth0-react';
 import { ArrowCircleLeftOutlined } from '@mui/icons-material';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import { Box, Button, Chip } from '@mui/material';
+import { useUserCanEdit } from 'hooks';
 import { indexToPRISMAMapping, ITag } from 'hooks/projects/useGetProjects';
 import CurationPopupExclusionSelector from 'pages/Curation/components/CurationPopupExclusionSelector';
 import { ICurationStubStudy } from 'pages/Curation/Curation.types';
@@ -25,7 +26,8 @@ interface ICurationEditableStubSummaryHeader {
 }
 
 const CurationEditableStubSummaryHeader: React.FC<ICurationEditableStubSummaryHeader> = React.memo((props) => {
-    const { isAuthenticated } = useAuth0();
+    const { user } = useAuth0();
+    const canEdit = useUserCanEdit(user?.sub || undefined);
 
     const [exclusionTagSelectorIsOpen, setExclusionTagSelectorIsOpen] = useState(false);
 
@@ -106,6 +108,7 @@ const CurationEditableStubSummaryHeader: React.FC<ICurationEditableStubSummaryHe
                     sx={{ fontSize: '1.2rem', borderRadius: '4px' }}
                     onDelete={handleRemoveExclusion}
                     label={exclusionTag?.label || 'Excluded'}
+                    disabled={!canEdit}
                     size="medium"
                     color="error"
                 />
@@ -116,6 +119,7 @@ const CurationEditableStubSummaryHeader: React.FC<ICurationEditableStubSummaryHe
                 <Chip
                     sx={{ fontSize: '1.2rem', borderRadius: '4px' }}
                     onDelete={handleDemoteStub}
+                    disabled={!canEdit}
                     label="Included"
                     size="medium"
                     color="success"
@@ -128,7 +132,7 @@ const CurationEditableStubSummaryHeader: React.FC<ICurationEditableStubSummaryHe
                     <Button
                         onClick={handlePromote}
                         variant="outlined"
-                        disabled={!isAuthenticated}
+                        disabled={!canEdit}
                         color="success"
                         size="small"
                         sx={{ marginRight: '10px', width: '140px' }}
@@ -161,7 +165,7 @@ const CurationEditableStubSummaryHeader: React.FC<ICurationEditableStubSummaryHe
                         onClosePopup={() => setExclusionTagSelectorIsOpen(false)}
                         onAddExclusion={handleAddExclusion}
                         onCreateExclusion={handleCreateExclusion}
-                        disabled={!isAuthenticated}
+                        disabled={!canEdit}
                         prismaPhase={prismaPhase}
                         onlyShowDefaultExclusion={isPrismaIdentificationPhase}
                     />
@@ -172,6 +176,7 @@ const CurationEditableStubSummaryHeader: React.FC<ICurationEditableStubSummaryHe
                             color="secondary"
                             onClick={handleDemoteStub}
                             variant="outlined"
+                            disabled={!canEdit}
                             size="small"
                         >
                             Demote

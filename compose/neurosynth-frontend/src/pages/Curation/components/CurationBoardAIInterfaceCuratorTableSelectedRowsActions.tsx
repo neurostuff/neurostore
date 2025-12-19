@@ -14,6 +14,8 @@ import { v4 as uuid } from 'uuid';
 import { ICurationTableStudy } from '../hooks/useCuratorTableState.types';
 import CurationPopupExclusionSelector from './CurationPopupExclusionSelector';
 import { ArrowCircleLeftOutlined } from '@mui/icons-material';
+import { useAuth0 } from '@auth0/auth0-react';
+import { useUserCanEdit } from 'hooks';
 
 const CurationBoardAIInterfaceCuratorTableSelectedRowsActions: React.FC<{
     table: Table<ICurationTableStudy>;
@@ -27,6 +29,8 @@ const CurationBoardAIInterfaceCuratorTableSelectedRowsActions: React.FC<{
     const prismaPhase = prismaConfig.isPrisma ? indexToPRISMAMapping(columnIndex) : undefined;
     const demoteStudy = useDemoteStub();
     const promoteStudy = usePromoteStub();
+    const { user } = useAuth0();
+    const canEdit = useUserCanEdit(user?.sub || undefined);
 
     const handleAddExclusionForRows = (exclusionTag: ITag) => {
         rows.forEach((stub) => {
@@ -72,6 +76,7 @@ const CurationBoardAIInterfaceCuratorTableSelectedRowsActions: React.FC<{
                 size="small"
                 style={{ marginRight: '8px', fontSize: '12px' }}
                 variant="outlined"
+                disabled={!canEdit}
                 startIcon={<CheckCircleOutlineIcon />}
                 onClick={handlePromoteStudies}
             >
@@ -84,7 +89,7 @@ const CurationBoardAIInterfaceCuratorTableSelectedRowsActions: React.FC<{
                 onAddExclusion={handleAddExclusionForRows}
                 onCreateExclusion={handleCreateExclusion}
                 exclusionButtonEndText={` (${numRowsSelected})`}
-                disabled={false}
+                disabled={!canEdit}
                 prismaPhase={prismaPhase}
                 onlyShowDefaultExclusion={isPrismaIdentificationPhase}
             />
@@ -96,6 +101,7 @@ const CurationBoardAIInterfaceCuratorTableSelectedRowsActions: React.FC<{
                     color="secondary"
                     size="small"
                     onClick={handleDemoteStudies}
+                    disabled={!canEdit}
                 >
                     Demote ({numRowsSelected})
                 </Button>

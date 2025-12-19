@@ -5,8 +5,8 @@ import CodeSnippet from 'components/CodeSnippet/CodeSnippet';
 import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
 import { useEffect, useState } from 'react';
 
-const UserProfilePage: React.FC = (props) => {
-    const { user, getAccessTokenSilently } = useAuth0();
+const UserProfilePage: React.FC = () => {
+    const { user } = useAuth0();
     const [refreshToken, setRefreshToken] = useState('');
 
     useEffect(() => {
@@ -18,7 +18,7 @@ const UserProfilePage: React.FC = (props) => {
             const auth0Res = localStorageCache.get<{ body?: { refresh_token?: string } }>(keys[0]);
             setRefreshToken(auth0Res?.body?.refresh_token || '');
         }
-    }, [getAccessTokenSilently]);
+    }, []);
 
     return (
         <Box>

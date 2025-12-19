@@ -1,5 +1,5 @@
 import { useQuery } from 'react-query';
-import API, { NeurostoreAnnotation } from 'utils/api';
+import API, { NeurostoreAnnotation } from 'api/api.config';
 
 const useGetAnnotationsByStudysetId = (studyId: string | undefined | null) => {
     return useQuery(

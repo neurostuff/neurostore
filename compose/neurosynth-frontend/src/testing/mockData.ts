@@ -7,9 +7,10 @@ import {
     AnalysisReturn,
     BaseStudyReturn,
 } from 'neurostore-typescript-sdk';
-import { NeurostoreAnnotation } from 'utils/api';
+import { NeurostoreAnnotation } from 'api/api.config';
 import { IStoreStudy } from 'pages/Study/store/StudyStore.helpers';
 import { INeurovault } from 'hooks/metaAnalyses/useGetNeurovaultImages';
+import { v4 as uuidv4 } from 'uuid';
 
 const mockConditions: () => ConditionReturn[] = () => [
     {
@@ -160,6 +161,10 @@ const mockStudysets: () => StudysetReturn[] = () => [
         name: 'studyset-name-1',
         description: 'studyset-description-1',
         studies: ['4ZhkLTH8k2P6'],
+        studyset_studies: [{ id: '4ZhkLTH8k2P6', curation_stub_uuid: uuidv4() }],
+        source: null,
+        source_id: null,
+        source_updated_at: null,
     },
     {
         created_at: '2022-04-28T16:39:36.134359+00:00',
@@ -171,6 +176,10 @@ const mockStudysets: () => StudysetReturn[] = () => [
         name: 'studyset-name-2',
         description: 'studyset-description-2',
         studies: [],
+        studyset_studies: [],
+        source: null,
+        source_id: null,
+        source_updated_at: null,
     },
     {
         created_at: '2022-04-28T16:39:36.134359+00:00',
@@ -182,6 +191,10 @@ const mockStudysets: () => StudysetReturn[] = () => [
         name: 'studyset-name-3',
         description: 'studyset-description-3',
         studies: [],
+        studyset_studies: [],
+        source: null,
+        source_id: null,
+        source_updated_at: null,
     },
 ];
 
@@ -194,6 +207,10 @@ const mockStudysetNested: () => StudysetReturn = () => ({
     pmid: null,
     publication: null,
     studies: mockStudies(),
+    studyset_studies: mockStudies().map((study) => ({
+        id: study.id,
+        curation_stub_uuid: uuidv4(),
+    })),
     updated_at: null,
     user: 'github|26612023',
 });
@@ -207,6 +224,19 @@ const mockStudysetNotNested: () => StudysetReturn = () => ({
     pmid: null,
     publication: null,
     studies: ['5cLR4qwokFqV', '6cbdeyacHieR'],
+    studyset_studies: [
+        {
+            id: '5cLR4qwokFqV',
+            curation_stub_uuid: '123e4567-e89b-12d3-a456-426614174999',
+        },
+        {
+            id: '6cbdeyacHieR',
+            curation_stub_uuid: '123e4567-e89b-12d3-a456-426614174998',
+        },
+    ],
+    source: null,
+    source_id: null,
+    source_updated_at: null,
     updated_at: null,
     user: 'github|26612023',
 });

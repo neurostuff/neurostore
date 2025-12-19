@@ -1,6 +1,6 @@
 import { AxiosResponse } from 'axios';
 import { NoteCollectionReturn } from 'neurostore-typescript-sdk';
-import API, { NeurostoreAnnotation } from 'utils/api';
+import API, { NeurostoreAnnotation } from 'api/api.config';
 
 export const setAnalysesInAnnotationAsIncluded = async (annotationId: string) => {
     try {

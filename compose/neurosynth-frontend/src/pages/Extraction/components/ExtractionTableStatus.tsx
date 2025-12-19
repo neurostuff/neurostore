@@ -3,13 +3,16 @@ import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import BookmarkIcon from '@mui/icons-material/Bookmark';
 import { Box, Button, ButtonGroup, IconButton, Tooltip, Typography } from '@mui/material';
 import { CellContext, HeaderContext } from '@tanstack/react-table';
-import { useProjectExtractionAddOrUpdateStudyListStatus } from 'pages/Project/store/ProjectStore';
+import { useProjectExtractionAddOrUpdateStudyListStatus, useProjectUser } from 'pages/Project/store/ProjectStore';
 import { EExtractionStatus } from '../ExtractionPage';
 import { IExtractionTableStudy } from './ExtractionTable';
+import { useUserCanEdit } from 'hooks';
 
 export const ExtractionTableStatusCell: React.FC<CellContext<IExtractionTableStudy, EExtractionStatus | undefined>> = (
     props
 ) => {
+    const projectUser = useProjectUser();
+    const userCanEdit = useUserCanEdit(projectUser ?? undefined);
     const status = props.getValue();
 
     const updateStudyListStatus = useProjectExtractionAddOrUpdateStudyListStatus();
@@ -23,6 +26,7 @@ export const ExtractionTableStatusCell: React.FC<CellContext<IExtractionTableStu
                         updateStudyListStatus(props.row.original.id || '', EExtractionStatus.UNCATEGORIZED);
                     }}
                     disableElevation
+                    disabled={!userCanEdit}
                     sx={{ paddingX: '0' }}
                     color="warning"
                     size="small"
@@ -38,6 +42,7 @@ export const ExtractionTableStatusCell: React.FC<CellContext<IExtractionTableStu
                         updateStudyListStatus(props.row.original.id || '', EExtractionStatus.SAVEDFORLATER);
                     }}
                     disableElevation
+                    disabled={!userCanEdit}
                     sx={{ paddingX: '0' }}
                     color="info"
                     size="small"
@@ -51,6 +56,7 @@ export const ExtractionTableStatusCell: React.FC<CellContext<IExtractionTableStu
                         updateStudyListStatus(props.row.original.id || '', EExtractionStatus.COMPLETED);
                     }}
                     disableElevation
+                    disabled={!userCanEdit}
                     sx={{ paddingX: '0' }}
                     color="success"
                     size="small"
