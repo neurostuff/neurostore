@@ -119,6 +119,10 @@ def _derive_default(class_signature, param):
     return default
 
 
+def _is_pairwise_cbma(cls):
+    return any(base.__name__ == "PairwiseCBMAEstimator" for base in inspect.getmro(cls))
+
+
 def _check_fwe(cls):
     # Check if the method exists
     has_method = hasattr(cls, "correct_fwe_montecarlo")
@@ -168,8 +172,12 @@ for algo, cls in NIMARE_COORDINATE_ALGORITHMS:
     docs = ClassDoc(cls)
     cls_signature = inspect.signature(cls)
 
+    summary = " ".join(docs._parsed_data["Summary"])
+    if _is_pairwise_cbma(cls):
+        summary = summary + " Uses Reference/Comparison Studyset."
+
     config["CBMA"][algo] = {
-        "summary": " ".join(docs._parsed_data["Summary"]),
+        "summary": summary,
         "parameters": {
             param.name: {
                 "description": " ".join(param.desc),
@@ -243,15 +251,22 @@ config["CORRECTOR"]["FWECorrector"]["parameters"]["method"]["type"] = "str"
 config["CBMA"]["ALE"]["parameters"]["kernel__fwhm"]["default"] = 8
 config["CBMA"]["ALESubtraction"]["parameters"]["kernel__fwhm"]["default"] = 8
 
-# save config file
-fname = (
+# save config file(s)
+output_paths = [
     Path(__file__).parent.parent
     / "NiMARE"
     / "src"
     / "assets"
     / "config"
-    / "meta_analysis_params.json"
-)
+    / "meta_analysis_params.json",
+    Path(__file__).parent.parent
+    / "src"
+    / "assets"
+    / "config"
+    / "meta_analysis_params.json",
+]
 
-with open(fname, "w+") as c:
-    json.dump(config, c, indent=4)
+for fname in output_paths:
+    fname.parent.mkdir(parents=True, exist_ok=True)
+    with open(fname, "w+") as c:
+        json.dump(config, c, indent=4)
