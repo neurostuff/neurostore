@@ -306,6 +306,7 @@ const ExtractionTable: React.FC = () => {
                         sx={{ marginLeft: '4px' }}
                         color="success"
                         disableElevation
+                        disabled={!usercanEdit}
                         onClick={() => setConfirmationDialogIsOpen(true)}
                     >
                         Mark all as complete

@@ -200,6 +200,7 @@ const CurationBoardAIInterfaceCurator: React.FC<{
                                 size="small"
                                 color="success"
                                 variant="outlined"
+                                disabled={!canEdit}
                             >
                                 Skip Curation
                             </CurationPromoteUncategorizedButton>

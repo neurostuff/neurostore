@@ -1,6 +1,16 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 
+declare global {
+    interface Window {
+        gtag?: (
+            type: 'event' | 'config' | 'get' | 'set' | 'consent',
+            action: 'login' | 'page_view',
+            options?: any
+        ) => void;
+    }
+}
+
 export const routeMapping = (path: string) => {
     if (/^\/projects\/.*\/curation\/import.*$/g.test(path)) {
         return 'curation import page';

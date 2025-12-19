@@ -18,14 +18,14 @@ const ProjectViewMetaAnalysis: React.FC<MetaAnalysisReturn> = (props) => {
         data: metaAnalysisJobs,
         isLoading: metaAnalysisJobsIsLoading,
         isError: metaAnalysisJobsIsError,
-    } = useGetMetaAnalysisJobsByMetaAnalysisId(id);
+    } = useGetMetaAnalysisJobsByMetaAnalysisId(id, canEdit);
     const jobs = metaAnalysisJobs ?? [];
     const latestJob = jobs.length > 0 ? jobs[jobs.length - 1] : undefined;
     const {
         data: latestMetaAnalysisJob,
         isLoading: latestJobIsLoading,
         isError: latestJobIsError,
-    } = useGetMetaAnalysisJobById(latestJob?.job_id);
+    } = useGetMetaAnalysisJobById(latestJob?.job_id, canEdit);
     const allResults = (props.results ?? []) as ResultReturn[];
     const latestResult = allResults.length > 0 ? allResults[allResults.length - 1] : undefined;
     const {

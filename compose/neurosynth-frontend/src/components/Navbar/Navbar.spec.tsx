@@ -23,7 +23,7 @@ describe('Navbar', () => {
 
         userEvent.click(screen.getByTestId('toolbar-trigger-login'));
 
-        expect(useAuth0().loginWithPopup).toHaveBeenCalled();
+        expect(useAuth0().getAccessTokenWithPopup).toHaveBeenCalled();
     });
 
     it('should call the auth0 logout method when logging out', () => {

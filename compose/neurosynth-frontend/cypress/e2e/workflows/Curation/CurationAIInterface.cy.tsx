@@ -673,6 +673,14 @@ describe('CurationAIInterface', () => {
             });
 
             it('should skip curation', () => {
+                cy.fixture('projects/projectCurationSimpleWithStudies').then(
+                    (projectFixture: INeurosynthProjectReturn) => {
+                        projectFixture.user = 'auth0|62e0e6c9dd47048572613b4d'; // this user can edit the project
+
+                        cy.intercept('GET', '**/api/projects/*', projectFixture).as('projectFixture');
+                    }
+                );
+
                 cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
                 cy.contains('Skip Curation').click();
                 cy.contains('button', 'Continue').click();
@@ -681,6 +689,14 @@ describe('CurationAIInterface', () => {
             });
 
             it('should move to the next group after skip curation', () => {
+                cy.fixture('projects/projectCurationSimpleWithStudies').then(
+                    (projectFixture: INeurosynthProjectReturn) => {
+                        projectFixture.user = 'auth0|62e0e6c9dd47048572613b4d'; // this user can edit the project
+
+                        cy.intercept('GET', '**/api/projects/*', projectFixture).as('projectFixture');
+                    }
+                );
+
                 cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
                 cy.contains('Skip Curation').click();
                 cy.contains('button', 'Continue').click();

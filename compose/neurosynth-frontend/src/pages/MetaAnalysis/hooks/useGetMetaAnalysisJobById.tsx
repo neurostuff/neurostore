@@ -1,7 +1,7 @@
 import { useQuery } from 'react-query';
 import API from 'api/api.config';
 
-const useGetMetaAnalysisJobById = (metaAnalysisJobId: string | undefined) => {
+const useGetMetaAnalysisJobById = (metaAnalysisJobId: string | undefined, enabled: boolean = true) => {
     return useQuery(
         ['meta-analysis-jobs', metaAnalysisJobId],
         () =>
@@ -10,7 +10,7 @@ const useGetMetaAnalysisJobById = (metaAnalysisJobId: string | undefined) => {
             ),
         {
             select: (data) => data.data,
-            enabled: !!metaAnalysisJobId,
+            enabled: enabled && !!metaAnalysisJobId,
         }
     );
 };

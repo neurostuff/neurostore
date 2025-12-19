@@ -1,6 +1,7 @@
 import { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 import { jwtDecode } from 'jwt-decode';
-import { axiosInstance, getAccessTokenSilentlyFunc, neurostoreConfig, neurosynthConfig } from './api.state';
+import { enqueueSnackbar } from 'notistack';
+import { _getAccessTokenSilentlyFunc, _updateServicesWithToken, axiosInstance } from './api.state';
 
 // Extend Axios types to include our custom _retry property
 export interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
@@ -58,7 +59,7 @@ export const handleError = async (error: AxiosError) => {
     }
 
     const tokenExpired = isTokenExpired(currentJWT);
-    if (error.response && tokenExpired && !originalRequest._retry) {
+    if (error && tokenExpired && !originalRequest._retry) {
         if (isRefreshing) {
             // If already refreshing, queue this request
             // This promise will be resolved/rejected by processQueue() when the token refresh completes.
@@ -78,18 +79,15 @@ export const handleError = async (error: AxiosError) => {
         originalRequest._retry = true;
         isRefreshing = true;
 
-        if (!getAccessTokenSilentlyFunc) {
+        if (!_getAccessTokenSilentlyFunc) {
             processQueue(error, null);
             isRefreshing = false;
             return Promise.reject(error);
         }
 
         try {
-            const newToken = await getAccessTokenSilentlyFunc();
-
-            // Update the token in configurations
-            neurostoreConfig.accessToken = newToken;
-            neurosynthConfig.accessToken = newToken;
+            const newToken = await _getAccessTokenSilentlyFunc();
+            _updateServicesWithToken(newToken);
 
             // Update the Authorization header for the failed request
             originalRequest.headers['Authorization'] = `Bearer ${newToken}`;
@@ -101,6 +99,7 @@ export const handleError = async (error: AxiosError) => {
             return axiosInstance(originalRequest);
         } catch (refreshError) {
             processQueue(refreshError, null);
+            enqueueSnackbar('Your session has expired. Please log in again.', { variant: 'error' });
             isRefreshing = false;
             return Promise.reject(refreshError);
         }

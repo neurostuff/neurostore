@@ -21,7 +21,7 @@ import * as jwtDecodeModule from 'jwt-decode';
 import * as apiState from './api.state';
 import { CustomAxiosRequestConfig, handleError, handleResponse } from './axios.config';
 
-// Mock jwt-decode
+vi.mock('notistack');
 vi.mock('jwt-decode');
 
 // Mock api.state module - need to provide inline mock
@@ -42,29 +42,32 @@ vi.mock('./api.state', () => {
 
     return {
         axiosInstance: mockAxiosInstanceFn,
-        getAccessTokenSilentlyFunc: null,
+        _getAccessTokenSilentlyFunc: null,
         neurostoreConfig: { accessToken: '' },
         neurosynthConfig: { accessToken: '' },
-        setAccessTokenSilentlyFunc: vi.fn(),
-        updateServicesWithToken: vi.fn(),
+        _setAccessTokenSilentlyFunc: vi.fn(),
+        _updateServicesWithToken: vi.fn(),
+        _setEnqueueSnackbarFunc: vi.fn(),
+        _enqueueSnackbarFunc: vi.fn(),
     };
 });
 
 describe('axios.config', () => {
     let mockAxiosInstance: ReturnType<typeof vi.fn>;
     let mockGetAccessTokenSilently: ReturnType<typeof vi.fn>;
+    let mockUpdateServicesWithToken: ReturnType<typeof vi.fn>;
 
     beforeEach(() => {
         vi.clearAllMocks();
         mockGetAccessTokenSilently = vi.fn();
-
+        mockUpdateServicesWithToken = vi.fn();
         // Get reference to the mocked axios instance
 
         mockAxiosInstance = apiState.axiosInstance as any;
 
         // Reset api.state mocks
 
-        (apiState as any).getAccessTokenSilentlyFunc = null;
+        (apiState as any)._getAccessTokenSilentlyFunc = null;
 
         (apiState as any).neurostoreConfig = { accessToken: '' };
 
@@ -183,7 +186,7 @@ describe('axios.config', () => {
 
             const error = createMockError(500, 'expired.token.here');
 
-            (apiState as any).getAccessTokenSilentlyFunc = null;
+            (apiState as any)._getAccessTokenSilentlyFunc = null;
 
             await expect(handleError(error)).rejects.toBe(error);
         });
@@ -195,7 +198,8 @@ describe('axios.config', () => {
             const newToken = 'new.fresh.token';
             mockGetAccessTokenSilently.mockResolvedValue(newToken);
 
-            (apiState as any).getAccessTokenSilentlyFunc = mockGetAccessTokenSilently;
+            (apiState as any)._getAccessTokenSilentlyFunc = mockGetAccessTokenSilently;
+            (apiState as any)._updateServicesWithToken = mockUpdateServicesWithToken;
 
             const mockRetryResponse: AxiosResponse = {
                 data: { success: true },
@@ -210,8 +214,7 @@ describe('axios.config', () => {
             const result = await handleError(error);
 
             expect(mockGetAccessTokenSilently).toHaveBeenCalled();
-            expect(apiState.neurostoreConfig.accessToken).toBe(newToken);
-            expect(apiState.neurosynthConfig.accessToken).toBe(newToken);
+            expect(mockUpdateServicesWithToken).toHaveBeenCalledWith(newToken);
             expect(error.config?.headers?.['Authorization']).toBe(`Bearer ${newToken}`);
             expect(mockAxiosInstance).toHaveBeenCalledWith(error.config);
             expect(result).toBe(mockRetryResponse);
@@ -224,7 +227,7 @@ describe('axios.config', () => {
             const refreshError = new Error('Token refresh failed');
             mockGetAccessTokenSilently.mockRejectedValue(refreshError);
 
-            (apiState as any).getAccessTokenSilentlyFunc = mockGetAccessTokenSilently;
+            (apiState as any)._getAccessTokenSilentlyFunc = mockGetAccessTokenSilently;
 
             const error = createMockError(500, 'expired.token.here');
 
@@ -245,7 +248,7 @@ describe('axios.config', () => {
                 })
             );
 
-            (apiState as any).getAccessTokenSilentlyFunc = mockGetAccessTokenSilently;
+            (apiState as any)._getAccessTokenSilentlyFunc = mockGetAccessTokenSilently;
 
             const mockRetryResponse1: AxiosResponse = {
                 data: { request: 1 },
@@ -300,7 +303,7 @@ describe('axios.config', () => {
             });
             mockGetAccessTokenSilently.mockReturnValue(tokenRefreshPromise);
 
-            (apiState as any).getAccessTokenSilentlyFunc = mockGetAccessTokenSilently;
+            (apiState as any)._getAccessTokenSilentlyFunc = mockGetAccessTokenSilently;
 
             const error1 = createMockError(500, 'expired.token.here');
             const error2 = createMockError(500, 'expired.token.here');
@@ -329,7 +332,7 @@ describe('axios.config', () => {
 
             const error = createMockError(500, 'token.without.exp');
 
-            (apiState as any).getAccessTokenSilentlyFunc = null;
+            (apiState as any)._getAccessTokenSilentlyFunc = null;
 
             await expect(handleError(error)).rejects.toBe(error);
         });
@@ -342,7 +345,7 @@ describe('axios.config', () => {
 
             const error = createMockError(500, 'invalid.token');
 
-            (apiState as any).getAccessTokenSilentlyFunc = null;
+            (apiState as any)._getAccessTokenSilentlyFunc = null;
 
             await expect(handleError(error)).rejects.toBe(error);
         });
@@ -355,7 +358,7 @@ describe('axios.config', () => {
             const newToken = 'new.fresh.token';
             mockGetAccessTokenSilently.mockResolvedValue(newToken);
 
-            (apiState as any).getAccessTokenSilentlyFunc = mockGetAccessTokenSilently;
+            (apiState as any)._getAccessTokenSilentlyFunc = mockGetAccessTokenSilently;
 
             const mockRetryResponse: AxiosResponse = {
                 data: { success: true },

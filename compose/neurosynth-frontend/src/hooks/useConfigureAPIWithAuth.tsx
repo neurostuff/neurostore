@@ -1,6 +1,7 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import { useEffect } from 'react';
 import { initAPISetAccessTokenFunc, updateAPISetToken } from 'api';
+import { enqueueSnackbar } from 'notistack';
 
 const useConfigureAPIWithAuth = () => {
     const { getAccessTokenSilently, isAuthenticated } = useAuth0();
@@ -13,12 +14,17 @@ const useConfigureAPIWithAuth = () => {
     // on window focus, we want to get the latest refresh token
     useEffect(() => {
         const onWindowFocus = async () => {
+            if (!isAuthenticated) return;
             getAccessTokenSilently()
                 .then((token) => {
                     updateAPISetToken(token);
                 })
                 .catch((error) => {
-                    console.error('Error getting token:', error);
+                    if (error.error && error.error === 'login_required') {
+                        enqueueSnackbar('Your session has expired. Please log in again.', {
+                            variant: 'error',
+                        });
+                    }
                 });
         };
 
@@ -26,7 +32,7 @@ const useConfigureAPIWithAuth = () => {
         return () => {
             window.removeEventListener('focus', onWindowFocus);
         };
-    }, [getAccessTokenSilently]);
+    }, [getAccessTokenSilently, isAuthenticated]);
 
     // on initial component mount, we want to get the latest refresh token
     useEffect(() => {
@@ -36,7 +42,11 @@ const useConfigureAPIWithAuth = () => {
                 updateAPISetToken(token);
             })
             .catch((error) => {
-                console.error('Error getting token:', error);
+                if (error.error && error.error === 'login_required') {
+                    enqueueSnackbar('Your session has expired. Please log in again.', {
+                        variant: 'error',
+                    });
+                }
             });
     }, [getAccessTokenSilently, isAuthenticated]);
 };

@@ -7,28 +7,15 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import { Box, Button, Card, CardContent, Typography } from '@mui/material';
 import NeurosynthActivitySummary from 'components/NeurosynthActivitySummary';
 import { useGuard } from 'hooks';
+import useAuthenticate from 'hooks/useAuthenticate';
+import PlatformComparisonTable from 'pages/LandingPage/components/PlatformComparisonTable';
 import { LOGOS } from 'pages/LandingPage/LandingPage.helpers';
 import LandingPageStyles from './LandingPage.styles';
-import PlatformComparisonTable from 'pages/LandingPage/components/PlatformComparisonTable';
-import { useNavigate } from 'react-router';
-
-const AUTH0_AUDIENCE = import.meta.env.VITE_APP_AUTH0_AUDIENCE;
 
 const LandingPage = () => {
-    const { isAuthenticated, isLoading, loginWithPopup } = useAuth0();
-    const navigate = useNavigate();
+    const { isAuthenticated, isLoading } = useAuth0();
     useGuard('/projects', '', isAuthenticated, isLoading, true);
-
-    const handleLogin = async () => {
-        await loginWithPopup({
-            audience: AUTH0_AUDIENCE,
-            scope: 'openid profile email offline_access',
-        });
-        if (window.gtag) {
-            window.gtag('event', 'login');
-        }
-        navigate('/');
-    };
+    const { handleLogin } = useAuthenticate();
 
     return (
         <>

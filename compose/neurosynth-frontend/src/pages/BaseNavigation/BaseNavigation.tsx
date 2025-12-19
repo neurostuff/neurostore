@@ -2,15 +2,16 @@ import { Box, Link, Typography } from '@mui/material';
 import { ErrorBoundary } from '@sentry/react';
 import ProgressLoader from 'components/ProgressLoader';
 import AnnotationsPage from 'pages/Annotations/AnnotationsPage';
-import ProtectedMetaAnalysesRoute from 'pages/BaseNavigation/components/ProtectedMetaAnalysesRoute';
 import ProtectedProjectRoute from 'pages/BaseNavigation/components/ProtectedProjectRoute';
 import CurationImportPage from 'pages/CurationImport/CurationImportPage';
 import ExtractionPage from 'pages/Extraction/ExtractionPage';
 import ForbiddenPage from 'pages/Forbidden/Forbidden';
+import HelpPage from 'pages/HelpPage/HelpPage';
 import NotFoundPage from 'pages/NotFound/NotFoundPage';
 import ProjectEditMetaAnalyses from 'pages/Project/components/ProjectEditMetaAnalyses';
 import ProjectViewMetaAnalyses from 'pages/Project/components/ProjectViewMetaAnalyses';
 import ProjectPage from 'pages/Project/ProjectPage';
+import ProjectsPage from 'pages/Projects/ProjectsPage';
 import BaseStudyPage from 'pages/Study/BaseStudyPage';
 import TermsAndConditions from 'pages/TermsAndConditions/TermsAndConditions';
 import UserProfilePage from 'pages/UserProfile/UserProfilePage';
@@ -19,7 +20,6 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import LandingPage from '../LandingPage/LandingPage';
 import BaseNavigationStyles from './BaseNavigation.styles';
 import ProtectedRoute from './components/ProtectedRoute';
-import HelpPage from 'pages/HelpPage/HelpPage';
 
 const EditStudyPage = React.lazy(() => import('pages/Study/EditStudyPage'));
 const ProjectStudyPage = React.lazy(() => import('pages/Study/ProjectStudyPage'));
@@ -28,7 +28,7 @@ const StudiesPage = React.lazy(() => import('pages/Studies/StudiesPage'));
 const MetaAnalysesPage = React.lazy(() => import('pages/MetaAnalyses/MetaAnalysesPage'));
 const MetaAnalysisPage = React.lazy(() => import('pages/MetaAnalysis/MetaAnalysisPage'));
 
-const ProjectsPage = React.lazy(() => import('pages/Projects/ProjectsPage'));
+// const ProjectsPage = React.lazy(() => import('pages/Projects/ProjectsPage'));
 
 const CurationPage = React.lazy(() => import('pages/Curation/CurationPage'));
 
@@ -77,7 +77,7 @@ const BaseNavigation: React.FC = () => {
                     <Route
                         path="/projects/:projectId"
                         element={
-                            <ProtectedProjectRoute errorMessage="You do not have access to this project">
+                            <ProtectedProjectRoute errorMessage="You do not have access to this page">
                                 <Box sx={BaseNavigationStyles.pagesContainer}>
                                     <ProjectPage />
                                 </Box>
@@ -96,7 +96,7 @@ const BaseNavigation: React.FC = () => {
                     <Route
                         path="/projects/:projectId/curation"
                         element={
-                            <ProtectedProjectRoute errorMessage="You do not have access to this project">
+                            <ProtectedProjectRoute errorMessage="You do not have access to this page">
                                 <Box sx={BaseNavigationStyles.curationPageContainer}>
                                     <CurationPage />
                                 </Box>
@@ -119,7 +119,7 @@ const BaseNavigation: React.FC = () => {
                     <Route
                         path="/projects/:projectId/extraction"
                         element={
-                            <ProtectedProjectRoute errorMessage="You do not have access to this project">
+                            <ProtectedProjectRoute errorMessage="You do not have access to this page">
                                 <Box sx={BaseNavigationStyles.pagesContainer}>
                                     <ExtractionPage />
                                 </Box>
@@ -131,7 +131,7 @@ const BaseNavigation: React.FC = () => {
                         element={
                             <ProtectedProjectRoute
                                 onlyOwnerCanAccess
-                                errorMessage="You do not have access to this project"
+                                errorMessage="You do not have access to this page"
                             >
                                 <Box sx={BaseNavigationStyles.pagesContainer}>
                                     <EditStudyPage />
@@ -142,7 +142,7 @@ const BaseNavigation: React.FC = () => {
                     <Route
                         path="/projects/:projectId/extraction/studies/:studyId"
                         element={
-                            <ProtectedProjectRoute errorMessage="You do not have access to this project">
+                            <ProtectedProjectRoute errorMessage="You do not have access to this page">
                                 <Box sx={BaseNavigationStyles.pagesContainer}>
                                     <ProjectStudyPage />
                                 </Box>
@@ -152,7 +152,7 @@ const BaseNavigation: React.FC = () => {
                     <Route
                         path="/projects/:projectId/extraction/annotations"
                         element={
-                            <ProtectedProjectRoute errorMessage="You do not have access to this project">
+                            <ProtectedProjectRoute errorMessage="You do not have access to this page">
                                 <Box sx={BaseNavigationStyles.pagesContainer}>
                                     <AnnotationsPage />
                                 </Box>
@@ -162,24 +162,11 @@ const BaseNavigation: React.FC = () => {
                     <Route
                         path="/projects/:projectId/meta-analyses/:metaAnalysisId"
                         element={
-                            <ProtectedProjectRoute
-                                errorMessage="You do not have access to this project"
-                                onlyOwnerCanAccess
-                            >
+                            <ProtectedProjectRoute errorMessage="You do not have access to this page">
                                 <Box sx={BaseNavigationStyles.pagesContainer}>
                                     <MetaAnalysisPage />
                                 </Box>
                             </ProtectedProjectRoute>
-                        }
-                    />
-                    <Route
-                        path="/meta-analyses/:metaAnalysisId"
-                        element={
-                            <ProtectedMetaAnalysesRoute errorMessage="You do not have access to this meta-analysis">
-                                <Box sx={BaseNavigationStyles.pagesContainer}>
-                                    <MetaAnalysisPage />
-                                </Box>
-                            </ProtectedMetaAnalysesRoute>
                         }
                     />
                     <Route
