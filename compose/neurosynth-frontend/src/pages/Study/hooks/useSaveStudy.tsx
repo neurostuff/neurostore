@@ -128,7 +128,9 @@ const useSaveStudy = () => {
 
     const handleUpdateDB = async () => {
         try {
-            if (studyHasBeenEdited && annotationIsEdited) {
+            const newAnalysesWereCreated = storeStudy.analyses.some((analysis) => analysis.isNew);
+
+            if (studyHasBeenEdited && (annotationIsEdited || newAnalysesWereCreated)) {
                 await handleUpdateBothInDB();
             } else if (studyHasBeenEdited) {
                 await handleUpdateStudyInDB();
