@@ -651,21 +651,17 @@ export const useStudyAnalysisPointStatistic = (analysisId?: string) =>
 export const useNumStudyAnalyses = () => useStudyStore((state) => state.study.analyses.length);
 export const useStudyAnalyses = () => useStudyStore((state) => state.study.analyses);
 export const useDebouncedStudyAnalyses = () => {
+    const studyAnalyses = useStudyAnalyses();
     const [debouncedAnalyses, setDebouncedAnalyses] = useState(useStudyStore.getState().study.analyses);
     useEffect(() => {
-        let debounce: NodeJS.Timeout;
-        const unsub = useStudyStore.subscribe((state) => {
-            if (debounce) clearTimeout(debounce);
-            debounce = setTimeout(() => {
-                setDebouncedAnalyses(state.study.analyses);
-            }, 400);
-        });
+        const debounce: NodeJS.Timeout = setTimeout(() => {
+            setDebouncedAnalyses(studyAnalyses);
+        }, 500);
 
         return () => {
-            unsub();
             clearTimeout(debounce);
         };
-    }, []);
+    }, [studyAnalyses]);
     return debouncedAnalyses;
 };
 

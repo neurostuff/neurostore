@@ -1,5 +1,5 @@
 import { NoteKeyType } from 'components/HotTables/HotTables.types';
-import { AnnotationReturnOneOf1, NoteCollectionReturn } from 'neurostore-typescript-sdk';
+import { AnnotationReturnOneOf, NoteCollectionReturn } from 'neurostore-typescript-sdk';
 
 export type AnnotationStoreMetadata = {
     annotationIsEdited: boolean;
@@ -12,7 +12,7 @@ export interface IStoreNoteCollectionReturn extends NoteCollectionReturn {
     isNew?: boolean;
 }
 
-export interface IStoreAnnotation extends Omit<AnnotationReturnOneOf1, 'notes' | 'note_keys'> {
+export interface IStoreAnnotation extends Omit<AnnotationReturnOneOf, 'notes' | 'note_keys'> {
     notes: IStoreNoteCollectionReturn[] | undefined;
     note_keys: NoteKeyType[] | undefined;
 }
@@ -22,12 +22,12 @@ export type AnnotationStoreActions = {
     setAnnotationIsEdited: (isEdited: boolean) => void;
     clearAnnotationStore: () => void;
     updateNotes: (updatedNotes: Array<NoteCollectionReturn>) => void;
-    createAnnotationColumn: (noteKey: NoteKeyType) => void;
+    createAnnotationColumn: (noteKey: Omit<NoteKeyType, 'order'>) => void;
     updateAnnotationInDB: () => Promise<void>;
     createAnnotationNote: (analysisId: string, studyId: string, analysisName: string) => void;
     deleteAnnotationNote: (analysisId: string) => void;
-    updateAnnotationNoteName: (analysis: Partial<IStoreNoteCollectionReturn>) => void;
     removeAnnotationColumn: (noteKey: string) => void;
+    updateAnnotationNoteDetails: (note: Partial<IStoreNoteCollectionReturn>) => void;
 };
 
 export type AnnotationNoteType = {

@@ -28,9 +28,7 @@ export const noteKeyArrToDefaultNoteKeyObj = (noteKeys: NoteKeyType[]): Annotati
     return x;
 };
 
-export const storeNotesToDBNotes = (
-    notes: IStoreNoteCollectionReturn[]
-): NoteCollectionRequest[] => {
+export const storeNotesToDBNotes = (notes: IStoreNoteCollectionReturn[]): NoteCollectionRequest[] => {
     return notes.map((annotationNote) => ({
         analysis: annotationNote.analysis,
         study: annotationNote.study,
@@ -38,7 +36,7 @@ export const storeNotesToDBNotes = (
     }));
 };
 
-export const updateNoteNameHelper = (
+export const updateNoteDetailsHelper = (
     notes: IStoreNoteCollectionReturn[],
     update: Partial<IStoreNoteCollectionReturn>
 ): IStoreNoteCollectionReturn[] => {

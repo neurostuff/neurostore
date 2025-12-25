@@ -1,5 +1,5 @@
 import { AxiosResponse } from 'axios';
-import { AnnotationReturnOneOf1 } from 'neurostore-typescript-sdk';
+import { AnnotationReturnOneOf } from 'neurostore-typescript-sdk';
 import { useQuery } from 'react-query';
 import API from 'api/api.config';
 
@@ -8,7 +8,7 @@ const useGetAnnotationById = (annotationId: string | undefined | null) => {
         ['annotations', annotationId],
         () => API.NeurostoreServices.AnnotationsService.annotationsIdGet(annotationId || ''),
         {
-            select: (res: AxiosResponse<AnnotationReturnOneOf1>) => res.data,
+            select: (res: AxiosResponse<AnnotationReturnOneOf>) => res.data,
             enabled: !!annotationId,
         }
     );
