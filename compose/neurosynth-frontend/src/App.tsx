@@ -5,6 +5,7 @@ import useGoogleAnalytics from 'hooks/useGoogleAnalytics';
 import { closeSnackbar, SnackbarProvider } from 'notistack';
 import BaseNavigation from 'pages/BaseNavigation/BaseNavigation';
 import useConfigureAPIWithAuth from './hooks/useConfigureAPIWithAuth';
+import Banner from 'components/Banner';
 
 function App() {
     useConfigureAPIWithAuth();
@@ -23,7 +24,7 @@ function App() {
                 </IconButton>
             )}
         >
-            {/* <Banner /> */}
+            <Banner />
             <Navbar />
             <BaseNavigation />
         </SnackbarProvider>
