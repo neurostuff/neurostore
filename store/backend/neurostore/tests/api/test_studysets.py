@@ -251,7 +251,9 @@ def test_clone_studyset_without_annotations_when_disabled(
     assert cloned_annotations.json()["results"] == []
 
 
-def test_studyset_studies_capture_curation_stub_uuid(auth_client, ingest_neurosynth, session):
+def test_studyset_studies_capture_curation_stub_uuid(
+    auth_client, ingest_neurosynth, session
+):
     payload = auth_client.get("/api/studies/?page_size=2").json()
     study_ids = [study["id"] for study in payload["results"]]
     stub_uuid = "123e4567-e89b-12d3-a456-426614174000"
@@ -340,7 +342,8 @@ def test_non_nested_studyset_includes_studyset_studies(auth_client, ingest_neuro
     assert update_resp.status_code == 200
     update_data = update_resp.json()
     assert any(
-        assoc.get("id") == study_ids[1] and assoc.get("curation_stub_uuid") == stub_uuid_2
+        assoc.get("id") == study_ids[1]
+        and assoc.get("curation_stub_uuid") == stub_uuid_2
         for assoc in update_data.get("studyset_studies") or []
     )
 
@@ -353,7 +356,8 @@ def test_non_nested_studyset_includes_studyset_studies(auth_client, ingest_neuro
         for assoc in final_data.get("studyset_studies") or []
     )
     assert any(
-        assoc.get("id") == study_ids[1] and assoc.get("curation_stub_uuid") == stub_uuid_2
+        assoc.get("id") == study_ids[1]
+        and assoc.get("curation_stub_uuid") == stub_uuid_2
         for assoc in final_data.get("studyset_studies") or []
     )
 
@@ -390,8 +394,7 @@ def test_studyset_studies_survive_multiple_updates(auth_client, ingest_neurosynt
     data_1 = update_resp_1.json()
     assert data_1.get("studyset_studies")
     assert any(
-        assoc.get("id") == study_ids[1] and
-        assoc.get("curation_stub_uuid") == stub_b
+        assoc.get("id") == study_ids[1] and assoc.get("curation_stub_uuid") == stub_b
         for assoc in data_1.get("studyset_studies") or []
     )
 
@@ -421,10 +424,15 @@ def test_studyset_studies_survive_multiple_updates(auth_client, ingest_neurosynt
     assert final_resp.status_code == 200
     final = final_resp.json()
     assert final.get("studyset_studies")
-    assert set(s.get("id") for s in final.get("studyset_studies")) == {study_ids[0], study_ids[1]}
+    assert set(s.get("id") for s in final.get("studyset_studies")) == {
+        study_ids[0],
+        study_ids[1],
+    }
 
 
-def test_stub_mapping_updates_when_switching_versions(auth_client, ingest_neurosynth, session):
+def test_stub_mapping_updates_when_switching_versions(
+    auth_client, ingest_neurosynth, session
+):
     """
     If a stub is re-linked to a different study version,
     the mapping should move to the new study_id.

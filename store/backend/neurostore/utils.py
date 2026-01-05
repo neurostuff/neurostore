@@ -39,14 +39,11 @@ def build_jsonpath(field_path: str, operator: str, value: str) -> str:
     Returns:
         PostgreSQL jsonpath query string
     """
+
     def normalize_value(raw_val: str):
         # Strip surrounding quotes so users can include quoted values without
         # creating invalid jsonpath strings.
-        if (
-            len(raw_val) >= 2
-            and raw_val[0] == raw_val[-1]
-            and raw_val[0] in {"'", '"'}
-        ):
+        if len(raw_val) >= 2 and raw_val[0] == raw_val[-1] and raw_val[0] in {"'", '"'}:
             raw_val = raw_val[1:-1]
         return determine_value_type(raw_val)
 

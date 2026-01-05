@@ -571,13 +571,11 @@ def test_feature_display_and_pipeline_config(auth_client, ingest_demographic_fea
     assert len(mismatch_response.json()["results"]) == 0
 
 
-def test_pipeline_config_with_quoted_value(
-    auth_client, ingest_demographic_features
-):
+def test_pipeline_config_with_quoted_value(auth_client, ingest_demographic_features):
     """Ensure quoted config filter values do not break jsonpath parsing."""
     quoted_resp = auth_client.get(
         "/api/base-studies/?"
-        'pipeline_config=ParticipantDemographicsExtractor:1.0.0:'
+        "pipeline_config=ParticipantDemographicsExtractor:1.0.0:"
         'extractor_kwargs.extraction_model="gpt-4-turbo"'
     )
     assert quoted_resp.status_code == 200
