@@ -838,6 +838,29 @@ class AnnotationSchema(BaseDataSchema):
         if invalid:
             raise ValidationError({"notes": invalid})
 
+    @pre_dump
+    def sort_notes(self, annotation, **kwargs):
+        notes = getattr(annotation, "annotation_analyses", None)
+        if not notes:
+            return annotation
+
+        def sort_key(note):
+            analysis = getattr(note, "analysis", None)
+            order = getattr(analysis, "order", None)
+            if isinstance(order, bool) or not isinstance(order, int):
+                order = None
+            if order is not None:
+                return (0, order, note.analysis_id or "")
+
+            created_at = getattr(analysis, "created_at", None) or getattr(
+                note, "created_at", None
+            )
+            created_ts = created_at.timestamp() if created_at else 0
+            return (1, created_ts, note.analysis_id or "")
+
+        annotation.annotation_analyses = sorted(notes, key=sort_key)
+        return annotation
+
 
 class BaseSnapshot(object):
     def __init__(self):

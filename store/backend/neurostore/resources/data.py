@@ -583,7 +583,12 @@ class AnnotationsView(ObjectView, ListView):
             )
             .options(
                 joinedload(AnnotationAnalysis.analysis)
-                .load_only(Analysis.id, Analysis.name)
+                .load_only(
+                    Analysis.id,
+                    Analysis.name,
+                    Analysis.order,
+                    Analysis.created_at,
+                )
                 .options(raiseload("*", sql_only=True)),
                 joinedload(AnnotationAnalysis.studyset_study).options(
                     joinedload(StudysetStudy.study)
