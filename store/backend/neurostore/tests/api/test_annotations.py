@@ -487,9 +487,7 @@ def test_correct_note_overwrite(auth_client, ingest_neurosynth, session):
     assert len(put_resp.json()["notes"]) == len(data)
     assert get_resp.json() == put_resp.json()
     target_analysis_id = data[0]["analysis"]
-    notes_by_analysis = {
-        note["analysis"]: note for note in get_resp.json()["notes"]
-    }
+    notes_by_analysis = {note["analysis"]: note for note in get_resp.json()["notes"]}
     assert notes_by_analysis[target_analysis_id]["note"]["doo"] == new_value
 
 
