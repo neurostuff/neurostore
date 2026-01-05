@@ -845,18 +845,19 @@ class AnnotationSchema(BaseDataSchema):
             return annotation
 
         def sort_key(note):
+            study_id = getattr(note, "study_id", None) or ""
             analysis = getattr(note, "analysis", None)
             order = getattr(analysis, "order", None)
             if isinstance(order, bool) or not isinstance(order, int):
                 order = None
             if order is not None:
-                return (0, order, note.analysis_id or "")
+                return (study_id, 0, order, note.analysis_id or "")
 
             created_at = getattr(analysis, "created_at", None) or getattr(
                 note, "created_at", None
             )
             created_ts = created_at.timestamp() if created_at else 0
-            return (1, created_ts, note.analysis_id or "")
+            return (study_id, 1, created_ts, note.analysis_id or "")
 
         annotation.annotation_analyses = sorted(notes, key=sort_key)
         return annotation
