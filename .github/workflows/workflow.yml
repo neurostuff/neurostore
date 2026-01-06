@@ -257,7 +257,7 @@ jobs:
       name: Create Test Database
       run: |
         docker compose exec -T \
-        compose_pgsql17 \
+        compose-pgsql17 \
         psql -U postgres -c "create database test_db"
     -
       name: Backend Tests
@@ -348,7 +348,7 @@ jobs:
       name: Create Test Database
       run: | 
         docker compose exec -T \
-        compose_pgsql17 \
+        compose-pgsql17 \
         psql -U postgres -c "create database test_db"
     -
       name: Frontend Jest Unit Tests
@@ -457,7 +457,7 @@ jobs:
         cd compose
 
         docker compose exec -T \
-        compose_pgsql17 \
+        compose-pgsql17 \
         psql -U postgres -c "create database test_db"
     -
       name: Create Store Database
