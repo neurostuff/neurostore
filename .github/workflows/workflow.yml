@@ -17,8 +17,9 @@ permissions:
 jobs:
   clean:
     strategy:
+      fail-fast: false
       matrix:
-        package: ['neurosynth_compose', 'compose_nginx', 'compose_pgsql', 'compose_worker', 'neurostore', 'store_nginx', 'store-pgsql']
+        package: ['neurosynth_compose', 'compose_nginx', 'compose_pgsql', 'compose_worker', 'neurostore', 'store_nginx', 'store-pgsql', 'store-pgsql17', 'compose_pgsql17']
     runs-on: ubuntu-latest
 
     steps:
@@ -176,13 +177,20 @@ jobs:
               store-pgsql17.cache-from=type=gha,scope=cached-store-pgsql17
       - 
         name: spin up backend
+        id: spin_up_backend
+        continue-on-error: true
         run: |
+          set -o pipefail
           docker network create nginx-proxy
           docker compose pull --ignore-buildable 
           docker compose \
             -f docker-compose.yml \
             -f docker-compose.dev.yml \
             up -d --no-build
+      - 
+        name: Abort if compose failed
+        if: ${{ steps.spin_up_backend.outcome == 'failure' }}
+        run: exit 1
       - 
         name: Create Test Database
         run: |
@@ -444,7 +452,10 @@ jobs:
           up -d --no-build
     -
       name: Spin up store backend
+      id: spin_up_store_backend
+      continue-on-error: true
       run: |
+        set -o pipefail
         cd store
         docker compose pull --ignore-buildable 
         docker compose \
@@ -452,13 +463,17 @@ jobs:
           -f docker-compose.dev.yml \
           up -d --no-build
     -
+      name: Abort if store compose failed
+      if: ${{ steps.spin_up_store_backend.outcome == 'failure' }}
+      run: exit 1
+    -
       name: Create Compose Database
       run: |
         cd compose
 
         docker compose exec -T \
         compose-pgsql17 \
-        psql -U postgres -c "create database test_db"
+        psql -U postgres -c "CREATE DATABASE test_db"
     -
       name: Create Store Database
       run: |
@@ -466,31 +481,21 @@ jobs:
 
         docker compose exec -T \
         store-pgsql17 \
-        psql -U postgres -c "create database test_db"
+        psql -U postgres -c "CREATE DATABASE test_db"
 
         docker compose exec -T \
         store-pgsql17 \
         psql -U postgres -d test_db -c "CREATE EXTENSION IF NOT EXISTS vector;"
     -
-      name: Initialize Compose Database
+      name: Apply Compose migrations
       run: |
         cd compose
-        docker compose exec -T compose \
-        bash -c \
-            "flask db merge heads && \
-             flask db stamp head && \
-             flask db migrate && \
-             flask db upgrade"
+        docker compose exec -T compose flask db upgrade
     -
-      name: Initialize Store Database
+      name: Apply Store migrations
       run: |
         cd store
-        docker compose exec -T neurostore \
-        bash -c \
-            "flask db merge heads && \
-             flask db stamp head && \
-             flask db migrate && \
-             flask db upgrade"
+        docker compose exec -T neurostore flask db upgrade
     - 
       name: Ingest data into Store
       run: |

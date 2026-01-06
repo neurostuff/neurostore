@@ -84,11 +84,19 @@ class Studyset(BaseMixin, db.Model):
     public = db.Column(db.Boolean, default=True)
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"), index=True)
     user = relationship("User", backref=backref("studysets", passive_deletes=True))
+    studyset_studies = relationship(
+        "StudysetStudy",
+        back_populates="studyset",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        lazy="selectin",
+    )
     studies = relationship(
         "Study",
         secondary="studyset_studies",
-        backref=backref("studysets", lazy="dynamic"),
-        passive_deletes=True,
+        back_populates="studysets",
+        lazy="selectin",
+        viewonly=True,
     )
     annotations = relationship(
         "Annotation",
@@ -189,6 +197,7 @@ class BaseStudy(BaseMixin, db.Model):
     public = db.Column(db.Boolean, default=True)
     level = db.Column(db.String)
     metadata_ = db.Column(JSONB)
+    is_oa = db.Column(db.Boolean, default=None, nullable=True)
     has_coordinates = db.Column(db.Boolean, default=False, nullable=False)
     has_images = db.Column(db.Boolean, default=False, nullable=False)
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"), index=True)
@@ -472,6 +481,28 @@ class Study(BaseMixin, db.Model):
         passive_deletes=True,
         cascade="all, delete-orphan",
     )
+    tables = relationship(
+        "Table",
+        back_populates="study",
+        passive_deletes=True,
+        cascade="all, delete-orphan",
+        cascade_backrefs=False,
+        lazy="selectin",
+    )
+    studyset_studies = relationship(
+        "StudysetStudy",
+        back_populates="study",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        lazy="selectin",
+    )
+    studysets = relationship(
+        "Studyset",
+        secondary="studyset_studies",
+        back_populates="studies",
+        lazy="dynamic",
+        viewonly=True,
+    )
 
     __table_args__ = (
         db.CheckConstraint(level.in_(["group", "meta"])),
@@ -491,15 +522,23 @@ class StudysetStudy(db.Model):
     studyset_id = db.Column(
         db.ForeignKey("studysets.id", ondelete="CASCADE"), index=True, primary_key=True
     )
+    curation_stub_uuid = db.Column(db.Text, nullable=True, index=True)
     study = relationship(
         "Study",
-        backref=backref("studyset_studies"),
-        viewonly=True,
+        back_populates="studyset_studies",
+        passive_deletes=True,
     )
     studyset = relationship(
         "Studyset",
-        backref=backref("studyset_studies"),
-        viewonly=True,
+        back_populates="studyset_studies",
+        passive_deletes=True,
+    )
+    __table_args__ = (
+        db.UniqueConstraint(
+            "studyset_id",
+            "curation_stub_uuid",
+            name="uq_studyset_stub_uuid",
+        ),
     )
     annotation_analyses = relationship(
         "AnnotationAnalysis",
@@ -509,18 +548,45 @@ class StudysetStudy(db.Model):
     )
 
 
+class Table(BaseMixin, db.Model):
+    __tablename__ = "tables"
+
+    study_id = db.Column(
+        db.Text, db.ForeignKey("studies.id", ondelete="CASCADE"), index=True
+    )
+    t_id = db.Column(db.Text)
+    name = db.Column(db.Text)
+    footer = db.Column(db.Text)
+    caption = db.Column(db.Text)
+    user_id = db.Column(db.Text, db.ForeignKey("users.external_id"), index=True)
+
+    study = relationship(
+        "Study",
+        back_populates="tables",
+        passive_deletes=True,
+    )
+    user = relationship(
+        "User", backref=backref("tables", cascade_backrefs=False, passive_deletes=True)
+    )
+
+    __table_args__ = (
+        db.UniqueConstraint("study_id", "t_id", name="uq_tables_study_t_id"),
+    )
+
+
 class Analysis(BaseMixin, db.Model):
     __tablename__ = "analyses"
 
     study_id = db.Column(
         db.Text, db.ForeignKey("studies.id", ondelete="CASCADE"), index=True
     )
+    table_id = db.Column(
+        db.Text, db.ForeignKey("tables.id", ondelete="SET NULL"), index=True
+    )
     name = db.Column(db.String)
     description = db.Column(db.String)
     metadata_ = db.Column(JSONB)
     order = db.Column(db.Integer)
-    # used to keep track of neurosynth analyses (in case of neurosynth/ace updates)
-    table_id = db.Column(db.String)
     points = relationship(
         "Point",
         backref=backref("analysis", passive_deletes=True),
@@ -551,6 +617,12 @@ class Analysis(BaseMixin, db.Model):
         passive_deletes=True,
         cascade="all, delete-orphan",
         cascade_backrefs=False,
+    )
+    table = relationship(
+        "Table",
+        backref=backref("analyses", cascade_backrefs=False, passive_deletes=True),
+        foreign_keys=[table_id],
+        passive_deletes=True,
     )
 
 
@@ -753,6 +825,13 @@ class PipelineConfig(BaseMixin, db.Model):
 
 class PipelineStudyResult(BaseMixin, db.Model):
     __tablename__ = "pipeline_study_results"
+    __table_args__ = (
+        sa.Index(
+            "ix_pipeline_study_results__modality",
+            sa.text("(result_data -> 'Modality')"),
+            postgresql_using="gin",
+        ),
+    )
 
     config_id = db.Column(
         db.Text, db.ForeignKey("pipeline_configs.id", ondelete="CASCADE"), index=True

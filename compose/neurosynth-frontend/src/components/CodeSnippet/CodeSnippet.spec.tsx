@@ -29,7 +29,7 @@ describe('CodeSnippet', () => {
 
             userEvent.click(copybutton);
 
-            let copyText = screen.queryByText('copied!');
+            let copyText = screen.queryByText('✓');
             expect(copyText).toBeInTheDocument();
 
             act(() => {

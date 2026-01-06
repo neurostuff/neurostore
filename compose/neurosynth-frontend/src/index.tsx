@@ -1,6 +1,6 @@
 import { Auth0Provider } from '@auth0/auth0-react';
 import { grey } from '@mui/material/colors';
-import { createTheme, ThemeProvider } from '@mui/material/styles';
+import { createTheme, responsiveFontSizes, ThemeProvider } from '@mui/material/styles';
 import { SystemStyleObject } from '@mui/system';
 import * as Sentry from '@sentry/react';
 import React from 'react';
@@ -8,6 +8,8 @@ import ReactDOM from 'react-dom';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import './index.css';
+import { QueryCache, QueryClient, QueryClientProvider } from 'react-query';
+import { AxiosError } from 'axios';
 
 export type Style = Record<string, SystemStyleObject>;
 export type ColorOptions = 'inherit' | 'primary' | 'secondary' | 'success' | 'error' | 'info' | 'warning';
@@ -21,7 +23,7 @@ declare module '@mui/material/styles/createPalette' {
     }
 }
 
-const theme = createTheme({
+let theme = createTheme({
     palette: {
         primary: {
             light: '#0096c7',
@@ -52,35 +54,19 @@ const theme = createTheme({
             main: grey[500],
         },
     },
+    typography: {
+        h1: { fontSize: '3rem' },
+        h2: { fontSize: '2.25rem' },
+        h3: { fontSize: '1.75rem' },
+        h4: { fontSize: '1.5rem' },
+        h5: { fontSize: '1.25rem' },
+        h6: { fontSize: '1rem' },
+        body1: { fontSize: '1rem' },
+        body2: { fontSize: '0.875rem' },
+    },
 });
 
-theme.typography.h3 = {
-    ...theme.typography.h3,
-    [theme.breakpoints.down('md')]: {
-        fontSize: '2rem',
-    },
-    [theme.breakpoints.up('md')]: {
-        fontSize: '3rem',
-    },
-};
-theme.typography.h4 = {
-    ...theme.typography.h4,
-    [theme.breakpoints.down('md')]: {
-        fontSize: '1.125rem',
-    },
-    [theme.breakpoints.up('md')]: {
-        fontSize: '2.125',
-    },
-};
-theme.typography.h6 = {
-    ...theme.typography.h6,
-    [theme.breakpoints.down('md')]: {
-        fontSize: '1rem',
-    },
-    [theme.breakpoints.up('md')]: {
-        fontSize: '1.25rem',
-    },
-};
+theme = responsiveFontSizes(theme);
 
 const domain = import.meta.env.VITE_APP_AUTH0_DOMAIN as string;
 const clientId = import.meta.env.VITE_APP_AUTH0_CLIENT_ID as string;
@@ -103,6 +89,25 @@ if (env === 'PROD') {
     });
 }
 
+const queryClient = new QueryClient({
+    defaultOptions: {
+        queries: {
+            retry: 0,
+            refetchOnWindowFocus: false,
+            // staleTime: 5000, // https://tkdodo.eu/blog/practical-react-query#the-defaults-explained
+        },
+    },
+    queryCache: new QueryCache({
+        onError: (error) => {
+            console.log({ error });
+            const responseStatus = (error as AxiosError)?.response?.status;
+            if (responseStatus && responseStatus === 404) {
+                console.error('could not find resource');
+            }
+        },
+    }),
+});
+
 ReactDOM.render(
     <React.StrictMode>
         <Auth0Provider
@@ -116,7 +121,9 @@ ReactDOM.render(
         >
             <BrowserRouter>
                 <ThemeProvider theme={theme}>
-                    <App />
+                    <QueryClientProvider client={queryClient}>
+                        <App />
+                    </QueryClientProvider>
                 </ThemeProvider>
             </BrowserRouter>
         </Auth0Provider>

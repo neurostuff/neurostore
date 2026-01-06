@@ -51,20 +51,25 @@ class PipelineStudyResultSchema(BaseSchema):
 
     # Execution metadata
     date_executed = fields.DateTime(
-        dump_only=True, description="Timestamp of pipeline execution", allow_none=True
+        dump_only=True,
+        allow_none=True,
+        metadata={"description": "Timestamp of pipeline execution"},
     )
 
     # Result and input data
-    result_data = fields.Dict(description="Pipeline execution results", allow_none=True)
+    result_data = fields.Dict(
+        allow_none=True, metadata={"description": "Pipeline execution results"}
+    )
     file_inputs = fields.Dict(
-        description="Files used as input for the pipeline", allow_none=True
+        allow_none=True,
+        metadata={"description": "Files used as input for the pipeline"},
     )
 
     # Pipeline execution status
     status = fields.Str(
         validate=lambda x: x in ["SUCCESS", "FAILURE", "ERROR", "UNKNOWN"],
         required=True,
-        description="Current status of the pipeline execution",
+        metadata={"description": "Current status of the pipeline execution"},
     )
 
     class Meta:
@@ -126,27 +131,30 @@ class PipelineEmbeddingSchema(BaseSchema):
 
     # Execution metadata
     date_executed = fields.DateTime(
-        dump_only=True, description="Timestamp of pipeline execution", allow_none=True
+        dump_only=True,
+        allow_none=True,
+        metadata={"description": "Timestamp of pipeline execution"},
     )
 
     # Result and input data
     file_inputs = fields.Dict(
-        description="Files used as input for the pipeline", allow_none=True
+        allow_none=True,
+        metadata={"description": "Files used as input for the pipeline"},
     )
 
     # Pipeline execution status
     status = fields.Str(
         validate=lambda x: x in ["SUCCESS", "FAILURE", "ERROR", "UNKNOWN"],
         required=True,
-        description="Current status of the pipeline execution",
+        metadata={"description": "Current status of the pipeline execution"},
     )
 
     # Vector embedding data
     embedding = fields.List(
         fields.Float(),
         required=True,
-        description="Vector embedding data",
         allow_none=False,
+        metadata={"description": "Vector embedding data"},
     )
 
     class Meta:

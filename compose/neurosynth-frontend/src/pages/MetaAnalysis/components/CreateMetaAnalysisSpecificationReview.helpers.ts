@@ -17,9 +17,7 @@ export const getWeightAndConditionsForSpecification = (
     if (!estimator) return { weights: [], conditions: [], databaseStudyset: undefined };
 
     const isMultiGroup = isMultiGroupAlgorithm(estimator);
-    const usingPredefinedDataset = selectedReferenceDatasetIsDefaultDataset(
-        selection.referenceDataset
-    );
+    const usingPredefinedDataset = selectedReferenceDatasetIsDefaultDataset(selection.referenceDataset);
     let conditions: string[] | boolean[] = [];
     let weights = [];
     let databaseStudyset: string | undefined;
@@ -46,8 +44,7 @@ export const getWeightAndConditionsForSpecification = (
     conditions.forEach((condition, index) => {
         switch (selection.type) {
             case EPropertyType.BOOLEAN:
-                conditions[index] =
-                    typeof condition === 'boolean' ? condition : condition === 'true';
+                conditions[index] = typeof condition === 'boolean' ? condition : condition === 'true';
                 break;
             case EPropertyType.STRING:
                 conditions[index] = condition.toString();

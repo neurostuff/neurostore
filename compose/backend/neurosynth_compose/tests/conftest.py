@@ -1,12 +1,15 @@
 from unittest.mock import patch
 
+import copy
+import itertools
+
 import flask_sqlalchemy
 import json
 from os.path import isfile
 from os import environ
 import pathlib
 
-from auth0.v3.authentication import GetToken
+from auth0.authentication import GetToken
 import pytest
 from nimare.results import MetaResult
 import sqlalchemy as sa
@@ -81,28 +84,101 @@ def mock_decode_token(token):
         return {"sub": "user2-id"}
 
 
-def mock_ns_session(request):
-    class MockResponse:
-        def __init__(self, data):
-            self.data = data
-            self.status_code = 200
+class MockResponse:
+    def __init__(self, data):
+        self.data = data
+        self.status_code = 200
 
-        def json(self):
-            return self.data
+    def json(self):
+        return self.data
 
-    class MockSession:
-        def post(self, path, json):
-            json.update({"id": "123"})
-            return MockResponse(json)
 
-        def put(self, path, json):
-            json.update({"id": path.split("/")[-1]})
-            return MockResponse(json)
+class MockNeurostoreSession:
+    """Lightweight stand-in for a requests.Session when mocking Neurostore."""
 
-        def get(self, path):
-            return MockResponse({"metadata": {"test": "value"}})
+    instances = []
+    call_log = []
+    _global_counter = itertools.count(10_000)
 
-    return MockSession()
+    def __init__(self):
+        self.headers = {}
+        self.calls = []
+        MockNeurostoreSession.instances.append(self)
+
+    @classmethod
+    def reset(cls):
+        cls.instances.clear()
+        cls.call_log.clear()
+        cls._global_counter = itertools.count(10_000)
+
+    @classmethod
+    def _next_id(cls, prefix):
+        return f"{prefix}-{next(cls._global_counter)}"
+
+    @staticmethod
+    def _extract_id(path):
+        return path.split("/")[-1]
+
+    def _record(self, method, path, payload=None):
+        call = {
+            "method": method,
+            "path": path,
+            "json": copy.deepcopy(payload),
+            "headers": dict(self.headers),
+        }
+        self.calls.append(call)
+        MockNeurostoreSession.call_log.append(call)
+
+    def _response_payload(self, path, payload):
+        data = copy.deepcopy(payload) if payload is not None else {}
+        if path.startswith("/api/studysets"):
+            data.setdefault("id", self._next_id("studyset"))
+            data.setdefault(
+                "annotations",
+                [
+                    {
+                        "id": self._next_id("annotation"),
+                        "studyset": data.get("id"),
+                    }
+                ],
+            )
+            return data
+        if path.startswith("/api/annotations"):
+            data.setdefault("id", self._next_id("annotation"))
+            return data
+        if path.startswith("/api/studies"):
+            data.setdefault("id", self._next_id("study"))
+            return data
+        data.setdefault("id", self._next_id("resource"))
+        return data
+
+    def post(self, path, json=None):
+        self._record("POST", path, json)
+        return MockResponse(self._response_payload(path, json))
+
+    def put(self, path, json=None):
+        payload = copy.deepcopy(json) if json is not None else {}
+        payload.setdefault("id", self._extract_id(path))
+        self._record("PUT", path, json)
+        return MockResponse(payload)
+
+    def get(self, path):
+        self._record("GET", path)
+        return MockResponse({"metadata": {"test": "value"}})
+
+
+def mock_ns_session(access_token):
+    session = MockNeurostoreSession()
+    if access_token:
+        session.headers.update({"Authorization": access_token})
+    return session
+
+
+@pytest.fixture(scope="function")
+def reset_ns_session():
+    MockNeurostoreSession.reset()
+    yield
+    MockNeurostoreSession.reset()
 
 
 class MockPYNVClient:
@@ -159,6 +235,9 @@ def mock_ns(monkeysession):
     """mock neurostore api"""
     monkeysession.setattr(
         "neurosynth_compose.resources.neurostore.neurostore_session", mock_ns_session
+    )
+    monkeysession.setattr(
+        "neurosynth_compose.resources.analysis.neurostore_session", mock_ns_session
     )
     # Remove patch for tasks, only patch neurostore.neurostore_session
 
@@ -327,7 +406,11 @@ def add_users(real_app, real_db):
     from neurosynth_compose.resources.auth import decode_token
 
     domain = real_app.config["AUTH0_BASE_URL"].split("://")[1]
-    token = GetToken(domain)
+    token = GetToken(
+        domain,
+        real_app.config["AUTH0_CLIENT_ID"],
+        client_secret=real_app.config["AUTH0_CLIENT_SECRET"],
+    )
 
     users = [
         {
@@ -345,8 +428,6 @@ def add_users(real_app, real_db):
         name = u["name"]
         passw = u["password"]
         payload = token.login(
-            client_id=real_app.config["AUTH0_CLIENT_ID"],
-            client_secret=real_app.config["AUTH0_CLIENT_SECRET"],
             username=name + "@email.com",
             password=passw,
             realm="Username-Password-Authentication",

@@ -20,19 +20,11 @@ export const HotSettings: HotTableProps = {
     viewportRowRenderingOffset: 2,
     allowInsertColumn: false,
     viewportColumnRenderingOffset: 100,
-    fixedColumnsStart: 2,
+    fixedColumnsStart: 1,
     fillHandle: {
         direction: 'vertical',
         autoInsertRow: false,
     },
-};
-
-export const createStudyAnnotationColHeaders = (noteKeys: NoteKeyType[]): string[] => {
-    return [
-        'Analysis Name',
-        'Analysis Description',
-        ...noteKeys.map((x) => `<div class="${styles[x.type]}">${x.key}</div>`),
-    ];
 };
 
 export const createStudyAnnotationColumns = (noteKeys: NoteKeyType[], readonly: boolean) =>
@@ -57,14 +49,14 @@ export const createStudyAnnotationColumns = (noteKeys: NoteKeyType[], readonly: 
                     x.type === EPropertyType.BOOLEAN
                         ? 'checkbox'
                         : x.type === EPropertyType.NUMBER
-                        ? 'numeric'
-                        : 'text',
+                          ? 'numeric'
+                          : 'text',
                 validator:
                     x.type === EPropertyType.NUMBER
                         ? numericValidator
                         : x.type === EPropertyType.BOOLEAN
-                        ? booleanValidator
-                        : undefined,
+                          ? booleanValidator
+                          : undefined,
             } as ColumnSettings;
         }),
     ] as ColumnSettings[];

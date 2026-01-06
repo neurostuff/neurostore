@@ -1,0 +1,12 @@
+id,product_name,category,price,quantity,last_updated
+1,Widget Alpha,Electronics,29.99,45,2023-01-15
+2,Gadget Beta,Home & Garden,15.50,120,2023-02-20
+3,Tool Gamma,Automotive,89.99,23,2023-03-10
+4,Device Delta,Sports,44.25,67,2023-04-05
+5,Item Epsilon,Books,12.99,200,2023-05-18
+6,Product Zeta,Toys,33.75,88,2023-06-22
+7,Object Theta,Clothing,19.99,145,2023-07-30
+8,Thing Iota,Food,8.50,300,2023-08-12
+9,Article Kappa,Health,56.00,42,2023-09-25
+10,Commodity Lambda,Beauty,27.99,91,2023-10-01
+

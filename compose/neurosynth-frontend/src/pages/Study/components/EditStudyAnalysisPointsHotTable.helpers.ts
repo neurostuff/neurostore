@@ -76,7 +76,7 @@ export const EditStudyAnalysisPointsDefaultConfig: HotTableProps = {
     undo: false,
     manualColumnResize: false,
     allowInsertColumn: false,
-    colWidths: [50, 50, 50, 150, 150, 100],
+    colWidths: [50, 50, 50, 100, 140, 100],
 };
 
 export const getHotTableInsertionIndices = (selectedCoords: [number, number, number, number][]) => {

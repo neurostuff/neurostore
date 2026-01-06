@@ -15,6 +15,10 @@ from .analysis import (
 )
 
 from .users import UsersView
+from .meta_analysis_jobs import (
+    MetaAnalysisJobsResource,
+    MetaAnalysisJobResource,
+)
 
 __all__ = [
     "ConditionsResource",
@@ -31,4 +35,6 @@ __all__ = [
     "UsersView",
     "NeurostoreStudiesView",
     "ProjectsView",
+    "MetaAnalysisJobsResource",
+    "MetaAnalysisJobResource",
 ]

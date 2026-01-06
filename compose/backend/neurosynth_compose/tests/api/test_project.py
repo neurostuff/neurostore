@@ -2,6 +2,8 @@ from neurosynth_compose.models import Project, MetaAnalysisResult, User
 from neurosynth_compose.schemas import MetaAnalysisSchema
 from sqlalchemy import select
 
+from ..conftest import MockNeurostoreSession
+
 
 def test_get_all_projects(session, app, auth_client, user_data):
     projects = session.execute(select(Project)).scalars().all()
@@ -88,7 +90,7 @@ def test_delete_project(session, app, auth_client, user_data):
 
     good_delete = auth_client.delete(f"/api/projects/{project.id}")
 
-    assert good_delete.status_code == 200
+    assert good_delete.status_code == 204
 
 
 def test_total_count(session, app, auth_client, user_data):
@@ -115,3 +117,113 @@ def test_search_capabilities(session, app, auth_client, user_data):
     search_term = "test"
     response = auth_client.get(f"/api/projects?search={search_term}")
     assert response.status_code == 200
+
+
+def test_clone_public_project_creates_new_project(
+    session, auth_client, user_data, reset_ns_session, mock_ns
+):
+    source_project = (
+        session.execute(
+            select(Project)
+            .join(Project.user)
+            .where(User.external_id != auth_client.username)
+            .where(Project.public == True)  # noqa: E712
+        )
+        .scalars()
+        .first()
+    )
+    assert source_project is not None
+
+    source_meta_ids = [ma.id for ma in source_project.meta_analyses]
+    response = auth_client.post(f"/api/projects?source_id={source_project.id}", data={})
+
+    assert response.status_code == 200
+    payload = response.json
+
+    assert payload["id"] != source_project.id
+    assert payload["user"] == auth_client.username
+    assert len(payload["meta_analyses"]) == len(source_meta_ids)
+    assert set(payload["meta_analyses"]) != set(source_meta_ids)
+
+    cloned_project = (
+        session.execute(select(Project).where(Project.id == payload["id"]))
+        .scalars()
+        .one()
+    )
+    assert cloned_project.user.external_id == auth_client.username
+    assert (
+        cloned_project.studyset_id
+        and cloned_project.studyset_id != source_project.studyset_id
+    )
+    assert (
+        cloned_project.annotation_id
+        and cloned_project.annotation_id != source_project.annotation_id
+    )
+
+    expected_auth = f"Bearer {auth_client.token}"
+    auth_headers = {
+        call["headers"].get("Authorization")
+        for call in MockNeurostoreSession.call_log
+        if call["method"] == "POST"
+    }
+    assert expected_auth in auth_headers
+
+
+def test_clone_private_project_forbidden(
+    session, auth_client, user_data, reset_ns_session, mock_ns
+):
+    private_project = (
+        session.execute(
+            select(Project)
+            .join(Project.user)
+            .where(User.external_id != auth_client.username)
+            .where(Project.public == False)  # noqa: E712
+        )
+        .scalars()
+        .first()
+    )
+    assert private_project is not None
+
+    resp = auth_client.post(f"/api/projects?source_id={private_project.id}", data={})
+
+    assert resp.status_code == 403
+
+
+def test_clone_public_project_without_annotations(
+    session, auth_client, user_data, reset_ns_session, mock_ns
+):
+    source_project = (
+        session.execute(
+            select(Project)
+            .join(Project.user)
+            .where(User.external_id != auth_client.username)
+            .where(Project.public == True)  # noqa: E712
+        )
+        .scalars()
+        .first()
+    )
+    assert source_project is not None
+    assert source_project.annotation is not None
+
+    response = auth_client.post(
+        f"/api/projects?source_id={source_project.id}&copy_annotations=false",
+        data={},
+    )
+
+    assert response.status_code == 200
+    payload = response.json
+    assert payload["annotation"] is None
+
+    cloned_project = (
+        session.execute(select(Project).where(Project.id == payload["id"]))
+        .scalars()
+        .one()
+    )
+    assert cloned_project.annotation_id is None
+
+    # ensure query parameter propagated
+    assert any(
+        call["path"].endswith("copy_annotations=false")
+        for call in MockNeurostoreSession.call_log
+        if call["method"] == "POST" and call["path"].startswith("/api/studysets")
+    )

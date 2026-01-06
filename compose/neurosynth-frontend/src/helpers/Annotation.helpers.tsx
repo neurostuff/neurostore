@@ -1,6 +1,6 @@
 import { AxiosResponse } from 'axios';
 import { NoteCollectionReturn } from 'neurostore-typescript-sdk';
-import API, { NeurostoreAnnotation } from 'utils/api';
+import API, { NeurostoreAnnotation } from 'api/api.config';
 
 export const setAnalysesInAnnotationAsIncluded = async (annotationId: string) => {
     try {
@@ -8,7 +8,7 @@ export const setAnalysesInAnnotationAsIncluded = async (annotationId: string) =>
             annotationId
         )) as AxiosResponse<NeurostoreAnnotation>;
 
-        let notes = (annotation.data.notes || []) as NoteCollectionReturn[];
+        const notes = (annotation.data.notes || []) as NoteCollectionReturn[];
 
         await API.NeurostoreServices.AnnotationsService.annotationsIdPut(annotationId, {
             notes: notes.map((x) => ({
@@ -18,7 +18,10 @@ export const setAnalysesInAnnotationAsIncluded = async (annotationId: string) =>
                     ...x.note,
                     // included can be null meaning it has not been instantiated. We only want to set it to true
                     // if it has not been instantiated as that will overwrite the value is the user previously set it to false
-                    included: (x.note as any)?.included === false ? false : true,
+                    // null ?? true === true
+                    // undefined ?? true === true
+                    // false ?? true === false
+                    included: (x.note as any)?.included ?? true,
                 },
             })),
         });

@@ -1,9 +1,10 @@
 import useIsMounted from './useIsMounted';
 import useInputValidation from './useInputValidation';
-import useGetToken from './useGetToken';
+import useConfigureAPIWithAuth from './useConfigureAPIWithAuth';
 import useGuard from './useGuard';
 import useGetTour from './useGetTour';
 import useGetWindowHeight from './useGetWindowHeight';
+import useMeasure from './useMeasure';
 
 import useCreateAlgorithmSpecification from './metaAnalyses/useCreateAlgorithmSpecification';
 import useGetMetaAnalysesByIds from './metaAnalyses/useGetMetaAnalysesByIds';
@@ -28,7 +29,6 @@ import useGetStudysetById from './studysets/useGetStudysetById';
 import useCreateAnnotation from './analyses/useCreateAnnotation';
 import useCreateStudy from './studies/useCreateStudy';
 import useCreateProject from './projects/useCreateProject';
-import useGetStudysets from './studysets/useGetStudysets';
 import useDeleteStudyset from './studysets/useDeleteStudyset';
 import useGetBaseStudies from './studies/useGetBaseStudies';
 import useGetStudyById from './studies/useGetStudyById';
@@ -46,10 +46,11 @@ export {
     useGetExtractionSummary,
     useIsMounted,
     useInputValidation,
-    useGetToken,
+    useConfigureAPIWithAuth as useGetToken,
     useGuard,
     useGetTour,
     useGetWindowHeight,
+    useMeasure,
     useGetFullText,
     useUserCanEdit,
     useGetBaseStudyById,
@@ -67,7 +68,6 @@ export {
     // META-ANALYSIS RESULTS
     useGetMetaAnalysisResultById,
     // STUDYSETS
-    useGetStudysets,
     useGetStudysetById,
     useCreateStudyset,
     useDeleteStudyset,

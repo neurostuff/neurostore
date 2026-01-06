@@ -37,11 +37,7 @@ const EditMetadataValue: React.FC<IEditMetadataValue> = (props) => {
             <FormGroup>
                 <FormControlLabel
                     disabled={disabled}
-                    sx={
-                        value
-                            ? EditMetadataValueStyles.checkedTrue
-                            : EditMetadataValueStyles.checkedFalse
-                    }
+                    sx={value ? EditMetadataValueStyles.checkedTrue : EditMetadataValueStyles.checkedFalse}
                     control={
                         <Switch
                             onChange={(event, checked) => {

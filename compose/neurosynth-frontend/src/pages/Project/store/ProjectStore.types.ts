@@ -150,7 +150,7 @@ export type ProjectStoreActions = {
     ) => void;
     addTagToStub: (columnIndex: number, stubId: string, newTag: ITag) => void;
     removeTagFromStub: (columnIndex: number, stubId: string, tagId: string) => void;
-    setExclusionForStub: (columnIndex: number, stubId: string, exclusion: ITag | null) => void;
+    setExclusionForStub: (columnIndex: number, stubId: string, exclusionId: string | null) => void;
     promoteStub: (columnIndex: number, stubId: string) => void;
     demoteStub: (columnIndex: number, stubId: string) => void;
     promoteAllUncategorized: () => void; // TODO: improve this
@@ -159,6 +159,7 @@ export type ProjectStoreActions = {
     replaceStudyListStatusId: (idToFindAndReplace: string, replaceWithId: string) => void;
     setGivenStudyStatusesAsComplete: (studyIdList: string[]) => void;
     allowEditMetaAnalyses: (allowEditMetaAnalysis: boolean) => void;
+    updateExclusionTag: (id: string, newName: string) => void;
 };
 
 export type TProjectStore = INeurosynthProjectReturn & ProjectStoreActions & { metadata: ProjectStoreMetadata };

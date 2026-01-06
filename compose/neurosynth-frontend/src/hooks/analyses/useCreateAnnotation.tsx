@@ -1,7 +1,7 @@
 import { AxiosError, AxiosResponse } from 'axios';
 import { useSnackbar } from 'notistack';
 import { useMutation, useQueryClient } from 'react-query';
-import API, { NeurostoreAnnotation } from 'utils/api';
+import API, { NeurostoreAnnotation } from 'api/api.config';
 
 const useCreateAnnotation = () => {
     const queryClient = useQueryClient();

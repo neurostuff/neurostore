@@ -15,13 +15,14 @@ from ..models import (
     Annotation,
     AnnotationAnalysis,
     AnalysisConditions,
+    StudysetStudy,
     Point,
     Image,
     Entity,
 )
 from ..ingest.extracted_features import ingest_feature
-from auth0.v3.authentication import GetToken
-from auth0.v3.authentication.users import Users
+from auth0.authentication import GetToken
+from auth0.authentication.users import Users
 from unittest.mock import patch
 
 
@@ -29,6 +30,7 @@ import shortuuid
 import vcr
 
 import logging
+from .utils import ordered_note_keys
 
 LOGGER = logging.getLogger(__name__)
 
@@ -377,7 +379,11 @@ def add_users(real_app, real_db):
     from neurostore.resources.auth import decode_token
 
     domain = real_app.config["AUTH0_BASE_URL"].split("://")[1]
-    token = GetToken(domain)
+    token = GetToken(
+        domain,
+        real_app.config["AUTH0_CLIENT_ID"],
+        real_app.config["AUTH0_CLIENT_SECRET"],
+    )
 
     users = [
         {
@@ -395,8 +401,6 @@ def add_users(real_app, real_db):
         name = u["name"]
         passw = u["password"]
         payload = token.login(
-            client_id=real_app.config["AUTH0_CLIENT_ID"],
-            client_secret=real_app.config["AUTH0_CLIENT_SECRET"],
             username=name + "@email.com",
             password=passw,
             realm="Username-Password-Authentication",
@@ -567,8 +571,8 @@ def user_data(session, mock_add_users):
                     # put together the study
                     study.analyses = [analysis]
 
-                    # put together the studyset
-                    studyset.studies = [study]
+                    # put together the studyset via association rows
+                    studyset.studyset_studies = [StudysetStudy(study=study)]
 
                     if public:
                         public_studies.append(study)
@@ -578,7 +582,9 @@ def user_data(session, mock_add_users):
                     to_commit.append(base_study)
 
         # add public studyset to commit
-        public_studyset.studies = public_studies
+        public_studyset.studyset_studies = [
+            StudysetStudy(study=study) for study in public_studies
+        ]
         to_commit.append(public_studyset)
 
         session.add_all(to_commit)
@@ -600,7 +606,7 @@ def user_data(session, mock_add_users):
             annotation = Annotation(
                 name=name + "annotation",
                 source="neurostore",
-                note_keys={"food": "string"},
+                note_keys=ordered_note_keys({"food": "string"}),
                 studyset=studyset,
                 user=user,
             )
@@ -637,13 +643,13 @@ def simple_neurosynth_annotation(session, ingest_neurosynth):
                 )
             )
 
-        smol_annot = Annotation(
-            name="smol " + annot.name,
-            source="neurostore",
-            studyset=annot.studyset,
-            note_keys={"animal": "number"},
-            annotation_analyses=smol_notes,
-        )
+            smol_annot = Annotation(
+                name="smol " + annot.name,
+                source="neurostore",
+                studyset=annot.studyset,
+                note_keys=ordered_note_keys({"animal": "number"}),
+                annotation_analyses=smol_notes,
+            )
     session.add(smol_annot)
     session.commit()
 

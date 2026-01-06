@@ -1,7 +1,7 @@
 import { AxiosError, AxiosResponse } from 'axios';
 import { AnalysisReturn, StudyReturn } from 'neurostore-typescript-sdk';
 import { useQuery } from 'react-query';
-import API from 'utils/api';
+import API from 'api/api.config';
 
 const useGetStudyById = (studyId: string | undefined) => {
     return useQuery<

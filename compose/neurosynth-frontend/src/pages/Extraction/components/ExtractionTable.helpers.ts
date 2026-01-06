@@ -17,7 +17,7 @@ export const retrieveExtractionTableState = (projectId: string | undefined) => {
     if (!projectId) return null;
     try {
         const parsedState = JSON.parse(
-            window.sessionStorage.getItem(`${projectId}-extraction-table`) || ''
+            window.sessionStorage.getItem(`${projectId}-extraction-table`) ?? '{}'
         ) as IExtractionTableState | null;
 
         if (!parsedState?.columnFilters || !parsedState?.sorting || !parsedState?.studies || !parsedState?.pagination) {
@@ -30,7 +30,7 @@ export const retrieveExtractionTableState = (projectId: string | undefined) => {
         } else {
             return parsedState;
         }
-    } catch (e) {
+    } catch {
         return null;
     }
 };

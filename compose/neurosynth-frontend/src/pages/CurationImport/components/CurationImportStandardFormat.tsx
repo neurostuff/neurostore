@@ -163,7 +163,7 @@ const CurationImportStandardFormat: React.FC<{
             }));
 
             const reader = new FileReader();
-            reader.onload = function (e) {
+            reader.onload = function () {
                 const content = reader.result;
 
                 if (content && typeof content === 'string') {

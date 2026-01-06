@@ -90,7 +90,7 @@ def file_upload_neurovault(self, fpath, id):
 def create_or_update_neurostore_analysis(
     self, ns_analysis_id, cluster_table, nv_collection_id, access_token
 ):
-    from auth0.v3.authentication.get_token import GetToken
+    from auth0.authentication.get_token import GetToken
     import pandas as pd
     from .neurostore import neurostore_session
 
@@ -107,10 +107,12 @@ def create_or_update_neurostore_analysis(
         # use the client to authenticate if user credentials were not used
         if not access_token:
             domain = app.config["AUTH0_BASE_URL"].lstrip("https://")
-            g_token = GetToken(domain)
-            token_resp = g_token.client_credentials(
-                client_id=app.config["AUTH0_CLIENT_ID"],
+            g_token = GetToken(
+                domain,
+                app.config["AUTH0_CLIENT_ID"],
                 client_secret=app.config["AUTH0_CLIENT_SECRET"],
+            )
+            token_resp = g_token.client_credentials(
                 audience=app.config["AUTH0_API_AUDIENCE"],
             )
             access_token = " ".join(

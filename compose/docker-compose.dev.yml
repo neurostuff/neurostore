@@ -11,10 +11,9 @@ services:
   compose:
     expose:
       - "8000"
-    command: /usr/local/bin/gunicorn -w 2 -b :8000 neurosynth_compose.core:app --log-level debug --timeout 300 --reload
+    command: /usr/local/bin/gunicorn -k uvicorn.workers.UvicornWorker --reload -w 2 -b :8000 neurosynth_compose.core:asgi_app --log-level debug --timeout 300
     restart: "no"
   
   compose_worker:
     volumes:
       - ./neurosynth_compose:/usr/local/lib/python3.10/site-packages/neurosynth_compose
-

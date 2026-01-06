@@ -14,6 +14,9 @@ from .analysis import (
     ProjectSchema,
     ResultInitSchema,
     ResultUploadSchema,
+    MetaAnalysisJobRequestSchema,
+    MetaAnalysisJobResponseSchema,
+    MetaAnalysisJobLogSchema,
 )
 from .users import UserSchema
 
@@ -35,4 +38,7 @@ __all__ = [
     "NeurostoreStudySchema",
     "ProjectSchema",
     "UserSchema",
+    "MetaAnalysisJobRequestSchema",
+    "MetaAnalysisJobResponseSchema",
+    "MetaAnalysisJobLogSchema",
 ]

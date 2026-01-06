@@ -1,6 +1,6 @@
 import { Box, Button, Tooltip, Typography } from '@mui/material';
+import LoadingStateIndicatorProject from 'components/LoadingStateIndicator/LoadingStateIndicatorProject';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs';
-import ProjectIsLoadingText from 'components/ProjectIsLoadingText';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import TextEdit from 'components/TextEdit/TextEdit';
 import { useGetStudysetById, useUpdateStudyset } from 'hooks';
@@ -20,7 +20,6 @@ import {
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import ExtractionTable from './components/ExtractionTable';
-import LoadingStateIndicatorProject from 'components/LoadingStateIndicator/LoadingStateIndicatorProject';
 
 export enum EExtractionStatus {
     'COMPLETED' = 'completed',
@@ -28,7 +27,7 @@ export enum EExtractionStatus {
     'UNCATEGORIZED' = 'uncategorized',
 }
 
-const ExtractionPage: React.FC = (props) => {
+const ExtractionPage: React.FC = () => {
     const { projectId } = useParams<{ projectId: string | undefined }>();
     const navigate = useNavigate();
 
@@ -159,7 +158,11 @@ const ExtractionPage: React.FC = (props) => {
                         </Tooltip>
                     </Box>
                 </Box>
-                {showReconcilePrompt && <ExtractionOutOfSync />}
+                {showReconcilePrompt && (
+                    <Box sx={{ my: 1 }}>
+                        <ExtractionOutOfSync />
+                    </Box>
+                )}
                 <Box sx={{ flexGrow: 1 }}>
                     <Box>
                         <TextEdit

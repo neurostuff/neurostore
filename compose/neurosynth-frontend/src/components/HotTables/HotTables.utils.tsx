@@ -4,31 +4,41 @@ import { CellValue } from 'handsontable/common';
 
 export const noteKeyObjToArr = (noteKeys?: object | null): NoteKeyType[] => {
     if (!noteKeys) return [];
-    const noteKeyTypes = noteKeys as { [key: string]: EPropertyType };
-    const arr = Object.entries(noteKeyTypes).map(([key, type]) => ({
-        key,
-        type,
-    }));
+    const noteKeyTypes = noteKeys as { [key: string]: { type: EPropertyType; order?: number } };
+    const arr = Object.entries(noteKeyTypes)
+        .map(([key, descriptor]) => {
+            if (!descriptor?.type) throw new Error('Invalid note_keys descriptor: missing type');
+            return {
+                type: descriptor.type,
+                key,
+                order: descriptor.order ?? 0,
+            };
+        })
+        .sort((a, b) => a.order - b.order || a.key.localeCompare(b.key))
+        .map((noteKey, index) => ({ ...noteKey, order: index }));
     return arr;
 };
 
-export const noteKeyArrToObj = (noteKeyArr: NoteKeyType[]): { [key: string]: EPropertyType } => {
-    const noteKeyObj: { [key: string]: EPropertyType } = noteKeyArr.reduce((acc, curr) => {
-        acc[curr.key] = curr.type;
-        return acc;
-    }, {} as { [key: string]: EPropertyType });
+export const noteKeyArrToObj = (
+    noteKeyArr: NoteKeyType[]
+): { [key: string]: { type: EPropertyType; order: number } } => {
+    const noteKeyObj = noteKeyArr.reduce(
+        (acc, curr, index) => {
+            acc[curr.key] = {
+                type: curr.type,
+                order: curr.order ?? index,
+            };
+            return acc;
+        },
+        {} as { [key: string]: { type: EPropertyType; order: number } }
+    );
 
     return noteKeyObj;
 };
 
 export const booleanValidator = (value: CellValue, callback: (isValid: boolean) => void) => {
     const isValid =
-        value === true ||
-        value === false ||
-        value === 'true' ||
-        value === 'false' ||
-        value === null ||
-        value === '';
+        value === true || value === false || value === 'true' || value === 'false' || value === null || value === '';
     callback(isValid);
 };
 
@@ -41,7 +51,7 @@ export const replaceString = (val: string) => {
 export const stripTags = (stringWhichMayHaveHTML: any) => {
     if (typeof stringWhichMayHaveHTML !== 'string') return '';
 
-    let doc = new DOMParser().parseFromString(stringWhichMayHaveHTML, 'text/html');
+    const doc = new DOMParser().parseFromString(stringWhichMayHaveHTML, 'text/html');
     return doc.body.textContent || '';
 };
 

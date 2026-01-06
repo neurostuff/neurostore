@@ -306,6 +306,7 @@ const ExtractionTable: React.FC = () => {
                         sx={{ marginLeft: '4px' }}
                         color="success"
                         disableElevation
+                        disabled={!usercanEdit}
                         onClick={() => setConfirmationDialogIsOpen(true)}
                     >
                         Mark all as complete
@@ -346,6 +347,14 @@ const ExtractionTable: React.FC = () => {
                                 className={styles[studyStatusMap.get(row.original.id || '')?.status ?? 'uncategorized']}
                                 onClick={() => {
                                     if (!row.original.id || !projectId) return;
+
+                                    updateExtractionTableState(projectId, {
+                                        columnFilters: table.getState().columnFilters,
+                                        sorting: table.getState().sorting,
+                                        pagination: table.getState().pagination,
+                                        studies: table.getSortedRowModel().rows.map((x) => x.original.id as string),
+                                    });
+
                                     if (usercanEdit) {
                                         navigate(`/projects/${projectId}/extraction/studies/${row.original.id}/edit`);
                                     } else {

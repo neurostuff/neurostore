@@ -163,9 +163,7 @@ def test_condition_cloning_cross_user_permissions(auth_client, session):
     )
 
     # Condition should still be owned by original user (read-only reference)
-    assert (
-        cloned_condition.user_id == condition_owner.external_id
-    ), (
+    assert cloned_condition.user_id == condition_owner.external_id, (
         f"Condition ownership changed! Expected {condition_owner.external_id}, "
         f"got {cloned_condition.user_id}"
     )

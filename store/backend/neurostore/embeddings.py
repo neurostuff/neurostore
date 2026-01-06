@@ -85,6 +85,10 @@ def get_embedding(text: str, dimensions: Optional[int] = None) -> List[float]:
                       or the response is malformed.
         ValueError: If `dimension` is provided but not an int.
     """
+    # Validate dimensions first so tests expecting a ValueError for invalid
+    # dimension values get that error even when OPENAI_API_KEY is not set.
+    if dimensions is not None and not isinstance(dimensions, int):
+        raise ValueError("dimensions must be an int when provided")
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
         raise RuntimeError("OPENAI_API_KEY not set")

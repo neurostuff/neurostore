@@ -1,9 +1,19 @@
 import string
+from collections import Counter, OrderedDict
+from copy import deepcopy
+from datetime import datetime
 from sqlalchemy import func, text
+from sqlalchemy.exc import SQLAlchemyError
 
 from pgvector.sqlalchemy import Vector
-from flask import request, abort
+from flask import request
 from webargs.flaskparser import parser
+from neurostore.exceptions.utils.error_helpers import (
+    abort_validation,
+    abort_not_found,
+    abort_unprocessable,
+)
+from neurostore.exceptions.factories import make_field_error
 from webargs import fields
 import sqlalchemy.sql.expression as sae
 from sqlalchemy.orm import (
@@ -11,6 +21,7 @@ from sqlalchemy.orm import (
     defaultload,
     raiseload,
     selectinload,
+    load_only,
 )
 import sqlalchemy as sa
 from sqlalchemy import select
@@ -26,6 +37,7 @@ from ..models import (
     User,
     Studyset,
     Study,
+    Table,
     Image,
     Point,
     PointValue,
@@ -39,7 +51,7 @@ from ..models import (
     PipelineConfig,
     Pipeline,
 )
-from ..models.data import StudysetStudy, BaseStudy
+from ..models.data import StudysetStudy, BaseStudy, _check_type
 from ..utils import parse_json_filter, build_jsonpath
 
 
@@ -48,6 +60,7 @@ from ..schemas import (
     AnalysisConditionSchema,
     StudysetStudySchema,
     EntitySchema,
+    PipelineStudyResultSchema,
 )
 from ..schemas.data import StudysetSnapshot
 
@@ -58,6 +71,7 @@ __all__ = [
     "BaseStudiesView",
     "StudiesView",
     "AnalysesView",
+    "TablesView",
     "ConditionsView",
     "ImagesView",
     "PointsView",
@@ -81,6 +95,7 @@ class StudysetsView(ObjectView, ListView):
     _view_fields = {
         **LIST_CLONE_ARGS,
         **LIST_NESTED_ARGS,
+        "copy_annotations": fields.Boolean(load_default=True),
     }
     # reorg int o2m and m2o
     _o2m = {"studies": "StudiesView", "annotations": "AnnotationsView"}
@@ -146,6 +161,15 @@ class StudysetsView(ObjectView, ListView):
 
     def eager_load(self, q, args=None):
         args = args or {}
+        q = q.options(
+            selectinload(Studyset.studyset_studies).options(
+                load_only(
+                    StudysetStudy.study_id,
+                    StudysetStudy.studyset_id,
+                    StudysetStudy.curation_stub_uuid,
+                )
+            )
+        )
         if args.get("nested"):
             q = q.options(
                 selectinload(Studyset.studies).options(
@@ -207,6 +231,211 @@ class StudysetsView(ObjectView, ListView):
             return content
         return super().serialize_records(records, args)
 
+    def post(self):
+        args = parser.parse(self._user_args, request, location="query")
+        copy_annotations = args.pop("copy_annotations", True)
+        source_id = args.get("source_id")
+
+        if not source_id:
+            return super().post()
+
+        source = args.get("source") or "neurostore"
+        if source != "neurostore":
+            field_err = make_field_error("source", source, valid_options=["neurostore"])
+            abort_unprocessable(
+                "invalid source, choose from: 'neurostore'", [field_err]
+            )
+
+        unknown = self.__class__._schema.opts.unknown
+        data = parser.parse(
+            self.__class__._schema(exclude=("id",)), request, unknown=unknown
+        )
+
+        clone_payload, source_record = self._build_clone_payload(source_id, data)
+
+        # ensure nested serialization when cloning
+        args["nested"] = bool(args.get("nested") or request.args.get("source_id"))
+
+        with db.session.no_autoflush:
+            record = self.__class__.update_or_create(clone_payload)
+
+        unique_ids = self.get_affected_ids([record.id])
+        clear_cache(unique_ids)
+
+        db.session.flush()
+
+        self.update_base_studies(unique_ids.get("base-studies"))
+
+        try:
+            if copy_annotations:
+                self._clone_annotations(source_record, record)
+            self.update_annotations(unique_ids.get("annotations"))
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            abort_validation(str(e))
+
+        response_context = dict(args)
+        response = self.__class__._schema(context=response_context).dump(record)
+
+        db.session.commit()
+
+        return response
+
+    @classmethod
+    def update_or_create(cls, data, id=None, user=None, record=None, flush=True):
+        """
+        Extend base behavior to attach optional curation_stub_uuid to studyset-study links.
+        """
+        stub_map = data.pop("curation_stub_map", {}) or {}
+        record = super().update_or_create(
+            data, id=id, user=user, record=record, flush=flush
+        )
+
+        if getattr(record, "studyset_studies", None) is not None:
+            # Ensure associations match the current studies and apply stub mappings.
+            current_ids = {
+                s.id for s in getattr(record, "studies", []) if getattr(s, "id", None)
+            }
+
+            # Load existing associations directly to avoid
+            # duplicate pending rows in the relationship.
+            existing = {
+                assoc.study_id: assoc
+                for assoc in StudysetStudy.query.filter_by(studyset_id=record.id).all()
+            }
+
+            # Remove stale associations in bulk
+            if existing:
+                stale_ids = set(existing.keys()) - current_ids
+                if stale_ids:
+                    (
+                        StudysetStudy.query.filter_by(studyset_id=record.id)
+                        .filter(StudysetStudy.study_id.in_(stale_ids))
+                        .delete(synchronize_session=False)
+                    )
+                    for sid in stale_ids:
+                        existing.pop(sid, None)
+
+            # Ensure each study has an association and apply stub UUIDs
+            for study_id in current_ids:
+                assoc = existing.get(study_id)
+                if not assoc:
+                    assoc = StudysetStudy(
+                        study_id=study_id,
+                        studyset_id=record.id,
+                        curation_stub_uuid=None,
+                    )
+                    db.session.add(assoc)
+                    existing[study_id] = assoc
+                if study_id in stub_map:
+                    assoc.curation_stub_uuid = stub_map[study_id]
+
+            # Sync the relationship collection to the de-duplicated set for serialization.
+            record.studyset_studies = list(existing.values())
+
+        return record
+
+    def _build_clone_payload(self, source_id, override_data):
+        source_record = (
+            Studyset.query.options(
+                selectinload(Studyset.studies),
+                selectinload(Studyset.annotations).options(
+                    selectinload(Annotation.annotation_analyses)
+                ),
+            )
+            .filter_by(id=source_id)
+            .first()
+        )
+
+        if source_record is None:
+            abort_not_found(Studyset.__name__, source_id)
+
+        payload = {
+            "name": source_record.name,
+            "description": source_record.description,
+            "publication": source_record.publication,
+            "doi": source_record.doi,
+            "pmid": source_record.pmid,
+            "authors": source_record.authors,
+            "metadata_": (
+                deepcopy(source_record.metadata_)
+                if source_record.metadata_ is not None
+                else None
+            ),
+            "public": source_record.public,
+            "studies": [{"id": study.id} for study in source_record.studies],
+            "source": "neurostore",
+            "source_id": self._resolve_neurostore_origin(source_record),
+            "source_updated_at": source_record.updated_at or source_record.created_at,
+        }
+
+        if payload.get("metadata_") is None:
+            payload.pop("metadata_", None)
+
+        if override_data:
+            payload.update(override_data)
+
+        return payload, source_record
+
+    def _clone_annotations(self, source_record, cloned_record):
+        if not source_record.annotations:
+            return
+
+        owner_id = cloned_record.user_id
+
+        for annotation in source_record.annotations:
+            clone_annotation = Annotation(
+                name=annotation.name,
+                description=annotation.description,
+                source="neurostore",
+                source_id=self._resolve_neurostore_origin(annotation),
+                source_updated_at=annotation.updated_at or annotation.created_at,
+                user_id=owner_id,
+                metadata_=(
+                    deepcopy(annotation.metadata_) if annotation.metadata_ else None
+                ),
+                public=annotation.public,
+                note_keys=(
+                    deepcopy(annotation.note_keys) if annotation.note_keys else {}
+                ),
+            )
+            clone_annotation.studyset = cloned_record
+            db.session.add(clone_annotation)
+            db.session.flush()
+
+            analyses_to_create = []
+            for aa in annotation.annotation_analyses:
+                analyses_to_create.append(
+                    AnnotationAnalysis(
+                        annotation_id=clone_annotation.id,
+                        analysis_id=aa.analysis_id,
+                        note=deepcopy(aa.note) if aa.note else {},
+                        user_id=owner_id,
+                        study_id=aa.study_id,
+                        studyset_id=cloned_record.id,
+                    )
+                )
+
+            if analyses_to_create:
+                db.session.add_all(analyses_to_create)
+
+    @staticmethod
+    def _resolve_neurostore_origin(record):
+        source_id = record.id
+        parent_source_id = record.source_id
+        parent_source = getattr(record, "source", None)
+        Model = type(record)
+
+        while parent_source_id is not None and parent_source == "neurostore":
+            source_id = parent_source_id
+            parent = Model.query.filter_by(id=parent_source_id).first()
+            if parent is None:
+                break
+            parent_source_id = parent.source_id
+            parent_source = getattr(parent, "source", None)
+
+        return source_id
+
 
 @view_maker
 class AnnotationsView(ObjectView, ListView):
@@ -227,6 +456,84 @@ class AnnotationsView(ObjectView, ListView):
             "annotations": set(ids),
         }
         return unique_ids
+
+    @staticmethod
+    def _ordered_note_keys(note_keys):
+        if not note_keys:
+            return []
+        keys = list(note_keys.keys())
+        alphabetical = sorted(keys)
+        if keys == alphabetical:
+            return alphabetical
+        return keys
+
+    @classmethod
+    def _normalize_note_keys(cls, note_keys):
+        if note_keys is None:
+            return None
+        if not isinstance(note_keys, dict):
+            abort_validation("`note_keys` must be an object.")
+
+        ordered_keys = cls._ordered_note_keys(note_keys)
+        normalized = OrderedDict()
+        used_orders = set()
+        next_order = 0
+
+        for key in ordered_keys:
+            descriptor = note_keys.get(key) or {}
+            note_type = descriptor.get("type")
+            if note_type not in {"string", "number", "boolean"}:
+                abort_validation(
+                    "Invalid `type` for note_keys entry "
+                    f"'{key}', choose from: ['boolean', 'number', 'string']."
+                )
+
+            order = descriptor.get("order")
+            if isinstance(order, bool) or (
+                order is not None and not isinstance(order, int)
+            ):
+                order = None
+
+            if isinstance(order, int) and order not in used_orders:
+                used_orders.add(order)
+                if order >= next_order:
+                    next_order = order + 1
+            else:
+                while next_order in used_orders:
+                    next_order += 1
+                order = next_order
+                used_orders.add(order)
+                next_order += 1
+
+            normalized[key] = {"type": note_type, "order": order}
+
+        return normalized
+
+    @classmethod
+    def _merge_note_keys(cls, existing, additions):
+        """
+        additions is a mapping of key -> type
+        """
+        base = cls._normalize_note_keys(existing or {}) or OrderedDict()
+        used_orders = {v.get("order") for v in base.values() if isinstance(v, dict)}
+        used_orders = {o for o in used_orders if isinstance(o, int)}
+        next_order = max(used_orders, default=-1) + 1
+
+        for key, value_type in additions.items():
+            if key in base:
+                descriptor = base[key] or {}
+                descriptor["type"] = value_type or descriptor.get("type") or "string"
+                base[key] = descriptor
+                continue
+
+            descriptor = {
+                "type": value_type or "string",
+                "order": next_order,
+            }
+            base[key] = descriptor
+            next_order += 1
+
+        return base
 
     @classmethod
     def load_nested_records(cls, data, record=None):
@@ -276,7 +583,12 @@ class AnnotationsView(ObjectView, ListView):
             )
             .options(
                 joinedload(AnnotationAnalysis.analysis)
-                .load_only(Analysis.id, Analysis.name)
+                .load_only(
+                    Analysis.id,
+                    Analysis.name,
+                    Analysis.order,
+                    Analysis.created_at,
+                )
                 .options(raiseload("*", sql_only=True)),
                 joinedload(AnnotationAnalysis.studyset_study).options(
                     joinedload(StudysetStudy.study)
@@ -317,24 +629,25 @@ class AnnotationsView(ObjectView, ListView):
         if source == "neurostore":
             return cls.load_from_neurostore(source_id, data)
         else:
-            abort(
-                422,
-                {
-                    "message": "invalid source, choose from: 'neurostore'",
-                    "errors": f"source: {source}",
-                },
+            field_err = make_field_error("source", source, valid_options=["neurostore"])
+            abort_unprocessable(
+                "invalid source, choose from: 'neurostore'", [field_err]
             )
 
     @classmethod
     def load_from_neurostore(cls, source_id, data=None):
         q = cls._model.query.filter_by(id=source_id)
         q = cls().join_tables(q, {})
-        annotation = q.first_or_404()
+        annotation = q.first()
+        if annotation is None:
+            abort_not_found(cls._model.__name__, source_id)
         parent_source_id = annotation.source_id
         parent_source = annotation.source
         while parent_source_id is not None and parent_source == "neurostore":
             source_id = parent_source_id
-            parent = cls._model.query.filter_by(id=source_id).first_or_404()
+            parent = cls._model.query.filter_by(id=source_id).first()
+            if parent is None:
+                abort_not_found(cls._model.__name__, source_id)
             parent_source = parent.source
             parent_source_id = parent.source_id
 
@@ -345,6 +658,11 @@ class AnnotationsView(ObjectView, ListView):
         schema = cls._schema(context=context)
         tmp_data = schema.dump(annotation)
         data = schema.load(tmp_data)
+        # Ensure cloned payload does not reference original primary keys
+        data.pop("id", None)
+        for note in data.get("annotation_analyses") or []:
+            if isinstance(note, dict):
+                note.pop("id", None)
         data["source"] = "neurostore"
         data["source_id"] = source_id
         data["source_updated_at"] = annotation.updated_at or annotation.created_at
@@ -374,10 +692,412 @@ class AnnotationsView(ObjectView, ListView):
             return
 
         if db_analysis_ids != data_analysis_ids:
-            abort(
-                400,
-                description="annotation request must contain all analyses from the studyset.",
+            abort_validation(
+                "annotation request must contain all analyses from the studyset."
             )
+
+    def put(self, id):
+        request_data = self.insert_data(id, request.json)
+        schema = self._schema()
+        data = schema.load(request_data)
+
+        if "note_keys" in data:
+            data["note_keys"] = self._normalize_note_keys(data["note_keys"])
+
+        pipeline_payload = data.pop("pipelines", [])
+
+        args = {}
+        if set(self._o2m.keys()).intersection(set(data.keys())):
+            args["nested"] = True
+
+        q = self._model.query.filter_by(id=id)
+        q = self.eager_load(q, args)
+        input_record = q.one()
+
+        if pipeline_payload:
+            specs, column_counter = self._normalize_pipeline_specs(pipeline_payload)
+            self._apply_pipeline_columns(input_record, data, specs, column_counter)
+
+        self.db_validation(input_record, data)
+
+        with db.session.no_autoflush:
+            record = self.__class__.update_or_create(data, id, record=input_record)
+
+        with db.session.no_autoflush:
+            unique_ids = self.get_affected_ids([id])
+            clear_cache(unique_ids)
+
+        try:
+            self.update_base_studies(unique_ids.get("base-studies"))
+            self.update_annotations(unique_ids.get("annotations"))
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            abort_validation(str(e))
+
+        db.session.flush()
+
+        response = schema.dump(record)
+
+        db.session.commit()
+
+        return response
+
+    @staticmethod
+    def _extract_analysis_id(note):
+        if not isinstance(note, dict):
+            return None
+        analysis = note.get("analysis")
+        if isinstance(analysis, dict):
+            return analysis.get("id")
+        return analysis
+
+    @staticmethod
+    def _collect_column_values(data, column):
+        collected = []
+
+        def _walk(obj):
+            if isinstance(obj, dict):
+                if column in obj and not isinstance(obj[column], (dict, list)):
+                    collected.append(obj[column])
+                for value in obj.values():
+                    _walk(value)
+            elif isinstance(obj, list):
+                dict_items = [item for item in obj if isinstance(item, dict)]
+                if dict_items and all(column in item for item in dict_items):
+                    for item in dict_items:
+                        value = item.get(column)
+                        if not isinstance(value, (dict, list)):
+                            collected.append(value)
+                else:
+                    for item in obj:
+                        _walk(item)
+
+        _walk(data)
+        return collected
+
+    def _normalize_pipeline_specs(self, pipelines):
+        specs = []
+        column_counter = Counter()
+
+        if not isinstance(pipelines, list):
+            field_err = make_field_error("pipelines", pipelines, code="INVALID_FORMAT")
+            abort_validation(
+                "`pipelines` must be provided as a list of pipeline descriptors.",
+                [field_err],
+            )
+
+        for idx, payload in enumerate(pipelines):
+            if not isinstance(payload, dict):
+                field_err = make_field_error(
+                    f"pipelines[{idx}]", payload, code="INVALID_VALUE"
+                )
+                abort_validation(
+                    "Each pipeline descriptor must be an object.", [field_err]
+                )
+
+            name = payload.get("name")
+            if not isinstance(name, str) or not name.strip():
+                field_err = make_field_error(
+                    f"pipelines[{idx}].name", name, code="MISSING_VALUE"
+                )
+                abort_validation(
+                    "Pipeline entries must include a non-empty `name`.", [field_err]
+                )
+            name = name.strip()
+
+            columns = payload.get("columns")
+            if not isinstance(columns, (list, tuple)) or not columns:
+                field_err = make_field_error(
+                    f"pipelines[{idx}].columns", columns, code="MISSING_VALUE"
+                )
+                abort_validation(
+                    "Pipeline entries must include a non-empty `columns` list.",
+                    [field_err],
+                )
+            normalized_columns = []
+            for column in columns:
+                if isinstance(column, str) and column.strip():
+                    col = column.strip()
+                    if col not in normalized_columns:
+                        normalized_columns.append(col)
+            if not normalized_columns:
+                field_err = make_field_error(
+                    f"pipelines[{idx}].columns", columns, code="INVALID_VALUE"
+                )
+                abort_validation(
+                    "Columns must contain at least one non-empty string.", [field_err]
+                )
+
+            version = payload.get("version")
+            if version is not None and not isinstance(version, str):
+                field_err = make_field_error(
+                    f"pipelines[{idx}].version", version, code="INVALID_VALUE"
+                )
+                abort_validation(
+                    "`version` must be a string when provided.", [field_err]
+                )
+            config_id = payload.get("config_id")
+            if config_id is not None and not isinstance(config_id, str):
+                field_err = make_field_error(
+                    f"pipelines[{idx}].config_id", config_id, code="INVALID_VALUE"
+                )
+                abort_validation(
+                    "`config_id` must be a string when provided.", [field_err]
+                )
+
+            spec = {
+                "name": name,
+                "columns": normalized_columns,
+                "version": version.strip() if isinstance(version, str) else None,
+                "config_id": config_id.strip() if isinstance(config_id, str) else None,
+            }
+            specs.append(spec)
+
+            for column in normalized_columns:
+                column_counter[column] += 1
+
+        return specs, column_counter
+
+    def _build_note_map(self, annotation, incoming_notes):
+        note_map = OrderedDict()
+        analysis_context = {}
+
+        for aa in annotation.annotation_analyses:
+            studyset_study = getattr(aa, "studyset_study", None)
+            study = getattr(studyset_study, "study", None) if studyset_study else None
+            if study is None and aa.analysis:
+                study = aa.analysis.study
+            base_study_id = getattr(study, "base_study_id", None)
+            analysis_context[aa.analysis_id] = {
+                "base_study_id": base_study_id,
+                "study_id": aa.study_id,
+                "studyset_id": aa.studyset_id,
+            }
+            note_map[aa.analysis_id] = {
+                "id": aa.id,
+                "analysis": {"id": aa.analysis_id},
+                "studyset_study": {
+                    "study": {"id": aa.study_id},
+                    "studyset": {"id": aa.studyset_id},
+                },
+                "note": dict(aa.note or {}),
+            }
+
+        for note in incoming_notes or []:
+            if not isinstance(note, dict):
+                continue
+            analysis_id = self._extract_analysis_id(note)
+            if not analysis_id:
+                continue
+            if analysis_id in note_map:
+                merged = note_map[analysis_id]
+                if "note" in note and isinstance(note["note"], dict):
+                    merged["note"] = dict(note["note"])
+                if "studyset_study" in note and note["studyset_study"]:
+                    merged["studyset_study"] = note["studyset_study"]
+                if "analysis" in note and note["analysis"]:
+                    merged["analysis"] = note["analysis"]
+                if "id" in note and note["id"]:
+                    merged["id"] = note["id"]
+            else:
+                note_map[analysis_id] = note
+                analysis_context.setdefault(
+                    analysis_id,
+                    {"base_study_id": None, "study_id": None, "studyset_id": None},
+                )
+
+        return note_map, analysis_context
+
+    def _fetch_pipeline_data(self, spec, base_study_ids):
+        pipeline = Pipeline.query.filter_by(name=spec["name"]).first()
+        if not pipeline:
+            field_err = make_field_error("pipeline", spec["name"], code="NOT_FOUND")
+            abort_validation(f"Pipeline '{spec['name']}' does not exist.", [field_err])
+
+        config_query = PipelineConfig.query.filter_by(pipeline_id=pipeline.id)
+
+        resolved_config = None
+        if spec["config_id"]:
+            resolved_config = config_query.filter_by(id=spec["config_id"]).first()
+            if not resolved_config:
+                field_err = make_field_error(
+                    "config_id", spec["config_id"], code="NOT_FOUND"
+                )
+                abort_validation(
+                    f"Pipeline '{spec['name']}' does not have config '{spec['config_id']}'.",
+                    [field_err],
+                )
+
+        configs_for_version = []
+        if spec["version"]:
+            configs_for_version = config_query.filter_by(version=spec["version"]).all()
+            if not configs_for_version:
+                field_err = make_field_error(
+                    "version", spec["version"], code="NOT_FOUND"
+                )
+                abort_validation(
+                    f"Pipeline '{spec['name']}' does not have version '{spec['version']}'.",
+                    [field_err],
+                )
+            if not resolved_config and len(configs_for_version) == 1:
+                resolved_config = configs_for_version[0]
+
+        query = (
+            db.session.query(
+                PipelineStudyResult.base_study_id,
+                PipelineStudyResult.result_data,
+                PipelineStudyResult.date_executed,
+                PipelineStudyResult.created_at,
+                PipelineStudyResult.config_id,
+                PipelineConfig.version,
+            )
+            .join(PipelineConfig, PipelineStudyResult.config_id == PipelineConfig.id)
+            .filter(PipelineConfig.pipeline_id == pipeline.id)
+        )
+
+        if base_study_ids:
+            query = query.filter(PipelineStudyResult.base_study_id.in_(base_study_ids))
+        if spec["config_id"]:
+            query = query.filter(PipelineConfig.id == spec["config_id"])
+        if spec["version"]:
+            query = query.filter(PipelineConfig.version == spec["version"])
+
+        rows = query.all()
+
+        per_base = {}
+        for row in rows:
+            timestamp = row.date_executed or row.created_at or datetime.min
+            existing = per_base.get(row.base_study_id)
+            if existing is None or timestamp > existing["timestamp"]:
+                result_data = (
+                    row.result_data if isinstance(row.result_data, dict) else {}
+                )
+                flattened = (
+                    PipelineStudyResultSchema.flatten_dict(result_data)
+                    if isinstance(result_data, dict)
+                    else {}
+                )
+                per_base[row.base_study_id] = {
+                    "flat": flattened,
+                    "raw": result_data if isinstance(result_data, dict) else {},
+                    "config_id": row.config_id,
+                    "version": row.version,
+                    "timestamp": timestamp,
+                }
+
+        if not resolved_config and per_base:
+            config_ids = {
+                entry["config_id"] for entry in per_base.values() if entry["config_id"]
+            }
+            if len(config_ids) == 1:
+                resolved_config = PipelineConfig.query.filter_by(
+                    id=config_ids.pop()
+                ).first()
+
+        resolved_version = spec["version"]
+        if not resolved_version:
+            versions = {
+                entry["version"] for entry in per_base.values() if entry["version"]
+            }
+            if len(versions) == 1:
+                resolved_version = versions.pop()
+            elif len(versions) > 1:
+                resolved_version = sorted(versions)[-1]
+            elif resolved_config:
+                resolved_version = resolved_config.version
+
+        resolved_config_id = spec["config_id"]
+        if not resolved_config_id:
+            if resolved_config:
+                resolved_config_id = resolved_config.id
+            else:
+                config_ids = {
+                    entry["config_id"]
+                    for entry in per_base.values()
+                    if entry["config_id"]
+                }
+                if len(config_ids) == 1:
+                    resolved_config_id = config_ids.pop()
+
+        return (
+            per_base,
+            resolved_version or "latest",
+            resolved_config_id or "latest",
+        )
+
+    def _apply_pipeline_columns(self, annotation, data, specs, column_counter):
+        incoming_notes = data.get("annotation_analyses") or []
+        note_map, analysis_context = self._build_note_map(annotation, incoming_notes)
+
+        base_study_ids = {
+            ctx["base_study_id"]
+            for ctx in analysis_context.values()
+            if ctx.get("base_study_id")
+        }
+
+        column_types = {}
+
+        for spec in specs:
+            if not base_study_ids:
+                continue
+            pipeline_data, resolved_version, resolved_config_id = (
+                self._fetch_pipeline_data(spec, base_study_ids)
+            )
+            version_label = str(resolved_version or "latest").replace(" ", "_")
+            config_label = str(resolved_config_id or "latest").replace(" ", "_")
+            suffix_label = f"{spec['name']}_{version_label}_{config_label}"
+
+            for column in spec["columns"]:
+                key_name = column
+                if column_counter[column] > 1:
+                    key_name = f"{column}_{suffix_label}"
+
+                for analysis_id, payload in note_map.items():
+                    context = analysis_context.get(analysis_id) or {}
+                    base_study_id = context.get("base_study_id")
+                    entry = pipeline_data.get(base_study_id)
+                    flat_values = entry["flat"] if entry else {}
+                    value = flat_values.get(column)
+                    if isinstance(value, list):
+                        flattened_value = ",".join(
+                            str(item) for item in value if item is not None
+                        )
+                        value = flattened_value if flattened_value else None
+                    if value is None and entry:
+                        raw_values = [
+                            v
+                            for v in self._collect_column_values(
+                                entry.get("raw", {}), column
+                            )
+                            if v is not None
+                        ]
+                        if raw_values:
+                            if len(raw_values) == 1:
+                                value = str(raw_values[0])
+                            else:
+                                value = ",".join(str(v) for v in raw_values)
+
+                    payload.setdefault("note", {})
+                    payload["note"][key_name] = value
+
+                    detected_type = _check_type(value)
+                    existing_type = column_types.get(key_name)
+                    if detected_type:
+                        if existing_type and existing_type != detected_type:
+                            column_types[key_name] = "string"
+                        else:
+                            column_types[key_name] = detected_type
+                    elif existing_type is None:
+                        column_types[key_name] = "string"
+
+        if column_types:
+            if data.get("note_keys") is None:
+                note_keys = self._normalize_note_keys(annotation.note_keys or {})
+            else:
+                note_keys = self._normalize_note_keys(data["note_keys"])
+            data["note_keys"] = self._merge_note_keys(note_keys, column_types)
+
+        data["annotation_analyses"] = list(note_map.values())
 
 
 @view_maker
@@ -394,6 +1114,7 @@ class BaseStudiesView(ObjectView, ListView):
         "flat": fields.Boolean(load_default=False),
         "info": fields.Boolean(load_default=False),
         "data_type": fields.String(load_default=None),
+        "is_oa": fields.Boolean(load_default=None, allow_none=True),
         "feature_filter": fields.List(fields.String(load_default=None)),
         "pipeline_config": fields.List(fields.String(load_default=None)),
         "feature_display": fields.List(fields.String(load_default=None)),
@@ -404,6 +1125,7 @@ class BaseStudiesView(ObjectView, ListView):
         "y": fields.Float(required=False, allow_none=True),
         "z": fields.Float(required=False, allow_none=True),
         "radius": fields.Float(required=False, allow_none=True),
+        **LIST_NESTED_ARGS,
     }
 
     _multi_search = ("name", "description")
@@ -428,6 +1150,7 @@ class BaseStudiesView(ObjectView, ListView):
         q,  # an existing SQLAlchemy Query object
         user_vector,
         config_id,
+        embedding_dimensions=None,
         distance_threshold=0.5,
         overall_cap=3000,
     ):
@@ -436,10 +1159,21 @@ class BaseStudiesView(ObjectView, ListView):
         cfg = sa.bindparam("config_id", type_=sa.String())
         thr = sa.bindparam("threshold", type_=sa.Float())
 
-        # Distance expression
-        distance = sa.cast(PipelineEmbedding.embedding.op("<=>")(qvec), sa.Float).label(
-            "distance"
-        )
+        # Distance expression (cast to fixed-dimension vector when provided so the
+        # planner can use the per-partition HNSW index)
+        dims = None
+        try:
+            if embedding_dimensions is not None:
+                dims = int(embedding_dimensions)
+        except (TypeError, ValueError):
+            dims = None
+
+        if dims:
+            embedding_expr = sa.cast(PipelineEmbedding.embedding, Vector(dims))
+        else:
+            embedding_expr = PipelineEmbedding.embedding
+
+        distance = sa.cast(embedding_expr.op("<=>")(qvec), sa.Float).label("distance")
 
         # Build the ANN CTE
         inner = (
@@ -484,7 +1218,51 @@ class BaseStudiesView(ObjectView, ListView):
             )
 
         # Handle version and user loading
-        if args.get("info"):
+        if args.get("nested"):
+            q = q.options(
+                selectinload(BaseStudy.versions).options(
+                    selectinload(Study.user)
+                    .load_only(User.name, User.external_id)
+                    .options(raiseload("*", sql_only=True)),
+                    selectinload(Study.tables)
+                    .load_only(Table.id)
+                    .options(raiseload("*", sql_only=True)),
+                    selectinload(Study.analyses).options(
+                        raiseload("*", sql_only=True),
+                        selectinload(Analysis.user)
+                        .load_only(User.name, User.external_id)
+                        .options(raiseload("*", sql_only=True)),
+                        selectinload(Analysis.images).options(
+                            raiseload("*", sql_only=True),
+                            selectinload(Image.user)
+                            .load_only(User.name, User.external_id)
+                            .options(raiseload("*", sql_only=True)),
+                        ),
+                        selectinload(Analysis.points).options(
+                            raiseload("*", sql_only=True),
+                            selectinload(Point.user)
+                            .load_only(User.name, User.external_id)
+                            .options(raiseload("*", sql_only=True)),
+                            selectinload(Point.values).options(
+                                raiseload("*", sql_only=True)
+                            ),
+                        ),
+                        selectinload(Analysis.analysis_conditions).options(
+                            raiseload("*", sql_only=True),
+                            selectinload(AnalysisConditions.condition).options(
+                                raiseload("*", sql_only=True),
+                                selectinload(Condition.user)
+                                .load_only(User.name, User.external_id)
+                                .options(raiseload("*", sql_only=True)),
+                            ),
+                        ),
+                    ),
+                ),
+                joinedload(BaseStudy.user)
+                .load_only(User.name, User.external_id)
+                .options(raiseload("*", sql_only=True)),
+            )
+        elif args.get("info"):
             q = q.options(
                 joinedload(BaseStudy.versions).options(
                     raiseload("*", sql_only=True),
@@ -541,7 +1319,12 @@ class BaseStudiesView(ObjectView, ListView):
             distance_threshold = args.get("distance_threshold", 0.5)
             overall_cap = args.get("overall_cap", 3000)
             q = self.ann_query_object(
-                q, user_vector, pipeline_config_id, distance_threshold, overall_cap
+                q,
+                user_vector,
+                pipeline_config_id,
+                dimensions,
+                distance_threshold,
+                overall_cap,
             )
 
         # Spatial filter: x, y, z, radius must all be present to apply
@@ -556,28 +1339,36 @@ class BaseStudiesView(ObjectView, ListView):
                 z = float(z)
                 radius = float(radius)
             except Exception:
-                abort(400, "Spatial parameters must be numeric.")
-            # Join BaseStudy -> Study -> Analysis -> Point
-            q = q.join(Study, Study.base_study_id == self._model.id)
-            q = q.join(Analysis, Analysis.study_id == Study.id)
-            q = q.join(Point, Point.analysis_id == Analysis.id)
-            # Box filter first, then Euclidean distance
-            q = q.filter(
-                Point.x <= x + radius,
-                Point.x >= x - radius,
-                Point.y <= y + radius,
-                Point.y >= y - radius,
-                Point.z <= z + radius,
-                Point.z >= z - radius,
-                (Point.x - x) * (Point.x - x)
-                + (Point.y - y) * (Point.y - y)
-                + (Point.z - z) * (Point.z - z)
-                <= radius * radius,
+                abort_validation("Spatial parameters must be numeric.")
+            # Use EXISTS so we do not duplicate base studies when filtering by spatial criteria
+            spatial_point = aliased(Point)
+            spatial_analysis = aliased(Analysis)
+            spatial_study = aliased(Study)
+
+            spatial_filter = (
+                sa.select(sa.literal(True))
+                .select_from(spatial_study)
+                .join(spatial_analysis, spatial_analysis.study_id == spatial_study.id)
+                .join(spatial_point, spatial_point.analysis_id == spatial_analysis.id)
+                .where(
+                    spatial_study.base_study_id == self._model.id,
+                    spatial_point.x <= x + radius,
+                    spatial_point.x >= x - radius,
+                    spatial_point.y <= y + radius,
+                    spatial_point.y >= y - radius,
+                    spatial_point.z <= z + radius,
+                    spatial_point.z >= z - radius,
+                    (spatial_point.x - x) * (spatial_point.x - x)
+                    + (spatial_point.y - y) * (spatial_point.y - y)
+                    + (spatial_point.z - z) * (spatial_point.z - z)
+                    <= radius * radius,
+                )
+                .correlate(self._model)
+                .exists()
             )
-            # Only return distinct base studies
-            q = q.distinct()
+            q = q.filter(spatial_filter)
         elif any(v is not None for v in [x, y, z, radius]):
-            abort(400, "Spatial query requires x, y, z, and radius together.")
+            abort_validation("Spatial query requires x, y, z, and radius together.")
 
         # search studies for data_type
         if args.get("data_type"):
@@ -592,6 +1383,11 @@ class BaseStudiesView(ObjectView, ListView):
                         self._model.has_images.is_(True),
                     ),
                 )
+        is_oa = args.get("is_oa", None)
+        if is_oa is not None and not isinstance(is_oa, bool):
+            abort_validation("is_oa must be a boolean.")
+        if is_oa is not None:
+            q = q.filter(self._model.is_oa.is_(is_oa))
         # filter by year range
         year_min = args.get("year_min")
         year_max = args.get("year_max")
@@ -690,9 +1486,10 @@ class BaseStudiesView(ObjectView, ListView):
                 invalid_filters.append({"filter": config_filter, "error": str(e)})
 
         if invalid_filters:
-            abort(
-                400, {"message": "Invalid feature filter(s)", "errors": invalid_filters}
+            field_err = make_field_error(
+                "feature_filters", invalid_filters, code="INVALID_FILTER"
             )
+            abort_validation("Invalid feature filter(s)", [field_err])
 
         # Create subqueries for each pipeline
         pipeline_subqueries = []
@@ -765,6 +1562,34 @@ class BaseStudiesView(ObjectView, ListView):
             for idx, (field_path, operator, value) in enumerate(
                 filters["result_filters"]
             ):
+                normalized_field = field_path.replace("[]", "")
+                if (
+                    pipeline_name == "TaskExtractor"
+                    and normalized_field == "Modality"
+                    and operator == "="
+                ):
+                    modality_values = [
+                        val.strip() for val in value.split("|") if val.strip()
+                    ]
+                    if modality_values:
+                        modality_field = PipelineStudyResultAlias.result_data.op("->")(
+                            sa.literal_column("'Modality'")
+                        )
+                        modality_clauses = []
+                        for idx, modality_value in enumerate(modality_values):
+                            param_name = f"modality_filter_{pipeline_name}_{idx}"
+                            modality_clauses.append(
+                                modality_field.op("@>")(
+                                    sa.func.jsonb_build_array(
+                                        sa.bindparam(param_name, modality_value)
+                                    )
+                                )
+                            )
+                        pipeline_query = pipeline_query.filter(
+                            sae.or_(*modality_clauses)
+                        )
+                        pipeline_subqueries.append(pipeline_query.subquery())
+                    continue
                 jsonpath = build_jsonpath(field_path, operator, value)
                 param_name = f"jsonpath_result_{pipeline_name}_{idx}"
                 pipeline_query = pipeline_query.filter(
@@ -803,9 +1628,10 @@ class BaseStudiesView(ObjectView, ListView):
 
         # If any filters were invalid, return 400 with error details
         if invalid_filters:
-            abort(
-                400, {"message": "Invalid feature filter(s)", "errors": invalid_filters}
+            field_err = make_field_error(
+                "feature_filters", invalid_filters, code="INVALID_FILTER"
             )
+            abort_validation("Invalid feature filter(s)", [field_err])
         if args.get("semantic_search"):
             q = q.filter(self._model.semantic_search == args["semantic_search"])
 
@@ -960,11 +1786,13 @@ class StudiesView(ObjectView, ListView):
                 Analysis.id,
                 StudysetStudy.studyset_id,
                 Study.base_study_id,
+                Table.id.label("table_id"),
             )
             .select_from(Study)
             .outerjoin(Analysis, Analysis.study_id == Study.id)
             .outerjoin(StudysetStudy, Study.id == StudysetStudy.study_id)
             .outerjoin(Annotation, StudysetStudy.studyset_id == Annotation.studyset_id)
+            .outerjoin(Table, Table.study_id == Study.id)
             .where(Study.id.in_(ids))
         )
 
@@ -977,10 +1805,11 @@ class StudiesView(ObjectView, ListView):
             "analyses": set(),
             "studysets": set(),
             "base-studies": set(),
+            "tables": set(),
         }
 
         # Iterate over the result and add IDs to the respective sets
-        for annotation_id, analysis_id, studyset_id, base_study_id in result:
+        for annotation_id, analysis_id, studyset_id, base_study_id, table_id in result:
             if annotation_id:
                 unique_ids["annotations"].add(annotation_id)
             if analysis_id:
@@ -989,6 +1818,8 @@ class StudiesView(ObjectView, ListView):
                 unique_ids["studysets"].add(studyset_id)
             if base_study_id:
                 unique_ids["base-studies"].add(base_study_id)
+            if table_id:
+                unique_ids["tables"].add(table_id)
 
         return unique_ids
 
@@ -998,6 +1829,9 @@ class StudiesView(ObjectView, ListView):
             q = q.options(
                 selectinload(Study.user)
                 .load_only(User.name, User.external_id)
+                .options(raiseload("*", sql_only=True)),
+                selectinload(Study.tables)
+                .load_only(Table.id)
                 .options(raiseload("*", sql_only=True)),
                 selectinload(Study.analyses).options(
                     raiseload("*", sql_only=True),
@@ -1037,6 +1871,9 @@ class StudiesView(ObjectView, ListView):
                 .options(raiseload("*", sql_only=True)),
                 selectinload(Study.user)
                 .load_only(User.name, User.external_id)
+                .options(raiseload("*", sql_only=True)),
+                selectinload(Study.tables)
+                .load_only(Table.id)
                 .options(raiseload("*", sql_only=True)),
             )
         return q
@@ -1079,9 +1916,10 @@ class StudiesView(ObjectView, ListView):
 
     def join_tables(self, q, args):
         "join relevant tables to speed up query"
+        options = [selectinload(self._model.tables).load_only(Table.id)]
         if not args.get("flat"):
-            # q = q.options(selectinload("base_study"))
-            q = q.options(selectinload(self._model.analyses))
+            options.append(selectinload(self._model.analyses))
+        q = q.options(*options)
         return super().join_tables(q, args)
 
     def serialize_records(self, records, args, exclude=tuple()):
@@ -1101,12 +1939,12 @@ class StudiesView(ObjectView, ListView):
         elif source == "pubmed":
             return cls.load_from_pubmed(source_id, data)
         else:
-            abort(
-                422,
-                {
-                    "message": "invalid source, choose from: 'neurostore', 'neurovault', 'pubmed'",
-                    "errors": f"source: {source}",
-                },
+            field_err = make_field_error(
+                "source", source, valid_options=["neurostore", "neurovault", "pubmed"]
+            )
+            abort_unprocessable(
+                "invalid source, choose from: 'neurostore', 'neurovault', 'pubmed'",
+                [field_err],
             )
 
     @classmethod
@@ -1114,12 +1952,16 @@ class StudiesView(ObjectView, ListView):
         q = cls._model.query.filter_by(id=source_id)
         q = cls().eager_load(q, {"nested": True})
 
-        study = q.first_or_404()
+        study = q.first()
+        if study is None:
+            abort_not_found(cls._model.__name__, source_id)
         parent_source_id = study.source_id
         parent_source = study.source
         while parent_source_id is not None and parent_source == "neurostore":
             source_id = parent_source_id
-            parent = cls._model.query.filter_by(id=source_id).first_or_404()
+            parent = cls._model.query.filter_by(id=source_id).first()
+            if parent is None:
+                abort_not_found(cls._model.__name__, source_id)
             parent_source = parent.source
             parent_source_id = parent.source_id
 
@@ -1224,6 +2066,7 @@ class AnalysesView(ObjectView, ListView):
                 Analysis.study_id,
                 StudysetStudy.studyset_id,
                 Study.base_study_id,
+                Analysis.table_id,
             )
             .outerjoin(Study, Analysis.study_id == Study.id)
             .outerjoin(StudysetStudy, Study.id == StudysetStudy.study_id)
@@ -1241,10 +2084,11 @@ class AnalysesView(ObjectView, ListView):
             "studies": set(),
             "studysets": set(),
             "base-studies": set(),
+            "tables": set(),
         }
 
         # Iterate over the result and add IDs to the respective sets
-        for annotation_id, study_id, studyset_id, base_study_id in result:
+        for annotation_id, study_id, studyset_id, base_study_id, table_id in result:
             if annotation_id:
                 unique_ids["annotations"].add(annotation_id)
             if study_id:
@@ -1253,6 +2097,8 @@ class AnalysesView(ObjectView, ListView):
                 unique_ids["studysets"].add(studyset_id)
             if base_study_id:
                 unique_ids["base-studies"].add(base_study_id)
+            if table_id:
+                unique_ids["tables"].add(table_id)
 
         return unique_ids
 
@@ -1318,6 +2164,21 @@ class AnalysesView(ObjectView, ListView):
             )
         return super().join_tables(q, args)
 
+    def db_validation(self, record, data):
+        table_id = data.get("table_id")
+        study_id = data.get("study_id") or getattr(record, "study_id", None)
+
+        if table_id:
+            table = Table.query.filter_by(id=table_id).first()
+            if table is None:
+                field_err = make_field_error("table_id", table_id, code="NOT_FOUND")
+                abort_unprocessable("Invalid table reference", [field_err])
+            if study_id and table.study_id != study_id:
+                field_err = make_field_error("table_id", table_id, code="MISMATCH")
+                abort_unprocessable(
+                    "Table must belong to the same study as the analysis", [field_err]
+                )
+
     @classmethod
     def check_duplicate(cls, data, record):
         study_id = data.get("study_id")
@@ -1370,6 +2231,127 @@ class AnalysesView(ObjectView, ListView):
                 return False  # If the point doesn't have coordinates or a valid ID, return False
 
         return existing_points_set == new_points_set
+
+
+@view_maker
+class TablesView(ObjectView, ListView):
+    _view_fields = {**LIST_NESTED_ARGS, "study": fields.String(load_default=None)}
+    _m2o = {"study": "StudiesView"}
+    _parent = {"study": "StudiesView"}
+    _search_fields = ("t_id", "name", "caption", "footer")
+
+    def view_search(self, q, args):
+        if args.get("study"):
+            q = q.filter(Table.study_id == args["study"])
+        return q
+
+    def get_affected_ids(self, ids):
+        query = (
+            select(
+                Table.id,
+                Table.study_id,
+                Analysis.id.label("analysis_id"),
+                StudysetStudy.studyset_id,
+                Study.base_study_id,
+            )
+            .select_from(Table)
+            .outerjoin(Analysis, Analysis.table_id == Table.id)
+            .outerjoin(Study, Table.study_id == Study.id)
+            .outerjoin(StudysetStudy, Study.id == StudysetStudy.study_id)
+            .where(Table.id.in_(ids))
+        )
+
+        result = db.session.execute(query).fetchall()
+
+        unique_ids = {
+            "tables": set(ids),
+            "analyses": set(),
+            "studies": set(),
+            "studysets": set(),
+            "base-studies": set(),
+        }
+
+        for _, study_id, analysis_id, studyset_id, base_study_id in result:
+            if analysis_id:
+                unique_ids["analyses"].add(analysis_id)
+            if study_id:
+                unique_ids["studies"].add(study_id)
+            if studyset_id:
+                unique_ids["studysets"].add(studyset_id)
+            if base_study_id:
+                unique_ids["base-studies"].add(base_study_id)
+
+        return unique_ids
+
+    def eager_load(self, q, args=None):
+        args = args or {}
+        if args.get("nested"):
+            q = q.options(
+                selectinload(Table.user)
+                .load_only(User.name, User.external_id)
+                .options(raiseload("*", sql_only=True)),
+                selectinload(Table.analyses).options(
+                    raiseload("*", sql_only=True),
+                    selectinload(Analysis.user)
+                    .load_only(User.name, User.external_id)
+                    .options(raiseload("*", sql_only=True)),
+                ),
+            )
+        else:
+            q = q.options(
+                selectinload(Table.user)
+                .load_only(User.name, User.external_id)
+                .options(raiseload("*", sql_only=True)),
+                selectinload(Table.analyses)
+                .load_only(Analysis.id)
+                .options(raiseload("*", sql_only=True)),
+            )
+        return q
+
+    def db_validation(self, record, data):
+        study_id = data.get("study_id") or record.study_id
+        if study_id is None:
+            field_err = make_field_error("study", None, code="MISSING_FIELD")
+            abort_unprocessable("Missing required field: study", [field_err])
+
+        t_id = data.get("t_id")
+        if t_id:
+            existing = (
+                Table.query.filter_by(study_id=study_id, t_id=t_id)
+                .filter(Table.id != getattr(record, "id", None))
+                .first()
+            )
+            if existing:
+                field_err = make_field_error("t_id", t_id, code="NOT_UNIQUE")
+                abort_unprocessable(
+                    f"Table with t_id '{t_id}' already exists for this study",
+                    [field_err],
+                )
+
+    @staticmethod
+    def pre_nested_record_update(record):
+        if record.study and record.user_id != record.study.user_id:
+            record.user_id = record.study.user_id
+        return record
+
+    @classmethod
+    def check_duplicate(cls, data, record):
+        study_id = data.get("study_id") or getattr(record, "study_id", None)
+        t_id = data.get("t_id")
+        if not (study_id and t_id):
+            return False
+
+        existing = (
+            Table.query.filter_by(study_id=study_id, t_id=t_id)
+            .filter(Table.id != getattr(record, "id", None))
+            .first()
+        )
+        if existing:
+            field_err = make_field_error("t_id", t_id, code="NOT_UNIQUE")
+            abort_unprocessable(
+                f"Table with t_id '{t_id}' already exists for this study", [field_err]
+            )
+        return False
 
 
 @view_maker
@@ -1588,7 +2570,9 @@ class AnnotationAnalysesView(ObjectView, ListView):
             with db.session.no_autoflush:
                 d = ids.get(input_record.id)
                 to_commit.append(
-                    self.__class__.update_or_create(d, id, record=input_record)
+                    self.__class__.update_or_create(
+                        d, id=input_record.id, record=input_record
+                    )
                 )
 
         db.session.add_all(to_commit)

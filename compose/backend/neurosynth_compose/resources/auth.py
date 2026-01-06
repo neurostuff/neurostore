@@ -1,22 +1,21 @@
 import json
+from contextlib import contextmanager
 from urllib.request import urlopen
 
-from flask import jsonify, request
+from flask import current_app, has_app_context, jsonify, request
 from jose import jwt
-
-from flask import current_app as app
+from werkzeug.local import LocalProxy
+from connexion.security import NO_VALUE
 from ..database import db
 from sqlalchemy import select
 
 
-# Error handler
 class AuthError(Exception):
     def __init__(self, error, status_code):
         self.error = error
         self.status_code = status_code
 
 
-@app.errorhandler(AuthError)
 def handle_auth_error(ex):
     response = jsonify(ex.error)
     response.status_code = ex.status_code
@@ -62,54 +61,49 @@ def get_token_auth_header():
     return token
 
 
-def decode_token(token):
-    jsonurl = urlopen(app.config["AUTH0_BASE_URL"] + "/.well-known/jwks.json")
-    jwks = json.loads(jsonurl.read())
-    try:
-        unverified_header = jwt.get_unverified_header(token)
-    except jwt.JWTError:
-        raise AuthError(
-            {
-                "code": "invalid_header",
-                "description": "Unable to parse authentication" " token.",
-            },
-            401,
+_flask_app = None
+
+
+def init_app(app):
+    """Record the Flask application so security helpers can push a context."""
+
+    global _flask_app
+    _flask_app = app
+
+
+def _get_current_app():
+    if has_app_context():
+        return current_app._get_current_object()
+    if _flask_app is not None:  # pragma: no cover - defensive
+        return _flask_app
+    raise RuntimeError("No Flask application is configured for authentication helpers.")
+
+
+@contextmanager
+def _ensure_app_context():
+    if has_app_context():
+        yield current_app._get_current_object()
+        return
+
+    if _flask_app is None:  # pragma: no cover - defensive
+        raise RuntimeError(
+            "No Flask application is configured for authentication helpers."
         )
 
-    rsa_key = {}
-    for key in jwks["keys"]:
-        if key["kid"] == unverified_header["kid"]:
-            rsa_key = {
-                "kty": key["kty"],
-                "kid": key["kid"],
-                "use": key["use"],
-                "n": key["n"],
-                "e": key["e"],
-            }
-    if rsa_key:
+    with _flask_app.app_context():
+        yield _flask_app
+
+
+app = LocalProxy(_get_current_app)
+
+
+def decode_token(token):
+    with _ensure_app_context() as app:
+        jsonurl = urlopen(app.config["AUTH0_BASE_URL"] + "/.well-known/jwks.json")
+        jwks = json.loads(jsonurl.read())
         try:
-            payload = jwt.decode(
-                token,
-                rsa_key,
-                algorithms=["RS256"],
-                audience=app.config["AUTH0_API_AUDIENCE"],
-                # needs slash at end
-                issuer=app.config["AUTH0_BASE_URL"] + "/",
-            )
-        except jwt.ExpiredSignatureError:
-            raise AuthError(
-                {"code": "token_expired", "description": "token is expired"}, 401
-            )
-        except jwt.JWTClaimsError:
-            raise AuthError(
-                {
-                    "code": "invalid_claims",
-                    "description": "incorrect claims,"
-                    "please check the audience and issuer",
-                },
-                401,
-            )
-        except Exception:
+            unverified_header = jwt.get_unverified_header(token)
+        except jwt.JWTError:
             raise AuthError(
                 {
                     "code": "invalid_header",
@@ -118,38 +112,74 @@ def decode_token(token):
                 401,
             )
 
-        return payload
+        rsa_key = {}
+        for key in jwks["keys"]:
+            if key["kid"] == unverified_header["kid"]:
+                rsa_key = {
+                    "kty": key["kty"],
+                    "kid": key["kid"],
+                    "use": key["use"],
+                    "n": key["n"],
+                    "e": key["e"],
+                }
+        if rsa_key:
+            try:
+                payload = jwt.decode(
+                    token,
+                    rsa_key,
+                    algorithms=["RS256"],
+                    audience=app.config["AUTH0_API_AUDIENCE"],
+                    # needs slash at end
+                    issuer=app.config["AUTH0_BASE_URL"] + "/",
+                )
+            except jwt.ExpiredSignatureError:
+                raise AuthError(
+                    {"code": "token_expired", "description": "token is expired"},
+                    401,
+                )
+            except jwt.JWTClaimsError:
+                raise AuthError(
+                    {
+                        "code": "invalid_claims",
+                        "description": "incorrect claims,"
+                        "please check the audience and issuer",
+                    },
+                    401,
+                )
+            except Exception:
+                raise AuthError(
+                    {
+                        "code": "invalid_header",
+                        "description": "Unable to parse authentication" " token.",
+                    },
+                    401,
+                )
+
+            return payload
 
     raise AuthError(
         {"code": "invalid_header", "description": "Unable to find appropriate key"}, 401
     )
 
 
-def verify_key(*args, **kwargs):
-    if request.method == "POST":
+def verify_key(run_key):
+    if not run_key:
+        return NO_VALUE
+
+    with _ensure_app_context():
         from ..models import MetaAnalysis
 
         meta_analysis = db.session.execute(
-            select(MetaAnalysis).where(
-                MetaAnalysis.id == request.json["meta_analysis_id"]
-            )
-        ).scalar_one()
-    elif request.method == "PUT":
-        from ..models import MetaAnalysisResult
+            select(MetaAnalysis).where(MetaAnalysis.run_key == run_key)
+        ).scalar_one_or_none()
 
-        result_id = request.view_args["id"]
-        meta_analysis = (
-            db.session.execute(
-                select(MetaAnalysisResult).where(MetaAnalysisResult.id == result_id)
+        if meta_analysis is None:
+            raise AuthError(
+                {
+                    "code": "invalid_key",
+                    "description": "Unable to find appropriate key",
+                },
+                401,
             )
-            .scalar_one()
-            .meta_analysis
-        )
-    run_key = args[0]
 
-    if meta_analysis.run_key != run_key:
-        raise AuthError(
-            {"code": "invalid_key", "description": "Unable to find appropriate key"},
-            401,
-        )
-    return {"sub": "neurosynth_compose"}
+        return {"sub": "neurosynth_compose", "meta_analysis_id": meta_analysis.id}

@@ -1,6 +1,7 @@
 import { indexToPRISMAMapping, IPRISMAConfig } from 'hooks/projects/useGetProjects';
 import {
     useProjectCurationColumns,
+    useProjectCurationDuplicates,
     useProjectCurationExclusionTags,
     useProjectCurationImports,
     useProjectCurationPrismaConfig,
@@ -29,6 +30,7 @@ export const SELECTED_CURATION_STEP_LOCAL_STORAGE_KEY_SUFFIX = '_CURATION_STEP_I
 
 function useCurationBoardGroupsState() {
     const curationColumns = useProjectCurationColumns();
+    const curationDuplicates = useProjectCurationDuplicates();
     const { projectId } = useParams<{ projectId: string }>();
     const selectedCurationStepLocalStorageKey = `${projectId}${SELECTED_CURATION_STEP_LOCAL_STORAGE_KEY_SUFFIX}`;
     const prismaConfig = useProjectCurationPrismaConfig();
@@ -65,20 +67,16 @@ function useCurationBoardGroupsState() {
                 });
 
                 const prismaPhase: keyof Omit<IPRISMAConfig, 'isPrisma'> | undefined = indexToPRISMAMapping(index);
-
+                const thisGroupListItem = groupListItems[groupListItems.length - 1];
                 if (prismaPhase === 'identification') {
-                    groupListItems[groupListItems.length - 1].secondaryLabel =
-                        'Search for studies and identify duplicates';
+                    thisGroupListItem.secondaryLabel = 'Search for studies and identify duplicates';
                 } else if (prismaPhase === 'screening') {
-                    groupListItems[groupListItems.length - 1].secondaryLabel =
-                        'Screen titles and abstracts for relevance';
+                    thisGroupListItem.secondaryLabel = 'Screen titles and abstracts for relevance';
                 } else if (prismaPhase === 'eligibility') {
-                    groupListItems[groupListItems.length - 1].secondaryLabel =
-                        'Assess full full-texts against inclusion criteria';
+                    thisGroupListItem.secondaryLabel = 'Assess full full-texts against inclusion criteria';
                 } else {
                     // inclusion phase
-                    groupListItems[groupListItems.length - 1].secondaryLabel =
-                        'Studies to be included in the final meta-analysis';
+                    thisGroupListItem.secondaryLabel = 'Studies to be included in the final meta-analysis';
                     return;
                 }
 
@@ -86,10 +84,8 @@ function useCurationBoardGroupsState() {
                     groupListItems.push({
                         id: defaultExclusionTags.duplicate.id,
                         type: 'LISTITEM',
-                        label: defaultExclusionTags.duplicate.label,
-                        count: column.stubStudies.filter(
-                            (x) => x.exclusionTag?.id === defaultExclusionTags.duplicate.id
-                        ).length,
+                        label: `${defaultExclusionTags.duplicate.label}`,
+                        count: curationDuplicates.length,
                         UI: ECurationBoardAIInterface.EXCLUDE,
                         listItemStyles: {
                             '& .MuiListItemButton-root': {
@@ -114,7 +110,7 @@ function useCurationBoardGroupsState() {
                             id: exclusionTag.id,
                             type: 'LISTITEM',
                             label: exclusionTag.label,
-                            count: column.stubStudies.filter((x) => x.exclusionTag?.id === exclusionTag.id).length,
+                            count: column.stubStudies.filter((x) => x.exclusionTag === exclusionTag.id).length,
                             UI: ECurationBoardAIInterface.EXCLUDE,
                             listItemStyles: excludedListItemStylesChildren,
                             children: [],
@@ -163,8 +159,7 @@ function useCurationBoardGroupsState() {
                     children: excludedGroups.map((excludedGroup) => {
                         const numExcludedInGroup = curationColumns.reduce((acc, curr) => {
                             return (
-                                acc +
-                                curr.stubStudies.filter((study) => study.exclusionTag?.id === excludedGroup.id).length
+                                acc + curr.stubStudies.filter((study) => study.exclusionTag === excludedGroup.id).length
                             );
                         }, 0);
 

@@ -9,10 +9,11 @@ RUN apt-get update && \
 RUN pip3 install --break-system-packages awscli
 
 # Download and install pgvector
+# Force baseline compiler flags so the extension runs on GitHub runners without illegal-instruction crashes
 RUN curl -L https://github.com/pgvector/pgvector/archive/refs/tags/v0.8.0.tar.gz -o pgvector.tar.gz \
     && tar -xzf pgvector.tar.gz \
     && cd pgvector-0.8.0 \
-    && make \
+    && make OPTFLAGS='-O2 -fPIC' \
     && make install \
     && rm -rf pgvector.tar.gz pgvector-0.8.0
 

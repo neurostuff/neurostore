@@ -232,6 +232,24 @@ def test_info_base_study(auth_client, ingest_neurosynth, session):
     assert isinstance(single_reg_resp.json()["versions"][0], str)
 
 
+def test_nested_base_study(auth_client, ingest_neurosynth, session):
+    resp = auth_client.get("/api/base-studies/?nested=true")
+    assert resp.status_code == 200
+
+    first_result = resp.json()["results"][0]
+    first_version = first_result["versions"][0]
+
+    assert isinstance(first_version, dict)
+    assert "username" in first_version
+    assert "user" in first_version
+
+    if first_version.get("analyses"):
+        first_analysis = first_version["analyses"][0]
+        assert isinstance(first_analysis, dict)
+        assert "username" in first_analysis
+        assert "user" in first_analysis
+
+
 def test_has_coordinates_images(auth_client, session):
     # create an empty study
     doi_a = "abcd"
@@ -340,6 +358,19 @@ def test_has_coordinates_images(auth_client, session):
     assert base_study_2.has_coordinates is True
     assert base_study_2.has_images is True
 
+    # adding an analysis without media should not flip the flags back to False
+    empty_analysis_resp = auth_client.post(
+        "/api/analyses/",
+        data={
+            "study": create_full_study.json()["id"],
+            "name": "empty analysis",
+        },
+    )
+    assert empty_analysis_resp.status_code == 200
+    session.refresh(base_study_2)
+    assert base_study_2.has_coordinates is True
+    assert base_study_2.has_images is True
+
     # delete analysis a
     analysis_ids = create_full_study.json()["analyses"]
     analyses = [Analysis.query.filter_by(id=id_).one() for id_ in analysis_ids]
@@ -405,6 +436,64 @@ def test_has_coordinates_images(auth_client, session):
     session.refresh(base_study_2)
     assert base_study_2.has_coordinates is False
     assert base_study_2.has_images is False
+
+
+def test_filter_by_is_oa(auth_client, session):
+    base_true = BaseStudy(
+        name="Open Access Study",
+        doi="10.1234/oa-study",
+        pmid="111111",
+        is_oa=True,
+        public=True,
+        level="group",
+    )
+    base_false = BaseStudy(
+        name="Closed Access Study",
+        doi="10.1234/closed-study",
+        pmid="222222",
+        is_oa=False,
+        public=True,
+        level="group",
+    )
+    base_unknown = BaseStudy(
+        name="Unknown Access Study",
+        doi="10.1234/unknown-study",
+        pmid="333333",
+        is_oa=None,
+        public=True,
+        level="group",
+    )
+    session.add_all([base_true, base_false, base_unknown])
+    session.commit()
+
+    assert session.query(BaseStudy).count() == 3
+
+    all_resp = auth_client.get("/api/base-studies/")
+    assert all_resp.status_code == 200
+    all_names = {result["name"] for result in all_resp.json()["results"]}
+    assert {
+        "Open Access Study",
+        "Closed Access Study",
+        "Unknown Access Study",
+    }.issubset(all_names)
+
+    true_resp = auth_client.get("/api/base-studies/?is_oa=true")
+    assert true_resp.status_code == 200
+    true_results = true_resp.json()["results"]
+    assert all(result["is_oa"] is True for result in true_results)
+    true_names = {result["name"] for result in true_results}
+    assert "Open Access Study" in true_names
+    assert "Closed Access Study" not in true_names
+    assert "Unknown Access Study" not in true_names
+
+    false_resp = auth_client.get("/api/base-studies/?is_oa=false")
+    assert false_resp.status_code == 200
+    false_results = false_resp.json()["results"]
+    assert all(result["is_oa"] is False for result in false_results)
+    false_names = {result["name"] for result in false_results}
+    assert "Closed Access Study" in false_names
+    assert "Open Access Study" not in false_names
+    assert "Unknown Access Study" not in false_names
 
 
 def test_config_and_feature_filters(auth_client, ingest_demographic_features, session):
@@ -480,6 +569,27 @@ def test_feature_display_and_pipeline_config(auth_client, ingest_demographic_fea
     )
     assert mismatch_response.status_code == 200
     assert len(mismatch_response.json()["results"]) == 0
+
+
+def test_pipeline_config_with_quoted_value(auth_client, ingest_demographic_features):
+    """Ensure quoted config filter values do not break jsonpath parsing."""
+    quoted_resp = auth_client.get(
+        "/api/base-studies/?"
+        "pipeline_config=ParticipantDemographicsExtractor:1.0.0:"
+        'extractor_kwargs.extraction_model="gpt-4-turbo"'
+    )
+    assert quoted_resp.status_code == 200
+
+    unquoted_resp = auth_client.get(
+        "/api/base-studies/?"
+        "pipeline_config=ParticipantDemographicsExtractor:1.0.0:"
+        "extractor_kwargs.extraction_model=gpt-4-turbo"
+    )
+    assert unquoted_resp.status_code == 200
+
+    quoted_ids = {result["id"] for result in quoted_resp.json()["results"]}
+    unquoted_ids = {result["id"] for result in unquoted_resp.json()["results"]}
+    assert quoted_ids == unquoted_ids
 
 
 def test_feature_flatten(auth_client, ingest_demographic_features):

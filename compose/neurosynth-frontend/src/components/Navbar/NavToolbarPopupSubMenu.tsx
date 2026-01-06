@@ -5,7 +5,7 @@ export interface INavToolbarPopupSubMenu {
     buttonProps: ButtonProps;
     buttonLabel: string;
     options: {
-        label: string;
+        label: string | React.ReactNode;
         secondary?: string;
         onClick: () => void;
     }[];
@@ -37,10 +37,7 @@ const NavToolbarPopupSubMenu: React.FC<INavToolbarPopupSubMenu> = (props) => {
                                 handleCloseNavMenu();
                             }}
                         >
-                            <ListItemText
-                                primary={option.label}
-                                secondary={option?.secondary || ''}
-                            />
+                            <ListItemText primary={option.label} secondary={option?.secondary || ''} />
                         </ListItemButton>
                     </ListItem>
                 ))}

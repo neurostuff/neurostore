@@ -2,7 +2,7 @@ import { Close, Delete } from '@mui/icons-material';
 import { Alert, Box, Button, Chip, IconButton, Typography } from '@mui/material';
 import DebouncedTextField from 'components/DebouncedTextField';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
-import { useGetWindowHeight } from 'hooks';
+import { useGetWindowHeight, useUserCanEdit } from 'hooks';
 import CurationImportFinalizeReviewVirtualizedListItem from 'pages/CurationImport/components/CurationImportFinalizeReviewVirtualizedListItem';
 import { EImportMode } from 'pages/CurationImport/CurationImport.types';
 import { useProjectCurationColumns, useProjectCurationImport } from 'pages/Project/store/ProjectStore';
@@ -10,6 +10,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { FixedSizeList } from 'react-window';
 import { ICurationStubStudy } from '../Curation.types';
 import { IGroupListItem } from './CurationBoardAIGroupsList';
+import { useAuth0 } from '@auth0/auth0-react';
 
 const LIST_HEIGHT = 95;
 
@@ -26,6 +27,8 @@ const CurationBoardAIInterfaceImportSummary: React.FC<{
     const windowHeight = useGetWindowHeight();
     const [confirmationDialogIsOpen, setConfirmationDialogIsOpen] = useState(false);
     const [searchText, setSearchText] = useState<string>();
+    const { user } = useAuth0();
+    const canEdit = useUserCanEdit(user?.sub || undefined);
 
     useEffect(() => {
         const totalHeight =
@@ -121,6 +124,7 @@ const CurationBoardAIInterfaceImportSummary: React.FC<{
                             sx={{ minWidth: '150px' }}
                             endIcon={<Delete />}
                             variant="contained"
+                            disabled={!canEdit}
                             disableElevation
                             size="small"
                             onClick={() => setConfirmationDialogIsOpen(true)}

@@ -1,0 +1,220 @@
+import { Warning } from '@mui/icons-material';
+import CloseIcon from '@mui/icons-material/Close';
+import FileUploadIcon from '@mui/icons-material/FileUpload';
+import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
+import { Box, Button, IconButton, List, ListItem, ListItemIcon, ListItemText, Typography } from '@mui/material';
+import CurationImportBaseStyles from 'pages/CurationImport/components/CurationImport.styles';
+import React, { useMemo, useState } from 'react';
+import {
+    ISleuthFileUploadStubs,
+    normalizeLineEndings,
+    sleuthUploadToStubs,
+    validateFileContents,
+} from '../../CurationImport/helpers';
+import CurationImportSleuthHint from './CurationImportSleuthHint';
+
+const CurationImportSleuthUpload: React.FC<{
+    onNext: (sleuthUploads: ISleuthFileUploadStubs[]) => void;
+    onPrevious: () => void;
+}> = (props) => {
+    const { onNext, onPrevious } = props;
+
+    const [sleuthFileUploads, setSleuthFileUploads] = useState<
+        {
+            file: File;
+            validatedNormalizedFileContents: string;
+            isValidFile: boolean;
+            errorMessage?: string;
+        }[]
+    >([]);
+
+    const validateAndNormalizeFile = async (file: File): Promise<string> => {
+        return new Promise((resolve, reject) => {
+            if (file.type !== 'text/plain') {
+                return reject(new Error('File should be .txt'));
+            }
+
+            const fileReader = new FileReader();
+            fileReader.readAsText(file, 'UTF-8');
+            fileReader.onload = (e) => {
+                const fileContents = e.target?.result;
+                if (!fileContents || typeof fileContents !== 'string') {
+                    return reject(new Error('File contents are invalid (expected string)'));
+                }
+                const normalizedFileContents = normalizeLineEndings(fileContents);
+                const { isValid, errorMessage } = validateFileContents(normalizedFileContents);
+                return isValid ? resolve(normalizedFileContents) : reject(new Error(errorMessage || 'File is invalid'));
+            };
+
+            fileReader.onerror = (err) => {
+                reject(err);
+            };
+            fileReader.onabort = (err) => {
+                reject(err);
+            };
+        });
+    };
+
+    const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        if (!event?.target?.files) return;
+        const uploadedFiles: {
+            file: File;
+            validatedNormalizedFileContents: string;
+            isValidFile: boolean;
+            errorMessage?: string;
+        }[] = [];
+
+        for (const targetFile of [...event.target.files]) {
+            try {
+                const validatedNormalizedFile = await validateAndNormalizeFile(targetFile);
+
+                uploadedFiles.push({
+                    file: targetFile,
+                    validatedNormalizedFileContents: validatedNormalizedFile,
+                    isValidFile: true,
+                });
+            } catch (error: unknown) {
+                uploadedFiles.push({
+                    file: targetFile,
+                    validatedNormalizedFileContents: '',
+                    errorMessage:
+                        typeof error === 'string'
+                            ? error
+                            : error instanceof Error
+                              ? error.message
+                              : 'File parsing error',
+                    isValidFile: false,
+                });
+            }
+        }
+
+        setSleuthFileUploads((prev) => {
+            return [...uploadedFiles, ...prev];
+        });
+        event.target.value = '';
+    };
+
+    const handleRemoveFile = (index: number) => {
+        setSleuthFileUploads(sleuthFileUploads.filter((_, i) => i !== index));
+    };
+
+    const handleClickNext = () => {
+        const convertedUploads: ISleuthFileUploadStubs[] = [];
+        for (const file of sleuthFileUploads) {
+            const { sleuthStubs, space } = sleuthUploadToStubs(file.validatedNormalizedFileContents);
+            convertedUploads.push({
+                fileName: file.file.name,
+                sleuthStubs,
+                space,
+            });
+        }
+        onNext(convertedUploads);
+    };
+
+    const nextButtonDisabled = useMemo(() => {
+        return sleuthFileUploads.length === 0 || sleuthFileUploads.some((x) => !x.isValidFile);
+    }, [sleuthFileUploads]);
+
+    return (
+        <Box mt={1}>
+            <Box mb="1rem" sx={{ display: 'flex', alignItems: 'center' }}>
+                <Typography mr={1}>
+                    Please ensure that your sleuth files are in the correct format before uploading
+                </Typography>
+                <CurationImportSleuthHint />
+            </Box>
+            <Box sx={{ display: 'flex', height: '350px', marginBottom: '6rem' }}>
+                <Box
+                    sx={{
+                        width: '50%',
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                    }}
+                >
+                    <Button
+                        sx={{
+                            width: '100%',
+                            height: '100%',
+                            border: '4px dashed #f4f4f4',
+                            fontSize: '1.4rem',
+                        }}
+                        component="label"
+                    >
+                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                            <FileUploadIcon
+                                sx={{
+                                    width: '50px',
+                                    height: '50px',
+                                    display: 'block',
+                                    marginBottom: '0.5rem',
+                                }}
+                            />
+                            <Typography sx={{ fontSize: '1.5rem', textTransform: 'none' }}>
+                                Click to Upload File
+                            </Typography>
+                        </Box>
+                        <input multiple onChange={handleFileUpload} type="file" hidden />
+                    </Button>
+                </Box>
+                <Box sx={{ width: '50%', overflowY: 'auto' }}>
+                    <List sx={{ padding: '0 1rem' }} disablePadding>
+                        {sleuthFileUploads.length === 0 && (
+                            <Typography sx={{ padding: '1rem' }} color="warning.dark">
+                                No files uploaded
+                            </Typography>
+                        )}
+                        {sleuthFileUploads.map((sleuthFile, index) => (
+                            <ListItem key={index}>
+                                <ListItemIcon>
+                                    {sleuthFile.isValidFile ? (
+                                        <InsertDriveFileIcon color="primary" />
+                                    ) : (
+                                        <Warning color="error" />
+                                    )}
+                                </ListItemIcon>
+                                <ListItemText
+                                    sx={{
+                                        color: sleuthFile.isValidFile ? 'primary.main' : 'error.main',
+                                        overflowWrap: 'break-word',
+                                    }}
+                                    secondaryTypographyProps={{
+                                        color: sleuthFile.isValidFile ? 'inherit' : 'error',
+                                    }}
+                                    secondary={
+                                        sleuthFile.isValidFile
+                                            ? sleuthFile.file.type
+                                            : sleuthFile.errorMessage || 'The format of this file is invalid'
+                                    }
+                                >
+                                    {sleuthFile.file.name}
+                                </ListItemText>
+                                <IconButton sx={{ color: 'error.main' }} onClick={() => handleRemoveFile(index)}>
+                                    <CloseIcon />
+                                </IconButton>
+                            </ListItem>
+                        ))}
+                    </List>
+                </Box>
+            </Box>
+            <Box sx={CurationImportBaseStyles.fixedContainer}>
+                <Box sx={[CurationImportBaseStyles.fixedButtonsContainer, { justifyContent: 'space-between' }]}>
+                    <Button variant="outlined" disableElevation onClick={() => onPrevious()}>
+                        back
+                    </Button>
+                    <Button
+                        variant="contained"
+                        sx={CurationImportBaseStyles.nextButton}
+                        disableElevation
+                        disabled={nextButtonDisabled}
+                        onClick={handleClickNext}
+                    >
+                        next
+                    </Button>
+                </Box>
+            </Box>
+        </Box>
+    );
+};
+
+export default CurationImportSleuthUpload;

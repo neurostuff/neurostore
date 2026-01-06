@@ -22,7 +22,7 @@ const ToggleType: React.FC<IToggleTypeModel> = React.memo((props) => {
     const myClass: 'type_number' | 'type_boolean' | 'type_string' | 'type_none' = `type_${type}`;
 
     return (
-        <Box sx={ToggleTypeStyles.toggleItemContainer}>
+        <Box>
             <FormControl variant="outlined">
                 <Select
                     disabled={disabled}

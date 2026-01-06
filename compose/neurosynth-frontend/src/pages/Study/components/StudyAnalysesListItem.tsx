@@ -1,5 +1,5 @@
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
-import { ListItem, ListItemButton, ListItemIcon, ListItemText, Tooltip } from '@mui/material';
+import { ListItem, ListItemButton, ListItemIcon, ListItemText, Tooltip, useMediaQuery, useTheme } from '@mui/material';
 import { AnalysisReturn } from 'neurostore-typescript-sdk';
 import useDisplayWarnings from 'pages/Study/hooks/useDisplayWarnings';
 import { IStoreAnalysis } from 'pages/Study/store/StudyStore.helpers';
@@ -11,9 +11,10 @@ const StudyAnalysesListItem: React.FC<{
     onSelectAnalysis: (analysisId: string) => void;
 }> = React.memo((props) => {
     const { analysis, selected, onSelectAnalysis } = props;
-    const { hasDuplicateName, hasNoName, hasNoPoints, hasNonMNICoordinates } = useDisplayWarnings(
-        analysis.id
-    );
+    const { hasDuplicateName, hasNoName, hasNoPoints, hasNonMNICoordinates } = useDisplayWarnings(analysis.id);
+
+    const theme = useTheme();
+    const mdDown = useMediaQuery(theme.breakpoints.down('md'));
 
     const handleSelectAnalysis = () => {
         if (!analysis.id) return;
@@ -37,8 +38,11 @@ const StudyAnalysesListItem: React.FC<{
                     secondaryTypographyProps={{
                         color: analysis?.description ? '' : 'warning.dark',
                     }}
+                    primaryTypographyProps={{
+                        variant: mdDown ? 'caption' : 'body1',
+                    }}
                     primary={analysis?.name || 'No name'}
-                    secondary={analysis?.description || 'No description'}
+                    secondary={mdDown ? undefined : analysis?.description || 'No description'}
                 />
                 {showWarningIcon && (
                     <Tooltip title="This analysis has a warning" placement="top">

@@ -1,18 +1,17 @@
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
-import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
-import { ButtonGroup } from '@mui/material';
-import NavToolbarStyles from 'components/Navbar/NavToolbar.styles';
-import NeurosynthPopupMenu from 'components/NeurosynthPopupMenu';
-import { useRef } from 'react';
 import LoadingButton from 'components/Buttons/LoadingButton';
+import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
+import NavToolbarStyles from 'components/Navbar/NavToolbar.styles';
+import { hasUnsavedChanges, unsetUnloadHandler } from 'helpers/BeforeUnload.helpers';
 import { useCreateProject } from 'hooks';
 import { generateNewProjectData } from 'pages/Project/store/ProjectStore.helpers';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const CreateProjectButton: React.FC = () => {
     const { mutate, isLoading: createProjectIsLoading } = useCreateProject();
     const navigate = useNavigate();
-    const buttonGroupRef = useRef<HTMLDivElement>(null);
+    const [confirmationDialogIsOpen, setConfirmationDialogIsOpen] = useState(false);
 
     const handleCreateProject = () => {
         mutate(generateNewProjectData('Untitled', ''), {
@@ -22,39 +21,47 @@ const CreateProjectButton: React.FC = () => {
         });
     };
 
+    const handleButtonClick = () => {
+        const unsavedChangesExist = hasUnsavedChanges();
+        if (unsavedChangesExist) {
+            setConfirmationDialogIsOpen(true);
+            return;
+        } else {
+            handleCreateProject();
+        }
+    };
+
+    const handleConfirmationDialogClose = (ok: boolean | undefined) => {
+        if (ok) {
+            unsetUnloadHandler('project');
+            unsetUnloadHandler('study');
+            unsetUnloadHandler('annotation');
+            handleCreateProject();
+        }
+        setConfirmationDialogIsOpen(false);
+    };
+
     return (
         <>
-            <ButtonGroup
-                ref={buttonGroupRef}
-                sx={{ marginRight: '8px' }}
+            <ConfirmationDialog
+                dialogTitle="You have unsaved changes"
+                dialogMessage="Are you sure you want to continue? You'll lose your unsaved changes"
+                confirmText="Continue"
+                rejectText="Cancel"
+                onCloseDialog={handleConfirmationDialogClose}
+                isOpen={confirmationDialogIsOpen}
+            />
+            <LoadingButton
                 variant="contained"
-                disableElevation
                 color="secondary"
-            >
-                <LoadingButton
-                    variant="contained"
-                    loaderColor="primary"
-                    onClick={handleCreateProject}
-                    isLoading={createProjectIsLoading}
-                    sx={[NavToolbarStyles.menuItem, NavToolbarStyles.createProjectButton]}
-                    startIcon={<AddCircleOutlineIcon />}
-                    text="NEW PROJECT"
-                />
-                <NeurosynthPopupMenu
-                    size="small"
-                    anchorEl={buttonGroupRef.current}
-                    buttonLabel={<ArrowDropDownIcon />}
-                    options={[
-                        {
-                            label: 'Create project from sleuth file',
-                            onClick: () => {
-                                navigate('/projects/new/sleuth');
-                            },
-                            value: 'sleuth',
-                        },
-                    ]}
-                />
-            </ButtonGroup>
+                disableElevation
+                loaderColor="primary"
+                onClick={handleButtonClick}
+                isLoading={createProjectIsLoading}
+                sx={[NavToolbarStyles.menuItem, NavToolbarStyles.createProjectButton]}
+                startIcon={<AddCircleOutlineIcon />}
+                text="NEW PROJECT"
+            />
         </>
     );
 };

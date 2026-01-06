@@ -1,11 +1,17 @@
-import { Box, Button } from '@mui/material';
+import { Box, Button, Typography } from '@mui/material';
+import { SystemStyleObject } from '@mui/system';
 import { useState } from 'react';
 import CodeSnippetStyles from './CodeSnippet.styles';
 
-const CodeSnippet: React.FC<{ linesOfCode: string[] }> = (props) => {
+const CodeSnippet: React.FC<{
+    linesOfCode: string[];
+    noCopyButton?: boolean;
+    sx?: SystemStyleObject;
+    title?: string;
+}> = (props) => {
     const [copied, setCopied] = useState(false);
 
-    const copyToClipboard = (_event: React.MouseEvent) => {
+    const copyToClipboard = () => {
         setCopied(true);
         const codeString = props.linesOfCode.reduce((prev, curr, index) => {
             return index === 0 ? curr : `${prev}\n${curr}`;
@@ -17,18 +23,33 @@ const CodeSnippet: React.FC<{ linesOfCode: string[] }> = (props) => {
     };
 
     return (
-        <Box sx={[CodeSnippetStyles.codeBlock, { display: 'flex', flexWrap: 'wrap' }]}>
-            <Box sx={{ flexGrow: 1 }}>
-                {props.linesOfCode.map((code, index) => (
-                    <Box key={index} sx={{ marginBottom: '3px', minHeight: '15px' }}>
-                        {code}
+        <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+            <Box sx={CodeSnippetStyles.codeBlockHeader}>
+                <Box>
+                    <Typography variant="body2">{props.title ?? 'Code Snippet'}</Typography>
+                </Box>
+                {props.noCopyButton ? null : (
+                    <Box>
+                        <Button
+                            size="small"
+                            sx={{ fontSize: '12px', height: '24px', color: copied ? 'success.main' : 'white' }}
+                            onClick={copyToClipboard}
+                            disableElevation
+                            variant="contained"
+                        >
+                            {copied ? '✓' : 'copy'}
+                        </Button>
                     </Box>
-                ))}
+                )}
             </Box>
-            <Box>
-                <Button onClick={copyToClipboard} disableElevation variant="contained">
-                    {copied ? 'copied!' : 'copy'}
-                </Button>
+            <Box sx={[CodeSnippetStyles.codeBlock, props.sx ?? {}]}>
+                <Box sx={{ whiteSpace: 'nowrap', overflow: 'auto' }} className="sleek-scrollbar">
+                    {props.linesOfCode.map((code, index) => (
+                        <Box key={index} sx={{ marginBottom: '3px', minHeight: '15px' }}>
+                            {code}
+                        </Box>
+                    ))}
+                </Box>
             </Box>
         </Box>
     );

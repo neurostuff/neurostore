@@ -29,7 +29,7 @@ describe('NavToolbar Component', () => {
         expect(screen.queryByTestId('PersonIcon')).not.toBeInTheDocument();
 
         expect(screen.queryByText('explore')).toBeInTheDocument();
-        expect(screen.queryByText('DOCS')).toBeInTheDocument();
+        expect(screen.queryByText('help')).toBeInTheDocument();
         expect(screen.queryByText('Sign In/Sign Up')).toBeInTheDocument();
     });
 
@@ -41,7 +41,7 @@ describe('NavToolbar Component', () => {
         expect(screen.queryByText('NEW PROJECT')).toBeInTheDocument();
         expect(screen.queryByText('my projects')).toBeInTheDocument();
         expect(screen.queryByText('explore')).toBeInTheDocument();
-        expect(screen.queryByText('DOCS')).toBeInTheDocument();
+        expect(screen.queryByText('help')).toBeInTheDocument();
         expect(screen.getByTestId('PersonIcon')).toBeInTheDocument();
     });
 
@@ -66,7 +66,8 @@ describe('NavToolbar Component', () => {
     it('should open the navpopup menu with the given menu items', () => {
         render(<NavToolbar onLogin={mockLogin} onLogout={mockLogout} />);
 
-        userEvent.click(screen.getByTestId('mock-trigger-show-popup'));
+        // get the first element (the Explore button)
+        userEvent.click(screen.getAllByTestId('mock-trigger-show-popup')[0]);
         expect(screen.getByText('Studies')).toBeInTheDocument();
         expect(screen.getByText('Meta-Analyses')).toBeInTheDocument();
     });

@@ -21,17 +21,12 @@ const EditStudyAnnotations: React.FC = () => {
                 },
             ]}
             accordionSummarySx={EditStudyComponentsStyles.accordionSummary}
-            TitleElement={
-                <Typography sx={EditStudyComponentsStyles.accordionTitle}>
-                    Study Annotations
-                </Typography>
-            }
+            TitleElement={<Typography sx={EditStudyComponentsStyles.accordionTitle}>Study Annotations</Typography>}
         >
             <Box sx={{ padding: '1rem 0' }}>
                 {numAnalyses === 0 ? (
                     <Typography sx={{ color: 'warning.dark' }}>
-                        There are no annotations for this study. To get started, add an analysis
-                        below
+                        There are no annotations for this study. To get started, add an analysis below
                     </Typography>
                 ) : (
                     <EditStudyAnnotationsHotTable />
