@@ -87,7 +87,7 @@ services:
       timeout: 3s
       retries: 10
     
-  pghero:
+  store-pghero:
     image: ankane/pghero
     restart: always
     expose:
@@ -101,7 +101,7 @@ services:
       store-pgsql17:
         condition: service_healthy
 
-  grafana:
+  store-grafana:
     image: grafana/grafana
     restart: always
     expose:
@@ -132,4 +132,3 @@ networks:
   default:
     external:
       name: nginx-proxy
-

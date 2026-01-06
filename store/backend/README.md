@@ -100,7 +100,7 @@ and execute:
 To start the pgHero service, ensure Docker Compose is set up and run:
 
 ```sh
-docker-compose up -d pghero
+docker-compose up -d store-pghero
 ```
 
 ### Accessing the pgHero Web UI

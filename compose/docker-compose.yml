@@ -96,7 +96,7 @@ services:
       timeout: 3s
       retries: 10
 
-  pghero:
+  compose-pghero:
     image: ankane/pghero
     restart: always
     expose:
@@ -110,7 +110,7 @@ services:
       compose-pgsql17:
         condition: service_healthy
 
-  grafana:
+  compose-grafana:
     image: grafana/grafana
     restart: always
     expose:
