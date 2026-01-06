@@ -162,6 +162,29 @@ def fetch_neurostore_missing(cur) -> List[dict]:
     return [dict(zip(cols, row)) for row in cur.fetchall()]
 
 
+def fetch_neurostore_assigned(cur, studyset_ids: Iterable[str]) -> Dict[str, Set[str]]:
+    """
+    Returns map of studyset_id -> set(curation_stub_uuid) for provided studyset_ids.
+    """
+    unique_ids = sorted({ssid for ssid in studyset_ids if ssid})
+    if not unique_ids:
+        return {}
+
+    sql = """
+    SELECT
+        studyset_id,
+        curation_stub_uuid
+    FROM studyset_studies
+    WHERE curation_stub_uuid IS NOT NULL
+      AND studyset_id = ANY(%s);
+    """
+    cur.execute(sql, (unique_ids,))
+    out: Dict[str, Set[str]] = defaultdict(set)
+    for studyset_id, stub_uuid in cur.fetchall():
+        out[studyset_id].add(stub_uuid)
+    return out
+
+
 # Matching -------------------------------------------------------------------
 
 
@@ -203,9 +226,13 @@ def build_stub_map(stubs: Iterable[dict]) -> Dict[str, Dict[Tuple[str, str], Set
     return out
 
 
-def plan_updates(stub_map, missing_rows):
+def plan_updates(stub_map, missing_rows, assigned_stub_map=None):
     updates = []
     skipped = []
+    used_stub_uuids: Dict[str, Set[str]] = defaultdict(set)
+    if assigned_stub_map:
+        for ssid, stub_uuids in assigned_stub_map.items():
+            used_stub_uuids[ssid].update(stub_uuids)
     for row in missing_rows:
         ssid = row["studyset_id"]
         if not ssid:
@@ -217,33 +244,52 @@ def plan_updates(stub_map, missing_rows):
             continue
         matched = False
         saw_ambiguous = False
+        saw_taken = False
         key_map = stub_map.get(ssid, {})
         for key in keys:
             candidates = key_map.get(key, set())
             if len(candidates) == 1:
                 stub_uuid = next(iter(candidates))
+                if stub_uuid in used_stub_uuids[ssid]:
+                    saw_taken = True
+                    continue
                 updates.append((stub_uuid, ssid, row["study_id"]))
+                used_stub_uuids[ssid].add(stub_uuid)
                 matched = True
                 break
             if len(candidates) > 1:
                 saw_ambiguous = True
         if not matched:
-            skipped.append((row, "ambiguous" if saw_ambiguous else "no_match"))
+            if saw_taken:
+                skipped.append((row, "stub_uuid_taken"))
+            else:
+                skipped.append((row, "ambiguous" if saw_ambiguous else "no_match"))
     return updates, skipped
 
 
 def apply_updates(cur, updates, execute: bool):
     if not execute or not updates:
-        return
+        return 0
+    applied = 0
     for stub_uuid, studyset_id, study_id in updates:
         cur.execute(
             """
-            UPDATE studyset_studies
+            UPDATE studyset_studies ss
             SET curation_stub_uuid = %s
-            WHERE studyset_id = %s AND study_id = %s AND curation_stub_uuid IS NULL
+            WHERE ss.studyset_id = %s
+              AND ss.study_id = %s
+              AND ss.curation_stub_uuid IS NULL
+              AND NOT EXISTS (
+                  SELECT 1
+                  FROM studyset_studies ss2
+                  WHERE ss2.studyset_id = ss.studyset_id
+                    AND ss2.curation_stub_uuid = %s
+              )
             """,
-            (stub_uuid, studyset_id, study_id),
+            (stub_uuid, studyset_id, study_id, stub_uuid),
         )
+        applied += cur.rowcount
+    return applied
 
 
 # Main ----------------------------------------------------------------------
@@ -280,9 +326,10 @@ def main():
             stubs = fetch_compose_stubs(ccur)
         with neuro_conn.cursor() as ncur:
             missing = fetch_neurostore_missing(ncur)
+            assigned = fetch_neurostore_assigned(ncur, (row["studyset_id"] for row in missing))
 
         stub_map = build_stub_map(stubs)
-        updates, skipped = plan_updates(stub_map, missing)
+        updates, skipped = plan_updates(stub_map, missing, assigned_stub_map=assigned)
 
         print(f"Found {len(stubs)} stubs across compose projects")
         print(f"Found {len(missing)} neurostore associations missing stub uuid")
@@ -295,9 +342,9 @@ def main():
 
         if updates and args.execute:
             with neuro_conn.cursor() as ncur:
-                apply_updates(ncur, updates, execute=True)
+                applied = apply_updates(ncur, updates, execute=True)
             neuro_conn.commit()
-            print(f"Applied {len(updates)} updates.")
+            print(f"Applied {applied} updates.")
         else:
             print("Dry-run (no updates applied). Use --execute to write changes.")
 
