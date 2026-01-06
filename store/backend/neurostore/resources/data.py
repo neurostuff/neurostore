@@ -213,7 +213,6 @@ class StudysetsView(ObjectView, ListView):
             )
         else:
             q = q.options(
-                selectinload(Studyset.studies).options(raiseload("*", sql_only=True)),
                 selectinload(Studyset.user)
                 .load_only(User.name, User.external_id)
                 .options(raiseload("*", sql_only=True)),
