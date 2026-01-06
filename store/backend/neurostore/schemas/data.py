@@ -182,6 +182,20 @@ class StringOrNested(fields.Nested):
         return schema.load(value, many=self.many)
 
 
+class StudysetStudiesField(StringOrNested):
+    """Avoid loading Studyset.studies when only IDs are needed."""
+
+    def get_value(self, obj, attr, accessor=None, default=None):
+        if not self.context.get("nested") and not self.context.get("info"):
+            assoc = getattr(obj, "studyset_studies", None)
+            if assoc is not None:
+                return [link.study_id for link in assoc]
+        try:
+            return super().get_value(obj, attr, accessor=accessor, default=default)
+        except TypeError:
+            return super().get_value(obj, attr, accessor=accessor)
+
+
 # https://github.com/marshmallow-code/marshmallow/issues/466#issuecomment-285342071
 class BaseSchemaOpts(SchemaOpts):
     def __init__(self, meta, *args, **kwargs):
@@ -597,7 +611,7 @@ class StudySchema(BaseDataSchema):
 
 class StudysetSchema(BaseDataSchema):
     # serialize
-    studies = StringOrNested(
+    studies = StudysetStudiesField(
         StudySchema, many=True
     )  # This needs to be nested, but not cloned
     # expose association records for stub mapping
