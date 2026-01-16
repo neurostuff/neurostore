@@ -2,7 +2,7 @@ import { AxiosError, AxiosResponse } from 'axios';
 import { useSnackbar } from 'notistack';
 import { useMutation, useQueryClient } from 'react-query';
 import { MetaAnalysisPostBody, MetaAnalysisReturn } from 'neurosynth-compose-typescript-sdk';
-import API from 'utils/api';
+import API from 'api/api.config';
 
 const useUpdateMetaAnalysis = () => {
     const queryClient = useQueryClient();

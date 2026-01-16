@@ -10,6 +10,7 @@ import {
     addTagToStubHelper,
     createNewExclusionHelper,
     demoteStubHelper,
+    getExclusionsHelper,
     handleDragEndHelper,
     initCurationHelper,
     promoteAllUncategorizedHelper,
@@ -18,12 +19,13 @@ import {
     replaceStudyListStatusIdHelper,
     setExclusionForStubHelper,
     setGivenStudyStatusesAsCompleteHelper,
+    updateExclusionTagHelper,
     updateStubFieldHelper,
 } from 'pages/Project/store/ProjectStore.helpers';
 import { useEffect } from 'react';
 import { useQueryClient } from 'react-query';
 import { useParams } from 'react-router-dom';
-import API from 'utils/api';
+import API from 'api/api.config';
 import { create } from 'zustand';
 import { TProjectStore } from './ProjectStore.types';
 
@@ -500,6 +502,16 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
 
             get().updateProjectInDBDebounced();
         },
+        updateExclusionTag: (exclusionIdToUpdate, newName) => {
+            set((state) => {
+                return {
+                    ...state,
+                    provenance: updateExclusionTagHelper(state.provenance, exclusionIdToUpdate, newName),
+                };
+            });
+
+            get().updateProjectInDBDebounced();
+        },
         deleteCurationImport(importId) {
             set((state) => ({
                 ...state,
@@ -559,7 +571,7 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
 
             get().updateProjectInDBDebounced();
         },
-        setExclusionForStub: (columnIndex, stubId, exclusion) => {
+        setExclusionForStub: (columnIndex, stubId, exclusionId) => {
             set((state) => ({
                 ...state,
                 provenance: {
@@ -570,7 +582,7 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
                             state.provenance.curationMetadata.columns,
                             columnIndex,
                             stubId,
-                            exclusion
+                            exclusionId
                         ),
                     },
                 },
@@ -711,6 +723,15 @@ export const useProjectMetaAnalyses = () => useProjectStore((state) => state.met
 
 // curation retrieval hooks
 export const useProjectCurationColumns = () => useProjectStore((state) => state.provenance.curationMetadata.columns);
+export const useProjectExclusionTags = () =>
+    useProjectStore((state) => {
+        return getExclusionsHelper(state.provenance);
+    });
+export const useProjectExclusionTag = (exclusionTagId: string | null) => {
+    const exclusionTags = useProjectExclusionTags();
+    if (exclusionTagId === null) return null;
+    return exclusionTags.find((tag) => tag.id === exclusionTagId);
+};
 export const useProjectCurationIsLastColumn = (columnIndex: number) =>
     useProjectStore((state) => state.provenance.curationMetadata.columns.length <= columnIndex + 1);
 export const useProjectNumCurationColumns = () =>
@@ -752,6 +773,7 @@ export const useProjectGetColumnForStub = (stubId: string) =>
             column: state.provenance.curationMetadata.columns[colIndex],
         };
     });
+
 export const useProjectCurationDuplicates = () =>
     useProjectStore((state) => {
         if (!state.provenance.curationMetadata.prismaConfig.isPrisma) return [];
@@ -782,6 +804,7 @@ export const useSetExclusionForStub = () => useProjectStore((state) => state.set
 export const useCreateNewExclusion = () => useProjectStore((state) => state.createNewExclusion);
 export const useUpdateProjectMetadata = () => useProjectStore((state) => state.updateProjectMetadata);
 export const useInitCuration = () => useProjectStore((state) => state.initCuration);
+export const useUpdateExclusionTag = () => useProjectStore((state) => state.updateExclusionTag);
 
 export const useInitProjectStoreIfRequired = () => {
     const clearProjectStore = useClearProjectStore();

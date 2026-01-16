@@ -2,7 +2,7 @@ import { AxiosResponse, AxiosError } from 'axios';
 import { useSnackbar } from 'notistack';
 import { useMutation, useQueryClient } from 'react-query';
 import { AnalysisRequest, AnalysisReturn } from 'neurostore-typescript-sdk';
-import API from 'utils/api';
+import API from 'api/api.config';
 
 const useCreateAnalysis = () => {
     const queryClient = useQueryClient();

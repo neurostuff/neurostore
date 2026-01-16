@@ -1,5 +1,7 @@
+import { useAuth0 } from '@auth0/auth0-react';
 import { Box, Button, Card, CardActions, CardContent, Link as MuiLink, Typography } from '@mui/material';
 import CurationPromoteUncategorizedButton from 'components/Buttons/CurationPromoteUncategorizedButton';
+import { useUserCanEdit } from 'hooks';
 import {
     useProjectCurationColumns,
     useProjectCurationDuplicates,
@@ -19,6 +21,8 @@ const CurationBoardAIInterfaceIdentificationUI: React.FC<{
         return cols.every((col) => col.stubStudies.length === 0);
     }, [cols]);
     const imports = useProjectCurationImports();
+    const { user } = useAuth0();
+    const canEdit = useUserCanEdit(user?.sub || undefined);
 
     const handleReviewDuplicates = () => {
         onManuallyReview();
@@ -102,6 +106,7 @@ const CurationBoardAIInterfaceIdentificationUI: React.FC<{
                             // sx={{ minWidth: '200px' }}
                             dialogTitle="Are you sure you want to promote all uncategorized studies to screening?"
                             dialogMessage="All studies that have not been marked as duplicates in this stage will be promoted"
+                            disabled={!canEdit}
                         >
                             Promote all uncategorized studies
                         </CurationPromoteUncategorizedButton>

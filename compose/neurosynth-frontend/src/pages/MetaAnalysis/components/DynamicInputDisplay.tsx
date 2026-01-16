@@ -3,16 +3,12 @@ import { IDynamicValueType, KWARG_STRING } from 'pages/MetaAnalysis/components/D
 import DynamicInputDisplayStyles from './DynamicInputDisplay.styles';
 
 const DynamicInputDisplay: React.FC<{ dynamicArg: IDynamicValueType }> = (props) => {
-    /**
-     * filter for values that exist
-     */
+    /** filter for values that exist */
     const valuesList = Object.keys(props.dynamicArg)
         .filter((x) => !!props.dynamicArg[x])
         .sort();
 
-    /**
-     * if kwarg string exists, remove it and put it into its own object and list
-     */
+    /** if kwarg string exists, remove it and put it into its own object and list */
     const kwargStringIndex = valuesList.findIndex((spec) => spec === KWARG_STRING);
     if (kwargStringIndex >= 0) valuesList.splice(kwargStringIndex, 1);
     const kwargs = (props.dynamicArg[KWARG_STRING] || {}) as { [key: string]: string };
@@ -22,16 +18,12 @@ const DynamicInputDisplay: React.FC<{ dynamicArg: IDynamicValueType }> = (props)
         <>
             {valuesList.length > 0 && (
                 <>
-                    <Typography sx={DynamicInputDisplayStyles.dynamicInputSection}>
-                        Arguments
-                    </Typography>
+                    <Typography sx={DynamicInputDisplayStyles.dynamicInputSection}>Arguments</Typography>
                     <Box sx={DynamicInputDisplayStyles.valuesListContainer}>
                         {valuesList.map((value) => (
                             <Box key={value} sx={DynamicInputDisplayStyles.tr}>
                                 <Box sx={DynamicInputDisplayStyles.cell}>{value}</Box>:
-                                <Box sx={DynamicInputDisplayStyles.cell}>
-                                    {`${props.dynamicArg[value]}`}
-                                </Box>
+                                <Box sx={DynamicInputDisplayStyles.cell}>{`${props.dynamicArg[value]}`}</Box>
                             </Box>
                         ))}
                     </Box>
@@ -40,9 +32,7 @@ const DynamicInputDisplay: React.FC<{ dynamicArg: IDynamicValueType }> = (props)
 
             {Object.keys(kwargs).length > 0 && (
                 <>
-                    <Typography sx={DynamicInputDisplayStyles.dynamicInputSection}>
-                        {KWARG_STRING}
-                    </Typography>
+                    <Typography sx={DynamicInputDisplayStyles.dynamicInputSection}>{KWARG_STRING}</Typography>
                     <Box sx={DynamicInputDisplayStyles.valuesListContainer}>
                         {kwargList.map((value) => (
                             <Box key={value} sx={DynamicInputDisplayStyles.tr}>

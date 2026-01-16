@@ -4,7 +4,7 @@ import { EImportMode } from 'pages/CurationImport/CurationImport.types';
 import { EExtractionStatus } from 'pages/Extraction/ExtractionPage';
 import { SortBy } from 'pages/Study/Study.types';
 import { useQuery } from 'react-query';
-import API from 'utils/api';
+import API from 'api/api.config';
 
 export interface ITag {
     label: string;

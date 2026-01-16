@@ -4,7 +4,7 @@ const useAuth0 = vi.fn().mockReturnValue({
     getAccessTokenSilently: vi.fn().mockImplementation(() => {
         return Promise.resolve('test-token');
     }),
-    loginWithPopup: vi.fn(),
+    getAccessTokenWithPopup: vi.fn(),
     logout: vi.fn(),
     isAuthenticated: false,
     isLoading: false,

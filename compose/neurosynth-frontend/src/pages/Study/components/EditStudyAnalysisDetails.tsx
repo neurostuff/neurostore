@@ -5,47 +5,44 @@ import {
     useStudyAnalysisName,
 } from 'pages/Study/store/StudyStore';
 import { IStoreAnalysis } from 'pages/Study/store/StudyStore.helpers';
-import { useEffect } from 'react';
-import { useUpdateAnnotationNoteName } from 'stores/AnnotationStore.actions';
+import EditStudyAnalysisDeleteButton from './EditStudyAnalysisDeleteButton';
+import { useUpdateAnnotationNoteDetails } from 'stores/AnnotationStore.actions';
 
-const EditStudyAnalysisDetails: React.FC<{ analysisId?: string }> = (props) => {
+const EditStudyAnalysisDetails: React.FC<{ analysisId?: string; onDeleteAnalysis: () => void }> = (props) => {
     const addOrUpdateAnalysis = useAddOrUpdateAnalysis();
     const name = useStudyAnalysisName(props.analysisId);
     const description = useStudyAnalysisDescription(props.analysisId);
-    const updateAnnotationNoteName = useUpdateAnnotationNoteName();
+    const updateAnnotationNoteName = useUpdateAnnotationNoteDetails();
 
-    useEffect(() => {
-        if (!props.analysisId) return;
-        let debounce: NodeJS.Timeout;
-        debounce = setTimeout(() => {
-            updateAnnotationNoteName({
-                analysis: props.analysisId,
-                analysis_name: name,
-            });
-        }, 500);
-
-        return () => {
-            clearTimeout(debounce);
-        };
-    }, [name, props.analysisId, updateAnnotationNoteName]);
-
-    const handleUpdateAnalysisDetails = (
-        field: keyof IStoreAnalysis,
-        analysisId: string,
-        value: string
-    ) => {
+    const handleUpdateAnalysisDetails = (field: keyof IStoreAnalysis, analysisId: string, value: string) => {
         if (!analysisId) return;
         addOrUpdateAnalysis({
             id: analysisId,
             [field]: value,
         });
+        if (field === 'name') {
+            updateAnnotationNoteName({
+                analysis: analysisId,
+                analysis_name: value,
+            });
+        }
     };
 
     return (
         <Box sx={{ width: '100%' }}>
-            <Typography sx={{ marginBottom: '1rem', fontWeight: 'bold' }}>
-                Analysis Details
-            </Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <Typography sx={{ marginBottom: '1rem', fontWeight: 'bold' }}>Analysis Details</Typography>
+                <EditStudyAnalysisDeleteButton
+                    variant="contained"
+                    disableElevation
+                    color="error"
+                    size="small"
+                    onDeleteAnalysis={props.onDeleteAnalysis}
+                    analysisId={props.analysisId}
+                >
+                    Delete Analysis
+                </EditStudyAnalysisDeleteButton>
+            </Box>
             <TextField
                 label="name"
                 size="small"
@@ -57,11 +54,7 @@ const EditStudyAnalysisDetails: React.FC<{ analysisId?: string }> = (props) => {
             />
             <TextField
                 onChange={(event) => {
-                    handleUpdateAnalysisDetails(
-                        'description',
-                        props.analysisId || '',
-                        event.target.value
-                    );
+                    handleUpdateAnalysisDetails('description', props.analysisId || '', event.target.value);
                 }}
                 label="description"
                 size="small"

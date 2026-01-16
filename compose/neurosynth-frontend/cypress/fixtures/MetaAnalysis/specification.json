@@ -1,0 +1,29 @@
+{
+    "id": "rgiZsKGMdxzT",
+    "created_at": "2023-11-27T21:45:52.407039+00:00",
+    "updated_at": "2023-11-28T02:43:14.502324+00:00",
+    "user": "github|26612023",
+    "username": "Nicholas Lee",
+    "type": "CBMA",
+    "estimator": {
+        "type": "ALESubtraction",
+        "args": {
+            "**kwargs": {},
+            "kernel__fwhm": null,
+            "kernel__sample_size": null,
+            "n_iters": 10000
+        }
+    },
+    "database_studyset": "Neurostore Dataset",
+    "filter": "some key",
+    "corrector": {
+        "type": "FDRCorrector",
+        "args": {
+            "method": "indep",
+            "alpha": 0.05
+        }
+    },
+    "conditions": ["ABC"],
+    "weights": [1.0]
+  }
+  

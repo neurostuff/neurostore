@@ -1,7 +1,7 @@
 import { AxiosResponse } from 'axios';
 import { ResultReturn } from 'neurosynth-compose-typescript-sdk';
 import { useQuery } from 'react-query';
-import API from 'utils/api';
+import API from 'api/api.config';
 
 const useGetMetaAnalysisResultById = (metaAnalysisResultId: string | undefined | null) => {
     return useQuery(

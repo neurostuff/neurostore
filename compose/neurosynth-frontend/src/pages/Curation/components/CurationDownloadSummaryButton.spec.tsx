@@ -2,7 +2,7 @@ import { vi, Mock } from 'vitest';
 import { act, render, screen } from '@testing-library/react';
 import CurationDownloadSummaryButton from 'pages/Curation/components/CurationDownloadSummaryButton';
 import userEvent from '@testing-library/user-event';
-import { useProjectCurationColumns } from 'pages/Project/store/ProjectStore';
+import { useProjectCurationColumns, useProjectExclusionTags } from 'pages/Project/store/ProjectStore';
 import { ICurationColumn } from '../Curation.types';
 import { defaultIdentificationSources } from 'pages/Project/store/ProjectStore.types';
 import { downloadFile } from '../Curation.helpers';
@@ -32,12 +32,7 @@ const mockCurationColumns: ICurationColumn[] = [
                 identificationSource: defaultIdentificationSources.neurostore,
                 keywords: '',
                 abstractText: 'included_abstract_1',
-                exclusionTag: {
-                    id: 'excluded',
-                    label: 'exclusion-tag-label',
-                    isExclusionTag: true,
-                    isAssignable: true,
-                },
+                exclusionTag: 'excluded',
                 neurostoreId: 'included_neurostoreid_1',
             },
         ],
@@ -81,6 +76,17 @@ const mockCurationColumns: ICurationColumn[] = [
 ];
 
 describe('CurationDownloadSummaryButton', () => {
+    beforeEach(() => {
+        (useProjectExclusionTags as Mock).mockReturnValue([
+            {
+                id: 'excluded',
+                label: 'exclusion-tag-label',
+                isExclusionTag: true,
+                isAssignable: true,
+            },
+        ]);
+    });
+
     it('should render', () => {
         (useProjectCurationColumns as Mock).mockReturnValue(mockCurationColumns);
         render(<CurationDownloadSummaryButton />);

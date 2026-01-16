@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 
 JOB_CACHE_PREFIX = "compose:jobs"
 JOB_CACHE_TTL_SECONDS = 60 * 60 * 24 * 3  # 3 days
+LOG_TIME_PADDING_MS = 5 * 60 * 1000  # pad log queries by 5 minutes on each side
 
 _job_store_client: Optional[Redis] = None
 
@@ -53,6 +54,20 @@ def get_job_store() -> Redis:
 
 def _job_cache_key(job_id: str) -> str:
     return f"{JOB_CACHE_PREFIX}:{job_id}"
+
+
+def _iso_to_epoch_millis(value: Optional[str]) -> Optional[int]:
+    """Convert an ISO 8601 timestamp to epoch milliseconds."""
+    if not value:
+        return None
+    try:
+        dt = datetime.fromisoformat(value)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return int(dt.timestamp() * 1000)
+    except ValueError:
+        logger.warning("Invalid ISO timestamp when querying logs: %s", value)
+        return None
 
 
 def _store_job(job_id: str, payload: dict) -> None:
@@ -182,6 +197,7 @@ def submit_job():
         "updated_at": now,
         "output": submission_response.get("output"),
         "start_time": submission_response.get("start_time"),
+        "stop_time": submission_response.get("stop_time"),
         "logs": submission_response.get("logs", []),
     }
 
@@ -211,10 +227,22 @@ def get_job_status(job_id: str):
     try:
         status_response = call_lambda(status_url, {"job_id": job_id})
         logs_payload = {"events": []}
-        if cached_job.get("artifact_prefix"):
-            logs_payload = call_lambda(
-                logs_url, {"artifact_prefix": cached_job["artifact_prefix"]}
-            )
+        artifact_prefix = status_response.get("artifact_prefix") or cached_job.get(
+            "artifact_prefix"
+        )
+        start_time_iso = status_response.get("start_time") or cached_job.get(
+            "start_time"
+        )
+        stop_time_iso = status_response.get("stop_time") or cached_job.get("stop_time")
+        if artifact_prefix:
+            logs_request = {"artifact_prefix": artifact_prefix}
+            start_ms = _iso_to_epoch_millis(start_time_iso)
+            stop_ms = _iso_to_epoch_millis(stop_time_iso)
+            if start_ms is not None:
+                logs_request["start_time"] = max(0, start_ms - LOG_TIME_PADDING_MS)
+            if stop_ms is not None:
+                logs_request["end_time"] = stop_ms + LOG_TIME_PADDING_MS
+            logs_payload = call_lambda(logs_url, logs_request)
     except (ComposeRunnerError, Exception) as exc:  # noqa: BLE001
         _abort_with_runner_error(exc)
 
@@ -222,10 +250,9 @@ def get_job_status(job_id: str):
     cached_job.update(
         {
             "status": status_response.get("status", cached_job.get("status")),
-            "artifact_prefix": status_response.get(
-                "artifact_prefix", cached_job.get("artifact_prefix")
-            ),
-            "start_time": status_response.get("start_time"),
+            "artifact_prefix": artifact_prefix,
+            "start_time": start_time_iso,
+            "stop_time": stop_time_iso,
             "output": status_response.get("output"),
             "updated_at": now,
         }

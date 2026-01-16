@@ -21,6 +21,7 @@ from sqlalchemy.orm import (
     defaultload,
     raiseload,
     selectinload,
+    load_only,
 )
 import sqlalchemy as sa
 from sqlalchemy import select
@@ -36,6 +37,7 @@ from ..models import (
     User,
     Studyset,
     Study,
+    Table,
     Image,
     Point,
     PointValue,
@@ -69,6 +71,7 @@ __all__ = [
     "BaseStudiesView",
     "StudiesView",
     "AnalysesView",
+    "TablesView",
     "ConditionsView",
     "ImagesView",
     "PointsView",
@@ -158,6 +161,15 @@ class StudysetsView(ObjectView, ListView):
 
     def eager_load(self, q, args=None):
         args = args or {}
+        q = q.options(
+            selectinload(Studyset.studyset_studies).options(
+                load_only(
+                    StudysetStudy.study_id,
+                    StudysetStudy.studyset_id,
+                    StudysetStudy.curation_stub_uuid,
+                )
+            )
+        )
         if args.get("nested"):
             q = q.options(
                 selectinload(Studyset.studies).options(
@@ -201,7 +213,6 @@ class StudysetsView(ObjectView, ListView):
             )
         else:
             q = q.options(
-                selectinload(Studyset.studies).options(raiseload("*", sql_only=True)),
                 selectinload(Studyset.user)
                 .load_only(User.name, User.external_id)
                 .options(raiseload("*", sql_only=True)),
@@ -268,6 +279,60 @@ class StudysetsView(ObjectView, ListView):
         db.session.commit()
 
         return response
+
+    @classmethod
+    def update_or_create(cls, data, id=None, user=None, record=None, flush=True):
+        """
+        Extend base behavior to attach optional curation_stub_uuid to studyset-study links.
+        """
+        stub_map = data.pop("curation_stub_map", {}) or {}
+        record = super().update_or_create(
+            data, id=id, user=user, record=record, flush=flush
+        )
+
+        if getattr(record, "studyset_studies", None) is not None:
+            # Ensure associations match the current studies and apply stub mappings.
+            current_ids = {
+                s.id for s in getattr(record, "studies", []) if getattr(s, "id", None)
+            }
+
+            # Load existing associations directly to avoid
+            # duplicate pending rows in the relationship.
+            existing = {
+                assoc.study_id: assoc
+                for assoc in StudysetStudy.query.filter_by(studyset_id=record.id).all()
+            }
+
+            # Remove stale associations in bulk
+            if existing:
+                stale_ids = set(existing.keys()) - current_ids
+                if stale_ids:
+                    (
+                        StudysetStudy.query.filter_by(studyset_id=record.id)
+                        .filter(StudysetStudy.study_id.in_(stale_ids))
+                        .delete(synchronize_session=False)
+                    )
+                    for sid in stale_ids:
+                        existing.pop(sid, None)
+
+            # Ensure each study has an association and apply stub UUIDs
+            for study_id in current_ids:
+                assoc = existing.get(study_id)
+                if not assoc:
+                    assoc = StudysetStudy(
+                        study_id=study_id,
+                        studyset_id=record.id,
+                        curation_stub_uuid=None,
+                    )
+                    db.session.add(assoc)
+                    existing[study_id] = assoc
+                if study_id in stub_map:
+                    assoc.curation_stub_uuid = stub_map[study_id]
+
+            # Sync the relationship collection to the de-duplicated set for serialization.
+            record.studyset_studies = list(existing.values())
+
+        return record
 
     def _build_clone_payload(self, source_id, override_data):
         source_record = (
@@ -391,6 +456,84 @@ class AnnotationsView(ObjectView, ListView):
         }
         return unique_ids
 
+    @staticmethod
+    def _ordered_note_keys(note_keys):
+        if not note_keys:
+            return []
+        keys = list(note_keys.keys())
+        alphabetical = sorted(keys)
+        if keys == alphabetical:
+            return alphabetical
+        return keys
+
+    @classmethod
+    def _normalize_note_keys(cls, note_keys):
+        if note_keys is None:
+            return None
+        if not isinstance(note_keys, dict):
+            abort_validation("`note_keys` must be an object.")
+
+        ordered_keys = cls._ordered_note_keys(note_keys)
+        normalized = OrderedDict()
+        used_orders = set()
+        next_order = 0
+
+        for key in ordered_keys:
+            descriptor = note_keys.get(key) or {}
+            note_type = descriptor.get("type")
+            if note_type not in {"string", "number", "boolean"}:
+                abort_validation(
+                    "Invalid `type` for note_keys entry "
+                    f"'{key}', choose from: ['boolean', 'number', 'string']."
+                )
+
+            order = descriptor.get("order")
+            if isinstance(order, bool) or (
+                order is not None and not isinstance(order, int)
+            ):
+                order = None
+
+            if isinstance(order, int) and order not in used_orders:
+                used_orders.add(order)
+                if order >= next_order:
+                    next_order = order + 1
+            else:
+                while next_order in used_orders:
+                    next_order += 1
+                order = next_order
+                used_orders.add(order)
+                next_order += 1
+
+            normalized[key] = {"type": note_type, "order": order}
+
+        return normalized
+
+    @classmethod
+    def _merge_note_keys(cls, existing, additions):
+        """
+        additions is a mapping of key -> type
+        """
+        base = cls._normalize_note_keys(existing or {}) or OrderedDict()
+        used_orders = {v.get("order") for v in base.values() if isinstance(v, dict)}
+        used_orders = {o for o in used_orders if isinstance(o, int)}
+        next_order = max(used_orders, default=-1) + 1
+
+        for key, value_type in additions.items():
+            if key in base:
+                descriptor = base[key] or {}
+                descriptor["type"] = value_type or descriptor.get("type") or "string"
+                base[key] = descriptor
+                continue
+
+            descriptor = {
+                "type": value_type or "string",
+                "order": next_order,
+            }
+            base[key] = descriptor
+            next_order += 1
+
+        return base
+
     @classmethod
     def load_nested_records(cls, data, record=None):
         if not data:
@@ -439,7 +582,12 @@ class AnnotationsView(ObjectView, ListView):
             )
             .options(
                 joinedload(AnnotationAnalysis.analysis)
-                .load_only(Analysis.id, Analysis.name)
+                .load_only(
+                    Analysis.id,
+                    Analysis.name,
+                    Analysis.order,
+                    Analysis.created_at,
+                )
                 .options(raiseload("*", sql_only=True)),
                 joinedload(AnnotationAnalysis.studyset_study).options(
                     joinedload(StudysetStudy.study)
@@ -551,6 +699,9 @@ class AnnotationsView(ObjectView, ListView):
         request_data = self.insert_data(id, request.json)
         schema = self._schema()
         data = schema.load(request_data)
+
+        if "note_keys" in data:
+            data["note_keys"] = self._normalize_note_keys(data["note_keys"])
 
         pipeline_payload = data.pop("pipelines", [])
 
@@ -940,12 +1091,10 @@ class AnnotationsView(ObjectView, ListView):
 
         if column_types:
             if data.get("note_keys") is None:
-                note_keys = dict(annotation.note_keys or {})
+                note_keys = self._normalize_note_keys(annotation.note_keys or {})
             else:
-                note_keys = dict(data["note_keys"])
-            for key, value_type in column_types.items():
-                note_keys[key] = value_type or "string"
-            data["note_keys"] = note_keys
+                note_keys = self._normalize_note_keys(data["note_keys"])
+            data["note_keys"] = self._merge_note_keys(note_keys, column_types)
 
         data["annotation_analyses"] = list(note_map.values())
 
@@ -975,6 +1124,7 @@ class BaseStudiesView(ObjectView, ListView):
         "y": fields.Float(required=False, allow_none=True),
         "z": fields.Float(required=False, allow_none=True),
         "radius": fields.Float(required=False, allow_none=True),
+        **LIST_NESTED_ARGS,
     }
 
     _multi_search = ("name", "description")
@@ -1067,7 +1217,51 @@ class BaseStudiesView(ObjectView, ListView):
             )
 
         # Handle version and user loading
-        if args.get("info"):
+        if args.get("nested"):
+            q = q.options(
+                selectinload(BaseStudy.versions).options(
+                    selectinload(Study.user)
+                    .load_only(User.name, User.external_id)
+                    .options(raiseload("*", sql_only=True)),
+                    selectinload(Study.tables)
+                    .load_only(Table.id)
+                    .options(raiseload("*", sql_only=True)),
+                    selectinload(Study.analyses).options(
+                        raiseload("*", sql_only=True),
+                        selectinload(Analysis.user)
+                        .load_only(User.name, User.external_id)
+                        .options(raiseload("*", sql_only=True)),
+                        selectinload(Analysis.images).options(
+                            raiseload("*", sql_only=True),
+                            selectinload(Image.user)
+                            .load_only(User.name, User.external_id)
+                            .options(raiseload("*", sql_only=True)),
+                        ),
+                        selectinload(Analysis.points).options(
+                            raiseload("*", sql_only=True),
+                            selectinload(Point.user)
+                            .load_only(User.name, User.external_id)
+                            .options(raiseload("*", sql_only=True)),
+                            selectinload(Point.values).options(
+                                raiseload("*", sql_only=True)
+                            ),
+                        ),
+                        selectinload(Analysis.analysis_conditions).options(
+                            raiseload("*", sql_only=True),
+                            selectinload(AnalysisConditions.condition).options(
+                                raiseload("*", sql_only=True),
+                                selectinload(Condition.user)
+                                .load_only(User.name, User.external_id)
+                                .options(raiseload("*", sql_only=True)),
+                            ),
+                        ),
+                    ),
+                ),
+                joinedload(BaseStudy.user)
+                .load_only(User.name, User.external_id)
+                .options(raiseload("*", sql_only=True)),
+            )
+        elif args.get("info"):
             q = q.options(
                 joinedload(BaseStudy.versions).options(
                     raiseload("*", sql_only=True),
@@ -1591,11 +1785,13 @@ class StudiesView(ObjectView, ListView):
                 Analysis.id,
                 StudysetStudy.studyset_id,
                 Study.base_study_id,
+                Table.id.label("table_id"),
             )
             .select_from(Study)
             .outerjoin(Analysis, Analysis.study_id == Study.id)
             .outerjoin(StudysetStudy, Study.id == StudysetStudy.study_id)
             .outerjoin(Annotation, StudysetStudy.studyset_id == Annotation.studyset_id)
+            .outerjoin(Table, Table.study_id == Study.id)
             .where(Study.id.in_(ids))
         )
 
@@ -1608,10 +1804,11 @@ class StudiesView(ObjectView, ListView):
             "analyses": set(),
             "studysets": set(),
             "base-studies": set(),
+            "tables": set(),
         }
 
         # Iterate over the result and add IDs to the respective sets
-        for annotation_id, analysis_id, studyset_id, base_study_id in result:
+        for annotation_id, analysis_id, studyset_id, base_study_id, table_id in result:
             if annotation_id:
                 unique_ids["annotations"].add(annotation_id)
             if analysis_id:
@@ -1620,6 +1817,8 @@ class StudiesView(ObjectView, ListView):
                 unique_ids["studysets"].add(studyset_id)
             if base_study_id:
                 unique_ids["base-studies"].add(base_study_id)
+            if table_id:
+                unique_ids["tables"].add(table_id)
 
         return unique_ids
 
@@ -1629,6 +1828,9 @@ class StudiesView(ObjectView, ListView):
             q = q.options(
                 selectinload(Study.user)
                 .load_only(User.name, User.external_id)
+                .options(raiseload("*", sql_only=True)),
+                selectinload(Study.tables)
+                .load_only(Table.id)
                 .options(raiseload("*", sql_only=True)),
                 selectinload(Study.analyses).options(
                     raiseload("*", sql_only=True),
@@ -1668,6 +1870,9 @@ class StudiesView(ObjectView, ListView):
                 .options(raiseload("*", sql_only=True)),
                 selectinload(Study.user)
                 .load_only(User.name, User.external_id)
+                .options(raiseload("*", sql_only=True)),
+                selectinload(Study.tables)
+                .load_only(Table.id)
                 .options(raiseload("*", sql_only=True)),
             )
         return q
@@ -1710,9 +1915,10 @@ class StudiesView(ObjectView, ListView):
 
     def join_tables(self, q, args):
         "join relevant tables to speed up query"
+        options = [selectinload(self._model.tables).load_only(Table.id)]
         if not args.get("flat"):
-            # q = q.options(selectinload("base_study"))
-            q = q.options(selectinload(self._model.analyses))
+            options.append(selectinload(self._model.analyses))
+        q = q.options(*options)
         return super().join_tables(q, args)
 
     def serialize_records(self, records, args, exclude=tuple()):
@@ -1859,6 +2065,7 @@ class AnalysesView(ObjectView, ListView):
                 Analysis.study_id,
                 StudysetStudy.studyset_id,
                 Study.base_study_id,
+                Analysis.table_id,
             )
             .outerjoin(Study, Analysis.study_id == Study.id)
             .outerjoin(StudysetStudy, Study.id == StudysetStudy.study_id)
@@ -1876,10 +2083,11 @@ class AnalysesView(ObjectView, ListView):
             "studies": set(),
             "studysets": set(),
             "base-studies": set(),
+            "tables": set(),
         }
 
         # Iterate over the result and add IDs to the respective sets
-        for annotation_id, study_id, studyset_id, base_study_id in result:
+        for annotation_id, study_id, studyset_id, base_study_id, table_id in result:
             if annotation_id:
                 unique_ids["annotations"].add(annotation_id)
             if study_id:
@@ -1888,6 +2096,8 @@ class AnalysesView(ObjectView, ListView):
                 unique_ids["studysets"].add(studyset_id)
             if base_study_id:
                 unique_ids["base-studies"].add(base_study_id)
+            if table_id:
+                unique_ids["tables"].add(table_id)
 
         return unique_ids
 
@@ -1953,6 +2163,21 @@ class AnalysesView(ObjectView, ListView):
             )
         return super().join_tables(q, args)
 
+    def db_validation(self, record, data):
+        table_id = data.get("table_id")
+        study_id = data.get("study_id") or getattr(record, "study_id", None)
+
+        if table_id:
+            table = Table.query.filter_by(id=table_id).first()
+            if table is None:
+                field_err = make_field_error("table_id", table_id, code="NOT_FOUND")
+                abort_unprocessable("Invalid table reference", [field_err])
+            if study_id and table.study_id != study_id:
+                field_err = make_field_error("table_id", table_id, code="MISMATCH")
+                abort_unprocessable(
+                    "Table must belong to the same study as the analysis", [field_err]
+                )
+
     @classmethod
     def check_duplicate(cls, data, record):
         study_id = data.get("study_id")
@@ -2005,6 +2230,127 @@ class AnalysesView(ObjectView, ListView):
                 return False  # If the point doesn't have coordinates or a valid ID, return False
 
         return existing_points_set == new_points_set
+
+
+@view_maker
+class TablesView(ObjectView, ListView):
+    _view_fields = {**LIST_NESTED_ARGS, "study": fields.String(load_default=None)}
+    _m2o = {"study": "StudiesView"}
+    _parent = {"study": "StudiesView"}
+    _search_fields = ("t_id", "name", "caption", "footer")
+
+    def view_search(self, q, args):
+        if args.get("study"):
+            q = q.filter(Table.study_id == args["study"])
+        return q
+
+    def get_affected_ids(self, ids):
+        query = (
+            select(
+                Table.id,
+                Table.study_id,
+                Analysis.id.label("analysis_id"),
+                StudysetStudy.studyset_id,
+                Study.base_study_id,
+            )
+            .select_from(Table)
+            .outerjoin(Analysis, Analysis.table_id == Table.id)
+            .outerjoin(Study, Table.study_id == Study.id)
+            .outerjoin(StudysetStudy, Study.id == StudysetStudy.study_id)
+            .where(Table.id.in_(ids))
+        )
+
+        result = db.session.execute(query).fetchall()
+
+        unique_ids = {
+            "tables": set(ids),
+            "analyses": set(),
+            "studies": set(),
+            "studysets": set(),
+            "base-studies": set(),
+        }
+
+        for _, study_id, analysis_id, studyset_id, base_study_id in result:
+            if analysis_id:
+                unique_ids["analyses"].add(analysis_id)
+            if study_id:
+                unique_ids["studies"].add(study_id)
+            if studyset_id:
+                unique_ids["studysets"].add(studyset_id)
+            if base_study_id:
+                unique_ids["base-studies"].add(base_study_id)
+
+        return unique_ids
+
+    def eager_load(self, q, args=None):
+        args = args or {}
+        if args.get("nested"):
+            q = q.options(
+                selectinload(Table.user)
+                .load_only(User.name, User.external_id)
+                .options(raiseload("*", sql_only=True)),
+                selectinload(Table.analyses).options(
+                    raiseload("*", sql_only=True),
+                    selectinload(Analysis.user)
+                    .load_only(User.name, User.external_id)
+                    .options(raiseload("*", sql_only=True)),
+                ),
+            )
+        else:
+            q = q.options(
+                selectinload(Table.user)
+                .load_only(User.name, User.external_id)
+                .options(raiseload("*", sql_only=True)),
+                selectinload(Table.analyses)
+                .load_only(Analysis.id)
+                .options(raiseload("*", sql_only=True)),
+            )
+        return q
+
+    def db_validation(self, record, data):
+        study_id = data.get("study_id") or record.study_id
+        if study_id is None:
+            field_err = make_field_error("study", None, code="MISSING_FIELD")
+            abort_unprocessable("Missing required field: study", [field_err])
+
+        t_id = data.get("t_id")
+        if t_id:
+            existing = (
+                Table.query.filter_by(study_id=study_id, t_id=t_id)
+                .filter(Table.id != getattr(record, "id", None))
+                .first()
+            )
+            if existing:
+                field_err = make_field_error("t_id", t_id, code="NOT_UNIQUE")
+                abort_unprocessable(
+                    f"Table with t_id '{t_id}' already exists for this study",
+                    [field_err],
+                )
+
+    @staticmethod
+    def pre_nested_record_update(record):
+        if record.study and record.user_id != record.study.user_id:
+            record.user_id = record.study.user_id
+        return record
+
+    @classmethod
+    def check_duplicate(cls, data, record):
+        study_id = data.get("study_id") or getattr(record, "study_id", None)
+        t_id = data.get("t_id")
+        if not (study_id and t_id):
+            return False
+
+        existing = (
+            Table.query.filter_by(study_id=study_id, t_id=t_id)
+            .filter(Table.id != getattr(record, "id", None))
+            .first()
+        )
+        if existing:
+            field_err = make_field_error("t_id", t_id, code="NOT_UNIQUE")
+            abort_unprocessable(
+                f"Table with t_id '{t_id}' already exists for this study", [field_err]
+            )
+        return False
 
 
 @view_maker

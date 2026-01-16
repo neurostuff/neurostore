@@ -182,6 +182,20 @@ class StringOrNested(fields.Nested):
         return schema.load(value, many=self.many)
 
 
+class StudysetStudiesField(StringOrNested):
+    """Avoid loading Studyset.studies when only IDs are needed."""
+
+    def get_value(self, obj, attr, accessor=None, default=None):
+        if not self.context.get("nested") and not self.context.get("info"):
+            assoc = getattr(obj, "studyset_studies", None)
+            if assoc is not None:
+                return [link.study_id for link in assoc]
+        try:
+            return super().get_value(obj, attr, accessor=accessor, default=default)
+        except TypeError:
+            return super().get_value(obj, attr, accessor=accessor)
+
+
 # https://github.com/marshmallow-code/marshmallow/issues/466#issuecomment-285342071
 class BaseSchemaOpts(SchemaOpts):
     def __init__(self, meta, *args, **kwargs):
@@ -385,13 +399,19 @@ class AnalysisConditionSchema(BaseDataSchema):
 
 
 class StudysetStudySchema(BaseDataSchema):
-    studyset_id = fields.String()  # primary key needed (no id_field)
-    study_id = fields.String()  # primary key needed (no id_field)
+    # expose only the study id and optional stub mapping; keep everything else load-only
+    id = fields.Function(lambda obj: getattr(obj, "study_id", None), dump_only=True)
+    study_id = fields.String(load_only=True)  # primary key needed (no id_field)
+    studyset_id = fields.String(load_only=True)  # primary key needed (no id_field)
+    curation_stub_uuid = fields.String(allow_none=True)
 
 
 class AnalysisSchema(BaseDataSchema):
     # serialization
     study_id = fields.String(data_key="study", metadata={"id_field": True})
+    table_id = fields.String(
+        data_key="table_id", allow_none=True, metadata={"id_field": True}
+    )
     metadata = fields.Dict(attribute="metadata_", dump_only=True)
     metadata_ = fields.Dict(data_key="metadata", load_only=True, allow_none=True)
     # study = fields.Pluck("StudySchema", "id", metadata={"id_field": True})
@@ -442,6 +462,15 @@ class AnalysisSchema(BaseDataSchema):
         data.pop("analysis_conditions", None)
 
         return data
+
+
+class TableSchema(BaseDataSchema):
+    study_id = fields.String(data_key="study", metadata={"id_field": True})
+    t_id = fields.String(allow_none=True)
+    name = fields.String(allow_none=True)
+    footer = fields.String(allow_none=True)
+    caption = fields.String(allow_none=True)
+    analyses = StringOrNested(AnalysisSchema, many=True, dump_only=True)
 
 
 class StudySetStudyInfoSchema(Schema):
@@ -542,6 +571,7 @@ class StudySchema(BaseDataSchema):
     year = fields.Integer(allow_none=True)
     level = fields.String(allow_none=True)
     analyses = StringOrNested(AnalysisSchema, many=True)
+    tables = fields.Method("get_table_ids", dump_only=True)
     source = fields.String(
         dump_only=True, metadata={"info_field": True}, allow_none=True
     )
@@ -565,18 +595,28 @@ class StudySchema(BaseDataSchema):
     @pre_load
     def check_nulls(self, data, **kwargs):
         """ensure data is not empty string or whitespace"""
+        if not isinstance(data, dict):
+            return data
         for attr in ["pmid", "pmcid", "doi"]:
             val = data.get(attr, None)
             if val is not None and (val == "" or val.isspace()):
                 data[attr] = None
         return data
 
+    def get_table_ids(self, obj):
+        if not getattr(obj, "tables", None):
+            return []
+        return [getattr(table, "id", table) for table in obj.tables]
+
 
 class StudysetSchema(BaseDataSchema):
     # serialize
-    studies = StringOrNested(
+    studies = StudysetStudiesField(
         StudySchema, many=True
     )  # This needs to be nested, but not cloned
+    # expose association records for stub mapping
+    studyset_studies = fields.Nested("StudysetStudySchema", many=True, dump_only=True)
+    curation_stub_map = fields.Dict(load_only=True)
     source = fields.String(dump_only=True, allow_none=True)
     source_id = fields.String(dump_only=True, allow_none=True)
     source_updated_at = fields.DateTime(dump_only=True, allow_none=True)
@@ -588,6 +628,60 @@ class StudysetSchema(BaseDataSchema):
 
     class Meta:
         render_module = orjson
+
+    @pre_load
+    def capture_curation_stub_uuids(self, data, **kwargs):
+        if not isinstance(data, dict):
+            return data
+
+        # Always derive stub mapping from inline study payload; ignore any incoming map.
+        data.pop("curation_stub_map", None)
+        studies = data.get("studies")
+        if not studies:
+            return data
+
+        stub_map = {}
+        cleaned = []
+        for item in studies:
+            if isinstance(item, dict):
+                stub = item.get("curation_stub_uuid")
+                study_id = item.get("id")
+                if stub and study_id:
+                    stub_map[study_id] = stub
+                cleaned.append(
+                    {k: v for k, v in item.items() if k != "curation_stub_uuid"}
+                )
+            else:
+                # Downstream schemas (e.g., StudySchema) expect each study
+                # to be an object with at least an 'id' key.
+                # This normalization ensures that string study IDs
+                # are converted to the required object form,
+                # enabling proper deserialization and validation by those schemas.
+                cleaned.append({"id": item})
+
+        data["studies"] = cleaned
+        if stub_map:
+            data["curation_stub_map"] = stub_map
+
+        return data
+
+    @post_dump
+    def normalize_studyset_studies(self, data, **kwargs):
+        """
+        Emit minimal association records with id and optional curation_stub_uuid.
+        If there is no stub mapping, return the study id with curation_stub_uuid as null.
+        """
+        if "studyset_studies" in data and data["studyset_studies"] is not None:
+            normalized = []
+            for assoc in data["studyset_studies"]:
+                normalized.append(
+                    {
+                        "id": assoc.get("id") or assoc.get("study_id"),
+                        "curation_stub_uuid": assoc.get("curation_stub_uuid"),
+                    }
+                )
+            data["studyset_studies"] = normalized
+        return data
 
 
 class AnnotationAnalysisSchema(BaseSchema):
@@ -645,6 +739,70 @@ class AnnotationPipelineSchema(BaseSchema):
     columns = fields.List(fields.String(), required=True)
 
 
+class NoteKeysField(fields.Field):
+    allowed_types = {"string", "number", "boolean"}
+
+    def _serialize(self, value, attr, obj, **kwargs):
+        if not value:
+            return {}
+        serialized = {}
+        for key, descriptor in value.items():
+            if not isinstance(descriptor, dict):
+                continue
+            serialized[key] = {
+                "type": descriptor.get("type"),
+                "order": descriptor.get("order"),
+            }
+        return serialized
+
+    def _deserialize(self, value, attr, data, **kwargs):
+        if value is None:
+            return {}
+        if not isinstance(value, dict):
+            raise ValidationError("`note_keys` must be an object.")
+
+        normalized = {}
+        used_orders = set()
+        explicit_orders = []
+        for descriptor in value.values():
+            if isinstance(descriptor, dict) and isinstance(
+                descriptor.get("order"), int
+            ):
+                explicit_orders.append(descriptor["order"])
+        next_order = max(explicit_orders, default=-1) + 1
+
+        for key, descriptor in value.items():
+            if not isinstance(descriptor, dict):
+                raise ValidationError("Each note key must map to an object.")
+
+            note_type = descriptor.get("type")
+            if note_type not in self.allowed_types:
+                raise ValidationError(
+                    f"Invalid note type for '{key}', choose from: {sorted(self.allowed_types)}"
+                )
+
+            order = descriptor.get("order")
+            if isinstance(order, bool) or (
+                order is not None and not isinstance(order, int)
+            ):
+                order = None
+
+            if isinstance(order, int) and order not in used_orders:
+                used_orders.add(order)
+                if order >= next_order:
+                    next_order = order + 1
+            else:
+                while next_order in used_orders:
+                    next_order += 1
+                order = next_order
+                used_orders.add(order)
+                next_order += 1
+
+            normalized[key] = {"type": note_type, "order": order}
+
+        return normalized
+
+
 class AnnotationSchema(BaseDataSchema):
     # serialization
     studyset_id = fields.String(data_key="studyset")
@@ -657,7 +815,7 @@ class AnnotationSchema(BaseDataSchema):
     source_id = fields.String(dump_only=True, allow_none=True)
     source_updated_at = fields.DateTime(dump_only=True, allow_none=True)
 
-    note_keys = fields.Dict()
+    note_keys = NoteKeysField()
     metadata = fields.Dict(attribute="metadata_", dump_only=True)
     # deserialization
     metadata_ = fields.Dict(data_key="metadata", load_only=True, allow_none=True)
@@ -693,6 +851,30 @@ class AnnotationSchema(BaseDataSchema):
 
         if invalid:
             raise ValidationError({"notes": invalid})
+
+    @pre_dump
+    def sort_notes(self, annotation, **kwargs):
+        notes = getattr(annotation, "annotation_analyses", None)
+        if not notes:
+            return annotation
+
+        def sort_key(note):
+            study_id = getattr(note, "study_id", None) or ""
+            analysis = getattr(note, "analysis", None)
+            order = getattr(analysis, "order", None)
+            if isinstance(order, bool) or not isinstance(order, int):
+                order = None
+            if order is not None:
+                return (study_id, 0, order, note.analysis_id or "")
+
+            created_at = getattr(analysis, "created_at", None) or getattr(
+                note, "created_at", None
+            )
+            created_ts = created_at.timestamp() if created_at else 0
+            return (study_id, 1, created_ts, note.analysis_id or "")
+
+        annotation.annotation_analyses = sorted(notes, key=sort_key)
+        return annotation
 
 
 class BaseSnapshot(object):
@@ -809,4 +991,13 @@ class StudysetSnapshot(BaseSnapshot):
             "created_at": self._serialize_dt(studyset.created_at),
             "updated_at": self._serialize_dt(studyset.updated_at),
             "studies": [s_schema.dump(s) for s in studyset.studies],
+            # Include association records so the frontend can
+            # maintain stub mappings even in nested responses.
+            "studyset_studies": [
+                {
+                    "id": assoc.study_id,
+                    "curation_stub_uuid": getattr(assoc, "curation_stub_uuid", None),
+                }
+                for assoc in getattr(studyset, "studyset_studies", []) or []
+            ],
         }

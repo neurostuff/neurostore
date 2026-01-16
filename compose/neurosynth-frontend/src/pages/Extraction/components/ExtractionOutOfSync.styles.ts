@@ -9,6 +9,7 @@ const ExtractionOutOfSyncStyles: Style = {
         marginBottom: '1rem',
         position: 'sticky',
         top: '1.5rem',
+        marginTop: '1rem',
         zIndex: 10,
     },
 };

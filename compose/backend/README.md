@@ -27,22 +27,11 @@ The server should now be running at http://localhost:81
 
 Create the database for compose:
 
-    docker-compose exec compose_pgsql psql -U postgres -c "create database compose"
+    docker-compose exec compose_pgsql17 psql -U postgres -c "create database compose"
 
-Next, migrate and upgrade the database migrations.
+Next, apply the existing migrations (they are the canonical schema definition):
 
-    docker-compose exec compose \
-        bash -c \
-            "flask db merge heads && \
-             flask db stamp head && \
-             flask db migrate && \
-             flask db upgrade"
-
-**Note**: `flask db merge heads` is not strictly necessary
-unless you have multiple schema versions that are not from the same history
-(e.g., multiple files in the `versions` directory).
-However, `flask db merge heads` makes the migration more robust
-when there are multiple versions from different histories.
+    docker-compose exec compose flask db upgrade
 
 
 ## Maintaining docker image and db
@@ -50,16 +39,45 @@ If you make a change to compose, you should be able to simply restart the server
 
     docker-compose restart compose
 
-If you need to upgrade the db after changing any models:
+If you change any models, generate a new Alembic migration and migrate the database (commit the generated revision file so it becomes the new source of truth):
 
     docker-compose exec compose flask db migrate
     docker-compose exec compose flask db upgrade
 
 
+## Database migrations
+
+The migrations stored in `backend/migrations` are the **only** source of truth for the schema—avoid merging heads, stamping, or manually altering the history. Always move the database forward (or rebuild from scratch) by applying the tracked revisions.
+
+### Applying migrations after pulling a branch
+
+Any time you start the backend or pull the latest changes, bring the database to the expected state with:
+
+```sh
+docker-compose exec compose flask db upgrade
+```
+
+`upgrade` is idempotent, so rerunning it is harmless; it only applies migrations that have not been run yet.
+
+### Resetting the database when switching branches
+
+Because each branch might change the schema independently, recreate the database before starting work on a different branch so that Alembic can replay only the migrations that exist on that branch.
+
+```sh
+docker-compose stop compose
+docker-compose exec compose_pgsql17 psql -U postgres -c "DROP DATABASE IF EXISTS compose;"
+docker-compose exec compose_pgsql17 psql -U postgres -c "CREATE DATABASE compose;"
+docker-compose start compose
+docker-compose exec compose flask db upgrade
+```
+
+If you're using the legacy Postgres container, replace `compose_pgsql17` with `compose_pgsql` in the commands above.
+
+
 ## Running tests
 To run tests, after starting services, create a test database:
 
-    docker-compose exec compose_pgsql psql -U postgres -c "create database test_db"
+    docker-compose exec compose_pgsql17 psql -U postgres -c "create database test_db"
 
 **NOTE**: This command will ask you for the postgres password which is defined
 in the `.env` file.

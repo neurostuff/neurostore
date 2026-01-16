@@ -101,10 +101,28 @@ const EditStudySwapVersionButton: React.FC = () => {
             if (currentStudyBeingEditedIndex < 0) throw new Error('study not found in studyset');
 
             updatedStudyset[currentStudyBeingEditedIndex] = versionToSwapTo;
+
+            // Preserve curation stub linkage when swapping versions.
+            const studyToStub = new Map<string, string>();
+            (studyset.studyset_studies || []).forEach((assoc) => {
+                if (assoc?.id && assoc?.curation_stub_uuid) {
+                    studyToStub.set(assoc.id, assoc.curation_stub_uuid);
+                }
+            });
+            const stubForCurrent = studyToStub.get(studyId);
+            if (stubForCurrent) {
+                studyToStub.delete(studyId);
+                studyToStub.set(versionToSwapTo, stubForCurrent);
+            }
+            const studiesPayload = updatedStudyset.map((id) => {
+                const stub = studyToStub.get(id);
+                return { id, curation_stub_uuid: stub };
+            });
+
             await updateStudyset({
                 studysetId: studysetId,
                 studyset: {
-                    studies: updatedStudyset,
+                    studies: studiesPayload,
                 },
             });
             updateStudyListStatusWithNewStudyId(studyId, versionToSwapTo);

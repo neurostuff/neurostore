@@ -1,9 +1,24 @@
 import { SearchCriteria, SearchDataType, SortBy } from 'pages/Study/Study.types';
 import { useQuery } from 'react-query';
-import API from 'utils/api';
+import API from 'api/api.config';
 
 export const baseStudiesSearchHelper = (searchCriteria: Partial<SearchCriteria>) => {
     return API.NeurostoreServices.StudiesService.baseStudiesGet(
+        searchCriteria.isNested,
+        undefined, // year_min
+        undefined, // x
+        undefined, // y
+        undefined, // z
+        undefined, // radius
+        undefined, // year_max
+        undefined, // feature_filter
+        undefined, // pipeline_config
+        undefined, // feature_display
+        undefined, // semantic_search
+        undefined, // pipeline_config_id
+        undefined, // distance_threshold
+        undefined, // overall_cap
+        undefined, // feature_flatten
         searchCriteria.genericSearchStr || undefined,
         searchCriteria.sortBy === SortBy.RELEVANCE ? undefined : searchCriteria.sortBy,
         searchCriteria.pageOfResults,
@@ -14,6 +29,7 @@ export const baseStudiesSearchHelper = (searchCriteria: Partial<SearchCriteria>)
         searchCriteria.authorSearch || undefined,
         'group',
         searchCriteria.dataType === SearchDataType.ALL ? 'both' : searchCriteria.dataType,
+        undefined, // is_oa
         searchCriteria.journalSearch || undefined,
         searchCriteria.pmid,
         searchCriteria.doi,

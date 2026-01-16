@@ -31,7 +31,7 @@ const ProtectedProjectRoute: React.FC<{ onlyOwnerCanAccess?: boolean; errorMessa
     }
 
     if (isError) {
-        console.error('There was an error loading the project: ' + projectId);
+        console.error('There was an error loading the project: ' + projectId, error);
         throw new Error(JSON.stringify(error)); // go to fallback page
     }
 

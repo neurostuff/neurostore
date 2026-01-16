@@ -2,7 +2,7 @@ import { Box, Typography } from '@mui/material';
 import DisplayStudyLinkFullText from 'components/DisplayStudyLink/DisplayStudyLinkFullText';
 import EditableDisplayLink from 'components/DisplayStudyLink/EditableDisplayLink';
 import TextEdit from 'components/TextEdit/TextEdit';
-import { PUBMED_ARTICLE_URL_PREFIX, PUBMED_CENTRAL_ARTICLE_URL_PREFIX } from 'hooks/external/useGetPubMedIds';
+import { PUBMED_ARTICLE_URL_PREFIX, PUBMED_CENTRAL_ARTICLE_URL_PREFIX } from 'hooks/external/useFetchPubMedIds.types';
 import { ISource } from 'hooks/projects/useGetProjects';
 import useUserCanEdit from 'hooks/useUserCanEdit';
 import { ICurationStubStudy } from 'pages/Curation/Curation.types';
@@ -175,7 +175,8 @@ const CurationEditableStubSummary: React.FC<ICurationEditableStubSummary> = ({
                 {stub.keywords || 'No Keywords'}
             </Typography>
 
-            <TextExpansion text={stub.abstractText} textSx={{ typography: 'body2' }}></TextExpansion>
+            {/* add a key to the text expansion to force a re-render when the stub changes */}
+            <TextExpansion key={stub.id} text={stub.abstractText} textSx={{ typography: 'body2' }}></TextExpansion>
 
             <Box>{children}</Box>
         </Box>

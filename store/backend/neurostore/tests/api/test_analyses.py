@@ -31,6 +31,7 @@ def test_get_analyses(auth_client, ingest_neurosynth, session):
         "points",
         "study",
         "weights",
+        "table_id",
     ]
     for k in keys:
         assert k in analysis

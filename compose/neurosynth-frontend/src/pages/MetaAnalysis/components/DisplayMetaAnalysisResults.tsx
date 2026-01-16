@@ -1,5 +1,5 @@
-import { Box, Button, Link, List, ListItemButton, ListItemText, Typography } from '@mui/material';
 import { OpenInNew } from '@mui/icons-material';
+import { Box, Button, Link, List, ListItemButton, ListItemText, Typography } from '@mui/material';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import NiiVueVisualizer from 'components/Visualizer/NiiVueVisualizer';
 import { useGetMetaAnalysisResultById, useGetNeurovaultImages } from 'hooks';
@@ -8,16 +8,15 @@ import { MetaAnalysisReturn, NeurovaultFile, ResultReturn, Specification } from 
 import { useEffect, useMemo, useState } from 'react';
 import { NimareOutputs, parseNimareFileName } from '../Nimare.helpers';
 import DisplayParsedNiMareFile from './DisplayParsedNiMareFile';
-import MetaAnalysisResultStatusAlert from './MetaAnalysisResultStatusAlert';
 
 const DisplayMetaAnalysisResults: React.FC<{
     metaAnalysis: MetaAnalysisReturn | undefined;
 }> = ({ metaAnalysis }) => {
     // Each result represents a run. We just need to get the last item to get the latest run
-    const metaAnalysisResults = (metaAnalysis?.results || []) as ResultReturn[];
-    const { data, isLoading, isError } = useGetMetaAnalysisResultById(
-        metaAnalysisResults[metaAnalysisResults.length - 1]?.id
-    );
+    const metaAnalysisResults = (metaAnalysis?.results ?? []) as ResultReturn[];
+    const latestResult =
+        metaAnalysisResults.length > 0 ? metaAnalysisResults[metaAnalysisResults.length - 1] : undefined;
+    const { data, isLoading, isError } = useGetMetaAnalysisResultById(latestResult?.id);
     const neurovaultCollectionLink = data?.neurovault_collection?.url || '';
 
     const neurovaultFileURLs = ((data?.neurovault_collection?.files || []) as NeurovaultFile[]).map(
@@ -125,7 +124,6 @@ const DisplayMetaAnalysisResults: React.FC<{
             isLoading={isLoading || neurovaultFilesIsLoading}
             isError={isError || neurovaultFilesIsError}
         >
-            <MetaAnalysisResultStatusAlert metaAnalysis={metaAnalysis} metaAnalysisResult={data} />
             <Box display="flex" sx={{ height: '100%', minHeight: '600px' }}>
                 <Box sx={{ width: '27%', maxHeight: '650px', overflowY: 'auto' }}>
                     <List sx={{ padding: 0 }}>

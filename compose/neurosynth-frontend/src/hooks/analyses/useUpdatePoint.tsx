@@ -1,7 +1,7 @@
 import { AxiosResponse, AxiosError } from 'axios';
 import { PointRequest, PointReturn } from 'neurostore-typescript-sdk';
 import { useMutation, useQueryClient } from 'react-query';
-import API from 'utils/api';
+import API from 'api/api.config';
 
 const useUpdatePoint = () => {
     const queryClient = useQueryClient();

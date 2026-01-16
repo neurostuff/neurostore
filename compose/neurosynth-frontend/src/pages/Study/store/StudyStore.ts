@@ -16,7 +16,7 @@ import {
 } from 'pages/Study/store/StudyStore.helpers';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import API from 'utils/api';
+import API from 'api/api.config';
 import { v4 as uuid } from 'uuid';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
@@ -651,21 +651,17 @@ export const useStudyAnalysisPointStatistic = (analysisId?: string) =>
 export const useNumStudyAnalyses = () => useStudyStore((state) => state.study.analyses.length);
 export const useStudyAnalyses = () => useStudyStore((state) => state.study.analyses);
 export const useDebouncedStudyAnalyses = () => {
+    const studyAnalyses = useStudyAnalyses();
     const [debouncedAnalyses, setDebouncedAnalyses] = useState(useStudyStore.getState().study.analyses);
     useEffect(() => {
-        let debounce: NodeJS.Timeout;
-        const unsub = useStudyStore.subscribe((state) => {
-            if (debounce) clearTimeout(debounce);
-            debounce = setTimeout(() => {
-                setDebouncedAnalyses(state.study.analyses);
-            }, 400);
-        });
+        const debounce: NodeJS.Timeout = setTimeout(() => {
+            setDebouncedAnalyses(studyAnalyses);
+        }, 500);
 
         return () => {
-            unsub();
             clearTimeout(debounce);
         };
-    }, []);
+    }, [studyAnalyses]);
     return debouncedAnalyses;
 };
 

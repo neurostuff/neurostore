@@ -36,7 +36,7 @@ dependencies = [
     "sqlalchemy-utils~=0.36",
     "webargs~=8.7",
     "wrapt~=2.0",
-    "NiMARE==0.6.1",
+    "NiMARE==0.7.0",
     "pynv @ git+https://github.com/NeuroVault/pynv.git#egg=pynv",
     "neurostore-sdk @ git+https://github.com/neurostuff/neurostore-python-sdk.git#egg=neurostore-sdk"
 ]
@@ -46,7 +46,7 @@ dev = [
     "flake8~=7.3",
     "pip-chill~=1.0",
     "wheel~=0.36",
-    "pytest~=8.4"
+    "pytest~=9.0"
 ]
 
 [tool.setuptools.packages.find]

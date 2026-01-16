@@ -5,7 +5,7 @@ import NeurosynthTableStyles from 'components/NeurosynthTable/NeurosynthTable.st
 import { useGetMetaAnalysesPublic } from 'hooks';
 import { useNavigate } from 'react-router-dom';
 
-const MetaAnalysesPage: React.FC = (props) => {
+const MetaAnalysesPage: React.FC = () => {
     const navigate = useNavigate();
     const { data, isLoading, isError } = useGetMetaAnalysesPublic();
 
@@ -51,24 +51,21 @@ const MetaAnalysesPage: React.FC = (props) => {
                         ]}
                         rows={(data || []).map((metaAnalysis, index) => (
                             <TableRow
-                                onClick={() => navigate(`/meta-analyses/${metaAnalysis?.id}`)}
+                                onClick={() =>
+                                    navigate(`/projects/${metaAnalysis?.project}/meta-analyses/${metaAnalysis?.id}`)
+                                }
                                 key={metaAnalysis?.id || index}
                                 sx={NeurosynthTableStyles.tableRow}
                             >
                                 <TableCell>
-                                    {metaAnalysis?.name || (
-                                        <Box sx={{ color: 'warning.dark' }}>No name</Box>
-                                    )}
+                                    {metaAnalysis?.name || <Box sx={{ color: 'warning.dark' }}>No name</Box>}
                                 </TableCell>
                                 <TableCell>
                                     {metaAnalysis?.description || (
                                         <Box sx={{ color: 'warning.dark' }}>No description</Box>
                                     )}
                                 </TableCell>
-                                <TableCell>
-                                    {/* TODO: fix the model to add the username property */}
-                                    {(metaAnalysis as any)?.username || 'Neurosynth-Compose'}
-                                </TableCell>
+                                <TableCell>{metaAnalysis?.username || 'Neurosynth-Compose'}</TableCell>
                             </TableRow>
                         ))}
                     />

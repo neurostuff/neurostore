@@ -1,12 +1,19 @@
 import { Box, Typography } from '@mui/material';
-import { useGetWindowHeight } from 'hooks';
-import { useProjectCurationColumns } from 'pages/Project/store/ProjectStore';
+import { useGetWindowHeight, useMeasure, useUserCanEdit } from 'hooks';
+import {
+    useProjectCurationColumns,
+    useProjectExclusionTag,
+    useProjectUser,
+    useUpdateExclusionTag,
+} from 'pages/Project/store/ProjectStore';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FixedSizeList } from 'react-window';
 import { ICurationStubStudy } from '../Curation.types';
 import { IGroupListItem } from './CurationBoardAIGroupsList';
 import CurationEditableStubSummary from './CurationEditableStubSummary';
 import CurationStubListItemVirtualizedContainer from './CurationStubListItemVirtualizedContainer';
+import TextEdit from 'components/TextEdit/TextEdit';
+import { ENeurosynthTagIds } from 'pages/Project/store/ProjectStore.types';
 
 const CurationBoardAIInterfaceExclude: React.FC<{
     group: IGroupListItem;
@@ -16,13 +23,23 @@ const CurationBoardAIInterfaceExclude: React.FC<{
     const listRef = useRef<FixedSizeList>(null);
     const [selectedStubId, setSelectedStubId] = useState<string>();
     const columns = useProjectCurationColumns();
+    const projectUser = useProjectUser();
+    const canEdit = useUserCanEdit(projectUser || undefined);
+    const exclusionTag = useProjectExclusionTag(group.id);
+    const updateExclusionTag = useUpdateExclusionTag();
+
+    // Check if this is a default exclusion tag
+    const isDefaultExclusion = useMemo(() => {
+        const defaultExclusionIds = Object.values(ENeurosynthTagIds).filter((id) => id.includes('_exclusion'));
+        return defaultExclusionIds.some((defaultExclusionId) => defaultExclusionId === exclusionTag?.id);
+    }, [exclusionTag]);
 
     const stubs = useMemo(() => {
         const allStudies = columns.reduce((acc, curr) => [...acc, ...curr.stubStudies], [] as ICurationStubStudy[]);
         return allStudies
-            .filter((study) => study.exclusionTag && study.exclusionTag.id === group.id)
+            .filter((study) => study.exclusionTag && study.exclusionTag === exclusionTag?.id)
             .sort((a, b) => (a.title || '').toLocaleLowerCase().localeCompare((b.title || '').toLocaleLowerCase()));
-    }, [columns, group.id]);
+    }, [columns, exclusionTag?.id]);
 
     const selectedStub: ICurationStubStudy | undefined = useMemo(
         () => (stubs || []).find((stub) => stub.id === selectedStubId),
@@ -44,8 +61,18 @@ const CurationBoardAIInterfaceExclude: React.FC<{
         setSelectedStubId(nextStub.id);
     }, [selectedStub?.id, stubs]);
 
-    const pxInVh = Math.round(windowHeight - 240);
+    const handleUpdateExclusionTag = useCallback(
+        (newName: string) => {
+            if (!exclusionTag?.id) return;
+            updateExclusionTag(exclusionTag.id, newName);
+        },
+        [exclusionTag?.id, updateExclusionTag]
+    );
 
+    const { ref: labelContainerRef, height: labelContainerHeight } = useMeasure<HTMLDivElement>();
+    const pxInVh = Math.round(windowHeight - 220 - labelContainerHeight);
+
+    // when the group changes, automatically select the first stub
     useEffect(() => {
         if (stubs.length > 0) {
             setSelectedStubId(stubs[0]?.id);
@@ -53,12 +80,14 @@ const CurationBoardAIInterfaceExclude: React.FC<{
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [group.id]);
 
+    // scroll to the selected stub when a stub is selected and the view changes to focus mode
     useEffect(() => {
         if (!listRef.current) return;
         const selectedItemIndex = (stubs || []).findIndex((x) => x.id === selectedStubId);
         listRef.current.scrollToItem(selectedItemIndex, 'smart');
     }, [selectedStubId, stubs]);
 
+    // reset scroll position of details page when the selected stub changes
     useEffect(() => {
         if (scrollableBoxRef.current) {
             scrollableBoxRef.current.scrollTo(0, 0);
@@ -66,10 +95,29 @@ const CurationBoardAIInterfaceExclude: React.FC<{
     }, [selectedStub?.id]);
 
     return (
-        <Box sx={{ display: 'flex', padding: '1rem', height: 'calc(100% - 48px - 8px - 20px)' }}>
-            {stubs.length === 0 && <Typography color="warning.dark">No studies for this exclusion.</Typography>}
-            {stubs.length > 0 && (
-                <>
+        <Box sx={{ padding: '1rem' }}>
+            <Box mb={2} ref={labelContainerRef}>
+                <TextEdit
+                    textFieldSx={{ input: { fontSize: '1.25rem' } }}
+                    onSave={(updatedText) => handleUpdateExclusionTag(updatedText)}
+                    label="Group Label"
+                    textToEdit={exclusionTag?.label || ''}
+                    editIconIsVisible={canEdit && !isDefaultExclusion}
+                >
+                    <Typography variant="h4" sx={{ color: 'error.dark' }}>
+                        {exclusionTag?.label || ''}
+                    </Typography>
+                </TextEdit>
+                <Typography variant="body2" color="text.secondary">
+                    These studies have been excluded due to the following reason: {group?.label || ''}
+                </Typography>
+            </Box>
+            {stubs.length === 0 ? (
+                <Box sx={{ display: 'flex' }}>
+                    <Typography color="warning.dark">No studies have been marked as {group?.label || ''}.</Typography>
+                </Box>
+            ) : (
+                <Box sx={{ display: 'flex' }}>
                     <Box>
                         <FixedSizeList
                             height={pxInVh}
@@ -89,14 +137,14 @@ const CurationBoardAIInterfaceExclude: React.FC<{
                             {CurationStubListItemVirtualizedContainer}
                         </FixedSizeList>
                     </Box>
-                    <Box ref={scrollableBoxRef} sx={{ overflowY: 'auto', width: '100%' }}>
+                    <Box ref={scrollableBoxRef} sx={{ overflowY: 'auto', width: '100%', height: `${pxInVh}px` }}>
                         <CurationEditableStubSummary
                             onMoveToNextStub={handleMoveToNextStub}
                             columnIndex={selectedColumnIndex || 0}
                             stub={selectedStub}
                         />
                     </Box>
-                </>
+                </Box>
             )}
         </Box>
     );

@@ -1,4 +1,4 @@
-import { Alert, Typography } from '@mui/material';
+import { Alert, Box, Typography } from '@mui/material';
 import CodeSnippet from 'components/CodeSnippet/CodeSnippet';
 import HelpDialog from 'components/Dialogs/HelpDialog';
 import React from 'react';
@@ -52,11 +52,9 @@ const CurationImportSleuthHint: React.FC = () => {
                         {hint.instruction}
                         <br />
                         {hint.example && (
-                            <CodeSnippet
-                                linesOfCode={[hint.example]}
-                                noCopyButton
-                                sx={{ marginY: '4px', paddingY: '4px' }}
-                            />
+                            <Box sx={{ marginTop: '0.5rem' }}>
+                                <CodeSnippet linesOfCode={[hint.example]} noCopyButton />
+                            </Box>
                         )}
                     </li>
                 ))}
