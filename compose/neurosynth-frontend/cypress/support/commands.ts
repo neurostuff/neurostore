@@ -39,7 +39,7 @@ const createMockRequest = async (
     const id_token = await constructMockAuthJWT({
         'https://neurosynth-compose/loginsCount': 871,
         nickname: 'test-user',
-        name: 'test-user@gmail.com',
+        name: 'Test User',
         picture:
             'https://s.gravatar.com/avatar/3a6e372ed11e9bc975215430fe82c28f?s=480&r=pg&d=https%3A%2F%2Fcdn.auth0.com%2Favatars%2Fte.png',
         updated_at: '2022-08-02T18:50:33.106Z',
@@ -126,6 +126,12 @@ Cypress.Commands.add('login', (loginMode = 'mocked', extraClaims = {}) => {
                     header: jwtObject.header,
                     user: {
                         sub: jwtObject.sub,
+                        email: jwtObject.email,
+                        name: jwtObject.name,
+                        nickname: jwtObject.nickname,
+                        picture: jwtObject.picture,
+                        updated_at: jwtObject.updated_at,
+                        email_verified: jwtObject.email_verified,
                     },
                 },
                 expires_in,
@@ -141,10 +147,7 @@ Cypress.Commands.add('login', (loginMode = 'mocked', extraClaims = {}) => {
          * Finally managed to get it working by adding this in localstorage, which seems to be checked by auth0-react to determine
          * the isAuthenticated state. This code is in tandem with setting the auth0 provider cacheLocation=localstorage.
          */
-        cy.addToLocalStorage(
-            `@@auth0spajs@@::${client_id}::${audience}::${scope}`,
-            JSON.stringify(session)
-        );
+        cy.addToLocalStorage(`@@auth0spajs@@::${client_id}::${audience}::${scope}`, JSON.stringify(session));
     });
 });
 

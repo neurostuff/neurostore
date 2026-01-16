@@ -31,6 +31,24 @@ const UserProfilePage: React.FC = () => {
             enqueueSnackbar('User email not found', { variant: 'error' });
             return;
         }
+
+        let loginIdentityProvider: 'auth0' | 'google' | 'github' | undefined;
+        if (user.sub?.includes('auth0')) {
+            loginIdentityProvider = 'auth0';
+        } else if (user.sub?.includes('google')) {
+            loginIdentityProvider = 'google';
+        } else if (user.sub?.includes('github')) {
+            loginIdentityProvider = 'github';
+        }
+
+        if (loginIdentityProvider !== 'auth0') {
+            enqueueSnackbar(
+                `You used ${loginIdentityProvider} to login. To reset your password, please sign into your ${loginIdentityProvider} account and reset your password there.`,
+                { variant: 'error' }
+            );
+            return;
+        }
+
         sendResetPasswordEmail(userEmail, {
             onSuccess: () => {
                 enqueueSnackbar('Reset password email sent', { variant: 'success' });
