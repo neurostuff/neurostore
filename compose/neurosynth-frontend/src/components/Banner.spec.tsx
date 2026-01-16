@@ -65,8 +65,7 @@ describe('Banner Component', () => {
             isError: false,
         });
 
-        const d = render(<Banner />);
-        d.debug();
+        render(<Banner />);
 
         expect(screen.queryByText('Test banner description')).not.toBeInTheDocument();
     });

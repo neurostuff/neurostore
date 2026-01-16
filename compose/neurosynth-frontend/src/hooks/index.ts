@@ -41,6 +41,7 @@ import useGetBaseStudyById from './studies/useGetBaseStudyById';
 import useGetProjectById from './projects/useGetProjectById';
 import useGetNeurovaultImages from './metaAnalyses/useGetNeurovaultImages';
 import useFetchPubMedIds from './external/useFetchPubMedIds';
+import useGetPubMedIdFromDOI from './external/useGetPubMedIdFromDOI';
 
 export {
     useGetCurationSummary,
@@ -95,4 +96,5 @@ export {
     useGetProjectById,
     // EXTERNAL
     useFetchPubMedIds,
+    useGetPubMedIdFromDOI,
 };

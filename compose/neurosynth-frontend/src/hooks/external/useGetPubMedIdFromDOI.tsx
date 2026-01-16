@@ -34,9 +34,7 @@ const PUBMED_API_KEY = import.meta.env.VITE_APP_PUBMED_API_KEY as string;
 const useGetPubMedIdFromDOI = () => {
     return useMutation<AxiosResponse<IESearchResult>, AxiosError, string, unknown>((doi) =>
         axios.get<IESearchResult>(
-            `${ESEARCH_UR}?db=pubmed&retmode=json&term=${doi}${
-                PUBMED_API_KEY ? `&api_key=${PUBMED_API_KEY}` : ''
-            }`,
+            `${ESEARCH_UR}?db=pubmed&retmode=json&term=${doi}${PUBMED_API_KEY ? `&api_key=${PUBMED_API_KEY}` : ''}`,
             {
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
