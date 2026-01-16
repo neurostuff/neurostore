@@ -40,6 +40,7 @@ import useUserCanEdit from './useUserCanEdit';
 import useGetBaseStudyById from './studies/useGetBaseStudyById';
 import useGetProjectById from './projects/useGetProjectById';
 import useGetNeurovaultImages from './metaAnalyses/useGetNeurovaultImages';
+import useFetchPubMedIds from './external/useFetchPubMedIds';
 
 export {
     useGetCurationSummary,
@@ -92,4 +93,6 @@ export {
     // project
     useCreateProject,
     useGetProjectById,
+    // EXTERNAL
+    useFetchPubMedIds,
 };

@@ -3,7 +3,7 @@ import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import { Box, Button, CircularProgress, LinearProgress, Typography } from '@mui/material';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import useGetPubMedIdFromDOI from 'hooks/external/useGetPubMedIdFromDOI';
-import useGetPubmedIDs from 'hooks/external/useGetPubMedIds';
+import { useFetchPubMedIds } from 'hooks';
 import useIngest from 'hooks/studies/useIngest';
 import { BaseStudy } from 'neurostore-typescript-sdk';
 import CurationImportStyles from 'pages/CurationImport/components/CurationImport.styles';
@@ -34,7 +34,7 @@ const CurationImportSleuthIngest: React.FC<{
     onStubsUploaded: (stubs: ICurationStubStudy[]) => void;
 }> = ({ sleuthUploads, onStubsUploaded }) => {
     const { user } = useAuth0();
-    const { queryImperatively: getPubmedIds } = useGetPubmedIDs([], false);
+    const { mutateAsync: fetchPubmedIds } = useFetchPubMedIds();
     const { mutateAsync: getPubMedIdFromDOI } = useGetPubMedIdFromDOI();
     const { mutateAsync: ingestAsync } = useIngest();
 
@@ -86,7 +86,7 @@ const CurationImportSleuthIngest: React.FC<{
                                 Math.round((progress / 100) * (percentageIncrement / 2) + percentageAlreadyComplete)
                             );
                         },
-                        getPubmedIds
+                        fetchPubmedIds
                     );
 
                     setProgressText(`Adding ${sleuthUpload.fileName} studies into the database...`);
@@ -135,7 +135,7 @@ const CurationImportSleuthIngest: React.FC<{
         };
 
         build(sleuthUploads);
-    }, [ingestAsync, onStubsUploaded, sleuthUploads, user, getPubmedIds, getPubMedIdFromDOI]);
+    }, [ingestAsync, onStubsUploaded, sleuthUploads, user, fetchPubmedIds, getPubMedIdFromDOI]);
 
     const handleNext = () => {
         if (!sleuthStudyStubs) throw new Error('No sleuth study stubs found');

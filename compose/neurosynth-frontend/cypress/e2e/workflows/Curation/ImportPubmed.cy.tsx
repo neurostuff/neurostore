@@ -12,12 +12,19 @@ describe('ImportPubmedDialog', () => {
 
     describe('Import via Pubmed IDs', () => {
         beforeEach(() => {
-            cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture').wait('@studysetFixture');
             cy.intercept('PUT', '**/api/projects/abc123').as('updateProjectFixture');
             // not going to mock this for now as cypress does not seem to support XML fixtures
             // cy.intercept('POST', 'https://eutils.ncbi.nlm.nih.gov/**', {
             //     fixture: 'NIHPMIDResponse',
             // }).as('NIHPMIDFixture.xml');
+
+            cy.intercept('POST', `*//eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi**`, {
+                fixture: 'ImportSleuth/pubmedResponses/efetchSingleResponse.xml',
+                delay: 500,
+            }).as('pmidsFetch');
+
+            cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture').wait('@studysetFixture');
+
             cy.contains('button', 'import studies').click();
             cy.contains(/PMID/).click();
             cy.contains('button', 'next').click();
