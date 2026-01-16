@@ -3,11 +3,12 @@ import { Box, Button, TextField } from '@mui/material';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons';
 import { ChangeEvent, useEffect, useState } from 'react';
 import CurationImportBaseStyles from './CurationImport.styles';
+import { PUBMED_MAX_IDS_PER_REQUEST } from 'hooks/external/useFetchPubMedIds.types';
 
 enum EValidationReason {
     EMPTY = 'PubMed ID input is empty',
     INCORRECT = 'PubMed ID format is incorrect or unsupported',
-    TOO_BIG = 'Please limit uploads to 1500 PMIDs at a time',
+    TOO_BIG = 'Please limit uploads to 10,000 PMIDs at a time',
 }
 
 const isValidNumberList = (rawIdText: string | undefined) => {
@@ -60,7 +61,7 @@ const CurationImportPMIDsUpload: React.FC<{
             .split(/[\r?\n]+/)
             .map((x) => x.trim())
             .filter((x) => !!x);
-        if (textIdsToStringArr.length > 1500) {
+        if (textIdsToStringArr.length > PUBMED_MAX_IDS_PER_REQUEST) {
             setUploadState((prev) => ({
                 ...prev,
                 isValid: false,
@@ -87,7 +88,7 @@ const CurationImportPMIDsUpload: React.FC<{
             }));
 
             const reader = new FileReader();
-            reader.onload = function (e) {
+            reader.onload = function () {
                 const content = reader.result;
                 if (content && typeof content === 'string') {
                     // we have trouble testing string patterns for carriage returns like \r\n, so we replace them here with new \n newlines

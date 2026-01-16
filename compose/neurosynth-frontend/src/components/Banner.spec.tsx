@@ -230,7 +230,9 @@ describe('Banner Component', () => {
     });
 
     it('should show banner on exact start date', () => {
-        const today = new Date().toISOString().split('T')[0];
+        const now = new Date();
+        const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        console.log({ today });
         const mockBanner = createMockBanner({
             displayStartDate: today,
             displayEndDate: '2099-12-31',
@@ -247,7 +249,8 @@ describe('Banner Component', () => {
     });
 
     it('should show banner on exact end date', () => {
-        const today = new Date().toISOString().split('T')[0];
+        const now = new Date();
+        const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
         const mockBanner = createMockBanner({
             displayStartDate: '2020-01-01',
             displayEndDate: today,
