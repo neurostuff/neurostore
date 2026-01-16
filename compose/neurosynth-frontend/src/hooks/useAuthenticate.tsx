@@ -25,6 +25,11 @@ function useAuthenticate() {
 
             navigate('/');
         } catch (error) {
+            if (error instanceof Error && error.message === 'Popup closed') {
+                console.error('Error getting token:', error.message);
+                enqueueSnackbar(error.message, { variant: 'warning' });
+                return;
+            }
             console.error('Error getting token:', error);
             enqueueSnackbar('Error logging in', { variant: 'error' });
         }
