@@ -23,8 +23,7 @@ const EditStudyAnalysisConditions: React.FC<{ analysisId: string }> = React.memo
     const conditions = useStudyAnalysisConditions(props.analysisId);
     const weights = useStudyAnalysisWeights(props.analysisId);
 
-    const addOrUpdateConditionWeightPairForAnalysis =
-        useAddOrUpdateConditionWeightPairForAnalysis();
+    const addOrUpdateConditionWeightPairForAnalysis = useAddOrUpdateConditionWeightPairForAnalysis();
     const deleteConditionFromAnalysis = useDeleteConditionFromAnalysis();
     const { enqueueSnackbar } = useSnackbar();
 
@@ -32,9 +31,7 @@ const EditStudyAnalysisConditions: React.FC<{ analysisId: string }> = React.memo
         if (!props.analysisId) return;
 
         const conditionExistsInTable =
-            (conditions || []).findIndex(
-                (analysisConditions) => analysisConditions.id === condition.id
-            ) >= 0;
+            (conditions || []).findIndex((analysisConditions) => analysisConditions.id === condition.id) >= 0;
 
         if (conditionExistsInTable) {
             enqueueSnackbar('cannot add more than one of the same condition to an analysis', {
@@ -54,11 +51,7 @@ const EditStudyAnalysisConditions: React.FC<{ analysisId: string }> = React.memo
         if (!props.analysisId) return;
         const conditionIndex = conditions.findIndex((x) => x.id === params.id);
         if (conditionIndex < 0) return;
-        addOrUpdateConditionWeightPairForAnalysis(
-            props.analysisId,
-            conditions[conditionIndex],
-            params.value as number
-        );
+        addOrUpdateConditionWeightPairForAnalysis(props.analysisId, conditions[conditionIndex], params.value as number);
     };
 
     const handleDeleteCondition = (conditionId: string) => {
@@ -115,10 +108,7 @@ const EditStudyAnalysisConditions: React.FC<{ analysisId: string }> = React.memo
                         width: 90,
                         editable: false,
                         renderCell: (params: any) => (
-                            <Button
-                                color="error"
-                                onClick={(_event) => handleDeleteCondition(params.id as string)}
-                            >
+                            <Button color="error" onClick={(_event) => handleDeleteCondition(params.id as string)}>
                                 delete
                             </Button>
                         ),

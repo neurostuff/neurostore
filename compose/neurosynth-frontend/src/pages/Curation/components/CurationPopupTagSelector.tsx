@@ -73,15 +73,10 @@ const CurationPopupTagSelector: React.FC<ITagSelectorPopup> = (props) => {
         if (props.onCreateTag) props.onCreateTag(newTag);
     };
 
-    const handleChange = (
-        _event: React.SyntheticEvent<Element, Event>,
-        newValue: string | AutoSelectOption | null
-    ) => {
+    const handleChange = (_event: React.SyntheticEvent<Element, Event>, newValue: string | AutoSelectOption | null) => {
         // if user hits enter after typing input, we get a string and handle it here
         if (typeof newValue === 'string') {
-            const foundValue = tagOption.find(
-                (tag) => tag.label.toLocaleLowerCase() === newValue.toLocaleLowerCase()
-            );
+            const foundValue = tagOption.find((tag) => tag.label.toLocaleLowerCase() === newValue.toLocaleLowerCase());
             if (foundValue) {
                 // do not create a new tag if an identical label exists
                 props.onAddTag(foundValue);
@@ -122,20 +117,13 @@ const CurationPopupTagSelector: React.FC<ITagSelectorPopup> = (props) => {
                 </ListItem>
             )}
             renderInput={(params) => (
-                <TextField
-                    {...params}
-                    size={props.size}
-                    placeholder={placeholder}
-                    label={label || 'select tag'}
-                />
+                <TextField {...params} size={props.size} placeholder={placeholder} label={label || 'select tag'} />
             )}
             filterOptions={(options, params) => {
                 const filteredValues = filterOptions(options, params);
 
                 const optionExists = options.some(
-                    (option) =>
-                        params.inputValue.toLocaleLowerCase() ===
-                        (option?.label || '').toLocaleLowerCase()
+                    (option) => params.inputValue.toLocaleLowerCase() === (option?.label || '').toLocaleLowerCase()
                 );
 
                 if (params.inputValue !== '' && !optionExists) {

@@ -4,8 +4,7 @@ import API from 'api/api.config';
 const useGetSpecificationById = (specificationId?: string) => {
     return useQuery(
         ['specifications', specificationId],
-        () =>
-            API.NeurosynthServices.SpecificationsService.specificationsIdGet(specificationId || ''),
+        () => API.NeurosynthServices.SpecificationsService.specificationsIdGet(specificationId || ''),
         {
             select: (res) => {
                 return res.data;

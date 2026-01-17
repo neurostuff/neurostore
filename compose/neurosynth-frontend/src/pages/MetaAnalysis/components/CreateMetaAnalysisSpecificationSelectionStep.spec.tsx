@@ -78,9 +78,7 @@ describe('CreateMetaAnalysisSpecificationSelectionStep', () => {
             />
         );
 
-        expect(
-            screen.queryByTestId('CreateMetaAnalysisSpecificationSelectionStepMultiGroup')
-        ).not.toBeInTheDocument();
+        expect(screen.queryByTestId('CreateMetaAnalysisSpecificationSelectionStepMultiGroup')).not.toBeInTheDocument();
     });
 
     it('should show the multigroup selection component if the estimator is a multigroup estimator', () => {
@@ -103,9 +101,7 @@ describe('CreateMetaAnalysisSpecificationSelectionStep', () => {
             />
         );
 
-        expect(
-            screen.getByTestId('CreateMetaAnalysisSpecificationSelectionStepMultiGroup')
-        ).toBeInTheDocument();
+        expect(screen.getByTestId('CreateMetaAnalysisSpecificationSelectionStepMultiGroup')).toBeInTheDocument();
     });
 
     describe('navigation', () => {

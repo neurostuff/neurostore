@@ -6,199 +6,198 @@
     "meta_analyses": [],
     "name": "Untitled",
     "neurostore_study": {
-      "created_at": "2025-05-30T23:14:42.984037+00:00",
-      "exception": null,
-      "neurostore_id": "YVqGsqRLSned",
-      "status": "PENDING",
-      "traceback": null,
-      "updated_at": "2025-05-30T23:14:42.990766+00:00"
+        "created_at": "2025-05-30T23:14:42.984037+00:00",
+        "exception": null,
+        "neurostore_id": "YVqGsqRLSned",
+        "status": "PENDING",
+        "traceback": null,
+        "updated_at": "2025-05-30T23:14:42.990766+00:00"
     },
     "neurostore_url": "https://neurostore.org/api/studies/YVqGsqRLSned",
     "provenance": {
-      "curationMetadata": {
-        "columns": [
-          {
-            "id": "bf2f83c7-0a3b-48d4-b30c-5860f6bb29b9",
-            "name": "Identification",
-            "stubStudies": [
+        "curationMetadata": {
+            "columns": [
                 {
-                    "abstractText": "",
-                    "articleLink": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2886908/",
-                    "articleYear": "2010",
-                    "authors": "Nelson, Steven M, Dosenbach, Nico UF, Cohen, Alexander L, Wheeler, Mark E, Schlaggar, Bradley L, Petersen, Steven E",
-                    "doi": "https://doi.org/10.1007%2Fs00429-010-0260-2",
-                    "exclusionTag": null,
-                    "id": "15799890-70d5-4f90-aa5f-92fba8ea165b",
-                    "identificationSource": {
-                        "id": "neurosynth_neurostore_id_source",
-                        "label": "Neurostore"
-                    },
-                    "importId": "75d6c47e-627f-4965-b51e-c06912b67dde",
-                    "journal": "Brain structure and function",
-                    "keywords": "",
-                    "neurostoreId": "3haTSe2ojmt6",
-                    "pmid": "25461707",
-                    "searchTerm": "?genericSearchStr=emotional+damage&dataType=all&source=all&sortBy=relevance&descOrder=true",
-                    "tags": [
+                    "id": "bf2f83c7-0a3b-48d4-b30c-5860f6bb29b9",
+                    "name": "Identification",
+                    "stubStudies": [
                         {
-                        "id": "d337f434-c6db-4e86-8809-ed7e5d6769b2",
-                        "isAssignable": true,
-                        "isExclusionTag": false,
-                        "label": "?genericSearchStr=emotional+damage&dataType=all&source=all&sortBy=relevance&descOrder=true"
+                            "abstractText": "",
+                            "articleLink": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2886908/",
+                            "articleYear": "2010",
+                            "authors": "Nelson, Steven M, Dosenbach, Nico UF, Cohen, Alexander L, Wheeler, Mark E, Schlaggar, Bradley L, Petersen, Steven E",
+                            "doi": "https://doi.org/10.1007%2Fs00429-010-0260-2",
+                            "exclusionTag": null,
+                            "id": "15799890-70d5-4f90-aa5f-92fba8ea165b",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "75d6c47e-627f-4965-b51e-c06912b67dde",
+                            "journal": "Brain structure and function",
+                            "keywords": "",
+                            "neurostoreId": "3haTSe2ojmt6",
+                            "pmid": "25461707",
+                            "searchTerm": "?genericSearchStr=emotional+damage&dataType=all&source=all&sortBy=relevance&descOrder=true",
+                            "tags": [
+                                {
+                                    "id": "d337f434-c6db-4e86-8809-ed7e5d6769b2",
+                                    "isAssignable": true,
+                                    "isExclusionTag": false,
+                                    "label": "?genericSearchStr=emotional+damage&dataType=all&source=all&sortBy=relevance&descOrder=true"
+                                }
+                            ],
+                            "title": "Role of the anterior insula in task-level control and focal attention"
                         }
-                    ],
-                    "title": "Role of the anterior insula in task-level control and focal attention"
+                    ]
+                },
+                {
+                    "id": "a2e51654-d54c-47e2-80f6-ca3776e55939",
+                    "name": "Screening",
+                    "stubStudies": []
+                },
+                {
+                    "id": "bc39eaf3-3162-4604-ab7f-af6ea811edcf",
+                    "name": "Eligibility",
+                    "stubStudies": []
+                },
+                {
+                    "id": "9cbac36b-a3a0-4bcd-9e7c-58aac9fc8e07",
+                    "name": "Included",
+                    "stubStudies": []
                 }
-            ]
-          },
-          {
-            "id": "a2e51654-d54c-47e2-80f6-ca3776e55939",
-            "name": "Screening",
-            "stubStudies": []
-          },
-          {
-            "id": "bc39eaf3-3162-4604-ab7f-af6ea811edcf",
-            "name": "Eligibility",
-            "stubStudies": []
-          },
-          {
-            "id": "9cbac36b-a3a0-4bcd-9e7c-58aac9fc8e07",
-            "name": "Included",
-            "stubStudies": []
-          }
-        ],
-        "exclusionTags": [
-          {
-            "id": "neurosynth_exclude_exclusion",
-            "isAssignable": true,
-            "isExclusionTag": true,
-            "label": "Exclude"
-          },
-          {
-            "id": "neurosynth_duplicate_exclusion",
-            "isAssignable": true,
-            "isExclusionTag": true,
-            "label": "Duplicate"
-          }
-        ],
-        "identificationSources": [
-          {
-            "id": "neurosynth_neurostore_id_source",
-            "label": "Neurostore"
-          },
-          {
-            "id": "neurosynth_pubmed_id_source",
-            "label": "PubMed"
-          },
-          {
-            "id": "neurosynth_scopus_id_source",
-            "label": "Scopus"
-          },
-          {
-            "id": "neurosynth_web_of_science_id_source",
-            "label": "Web of Science"
-          },
-          {
-            "id": "neurosynth_psycinfo_id_source",
-            "label": "PsycInfo"
-          },
-          {
-            "id": "neurosynth_sleuth_id_source",
-            "label": "Sleuth"
-          }
-        ],
-        "imports": [
-          {
-            "date": "2025-05-31T22:27:37.191Z",
-            "id": "75d6c47e-627f-4965-b51e-c06912b67dde",
-            "importModeUsed": "NEUROSTORE_IMPORT",
-            "name": "marijuana",
-            "neurostoreSearchParams": "genericSearchStr=marijuana&sortBy=relevance&pageOfResults=1&descOrder=true&pageSize=10&source=all&dataType=all&level=group&flat=true&info=true",
-            "numImported": 29
-          }
-        ],
-        "infoTags": [
-          {
-            "id": "neurosynth_untagged_tag",
-            "isAssignable": false,
-            "isExclusionTag": false,
-            "label": "Untagged studies"
-          },
-          {
-            "id": "neurosynth_uncategorized_tag",
-            "isAssignable": false,
-            "isExclusionTag": false,
-            "label": "Uncategorized Studies"
-          },
-          {
-            "id": "neurosynth_needs_review_tag",
-            "isAssignable": false,
-            "isExclusionTag": false,
-            "label": "Needs Review"
-          }
-        ],
-        "prismaConfig": {
-          "eligibility": {
+            ],
             "exclusionTags": [
-              {
-                "id": "neurosynth_reports_not_retrieved_exclusion",
-                "isAssignable": true,
-                "isExclusionTag": true,
-                "label": "Reports not retrieved"
-              },
-              {
-                "id": "neurosynth_insufficient_detail_exclusion",
-                "isAssignable": true,
-                "isExclusionTag": true,
-                "label": "Insufficient Details"
-              },
-              {
-                "id": "neurosynth_limited_rigor",
-                "isAssignable": true,
-                "isExclusionTag": true,
-                "label": "Limited Rigor"
-              },
-              {
-                "id": "neurosynth_out_of_scope_exclusion",
-                "isAssignable": true,
-                "isExclusionTag": true,
-                "label": "Out of scope"
-              }
-            ]
-          },
-          "identification": {
-            "exclusionTags": [
-              {
-                "id": "neurosynth_duplicate_exclusion",
-                "isAssignable": true,
-                "isExclusionTag": true,
-                "label": "Duplicate"
-              }
-            ]
-          },
-          "isPrisma": true,
-          "screening": {
-            "exclusionTags": [
-              {
-                "id": "neurosynth_irrelevant_exclusion",
-                "isAssignable": true,
-                "isExclusionTag": true,
-                "label": "Irrelevant"
-              }
-            ]
-          }
+                {
+                    "id": "neurosynth_exclude_exclusion",
+                    "isAssignable": true,
+                    "isExclusionTag": true,
+                    "label": "Exclude"
+                },
+                {
+                    "id": "neurosynth_duplicate_exclusion",
+                    "isAssignable": true,
+                    "isExclusionTag": true,
+                    "label": "Duplicate"
+                }
+            ],
+            "identificationSources": [
+                {
+                    "id": "neurosynth_neurostore_id_source",
+                    "label": "Neurostore"
+                },
+                {
+                    "id": "neurosynth_pubmed_id_source",
+                    "label": "PubMed"
+                },
+                {
+                    "id": "neurosynth_scopus_id_source",
+                    "label": "Scopus"
+                },
+                {
+                    "id": "neurosynth_web_of_science_id_source",
+                    "label": "Web of Science"
+                },
+                {
+                    "id": "neurosynth_psycinfo_id_source",
+                    "label": "PsycInfo"
+                },
+                {
+                    "id": "neurosynth_sleuth_id_source",
+                    "label": "Sleuth"
+                }
+            ],
+            "imports": [
+                {
+                    "date": "2025-05-31T22:27:37.191Z",
+                    "id": "75d6c47e-627f-4965-b51e-c06912b67dde",
+                    "importModeUsed": "NEUROSTORE_IMPORT",
+                    "name": "marijuana",
+                    "neurostoreSearchParams": "genericSearchStr=marijuana&sortBy=relevance&pageOfResults=1&descOrder=true&pageSize=10&source=all&dataType=all&level=group&flat=true&info=true",
+                    "numImported": 29
+                }
+            ],
+            "infoTags": [
+                {
+                    "id": "neurosynth_untagged_tag",
+                    "isAssignable": false,
+                    "isExclusionTag": false,
+                    "label": "Untagged studies"
+                },
+                {
+                    "id": "neurosynth_uncategorized_tag",
+                    "isAssignable": false,
+                    "isExclusionTag": false,
+                    "label": "Uncategorized Studies"
+                },
+                {
+                    "id": "neurosynth_needs_review_tag",
+                    "isAssignable": false,
+                    "isExclusionTag": false,
+                    "label": "Needs Review"
+                }
+            ],
+            "prismaConfig": {
+                "eligibility": {
+                    "exclusionTags": [
+                        {
+                            "id": "neurosynth_reports_not_retrieved_exclusion",
+                            "isAssignable": true,
+                            "isExclusionTag": true,
+                            "label": "Reports not retrieved"
+                        },
+                        {
+                            "id": "neurosynth_insufficient_detail_exclusion",
+                            "isAssignable": true,
+                            "isExclusionTag": true,
+                            "label": "Insufficient Details"
+                        },
+                        {
+                            "id": "neurosynth_limited_rigor",
+                            "isAssignable": true,
+                            "isExclusionTag": true,
+                            "label": "Limited Rigor"
+                        },
+                        {
+                            "id": "neurosynth_out_of_scope_exclusion",
+                            "isAssignable": true,
+                            "isExclusionTag": true,
+                            "label": "Out of scope"
+                        }
+                    ]
+                },
+                "identification": {
+                    "exclusionTags": [
+                        {
+                            "id": "neurosynth_duplicate_exclusion",
+                            "isAssignable": true,
+                            "isExclusionTag": true,
+                            "label": "Duplicate"
+                        }
+                    ]
+                },
+                "isPrisma": true,
+                "screening": {
+                    "exclusionTags": [
+                        {
+                            "id": "neurosynth_irrelevant_exclusion",
+                            "isAssignable": true,
+                            "isExclusionTag": true,
+                            "label": "Irrelevant"
+                        }
+                    ]
+                }
+            }
+        },
+        "extractionMetadata": {
+            "studyStatusList": []
+        },
+        "metaAnalysisMetadata": {
+            "canEditMetaAnalyses": false
         }
-      },
-      "extractionMetadata": {
-        "studyStatusList": []
-      },
-      "metaAnalysisMetadata": {
-        "canEditMetaAnalyses": false
-      }
     },
     "public": true,
     "updated_at": "2025-06-09T21:26:11.191969+00:00",
     "user": "github|26612023",
     "username": "Nicholas Lee"
-  }
-  
+}

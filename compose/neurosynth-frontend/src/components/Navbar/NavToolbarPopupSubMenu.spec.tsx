@@ -22,13 +22,7 @@ describe('NavToolbarPopupSubMenu', () => {
     });
 
     it('should not show the options by default', () => {
-        render(
-            <NavToolbarPopupSubMenu
-                buttonProps={{}}
-                buttonLabel="button-name"
-                options={mockOptions}
-            />
-        );
+        render(<NavToolbarPopupSubMenu buttonProps={{}} buttonLabel="button-name" options={mockOptions} />);
 
         mockOptions.forEach((mockOption) => {
             expect(screen.queryByText(mockOption.label)).not.toBeInTheDocument();
@@ -37,13 +31,7 @@ describe('NavToolbarPopupSubMenu', () => {
     });
 
     it('should show the options when clicked', () => {
-        render(
-            <NavToolbarPopupSubMenu
-                buttonProps={{}}
-                buttonLabel="button-name"
-                options={mockOptions}
-            />
-        );
+        render(<NavToolbarPopupSubMenu buttonProps={{}} buttonLabel="button-name" options={mockOptions} />);
         userEvent.click(screen.getByText('button-name'));
 
         mockOptions.forEach((mockOption) => {
@@ -53,13 +41,7 @@ describe('NavToolbarPopupSubMenu', () => {
     });
 
     it('should hide the options when clicked away', async () => {
-        render(
-            <NavToolbarPopupSubMenu
-                buttonProps={{}}
-                buttonLabel="button-name"
-                options={mockOptions}
-            />
-        );
+        render(<NavToolbarPopupSubMenu buttonProps={{}} buttonLabel="button-name" options={mockOptions} />);
 
         userEvent.click(screen.getByText('button-name'));
 
@@ -80,13 +62,7 @@ describe('NavToolbarPopupSubMenu', () => {
     });
 
     it('should close the options menu when an option has been selected', async () => {
-        render(
-            <NavToolbarPopupSubMenu
-                buttonProps={{}}
-                buttonLabel="button-name"
-                options={mockOptions}
-            />
-        );
+        render(<NavToolbarPopupSubMenu buttonProps={{}} buttonLabel="button-name" options={mockOptions} />);
 
         userEvent.click(screen.getByText('button-name'));
 
@@ -101,13 +77,7 @@ describe('NavToolbarPopupSubMenu', () => {
     });
 
     it('should call the click handler when the option has been clicked', () => {
-        render(
-            <NavToolbarPopupSubMenu
-                buttonProps={{}}
-                buttonLabel="button-name"
-                options={mockOptions}
-            />
-        );
+        render(<NavToolbarPopupSubMenu buttonProps={{}} buttonLabel="button-name" options={mockOptions} />);
 
         userEvent.click(screen.getByText('button-name'));
 

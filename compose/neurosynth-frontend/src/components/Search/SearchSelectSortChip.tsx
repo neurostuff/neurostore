@@ -53,11 +53,7 @@ const SearchSelectSortChip: React.FC<{
                 <Box>
                     <MenuList sx={{ width: '160px' }}>
                         {sortByList.map((sortBy) => (
-                            <MenuItem
-                                onClick={() => handleSelectSortBy(sortBy as SortBy)}
-                                key={sortBy}
-                                value={sortBy}
-                            >
+                            <MenuItem onClick={() => handleSelectSortBy(sortBy as SortBy)} key={sortBy} value={sortBy}>
                                 {SortByEnumToString[sortBy]}
                             </MenuItem>
                         ))}
@@ -86,12 +82,8 @@ const SearchSelectSortChip: React.FC<{
             >
                 <Box>
                     <MenuList sx={{ width: '200px' }}>
-                        <MenuItem onClick={() => handleSelectIsDescOrder(false)}>
-                            Ascending Order
-                        </MenuItem>
-                        <MenuItem onClick={() => handleSelectIsDescOrder(true)}>
-                            Descending Order
-                        </MenuItem>
+                        <MenuItem onClick={() => handleSelectIsDescOrder(false)}>Ascending Order</MenuItem>
+                        <MenuItem onClick={() => handleSelectIsDescOrder(true)}>Descending Order</MenuItem>
                     </MenuList>
                 </Box>
             </NeurosynthPopper>

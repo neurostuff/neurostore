@@ -60,9 +60,7 @@ describe('DisplayExtractionTableState Component', () => {
         expect(screen.getByText('study-1')).toBeInTheDocument();
         userEvent.click(screen.getByText('study-1'));
 
-        expect(useNavigate()).toHaveBeenCalledWith(
-            '/projects/project-id/extraction/studies/study-1/edit'
-        );
+        expect(useNavigate()).toHaveBeenCalledWith('/projects/project-id/extraction/studies/study-1/edit');
     });
 
     it('navigates to the next study', () => {
@@ -73,9 +71,7 @@ describe('DisplayExtractionTableState Component', () => {
         expect(screen.getByText('study-3')).toBeInTheDocument();
         userEvent.click(screen.getByText('study-3'));
 
-        expect(useNavigate()).toHaveBeenCalledWith(
-            '/projects/project-id/extraction/studies/study-3/edit'
-        );
+        expect(useNavigate()).toHaveBeenCalledWith('/projects/project-id/extraction/studies/study-3/edit');
     });
 
     it('should not show the previous button if there is no previous study', () => {
@@ -112,9 +108,7 @@ describe('DisplayExtractionTableState Component', () => {
         expect(screen.getByText('You have unsaved changes')).toBeInTheDocument();
 
         userEvent.click(screen.getByTestId('accept-close-confirmation'));
-        expect(useNavigate()).toHaveBeenCalledWith(
-            '/projects/project-id/extraction/studies/study-2/edit'
-        );
+        expect(useNavigate()).toHaveBeenCalledWith('/projects/project-id/extraction/studies/study-2/edit');
     });
 
     it('should not navigate after cancelling the dialog', () => {

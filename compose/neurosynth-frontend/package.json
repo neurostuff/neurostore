@@ -57,7 +57,9 @@
         "cy:e2e-headless-staging-single": "env-cmd -f .env.staging cypress run --spec",
         "cy:install": "cypress install",
         "serve-build": "vite preview --mode staging --port 3000",
-        "lint": "eslint ."
+        "lint": "eslint .",
+        "format": "prettier --write .",
+        "format:check": "prettier --check ."
     },
     "type": "module",
     "browserslist": {
@@ -94,7 +96,6 @@
         "eslint": "^9.14.0",
         "eslint-config-prettier": "^10.1.8",
         "eslint-plugin-cypress": "^4.1.0",
-        "eslint-plugin-prettier": "^5.2.1",
         "eslint-plugin-react-hooks": "^5.0.0",
         "eslint-plugin-react-refresh": "^0.4.14",
         "globals": "^15.12.0",

@@ -1,166 +1,165 @@
 {
-  "created_at": "2025-05-30T23:14:42.972395+00:00",
-  "description": "",
-  "draft": true,
-  "id": "aubYH6Hdvoe3",
-  "meta_analyses": [],
-  "name": "Untitled",
-  "neurostore_study": {
-    "created_at": "2025-05-30T23:14:42.984037+00:00",
-    "exception": null,
-    "neurostore_id": "YVqGsqRLSned",
-    "status": "PENDING",
-    "traceback": null,
-    "updated_at": "2025-05-30T23:14:42.990766+00:00"
-  },
-  "neurostore_url": "https://neurostore.org/api/studies/YVqGsqRLSned",
-  "provenance": {
-    "curationMetadata": {
-      "columns": [
-        {
-          "id": "bf2f83c7-0a3b-48d4-b30c-5860f6bb29b9",
-          "name": "Identification",
-          "stubStudies": []
-        },
-        {
-          "id": "a2e51654-d54c-47e2-80f6-ca3776e55939",
-          "name": "Screening",
-          "stubStudies": []
-        },
-        {
-          "id": "bc39eaf3-3162-4604-ab7f-af6ea811edcf",
-          "name": "Eligibility",
-          "stubStudies": []
-        },
-        {
-          "id": "9cbac36b-a3a0-4bcd-9e7c-58aac9fc8e07",
-          "name": "Included",
-          "stubStudies": []
-        }
-      ],
-      "exclusionTags": [
-        {
-          "id": "neurosynth_exclude_exclusion",
-          "isAssignable": true,
-          "isExclusionTag": true,
-          "label": "Exclude"
-        },
-        {
-          "id": "neurosynth_duplicate_exclusion",
-          "isAssignable": true,
-          "isExclusionTag": true,
-          "label": "Duplicate"
-        }
-      ],
-      "identificationSources": [
-        {
-          "id": "neurosynth_neurostore_id_source",
-          "label": "Neurostore"
-        },
-        {
-          "id": "neurosynth_pubmed_id_source",
-          "label": "PubMed"
-        },
-        {
-          "id": "neurosynth_scopus_id_source",
-          "label": "Scopus"
-        },
-        {
-          "id": "neurosynth_web_of_science_id_source",
-          "label": "Web of Science"
-        },
-        {
-          "id": "neurosynth_psycinfo_id_source",
-          "label": "PsycInfo"
-        },
-        {
-          "id": "neurosynth_sleuth_id_source",
-          "label": "Sleuth"
-        }
-      ],
-      "imports": [
-      ],
-      "infoTags": [
-        {
-          "id": "neurosynth_untagged_tag",
-          "isAssignable": false,
-          "isExclusionTag": false,
-          "label": "Untagged studies"
-        },
-        {
-          "id": "neurosynth_uncategorized_tag",
-          "isAssignable": false,
-          "isExclusionTag": false,
-          "label": "Uncategorized Studies"
-        },
-        {
-          "id": "neurosynth_needs_review_tag",
-          "isAssignable": false,
-          "isExclusionTag": false,
-          "label": "Needs Review"
-        }
-      ],
-      "prismaConfig": {
-        "eligibility": {
-          "exclusionTags": [
-            {
-              "id": "neurosynth_reports_not_retrieved_exclusion",
-              "isAssignable": true,
-              "isExclusionTag": true,
-              "label": "Reports not retrieved"
-            },
-            {
-              "id": "neurosynth_insufficient_detail_exclusion",
-              "isAssignable": true,
-              "isExclusionTag": true,
-              "label": "Insufficient Details"
-            },
-            {
-              "id": "neurosynth_limited_rigor",
-              "isAssignable": true,
-              "isExclusionTag": true,
-              "label": "Limited Rigor"
-            },
-            {
-              "id": "neurosynth_out_of_scope_exclusion",
-              "isAssignable": true,
-              "isExclusionTag": true,
-              "label": "Out of scope"
-            }
-          ]
-        },
-        "identification": {
-          "exclusionTags": [
-            {
-              "id": "neurosynth_duplicate_exclusion",
-              "isAssignable": true,
-              "isExclusionTag": true,
-              "label": "Duplicate"
-            }
-          ]
-        },
-        "isPrisma": true,
-        "screening": {
-          "exclusionTags": [
-            {
-              "id": "neurosynth_irrelevant_exclusion",
-              "isAssignable": true,
-              "isExclusionTag": true,
-              "label": "Irrelevant"
-            }
-          ]
-        }
-      }
+    "created_at": "2025-05-30T23:14:42.972395+00:00",
+    "description": "",
+    "draft": true,
+    "id": "aubYH6Hdvoe3",
+    "meta_analyses": [],
+    "name": "Untitled",
+    "neurostore_study": {
+        "created_at": "2025-05-30T23:14:42.984037+00:00",
+        "exception": null,
+        "neurostore_id": "YVqGsqRLSned",
+        "status": "PENDING",
+        "traceback": null,
+        "updated_at": "2025-05-30T23:14:42.990766+00:00"
     },
-    "extractionMetadata": {
-      "studyStatusList": []
+    "neurostore_url": "https://neurostore.org/api/studies/YVqGsqRLSned",
+    "provenance": {
+        "curationMetadata": {
+            "columns": [
+                {
+                    "id": "bf2f83c7-0a3b-48d4-b30c-5860f6bb29b9",
+                    "name": "Identification",
+                    "stubStudies": []
+                },
+                {
+                    "id": "a2e51654-d54c-47e2-80f6-ca3776e55939",
+                    "name": "Screening",
+                    "stubStudies": []
+                },
+                {
+                    "id": "bc39eaf3-3162-4604-ab7f-af6ea811edcf",
+                    "name": "Eligibility",
+                    "stubStudies": []
+                },
+                {
+                    "id": "9cbac36b-a3a0-4bcd-9e7c-58aac9fc8e07",
+                    "name": "Included",
+                    "stubStudies": []
+                }
+            ],
+            "exclusionTags": [
+                {
+                    "id": "neurosynth_exclude_exclusion",
+                    "isAssignable": true,
+                    "isExclusionTag": true,
+                    "label": "Exclude"
+                },
+                {
+                    "id": "neurosynth_duplicate_exclusion",
+                    "isAssignable": true,
+                    "isExclusionTag": true,
+                    "label": "Duplicate"
+                }
+            ],
+            "identificationSources": [
+                {
+                    "id": "neurosynth_neurostore_id_source",
+                    "label": "Neurostore"
+                },
+                {
+                    "id": "neurosynth_pubmed_id_source",
+                    "label": "PubMed"
+                },
+                {
+                    "id": "neurosynth_scopus_id_source",
+                    "label": "Scopus"
+                },
+                {
+                    "id": "neurosynth_web_of_science_id_source",
+                    "label": "Web of Science"
+                },
+                {
+                    "id": "neurosynth_psycinfo_id_source",
+                    "label": "PsycInfo"
+                },
+                {
+                    "id": "neurosynth_sleuth_id_source",
+                    "label": "Sleuth"
+                }
+            ],
+            "imports": [],
+            "infoTags": [
+                {
+                    "id": "neurosynth_untagged_tag",
+                    "isAssignable": false,
+                    "isExclusionTag": false,
+                    "label": "Untagged studies"
+                },
+                {
+                    "id": "neurosynth_uncategorized_tag",
+                    "isAssignable": false,
+                    "isExclusionTag": false,
+                    "label": "Uncategorized Studies"
+                },
+                {
+                    "id": "neurosynth_needs_review_tag",
+                    "isAssignable": false,
+                    "isExclusionTag": false,
+                    "label": "Needs Review"
+                }
+            ],
+            "prismaConfig": {
+                "eligibility": {
+                    "exclusionTags": [
+                        {
+                            "id": "neurosynth_reports_not_retrieved_exclusion",
+                            "isAssignable": true,
+                            "isExclusionTag": true,
+                            "label": "Reports not retrieved"
+                        },
+                        {
+                            "id": "neurosynth_insufficient_detail_exclusion",
+                            "isAssignable": true,
+                            "isExclusionTag": true,
+                            "label": "Insufficient Details"
+                        },
+                        {
+                            "id": "neurosynth_limited_rigor",
+                            "isAssignable": true,
+                            "isExclusionTag": true,
+                            "label": "Limited Rigor"
+                        },
+                        {
+                            "id": "neurosynth_out_of_scope_exclusion",
+                            "isAssignable": true,
+                            "isExclusionTag": true,
+                            "label": "Out of scope"
+                        }
+                    ]
+                },
+                "identification": {
+                    "exclusionTags": [
+                        {
+                            "id": "neurosynth_duplicate_exclusion",
+                            "isAssignable": true,
+                            "isExclusionTag": true,
+                            "label": "Duplicate"
+                        }
+                    ]
+                },
+                "isPrisma": true,
+                "screening": {
+                    "exclusionTags": [
+                        {
+                            "id": "neurosynth_irrelevant_exclusion",
+                            "isAssignable": true,
+                            "isExclusionTag": true,
+                            "label": "Irrelevant"
+                        }
+                    ]
+                }
+            }
+        },
+        "extractionMetadata": {
+            "studyStatusList": []
+        },
+        "metaAnalysisMetadata": {
+            "canEditMetaAnalyses": false
+        }
     },
-    "metaAnalysisMetadata": {
-      "canEditMetaAnalyses": false
-    }
-  },
-  "public": true,
-  "updated_at": "2025-06-09T21:26:11.191969+00:00",
-  "user": "github|26612023",
-  "username": "Nicholas Lee"
+    "public": true,
+    "updated_at": "2025-06-09T21:26:11.191969+00:00",
+    "user": "github|26612023",
+    "username": "Nicholas Lee"
 }

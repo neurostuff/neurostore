@@ -17,11 +17,7 @@ describe('NeurosynthBreadcrumbs Component', () => {
     });
 
     it('should navigate when clicked', () => {
-        render(
-            <NeurosynthBreadcrumbs
-                breadcrumbItems={[{ link: '/page', text: 'Page', isCurrentPage: false }]}
-            />
-        );
+        render(<NeurosynthBreadcrumbs breadcrumbItems={[{ link: '/page', text: 'Page', isCurrentPage: false }]} />);
 
         userEvent.click(screen.getByText('Page'));
         expect(useNavigate()).toHaveBeenCalledWith('/page');
@@ -29,11 +25,7 @@ describe('NeurosynthBreadcrumbs Component', () => {
 
     it('should open the confirmation dialog', () => {
         setUnloadHandler('study');
-        render(
-            <NeurosynthBreadcrumbs
-                breadcrumbItems={[{ link: '/page', text: 'Page', isCurrentPage: false }]}
-            />
-        );
+        render(<NeurosynthBreadcrumbs breadcrumbItems={[{ link: '/page', text: 'Page', isCurrentPage: false }]} />);
 
         userEvent.click(screen.getByText('Page'));
 
@@ -42,11 +34,7 @@ describe('NeurosynthBreadcrumbs Component', () => {
 
     it('should not route when the dialog is cancelled', () => {
         setUnloadHandler('annotation');
-        render(
-            <NeurosynthBreadcrumbs
-                breadcrumbItems={[{ link: '/page', text: 'Page', isCurrentPage: false }]}
-            />
-        );
+        render(<NeurosynthBreadcrumbs breadcrumbItems={[{ link: '/page', text: 'Page', isCurrentPage: false }]} />);
 
         userEvent.click(screen.getByText('Page'));
         expect(screen.getByTestId('mock-confirmation-dialog')).toBeInTheDocument();
@@ -56,11 +44,7 @@ describe('NeurosynthBreadcrumbs Component', () => {
 
     it('should route when the dialog is accepted', () => {
         setUnloadHandler('study');
-        render(
-            <NeurosynthBreadcrumbs
-                breadcrumbItems={[{ link: '/page', text: 'Page', isCurrentPage: false }]}
-            />
-        );
+        render(<NeurosynthBreadcrumbs breadcrumbItems={[{ link: '/page', text: 'Page', isCurrentPage: false }]} />);
 
         userEvent.click(screen.getByText('Page'));
         expect(screen.getByTestId('mock-confirmation-dialog')).toBeInTheDocument();

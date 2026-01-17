@@ -22,9 +22,7 @@ export const hasDuplicateStudyAnalysisNames = (
     };
 };
 
-export const hasEmptyStudyPoints = (
-    analyses: IStoreAnalysis[]
-): { errorMessage: string; isError: boolean } => {
+export const hasEmptyStudyPoints = (analyses: IStoreAnalysis[]): { errorMessage: string; isError: boolean } => {
     for (let i = 0; i < analyses.length; i++) {
         const analysis = analyses[i];
         const isDefaultSinglePoint =

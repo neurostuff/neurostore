@@ -4,12 +4,7 @@ import { useQuery } from 'react-query';
 import API from 'api/api.config';
 
 const useGetStudyById = (studyId: string | undefined) => {
-    return useQuery<
-        AxiosResponse<StudyReturn>,
-        AxiosError,
-        StudyReturn,
-        [string, string | undefined]
-    >(
+    return useQuery<AxiosResponse<StudyReturn>, AxiosError, StudyReturn, [string, string | undefined]>(
         ['studies', studyId],
         () => API.NeurostoreServices.StudiesService.studiesIdGet(studyId || '', true),
         {

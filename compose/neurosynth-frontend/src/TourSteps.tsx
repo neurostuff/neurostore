@@ -13,8 +13,7 @@ const TourSteps: { [key: string]: StepType[] } = {
                     <Typography variant="subtitle1">
                         Welcome to the neurosynth-compose platform.
                         <br />
-                        This is an interactive guide that will get you familiarized with the
-                        platform features.
+                        This is an interactive guide that will get you familiarized with the platform features.
                     </Typography>
                 </div>
             ),
@@ -25,8 +24,8 @@ const TourSteps: { [key: string]: StepType[] } = {
                 <div>
                     <Typography variant="h5">Documentation</Typography>
                     <Typography variant="subtitle1">
-                        To get a more in depth understanding of neurosynth-compose, click this
-                        button to open the documentation.
+                        To get a more in depth understanding of neurosynth-compose, click this button to open the
+                        documentation.
                     </Typography>
                 </div>
             ),
@@ -37,8 +36,7 @@ const TourSteps: { [key: string]: StepType[] } = {
             content: () => (
                 <div>
                     <Typography variant="subtitle1">
-                        We'll start with the Public Studies Page. Click on{' '}
-                        <b>STUDIES {'>'} PUBLIC STUDIES</b>
+                        We'll start with the Public Studies Page. Click on <b>STUDIES {'>'} PUBLIC STUDIES</b>
                     </Typography>
                 </div>
             ),
@@ -62,11 +60,7 @@ const TourSteps: { [key: string]: StepType[] } = {
         },
         {
             selector: '[data-tour="StudiesPage-2"]',
-            content: () => (
-                <Typography>
-                    You can use this searchbar to filter studies by specific criteria.
-                </Typography>
-            ),
+            content: () => <Typography>You can use this searchbar to filter studies by specific criteria.</Typography>,
         },
         {
             selector: '[data-tour="StudiesPage-3"]',
@@ -83,9 +77,7 @@ const TourSteps: { [key: string]: StepType[] } = {
                     <Typography variant="subtitle1">
                         You can click on a row to view details about a specific study.
                     </Typography>
-                    <Typography variant="subtitle1">
-                        Click on this study now to view it in more detail.
-                    </Typography>
+                    <Typography variant="subtitle1">Click on this study now to view it in more detail.</Typography>
                 </div>
             ),
             stepInteraction: true,
@@ -112,8 +104,8 @@ const TourSteps: { [key: string]: StepType[] } = {
                 <div>
                     <Typography variant="h5">Metadata</Typography>
                     <Typography variant="subtitle1">
-                        This section contains the metadata associated with the study. You can click
-                        on it to expand or hide it.
+                        This section contains the metadata associated with the study. You can click on it to expand or
+                        hide it.
                     </Typography>
                 </div>
             ),
@@ -126,9 +118,8 @@ const TourSteps: { [key: string]: StepType[] } = {
                 <div>
                     <Typography variant="h5">Analyses</Typography>
                     <Typography variant="subtitle1">
-                        This section contains all the analyses within a study. An <b>analysis</b> is
-                        a contrast of <b>conditions</b> with statistical outputs such as{' '}
-                        <b>coordinates</b> or <b>images</b>.
+                        This section contains all the analyses within a study. An <b>analysis</b> is a contrast of{' '}
+                        <b>conditions</b> with statistical outputs such as <b>coordinates</b> or <b>images</b>.
                     </Typography>
                 </div>
             ),
@@ -139,8 +130,8 @@ const TourSteps: { [key: string]: StepType[] } = {
                 <div>
                     <Typography variant="h5">Conditions</Typography>
                     <Typography variant="subtitle1">
-                        Conditions are experimental variables that consist of a name/description and
-                        an associated weight.
+                        Conditions are experimental variables that consist of a name/description and an associated
+                        weight.
                     </Typography>
                 </div>
             ),
@@ -153,8 +144,8 @@ const TourSteps: { [key: string]: StepType[] } = {
                 <div>
                     <Typography variant="h5">Coordinates</Typography>
                     <Typography variant="subtitle1">
-                        Coordinates are X, Y, and Z values that represent various brain activations.
-                        They are listed here along with the kind and space.
+                        Coordinates are X, Y, and Z values that represent various brain activations. They are listed
+                        here along with the kind and space.
                     </Typography>
                 </div>
             ),
@@ -166,9 +157,7 @@ const TourSteps: { [key: string]: StepType[] } = {
             content: () => (
                 <div>
                     <Typography variant="h5">Images</Typography>
-                    <Typography variant="subtitle1">
-                        Not yet implemented yet, coming soon!
-                    </Typography>
+                    <Typography variant="subtitle1">Not yet implemented yet, coming soon!</Typography>
                 </div>
             ),
             resizeObservables: ['[data-tour="StudyPage-6"]'],
@@ -177,9 +166,7 @@ const TourSteps: { [key: string]: StepType[] } = {
         {
             selector: '[data-tour="StudyPage-7"]',
             content: () => (
-                <Typography variant="subtitle1">
-                    For multiple analyses, you can switch between them here.
-                </Typography>
+                <Typography variant="subtitle1">For multiple analyses, you can switch between them here.</Typography>
             ),
             stepInteraction: true,
         },
@@ -187,8 +174,8 @@ const TourSteps: { [key: string]: StepType[] } = {
             selector: '[data-tour="StudyPage-8"]',
             content: () => (
                 <Typography variant="subtitle1">
-                    If there is anything in the study that you would like to modify, you can{' '}
-                    <b>clone a study</b> in order to create your own version of it.
+                    If there is anything in the study that you would like to modify, you can <b>clone a study</b> in
+                    order to create your own version of it.
                     <br />
                     Once you have cloned a study, you can then click <b>Edit Study</b> to modify it.
                 </Typography>
@@ -199,8 +186,7 @@ const TourSteps: { [key: string]: StepType[] } = {
             content: () => (
                 <div>
                     <Typography variant="subtitle1">
-                        Now let's go to the My Studies Page. Click on{' '}
-                        <b>STUDIES {'>'} MY STUDIES</b>
+                        Now let's go to the My Studies Page. Click on <b>STUDIES {'>'} MY STUDIES</b>
                     </Typography>
                 </div>
             ),
@@ -215,9 +201,7 @@ const TourSteps: { [key: string]: StepType[] } = {
             content: () => (
                 <div>
                     <Typography variant="h5">My Studies Page</Typography>
-                    <Typography variant="subtitle1">
-                        This page holds all the studies that you have cloned.
-                    </Typography>
+                    <Typography variant="subtitle1">This page holds all the studies that you have cloned.</Typography>
                 </div>
             ),
         },
@@ -225,8 +209,8 @@ const TourSteps: { [key: string]: StepType[] } = {
             selector: '[data-tour="UserStudiesPage-2"]',
             content: () => (
                 <Typography variant="subtitle1">
-                    Just like with the Public Studies page, this table will contain your cloned
-                    studies which can be viewed or added to a <b>studyset</b>.
+                    Just like with the Public Studies page, this table will contain your cloned studies which can be
+                    viewed or added to a <b>studyset</b>.
                 </Typography>
             ),
         },
@@ -234,8 +218,7 @@ const TourSteps: { [key: string]: StepType[] } = {
             selector: '[data-tour="UserStudiesPage-3"]',
             content: () => (
                 <Typography variant="subtitle1">
-                    Use this button to delete a study that you have cloned. This action is
-                    irreversible!
+                    Use this button to delete a study that you have cloned. This action is irreversible!
                 </Typography>
             ),
         },
@@ -244,8 +227,7 @@ const TourSteps: { [key: string]: StepType[] } = {
             content: () => (
                 <div>
                     <Typography variant="subtitle1">
-                        Let's take a closer look at studysets. Click on{' '}
-                        <b>STUDYSETS {'>'} PUBLIC STUDYSETS</b>
+                        Let's take a closer look at studysets. Click on <b>STUDYSETS {'>'} PUBLIC STUDYSETS</b>
                     </Typography>
                 </div>
             ),
@@ -261,23 +243,16 @@ const TourSteps: { [key: string]: StepType[] } = {
             content: () => (
                 <div>
                     <Typography variant="h5">Public Studysets Page</Typography>
+                    <Typography variant="subtitle1">This page is where you can access all public studysets.</Typography>
                     <Typography variant="subtitle1">
-                        This page is where you can access all public studysets.
-                    </Typography>
-                    <Typography variant="subtitle1">
-                        A <b>studyset</b> is a collection of studies, and one or more associated{' '}
-                        <b>annotations</b>.
+                        A <b>studyset</b> is a collection of studies, and one or more associated <b>annotations</b>.
                     </Typography>
                 </div>
             ),
         },
         {
             selector: '[data-tour="StudysetsPage-1"]',
-            content: () => (
-                <Typography variant="subtitle1">
-                    Click on a studyset to view it in detail.
-                </Typography>
-            ),
+            content: () => <Typography variant="subtitle1">Click on a studyset to view it in detail.</Typography>,
             stepInteraction: true,
         },
     ],
@@ -293,8 +268,7 @@ const TourSteps: { [key: string]: StepType[] } = {
                     </Typography>
                     <br />
                     <Typography variant="subtitle1">
-                        A <b>studyset</b> is a collection of studies, and one or more associated{' '}
-                        <b>annotations</b>.
+                        A <b>studyset</b> is a collection of studies, and one or more associated <b>annotations</b>.
                     </Typography>
                 </div>
             ),
@@ -305,8 +279,8 @@ const TourSteps: { [key: string]: StepType[] } = {
                 <div>
                     <Typography variant="h5">Studyset Details</Typography>
                     <Typography variant="subtitle1">
-                        If you own this studyset, you will be able to edit the studyset name and
-                        associated journal, DOI, and description.
+                        If you own this studyset, you will be able to edit the studyset name and associated journal,
+                        DOI, and description.
                     </Typography>
                 </div>
             ),
@@ -332,19 +306,18 @@ const TourSteps: { [key: string]: StepType[] } = {
                     </Typography>
                     <br />
                     <Typography variant="subtitle1">
-                        Annotations are the experimental details and inclusion criteria for a given
-                        studyset.
+                        Annotations are the experimental details and inclusion criteria for a given studyset.
                     </Typography>
                     <Typography>
                         <b>
-                            Create an annotation in order to manually include/exclude certain
-                            analyses from your meta-analysis.
+                            Create an annotation in order to manually include/exclude certain analyses from your
+                            meta-analysis.
                         </b>
                     </Typography>
                     <br />
                     <Typography variant="subtitle1">
-                        If you want to learn more about editing annotations, you can click on an
-                        existing annotation and look for the <Help color="primary" /> icon
+                        If you want to learn more about editing annotations, you can click on an existing annotation and
+                        look for the <Help color="primary" /> icon
                     </Typography>
                 </div>
             ),
@@ -355,8 +328,8 @@ const TourSteps: { [key: string]: StepType[] } = {
                 <div>
                     <Typography variant="h5">Create a new annotation</Typography>
                     <Typography variant="subtitle1">
-                        Click this button and provide a name and description to create a new
-                        annotation for this studyset.
+                        Click this button and provide a name and description to create a new annotation for this
+                        studyset.
                     </Typography>
                 </div>
             ),
@@ -366,9 +339,7 @@ const TourSteps: { [key: string]: StepType[] } = {
             content: () => (
                 <div>
                     <Typography variant="h5">Delete this studyset</Typography>
-                    <Typography variant="subtitle1">
-                        To delete this studyset, click this button and confirm.
-                    </Typography>
+                    <Typography variant="subtitle1">To delete this studyset, click this button and confirm.</Typography>
                 </div>
             ),
         },
@@ -417,12 +388,9 @@ const TourSteps: { [key: string]: StepType[] } = {
             selector: '.tour-meta-analyses-tab',
             content: () => (
                 <div>
+                    <Typography variant="subtitle1">Now, let's move on to meta-analyses.</Typography>
                     <Typography variant="subtitle1">
-                        Now, let's move on to meta-analyses.
-                    </Typography>
-                    <Typography variant="subtitle1">
-                        Navigate to <b>META-ANALYSES {'>'} PUBLIC META-ANALYSES</b> to continue the
-                        tour.
+                        Navigate to <b>META-ANALYSES {'>'} PUBLIC META-ANALYSES</b> to continue the tour.
                     </Typography>
                 </div>
             ),
@@ -437,9 +405,7 @@ const TourSteps: { [key: string]: StepType[] } = {
             content: () => (
                 <div>
                     <Typography variant="h5">Public Meta-Analyses Page</Typography>
-                    <Typography variant="subtitle1">
-                        This page shows all publicly created meta-analyses.
-                    </Typography>
+                    <Typography variant="subtitle1">This page shows all publicly created meta-analyses.</Typography>
                 </div>
             ),
             position: 'center',
@@ -448,9 +414,7 @@ const TourSteps: { [key: string]: StepType[] } = {
             selector: '[data-tour="MetaAnalysesPage-1"]',
             content: () => (
                 <div>
-                    <Typography variant="subtitle1">
-                        Click on any meta-analysis in this table to continue.
-                    </Typography>
+                    <Typography variant="subtitle1">Click on any meta-analysis in this table to continue.</Typography>
                 </div>
             ),
             stepInteraction: true,
@@ -463,13 +427,11 @@ const TourSteps: { [key: string]: StepType[] } = {
                 <div>
                     <Typography variant="h5">Meta-Analysis Page</Typography>
                     <Typography variant="subtitle1">
-                        This page represents a single meta-analysis constructed from a curated and
-                        annotated <b>studyset</b>.
+                        This page represents a single meta-analysis constructed from a curated and annotated{' '}
+                        <b>studyset</b>.
                     </Typography>
                     <br />
-                    <Typography variant="subtitle1">
-                        You can run your meta-analysis in a few different ways.
-                    </Typography>
+                    <Typography variant="subtitle1">You can run your meta-analysis in a few different ways.</Typography>
                 </div>
             ),
             position: 'center',
@@ -480,8 +442,7 @@ const TourSteps: { [key: string]: StepType[] } = {
                 <div>
                     <Typography variant="h5">Specification Summary</Typography>
                     <Typography variant="subtitle1">
-                        Expand this accordion to view the specification summary of this
-                        meta-analysis.
+                        Expand this accordion to view the specification summary of this meta-analysis.
                     </Typography>
                 </div>
             ),
@@ -494,18 +455,15 @@ const TourSteps: { [key: string]: StepType[] } = {
                 <div>
                     <Typography variant="h5">Google Collab</Typography>
                     <Typography variant="subtitle1">
-                        We have created an environment for you to easily run your meta-analyis in
-                        Google Collab.
+                        We have created an environment for you to easily run your meta-analyis in Google Collab.
                     </Typography>
                     <br />
                     <Typography>
-                        This method is quick and easy, but may not provide sufficient resources to
-                        run your meta-analysis.
+                        This method is quick and easy, but may not provide sufficient resources to run your
+                        meta-analysis.
                     </Typography>
                     <br />
-                    <Typography>
-                        Copy the given ID and then click the button to get started.
-                    </Typography>
+                    <Typography>Copy the given ID and then click the button to get started.</Typography>
                 </div>
             ),
         },
@@ -524,8 +482,7 @@ const TourSteps: { [key: string]: StepType[] } = {
             selector: '.tour-meta-analyses-tab',
             content: () => (
                 <Typography>
-                    Let's now go to the My Meta-Analyses Page. Click{' '}
-                    <b>META-ANALYSES {'>'} MY META-ANALYSES </b>
+                    Let's now go to the My Meta-Analyses Page. Click <b>META-ANALYSES {'>'} MY META-ANALYSES </b>
                 </Typography>
             ),
             mutationObservables: ['.tour-highlighted-popper'],
@@ -550,8 +507,7 @@ const TourSteps: { [key: string]: StepType[] } = {
             selector: '[data-tour="UserMetaAnalysesPage-1"]',
             content: () => (
                 <Typography variant="subtitle1">
-                    As with the Public Meta-Analyses Page, you can click on a row to view your
-                    meta-analyses.
+                    As with the Public Meta-Analyses Page, you can click on a row to view your meta-analyses.
                 </Typography>
             ),
         },
@@ -561,12 +517,11 @@ const TourSteps: { [key: string]: StepType[] } = {
                 <div>
                     <Typography variant="h5">Create a meta-analysis</Typography>
                     <Typography variant="subtitle1">
-                        Once you have a properly <b>curated and annotated studyset</b>, you can
-                        proceed to create a meta-analysis.
+                        Once you have a properly <b>curated and annotated studyset</b>, you can proceed to create a
+                        meta-analysis.
                     </Typography>
                     <Typography variant="subtitle1">
-                        Go ahead and click on this button to continue the tour and go to the
-                        meta-analysis builder.
+                        Go ahead and click on this button to continue the tour and go to the meta-analysis builder.
                     </Typography>
                 </div>
             ),
@@ -591,13 +546,12 @@ const TourSteps: { [key: string]: StepType[] } = {
             content: () => (
                 <div>
                     <Typography variant="subtitle1">
-                        To build a meta-analysis, you must have a valid{' '}
-                        <b>curated and annotated studyset</b>.
+                        To build a meta-analysis, you must have a valid <b>curated and annotated studyset</b>.
                     </Typography>
                     <br />
                     <Typography>
-                        You will be asked to specify certain configurations, such as the type of
-                        meta-analytic algorithm you want to use as well as related inputs.
+                        You will be asked to specify certain configurations, such as the type of meta-analytic algorithm
+                        you want to use as well as related inputs.
                     </Typography>
                 </div>
             ),
@@ -609,8 +563,7 @@ const TourSteps: { [key: string]: StepType[] } = {
                 <div>
                     <Typography variant="h5">End of Tour</Typography>
                     <Typography variant="subtitle1">
-                        This concludes the neurosynth tour. We hope this was a useful introduction
-                        to the platform.
+                        This concludes the neurosynth tour. We hope this was a useful introduction to the platform.
                     </Typography>
                     <br />
                     <Typography variant="subtitle1">
@@ -621,8 +574,8 @@ const TourSteps: { [key: string]: StepType[] } = {
                     </Typography>
                     <br />
                     <Typography variant="subtitle1">
-                        You may now close this window by clicking outside, pressing the escape key,
-                        or clicking the "x" button on the top right.
+                        You may now close this window by clicking outside, pressing the escape key, or clicking the "x"
+                        button on the top right.
                     </Typography>
                 </div>
             ),

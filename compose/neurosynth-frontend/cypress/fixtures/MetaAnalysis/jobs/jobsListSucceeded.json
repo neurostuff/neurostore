@@ -1,19 +1,19 @@
 {
-  "results": [
-    {
-      "job_id": "job-succeeded-789",
-      "meta_analysis_id": "mock-meta-analysis-id",
-      "artifact_prefix": "test-artifact-789",
-      "status": "SUCCEEDED",
-      "environment": "staging",
-      "no_upload": false,
-      "user_id": "auth0|62e0e6c9dd47048572613b4d",
-      "status_url": "/meta-analysis-jobs/job-succeeded-789",
-      "created_at": "2024-01-14T10:00:00.000000+00:00",
-      "updated_at": "2024-01-14T10:05:00.000000+00:00"
+    "results": [
+        {
+            "job_id": "job-succeeded-789",
+            "meta_analysis_id": "mock-meta-analysis-id",
+            "artifact_prefix": "test-artifact-789",
+            "status": "SUCCEEDED",
+            "environment": "staging",
+            "no_upload": false,
+            "user_id": "auth0|62e0e6c9dd47048572613b4d",
+            "status_url": "/meta-analysis-jobs/job-succeeded-789",
+            "created_at": "2024-01-14T10:00:00.000000+00:00",
+            "updated_at": "2024-01-14T10:05:00.000000+00:00"
+        }
+    ],
+    "metadata": {
+        "count": 1
     }
-  ],
-  "metadata": {
-    "count": 1
-  }
 }

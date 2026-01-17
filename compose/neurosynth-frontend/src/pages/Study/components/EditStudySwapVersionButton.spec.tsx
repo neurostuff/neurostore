@@ -39,9 +39,7 @@ describe('EditStudySwapVersionButton Component', () => {
         userEvent.click(button);
 
         baseStudy.versions?.forEach((version) => {
-            expect(
-                screen.getByText(`Switch to version: ${(version as StudyReturn).id as string}`)
-            ).toBeInTheDocument();
+            expect(screen.getByText(`Switch to version: ${(version as StudyReturn).id as string}`)).toBeInTheDocument();
         });
     });
 
@@ -54,9 +52,7 @@ describe('EditStudySwapVersionButton Component', () => {
         await act(async () => {
             userEvent.click(button);
         });
-        const swapButton = screen.getByText(
-            `Switch to version: ${(baseStudy.versions as StudyReturn[])[0].id}`
-        );
+        const swapButton = screen.getByText(`Switch to version: ${(baseStudy.versions as StudyReturn[])[0].id}`);
         await act(async () => {
             userEvent.click(swapButton);
         });
@@ -70,9 +66,7 @@ describe('EditStudySwapVersionButton Component', () => {
         expect(useUpdateStudyset().mutateAsync).toHaveBeenCalled();
         expect(useProjectExtractionReplaceStudyListStatusId()).toHaveBeenCalled();
         expect(useNavigate()).toHaveBeenCalledWith(
-            `/projects/project-id/extraction/studies/${
-                (baseStudy.versions as StudyReturn[])[0].id
-            }/edit`
+            `/projects/project-id/extraction/studies/${(baseStudy.versions as StudyReturn[])[0].id}/edit`
         );
     });
 
@@ -84,9 +78,7 @@ describe('EditStudySwapVersionButton Component', () => {
         await act(async () => {
             userEvent.click(button);
         });
-        const swapButton = screen.getByText(
-            `Switch to version: ${(baseStudy.versions as StudyReturn[])[0].id}`
-        );
+        const swapButton = screen.getByText(`Switch to version: ${(baseStudy.versions as StudyReturn[])[0].id}`);
         await act(async () => {
             userEvent.click(swapButton);
         });

@@ -181,10 +181,7 @@ describe('AddMetadataRow Component', () => {
 
         render(
             <MockThemeProvider>
-                <AddMetadataRow
-                    onAddMetadataRow={onAddMetadataRowMock}
-                    keyPlaceholderText="some-new-key-placeholder"
-                />
+                <AddMetadataRow onAddMetadataRow={onAddMetadataRowMock} keyPlaceholderText="some-new-key-placeholder" />
             </MockThemeProvider>
         );
 

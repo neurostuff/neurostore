@@ -16,11 +16,7 @@ export const resolveStudysetAndCurationDifferences = (
     });
 
     curationStubs.forEach((stub) => {
-        if (
-            !studysetSet.has(stub.title) &&
-            !studysetSet.has(stub.pmid) &&
-            !studysetSet.has(stub.doi)
-        ) {
+        if (!studysetSet.has(stub.title) && !studysetSet.has(stub.pmid) && !studysetSet.has(stub.doi)) {
             return true;
         }
     });

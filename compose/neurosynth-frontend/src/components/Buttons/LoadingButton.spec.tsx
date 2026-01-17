@@ -22,15 +22,7 @@ describe('LoadingButton', () => {
     });
 
     it('should show a loading spinner when loading', () => {
-        render(
-            <LoadingButton
-                text="test"
-                variant="text"
-                disabled={false}
-                isLoading={true}
-                onClick={mockOnClick}
-            />
-        );
+        render(<LoadingButton text="test" variant="text" disabled={false} isLoading={true} onClick={mockOnClick} />);
 
         expect(screen.getByRole('progressbar')).toBeInTheDocument();
     });

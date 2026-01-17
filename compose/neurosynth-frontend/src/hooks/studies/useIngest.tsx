@@ -9,19 +9,17 @@ import API from 'api/api.config';
 const useIngest = () => {
     const queryClient = useQueryClient();
     const { enqueueSnackbar } = useSnackbar();
-    return useMutation<
-        AxiosResponse<BaseStudiesPost200Response>,
-        AxiosError,
-        BaseStudiesPostRequest,
-        unknown
-    >((stubs) => API.NeurostoreServices.StudiesService.baseStudiesPost(stubs), {
-        onSuccess: () => {
-            queryClient.invalidateQueries('studies');
-        },
-        onError: () => {
-            enqueueSnackbar('There was an error during ingestion', { variant: 'error' });
-        },
-    });
+    return useMutation<AxiosResponse<BaseStudiesPost200Response>, AxiosError, BaseStudiesPostRequest, unknown>(
+        (stubs) => API.NeurostoreServices.StudiesService.baseStudiesPost(stubs),
+        {
+            onSuccess: () => {
+                queryClient.invalidateQueries('studies');
+            },
+            onError: () => {
+                enqueueSnackbar('There was an error during ingestion', { variant: 'error' });
+            },
+        }
+    );
 };
 
 export default useIngest;

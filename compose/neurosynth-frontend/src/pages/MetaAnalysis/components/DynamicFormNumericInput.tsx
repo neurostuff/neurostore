@@ -6,10 +6,7 @@ import DynamicFormStyles from 'pages/MetaAnalysis/components//DynamicFormStyles'
 const DynamicFormNumericInput: React.FC<IDynamicFormInput> = (props) => {
     return (
         <Box sx={DynamicFormStyles.input}>
-            <MetaAnalysisDynamicFormTitle
-                name={props.parameterName}
-                description={props.parameter.description}
-            />
+            <MetaAnalysisDynamicFormTitle name={props.parameterName} description={props.parameter.description} />
 
             <Box sx={{ width: '50%' }}>
                 <TextField

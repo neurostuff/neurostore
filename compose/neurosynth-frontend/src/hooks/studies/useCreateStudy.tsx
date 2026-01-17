@@ -7,14 +7,8 @@ import API from 'api/api.config';
 const useCreateStudy = () => {
     const queryClient = useQueryClient();
     const { enqueueSnackbar } = useSnackbar();
-    return useMutation<
-        AxiosResponse<StudyReturn>,
-        AxiosError,
-        { sourceId: string; data: StudyRequest },
-        unknown
-    >(
-        ({ sourceId, data }) =>
-            API.NeurostoreServices.StudiesService.studiesPost(undefined, sourceId, data),
+    return useMutation<AxiosResponse<StudyReturn>, AxiosError, { sourceId: string; data: StudyRequest }, unknown>(
+        ({ sourceId, data }) => API.NeurostoreServices.StudiesService.studiesPost(undefined, sourceId, data),
         {
             onSuccess: () => {
                 queryClient.invalidateQueries('studies');

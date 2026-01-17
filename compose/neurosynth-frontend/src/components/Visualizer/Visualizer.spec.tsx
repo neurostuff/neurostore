@@ -19,14 +19,7 @@ describe('Visualizer Component', () => {
     });
 
     it('should render', () => {
-        render(
-            <Visualizer
-                imageURL="testImageURL"
-                fileName="testFileName"
-                template="testTemplate"
-                index={0}
-            />
-        );
+        render(<Visualizer imageURL="testImageURL" fileName="testFileName" template="testTemplate" index={0} />);
 
         expect(mockPapaya.Container.startPapaya).toBeCalled();
         expect(mockPapaya.Container.resetViewer).toBeCalledWith(0, {

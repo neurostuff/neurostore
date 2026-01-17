@@ -10,9 +10,7 @@ describe('Neurosynth Table Component', () => {
 
     describe('config', () => {
         it('should load', () => {
-            render(
-                <NeurosynthTable tableConfig={{ isLoading: true }} headerCells={[]} rows={[]} />
-            );
+            render(<NeurosynthTable tableConfig={{ isLoading: true }} headerCells={[]} rows={[]} />);
             expect(screen.getByRole('progressbar')).toBeInTheDocument();
         });
 
@@ -40,9 +38,7 @@ describe('Neurosynth Table Component', () => {
         });
 
         it('should have the correct table elevation', () => {
-            render(
-                <NeurosynthTable tableConfig={{ tableElevation: 3 }} headerCells={[]} rows={[]} />
-            );
+            render(<NeurosynthTable tableConfig={{ tableElevation: 3 }} headerCells={[]} rows={[]} />);
             // checking for set mui classes
             expect(screen.getByRole('table')?.parentElement?.className).toContain('elevation3');
         });
@@ -132,9 +128,7 @@ describe('Neurosynth Table Component', () => {
                 />
             );
 
-            expect(screen.getAllByTestId('mock-data-cell').length).toEqual(
-                mockSourceData.length * 2
-            );
+            expect(screen.getAllByTestId('mock-data-cell').length).toEqual(mockSourceData.length * 2);
 
             mockSourceData.forEach((dataElement) => {
                 expect(screen.getByText(dataElement.header1));
@@ -161,11 +155,7 @@ describe('Neurosynth Table Component', () => {
                         },
                     ]}
                     rows={[
-                        <tr
-                            key="row-1"
-                            data-testid="mock-click-row"
-                            onClick={() => mockHandleClick('some-id')}
-                        >
+                        <tr key="row-1" data-testid="mock-click-row" onClick={() => mockHandleClick('some-id')}>
                             <td data-testid="mock-data-cell">data-cell-1</td>
                             <td data-testid="mock-data-cell">data-cell-2</td>
                         </tr>,

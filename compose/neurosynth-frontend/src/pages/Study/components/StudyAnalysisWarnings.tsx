@@ -7,9 +7,7 @@ import { useGetStudyIsLoading } from 'pages/Study/store/StudyStore';
 const StudyAnalysisWarnings: React.FC<{ analysisId: string }> = (props) => {
     const getStudyIsLoading = useGetStudyIsLoading();
 
-    const { hasNoPoints, hasNoName, hasDuplicateName, hasNonMNICoordinates } = useDisplayWarnings(
-        props.analysisId
-    );
+    const { hasNoPoints, hasNoName, hasDuplicateName, hasNonMNICoordinates } = useDisplayWarnings(props.analysisId);
 
     return (
         <StateHandlerComponent isLoading={getStudyIsLoading} isError={false} loaderSize={20}>
