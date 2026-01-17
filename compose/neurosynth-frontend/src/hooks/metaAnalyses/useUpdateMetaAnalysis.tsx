@@ -17,10 +17,7 @@ const useUpdateMetaAnalysis = () => {
         unknown
     >(
         (update) =>
-            API.NeurosynthServices.MetaAnalysisService.metaAnalysesIdPut(
-                update.metaAnalysisId,
-                update.metaAnalysis
-            ),
+            API.NeurosynthServices.MetaAnalysisService.metaAnalysesIdPut(update.metaAnalysisId, update.metaAnalysis),
         {
             onSuccess: () => {
                 queryClient.invalidateQueries('meta-analyses');

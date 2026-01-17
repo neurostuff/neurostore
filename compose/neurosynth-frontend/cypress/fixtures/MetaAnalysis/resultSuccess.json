@@ -1,34 +1,33 @@
 {
-  "cli_args": null,
-  "cli_version": null,
-  "created_at": "2024-01-15T10:00:00.000000+00:00",
-  "diagnostic_table": null,
-  "id": "result-id-123",
-  "meta_analysis_id": "mock-meta-analysis-id",
-  "neurovault_collection": {
-    "collection_id": "14743",
+    "cli_args": null,
+    "cli_version": null,
     "created_at": "2024-01-15T10:00:00.000000+00:00",
-    "files": [
-      {
-        "created_at": "2025-12-08T22:04:34.379147+00:00",
-        "exception": null,
-        "image_id": "1013647",
-        "status": "OK",
-        "updated_at": "2025-12-08T22:04:34.570460+00:00",
-        "url": "https://neurovault.org/api/images/1013647"
-      },
-      {
-        "created_at": "2025-12-08T22:04:34.379147+00:00",
-        "exception": null,
-        "image_id": "1013650",
-        "status": "OK",
-        "updated_at": "2025-12-08T22:04:34.564599+00:00",
-        "url": "https://neurovault.org/api/images/1013650"
-      }
-    ],
-    "updated_at": null,
-    "url": "https://neurovault.org/api/collections/22477"
-  },
-  "updated_at": null
+    "diagnostic_table": null,
+    "id": "result-id-123",
+    "meta_analysis_id": "mock-meta-analysis-id",
+    "neurovault_collection": {
+        "collection_id": "14743",
+        "created_at": "2024-01-15T10:00:00.000000+00:00",
+        "files": [
+            {
+                "created_at": "2025-12-08T22:04:34.379147+00:00",
+                "exception": null,
+                "image_id": "1013647",
+                "status": "OK",
+                "updated_at": "2025-12-08T22:04:34.570460+00:00",
+                "url": "https://neurovault.org/api/images/1013647"
+            },
+            {
+                "created_at": "2025-12-08T22:04:34.379147+00:00",
+                "exception": null,
+                "image_id": "1013650",
+                "status": "OK",
+                "updated_at": "2025-12-08T22:04:34.564599+00:00",
+                "url": "https://neurovault.org/api/images/1013650"
+            }
+        ],
+        "updated_at": null,
+        "url": "https://neurovault.org/api/collections/22477"
+    },
+    "updated_at": null
 }
-

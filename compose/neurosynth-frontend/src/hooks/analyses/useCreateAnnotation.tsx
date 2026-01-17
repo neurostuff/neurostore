@@ -10,24 +10,14 @@ const useCreateAnnotation = () => {
         AxiosResponse<NeurostoreAnnotation>,
         AxiosError,
         {
-            source?:
-                | 'neurostore'
-                | 'neurovault'
-                | 'pubmed'
-                | 'neurosynth'
-                | 'neuroquery'
-                | undefined;
+            source?: 'neurostore' | 'neurovault' | 'pubmed' | 'neurosynth' | 'neuroquery' | undefined;
             sourceId?: string;
             annotation: Partial<NeurostoreAnnotation>;
         },
         unknown
     >(
         (args) =>
-            API.NeurostoreServices.AnnotationsService.annotationsPost(
-                args.source,
-                args.sourceId,
-                args.annotation
-            ),
+            API.NeurostoreServices.AnnotationsService.annotationsPost(args.source, args.sourceId, args.annotation),
         {
             onSuccess: () => {
                 queryClient.invalidateQueries('annotations');

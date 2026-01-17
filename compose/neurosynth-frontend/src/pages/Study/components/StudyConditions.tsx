@@ -5,13 +5,11 @@ import { ConditionReturn } from 'neurostore-typescript-sdk';
 const ROW_HEIGHT = 58;
 
 const StudyConditions: React.FC<{ conditions: ConditionReturn[]; weights: number[] }> = (props) => {
-    const conditionRows = ((props?.conditions as ConditionReturn[]) || []).map(
-        (condition, index) => ({
-            id: condition.id,
-            condition: condition.name,
-            weight: (props?.weights || [])[index],
-        })
-    );
+    const conditionRows = ((props?.conditions as ConditionReturn[]) || []).map((condition, index) => ({
+        id: condition.id,
+        condition: condition.name,
+        weight: (props?.weights || [])[index],
+    }));
 
     return (
         <Box sx={{ marginTop: '1rem' }}>
@@ -20,9 +18,7 @@ const StudyConditions: React.FC<{ conditions: ConditionReturn[]; weights: number
             </Typography>
             <Box
                 sx={{
-                    height:
-                        ROW_HEIGHT * (conditionRows.length === 0 ? 1 : conditionRows.length) +
-                        ROW_HEIGHT,
+                    height: ROW_HEIGHT * (conditionRows.length === 0 ? 1 : conditionRows.length) + ROW_HEIGHT,
                 }}
             >
                 <DataGrid

@@ -107,10 +107,7 @@ const PrismaDialog: React.FC<IDialog> = (props) => {
                                 <MenuItem onClick={() => handleMenuItemSelected('PNG')} value="PNG">
                                     PNG
                                 </MenuItem>
-                                <MenuItem
-                                    onClick={() => handleMenuItemSelected('JPEG')}
-                                    value="JPEG"
-                                >
+                                <MenuItem onClick={() => handleMenuItemSelected('JPEG')} value="JPEG">
                                     JPEG
                                 </MenuItem>
                             </MenuList>

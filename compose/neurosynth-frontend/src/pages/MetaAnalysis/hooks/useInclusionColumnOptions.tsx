@@ -2,10 +2,7 @@ import { useGetAnnotationById } from 'hooks';
 import { NoteCollectionReturn } from 'neurostore-typescript-sdk';
 import { useMemo } from 'react';
 
-const useInclusionColumnOptions = (
-    annotationId: string | undefined,
-    selectedKey: string | undefined
-) => {
+const useInclusionColumnOptions = (annotationId: string | undefined, selectedKey: string | undefined) => {
     const { data: annotation } = useGetAnnotationById(annotationId);
 
     const options = useMemo(() => {

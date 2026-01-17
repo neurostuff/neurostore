@@ -1,496 +1,464 @@
 {
-  "metadata": { "total_count": 3714 },
-  "results": [
-    {
-      "id": "ZzSjmSTQkLo8",
-      "config_id": "z9UG4FQvw7cs",
-      "base_study_id": "33L7mwvuUxYU",
-      "date_executed": "2025-03-05T19:26:24.852005+00:00",
-      "result_data": {
-        "Exclude": null,
-        "Modality": ["StructuralMRI"],
-        "fMRITasks": [],
-        "StudyObjective": "To identify the neural signature of predisposition for bipolar disorder (BD) and separate it from effects of long-standing illness and treatment.",
-        "BehavioralTasks": null
-      },
-      "file_inputs": {
-        "/data/alejandro/projects/ns-pond/data/5eg5qRwjvBiu/processed/ace/text.txt": "0d62ae27e9b1c0b3bcdb6b5ae380e148"
-      }
-    },
-    {
-      "id": "ZzjAsGdXUQjq",
-      "config_id": "z9UG4FQvw7cs",
-      "base_study_id": "5pTxsjLiZYgF",
-      "date_executed": "2025-03-05T19:11:06.917171+00:00",
-      "result_data": {
-        "Exclude": null,
-        "Modality": ["fMRI-BOLD"],
-        "fMRITasks": [
-          {
-            "Domain": ["Learning and memory"],
-            "Concepts": ["episodic memory", "recognition", "familiarity"],
-            "TaskName": "Episodic Memory Retrieval Task",
-            "Conditions": [
-              "True targets",
-              "Altered targets",
-              "False targets",
-              "Unrelated targets"
-            ],
-            "TaskDesign": ["EventRelated"],
-            "TaskMetrics": [
-              "reaction times",
-              "number of correctly recognized words",
-              "number of mistakes"
-            ],
-            "RestingState": false,
-            "TaskDuration": null,
-            "DesignDetails": "Subjects encoded words from a study list which they were asked to retrieve on the subsequent day during ketamine/placebo administration in fMRI. Each trial consisted of the word presented for 2 seconds, followed by the questions Remember/Know and Yes/No both with variable duration (3-5 seconds).",
-            "TaskDescription": "Subjects performed a memory retrieval task while receiving either ketamine or placebo in the fMRI scanner.",
-            "RestingStateMetadata": null
-          }
-        ],
-        "StudyObjective": "To investigate the relationship between NMDA receptors, posterior cingulate, and positive (i.e. psychosis-like) symptoms using the NMDA antagonist ketamine during episodic memory retrieval in healthy human subjects.",
-        "BehavioralTasks": null
-      },
-      "file_inputs": {
-        "/data/alejandro/projects/ns-pond/data/4wwHXAwqvine/processed/ace/text.txt": "9e2f7b99ff01ee970e6fc6a511ff5149"
-      }
-    },
-    {
-      "id": "ZzFhjXSkZQ9H",
-      "config_id": "z9UG4FQvw7cs",
-      "base_study_id": "3yPGeCjieLJ3",
-      "date_executed": "2025-03-05T19:43:36.162316+00:00",
-      "result_data": {
-        "Exclude": null,
-        "Modality": ["fMRI-BOLD"],
-        "fMRITasks": [
-          {
-            "Domain": ["Learning and memory", "Action"],
-            "Concepts": [
-              "object-location memory",
-              "spatial navigation",
-              "non-spatial processing"
-            ],
-            "TaskName": "Virtual Reality Navigation Task",
-            "Conditions": null,
-            "TaskDesign": ["EventRelated"],
-            "TaskMetrics": ["fMRI BOLD signal"],
-            "RestingState": false,
-            "TaskDuration": null,
-            "DesignDetails": "The task involved collecting and replacing six everyday objects within a virtual arena. Participants collected each object from its associated location during an initial trial and then had to move to the object's associated location upon seeing a cue image. After responding, the object appeared in its position for collection again. The task included both spatial and non-spatial components, engaging functions associated with both the posterior-medial and anterior-temporal networks. Each scanning session was subdivided into EPI acquisition blocks of 210 volumes, with an average of 5 blocks per session.",
-            "TaskDescription": "Participants performed an object-location memory task while freely navigating a 3D virtual environment.",
-            "RestingStateMetadata": null
-          }
-        ],
-        "StudyObjective": "To identify the human homologue of the rodent medial and lateral entorhinal cortex (MEC and LEC) by investigating functional connectivity patterns during a virtual reality task.",
-        "BehavioralTasks": null
-      },
-      "file_inputs": {
-        "/data/alejandro/projects/ns-pond/data/3fJg4ogEUXHY/processed/pubget/text.txt": "22419ee8b7e45484666fe33ee507ddde"
-      }
-    },
-    {
-      "id": "ZZdDkhCTyaXj",
-      "config_id": "z9UG4FQvw7cs",
-      "base_study_id": "4usz4hrGYvVi",
-      "date_executed": "2025-03-05T18:47:42.579891+00:00",
-      "result_data": {
-        "Exclude": null,
-        "Modality": ["fMRI-BOLD"],
-        "fMRITasks": [
-          {
-            "Domain": ["Reasoning and decision making", "Learning and memory"],
-            "Concepts": [
-              "creativity",
-              "semantic processing",
-              "divergent thinking"
-            ],
-            "TaskName": "Story Generation Task",
-            "Conditions": [
-              "Be creative - related",
-              "Be creative - unrelated",
-              "Be uncreative - related",
-              "Be uncreative - unrelated"
-            ],
-            "TaskDesign": ["Blocked"],
-            "TaskMetrics": ["brain activity", "creativity ratings"],
-            "RestingState": false,
-            "TaskDuration": "6.4 minutes",
-            "DesignDetails": "A 2 x 2 factorial block design was employed, with all within-participant variables. The independent variables were objective (Be creative, Be uncreative) and relatedness of the words (related, unrelated). Each participant experienced all four conditions in a randomized order.",
-            "TaskDescription": "Participants were required to generate creative and uncreative stories from sets of words that were either related or unrelated.",
-            "RestingStateMetadata": null
-          }
-        ],
-        "StudyObjective": "The aim of this fMRI investigation was to identify those areas of the brain associated with approaching a story generation task creatively and to investigate the effects upon these correlates of incorporating a set of words that were unrelated to each other-a strategy considered to encourage semantic divergence.",
-        "BehavioralTasks": null
-      },
-      "file_inputs": {
-        "/data/alejandro/projects/ns-pond/data/4hmCsAxCoSNk/processed/ace/text.txt": "a68b0f435f1c2ea834f366155ef16e88"
-      }
-    },
-    {
-      "id": "zZ5PTztGkYiW",
-      "config_id": "z9UG4FQvw7cs",
-      "base_study_id": "KpTqqB36JshB",
-      "date_executed": "2025-03-05T18:10:32.417232+00:00",
-      "result_data": {
-        "Exclude": null,
-        "Modality": ["fMRI-BOLD"],
-        "fMRITasks": [
-          {
-            "Domain": null,
-            "Concepts": null,
-            "TaskName": "Symbol Match",
-            "Conditions": null,
-            "TaskDesign": ["Blocked"],
-            "TaskMetrics": null,
-            "RestingState": false,
-            "TaskDuration": "45.1 seconds",
-            "DesignDetails": "The task involved sequential, visual presentation of six items, followed by a probe string prompting a yes-no manual response. The task controlled for visual input and motor output processes common to all five tasks.",
-            "TaskDescription": "Participants made same-different judgements for two nonverbalisable symbols in the probe string.",
-            "RestingStateMetadata": null
-          },
-          {
-            "Domain": null,
-            "Concepts": null,
-            "TaskName": "Letter Match",
-            "Conditions": null,
-            "TaskDesign": ["Blocked"],
-            "TaskMetrics": null,
-            "RestingState": false,
-            "TaskDuration": "45.1 seconds",
-            "DesignDetails": "The task involved sequential, visual presentation of six letters, followed by a probe string prompting a yes-no manual response. This task was assumed to control for visual input and motor output processes common to all five tasks.",
-            "TaskDescription": "Participants read letters silently and made same-different judgements for the two letters in the probe string.",
-            "RestingStateMetadata": null
-          },
-          {
-            "Domain": null,
-            "Concepts": null,
-            "TaskName": "Letter Probe",
-            "Conditions": null,
-            "TaskDesign": ["Blocked"],
-            "TaskMetrics": null,
-            "RestingState": false,
-            "TaskDuration": "45.1 seconds",
-            "DesignDetails": "The task involved sequential, visual presentation of six letters, followed by a probe string prompting a yes-no manual response. This task included an explicit memory component and was assumed to involve access to a phonological store in addition to phonological recoding.",
-            "TaskDescription": "Participants judged the presence or absence of a single letter in the prior sequence of six letters.",
-            "RestingStateMetadata": null
-          },
-          {
-            "Domain": null,
-            "Concepts": null,
-            "TaskName": "Sequence Probe",
-            "Conditions": null,
-            "TaskDesign": ["Blocked"],
-            "TaskMetrics": null,
-            "RestingState": false,
-            "TaskDuration": "45.1 seconds",
-            "DesignDetails": "The task involved sequential, visual presentation of six letters, followed by a probe string prompting a yes-no manual response. This task required serial rehearsal and was expected to show greater detrimental effects of concurrent articulatory suppression than the Letter Probe task.",
-            "TaskDescription": "Participants judged the match of the serial order of all six letters with their temporal order in the prior sequence.",
-            "RestingStateMetadata": null
-          },
-          {
-            "Domain": null,
-            "Concepts": null,
-            "TaskName": "Grouped Probe",
-            "Conditions": null,
-            "TaskDesign": ["Blocked"],
-            "TaskMetrics": null,
-            "RestingState": false,
-            "TaskDuration": "45.1 seconds",
-            "DesignDetails": "The task involved sequential, visual presentation of six letters, grouped temporally into two groups of three by the insertion of a short pause after every third letter, followed by a probe string prompting a yes-no manual response.",
-            "TaskDescription": "Participants judged the match of the serial order of all six letters presented in two groups of three with a pause after every third letter.",
-            "RestingStateMetadata": null
-          }
-        ],
-        "StudyObjective": "The present study used fMRI to identify the neural correlates of the basic processes in verbal short-term memory (VSTM) and the components of a connectionist model of the Phonological Loop.",
-        "BehavioralTasks": null
-      },
-      "file_inputs": {
-        "/data/alejandro/projects/ns-pond/data/486q86xXSVnf/processed/ace/text.txt": "a2d01ff1422948f76628a1726068f54b"
-      }
-    },
-    {
-      "id": "zz5JF9szwhQA",
-      "config_id": "z9UG4FQvw7cs",
-      "base_study_id": "6NNwovn3BTzv",
-      "date_executed": "2025-03-05T18:00:55.671674+00:00",
-      "result_data": {
-        "Exclude": null,
-        "Modality": ["fMRI-BOLD"],
-        "fMRITasks": [
-          {
-            "Domain": ["Perception", "Attention"],
-            "Concepts": ["action observation", "goal recognition"],
-            "TaskName": "What Task",
-            "Conditions": [
-              "same action-same vitality",
-              "same action-different vitality",
-              "different action-same vitality",
-              "different action-different vitality"
-            ],
-            "TaskDesign": ["Mixed"],
-            "TaskMetrics": ["activation patterns evoked by the tasks"],
-            "RestingState": false,
-            "TaskDuration": "13 minutes",
-            "DesignDetails": "The what task required the participants to pay attention to the type of action observed in the two consecutive videos and to decide whether the represented action was the same or different regardless of vitality form. Each video combination was presented 32 times within this task.",
-            "TaskDescription": "Participants focused on the goal of the presented action.",
-            "RestingStateMetadata": null
-          },
-          {
-            "Domain": ["Perception", "Attention"],
-            "Concepts": ["action observation", "vitality form recognition"],
-            "TaskName": "How Task",
-            "Conditions": [
-              "same action-same vitality",
-              "same action-different vitality",
-              "different action-same vitality",
-              "different action-different vitality"
-            ],
-            "TaskDesign": ["Mixed"],
-            "TaskMetrics": ["activation patterns evoked by the tasks"],
-            "RestingState": false,
-            "TaskDuration": "13 minutes",
-            "DesignDetails": "The how task required the participants to pay attention to the vitality form and to decide whether the represented vitality was the same or different between the two consecutive videos regardless of the type of action performed. Each video combination was presented 32 times within this task.",
-            "TaskDescription": "Participants focused on the vitality form of the action.",
-            "RestingStateMetadata": null
-          }
-        ],
-        "StudyObjective": "To investigate the neural correlates underpinning the recognition of vitality forms during the observation of actions done by others.",
-        "BehavioralTasks": null
-      },
-      "file_inputs": {
-        "/data/alejandro/projects/ns-pond/data/467KcEDgDpGg/processed/ace/text.txt": "7323526538dfa4aeddcb111b18ddfb0d"
-      }
-    },
-    {
-      "id": "ZYMxZGxdMcaE",
-      "config_id": "z9UG4FQvw7cs",
-      "base_study_id": "437o5VGmrKmL",
-      "date_executed": "2025-03-05T18:17:47.786124+00:00",
-      "result_data": {
-        "Exclude": null,
-        "Modality": ["StructuralMRI"],
-        "fMRITasks": [],
-        "StudyObjective": "To determine whether pain-related morphological changes in spinal cord injury (SCI) exist by disaggregating patient groups, specifically comparing patients with below-level pain to those without pain.",
-        "BehavioralTasks": null
-      },
-      "file_inputs": {
-        "/data/alejandro/projects/ns-pond/data/79ysqeCZUEhu/processed/pubget/text.txt": "ae0eb546271207364a515a8fe1a21511"
-      }
-    },
-    {
-      "id": "ZyATXQnDyaxC",
-      "config_id": "z9UG4FQvw7cs",
-      "base_study_id": "Q6BJGYwrmzfR",
-      "date_executed": "2025-03-05T17:35:09.277167+00:00",
-      "result_data": {
-        "Exclude": null,
-        "Modality": ["fMRI-BOLD"],
-        "fMRITasks": [],
-        "StudyObjective": "To investigate the resting-state functional connectivity patterns of the DLPFC in MCI patients and examine the asymmetry of DLPFC-FC in MCI patients compared to healthy controls.",
-        "BehavioralTasks": null
-      },
-      "file_inputs": {
-        "/data/alejandro/projects/ns-pond/data/6WcuZLiVJkXj/processed/pubget/text.txt": "43b97ffb396f48609d2491a9db5565f1"
-      }
-    },
-    {
-      "id": "ZY9YF6d9cmR4",
-      "config_id": "z9UG4FQvw7cs",
-      "base_study_id": "4L3xpvkzkENg",
-      "date_executed": "2025-03-05T17:07:47.349668+00:00",
-      "result_data": {
-        "Exclude": null,
-        "Modality": ["fMRI-BOLD"],
-        "fMRITasks": [
-          {
-            "Domain": ["Perception", "Emotion"],
-            "Concepts": ["emotion recognition", "fear perception"],
-            "TaskName": "Emotion Recognition Task",
-            "Conditions": ["Neutral", "Fearful"],
-            "TaskDesign": ["EventRelated"],
-            "TaskMetrics": ["fearfulness ratings", "reaction times"],
-            "RestingState": false,
-            "TaskDuration": "10 minutes",
-            "DesignDetails": "The task involved presenting morphed faces of varying fearfulness levels (from neutral to fearful) in a randomized sequence. Each face was shown for 350 ms after a fixation cross, followed by a visual scale for participants to rate fearfulness. The task included 196 trials with jittered interstimulus intervals of 500-1500 ms.",
-            "TaskDescription": "Participants rated fearfulness of emotional faces of different morphing levels under exposure to olfactory anxiety cues.",
-            "RestingStateMetadata": null
-          }
-        ],
-        "StudyObjective": "To investigate the brain responses to subtle changes in facial expressions in response to anxiety chemosensory cues.",
-        "BehavioralTasks": null
-      },
-      "file_inputs": {
-        "/data/alejandro/projects/ns-pond/data/47LyxbNnNf2o/processed/ace/text.txt": "ce80fc67d968290a133373d50551bdb3"
-      }
-    },
-    {
-      "id": "ZY735haQVLie",
-      "config_id": "z9UG4FQvw7cs",
-      "base_study_id": "7SySM9AW3wPN",
-      "date_executed": "2025-03-05T17:18:29.926299+00:00",
-      "result_data": {
-        "Exclude": null,
-        "Modality": ["fMRI-BOLD"],
-        "fMRITasks": [
-          {
-            "Domain": ["Executive cognitive control"],
-            "Concepts": [
-              "Cognitive control",
-              "Task context maintenance",
-              "Response inhibition"
-            ],
-            "TaskName": "Preparing to Overcome Prepotency (POP) Task",
-            "Conditions": ["Green trials", "Red trials"],
-            "TaskDesign": ["EventRelated"],
-            "TaskMetrics": ["Mean reaction times", "Error rates"],
-            "RestingState": false,
-            "TaskDuration": "20 seconds per trial",
-            "DesignDetails": "The task was administered using a slow event-related design. Each subject performed a brief practice block in the scanner (no data were collected for the practice trials) followed by 4 runs of 24 trials (20 s/trial). Thus, each run lasted 480 s with brief breaks lasting a maximum of 3 min in between. There were a total of 24 red trials and 72 green trials. Subjects missing more than 60% of a trial type were excluded from the analysis. Within each run, trials of the POP task were presented in a pseudorandom order. Activation during green minus baseline, red minus baseline, and red minus green trials during the cue (considered the strongest measure of cognitive control), were examined.",
-            "TaskDescription": "The POP task is designed to study cognitive control involved in context processing (maintaining a cue over a delay and then overcoming a prepotent response tendency).",
-            "RestingStateMetadata": null
-          }
-        ],
-        "StudyObjective": "The current study examined cognitive control - the ability to maintain task context online to support adaptive functioning in the face of response competition - in adolescents with autism spectrum disorders and typically developing subjects.",
-        "BehavioralTasks": null
-      },
-      "file_inputs": {
-        "/data/alejandro/projects/ns-pond/data/eZiT9qn6sXPv/processed/ace/text.txt": "710c9d3db8928d2826f7bb5c19fa38e6"
-      }
-    },
-    {
-      "id": "ZXRb7ZkC8RiZ",
-      "config_id": "z9UG4FQvw7cs",
-      "base_study_id": "66uQ9uhgeLKw",
-      "date_executed": "2025-03-05T19:07:51.711572+00:00",
-      "result_data": {
-        "Exclude": null,
-        "Modality": ["StructuralMRI"],
-        "fMRITasks": [],
-        "StudyObjective": "To investigate the potential effects of immunomodulatory medications on regional gray matter volume loss in patients with relapsing-remitting multiple sclerosis (RRMS) using voxel-based morphometry (VBM).",
-        "BehavioralTasks": null
-      },
-      "file_inputs": {
-        "/data/alejandro/projects/ns-pond/data/CxXTYrRLqCQT/processed/ace/text.txt": "b35162e86feb2de6138bdd34923f932c"
-      }
-    },
-    {
-      "id": "ZxNzUJRYcA9Z",
-      "config_id": "z9UG4FQvw7cs",
-      "base_study_id": "8C2vmNhoQEqy",
-      "date_executed": "2025-03-05T18:30:41.459965+00:00",
-      "result_data": {
-        "Exclude": null,
-        "Modality": ["fMRI-BOLD"],
-        "fMRITasks": [
-          {
-            "Domain": ["Learning and memory"],
-            "Concepts": ["working memory", "serial position effects"],
-            "TaskName": "Judgment of Recency (JOR)",
-            "Conditions": ["Final item vs earlier items"],
-            "TaskDesign": ["EventRelated"],
-            "TaskMetrics": ["reaction time", "accuracy"],
-            "RestingState": false,
-            "TaskDuration": "~15 minutes",
-            "DesignDetails": "Each trial was initiated by the subject's key press, followed by a 500 ms fixation, five items presented sequentially for 500 ms each, a 750 ms mask, and a 3-second probe. The task consisted of 96 trials, with the order of trials randomized within blocks. Trials were blocked by task to avoid rapid switching between tasks.",
-            "TaskDescription": "In the JOR task, subjects were presented with five letter lists and asked to identify which of two test items had been presented later in the list.",
-            "RestingStateMetadata": null
-          }
-        ],
-        "StudyObjective": "The present paper explores one explanation for divergent conclusions about the architecture and capacity of working memory (WM), concentrating on the contributions of the focus of attention (FOA) to WM capacity.",
-        "BehavioralTasks": [
-          {
-            "Domain": ["Learning and memory"],
-            "Concepts": ["working memory", "serial position effects"],
-            "TaskName": "Judgment of Primacy (JOP)",
-            "Conditions": ["Earlier item vs later items"],
-            "TaskMetrics": ["reaction time", "accuracy"],
-            "DesignDetails": "The JOP task was similar to the JOR task, with the same sequence of events and timing, but required subjects to report the earlier item instead of the later one. Each task consisted of 96 trials, with the order of trials randomized within blocks.",
-            "TaskDescription": "In the JOP task, subjects were asked to identify which of two test items had been presented earlier in the preceding list of items."
-          }
-        ]
-      },
-      "file_inputs": {
-        "/data/alejandro/projects/ns-pond/data/3xSE2qbKHeYp/processed/pubget/text.txt": "bdf44d190fcc3eb03c4bfd6c81490a89"
-      }
-    },
-    {
-      "id": "zXMqUQy664nG",
-      "config_id": "z9UG4FQvw7cs",
-      "base_study_id": "5ELzsWyhueKM",
-      "date_executed": "2025-03-05T17:55:48.597845+00:00",
-      "result_data": {
-        "Exclude": null,
-        "Modality": ["fMRI-BOLD"],
-        "fMRITasks": [
-          {
-            "Domain": ["Language"],
-            "Concepts": [
-              "Verb generation",
-              "Noun-verb semantic associations",
-              "Articulation",
-              "Auditory processing"
-            ],
-            "TaskName": "Event-Related Verb Generation Task (ER-VGT)",
-            "Conditions": [
-              "Covert generation",
-              "Overt generation",
-              "Overt repetition"
-            ],
-            "TaskDesign": ["EventRelated"],
-            "TaskMetrics": [
-              "Number of correct verbs generated",
-              "Number of correct noun repetitions"
-            ],
-            "RestingState": false,
-            "TaskDuration": "9 minutes 4 seconds",
-            "DesignDetails": "The task consists of 45 trials, each lasting 12 seconds. The first 6 seconds of each trial is MRI silence, followed by 6 seconds of fMRI data acquisition. Covert generation, overt generation, and overt repetition alternate 15 times during the task.",
-            "TaskDescription": "Subjects generate verbs related to a given noun or repeat the noun during fMRI scanning.",
-            "RestingStateMetadata": null
-          }
-        ],
-        "StudyObjective": "To identify the neural correlates of overt verb generation performance in LMCA stroke patients and to assess the relationship between intra-scanner performance and cortical recruitment.",
-        "BehavioralTasks": null
-      },
-      "file_inputs": {
-        "/data/alejandro/projects/ns-pond/data/mh9KxHcyeFQA/processed/pubget/text.txt": "d1cedcc118caf71c6a9984348f51c778"
-      }
-    },
-    {
-      "id": "ZxbQvpYfEjtq",
-      "config_id": "z9UG4FQvw7cs",
-      "base_study_id": "3xKuNhpx7wDb",
-      "date_executed": "2025-03-05T19:26:58.654506+00:00",
-      "result_data": {
-        "Exclude": null,
-        "Modality": ["fMRI-BOLD"],
-        "fMRITasks": [
-          {
-            "Domain": ["Executive cognitive control", "Learning and memory"],
-            "Concepts": [
-              "task learning",
-              "rule integration",
-              "decision making"
-            ],
-            "TaskName": "Cognitive paradigm to investigate rapid instructed task learning",
-            "Conditions": null,
-            "TaskDesign": ["Mixed"],
-            "TaskMetrics": ["accuracy", "reaction time"],
-            "RestingState": false,
-            "TaskDuration": null,
-            "DesignDetails": "Each trial involved three distinct rules that had to be successfully integrated. Participants performed 64 distinct tasks in randomly intermixed short blocks, with four tasks practiced for 2 hours in a prior session. Each task consisted of a decision rule and a semantic rule + response rule combination, with 64 tasks created by combining four decision rules with 16 semantic/response combinations.",
-            "TaskDescription": "Participants performed tasks that involved integrating multiple rules to achieve accurate task performance.",
-            "RestingStateMetadata": null
-          }
-        ],
-        "StudyObjective": "To investigate how the human brain allows for rapid learning of complex novel tasks through compositional representation within the lateral prefrontal cortex (LPFC) and the transfer of practiced rule representations to novel contexts.",
-        "BehavioralTasks": null
-      },
-      "file_inputs": {
-        "/data/alejandro/projects/ns-pond/data/EMG8gyVegDqu/processed/pubget/text.txt": "ee24f91d554cb1dee3ee27a755160e16"
-      }
-    }
-  ]
+    "metadata": { "total_count": 3714 },
+    "results": [
+        {
+            "id": "ZzSjmSTQkLo8",
+            "config_id": "z9UG4FQvw7cs",
+            "base_study_id": "33L7mwvuUxYU",
+            "date_executed": "2025-03-05T19:26:24.852005+00:00",
+            "result_data": {
+                "Exclude": null,
+                "Modality": ["StructuralMRI"],
+                "fMRITasks": [],
+                "StudyObjective": "To identify the neural signature of predisposition for bipolar disorder (BD) and separate it from effects of long-standing illness and treatment.",
+                "BehavioralTasks": null
+            },
+            "file_inputs": {
+                "/data/alejandro/projects/ns-pond/data/5eg5qRwjvBiu/processed/ace/text.txt": "0d62ae27e9b1c0b3bcdb6b5ae380e148"
+            }
+        },
+        {
+            "id": "ZzjAsGdXUQjq",
+            "config_id": "z9UG4FQvw7cs",
+            "base_study_id": "5pTxsjLiZYgF",
+            "date_executed": "2025-03-05T19:11:06.917171+00:00",
+            "result_data": {
+                "Exclude": null,
+                "Modality": ["fMRI-BOLD"],
+                "fMRITasks": [
+                    {
+                        "Domain": ["Learning and memory"],
+                        "Concepts": ["episodic memory", "recognition", "familiarity"],
+                        "TaskName": "Episodic Memory Retrieval Task",
+                        "Conditions": ["True targets", "Altered targets", "False targets", "Unrelated targets"],
+                        "TaskDesign": ["EventRelated"],
+                        "TaskMetrics": ["reaction times", "number of correctly recognized words", "number of mistakes"],
+                        "RestingState": false,
+                        "TaskDuration": null,
+                        "DesignDetails": "Subjects encoded words from a study list which they were asked to retrieve on the subsequent day during ketamine/placebo administration in fMRI. Each trial consisted of the word presented for 2 seconds, followed by the questions Remember/Know and Yes/No both with variable duration (3-5 seconds).",
+                        "TaskDescription": "Subjects performed a memory retrieval task while receiving either ketamine or placebo in the fMRI scanner.",
+                        "RestingStateMetadata": null
+                    }
+                ],
+                "StudyObjective": "To investigate the relationship between NMDA receptors, posterior cingulate, and positive (i.e. psychosis-like) symptoms using the NMDA antagonist ketamine during episodic memory retrieval in healthy human subjects.",
+                "BehavioralTasks": null
+            },
+            "file_inputs": {
+                "/data/alejandro/projects/ns-pond/data/4wwHXAwqvine/processed/ace/text.txt": "9e2f7b99ff01ee970e6fc6a511ff5149"
+            }
+        },
+        {
+            "id": "ZzFhjXSkZQ9H",
+            "config_id": "z9UG4FQvw7cs",
+            "base_study_id": "3yPGeCjieLJ3",
+            "date_executed": "2025-03-05T19:43:36.162316+00:00",
+            "result_data": {
+                "Exclude": null,
+                "Modality": ["fMRI-BOLD"],
+                "fMRITasks": [
+                    {
+                        "Domain": ["Learning and memory", "Action"],
+                        "Concepts": ["object-location memory", "spatial navigation", "non-spatial processing"],
+                        "TaskName": "Virtual Reality Navigation Task",
+                        "Conditions": null,
+                        "TaskDesign": ["EventRelated"],
+                        "TaskMetrics": ["fMRI BOLD signal"],
+                        "RestingState": false,
+                        "TaskDuration": null,
+                        "DesignDetails": "The task involved collecting and replacing six everyday objects within a virtual arena. Participants collected each object from its associated location during an initial trial and then had to move to the object's associated location upon seeing a cue image. After responding, the object appeared in its position for collection again. The task included both spatial and non-spatial components, engaging functions associated with both the posterior-medial and anterior-temporal networks. Each scanning session was subdivided into EPI acquisition blocks of 210 volumes, with an average of 5 blocks per session.",
+                        "TaskDescription": "Participants performed an object-location memory task while freely navigating a 3D virtual environment.",
+                        "RestingStateMetadata": null
+                    }
+                ],
+                "StudyObjective": "To identify the human homologue of the rodent medial and lateral entorhinal cortex (MEC and LEC) by investigating functional connectivity patterns during a virtual reality task.",
+                "BehavioralTasks": null
+            },
+            "file_inputs": {
+                "/data/alejandro/projects/ns-pond/data/3fJg4ogEUXHY/processed/pubget/text.txt": "22419ee8b7e45484666fe33ee507ddde"
+            }
+        },
+        {
+            "id": "ZZdDkhCTyaXj",
+            "config_id": "z9UG4FQvw7cs",
+            "base_study_id": "4usz4hrGYvVi",
+            "date_executed": "2025-03-05T18:47:42.579891+00:00",
+            "result_data": {
+                "Exclude": null,
+                "Modality": ["fMRI-BOLD"],
+                "fMRITasks": [
+                    {
+                        "Domain": ["Reasoning and decision making", "Learning and memory"],
+                        "Concepts": ["creativity", "semantic processing", "divergent thinking"],
+                        "TaskName": "Story Generation Task",
+                        "Conditions": [
+                            "Be creative - related",
+                            "Be creative - unrelated",
+                            "Be uncreative - related",
+                            "Be uncreative - unrelated"
+                        ],
+                        "TaskDesign": ["Blocked"],
+                        "TaskMetrics": ["brain activity", "creativity ratings"],
+                        "RestingState": false,
+                        "TaskDuration": "6.4 minutes",
+                        "DesignDetails": "A 2 x 2 factorial block design was employed, with all within-participant variables. The independent variables were objective (Be creative, Be uncreative) and relatedness of the words (related, unrelated). Each participant experienced all four conditions in a randomized order.",
+                        "TaskDescription": "Participants were required to generate creative and uncreative stories from sets of words that were either related or unrelated.",
+                        "RestingStateMetadata": null
+                    }
+                ],
+                "StudyObjective": "The aim of this fMRI investigation was to identify those areas of the brain associated with approaching a story generation task creatively and to investigate the effects upon these correlates of incorporating a set of words that were unrelated to each other-a strategy considered to encourage semantic divergence.",
+                "BehavioralTasks": null
+            },
+            "file_inputs": {
+                "/data/alejandro/projects/ns-pond/data/4hmCsAxCoSNk/processed/ace/text.txt": "a68b0f435f1c2ea834f366155ef16e88"
+            }
+        },
+        {
+            "id": "zZ5PTztGkYiW",
+            "config_id": "z9UG4FQvw7cs",
+            "base_study_id": "KpTqqB36JshB",
+            "date_executed": "2025-03-05T18:10:32.417232+00:00",
+            "result_data": {
+                "Exclude": null,
+                "Modality": ["fMRI-BOLD"],
+                "fMRITasks": [
+                    {
+                        "Domain": null,
+                        "Concepts": null,
+                        "TaskName": "Symbol Match",
+                        "Conditions": null,
+                        "TaskDesign": ["Blocked"],
+                        "TaskMetrics": null,
+                        "RestingState": false,
+                        "TaskDuration": "45.1 seconds",
+                        "DesignDetails": "The task involved sequential, visual presentation of six items, followed by a probe string prompting a yes-no manual response. The task controlled for visual input and motor output processes common to all five tasks.",
+                        "TaskDescription": "Participants made same-different judgements for two nonverbalisable symbols in the probe string.",
+                        "RestingStateMetadata": null
+                    },
+                    {
+                        "Domain": null,
+                        "Concepts": null,
+                        "TaskName": "Letter Match",
+                        "Conditions": null,
+                        "TaskDesign": ["Blocked"],
+                        "TaskMetrics": null,
+                        "RestingState": false,
+                        "TaskDuration": "45.1 seconds",
+                        "DesignDetails": "The task involved sequential, visual presentation of six letters, followed by a probe string prompting a yes-no manual response. This task was assumed to control for visual input and motor output processes common to all five tasks.",
+                        "TaskDescription": "Participants read letters silently and made same-different judgements for the two letters in the probe string.",
+                        "RestingStateMetadata": null
+                    },
+                    {
+                        "Domain": null,
+                        "Concepts": null,
+                        "TaskName": "Letter Probe",
+                        "Conditions": null,
+                        "TaskDesign": ["Blocked"],
+                        "TaskMetrics": null,
+                        "RestingState": false,
+                        "TaskDuration": "45.1 seconds",
+                        "DesignDetails": "The task involved sequential, visual presentation of six letters, followed by a probe string prompting a yes-no manual response. This task included an explicit memory component and was assumed to involve access to a phonological store in addition to phonological recoding.",
+                        "TaskDescription": "Participants judged the presence or absence of a single letter in the prior sequence of six letters.",
+                        "RestingStateMetadata": null
+                    },
+                    {
+                        "Domain": null,
+                        "Concepts": null,
+                        "TaskName": "Sequence Probe",
+                        "Conditions": null,
+                        "TaskDesign": ["Blocked"],
+                        "TaskMetrics": null,
+                        "RestingState": false,
+                        "TaskDuration": "45.1 seconds",
+                        "DesignDetails": "The task involved sequential, visual presentation of six letters, followed by a probe string prompting a yes-no manual response. This task required serial rehearsal and was expected to show greater detrimental effects of concurrent articulatory suppression than the Letter Probe task.",
+                        "TaskDescription": "Participants judged the match of the serial order of all six letters with their temporal order in the prior sequence.",
+                        "RestingStateMetadata": null
+                    },
+                    {
+                        "Domain": null,
+                        "Concepts": null,
+                        "TaskName": "Grouped Probe",
+                        "Conditions": null,
+                        "TaskDesign": ["Blocked"],
+                        "TaskMetrics": null,
+                        "RestingState": false,
+                        "TaskDuration": "45.1 seconds",
+                        "DesignDetails": "The task involved sequential, visual presentation of six letters, grouped temporally into two groups of three by the insertion of a short pause after every third letter, followed by a probe string prompting a yes-no manual response.",
+                        "TaskDescription": "Participants judged the match of the serial order of all six letters presented in two groups of three with a pause after every third letter.",
+                        "RestingStateMetadata": null
+                    }
+                ],
+                "StudyObjective": "The present study used fMRI to identify the neural correlates of the basic processes in verbal short-term memory (VSTM) and the components of a connectionist model of the Phonological Loop.",
+                "BehavioralTasks": null
+            },
+            "file_inputs": {
+                "/data/alejandro/projects/ns-pond/data/486q86xXSVnf/processed/ace/text.txt": "a2d01ff1422948f76628a1726068f54b"
+            }
+        },
+        {
+            "id": "zz5JF9szwhQA",
+            "config_id": "z9UG4FQvw7cs",
+            "base_study_id": "6NNwovn3BTzv",
+            "date_executed": "2025-03-05T18:00:55.671674+00:00",
+            "result_data": {
+                "Exclude": null,
+                "Modality": ["fMRI-BOLD"],
+                "fMRITasks": [
+                    {
+                        "Domain": ["Perception", "Attention"],
+                        "Concepts": ["action observation", "goal recognition"],
+                        "TaskName": "What Task",
+                        "Conditions": [
+                            "same action-same vitality",
+                            "same action-different vitality",
+                            "different action-same vitality",
+                            "different action-different vitality"
+                        ],
+                        "TaskDesign": ["Mixed"],
+                        "TaskMetrics": ["activation patterns evoked by the tasks"],
+                        "RestingState": false,
+                        "TaskDuration": "13 minutes",
+                        "DesignDetails": "The what task required the participants to pay attention to the type of action observed in the two consecutive videos and to decide whether the represented action was the same or different regardless of vitality form. Each video combination was presented 32 times within this task.",
+                        "TaskDescription": "Participants focused on the goal of the presented action.",
+                        "RestingStateMetadata": null
+                    },
+                    {
+                        "Domain": ["Perception", "Attention"],
+                        "Concepts": ["action observation", "vitality form recognition"],
+                        "TaskName": "How Task",
+                        "Conditions": [
+                            "same action-same vitality",
+                            "same action-different vitality",
+                            "different action-same vitality",
+                            "different action-different vitality"
+                        ],
+                        "TaskDesign": ["Mixed"],
+                        "TaskMetrics": ["activation patterns evoked by the tasks"],
+                        "RestingState": false,
+                        "TaskDuration": "13 minutes",
+                        "DesignDetails": "The how task required the participants to pay attention to the vitality form and to decide whether the represented vitality was the same or different between the two consecutive videos regardless of the type of action performed. Each video combination was presented 32 times within this task.",
+                        "TaskDescription": "Participants focused on the vitality form of the action.",
+                        "RestingStateMetadata": null
+                    }
+                ],
+                "StudyObjective": "To investigate the neural correlates underpinning the recognition of vitality forms during the observation of actions done by others.",
+                "BehavioralTasks": null
+            },
+            "file_inputs": {
+                "/data/alejandro/projects/ns-pond/data/467KcEDgDpGg/processed/ace/text.txt": "7323526538dfa4aeddcb111b18ddfb0d"
+            }
+        },
+        {
+            "id": "ZYMxZGxdMcaE",
+            "config_id": "z9UG4FQvw7cs",
+            "base_study_id": "437o5VGmrKmL",
+            "date_executed": "2025-03-05T18:17:47.786124+00:00",
+            "result_data": {
+                "Exclude": null,
+                "Modality": ["StructuralMRI"],
+                "fMRITasks": [],
+                "StudyObjective": "To determine whether pain-related morphological changes in spinal cord injury (SCI) exist by disaggregating patient groups, specifically comparing patients with below-level pain to those without pain.",
+                "BehavioralTasks": null
+            },
+            "file_inputs": {
+                "/data/alejandro/projects/ns-pond/data/79ysqeCZUEhu/processed/pubget/text.txt": "ae0eb546271207364a515a8fe1a21511"
+            }
+        },
+        {
+            "id": "ZyATXQnDyaxC",
+            "config_id": "z9UG4FQvw7cs",
+            "base_study_id": "Q6BJGYwrmzfR",
+            "date_executed": "2025-03-05T17:35:09.277167+00:00",
+            "result_data": {
+                "Exclude": null,
+                "Modality": ["fMRI-BOLD"],
+                "fMRITasks": [],
+                "StudyObjective": "To investigate the resting-state functional connectivity patterns of the DLPFC in MCI patients and examine the asymmetry of DLPFC-FC in MCI patients compared to healthy controls.",
+                "BehavioralTasks": null
+            },
+            "file_inputs": {
+                "/data/alejandro/projects/ns-pond/data/6WcuZLiVJkXj/processed/pubget/text.txt": "43b97ffb396f48609d2491a9db5565f1"
+            }
+        },
+        {
+            "id": "ZY9YF6d9cmR4",
+            "config_id": "z9UG4FQvw7cs",
+            "base_study_id": "4L3xpvkzkENg",
+            "date_executed": "2025-03-05T17:07:47.349668+00:00",
+            "result_data": {
+                "Exclude": null,
+                "Modality": ["fMRI-BOLD"],
+                "fMRITasks": [
+                    {
+                        "Domain": ["Perception", "Emotion"],
+                        "Concepts": ["emotion recognition", "fear perception"],
+                        "TaskName": "Emotion Recognition Task",
+                        "Conditions": ["Neutral", "Fearful"],
+                        "TaskDesign": ["EventRelated"],
+                        "TaskMetrics": ["fearfulness ratings", "reaction times"],
+                        "RestingState": false,
+                        "TaskDuration": "10 minutes",
+                        "DesignDetails": "The task involved presenting morphed faces of varying fearfulness levels (from neutral to fearful) in a randomized sequence. Each face was shown for 350 ms after a fixation cross, followed by a visual scale for participants to rate fearfulness. The task included 196 trials with jittered interstimulus intervals of 500-1500 ms.",
+                        "TaskDescription": "Participants rated fearfulness of emotional faces of different morphing levels under exposure to olfactory anxiety cues.",
+                        "RestingStateMetadata": null
+                    }
+                ],
+                "StudyObjective": "To investigate the brain responses to subtle changes in facial expressions in response to anxiety chemosensory cues.",
+                "BehavioralTasks": null
+            },
+            "file_inputs": {
+                "/data/alejandro/projects/ns-pond/data/47LyxbNnNf2o/processed/ace/text.txt": "ce80fc67d968290a133373d50551bdb3"
+            }
+        },
+        {
+            "id": "ZY735haQVLie",
+            "config_id": "z9UG4FQvw7cs",
+            "base_study_id": "7SySM9AW3wPN",
+            "date_executed": "2025-03-05T17:18:29.926299+00:00",
+            "result_data": {
+                "Exclude": null,
+                "Modality": ["fMRI-BOLD"],
+                "fMRITasks": [
+                    {
+                        "Domain": ["Executive cognitive control"],
+                        "Concepts": ["Cognitive control", "Task context maintenance", "Response inhibition"],
+                        "TaskName": "Preparing to Overcome Prepotency (POP) Task",
+                        "Conditions": ["Green trials", "Red trials"],
+                        "TaskDesign": ["EventRelated"],
+                        "TaskMetrics": ["Mean reaction times", "Error rates"],
+                        "RestingState": false,
+                        "TaskDuration": "20 seconds per trial",
+                        "DesignDetails": "The task was administered using a slow event-related design. Each subject performed a brief practice block in the scanner (no data were collected for the practice trials) followed by 4 runs of 24 trials (20 s/trial). Thus, each run lasted 480 s with brief breaks lasting a maximum of 3 min in between. There were a total of 24 red trials and 72 green trials. Subjects missing more than 60% of a trial type were excluded from the analysis. Within each run, trials of the POP task were presented in a pseudorandom order. Activation during green minus baseline, red minus baseline, and red minus green trials during the cue (considered the strongest measure of cognitive control), were examined.",
+                        "TaskDescription": "The POP task is designed to study cognitive control involved in context processing (maintaining a cue over a delay and then overcoming a prepotent response tendency).",
+                        "RestingStateMetadata": null
+                    }
+                ],
+                "StudyObjective": "The current study examined cognitive control - the ability to maintain task context online to support adaptive functioning in the face of response competition - in adolescents with autism spectrum disorders and typically developing subjects.",
+                "BehavioralTasks": null
+            },
+            "file_inputs": {
+                "/data/alejandro/projects/ns-pond/data/eZiT9qn6sXPv/processed/ace/text.txt": "710c9d3db8928d2826f7bb5c19fa38e6"
+            }
+        },
+        {
+            "id": "ZXRb7ZkC8RiZ",
+            "config_id": "z9UG4FQvw7cs",
+            "base_study_id": "66uQ9uhgeLKw",
+            "date_executed": "2025-03-05T19:07:51.711572+00:00",
+            "result_data": {
+                "Exclude": null,
+                "Modality": ["StructuralMRI"],
+                "fMRITasks": [],
+                "StudyObjective": "To investigate the potential effects of immunomodulatory medications on regional gray matter volume loss in patients with relapsing-remitting multiple sclerosis (RRMS) using voxel-based morphometry (VBM).",
+                "BehavioralTasks": null
+            },
+            "file_inputs": {
+                "/data/alejandro/projects/ns-pond/data/CxXTYrRLqCQT/processed/ace/text.txt": "b35162e86feb2de6138bdd34923f932c"
+            }
+        },
+        {
+            "id": "ZxNzUJRYcA9Z",
+            "config_id": "z9UG4FQvw7cs",
+            "base_study_id": "8C2vmNhoQEqy",
+            "date_executed": "2025-03-05T18:30:41.459965+00:00",
+            "result_data": {
+                "Exclude": null,
+                "Modality": ["fMRI-BOLD"],
+                "fMRITasks": [
+                    {
+                        "Domain": ["Learning and memory"],
+                        "Concepts": ["working memory", "serial position effects"],
+                        "TaskName": "Judgment of Recency (JOR)",
+                        "Conditions": ["Final item vs earlier items"],
+                        "TaskDesign": ["EventRelated"],
+                        "TaskMetrics": ["reaction time", "accuracy"],
+                        "RestingState": false,
+                        "TaskDuration": "~15 minutes",
+                        "DesignDetails": "Each trial was initiated by the subject's key press, followed by a 500 ms fixation, five items presented sequentially for 500 ms each, a 750 ms mask, and a 3-second probe. The task consisted of 96 trials, with the order of trials randomized within blocks. Trials were blocked by task to avoid rapid switching between tasks.",
+                        "TaskDescription": "In the JOR task, subjects were presented with five letter lists and asked to identify which of two test items had been presented later in the list.",
+                        "RestingStateMetadata": null
+                    }
+                ],
+                "StudyObjective": "The present paper explores one explanation for divergent conclusions about the architecture and capacity of working memory (WM), concentrating on the contributions of the focus of attention (FOA) to WM capacity.",
+                "BehavioralTasks": [
+                    {
+                        "Domain": ["Learning and memory"],
+                        "Concepts": ["working memory", "serial position effects"],
+                        "TaskName": "Judgment of Primacy (JOP)",
+                        "Conditions": ["Earlier item vs later items"],
+                        "TaskMetrics": ["reaction time", "accuracy"],
+                        "DesignDetails": "The JOP task was similar to the JOR task, with the same sequence of events and timing, but required subjects to report the earlier item instead of the later one. Each task consisted of 96 trials, with the order of trials randomized within blocks.",
+                        "TaskDescription": "In the JOP task, subjects were asked to identify which of two test items had been presented earlier in the preceding list of items."
+                    }
+                ]
+            },
+            "file_inputs": {
+                "/data/alejandro/projects/ns-pond/data/3xSE2qbKHeYp/processed/pubget/text.txt": "bdf44d190fcc3eb03c4bfd6c81490a89"
+            }
+        },
+        {
+            "id": "zXMqUQy664nG",
+            "config_id": "z9UG4FQvw7cs",
+            "base_study_id": "5ELzsWyhueKM",
+            "date_executed": "2025-03-05T17:55:48.597845+00:00",
+            "result_data": {
+                "Exclude": null,
+                "Modality": ["fMRI-BOLD"],
+                "fMRITasks": [
+                    {
+                        "Domain": ["Language"],
+                        "Concepts": [
+                            "Verb generation",
+                            "Noun-verb semantic associations",
+                            "Articulation",
+                            "Auditory processing"
+                        ],
+                        "TaskName": "Event-Related Verb Generation Task (ER-VGT)",
+                        "Conditions": ["Covert generation", "Overt generation", "Overt repetition"],
+                        "TaskDesign": ["EventRelated"],
+                        "TaskMetrics": ["Number of correct verbs generated", "Number of correct noun repetitions"],
+                        "RestingState": false,
+                        "TaskDuration": "9 minutes 4 seconds",
+                        "DesignDetails": "The task consists of 45 trials, each lasting 12 seconds. The first 6 seconds of each trial is MRI silence, followed by 6 seconds of fMRI data acquisition. Covert generation, overt generation, and overt repetition alternate 15 times during the task.",
+                        "TaskDescription": "Subjects generate verbs related to a given noun or repeat the noun during fMRI scanning.",
+                        "RestingStateMetadata": null
+                    }
+                ],
+                "StudyObjective": "To identify the neural correlates of overt verb generation performance in LMCA stroke patients and to assess the relationship between intra-scanner performance and cortical recruitment.",
+                "BehavioralTasks": null
+            },
+            "file_inputs": {
+                "/data/alejandro/projects/ns-pond/data/mh9KxHcyeFQA/processed/pubget/text.txt": "d1cedcc118caf71c6a9984348f51c778"
+            }
+        },
+        {
+            "id": "ZxbQvpYfEjtq",
+            "config_id": "z9UG4FQvw7cs",
+            "base_study_id": "3xKuNhpx7wDb",
+            "date_executed": "2025-03-05T19:26:58.654506+00:00",
+            "result_data": {
+                "Exclude": null,
+                "Modality": ["fMRI-BOLD"],
+                "fMRITasks": [
+                    {
+                        "Domain": ["Executive cognitive control", "Learning and memory"],
+                        "Concepts": ["task learning", "rule integration", "decision making"],
+                        "TaskName": "Cognitive paradigm to investigate rapid instructed task learning",
+                        "Conditions": null,
+                        "TaskDesign": ["Mixed"],
+                        "TaskMetrics": ["accuracy", "reaction time"],
+                        "RestingState": false,
+                        "TaskDuration": null,
+                        "DesignDetails": "Each trial involved three distinct rules that had to be successfully integrated. Participants performed 64 distinct tasks in randomly intermixed short blocks, with four tasks practiced for 2 hours in a prior session. Each task consisted of a decision rule and a semantic rule + response rule combination, with 64 tasks created by combining four decision rules with 16 semantic/response combinations.",
+                        "TaskDescription": "Participants performed tasks that involved integrating multiple rules to achieve accurate task performance.",
+                        "RestingStateMetadata": null
+                    }
+                ],
+                "StudyObjective": "To investigate how the human brain allows for rapid learning of complex novel tasks through compositional representation within the lateral prefrontal cortex (LPFC) and the transfer of practiced rule representations to novel contexts.",
+                "BehavioralTasks": null
+            },
+            "file_inputs": {
+                "/data/alejandro/projects/ns-pond/data/EMG8gyVegDqu/processed/pubget/text.txt": "ee24f91d554cb1dee3ee27a755160e16"
+            }
+        }
+    ]
 }

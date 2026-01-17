@@ -17,18 +17,10 @@ const NeurosynthActivitySummary: React.FC = () => {
             }}
         >
             {isLoading ? (
-                <Skeleton
-                    animation="pulse"
-                    width={200}
-                    height={40}
-                    sx={{ marginRight: { xs: '0px', sm: '20px' } }}
-                />
+                <Skeleton animation="pulse" width={200} height={40} sx={{ marginRight: { xs: '0px', sm: '20px' } }} />
             ) : (
                 <>
-                    <Typography
-                        variant="h5"
-                        sx={{ color: 'white', marginRight: { xs: '0px', sm: '20px' } }}
-                    >
+                    <Typography variant="h5" sx={{ color: 'white', marginRight: { xs: '0px', sm: '20px' } }}>
                         <b>{(studies?.metadata?.total_count || 0).toLocaleString()}</b> studies
                     </Typography>
                 </>

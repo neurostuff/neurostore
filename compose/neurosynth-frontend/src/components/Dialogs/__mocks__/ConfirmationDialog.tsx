@@ -7,10 +7,7 @@ const mockConfirmationDialog: React.FC<IConfirmationDialog> = (props) => {
                 <div data-testid="mock-confirmation-dialog">
                     <h1>{props.dialogTitle}</h1>
                     <div>{props.dialogMessage}</div>
-                    <button
-                        data-testid="accept-close-confirmation"
-                        onClick={(_event) => props.onCloseDialog(true)}
-                    >
+                    <button data-testid="accept-close-confirmation" onClick={(_event) => props.onCloseDialog(true)}>
                         {props.confirmText}
                     </button>
                     <button

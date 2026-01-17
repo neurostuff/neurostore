@@ -10,11 +10,7 @@
     },
     "order": 1,
     "images": [],
-    "points": [
-        "5oDQkSwyWFGv",
-        "sajo7xUhYQsA",
-        "jwTARUb8FkBY"
-    ],
+    "points": ["5oDQkSwyWFGv", "sajo7xUhYQsA", "jwTARUb8FkBY"],
     "weights": [],
     "name": "my new analysis made for testing",
     "description": null,

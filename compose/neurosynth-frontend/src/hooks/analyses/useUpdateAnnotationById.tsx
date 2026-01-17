@@ -17,10 +17,7 @@ const useUpdateAnnotationById = (annotationId: string | undefined | null) => {
         unknown
     >(
         (update) =>
-            API.NeurostoreServices.AnnotationsService.annotationsIdPut(
-                update.argAnnotationId,
-                update.annotation
-            ),
+            API.NeurostoreServices.AnnotationsService.annotationsIdPut(update.argAnnotationId, update.annotation),
         {
             onSuccess: (res) => {
                 queryClient.invalidateQueries(['annotations', annotationId]);

@@ -16,9 +16,7 @@ import { EAnalysisType } from 'hooks/metaAnalyses/useCreateAlgorithmSpecificatio
 
 const metaAnalysisSpecification: IMetaAnalysisParamsSpecification = metaAnalysisSpec;
 
-const getDynamicFormInputComponentByParameter = (
-    parameter: IParameter
-): React.FC<IDynamicFormInput> => {
+const getDynamicFormInputComponentByParameter = (parameter: IParameter): React.FC<IDynamicFormInput> => {
     switch (parameter.type) {
         case 'str':
             return DynamicFormStringInput;
@@ -54,9 +52,7 @@ const MetaAnalysisDynamicForm: React.FC<IDynamicForm> = (props) => {
 
     const parametersAsInputList: IDynamicFormInput[] = sortedParameterKeys.map((parameterKey) => {
         const parameter =
-            metaAnalysisSpecification[props.type][props.correctorOrEstimatorLabel].parameters[
-                parameterKey
-            ];
+            metaAnalysisSpecification[props.type][props.correctorOrEstimatorLabel].parameters[parameterKey];
 
         return {
             parameterName: parameterKey,
@@ -78,18 +74,14 @@ const MetaAnalysisDynamicForm: React.FC<IDynamicForm> = (props) => {
         >
             {parametersAsInputList.length > 0 &&
                 parametersAsInputList.map((parameterAsInput) => {
-                    const DynamicInputComponent = getDynamicFormInputComponentByParameter(
-                        parameterAsInput.parameter
-                    );
+                    const DynamicInputComponent = getDynamicFormInputComponentByParameter(parameterAsInput.parameter);
                     return (
                         <Box key={parameterAsInput.parameterName}>
                             <DynamicInputComponent {...parameterAsInput} />
                         </Box>
                     );
                 })}
-            {parametersAsInputList.length === 0 && (
-                <Box sx={{ color: 'warning.dark' }}>No arguments available</Box>
-            )}
+            {parametersAsInputList.length === 0 && <Box sx={{ color: 'warning.dark' }}>No arguments available</Box>}
         </Box>
     );
 };

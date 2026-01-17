@@ -11,17 +11,9 @@ vi.mock('@mui/material', async (props: any) => ({
         <>
             <span>page: {props.page}</span>
             <span>count: {props.count}</span>
-            <span data-testid="mock-pagination-styles">
-                styles: {JSON.stringify(props.sx)}
-            </span>
-            <button
-                data-testid="trigger-right-paginate"
-                onClick={props.onChange(undefined, 2)}
-            ></button>
-            <button
-                data-testid="trigger-set-page"
-                onClick={props.onChange(undefined, 5)}
-            ></button>
+            <span data-testid="mock-pagination-styles">styles: {JSON.stringify(props.sx)}</span>
+            <button data-testid="trigger-right-paginate" onClick={props.onChange(undefined, 2)}></button>
+            <button data-testid="trigger-set-page" onClick={props.onChange(undefined, 5)}></button>
         </>
     ),
     TablePagination: (props: any) => (
@@ -32,8 +24,7 @@ vi.mock('@mui/material', async (props: any) => ({
                 onClick={props.onRowsPerPageChange({ target: { value: 25 } }, 25)}
             ></button>
         </>
-        
-    )
+    ),
 }));
 
 describe('SearchContainer Component', () => {

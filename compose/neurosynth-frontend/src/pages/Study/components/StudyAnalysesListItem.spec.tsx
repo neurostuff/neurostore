@@ -7,9 +7,7 @@ import useDisplayWarnings from 'pages/Study/hooks/useDisplayWarnings';
 vi.mock('pages/Study/hooks/useDisplayWarnings.tsx');
 describe('StudyAnalysesListItem Component', () => {
     it('should render', () => {
-        render(
-            <StudyAnalysesListItem analysis={{}} selected={false} onSelectAnalysis={() => {}} />
-        );
+        render(<StudyAnalysesListItem analysis={{}} selected={false} onSelectAnalysis={() => {}} />);
     });
 
     it('render analysis name and description', () => {

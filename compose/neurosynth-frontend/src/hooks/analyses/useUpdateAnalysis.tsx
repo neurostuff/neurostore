@@ -16,18 +16,14 @@ const useUpdateAnalysis = () => {
             analysis: AnalysisRequest;
         },
         unknown
-    >(
-        (args) =>
-            API.NeurostoreServices.AnalysesService.analysesIdPut(args.analysisId, args.analysis),
-        {
-            onSuccess: (res) => {
-                queryClient.invalidateQueries('studies');
-            },
-            onError: () => {
-                enqueueSnackbar('there was an error updating the analysis', { variant: 'error' });
-            },
-        }
-    );
+    >((args) => API.NeurostoreServices.AnalysesService.analysesIdPut(args.analysisId, args.analysis), {
+        onSuccess: (res) => {
+            queryClient.invalidateQueries('studies');
+        },
+        onError: () => {
+            enqueueSnackbar('there was an error updating the analysis', { variant: 'error' });
+        },
+    });
 };
 
 export default useUpdateAnalysis;

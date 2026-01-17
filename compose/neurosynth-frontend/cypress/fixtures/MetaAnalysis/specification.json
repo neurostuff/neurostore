@@ -25,5 +25,4 @@
     },
     "conditions": ["ABC"],
     "weights": [1.0]
-  }
-  
+}

@@ -28,10 +28,7 @@ const SelectSpecificationComponent: React.FC<{
                     isOptionEqualToValue={(option, value) => option?.label === value?.label}
                     renderOption={(params, option) => (
                         <ListItem {...params}>
-                            <ListItemText
-                                primary={option?.label || ''}
-                                secondary={option?.description || ''}
-                            />
+                            <ListItemText primary={option?.label || ''} secondary={option?.description || ''} />
                         </ListItem>
                     )}
                     value={props.algorithm?.estimator}
@@ -41,10 +38,7 @@ const SelectSpecificationComponent: React.FC<{
                         const updatedAlgorithm = {
                             ...props.algorithm,
                             estimator: newVal,
-                            estimatorArgs: getDefaultValuesForTypeAndParameter(
-                                EAnalysisType.CBMA,
-                                newVal?.label
-                            ),
+                            estimatorArgs: getDefaultValuesForTypeAndParameter(EAnalysisType.CBMA, newVal?.label),
                         };
                         props.onSelectSpecification(updatedAlgorithm);
 
@@ -78,11 +72,7 @@ const SelectSpecificationComponent: React.FC<{
                                     backgroundColor: '#f2f2f2',
                                 },
                             }}
-                            TitleElement={
-                                <Typography sx={{ color: 'secondary.main' }}>
-                                    Algorithm arguments
-                                </Typography>
-                            }
+                            TitleElement={<Typography sx={{ color: 'secondary.main' }}>Algorithm arguments</Typography>}
                         >
                             <MetaAnalysisDynamicForm
                                 onUpdate={(arg) => {
@@ -104,8 +94,7 @@ const SelectSpecificationComponent: React.FC<{
             </Box>
 
             <Typography sx={{ margin: '1rem 0' }} gutterBottom>
-                [Optional] Select the <b>corrector</b> that you would like to use for your
-                meta-analysis
+                [Optional] Select the <b>corrector</b> that you would like to use for your meta-analysis
             </Typography>
 
             <Box sx={CreateMetaAnalysisSpecificationDialogBaseStyles.highlightInput}>
@@ -116,10 +105,7 @@ const SelectSpecificationComponent: React.FC<{
                     isOptionEqualToValue={(option, value) => option?.label === value?.label}
                     renderOption={(params, option) => (
                         <ListItem {...params}>
-                            <ListItemText
-                                primary={option?.label || ''}
-                                secondary={option?.description || ''}
-                            />
+                            <ListItemText primary={option?.label || ''} secondary={option?.description || ''} />
                         </ListItem>
                     )}
                     value={props.algorithm?.corrector}
@@ -153,11 +139,7 @@ const SelectSpecificationComponent: React.FC<{
                                     backgroundColor: '#f2f2f2',
                                 },
                             }}
-                            TitleElement={
-                                <Typography sx={{ color: 'secondary.main' }}>
-                                    Corrector arguments
-                                </Typography>
-                            }
+                            TitleElement={<Typography sx={{ color: 'secondary.main' }}>Corrector arguments</Typography>}
                         >
                             <MetaAnalysisDynamicForm
                                 onUpdate={(arg) => {

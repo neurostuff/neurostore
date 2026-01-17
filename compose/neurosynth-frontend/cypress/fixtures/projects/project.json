@@ -1,120 +1,118 @@
 {
-  "created_at": "2023-11-02T15:48:04.630172+00:00",
-  "description": "this is a bulk import test",
-  "id": "3YK4ZD7aeyQU",
-  "meta_analyses": [
-    "3xHJJQWFURob"
-  ],
-  "name": "Bulk import test",
-  "neurostore_study": {
-    "created_at": "2023-11-02T15:48:04.640598+00:00",
-    "exception": null,
-    "neurostore_id": "7BrAuwJ2tjPW",
-    "status": "PENDING",
-    "traceback": null,
-    "updated_at": "2023-11-02T15:48:04.653465+00:00"
-  },
-  "neurostore_url": "https://neurostore.org/api/studies/7BrAuwJ2tjPW",
-  "provenance": {
-    "curationMetadata": {
-      "columns": [
-        {
-          "id": "370ba40c-91e8-47e7-9b4d-926bc8f31d10",
-          "name": "not included",
-          "stubStudies": []
-        },
-        {
-          "id": "1f15d9a7-968e-44a6-8574-caa3794e050e",
-          "name": "included",
-          "stubStudies": []
-        }
-      ],
-      "exclusionTags": [
-        {
-          "id": "neurosynth_exclude_exclusion",
-          "isAssignable": true,
-          "isExclusionTag": true,
-          "label": "Exclude"
-        },
-        {
-          "id": "neurosynth_duplicate_exclusion",
-          "isAssignable": true,
-          "isExclusionTag": true,
-          "label": "Duplicate"
-        }
-      ],
-      "identificationSources": [
-        {
-          "id": "neurosynth_neurostore_id_source",
-          "label": "Neurostore"
-        },
-        {
-          "id": "neurosynth_pubmed_id_source",
-          "label": "PubMed"
-        },
-        {
-          "id": "neurosynth_scopus_id_source",
-          "label": "Scopus"
-        },
-        {
-          "id": "neurosynth_web_of_science_id_source",
-          "label": "Web of Science"
-        },
-        {
-          "id": "neurosynth_psycinfo_id_source",
-          "label": "PsycInfo"
-        }
-      ],
-      "infoTags": [
-        {
-          "id": "neurosynth_untagged_tag",
-          "isAssignable": false,
-          "isExclusionTag": false,
-          "label": "Untagged studies"
-        },
-        {
-          "id": "neurosynth_uncategorized_tag",
-          "isAssignable": false,
-          "isExclusionTag": false,
-          "label": "Uncategorized Studies"
-        },
-        {
-          "id": "neurosynth_needs_review_tag",
-          "isAssignable": false,
-          "isExclusionTag": false,
-          "label": "Needs Review"
-        },
-        {
-          "id": "6f299c47-766c-48bd-a56b-9c77019ea9de",
-          "isAssignable": true,
-          "isExclusionTag": false,
-          "label": "marijuana"
-        }
-      ],
-      "prismaConfig": {
-        "eligibility": {
-          "exclusionTags": []
-        },
-        "identification": {
-          "exclusionTags": []
-        },
-        "isPrisma": false,
-        "screening": {
-          "exclusionTags": []
-        }
-      }
+    "created_at": "2023-11-02T15:48:04.630172+00:00",
+    "description": "this is a bulk import test",
+    "id": "3YK4ZD7aeyQU",
+    "meta_analyses": ["3xHJJQWFURob"],
+    "name": "Bulk import test",
+    "neurostore_study": {
+        "created_at": "2023-11-02T15:48:04.640598+00:00",
+        "exception": null,
+        "neurostore_id": "7BrAuwJ2tjPW",
+        "status": "PENDING",
+        "traceback": null,
+        "updated_at": "2023-11-02T15:48:04.653465+00:00"
     },
-    "extractionMetadata": {
-      "annotationId": "5LSBDTGqA6RF",
-      "studyStatusList": [],
-      "studysetId": "73HRs8HaJbR8"
+    "neurostore_url": "https://neurostore.org/api/studies/7BrAuwJ2tjPW",
+    "provenance": {
+        "curationMetadata": {
+            "columns": [
+                {
+                    "id": "370ba40c-91e8-47e7-9b4d-926bc8f31d10",
+                    "name": "not included",
+                    "stubStudies": []
+                },
+                {
+                    "id": "1f15d9a7-968e-44a6-8574-caa3794e050e",
+                    "name": "included",
+                    "stubStudies": []
+                }
+            ],
+            "exclusionTags": [
+                {
+                    "id": "neurosynth_exclude_exclusion",
+                    "isAssignable": true,
+                    "isExclusionTag": true,
+                    "label": "Exclude"
+                },
+                {
+                    "id": "neurosynth_duplicate_exclusion",
+                    "isAssignable": true,
+                    "isExclusionTag": true,
+                    "label": "Duplicate"
+                }
+            ],
+            "identificationSources": [
+                {
+                    "id": "neurosynth_neurostore_id_source",
+                    "label": "Neurostore"
+                },
+                {
+                    "id": "neurosynth_pubmed_id_source",
+                    "label": "PubMed"
+                },
+                {
+                    "id": "neurosynth_scopus_id_source",
+                    "label": "Scopus"
+                },
+                {
+                    "id": "neurosynth_web_of_science_id_source",
+                    "label": "Web of Science"
+                },
+                {
+                    "id": "neurosynth_psycinfo_id_source",
+                    "label": "PsycInfo"
+                }
+            ],
+            "infoTags": [
+                {
+                    "id": "neurosynth_untagged_tag",
+                    "isAssignable": false,
+                    "isExclusionTag": false,
+                    "label": "Untagged studies"
+                },
+                {
+                    "id": "neurosynth_uncategorized_tag",
+                    "isAssignable": false,
+                    "isExclusionTag": false,
+                    "label": "Uncategorized Studies"
+                },
+                {
+                    "id": "neurosynth_needs_review_tag",
+                    "isAssignable": false,
+                    "isExclusionTag": false,
+                    "label": "Needs Review"
+                },
+                {
+                    "id": "6f299c47-766c-48bd-a56b-9c77019ea9de",
+                    "isAssignable": true,
+                    "isExclusionTag": false,
+                    "label": "marijuana"
+                }
+            ],
+            "prismaConfig": {
+                "eligibility": {
+                    "exclusionTags": []
+                },
+                "identification": {
+                    "exclusionTags": []
+                },
+                "isPrisma": false,
+                "screening": {
+                    "exclusionTags": []
+                }
+            }
+        },
+        "extractionMetadata": {
+            "annotationId": "5LSBDTGqA6RF",
+            "studyStatusList": [],
+            "studysetId": "73HRs8HaJbR8"
+        },
+        "metaAnalysisMetadata": {
+            "canEditMetaAnalyses": true
+        }
     },
-    "metaAnalysisMetadata": {
-      "canEditMetaAnalyses": true
-    }
-  },
-  "public": false,
-  "updated_at": "2023-11-02T19:42:04.265234+00:00",
-  "user": "auth0|62e0e6c9dd47048572613b4d",
-  "username": "Test User"
+    "public": false,
+    "updated_at": "2023-11-02T19:42:04.265234+00:00",
+    "user": "auth0|62e0e6c9dd47048572613b4d",
+    "username": "Test User"
 }

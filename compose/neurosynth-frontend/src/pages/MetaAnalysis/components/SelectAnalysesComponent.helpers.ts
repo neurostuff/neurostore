@@ -9,9 +9,7 @@ import { DEFAULT_REFERENCE_DATASETS, MULTIGROUP_ALGORITHMS } from './SelectAnaly
 
 export const isMultiGroupAlgorithm = (estimator: IAutocompleteObject | null | undefined) => {
     if (!estimator) return false;
-    return MULTIGROUP_ALGORITHMS.some(
-        (multigroupAlgorithm) => estimator.label === multigroupAlgorithm
-    );
+    return MULTIGROUP_ALGORITHMS.some((multigroupAlgorithm) => estimator.label === multigroupAlgorithm);
 };
 
 export const getFilteredAnnotationNotes = (
@@ -88,9 +86,7 @@ export const annotationNotesToTableFormatHelper = (
     return tableFormat;
 };
 
-export const selectedReferenceDatasetIsDefaultDataset = (
-    selectedReferenceDataset: string | undefined
-) => {
+export const selectedReferenceDatasetIsDefaultDataset = (selectedReferenceDataset: string | undefined) => {
     if (!selectedReferenceDataset) return false;
 
     return DEFAULT_REFERENCE_DATASETS.some((x) => x.id === selectedReferenceDataset);

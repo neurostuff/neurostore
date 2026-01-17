@@ -75,19 +75,14 @@ const StudyConditionSelector: React.FC<{
                 }}
                 renderOption={(params, option) => (
                     <ListItem {...params} key={option?.id}>
-                        <ListItemText
-                            primary={option?.label || ''}
-                            secondary={option?.description || ''}
-                        />
+                        <ListItemText primary={option?.label || ''} secondary={option?.description || ''} />
                     </ListItem>
                 )}
                 filterOptions={(options, params) => {
                     const filteredValues = filterOptions(options, params);
 
                     const optionExists = options.some(
-                        (option) =>
-                            params.inputValue.toLocaleLowerCase() ===
-                            (option?.label || '').toLocaleLowerCase()
+                        (option) => params.inputValue.toLocaleLowerCase() === (option?.label || '').toLocaleLowerCase()
                     );
 
                     if (params.inputValue !== '' && !optionExists) {

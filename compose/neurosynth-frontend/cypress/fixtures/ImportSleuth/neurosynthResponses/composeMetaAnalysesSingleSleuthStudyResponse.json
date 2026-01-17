@@ -7,13 +7,13 @@
     "id": "mHQxyne2cYnL",
     "name": "Untitled sleuth project: ALE Meta Analysis: test1_new.txt",
     "neurostore_analysis": {
-      "created_at": "2024-06-14T14:35:03.198506+00:00",
-      "exception": null,
-      "id": "e6jjPciECoL3",
-      "neurostore_id": null,
-      "status": "PENDING",
-      "traceback": null,
-      "updated_at": null
+        "created_at": "2024-06-14T14:35:03.198506+00:00",
+        "exception": null,
+        "id": "e6jjPciECoL3",
+        "neurostore_id": null,
+        "status": "PENDING",
+        "traceback": null,
+        "updated_at": null
     },
     "neurostore_url": null,
     "project": "WKTKwzTJcX5g",
@@ -25,5 +25,4 @@
     "updated_at": null,
     "user": "auth0|666c3bb1fcdc91471b06bfb2",
     "username": "test user 6"
-  }
-  
+}

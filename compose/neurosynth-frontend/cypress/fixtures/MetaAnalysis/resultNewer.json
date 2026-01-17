@@ -1,28 +1,27 @@
 {
-  "cli_args": null,
-  "cli_version": null,
-  "created_at": "2024-01-15T10:00:00.000000+00:00",
-  "diagnostic_table": null,
-  "id": "result-id-123",
-  "meta_analysis_id": "mock-meta-analysis-id",
-  "neurovault_collection": {
-    "collection_id": "14743",
+    "cli_args": null,
+    "cli_version": null,
     "created_at": "2024-01-15T10:00:00.000000+00:00",
-    "files": [
-      {
-        "image_id": "image-123",
-        "name": "z_stat.nii.gz",
-        "url": "https://neurovault.org/media/images/14743/z_stat.nii.gz"
-      },
-      {
-        "image_id": "image-124",
-        "name": "p_stat.nii.gz",
-        "url": "https://neurovault.org/media/images/14743/p_stat.nii.gz"
-      }
-    ],
-    "updated_at": null,
-    "url": "https://neurovault.org/api/collections/14743"
-  },
-  "updated_at": null
+    "diagnostic_table": null,
+    "id": "result-id-123",
+    "meta_analysis_id": "mock-meta-analysis-id",
+    "neurovault_collection": {
+        "collection_id": "14743",
+        "created_at": "2024-01-15T10:00:00.000000+00:00",
+        "files": [
+            {
+                "image_id": "image-123",
+                "name": "z_stat.nii.gz",
+                "url": "https://neurovault.org/media/images/14743/z_stat.nii.gz"
+            },
+            {
+                "image_id": "image-124",
+                "name": "p_stat.nii.gz",
+                "url": "https://neurovault.org/media/images/14743/p_stat.nii.gz"
+            }
+        ],
+        "updated_at": null,
+        "url": "https://neurovault.org/api/collections/14743"
+    },
+    "updated_at": null
 }
-

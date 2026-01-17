@@ -1,1871 +1,1871 @@
 {
-  "created_at": "2025-05-30T23:14:42.972395+00:00",
-  "description": "",
-  "draft": true,
-  "id": "aubYH6Hdvoe3",
-  "meta_analyses": [],
-  "name": "Untitled",
-  "neurostore_study": {
-    "created_at": "2025-05-30T23:14:42.984037+00:00",
-    "exception": null,
-    "neurostore_id": "YVqGsqRLSned",
-    "status": "PENDING",
-    "traceback": null,
-    "updated_at": "2025-05-30T23:14:42.990766+00:00"
-  },
-  "neurostore_url": "https://neurostore.org/api/studies/YVqGsqRLSned",
-  "provenance": {
-    "curationMetadata": {
-      "columns": [
-        {
-          "id": "bf2f83c7-0a3b-48d4-b30c-5860f6bb29b9",
-          "name": "Identification",
-          "stubStudies": [
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/15205869",
-              "articleYear": "",
-              "authors": "Kanayama G, Rogowska J, Pope HG, Gruber SA, Yurgelun-Todd DA",
-              "doi": "10.1007/s00213-004-1885-8",
-              "exclusionTag": null,
-              "id": "5e3fba07-e21d-41fd-80c0-abddd16cb0b3",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
-              "journal": "Psychopharmacology",
-              "keywords": "",
-              "neurostoreId": "4ipTCvWCyQKQ",
-              "pmcid": "",
-              "pmid": "15205869",
-              "tags": [],
-              "title": "Spatial working memory in heavy cannabis users: a functional magnetic resonance imaging study."
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/26058801",
-              "articleYear": "",
-              "authors": "Tomasi D, Wang GJ, Volkow ND",
-              "doi": "10.1002/hbm.22834",
-              "exclusionTag": null,
-              "id": "7c545ab0-97a7-469b-aac5-bd79d46fb4ab",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
-              "journal": "Human brain mapping",
-              "keywords": "",
-              "neurostoreId": "4QbUxxVNoQpZ",
-              "pmcid": "",
-              "pmid": "26058801",
-              "tags": [],
-              "title": "Balanced modulation of striatal activation from D /D receptors in caudate and ventral striatum: Disruption in cannabis abusers."
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/23115554",
-              "articleYear": "",
-              "authors": "",
-              "doi": "",
-              "exclusionTag": null,
-              "id": "cccf425e-0eb8-4233-aac3-9904d99c3fe4",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
-              "journal": "",
-              "keywords": "",
-              "neurostoreId": "4rdkD2dXjgAT",
-              "pmcid": "",
-              "pmid": "23115554",
-              "tags": [],
-              "title": "An fMRI Study of Neuronal Activation in Schizophrenia Patients with and without Previous Cannabis Use"
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/20061126",
-              "articleYear": "",
-              "authors": "van Hell HH, Vink M, Ossewaarde L, Jager G, Kahn RS, Ramsey NF",
-              "doi": "10.1016/j.euroneuro.2009.11.010",
-              "exclusionTag": null,
-              "id": "353d6044-86aa-44d0-a943-ea08985f3a43",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
-              "journal": "European neuropsychopharmacology : the journal of the European College of Neuropsychopharmacology",
-              "keywords": "",
-              "neurostoreId": "4Y8ioZSVYAkH",
-              "pmcid": "",
-              "pmid": "20061126",
-              "tags": [],
-              "title": "Chronic effects of cannabis use on the human reward system: an fMRI study."
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/22159107",
-              "articleYear": "",
-              "authors": "King GR, Ernst T, Deng W, Stenger A, Gonzales RM, Nakama H, Chang L",
-              "doi": "10.1523/JNEUROSCI.4148-11.2011",
-              "exclusionTag": null,
-              "id": "04ba58c6-140b-4d63-9d9a-abe3792af26c",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
-              "journal": "The Journal of neuroscience : the official journal of the Society for Neuroscience",
-              "keywords": "",
-              "neurostoreId": "5B72cAjdqPnG",
-              "pmcid": "",
-              "pmid": "22159107",
-              "tags": [],
-              "title": "Altered brain activation during visuomotor integration in chronic active cannabis users: relationship to cortisol levels."
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/24035535",
-              "articleYear": "",
-              "authors": "Charboneau EJ, Dietrich MS, Park S, Cao A, Watkins TJ, Blackford JU, Benningfield MM, Martin PR, Buchowski MS, Cowan RL",
-              "doi": "10.1016/j.pscychresns.2013.06.005",
-              "exclusionTag": null,
-              "id": "82d93823-75bc-4142-b324-b6077fafc257",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
-              "journal": "Psychiatry research",
-              "keywords": "",
-              "neurostoreId": "5CWvpYRhHh9h",
-              "pmcid": "",
-              "pmid": "24035535",
-              "tags": [],
-              "title": "Cannabis cue-induced brain activation correlates with drug craving in limbic and  visual salience regions: preliminary results."
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/25799565",
-              "articleYear": "",
-              "authors": "Enzi B, Lissek S, Edel MA, Tegenthoff M, Nicolas V, Scherbaum N, Juckel G, Roser P",
-              "doi": "10.1371/journal.pone.0119150",
-              "exclusionTag": null,
-              "id": "32b2c369-1479-44e1-a481-1bb412754d50",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
-              "journal": "PloS one",
-              "keywords": "",
-              "neurostoreId": "5fhdiEePzW3v",
-              "pmcid": "",
-              "pmid": "25799565",
-              "tags": [],
-              "title": "Alterations of monetary reward and punishment processing in chronic cannabis users: an FMRI study."
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/23773952",
-              "articleYear": "",
-              "authors": "De Bellis MD, Wang L, Bergman SR, Yaxley RH, Hooper SR, Huettel SA",
-              "doi": "10.1016/j.drugalcdep.2013.05.020",
-              "exclusionTag": null,
-              "id": "95ae7a02-4a8d-4631-be19-5dfc3065b286",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
-              "journal": "Drug and alcohol dependence",
-              "keywords": "",
-              "neurostoreId": "5pFkVeped74o",
-              "pmcid": "",
-              "pmid": "23773952",
-              "tags": [],
-              "title": "Neural mechanisms of risky decision-making and reward response in adolescent onset cannabis use disorder."
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/20363277",
-              "articleYear": "",
-              "authors": "",
-              "doi": "",
-              "exclusionTag": null,
-              "id": "7e18c9c8-f6f4-485c-9ac4-60171669acda",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
-              "journal": "",
-              "keywords": "",
-              "neurostoreId": "5qUAE3Awq249",
-              "pmcid": "",
-              "pmid": "20363277",
-              "tags": [],
-              "title": "The impact of early-onset cannabis use on functional brain correlates of working memory"
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/16631130",
-              "articleYear": "",
-              "authors": "Jacobsen LK, Pugh KR, Constable RT, Westerveld M, Mencl WE",
-              "doi": "10.1016/j.biopsych.2006.02.014",
-              "exclusionTag": null,
-              "id": "6e240c4e-93d3-4e55-8321-ed41e7574c97",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
-              "journal": "Biological psychiatry",
-              "keywords": "",
-              "neurostoreId": "6a9mjBuZngdR",
-              "pmcid": "",
-              "pmid": "16631130",
-              "tags": [],
-              "title": "Functional correlates of verbal memory deficits emerging during nicotine withdrawal in abstinent adolescent cannabis users."
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/27168331",
-              "articleYear": "",
-              "authors": "",
-              "doi": "",
-              "exclusionTag": null,
-              "id": "eebbd173-8808-454f-9163-f576991e96ab",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
-              "journal": "",
-              "keywords": "",
-              "neurostoreId": "6bZKnK7pjcc4",
-              "pmcid": "",
-              "pmid": "27168331",
-              "tags": [],
-              "title": "fMRI study of neural sensitization to hedonic stimuli in long\u2010term, daily cannabis users"
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/22695256",
-              "articleYear": "",
-              "authors": "Roser P, Lissek S, Tegenthoff M, Nicolas V, Juckel G, Brune M",
-              "doi": "10.1016/j.schres.2012.05.020",
-              "exclusionTag": null,
-              "id": "fce09616-f180-49bb-8900-62c0977405cf",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
-              "journal": "Schizophrenia research",
-              "keywords": "",
-              "neurostoreId": "7AavTRUVBih3",
-              "pmcid": "",
-              "pmid": "22695256",
-              "tags": [],
-              "title": "Alterations of theory of mind network activation in chronic cannabis users."
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/22395430",
-              "articleYear": "",
-              "authors": "Jacobus J, Goldenberg D, Wierenga CE, Tolentino NJ, Liu TT, Tapert SF",
-              "doi": "10.1007/s00213-012-2674-4",
-              "exclusionTag": null,
-              "id": "7e15efb2-ef21-4c69-abb6-722df077d4b2",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
-              "journal": "Psychopharmacology",
-              "keywords": "",
-              "neurostoreId": "7AT9K9cTFjeo",
-              "pmcid": "",
-              "pmid": "22395430",
-              "tags": [],
-              "title": "Altered cerebral blood flow and neurocognitive correlates in adolescent cannabis  users."
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/26667034",
-              "articleYear": "",
-              "authors": "Ramaekers JG, van Wel JH, Spronk D, Franke B, Kenis G, Toennes SW, Kuypers KP, Theunissen EL, Stiers P, Verkes RJ",
-              "doi": "10.1007/s11682-015-9488-z",
-              "exclusionTag": null,
-              "id": "e5348814-fed9-4a71-8436-ba6f8d8c2230",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
-              "journal": "Brain imaging and behavior",
-              "keywords": "",
-              "neurostoreId": "7aUADHwNt9WZ",
-              "pmcid": "",
-              "pmid": "26667034",
-              "tags": [],
-              "title": "Cannabis and cocaine decrease cognitive impulse control and functional corticostriatal connectivity in drug users with low activity DBH genotypes."
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/26553191",
-              "articleYear": "",
-              "authors": "",
-              "doi": "",
-              "exclusionTag": null,
-              "id": "8822f2e2-743c-4036-8044-d0fc47238242",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
-              "journal": "",
-              "keywords": "",
-              "neurostoreId": "7eK4f3GuJgDz",
-              "pmcid": "",
-              "pmid": "26553191",
-              "tags": [],
-              "title": "Evaluating the impact of cannabis use on thalamic connectivity in youth at clinical high risk of psychosis"
-            },
-            {
-              "abstractText": "This collection describes the results of an image-based meta-analysis of reward processing in addiction. The analyses include 25 fMRI studies totalizing 643 addicted individuals and 609 unique healthy controls. Full T-maps were sued as inputs, using the software Seed-based d Mapping (SDM) v4.31. The analyses focus on monetary reward processing (anticipation and outcome) across substance (nicotine, cannabis, alcohol and cocaine) and gambling addictions. ",
-              "articleLink": "",
-              "articleYear": "",
-              "authors": "Maartje Luijten, Arnt F. Schellekens, Simone K\u00fchn, Marise W. J. Machielse and Guillaume Sescousse",
-              "doi": "10.1001/jamapsychiatry.2016.3084",
-              "exclusionTag": null,
-              "id": "e782068b-8a4a-4951-9461-5c14717653c7",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
-              "journal": "JAMA Psychiatry",
-              "keywords": "",
-              "neurostoreId": "7Gn5Bsg9BDai",
-              "pmcid": "",
-              "pmid": "",
-              "tags": [],
-              "title": "Disruption of Reward Processing in Addiction"
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/23672820",
-              "articleYear": "",
-              "authors": "",
-              "doi": "",
-              "exclusionTag": null,
-              "id": "b061d39a-c626-4ea5-a995-822942f776e0",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
-              "journal": "",
-              "keywords": "",
-              "neurostoreId": "7hqLGgN3sS3m",
-              "pmcid": "",
-              "pmid": "23672820",
-              "tags": [],
-              "title": "Cannabis use, cognition and brain structure in first-episode psychosis"
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/23273106",
-              "articleYear": "",
-              "authors": "Lee MC, Ploner M, Wiech K, Bingel U, Wanigasekera V, Brooks J, Menon DK, Tracey I",
-              "doi": "10.1016/j.pain.2012.09.017",
-              "exclusionTag": null,
-              "id": "b09862b3-beed-46e7-8bb2-510932edcd8b",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
-              "journal": "Pain",
-              "keywords": "",
-              "neurostoreId": "7LT9PtxLtNE7",
-              "pmcid": "",
-              "pmid": "23273106",
-              "tags": [],
-              "title": "Amygdala activity contributes to the dissociative effect of cannabis on pain perception."
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/27500453",
-              "articleYear": "",
-              "authors": "Hill SY, Sharma V, Jones BL",
-              "doi": "10.1016/j.pscychresns.2016.05.009",
-              "exclusionTag": null,
-              "id": "8c2de0fd-196c-4929-b428-359419c4566e",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
-              "journal": "Psychiatry research. Neuroimaging",
-              "keywords": "",
-              "neurostoreId": "7mdsWAaXsUgL",
-              "pmcid": "",
-              "pmid": "27500453",
-              "tags": [],
-              "title": "Lifetime use of cannabis from longitudinal assessments, cannabinoid receptor (CNR1) variation, and reduced volume of the right anterior cingulate."
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/20417713",
-              "articleYear": "",
-              "authors": "Roberts GM, Garavan H",
-              "doi": "10.1016/j.neuroimage.2010.04.192",
-              "exclusionTag": null,
-              "id": "0a6ac708-d0a5-4764-bb2d-3f30e8a17f8d",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
-              "journal": "NeuroImage",
-              "keywords": "",
-              "neurostoreId": "7PjTJeNVMLvA",
-              "pmcid": "",
-              "pmid": "20417713",
-              "tags": [],
-              "title": "Evidence of increased activation underlying cognitive control in ecstasy and cannabis users."
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/26249266",
-              "articleYear": "",
-              "authors": "Carey SE, Nestor L, Jones J, Garavan H, Hester R",
-              "doi": "10.1016/j.drugalcdep.2015.07.671",
-              "exclusionTag": null,
-              "id": "cc6d457e-b196-48ac-baa5-c33ad041aa52",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
-              "journal": "Drug and alcohol dependence",
-              "keywords": "",
-              "neurostoreId": "7sFNuY9yPoJq",
-              "pmcid": "",
-              "pmid": "26249266",
-              "tags": [],
-              "title": "Impaired learning from errors in cannabis users: Dorsal anterior cingulate cortex and hippocampus hypoactivity."
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/26347227",
-              "articleYear": "",
-              "authors": "Spechler PA, Orr CA, Chaarani B, Kan KJ, Mackey S, Morton A, Snowe MP, Hudson KE, Althoff RR, Higgins ST, Cattrell A, Flor H, Nees F, Banaschewski T, Bokde ALW, Whelan R, Buchel C, Bromberg U, Conrod P, Frouin V, Papadopoulos D, Gallinat J, Heinz A, Walter H, Ittermann B, Gowland P, Paus T, Poustka L, Martinot JL, Artiges E, Smolka MN, Schumann G, Garavan H",
-              "doi": "10.1016/j.dcn.2015.08.007",
-              "exclusionTag": null,
-              "id": "3710ca96-11a2-4908-ac53-13d55b422a2b",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
-              "journal": "Developmental cognitive neuroscience",
-              "keywords": "",
-              "neurostoreId": "7yaBoALZZaDF",
-              "pmcid": "",
-              "pmid": "26347227",
-              "tags": [],
-              "title": "Cannabis use in early adolescence: Evidence of amygdala hypersensitivity to signals of threat."
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/18296071",
-              "articleYear": "",
-              "authors": "",
-              "doi": "",
-              "exclusionTag": null,
-              "id": "5ba6b77c-dd1c-4409-bfdc-df70ccaddff0",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
-              "journal": "",
-              "keywords": "",
-              "neurostoreId": "7z2Tef3naGdS",
-              "pmcid": "",
-              "pmid": "18296071",
-              "tags": [],
-              "title": "Deficits in learning and memory: Parahippocampal hyperactivity and frontocortical hypoactivity in cannabis users"
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/19631753",
-              "articleYear": "",
-              "authors": "Nestor L, Hester R, Garavan H",
-              "doi": "10.1016/j.neuroimage.2009.07.022",
-              "exclusionTag": null,
-              "id": "cf06ecef-0978-4899-9dc8-76b2386503e4",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
-              "journal": "NeuroImage",
-              "keywords": "",
-              "neurostoreId": "89VpuBDn3A6z",
-              "pmcid": "",
-              "pmid": "19631753",
-              "tags": [],
-              "title": "Increased ventral striatal BOLD activity during non-drug reward anticipation in cannabis users."
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/17137758",
-              "articleYear": "",
-              "authors": "Jager G, Van Hell HH, De Win MM, Kahn RS, Van Den Brink W, Van Ree JM, Ramsey NF",
-              "doi": "10.1016/j.euroneuro.2006.10.003",
-              "exclusionTag": null,
-              "id": "46c03505-0a67-4a8e-b293-058a29b2a9f8",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
-              "journal": "European neuropsychopharmacology : the journal of the European College of Neuropsychopharmacology",
-              "keywords": "",
-              "neurostoreId": "8Mc2EA67ig4D",
-              "pmcid": "",
-              "pmid": "17137758",
-              "tags": [],
-              "title": "Effects of frequent cannabis use on hippocampal activity during an associative memory task."
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/28607694",
-              "articleYear": "",
-              "authors": "",
-              "doi": "",
-              "exclusionTag": null,
-              "id": "a421e899-c111-46ea-bcb4-359a21923845",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
-              "journal": "",
-              "keywords": "",
-              "neurostoreId": "8MMHnKaUsdV9",
-              "pmcid": "",
-              "pmid": "28607694",
-              "tags": [],
-              "title": "Cannabis-induced alterations in brain activation during a test of information processing speed in patients with MS"
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/25824306",
-              "articleYear": "",
-              "authors": "",
-              "doi": "",
-              "exclusionTag": null,
-              "id": "77b5b283-d277-4443-83bb-efd5d520a9b3",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
-              "journal": "",
-              "keywords": "",
-              "neurostoreId": "d72TGHWHHNsk",
-              "pmcid": "",
-              "pmid": "25824306",
-              "tags": [],
-              "title": "Telling true from false: cannabis users show increased susceptibility to false memories"
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/25962875",
-              "articleYear": "",
-              "authors": "",
-              "doi": "",
-              "exclusionTag": null,
-              "id": "88dbfc56-02d4-4ad9-9beb-1048d23fe844",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
-              "journal": "",
-              "keywords": "",
-              "neurostoreId": "yK9iGBbVdA4u",
-              "pmcid": "",
-              "pmid": "25962875",
-              "tags": [],
-              "title": "An fMRI-Based Neural Signature of Decisions to Smoke Cannabis"
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/23970971",
-              "articleYear": "",
-              "authors": "",
-              "doi": "",
-              "exclusionTag": null,
-              "id": "1576c6c5-1dfe-4119-8e75-ffa15fb07608",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
-              "journal": "",
-              "keywords": "",
-              "neurostoreId": "ZBwXUprZ35mq",
-              "pmcid": "",
-              "pmid": "23970971",
-              "tags": [],
-              "title": "The Neural Correlates of Mental Rotation Abilities in Cannabis-Abusing Patients with Schizophrenia: An fMRI Study"
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/19962862",
-              "articleYear": "",
-              "authors": "",
-              "doi": "",
-              "exclusionTag": null,
-              "id": "82c94d44-43a8-4555-bc4f-f04f81e160dd",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
-              "journal": "",
-              "keywords": "",
-              "neurostoreId": "ZorwPCxgpfUj",
-              "pmcid": "",
-              "pmid": "19962862",
-              "tags": [],
-              "title": "Cannabis use and callosal white matter structure and integrity in recent-onset schizophrenia"
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/15561477",
-              "articleYear": "",
-              "authors": "Pillay SS, Rogowska J, Kanayama G, Jon DI, Gruber S, Simpson N, Cherayil M, Pope HG, Yurgelun-Todd DA",
-              "doi": "10.1016/j.drugalcdep.2004.05.009",
-              "exclusionTag": null,
-              "id": "89b761e9-89b5-47b6-9d87-35022360d0bc",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
-              "journal": "Drug and alcohol dependence",
-              "keywords": "",
-              "neurostoreId": "4oKfGgB2jcA4",
-              "pmcid": "",
-              "pmid": "15561477",
-              "tags": [],
-              "title": "Neurophysiology of motor function following cannabis discontinuation in chronic cannabis smokers: an fMRI study."
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/25037524",
-              "articleYear": "",
-              "authors": "",
-              "doi": "",
-              "exclusionTag": null,
-              "id": "418bbc7e-3afb-4955-94fa-3f2124b8c96d",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
-              "journal": "",
-              "keywords": "",
-              "neurostoreId": "6TntKKDTXzHn",
-              "pmcid": "",
-              "pmid": "25037524",
-              "tags": [],
-              "title": "Impaired Functional Connectivity of Brain Reward Circuitry in Patients with Schizophrenia and Cannabis Use Disorder: Effects of Cannabis and THC"
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/21982932",
-              "articleYear": "",
-              "authors": "",
-              "doi": "",
-              "exclusionTag": null,
-              "id": "fe279a21-dd07-404a-ba3e-52f5ba6b532a",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
-              "journal": "",
-              "keywords": "",
-              "neurostoreId": "bJu2q2ZYnmvP",
-              "pmcid": "",
-              "pmid": "21982932",
-              "tags": [],
-              "title": "Grey matter alterations associated with cannabis use: Results of a VBM study in heavy cannabis users and healthy controls"
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/22957019",
-              "articleYear": "",
-              "authors": "Cousijn J, Goudriaan AE, Ridderinkhof KR, van den Brink W, Veltman DJ, Wiers RW",
-              "doi": "10.1371/journal.pone.0042394",
-              "exclusionTag": null,
-              "id": "44e5a2bc-8334-4ab0-b0bf-114f22a1ff97",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
-              "journal": "PloS one",
-              "keywords": "",
-              "neurostoreId": "WkX3FpUidscq",
-              "pmcid": "",
-              "pmid": "22957019",
-              "tags": [],
-              "title": "Approach-bias predicts development of cannabis problem severity in heavy cannabis users: results from a prospective FMRI study."
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/24038570",
-              "articleYear": "",
-              "authors": "Cousijn J, Wiers RW, Ridderinkhof KR, van den Brink W, Veltman DJ, Goudriaan AE",
-              "doi": "10.1002/hbm.22342",
-              "exclusionTag": null,
-              "id": "9b43985b-77f0-4548-b142-1ee7183444eb",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
-              "journal": "Human brain mapping",
-              "keywords": "",
-              "neurostoreId": "4rTG2gkFcsGL",
-              "pmcid": "",
-              "pmid": "24038570",
-              "tags": [],
-              "title": "Effect of baseline cannabis use and working-memory network function on changes in cannabis use in heavy cannabis users: a prospective fMRI study."
-            },
-            {
-              "abstractText": "Unthresholded maps from analyses reported in following publication:\r\n\r\nABSTRACT \r\nObjective: Brain function supporting error-monitoring has rarely been examined among persons living with HIV (PLWH) despite its importance for recognizing and preventing maladaptive behavior (e.g. drug use, medication non-adherence, gambling, risky sexual behavior) that could lead to worsened health and economic outcomes among this vulnerable population. As medicinal and recreational cannabis use is prevalent among PLWH, we aimed to assess interactive impacts of HIV infection and chronic cannabis use (CB) on error-processing brain function and investigate the implications for everyday functioning and clinically relevant disease management behaviors. \r\nMethods: Our sample of 109 participants was stratified into four groups based on HIV serostatus and cannabis use history (HIV+/CB+, n=32; HIV+/CB-, n=27; HIV-/CB+, n=28; HIV-/CB-, n=22). Participants underwent fMRI scanning while completing a Go/NoGo, motor inhibition paradigm called the Error Awareness Task (EAT) that probes error-processing, and error-awareness mechanisms. Participants also completed a battery of well-validated instruments including an objective behavioral measure of medication management abilities and self-reports of everyday cognitive failures and cannabis use history.\r\nResults: We observed error-related brain activity in the anterior insula that was associated improved cognitive-control performance across the full sample, and less self-reported cognitive failures among HIV- controls. Regarding error awareness, we found significantly more insula responsivity and posterior cingulate cortex (PCC) deactivation to aware errors relative to unaware errors. Regarding group effects, PLWH displayed a lack of error-related deactivation in two default mode network (DMN) hub regions (the PCC and medial prefrontal cortex [mPFC]) that was contrarily observed among HIV- controls and associated with their improved cognitive control, task performance. CB main and interaction effects were not detected. Across all groups, less error-related PCC deactivation was associated with worsened medication management behavioral performance and mediated the effect of HIV-status on medication management abilities. However, DMN deactivation was not significantly related to self-reported cognitive failures. Amount of CB used over the lifetime was associated with reduced mPFC deactivation to errors among CB using HIV- controls, and worsened medication management abilities across all CB users. \r\n\r\nConclusions: These results demonstrate insufficient error-related DMN deactivation among PLWH with critical consequences for medication management behaviors. \r\n",
-              "articleLink": "",
-              "articleYear": "",
-              "authors": "Jessica S. Flannery, Michael C. Riedel, Taylor Salo, Ranjita Poudel, Angela R. Laird, Raul Gonzalez and Matthew T. Sutherland",
-              "doi": "10.1016/j.pnpbp.2021.110398",
-              "exclusionTag": null,
-              "id": "201ee9ac-43d2-4dd9-942b-db3e1a6b74ff",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
-              "journal": "Progress in Neuro-Psychopharmacology and Biological Psychiatry",
-              "keywords": "",
-              "neurostoreId": "4p5pHA7zByBP",
-              "pmcid": "",
-              "pmid": "",
-              "tags": [],
-              "title": "HIV infection is linked with reduced error-related default mode network suppression and poorer medication management abilities"
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/19553917",
-              "articleYear": "",
-              "authors": "",
-              "doi": "",
-              "exclusionTag": null,
-              "id": "8da5f9fe-69e6-4431-9c18-b1dca84c8299",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
-              "journal": "",
-              "keywords": "",
-              "neurostoreId": "4HdaLQsLToRS",
-              "pmcid": "",
-              "pmid": "19553917",
-              "tags": [],
-              "title": "Impaired error awareness and anterior cingulate cortex hypoactivity in chronic cannabis users"
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/26106538",
-              "articleYear": "",
-              "authors": "Romero K, Pavisian B, Staines WR, Feinstein A",
-              "doi": "10.1016/j.nicl.2015.04.006",
-              "exclusionTag": null,
-              "id": "b8a75332-569a-42bb-956b-225c351e6251",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
-              "journal": "NeuroImage. Clinical",
-              "keywords": "",
-              "neurostoreId": "47oz6X9Cnics",
-              "pmcid": "",
-              "pmid": "26106538",
-              "tags": [],
-              "title": "Multiple sclerosis, cannabis, and cognition: A structural MRI study."
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/27257518",
-              "articleYear": "",
-              "authors": "",
-              "doi": "",
-              "exclusionTag": null,
-              "id": "946df81b-7340-487c-8192-010563c91387",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
-              "journal": "",
-              "keywords": "",
-              "neurostoreId": "44bhHQQbyVc7",
-              "pmcid": "",
-              "pmid": "27257518",
-              "tags": [],
-              "title": "Variable activation in striatal subregions across components of a social influence task in young adult cannabis users"
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/23791961",
-              "articleYear": "",
-              "authors": "",
-              "doi": "",
-              "exclusionTag": null,
-              "id": "82e5ea8c-ef3f-4730-b437-b7a9d1575906",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
-              "journal": "",
-              "keywords": "",
-              "neurostoreId": "3VErf6d259gU",
-              "pmcid": "",
-              "pmid": "23791961",
-              "tags": [],
-              "title": "Response inhibition and elevated parietal-cerebellar correlations in chronic adolescent cannabis users"
-            },
-            {
-              "abstractText": "",
-              "articleLink": "",
-              "articleYear": "",
-              "authors": "Julio A Yanes, Michael C Riedel, Kimberly L Ray, Anna E Kirkland, Ryan T Bird, Emily R Boeving, Meredith A Reid, Raul Gonzalez, Jennifer L Robinson, Angela R Laird and Matthew T Sutherland",
-              "doi": "10.1177/0269881117744995",
-              "exclusionTag": null,
-              "id": "3e2636be-cd64-4e99-9959-955adf5ed8d4",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
-              "journal": "Journal of Psychopharmacology",
-              "keywords": "",
-              "neurostoreId": "3pTbJ3Uk2wHW",
-              "pmcid": "",
-              "pmid": "",
-              "tags": [],
-              "title": "Neuroimaging meta-analysis of cannabis use studies reveals convergent functional alterations in brain regions supporting cognitive control and reward processing"
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/20300735",
-              "articleYear": "",
-              "authors": "Becker B, Wagner D, Gouzoulis-Mayfrank E, Spuentrup E, Daumann J",
-              "doi": "10.1007/s00213-010-1805-z",
-              "exclusionTag": null,
-              "id": "c87ee390-1266-41ca-8c30-f4c2f7127cd9",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
-              "journal": "Psychopharmacology",
-              "keywords": "",
-              "neurostoreId": "3nLP29xfdwyV",
-              "pmcid": "",
-              "pmid": "20300735",
-              "tags": [],
-              "title": "Altered parahippocampal functioning in cannabis users is related to the frequency of use."
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/26602958",
-              "articleYear": "",
-              "authors": "",
-              "doi": "",
-              "exclusionTag": null,
-              "id": "5f26aafb-7e20-4d54-be42-cf29fa39009a",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
-              "journal": "",
-              "keywords": "",
-              "neurostoreId": "3hKR63uehbaH",
-              "pmcid": "",
-              "pmid": "26602958",
-              "tags": [],
-              "title": "Longitudinal changes in white matter microstructure after heavy cannabis use"
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/16521034",
-              "articleYear": "",
-              "authors": "Jager G, Kahn RS, Van Den Brink W, Van Ree JM, Ramsey NF",
-              "doi": "10.1007/s00213-005-0298-7",
-              "exclusionTag": null,
-              "id": "241e9410-3feb-4291-9789-3e0721af8587",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
-              "journal": "Psychopharmacology",
-              "keywords": "",
-              "neurostoreId": "3fVWzJYzSvJu",
-              "pmcid": "",
-              "pmid": "16521034",
-              "tags": [],
-              "title": "Long-term effects of frequent cannabis use on working memory and attention: an fMRI study."
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/24741043",
-              "articleYear": "",
-              "authors": "Gilman JM, Kuster JK, Lee S, Lee MJ, Kim BW, Makris N, van der Kouwe A, Blood AJ, Breiter HC",
-              "doi": "10.1523/JNEUROSCI.4745-13.2014",
-              "exclusionTag": null,
-              "id": "729de3a5-d159-476c-a0e2-33aa988287cf",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
-              "journal": "The Journal of neuroscience : the official journal of the Society for Neuroscience",
-              "keywords": "",
-              "neurostoreId": "38Wwv5RWPALv",
-              "pmcid": "",
-              "pmid": "24741043",
-              "tags": [],
-              "title": "Cannabis use is quantitatively associated with nucleus accumbens and amygdala abnormalities in young adult recreational users."
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/26403581",
-              "articleYear": "",
-              "authors": "Heitzeg MM, Cope LM, Martz ME, Hardee JE, Zucker RA",
-              "doi": "10.1016/j.dcn.2015.09.003",
-              "exclusionTag": null,
-              "id": "bc0cf532-63c7-4193-86ef-a03e57df58a3",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "75d6c47e-627f-4965-b51e-c06912b67dde",
-              "journal": "Developmental cognitive neuroscience",
-              "keywords": "",
-              "neurostoreId": "QVa7Wq5hQkhD",
-              "pmcid": "",
-              "pmid": "26403581",
-              "tags": [],
-              "title": "Brain activation to negative stimuli mediates a relationship between adolescent marijuana use and later emotional functioning."
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/16473495",
-              "articleYear": "",
-              "authors": "",
-              "doi": "",
-              "exclusionTag": null,
-              "id": "c7b2a9fe-4e88-4653-8345-0aabaa2ab932",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "75d6c47e-627f-4965-b51e-c06912b67dde",
-              "journal": "",
-              "keywords": "",
-              "neurostoreId": "nw5BFUZVR5ow",
-              "pmcid": "",
-              "pmid": "16473495",
-              "tags": [],
-              "title": "Effects of prenatal marijuana on visuospatial working memory: An fMRI study in young adults"
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/15907305",
-              "articleYear": "",
-              "authors": "Bolla KI, Eldreth DA, Matochik JA, Cadet JL",
-              "doi": "10.1016/j.neuroimage.2005.02.012",
-              "exclusionTag": null,
-              "id": "dc999e9d-462f-4d83-9b97-07a9efb81968",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "75d6c47e-627f-4965-b51e-c06912b67dde",
-              "journal": "NeuroImage",
-              "keywords": "",
-              "neurostoreId": "M3yLshPJvgcL",
-              "pmcid": "",
-              "pmid": "15907305",
-              "tags": [],
-              "title": "Neural substrates of faulty decision-making in abstinent marijuana users."
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/22306089",
-              "articleYear": "",
-              "authors": "Gruber SA, Dahlgren MK, Sagar KA, Gonenc A, Killgore WD",
-              "doi": "10.1037/a0026269",
-              "exclusionTag": null,
-              "id": "ebe55a33-5882-4be2-a8b1-4d49331e1364",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "75d6c47e-627f-4965-b51e-c06912b67dde",
-              "journal": "Neuroscience letters",
-              "keywords": "",
-              "neurostoreId": "JtMCEqqPwZX6",
-              "pmcid": "",
-              "pmid": "22306089",
-              "tags": [],
-              "title": "Age of onset of marijuana use impacts inhibitory processing."
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/22835865",
-              "articleYear": "",
-              "authors": "Lopez-Larson MP, Rogowska J, Bogorodzki P, Bueler CE, McGlade EC, Yurgelun-Todd DA",
-              "doi": "10.1016/j.pscychresns.2011.11.005",
-              "exclusionTag": null,
-              "id": "7f52386a-7673-4b1a-b29b-efd63b93e5fc",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "75d6c47e-627f-4965-b51e-c06912b67dde",
-              "journal": "Psychiatry research",
-              "keywords": "",
-              "neurostoreId": "fCLUsE7KW2Gf",
-              "pmcid": "",
-              "pmid": "22835865",
-              "tags": [],
-              "title": "Cortico-cerebellar abnormalities in adolescents with heavy marijuana use."
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/26658924",
-              "articleYear": "",
-              "authors": "",
-              "doi": "",
-              "exclusionTag": null,
-              "id": "9f4ba221-e5f0-4077-bb23-db7ebf482047",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "75d6c47e-627f-4965-b51e-c06912b67dde",
-              "journal": "",
-              "keywords": "",
-              "neurostoreId": "8N2A5j7ixGeN",
-              "pmcid": "",
-              "pmid": "26658924",
-              "tags": [],
-              "title": "Citicoline Treatment Improves Measures of Impulsivity and Task Performance in Chronic Marijuana Smokers: A Pilot BOLD fMRI Study"
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/20010552",
-              "articleYear": "",
-              "authors": "",
-              "doi": "",
-              "exclusionTag": null,
-              "id": "5ed0cf8f-75f8-4229-bf16-94ec0c7c0ea3",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "75d6c47e-627f-4965-b51e-c06912b67dde",
-              "journal": "",
-              "keywords": "",
-              "neurostoreId": "8LR8jqFUiQaW",
-              "pmcid": "",
-              "pmid": "20010552",
-              "tags": [],
-              "title": "Individual and Additive Effects of the CNR1 and FAAH Genes on Brain Response to Marijuana Cues"
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/19651613",
-              "articleYear": "",
-              "authors": "Filbey FM, Schacht JP, Myers US, Chavez RS, Hutchison KE",
-              "doi": "10.1073/pnas.0903863106",
-              "exclusionTag": null,
-              "id": "ab1dd6b0-7e66-4853-9484-d3fa100ddb87",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "75d6c47e-627f-4965-b51e-c06912b67dde",
-              "journal": "Proceedings of the National Academy of Sciences of the United States of America",
-              "keywords": "",
-              "neurostoreId": "87NZBEraxvDw",
-              "pmcid": "",
-              "pmid": "19651613",
-              "tags": [],
-              "title": "Marijuana craving in the brain."
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/21134014",
-              "articleYear": "",
-              "authors": "",
-              "doi": "",
-              "exclusionTag": null,
-              "id": "a1390234-726b-4ddb-bdb4-e75dc07f49e8",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "75d6c47e-627f-4965-b51e-c06912b67dde",
-              "journal": "",
-              "keywords": "",
-              "neurostoreId": "84bkENgJF9Be",
-              "pmcid": "",
-              "pmid": "21134014",
-              "tags": [],
-              "title": "Neural Correlates of Verbal Learning in Adolescent Alcohol and Marijuana Users"
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/15607838",
-              "articleYear": "",
-              "authors": "Matochik JA, Eldreth DA, Cadet JL, Bolla KI",
-              "doi": "10.1016/j.drugalcdep.2004.06.011",
-              "exclusionTag": null,
-              "id": "cfc1c1a7-1f16-4b44-8a5e-bd7435ba0ae1",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "75d6c47e-627f-4965-b51e-c06912b67dde",
-              "journal": "Drug and alcohol dependence",
-              "keywords": "",
-              "neurostoreId": "7QPhkRUGLcwB",
-              "pmcid": "",
-              "pmid": "15607838",
-              "tags": [],
-              "title": "Altered brain tissue composition in heavy marijuana users."
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/15528091",
-              "articleYear": "",
-              "authors": "",
-              "doi": "",
-              "exclusionTag": null,
-              "id": "9217c2ed-c5be-4468-8643-5f83028f5acb",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "75d6c47e-627f-4965-b51e-c06912b67dde",
-              "journal": "",
-              "keywords": "",
-              "neurostoreId": "7mhRSteFEDVq",
-              "pmcid": "",
-              "pmid": "15528091",
-              "tags": [],
-              "title": "Abnormal brain activity in prefrontal brain regions in abstinent marijuana users"
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/16002029",
-              "articleYear": "",
-              "authors": "Schweinsburg AD, Schweinsburg BC, Cheung EH, Brown GG, Brown SA, Tapert SF",
-              "doi": "10.1016/j.drugalcdep.2005.01.009",
-              "exclusionTag": null,
-              "id": "717eb7fe-3d9a-4e0b-894d-d5293bc4b77d",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "75d6c47e-627f-4965-b51e-c06912b67dde",
-              "journal": "Drug and alcohol dependence",
-              "keywords": "",
-              "neurostoreId": "75inmwoSBmMN",
-              "pmcid": "",
-              "pmid": "16002029",
-              "tags": [],
-              "title": "fMRI response to spatial working memory in adolescents with comorbid marijuana and alcohol use disorders."
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/28429160",
-              "articleYear": "",
-              "authors": "Claus ED, Feldstein Ewing SW, Magnan RE, Montanaro E, Hutchison KE, Bryan AD",
-              "doi": "10.1007/s11682-017-9723-x",
-              "exclusionTag": null,
-              "id": "ae1a54fa-70c1-49fc-9f65-7cce30f659e3",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "75d6c47e-627f-4965-b51e-c06912b67dde",
-              "journal": "Brain imaging and behavior",
-              "keywords": "",
-              "neurostoreId": "6QhbHzxb2Nop",
-              "pmcid": "",
-              "pmid": "28429160",
-              "tags": [],
-              "title": "Neural mechanisms of risky decision making in adolescents reporting frequent alcohol and/or marijuana use."
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/21145211",
-              "articleYear": "",
-              "authors": "Wesley MJ, Hanlon CA, Porrino LJ",
-              "doi": "10.1016/j.pscychresns.2010.10.002",
-              "exclusionTag": null,
-              "id": "8b679b7d-52f6-4678-a01a-0b2e5143cb78",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "75d6c47e-627f-4965-b51e-c06912b67dde",
-              "journal": "Psychiatry research",
-              "keywords": "",
-              "neurostoreId": "6MAFxwu9pNbj",
-              "pmcid": "",
-              "pmid": "21145211",
-              "tags": [],
-              "title": "Poor decision-making by chronic marijuana users is associated with decreased functional responsiveness to negative consequences."
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/26296778",
-              "articleYear": "",
-              "authors": "Lopez-Larson MP, Rogowska J, Yurgelun-Todd D",
-              "doi": "10.1016/j.dcn.2015.08.002",
-              "exclusionTag": null,
-              "id": "01498d29-5d73-4861-a2aa-f8ac94363d45",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "75d6c47e-627f-4965-b51e-c06912b67dde",
-              "journal": "Developmental cognitive neuroscience",
-              "keywords": "",
-              "neurostoreId": "6eCcCduLRW6G",
-              "pmcid": "",
-              "pmid": "26296778",
-              "tags": [],
-              "title": "Aberrant orbitofrontal connectivity in marijuana smoking adolescents."
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/25936584",
-              "articleYear": "",
-              "authors": "Sagar KA, Dahlgren MK, Gonenc A, Racine MT, Dreman MW, Gruber SA",
-              "doi": "10.1016/j.dcn.2015.03.003",
-              "exclusionTag": null,
-              "id": "391c2729-88b5-4f94-a640-eabec70898cf",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "75d6c47e-627f-4965-b51e-c06912b67dde",
-              "journal": "Developmental cognitive neuroscience",
-              "keywords": "",
-              "neurostoreId": "68YzJcnvLU2Z",
-              "pmcid": "",
-              "pmid": "25936584",
-              "tags": [],
-              "title": "The impact of initiation: Early onset marijuana smokers demonstrate altered Stroop performance and brain activation."
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/24139957",
-              "articleYear": "",
-              "authors": "",
-              "doi": "",
-              "exclusionTag": null,
-              "id": "0837ced9-713c-4dce-91d8-8b52a09f4188",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "75d6c47e-627f-4965-b51e-c06912b67dde",
-              "journal": "",
-              "keywords": "",
-              "neurostoreId": "5cbWJ8jkEw5o",
-              "pmcid": "",
-              "pmid": "24139957",
-              "tags": [],
-              "title": "White matter characterization of adolescent binge drinking with and without co-occurring marijuana use: A 3-year investigation"
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/19656642",
-              "articleYear": "",
-              "authors": "Gruber SA, Rogowska J, Yurgelun-Todd DA",
-              "doi": "10.1016/j.drugalcdep.2009.06.019",
-              "exclusionTag": null,
-              "id": "45c647f3-7ed1-46b4-a6d1-b9e15c95f207",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "75d6c47e-627f-4965-b51e-c06912b67dde",
-              "journal": "Drug and alcohol dependence",
-              "keywords": "",
-              "neurostoreId": "5a2XN9EPKJLL",
-              "pmcid": "",
-              "pmid": "19656642",
-              "tags": [],
-              "title": "Altered affective response in marijuana smokers: an FMRI study."
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/26507433",
-              "articleYear": "",
-              "authors": "Filbey FM, McQueeny T, DeWitt SJ, Mishra V",
-              "doi": "10.1016/j.dcn.2015.10.001",
-              "exclusionTag": null,
-              "id": "ffb0e183-1980-4072-bb86-bf39260324bd",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "75d6c47e-627f-4965-b51e-c06912b67dde",
-              "journal": "Developmental cognitive neuroscience",
-              "keywords": "",
-              "neurostoreId": "4yx2tzSh5APo",
-              "pmcid": "",
-              "pmid": "26507433",
-              "tags": [],
-              "title": "Preliminary findings demonstrating latent effects of early adolescent marijuana use onset on cortical architecture."
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/16585053",
-              "articleYear": "",
-              "authors": "Chang L, Yakupov R, Cloak C, Ernst T",
-              "doi": "10.1093/brain/awl064",
-              "exclusionTag": null,
-              "id": "63e11b26-5ad7-4756-884a-ad0363d5bd73",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "75d6c47e-627f-4965-b51e-c06912b67dde",
-              "journal": "Brain : a journal of neurology",
-              "keywords": "",
-              "neurostoreId": "4RWW4PTaHAJT",
-              "pmcid": "",
-              "pmid": "16585053",
-              "tags": [],
-              "title": "Marijuana use is associated with a reorganized visual-attention network and cerebellar hypoactivation."
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/18356027",
-              "articleYear": "",
-              "authors": "Schweinsburg AD, Nagel BJ, Schweinsburg BC, Park A, Theilmann RJ, Tapert SF",
-              "doi": "10.1016/j.pscychresns.2007.04.018",
-              "exclusionTag": null,
-              "id": "8be714eb-c31a-4be2-8428-76c1156bcd4e",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "75d6c47e-627f-4965-b51e-c06912b67dde",
-              "journal": "Psychiatry research",
-              "keywords": "",
-              "neurostoreId": "4oRqnXS5ppMw",
-              "pmcid": "",
-              "pmid": "18356027",
-              "tags": [],
-              "title": "Abstinent adolescent marijuana users show altered fMRI response during spatial working memory."
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/15795138",
-              "articleYear": "",
-              "authors": "Gruber SA, Yurgelun-Todd DA",
-              "doi": "10.1016/j.cogbrainres.2005.02.016",
-              "exclusionTag": null,
-              "id": "57690aa6-d5d4-4fe6-8499-909531fe7bfb",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "75d6c47e-627f-4965-b51e-c06912b67dde",
-              "journal": "Brain research. Cognitive brain research",
-              "keywords": "",
-              "neurostoreId": "4ebX3ozjmFnv",
-              "pmcid": "",
-              "pmid": "15795138",
-              "tags": [],
-              "title": "Neuroimaging of marijuana smokers during inhibitory processing: a pilot investigation."
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/21310189",
-              "articleYear": "",
-              "authors": "Lopez-Larson MP, Bogorodzki P, Rogowska J, McGlade E, King JB, Terry J, Yurgelun-Todd D",
-              "doi": "10.1016/j.bbr.2011.02.001",
-              "exclusionTag": null,
-              "id": "ce3531c8-d3e0-4a68-a4e3-9b1e72ec9e2a",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "75d6c47e-627f-4965-b51e-c06912b67dde",
-              "journal": "Behavioural brain research",
-              "keywords": "",
-              "neurostoreId": "4BM93PjhYdcM",
-              "pmcid": "",
-              "pmid": "21310189",
-              "tags": [],
-              "title": "Altered prefrontal and insular cortical thickness in adolescent marijuana users."
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/20729530",
-              "articleYear": "",
-              "authors": "",
-              "doi": "",
-              "exclusionTag": null,
-              "id": "d14072cd-1c1c-4420-8005-32461f1e2421",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "75d6c47e-627f-4965-b51e-c06912b67dde",
-              "journal": "",
-              "keywords": "",
-              "neurostoreId": "47MapMKyDrzV",
-              "pmcid": "",
-              "pmid": "20729530",
-              "tags": [],
-              "title": "fMRI BOLD Response in High-risk College Students (Part 1): During Exposure to Alcohol, Marijuana, Polydrug and Emotional Picture Cues"
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/20729527",
-              "articleYear": "",
-              "authors": "",
-              "doi": "",
-              "exclusionTag": null,
-              "id": "c7fc4204-b7de-4525-8da4-9d5250ef5864",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "75d6c47e-627f-4965-b51e-c06912b67dde",
-              "journal": "",
-              "keywords": "",
-              "neurostoreId": "3rzzi933wTV8",
-              "pmcid": "",
-              "pmid": "20729527",
-              "tags": [],
-              "title": "fMRI BOLD Response of High-risk College Students (Part 2): During Memory Priming of Alcohol, Marijuana and Polydrug Picture Cues"
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/23690923",
-              "articleYear": "",
-              "authors": "Filbey FM, Dunlop J, Myers US",
-              "doi": "10.1371/journal.pone.0061470",
-              "exclusionTag": null,
-              "id": "57d9dd6e-d788-46ca-b037-c8f2c9344ee7",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "75d6c47e-627f-4965-b51e-c06912b67dde",
-              "journal": "PloS one",
-              "keywords": "",
-              "neurostoreId": "3LyrU4rra7QS",
-              "pmcid": "",
-              "pmid": "23690923",
-              "tags": [],
-              "title": "Neural effects of positive and negative incentives during marijuana withdrawal."
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/24029699",
-              "articleYear": "",
-              "authors": "L Ames S, Grenard JL, W Stacy A, Xiao L, He Q, Wong SW, Xue G, W Wiers R, Bechara A",
-              "doi": "10.1037/a0027640",
-              "exclusionTag": null,
-              "id": "933ede88-7653-4319-931c-01cd0c0a545d",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "75d6c47e-627f-4965-b51e-c06912b67dde",
-              "journal": "Behavioural brain research",
-              "keywords": "",
-              "neurostoreId": "3ecaPHrwuKMf",
-              "pmcid": "",
-              "pmid": "24029699",
-              "tags": [],
-              "title": "Functional imaging of implicit marijuana associations during performance on an Implicit Association Test (IAT)."
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/23951549",
-              "articleYear": "",
-              "authors": "",
-              "doi": "",
-              "exclusionTag": null,
-              "id": "c9718f05-d33b-4ec9-b42b-a321d562da91",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "75d6c47e-627f-4965-b51e-c06912b67dde",
-              "journal": "",
-              "keywords": "",
-              "neurostoreId": "358ZLG43Vn86",
-              "pmcid": "",
-              "pmid": "23951549",
-              "tags": [],
-              "title": "A Preliminary Study of Functional Brain Activation among Marijuana Users during Performance of a Virtual Water Maze Task"
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/25692068",
-              "articleYear": "",
-              "authors": "",
-              "doi": "",
-              "exclusionTag": null,
-              "id": "40f9880a-d2c5-459a-9be5-a65df94c7ce3",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "75d6c47e-627f-4965-b51e-c06912b67dde",
-              "journal": "",
-              "keywords": "",
-              "neurostoreId": "36fPjzmodXgH",
-              "pmcid": "",
-              "pmid": "25692068",
-              "tags": [],
-              "title": "Functional Activation and Effective Connectivity Differences in Adolescent Marijuana Users Performing a Simulated Gambling Task"
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/24838032",
-              "articleYear": "",
-              "authors": "Filbey FM, Dunlop J",
-              "doi": "10.1016/j.drugalcdep.2014.04.002",
-              "exclusionTag": null,
-              "id": "f3005b4c-d72c-465e-87e9-85bb2e51b57c",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
-              "journal": "Drug and alcohol dependence",
-              "keywords": "",
-              "neurostoreId": "6x8epP5ryoCo",
-              "pmcid": "",
-              "pmid": "24838032",
-              "tags": [],
-              "title": "Differential reward network functional connectivity in cannabis dependent and non-dependent users."
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/23906663",
-              "articleYear": "",
-              "authors": "Bourque J, Mendrek A, Durand M, Lakis N, Lipp O, Stip E, Lalonde P, Grignon S, Potvin S",
-              "doi": "10.1016/j.pscychresns.2013.05.012",
-              "exclusionTag": null,
-              "id": "2aeaa0ac-3979-447b-a95b-a6d26db01deb",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
-              "journal": "Psychiatry research",
-              "keywords": "",
-              "neurostoreId": "6Y7mYJwmDjgp",
-              "pmcid": "",
-              "pmid": "23906663",
-              "tags": [],
-              "title": "Cannabis abuse is associated with better emotional memory in schizophrenia: a functional magnetic resonance imaging study."
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/24186078",
-              "articleYear": "",
-              "authors": "Wetherill RR, Childress AR, Jagannathan K, Bender J, Young KA, Suh JJ, O'Brien CP, Franklin TR",
-              "doi": "10.1007/s00213-013-3342-z",
-              "exclusionTag": null,
-              "id": "ff0e593b-ebf8-431d-9cdc-b5ae34d3b6f7",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
-              "journal": "Psychopharmacology",
-              "keywords": "",
-              "neurostoreId": "3j5YjsPYGDeQ",
-              "pmcid": "",
-              "pmid": "24186078",
-              "tags": [],
-              "title": "Neural responses to subliminally presented cannabis and other emotionally evocative cues in cannabis-dependent individuals."
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/29253654",
-              "articleYear": "",
-              "authors": "Tervo-Clemmens B, Simmonds D, Calabro FJ, Day NL, Richardson GA, Luna B",
-              "doi": "10.1016/j.neuroimage.2017.12.041",
-              "exclusionTag": null,
-              "id": "7a42c01d-57db-46e2-aa9e-f393f69216ff",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
-              "journal": "NeuroImage",
-              "keywords": "",
-              "neurostoreId": "3ps4gRV87pns",
-              "pmcid": "",
-              "pmid": "29253654",
-              "tags": [],
-              "title": "Adolescent cannabis use and brain systems supporting adult working memory encoding, maintenance, and retrieval."
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/23300977",
-              "articleYear": "",
-              "authors": "Battistella G, Fornari E, Thomas A, Mall JF, Chtioui H, Appenzeller M, Annoni JM, Favrat B, Maeder P, Giroud C",
-              "doi": "10.1371/journal.pone.0052545",
-              "exclusionTag": null,
-              "id": "69f61142-0069-499d-a309-870de6b25603",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
-              "journal": "PloS one",
-              "keywords": "",
-              "neurostoreId": "3JbXYj2eZ2cg",
-              "pmcid": "",
-              "pmid": "23300977",
-              "tags": [],
-              "title": "Weed or wheel! FMRI, behavioural, and toxicological investigations of how cannabis smoking affects skills necessary for driving."
-            },
-            {
-              "abstractText": "",
-              "articleLink": "https://pubmed.ncbi.nlm.nih.gov/23300977",
-              "articleYear": "",
-              "authors": "Battistella G, Fornari E, Thomas A, Mall JF, Chtioui H, Appenzeller M, Annoni JM, Favrat B, Maeder P, Giroud C",
-              "doi": "10.1371/journal.pone.0052545",
-              "exclusionTag": null,
-              "id": "2d43c0b1-2358-40bc-b253-00dea1cea5c6",
-              "identificationSource": {
-                "id": "neurosynth_neurostore_id_source",
-                "label": "Neurostore"
-              },
-              "importId": "c0fdb578-4355-4b5b-ac51-e0fc7b9ba5de",
-              "journal": "PloS one",
-              "keywords": "",
-              "neurostoreId": "3JbXYj2eZ2cg",
-              "pmcid": "",
-              "pmid": "23300977",
-              "tags": [],
-              "title": "Weed or wheel! FMRI, behavioural, and toxicological investigations of how cannabis smoking affects skills necessary for driving."
-            }
-          ]
-        },
-        {
-          "id": "a2e51654-d54c-47e2-80f6-ca3776e55939",
-          "name": "Screening",
-          "stubStudies": []
-        },
-        {
-          "id": "bc39eaf3-3162-4604-ab7f-af6ea811edcf",
-          "name": "Eligibility",
-          "stubStudies": []
-        },
-        {
-          "id": "9cbac36b-a3a0-4bcd-9e7c-58aac9fc8e07",
-          "name": "Included",
-          "stubStudies": []
-        }
-      ],
-      "exclusionTags": [
-        {
-          "id": "neurosynth_exclude_exclusion",
-          "isAssignable": true,
-          "isExclusionTag": true,
-          "label": "Exclude"
-        },
-        {
-          "id": "neurosynth_duplicate_exclusion",
-          "isAssignable": true,
-          "isExclusionTag": true,
-          "label": "Duplicate"
-        }
-      ],
-      "identificationSources": [
-        {
-          "id": "neurosynth_neurostore_id_source",
-          "label": "Neurostore"
-        },
-        {
-          "id": "neurosynth_pubmed_id_source",
-          "label": "PubMed"
-        },
-        {
-          "id": "neurosynth_scopus_id_source",
-          "label": "Scopus"
-        },
-        {
-          "id": "neurosynth_web_of_science_id_source",
-          "label": "Web of Science"
-        },
-        {
-          "id": "neurosynth_psycinfo_id_source",
-          "label": "PsycInfo"
-        },
-        {
-          "id": "neurosynth_sleuth_id_source",
-          "label": "Sleuth"
-        }
-      ],
-      "imports": [
-        {
-          "date": "2025-05-31T22:27:37.191Z",
-          "id": "75d6c47e-627f-4965-b51e-c06912b67dde",
-          "importModeUsed": "NEUROSTORE_IMPORT",
-          "name": "marijuana",
-          "neurostoreSearchParams": "genericSearchStr=marijuana&sortBy=relevance&pageOfResults=1&descOrder=true&pageSize=10&source=all&dataType=all&level=group&flat=true&info=true",
-          "numImported": 29
-        },
-        {
-          "date": "2025-05-31T22:27:47.110Z",
-          "id": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
-          "importModeUsed": "NEUROSTORE_IMPORT",
-          "name": "cannabis",
-          "neurostoreSearchParams": "genericSearchStr=cannabis&sortBy=relevance&pageOfResults=1&descOrder=true&pageSize=10&source=all&dataType=all&level=group&flat=true&info=true",
-          "numImported": 50
-        },
-        {
-          "date": "2025-05-31T22:28:00.077Z",
-          "id": "c0fdb578-4355-4b5b-ac51-e0fc7b9ba5de",
-          "importModeUsed": "NEUROSTORE_IMPORT",
-          "name": "weed",
-          "neurostoreSearchParams": "genericSearchStr=weed&sortBy=relevance&pageOfResults=1&descOrder=true&pageSize=10&source=all&dataType=all&level=group&flat=true&info=true",
-          "numImported": 1
-        }
-      ],
-      "infoTags": [
-        {
-          "id": "neurosynth_untagged_tag",
-          "isAssignable": false,
-          "isExclusionTag": false,
-          "label": "Untagged studies"
-        },
-        {
-          "id": "neurosynth_uncategorized_tag",
-          "isAssignable": false,
-          "isExclusionTag": false,
-          "label": "Uncategorized Studies"
-        },
-        {
-          "id": "neurosynth_needs_review_tag",
-          "isAssignable": false,
-          "isExclusionTag": false,
-          "label": "Needs Review"
-        }
-      ],
-      "prismaConfig": {
-        "eligibility": {
-          "exclusionTags": [
-            {
-              "id": "neurosynth_reports_not_retrieved_exclusion",
-              "isAssignable": true,
-              "isExclusionTag": true,
-              "label": "Reports not retrieved"
-            },
-            {
-              "id": "neurosynth_insufficient_detail_exclusion",
-              "isAssignable": true,
-              "isExclusionTag": true,
-              "label": "Insufficient Details"
-            },
-            {
-              "id": "neurosynth_limited_rigor",
-              "isAssignable": true,
-              "isExclusionTag": true,
-              "label": "Limited Rigor"
-            },
-            {
-              "id": "neurosynth_out_of_scope_exclusion",
-              "isAssignable": true,
-              "isExclusionTag": true,
-              "label": "Out of scope"
-            }
-          ]
-        },
-        "identification": {
-          "exclusionTags": [
-            {
-              "id": "neurosynth_duplicate_exclusion",
-              "isAssignable": true,
-              "isExclusionTag": true,
-              "label": "Duplicate"
-            }
-          ]
-        },
-        "isPrisma": true,
-        "screening": {
-          "exclusionTags": [
-            {
-              "id": "neurosynth_irrelevant_exclusion",
-              "isAssignable": true,
-              "isExclusionTag": true,
-              "label": "Irrelevant"
-            }
-          ]
-        }
-      }
+    "created_at": "2025-05-30T23:14:42.972395+00:00",
+    "description": "",
+    "draft": true,
+    "id": "aubYH6Hdvoe3",
+    "meta_analyses": [],
+    "name": "Untitled",
+    "neurostore_study": {
+        "created_at": "2025-05-30T23:14:42.984037+00:00",
+        "exception": null,
+        "neurostore_id": "YVqGsqRLSned",
+        "status": "PENDING",
+        "traceback": null,
+        "updated_at": "2025-05-30T23:14:42.990766+00:00"
     },
-    "extractionMetadata": {
-      "studyStatusList": []
+    "neurostore_url": "https://neurostore.org/api/studies/YVqGsqRLSned",
+    "provenance": {
+        "curationMetadata": {
+            "columns": [
+                {
+                    "id": "bf2f83c7-0a3b-48d4-b30c-5860f6bb29b9",
+                    "name": "Identification",
+                    "stubStudies": [
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/15205869",
+                            "articleYear": "",
+                            "authors": "Kanayama G, Rogowska J, Pope HG, Gruber SA, Yurgelun-Todd DA",
+                            "doi": "10.1007/s00213-004-1885-8",
+                            "exclusionTag": null,
+                            "id": "5e3fba07-e21d-41fd-80c0-abddd16cb0b3",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
+                            "journal": "Psychopharmacology",
+                            "keywords": "",
+                            "neurostoreId": "4ipTCvWCyQKQ",
+                            "pmcid": "",
+                            "pmid": "15205869",
+                            "tags": [],
+                            "title": "Spatial working memory in heavy cannabis users: a functional magnetic resonance imaging study."
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/26058801",
+                            "articleYear": "",
+                            "authors": "Tomasi D, Wang GJ, Volkow ND",
+                            "doi": "10.1002/hbm.22834",
+                            "exclusionTag": null,
+                            "id": "7c545ab0-97a7-469b-aac5-bd79d46fb4ab",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
+                            "journal": "Human brain mapping",
+                            "keywords": "",
+                            "neurostoreId": "4QbUxxVNoQpZ",
+                            "pmcid": "",
+                            "pmid": "26058801",
+                            "tags": [],
+                            "title": "Balanced modulation of striatal activation from D /D receptors in caudate and ventral striatum: Disruption in cannabis abusers."
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/23115554",
+                            "articleYear": "",
+                            "authors": "",
+                            "doi": "",
+                            "exclusionTag": null,
+                            "id": "cccf425e-0eb8-4233-aac3-9904d99c3fe4",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
+                            "journal": "",
+                            "keywords": "",
+                            "neurostoreId": "4rdkD2dXjgAT",
+                            "pmcid": "",
+                            "pmid": "23115554",
+                            "tags": [],
+                            "title": "An fMRI Study of Neuronal Activation in Schizophrenia Patients with and without Previous Cannabis Use"
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/20061126",
+                            "articleYear": "",
+                            "authors": "van Hell HH, Vink M, Ossewaarde L, Jager G, Kahn RS, Ramsey NF",
+                            "doi": "10.1016/j.euroneuro.2009.11.010",
+                            "exclusionTag": null,
+                            "id": "353d6044-86aa-44d0-a943-ea08985f3a43",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
+                            "journal": "European neuropsychopharmacology : the journal of the European College of Neuropsychopharmacology",
+                            "keywords": "",
+                            "neurostoreId": "4Y8ioZSVYAkH",
+                            "pmcid": "",
+                            "pmid": "20061126",
+                            "tags": [],
+                            "title": "Chronic effects of cannabis use on the human reward system: an fMRI study."
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/22159107",
+                            "articleYear": "",
+                            "authors": "King GR, Ernst T, Deng W, Stenger A, Gonzales RM, Nakama H, Chang L",
+                            "doi": "10.1523/JNEUROSCI.4148-11.2011",
+                            "exclusionTag": null,
+                            "id": "04ba58c6-140b-4d63-9d9a-abe3792af26c",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
+                            "journal": "The Journal of neuroscience : the official journal of the Society for Neuroscience",
+                            "keywords": "",
+                            "neurostoreId": "5B72cAjdqPnG",
+                            "pmcid": "",
+                            "pmid": "22159107",
+                            "tags": [],
+                            "title": "Altered brain activation during visuomotor integration in chronic active cannabis users: relationship to cortisol levels."
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/24035535",
+                            "articleYear": "",
+                            "authors": "Charboneau EJ, Dietrich MS, Park S, Cao A, Watkins TJ, Blackford JU, Benningfield MM, Martin PR, Buchowski MS, Cowan RL",
+                            "doi": "10.1016/j.pscychresns.2013.06.005",
+                            "exclusionTag": null,
+                            "id": "82d93823-75bc-4142-b324-b6077fafc257",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
+                            "journal": "Psychiatry research",
+                            "keywords": "",
+                            "neurostoreId": "5CWvpYRhHh9h",
+                            "pmcid": "",
+                            "pmid": "24035535",
+                            "tags": [],
+                            "title": "Cannabis cue-induced brain activation correlates with drug craving in limbic and  visual salience regions: preliminary results."
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/25799565",
+                            "articleYear": "",
+                            "authors": "Enzi B, Lissek S, Edel MA, Tegenthoff M, Nicolas V, Scherbaum N, Juckel G, Roser P",
+                            "doi": "10.1371/journal.pone.0119150",
+                            "exclusionTag": null,
+                            "id": "32b2c369-1479-44e1-a481-1bb412754d50",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
+                            "journal": "PloS one",
+                            "keywords": "",
+                            "neurostoreId": "5fhdiEePzW3v",
+                            "pmcid": "",
+                            "pmid": "25799565",
+                            "tags": [],
+                            "title": "Alterations of monetary reward and punishment processing in chronic cannabis users: an FMRI study."
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/23773952",
+                            "articleYear": "",
+                            "authors": "De Bellis MD, Wang L, Bergman SR, Yaxley RH, Hooper SR, Huettel SA",
+                            "doi": "10.1016/j.drugalcdep.2013.05.020",
+                            "exclusionTag": null,
+                            "id": "95ae7a02-4a8d-4631-be19-5dfc3065b286",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
+                            "journal": "Drug and alcohol dependence",
+                            "keywords": "",
+                            "neurostoreId": "5pFkVeped74o",
+                            "pmcid": "",
+                            "pmid": "23773952",
+                            "tags": [],
+                            "title": "Neural mechanisms of risky decision-making and reward response in adolescent onset cannabis use disorder."
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/20363277",
+                            "articleYear": "",
+                            "authors": "",
+                            "doi": "",
+                            "exclusionTag": null,
+                            "id": "7e18c9c8-f6f4-485c-9ac4-60171669acda",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
+                            "journal": "",
+                            "keywords": "",
+                            "neurostoreId": "5qUAE3Awq249",
+                            "pmcid": "",
+                            "pmid": "20363277",
+                            "tags": [],
+                            "title": "The impact of early-onset cannabis use on functional brain correlates of working memory"
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/16631130",
+                            "articleYear": "",
+                            "authors": "Jacobsen LK, Pugh KR, Constable RT, Westerveld M, Mencl WE",
+                            "doi": "10.1016/j.biopsych.2006.02.014",
+                            "exclusionTag": null,
+                            "id": "6e240c4e-93d3-4e55-8321-ed41e7574c97",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
+                            "journal": "Biological psychiatry",
+                            "keywords": "",
+                            "neurostoreId": "6a9mjBuZngdR",
+                            "pmcid": "",
+                            "pmid": "16631130",
+                            "tags": [],
+                            "title": "Functional correlates of verbal memory deficits emerging during nicotine withdrawal in abstinent adolescent cannabis users."
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/27168331",
+                            "articleYear": "",
+                            "authors": "",
+                            "doi": "",
+                            "exclusionTag": null,
+                            "id": "eebbd173-8808-454f-9163-f576991e96ab",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
+                            "journal": "",
+                            "keywords": "",
+                            "neurostoreId": "6bZKnK7pjcc4",
+                            "pmcid": "",
+                            "pmid": "27168331",
+                            "tags": [],
+                            "title": "fMRI study of neural sensitization to hedonic stimuli in long\u2010term, daily cannabis users"
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/22695256",
+                            "articleYear": "",
+                            "authors": "Roser P, Lissek S, Tegenthoff M, Nicolas V, Juckel G, Brune M",
+                            "doi": "10.1016/j.schres.2012.05.020",
+                            "exclusionTag": null,
+                            "id": "fce09616-f180-49bb-8900-62c0977405cf",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
+                            "journal": "Schizophrenia research",
+                            "keywords": "",
+                            "neurostoreId": "7AavTRUVBih3",
+                            "pmcid": "",
+                            "pmid": "22695256",
+                            "tags": [],
+                            "title": "Alterations of theory of mind network activation in chronic cannabis users."
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/22395430",
+                            "articleYear": "",
+                            "authors": "Jacobus J, Goldenberg D, Wierenga CE, Tolentino NJ, Liu TT, Tapert SF",
+                            "doi": "10.1007/s00213-012-2674-4",
+                            "exclusionTag": null,
+                            "id": "7e15efb2-ef21-4c69-abb6-722df077d4b2",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
+                            "journal": "Psychopharmacology",
+                            "keywords": "",
+                            "neurostoreId": "7AT9K9cTFjeo",
+                            "pmcid": "",
+                            "pmid": "22395430",
+                            "tags": [],
+                            "title": "Altered cerebral blood flow and neurocognitive correlates in adolescent cannabis  users."
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/26667034",
+                            "articleYear": "",
+                            "authors": "Ramaekers JG, van Wel JH, Spronk D, Franke B, Kenis G, Toennes SW, Kuypers KP, Theunissen EL, Stiers P, Verkes RJ",
+                            "doi": "10.1007/s11682-015-9488-z",
+                            "exclusionTag": null,
+                            "id": "e5348814-fed9-4a71-8436-ba6f8d8c2230",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
+                            "journal": "Brain imaging and behavior",
+                            "keywords": "",
+                            "neurostoreId": "7aUADHwNt9WZ",
+                            "pmcid": "",
+                            "pmid": "26667034",
+                            "tags": [],
+                            "title": "Cannabis and cocaine decrease cognitive impulse control and functional corticostriatal connectivity in drug users with low activity DBH genotypes."
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/26553191",
+                            "articleYear": "",
+                            "authors": "",
+                            "doi": "",
+                            "exclusionTag": null,
+                            "id": "8822f2e2-743c-4036-8044-d0fc47238242",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
+                            "journal": "",
+                            "keywords": "",
+                            "neurostoreId": "7eK4f3GuJgDz",
+                            "pmcid": "",
+                            "pmid": "26553191",
+                            "tags": [],
+                            "title": "Evaluating the impact of cannabis use on thalamic connectivity in youth at clinical high risk of psychosis"
+                        },
+                        {
+                            "abstractText": "This collection describes the results of an image-based meta-analysis of reward processing in addiction. The analyses include 25 fMRI studies totalizing 643 addicted individuals and 609 unique healthy controls. Full T-maps were sued as inputs, using the software Seed-based d Mapping (SDM) v4.31. The analyses focus on monetary reward processing (anticipation and outcome) across substance (nicotine, cannabis, alcohol and cocaine) and gambling addictions. ",
+                            "articleLink": "",
+                            "articleYear": "",
+                            "authors": "Maartje Luijten, Arnt F. Schellekens, Simone K\u00fchn, Marise W. J. Machielse and Guillaume Sescousse",
+                            "doi": "10.1001/jamapsychiatry.2016.3084",
+                            "exclusionTag": null,
+                            "id": "e782068b-8a4a-4951-9461-5c14717653c7",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
+                            "journal": "JAMA Psychiatry",
+                            "keywords": "",
+                            "neurostoreId": "7Gn5Bsg9BDai",
+                            "pmcid": "",
+                            "pmid": "",
+                            "tags": [],
+                            "title": "Disruption of Reward Processing in Addiction"
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/23672820",
+                            "articleYear": "",
+                            "authors": "",
+                            "doi": "",
+                            "exclusionTag": null,
+                            "id": "b061d39a-c626-4ea5-a995-822942f776e0",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
+                            "journal": "",
+                            "keywords": "",
+                            "neurostoreId": "7hqLGgN3sS3m",
+                            "pmcid": "",
+                            "pmid": "23672820",
+                            "tags": [],
+                            "title": "Cannabis use, cognition and brain structure in first-episode psychosis"
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/23273106",
+                            "articleYear": "",
+                            "authors": "Lee MC, Ploner M, Wiech K, Bingel U, Wanigasekera V, Brooks J, Menon DK, Tracey I",
+                            "doi": "10.1016/j.pain.2012.09.017",
+                            "exclusionTag": null,
+                            "id": "b09862b3-beed-46e7-8bb2-510932edcd8b",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
+                            "journal": "Pain",
+                            "keywords": "",
+                            "neurostoreId": "7LT9PtxLtNE7",
+                            "pmcid": "",
+                            "pmid": "23273106",
+                            "tags": [],
+                            "title": "Amygdala activity contributes to the dissociative effect of cannabis on pain perception."
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/27500453",
+                            "articleYear": "",
+                            "authors": "Hill SY, Sharma V, Jones BL",
+                            "doi": "10.1016/j.pscychresns.2016.05.009",
+                            "exclusionTag": null,
+                            "id": "8c2de0fd-196c-4929-b428-359419c4566e",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
+                            "journal": "Psychiatry research. Neuroimaging",
+                            "keywords": "",
+                            "neurostoreId": "7mdsWAaXsUgL",
+                            "pmcid": "",
+                            "pmid": "27500453",
+                            "tags": [],
+                            "title": "Lifetime use of cannabis from longitudinal assessments, cannabinoid receptor (CNR1) variation, and reduced volume of the right anterior cingulate."
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/20417713",
+                            "articleYear": "",
+                            "authors": "Roberts GM, Garavan H",
+                            "doi": "10.1016/j.neuroimage.2010.04.192",
+                            "exclusionTag": null,
+                            "id": "0a6ac708-d0a5-4764-bb2d-3f30e8a17f8d",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
+                            "journal": "NeuroImage",
+                            "keywords": "",
+                            "neurostoreId": "7PjTJeNVMLvA",
+                            "pmcid": "",
+                            "pmid": "20417713",
+                            "tags": [],
+                            "title": "Evidence of increased activation underlying cognitive control in ecstasy and cannabis users."
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/26249266",
+                            "articleYear": "",
+                            "authors": "Carey SE, Nestor L, Jones J, Garavan H, Hester R",
+                            "doi": "10.1016/j.drugalcdep.2015.07.671",
+                            "exclusionTag": null,
+                            "id": "cc6d457e-b196-48ac-baa5-c33ad041aa52",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
+                            "journal": "Drug and alcohol dependence",
+                            "keywords": "",
+                            "neurostoreId": "7sFNuY9yPoJq",
+                            "pmcid": "",
+                            "pmid": "26249266",
+                            "tags": [],
+                            "title": "Impaired learning from errors in cannabis users: Dorsal anterior cingulate cortex and hippocampus hypoactivity."
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/26347227",
+                            "articleYear": "",
+                            "authors": "Spechler PA, Orr CA, Chaarani B, Kan KJ, Mackey S, Morton A, Snowe MP, Hudson KE, Althoff RR, Higgins ST, Cattrell A, Flor H, Nees F, Banaschewski T, Bokde ALW, Whelan R, Buchel C, Bromberg U, Conrod P, Frouin V, Papadopoulos D, Gallinat J, Heinz A, Walter H, Ittermann B, Gowland P, Paus T, Poustka L, Martinot JL, Artiges E, Smolka MN, Schumann G, Garavan H",
+                            "doi": "10.1016/j.dcn.2015.08.007",
+                            "exclusionTag": null,
+                            "id": "3710ca96-11a2-4908-ac53-13d55b422a2b",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
+                            "journal": "Developmental cognitive neuroscience",
+                            "keywords": "",
+                            "neurostoreId": "7yaBoALZZaDF",
+                            "pmcid": "",
+                            "pmid": "26347227",
+                            "tags": [],
+                            "title": "Cannabis use in early adolescence: Evidence of amygdala hypersensitivity to signals of threat."
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/18296071",
+                            "articleYear": "",
+                            "authors": "",
+                            "doi": "",
+                            "exclusionTag": null,
+                            "id": "5ba6b77c-dd1c-4409-bfdc-df70ccaddff0",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
+                            "journal": "",
+                            "keywords": "",
+                            "neurostoreId": "7z2Tef3naGdS",
+                            "pmcid": "",
+                            "pmid": "18296071",
+                            "tags": [],
+                            "title": "Deficits in learning and memory: Parahippocampal hyperactivity and frontocortical hypoactivity in cannabis users"
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/19631753",
+                            "articleYear": "",
+                            "authors": "Nestor L, Hester R, Garavan H",
+                            "doi": "10.1016/j.neuroimage.2009.07.022",
+                            "exclusionTag": null,
+                            "id": "cf06ecef-0978-4899-9dc8-76b2386503e4",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
+                            "journal": "NeuroImage",
+                            "keywords": "",
+                            "neurostoreId": "89VpuBDn3A6z",
+                            "pmcid": "",
+                            "pmid": "19631753",
+                            "tags": [],
+                            "title": "Increased ventral striatal BOLD activity during non-drug reward anticipation in cannabis users."
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/17137758",
+                            "articleYear": "",
+                            "authors": "Jager G, Van Hell HH, De Win MM, Kahn RS, Van Den Brink W, Van Ree JM, Ramsey NF",
+                            "doi": "10.1016/j.euroneuro.2006.10.003",
+                            "exclusionTag": null,
+                            "id": "46c03505-0a67-4a8e-b293-058a29b2a9f8",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
+                            "journal": "European neuropsychopharmacology : the journal of the European College of Neuropsychopharmacology",
+                            "keywords": "",
+                            "neurostoreId": "8Mc2EA67ig4D",
+                            "pmcid": "",
+                            "pmid": "17137758",
+                            "tags": [],
+                            "title": "Effects of frequent cannabis use on hippocampal activity during an associative memory task."
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/28607694",
+                            "articleYear": "",
+                            "authors": "",
+                            "doi": "",
+                            "exclusionTag": null,
+                            "id": "a421e899-c111-46ea-bcb4-359a21923845",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
+                            "journal": "",
+                            "keywords": "",
+                            "neurostoreId": "8MMHnKaUsdV9",
+                            "pmcid": "",
+                            "pmid": "28607694",
+                            "tags": [],
+                            "title": "Cannabis-induced alterations in brain activation during a test of information processing speed in patients with MS"
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/25824306",
+                            "articleYear": "",
+                            "authors": "",
+                            "doi": "",
+                            "exclusionTag": null,
+                            "id": "77b5b283-d277-4443-83bb-efd5d520a9b3",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
+                            "journal": "",
+                            "keywords": "",
+                            "neurostoreId": "d72TGHWHHNsk",
+                            "pmcid": "",
+                            "pmid": "25824306",
+                            "tags": [],
+                            "title": "Telling true from false: cannabis users show increased susceptibility to false memories"
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/25962875",
+                            "articleYear": "",
+                            "authors": "",
+                            "doi": "",
+                            "exclusionTag": null,
+                            "id": "88dbfc56-02d4-4ad9-9beb-1048d23fe844",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
+                            "journal": "",
+                            "keywords": "",
+                            "neurostoreId": "yK9iGBbVdA4u",
+                            "pmcid": "",
+                            "pmid": "25962875",
+                            "tags": [],
+                            "title": "An fMRI-Based Neural Signature of Decisions to Smoke Cannabis"
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/23970971",
+                            "articleYear": "",
+                            "authors": "",
+                            "doi": "",
+                            "exclusionTag": null,
+                            "id": "1576c6c5-1dfe-4119-8e75-ffa15fb07608",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
+                            "journal": "",
+                            "keywords": "",
+                            "neurostoreId": "ZBwXUprZ35mq",
+                            "pmcid": "",
+                            "pmid": "23970971",
+                            "tags": [],
+                            "title": "The Neural Correlates of Mental Rotation Abilities in Cannabis-Abusing Patients with Schizophrenia: An fMRI Study"
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/19962862",
+                            "articleYear": "",
+                            "authors": "",
+                            "doi": "",
+                            "exclusionTag": null,
+                            "id": "82c94d44-43a8-4555-bc4f-f04f81e160dd",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
+                            "journal": "",
+                            "keywords": "",
+                            "neurostoreId": "ZorwPCxgpfUj",
+                            "pmcid": "",
+                            "pmid": "19962862",
+                            "tags": [],
+                            "title": "Cannabis use and callosal white matter structure and integrity in recent-onset schizophrenia"
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/15561477",
+                            "articleYear": "",
+                            "authors": "Pillay SS, Rogowska J, Kanayama G, Jon DI, Gruber S, Simpson N, Cherayil M, Pope HG, Yurgelun-Todd DA",
+                            "doi": "10.1016/j.drugalcdep.2004.05.009",
+                            "exclusionTag": null,
+                            "id": "89b761e9-89b5-47b6-9d87-35022360d0bc",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
+                            "journal": "Drug and alcohol dependence",
+                            "keywords": "",
+                            "neurostoreId": "4oKfGgB2jcA4",
+                            "pmcid": "",
+                            "pmid": "15561477",
+                            "tags": [],
+                            "title": "Neurophysiology of motor function following cannabis discontinuation in chronic cannabis smokers: an fMRI study."
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/25037524",
+                            "articleYear": "",
+                            "authors": "",
+                            "doi": "",
+                            "exclusionTag": null,
+                            "id": "418bbc7e-3afb-4955-94fa-3f2124b8c96d",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
+                            "journal": "",
+                            "keywords": "",
+                            "neurostoreId": "6TntKKDTXzHn",
+                            "pmcid": "",
+                            "pmid": "25037524",
+                            "tags": [],
+                            "title": "Impaired Functional Connectivity of Brain Reward Circuitry in Patients with Schizophrenia and Cannabis Use Disorder: Effects of Cannabis and THC"
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/21982932",
+                            "articleYear": "",
+                            "authors": "",
+                            "doi": "",
+                            "exclusionTag": null,
+                            "id": "fe279a21-dd07-404a-ba3e-52f5ba6b532a",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
+                            "journal": "",
+                            "keywords": "",
+                            "neurostoreId": "bJu2q2ZYnmvP",
+                            "pmcid": "",
+                            "pmid": "21982932",
+                            "tags": [],
+                            "title": "Grey matter alterations associated with cannabis use: Results of a VBM study in heavy cannabis users and healthy controls"
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/22957019",
+                            "articleYear": "",
+                            "authors": "Cousijn J, Goudriaan AE, Ridderinkhof KR, van den Brink W, Veltman DJ, Wiers RW",
+                            "doi": "10.1371/journal.pone.0042394",
+                            "exclusionTag": null,
+                            "id": "44e5a2bc-8334-4ab0-b0bf-114f22a1ff97",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
+                            "journal": "PloS one",
+                            "keywords": "",
+                            "neurostoreId": "WkX3FpUidscq",
+                            "pmcid": "",
+                            "pmid": "22957019",
+                            "tags": [],
+                            "title": "Approach-bias predicts development of cannabis problem severity in heavy cannabis users: results from a prospective FMRI study."
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/24038570",
+                            "articleYear": "",
+                            "authors": "Cousijn J, Wiers RW, Ridderinkhof KR, van den Brink W, Veltman DJ, Goudriaan AE",
+                            "doi": "10.1002/hbm.22342",
+                            "exclusionTag": null,
+                            "id": "9b43985b-77f0-4548-b142-1ee7183444eb",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
+                            "journal": "Human brain mapping",
+                            "keywords": "",
+                            "neurostoreId": "4rTG2gkFcsGL",
+                            "pmcid": "",
+                            "pmid": "24038570",
+                            "tags": [],
+                            "title": "Effect of baseline cannabis use and working-memory network function on changes in cannabis use in heavy cannabis users: a prospective fMRI study."
+                        },
+                        {
+                            "abstractText": "Unthresholded maps from analyses reported in following publication:\r\n\r\nABSTRACT \r\nObjective: Brain function supporting error-monitoring has rarely been examined among persons living with HIV (PLWH) despite its importance for recognizing and preventing maladaptive behavior (e.g. drug use, medication non-adherence, gambling, risky sexual behavior) that could lead to worsened health and economic outcomes among this vulnerable population. As medicinal and recreational cannabis use is prevalent among PLWH, we aimed to assess interactive impacts of HIV infection and chronic cannabis use (CB) on error-processing brain function and investigate the implications for everyday functioning and clinically relevant disease management behaviors. \r\nMethods: Our sample of 109 participants was stratified into four groups based on HIV serostatus and cannabis use history (HIV+/CB+, n=32; HIV+/CB-, n=27; HIV-/CB+, n=28; HIV-/CB-, n=22). Participants underwent fMRI scanning while completing a Go/NoGo, motor inhibition paradigm called the Error Awareness Task (EAT) that probes error-processing, and error-awareness mechanisms. Participants also completed a battery of well-validated instruments including an objective behavioral measure of medication management abilities and self-reports of everyday cognitive failures and cannabis use history.\r\nResults: We observed error-related brain activity in the anterior insula that was associated improved cognitive-control performance across the full sample, and less self-reported cognitive failures among HIV- controls. Regarding error awareness, we found significantly more insula responsivity and posterior cingulate cortex (PCC) deactivation to aware errors relative to unaware errors. Regarding group effects, PLWH displayed a lack of error-related deactivation in two default mode network (DMN) hub regions (the PCC and medial prefrontal cortex [mPFC]) that was contrarily observed among HIV- controls and associated with their improved cognitive control, task performance. CB main and interaction effects were not detected. Across all groups, less error-related PCC deactivation was associated with worsened medication management behavioral performance and mediated the effect of HIV-status on medication management abilities. However, DMN deactivation was not significantly related to self-reported cognitive failures. Amount of CB used over the lifetime was associated with reduced mPFC deactivation to errors among CB using HIV- controls, and worsened medication management abilities across all CB users. \r\n\r\nConclusions: These results demonstrate insufficient error-related DMN deactivation among PLWH with critical consequences for medication management behaviors. \r\n",
+                            "articleLink": "",
+                            "articleYear": "",
+                            "authors": "Jessica S. Flannery, Michael C. Riedel, Taylor Salo, Ranjita Poudel, Angela R. Laird, Raul Gonzalez and Matthew T. Sutherland",
+                            "doi": "10.1016/j.pnpbp.2021.110398",
+                            "exclusionTag": null,
+                            "id": "201ee9ac-43d2-4dd9-942b-db3e1a6b74ff",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
+                            "journal": "Progress in Neuro-Psychopharmacology and Biological Psychiatry",
+                            "keywords": "",
+                            "neurostoreId": "4p5pHA7zByBP",
+                            "pmcid": "",
+                            "pmid": "",
+                            "tags": [],
+                            "title": "HIV infection is linked with reduced error-related default mode network suppression and poorer medication management abilities"
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/19553917",
+                            "articleYear": "",
+                            "authors": "",
+                            "doi": "",
+                            "exclusionTag": null,
+                            "id": "8da5f9fe-69e6-4431-9c18-b1dca84c8299",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
+                            "journal": "",
+                            "keywords": "",
+                            "neurostoreId": "4HdaLQsLToRS",
+                            "pmcid": "",
+                            "pmid": "19553917",
+                            "tags": [],
+                            "title": "Impaired error awareness and anterior cingulate cortex hypoactivity in chronic cannabis users"
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/26106538",
+                            "articleYear": "",
+                            "authors": "Romero K, Pavisian B, Staines WR, Feinstein A",
+                            "doi": "10.1016/j.nicl.2015.04.006",
+                            "exclusionTag": null,
+                            "id": "b8a75332-569a-42bb-956b-225c351e6251",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
+                            "journal": "NeuroImage. Clinical",
+                            "keywords": "",
+                            "neurostoreId": "47oz6X9Cnics",
+                            "pmcid": "",
+                            "pmid": "26106538",
+                            "tags": [],
+                            "title": "Multiple sclerosis, cannabis, and cognition: A structural MRI study."
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/27257518",
+                            "articleYear": "",
+                            "authors": "",
+                            "doi": "",
+                            "exclusionTag": null,
+                            "id": "946df81b-7340-487c-8192-010563c91387",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
+                            "journal": "",
+                            "keywords": "",
+                            "neurostoreId": "44bhHQQbyVc7",
+                            "pmcid": "",
+                            "pmid": "27257518",
+                            "tags": [],
+                            "title": "Variable activation in striatal subregions across components of a social influence task in young adult cannabis users"
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/23791961",
+                            "articleYear": "",
+                            "authors": "",
+                            "doi": "",
+                            "exclusionTag": null,
+                            "id": "82e5ea8c-ef3f-4730-b437-b7a9d1575906",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
+                            "journal": "",
+                            "keywords": "",
+                            "neurostoreId": "3VErf6d259gU",
+                            "pmcid": "",
+                            "pmid": "23791961",
+                            "tags": [],
+                            "title": "Response inhibition and elevated parietal-cerebellar correlations in chronic adolescent cannabis users"
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "",
+                            "articleYear": "",
+                            "authors": "Julio A Yanes, Michael C Riedel, Kimberly L Ray, Anna E Kirkland, Ryan T Bird, Emily R Boeving, Meredith A Reid, Raul Gonzalez, Jennifer L Robinson, Angela R Laird and Matthew T Sutherland",
+                            "doi": "10.1177/0269881117744995",
+                            "exclusionTag": null,
+                            "id": "3e2636be-cd64-4e99-9959-955adf5ed8d4",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
+                            "journal": "Journal of Psychopharmacology",
+                            "keywords": "",
+                            "neurostoreId": "3pTbJ3Uk2wHW",
+                            "pmcid": "",
+                            "pmid": "",
+                            "tags": [],
+                            "title": "Neuroimaging meta-analysis of cannabis use studies reveals convergent functional alterations in brain regions supporting cognitive control and reward processing"
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/20300735",
+                            "articleYear": "",
+                            "authors": "Becker B, Wagner D, Gouzoulis-Mayfrank E, Spuentrup E, Daumann J",
+                            "doi": "10.1007/s00213-010-1805-z",
+                            "exclusionTag": null,
+                            "id": "c87ee390-1266-41ca-8c30-f4c2f7127cd9",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
+                            "journal": "Psychopharmacology",
+                            "keywords": "",
+                            "neurostoreId": "3nLP29xfdwyV",
+                            "pmcid": "",
+                            "pmid": "20300735",
+                            "tags": [],
+                            "title": "Altered parahippocampal functioning in cannabis users is related to the frequency of use."
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/26602958",
+                            "articleYear": "",
+                            "authors": "",
+                            "doi": "",
+                            "exclusionTag": null,
+                            "id": "5f26aafb-7e20-4d54-be42-cf29fa39009a",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
+                            "journal": "",
+                            "keywords": "",
+                            "neurostoreId": "3hKR63uehbaH",
+                            "pmcid": "",
+                            "pmid": "26602958",
+                            "tags": [],
+                            "title": "Longitudinal changes in white matter microstructure after heavy cannabis use"
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/16521034",
+                            "articleYear": "",
+                            "authors": "Jager G, Kahn RS, Van Den Brink W, Van Ree JM, Ramsey NF",
+                            "doi": "10.1007/s00213-005-0298-7",
+                            "exclusionTag": null,
+                            "id": "241e9410-3feb-4291-9789-3e0721af8587",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
+                            "journal": "Psychopharmacology",
+                            "keywords": "",
+                            "neurostoreId": "3fVWzJYzSvJu",
+                            "pmcid": "",
+                            "pmid": "16521034",
+                            "tags": [],
+                            "title": "Long-term effects of frequent cannabis use on working memory and attention: an fMRI study."
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/24741043",
+                            "articleYear": "",
+                            "authors": "Gilman JM, Kuster JK, Lee S, Lee MJ, Kim BW, Makris N, van der Kouwe A, Blood AJ, Breiter HC",
+                            "doi": "10.1523/JNEUROSCI.4745-13.2014",
+                            "exclusionTag": null,
+                            "id": "729de3a5-d159-476c-a0e2-33aa988287cf",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
+                            "journal": "The Journal of neuroscience : the official journal of the Society for Neuroscience",
+                            "keywords": "",
+                            "neurostoreId": "38Wwv5RWPALv",
+                            "pmcid": "",
+                            "pmid": "24741043",
+                            "tags": [],
+                            "title": "Cannabis use is quantitatively associated with nucleus accumbens and amygdala abnormalities in young adult recreational users."
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/26403581",
+                            "articleYear": "",
+                            "authors": "Heitzeg MM, Cope LM, Martz ME, Hardee JE, Zucker RA",
+                            "doi": "10.1016/j.dcn.2015.09.003",
+                            "exclusionTag": null,
+                            "id": "bc0cf532-63c7-4193-86ef-a03e57df58a3",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "75d6c47e-627f-4965-b51e-c06912b67dde",
+                            "journal": "Developmental cognitive neuroscience",
+                            "keywords": "",
+                            "neurostoreId": "QVa7Wq5hQkhD",
+                            "pmcid": "",
+                            "pmid": "26403581",
+                            "tags": [],
+                            "title": "Brain activation to negative stimuli mediates a relationship between adolescent marijuana use and later emotional functioning."
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/16473495",
+                            "articleYear": "",
+                            "authors": "",
+                            "doi": "",
+                            "exclusionTag": null,
+                            "id": "c7b2a9fe-4e88-4653-8345-0aabaa2ab932",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "75d6c47e-627f-4965-b51e-c06912b67dde",
+                            "journal": "",
+                            "keywords": "",
+                            "neurostoreId": "nw5BFUZVR5ow",
+                            "pmcid": "",
+                            "pmid": "16473495",
+                            "tags": [],
+                            "title": "Effects of prenatal marijuana on visuospatial working memory: An fMRI study in young adults"
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/15907305",
+                            "articleYear": "",
+                            "authors": "Bolla KI, Eldreth DA, Matochik JA, Cadet JL",
+                            "doi": "10.1016/j.neuroimage.2005.02.012",
+                            "exclusionTag": null,
+                            "id": "dc999e9d-462f-4d83-9b97-07a9efb81968",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "75d6c47e-627f-4965-b51e-c06912b67dde",
+                            "journal": "NeuroImage",
+                            "keywords": "",
+                            "neurostoreId": "M3yLshPJvgcL",
+                            "pmcid": "",
+                            "pmid": "15907305",
+                            "tags": [],
+                            "title": "Neural substrates of faulty decision-making in abstinent marijuana users."
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/22306089",
+                            "articleYear": "",
+                            "authors": "Gruber SA, Dahlgren MK, Sagar KA, Gonenc A, Killgore WD",
+                            "doi": "10.1037/a0026269",
+                            "exclusionTag": null,
+                            "id": "ebe55a33-5882-4be2-a8b1-4d49331e1364",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "75d6c47e-627f-4965-b51e-c06912b67dde",
+                            "journal": "Neuroscience letters",
+                            "keywords": "",
+                            "neurostoreId": "JtMCEqqPwZX6",
+                            "pmcid": "",
+                            "pmid": "22306089",
+                            "tags": [],
+                            "title": "Age of onset of marijuana use impacts inhibitory processing."
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/22835865",
+                            "articleYear": "",
+                            "authors": "Lopez-Larson MP, Rogowska J, Bogorodzki P, Bueler CE, McGlade EC, Yurgelun-Todd DA",
+                            "doi": "10.1016/j.pscychresns.2011.11.005",
+                            "exclusionTag": null,
+                            "id": "7f52386a-7673-4b1a-b29b-efd63b93e5fc",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "75d6c47e-627f-4965-b51e-c06912b67dde",
+                            "journal": "Psychiatry research",
+                            "keywords": "",
+                            "neurostoreId": "fCLUsE7KW2Gf",
+                            "pmcid": "",
+                            "pmid": "22835865",
+                            "tags": [],
+                            "title": "Cortico-cerebellar abnormalities in adolescents with heavy marijuana use."
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/26658924",
+                            "articleYear": "",
+                            "authors": "",
+                            "doi": "",
+                            "exclusionTag": null,
+                            "id": "9f4ba221-e5f0-4077-bb23-db7ebf482047",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "75d6c47e-627f-4965-b51e-c06912b67dde",
+                            "journal": "",
+                            "keywords": "",
+                            "neurostoreId": "8N2A5j7ixGeN",
+                            "pmcid": "",
+                            "pmid": "26658924",
+                            "tags": [],
+                            "title": "Citicoline Treatment Improves Measures of Impulsivity and Task Performance in Chronic Marijuana Smokers: A Pilot BOLD fMRI Study"
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/20010552",
+                            "articleYear": "",
+                            "authors": "",
+                            "doi": "",
+                            "exclusionTag": null,
+                            "id": "5ed0cf8f-75f8-4229-bf16-94ec0c7c0ea3",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "75d6c47e-627f-4965-b51e-c06912b67dde",
+                            "journal": "",
+                            "keywords": "",
+                            "neurostoreId": "8LR8jqFUiQaW",
+                            "pmcid": "",
+                            "pmid": "20010552",
+                            "tags": [],
+                            "title": "Individual and Additive Effects of the CNR1 and FAAH Genes on Brain Response to Marijuana Cues"
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/19651613",
+                            "articleYear": "",
+                            "authors": "Filbey FM, Schacht JP, Myers US, Chavez RS, Hutchison KE",
+                            "doi": "10.1073/pnas.0903863106",
+                            "exclusionTag": null,
+                            "id": "ab1dd6b0-7e66-4853-9484-d3fa100ddb87",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "75d6c47e-627f-4965-b51e-c06912b67dde",
+                            "journal": "Proceedings of the National Academy of Sciences of the United States of America",
+                            "keywords": "",
+                            "neurostoreId": "87NZBEraxvDw",
+                            "pmcid": "",
+                            "pmid": "19651613",
+                            "tags": [],
+                            "title": "Marijuana craving in the brain."
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/21134014",
+                            "articleYear": "",
+                            "authors": "",
+                            "doi": "",
+                            "exclusionTag": null,
+                            "id": "a1390234-726b-4ddb-bdb4-e75dc07f49e8",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "75d6c47e-627f-4965-b51e-c06912b67dde",
+                            "journal": "",
+                            "keywords": "",
+                            "neurostoreId": "84bkENgJF9Be",
+                            "pmcid": "",
+                            "pmid": "21134014",
+                            "tags": [],
+                            "title": "Neural Correlates of Verbal Learning in Adolescent Alcohol and Marijuana Users"
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/15607838",
+                            "articleYear": "",
+                            "authors": "Matochik JA, Eldreth DA, Cadet JL, Bolla KI",
+                            "doi": "10.1016/j.drugalcdep.2004.06.011",
+                            "exclusionTag": null,
+                            "id": "cfc1c1a7-1f16-4b44-8a5e-bd7435ba0ae1",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "75d6c47e-627f-4965-b51e-c06912b67dde",
+                            "journal": "Drug and alcohol dependence",
+                            "keywords": "",
+                            "neurostoreId": "7QPhkRUGLcwB",
+                            "pmcid": "",
+                            "pmid": "15607838",
+                            "tags": [],
+                            "title": "Altered brain tissue composition in heavy marijuana users."
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/15528091",
+                            "articleYear": "",
+                            "authors": "",
+                            "doi": "",
+                            "exclusionTag": null,
+                            "id": "9217c2ed-c5be-4468-8643-5f83028f5acb",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "75d6c47e-627f-4965-b51e-c06912b67dde",
+                            "journal": "",
+                            "keywords": "",
+                            "neurostoreId": "7mhRSteFEDVq",
+                            "pmcid": "",
+                            "pmid": "15528091",
+                            "tags": [],
+                            "title": "Abnormal brain activity in prefrontal brain regions in abstinent marijuana users"
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/16002029",
+                            "articleYear": "",
+                            "authors": "Schweinsburg AD, Schweinsburg BC, Cheung EH, Brown GG, Brown SA, Tapert SF",
+                            "doi": "10.1016/j.drugalcdep.2005.01.009",
+                            "exclusionTag": null,
+                            "id": "717eb7fe-3d9a-4e0b-894d-d5293bc4b77d",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "75d6c47e-627f-4965-b51e-c06912b67dde",
+                            "journal": "Drug and alcohol dependence",
+                            "keywords": "",
+                            "neurostoreId": "75inmwoSBmMN",
+                            "pmcid": "",
+                            "pmid": "16002029",
+                            "tags": [],
+                            "title": "fMRI response to spatial working memory in adolescents with comorbid marijuana and alcohol use disorders."
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/28429160",
+                            "articleYear": "",
+                            "authors": "Claus ED, Feldstein Ewing SW, Magnan RE, Montanaro E, Hutchison KE, Bryan AD",
+                            "doi": "10.1007/s11682-017-9723-x",
+                            "exclusionTag": null,
+                            "id": "ae1a54fa-70c1-49fc-9f65-7cce30f659e3",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "75d6c47e-627f-4965-b51e-c06912b67dde",
+                            "journal": "Brain imaging and behavior",
+                            "keywords": "",
+                            "neurostoreId": "6QhbHzxb2Nop",
+                            "pmcid": "",
+                            "pmid": "28429160",
+                            "tags": [],
+                            "title": "Neural mechanisms of risky decision making in adolescents reporting frequent alcohol and/or marijuana use."
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/21145211",
+                            "articleYear": "",
+                            "authors": "Wesley MJ, Hanlon CA, Porrino LJ",
+                            "doi": "10.1016/j.pscychresns.2010.10.002",
+                            "exclusionTag": null,
+                            "id": "8b679b7d-52f6-4678-a01a-0b2e5143cb78",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "75d6c47e-627f-4965-b51e-c06912b67dde",
+                            "journal": "Psychiatry research",
+                            "keywords": "",
+                            "neurostoreId": "6MAFxwu9pNbj",
+                            "pmcid": "",
+                            "pmid": "21145211",
+                            "tags": [],
+                            "title": "Poor decision-making by chronic marijuana users is associated with decreased functional responsiveness to negative consequences."
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/26296778",
+                            "articleYear": "",
+                            "authors": "Lopez-Larson MP, Rogowska J, Yurgelun-Todd D",
+                            "doi": "10.1016/j.dcn.2015.08.002",
+                            "exclusionTag": null,
+                            "id": "01498d29-5d73-4861-a2aa-f8ac94363d45",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "75d6c47e-627f-4965-b51e-c06912b67dde",
+                            "journal": "Developmental cognitive neuroscience",
+                            "keywords": "",
+                            "neurostoreId": "6eCcCduLRW6G",
+                            "pmcid": "",
+                            "pmid": "26296778",
+                            "tags": [],
+                            "title": "Aberrant orbitofrontal connectivity in marijuana smoking adolescents."
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/25936584",
+                            "articleYear": "",
+                            "authors": "Sagar KA, Dahlgren MK, Gonenc A, Racine MT, Dreman MW, Gruber SA",
+                            "doi": "10.1016/j.dcn.2015.03.003",
+                            "exclusionTag": null,
+                            "id": "391c2729-88b5-4f94-a640-eabec70898cf",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "75d6c47e-627f-4965-b51e-c06912b67dde",
+                            "journal": "Developmental cognitive neuroscience",
+                            "keywords": "",
+                            "neurostoreId": "68YzJcnvLU2Z",
+                            "pmcid": "",
+                            "pmid": "25936584",
+                            "tags": [],
+                            "title": "The impact of initiation: Early onset marijuana smokers demonstrate altered Stroop performance and brain activation."
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/24139957",
+                            "articleYear": "",
+                            "authors": "",
+                            "doi": "",
+                            "exclusionTag": null,
+                            "id": "0837ced9-713c-4dce-91d8-8b52a09f4188",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "75d6c47e-627f-4965-b51e-c06912b67dde",
+                            "journal": "",
+                            "keywords": "",
+                            "neurostoreId": "5cbWJ8jkEw5o",
+                            "pmcid": "",
+                            "pmid": "24139957",
+                            "tags": [],
+                            "title": "White matter characterization of adolescent binge drinking with and without co-occurring marijuana use: A 3-year investigation"
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/19656642",
+                            "articleYear": "",
+                            "authors": "Gruber SA, Rogowska J, Yurgelun-Todd DA",
+                            "doi": "10.1016/j.drugalcdep.2009.06.019",
+                            "exclusionTag": null,
+                            "id": "45c647f3-7ed1-46b4-a6d1-b9e15c95f207",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "75d6c47e-627f-4965-b51e-c06912b67dde",
+                            "journal": "Drug and alcohol dependence",
+                            "keywords": "",
+                            "neurostoreId": "5a2XN9EPKJLL",
+                            "pmcid": "",
+                            "pmid": "19656642",
+                            "tags": [],
+                            "title": "Altered affective response in marijuana smokers: an FMRI study."
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/26507433",
+                            "articleYear": "",
+                            "authors": "Filbey FM, McQueeny T, DeWitt SJ, Mishra V",
+                            "doi": "10.1016/j.dcn.2015.10.001",
+                            "exclusionTag": null,
+                            "id": "ffb0e183-1980-4072-bb86-bf39260324bd",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "75d6c47e-627f-4965-b51e-c06912b67dde",
+                            "journal": "Developmental cognitive neuroscience",
+                            "keywords": "",
+                            "neurostoreId": "4yx2tzSh5APo",
+                            "pmcid": "",
+                            "pmid": "26507433",
+                            "tags": [],
+                            "title": "Preliminary findings demonstrating latent effects of early adolescent marijuana use onset on cortical architecture."
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/16585053",
+                            "articleYear": "",
+                            "authors": "Chang L, Yakupov R, Cloak C, Ernst T",
+                            "doi": "10.1093/brain/awl064",
+                            "exclusionTag": null,
+                            "id": "63e11b26-5ad7-4756-884a-ad0363d5bd73",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "75d6c47e-627f-4965-b51e-c06912b67dde",
+                            "journal": "Brain : a journal of neurology",
+                            "keywords": "",
+                            "neurostoreId": "4RWW4PTaHAJT",
+                            "pmcid": "",
+                            "pmid": "16585053",
+                            "tags": [],
+                            "title": "Marijuana use is associated with a reorganized visual-attention network and cerebellar hypoactivation."
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/18356027",
+                            "articleYear": "",
+                            "authors": "Schweinsburg AD, Nagel BJ, Schweinsburg BC, Park A, Theilmann RJ, Tapert SF",
+                            "doi": "10.1016/j.pscychresns.2007.04.018",
+                            "exclusionTag": null,
+                            "id": "8be714eb-c31a-4be2-8428-76c1156bcd4e",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "75d6c47e-627f-4965-b51e-c06912b67dde",
+                            "journal": "Psychiatry research",
+                            "keywords": "",
+                            "neurostoreId": "4oRqnXS5ppMw",
+                            "pmcid": "",
+                            "pmid": "18356027",
+                            "tags": [],
+                            "title": "Abstinent adolescent marijuana users show altered fMRI response during spatial working memory."
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/15795138",
+                            "articleYear": "",
+                            "authors": "Gruber SA, Yurgelun-Todd DA",
+                            "doi": "10.1016/j.cogbrainres.2005.02.016",
+                            "exclusionTag": null,
+                            "id": "57690aa6-d5d4-4fe6-8499-909531fe7bfb",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "75d6c47e-627f-4965-b51e-c06912b67dde",
+                            "journal": "Brain research. Cognitive brain research",
+                            "keywords": "",
+                            "neurostoreId": "4ebX3ozjmFnv",
+                            "pmcid": "",
+                            "pmid": "15795138",
+                            "tags": [],
+                            "title": "Neuroimaging of marijuana smokers during inhibitory processing: a pilot investigation."
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/21310189",
+                            "articleYear": "",
+                            "authors": "Lopez-Larson MP, Bogorodzki P, Rogowska J, McGlade E, King JB, Terry J, Yurgelun-Todd D",
+                            "doi": "10.1016/j.bbr.2011.02.001",
+                            "exclusionTag": null,
+                            "id": "ce3531c8-d3e0-4a68-a4e3-9b1e72ec9e2a",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "75d6c47e-627f-4965-b51e-c06912b67dde",
+                            "journal": "Behavioural brain research",
+                            "keywords": "",
+                            "neurostoreId": "4BM93PjhYdcM",
+                            "pmcid": "",
+                            "pmid": "21310189",
+                            "tags": [],
+                            "title": "Altered prefrontal and insular cortical thickness in adolescent marijuana users."
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/20729530",
+                            "articleYear": "",
+                            "authors": "",
+                            "doi": "",
+                            "exclusionTag": null,
+                            "id": "d14072cd-1c1c-4420-8005-32461f1e2421",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "75d6c47e-627f-4965-b51e-c06912b67dde",
+                            "journal": "",
+                            "keywords": "",
+                            "neurostoreId": "47MapMKyDrzV",
+                            "pmcid": "",
+                            "pmid": "20729530",
+                            "tags": [],
+                            "title": "fMRI BOLD Response in High-risk College Students (Part 1): During Exposure to Alcohol, Marijuana, Polydrug and Emotional Picture Cues"
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/20729527",
+                            "articleYear": "",
+                            "authors": "",
+                            "doi": "",
+                            "exclusionTag": null,
+                            "id": "c7fc4204-b7de-4525-8da4-9d5250ef5864",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "75d6c47e-627f-4965-b51e-c06912b67dde",
+                            "journal": "",
+                            "keywords": "",
+                            "neurostoreId": "3rzzi933wTV8",
+                            "pmcid": "",
+                            "pmid": "20729527",
+                            "tags": [],
+                            "title": "fMRI BOLD Response of High-risk College Students (Part 2): During Memory Priming of Alcohol, Marijuana and Polydrug Picture Cues"
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/23690923",
+                            "articleYear": "",
+                            "authors": "Filbey FM, Dunlop J, Myers US",
+                            "doi": "10.1371/journal.pone.0061470",
+                            "exclusionTag": null,
+                            "id": "57d9dd6e-d788-46ca-b037-c8f2c9344ee7",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "75d6c47e-627f-4965-b51e-c06912b67dde",
+                            "journal": "PloS one",
+                            "keywords": "",
+                            "neurostoreId": "3LyrU4rra7QS",
+                            "pmcid": "",
+                            "pmid": "23690923",
+                            "tags": [],
+                            "title": "Neural effects of positive and negative incentives during marijuana withdrawal."
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/24029699",
+                            "articleYear": "",
+                            "authors": "L Ames S, Grenard JL, W Stacy A, Xiao L, He Q, Wong SW, Xue G, W Wiers R, Bechara A",
+                            "doi": "10.1037/a0027640",
+                            "exclusionTag": null,
+                            "id": "933ede88-7653-4319-931c-01cd0c0a545d",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "75d6c47e-627f-4965-b51e-c06912b67dde",
+                            "journal": "Behavioural brain research",
+                            "keywords": "",
+                            "neurostoreId": "3ecaPHrwuKMf",
+                            "pmcid": "",
+                            "pmid": "24029699",
+                            "tags": [],
+                            "title": "Functional imaging of implicit marijuana associations during performance on an Implicit Association Test (IAT)."
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/23951549",
+                            "articleYear": "",
+                            "authors": "",
+                            "doi": "",
+                            "exclusionTag": null,
+                            "id": "c9718f05-d33b-4ec9-b42b-a321d562da91",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "75d6c47e-627f-4965-b51e-c06912b67dde",
+                            "journal": "",
+                            "keywords": "",
+                            "neurostoreId": "358ZLG43Vn86",
+                            "pmcid": "",
+                            "pmid": "23951549",
+                            "tags": [],
+                            "title": "A Preliminary Study of Functional Brain Activation among Marijuana Users during Performance of a Virtual Water Maze Task"
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/25692068",
+                            "articleYear": "",
+                            "authors": "",
+                            "doi": "",
+                            "exclusionTag": null,
+                            "id": "40f9880a-d2c5-459a-9be5-a65df94c7ce3",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "75d6c47e-627f-4965-b51e-c06912b67dde",
+                            "journal": "",
+                            "keywords": "",
+                            "neurostoreId": "36fPjzmodXgH",
+                            "pmcid": "",
+                            "pmid": "25692068",
+                            "tags": [],
+                            "title": "Functional Activation and Effective Connectivity Differences in Adolescent Marijuana Users Performing a Simulated Gambling Task"
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/24838032",
+                            "articleYear": "",
+                            "authors": "Filbey FM, Dunlop J",
+                            "doi": "10.1016/j.drugalcdep.2014.04.002",
+                            "exclusionTag": null,
+                            "id": "f3005b4c-d72c-465e-87e9-85bb2e51b57c",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
+                            "journal": "Drug and alcohol dependence",
+                            "keywords": "",
+                            "neurostoreId": "6x8epP5ryoCo",
+                            "pmcid": "",
+                            "pmid": "24838032",
+                            "tags": [],
+                            "title": "Differential reward network functional connectivity in cannabis dependent and non-dependent users."
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/23906663",
+                            "articleYear": "",
+                            "authors": "Bourque J, Mendrek A, Durand M, Lakis N, Lipp O, Stip E, Lalonde P, Grignon S, Potvin S",
+                            "doi": "10.1016/j.pscychresns.2013.05.012",
+                            "exclusionTag": null,
+                            "id": "2aeaa0ac-3979-447b-a95b-a6d26db01deb",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
+                            "journal": "Psychiatry research",
+                            "keywords": "",
+                            "neurostoreId": "6Y7mYJwmDjgp",
+                            "pmcid": "",
+                            "pmid": "23906663",
+                            "tags": [],
+                            "title": "Cannabis abuse is associated with better emotional memory in schizophrenia: a functional magnetic resonance imaging study."
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/24186078",
+                            "articleYear": "",
+                            "authors": "Wetherill RR, Childress AR, Jagannathan K, Bender J, Young KA, Suh JJ, O'Brien CP, Franklin TR",
+                            "doi": "10.1007/s00213-013-3342-z",
+                            "exclusionTag": null,
+                            "id": "ff0e593b-ebf8-431d-9cdc-b5ae34d3b6f7",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
+                            "journal": "Psychopharmacology",
+                            "keywords": "",
+                            "neurostoreId": "3j5YjsPYGDeQ",
+                            "pmcid": "",
+                            "pmid": "24186078",
+                            "tags": [],
+                            "title": "Neural responses to subliminally presented cannabis and other emotionally evocative cues in cannabis-dependent individuals."
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/29253654",
+                            "articleYear": "",
+                            "authors": "Tervo-Clemmens B, Simmonds D, Calabro FJ, Day NL, Richardson GA, Luna B",
+                            "doi": "10.1016/j.neuroimage.2017.12.041",
+                            "exclusionTag": null,
+                            "id": "7a42c01d-57db-46e2-aa9e-f393f69216ff",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
+                            "journal": "NeuroImage",
+                            "keywords": "",
+                            "neurostoreId": "3ps4gRV87pns",
+                            "pmcid": "",
+                            "pmid": "29253654",
+                            "tags": [],
+                            "title": "Adolescent cannabis use and brain systems supporting adult working memory encoding, maintenance, and retrieval."
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/23300977",
+                            "articleYear": "",
+                            "authors": "Battistella G, Fornari E, Thomas A, Mall JF, Chtioui H, Appenzeller M, Annoni JM, Favrat B, Maeder P, Giroud C",
+                            "doi": "10.1371/journal.pone.0052545",
+                            "exclusionTag": null,
+                            "id": "69f61142-0069-499d-a309-870de6b25603",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
+                            "journal": "PloS one",
+                            "keywords": "",
+                            "neurostoreId": "3JbXYj2eZ2cg",
+                            "pmcid": "",
+                            "pmid": "23300977",
+                            "tags": [],
+                            "title": "Weed or wheel! FMRI, behavioural, and toxicological investigations of how cannabis smoking affects skills necessary for driving."
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/23300977",
+                            "articleYear": "",
+                            "authors": "Battistella G, Fornari E, Thomas A, Mall JF, Chtioui H, Appenzeller M, Annoni JM, Favrat B, Maeder P, Giroud C",
+                            "doi": "10.1371/journal.pone.0052545",
+                            "exclusionTag": null,
+                            "id": "2d43c0b1-2358-40bc-b253-00dea1cea5c6",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "importId": "c0fdb578-4355-4b5b-ac51-e0fc7b9ba5de",
+                            "journal": "PloS one",
+                            "keywords": "",
+                            "neurostoreId": "3JbXYj2eZ2cg",
+                            "pmcid": "",
+                            "pmid": "23300977",
+                            "tags": [],
+                            "title": "Weed or wheel! FMRI, behavioural, and toxicological investigations of how cannabis smoking affects skills necessary for driving."
+                        }
+                    ]
+                },
+                {
+                    "id": "a2e51654-d54c-47e2-80f6-ca3776e55939",
+                    "name": "Screening",
+                    "stubStudies": []
+                },
+                {
+                    "id": "bc39eaf3-3162-4604-ab7f-af6ea811edcf",
+                    "name": "Eligibility",
+                    "stubStudies": []
+                },
+                {
+                    "id": "9cbac36b-a3a0-4bcd-9e7c-58aac9fc8e07",
+                    "name": "Included",
+                    "stubStudies": []
+                }
+            ],
+            "exclusionTags": [
+                {
+                    "id": "neurosynth_exclude_exclusion",
+                    "isAssignable": true,
+                    "isExclusionTag": true,
+                    "label": "Exclude"
+                },
+                {
+                    "id": "neurosynth_duplicate_exclusion",
+                    "isAssignable": true,
+                    "isExclusionTag": true,
+                    "label": "Duplicate"
+                }
+            ],
+            "identificationSources": [
+                {
+                    "id": "neurosynth_neurostore_id_source",
+                    "label": "Neurostore"
+                },
+                {
+                    "id": "neurosynth_pubmed_id_source",
+                    "label": "PubMed"
+                },
+                {
+                    "id": "neurosynth_scopus_id_source",
+                    "label": "Scopus"
+                },
+                {
+                    "id": "neurosynth_web_of_science_id_source",
+                    "label": "Web of Science"
+                },
+                {
+                    "id": "neurosynth_psycinfo_id_source",
+                    "label": "PsycInfo"
+                },
+                {
+                    "id": "neurosynth_sleuth_id_source",
+                    "label": "Sleuth"
+                }
+            ],
+            "imports": [
+                {
+                    "date": "2025-05-31T22:27:37.191Z",
+                    "id": "75d6c47e-627f-4965-b51e-c06912b67dde",
+                    "importModeUsed": "NEUROSTORE_IMPORT",
+                    "name": "marijuana",
+                    "neurostoreSearchParams": "genericSearchStr=marijuana&sortBy=relevance&pageOfResults=1&descOrder=true&pageSize=10&source=all&dataType=all&level=group&flat=true&info=true",
+                    "numImported": 29
+                },
+                {
+                    "date": "2025-05-31T22:27:47.110Z",
+                    "id": "77106ba1-68c1-4883-92d5-b3d304dd80e8",
+                    "importModeUsed": "NEUROSTORE_IMPORT",
+                    "name": "cannabis",
+                    "neurostoreSearchParams": "genericSearchStr=cannabis&sortBy=relevance&pageOfResults=1&descOrder=true&pageSize=10&source=all&dataType=all&level=group&flat=true&info=true",
+                    "numImported": 50
+                },
+                {
+                    "date": "2025-05-31T22:28:00.077Z",
+                    "id": "c0fdb578-4355-4b5b-ac51-e0fc7b9ba5de",
+                    "importModeUsed": "NEUROSTORE_IMPORT",
+                    "name": "weed",
+                    "neurostoreSearchParams": "genericSearchStr=weed&sortBy=relevance&pageOfResults=1&descOrder=true&pageSize=10&source=all&dataType=all&level=group&flat=true&info=true",
+                    "numImported": 1
+                }
+            ],
+            "infoTags": [
+                {
+                    "id": "neurosynth_untagged_tag",
+                    "isAssignable": false,
+                    "isExclusionTag": false,
+                    "label": "Untagged studies"
+                },
+                {
+                    "id": "neurosynth_uncategorized_tag",
+                    "isAssignable": false,
+                    "isExclusionTag": false,
+                    "label": "Uncategorized Studies"
+                },
+                {
+                    "id": "neurosynth_needs_review_tag",
+                    "isAssignable": false,
+                    "isExclusionTag": false,
+                    "label": "Needs Review"
+                }
+            ],
+            "prismaConfig": {
+                "eligibility": {
+                    "exclusionTags": [
+                        {
+                            "id": "neurosynth_reports_not_retrieved_exclusion",
+                            "isAssignable": true,
+                            "isExclusionTag": true,
+                            "label": "Reports not retrieved"
+                        },
+                        {
+                            "id": "neurosynth_insufficient_detail_exclusion",
+                            "isAssignable": true,
+                            "isExclusionTag": true,
+                            "label": "Insufficient Details"
+                        },
+                        {
+                            "id": "neurosynth_limited_rigor",
+                            "isAssignable": true,
+                            "isExclusionTag": true,
+                            "label": "Limited Rigor"
+                        },
+                        {
+                            "id": "neurosynth_out_of_scope_exclusion",
+                            "isAssignable": true,
+                            "isExclusionTag": true,
+                            "label": "Out of scope"
+                        }
+                    ]
+                },
+                "identification": {
+                    "exclusionTags": [
+                        {
+                            "id": "neurosynth_duplicate_exclusion",
+                            "isAssignable": true,
+                            "isExclusionTag": true,
+                            "label": "Duplicate"
+                        }
+                    ]
+                },
+                "isPrisma": true,
+                "screening": {
+                    "exclusionTags": [
+                        {
+                            "id": "neurosynth_irrelevant_exclusion",
+                            "isAssignable": true,
+                            "isExclusionTag": true,
+                            "label": "Irrelevant"
+                        }
+                    ]
+                }
+            }
+        },
+        "extractionMetadata": {
+            "studyStatusList": []
+        },
+        "metaAnalysisMetadata": {
+            "canEditMetaAnalyses": false
+        }
     },
-    "metaAnalysisMetadata": {
-      "canEditMetaAnalyses": false
-    }
-  },
-  "public": true,
-  "updated_at": "2025-06-09T21:26:11.191969+00:00",
-  "user": "github|26612023",
-  "username": "Nicholas Lee"
+    "public": true,
+    "updated_at": "2025-06-09T21:26:11.191969+00:00",
+    "user": "github|26612023",
+    "username": "Nicholas Lee"
 }

@@ -1,711 +1,703 @@
 {
-    "name":"Emotional vs Physical Pain in the anterior cortex meta-analysis project abc",
-    "description":"adding a description so that the last updated date will be changed lorem ipsum aeourigbaeo ugbaeiguba gaieubg aeilgu baegiluaebg ailueb gaeliurgbaeliug baeilg ubae ilubgaeilu bae",
-    "public":false,
-    "provenance":{
-       "curationMetadata":{
-          "columns":[
-             {
-                "id":"88284ae3-e6bc-487b-93d3-8e54be448297",
-                "name":"not included",
-                "stubStudies":[
-                   
-                ]
-             },
-             {
-                "id":"981a1475-93ea-4dbd-9468-3596a180d596",
-                "name":"included",
-                "stubStudies":[
-                   {
-                      "abstractText":"",
-                      "articleLink":"https://pubmed.ncbi.nlm.nih.gov/18502045",
-                      "articleYear":"",
-                      "authors":"Ushida T, Ikemoto T, Tanaka S, Shinozaki J, Taniguchi S, Murata Y, McLaughlin M, Arai YC, Tamura Y",
-                      "doi":"10.1016/j.neulet.2008.04.085",
-                      "exclusionTag":null,
-                      "id":"4c629ce1-79ba-4c60-9722-201a5ae88704",
-                      "identificationSource":{
-                         "id":"neurosynth_neurostore_id_source",
-                         "label":"Neurostore"
-                      },
-                      "journal":"Neuroscience letters",
-                      "keywords":"",
-                      "neurostoreId":"3LqMuQo92vDn",
-                      "pmid":"18502045",
-                      "searchTerm":"?genericSearchStr=emotional+pain&dataType=coordinate&source=all&sortBy=relevance&descOrder=true",
-                      "tags":[
-                         {
-                            "id":"fca43b33-bbcf-4c12-a6cc-06118ff7d364",
-                            "isAssignable":true,
-                            "isExclusionTag":false,
-                            "label":"emotional pain (datatype=coordinate)"
-                         }
-                      ],
-                      "title":"Virtual needle pain stimuli activates cortical representation of emotions in normal volunteers."
-                   },
-                   {
-                      "abstractText":"",
-                      "articleLink":"https://pubmed.ncbi.nlm.nih.gov/20510372",
-                      "articleYear":"",
-                      "authors":"Budell L, Jackson P, Rainville P",
-                      "doi":"10.1016/j.neuroimage.2010.05.037",
-                      "exclusionTag":null,
-                      "id":"2edf895c-8a92-42f5-972d-e5e02352fa14",
-                      "identificationSource":{
-                         "id":"neurosynth_neurostore_id_source",
-                         "label":"Neurostore"
-                      },
-                      "journal":"NeuroImage",
-                      "keywords":"",
-                      "neurostoreId":"4sMVHtqQYEgR",
-                      "pmid":"20510372",
-                      "searchTerm":"?genericSearchStr=emotional+pain&dataType=coordinate&source=all&sortBy=relevance&descOrder=true",
-                      "tags":[
-                         {
-                            "id":"fca43b33-bbcf-4c12-a6cc-06118ff7d364",
-                            "isAssignable":true,
-                            "isExclusionTag":false,
-                            "label":"emotional pain (datatype=coordinate)"
-                         }
-                      ],
-                      "title":"Brain responses to facial expressions of pain: emotional or motor mirroring?"
-                   },
-                   {
-                      "abstractText":"",
-                      "articleLink":"https://pubmed.ncbi.nlm.nih.gov/21514332",
-                      "articleYear":"",
-                      "authors":"Takahashi K, Taguchi T, Tanaka S, Sadato N, Qiu Y, Kakigi R, Mizumura K",
-                      "doi":"10.1016/j.neures.2011.04.001",
-                      "exclusionTag":null,
-                      "id":"901ab956-6300-4012-a301-7eed7f747767",
-                      "identificationSource":{
-                         "id":"neurosynth_neurostore_id_source",
-                         "label":"Neurostore"
-                      },
-                      "journal":"Neuroscience research",
-                      "keywords":"",
-                      "neurostoreId":"7ztw3nshcbSQ",
-                      "pmid":"21514332",
-                      "searchTerm":"?genericSearchStr=emotional+pain&dataType=coordinate&source=all&sortBy=relevance&descOrder=true",
-                      "tags":[
-                         {
-                            "id":"fca43b33-bbcf-4c12-a6cc-06118ff7d364",
-                            "isAssignable":true,
-                            "isExclusionTag":false,
-                            "label":"emotional pain (datatype=coordinate)"
-                         }
-                      ],
-                      "title":"Painful muscle stimulation preferentially activates emotion-related brain regions compared to painful skin stimulation."
-                   },
-                   {
-                      "abstractText":"",
-                      "articleLink":"https://pubmed.ncbi.nlm.nih.gov/21861676",
-                      "articleYear":"",
-                      "authors":"Lapate RC, Lee H, Salomons TV, van Reekum CM, Greischar LL, Davidson RJ",
-                      "doi":"10.1162/jocn_a_00125",
-                      "exclusionTag":null,
-                      "id":"fe309201-6da2-4e8b-9a2f-c7e0f5b112a3",
-                      "identificationSource":{
-                         "id":"neurosynth_neurostore_id_source",
-                         "label":"Neurostore"
-                      },
-                      "journal":"Journal of cognitive neuroscience",
-                      "keywords":"",
-                      "neurostoreId":"39XNYSNrAtma",
-                      "pmid":"21861676",
-                      "searchTerm":"?genericSearchStr=emotional+pain&dataType=coordinate&source=all&sortBy=relevance&descOrder=true",
-                      "tags":[
-                         {
-                            "id":"fca43b33-bbcf-4c12-a6cc-06118ff7d364",
-                            "isAssignable":true,
-                            "isExclusionTag":false,
-                            "label":"emotional pain (datatype=coordinate)"
-                         }
-                      ],
-                      "title":"Amygdalar function reflects common individual differences in emotion and pain regulation success."
-                   },
-                   {
-                      "abstractText":"",
-                      "articleLink":"https://pubmed.ncbi.nlm.nih.gov/21880911",
-                      "articleYear":"",
-                      "authors":"Hubbard CS, Labus JS, Bueller J, Stains J, Suyenobu B, Dukes GE, Kelleher DL, Tillisch K, Naliboff BD, Mayer EA",
-                      "doi":"10.1523/JNEUROSCI.1860-11.2011",
-                      "exclusionTag":null,
-                      "id":"2ebe0596-6f26-48e9-aea9-223b67cca17b",
-                      "identificationSource":{
-                         "id":"neurosynth_neurostore_id_source",
-                         "label":"Neurostore"
-                      },
-                      "journal":"The Journal of neuroscience : the official journal of the Society for Neuroscience",
-                      "keywords":"",
-                      "neurostoreId":"55eCbb58HZ9k",
-                      "pmid":"21880911",
-                      "searchTerm":"?genericSearchStr=emotional+pain&dataType=coordinate&source=all&sortBy=relevance&descOrder=true",
-                      "tags":[
-                         {
-                            "id":"fca43b33-bbcf-4c12-a6cc-06118ff7d364",
-                            "isAssignable":true,
-                            "isExclusionTag":false,
-                            "label":"emotional pain (datatype=coordinate)"
-                         }
-                      ],
-                      "title":"Corticotropin-releasing factor receptor 1 antagonist alters regional activation and effective connectivity in an emotional-arousal circuit during expectation of  abdominal pain."
-                   },
-                   {
-                      "abstractText":"",
-                      "articleLink":"https://pubmed.ncbi.nlm.nih.gov/22073183",
-                      "articleYear":"",
-                      "authors":"Shimo K, Ueno T, Younger J, Nishihara M, Inoue S, Ikemoto T, Taniguchi S, Ushida T",
-                      "doi":"10.1371/journal.pone.0026681",
-                      "exclusionTag":null,
-                      "id":"49d85af8-eabc-4cbd-872d-1d960f657396",
-                      "identificationSource":{
-                         "id":"neurosynth_neurostore_id_source",
-                         "label":"Neurostore"
-                      },
-                      "journal":"PloS one",
-                      "keywords":"",
-                      "neurostoreId":"53Wz2LfFi9yJ",
-                      "pmid":"22073183",
-                      "searchTerm":"?genericSearchStr=emotional+pain&dataType=coordinate&source=all&sortBy=relevance&descOrder=true",
-                      "tags":[
-                         {
-                            "id":"fca43b33-bbcf-4c12-a6cc-06118ff7d364",
-                            "isAssignable":true,
-                            "isExclusionTag":false,
-                            "label":"emotional pain (datatype=coordinate)"
-                         }
-                      ],
-                      "title":"Visualization of painful experiences believed to trigger the activation of affective and emotional brain regions in subjects with low back pain."
-                   },
-                   {
-                      "abstractText":"",
-                      "articleLink":"https://pubmed.ncbi.nlm.nih.gov/22154962",
-                      "articleYear":"",
-                      "authors":"Bruneau EG, Pluta A, Saxe R",
-                      "doi":"10.1016/j.neuropsychologia.2011.11.008",
-                      "exclusionTag":null,
-                      "id":"7ec96f39-c5a7-4f3e-9b60-c54e7894d973",
-                      "identificationSource":{
-                         "id":"neurosynth_neurostore_id_source",
-                         "label":"Neurostore"
-                      },
-                      "journal":"Neuropsychologia",
-                      "keywords":"",
-                      "neurostoreId":"74WZB3uFs4dF",
-                      "pmid":"22154962",
-                      "searchTerm":"?genericSearchStr=emotional+pain&dataType=coordinate&source=all&sortBy=relevance&descOrder=true",
-                      "tags":[
-                         {
-                            "id":"fca43b33-bbcf-4c12-a6cc-06118ff7d364",
-                            "isAssignable":true,
-                            "isExclusionTag":false,
-                            "label":"emotional pain (datatype=coordinate)"
-                         }
-                      ],
-                      "title":"Distinct roles of the 'shared pain' and 'theory of mind' networks in processing others' emotional suffering."
-                   },
-                   {
-                      "abstractText":"",
-                      "articleLink":"https://pubmed.ncbi.nlm.nih.gov/22446299",
-                      "articleYear":"",
-                      "authors":"Buhle JT, Kober H, Ochsner KN, Mende-Siedlecki P, Weber J, Hughes BL, Kross E, Atlas LY, McRae K, Wager TD",
-                      "doi":"10.1093/scan/nss038",
-                      "exclusionTag":null,
-                      "id":"3cf72cf1-2068-483d-bce4-354900d22af9",
-                      "identificationSource":{
-                         "id":"neurosynth_neurostore_id_source",
-                         "label":"Neurostore"
-                      },
-                      "journal":"Social cognitive and affective neuroscience",
-                      "keywords":"",
-                      "neurostoreId":"4AWg42ESd7Am",
-                      "pmid":"22446299",
-                      "searchTerm":"?genericSearchStr=emotional+pain&dataType=coordinate&source=all&sortBy=relevance&descOrder=true",
-                      "tags":[
-                         {
-                            "id":"fca43b33-bbcf-4c12-a6cc-06118ff7d364",
-                            "isAssignable":true,
-                            "isExclusionTag":false,
-                            "label":"emotional pain (datatype=coordinate)"
-                         }
-                      ],
-                      "title":"Common representation of pain and negative emotion in the midbrain periaqueductal gray."
-                   },
-                   {
-                      "abstractText":"",
-                      "articleLink":"https://pubmed.ncbi.nlm.nih.gov/22732556",
-                      "articleYear":"",
-                      "authors":"Vachon-Presseau E, Roy M, Martel MO, Albouy G, Chen J, Budell L, Sullivan MJ, Jackson PL, Rainville P",
-                      "doi":"10.1016/j.neuroimage.2012.06.030",
-                      "exclusionTag":null,
-                      "id":"dcabe3f1-18c7-42fa-a189-92ddd7328cbc",
-                      "identificationSource":{
-                         "id":"neurosynth_neurostore_id_source",
-                         "label":"Neurostore"
-                      },
-                      "journal":"NeuroImage",
-                      "keywords":"",
-                      "neurostoreId":"3rdCEELEZ6JB",
-                      "pmid":"22732556",
-                      "searchTerm":"?genericSearchStr=emotional+pain&dataType=coordinate&source=all&sortBy=relevance&descOrder=true",
-                      "tags":[
-                         {
-                            "id":"fca43b33-bbcf-4c12-a6cc-06118ff7d364",
-                            "isAssignable":true,
-                            "isExclusionTag":false,
-                            "label":"emotional pain (datatype=coordinate)"
-                         }
-                      ],
-                      "title":"Neural processing of sensory and emotional-communicative information associated with the perception of vicarious pain."
-                   },
-                   {
-                      "abstractText":"",
-                      "articleLink":"https://pubmed.ncbi.nlm.nih.gov/23063451",
-                      "articleYear":"",
-                      "authors":"van der Heiden L, Scherpiet S, Konicar L, Birbaumer N, Veit R",
-                      "doi":"10.1016/j.neuroimage.2012.10.003",
-                      "exclusionTag":null,
-                      "id":"0ac51b78-6c1c-4604-930b-f80efcdc7a35",
-                      "identificationSource":{
-                         "id":"neurosynth_neurostore_id_source",
-                         "label":"Neurostore"
-                      },
-                      "journal":"NeuroImage",
-                      "keywords":"",
-                      "neurostoreId":"y5tfdVAraBwq",
-                      "pmid":"23063451",
-                      "searchTerm":"?genericSearchStr=emotional+pain&dataType=coordinate&source=all&sortBy=relevance&descOrder=true",
-                      "tags":[
-                         {
-                            "id":"fca43b33-bbcf-4c12-a6cc-06118ff7d364",
-                            "isAssignable":true,
-                            "isExclusionTag":false,
-                            "label":"emotional pain (datatype=coordinate)"
-                         }
-                      ],
-                      "title":"Inter-individual differences in successful perspective taking during pain perception mediates emotional responsiveness in self and others: an fMRI study."
-                   },
-                   {
-                      "abstractText":"",
-                      "articleLink":"https://pubmed.ncbi.nlm.nih.gov/23566889",
-                      "articleYear":"",
-                      "authors":"Cheon BK, Im DM, Harada T, Kim JS, Mathur VA, Scimeca JM, Parrish TB, Park H, Chiao JY",
-                      "doi":"10.1016/j.neuropsychologia.2013.03.018",
-                      "exclusionTag":null,
-                      "id":"23bba6f2-bd8f-4b72-8867-51ba1867e5c1",
-                      "identificationSource":{
-                         "id":"neurosynth_neurostore_id_source",
-                         "label":"Neurostore"
-                      },
-                      "journal":"Neuropsychologia",
-                      "keywords":"",
-                      "neurostoreId":"6w7Tz9fwRtLg",
-                      "pmid":"23566889",
-                      "searchTerm":"?genericSearchStr=emotional+pain&dataType=coordinate&source=all&sortBy=relevance&descOrder=true",
-                      "tags":[
-                         {
-                            "id":"fca43b33-bbcf-4c12-a6cc-06118ff7d364",
-                            "isAssignable":true,
-                            "isExclusionTag":false,
-                            "label":"emotional pain (datatype=coordinate)"
-                         }
-                      ],
-                      "title":"Cultural modulation of the neural correlates of emotional pain perception: the role of other-focusedness."
-                   },
-                   {
-                      "abstractText":"",
-                      "articleLink":"https://pubmed.ncbi.nlm.nih.gov/23752177",
-                      "articleYear":"",
-                      "authors":"Kamping S, Bomba IC, Kanske P, Diesch E, Flor H",
-                      "doi":"10.1016/j.pain.2013.06.003",
-                      "exclusionTag":null,
-                      "id":"e1874700-b7d8-4ce8-a159-1ada9d3deba3",
-                      "identificationSource":{
-                         "id":"neurosynth_neurostore_id_source",
-                         "label":"Neurostore"
-                      },
-                      "journal":"Pain",
-                      "keywords":"",
-                      "neurostoreId":"7kUjVE7yPSaq",
-                      "pmid":"23752177",
-                      "searchTerm":"?genericSearchStr=emotional+pain&dataType=coordinate&source=all&sortBy=relevance&descOrder=true",
-                      "tags":[
-                         {
-                            "id":"fca43b33-bbcf-4c12-a6cc-06118ff7d364",
-                            "isAssignable":true,
-                            "isExclusionTag":false,
-                            "label":"emotional pain (datatype=coordinate)"
-                         }
-                      ],
-                      "title":"Deficient modulation of pain by a positive emotional context in fibromyalgia patients."
-                   },
-                   {
-                      "abstractText":"",
-                      "articleLink":"https://pubmed.ncbi.nlm.nih.gov/23983029",
-                      "articleYear":"",
-                      "authors":"Hashmi JA, Baliki MN, Huang L, Baria AT, Torbey S, Hermann KM, Schnitzer TJ, Apkarian AV",
-                      "doi":"10.1093/brain/awt211",
-                      "exclusionTag":null,
-                      "id":"235f4057-1994-478a-8ac9-c7adb4a8ed63",
-                      "identificationSource":{
-                         "id":"neurosynth_neurostore_id_source",
-                         "label":"Neurostore"
-                      },
-                      "journal":"Brain : a journal of neurology",
-                      "keywords":"",
-                      "neurostoreId":"54qajmhxQBs6",
-                      "pmid":"23983029",
-                      "searchTerm":"?genericSearchStr=emotional+pain&dataType=coordinate&source=all&sortBy=relevance&descOrder=true",
-                      "tags":[
-                         {
-                            "id":"fca43b33-bbcf-4c12-a6cc-06118ff7d364",
-                            "isAssignable":true,
-                            "isExclusionTag":false,
-                            "label":"emotional pain (datatype=coordinate)"
-                         }
-                      ],
-                      "title":"Shape shifting pain: chronification of back pain shifts brain representation from nociceptive to emotional circuits."
-                   },
-                   {
-                      "abstractText":"",
-                      "articleLink":"https://pubmed.ncbi.nlm.nih.gov/25208742",
-                      "articleYear":"",
-                      "authors":"Salomons TV, Nusslock R, Detloff A, Johnstone T, Davidson RJ",
-                      "doi":"10.1162/jocn_a_00702",
-                      "exclusionTag":null,
-                      "id":"24c3883c-f435-4d5d-a5e4-df2f53a012ca",
-                      "identificationSource":{
-                         "id":"neurosynth_neurostore_id_source",
-                         "label":"Neurostore"
-                      },
-                      "journal":"Journal of cognitive neuroscience",
-                      "keywords":"",
-                      "neurostoreId":"5Bi5Sh63u6EH",
-                      "pmid":"25208742",
-                      "searchTerm":"?genericSearchStr=emotional+pain&dataType=coordinate&source=all&sortBy=relevance&descOrder=true",
-                      "tags":[
-                         {
-                            "id":"fca43b33-bbcf-4c12-a6cc-06118ff7d364",
-                            "isAssignable":true,
-                            "isExclusionTag":false,
-                            "label":"emotional pain (datatype=coordinate)"
-                         }
-                      ],
-                      "title":"Neural emotion regulation circuitry underlying anxiolytic effects of perceived control over pain."
-                   },
-                   {
-                      "abstractText":"",
-                      "articleLink":"https://pubmed.ncbi.nlm.nih.gov/25396729",
-                      "articleYear":"",
-                      "authors":"Laeger I, Dobel C, Radenz B, Kugel H, Keuper K, Eden A, Arolt V, Zwitserlood P, Dannlowski U, Zwanzger P",
-                      "doi":"10.1371/journal.pone.0109949",
-                      "exclusionTag":null,
-                      "id":"dd2662ea-83a4-4db0-b651-957d64b62203",
-                      "identificationSource":{
-                         "id":"neurosynth_neurostore_id_source",
-                         "label":"Neurostore"
-                      },
-                      "journal":"PloS one",
-                      "keywords":"",
-                      "neurostoreId":"7Zxy4YoV24xZ",
-                      "pmid":"25396729",
-                      "searchTerm":"?genericSearchStr=emotional+pain&dataType=coordinate&source=all&sortBy=relevance&descOrder=true",
-                      "tags":[
-                         {
-                            "id":"fca43b33-bbcf-4c12-a6cc-06118ff7d364",
-                            "isAssignable":true,
-                            "isExclusionTag":false,
-                            "label":"emotional pain (datatype=coordinate)"
-                         }
-                      ],
-                      "title":"Of 'disgrace' and 'pain' - corticolimbic interaction patterns for disorder-relevant and emotional words in social phobia."
-                   },
-                   {
-                      "abstractText":"",
-                      "articleLink":"https://pubmed.ncbi.nlm.nih.gov/25605968",
-                      "articleYear":"",
-                      "authors":"Wang C, Wu B, Liu Y, Wu X, Han S",
-                      "doi":"10.1093/scan/nsv005",
-                      "exclusionTag":null,
-                      "id":"8b99e5d8-7fa2-40bf-a46c-ea73cd7615d0",
-                      "identificationSource":{
-                         "id":"neurosynth_neurostore_id_source",
-                         "label":"Neurostore"
-                      },
-                      "journal":"Social cognitive and affective neuroscience",
-                      "keywords":"",
-                      "neurostoreId":"GLz2mFBHedt5",
-                      "pmid":"25605968",
-                      "searchTerm":"?genericSearchStr=emotional+pain&dataType=coordinate&source=all&sortBy=relevance&descOrder=true",
-                      "tags":[
-                         {
-                            "id":"fca43b33-bbcf-4c12-a6cc-06118ff7d364",
-                            "isAssignable":true,
-                            "isExclusionTag":false,
-                            "label":"emotional pain (datatype=coordinate)"
-                         }
-                      ],
-                      "title":"Challenging emotional prejudice by changing self-concept: priming independent self-construal reduces racial in-group bias in neural responses to other's pain."
-                   },
-                   {
-                      "abstractText":"",
-                      "articleLink":"https://pubmed.ncbi.nlm.nih.gov/25671563",
-                      "articleYear":"",
-                      "authors":"Budell L, Kunz M, Jackson PL, Rainville P",
-                      "doi":"10.1371/journal.pone.0107526",
-                      "exclusionTag":null,
-                      "id":"49fb402b-c1cf-4b89-82f0-d8a04f050f2a",
-                      "identificationSource":{
-                         "id":"neurosynth_neurostore_id_source",
-                         "label":"Neurostore"
-                      },
-                      "journal":"PloS one",
-                      "keywords":"",
-                      "neurostoreId":"3dxtKE8oBCDT",
-                      "pmid":"25671563",
-                      "searchTerm":"?genericSearchStr=emotional+pain&dataType=coordinate&source=all&sortBy=relevance&descOrder=true",
-                      "tags":[
-                         {
-                            "id":"fca43b33-bbcf-4c12-a6cc-06118ff7d364",
-                            "isAssignable":true,
-                            "isExclusionTag":false,
-                            "label":"emotional pain (datatype=coordinate)"
-                         }
-                      ],
-                      "title":"Mirroring pain in the brain: emotional expression versus motor imitation."
-                   },
-                   {
-                      "abstractText":"",
-                      "articleLink":"https://pubmed.ncbi.nlm.nih.gov/29258849",
-                      "articleYear":"",
-                      "authors":"Qiao-Tasserit E, Corradi-Dell'Acqua C, Vuilleumier P",
-                      "doi":"10.1016/j.neuropsychologia.2017.12.027",
-                      "exclusionTag":null,
-                      "id":"2398271b-8fe7-49b0-8b0d-4b8cf788db8a",
-                      "identificationSource":{
-                         "id":"neurosynth_neurostore_id_source",
-                         "label":"Neurostore"
-                      },
-                      "journal":"Neuropsychologia",
-                      "keywords":"",
-                      "neurostoreId":"GD4L8f8poNaE",
-                      "pmid":"29258849",
-                      "searchTerm":"?genericSearchStr=emotional+pain&dataType=coordinate&source=all&sortBy=relevance&descOrder=true",
-                      "tags":[
-                         {
-                            "id":"fca43b33-bbcf-4c12-a6cc-06118ff7d364",
-                            "isAssignable":true,
-                            "isExclusionTag":false,
-                            "label":"emotional pain (datatype=coordinate)"
-                         }
-                      ],
-                      "title":"The good, the bad, and the suffering. Transient emotional episodes modulate the neural circuits of pain and empathy."
-                   },
-                   {
-                      "abstractText":"",
-                      "articleLink":"https://pubmed.ncbi.nlm.nih.gov/29662445",
-                      "articleYear":"",
-                      "authors":"Zhang Y, Mao Z, Pan L, Ling Z, Liu X, Zhang J, Yu X",
-                      "doi":"10.3389/fnhum.2018.00107",
-                      "exclusionTag":null,
-                      "id":"58dc1652-fde6-4f24-a59c-30c862ec3973",
-                      "identificationSource":{
-                         "id":"neurosynth_neurostore_id_source",
-                         "label":"Neurostore"
-                      },
-                      "journal":"Frontiers in human neuroscience",
-                      "keywords":"",
-                      "neurostoreId":"6wfjKuLfhbEk",
-                      "pmid":"29662445",
-                      "searchTerm":"?genericSearchStr=emotional+pain&dataType=coordinate&source=all&sortBy=relevance&descOrder=true",
-                      "tags":[
-                         {
-                            "id":"fca43b33-bbcf-4c12-a6cc-06118ff7d364",
-                            "isAssignable":true,
-                            "isExclusionTag":false,
-                            "label":"emotional pain (datatype=coordinate)"
-                         }
-                      ],
-                      "title":"Dysregulation of Pain- and Emotion-Related Networks in Trigeminal Neuralgia."
-                   },
-                   {
-                      "abstractText":"",
-                      "articleLink":"https://pubmed.ncbi.nlm.nih.gov/24062659",
-                      "articleYear":"",
-                      "authors":"",
-                      "doi":"",
-                      "exclusionTag":null,
-                      "id":"21bf8fe6-c288-41c3-a9ba-2911704f67c8",
-                      "identificationSource":{
-                         "id":"neurosynth_neurostore_id_source",
-                         "label":"Neurostore"
-                      },
-                      "journal":"",
-                      "keywords":"",
-                      "neurostoreId":"7GePz7Fxq6M5",
-                      "pmid":"24062659",
-                      "searchTerm":"?genericSearchStr=emotional+pain&dataType=coordinate&source=all&sortBy=relevance&descOrder=true",
-                      "tags":[
-                         {
-                            "id":"fca43b33-bbcf-4c12-a6cc-06118ff7d364",
-                            "isAssignable":true,
-                            "isExclusionTag":false,
-                            "label":"emotional pain (datatype=coordinate)"
-                         }
-                      ],
-                      "title":"Emotional modulation of experimental pain: a source imaging study of laser evoked potentials"
-                   },
-                   {
-                      "abstractText":"",
-                      "articleLink":"https://pubmed.ncbi.nlm.nih.gov/24424389",
-                      "articleYear":"",
-                      "authors":"",
-                      "doi":"",
-                      "exclusionTag":null,
-                      "id":"4a77d8fc-74ad-42df-907c-2bc494140385",
-                      "identificationSource":{
-                         "id":"neurosynth_neurostore_id_source",
-                         "label":"Neurostore"
-                      },
-                      "journal":"",
-                      "keywords":"",
-                      "neurostoreId":"8K2VUUynUP8M",
-                      "pmid":"24424389",
-                      "searchTerm":"?genericSearchStr=emotional+pain&dataType=coordinate&source=all&sortBy=relevance&descOrder=true",
-                      "tags":[
-                         {
-                            "id":"fca43b33-bbcf-4c12-a6cc-06118ff7d364",
-                            "isAssignable":true,
-                            "isExclusionTag":false,
-                            "label":"emotional pain (datatype=coordinate)"
-                         }
-                      ],
-                      "title":"Emotional contagion for pain is intact in autism spectrum disorders"
-                   },
-                   {
-                      "abstractText":"",
-                      "articleLink":"https://pubmed.ncbi.nlm.nih.gov/28259800",
-                      "articleYear":"",
-                      "authors":"",
-                      "doi":"",
-                      "exclusionTag":null,
-                      "id":"a47950dd-3794-420e-b74d-62879155c2bb",
-                      "identificationSource":{
-                         "id":"neurosynth_neurostore_id_source",
-                         "label":"Neurostore"
-                      },
-                      "journal":"",
-                      "keywords":"",
-                      "neurostoreId":"7MbiShMxeZNF",
-                      "pmid":"28259800",
-                      "searchTerm":"?genericSearchStr=emotional+pain&dataType=coordinate&source=all&sortBy=relevance&descOrder=true",
-                      "tags":[
-                         {
-                            "id":"fca43b33-bbcf-4c12-a6cc-06118ff7d364",
-                            "isAssignable":true,
-                            "isExclusionTag":false,
-                            "label":"emotional pain (datatype=coordinate)"
-                         }
-                      ],
-                      "title":"The interaction of emotion and pain in the insula and secondary somatosensory cortex"
-                   }
-                ]
-             }
-          ],
-          "exclusionTags":[
-             {
-                "id":"neurosynth_exclude_exclusion",
-                "isAssignable":true,
-                "isExclusionTag":true,
-                "label":"Exclude"
-             },
-             {
-                "id":"neurosynth_duplicate_exclusion",
-                "isAssignable":true,
-                "isExclusionTag":true,
-                "label":"Duplicate"
-             }
-          ],
-          "identificationSources":[
-             {
-                "id":"neurosynth_neurostore_id_source",
-                "label":"Neurostore"
-             },
-             {
-                "id":"neurosynth_pubmed_id_source",
-                "label":"PubMed"
-             },
-             {
-                "id":"neurosynth_scopus_id_source",
-                "label":"Scopus"
-             },
-             {
-                "id":"neurosynth_web_of_science_id_source",
-                "label":"Web of Science"
-             },
-             {
-                "id":"neurosynth_psycinfo_id_source",
-                "label":"PsycInfo"
-             }
-          ],
-          "infoTags":[
-             {
-                "id":"neurosynth_untagged_tag",
-                "isAssignable":false,
-                "isExclusionTag":false,
-                "label":"Untagged studies"
-             },
-             {
-                "id":"neurosynth_uncategorized_tag",
-                "isAssignable":false,
-                "isExclusionTag":false,
-                "label":"Uncategorized Studies"
-             },
-             {
-                "id":"neurosynth_needs_review_tag",
-                "isAssignable":false,
-                "isExclusionTag":false,
-                "label":"Needs Review"
-             },
-             {
-                "id":"fca43b33-bbcf-4c12-a6cc-06118ff7d364",
-                "isAssignable":true,
-                "isExclusionTag":false,
-                "label":"emotional pain (datatype=coordinate)"
-             }
-          ],
-          "prismaConfig":{
-             "eligibility":{
-                "exclusionTags":[
-                   
-                ]
-             },
-             "identification":{
-                "exclusionTags":[
-                   
-                ]
-             },
-             "isPrisma":false,
-             "screening":{
-                "exclusionTags":[
-                   
-                ]
-             }
-          }
-       },
-       "extractionMetadata":{
-          "annotationId":"7GpCejT5D628",
-          "studyStatusList":[
-             {
-                "id":"3DHHkeKrwgdo",
-                "status":"completed"
-             }
-          ],
-          "studysetId":"4uLzwmHx8N4x"
-       },
-       "metaAnalysisMetadata":{
-          "canEditMetaAnalyses":false
-       }
+    "name": "Emotional vs Physical Pain in the anterior cortex meta-analysis project abc",
+    "description": "adding a description so that the last updated date will be changed lorem ipsum aeourigbaeo ugbaeiguba gaieubg aeilgu baegiluaebg ailueb gaeliurgbaeliug baeilg ubae ilubgaeilu bae",
+    "public": false,
+    "provenance": {
+        "curationMetadata": {
+            "columns": [
+                {
+                    "id": "88284ae3-e6bc-487b-93d3-8e54be448297",
+                    "name": "not included",
+                    "stubStudies": []
+                },
+                {
+                    "id": "981a1475-93ea-4dbd-9468-3596a180d596",
+                    "name": "included",
+                    "stubStudies": [
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/18502045",
+                            "articleYear": "",
+                            "authors": "Ushida T, Ikemoto T, Tanaka S, Shinozaki J, Taniguchi S, Murata Y, McLaughlin M, Arai YC, Tamura Y",
+                            "doi": "10.1016/j.neulet.2008.04.085",
+                            "exclusionTag": null,
+                            "id": "4c629ce1-79ba-4c60-9722-201a5ae88704",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "journal": "Neuroscience letters",
+                            "keywords": "",
+                            "neurostoreId": "3LqMuQo92vDn",
+                            "pmid": "18502045",
+                            "searchTerm": "?genericSearchStr=emotional+pain&dataType=coordinate&source=all&sortBy=relevance&descOrder=true",
+                            "tags": [
+                                {
+                                    "id": "fca43b33-bbcf-4c12-a6cc-06118ff7d364",
+                                    "isAssignable": true,
+                                    "isExclusionTag": false,
+                                    "label": "emotional pain (datatype=coordinate)"
+                                }
+                            ],
+                            "title": "Virtual needle pain stimuli activates cortical representation of emotions in normal volunteers."
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/20510372",
+                            "articleYear": "",
+                            "authors": "Budell L, Jackson P, Rainville P",
+                            "doi": "10.1016/j.neuroimage.2010.05.037",
+                            "exclusionTag": null,
+                            "id": "2edf895c-8a92-42f5-972d-e5e02352fa14",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "journal": "NeuroImage",
+                            "keywords": "",
+                            "neurostoreId": "4sMVHtqQYEgR",
+                            "pmid": "20510372",
+                            "searchTerm": "?genericSearchStr=emotional+pain&dataType=coordinate&source=all&sortBy=relevance&descOrder=true",
+                            "tags": [
+                                {
+                                    "id": "fca43b33-bbcf-4c12-a6cc-06118ff7d364",
+                                    "isAssignable": true,
+                                    "isExclusionTag": false,
+                                    "label": "emotional pain (datatype=coordinate)"
+                                }
+                            ],
+                            "title": "Brain responses to facial expressions of pain: emotional or motor mirroring?"
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/21514332",
+                            "articleYear": "",
+                            "authors": "Takahashi K, Taguchi T, Tanaka S, Sadato N, Qiu Y, Kakigi R, Mizumura K",
+                            "doi": "10.1016/j.neures.2011.04.001",
+                            "exclusionTag": null,
+                            "id": "901ab956-6300-4012-a301-7eed7f747767",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "journal": "Neuroscience research",
+                            "keywords": "",
+                            "neurostoreId": "7ztw3nshcbSQ",
+                            "pmid": "21514332",
+                            "searchTerm": "?genericSearchStr=emotional+pain&dataType=coordinate&source=all&sortBy=relevance&descOrder=true",
+                            "tags": [
+                                {
+                                    "id": "fca43b33-bbcf-4c12-a6cc-06118ff7d364",
+                                    "isAssignable": true,
+                                    "isExclusionTag": false,
+                                    "label": "emotional pain (datatype=coordinate)"
+                                }
+                            ],
+                            "title": "Painful muscle stimulation preferentially activates emotion-related brain regions compared to painful skin stimulation."
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/21861676",
+                            "articleYear": "",
+                            "authors": "Lapate RC, Lee H, Salomons TV, van Reekum CM, Greischar LL, Davidson RJ",
+                            "doi": "10.1162/jocn_a_00125",
+                            "exclusionTag": null,
+                            "id": "fe309201-6da2-4e8b-9a2f-c7e0f5b112a3",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "journal": "Journal of cognitive neuroscience",
+                            "keywords": "",
+                            "neurostoreId": "39XNYSNrAtma",
+                            "pmid": "21861676",
+                            "searchTerm": "?genericSearchStr=emotional+pain&dataType=coordinate&source=all&sortBy=relevance&descOrder=true",
+                            "tags": [
+                                {
+                                    "id": "fca43b33-bbcf-4c12-a6cc-06118ff7d364",
+                                    "isAssignable": true,
+                                    "isExclusionTag": false,
+                                    "label": "emotional pain (datatype=coordinate)"
+                                }
+                            ],
+                            "title": "Amygdalar function reflects common individual differences in emotion and pain regulation success."
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/21880911",
+                            "articleYear": "",
+                            "authors": "Hubbard CS, Labus JS, Bueller J, Stains J, Suyenobu B, Dukes GE, Kelleher DL, Tillisch K, Naliboff BD, Mayer EA",
+                            "doi": "10.1523/JNEUROSCI.1860-11.2011",
+                            "exclusionTag": null,
+                            "id": "2ebe0596-6f26-48e9-aea9-223b67cca17b",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "journal": "The Journal of neuroscience : the official journal of the Society for Neuroscience",
+                            "keywords": "",
+                            "neurostoreId": "55eCbb58HZ9k",
+                            "pmid": "21880911",
+                            "searchTerm": "?genericSearchStr=emotional+pain&dataType=coordinate&source=all&sortBy=relevance&descOrder=true",
+                            "tags": [
+                                {
+                                    "id": "fca43b33-bbcf-4c12-a6cc-06118ff7d364",
+                                    "isAssignable": true,
+                                    "isExclusionTag": false,
+                                    "label": "emotional pain (datatype=coordinate)"
+                                }
+                            ],
+                            "title": "Corticotropin-releasing factor receptor 1 antagonist alters regional activation and effective connectivity in an emotional-arousal circuit during expectation of  abdominal pain."
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/22073183",
+                            "articleYear": "",
+                            "authors": "Shimo K, Ueno T, Younger J, Nishihara M, Inoue S, Ikemoto T, Taniguchi S, Ushida T",
+                            "doi": "10.1371/journal.pone.0026681",
+                            "exclusionTag": null,
+                            "id": "49d85af8-eabc-4cbd-872d-1d960f657396",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "journal": "PloS one",
+                            "keywords": "",
+                            "neurostoreId": "53Wz2LfFi9yJ",
+                            "pmid": "22073183",
+                            "searchTerm": "?genericSearchStr=emotional+pain&dataType=coordinate&source=all&sortBy=relevance&descOrder=true",
+                            "tags": [
+                                {
+                                    "id": "fca43b33-bbcf-4c12-a6cc-06118ff7d364",
+                                    "isAssignable": true,
+                                    "isExclusionTag": false,
+                                    "label": "emotional pain (datatype=coordinate)"
+                                }
+                            ],
+                            "title": "Visualization of painful experiences believed to trigger the activation of affective and emotional brain regions in subjects with low back pain."
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/22154962",
+                            "articleYear": "",
+                            "authors": "Bruneau EG, Pluta A, Saxe R",
+                            "doi": "10.1016/j.neuropsychologia.2011.11.008",
+                            "exclusionTag": null,
+                            "id": "7ec96f39-c5a7-4f3e-9b60-c54e7894d973",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "journal": "Neuropsychologia",
+                            "keywords": "",
+                            "neurostoreId": "74WZB3uFs4dF",
+                            "pmid": "22154962",
+                            "searchTerm": "?genericSearchStr=emotional+pain&dataType=coordinate&source=all&sortBy=relevance&descOrder=true",
+                            "tags": [
+                                {
+                                    "id": "fca43b33-bbcf-4c12-a6cc-06118ff7d364",
+                                    "isAssignable": true,
+                                    "isExclusionTag": false,
+                                    "label": "emotional pain (datatype=coordinate)"
+                                }
+                            ],
+                            "title": "Distinct roles of the 'shared pain' and 'theory of mind' networks in processing others' emotional suffering."
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/22446299",
+                            "articleYear": "",
+                            "authors": "Buhle JT, Kober H, Ochsner KN, Mende-Siedlecki P, Weber J, Hughes BL, Kross E, Atlas LY, McRae K, Wager TD",
+                            "doi": "10.1093/scan/nss038",
+                            "exclusionTag": null,
+                            "id": "3cf72cf1-2068-483d-bce4-354900d22af9",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "journal": "Social cognitive and affective neuroscience",
+                            "keywords": "",
+                            "neurostoreId": "4AWg42ESd7Am",
+                            "pmid": "22446299",
+                            "searchTerm": "?genericSearchStr=emotional+pain&dataType=coordinate&source=all&sortBy=relevance&descOrder=true",
+                            "tags": [
+                                {
+                                    "id": "fca43b33-bbcf-4c12-a6cc-06118ff7d364",
+                                    "isAssignable": true,
+                                    "isExclusionTag": false,
+                                    "label": "emotional pain (datatype=coordinate)"
+                                }
+                            ],
+                            "title": "Common representation of pain and negative emotion in the midbrain periaqueductal gray."
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/22732556",
+                            "articleYear": "",
+                            "authors": "Vachon-Presseau E, Roy M, Martel MO, Albouy G, Chen J, Budell L, Sullivan MJ, Jackson PL, Rainville P",
+                            "doi": "10.1016/j.neuroimage.2012.06.030",
+                            "exclusionTag": null,
+                            "id": "dcabe3f1-18c7-42fa-a189-92ddd7328cbc",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "journal": "NeuroImage",
+                            "keywords": "",
+                            "neurostoreId": "3rdCEELEZ6JB",
+                            "pmid": "22732556",
+                            "searchTerm": "?genericSearchStr=emotional+pain&dataType=coordinate&source=all&sortBy=relevance&descOrder=true",
+                            "tags": [
+                                {
+                                    "id": "fca43b33-bbcf-4c12-a6cc-06118ff7d364",
+                                    "isAssignable": true,
+                                    "isExclusionTag": false,
+                                    "label": "emotional pain (datatype=coordinate)"
+                                }
+                            ],
+                            "title": "Neural processing of sensory and emotional-communicative information associated with the perception of vicarious pain."
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/23063451",
+                            "articleYear": "",
+                            "authors": "van der Heiden L, Scherpiet S, Konicar L, Birbaumer N, Veit R",
+                            "doi": "10.1016/j.neuroimage.2012.10.003",
+                            "exclusionTag": null,
+                            "id": "0ac51b78-6c1c-4604-930b-f80efcdc7a35",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "journal": "NeuroImage",
+                            "keywords": "",
+                            "neurostoreId": "y5tfdVAraBwq",
+                            "pmid": "23063451",
+                            "searchTerm": "?genericSearchStr=emotional+pain&dataType=coordinate&source=all&sortBy=relevance&descOrder=true",
+                            "tags": [
+                                {
+                                    "id": "fca43b33-bbcf-4c12-a6cc-06118ff7d364",
+                                    "isAssignable": true,
+                                    "isExclusionTag": false,
+                                    "label": "emotional pain (datatype=coordinate)"
+                                }
+                            ],
+                            "title": "Inter-individual differences in successful perspective taking during pain perception mediates emotional responsiveness in self and others: an fMRI study."
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/23566889",
+                            "articleYear": "",
+                            "authors": "Cheon BK, Im DM, Harada T, Kim JS, Mathur VA, Scimeca JM, Parrish TB, Park H, Chiao JY",
+                            "doi": "10.1016/j.neuropsychologia.2013.03.018",
+                            "exclusionTag": null,
+                            "id": "23bba6f2-bd8f-4b72-8867-51ba1867e5c1",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "journal": "Neuropsychologia",
+                            "keywords": "",
+                            "neurostoreId": "6w7Tz9fwRtLg",
+                            "pmid": "23566889",
+                            "searchTerm": "?genericSearchStr=emotional+pain&dataType=coordinate&source=all&sortBy=relevance&descOrder=true",
+                            "tags": [
+                                {
+                                    "id": "fca43b33-bbcf-4c12-a6cc-06118ff7d364",
+                                    "isAssignable": true,
+                                    "isExclusionTag": false,
+                                    "label": "emotional pain (datatype=coordinate)"
+                                }
+                            ],
+                            "title": "Cultural modulation of the neural correlates of emotional pain perception: the role of other-focusedness."
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/23752177",
+                            "articleYear": "",
+                            "authors": "Kamping S, Bomba IC, Kanske P, Diesch E, Flor H",
+                            "doi": "10.1016/j.pain.2013.06.003",
+                            "exclusionTag": null,
+                            "id": "e1874700-b7d8-4ce8-a159-1ada9d3deba3",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "journal": "Pain",
+                            "keywords": "",
+                            "neurostoreId": "7kUjVE7yPSaq",
+                            "pmid": "23752177",
+                            "searchTerm": "?genericSearchStr=emotional+pain&dataType=coordinate&source=all&sortBy=relevance&descOrder=true",
+                            "tags": [
+                                {
+                                    "id": "fca43b33-bbcf-4c12-a6cc-06118ff7d364",
+                                    "isAssignable": true,
+                                    "isExclusionTag": false,
+                                    "label": "emotional pain (datatype=coordinate)"
+                                }
+                            ],
+                            "title": "Deficient modulation of pain by a positive emotional context in fibromyalgia patients."
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/23983029",
+                            "articleYear": "",
+                            "authors": "Hashmi JA, Baliki MN, Huang L, Baria AT, Torbey S, Hermann KM, Schnitzer TJ, Apkarian AV",
+                            "doi": "10.1093/brain/awt211",
+                            "exclusionTag": null,
+                            "id": "235f4057-1994-478a-8ac9-c7adb4a8ed63",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "journal": "Brain : a journal of neurology",
+                            "keywords": "",
+                            "neurostoreId": "54qajmhxQBs6",
+                            "pmid": "23983029",
+                            "searchTerm": "?genericSearchStr=emotional+pain&dataType=coordinate&source=all&sortBy=relevance&descOrder=true",
+                            "tags": [
+                                {
+                                    "id": "fca43b33-bbcf-4c12-a6cc-06118ff7d364",
+                                    "isAssignable": true,
+                                    "isExclusionTag": false,
+                                    "label": "emotional pain (datatype=coordinate)"
+                                }
+                            ],
+                            "title": "Shape shifting pain: chronification of back pain shifts brain representation from nociceptive to emotional circuits."
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/25208742",
+                            "articleYear": "",
+                            "authors": "Salomons TV, Nusslock R, Detloff A, Johnstone T, Davidson RJ",
+                            "doi": "10.1162/jocn_a_00702",
+                            "exclusionTag": null,
+                            "id": "24c3883c-f435-4d5d-a5e4-df2f53a012ca",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "journal": "Journal of cognitive neuroscience",
+                            "keywords": "",
+                            "neurostoreId": "5Bi5Sh63u6EH",
+                            "pmid": "25208742",
+                            "searchTerm": "?genericSearchStr=emotional+pain&dataType=coordinate&source=all&sortBy=relevance&descOrder=true",
+                            "tags": [
+                                {
+                                    "id": "fca43b33-bbcf-4c12-a6cc-06118ff7d364",
+                                    "isAssignable": true,
+                                    "isExclusionTag": false,
+                                    "label": "emotional pain (datatype=coordinate)"
+                                }
+                            ],
+                            "title": "Neural emotion regulation circuitry underlying anxiolytic effects of perceived control over pain."
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/25396729",
+                            "articleYear": "",
+                            "authors": "Laeger I, Dobel C, Radenz B, Kugel H, Keuper K, Eden A, Arolt V, Zwitserlood P, Dannlowski U, Zwanzger P",
+                            "doi": "10.1371/journal.pone.0109949",
+                            "exclusionTag": null,
+                            "id": "dd2662ea-83a4-4db0-b651-957d64b62203",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "journal": "PloS one",
+                            "keywords": "",
+                            "neurostoreId": "7Zxy4YoV24xZ",
+                            "pmid": "25396729",
+                            "searchTerm": "?genericSearchStr=emotional+pain&dataType=coordinate&source=all&sortBy=relevance&descOrder=true",
+                            "tags": [
+                                {
+                                    "id": "fca43b33-bbcf-4c12-a6cc-06118ff7d364",
+                                    "isAssignable": true,
+                                    "isExclusionTag": false,
+                                    "label": "emotional pain (datatype=coordinate)"
+                                }
+                            ],
+                            "title": "Of 'disgrace' and 'pain' - corticolimbic interaction patterns for disorder-relevant and emotional words in social phobia."
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/25605968",
+                            "articleYear": "",
+                            "authors": "Wang C, Wu B, Liu Y, Wu X, Han S",
+                            "doi": "10.1093/scan/nsv005",
+                            "exclusionTag": null,
+                            "id": "8b99e5d8-7fa2-40bf-a46c-ea73cd7615d0",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "journal": "Social cognitive and affective neuroscience",
+                            "keywords": "",
+                            "neurostoreId": "GLz2mFBHedt5",
+                            "pmid": "25605968",
+                            "searchTerm": "?genericSearchStr=emotional+pain&dataType=coordinate&source=all&sortBy=relevance&descOrder=true",
+                            "tags": [
+                                {
+                                    "id": "fca43b33-bbcf-4c12-a6cc-06118ff7d364",
+                                    "isAssignable": true,
+                                    "isExclusionTag": false,
+                                    "label": "emotional pain (datatype=coordinate)"
+                                }
+                            ],
+                            "title": "Challenging emotional prejudice by changing self-concept: priming independent self-construal reduces racial in-group bias in neural responses to other's pain."
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/25671563",
+                            "articleYear": "",
+                            "authors": "Budell L, Kunz M, Jackson PL, Rainville P",
+                            "doi": "10.1371/journal.pone.0107526",
+                            "exclusionTag": null,
+                            "id": "49fb402b-c1cf-4b89-82f0-d8a04f050f2a",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "journal": "PloS one",
+                            "keywords": "",
+                            "neurostoreId": "3dxtKE8oBCDT",
+                            "pmid": "25671563",
+                            "searchTerm": "?genericSearchStr=emotional+pain&dataType=coordinate&source=all&sortBy=relevance&descOrder=true",
+                            "tags": [
+                                {
+                                    "id": "fca43b33-bbcf-4c12-a6cc-06118ff7d364",
+                                    "isAssignable": true,
+                                    "isExclusionTag": false,
+                                    "label": "emotional pain (datatype=coordinate)"
+                                }
+                            ],
+                            "title": "Mirroring pain in the brain: emotional expression versus motor imitation."
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/29258849",
+                            "articleYear": "",
+                            "authors": "Qiao-Tasserit E, Corradi-Dell'Acqua C, Vuilleumier P",
+                            "doi": "10.1016/j.neuropsychologia.2017.12.027",
+                            "exclusionTag": null,
+                            "id": "2398271b-8fe7-49b0-8b0d-4b8cf788db8a",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "journal": "Neuropsychologia",
+                            "keywords": "",
+                            "neurostoreId": "GD4L8f8poNaE",
+                            "pmid": "29258849",
+                            "searchTerm": "?genericSearchStr=emotional+pain&dataType=coordinate&source=all&sortBy=relevance&descOrder=true",
+                            "tags": [
+                                {
+                                    "id": "fca43b33-bbcf-4c12-a6cc-06118ff7d364",
+                                    "isAssignable": true,
+                                    "isExclusionTag": false,
+                                    "label": "emotional pain (datatype=coordinate)"
+                                }
+                            ],
+                            "title": "The good, the bad, and the suffering. Transient emotional episodes modulate the neural circuits of pain and empathy."
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/29662445",
+                            "articleYear": "",
+                            "authors": "Zhang Y, Mao Z, Pan L, Ling Z, Liu X, Zhang J, Yu X",
+                            "doi": "10.3389/fnhum.2018.00107",
+                            "exclusionTag": null,
+                            "id": "58dc1652-fde6-4f24-a59c-30c862ec3973",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "journal": "Frontiers in human neuroscience",
+                            "keywords": "",
+                            "neurostoreId": "6wfjKuLfhbEk",
+                            "pmid": "29662445",
+                            "searchTerm": "?genericSearchStr=emotional+pain&dataType=coordinate&source=all&sortBy=relevance&descOrder=true",
+                            "tags": [
+                                {
+                                    "id": "fca43b33-bbcf-4c12-a6cc-06118ff7d364",
+                                    "isAssignable": true,
+                                    "isExclusionTag": false,
+                                    "label": "emotional pain (datatype=coordinate)"
+                                }
+                            ],
+                            "title": "Dysregulation of Pain- and Emotion-Related Networks in Trigeminal Neuralgia."
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/24062659",
+                            "articleYear": "",
+                            "authors": "",
+                            "doi": "",
+                            "exclusionTag": null,
+                            "id": "21bf8fe6-c288-41c3-a9ba-2911704f67c8",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "journal": "",
+                            "keywords": "",
+                            "neurostoreId": "7GePz7Fxq6M5",
+                            "pmid": "24062659",
+                            "searchTerm": "?genericSearchStr=emotional+pain&dataType=coordinate&source=all&sortBy=relevance&descOrder=true",
+                            "tags": [
+                                {
+                                    "id": "fca43b33-bbcf-4c12-a6cc-06118ff7d364",
+                                    "isAssignable": true,
+                                    "isExclusionTag": false,
+                                    "label": "emotional pain (datatype=coordinate)"
+                                }
+                            ],
+                            "title": "Emotional modulation of experimental pain: a source imaging study of laser evoked potentials"
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/24424389",
+                            "articleYear": "",
+                            "authors": "",
+                            "doi": "",
+                            "exclusionTag": null,
+                            "id": "4a77d8fc-74ad-42df-907c-2bc494140385",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "journal": "",
+                            "keywords": "",
+                            "neurostoreId": "8K2VUUynUP8M",
+                            "pmid": "24424389",
+                            "searchTerm": "?genericSearchStr=emotional+pain&dataType=coordinate&source=all&sortBy=relevance&descOrder=true",
+                            "tags": [
+                                {
+                                    "id": "fca43b33-bbcf-4c12-a6cc-06118ff7d364",
+                                    "isAssignable": true,
+                                    "isExclusionTag": false,
+                                    "label": "emotional pain (datatype=coordinate)"
+                                }
+                            ],
+                            "title": "Emotional contagion for pain is intact in autism spectrum disorders"
+                        },
+                        {
+                            "abstractText": "",
+                            "articleLink": "https://pubmed.ncbi.nlm.nih.gov/28259800",
+                            "articleYear": "",
+                            "authors": "",
+                            "doi": "",
+                            "exclusionTag": null,
+                            "id": "a47950dd-3794-420e-b74d-62879155c2bb",
+                            "identificationSource": {
+                                "id": "neurosynth_neurostore_id_source",
+                                "label": "Neurostore"
+                            },
+                            "journal": "",
+                            "keywords": "",
+                            "neurostoreId": "7MbiShMxeZNF",
+                            "pmid": "28259800",
+                            "searchTerm": "?genericSearchStr=emotional+pain&dataType=coordinate&source=all&sortBy=relevance&descOrder=true",
+                            "tags": [
+                                {
+                                    "id": "fca43b33-bbcf-4c12-a6cc-06118ff7d364",
+                                    "isAssignable": true,
+                                    "isExclusionTag": false,
+                                    "label": "emotional pain (datatype=coordinate)"
+                                }
+                            ],
+                            "title": "The interaction of emotion and pain in the insula and secondary somatosensory cortex"
+                        }
+                    ]
+                }
+            ],
+            "exclusionTags": [
+                {
+                    "id": "neurosynth_exclude_exclusion",
+                    "isAssignable": true,
+                    "isExclusionTag": true,
+                    "label": "Exclude"
+                },
+                {
+                    "id": "neurosynth_duplicate_exclusion",
+                    "isAssignable": true,
+                    "isExclusionTag": true,
+                    "label": "Duplicate"
+                }
+            ],
+            "identificationSources": [
+                {
+                    "id": "neurosynth_neurostore_id_source",
+                    "label": "Neurostore"
+                },
+                {
+                    "id": "neurosynth_pubmed_id_source",
+                    "label": "PubMed"
+                },
+                {
+                    "id": "neurosynth_scopus_id_source",
+                    "label": "Scopus"
+                },
+                {
+                    "id": "neurosynth_web_of_science_id_source",
+                    "label": "Web of Science"
+                },
+                {
+                    "id": "neurosynth_psycinfo_id_source",
+                    "label": "PsycInfo"
+                }
+            ],
+            "infoTags": [
+                {
+                    "id": "neurosynth_untagged_tag",
+                    "isAssignable": false,
+                    "isExclusionTag": false,
+                    "label": "Untagged studies"
+                },
+                {
+                    "id": "neurosynth_uncategorized_tag",
+                    "isAssignable": false,
+                    "isExclusionTag": false,
+                    "label": "Uncategorized Studies"
+                },
+                {
+                    "id": "neurosynth_needs_review_tag",
+                    "isAssignable": false,
+                    "isExclusionTag": false,
+                    "label": "Needs Review"
+                },
+                {
+                    "id": "fca43b33-bbcf-4c12-a6cc-06118ff7d364",
+                    "isAssignable": true,
+                    "isExclusionTag": false,
+                    "label": "emotional pain (datatype=coordinate)"
+                }
+            ],
+            "prismaConfig": {
+                "eligibility": {
+                    "exclusionTags": []
+                },
+                "identification": {
+                    "exclusionTags": []
+                },
+                "isPrisma": false,
+                "screening": {
+                    "exclusionTags": []
+                }
+            }
+        },
+        "extractionMetadata": {
+            "annotationId": "7GpCejT5D628",
+            "studyStatusList": [
+                {
+                    "id": "3DHHkeKrwgdo",
+                    "status": "completed"
+                }
+            ],
+            "studysetId": "4uLzwmHx8N4x"
+        },
+        "metaAnalysisMetadata": {
+            "canEditMetaAnalyses": false
+        }
     }
- }
+}

@@ -1,0 +1,5 @@
+node_modules
+src/neurostore-typescript-sdk
+src/neurosynth-compose-typescript-sdk
+src/assets/config/meta_analysis_params.json
+dist

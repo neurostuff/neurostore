@@ -1,8 +1,8 @@
 import { Step, StepLabel, StepProps, Typography } from '@mui/material';
 
-const ProjectsPageCardStep: React.FC<
-    StepProps & { isActive: boolean; optionalText: string; title: string }
-> = (props) => {
+const ProjectsPageCardStep: React.FC<StepProps & { isActive: boolean; optionalText: string; title: string }> = (
+    props
+) => {
     const { isActive, optionalText, title, ...stepProps } = props;
 
     return (

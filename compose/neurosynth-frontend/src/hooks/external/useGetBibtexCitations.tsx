@@ -32,8 +32,7 @@ const generateBibtexNote = (study: ICurationStubStudy) => {
     }
     if (study.tags.length > 0) {
         const tagString = study.tags.reduce(
-            (prev, curr, index, arr) =>
-                `${prev}${curr.label}${index === arr.length - 1 ? '' : ','}`,
+            (prev, curr, index, arr) => `${prev}${curr.label}${index === arr.length - 1 ? '' : ','}`,
             ''
         );
         bibtexNote = `${bibtexNote}; Tags: ${tagString}`;
@@ -87,11 +86,8 @@ const useGetBibtexCitations = () => {
     return useMutation<IBibtex, AxiosError, ICurationStubStudy, unknown>(async (study) => {
         let res: IBibtex;
         try {
-            res = (
-                await axios.get<{ message: IBibtex }>(
-                    `https://api.crossref.org/v1/works/${study.doi}`
-                )
-            ).data.message;
+            res = (await axios.get<{ message: IBibtex }>(`https://api.crossref.org/v1/works/${study.doi}`)).data
+                .message;
         } catch (e) {
             res = generateBibtex(study);
         }

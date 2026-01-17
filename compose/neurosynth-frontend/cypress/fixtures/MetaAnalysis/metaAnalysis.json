@@ -31,9 +31,7 @@
     "results": [],
     "run_key": "ynOyv2LWO-ZMS-f9pYmX2w",
     "specification": {
-        "conditions": [
-            "ABC"
-        ],
+        "conditions": ["ABC"],
         "corrector": null,
         "created_at": "2023-11-27T21:45:52.407039+00:00",
         "database_studyset": "Neurostore Dataset",
@@ -52,9 +50,7 @@
         "updated_at": "2023-11-28T02:43:14.502324+00:00",
         "user": "mock-user-id",
         "username": "mock-username",
-        "weights": [
-            1.0
-        ]
+        "weights": [1.0]
     },
     "studyset": {
         "created_at": "2023-11-27T21:45:52.785294+00:00",
