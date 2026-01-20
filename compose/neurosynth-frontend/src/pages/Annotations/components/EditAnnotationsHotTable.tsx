@@ -92,6 +92,7 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
                         note: annotationNote.note,
                         analysis: annotationNote.analysis,
                         study: annotationNote.study,
+                        annotation: props.annotationId,
                     })),
                     note_keys: updatedNoteKeyObj,
                 },
