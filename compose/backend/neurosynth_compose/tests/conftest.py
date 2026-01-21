@@ -82,6 +82,9 @@ def mock_decode_token(token):
         return {"sub": "user1-id"}
     elif token == encode({"sub": "user2-id"}, "123", algorithm="HS256"):
         return {"sub": "user2-id"}
+    # admin user
+    elif token == encode({"sub": "admin-user-id"}, "admin123", algorithm="HS256"):
+        return {"sub": "admin-user-id"}
 
 
 class MockResponse:

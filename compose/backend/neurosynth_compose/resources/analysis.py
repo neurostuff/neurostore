@@ -108,6 +108,18 @@ def get_current_user():
     return None
 
 
+def is_user_admin(user=None):
+    """Check if the user has the admin role"""
+    if user is None:
+        user = get_current_user()
+    
+    if user is None:
+        return False
+    
+    # Check if user has a role named 'admin'
+    return any(role.name == "admin" for role in user.roles)
+
+
 def view_maker(cls):
     proc_name = cls.__name__.removesuffix("View").removesuffix("Resource")
     basename = singularize(proc_name, custom={"MetaAnalyses": "MetaAnalysis"})
@@ -180,8 +192,8 @@ class BaseView(MethodView):
                 to_commit.append(record)
             elif record is None:
                 abort(422)
-            elif not only_ids and record.user_id != current_user.external_id:
-                abort(403)
+            elif not only_ids and record.user_id != current_user.external_id and not is_user_admin(current_user):
+                abort(403, description="You do not have permission to modify this record. You must be the owner or an admin.")
             elif only_ids:
                 to_commit.append(record)
 
@@ -300,12 +312,13 @@ class ObjectView(BaseView):
         self.db_validation({"id": id})
 
         current_user = get_current_user()
-        if record.user_id != current_user.external_id:
+        is_admin = is_user_admin(current_user)
+        if record.user_id != current_user.external_id and not is_admin:
             abort(
                 403,
                 description=(
                     f"user {current_user.external_id} cannot change "
-                    f"record owned by {record.user_id}."
+                    f"record owned by {record.user_id}. Only the owner or an admin can delete records."
                 ),
             )
 
@@ -393,12 +406,18 @@ class ListView(BaseView):
         # query items that are public and/or you own them
         if hasattr(m, "public"):
             current_user = get_current_user()
-            q = q.filter(sae.or_(m.public == True, m.user == current_user))  # noqa E712
+            is_admin = is_user_admin(current_user)
+            # Admins can see all records, others see public or their own
+            if not is_admin:
+                q = q.filter(sae.or_(m.public == True, m.user == current_user))  # noqa E712
 
         # query items that are drafts
         if hasattr(m, "draft"):
             current_user = get_current_user()
-            q = q.filter(sae.or_(m.draft == False, m.user == current_user))  # noqa E712
+            is_admin = is_user_admin(current_user)
+            # Admins can see all drafts, others only see non-drafts or their own drafts
+            if not is_admin:
+                q = q.filter(sae.or_(m.draft == False, m.user == current_user))  # noqa E712
 
         # query annotations for a specific dataset
         if args.get("dataset_id"):
