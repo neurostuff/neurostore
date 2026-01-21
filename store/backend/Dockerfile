@@ -7,11 +7,11 @@ WORKDIR /store/backend
 RUN apt-get -qq update
 
 RUN wget -O- http://neuro.debian.net/lists/stretch.us-nh.full | tee /etc/apt/sources.list.d/neurodebian.sources.list && apt-key adv --recv-keys --keyserver hkps://keyserver.ubuntu.com 0xA5D32F012649A5A9
-RUN curl -sSL https://deb.nodesource.com/gpgkey/nodesource.gpg.key | apt-key add -
-RUN echo "deb https://deb.nodesource.com/node_16.x buster main" | tee /etc/apt/sources.list.d/nodesource.list
-RUN echo "deb-src https://deb.nodesource.com/node_16.x buster main" | tee -a /etc/apt/sources.list.d/nodesource.list
-RUN apt-get update --allow-releaseinfo-change
-RUN apt-get install -y nodejs
+
+# Install Node.js 16 using the setup script which handles signing issues
+RUN apt-get install -y --no-install-recommends curl ca-certificates gnupg
+RUN curl -fsSL https://deb.nodesource.com/setup_16.x | bash - || true
+RUN apt-get install -y --no-install-recommends nodejs
 RUN npm install -g yarn
 RUN pip install --upgrade pip
 
