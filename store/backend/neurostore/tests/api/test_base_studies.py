@@ -735,7 +735,7 @@ def test_base_studies_semantic_search(
         assert "id" in data["results"][0]
 
 
-def test_is_active_filter_list(auth_client, session, ingest_neurostore):
+def test_is_active_filter_list(auth_client, session, ingest_neurosynth):
     """Test that inactive base studies are filtered out from list view"""
     # Get a base study and mark it as inactive
     base_study = BaseStudy.query.first()
@@ -777,7 +777,7 @@ def test_is_active_filter_list(auth_client, session, ingest_neurostore):
     assert inactive_id not in result_ids
 
 
-def test_is_active_filter_get(auth_client, session, ingest_neurostore):
+def test_is_active_filter_get(auth_client, session, ingest_neurosynth):
     """Test that inactive base studies CAN still be retrieved via direct link"""
     # Get a base study and mark it as inactive
     base_study = BaseStudy.query.first()
@@ -854,7 +854,7 @@ def test_superseded_by_no_self_reference(session):
         # Expected behavior
 
 
-def test_is_active_not_exposed_in_api(auth_client, ingest_neurostore):
+def test_is_active_not_exposed_in_api(auth_client, ingest_neurosynth):
     """Test that is_active and superseded_by are not exposed in API responses"""
     # Get a base study
     resp = auth_client.get("/api/base-studies/")
