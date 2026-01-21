@@ -16,6 +16,7 @@ dependencies = [
     "celery~=5.0",
     "connexion[swagger-ui,uvicorn,flask]==3.3.0",
     "flask~=3.1",
+    "flask-admin~=1.6",
     "Flask-CeleryExt~=0.5",
     "flask-cors~=6.0",
     "flask-migrate~=4.1",

@@ -12,6 +12,8 @@ import connexion
 from connexion.resolver import MethodResolver
 from flask_caching import Cache
 from flask_orjson import OrjsonProvider
+from flask_admin import Admin
+from flask_admin.contrib.sqla import ModelView
 
 # Centralized error handling: replaced middleware with Starlette exception handlers
 from neurostore.exceptions.handlers import (
@@ -38,6 +40,33 @@ db = init_db(app)
 cache = Cache(app)
 
 app.secret_key = app.config["JWT_SECRET_KEY"]
+
+# Initialize Flask-Admin
+from neurostore.models import (
+    User, Role, Studyset, StudysetStudy, Annotation, BaseStudy, Study,
+    Analysis, Table, Condition, Point, Image, Entity, AnnotationAnalysis,
+    PointValue, AnalysisConditions
+)
+
+admin = Admin(app, name='NeuroStore Admin', template_mode='bootstrap4', url='/admin')
+
+# Add model views for all major models
+admin.add_view(ModelView(User, db.session, category='Auth'))
+admin.add_view(ModelView(Role, db.session, category='Auth'))
+admin.add_view(ModelView(Studyset, db.session, category='Data'))
+admin.add_view(ModelView(StudysetStudy, db.session, category='Data'))
+admin.add_view(ModelView(Annotation, db.session, category='Data'))
+admin.add_view(ModelView(BaseStudy, db.session, category='Studies'))
+admin.add_view(ModelView(Study, db.session, category='Studies'))
+admin.add_view(ModelView(Analysis, db.session, category='Studies'))
+admin.add_view(ModelView(Table, db.session, category='Studies'))
+admin.add_view(ModelView(Condition, db.session, category='Studies'))
+admin.add_view(ModelView(Point, db.session, category='Studies'))
+admin.add_view(ModelView(Image, db.session, category='Studies'))
+admin.add_view(ModelView(Entity, db.session, category='Studies'))
+admin.add_view(ModelView(AnnotationAnalysis, db.session, category='Analysis'))
+admin.add_view(ModelView(PointValue, db.session, category='Analysis'))
+admin.add_view(ModelView(AnalysisConditions, db.session, category='Analysis'))
 
 options = {"swagger_ui": True}
 

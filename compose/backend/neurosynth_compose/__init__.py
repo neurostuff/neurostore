@@ -5,6 +5,8 @@ import connexion
 from authlib.integrations.flask_client import OAuth
 from connexion.resolver import MethodResolver
 from starlette.middleware.cors import CORSMiddleware
+from flask_admin import Admin
+from flask_admin.contrib.sqla import ModelView
 
 from .database import init_db
 from .resources.auth import AuthError, handle_auth_error, init_app as init_auth
@@ -72,8 +74,38 @@ def create_app():
         client_kwargs={"scope": "openid profile email"},
     )
 
-    init_db(app)
+    db = init_db(app)
     init_auth(app)
+
+    # Initialize Flask-Admin
+    from neurosynth_compose.models import (
+        User, Specification, Studyset, StudysetReference, Annotation,
+        AnnotationReference, MetaAnalysis, MetaAnalysisResult,
+        NeurovaultCollection, NeurovaultFile, NeurostoreStudy,
+        NeurostoreAnalysis, Project
+    )
+    from neurosynth_compose.models.auth import Role
+    from neurosynth_compose.models.analysis import Condition, SpecificationCondition
+
+    admin = Admin(app, name='Neurosynth Compose Admin', template_mode='bootstrap4', url='/admin')
+
+    # Add model views for all major models
+    admin.add_view(ModelView(User, db.session, category='Auth'))
+    admin.add_view(ModelView(Role, db.session, category='Auth'))
+    admin.add_view(ModelView(Project, db.session, category='Projects'))
+    admin.add_view(ModelView(MetaAnalysis, db.session, category='Meta-Analysis'))
+    admin.add_view(ModelView(MetaAnalysisResult, db.session, category='Meta-Analysis'))
+    admin.add_view(ModelView(Specification, db.session, category='Specifications'))
+    admin.add_view(ModelView(SpecificationCondition, db.session, category='Specifications'))
+    admin.add_view(ModelView(Condition, db.session, category='Specifications'))
+    admin.add_view(ModelView(Studyset, db.session, category='Data'))
+    admin.add_view(ModelView(StudysetReference, db.session, category='Data'))
+    admin.add_view(ModelView(Annotation, db.session, category='Data'))
+    admin.add_view(ModelView(AnnotationReference, db.session, category='Data'))
+    admin.add_view(ModelView(NeurovaultCollection, db.session, category='Neurovault'))
+    admin.add_view(ModelView(NeurovaultFile, db.session, category='Neurovault'))
+    admin.add_view(ModelView(NeurostoreStudy, db.session, category='Neurostore'))
+    admin.add_view(ModelView(NeurostoreAnalysis, db.session, category='Neurostore'))
 
     app.secret_key = app.config["JWT_SECRET_KEY"]
 
