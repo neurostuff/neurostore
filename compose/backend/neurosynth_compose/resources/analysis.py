@@ -1081,6 +1081,7 @@ def create_or_update_neurostore_study(ns_study):
     from flask import request
     from auth0.authentication.get_token import GetToken
     from .neurostore import neurostore_session
+    import traceback
 
     access_token = request.headers.get("Authorization")
     # use the client to authenticate if user credentials were not used
@@ -1110,8 +1111,12 @@ def create_or_update_neurostore_study(ns_study):
         else:
             ns_study_res = ns_ses.post("/api/studies/", json=study_data)
             ns_study.neurostore_id = ns_study_res.json()["id"]
+        ns_study.status = "OK"
+        ns_study.exception = None
+        ns_study.traceback = None
     except Exception as exception:  # noqa: E722
-        ns_study.traceback = str(exception)
+        ns_study.exception = str(exception)
+        ns_study.traceback = traceback.format_exc()
         ns_study.status = "FAILED"
 
     return ns_study
