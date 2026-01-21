@@ -36,7 +36,7 @@ def test_is_user_admin_returns_false_for_none(session):
 
 def test_admin_can_modify_others_records(auth_clients, user_data, session):
     """Test that admin users can modify records they don't own"""
-    from .request_utils import Client
+    from ..request_utils import Client
     from jose.jwt import encode
 
     # Get a regular user's study
@@ -73,7 +73,7 @@ def test_admin_can_modify_others_records(auth_clients, user_data, session):
 
 def test_admin_can_delete_others_records(auth_clients, user_data, session):
     """Test that admin users can delete records they don't own"""
-    from .request_utils import Client
+    from ..request_utils import Client
     from jose.jwt import encode
 
     # Get a regular user's study
@@ -108,7 +108,7 @@ def test_admin_can_delete_others_records(auth_clients, user_data, session):
 
 def test_admin_can_see_private_records(auth_clients, user_data, session):
     """Test that admin users can see all records including private ones"""
-    from .request_utils import Client
+    from ..request_utils import Client
     from jose.jwt import encode
 
     # Create a private studyset owned by user1
