@@ -108,4 +108,3 @@ def test_table_label_field(auth_client, ingest_neurosynth, session):
     get_resp = auth_client.get(f"/api/tables/{table_id}")
     assert get_resp.status_code == 200
     assert get_resp.json()["table_label"] == "n-back task contrasts"
-
