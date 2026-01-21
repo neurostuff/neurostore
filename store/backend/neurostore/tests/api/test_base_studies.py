@@ -737,11 +737,16 @@ def test_base_studies_semantic_search(
 
 def test_is_active_filter_list(auth_client, session, ingest_neurosynth):
     """Test that inactive base studies are filtered out from list view"""
+    # First get the list of all base studies
+    resp = auth_client.get("/api/base-studies/")
+    assert resp.status_code == 200
+    data = resp.json()
+    initial_count = len(data["results"])
+    assert initial_count > 0, "Should have at least one base study"
+
     # Get a base study and mark it as inactive
     base_study = BaseStudy.query.first()
     assert base_study is not None
-
-    # Store the ID for later
     inactive_id = base_study.id
 
     # Mark it as inactive
@@ -756,25 +761,8 @@ def test_is_active_filter_list(auth_client, session, ingest_neurosynth):
     # Verify the inactive study is not in the results
     result_ids = [result["id"] for result in data["results"]]
     assert inactive_id not in result_ids
-
-    # Create an active base study to verify active ones still appear
-    active_study = BaseStudy(
-        name="Active Test Study",
-        doi="10.1234/active.test",
-        pmid="99999999",
-        is_active=True
-    )
-    session.add(active_study)
-    session.commit()
-    active_id = active_study.id
-
-    # Verify the active study appears
-    resp = auth_client.get("/api/base-studies/")
-    assert resp.status_code == 200
-    data = resp.json()
-    result_ids = [result["id"] for result in data["results"]]
-    assert active_id in result_ids
-    assert inactive_id not in result_ids
+    # Should have one less study than before
+    assert len(data["results"]) == initial_count - 1
 
 
 def test_is_active_filter_get(auth_client, session, ingest_neurosynth):
