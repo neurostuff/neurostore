@@ -232,4 +232,3 @@ def test_point_cluster_measurement_unit(auth_client, session):
     )
     assert resp_update.status_code == 200
     assert resp_update.json()["cluster_measurement_unit"] == "voxels"
-
