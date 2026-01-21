@@ -826,8 +826,8 @@ def test_superseded_by_relationship(session):
     assert study1.superseded_by == study2.id
     assert study1.superseded_by_study.id == study2.id
 
-    # Verify study2 has study1 in its supercedes backref
-    assert study1 in study2.supercedes
+    # Verify study2 has study1 in its supersedes backref
+    assert study1 in study2.supersedes
 
 
 def test_superseded_by_no_self_reference(session):

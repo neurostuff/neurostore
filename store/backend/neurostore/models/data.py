@@ -239,7 +239,7 @@ class BaseStudy(BaseMixin, db.Model):
         "BaseStudy",
         remote_side="BaseStudy.id",
         foreign_keys=[superseded_by],
-        backref=backref("supercedes", passive_deletes=True),
+        backref=backref("supersedes", passive_deletes=True),
     )
 
     __table_args__ = (
