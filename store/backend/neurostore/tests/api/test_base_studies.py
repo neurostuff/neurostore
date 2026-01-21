@@ -799,8 +799,8 @@ def test_is_active_filter_get(auth_client, session, ingest_neurostore):
     assert resp.status_code == 404
 
 
-def test_superceded_by_relationship(session):
-    """Test that superceded_by creates a valid relationship"""
+def test_superseded_by_relationship(session):
+    """Test that superseded_by creates a valid relationship"""
     # Create two base studies
     study1 = BaseStudy(
         name="Old Study",
@@ -819,18 +819,18 @@ def test_superceded_by_relationship(session):
     session.commit()
 
     # Link study1 to study2
-    study1.superceded_by = study2.id
+    study1.superseded_by = study2.id
     session.commit()
 
     # Verify the relationship
-    assert study1.superceded_by == study2.id
-    assert study1.superceded_by_study.id == study2.id
+    assert study1.superseded_by == study2.id
+    assert study1.superseded_by_study.id == study2.id
 
     # Verify study2 has study1 in its supercedes backref
     assert study1 in study2.supercedes
 
 
-def test_superceded_by_no_self_reference(session):
+def test_superseded_by_no_self_reference(session):
     """Test that a base study cannot supersede itself"""
     from sqlalchemy.exc import IntegrityError
 
@@ -842,8 +842,8 @@ def test_superceded_by_no_self_reference(session):
     session.add(study)
     session.commit()
 
-    # Try to set superceded_by to itself - should fail
-    study.superceded_by = study.id
+    # Try to set superseded_by to itself - should fail
+    study.superseded_by = study.id
 
     try:
         session.commit()
@@ -854,7 +854,7 @@ def test_superceded_by_no_self_reference(session):
 
 
 def test_is_active_not_exposed_in_api(auth_client, ingest_neurostore):
-    """Test that is_active and superceded_by are not exposed in API responses"""
+    """Test that is_active and superseded_by are not exposed in API responses"""
     # Get a base study
     resp = auth_client.get("/api/base-studies/")
     assert resp.status_code == 200
@@ -864,4 +864,4 @@ def test_is_active_not_exposed_in_api(auth_client, ingest_neurostore):
         result = data["results"][0]
         # Verify internal fields are not exposed
         assert "is_active" not in result
-        assert "superceded_by" not in result
+        assert "superseded_by" not in result
