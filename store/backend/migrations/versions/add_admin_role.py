@@ -41,6 +41,7 @@ def upgrade():
                 name="admin",
                 description="Administrator role with full access to all resources",
                 created_at=sa.func.now(),
+                updated_at=sa.func.now(),
             )
         )
 
