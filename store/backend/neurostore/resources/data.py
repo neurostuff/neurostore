@@ -1309,7 +1309,7 @@ class BaseStudiesView(ObjectView, ListView):
     def view_search(self, q, args):
         # Filter out inactive base studies
         q = q.filter(BaseStudy.is_active == True)  # noqa E712
-        
+
         if args.get("semantic_search"):
             pipeline_config_id = args.get("pipeline_config_id", None)
             if pipeline_config_id is None:

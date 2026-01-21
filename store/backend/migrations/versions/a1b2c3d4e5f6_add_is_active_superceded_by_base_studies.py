@@ -24,7 +24,7 @@ def upgrade():
     op.create_index(
         op.f("ix_base_studies_is_active"), "base_studies", ["is_active"], unique=False
     )
-    
+
     # Add superceded_by column (nullable self-referencing foreign key)
     op.add_column(
         "base_studies",
@@ -39,7 +39,7 @@ def upgrade():
         ["id"],
         ondelete="SET NULL",
     )
-    
+
     # Add check constraint to prevent self-reference
     op.create_check_constraint(
         "no_self_reference",
@@ -51,15 +51,15 @@ def upgrade():
 def downgrade():
     # Drop check constraint
     op.drop_constraint("no_self_reference", "base_studies", type_="check")
-    
+
     # Drop foreign key constraint
     op.drop_constraint("fk_base_studies_superceded_by", "base_studies", type_="foreignkey")
-    
+
     # Drop superceded_by column
     op.drop_column("base_studies", "superceded_by")
-    
+
     # Drop is_active index
     op.drop_index(op.f("ix_base_studies_is_active"), table_name="base_studies")
-    
+
     # Drop is_active column
     op.drop_column("base_studies", "is_active")
