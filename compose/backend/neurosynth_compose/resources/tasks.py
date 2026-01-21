@@ -75,6 +75,7 @@ def file_upload_neurovault(self, fpath, id):
         os.remove(fpath)
 
     except Exception as exception:  # noqa: E722
+        record.exception = str(exception)
         record.traceback = traceback.format_exc()
         record.status = "FAILED"
 
