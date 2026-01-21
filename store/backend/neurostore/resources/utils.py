@@ -29,6 +29,18 @@ def get_current_user():
     return None
 
 
+def is_user_admin(user=None):
+    """Check if the user has the admin role"""
+    if user is None:
+        user = get_current_user()
+    
+    if user is None:
+        return False
+    
+    # Check if user has a role named 'admin'
+    return any(role.name == "admin" for role in user.roles)
+
+
 def view_maker(cls):
     """Create a View class with model and schema attributes"""
     proc_name = cls.__name__.removesuffix("View").removesuffix("Resource")
