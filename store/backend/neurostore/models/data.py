@@ -745,6 +745,7 @@ class Point(BaseMixin, db.Model):
         db.Text, db.ForeignKey("analyses.id", ondelete="CASCADE"), index=True
     )
     cluster_size = db.Column(db.Float)
+    cluster_measurement_unit = db.Column(db.String)
     subpeak = db.Column(db.Boolean)
     deactivation = db.Column(db.Boolean, default=False, index=True)
     order = db.Column(db.Integer)

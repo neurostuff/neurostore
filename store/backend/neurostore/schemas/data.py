@@ -319,6 +319,7 @@ class PointSchema(BaseDataSchema):
     values = fields.Nested(PointValueSchema, many=True)
     entities = fields.Nested(EntitySchema, many=True, load_only=True)
     cluster_size = fields.Float(allow_none=True)
+    cluster_measurement_unit = fields.String(allow_none=True)
     subpeak = fields.Boolean(allow_none=True)
     deactivation = fields.Boolean(load_default=False, allow_none=True)
     order = fields.Integer()

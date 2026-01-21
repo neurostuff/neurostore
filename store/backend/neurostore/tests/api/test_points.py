@@ -167,3 +167,69 @@ def test_point_deactivation_column(auth_client, session):
     )
     assert resp_update.status_code == 200
     assert resp_update.json()["deactivation"] is True
+
+
+def test_point_cluster_measurement_unit(auth_client, session):
+    from ...models import User, Point, Analysis, Study
+
+    id_ = auth_client.username
+    user = User.query.filter_by(external_id=id_).first()
+    # Create study with points having different cluster_measurement_unit values
+    s = Study(
+        name="cluster measurement unit test",
+        user=user,
+        analyses=[
+            Analysis(
+                name="analysis",
+                user=user,
+                points=[
+                    Point(
+                        x=1,
+                        y=2,
+                        z=3,
+                        user=user,
+                        order=1,
+                        cluster_size=100.0,
+                        cluster_measurement_unit="mm^3",
+                    ),
+                    Point(
+                        x=4,
+                        y=5,
+                        z=6,
+                        user=user,
+                        order=2,
+                        cluster_size=50.0,
+                        cluster_measurement_unit="voxels",
+                    ),
+                    Point(x=7, y=8, z=9, user=user, order=3, cluster_size=75.0),
+                ],
+            )
+        ],
+    )
+    session.add(s)
+    session.commit()
+
+    point_mm3 = s.analyses[0].points[0]
+    point_voxels = s.analyses[0].points[1]
+    point_none = s.analyses[0].points[2]
+
+    # Fetch via API and verify cluster_measurement_unit
+    resp_mm3 = auth_client.get(f"/api/points/{point_mm3.id}")
+    resp_voxels = auth_client.get(f"/api/points/{point_voxels.id}")
+    resp_none = auth_client.get(f"/api/points/{point_none.id}")
+
+    assert resp_mm3.status_code == 200
+    assert resp_voxels.status_code == 200
+    assert resp_none.status_code == 200
+
+    assert resp_mm3.json()["cluster_measurement_unit"] == "mm^3"
+    assert resp_voxels.json()["cluster_measurement_unit"] == "voxels"
+    assert resp_none.json()["cluster_measurement_unit"] is None
+
+    # Update cluster_measurement_unit value
+    resp_update = auth_client.put(
+        f"/api/points/{point_none.id}", data={"cluster_measurement_unit": "voxels"}
+    )
+    assert resp_update.status_code == 200
+    assert resp_update.json()["cluster_measurement_unit"] == "voxels"
+
