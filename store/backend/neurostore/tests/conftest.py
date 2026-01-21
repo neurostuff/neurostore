@@ -111,6 +111,9 @@ def mock_decode_token(token):
     # new user not in the database
     elif token == encode({"sub": "newuser-id"}, "789", algorithm="HS256"):
         return {"sub": "newuser-id"}
+    # admin user
+    elif token == encode({"sub": "admin-user-id"}, "admin123", algorithm="HS256"):
+        return {"sub": "admin-user-id"}
 
 
 @pytest.fixture(scope="session")
