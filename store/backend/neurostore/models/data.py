@@ -203,7 +203,9 @@ class BaseStudy(BaseMixin, db.Model):
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"), index=True)
     ace_fulltext = db.Column(db.Text)
     pubget_fulltext = db.Column(db.Text)
-    is_active = db.Column(db.Boolean, default=True, nullable=False, index=True)
+    is_active = db.Column(
+        db.Boolean, default=True, server_default=sa.true(), nullable=False, index=True
+    )
     superseded_by = db.Column(db.Text, db.ForeignKey("base_studies.id"), nullable=True)
     _ts_vector = db.Column(
         "__ts_vector__",
