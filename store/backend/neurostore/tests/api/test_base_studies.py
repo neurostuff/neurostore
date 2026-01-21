@@ -778,7 +778,7 @@ def test_is_active_filter_list(auth_client, session, ingest_neurostore):
 
 
 def test_is_active_filter_get(auth_client, session, ingest_neurostore):
-    """Test that inactive base studies cannot be retrieved via get endpoint"""
+    """Test that inactive base studies CAN still be retrieved via direct link"""
     # Get a base study and mark it as inactive
     base_study = BaseStudy.query.first()
     assert base_study is not None
@@ -794,9 +794,10 @@ def test_is_active_filter_get(auth_client, session, ingest_neurostore):
     base_study.is_active = False
     session.commit()
 
-    # Try to get the inactive base study - should return 404
+    # Try to get the inactive base study via direct link - should still work (200)
     resp = auth_client.get(f"/api/base-studies/{inactive_id}")
-    assert resp.status_code == 404
+    assert resp.status_code == 200
+    assert resp.json()["id"] == inactive_id
 
 
 def test_superseded_by_relationship(session):

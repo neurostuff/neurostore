@@ -1144,28 +1144,6 @@ class BaseStudiesView(ObjectView, ListView):
         super().__init__(*args, **kwargs)
         self.context = {}
 
-    def get(self, id):
-        """Override to filter out inactive base studies"""
-        args = parser.parse(self._view_fields, request, location="query")
-        if args.get("nested") is None:
-            args["nested"] = request.args.get("nested", False) == "true"
-
-        q = self._model.query
-        # Filter out inactive base studies
-        q = q.filter(BaseStudy.is_active == True)  # noqa E712
-        q = self.eager_load(q, args)
-        record = q.filter_by(id=id).first()
-        if record is None:
-            abort_not_found(self._model.__name__, id)
-
-        return (
-            self._schema(
-                context=dict(args),
-            ).dump(record),
-            200,
-            {"Content-Type": "application/json"},
-        )
-
     def ann_query_object(
         self,
         q,  # an existing SQLAlchemy Query object
