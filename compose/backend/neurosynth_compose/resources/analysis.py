@@ -1001,27 +1001,78 @@ def create_neurovault_collection(nv_collection):
 
     meta_analysis = nv_collection.result.meta_analysis
 
-    collection_name = " : ".join(
-        [meta_analysis.name, datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")]
-    )
+    def build_collection_name(
+        base_name: str, created_at: str, suffix_number: int | None, max_length: int
+    ) -> str:
+        suffix = "" if suffix_number is None else f" ({suffix_number})"
+        tail = f" : {created_at}{suffix}"
+        if max_length <= 0:
+            return (base_name or "") + tail
+
+        base_name = base_name or "Untitled"
+        remaining = max_length - len(tail)
+        if remaining <= 0:
+            return tail[-max_length:]
+        if len(base_name) > remaining:
+            base_name = base_name[:remaining].rstrip()
+            if not base_name:
+                base_name = "Untitled"
+        return base_name + tail
+
+    created_at = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+    base_name = getattr(meta_analysis, "name", None) or "Untitled"
+    max_length = int(app.config.get("NEUROVAULT_COLLECTION_NAME_MAX_LEN", 200))
+    max_suffix = int(app.config.get("NEUROVAULT_COLLECTION_CREATE_MAX_SUFFIX", 25))
+    name_length_candidates = [max_length]
+    for fallback in (200, 150, 120, 100, 80):
+        if fallback < max_length:
+            name_length_candidates.append(fallback)
 
     url = f"{flask.request.host_url.rstrip('/')}/meta-analyses/{meta_analysis.id}"
+    last_exception: Exception | None = None
+    last_attempted_name: str | None = None
     try:
         api = Client(access_token=app.config["NEUROVAULT_ACCESS_TOKEN"])
-        collection = api.create_collection(
-            collection_name,
-            description=meta_analysis.description,
-            full_dataset_url=url,
-        )
+        tried_names: set[str] = set()
+        for suffix_number in [None, *range(1, max_suffix + 1)]:
+            for name_length in name_length_candidates:
+                collection_name = build_collection_name(
+                    base_name=base_name,
+                    created_at=created_at,
+                    suffix_number=suffix_number,
+                    max_length=name_length,
+                )
+                if collection_name in tried_names:
+                    continue
+                tried_names.add(collection_name)
+                last_attempted_name = collection_name
+                try:
+                    collection = api.create_collection(
+                        collection_name,
+                        description=meta_analysis.description,
+                        full_dataset_url=url,
+                    )
+                    nv_collection.collection_id = collection["id"]
+                    return nv_collection
+                except Exception as exception:  # noqa: BLE001
+                    last_exception = exception
+                    app.logger.warning(
+                        "Neurovault collection create failed for name=%r: %s",
+                        collection_name,
+                        str(exception),
+                    )
 
-        nv_collection.collection_id = collection["id"]
+    except Exception as exception:  # noqa: BLE001
+        last_exception = exception
 
-    except Exception:
-        abort(
-            422,
-            f"Error creating collection named: {collection_name}, "
-            "perhaps one with that name already exists?",
-        )
+    abort(
+        422,
+        (
+            "Error creating Neurovault collection after retries. "
+            f"Last attempted name: {last_attempted_name}. "
+            f"Last error: {last_exception}"
+        ),
+    )
 
     return nv_collection
 
