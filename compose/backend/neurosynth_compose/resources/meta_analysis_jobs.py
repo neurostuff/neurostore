@@ -159,7 +159,10 @@ def submit_job():
     if meta_analysis.user_id != current_user.external_id and not is_admin:
         abort(
             403,
-            description="user is not authorized to submit jobs for this meta-analysis. Must be the owner or an admin.",
+            description=(
+                "user is not authorized to submit jobs for this "
+                "meta-analysis. Must be the owner or an admin."
+            ),
         )
 
     submit_url = current_app.config.get("COMPOSE_RUNNER_SUBMIT_URL")

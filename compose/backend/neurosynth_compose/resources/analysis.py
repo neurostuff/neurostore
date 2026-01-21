@@ -112,10 +112,10 @@ def is_user_admin(user=None):
     """Check if the user has the admin role"""
     if user is None:
         user = get_current_user()
-    
+
     if user is None:
         return False
-    
+
     # Check if user has a role named 'admin'
     return any(role.name == "admin" for role in user.roles)
 
@@ -192,8 +192,14 @@ class BaseView(MethodView):
                 to_commit.append(record)
             elif record is None:
                 abort(422)
-            elif not only_ids and record.user_id != current_user.external_id and not is_user_admin(current_user):
-                abort(403, description="You do not have permission to modify this record. You must be the owner or an admin.")
+            elif (not only_ids and
+                  record.user_id != current_user.external_id and
+                  not is_user_admin(current_user)):
+                abort(
+                    403,
+                    description="You do not have permission to modify this "
+                    "record. You must be the owner or an admin."
+                )
             elif only_ids:
                 to_commit.append(record)
 
@@ -318,7 +324,8 @@ class ObjectView(BaseView):
                 403,
                 description=(
                     f"user {current_user.external_id} cannot change "
-                    f"record owned by {record.user_id}. Only the owner or an admin can delete records."
+                    f"record owned by {record.user_id}. Only the owner or "
+                    f"an admin can delete records."
                 ),
             )
 

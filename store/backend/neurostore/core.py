@@ -26,6 +26,11 @@ from neurostore.exceptions.handlers import (
 from neurostore.exceptions.base import NeuroStoreException
 
 from .database import init_db
+from neurostore.models import (
+    User, Role, Studyset, StudysetStudy, Annotation, BaseStudy, Study,
+    Analysis, Table, Condition, Point, Image, Entity, AnnotationAnalysis,
+    PointValue, AnalysisConditions
+)
 
 connexion_app = connexion.FlaskApp(__name__, specification_dir="openapi/")
 app = connexion_app.app
@@ -42,12 +47,6 @@ cache = Cache(app)
 app.secret_key = app.config["JWT_SECRET_KEY"]
 
 # Initialize Flask-Admin
-from neurostore.models import (
-    User, Role, Studyset, StudysetStudy, Annotation, BaseStudy, Study,
-    Analysis, Table, Condition, Point, Image, Entity, AnnotationAnalysis,
-    PointValue, AnalysisConditions
-)
-
 admin = Admin(app, name='NeuroStore Admin', template_mode='bootstrap4', url='/admin')
 
 # Add model views for all major models

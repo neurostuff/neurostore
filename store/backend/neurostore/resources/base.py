@@ -336,10 +336,13 @@ class BaseView(MethodView):
                 v = PrtCls._model.query.filter_by(id=v["id"]).first()
                 if PrtCls._model is BaseStudy:
                     pass
-                elif current_user != v.user and current_user.external_id != compose_bot and not is_admin:
+                elif (current_user != v.user and
+                      current_user.external_id != compose_bot and
+                      not is_admin):
                     abort_permission(
-                        "You do not have permission to link to this parent record. "
-                        "You must own the parent record, be the compose bot, or be an admin."
+                        "You do not have permission to link to this parent "
+                        "record. You must own the parent record, be the "
+                        "compose bot, or be an admin."
                     )
             if k in cls._linked and v is not None:
                 LnCls = getattr(viewdata, cls._linked[k])
