@@ -2237,7 +2237,7 @@ class TablesView(ObjectView, ListView):
     _view_fields = {**LIST_NESTED_ARGS, "study": fields.String(load_default=None)}
     _m2o = {"study": "StudiesView"}
     _parent = {"study": "StudiesView"}
-    _search_fields = ("t_id", "name", "caption", "footer")
+    _search_fields = ("t_id", "name", "table_label", "caption", "footer")
 
     def view_search(self, q, args):
         if args.get("study"):

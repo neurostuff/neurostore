@@ -583,6 +583,8 @@ def ace_ingestion_logic(coordinates_df, metadata_df, text_df, skip_existing=Fals
             ).one_or_none() or Table(t_id=str(t_id), study=s, user_id=s.user_id)
             if table not in tables:
                 tables.append(table)
+            if not table.table_label:
+                table.table_label = df["table_label"][0] or str(t_id)
             if not table.name:
                 table.name = df["table_label"][0] or str(t_id)
             if table.caption is None:
