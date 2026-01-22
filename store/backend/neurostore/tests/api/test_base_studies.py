@@ -737,6 +737,8 @@ def test_base_studies_semantic_search(
 
 def test_is_active_filter_list(auth_client, session, ingest_neurosynth):
     """Test that inactive base studies are filtered out from list view"""
+    from neurostore.core import cache
+
     # First get the list of all base studies
     resp = auth_client.get("/api/base-studies/")
     assert resp.status_code == 200
@@ -752,6 +754,9 @@ def test_is_active_filter_list(auth_client, session, ingest_neurosynth):
     # Mark it as inactive
     base_study.is_active = False
     session.commit()
+
+    # Clear all cache to ensure the next request sees the updated data
+    cache.clear()
 
     # Try to list all base studies - should not include the inactive one
     resp = auth_client.get("/api/base-studies/")
