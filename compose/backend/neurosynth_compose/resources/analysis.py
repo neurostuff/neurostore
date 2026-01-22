@@ -111,7 +111,10 @@ def get_current_user():
 def is_user_admin(user=None):
     """Check if the user has the admin role"""
     if user is None:
-        user = get_current_user()
+        try:
+            user = get_current_user()
+        except Exception:
+            return False
 
     if user is None:
         return False
