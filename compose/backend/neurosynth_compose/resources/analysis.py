@@ -108,13 +108,23 @@ def get_current_user():
     return None
 
 
-def is_user_admin(user=None):
-    """Check if the user has the admin role"""
-    if user is None:
-        try:
-            user = get_current_user()
-        except Exception:
-            return False
+# Sentinel value to distinguish between no argument and explicit None
+_UNSET = object()
+
+
+def is_user_admin(user=_UNSET):
+    """Check if the user has the admin role
+    
+    Args:
+        user: User object to check. If not provided, gets current user from context.
+              If None is explicitly passed, returns False.
+    
+    Returns:
+        bool: True if user has admin role, False otherwise
+    """
+    if user is _UNSET:
+        # No argument provided, get current user from context
+        user = get_current_user()
 
     if user is None:
         return False
