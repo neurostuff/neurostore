@@ -51,7 +51,18 @@ def is_user_admin(user=_UNSET):
         return False
 
     # Check if user has a role named 'admin'
-    return any(role.name == "admin" for role in user.roles)
+    # Use a database query to avoid lazy loading issues when roles relationship
+    # is configured with raise_on_sql
+    from ..models import Role
+    from ..database import db
+    
+    role_names = db.session.query(Role.name).join(
+        Role.users
+    ).filter(
+        db.text("users.id = :user_id")
+    ).params(user_id=user.id).all()
+    
+    return any(role[0] == "admin" for role in role_names)
 
 
 def view_maker(cls):

@@ -55,7 +55,7 @@ def test_admin_can_modify_others_records(auth_client, user_data, session, db):
     session.commit()
 
     # Create admin client
-    from neurosynth_compose.tests.utils import Client
+    from ..request_utils import Client
     from jose.jwt import encode
 
     admin_token = encode({"sub": "admin-user-id"}, "admin123", algorithm="HS256")
@@ -93,7 +93,7 @@ def test_admin_can_delete_others_records(auth_client, user_data, session, db):
     session.commit()
 
     # Create admin client
-    from neurosynth_compose.tests.utils import Client
+    from ..request_utils import Client
     from jose.jwt import encode
 
     admin_token = encode({"sub": "admin-user-id"}, "admin123", algorithm="HS256")
@@ -133,7 +133,7 @@ def test_admin_can_see_private_records(auth_client, user_data, session, db):
     session.commit()
 
     # Create admin client
-    from neurosynth_compose.tests.utils import Client
+    from ..request_utils import Client
     from jose.jwt import encode
 
     admin_token = encode({"sub": "admin-user-id"}, "admin123", algorithm="HS256")
