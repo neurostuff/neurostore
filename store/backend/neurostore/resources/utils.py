@@ -35,11 +35,11 @@ _UNSET = object()
 
 def is_user_admin(user=_UNSET):
     """Check if the user has the admin role
-    
+
     Args:
         user: User object to check. If not provided, gets current user from context.
               If None is explicitly passed, returns False.
-    
+
     Returns:
         bool: True if user has admin role, False otherwise
     """
@@ -55,13 +55,13 @@ def is_user_admin(user=_UNSET):
     # is configured with raise_on_sql
     from ..models import Role
     from ..database import db
-    
+
     role_names = db.session.query(Role.name).join(
         Role.users
     ).filter(
         db.text("users.id = :user_id")
     ).params(user_id=user.id).all()
-    
+
     return any(role[0] == "admin" for role in role_names)
 
 
