@@ -229,34 +229,14 @@ def app(mock_auth):
 def db(app):
     """Session-wide test database."""
     _db = app.extensions["sqlalchemy"]
-
-    # Drop all tables with CASCADE to handle foreign key constraints
-    # This handles tables created by migrations that may not be in the ORM models
-    try:
-        with _db.engine.begin() as conn:
-            # Get all tables and drop them with CASCADE
-            conn.execute(sa.text("""
-                SELECT tablename FROM pg_tables
-                WHERE schemaname = 'public'
-            """))
-            # Use CASCADE to drop all dependent objects
-            conn.execute(sa.text("DROP SCHEMA IF EXISTS public CASCADE;"))
-            conn.execute(sa.text("CREATE SCHEMA public;"))
-            conn.execute(sa.text("GRANT ALL ON SCHEMA public TO public;"))
-    except Exception as e:
-        LOGGER.warning("Error dropping schema: %s", e)
-        # Fall back to drop_all() if CASCADE approach doesn't work
-        try:
-            _db.drop_all()
-        except Exception as e2:
-            LOGGER.warning("Error with drop_all: %s", e2)
-
+    _db.drop_all()
     # Ensure pgvector extension exists before creating tables so the VECTOR type is available.
     try:
         # Use a direct engine connection to run CREATE EXTENSION, which is safer than using
         # the session before tables/metadata exist.
-        with _db.engine.begin() as conn:
+        with _db.engine.connect() as conn:
             conn.execute(sa.text("CREATE EXTENSION IF NOT EXISTS vector;"))
+            conn.commit()
     except Exception as e:
         LOGGER.warning("Could not create pgvector extension: %s", e)
         # If the extension cannot be created (permissions or non-Postgres DB), continue;

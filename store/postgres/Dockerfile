@@ -27,4 +27,3 @@ RUN dos2unix /home/s3-autodelete.sh
 COPY postgresql.conf /etc/postgresql/postgresql.conf
 COPY pg_stat_statements.sql /docker-entrypoint-initdb.d/
 COPY init-pgvector.sql /docker-entrypoint-initdb.d/
-COPY init-test-db.sql /docker-entrypoint-initdb.d/
