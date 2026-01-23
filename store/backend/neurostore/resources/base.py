@@ -581,7 +581,7 @@ class ObjectView(BaseView):
 
             db.session.commit()
 
-        return 204
+        return "", 204
 
     def insert_data(self, id, data):
         return data

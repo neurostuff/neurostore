@@ -94,6 +94,14 @@ The Flask-Admin interface provides:
 3. **Production Access**: Consider restricting /admin access by IP address or VPN in production environments
 4. **Audit Logging**: Consider enabling audit logging for all admin interface actions
 
+## Admin Authentication
+
+The admin panel uses HTTP Basic auth. Set the following environment variables
+for both services:
+
+- `FLASK_ADMIN_USERNAME`
+- `FLASK_ADMIN_PASSWORD`
+
 ## Usage Examples
 
 ### Assigning Admin Role to Users
@@ -106,7 +114,7 @@ The Flask-Admin interface provides:
 6. Add the "admin" role to the user
 7. Click "Save"
 
-Alternatively, use SQL (as documented in ADMIN_ROLE.md):
+Alternatively, use SQL:
 ```sql
 INSERT INTO roles_users (user_id, role_id) VALUES ('user-id', 'admin');
 ```

@@ -2,7 +2,14 @@
 Tests for admin role functionality in compose
 """
 import pytest
-from neurosynth_compose.models import User, Role, MetaAnalysis, Project
+from neurosynth_compose.models import (
+    User,
+    Role,
+    MetaAnalysis,
+    Project,
+    NeurostoreStudy,
+)
+from neurosynth_compose.models.analysis import generate_id
 from neurosynth_compose.resources.analysis import is_user_admin
 
 
@@ -111,12 +118,14 @@ def test_admin_can_see_private_records(auth_client, user_data, session, db):
     """Test that admin users can see all records including private ones"""
     # Create a private project owned by user1
     regular_user = User.query.filter_by(name="user1").first()
+    ns_study = NeurostoreStudy(neurostore_id=generate_id())
     private_project = Project(
         name="Private Project",
         user=regular_user,
-        public=False
+        public=False,
+        neurostore_study=ns_study,
     )
-    session.add(private_project)
+    session.add_all([ns_study, private_project])
     session.commit()
     project_id = private_project.id
 

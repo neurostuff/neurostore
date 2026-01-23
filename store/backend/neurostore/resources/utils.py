@@ -50,19 +50,22 @@ def is_user_admin(user=_UNSET):
     if user is None:
         return False
 
-    # Check if user has a role named 'admin'
-    # Use a database query to avoid lazy loading issues when roles relationship
-    # is configured with raise_on_sql
-    from ..models import Role
-    from ..database import db
+    # Load roles eagerly to avoid lazy loading when raise_on_sql is enabled.
+    from sqlalchemy.orm import selectinload
 
-    role_names = db.session.query(Role.name).join(
-        Role.users
-    ).filter(
-        db.text("users.id = :user_id")
-    ).params(user_id=user.id).all()
+    if user.id is None:
+        return False
 
-    return any(role[0] == "admin" for role in role_names)
+    user_with_roles = (
+        models.User.query.options(selectinload(models.User.roles))
+        .filter_by(id=user.id)
+        .first()
+    )
+
+    if user_with_roles is None:
+        return False
+
+    return any(role.name == "admin" for role in user_with_roles.roles)
 
 
 def view_maker(cls):

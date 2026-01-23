@@ -12,8 +12,9 @@ import connexion
 from connexion.resolver import MethodResolver
 from flask_caching import Cache
 from flask_orjson import OrjsonProvider
-from flask_admin import Admin
+from flask_admin import Admin, AdminIndexView
 from flask_admin.contrib.sqla import ModelView
+from flask import Response, request
 
 # Centralized error handling: replaced middleware with Starlette exception handlers
 from neurostore.exceptions.handlers import (
@@ -46,26 +47,72 @@ cache = Cache(app)
 
 app.secret_key = app.config["JWT_SECRET_KEY"]
 
+def _get_admin_credentials():
+    username = app.config.get("FLASK_ADMIN_USERNAME") or os.getenv("FLASK_ADMIN_USERNAME")
+    password = app.config.get("FLASK_ADMIN_PASSWORD") or os.getenv("FLASK_ADMIN_PASSWORD")
+    return username, password
+
+
+def _admin_auth_failed():
+    return Response(
+        "Authentication required",
+        401,
+        {"WWW-Authenticate": 'Basic realm="Admin"'},
+    )
+
+
+def _is_admin_authenticated():
+    username, password = _get_admin_credentials()
+    if not username or not password:
+        return False
+    auth = request.authorization
+    if not auth:
+        return False
+    return auth.username == username and auth.password == password
+
+
+class SecureAdminIndexView(AdminIndexView):
+    def is_accessible(self):
+        return _is_admin_authenticated()
+
+    def inaccessible_callback(self, name, **kwargs):
+        return _admin_auth_failed()
+
+
+class SecureModelView(ModelView):
+    def is_accessible(self):
+        return _is_admin_authenticated()
+
+    def inaccessible_callback(self, name, **kwargs):
+        return _admin_auth_failed()
+
+
 # Initialize Flask-Admin
-admin = Admin(app, name='NeuroStore Admin', template_mode='bootstrap4', url='/admin')
+admin = Admin(
+    app,
+    name="NeuroStore Admin",
+    template_mode="bootstrap4",
+    url="/admin",
+    index_view=SecureAdminIndexView(),
+)
 
 # Add model views for all major models
-admin.add_view(ModelView(User, db.session, category='Auth'))
-admin.add_view(ModelView(Role, db.session, category='Auth'))
-admin.add_view(ModelView(Studyset, db.session, category='Data'))
-admin.add_view(ModelView(StudysetStudy, db.session, category='Data'))
-admin.add_view(ModelView(Annotation, db.session, category='Data'))
-admin.add_view(ModelView(BaseStudy, db.session, category='Studies'))
-admin.add_view(ModelView(Study, db.session, category='Studies'))
-admin.add_view(ModelView(Analysis, db.session, category='Studies'))
-admin.add_view(ModelView(Table, db.session, category='Studies'))
-admin.add_view(ModelView(Condition, db.session, category='Studies'))
-admin.add_view(ModelView(Point, db.session, category='Studies'))
-admin.add_view(ModelView(Image, db.session, category='Studies'))
-admin.add_view(ModelView(Entity, db.session, category='Studies'))
-admin.add_view(ModelView(AnnotationAnalysis, db.session, category='Analysis'))
-admin.add_view(ModelView(PointValue, db.session, category='Analysis'))
-admin.add_view(ModelView(AnalysisConditions, db.session, category='Analysis'))
+admin.add_view(SecureModelView(User, db.session, category="Auth"))
+admin.add_view(SecureModelView(Role, db.session, category="Auth"))
+admin.add_view(SecureModelView(Studyset, db.session, category="Data"))
+admin.add_view(SecureModelView(StudysetStudy, db.session, category="Data"))
+admin.add_view(SecureModelView(Annotation, db.session, category="Data"))
+admin.add_view(SecureModelView(BaseStudy, db.session, category="Studies"))
+admin.add_view(SecureModelView(Study, db.session, category="Studies"))
+admin.add_view(SecureModelView(Analysis, db.session, category="Studies"))
+admin.add_view(SecureModelView(Table, db.session, category="Studies"))
+admin.add_view(SecureModelView(Condition, db.session, category="Studies"))
+admin.add_view(SecureModelView(Point, db.session, category="Studies"))
+admin.add_view(SecureModelView(Image, db.session, category="Studies"))
+admin.add_view(SecureModelView(Entity, db.session, category="Studies"))
+admin.add_view(SecureModelView(AnnotationAnalysis, db.session, category="Analysis"))
+admin.add_view(SecureModelView(PointValue, db.session, category="Analysis"))
+admin.add_view(SecureModelView(AnalysisConditions, db.session, category="Analysis"))
 
 options = {"swagger_ui": True}
 
