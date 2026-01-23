@@ -94,17 +94,17 @@ def test_table_label_field(auth_client, ingest_neurosynth, session):
     payload = {
         "study": study.id,
         "t_id": "test-table-001",
-        "name": "Table 1",
-        "table_label": "n-back task contrasts",
+        "name": "n-back task contrasts",
+        "table_label": "Table 1",
     }
     resp = auth_client.post("/api/tables/", data=payload)
     assert resp.status_code == 200
-    assert resp.json()["table_label"] == "n-back task contrasts"
-    assert resp.json()["name"] == "Table 1"
+    assert resp.json()["table_label"] == "Table 1"
+    assert resp.json()["name"] == "n-back task contrasts"
     assert resp.json()["t_id"] == "test-table-001"
 
     # Retrieve the table and verify table_label is present
     table_id = resp.json()["id"]
     get_resp = auth_client.get(f"/api/tables/{table_id}")
     assert get_resp.status_code == 200
-    assert get_resp.json()["table_label"] == "n-back task contrasts"
+    assert get_resp.json()["table_label"] == "Table 1"
