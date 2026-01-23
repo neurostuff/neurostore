@@ -28,9 +28,22 @@ from neurostore.exceptions.base import NeuroStoreException
 
 from .database import init_db
 from neurostore.models import (
-    User, Role, Studyset, StudysetStudy, Annotation, BaseStudy, Study,
-    Analysis, Table, Condition, Point, Image, Entity, AnnotationAnalysis,
-    PointValue, AnalysisConditions
+    User,
+    Role,
+    Studyset,
+    StudysetStudy,
+    Annotation,
+    BaseStudy,
+    Study,
+    Analysis,
+    Table,
+    Condition,
+    Point,
+    Image,
+    Entity,
+    AnnotationAnalysis,
+    PointValue,
+    AnalysisConditions,
 )
 
 connexion_app = connexion.FlaskApp(__name__, specification_dir="openapi/")
@@ -47,9 +60,14 @@ cache = Cache(app)
 
 app.secret_key = app.config["JWT_SECRET_KEY"]
 
+
 def _get_admin_credentials():
-    username = app.config.get("FLASK_ADMIN_USERNAME") or os.getenv("FLASK_ADMIN_USERNAME")
-    password = app.config.get("FLASK_ADMIN_PASSWORD") or os.getenv("FLASK_ADMIN_PASSWORD")
+    username = app.config.get("FLASK_ADMIN_USERNAME") or os.getenv(
+        "FLASK_ADMIN_USERNAME"
+    )
+    password = app.config.get("FLASK_ADMIN_PASSWORD") or os.getenv(
+        "FLASK_ADMIN_PASSWORD"
+    )
     return username, password
 
 
