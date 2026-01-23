@@ -8,6 +8,8 @@ import { Box, Button, Card, CardContent, Typography } from '@mui/material';
 import NeurosynthActivitySummary from 'components/NeurosynthActivitySummary';
 import { useGuard } from 'hooks';
 import useAuthenticate from 'hooks/useAuthenticate';
+import usePageMetadata from 'hooks/usePageMetadata';
+import usePrerenderReady from 'hooks/usePrerenderReady';
 import PlatformComparisonTable from 'pages/LandingPage/components/PlatformComparisonTable';
 import { LOGOS } from 'pages/LandingPage/LandingPage.helpers';
 import LandingPageStyles from './LandingPage.styles';
@@ -16,6 +18,13 @@ const LandingPage = () => {
     const { isAuthenticated, isLoading } = useAuth0();
     useGuard('/projects', '', isAuthenticated, isLoading, true);
     const { handleLogin } = useAuthenticate();
+    usePageMetadata({
+        title: 'Neurosynth Compose | Neuroimaging Meta-Analysis Platform',
+        description:
+            'Create, curate, and run neuroimaging meta-analyses in the browser. Build studysets from published fMRI literature and execute reproducible pipelines in the cloud.',
+        canonicalPath: '/',
+    });
+    usePrerenderReady(true);
 
     return (
         <>

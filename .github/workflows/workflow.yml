@@ -524,6 +524,7 @@ jobs:
         VITE_APP_ENV: STAGING
         VITE_APP_NEUROSTORE_API_DOMAIN: ${{ secrets.VITE_APP_NEUROSTORE_API_DOMAIN }}
         VITE_APP_NEUROSYNTH_API_DOMAIN: ${{ secrets.VITE_APP_NEUROSYNTH_API_DOMAIN }}
+        VITE_GENERATE_SEO: "true"
       with:
         build: npm run build:staging
         record: true
