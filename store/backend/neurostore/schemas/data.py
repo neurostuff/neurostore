@@ -468,6 +468,7 @@ class TableSchema(BaseDataSchema):
     study_id = fields.String(data_key="study", metadata={"id_field": True})
     t_id = fields.String(allow_none=True)
     name = fields.String(allow_none=True)
+    table_label = fields.String(allow_none=True)
     footer = fields.String(allow_none=True)
     caption = fields.String(allow_none=True)
     analyses = StringOrNested(AnalysisSchema, many=True, dump_only=True)

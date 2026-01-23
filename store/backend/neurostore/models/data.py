@@ -556,6 +556,7 @@ class Table(BaseMixin, db.Model):
     )
     t_id = db.Column(db.Text)
     name = db.Column(db.Text)
+    table_label = db.Column(db.Text)
     footer = db.Column(db.Text)
     caption = db.Column(db.Text)
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"), index=True)
