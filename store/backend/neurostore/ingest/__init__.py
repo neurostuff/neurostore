@@ -33,6 +33,21 @@ from neurostore.models.data import StudysetStudy, _check_type
 META_ANALYSIS_WORDS = ["meta analysis", "meta-analysis", "systematic review"]
 
 
+def _coerce_optional(value):
+    if pd.isna(value):
+        return None
+    if isinstance(value, str) and value.strip() == "":
+        return None
+    return value
+
+
+def _coerce_optional_int(value):
+    value = _coerce_optional(value)
+    if value is None:
+        return None
+    return int(float(value))
+
+
 def ingest_neurovault(verbose=False, limit=20, overwrite=False, max_images=None):
     # Store existing studies for quick lookup
     all_studies = {s.doi: s for s in Study.query.filter_by(source="neurovault").all()}
@@ -218,7 +233,7 @@ def ingest_neurosynth(max_rows=None):
             metadata.itertuples(), annotations.itertuples(index=False)
         ):
             base_study = None
-            doi = None if isinstance(metadata_row.doi, float) else metadata_row.doi
+            doi = _coerce_optional(metadata_row.doi)
             id_ = pmid = metadata_row.Index
 
             # find an base_study based on available information
@@ -496,11 +511,7 @@ def load_ace_files(coordinates_file, metadata_file, text_file):
 
 def ace_ingestion_logic(coordinates_df, metadata_df, text_df, skip_existing=False):
     def get_base_study(metadata_row):
-        doi = (
-            None
-            if isinstance(metadata_row.doi, float) or metadata_row.doi == ""
-            else metadata_row.doi
-        )
+        doi = _coerce_optional(metadata_row.doi)
         pmid = metadata_row.Index
         base_studies = BaseStudy.query.filter(
             or_(BaseStudy.doi == doi, BaseStudy.pmid == pmid)
@@ -578,33 +589,32 @@ def ace_ingestion_logic(coordinates_df, metadata_df, text_df, skip_existing=Fals
             print(f"pmid: {id_} has no coordinates")
             return analyses, points, tables
         for order, (t_id, df) in enumerate(study_coord_data.groupby("table_id")):
+            first_row = df.iloc[0]
+            table_label = _coerce_optional(first_row["table_label"])
+            table_caption = _coerce_optional(first_row["table_caption"])
+            statistic = _coerce_optional(first_row["statistic"])
+            resolved_table_label = table_label if table_label is not None else str(t_id)
             table = Table.query.filter_by(
                 t_id=str(t_id), study_id=s.id
             ).one_or_none() or Table(t_id=str(t_id), study=s, user_id=s.user_id)
             if table not in tables:
                 tables.append(table)
             if not table.table_label:
-                table.table_label = df["table_label"][0] or str(t_id)
+                table.table_label = resolved_table_label
             if not table.name:
-                table.name = df["table_label"][0] or str(t_id)
+                table.name = resolved_table_label
             if table.caption is None:
-                table.caption = (
-                    df["table_caption"][0]
-                    if not df["table_caption"].isna()[0]
-                    else None
-                )
+                table.caption = table_caption
             existing_analysis = (
                 Analysis.query.filter_by(table_id=table.id, study_id=s.id).one_or_none()
                 if table.id
                 else None
             )
             a = existing_analysis or Analysis()
-            a.name = df["table_label"][0] or str(t_id)
+            a.name = resolved_table_label
             a.table = table
             a.order = a.order or order
-            a.description = (
-                df["table_caption"][0] if not df["table_caption"].isna()[0] else None
-            )
+            a.description = table_caption
             if not a.study:
                 a.study = s
             analyses.append(a)
@@ -615,11 +625,7 @@ def ace_ingestion_logic(coordinates_df, metadata_df, text_df, skip_existing=Fals
                     y=p["y"],
                     z=p["z"],
                     space=metadata_row.coordinate_space,
-                    kind=(
-                        df["statistic"][0]
-                        if not df["statistic"].isna()[0]
-                        else "unknown"
-                    ),
+                    kind=statistic if statistic is not None else "unknown",
                     analysis=a,
                     order=point_idx,
                 )
@@ -646,22 +652,9 @@ def ace_ingestion_logic(coordinates_df, metadata_df, text_df, skip_existing=Fals
             )
             base_study = get_base_study(metadata_row)
             pmid = metadata_row.Index
-            pmcid = (
-                None
-                if isinstance(metadata_row.pmcid, float) or metadata_row.pmcid == ""
-                else metadata_row.pmcid
-            )
-            doi = (
-                None
-                if isinstance(metadata_row.doi, float) or metadata_row.doi == ""
-                else metadata_row.doi
-            )
-            year = (
-                None
-                if isinstance(metadata_row.publication_year, float)
-                or metadata_row.publication_year == ""
-                else int(float(metadata_row.publication_year))
-            )
+            pmcid = _coerce_optional(metadata_row.pmcid)
+            doi = _coerce_optional(metadata_row.doi)
+            year = _coerce_optional_int(metadata_row.publication_year)
 
             if (
                 skip_existing
