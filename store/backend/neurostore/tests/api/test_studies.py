@@ -1,3 +1,4 @@
+import uuid
 import pytest
 
 from ...models import Studyset, Study, User, Analysis
@@ -111,6 +112,45 @@ def test_clone_studies(auth_client, ingest_neurovault, session):
     assert set([an["name"] for an in data2["analyses"]]) == set(
         [an.name for an in study_entry.analyses]
     )
+
+
+def test_clone_study_with_missing_source_id_sets_null(
+    auth_client, ingest_neurosynth, session
+):
+    study_entry = Study.query.first()
+    resp = auth_client.post(f"/api/studies/?source_id={study_entry.id}", data={})
+    assert resp.status_code == 200
+    clone = resp.json()
+
+    session.delete(study_entry)
+    session.commit()
+
+    resp2 = auth_client.post(f"/api/studies/?source_id={clone['id']}", data={})
+    assert resp2.status_code == 200
+    data2 = resp2.json()
+    assert data2["source_id"] is None
+
+
+def test_put_study_with_missing_source_id_sets_null(
+    auth_client, ingest_neurosynth, session
+):
+    study_entry = Study.query.first()
+    resp = auth_client.post(f"/api/studies/?source_id={study_entry.id}", data={})
+    assert resp.status_code == 200
+    clone = resp.json()
+
+    clone_record = Study.query.filter_by(id=clone["id"]).first()
+    clone_record.source_id = str(uuid.uuid4())
+    session.add(clone_record)
+    session.commit()
+
+    put_resp = auth_client.put(
+        f"/api/studies/{clone_record.id}", data={"name": "updated name"}
+    )
+    assert put_resp.status_code == 200
+    assert put_resp.json()["source_id"] is None
+    session.expire_all()
+    assert Study.query.filter_by(id=clone_record.id).first().source_id is None
 
 
 def test_clone_studies_with_data(auth_client, ingest_neurosynth, session):
