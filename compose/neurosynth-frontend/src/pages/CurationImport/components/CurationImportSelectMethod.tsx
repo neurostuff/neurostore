@@ -84,9 +84,9 @@ const CurationImportSelectMethod: React.FC<{
                         value={EImportMode.FILE_IMPORT}
                         label={
                             <>
-                                <Typography variant="h6">Import via File Format</Typography>
+                                <Typography variant="h6">Import Bibliography</Typography>
                                 <Typography variant="body1" sx={{ color: 'muted.main' }}>
-                                    Import studies from widely used standard formats such as RIS, endnote, or BibTex
+                                    Import studies from standard bibliographic formats such as RIS, EndNote, or BibTeX
                                 </Typography>
                             </>
                         }
