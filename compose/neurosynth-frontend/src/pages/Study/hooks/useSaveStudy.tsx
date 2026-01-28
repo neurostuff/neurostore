@@ -56,8 +56,8 @@ const useSaveStudy = () => {
     const updateAnnotationIsLoading = useUpdateAnnotationIsLoading();
     const notes = useAnnotationNotes();
     const annotationIsEdited = useAnnotationIsEdited();
-    const updateAnnotationNotes = useUpdateAnnotationNotes();
     const updateAnnotationInDB = useUpdateAnnotationInDB();
+    const updateNotes = useUpdateAnnotationNotes();
 
     const { data: studyset } = useGetStudysetById(studysetId || undefined, false);
     const { mutateAsync: updateStudyset } = useUpdateStudyset();
@@ -70,10 +70,14 @@ const useSaveStudy = () => {
         try {
             const updatedStudy = await updateStudyInDB(annotationId as string);
             const updatedNotes = [...(notes || [])];
+
+            // for new analyses, temporary uuids() are given to them. During study update, any new analyses are instantiated
+            // in the database and given a real ID. We need to update the notes to reflect this.
+            // we use the analysis name (which we validate to be unique) to find the analysis.
             updatedNotes.forEach((note, index) => {
                 if (note.isNew) {
                     const foundAnalysis = ((updatedStudy.analyses || []) as AnalysisReturn[]).find(
-                        (analysis) => analysis.name === note.analysis_name
+                        (analysis) => analysis.study === note.study && analysis.name === note.analysis_name
                     );
                     if (!foundAnalysis) return;
 
@@ -83,7 +87,7 @@ const useSaveStudy = () => {
                     };
                 }
             });
-            updateAnnotationNotes(updatedNotes);
+            updateNotes(updatedNotes);
             await updateAnnotationInDB();
             unsetUnloadHandler('study');
             unsetUnloadHandler('annotation');
