@@ -14,7 +14,7 @@ from .analysis import (
     Project,
 )
 
-from .auth import User
+from .auth import User, Role
 
 __all__ = [
     "Condition",
@@ -33,4 +33,5 @@ __all__ = [
     "NeurostoreAnalysis",
     "Project",
     "User",
+    "Role",
 ]
