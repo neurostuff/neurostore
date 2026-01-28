@@ -1,4 +1,4 @@
-import { Box, Button, TextField } from '@mui/material';
+import { Box, Button, Checkbox, FormControlLabel, TextField } from '@mui/material';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons';
 
 import { ISource } from 'hooks/projects/useGetProjects';
@@ -8,6 +8,7 @@ import CurationImportBaseStyles from './CurationImport.styles';
 import CreateStubStudyStyles from './CurationImportCreateStub.styles';
 import { ICurationStubStudy } from 'pages/Curation/Curation.types';
 import CurationPopupIdentificationSourceSelector from 'pages/Curation/components/CurationPopupIdentificationSourceSelector';
+import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 
 const CurationImportCreateStub: React.FC<{
     onNavigate: (button: ENavigationButton) => void;
@@ -16,7 +17,11 @@ const CurationImportCreateStub: React.FC<{
     const [formFieldTouched, setFormFieldTouched] = useState({
         name: false,
         doi: false,
+        pmid: false,
     });
+    const [noDoi, setNoDoi] = useState(false);
+    const [noPmid, setNoPmid] = useState(false);
+    const [noIdentifiersDialogOpen, setNoIdentifiersDialogOpen] = useState(false);
 
     const [form, setForm] = useState<{
         name: string;
@@ -69,37 +74,67 @@ const CurationImportCreateStub: React.FC<{
         }));
     };
 
+    const isDoiRequired = !noDoi;
+    const isPmidRequired = !noPmid;
+    const doiMissing = isDoiRequired && form.doi.trim().length === 0;
+    const pmidMissing = isPmidRequired && form.pmid.trim().length === 0;
+    const showDoiError = doiMissing && (formFieldTouched.doi || form.name.length > 0);
+    const showPmidError = pmidMissing && (formFieldTouched.pmid || form.name.length > 0);
+    const isSubmittingNoIdentifiers = noDoi && noPmid;
+
+    const createStubAndNavigate = () => {
+        if (!form.identificationSource) return;
+        props.onImportStubs([
+            {
+                id: uuidv4(),
+                title: form.name,
+                authors: form.authors,
+                keywords: form.keywords,
+                pmid: form.pmid,
+                pmcid: form.pmcid,
+                doi: form.doi,
+                journal: form.journal,
+                articleYear: form.articleYear,
+                abstractText: form.abstract,
+                articleLink: form.articleLink,
+                exclusionTag: null,
+                tags: [],
+                identificationSource: form.identificationSource as ISource,
+            },
+        ]);
+        props.onNavigate(ENavigationButton.NEXT);
+    };
+
     const handleButtonClick = (button: ENavigationButton) => {
         if (button === ENavigationButton.PREV) {
             props.onNavigate(button);
         } else {
-            if (!form.identificationSource) return;
-            props.onImportStubs([
-                {
-                    id: uuidv4(),
-                    title: form.name,
-                    authors: form.authors,
-                    keywords: form.keywords,
-                    pmid: form.pmid,
-                    pmcid: form.pmcid,
-                    doi: form.doi,
-                    journal: form.journal,
-                    articleYear: form.articleYear,
-                    abstractText: form.abstract,
-                    articleLink: form.articleLink,
-                    exclusionTag: null,
-                    tags: [],
-                    identificationSource: form.identificationSource as ISource,
-                },
-            ]);
-            props.onNavigate(button);
+            if (isSubmittingNoIdentifiers) {
+                setNoIdentifiersDialogOpen(true);
+                return;
+            }
+            createStubAndNavigate();
         }
     };
 
-    const disableCreateButton = form.name.length === 0 || !form.identificationSource;
+    const disableCreateButton =
+        form.name.length === 0 || !form.identificationSource || doiMissing || pmidMissing;
 
     return (
         <Box sx={{ padding: '10px 0', margin: '2rem 0 6rem 0' }}>
+            <ConfirmationDialog
+                dialogTitle="No identifiers provided"
+                dialogMessage="You've marked both DOI and PMID as missing. This study will be added without any identifiers. Are you sure you want to continue?"
+                confirmText="Continue"
+                rejectText="Cancel"
+                isOpen={noIdentifiersDialogOpen}
+                onCloseDialog={(ok) => {
+                    setNoIdentifiersDialogOpen(false);
+                    if (ok) {
+                        createStubAndNavigate();
+                    }
+                }}
+            />
             <TextField
                 onChange={handleUpdateForm}
                 required
@@ -123,8 +158,9 @@ const CurationImportCreateStub: React.FC<{
                 <TextField
                     value={form.doi}
                     onChange={handleUpdateForm}
-                    helperText={formFieldTouched.doi && form.doi.length === 0 ? 'doi cannot be empty' : ''}
-                    error={formFieldTouched.doi && form.doi.length === 0}
+                    required={isDoiRequired}
+                    helperText={showDoiError ? 'DOI is required unless "No DOI" is checked.' : ''}
+                    error={showDoiError}
                     name="doi"
                     label="DOI"
                     placeholder="10.1016/S0896-6273(00)80715-1"
@@ -132,6 +168,9 @@ const CurationImportCreateStub: React.FC<{
                 />
                 <TextField
                     onChange={handleUpdateForm}
+                    required={isPmidRequired}
+                    helperText={showPmidError ? 'PMID is required unless "No PMID" is checked.' : ''}
+                    error={showPmidError}
                     sx={{ width: '25%', marginRight: '15px' }}
                     label="PubMed ID"
                     value={form.pmid}
@@ -160,6 +199,16 @@ const CurationImportCreateStub: React.FC<{
                     type="number"
                     fullWidth
                     placeholder="2012"
+                />
+            </Box>
+            <Box sx={{ marginTop: '-0.5rem', marginBottom: '1rem', display: 'flex', gap: '1rem' }}>
+                <FormControlLabel
+                    control={<Checkbox checked={noDoi} onChange={(event) => setNoDoi(event.target.checked)} />}
+                    label="No DOI"
+                />
+                <FormControlLabel
+                    control={<Checkbox checked={noPmid} onChange={(event) => setNoPmid(event.target.checked)} />}
+                    label="No PMID"
                 />
             </Box>
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
