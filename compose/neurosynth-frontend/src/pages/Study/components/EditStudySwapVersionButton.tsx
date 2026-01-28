@@ -263,7 +263,7 @@ const EditStudySwapVersionButton: React.FC = () => {
                                         </Typography>
                                     </Button>
                                     <Button
-                                        href={`/base-studies/${baseStudyId}/${studyId}`}
+                                        href={`/base-studies/${baseStudyId}/${version.id}`}
                                         target="_blank"
                                         rel="noreferrer"
                                         sx={{ fontSize: '0.8rem' }}
