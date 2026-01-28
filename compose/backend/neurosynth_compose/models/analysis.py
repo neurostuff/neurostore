@@ -11,12 +11,14 @@ from sqlalchemy import (
     Column,
     Text,
     DateTime,
+    Table,
     JSON,
     Float,
     Integer,
     Boolean,
     CheckConstraint,
     ForeignKey,
+    Index,
 )
 
 
@@ -50,6 +52,43 @@ class Condition(BaseMixin, db.Model):
     description = Column(Text)
     specification_conditions = relationship(
         "SpecificationCondition", back_populates="condition", lazy="selectin"
+    )
+
+
+meta_analysis_tags = Table(
+    "meta_analysis_tags",
+    db.metadata,
+    Column("meta_analysis_id", Text, ForeignKey("meta_analyses.id"), primary_key=True),
+    Column("tag_id", Text, ForeignKey("tags.id"), primary_key=True),
+)
+
+
+class Tag(BaseMixin, db.Model):
+    __tablename__ = "tags"
+    name = Column(Text, nullable=False)
+    group = Column(Text)
+    description = Column(Text)
+    official = Column(Boolean, default=False)
+    user_id = Column(Text, ForeignKey("users.external_id"), index=True, nullable=True)
+    user = relationship("User", backref=backref("tags"))
+    meta_analyses = relationship(
+        "MetaAnalysis", secondary=meta_analysis_tags, back_populates="tags"
+    )
+
+    __table_args__ = (
+        Index(
+            "ux_tags_user_lower_name",
+            func.lower(name),
+            user_id,
+            unique=True,
+        ),
+        Index(
+            "ux_tags_global_lower_name",
+            func.lower(name),
+            unique=True,
+            postgresql_where=user_id.is_(None),
+        ),
+        Index("ix_tags_group", "group"),
     )
 
 
@@ -157,6 +196,12 @@ class MetaAnalysis(BaseMixin, db.Model):
     )
     project = relationship("Project", backref=backref("meta_analyses"))
     user = relationship("User", backref=backref("meta_analyses"))
+    tags = relationship(
+        "Tag",
+        secondary=meta_analysis_tags,
+        back_populates="meta_analyses",
+        lazy="selectin",
+    )
     results = relationship("MetaAnalysisResult", back_populates="meta_analysis")
     neurostore_analysis = relationship(
         "NeurostoreAnalysis", back_populates="meta_analysis", uselist=False

@@ -1,4 +1,5 @@
 from .analysis import (
+    Tag,
     Specification,
     Studyset,
     StudysetReference,
@@ -18,6 +19,7 @@ from .auth import User
 __all__ = [
     "Condition",
     "SpecificationCondition",
+    "Tag",
     "Specification",
     "Studyset",
     "StudysetReference",
