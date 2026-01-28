@@ -154,30 +154,43 @@ const CurationImportCreateStub: React.FC<{
                 name="authors"
                 placeholder="John Smith, Jane Doe, et al"
             />
-            <Box sx={{ display: 'flex', paddingBottom: '1rem' }}>
-                <TextField
-                    value={form.doi}
-                    onChange={handleUpdateForm}
-                    required={isDoiRequired}
-                    helperText={showDoiError ? 'DOI is required unless "No DOI" is checked.' : ''}
-                    error={showDoiError}
-                    name="doi"
-                    label="DOI"
-                    placeholder="10.1016/S0896-6273(00)80715-1"
-                    sx={{ width: '35%', marginRight: '15px' }}
-                />
-                <TextField
-                    onChange={handleUpdateForm}
-                    required={isPmidRequired}
-                    helperText={showPmidError ? 'PMID is required unless "No PMID" is checked.' : ''}
-                    error={showPmidError}
-                    sx={{ width: '25%', marginRight: '15px' }}
-                    label="PubMed ID"
-                    value={form.pmid}
-                    name="pmid"
-                    fullWidth
-                    placeholder="21706013"
-                />
+            <Box sx={{ display: 'flex', paddingBottom: '1rem', alignItems: 'flex-start' }}>
+                <Box sx={{ width: '35%', marginRight: '15px' }}>
+                    <TextField
+                        value={form.doi}
+                        onChange={handleUpdateForm}
+                        required={isDoiRequired}
+                        helperText={showDoiError ? 'DOI is required unless "No DOI" is checked.' : ''}
+                        error={showDoiError}
+                        name="doi"
+                        label="DOI"
+                        placeholder="10.1016/S0896-6273(00)80715-1"
+                        fullWidth
+                    />
+                    <FormControlLabel
+                        sx={{ marginTop: '0.25rem' }}
+                        control={<Checkbox checked={noDoi} onChange={(event) => setNoDoi(event.target.checked)} />}
+                        label="No DOI"
+                    />
+                </Box>
+                <Box sx={{ width: '25%', marginRight: '15px' }}>
+                    <TextField
+                        onChange={handleUpdateForm}
+                        required={isPmidRequired}
+                        helperText={showPmidError ? 'PMID is required unless "No PMID" is checked.' : ''}
+                        error={showPmidError}
+                        label="PubMed ID"
+                        value={form.pmid}
+                        name="pmid"
+                        fullWidth
+                        placeholder="21706013"
+                    />
+                    <FormControlLabel
+                        sx={{ marginTop: '0.25rem' }}
+                        control={<Checkbox checked={noPmid} onChange={(event) => setNoPmid(event.target.checked)} />}
+                        label="No PMID"
+                    />
+                </Box>
                 <TextField
                     onChange={handleUpdateForm}
                     sx={{ width: '25%', marginRight: '15px' }}
@@ -199,16 +212,6 @@ const CurationImportCreateStub: React.FC<{
                     type="number"
                     fullWidth
                     placeholder="2012"
-                />
-            </Box>
-            <Box sx={{ marginTop: '-0.5rem', marginBottom: '1rem', display: 'flex', gap: '1rem' }}>
-                <FormControlLabel
-                    control={<Checkbox checked={noDoi} onChange={(event) => setNoDoi(event.target.checked)} />}
-                    label="No DOI"
-                />
-                <FormControlLabel
-                    control={<Checkbox checked={noPmid} onChange={(event) => setNoPmid(event.target.checked)} />}
-                    label="No PMID"
                 />
             </Box>
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
