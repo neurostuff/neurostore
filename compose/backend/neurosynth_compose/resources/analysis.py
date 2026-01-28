@@ -350,6 +350,30 @@ class ListView(BaseView):
             **{f: fields.Str() for f in self._fulltext_fields},
         }
 
+    def _finalize_search(self, q, args):
+        m = self._model
+        sort_col = args["sort"]
+        desc = {False: "asc", True: "desc"}[args["desc"]]
+
+        attr = getattr(m, sort_col)
+        if sort_col not in ("created_at", "updated_at"):
+            attr = func.lower(attr)
+
+        q = q.order_by(getattr(attr, desc)(), getattr(m.id, desc)())
+
+        page = args["page"]
+        page_size = args["page_size"]
+        total = q.count()
+        offset = (page - 1) * page_size
+        records = q.offset(offset).limit(page_size).all()
+        metadata = {"total_count": total}
+        content = self.__class__._schema(only=self._only, many=True, context=args).dump(
+            records
+        )
+
+        response = {"metadata": metadata, "results": content}
+        return _make_json_response(response)
+
     def search(self):
         # Parse arguments using webargs
         args = parser.parse(self._user_args, request, location="query")
@@ -409,21 +433,7 @@ class ListView(BaseView):
         # but weird things are happening. look into this as time allows.
         # if isinstance(attr, ColumnAssociationProxyInstance):
         #     q = q.join(*attr.attr)
-        q = q.order_by(getattr(attr, desc)(), getattr(m.id, desc)())
-
-        page = args["page"]
-        page_size = args["page_size"]
-        total = q.count()
-        offset = (page - 1) * page_size
-        records = q.offset(offset).limit(page_size).all()
-        metadata = {"total_count": total}
-        content = self.__class__._schema(only=self._only, many=True, context=args).dump(
-            records
-        )
-
-        response = {"metadata": metadata, "results": content}
-
-        return _make_json_response(response)
+        return self._finalize_search(q, args)
 
     def post(self):
         # TODO: check to make sure current user hasn't already created a
@@ -615,27 +625,7 @@ class TagsView(ObjectView, ListView):
             if s is not None:
                 q = q.filter(getattr(Tag, field).ilike(f"%{s}%"))
 
-        sort_col = args["sort"]
-        desc = {False: "asc", True: "desc"}[args["desc"]]
-
-        attr = getattr(Tag, sort_col)
-        if sort_col not in ("created_at", "updated_at"):
-            attr = func.lower(attr)
-
-        q = q.order_by(getattr(attr, desc)(), getattr(Tag.id, desc)())
-
-        page = args["page"]
-        page_size = args["page_size"]
-        total = q.count()
-        offset = (page - 1) * page_size
-        records = q.offset(offset).limit(page_size).all()
-        metadata = {"total_count": total}
-        content = self.__class__._schema(only=self._only, many=True, context=args).dump(
-            records
-        )
-
-        response = {"metadata": metadata, "results": content}
-        return _make_json_response(response)
+        return self._finalize_search(q, args)
 
     @classmethod
     def update_or_create(cls, data, id=None, commit=True):
