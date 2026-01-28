@@ -169,6 +169,16 @@ class ConditionSchema(ContextSchema):
     description = PGSQLString()
 
 
+class TagSchema(ContextSchema):
+    id = PGSQLString()
+    created_at = fields.DateTime()
+    updated_at = fields.DateTime(allow_none=True)
+    name = PGSQLString(required=True, metadata={"info_field": True})
+    group = PGSQLString(allow_none=True)
+    description = PGSQLString(allow_none=True)
+    official = fields.Boolean()
+
+
 class SpecificationConditionSchema(BaseSchema):
     condition = fields.Pluck(ConditionSchema, "name")
     weight = fields.Float()
@@ -324,6 +334,12 @@ class MetaAnalysisSchema(BaseSchema):
     name = fields.String(allow_none=True, metadata={"info_field": True})
     description = fields.String(allow_none=True, metadata={"info_field": True})
     provenance = fields.Dict(allow_none=True)
+    tags = StringOrNested(
+        TagSchema,
+        metadata={"pluck": "name"},
+        many=True,
+        allow_none=True,
+    )
     specification_id = StringOrNested(SpecificationSchema, data_key="specification")
     neurostore_analysis = fields.Nested("NeurostoreAnalysisSchema", dump_only=True)
     studyset = StringOrNested(

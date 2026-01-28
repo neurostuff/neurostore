@@ -1,5 +1,6 @@
 from .analysis import (
     ConditionsResource,
+    TagsView,
     SpecificationConditionsResource,
     MetaAnalysesView,
     MetaAnalysisResultsView,
@@ -22,6 +23,7 @@ from .meta_analysis_jobs import (
 
 __all__ = [
     "ConditionsResource",
+    "TagsView",
     "SpecificationConditionsResource",
     "MetaAnalysesView",
     "MetaAnalysisResultsView",
