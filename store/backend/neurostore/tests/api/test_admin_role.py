@@ -101,7 +101,7 @@ def test_admin_can_delete_others_records(auth_clients, user_data, session):
     # Try to delete the study as admin
     resp = admin_client.delete(f"/api/studies/{study_id}")
 
-    assert resp.status_code == 204
+    assert resp.status_code == 200
     # Verify study is deleted
     assert Study.query.filter_by(id=study_id).first() is None
 

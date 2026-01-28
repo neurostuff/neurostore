@@ -563,6 +563,7 @@ class ObjectView(BaseView):
                 "Only the owner or an admin can delete records."
             )
         else:
+            payload = {"id": record.id}
             db.session.delete(record)
             # clear relevant caches
             with db.session.no_autoflush:
@@ -581,7 +582,8 @@ class ObjectView(BaseView):
 
             db.session.commit()
 
-        return "", 204
+        # Maintain API contract (OpenAPI/test expectations) for delete responses.
+        return payload, 200, {"Content-Type": "application/json"}
 
     def insert_data(self, id, data):
         return data
