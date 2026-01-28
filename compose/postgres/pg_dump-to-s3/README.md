@@ -1,5 +1,5 @@
 # pg_dump-to-s3
-Automatically dump and archive PostgreSQL backups to Amazon S3
+Dump and archive PostgreSQL backups to Amazon S3 from the postgres container.
 
 ## Requirements
 
@@ -7,15 +7,41 @@ Automatically dump and archive PostgreSQL backups to Amazon S3
   
 ## Setup
 
-Edit pg_to_s3.sh and replace:
-  - PG_HOST and PG_USER with your PostgreSQL hosts and backup user.
+Edit pg_dump-to-s3.sh and replace:
+  - PG_HOST and PG_USER with your PostgreSQL host and backup user.
   - S3_PATH with your Amazon S3 bucket and path
+
+The postgres image installs the scripts to `/home` and applies the cron schedule
+from `backup.txt`. Ensure your container environment provides:
+  - `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_DEFAULT_REGION`
+  - `POSTGRES_PASSWORD` (or a `~/.pgpass` file inside the container)
+
+The target bucket must already exist.
 
 ## Usage
 
 ```
 ./pg_to_s3.sh database1 database2 database3 [...]
 ```
+
+## Manual backup from docker-compose
+
+From the repo root:
+
+```
+cd compose
+docker compose exec -T compose-pgsql17 /bin/bash /home/pg_dump-to-s3.sh compose
+```
+
+## How it works
+
+- The postgres image installs `awscli`, `pg_dump-to-s3.sh`, and `s3-autodelete.sh`.
+- `backup.txt` schedules the monthly dump (00:00 on the 25th).
+- Each run dumps the database to `/tmp`, uploads to S3, then removes the local file.
+- The autodelete script removes backups older than the retention window but keeps
+  the newest backup so at least one remains.
+- If cron is not running in your container, use the manual command above or start
+  cron in the container entrypoint.
 
 ## Credentials
 
