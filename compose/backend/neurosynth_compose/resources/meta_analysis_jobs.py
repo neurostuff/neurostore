@@ -13,7 +13,7 @@ from sqlalchemy import select
 from ..database import db
 from ..models import MetaAnalysis
 from ..schemas import MetaAnalysisJobRequestSchema
-from .analysis import _make_json_response, get_current_user
+from .analysis import _make_json_response, get_current_user, is_user_admin
 
 logger = logging.getLogger(__name__)
 
@@ -155,10 +155,14 @@ def submit_job():
     if meta_analysis is None:
         abort(404, description="meta-analysis not found")
 
-    if meta_analysis.user_id != current_user.external_id:
+    is_admin = is_user_admin(current_user)
+    if meta_analysis.user_id != current_user.external_id and not is_admin:
         abort(
             403,
-            description="user is not authorized to submit jobs for this meta-analysis",
+            description=(
+                "user is not authorized to submit jobs for this "
+                "meta-analysis. Must be the owner or an admin."
+            ),
         )
 
     submit_url = current_app.config.get("COMPOSE_RUNNER_SUBMIT_URL")

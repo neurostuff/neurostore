@@ -1,5 +1,6 @@
 from .analysis import (
     ConditionSchema,
+    TagSchema,
     SpecificationConditionSchema,
     MetaAnalysisSchema,
     MetaAnalysisResultSchema,
@@ -23,6 +24,7 @@ from .users import UserSchema
 
 __all__ = [
     "ConditionSchema",
+    "TagSchema",
     "SpecificationConditionSchema",
     "MetaAnalysisSchema",
     "MetaAnalysisResultSchema",

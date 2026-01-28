@@ -425,13 +425,17 @@ class StudysetsView(ObjectView, ListView):
         parent_source = getattr(record, "source", None)
         Model = type(record)
 
+        invalid_source_chain = False
         while parent_source_id is not None and parent_source == "neurostore":
-            source_id = parent_source_id
             parent = Model.query.filter_by(id=parent_source_id).first()
             if parent is None:
+                invalid_source_chain = True
                 break
+            source_id = parent_source_id
             parent_source_id = parent.source_id
             parent_source = getattr(parent, "source", None)
+        if invalid_source_chain:
+            return None
 
         return source_id
 
@@ -642,13 +646,18 @@ class AnnotationsView(ObjectView, ListView):
             abort_not_found(cls._model.__name__, source_id)
         parent_source_id = annotation.source_id
         parent_source = annotation.source
+        invalid_source_chain = False
         while parent_source_id is not None and parent_source == "neurostore":
-            source_id = parent_source_id
-            parent = cls._model.query.filter_by(id=source_id).first()
+            parent = cls._model.query.filter_by(id=parent_source_id).first()
             if parent is None:
-                abort_not_found(cls._model.__name__, source_id)
+                # Orphaned source_id: mark invalid and stop traversal.
+                invalid_source_chain = True
+                break
+            source_id = parent_source_id
             parent_source = parent.source
             parent_source_id = parent.source_id
+        if invalid_source_chain:
+            source_id = None
 
         context = {
             "clone": True,
@@ -1285,6 +1294,9 @@ class BaseStudiesView(ObjectView, ListView):
         return q
 
     def view_search(self, q, args):
+        # Filter out inactive base studies
+        q = q.filter(BaseStudy.is_active == True)  # noqa E712
+
         if args.get("semantic_search"):
             pipeline_config_id = args.get("pipeline_config_id", None)
             if pipeline_config_id is None:
@@ -1956,13 +1968,18 @@ class StudiesView(ObjectView, ListView):
             abort_not_found(cls._model.__name__, source_id)
         parent_source_id = study.source_id
         parent_source = study.source
+        invalid_source_chain = False
         while parent_source_id is not None and parent_source == "neurostore":
-            source_id = parent_source_id
-            parent = cls._model.query.filter_by(id=source_id).first()
+            parent = cls._model.query.filter_by(id=parent_source_id).first()
             if parent is None:
-                abort_not_found(cls._model.__name__, source_id)
+                # Orphaned source_id: mark invalid and stop traversal.
+                invalid_source_chain = True
+                break
+            source_id = parent_source_id
             parent_source = parent.source
             parent_source_id = parent.source_id
+        if invalid_source_chain:
+            source_id = None
 
         update_schema = cls._schema(context={"nested": True})
         clone_data = update_schema.load(update_schema.dump(study))
@@ -1988,6 +2005,10 @@ class StudiesView(ObjectView, ListView):
 
     def pre_nested_record_update(record):
         """Find/create the associated base study"""
+        if record.source == "neurostore" and record.source_id:
+            parent = Study.query.filter_by(id=record.source_id).first()
+            if parent is None:
+                record.source_id = None
         # if the study was cloned and the base_study is already known.
         if record.base_study_id is not None or record.base_study is not None:
             return record
@@ -2237,7 +2258,7 @@ class TablesView(ObjectView, ListView):
     _view_fields = {**LIST_NESTED_ARGS, "study": fields.String(load_default=None)}
     _m2o = {"study": "StudiesView"}
     _parent = {"study": "StudiesView"}
-    _search_fields = ("t_id", "name", "caption", "footer")
+    _search_fields = ("t_id", "name", "table_label", "caption", "footer")
 
     def view_search(self, q, args):
         if args.get("study"):

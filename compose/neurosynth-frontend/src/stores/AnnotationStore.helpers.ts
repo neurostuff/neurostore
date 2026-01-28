@@ -32,7 +32,12 @@ export const storeNotesToDBNotes = (notes: IStoreNoteCollectionReturn[]): NoteCo
     return notes.map((annotationNote) => ({
         analysis: annotationNote.analysis,
         study: annotationNote.study,
-        note: annotationNote.note,
+        note: {
+            ...annotationNote.note,
+            // All notes should have the included property set to true by default.
+            // If the note does not have the included property, we instantiate it to true
+            included: (annotationNote.note as { included?: boolean })?.included ?? true,
+        },
     }));
 };
 
@@ -46,7 +51,7 @@ export const updateNoteDetailsHelper = (
 
     updatedNotes[foundNoteIndex] = {
         ...updatedNotes[foundNoteIndex],
-        analysis_name: update.analysis_name,
+        ...update,
     };
     return updatedNotes;
 };

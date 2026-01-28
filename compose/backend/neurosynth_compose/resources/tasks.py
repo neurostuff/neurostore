@@ -1,4 +1,5 @@
 import os
+import traceback
 from pathlib import Path
 
 from flask import current_app as app
@@ -74,7 +75,8 @@ def file_upload_neurovault(self, fpath, id):
         os.remove(fpath)
 
     except Exception as exception:  # noqa: E722
-        record.traceback = str(exception)
+        record.exception = str(exception)
+        record.traceback = traceback.format_exc()
         record.status = "FAILED"
 
     try:
@@ -194,7 +196,8 @@ def create_or_update_neurostore_analysis(
             ns_analysis.neurostore_id = ns_analysis_res.json()["id"]
             ns_analysis.status = "OK"
     except Exception as exception:  # noqa: E722
-        ns_analysis.traceback = str(exception)
+        ns_analysis.exception = str(exception)
+        ns_analysis.traceback = traceback.format_exc()
         ns_analysis.status = "FAILED"
 
     db.session.add(ns_analysis)

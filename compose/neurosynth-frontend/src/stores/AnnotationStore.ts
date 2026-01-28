@@ -201,13 +201,15 @@ export const useAnnotationStore = create<
             });
         },
         updateAnnotationNoteDetails: (note) => {
-            set((state) => ({
-                ...state,
-                annotation: {
-                    ...state.annotation,
-                    notes: updateNoteDetailsHelper(state.annotation.notes || [], note),
-                },
-            }));
+            set((state) => {
+                return {
+                    ...state,
+                    annotation: {
+                        ...state.annotation,
+                        notes: updateNoteDetailsHelper(state.annotation.notes || [], note),
+                    },
+                };
+            });
         },
         createAnnotationNote: (analysisId, studyId, analysisName) => {
             setUnloadHandler('annotation');

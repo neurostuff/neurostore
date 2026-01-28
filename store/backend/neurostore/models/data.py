@@ -203,6 +203,10 @@ class BaseStudy(BaseMixin, db.Model):
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"), index=True)
     ace_fulltext = db.Column(db.Text)
     pubget_fulltext = db.Column(db.Text)
+    is_active = db.Column(
+        db.Boolean, default=True, server_default=sa.true(), nullable=False, index=True
+    )
+    superseded_by = db.Column(db.Text, db.ForeignKey("base_studies.id"), nullable=True)
     _ts_vector = db.Column(
         "__ts_vector__",
         TSVector(),
@@ -232,12 +236,20 @@ class BaseStudy(BaseMixin, db.Model):
     pipeline_study_results = relationship(
         "PipelineStudyResult", backref=backref("base_study"), passive_deletes=True
     )
+    # self-referential relationship for superseded_by
+    superseded_by_study = relationship(
+        "BaseStudy",
+        remote_side="BaseStudy.id",
+        foreign_keys=[superseded_by],
+        backref=backref("supersedes", passive_deletes=True),
+    )
 
     __table_args__ = (
         db.CheckConstraint(level.in_(["group", "meta"])),
         db.UniqueConstraint("doi", "pmid", name="doi_pmid"),
         db.CheckConstraint("pmid ~ '^(?=.*\\S).+$' OR name IS NULL"),
         db.CheckConstraint("doi ~ '^(?=.*\\S).+$' OR name IS NULL"),
+        db.CheckConstraint("id != superseded_by", name="no_self_reference"),
         sa.Index("ix_base_study___ts_vector__", _ts_vector, postgresql_using="gin"),
     )
 
@@ -556,6 +568,7 @@ class Table(BaseMixin, db.Model):
     )
     t_id = db.Column(db.Text)
     name = db.Column(db.Text)
+    table_label = db.Column(db.Text)
     footer = db.Column(db.Text)
     caption = db.Column(db.Text)
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"), index=True)
@@ -732,6 +745,7 @@ class Point(BaseMixin, db.Model):
         db.Text, db.ForeignKey("analyses.id", ondelete="CASCADE"), index=True
     )
     cluster_size = db.Column(db.Float)
+    cluster_measurement_unit = db.Column(db.String)
     subpeak = db.Column(db.Boolean)
     deactivation = db.Column(db.Boolean, default=False, index=True)
     order = db.Column(db.Integer)
