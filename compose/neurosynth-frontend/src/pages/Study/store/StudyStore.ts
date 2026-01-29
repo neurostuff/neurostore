@@ -120,7 +120,7 @@ const useStudyStore = create<
                     }
                 },
                 clearStudyStore: () => {
-                    set((state) => ({
+                    set(() => ({
                         study: getEmptyStudy(),
                         storeMetadata: {
                             studyIsEdited: false,

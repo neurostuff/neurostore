@@ -8,7 +8,7 @@ import EditStudySwapVersionButton from 'pages/Study/components/EditStudySwapVers
 import { useNavigate } from 'react-router-dom';
 import { mockBaseStudy, mockStudysetNotNested } from 'testing/mockData';
 import { useStudyId } from 'pages/Study/store/StudyStore';
-import { setUnloadHandler, unsetUnloadHandler } from 'helpers/BeforeUnload.helpers';
+import { setUnloadHandler } from 'helpers/BeforeUnload.helpers';
 
 vi.mock('react-router-dom');
 vi.mock('hooks');
@@ -16,7 +16,6 @@ vi.mock('pages/Project/store/ProjectStore');
 vi.mock('pages/Study/store/StudyStore');
 vi.mock('components/Dialogs/ConfirmationDialog');
 vi.mock('notistack');
-vi.mock('helpers/Annotation.helpers');
 vi.mock('stores/AnnotationStore.getters');
 
 describe('EditStudySwapVersionButton Component', () => {

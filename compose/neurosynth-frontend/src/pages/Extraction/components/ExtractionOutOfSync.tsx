@@ -12,7 +12,6 @@ import {
     useProjectExtractionStudysetId,
     useProjectNumCurationColumns,
 } from 'pages/Project/store/ProjectStore';
-import { setAnalysesInAnnotationAsIncluded } from 'helpers/Annotation.helpers';
 import { useState } from 'react';
 import { useIsFetching, useQueryClient } from 'react-query';
 import ExtractionOutOfSyncStyles from './ExtractionOutOfSync.styles';
@@ -109,7 +108,6 @@ const ExtractionOutOfSync: React.FC = () => {
 
             queryClient.invalidateQueries('annotations');
 
-            await setAnalysesInAnnotationAsIncluded(annotationId);
 
             enqueueSnackbar('synced curation and studyset successfully', { variant: 'success' });
 

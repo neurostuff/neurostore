@@ -4,10 +4,9 @@ import LoadingButton from 'components/Buttons/LoadingButton';
 import { IMetadataRowModel, getType } from 'components/EditMetadata/EditMetadata.types';
 import AddMetadataRow from 'components/EditMetadata/AddMetadataRow';
 import useEditAnnotationsHotTable from 'pages/Annotations/hooks/useEditAnnotationsHotTable';
-import { noteKeyArrToObj } from 'components/HotTables/HotTables.utils';
+import { getDefaultForNoteKey, noteKeyArrToObj } from 'components/HotTables/HotTables.utils';
 import { CellCoords } from 'handsontable';
 import { registerAllModules } from 'handsontable/registry';
-import { SelectionController } from 'handsontable/selection';
 import { useGetWindowHeight, useUpdateAnnotationById } from 'hooks';
 import useUserCanEdit from 'hooks/useUserCanEdit';
 import { useSnackbar } from 'notistack';
@@ -48,7 +47,7 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
     } = useEditAnnotationsHotTable(props.annotationId, !canEdit);
 
     useEffect(() => {
-        const timeout: any = setTimeout(() => {
+        const timeout = window.setTimeout(() => {
             if (!hotTableRef.current?.hotInstance) return;
             const sizes = [
                 '64px', // NAV_HEIGHT
@@ -189,13 +188,8 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
      *      the row headers themselves are not merged
      * 3. add handleCellMouseDown to prevent the user from selecting an entire row - for stylistic reasons but also theres no reason for them to select a row
      */
-    const handleCellMouseDown = (
-        event: MouseEvent,
-        coords: CellCoords,
-        TD: HTMLTableCellElement,
-        controller: SelectionController
-    ): void => {
-        const isRowHeader = coords.col < 2;
+    const handleCellMouseDown = (event: MouseEvent, coords: CellCoords): void => {
+        const isRowHeader = coords.col === -1 || coords.col === 0;
         if (isRowHeader) {
             event.stopImmediatePropagation();
             return;
@@ -294,10 +288,18 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
     const handleAddHotColumn = (row: IMetadataRowModel) => {
         const trimmedKey = row.metadataKey.trim();
         if (noteKeys.find((x) => x.key === trimmedKey)) return false;
+        const columnType = getType(row.metadataValue);
+        const defaultValue = getDefaultForNoteKey(trimmedKey, columnType);
 
         setAnnotationsHotState((prev) => {
             const updatedNoteKeys: NoteKeyType[] = [
-                { key: trimmedKey, type: getType(row.metadataValue), order: 0, isNew: true },
+                {
+                    key: trimmedKey,
+                    type: columnType,
+                    order: 0,
+                    isNew: true,
+                    ...(defaultValue !== undefined ? { default: defaultValue } : {}),
+                },
                 ...prev.noteKeys,
             ].map((noteKey, index) => ({ ...noteKey, order: index }));
 
@@ -308,7 +310,7 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
                 hotColumns: createColumns(updatedNoteKeys, !canEdit),
                 hotData: [...prev.hotData].map((row) => {
                     const updatedRow = [...row];
-                    updatedRow.splice(2, 0, null);
+                    updatedRow.splice(2, 0, defaultValue ?? null);
                     return updatedRow;
                 }),
             };
@@ -327,7 +329,7 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
 
         setAnnotationsHotState((prev) => {
             const updatedHotData = [...prev.hotData];
-            changes.forEach(([row, col, _valChangedFrom, valChangedTo]) => {
+            changes.forEach(([row, col, , valChangedTo]) => {
                 updatedHotData[row] = [...updatedHotData[row]];
                 updatedHotData[row][col as number] = valChangedTo;
 

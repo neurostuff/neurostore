@@ -14,7 +14,6 @@ import {
 } from '@mui/material';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import ProgressLoader from 'components/ProgressLoader';
-import { setAnalysesInAnnotationAsIncluded } from 'helpers/Annotation.helpers';
 import { hasUnsavedStudyChanges, unsetUnloadHandler } from 'helpers/BeforeUnload.helpers';
 import { lastUpdatedAtSortFn } from 'helpers/utils';
 import { useGetStudysetById, useUpdateStudyset, useGetBaseStudyById } from 'hooks';
@@ -129,7 +128,6 @@ const EditStudySwapVersionButton: React.FC = () => {
             updateStudyByField('id', versionToSwapTo);
             unsetUnloadHandler('study');
             updateExtractionTableStateStudySwapInStorage(projectId, studyId, versionToSwapTo);
-            await setAnalysesInAnnotationAsIncluded(annotationId);
 
             navigate(`/projects/${projectId}/extraction/studies/${versionToSwapTo}/edit`);
 

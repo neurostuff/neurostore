@@ -201,7 +201,19 @@ class BaseView(MethodView):
     def _build_default_note(note_keys):
         if not note_keys:
             return None
-        return {key: None for key in note_keys.keys()}
+        if not isinstance(note_keys, dict):
+            return {key: None for key in note_keys}
+
+        defaults = {}
+        for key, descriptor in note_keys.items():
+            default_value = None
+            if isinstance(descriptor, dict):
+                if "default" in descriptor:
+                    default_value = descriptor.get("default")
+            elif descriptor == "boolean":
+                default_value = None
+            defaults[key] = default_value
+        return defaults
 
     def db_validation(self, record, data):
         """

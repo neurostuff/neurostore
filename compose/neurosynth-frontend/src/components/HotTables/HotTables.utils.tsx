@@ -1,17 +1,21 @@
 import { EPropertyType } from 'components/EditMetadata/EditMetadata.types';
-import { NoteKeyType } from 'components/HotTables/HotTables.types';
+import { AnnotationNoteValue, NoteKeyType } from 'components/HotTables/HotTables.types';
 import { CellValue } from 'handsontable/common';
 
 export const noteKeyObjToArr = (noteKeys?: object | null): NoteKeyType[] => {
     if (!noteKeys) return [];
-    const noteKeyTypes = noteKeys as { [key: string]: { type: EPropertyType; order?: number } };
+    const noteKeyTypes = noteKeys as {
+        [key: string]: { type: EPropertyType; order?: number; default?: AnnotationNoteValue };
+    };
     const arr = Object.entries(noteKeyTypes)
         .map(([key, descriptor]) => {
             if (!descriptor?.type) throw new Error('Invalid note_keys descriptor: missing type');
+            const hasDefault = Object.prototype.hasOwnProperty.call(descriptor, 'default');
             return {
                 type: descriptor.type,
                 key,
                 order: descriptor.order ?? 0,
+                default: hasDefault ? descriptor.default : undefined,
             };
         })
         .sort((a, b) => a.order - b.order || a.key.localeCompare(b.key))
@@ -21,19 +25,27 @@ export const noteKeyObjToArr = (noteKeys?: object | null): NoteKeyType[] => {
 
 export const noteKeyArrToObj = (
     noteKeyArr: NoteKeyType[]
-): { [key: string]: { type: EPropertyType; order: number } } => {
+): { [key: string]: { type: EPropertyType; order: number; default?: AnnotationNoteValue } } => {
     const noteKeyObj = noteKeyArr.reduce(
         (acc, curr, index) => {
             acc[curr.key] = {
                 type: curr.type,
                 order: curr.order ?? index,
             };
+            if (Object.prototype.hasOwnProperty.call(curr, 'default')) {
+                (acc[curr.key] as { default?: AnnotationNoteValue }).default = curr.default;
+            }
             return acc;
         },
-        {} as { [key: string]: { type: EPropertyType; order: number } }
+        {} as { [key: string]: { type: EPropertyType; order: number; default?: AnnotationNoteValue } }
     );
 
     return noteKeyObj;
+};
+
+export const getDefaultForNoteKey = (key: string, type: EPropertyType): AnnotationNoteValue | undefined => {
+    if (type !== EPropertyType.BOOLEAN) return undefined;
+    return key === 'included' ? true : false;
 };
 
 export const booleanValidator = (value: CellValue, callback: (isValid: boolean) => void) => {
@@ -48,14 +60,14 @@ export const replaceString = (val: string) => {
     return val.replaceAll(new RegExp('֊|‐|‑|⁃|﹣|－|‒|–|—|﹘|−|-', 'g'), '-');
 };
 
-export const stripTags = (stringWhichMayHaveHTML: any) => {
+export const stripTags = (stringWhichMayHaveHTML: unknown) => {
     if (typeof stringWhichMayHaveHTML !== 'string') return '';
 
     const doc = new DOMParser().parseFromString(stringWhichMayHaveHTML, 'text/html');
     return doc.body.textContent || '';
 };
 
-export const sanitizePaste = (data: any[][]) => {
+export const sanitizePaste = (data: unknown[][]) => {
     data.forEach((dataRow, rowIndex) => {
         dataRow.forEach((value, valueIndex) => {
             if (typeof value === 'number') return;
@@ -78,5 +90,5 @@ export const createColWidths = (
     second: number,
     colWidth?: number
 ): number[] => {
-    return [first, second, ...noteKeys.map((x) => (colWidth ? colWidth : 150))];
+    return [first, second, ...noteKeys.map(() => (colWidth ? colWidth : 150))];
 };
