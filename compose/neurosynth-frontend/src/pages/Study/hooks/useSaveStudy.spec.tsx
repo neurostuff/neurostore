@@ -10,7 +10,7 @@ import {
     useStudyUser,
     useUpdateStudyInDB,
 } from 'pages/Study/store/StudyStore';
-import { useUpdateAnnotationInDB } from 'stores/AnnotationStore.actions';
+import { useUpdateAnnotationInDBFromStore } from 'stores/AnnotationStore.actions';
 import { useAnnotationIsEdited, useAnnotationNotes } from 'stores/AnnotationStore.getters';
 import {
     mockAnalyses,
@@ -63,7 +63,7 @@ describe('useSaveStudy hook', () => {
         });
 
         expect(useSnackbar().enqueueSnackbar).toHaveBeenCalled();
-        expect(useUpdateAnnotationInDB()).not.toHaveBeenCalled();
+        expect(useUpdateAnnotationInDBFromStore()).not.toHaveBeenCalled();
         expect(useUpdateStudyInDB()).not.toHaveBeenCalled();
     });
 
@@ -91,7 +91,7 @@ describe('useSaveStudy hook', () => {
         });
 
         expect(useSnackbar().enqueueSnackbar).toHaveBeenCalled();
-        expect(useUpdateAnnotationInDB()).not.toHaveBeenCalled();
+        expect(useUpdateAnnotationInDBFromStore()).not.toHaveBeenCalled();
         expect(useUpdateStudyInDB()).not.toHaveBeenCalled();
     });
 
@@ -109,7 +109,7 @@ describe('useSaveStudy hook', () => {
         });
 
         expect(useUpdateStudyInDB()).toHaveBeenCalled();
-        expect(useUpdateAnnotationInDB()).toHaveBeenCalled();
+        expect(useUpdateAnnotationInDBFromStore()).toHaveBeenCalled();
     });
 
     it('should only save the study if the annotation has not been edited', async () => {
@@ -126,7 +126,7 @@ describe('useSaveStudy hook', () => {
         });
 
         expect(useUpdateStudyInDB()).toHaveBeenCalled();
-        expect(useUpdateAnnotationInDB()).not.toHaveBeenCalled();
+        expect(useUpdateAnnotationInDBFromStore()).not.toHaveBeenCalled();
     });
 
     it('should only save the annotation if the study has not been edited', async () => {
@@ -143,7 +143,7 @@ describe('useSaveStudy hook', () => {
         });
 
         expect(useUpdateStudyInDB()).not.toHaveBeenCalled();
-        expect(useUpdateAnnotationInDB()).toHaveBeenCalled();
+        expect(useUpdateAnnotationInDBFromStore()).toHaveBeenCalled();
     });
 
     it('should clone the study if user does not own the study and it has been edited', async () => {

@@ -6,7 +6,7 @@ import { NoteCollectionRequest } from 'neurostore-typescript-sdk';
 export const noteKeyObjToArr = (noteKeys?: object | null): NoteKeyType[] => {
     if (!noteKeys) return [];
     const noteKeyTypes = noteKeys as { [key: string]: { type: EPropertyType; order?: number } };
-    const arr = Object.entries(noteKeyTypes)
+    return Object.entries(noteKeyTypes)
         .map(([key, descriptor]) => {
             if (!descriptor?.type) throw new Error('Invalid note_keys descriptor: missing type');
             return {
@@ -16,8 +16,7 @@ export const noteKeyObjToArr = (noteKeys?: object | null): NoteKeyType[] => {
             };
         })
         .sort((a, b) => a.order - b.order || a.key.localeCompare(b.key))
-        .map((noteKey, index) => ({ ...noteKey, order: index }));
-    return arr;
+        .map((noteKey, index) => ({ ...noteKey, order: index, isNew: false }));
 };
 
 export const noteKeyArrToDefaultNoteKeyObj = (noteKeys: NoteKeyType[]): AnnotationNoteType => {
