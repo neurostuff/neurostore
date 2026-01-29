@@ -1,7 +1,7 @@
 import { vi, Mock } from 'vitest';
 import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { useCreateStudy, useUpdateAnnotationById, useUpdateStudyset } from 'hooks';
+import { useCreateStudy, useUpdateStudyset } from 'hooks';
 import { useSnackbar } from 'notistack';
 import {
     useStudy,
@@ -10,7 +10,7 @@ import {
     useStudyUser,
     useUpdateStudyInDB,
 } from 'pages/Study/store/StudyStore';
-import { useUpdateAnnotationInDBFromStore } from 'stores/AnnotationStore.actions';
+import { useUpdateDBWithAnnotationFromStore } from 'stores/AnnotationStore.actions';
 import { useAnnotationIsEdited, useAnnotationNotes } from 'stores/AnnotationStore.getters';
 import {
     mockAnalyses,
@@ -63,7 +63,7 @@ describe('useSaveStudy hook', () => {
         });
 
         expect(useSnackbar().enqueueSnackbar).toHaveBeenCalled();
-        expect(useUpdateAnnotationInDBFromStore()).not.toHaveBeenCalled();
+        expect(useUpdateDBWithAnnotationFromStore()).not.toHaveBeenCalled();
         expect(useUpdateStudyInDB()).not.toHaveBeenCalled();
     });
 
@@ -91,7 +91,7 @@ describe('useSaveStudy hook', () => {
         });
 
         expect(useSnackbar().enqueueSnackbar).toHaveBeenCalled();
-        expect(useUpdateAnnotationInDBFromStore()).not.toHaveBeenCalled();
+        expect(useUpdateDBWithAnnotationFromStore()).not.toHaveBeenCalled();
         expect(useUpdateStudyInDB()).not.toHaveBeenCalled();
     });
 
@@ -109,7 +109,7 @@ describe('useSaveStudy hook', () => {
         });
 
         expect(useUpdateStudyInDB()).toHaveBeenCalled();
-        expect(useUpdateAnnotationInDBFromStore()).toHaveBeenCalled();
+        expect(useUpdateDBWithAnnotationFromStore()).toHaveBeenCalled();
     });
 
     it('should only save the study if the annotation has not been edited', async () => {
@@ -126,7 +126,7 @@ describe('useSaveStudy hook', () => {
         });
 
         expect(useUpdateStudyInDB()).toHaveBeenCalled();
-        expect(useUpdateAnnotationInDBFromStore()).not.toHaveBeenCalled();
+        expect(useUpdateDBWithAnnotationFromStore()).not.toHaveBeenCalled();
     });
 
     it('should only save the annotation if the study has not been edited', async () => {
@@ -143,7 +143,7 @@ describe('useSaveStudy hook', () => {
         });
 
         expect(useUpdateStudyInDB()).not.toHaveBeenCalled();
-        expect(useUpdateAnnotationInDBFromStore()).toHaveBeenCalled();
+        expect(useUpdateDBWithAnnotationFromStore()).toHaveBeenCalled();
     });
 
     it('should clone the study if user does not own the study and it has been edited', async () => {
@@ -167,6 +167,6 @@ describe('useSaveStudy hook', () => {
         expect(useUpdateStudyInDB()).not.toHaveBeenCalled();
         expect(useCreateStudy().mutateAsync).toHaveBeenCalled();
         expect(useUpdateStudyset().mutateAsync).toHaveBeenCalled();
-        expect(useUpdateAnnotationById('').mutateAsync).toHaveBeenCalled(); // arg doesnt matter as it is a mock
+        expect(useUpdateDBWithAnnotationFromStore()).toHaveBeenCalled(); // arg doesnt matter as it is a mock
     });
 });

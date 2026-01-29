@@ -12,7 +12,7 @@ import {
 import { useState } from 'react';
 import { useQueryClient } from 'react-query';
 import { useNavigate } from 'react-router-dom';
-import { useUpdateAnnotationInDBFromStore, useUpdateAnnotationNotes } from 'stores/AnnotationStore.actions';
+import { useUpdateDBWithAnnotationFromStore, useUpdateAnnotationNotes } from 'stores/AnnotationStore.actions';
 import {
     useAnnotationIsEdited,
     useAnnotationNotes,
@@ -55,7 +55,7 @@ const useSaveStudy = () => {
     const updateAnnotationIsLoading = useUpdateAnnotationIsLoading();
     const notes = useAnnotationNotes();
     const annotationIsEdited = useAnnotationIsEdited();
-    const updateAnnotationInDB = useUpdateAnnotationInDBFromStore();
+    const updateAnnotationInDB = useUpdateDBWithAnnotationFromStore();
     const updateNotesInStore = useUpdateAnnotationNotes();
 
     const { data: studyset } = useGetStudysetById(studysetId || undefined, false);
