@@ -20,7 +20,7 @@ describe('ImportFileFormatDialog', () => {
         });
 
         it('should show the standard file import page', () => {
-            cy.contains(/enter data source/).should('be.visible');
+            cy.contains(/Start typing to add or create your own source/).should('be.visible');
         });
 
         it('should disable the next button initially', () => {
