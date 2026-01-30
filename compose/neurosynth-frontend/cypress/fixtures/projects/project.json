@@ -61,6 +61,10 @@
                 {
                     "id": "neurosynth_psycinfo_id_source",
                     "label": "PsycInfo"
+                },
+                {
+                    "id": "neurosynth_reference_manager_id_source",
+                    "label": "Reference Manager"
                 }
             ],
             "infoTags": [

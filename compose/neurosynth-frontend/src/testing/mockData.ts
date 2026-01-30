@@ -762,6 +762,10 @@ const mockProject: () => ProjectReturn = () => ({
                     id: 'neurosynth_sleuth_id_source',
                     label: 'Sleuth',
                 },
+                {
+                    id: 'neurosynth_reference_manager_id_source',
+                    label: 'Reference Manager',
+                },
             ],
             infoTags: [
                 {
