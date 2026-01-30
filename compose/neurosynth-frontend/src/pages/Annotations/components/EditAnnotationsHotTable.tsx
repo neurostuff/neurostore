@@ -6,7 +6,6 @@ import AddMetadataRow from 'components/EditMetadata/AddMetadataRow';
 import useEditAnnotationsHotTable from 'pages/Annotations/hooks/useEditAnnotationsHotTable';
 import { noteKeyArrToObj } from 'components/HotTables/HotTables.utils';
 import { CellCoords } from 'handsontable';
-import { CellChange } from 'handsontable/common';
 import { registerAllModules } from 'handsontable/registry';
 import { SelectionController } from 'handsontable/selection';
 import { useGetWindowHeight, useUpdateAnnotationById } from 'hooks';
@@ -15,15 +14,22 @@ import { useSnackbar } from 'notistack';
 import { useProjectUser } from 'pages/Project/store/ProjectStore';
 import React, { useEffect, useRef } from 'react';
 import { createColumns, hotDataToAnnotationNotes, hotSettings } from './EditAnnotationsHotTable.helpers';
+import useUpdateAnnotationByAnnotationAndAnalysisId from 'hooks/annotations/useUpdateAnnotationByAnnotationAndAnalysisId';
+import { CellChange } from 'handsontable/common';
 
 registerAllModules();
 
 const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((props) => {
     const { enqueueSnackbar } = useSnackbar();
-    const { mutate, isLoading: updateAnnotationIsLoading } = useUpdateAnnotationById(props.annotationId);
+    const { mutate: updateAnnotation, isLoading: updateAnnotationIsLoading } = useUpdateAnnotationById(
+        props.annotationId
+    );
+    const { mutate: updateAnnotationNoNoteKeys, isLoading: updateAnnotationNoNoteKeysIsLoading } =
+        useUpdateAnnotationByAnnotationAndAnalysisId(props.annotationId);
     const projectUser = useProjectUser();
     const canEdit = useUserCanEdit(projectUser || undefined);
     const hotTableRef = useRef<HotTable>(null);
+    const isColumnDraggingRef = useRef<boolean>(false);
     const windowSize = useGetWindowHeight();
     const {
         hotColumnHeaders,
@@ -36,6 +42,7 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
         noteKeys,
         hotDataToStudyMapping,
         isEdited,
+        isReordered,
         rowHeights,
     } = useEditAnnotationsHotTable(props.annotationId, !canEdit);
 
@@ -81,28 +88,45 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
             return;
         }
 
+        const hasNewNoteKey = noteKeys.some((x) => !!x.isNew);
         const updatedAnnotationNotes = hotDataToAnnotationNotes(hotData, hotDataToStudyMapping, noteKeys);
         const updatedNoteKeyObj = noteKeyArrToObj(noteKeys);
 
-        mutate(
-            {
-                argAnnotationId: props.annotationId,
-                annotation: {
-                    notes: updatedAnnotationNotes.map((annotationNote) => ({
-                        note: annotationNote.note,
-                        analysis: annotationNote.analysis,
-                        study: annotationNote.study,
-                    })),
-                    note_keys: updatedNoteKeyObj,
+        if (hasNewNoteKey || isReordered) {
+            updateAnnotation(
+                {
+                    argAnnotationId: props.annotationId,
+                    annotation: {
+                        notes: updatedAnnotationNotes.map((annotationNote) => ({
+                            note: annotationNote.note,
+                            analysis: annotationNote.analysis,
+                            study: annotationNote.study,
+                            annotation: props.annotationId,
+                        })),
+                        note_keys: updatedNoteKeyObj,
+                    },
                 },
-            },
-            {
-                onSuccess: () => {
-                    setAnnotationsHotState((prev) => ({ ...prev, isEdited: false }));
-                    enqueueSnackbar('annotation updated successfully', { variant: 'success' });
-                },
-            }
-        );
+                {
+                    onSuccess: () => {
+                        setAnnotationsHotState((prev) => ({ ...prev, isEdited: false }));
+                        enqueueSnackbar('annotation updated successfully', { variant: 'success' });
+                    },
+                }
+            );
+        } else {
+            updateAnnotationNoNoteKeys(
+                updatedAnnotationNotes.map((annotationNote) => ({
+                    id: `${props.annotationId}_${annotationNote.analysis}`,
+                    note: annotationNote.note,
+                })),
+                {
+                    onSuccess: () => {
+                        setAnnotationsHotState((prev) => ({ ...prev, isEdited: false }));
+                        enqueueSnackbar('annotation updated successfully', { variant: 'success' });
+                    },
+                }
+            );
+        }
     };
 
     const handleRemoveHotColumn = (colKey: string) => {
@@ -132,59 +156,6 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
         });
     };
 
-    const handleCellMouseUp = (event: MouseEvent, coords: CellCoords, TD: HTMLTableCellElement): void => {
-        const target = event.target as HTMLButtonElement;
-        if (coords.row < 0 && (target.tagName === 'svg' || target.tagName === 'path')) {
-            handleRemoveHotColumn(TD.innerText);
-        }
-    };
-
-    const reorderArray = <T,>(arr: T[], from: number, to: number) => {
-        if (from === to) return [...arr];
-        const updated = [...arr];
-        const [removed] = updated.splice(from, 1);
-        updated.splice(to, 0, removed);
-        return updated;
-    };
-
-    const handleColumnMove = (movedColumns: number[], finalIndex: number) => {
-        if (!canEdit) return;
-        if (!movedColumns.length) return;
-        const fromVisualIndex = movedColumns[0];
-        const toVisualIndex = finalIndex;
-
-        if (fromVisualIndex < 2 || toVisualIndex < 2) return; // lock study/analysis columns
-
-        const from = fromVisualIndex - 2;
-        let to = toVisualIndex - 2;
-
-        setAnnotationsHotState((prev) => {
-            if (from >= prev.noteKeys.length) return prev;
-            if (to >= prev.noteKeys.length) to = prev.noteKeys.length - 1;
-
-            const updatedNoteKeys = reorderArray(prev.noteKeys, from, to).map((noteKey, index) => ({
-                ...noteKey,
-                order: index,
-            }));
-
-            const updatedHotData = prev.hotData.map((row) => {
-                const metadataCols = row.slice(0, 2);
-                const noteCols = reorderArray(row.slice(2), from, to);
-                return [...metadataCols, ...noteCols];
-            });
-
-            return {
-                ...prev,
-                isEdited: true,
-                noteKeys: updatedNoteKeys,
-                hotColumns: createColumns(updatedNoteKeys, !canEdit),
-                hotData: updatedHotData,
-            };
-        });
-
-        hotTableRef.current?.hotInstance?.getPlugin('manualColumnMove').clearMoves();
-    };
-
     /**
      * NOTE: there is a bug where fixed, mergedCells (such as the cells showing our studies) get messed up when you scroll to the right. I think that this is
      * due to virtualization - as we scroll to the right, the original heights of the cells are no longer in the DOM and so the calculated row heights are lost and
@@ -203,11 +174,100 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
         TD: HTMLTableCellElement,
         controller: SelectionController
     ): void => {
-        const isRowHeader = coords.col === -1 || coords.col === 0;
+        const isRowHeader = coords.col < 2;
         if (isRowHeader) {
             event.stopImmediatePropagation();
             return;
         }
+
+        const target = event.target as HTMLElement;
+
+        // Track when user starts dragging a column header (but not when clicking the X button)
+        const isClickingDeleteButton = target.tagName === 'svg' || target.tagName === 'path';
+        if (!isClickingDeleteButton) {
+            // User is pressing down on a moveable column header (not the X button)
+            isColumnDraggingRef.current = true;
+        }
+    };
+
+    const handleCellMouseUp = (event: MouseEvent, coords: CellCoords, TD: HTMLTableCellElement): void => {
+        // Don't delete if we're in the middle of a column drag operation
+        if (isColumnDraggingRef.current) {
+            isColumnDraggingRef.current = false;
+            return;
+        }
+
+        const target = event.target as HTMLButtonElement;
+        if (coords.row < 0 && (target.tagName === 'svg' || target.tagName === 'path')) {
+            handleRemoveHotColumn(TD.innerText);
+        }
+    };
+
+    const reorderArray = <T,>(arr: T[], from: number, to: number) => {
+        if (from === to) return [...arr];
+        const updated = [...arr];
+        const [removed] = updated.splice(from, 1);
+        updated.splice(to, 0, removed);
+        return updated;
+    };
+
+    const handleBeforeColumnMove = (movedColumns: number[], finalIndex: number) => {
+        if (!canEdit) return false;
+        if (!movedColumns.length) return false;
+        if (movedColumns.length > 1) return false;
+
+        const fromVisualIndex = movedColumns[0];
+        const toVisualIndex = finalIndex;
+
+        // Prevent moving locked columns (first two columns are study name and analysis name)
+        if (fromVisualIndex < 2 || toVisualIndex < 2) {
+            return false;
+        }
+
+        // Calculate logical indices (subtract 2 for the fixed metadata columns)
+        const from = fromVisualIndex - 2;
+        let to = toVisualIndex - 2;
+
+        // Update React state with the new column order
+        // Returning false will prevent Handsontable from doing its own move,
+        // and React will re-render with the correct order
+        setAnnotationsHotState((prev) => {
+            if (from >= prev.noteKeys.length || from < 0) return prev;
+            if (to < 0) to = 0;
+            // Allow to === noteKeys.length for appending to the end
+            if (to > prev.noteKeys.length) to = prev.noteKeys.length;
+
+            // Don't do anything if moving to the same position
+            if (from === to) return prev;
+
+            const updatedNoteKeys = reorderArray(prev.noteKeys, from, to).map((noteKey, index) => ({
+                ...noteKey,
+                order: index,
+            }));
+
+            const updatedHotData = prev.hotData.map((row) => {
+                const metadataCols = row.slice(0, 2);
+                const noteCols = reorderArray(row.slice(2), from, to);
+                return [...metadataCols, ...noteCols];
+            });
+
+            return {
+                ...prev,
+                isEdited: true,
+                isReordered: true,
+                noteKeys: updatedNoteKeys,
+                hotColumns: createColumns(updatedNoteKeys, !canEdit),
+                hotData: updatedHotData,
+            };
+        });
+
+        // This should technically be handled by handleCellMouseUp, but we'll add it here for safety
+        setTimeout(() => {
+            isColumnDraggingRef.current = false;
+        }, 100);
+
+        // Return false to prevent Handsontable from performing its own column move - React will handle the re-render with the updated data
+        return false;
     };
 
     const handleAddHotColumn = (row: IMetadataRowModel) => {
@@ -239,7 +299,7 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
     /**
      * On top of being triggered when a change occurs, this hook is also triggered during initial mergeCells and on initial update.
      */
-    const handleChangeOccurred = (changes: CellChange[] | null, source: any) => {
+    const handleAfterChange = (changes: CellChange[] | null, source: any) => {
         if (!changes) return;
         const isDoingMergeCellOperation = changes.some((x) => x[1] === 0);
         if (isDoingMergeCellOperation) return; // We don't want update to occur when handsontable is merging cells, only when a user update occurs
@@ -289,7 +349,7 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
                 {hotData.length > 0 ? (
                     <HotTable
                         {...hotSettings}
-                        afterChange={handleChangeOccurred}
+                        afterChange={handleAfterChange}
                         ref={hotTableRef}
                         mergeCells={mergeCells}
                         disableVisualSelection={!canEdit}
@@ -301,7 +361,7 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
                         data={JSON.parse(JSON.stringify(hotData))}
                         afterOnCellMouseUp={handleCellMouseUp}
                         beforeOnCellMouseDown={handleCellMouseDown}
-                        afterColumnMove={handleColumnMove}
+                        beforeColumnMove={handleBeforeColumnMove}
                     />
                 ) : (
                     <Typography sx={{ color: 'warning.dark' }}>
@@ -328,7 +388,7 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
                     size="large"
                     text="save"
                     disabled={!isEdited || !canEdit}
-                    isLoading={updateAnnotationIsLoading}
+                    isLoading={updateAnnotationIsLoading || updateAnnotationNoNoteKeysIsLoading}
                     loaderColor="secondary"
                     color="primary"
                     variant="contained"
