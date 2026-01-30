@@ -15,12 +15,7 @@ export const storeNotesToDBNotes = (notes: IStoreNoteCollectionReturn[]): NoteCo
     return notes.map((annotationNote) => ({
         analysis: annotationNote.analysis,
         study: annotationNote.study,
-        note: {
-            ...annotationNote.note,
-            // All notes should have the included property set to true by default.
-            // If the note does not have the included property, we instantiate it to true
-            included: (annotationNote.note as { included?: boolean })?.included ?? true,
-        },
+        note: annotationNote.note,
     }));
 };
 
