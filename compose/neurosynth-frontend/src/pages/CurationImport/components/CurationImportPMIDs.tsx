@@ -1,7 +1,7 @@
 import { Box } from '@mui/material';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
-import useFetchPubMedIds from 'hooks/external/useFetchPubMedIds';
+import { useFetchPubMedIds } from 'hooks';
 import { useSnackbar } from 'notistack';
 import { ICurationStubStudy } from 'pages/Curation/Curation.types';
 import { defaultIdentificationSources } from 'pages/Project/store/ProjectStore.types';
