@@ -386,6 +386,7 @@ jobs:
           -e "VITE_APP_NEUROSTORE_API_DOMAIN=http://localhost/api" \
           -e "CI=true" \
           -e "VITE_APP_NEUROSYNTH_API_DOMAIN=http://localhost:81/api" \
+          -e "VITE_GENERATE_SEO=false" \
           --rm -w /compose/neurosynth-frontend \
           compose \
           bash -c "cd /compose/neurosynth-frontend && \
@@ -525,6 +526,7 @@ jobs:
         VITE_APP_NEUROSTORE_API_DOMAIN: ${{ secrets.VITE_APP_NEUROSTORE_API_DOMAIN }}
         VITE_APP_NEUROSYNTH_API_DOMAIN: ${{ secrets.VITE_APP_NEUROSYNTH_API_DOMAIN }}
         VITE_GENERATE_SEO: "true"
+        VITE_APP_SITE_URL: http://localhost:3000
       with:
         build: npm run build:staging
         record: true
