@@ -85,3 +85,25 @@ in the `.env` file.
 and execute:
 
     docker-compose run -e "APP_SETTINGS=neurosynth_compose.config.DockerTestConfig" --rm -w /compose compose python -m pytest compose/tests
+
+## Admin interface
+The Flask-Admin UI is served at `/admin` once the stack is running.
+
+Access:
+- Dev: http://localhost:81/admin
+- Prod: https://compose.neurosynth.org/admin
+
+Auth:
+- Set `FLASK_ADMIN_USERNAME` and `FLASK_ADMIN_PASSWORD` in the environment.
+- The browser will prompt for HTTP Basic auth when you visit `/admin`.
+
+Grant admin access (recommended for any admin UI access):
+```sh
+# Find the user ID
+docker-compose exec compose_pgsql17 psql -U postgres -d compose \
+  -c "SELECT id, external_id FROM users WHERE external_id = 'user-external-id';"
+
+# Assign admin role
+docker-compose exec compose_pgsql17 psql -U postgres -d compose \
+  -c "INSERT INTO roles_users (user_id, role_id) VALUES ('user-id', 'admin');"
+```

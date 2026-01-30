@@ -29,6 +29,45 @@ def get_current_user():
     return None
 
 
+# Sentinel value to distinguish between no argument and explicit None
+_UNSET = object()
+
+
+def is_user_admin(user=_UNSET):
+    """Check if the user has the admin role
+
+    Args:
+        user: User object to check. If not provided, gets current user from context.
+              If None is explicitly passed, returns False.
+
+    Returns:
+        bool: True if user has admin role, False otherwise
+    """
+    if user is _UNSET:
+        # No argument provided, get current user from context
+        user = get_current_user()
+
+    if user is None:
+        return False
+
+    # Load roles eagerly to avoid lazy loading when raise_on_sql is enabled.
+    from sqlalchemy.orm import selectinload
+
+    if user.id is None:
+        return False
+
+    user_with_roles = (
+        models.User.query.options(selectinload(models.User.roles))
+        .filter_by(id=user.id)
+        .first()
+    )
+
+    if user_with_roles is None:
+        return False
+
+    return any(role.name == "admin" for role in user_with_roles.roles)
+
+
 def view_maker(cls):
     """Create a View class with model and schema attributes"""
     proc_name = cls.__name__.removesuffix("View").removesuffix("Resource")

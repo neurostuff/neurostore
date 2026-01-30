@@ -733,3 +733,129 @@ def test_base_studies_semantic_search(
     assert isinstance(data["results"], list)
     if data["results"]:
         assert "id" in data["results"][0]
+
+
+def test_is_active_filter_list(auth_client, session, ingest_neurosynth):
+    """Test that inactive base studies are filtered out from list view"""
+    from neurostore.core import cache
+
+    # First get the list of all base studies
+    resp = auth_client.get("/api/base-studies/")
+    assert resp.status_code == 200
+    data = resp.json()
+    initial_count = len(data["results"])
+    assert initial_count > 0, "Should have at least one base study"
+
+    # Get a base study and mark it as inactive
+    base_study = BaseStudy.query.first()
+    assert base_study is not None
+    inactive_id = base_study.id
+
+    # Mark it as inactive
+    base_study.is_active = False
+    session.commit()
+
+    # Clear all cache to ensure the next request sees the updated data
+    cache.clear()
+
+    # Try to list all base studies - should not include the inactive one
+    resp = auth_client.get("/api/base-studies/")
+    assert resp.status_code == 200
+    data = resp.json()
+
+    # Verify the inactive study is not in the results
+    result_ids = [result["id"] for result in data["results"]]
+    assert inactive_id not in result_ids
+    # Should have one less study than before
+    assert len(data["results"]) == initial_count - 1
+
+
+def test_is_active_filter_get(auth_client, session, ingest_neurosynth):
+    """Test that inactive base studies CAN still be retrieved via direct link"""
+    # Get a base study and mark it as inactive
+    base_study = BaseStudy.query.first()
+    assert base_study is not None
+
+    # Store the ID
+    inactive_id = base_study.id
+
+    # First verify we can get it while active
+    resp = auth_client.get(f"/api/base-studies/{inactive_id}")
+    assert resp.status_code == 200
+
+    # Mark it as inactive
+    base_study.is_active = False
+    session.commit()
+
+    # Try to get the inactive base study via direct link - should still work (200)
+    resp = auth_client.get(f"/api/base-studies/{inactive_id}")
+    assert resp.status_code == 200
+    assert resp.json()["id"] == inactive_id
+
+
+def test_superseded_by_relationship(session):
+    """Test that superseded_by creates a valid relationship"""
+    # Create two base studies
+    study1 = BaseStudy(
+        name="Old Study",
+        doi="10.1234/old.study",
+        pmid="11111111",
+        is_active=False
+    )
+    study2 = BaseStudy(
+        name="New Study",
+        doi="10.1234/new.study",
+        pmid="22222222",
+        is_active=True
+    )
+    session.add(study1)
+    session.add(study2)
+    session.commit()
+
+    # Link study1 to study2
+    study1.superseded_by = study2.id
+    session.commit()
+
+    # Verify the relationship
+    assert study1.superseded_by == study2.id
+    assert study1.superseded_by_study.id == study2.id
+
+    # Verify study2 has study1 in its supersedes backref
+    assert study1 in study2.supersedes
+
+
+def test_superseded_by_no_self_reference(session):
+    """Test that a base study cannot supersede itself"""
+    from sqlalchemy.exc import IntegrityError
+
+    study = BaseStudy(
+        name="Self Reference Study",
+        doi="10.1234/self.ref",
+        pmid="33333333",
+    )
+    session.add(study)
+    session.commit()
+
+    # Try to set superseded_by to itself - should fail
+    study.superseded_by = study.id
+
+    try:
+        session.commit()
+        assert False, "Should have raised IntegrityError"
+    except IntegrityError:
+        session.rollback()
+        # Expected behavior
+
+
+def test_is_active_not_exposed_in_api(auth_client, ingest_neurosynth):
+    """Test that is_active and superseded_by are not exposed in API responses"""
+    # Get a base study
+    resp = auth_client.get("/api/base-studies/")
+    assert resp.status_code == 200
+    data = resp.json()
+
+    if data["results"]:
+        result = data["results"][0]
+        # Verify internal fields are not exposed
+        assert "is_active" not in result
+        assert "superseded_by" not in result

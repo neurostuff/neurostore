@@ -1,4 +1,5 @@
 from .analysis import (
+    Tag,
     Specification,
     Studyset,
     StudysetReference,
@@ -13,11 +14,12 @@ from .analysis import (
     Project,
 )
 
-from .auth import User
+from .auth import User, Role
 
 __all__ = [
     "Condition",
     "SpecificationCondition",
+    "Tag",
     "Specification",
     "Studyset",
     "StudysetReference",
@@ -31,4 +33,5 @@ __all__ = [
     "NeurostoreAnalysis",
     "Project",
     "User",
+    "Role",
 ]

@@ -30,7 +30,7 @@ from webargs import fields
 
 from ..core import cache
 from ..database import db
-from .utils import get_current_user, validate_search_query, pubmed_to_tsquery
+from .utils import get_current_user, is_user_admin, validate_search_query, pubmed_to_tsquery
 from ..models import (
     StudysetStudy,
     AnnotationAnalysis,
@@ -291,15 +291,17 @@ class BaseView(MethodView):
 
         data = cls.load_nested_records(data, record)
 
+        is_admin = is_user_admin(current_user)
         if (
             not sa.inspect(record).pending
             and record.user != current_user
             and not only_ids
             and current_user.external_id != compose_bot
+            and not is_admin
         ):
             abort_permission(
                 "You do not have permission to modify this record."
-                " You must be the owner or the compose bot."
+                " You must be the owner, the compose bot, or an admin."
             )
         elif only_ids:
             to_commit.append(record)
@@ -334,10 +336,13 @@ class BaseView(MethodView):
                 v = PrtCls._model.query.filter_by(id=v["id"]).first()
                 if PrtCls._model is BaseStudy:
                     pass
-                elif current_user != v.user and current_user.external_id != compose_bot:
+                elif (current_user != v.user and
+                      current_user.external_id != compose_bot and
+                      not is_admin):
                     abort_permission(
-                        "You do not have permission to link to this parent record. "
-                        "You must own the parent record or be the compose bot."
+                        "You do not have permission to link to this parent "
+                        "record. You must own the parent record, be the "
+                        "compose bot, or be an admin."
                     )
             if k in cls._linked and v is not None:
                 LnCls = getattr(viewdata, cls._linked[k])
@@ -551,12 +556,14 @@ class ObjectView(BaseView):
         record = q.one()
 
         current_user = get_current_user()
-        if record.user_id != current_user.external_id:
+        is_admin = is_user_admin(current_user)
+        if record.user_id != current_user.external_id and not is_admin:
             abort_permission(
                 "You do not have permission to delete this record. "
-                "Only the owner can delete records."
+                "Only the owner or an admin can delete records."
             )
         else:
+            payload = {"id": record.id}
             db.session.delete(record)
             # clear relevant caches
             with db.session.no_autoflush:
@@ -575,7 +582,8 @@ class ObjectView(BaseView):
 
             db.session.commit()
 
-        return 204
+        # Maintain API contract (OpenAPI/test expectations) for delete responses.
+        return payload, 200, {"Content-Type": "application/json"}
 
     def insert_data(self, id, data):
         return data
@@ -660,7 +668,10 @@ class ListView(BaseView):
         # query items that are public and/or you own them
         if hasattr(m, "public"):
             current_user = get_current_user()
-            q = q.filter(sae.or_(m.public == True, m.user == current_user))  # noqa E712
+            is_admin = is_user_admin(current_user)
+            # Admins can see all records, others see public or their own
+            if not is_admin:
+                q = q.filter(sae.or_(m.public == True, m.user == current_user))  # noqa E712
 
         # Search
         s = args["search"]

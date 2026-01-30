@@ -21,6 +21,7 @@ from webargs import fields
 from ..database import db, commit_session
 from ..models.analysis import (  # noqa E401
     Condition,
+    Tag,
     SpecificationCondition,
     Studyset,
     Annotation,
@@ -39,6 +40,7 @@ from ..models.auth import User
 
 from ..schemas import (  # noqa E401
     ConditionSchema,
+    TagSchema,
     SpecificationConditionSchema,
     MetaAnalysisSchema,
     AnnotationSchema,
@@ -104,6 +106,45 @@ def get_current_user():
             external_id=connexion.context.context["user"]
         ).first()
     return None
+
+
+# Sentinel value to distinguish between no argument and explicit None
+_UNSET = object()
+
+
+def is_user_admin(user=_UNSET):
+    """Check if the user has the admin role
+
+    Args:
+        user: User object to check. If not provided, gets current user from context.
+              If None is explicitly passed, returns False.
+
+    Returns:
+        bool: True if user has admin role, False otherwise
+    """
+    if user is _UNSET:
+        # No argument provided, get current user from context
+        user = get_current_user()
+
+    if user is None:
+        return False
+
+    # Load roles eagerly to avoid lazy loading when raise_on_sql is enabled.
+    from sqlalchemy.orm import selectinload
+
+    if user.id is None:
+        return False
+
+    user_with_roles = (
+        User.query.options(selectinload(User.roles))
+        .filter_by(id=user.id)
+        .first()
+    )
+
+    if user_with_roles is None:
+        return False
+
+    return any(role.name == "admin" for role in user_with_roles.roles)
 
 
 def view_maker(cls):
@@ -178,8 +219,14 @@ class BaseView(MethodView):
                 to_commit.append(record)
             elif record is None:
                 abort(422)
-            elif not only_ids and record.user_id != current_user.external_id:
-                abort(403)
+            elif (not only_ids and
+                  record.user_id != current_user.external_id and
+                  not is_user_admin(current_user)):
+                abort(
+                    403,
+                    description="You do not have permission to modify this "
+                    "record. You must be the owner or an admin."
+                )
             elif only_ids:
                 to_commit.append(record)
 
@@ -298,12 +345,14 @@ class ObjectView(BaseView):
         self.db_validation({"id": id})
 
         current_user = get_current_user()
-        if record.user_id != current_user.external_id:
+        is_admin = is_user_admin(current_user)
+        if record.user_id != current_user.external_id and not is_admin:
             abort(
                 403,
                 description=(
                     f"user {current_user.external_id} cannot change "
-                    f"record owned by {record.user_id}."
+                    f"record owned by {record.user_id}. Only the owner or "
+                    f"an admin can delete records."
                 ),
             )
 
@@ -348,6 +397,30 @@ class ListView(BaseView):
             **{f: fields.Str() for f in self._fulltext_fields},
         }
 
+    def _finalize_search(self, q, args):
+        m = self._model
+        sort_col = args["sort"]
+        desc = {False: "asc", True: "desc"}[args["desc"]]
+
+        attr = getattr(m, sort_col)
+        if sort_col not in ("created_at", "updated_at"):
+            attr = func.lower(attr)
+
+        q = q.order_by(getattr(attr, desc)(), getattr(m.id, desc)())
+
+        page = args["page"]
+        page_size = args["page_size"]
+        total = q.count()
+        offset = (page - 1) * page_size
+        records = q.offset(offset).limit(page_size).all()
+        metadata = {"total_count": total}
+        content = self.__class__._schema(only=self._only, many=True, context=args).dump(
+            records
+        )
+
+        response = {"metadata": metadata, "results": content}
+        return _make_json_response(response)
+
     def search(self):
         # Parse arguments using webargs
         args = parser.parse(self._user_args, request, location="query")
@@ -367,12 +440,18 @@ class ListView(BaseView):
         # query items that are public and/or you own them
         if hasattr(m, "public"):
             current_user = get_current_user()
-            q = q.filter(sae.or_(m.public == True, m.user == current_user))  # noqa E712
+            is_admin = is_user_admin(current_user)
+            # Admins can see all records, others see public or their own
+            if not is_admin:
+                q = q.filter(sae.or_(m.public == True, m.user == current_user))  # noqa E712
 
         # query items that are drafts
         if hasattr(m, "draft"):
             current_user = get_current_user()
-            q = q.filter(sae.or_(m.draft == False, m.user == current_user))  # noqa E712
+            is_admin = is_user_admin(current_user)
+            # Admins can see all drafts, others only see non-drafts or their own drafts
+            if not is_admin:
+                q = q.filter(sae.or_(m.draft == False, m.user == current_user))  # noqa E712
 
         # query annotations for a specific dataset
         if args.get("dataset_id"):
@@ -407,21 +486,7 @@ class ListView(BaseView):
         # but weird things are happening. look into this as time allows.
         # if isinstance(attr, ColumnAssociationProxyInstance):
         #     q = q.join(*attr.attr)
-        q = q.order_by(getattr(attr, desc)(), getattr(m.id, desc)())
-
-        page = args["page"]
-        page_size = args["page_size"]
-        total = q.count()
-        offset = (page - 1) * page_size
-        records = q.offset(offset).limit(page_size).all()
-        metadata = {"total_count": total}
-        content = self.__class__._schema(only=self._only, many=True, context=args).dump(
-            records
-        )
-
-        response = {"metadata": metadata, "results": content}
-
-        return _make_json_response(response)
+        return self._finalize_search(q, args)
 
     def post(self):
         # TODO: check to make sure current user hasn't already created a
@@ -451,8 +516,47 @@ class MetaAnalysesView(ObjectView, ListView):
     _nested = {
         "studyset": "StudysetsView",
         "annotation": "AnnotationsView",
+        "tags": "TagsView",
         "results": "MetaAnalysisResultsView",
     }
+
+    @classmethod
+    def update_or_create(cls, data, id=None, commit=True):
+        tags = data.get("tags")
+        if isinstance(tags, list):
+            current_user = get_current_user()
+            data["tags"] = cls._normalize_tags(tags, current_user)
+        return super().update_or_create(data, id=id, commit=commit)
+
+    @staticmethod
+    def _normalize_tags(tags, current_user):
+        normalized = []
+        for tag in tags:
+            if isinstance(tag, dict):
+                tag_id = tag.get("id")
+                tag_name = tag.get("name")
+            else:
+                tag_id = tag
+                tag_name = tag
+
+            tag_record = None
+            if tag_id:
+                tag_record = db.session.execute(
+                    select(Tag).where(Tag.id == tag_id)
+                ).scalars().first()
+                if tag_record and not _tag_accessible(tag_record, current_user):
+                    abort(403, description="tag is not accessible to this user")
+                if tag_record is None and not tag_name:
+                    abort(404, description="tag not found")
+
+            if tag_record is None and tag_name:
+                tag_record = _find_tag_by_name(tag_name, current_user)
+
+            if tag_record is not None:
+                normalized.append({"id": tag_record.id})
+            elif tag_name:
+                normalized.append({"name": tag_name})
+        return normalized
 
     def db_validation(self, data):
         ma = db.session.execute(
@@ -523,6 +627,125 @@ class ConditionsResource(ObjectView):
 @view_maker
 class SpecificationConditionsResource(ObjectView):
     _nested = {"condition": "ConditionsResource"}
+
+
+@view_maker
+class TagsView(ObjectView, ListView):
+    _search_fields = ("name", "description")
+
+    def __init__(self):
+        super().__init__()
+        self._user_args = {
+            **self._user_args,
+            "group": fields.String(load_default=None),
+            "filter": fields.String(load_default=None),
+            "official": fields.Boolean(load_default=None),
+        }
+
+    def get(self, id):
+        id = id.replace("\x00", "\uFFFD")
+        record = db.session.execute(
+            select(self._model).where(self._model.id == id)
+        ).scalar_one_or_none()
+        if record is None or not _tag_accessible(record, get_current_user()):
+            abort(404)
+        args = parser.parse(self._user_args, request, location="query")
+        payload = self.__class__._schema(context=args).dump(record)
+        return _make_json_response(payload)
+
+    def search(self):
+        args = parser.parse(self._user_args, request, location="query")
+        q = _scoped_tags_query(get_current_user())
+
+        if args.get("ids"):
+            q = q.filter(Tag.id.in_(args.get("ids")))
+        if args.get("user_id"):
+            q = q.filter(Tag.user_id == args.get("user_id"))
+        if args.get("group"):
+            q = q.filter(func.lower(Tag.group) == func.lower(args.get("group")))
+        if args.get("official") is not None:
+            q = q.filter(Tag.official == args.get("official"))
+
+        s = args["search"] or args.get("filter")
+        if s is not None and self._fulltext_fields:
+            search_expr = [
+                getattr(Tag, field).ilike(f"%{s}%") for field in self._fulltext_fields
+            ]
+            q = q.filter(sae.or_(*search_expr))
+
+        for field in self._search_fields:
+            s = args.get(field, None)
+            if s is not None:
+                q = q.filter(getattr(Tag, field).ilike(f"%{s}%"))
+
+        return self._finalize_search(q, args)
+
+    @classmethod
+    def update_or_create(cls, data, id=None, commit=True):
+        current_user = get_current_user()
+        if id is None and isinstance(data, dict):
+            name = data.get("name")
+            if name:
+                existing = _find_tag_by_name(name, current_user, prefer_global=False)
+                if existing is not None:
+                    return existing
+
+        record = super().update_or_create(data, id=id, commit=False)
+        if isinstance(data, dict) and data.get("official"):
+            record.user = None
+        elif record.user_id is None and current_user:
+            record.user = current_user
+
+        if commit:
+            db.session.add(record)
+            commit_session()
+
+        return record
+
+
+def _scoped_tags_query(current_user):
+    q = Tag.query
+    if current_user:
+        q = q.filter(
+            sae.or_(Tag.user_id.is_(None), Tag.user_id == current_user.external_id)
+        )
+    else:
+        q = q.filter(Tag.user_id.is_(None))
+    return q
+
+
+def _tag_accessible(tag, current_user):
+    return tag.user_id is None or (
+        current_user and tag.user_id == current_user.external_id
+    )
+
+
+def _find_tag_by_name(name, current_user, prefer_global=True):
+    q = select(Tag).where(func.lower(Tag.name) == func.lower(name))
+    if current_user:
+        q = q.where(
+            sae.or_(Tag.user_id.is_(None), Tag.user_id == current_user.external_id)
+        )
+    else:
+        q = q.where(Tag.user_id.is_(None))
+    tags = db.session.execute(q).scalars().all()
+    if not tags:
+        return None
+    if prefer_global:
+        for tag in tags:
+            if tag.user_id is None and tag.official:
+                return tag
+        for tag in tags:
+            if tag.user_id is None:
+                return tag
+    if current_user:
+        for tag in tags:
+            if tag.user_id == current_user.external_id:
+                return tag
+    for tag in tags:
+        if tag.user_id is None:
+            return tag
+    return tags[0]
 
 
 @view_maker
