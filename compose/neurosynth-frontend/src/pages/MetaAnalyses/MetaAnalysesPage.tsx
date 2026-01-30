@@ -3,8 +3,7 @@ import StateHandlerComponent from 'components/StateHandlerComponent/StateHandler
 import NeurosynthTable from 'components/NeurosynthTable/NeurosynthTable';
 import NeurosynthTableStyles from 'components/NeurosynthTable/NeurosynthTable.styles';
 import { useGetMetaAnalysesPublic } from 'hooks';
-import usePageMetadata from 'hooks/usePageMetadata';
-import usePrerenderReady from 'hooks/usePrerenderReady';
+import { usePrerenderReady, usePageMetadata } from '../../../seo/hooks';
 import { useNavigate } from 'react-router-dom';
 
 const MetaAnalysesPage: React.FC = () => {

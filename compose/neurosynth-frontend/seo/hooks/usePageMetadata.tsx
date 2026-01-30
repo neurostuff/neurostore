@@ -57,8 +57,7 @@ const ensureMetaTag = (selector: string, attributes: Record<string, string>) => 
     });
 };
 
-const setMetaName = (name: string, content: string) =>
-    ensureMetaTag(`meta[name="${name}"]`, { name, content });
+const setMetaName = (name: string, content: string) => ensureMetaTag(`meta[name="${name}"]`, { name, content });
 
 const setMetaProperty = (property: string, content: string) =>
     ensureMetaTag(`meta[property="${property}"]`, { property, content });

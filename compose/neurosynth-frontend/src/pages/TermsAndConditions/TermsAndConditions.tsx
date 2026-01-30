@@ -1,6 +1,5 @@
 import { Box, Typography } from '@mui/material';
-import usePageMetadata from 'hooks/usePageMetadata';
-import usePrerenderReady from 'hooks/usePrerenderReady';
+import { usePrerenderReady, usePageMetadata } from '../../../seo/hooks';
 
 const TermsAndConditions: React.FC = (props) => {
     usePageMetadata({

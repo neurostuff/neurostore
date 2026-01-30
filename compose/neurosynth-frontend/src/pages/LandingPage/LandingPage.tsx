@@ -8,14 +8,12 @@ import { Box, Button, Card, CardContent, Typography } from '@mui/material';
 import NeurosynthActivitySummary from 'components/NeurosynthActivitySummary';
 import { useGuard } from 'hooks';
 import useAuthenticate from 'hooks/useAuthenticate';
-import usePageMetadata from 'hooks/usePageMetadata';
-import usePrerenderReady from 'hooks/usePrerenderReady';
-import useStructuredData from 'hooks/useStructuredData';
+import { usePrerenderReady, usePageMetadata } from '../../../seo/hooks';
 import PlatformComparisonTable from 'pages/LandingPage/components/PlatformComparisonTable';
 import { LOGOS } from 'pages/LandingPage/LandingPage.helpers';
 import LandingPageStyles from './LandingPage.styles';
 
-const LANDING_PAGE_STRUCTURED_DATA = {
+const SEO_GRAPH_DATA = JSON.stringify({
     '@context': 'https://schema.org',
     '@graph': [
         {
@@ -61,13 +59,12 @@ const LANDING_PAGE_STRUCTURED_DATA = {
             },
         },
     ],
-};
+});
 
 const LandingPage = () => {
     const { isAuthenticated, isLoading } = useAuth0();
     useGuard('/projects', '', isAuthenticated, isLoading, true);
     const { handleLogin } = useAuthenticate();
-    const structuredDataJson = useStructuredData(() => LANDING_PAGE_STRUCTURED_DATA);
     usePageMetadata({
         title: 'Neurosynth Compose | Neuroimaging Meta-Analysis Platform',
         description:
@@ -78,10 +75,7 @@ const LandingPage = () => {
 
     return (
         <>
-            <script
-                type="application/ld+json"
-                dangerouslySetInnerHTML={{ __html: structuredDataJson }}
-            />
+            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: SEO_GRAPH_DATA }} />
             <Box sx={[LandingPageStyles.sectionContainer, { backgroundColor: 'primary.main' }]}>
                 <Box sx={[LandingPageStyles.sectionContents, LandingPageStyles.heroBannerContentContainer]}>
                     <Box sx={LandingPageStyles.heroBannerTextContainer}>
