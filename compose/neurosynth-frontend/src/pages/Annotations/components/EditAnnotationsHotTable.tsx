@@ -322,7 +322,7 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
     /**
      * On top of being triggered when a change occurs, this hook is also triggered during initial mergeCells and on initial update.
      */
-    const handleAfterChange = (changes: CellChange[] | null, source: any) => {
+    const handleAfterChange = (changes: CellChange[] | null) => {
         if (!changes) return;
         const isDoingMergeCellOperation = changes.some((x) => x[1] === 0);
         if (isDoingMergeCellOperation) return; // We don't want update to occur when handsontable is merging cells, only when a user update occurs
