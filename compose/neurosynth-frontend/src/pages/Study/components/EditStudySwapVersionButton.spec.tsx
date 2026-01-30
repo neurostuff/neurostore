@@ -43,6 +43,17 @@ describe('EditStudySwapVersionButton Component', () => {
         });
     });
 
+    it('should link to the selected base study version when viewing', () => {
+        render(<EditStudySwapVersionButton />);
+        const baseStudy = mockBaseStudy();
+        const button = screen.getByRole('button');
+        userEvent.click(button);
+
+        const viewLinks = screen.getAllByRole('link', { name: /View version/i });
+        const versionId = (baseStudy.versions as StudyReturn[])[0].id as string;
+        expect(viewLinks[0]).toHaveAttribute('href', `/base-studies/base-study-id/${versionId}`);
+    });
+
     it('should switch the study version', async () => {
         const studyset = mockStudysetNotNested();
         (useStudyId as Mock).mockReturnValue(studyset.studies?.[0]);
