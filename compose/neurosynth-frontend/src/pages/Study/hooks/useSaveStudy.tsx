@@ -66,7 +66,7 @@ const useSaveStudy = () => {
 
     const handleUpdateBothInDB = async () => {
         try {
-            const updatedStudy = await updateStudyInDB(annotationId as string);
+            const updatedStudy = await updateStudyInDB();
             const updatedNotes = [...(notes || [])];
 
             // for new analyses, temporary uuids() are given to them. During study update, any new analyses are instantiated
@@ -102,7 +102,7 @@ const useSaveStudy = () => {
 
     const handleUpdateStudyInDB = async () => {
         try {
-            await updateStudyInDB(annotationId as string);
+            await updateStudyInDB();
             unsetUnloadHandler('study');
             unsetUnloadHandler('annotation');
             queryClient.invalidateQueries('studies');

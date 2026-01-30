@@ -24,7 +24,7 @@ export type StudyStoreActions = {
     initStudyStore: (studyId?: string) => void;
     clearStudyStore: () => void;
     updateStudy: (fieldName: keyof StudyDetails, value: string | number) => void;
-    updateStudyInDB: (annotationId: string | undefined) => Promise<StudyReturn>;
+    updateStudyInDB: () => Promise<StudyReturn>;
     addOrUpdateStudyMetadataRow: (row: IMetadataRowModel) => void;
     deleteStudyMetadataRow: (key: string) => void;
     addOrUpdateAnalysis: (analysis: Partial<IStoreAnalysis>) => IStoreAnalysis;
@@ -145,7 +145,7 @@ const useStudyStore = create<
                         },
                     }));
                 },
-                updateStudyInDB: async (annotationId) => {
+                updateStudyInDB: async () => {
                     try {
                         const state = useStudyStore.getState();
                         if (!state.study.id) throw new Error('no study id');
