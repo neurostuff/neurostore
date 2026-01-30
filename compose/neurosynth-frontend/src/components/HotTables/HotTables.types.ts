@@ -4,6 +4,7 @@ export interface NoteKeyType {
     key: string;
     type: EPropertyType;
     order: number;
+    isNew?: boolean;
 }
 
 export type AnnotationNoteValue = string | number | boolean | null;

@@ -157,7 +157,10 @@ export const useAnnotationStore = create<
                 ...state,
                 annotation: {
                     ...state.annotation,
-                    note_keys: normalizeNoteKeyOrder([{ ...noteKey, order: 0 }, ...(state.annotation.note_keys ?? [])]),
+                    note_keys: normalizeNoteKeyOrder([
+                        { ...noteKey, isNew: true, order: 0 },
+                        ...(state.annotation.note_keys ?? []),
+                    ]),
                     notes: (state.annotation.notes ?? []).map((note) => ({
                         ...note,
                         note: {
@@ -267,25 +270,33 @@ export const useAnnotationStore = create<
                     },
                 }));
 
-                const annotationRes = (
+                const hasNewNoteKey = (state.annotation.note_keys ?? []).some((noteKey) => !!noteKey.isNew);
+
+                if (hasNewNoteKey) {
+                    // if there are new note keys, we need to update the annotation using the generic update endpoint
                     await API.NeurostoreServices.AnnotationsService.annotationsIdPut(state.annotation.id, {
                         note_keys: noteKeyArrToObj(state.annotation.note_keys ?? []),
                         notes: storeNotesToDBNotes(state.annotation.notes),
-                    })
-                ).data as AnnotationReturnOneOf;
+                    });
+                } else {
+                    // if there are no new note keys, we can use the optimized annotation endpoint
+                    await API.NeurostoreServices.AnnotationsService.annotationAnalysesPost(
+                        state.annotation.notes.map((note) => ({
+                            id: `${state.annotation.id}_${note.analysis}`,
+                            note: note.note,
+                        }))
+                    );
+                }
 
-                const noteKeysArr = noteKeyObjToArr(annotationRes.note_keys);
-                const notes: IStoreNoteCollectionReturn[] = (annotationRes.notes as Array<NoteCollectionReturn>)?.map(
-                    (x) => ({ ...x, isNew: false })
-                );
+                const noteKeysArr = (state.annotation.note_keys ?? []).map((noteKey) => ({ ...noteKey, isNew: false }));
+                const notesAfterDBUpdate = state.annotation.notes.map((note) => ({ ...note, isNew: false }));
 
                 set((state) => ({
                     ...state,
                     annotation: {
                         ...state.annotation,
-                        ...annotationRes,
-                        notes: notes,
-                        note_keys: [...noteKeysArr],
+                        notes: notesAfterDBUpdate,
+                        note_keys: noteKeysArr,
                     },
                     storeMetadata: {
                         ...state.storeMetadata,

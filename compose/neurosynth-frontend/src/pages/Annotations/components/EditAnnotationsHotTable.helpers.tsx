@@ -14,11 +14,15 @@ export const hotSettings: HotTableProps = {
     licenseKey: 'non-commercial-and-evaluation',
     contextMenu: false,
     viewportRowRenderingOffset: 4,
-    viewportColumnRenderingOffset: 4, // we do not want column virtualization as it screws up the spreadsheet
+    viewportColumnRenderingOffset: 4,
     width: '100%',
     fixedColumnsStart: 2,
     wordWrap: true,
     autoRowSize: false,
+    // rowHeaderWidth: 0 is used to prevent the row headers from being offset in the manualColumnMove calculations.
+    // HOWEVER why not just remove afterGetRowHeaderRenderers? We need to apply the styling (technically it's a noop now)
+    // in order to force handsontable to recalculte the row heights. If we remove it, the heights become slightly off.
+    rowHeaderWidth: 0,
     afterGetRowHeaderRenderers: (headerRenderers) => {
         headerRenderers.push((row, TH) => {
             TH.className = styles['no-top-bottom-borders'];
