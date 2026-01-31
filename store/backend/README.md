@@ -27,7 +27,7 @@ The server should now be running at http://localhost/
 
 Create the database for neurostore:
 
-    docker-compose exec store-pgsql17 psql -U postgres -c "create database neurostore"
+    docker-compose exec store-pgsql17 psql -U postgres -c "create database test_db"
 
 Next, apply the existing migrations (they are the canonical definition of the schema).
 

@@ -3,6 +3,7 @@
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.sql import func
 from sqlalchemy.ext.associationproxy import association_proxy
+from sqlalchemy.ext.hybrid import hybrid_property
 import shortuuid
 import secrets
 
@@ -19,6 +20,7 @@ from sqlalchemy import (
     CheckConstraint,
     ForeignKey,
     Index,
+    select,
 )
 
 
@@ -115,7 +117,7 @@ class Specification(BaseMixin, db.Model):
 
     type = Column(Text)
     estimator = Column(JSON)
-    filter = Column(Text)
+    filter = Column(JSON)
     weights = association_proxy("specification_conditions", "weight")
     conditions = association_proxy("specification_conditions", "condition")
     database_studyset = Column(Text)
@@ -206,6 +208,22 @@ class MetaAnalysis(BaseMixin, db.Model):
     neurostore_analysis = relationship(
         "NeurostoreAnalysis", back_populates="meta_analysis", uselist=False
     )
+
+    @hybrid_property
+    def public(self):
+        """Meta-analysis inherits public status from parent project"""
+        if self.project:
+            return self.project.public
+        return True  # Default to public if no project
+
+    @public.expression
+    def public(cls):
+        """SQL expression for querying public meta-analyses"""
+        return (
+            select(Project.public)
+            .where(Project.id == cls.project_id)
+            .scalar_subquery()
+        )
 
 
 class MetaAnalysisResult(BaseMixin, db.Model):
