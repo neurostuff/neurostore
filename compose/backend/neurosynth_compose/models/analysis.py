@@ -225,6 +225,22 @@ class MetaAnalysis(BaseMixin, db.Model):
             .scalar_subquery()
         )
 
+    @hybrid_property
+    def draft(self):
+        """Meta-analysis inherits draft status from parent project"""
+        if self.project:
+            return self.project.draft
+        return True  # Default to draft if no project
+
+    @draft.expression
+    def draft(cls):
+        """SQL expression for querying draft meta-analyses"""
+        return (
+            select(Project.draft)
+            .where(Project.id == cls.project_id)
+            .scalar_subquery()
+        )
+
 
 class MetaAnalysisResult(BaseMixin, db.Model):
     __tablename__ = "meta_analysis_results"

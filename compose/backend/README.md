@@ -27,7 +27,7 @@ The server should now be running at http://localhost:81
 
 Create the database for compose:
 
-    docker-compose exec compose-pgsql17 psql -U postgres -c "create database test_db"
+    docker-compose exec compose_pgsql17 psql -U postgres -c "create database test_db"
 
 Next, apply the existing migrations (they are the canonical schema definition):
 
@@ -71,7 +71,7 @@ docker-compose start compose
 docker-compose exec compose flask db upgrade
 ```
 
-If you're using the legacy Postgres container, replace `compose_pgsql17` with `compose_pgsql` in the commands above.
+If you're using the legacy Postgres container, replace `compose_pgsql17` with `compose-pgsql` in the commands above.
 
 
 ## Running tests
@@ -84,7 +84,7 @@ in the `.env` file.
 
 and execute:
 
-    docker-compose run -e "APP_SETTINGS=neurosynth_compose.config.DockerTestConfig" --rm -w /compose compose python -m pytest compose/tests
+    docker-compose run -e "APP_SETTINGS=neurosynth_compose.config.DockerTestConfig" --rm -w /compose compose python -m pytest backend/neurosynth_compose/tests
 
 ## Admin interface
 The Flask-Admin UI is served at `/admin` once the stack is running.
