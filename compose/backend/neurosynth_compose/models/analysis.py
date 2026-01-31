@@ -219,10 +219,11 @@ class MetaAnalysis(BaseMixin, db.Model):
     @public.expression
     def public(cls):
         """SQL expression for querying public meta-analyses"""
-        return (
+        return func.coalesce(
             select(Project.public)
             .where(Project.id == cls.project_id)
-            .scalar_subquery()
+            .scalar_subquery(),
+            True,
         )
 
     @hybrid_property
@@ -230,15 +231,16 @@ class MetaAnalysis(BaseMixin, db.Model):
         """Meta-analysis inherits draft status from parent project"""
         if self.project:
             return self.project.draft
-        return True  # Default to draft if no project
+        return False
 
     @draft.expression
     def draft(cls):
         """SQL expression for querying draft meta-analyses"""
-        return (
+        return func.coalesce(
             select(Project.draft)
             .where(Project.id == cls.project_id)
-            .scalar_subquery()
+            .scalar_subquery(),
+            False,
         )
 
 

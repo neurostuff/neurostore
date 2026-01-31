@@ -27,7 +27,7 @@ The server should now be running at http://localhost:81
 
 Create the database for compose:
 
-    docker-compose exec compose_pgsql17 psql -U postgres -c "create database test_db"
+    docker-compose exec compose_pgsql17 psql -U postgres -c "create database compose"
 
 Next, apply the existing migrations (they are the canonical schema definition):
 
