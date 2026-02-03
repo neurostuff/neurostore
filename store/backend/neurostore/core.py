@@ -14,6 +14,7 @@ from flask_caching import Cache
 from flask_orjson import OrjsonProvider
 from flask_admin import Admin, AdminIndexView
 from flask_admin.contrib.sqla import ModelView
+from flask_admin.theme import Bootstrap4Theme
 from flask import Response, request
 
 # Centralized error handling: replaced middleware with Starlette exception handlers
@@ -109,7 +110,7 @@ class SecureModelView(ModelView):
 admin = Admin(
     app,
     name="NeuroStore Admin",
-    template_mode="bootstrap4",
+    theme=Bootstrap4Theme(),
     url="/admin",
     index_view=SecureAdminIndexView(),
 )
