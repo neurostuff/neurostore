@@ -23,6 +23,12 @@ jobs:
       run: |
         ssh-keyscan -H deepdream.psy.utexas.edu >> ~/.ssh/known_hosts
 
+    - name: Upload staging migration scripts
+      run: |
+        ssh git@deepdream.psy.utexas.edu 'mkdir -p /var/www/neurostore/scripts/staging'
+        scp scripts/staging/migrations_workdir.sh scripts/staging/alembic_reconcile.py git@deepdream.psy.utexas.edu:/var/www/neurostore/scripts/staging/
+        ssh git@deepdream.psy.utexas.edu 'chmod +x /var/www/neurostore/scripts/staging/migrations_workdir.sh /var/www/neurostore/scripts/staging/alembic_reconcile.py'
+
     - name: Prepare migrations workdir and detect changes
       id: changes
       run: |
@@ -35,12 +41,7 @@ jobs:
           current_ref=$(git rev-parse HEAD) &&
           incoming_ref=$(git rev-parse origin/staging) &&
 
-          if [ -x scripts/staging/migrations_workdir.sh ]; then
-            scripts/staging/migrations_workdir.sh prepare --current-ref "$current_ref" --incoming-ref "$incoming_ref"
-          else
-            echo "Missing scripts/staging/migrations_workdir.sh" >&2
-            exit 1
-          fi
+          scripts/staging/migrations_workdir.sh prepare --current-ref "$current_ref" --incoming-ref "$incoming_ref"
 
           changes_in_store=$(git diff --name-only "$current_ref" "$incoming_ref" | grep "^store/" || echo "") &&
           changes_in_compose=$(git diff --name-only "$current_ref" "$incoming_ref" | grep "^compose/" || echo "") &&
