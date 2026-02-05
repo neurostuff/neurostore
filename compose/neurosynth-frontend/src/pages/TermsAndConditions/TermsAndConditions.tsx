@@ -1,6 +1,14 @@
 import { Box, Typography } from '@mui/material';
+import { usePrerenderReady, usePageMetadata } from '../../../seo/hooks';
 
 const TermsAndConditions: React.FC = (props) => {
+    usePageMetadata({
+        title: 'Terms and Conditions | Neurosynth Compose',
+        description: 'Read the terms, conditions, and privacy policy for using the Neurosynth Compose platform.',
+        canonicalPath: '/termsandconditions',
+    });
+    usePrerenderReady(true);
+
     return (
         <Box>
             <Typography variant="h5" mb="1rem" fontWeight="bold">

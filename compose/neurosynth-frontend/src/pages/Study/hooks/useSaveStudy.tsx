@@ -1,6 +1,6 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import { unsetUnloadHandler } from 'helpers/BeforeUnload.helpers';
-import { useCreateStudy, useGetStudysetById, useUpdateAnnotationById, useUpdateStudyset } from 'hooks';
+import { useCreateStudy, useGetStudysetById, useUpdateStudyset } from 'hooks';
 import { AnalysisReturn, StudyRequest } from 'neurostore-typescript-sdk';
 import { useSnackbar } from 'notistack';
 import {
@@ -12,13 +12,12 @@ import {
 import { useState } from 'react';
 import { useQueryClient } from 'react-query';
 import { useNavigate } from 'react-router-dom';
-import { useUpdateAnnotationInDB, useUpdateAnnotationNotes } from 'stores/AnnotationStore.actions';
+import { useUpdateDBWithAnnotationFromStore, useUpdateAnnotationNotes } from 'stores/AnnotationStore.actions';
 import {
     useAnnotationIsEdited,
     useAnnotationNotes,
     useUpdateAnnotationIsLoading,
 } from 'stores/AnnotationStore.getters';
-import { storeNotesToDBNotes } from 'stores/AnnotationStore.helpers';
 import API from 'api/api.config';
 import { arrayToMetadata } from '../components/EditStudyMetadata';
 import {
@@ -56,13 +55,12 @@ const useSaveStudy = () => {
     const updateAnnotationIsLoading = useUpdateAnnotationIsLoading();
     const notes = useAnnotationNotes();
     const annotationIsEdited = useAnnotationIsEdited();
-    const updateAnnotationNotes = useUpdateAnnotationNotes();
-    const updateAnnotationInDB = useUpdateAnnotationInDB();
+    const updateAnnotationInDB = useUpdateDBWithAnnotationFromStore();
+    const updateNotesInStore = useUpdateAnnotationNotes();
 
     const { data: studyset } = useGetStudysetById(studysetId || undefined, false);
     const { mutateAsync: updateStudyset } = useUpdateStudyset();
     const { mutateAsync: createStudy } = useCreateStudy();
-    const { mutateAsync: updateAnnotation } = useUpdateAnnotationById(annotationId);
 
     const [isCloning, setIsCloning] = useState(false);
 
@@ -70,10 +68,14 @@ const useSaveStudy = () => {
         try {
             const updatedStudy = await updateStudyInDB(annotationId as string);
             const updatedNotes = [...(notes || [])];
+
+            // for new analyses, temporary uuids() are given to them. During study update, any new analyses are instantiated
+            // in the database and given a real ID. We need to update the notes to reflect this.
+            // we use the analysis name (which we validate to be unique) to find the analysis.
             updatedNotes.forEach((note, index) => {
                 if (note.isNew) {
                     const foundAnalysis = ((updatedStudy.analyses || []) as AnalysisReturn[]).find(
-                        (analysis) => analysis.name === note.analysis_name
+                        (analysis) => analysis.study === note.study && analysis.name === note.analysis_name
                     );
                     if (!foundAnalysis) return;
 
@@ -83,7 +85,7 @@ const useSaveStudy = () => {
                     };
                 }
             });
-            updateAnnotationNotes(updatedNotes);
+            updateNotesInStore(updatedNotes);
             await updateAnnotationInDB();
             unsetUnloadHandler('study');
             unsetUnloadHandler('annotation');
@@ -223,11 +225,11 @@ const useSaveStudy = () => {
 
             // 5. as this is a completely new study, that we've just created, the annotations are cleared.
             // We need to update the annotations with our latest changes, and associate newly created analyses with their corresponding analysis changes.
-            //      - we do this based on the analysis names since the IDs are assigned by neurostore
+            //      - we do this based on the analysis names since the IDs are reinitialized by neurostore
             const updatedNotes = [...(notes || [])];
             ((updatedClone.analyses || []) as AnalysisReturn[]).forEach((analysis) => {
                 const foundNoteIndex = updatedNotes.findIndex(
-                    (note) => note.analysis_name === analysis.name && note.study === storeStudy.id
+                    (note) => note.study === storeStudy.id && note.analysis_name === analysis.name
                 );
                 if (foundNoteIndex < 0) return;
                 updatedNotes[foundNoteIndex] = {
@@ -239,12 +241,8 @@ const useSaveStudy = () => {
                     },
                 };
             });
-            await updateAnnotation({
-                argAnnotationId: annotationId,
-                annotation: {
-                    notes: storeNotesToDBNotes(updatedNotes),
-                },
-            });
+            updateNotesInStore(updatedNotes);
+            await updateAnnotationInDB();
 
             unsetUnloadHandler('study');
             unsetUnloadHandler('annotation');

@@ -1,6 +1,5 @@
 import { AxiosResponse } from 'axios';
 import { IMetadataRowModel } from 'components/EditMetadata/EditMetadata.types';
-import { setAnalysesInAnnotationAsIncluded } from 'helpers/Annotation.helpers';
 import { setUnloadHandler } from 'helpers/BeforeUnload.helpers';
 import { AnalysisReturn, StudyReturn } from 'neurostore-typescript-sdk';
 import { arrayToMetadata, metadataToArray } from 'pages/Study/components/EditStudyMetadata';
@@ -170,12 +169,6 @@ const useStudyStore = create<
                             metadata: arrayToMetadata(state.study.metadata),
                             analyses: storeAnalysesToStudyAnalyses(state.study.analyses),
                         });
-
-                        const newAnalysesWereCreated = state.study.analyses.some((analysis) => analysis.isNew);
-                        if (newAnalysesWereCreated && annotationId) {
-                            // new analyses created are not included by default and need to be manually set
-                            await setAnalysesInAnnotationAsIncluded(annotationId);
-                        }
 
                         // we want to reset the store with our new data because if we created any new
                         // analyses, they will now have their own IDs assigned to them by neurostore.

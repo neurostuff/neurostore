@@ -1,3 +1,4 @@
 # https://www.robotstxt.org/robotstxt.html
+# Sitemap is injected at build time when SEO generation is enabled.
 User-agent: *
 Disallow:
