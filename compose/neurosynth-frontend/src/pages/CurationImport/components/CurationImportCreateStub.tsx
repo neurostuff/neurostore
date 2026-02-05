@@ -1,6 +1,5 @@
 import { Box, Button, Checkbox, FormControlLabel, TextField } from '@mui/material';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons';
-
 import { ISource } from 'hooks/projects/useGetProjects';
 import { ChangeEvent, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
@@ -19,8 +18,8 @@ const CurationImportCreateStub: React.FC<{
         doi: false,
         pmid: false,
     });
-    const [noDoi, setNoDoi] = useState(false);
-    const [noPmid, setNoPmid] = useState(false);
+    const [doiRequired, setDoiRequired] = useState(true);
+    const [pmidRequired, setPmidRequired] = useState(true);
     const [noIdentifiersDialogOpen, setNoIdentifiersDialogOpen] = useState(false);
 
     const [form, setForm] = useState<{
@@ -74,13 +73,10 @@ const CurationImportCreateStub: React.FC<{
         }));
     };
 
-    const isDoiRequired = !noDoi;
-    const isPmidRequired = !noPmid;
-    const doiMissing = isDoiRequired && form.doi.trim().length === 0;
-    const pmidMissing = isPmidRequired && form.pmid.trim().length === 0;
+    const doiMissing = doiRequired && form.doi.trim().length === 0;
+    const pmidMissing = pmidRequired && form.pmid.trim().length === 0;
     const showDoiError = doiMissing && (formFieldTouched.doi || form.name.length > 0);
     const showPmidError = pmidMissing && (formFieldTouched.pmid || form.name.length > 0);
-    const isSubmittingNoIdentifiers = noDoi && noPmid;
 
     const createStubAndNavigate = () => {
         if (!form.identificationSource) return;
@@ -109,7 +105,7 @@ const CurationImportCreateStub: React.FC<{
         if (button === ENavigationButton.PREV) {
             props.onNavigate(button);
         } else {
-            if (isSubmittingNoIdentifiers) {
+            if (!doiRequired && !pmidRequired) {
                 setNoIdentifiersDialogOpen(true);
                 return;
             }
@@ -117,11 +113,86 @@ const CurationImportCreateStub: React.FC<{
         }
     };
 
-    const disableCreateButton =
-        form.name.length === 0 || !form.identificationSource || doiMissing || pmidMissing;
+    const disableCreateButton = form.name.length === 0 || !form.identificationSource || doiMissing || pmidMissing;
 
     return (
         <Box sx={{ padding: '10px 0', margin: '2rem 0 6rem 0' }}>
+            <Box
+                sx={{
+                    display: 'grid',
+                    gridTemplateColumns: { xs: '1fr 1fr', lg: '2fr 2fr 1fr' },
+                    gap: '20px',
+                    paddingBottom: '1rem',
+                    alignItems: 'flex-start',
+                }}
+            >
+                <Box sx={{ display: 'flex', whiteSpace: 'nowrap' }}>
+                    <FormControlLabel
+                        control={
+                            <Checkbox
+                                checked={!doiRequired}
+                                onChange={(event) => {
+                                    setForm((prev) => ({
+                                        ...prev,
+                                        doi: '',
+                                    }));
+                                    setDoiRequired(!event.target.checked);
+                                }}
+                            />
+                        }
+                        label="No DOI"
+                    />
+                    <TextField
+                        value={form.doi}
+                        onChange={handleUpdateForm}
+                        required={doiRequired}
+                        helperText={showDoiError ? 'DOI is required unless "No DOI" is checked.' : ''}
+                        error={showDoiError}
+                        name="doi"
+                        label="DOI"
+                        disabled={!doiRequired}
+                        placeholder="10.1016/S0896-6273(00)80715-1"
+                        fullWidth
+                    />
+                </Box>
+                <Box sx={{ display: 'flex', whiteSpace: 'nowrap' }}>
+                    <FormControlLabel
+                        control={
+                            <Checkbox
+                                checked={!pmidRequired}
+                                onChange={(event) => {
+                                    setForm((prev) => ({
+                                        ...prev,
+                                        pmid: '',
+                                    }));
+                                    setPmidRequired(!event.target.checked);
+                                }}
+                            />
+                        }
+                        label="No PMID"
+                    />
+                    <TextField
+                        onChange={handleUpdateForm}
+                        required={pmidRequired}
+                        helperText={showPmidError ? 'PMID is required unless "No PMID" is checked.' : ''}
+                        error={showPmidError}
+                        label="PubMed ID"
+                        value={form.pmid}
+                        name="pmid"
+                        disabled={!pmidRequired}
+                        fullWidth
+                        placeholder="21706013"
+                    />
+                </Box>
+                <TextField
+                    onChange={handleUpdateForm}
+                    label="PubMed Central ID"
+                    value={form.pmcid}
+                    name="pmcid"
+                    fullWidth
+                    placeholder="PMC3146590"
+                />
+            </Box>
             <ConfirmationDialog
                 dialogTitle="No identifiers provided"
                 dialogMessage="You've marked both DOI and PMID as missing. This study will be added without any identifiers. Are you sure you want to continue?"
@@ -135,76 +206,12 @@ const CurationImportCreateStub: React.FC<{
                     }
                 }}
             />
-            <TextField
-                onChange={handleUpdateForm}
-                required
-                value={form.name}
-                helperText={formFieldTouched.name && form.name.length === 0 ? 'study name cannot be empty' : ''}
-                error={formFieldTouched.name && form.name.length === 0}
-                sx={CreateStubStudyStyles.textInput}
-                name="name"
-                label="Study Name"
-                placeholder="My study name"
-            />
-            <TextField
-                value={form.authors}
-                onChange={handleUpdateForm}
-                sx={CreateStubStudyStyles.textInput}
-                label="Authors"
-                name="authors"
-                placeholder="John Smith, Jane Doe, et al"
-            />
-            <Box sx={{ display: 'flex', paddingBottom: '1rem', alignItems: 'flex-start' }}>
-                <Box sx={{ width: '35%', marginRight: '15px' }}>
-                    <TextField
-                        value={form.doi}
-                        onChange={handleUpdateForm}
-                        required={isDoiRequired}
-                        helperText={showDoiError ? 'DOI is required unless "No DOI" is checked.' : ''}
-                        error={showDoiError}
-                        name="doi"
-                        label="DOI"
-                        placeholder="10.1016/S0896-6273(00)80715-1"
-                        fullWidth
-                    />
-                    <FormControlLabel
-                        sx={{ marginTop: '0.25rem' }}
-                        control={<Checkbox checked={noDoi} onChange={(event) => setNoDoi(event.target.checked)} />}
-                        label="No DOI"
-                    />
-                </Box>
-                <Box sx={{ width: '25%', marginRight: '15px' }}>
-                    <TextField
-                        onChange={handleUpdateForm}
-                        required={isPmidRequired}
-                        helperText={showPmidError ? 'PMID is required unless "No PMID" is checked.' : ''}
-                        error={showPmidError}
-                        label="PubMed ID"
-                        value={form.pmid}
-                        name="pmid"
-                        fullWidth
-                        placeholder="21706013"
-                    />
-                    <FormControlLabel
-                        sx={{ marginTop: '0.25rem' }}
-                        control={<Checkbox checked={noPmid} onChange={(event) => setNoPmid(event.target.checked)} />}
-                        label="No PMID"
-                    />
-                </Box>
+            <Box sx={{ display: 'flex', gap: '15px' }}>
                 <TextField
-                    onChange={handleUpdateForm}
-                    sx={{ width: '25%', marginRight: '15px' }}
-                    label="PubMed Central ID"
-                    value={form.pmcid}
-                    name="pmcid"
-                    fullWidth
-                    placeholder="PMC3146590"
-                />
-                <TextField
+                    sx={{ width: '200px' }}
                     onWheel={(event) => {
                         event.preventDefault();
                     }}
-                    sx={{ width: '15%' }}
                     onChange={handleUpdateForm}
                     value={form.articleYear}
                     label="Article Year"
@@ -213,7 +220,26 @@ const CurationImportCreateStub: React.FC<{
                     fullWidth
                     placeholder="2012"
                 />
+                <TextField
+                    onChange={handleUpdateForm}
+                    required
+                    value={form.name}
+                    helperText={formFieldTouched.name && form.name.length === 0 ? 'study name cannot be empty' : ''}
+                    error={formFieldTouched.name && form.name.length === 0}
+                    sx={CreateStubStudyStyles.textInput}
+                    name="name"
+                    label="Study Name"
+                    placeholder="My study name"
+                />
             </Box>
+            <TextField
+                value={form.authors}
+                onChange={handleUpdateForm}
+                sx={CreateStubStudyStyles.textInput}
+                label="Authors"
+                name="authors"
+                placeholder="John Smith, Jane Doe, et al"
+            />
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                 <Box sx={{ width: '50%', marginRight: '7.5px' }}>
                     <TextField
