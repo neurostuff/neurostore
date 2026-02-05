@@ -5,10 +5,10 @@ import userEvent from '@testing-library/user-event';
 import { useProjectCurationColumns, useProjectExclusionTags } from 'pages/Project/store/ProjectStore';
 import { ICurationColumn } from '../Curation.types';
 import { defaultIdentificationSources } from 'pages/Project/store/ProjectStore.types';
-import { downloadFile } from '../Curation.helpers';
+import { downloadFile } from 'helpers/downloadFile.helpers';
 
 vi.mock('react-query');
-vi.mock('pages/Curation/Curation.helpers.ts', () => ({
+vi.mock('helpers/downloadFile.helpers.ts', () => ({
     downloadFile: vi.fn(),
 }));
 vi.mock('pages/Project/store/ProjectStore');

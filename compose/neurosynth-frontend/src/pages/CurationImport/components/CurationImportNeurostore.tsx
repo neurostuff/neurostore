@@ -15,8 +15,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { IImportArgs } from './CurationImportDoImport';
 import CurationImportBaseStyles from './CurationImport.styles';
-import { studiesToStubs } from 'helpers/Curation.helpers';
 import { AxiosError } from 'axios';
+import { studiesToStubs } from 'helpers/Curation.helpers';
 
 const CurationImportNeurostore: React.FC<
     IImportArgs & { onSetSearchCriteria: (searchCriteria: SearchCriteria) => void }

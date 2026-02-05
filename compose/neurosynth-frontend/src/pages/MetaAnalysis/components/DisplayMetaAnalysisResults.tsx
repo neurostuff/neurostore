@@ -8,6 +8,7 @@ import { MetaAnalysisReturn, NeurovaultFile, ResultReturn, Specification } from 
 import { useEffect, useMemo, useState } from 'react';
 import { NimareOutputs, parseNimareFileName } from '../Nimare.helpers';
 import DisplayParsedNiMareFile from './DisplayParsedNiMareFile';
+import DisplayMetaAnalysisActivations from './DisplayMetaAnalysisActivations';
 
 const DisplayMetaAnalysisResults: React.FC<{
     metaAnalysis: MetaAnalysisReturn | undefined;
@@ -163,6 +164,7 @@ const DisplayMetaAnalysisResults: React.FC<{
                     )}
                 </Box>
             </Box>
+            <DisplayMetaAnalysisActivations metaAnalysis={metaAnalysis} metaAnalysisResult={latestResult} />
         </StateHandlerComponent>
     );
 };
