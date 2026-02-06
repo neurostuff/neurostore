@@ -1,11 +1,11 @@
 import API from 'api/api.config';
-import { NoteKeyType } from 'components/HotTables/HotTables.types';
-import { noteKeyArrToObj } from 'components/HotTables/HotTables.utils';
+import { EPropertyType } from 'components/EditMetadata/EditMetadata.types';
+import { AnnotationNoteValue, NoteKeyType } from 'components/HotTables/HotTables.types';
+import { getDefaultForNoteKey, noteKeyArrToObj, noteKeyObjToArr } from 'components/HotTables/HotTables.utils';
 import { setUnloadHandler } from 'helpers/BeforeUnload.helpers';
 import { AnnotationReturnOneOf, NoteCollectionReturn } from 'neurostore-typescript-sdk';
 import {
     noteKeyArrToDefaultNoteKeyObj,
-    noteKeyObjToArr,
     storeNotesToDBNotes,
     updateNoteDetailsHelper,
 } from 'stores/AnnotationStore.helpers';
@@ -66,7 +66,9 @@ export const useAnnotationStore = create<
                 const annotationRes = (await API.NeurostoreServices.AnnotationsService.annotationsIdGet(annotationId))
                     .data as AnnotationReturnOneOf;
 
-                const noteKeysArr = noteKeyObjToArr(annotationRes.note_keys);
+                const noteKeysArr = noteKeyObjToArr(
+                    annotationRes.note_keys as { [key: string]: { type: EPropertyType; order: number } } | null
+                );
                 const notes: IStoreNoteCollectionReturn[] = (annotationRes.notes as Array<NoteCollectionReturn>)?.map(
                     (x) => ({ ...x, isNew: false, isEdited: false })
                 );
@@ -153,19 +155,22 @@ export const useAnnotationStore = create<
         },
         createAnnotationColumn: (noteKey) => {
             setUnloadHandler('annotation');
+            const newNormalizedNoteKey = {
+                ...noteKey,
+                isNew: true,
+                order: 0,
+                default: getDefaultForNoteKey(noteKey.key, noteKey.type),
+            };
             set((state) => ({
                 ...state,
                 annotation: {
                     ...state.annotation,
-                    note_keys: normalizeNoteKeyOrder([
-                        { ...noteKey, isNew: true, order: 0 },
-                        ...(state.annotation.note_keys ?? []),
-                    ]),
+                    note_keys: normalizeNoteKeyOrder([newNormalizedNoteKey, ...(state.annotation.note_keys ?? [])]),
                     notes: (state.annotation.notes ?? []).map((note) => ({
                         ...note,
                         note: {
                             ...note.note,
-                            [noteKey.key]: null,
+                            [noteKey.key]: newNormalizedNoteKey.default,
                         },
                     })),
                 },
@@ -236,7 +241,6 @@ export const useAnnotationStore = create<
                                 annotation: state.annotation.id,
                                 note: {
                                     ...noteKeyArrToDefaultNoteKeyObj(state.annotation.note_keys),
-                                    included: true,
                                 },
                                 isNew: true,
                             },
