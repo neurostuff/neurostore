@@ -1,5 +1,7 @@
 .neurostuff_secrets
 historical/
+store/.migrations-work/
+compose/.migrations-work/
 
 # node
 node_modules/
