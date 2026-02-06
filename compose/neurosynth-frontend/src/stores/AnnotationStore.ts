@@ -68,7 +68,7 @@ export const useAnnotationStore = create<
 
                 const noteKeysArr = noteKeyObjToArr(annotationRes.note_keys);
                 const notes: IStoreNoteCollectionReturn[] = (annotationRes.notes as Array<NoteCollectionReturn>)?.map(
-                    (x) => ({ ...x, isNew: false })
+                    (x) => ({ ...x, isNew: false, isEdited: false })
                 );
 
                 set((state) => ({
@@ -281,15 +281,21 @@ export const useAnnotationStore = create<
                 } else {
                     // if there are no new note keys, we can use the optimized annotation endpoint
                     await API.NeurostoreServices.AnnotationsService.annotationAnalysesPost(
-                        state.annotation.notes.map((note) => ({
-                            id: `${state.annotation.id}_${note.analysis}`,
-                            note: note.note,
-                        }))
+                        state.annotation.notes
+                            .filter((note) => note.isEdited)
+                            .map((note) => ({
+                                id: `${state.annotation.id}_${note.analysis}`,
+                                note: note.note,
+                            }))
                     );
                 }
 
                 const noteKeysArr = (state.annotation.note_keys ?? []).map((noteKey) => ({ ...noteKey, isNew: false }));
-                const notesAfterDBUpdate = state.annotation.notes.map((note) => ({ ...note, isNew: false }));
+                const notesAfterDBUpdate = state.annotation.notes.map((note) => ({
+                    ...note,
+                    isEdited: false,
+                    isNew: false,
+                }));
 
                 set((state) => ({
                     ...state,

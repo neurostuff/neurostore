@@ -41,11 +41,11 @@ export const convertRemToPx = (rem: number) => {
 
 export const hotDataToAnnotationNotes = (
     hotData: AnnotationNoteValue[][],
-    mapping: Map<number, { studyId: string; analysisId: string }>,
+    mapping: Map<number, { studyId: string; analysisId: string; isEdited: boolean }>,
     noteKeys: NoteKeyType[]
 ): NoteCollectionReturn[] => {
     const noteCollections: NoteCollectionReturn[] = hotData.map((row, index) => {
-        const mappedStudyAnalysis = mapping.get(index) as { studyId: string; analysisId: string };
+        const mappedStudyAnalysis = mapping.get(index) as { studyId: string; analysisId: string; isEdited: boolean };
 
         const updatedNote: { [key: string]: AnnotationNoteValue } = {};
         for (let i = 0; i < noteKeys.length; i++) {
@@ -69,10 +69,10 @@ export const annotationNotesToHotData = (
     getColNamesFromAnnotationNote: (note: NoteCollectionReturn) => [string, string]
 ): {
     hotData: AnnotationNoteValue[][];
-    hotDataToStudyMapping: Map<number, { studyId: string; analysisId: string }>;
+    hotDataToStudyMapping: Map<number, { studyId: string; analysisId: string; isEdited: boolean }>;
 } => {
     const hotData = new Array<AnnotationNoteValue[]>();
-    const hotDataToAnnotationMapping = new Map<number, { studyId: string; analysisId: string }>();
+    const hotDataToAnnotationMapping = new Map<number, { studyId: string; analysisId: string; isEdited: boolean }>();
 
     if (!annotationNotes) {
         return {
@@ -113,6 +113,7 @@ export const annotationNotesToHotData = (
             hotDataToAnnotationMapping.set(index, {
                 studyId: annotationNote.study as string,
                 analysisId: annotationNote.analysis as string,
+                isEdited: false,
             });
             hotData.push(row);
         });
