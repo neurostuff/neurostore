@@ -108,7 +108,7 @@ const useDeleteProject = vi.fn().mockReturnValue({
 
 const useGetExtractionSummary = vi.fn().mockReturnValue({
     savedForLater: 0,
-    uncategorized: 0,
+    unreviewed: 0,
     completed: 0,
     total: 0,
 });
