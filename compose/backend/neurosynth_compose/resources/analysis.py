@@ -6,6 +6,7 @@ from operator import itemgetter
 from urllib.parse import urlencode
 
 import connexion
+import importlib
 from connexion.lifecycle import ConnexionResponse
 from flask import abort, request, current_app
 from flask.views import MethodView
@@ -55,6 +56,7 @@ from ..schemas import (  # noqa E401
     ProjectSchema,
 )
 from .neurostore import neurostore_session
+from .auth import AuthError, get_token_auth_header
 from .singular import singularize
 
 
@@ -105,6 +107,27 @@ def get_current_user():
         return User.query.filter_by(
             external_id=connexion.context.context["user"]
         ).first()
+    # Support optional auth on public endpoints by decoding the bearer token
+    # if provided. This keeps public routes functional while still honoring
+    # user-specific visibility when an Authorization header is present.
+    auth_header = request.headers.get("Authorization")
+    if not auth_header:
+        return None
+    try:
+        token = get_token_auth_header()
+    except AuthError:
+        return None
+    bearerinfo_func = current_app.config.get("BEARERINFO_FUNC")
+    if isinstance(bearerinfo_func, str):
+        module_name, func_name = bearerinfo_func.rsplit(".", 1)
+        bearerinfo_func = getattr(importlib.import_module(module_name), func_name)
+    if callable(bearerinfo_func):
+        try:
+            token_info = bearerinfo_func(token)
+        except Exception:  # noqa: BLE001
+            return None
+        if token_info and token_info.get("sub"):
+            return User.query.filter_by(external_id=token_info["sub"]).first()
     return None
 
 

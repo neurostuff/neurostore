@@ -570,6 +570,7 @@ def user_data(app, db, mock_add_users, session):
                     name=user.id + "'s empty project",
                     description=user.id + "'s empty project",
                     public=public,
+                    draft=False,  # Make projects non-draft so they appear in tests
                     neurostore_study=ns_empty_study,
                     studyset=None,
                     annotation=None,

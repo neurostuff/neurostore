@@ -3,13 +3,13 @@ import LockIcon from '@mui/icons-material/Lock';
 import PublicIcon from '@mui/icons-material/Public';
 import { ToggleButtonGroup, ToggleButton, Box } from '@mui/material';
 import useUserCanEdit from 'hooks/useUserCanEdit';
-import { useProjectIsPublic, useUpdateProjectIsPublic } from 'pages/Project/store/ProjectStore';
+import { useProjectIsPublic, useProjectUser, useUpdateProjectIsPublic } from 'pages/Project/store/ProjectStore';
 
 const ProjectEditPrivacyToggle: React.FC = () => {
     const updateProjectIsPublic = useUpdateProjectIsPublic();
     const isPublic = useProjectIsPublic();
-    const { user } = useAuth0();
-    const userCanEdit = useUserCanEdit(user?.sub);
+    const user = useProjectUser();
+    const userCanEdit = useUserCanEdit(user);
 
     if (!userCanEdit && isPublic) {
         return (

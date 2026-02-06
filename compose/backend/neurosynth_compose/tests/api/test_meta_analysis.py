@@ -1,4 +1,4 @@
-from neurosynth_compose.models import MetaAnalysis, MetaAnalysisResult
+from neurosynth_compose.models import MetaAnalysis, MetaAnalysisResult, User
 from sqlalchemy import select
 
 
@@ -20,7 +20,13 @@ def test_get_meta_analyses(session, app, auth_client, user_data, db):
 
 
 def test_get_specific_meta_analyses(session, app, auth_client, user_data, db):
-    metas = db.session.execute(select(MetaAnalysis).limit(3)).scalars().all()
+    user = db.session.execute(
+        select(User).where(User.external_id == auth_client.username)
+    ).scalar_one_or_none()
+    query = (MetaAnalysis.user == user) | (
+        (MetaAnalysis.public == True) & (MetaAnalysis.draft == False)  # noqa E712
+    )
+    metas = db.session.execute(select(MetaAnalysis).where(query).limit(3)).scalars().all()
     ids = set([m.id for m in metas])
     ids_str = "&".join([f"ids={m.id}" for m in metas])
     get_all = auth_client.get(f"/api/meta-analyses?{ids_str}")
