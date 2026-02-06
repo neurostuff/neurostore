@@ -50,6 +50,18 @@ def is_user_admin(user=_UNSET):
     if user is None:
         return False
 
+    # Fast-path: memoized on request context or user instance
+    try:
+        cached = context.get("is_admin")
+        if cached is not None:
+            return cached
+    except Exception:
+        cached = None
+
+    cached = getattr(user, "_is_admin", None)
+    if cached is not None:
+        return cached
+
     # Load roles eagerly to avoid lazy loading when raise_on_sql is enabled.
     from sqlalchemy.orm import selectinload
 
@@ -63,9 +75,21 @@ def is_user_admin(user=_UNSET):
     )
 
     if user_with_roles is None:
-        return False
+        is_admin = False
+    else:
+        is_admin = any(role.name == "admin" for role in user_with_roles.roles)
 
-    return any(role.name == "admin" for role in user_with_roles.roles)
+    # Memoize for the remainder of the request and on the user instance
+    try:
+        context["is_admin"] = is_admin
+    except Exception:
+        pass
+    try:
+        setattr(user, "_is_admin", is_admin)
+    except Exception:
+        pass
+
+    return is_admin
 
 
 def view_maker(cls):
