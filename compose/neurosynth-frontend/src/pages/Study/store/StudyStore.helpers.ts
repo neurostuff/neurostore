@@ -142,11 +142,12 @@ export const studyPointsToStorePoints = (
                 x: undefined,
                 y: undefined,
                 z: undefined,
+                deactivation: undefined,
             },
         ];
     } else {
         storePoints = ((points || []) as Array<PointReturn>)
-            .map(({ entities, space, subpeak, cluster_size, values, kind, label_id, ...args }) => {
+            .map(({ entities, space, subpeak, cluster_size, values, kind, label_id, deactivation, ...args }) => {
                 const typedValues = values as Array<PointValue> | undefined;
                 if (!analysisSpace && !!space) {
                     analysisSpace = DefaultSpaceTypes[space] ? DefaultSpaceTypes[space] : DefaultSpaceTypes.OTHER;
@@ -163,6 +164,7 @@ export const studyPointsToStorePoints = (
 
                 return {
                     ...args,
+                    deactivation: deactivation === null ? undefined : deactivation,
                     subpeak: subpeak === null ? undefined : subpeak,
                     cluster_size: cluster_size === null ? undefined : cluster_size,
                     value: value,
@@ -269,10 +271,11 @@ export const storeAnalysesToStudyAnalyses = (analyses?: IStoreAnalysis[]): Analy
                     values: [
                         {
                             value: value || null,
-                            kind: pointStatistic?.value || null,
+                            kind: pointStatistic?.value ?? null,
                         },
                     ],
-                    cluster_size: pointArgs.cluster_size || null,
+                    cluster_size: pointArgs.cluster_size ?? null,
+                    deactivation: pointArgs.deactivation ?? null,
                 }));
             }
 

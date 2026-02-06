@@ -17,7 +17,7 @@ const nonEmptyNumericValidator = (value: CellValue, callback: (isValid: boolean)
     }
 };
 
-export const hotTableColHeaders = ['X', 'Y', 'Z', 'Value', 'Cluster Size (mm^3)', 'Subpeak?'];
+export const hotTableColHeaders = ['X', 'Y', 'Z', 'Value', 'Cluster Size (mm^3)', 'Subpeak?', 'Deactivations'];
 export const getHotTableColumnSettings = (disabled: boolean) => [
     {
         validator: nonEmptyNumericValidator,
@@ -61,6 +61,12 @@ export const getHotTableColumnSettings = (disabled: boolean) => [
         type: 'checkbox',
         readOnly: disabled,
     },
+    {
+        className: styles.boolean,
+        data: 'deactivation',
+        type: 'checkbox',
+        readOnly: disabled,
+    },
 ];
 
 export const EditStudyAnalysisPointsDefaultConfig: HotTableProps = {
@@ -76,7 +82,7 @@ export const EditStudyAnalysisPointsDefaultConfig: HotTableProps = {
     undo: false,
     manualColumnResize: false,
     allowInsertColumn: false,
-    colWidths: [50, 50, 50, 100, 140, 100],
+    colWidths: [30, 30, 30, 80, 100, 70, 70],
 };
 
 export const getHotTableInsertionIndices = (selectedCoords: [number, number, number, number][]) => {
