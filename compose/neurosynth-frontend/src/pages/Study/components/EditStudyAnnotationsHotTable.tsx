@@ -50,6 +50,7 @@ const EditStudyAnnotationsHotTable: React.FC<{ readonly?: boolean }> = ({ readon
                     ...updatedNotes[row].note,
                     [(colName as string).split('.')[1]]: newVal, // col names are given to us in the form "note.key"
                 },
+                isEdited: true,
             };
         });
         updateNotes(updatedNotes);
