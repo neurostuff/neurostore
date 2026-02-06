@@ -2,20 +2,18 @@ import { EPropertyType } from 'components/EditMetadata/EditMetadata.types';
 import { AnnotationNoteValue, NoteKeyType } from 'components/HotTables/HotTables.types';
 import { CellValue } from 'handsontable/common';
 
-export const noteKeyObjToArr = (noteKeys?: object | null): NoteKeyType[] => {
+export const noteKeyObjToArr = (
+    noteKeys?: { [key: string]: { type: EPropertyType; order?: number; default?: AnnotationNoteValue } } | null
+): NoteKeyType[] => {
     if (!noteKeys) return [];
-    const noteKeyTypes = noteKeys as {
-        [key: string]: { type: EPropertyType; order?: number; default?: AnnotationNoteValue };
-    };
-    const arr = Object.entries(noteKeyTypes)
+    const arr = Object.entries(noteKeys)
         .map(([key, descriptor]) => {
             if (!descriptor?.type) throw new Error('Invalid note_keys descriptor: missing type');
-            const hasDefault = Object.prototype.hasOwnProperty.call(descriptor, 'default');
             return {
                 type: descriptor.type,
                 key,
                 order: descriptor.order ?? 0,
-                default: hasDefault ? descriptor.default : undefined,
+                default: descriptor?.default ?? null,
             };
         })
         .sort((a, b) => a.order - b.order || a.key.localeCompare(b.key))
@@ -31,21 +29,18 @@ export const noteKeyArrToObj = (
             acc[curr.key] = {
                 type: curr.type,
                 order: curr.order ?? index,
+                default: curr?.default ?? null,
             };
-            if (Object.prototype.hasOwnProperty.call(curr, 'default')) {
-                (acc[curr.key] as { default?: AnnotationNoteValue }).default = curr.default;
-            }
             return acc;
         },
         {} as { [key: string]: { type: EPropertyType; order: number; default?: AnnotationNoteValue } }
     );
-
     return noteKeyObj;
 };
 
-export const getDefaultForNoteKey = (key: string, type: EPropertyType): AnnotationNoteValue | undefined => {
-    if (type !== EPropertyType.BOOLEAN) return undefined;
-    return key === 'included' ? true : false;
+export const getDefaultForNoteKey = (key: string, type: EPropertyType): AnnotationNoteValue => {
+    if (type !== EPropertyType.BOOLEAN) return null;
+    return key === 'included';
 };
 
 export const booleanValidator = (value: CellValue, callback: (isValid: boolean) => void) => {
@@ -70,10 +65,9 @@ export const stripTags = (stringWhichMayHaveHTML: unknown) => {
 export const sanitizePaste = (data: unknown[][]) => {
     data.forEach((dataRow, rowIndex) => {
         dataRow.forEach((value, valueIndex) => {
-            if (typeof value === 'number') return;
-            if (typeof value === 'boolean') return;
+            if (typeof value !== 'string') return;
 
-            let newVal = value;
+            let newVal: AnnotationNoteValue = value;
             newVal = stripTags(newVal); // strip all HTML tags that were copied over if they exist
             newVal = replaceString(newVal); // replace minus operator with javascript character code
 

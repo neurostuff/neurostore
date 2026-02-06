@@ -4,8 +4,7 @@ import { NoteCollectionRequest } from 'neurostore-typescript-sdk';
 
 export const noteKeyArrToDefaultNoteKeyObj = (noteKeys: NoteKeyType[]): AnnotationNoteType => {
     const x = noteKeys.reduce((acc, curr) => {
-        const hasDefault = Object.prototype.hasOwnProperty.call(curr, 'default');
-        acc[curr.key] = hasDefault ? (curr.default ?? null) : null;
+        acc[curr.key] = curr.default ?? null;
         return acc;
     }, {} as AnnotationNoteType);
     return x;

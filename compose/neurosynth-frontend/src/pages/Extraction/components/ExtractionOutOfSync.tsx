@@ -108,7 +108,6 @@ const ExtractionOutOfSync: React.FC = () => {
 
             queryClient.invalidateQueries('annotations');
 
-
             enqueueSnackbar('synced curation and studyset successfully', { variant: 'success' });
 
             if (updatedStudyset.data.studies && updatedStudyset.data.studies.length === 0) {
