@@ -35,19 +35,19 @@ export const stubsToCSV = (curationColumns: ICurationColumn[], exclusionTags: IT
 
     return toCSV(
         [
-            'Title',
-            'Authors',
-            'PMID',
-            'PMCID',
-            'DOI',
-            'Year',
-            'Journal',
-            'Link',
-            'Source',
-            'Status',
-            'Exclusion',
-            'Tags',
-            'Neurostore ID',
+            'title',
+            'authors',
+            'pmid',
+            'pmcid',
+            'doi',
+            'articleYear',
+            'journal',
+            'articleLink',
+            'source',
+            'status',
+            'exclusion',
+            'tags',
+            'neurostoreId',
         ],
         mappedCSVStudyObjs
     );

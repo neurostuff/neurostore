@@ -7,12 +7,9 @@ const formatCSVRow = (values: unknown[]): string =>
 
 export const toCSV = (headers: string[], data: Record<string, unknown>[]): string => {
     const headerRow = formatCSVRow(headers);
-    const dataRows = data.map((row) =>
-        formatCSVRow(headers.map((header) => row[header] ?? ''))
-    );
+    const dataRows = data.map((row) => formatCSVRow(headers.map((header) => row[header] ?? '')));
     return [headerRow, ...dataRows].join('\r\n');
 };
-
 
 export const downloadFile = (filename: string, fileContents: BlobPart, contentType: string) => {
     const blob = new Blob([fileContents], { type: contentType });
@@ -23,4 +20,3 @@ export const downloadFile = (filename: string, fileContents: BlobPart, contentTy
     element.click();
     window.document.body.removeChild(element);
 };
-
