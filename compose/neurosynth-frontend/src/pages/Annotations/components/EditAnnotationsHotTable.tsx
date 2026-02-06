@@ -15,6 +15,7 @@ import React, { useEffect, useRef } from 'react';
 import { createColumns, hotDataToAnnotationNotes, hotSettings } from './EditAnnotationsHotTable.helpers';
 import useUpdateAnnotationByAnnotationAndAnalysisId from 'hooks/annotations/useUpdateAnnotationByAnnotationAndAnalysisId';
 import { CellChange } from 'handsontable/common';
+import { NoteKeyType } from 'components/HotTables/HotTables.types';
 
 registerAllModules();
 
@@ -114,13 +115,33 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
             );
         } else {
             updateAnnotationNoNoteKeys(
-                updatedAnnotationNotes.map((annotationNote) => ({
-                    id: `${props.annotationId}_${annotationNote.analysis}`,
-                    note: annotationNote.note,
-                })),
+                updatedAnnotationNotes
+                    .filter((_, index) => {
+                        const studyMapping = hotDataToStudyMapping.get(index);
+                        return studyMapping?.isEdited;
+                    })
+                    .map((annotationNote) => ({
+                        id: `${props.annotationId}_${annotationNote.analysis}`,
+                        note: annotationNote.note,
+                    })),
                 {
                     onSuccess: () => {
-                        setAnnotationsHotState((prev) => ({ ...prev, isEdited: false }));
+                        setAnnotationsHotState((prev) => {
+                            const newMapping = new Map(prev.hotDataToStudyMapping);
+                            for (const [index, studyMapping] of newMapping.entries()) {
+                                if (studyMapping.isEdited) {
+                                    newMapping.set(index, { ...studyMapping, isEdited: false });
+                                }
+                            }
+                            return {
+                                // reset state to reflect that no changes have been made
+                                ...prev,
+                                hotDataToStudyMapping: newMapping,
+                                isEdited: false,
+                                noteKeys: prev.noteKeys.map((noteKey) => ({ ...noteKey, isNew: false })),
+                                isReordered: false,
+                            };
+                        });
                         enqueueSnackbar('annotation updated successfully', { variant: 'success' });
                     },
                 }
@@ -271,11 +292,12 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
         const defaultValue = getDefaultForNoteKey(trimmedKey, columnType);
 
         setAnnotationsHotState((prev) => {
-            const updatedNoteKeys = [
+            const updatedNoteKeys: NoteKeyType[] = [
                 {
                     key: trimmedKey,
                     type: columnType,
                     order: 0,
+                    isNew: true,
                     ...(defaultValue !== undefined ? { default: defaultValue } : {}),
                 },
                 ...prev.noteKeys,
@@ -310,6 +332,13 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
             changes.forEach(([row, col, , valChangedTo]) => {
                 updatedHotData[row] = [...updatedHotData[row]];
                 updatedHotData[row][col as number] = valChangedTo;
+
+                const studyMapping = prev.hotDataToStudyMapping.get(row);
+                if (!studyMapping) return prev;
+                hotDataToStudyMapping.set(row, {
+                    ...studyMapping,
+                    isEdited: true,
+                });
             });
 
             return {

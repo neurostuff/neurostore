@@ -10,6 +10,7 @@ export type AnnotationStoreMetadata = {
 
 export interface IStoreNoteCollectionReturn extends NoteCollectionReturn {
     isNew?: boolean;
+    isEdited?: boolean;
 }
 
 export interface IStoreAnnotation extends Omit<AnnotationReturnOneOf, 'notes' | 'note_keys'> {
