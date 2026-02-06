@@ -78,7 +78,7 @@ const ProjectExtractionStepCard: React.FC<{ disabled: boolean }> = ({ disabled }
                             <Box sx={ProjectComponentsStyles.statusIconContainer}>
                                 <QuestionMarkIcon sx={ProjectExtractionStep.uncategorizedIcon} />
                                 <Typography sx={{ color: 'warning.dark' }}>
-                                    {extractionSummary.uncategorized} uncategorized
+                                    {extractionSummary.unreviewed} unreviewed
                                 </Typography>
                             </Box>
                             <Box sx={ProjectComponentsStyles.statusIconContainer}>

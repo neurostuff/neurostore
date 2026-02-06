@@ -280,7 +280,7 @@ const EditStudyToolbar: React.FC = () => {
                             },
                         }}
                     >
-                        <Tooltip title="Mark as uncategorized" placement={mdDown ? 'bottom' : 'left'}>
+                        <Tooltip title="Mark as unreviewed" placement={mdDown ? 'bottom' : 'left'}>
                             <Button
                                 onClick={() => handleUpdateExtractionStatus(EExtractionStatus.UNCATEGORIZED)}
                                 sx={{ minWidth: '0', width: '40px', height: '40px' }}
