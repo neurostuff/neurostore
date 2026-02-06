@@ -10,6 +10,11 @@ export default [
     ...teslint.configs.recommended,
     eslintCypress.configs.recommended,
     {
+        env: {
+            browser: true,
+            node: true,
+            es2022: true,
+        },
         languageOptions: {
             globals: globals.browser,
         },

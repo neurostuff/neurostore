@@ -3,11 +3,21 @@ import StateHandlerComponent from 'components/StateHandlerComponent/StateHandler
 import NeurosynthTable from 'components/NeurosynthTable/NeurosynthTable';
 import NeurosynthTableStyles from 'components/NeurosynthTable/NeurosynthTable.styles';
 import { useGetMetaAnalysesPublic } from 'hooks';
+import { usePrerenderReady, usePageMetadata } from '../../../seo/hooks';
 import { useNavigate } from 'react-router-dom';
 
 const MetaAnalysesPage: React.FC = () => {
     const navigate = useNavigate();
     const { data, isLoading, isError } = useGetMetaAnalysesPublic();
+    const isPrerenderReady = !isLoading && (typeof data !== 'undefined' || isError);
+
+    usePageMetadata({
+        title: 'Public Meta-Analyses | Neurosynth Compose',
+        description:
+            'Explore public neuroimaging meta-analyses and results derived from curated studysets in Neurosynth Compose.',
+        canonicalPath: '/meta-analyses',
+    });
+    usePrerenderReady(isPrerenderReady);
 
     return (
         <>

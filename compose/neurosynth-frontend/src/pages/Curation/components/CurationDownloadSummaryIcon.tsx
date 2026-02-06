@@ -1,7 +1,7 @@
-import { useProjectCurationColumns, useProjectName } from 'pages/Project/store/ProjectStore';
+import { useProjectCurationColumns, useProjectExclusionTags, useProjectName } from 'pages/Project/store/ProjectStore';
 import { useRef, useState } from 'react';
 import { stubsToBibtex, stubsToCSV } from './CurationDownloadSummary.helpers';
-import { downloadFile } from '../Curation.helpers';
+import { downloadFile } from 'helpers/downloadFile.helpers';
 import { Box, IconButton, MenuItem, MenuList } from '@mui/material';
 import { Download } from '@mui/icons-material';
 import NeurosynthPopper from 'components/NeurosynthPopper/NeurosynthPopper';
@@ -11,6 +11,7 @@ const CurationDownloadIncludedStudiesIcon: React.FC = () => {
     const [optionsIsOpen, setOptionsIsOpen] = useState(false);
     const anchorRef = useRef(null);
     const curationColumns = useProjectCurationColumns();
+    const exclusionTags = useProjectExclusionTags();
     const projectName = useProjectName();
     const [isLoading, setIsLoading] = useState(false);
 
@@ -19,10 +20,10 @@ const CurationDownloadIncludedStudiesIcon: React.FC = () => {
         const allIncludedStudies = curationColumns[curationColumns.length - 1];
         const date = new Date().toLocaleDateString();
         if (format === 'bibtex') {
-            const bibtexStudies = stubsToBibtex(allIncludedStudies.stubStudies);
+            const bibtexStudies = stubsToBibtex(allIncludedStudies.stubStudies, exclusionTags);
             downloadFile(`${projectName}:Curation:${date}.bib`, bibtexStudies, 'text/plain');
         } else {
-            const csvStudies = stubsToCSV(allIncludedStudies.stubStudies);
+            const csvStudies = stubsToCSV(allIncludedStudies.stubStudies, exclusionTags);
             downloadFile(`${projectName}:Curation:${date}.csv`, csvStudies, 'text/csv;charset=utf-8');
         }
         setIsLoading(false);

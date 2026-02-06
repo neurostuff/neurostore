@@ -209,14 +209,15 @@ const CurationImportStandardFormat: React.FC<{
                 }}
             >
                 <Typography sx={{ maxWidth: '600px' }} gutterBottom>
-                    Enter the source that you imported your data from. If you don't see it below, start typing in the
-                    input to add it.
+                    Enter the database that you exported your bibliography from. If you don't see your database listed,
+                    you can type the name of the database you used. If you are using an export from a reference manager
+                    that does not specify the source, you can select "Reference Manager" as the source.
                 </Typography>
                 <CurationPopupIdentificationSourceSelector
                     excludeSources={[ENeurosynthSourceIds.NEUROSTORE, ENeurosynthSourceIds.SLEUTH]}
                     sx={{ width: '100%', maxWidth: '600px' }}
                     onAddSource={handleAddSource}
-                    label="enter data source (i.e. PubMed, Scopus)"
+                    label="Start typing to add or create your own source"
                     onCreateSource={handleAddSource}
                 />
             </Box>

@@ -23,29 +23,30 @@ jobs:
       run: |
         ssh-keyscan -H deepdream.psy.utexas.edu >> ~/.ssh/known_hosts
 
-    - name: Force sync staging branch to remote server
+    - name: Upload staging migration scripts
       run: |
-        ssh git@deepdream.psy.utexas.edu '
-          cd /var/www/neurostore && 
-          git fetch origin && # Fetch full history
-          git fetch --all && # Fetch all branches and their histories
-          git reset --hard origin/staging &&
-          git submodule update &&
-          git clean -fd
-        '
+        ssh git@deepdream.psy.utexas.edu 'mkdir -p /var/www/neurostore/scripts/staging'
+        scp scripts/staging/migrations_workdir.sh scripts/staging/alembic_reconcile.py git@deepdream.psy.utexas.edu:/var/www/neurostore/scripts/staging/
+        ssh git@deepdream.psy.utexas.edu 'chmod +x /var/www/neurostore/scripts/staging/migrations_workdir.sh /var/www/neurostore/scripts/staging/alembic_reconcile.py'
 
-    - name: Detect changes in specific directories from the previous commit
+    - name: Prepare migrations workdir and detect changes
       id: changes
       run: |
         # Capture the output of the SSH session and process it locally
         ssh_output=$(ssh git@deepdream.psy.utexas.edu '
+          set -e
           cd /var/www/neurostore &&
           git fetch origin &&
-          git log -n 2 &&
-          changes_in_store=$(git diff --name-only HEAD~1 -- | grep "^store/" || echo "") &&
-          changes_in_compose=$(git diff --name-only HEAD~1 -- | grep "^compose/" || echo "") &&
-          changes_in_frontend=$(git diff --name-only HEAD~1 -- | grep "^compose/neurosynth-frontend/" || echo "") &&
-          
+          git fetch --all &&
+          current_ref=$(git rev-parse HEAD) &&
+          incoming_ref=$(git rev-parse origin/staging) &&
+
+          scripts/staging/migrations_workdir.sh prepare --current-ref "$current_ref" --incoming-ref "$incoming_ref"
+
+          changes_in_store=$(git diff --name-only "$current_ref" "$incoming_ref" | grep "^store/" || echo "") &&
+          changes_in_compose=$(git diff --name-only "$current_ref" "$incoming_ref" | grep "^compose/" || echo "") &&
+          changes_in_frontend=$(git diff --name-only "$current_ref" "$incoming_ref" | grep "^compose/neurosynth-frontend/" || echo "") &&
+
           # Print results for local parsing
           echo "store:$changes_in_store" &&
           echo "compose:$changes_in_compose" &&
@@ -59,6 +60,42 @@ jobs:
           fi
         done
 
+    - name: Pre-downgrade store if needed (current code)
+      if: ${{ steps.changes.outputs.store }}
+      run: |
+        ssh git@deepdream.psy.utexas.edu '
+          cd /var/www/neurostore/store &&
+          docker compose exec -T neurostore python /store/.migrations-work/alembic_reconcile.py \
+            --service store \
+            --phase current \
+            --current-versions /store/.migrations-work/current/versions \
+            --incoming-versions /store/.migrations-work/incoming/versions
+        '
+
+    - name: Pre-downgrade compose if needed (current code)
+      if: ${{ steps.changes.outputs.compose }}
+      run: |
+        ssh git@deepdream.psy.utexas.edu '
+          cd /var/www/neurostore/compose &&
+          docker compose exec -T compose python /compose/.migrations-work/alembic_reconcile.py \
+            --service compose \
+            --phase current \
+            --current-versions /compose/.migrations-work/current/versions \
+            --incoming-versions /compose/.migrations-work/incoming/versions
+        '
+
+    - name: Reset to incoming staging revision
+      run: |
+        ssh git@deepdream.psy.utexas.edu '
+          set -e
+          cd /var/www/neurostore &&
+          git fetch origin &&
+          git fetch --all &&
+          git reset --hard origin/staging &&
+          git submodule update &&
+          git clean -fd -e store/.migrations-work -e compose/.migrations-work
+        '
+
     - name: Run Docker commands in store directory if changes detected
       if: ${{ steps.changes.outputs.store }}
       run: |
@@ -70,7 +107,11 @@ jobs:
 
           # Wait for PostgreSQL to be ready
           until docker compose exec store-pgsql pg_isready; do sleep 5; done
-          docker compose exec neurostore flask db upgrade
+          docker compose exec -T neurostore python /store/.migrations-work/alembic_reconcile.py \
+            --service store \
+            --phase incoming \
+            --current-versions /store/.migrations-work/current/versions \
+            --incoming-versions /store/.migrations-work/incoming/versions
         '
 
     - name: Run Docker commands in compose directory if changes detected
@@ -84,7 +125,11 @@ jobs:
 
           # Wait for PostgreSQL to be ready
           until docker compose exec compose_pgsql pg_isready; do sleep 5; done
-          docker compose exec compose flask db upgrade
+          docker compose exec -T compose python /compose/.migrations-work/alembic_reconcile.py \
+            --service compose \
+            --phase incoming \
+            --current-versions /compose/.migrations-work/current/versions \
+            --incoming-versions /compose/.migrations-work/incoming/versions
         '
 
     - name: Skip Docker commands and run frontend build if only frontend changes detected
@@ -93,4 +138,11 @@ jobs:
         ssh git@deepdream.psy.utexas.edu '
           cd /var/www/neurostore/compose &&
           docker compose exec -T compose bash -c "cd /compose/neurosynth-frontend/ && npm install && npm run build:staging" 
+        '
+
+    - name: Cleanup migrations workdir
+      if: ${{ always() }}
+      run: |
+        ssh git@deepdream.psy.utexas.edu '
+          rm -rf /var/www/neurostore/store/.migrations-work /var/www/neurostore/compose/.migrations-work
         '

@@ -5,6 +5,7 @@ import { addKVPToSearch, getSearchCriteriaFromURL, getURLFromSearchCriteria } fr
 import SearchContainer from 'components/Search/SearchContainer';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { baseStudiesSearchHelper } from 'hooks/studies/useGetBaseStudies';
+import { usePrerenderReady, usePageMetadata } from '../../../seo/hooks';
 import { BaseStudyList } from 'neurostore-typescript-sdk';
 import { useSnackbar } from 'notistack';
 import { useEffect, useMemo, useState } from 'react';
@@ -23,6 +24,15 @@ const StudiesPage = () => {
 
     // cached data returned from the api
     const [studyData, setStudyData] = useState<BaseStudyList>();
+    const isPrerenderReady = !isLoading && (!!studyData || !!error);
+
+    usePageMetadata({
+        title: 'Base Studies | Neurosynth Compose',
+        description:
+            'Search curated neuroimaging studies with coordinates, metadata, and provenance for meta-analysis in Neurosynth Compose.',
+        canonicalPath: '/base-studies',
+    });
+    usePrerenderReady(isPrerenderReady);
 
     const searchCriteria = useMemo(() => {
         return {

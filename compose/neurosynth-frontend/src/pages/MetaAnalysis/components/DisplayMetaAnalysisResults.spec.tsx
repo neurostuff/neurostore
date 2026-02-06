@@ -5,10 +5,12 @@ import { INeurovault } from 'hooks/metaAnalyses/useGetNeurovaultImages';
 import { useGetNeurovaultImages } from 'hooks';
 import { mockMetaAnalysisReturn } from 'testing/mockData';
 import { Specification } from 'neurosynth-compose-typescript-sdk';
+import QueryClientTestingWrapper from 'testing/QueryClientTestingWrapper';
 
 vi.mock('hooks');
 vi.mock('pages/MetaAnalysis/components/MetaAnalysisResultStatusAlert');
 vi.mock('pages/MetaAnalysis/components/DisplayParsedNiMareFile');
+vi.mock('pages/MetaAnalysis/components/DisplayMetaAnalysisActivations');
 vi.mock('components/Visualizer/NiiVueVisualizer');
 
 const caseNonsenseValues: Partial<INeurovault>[] = [
@@ -60,7 +62,9 @@ const caseMoreSegments: Partial<INeurovault>[] = [
 
 describe('DisplayMetaAnalysisResults', () => {
     it('should render', () => {
-        render(<DisplayMetaAnalysisResults metaAnalysis={undefined} />);
+        render(<DisplayMetaAnalysisResults metaAnalysis={undefined} />, {
+            wrapper: QueryClientTestingWrapper,
+        });
     });
 
     it('should show the correctly sorted list for nonsense values, sorting by alphabetical order', () => {
@@ -70,7 +74,9 @@ describe('DisplayMetaAnalysisResults', () => {
             isError: false,
         });
 
-        render(<DisplayMetaAnalysisResults metaAnalysis={mockMetaAnalysisReturn()} />);
+        render(<DisplayMetaAnalysisResults metaAnalysis={mockMetaAnalysisReturn()} />, {
+            wrapper: QueryClientTestingWrapper,
+        });
         const buttons = screen.getAllByRole('button');
         expect(buttons.length).toEqual(caseNonsenseValues.length);
         expect(buttons[0].textContent).toBe('ArandomValue');
@@ -86,7 +92,9 @@ describe('DisplayMetaAnalysisResults', () => {
         });
 
         // Passing in a meta-analysis as an argument is not necessary as we mock the hook that provides the actual data
-        render(<DisplayMetaAnalysisResults metaAnalysis={mockMetaAnalysisReturn()} />);
+        render(<DisplayMetaAnalysisResults metaAnalysis={mockMetaAnalysisReturn()} />, {
+            wrapper: QueryClientTestingWrapper,
+        });
         const buttons = screen.getAllByRole('button');
         expect(buttons.length).toEqual(caseRandomOrderDataTypes.length);
         expect(buttons[0].textContent).toBe('z_desc-ABC');
@@ -111,7 +119,9 @@ describe('DisplayMetaAnalysisResults', () => {
         });
 
         // Passing in a meta-analysis as an argument is not necessary as we mock the hook that provides the actual data
-        render(<DisplayMetaAnalysisResults metaAnalysis={mockMetaAnalysisReturn()} />);
+        render(<DisplayMetaAnalysisResults metaAnalysis={mockMetaAnalysisReturn()} />, {
+            wrapper: QueryClientTestingWrapper,
+        });
         const buttons = screen.getAllByRole('button');
         expect(buttons.length).toEqual(caseSameKeyDifferentValues.length);
         expect(buttons[0].textContent).toBe('z_desc-ABC');
@@ -126,7 +136,9 @@ describe('DisplayMetaAnalysisResults', () => {
             isError: false,
         });
 
-        render(<DisplayMetaAnalysisResults metaAnalysis={mockMetaAnalysisReturn()} />);
+        render(<DisplayMetaAnalysisResults metaAnalysis={mockMetaAnalysisReturn()} />, {
+            wrapper: QueryClientTestingWrapper,
+        });
         const buttons = screen.getAllByRole('button');
         expect(buttons.length).toEqual(caseVoxelAndCluster.length);
         expect(buttons[0].textContent).toBe('z_desc-ABC_level-cluster');
@@ -143,7 +155,9 @@ describe('DisplayMetaAnalysisResults', () => {
             isError: false,
         });
 
-        render(<DisplayMetaAnalysisResults metaAnalysis={mockMetaAnalysis} />);
+        render(<DisplayMetaAnalysisResults metaAnalysis={mockMetaAnalysis} />, {
+            wrapper: QueryClientTestingWrapper,
+        });
         const buttons = screen.getAllByRole('button');
         expect(buttons.length).toEqual(caseMKDAChi2.length);
         expect(buttons[0].textContent).toBe('z_desc-associationMass');
@@ -160,7 +174,9 @@ describe('DisplayMetaAnalysisResults', () => {
             isError: false,
         });
 
-        render(<DisplayMetaAnalysisResults metaAnalysis={mockMetaAnalysisReturn()} />);
+        render(<DisplayMetaAnalysisResults metaAnalysis={mockMetaAnalysisReturn()} />, {
+            wrapper: QueryClientTestingWrapper,
+        });
         const buttons = screen.getAllByRole('button');
         expect(buttons.length).toEqual(caseNotZAlphabetical.length);
         expect(buttons[0].textContent).toBe('p_desc-ABC');
@@ -174,7 +190,9 @@ describe('DisplayMetaAnalysisResults', () => {
             isError: false,
         });
 
-        render(<DisplayMetaAnalysisResults metaAnalysis={mockMetaAnalysisReturn()} />);
+        render(<DisplayMetaAnalysisResults metaAnalysis={mockMetaAnalysisReturn()} />, {
+            wrapper: QueryClientTestingWrapper,
+        });
         const buttons = screen.getAllByRole('button');
         expect(buttons.length).toEqual(caseMoreSegments.length);
         expect(buttons[0].textContent).toBe('z_desc-association_level-voxel_corr-FDR_method-indep.nii.gz');

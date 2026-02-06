@@ -23,6 +23,7 @@ export enum ENeurosynthSourceIds {
     WEBOFSCIENCE = 'neurosynth_web_of_science_id_source',
     PSYCINFO = 'neurosynth_psycinfo_id_source',
     SLEUTH = 'neurosynth_sleuth_id_source',
+    REFERENCEMANAGER = 'neurosynth_reference_manager_id_source',
 }
 
 export enum ENeurosynthTagIds {
@@ -63,6 +64,10 @@ export const defaultIdentificationSources = {
     sleuth: {
         id: ENeurosynthSourceIds.SLEUTH,
         label: 'Sleuth',
+    },
+    referenceManager: {
+        id: ENeurosynthSourceIds.REFERENCEMANAGER,
+        label: 'Reference Manager',
     },
 };
 

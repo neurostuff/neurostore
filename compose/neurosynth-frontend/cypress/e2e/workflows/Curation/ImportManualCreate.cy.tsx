@@ -40,6 +40,8 @@ describe('ImportManualCreateDialog', () => {
             cy.get('input[placeholder="My study name"]').click().type('new study');
             cy.get('input[role="combobox"]').click();
             cy.contains('li', 'Neurostore').click();
+            cy.get('input[placeholder="10.1016/S0896-6273(00)80715-1"]').click().type('10.1000/test');
+            cy.get('input[placeholder="21706013"]').click().type('12345678');
             cy.contains('button', 'next').should('not.be.disabled');
         });
 
@@ -47,7 +49,34 @@ describe('ImportManualCreateDialog', () => {
             cy.get('input[placeholder="My study name"]').click().type('new study');
             cy.get('input[role="combobox"]').click();
             cy.contains('li', 'Neurostore').click();
+            cy.get('input[placeholder="10.1016/S0896-6273(00)80715-1"]').click().type('10.1000/test');
+            cy.get('input[placeholder="21706013"]').click().type('12345678');
             cy.contains('button', 'next').click();
+            cy.get('input').type('my new import{enter}');
+            cy.contains('button', 'next').click().url().should('include', '/projects/abc123/curation');
+        });
+
+        it('should disable DOI input when No DOI checkbox is checked', () => {
+            cy.get('input[placeholder="10.1016/S0896-6273(00)80715-1"]').should('not.be.disabled');
+            cy.contains('label', 'No DOI').click();
+            cy.get('input[placeholder="10.1016/S0896-6273(00)80715-1"]').should('be.disabled');
+        });
+
+        it('should disable PMID input when No PMID checkbox is checked', () => {
+            cy.get('input[placeholder="21706013"]').should('not.be.disabled');
+            cy.contains('label', 'No PMID').click();
+            cy.get('input[placeholder="21706013"]').should('be.disabled');
+        });
+
+        it('should confirm when no identifiers are provided', () => {
+            cy.get('input[placeholder="My study name"]').click().type('new study');
+            cy.get('input[role="combobox"]').click();
+            cy.contains('li', 'Neurostore').click();
+            cy.contains('label', 'No DOI').click();
+            cy.contains('label', 'No PMID').click();
+            cy.contains('button', 'next').click();
+            cy.contains('No identifiers provided').should('be.visible');
+            cy.contains('button', 'Continue').click();
             cy.get('input').type('my new import{enter}');
             cy.contains('button', 'next').click().url().should('include', '/projects/abc123/curation');
         });

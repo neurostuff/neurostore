@@ -8,7 +8,7 @@ import { useEffect, useRef } from 'react';
 registerAllModules();
 
 const StudyPoints: React.FC<{
-    title: string;
+    title?: string;
     statistic: MapOrSpaceType | undefined;
     space: MapOrSpaceType | undefined;
     points: IStorePoint[];
@@ -47,7 +47,7 @@ const StudyPoints: React.FC<{
     return (
         <Box sx={{ width: '100%' }}>
             <Typography sx={{ fontWeight: 'bold', marginBottom: '0.5rem' }} gutterBottom>
-                {props.title}
+                {props.title ?? ''}
             </Typography>
             <Box
                 sx={{

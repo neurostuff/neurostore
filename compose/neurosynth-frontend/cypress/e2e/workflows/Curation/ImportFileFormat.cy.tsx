@@ -10,17 +10,17 @@ describe('ImportFileFormatDialog', () => {
         cy.intercept('GET', `**/api/studysets/*`, { fixture: 'studyset' }).as('studysetFixture');
     });
 
-    describe('Import via File Format', () => {
+    describe('Import Bibliography', () => {
         beforeEach(() => {
             cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture').wait('@studysetFixture');
             cy.intercept('PUT', '**/api/projects/abc123').as('updateProjectFixture');
             cy.contains('button', 'import studies').click();
-            cy.contains('Import via File Format').click();
+            cy.contains('Import Bibliography').click();
             cy.contains('button', 'next').click();
         });
 
         it('should show the standard file import page', () => {
-            cy.contains(/enter data source/).should('be.visible');
+            cy.contains(/Start typing to add or create your own source/).should('be.visible');
         });
 
         it('should disable the next button initially', () => {

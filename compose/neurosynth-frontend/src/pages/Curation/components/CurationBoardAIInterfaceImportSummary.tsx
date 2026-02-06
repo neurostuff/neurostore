@@ -68,7 +68,7 @@ const CurationBoardAIInterfaceImportSummary: React.FC<{
     let importMethodDescription = '';
     switch (curationImport.importModeUsed) {
         case EImportMode.FILE_IMPORT:
-            importMethodDescription = 'These studies were imported using a file (RIS, endnote, or BibText).';
+            importMethodDescription = 'These studies were imported from a file (RIS, endnote, or BibText).';
             break;
         case EImportMode.MANUAL_CREATE:
             importMethodDescription =

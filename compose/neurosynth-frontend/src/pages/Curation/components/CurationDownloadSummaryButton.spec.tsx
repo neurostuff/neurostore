@@ -5,12 +5,17 @@ import userEvent from '@testing-library/user-event';
 import { useProjectCurationColumns, useProjectExclusionTags } from 'pages/Project/store/ProjectStore';
 import { ICurationColumn } from '../Curation.types';
 import { defaultIdentificationSources } from 'pages/Project/store/ProjectStore.types';
-import { downloadFile } from '../Curation.helpers';
+import { downloadFile } from 'helpers/downloadFile.helpers';
 
 vi.mock('react-query');
-vi.mock('pages/Curation/Curation.helpers.ts', () => ({
-    downloadFile: vi.fn(),
-}));
+vi.mock('helpers/downloadFile.helpers', async () => {
+    const actual = await vi.importActual('helpers/downloadFile.helpers');
+
+    return {
+        ...actual,
+        downloadFile: vi.fn(),
+    };
+});
 vi.mock('pages/Project/store/ProjectStore');
 
 const mockCurationColumns: ICurationColumn[] = [
@@ -111,7 +116,7 @@ describe('CurationDownloadSummaryButton', () => {
 
     it('downloads CSVs when the download CSV button is clicked', () => {
         const csvStudies =
-            `"Title","Authors","PMID","PMCID","DOI","Year","Journal","Link","Source","Status","Exclusion","Tags","Neurosynth ID"\r\n` +
+            `"title","authors","pmid","pmcid","doi","articleYear","journal","articleLink","source","status","exclusion","tags","neurostoreId"\r\n` +
             `"included_1","John Smith","included_pmid_1","included_pmcid_1","included_doi_1","included_articleyear_1","included_journal_1","included_articlelink_1","Neurostore","excluded","exclusion-tag-label","","included_neurostoreid_1"\r\n` +
             `"included_2","included_authors_2","included_pmid_2","included_pmcid_2","","included_articleyear_2","included_journal_2","included_articlelink_2","Neurostore","included","","tag_1_label, tag_2_label","included_neurostoreid_2"`;
 

@@ -8,17 +8,74 @@ import { Box, Button, Card, CardContent, Typography } from '@mui/material';
 import NeurosynthActivitySummary from 'components/NeurosynthActivitySummary';
 import { useGuard } from 'hooks';
 import useAuthenticate from 'hooks/useAuthenticate';
+import { usePrerenderReady, usePageMetadata } from '../../../seo/hooks';
 import PlatformComparisonTable from 'pages/LandingPage/components/PlatformComparisonTable';
 import { LOGOS } from 'pages/LandingPage/LandingPage.helpers';
 import LandingPageStyles from './LandingPage.styles';
+
+const SEO_GRAPH_DATA = JSON.stringify({
+    '@context': 'https://schema.org',
+    '@graph': [
+        {
+            '@type': 'Organization',
+            '@id': 'https://github.com/neurostuff#organization',
+            name: 'Neurostuff',
+            url: 'https://github.com/neurostuff',
+        },
+        {
+            '@type': 'WebSite',
+            '@id': 'https://compose.neurosynth.org/#website',
+            name: 'Neurosynth Compose',
+            url: 'https://compose.neurosynth.org/',
+            publisher: { '@id': 'https://github.com/neurostuff#organization' },
+            about: { '@id': 'https://compose.neurosynth.org/#software' },
+        },
+        {
+            '@type': 'SoftwareApplication',
+            '@id': 'https://compose.neurosynth.org/#software',
+            name: 'Neurosynth Compose',
+            description:
+                'A web-based platform for creating, curating, and running reproducible neuroimaging meta-analyses.',
+            url: 'https://compose.neurosynth.org/',
+            applicationCategory: 'ScienceApplication',
+            operatingSystem: 'Web',
+            isAccessibleForFree: true,
+            publisher: { '@id': 'https://github.com/neurostuff#organization' },
+            isPartOf: {
+                '@type': 'CreativeWork',
+                name: 'Neurosynth ecosystem',
+                url: 'https://neurosynth.org/',
+                isPartOf: { '@id': 'https://github.com/neurostuff#organization' },
+            },
+            softwareHelp: {
+                '@type': 'CreativeWork',
+                name: 'Neurosynth Compose Documentation',
+                url: 'https://neurostuff.github.io/compose-docs/',
+            },
+            subjectOf: {
+                '@type': 'ScholarlyArticle',
+                name: 'Neurosynth Compose: A Web-Based Platform for Flexible and Reproducible Neuroimaging Meta-Analysis',
+                identifier: 'https://doi.org/10.1162/IMAG.a.1114',
+            },
+        },
+    ],
+});
 
 const LandingPage = () => {
     const { isAuthenticated, isLoading } = useAuth0();
     useGuard('/projects', '', isAuthenticated, isLoading, true);
     const { handleLogin } = useAuthenticate();
+    usePageMetadata({
+        title: 'Neurosynth Compose | Neuroimaging Meta-Analysis Platform',
+        description:
+            'Create, curate, and run neuroimaging meta-analyses in the browser. Build studysets from published fMRI literature and execute reproducible pipelines in the cloud.',
+        canonicalPath: '/',
+    });
+    usePrerenderReady(true);
 
     return (
         <>
+            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: SEO_GRAPH_DATA }} />
             <Box sx={[LandingPageStyles.sectionContainer, { backgroundColor: 'primary.main' }]}>
                 <Box sx={[LandingPageStyles.sectionContents, LandingPageStyles.heroBannerContentContainer]}>
                     <Box sx={LandingPageStyles.heroBannerTextContainer}>

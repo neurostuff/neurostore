@@ -7,6 +7,7 @@ from connexion.resolver import MethodResolver
 from starlette.middleware.cors import CORSMiddleware
 from flask_admin import Admin, AdminIndexView
 from flask_admin.contrib.sqla import ModelView
+from flask_admin.theme import Bootstrap4Theme
 from flask import Response, request
 
 from .database import init_db
@@ -126,7 +127,7 @@ def create_app():
     admin = Admin(
         app,
         name="Neurosynth Compose Admin",
-        template_mode="bootstrap4",
+        theme=Bootstrap4Theme(),
         url="/admin",
         index_view=SecureAdminIndexView(),
     )

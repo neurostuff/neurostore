@@ -2,8 +2,17 @@ import { Box, Button, Card, CardContent, Container, Link, Typography } from '@mu
 import ForumIcon from '@mui/icons-material/Forum';
 import EmailIcon from '@mui/icons-material/Email';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import { usePrerenderReady, usePageMetadata } from '../../../seo/hooks';
 
 const HelpPage: React.FC = () => {
+    usePrerenderReady(true);
+    usePageMetadata({
+        title: 'Help & Support | Neurosynth Compose',
+        description:
+            'Get help with Neurosynth Compose, documentation, and community support for neuroimaging meta-analysis.',
+        canonicalPath: '/help',
+    });
+
     return (
         <Box
             sx={{

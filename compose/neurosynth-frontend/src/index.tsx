@@ -10,6 +10,7 @@ import App from './App';
 import './index.css';
 import { QueryCache, QueryClient, QueryClientProvider } from 'react-query';
 import { AxiosError } from 'axios';
+import { HelmetProvider } from 'react-helmet-async';
 
 export type Style = Record<string, SystemStyleObject>;
 export type ColorOptions = 'inherit' | 'primary' | 'secondary' | 'success' | 'error' | 'info' | 'warning';
@@ -122,7 +123,9 @@ ReactDOM.render(
             <BrowserRouter>
                 <ThemeProvider theme={theme}>
                     <QueryClientProvider client={queryClient}>
-                        <App />
+                        <HelmetProvider>
+                            <App />
+                        </HelmetProvider>
                     </QueryClientProvider>
                 </ThemeProvider>
             </BrowserRouter>
