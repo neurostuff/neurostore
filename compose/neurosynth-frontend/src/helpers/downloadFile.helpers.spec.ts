@@ -1,5 +1,5 @@
 import { MockInstance } from 'vitest';
-import { toCSV, downloadFile } from './downloadFile.helpers';
+import { toCSV } from './downloadFile.helpers';
 
 describe('toCSV', () => {
     it('returns only header row when data is empty', () => {
@@ -36,23 +36,5 @@ describe('toCSV', () => {
     it('converts numbers and null/undefined to strings', () => {
         const result = toCSV(['n', 'x', 'z'], [{ n: 42, x: null, z: undefined }]);
         expect(result).toBe('"n","x","z"\r\n"42","",""');
-    });
-});
-
-describe('downloadFile', () => {
-    let createObjectURLSpy: MockInstance;
-    let anchorElement: HTMLAnchorElement;
-
-    beforeEach(() => {
-        const originalCreateElement = document.createElement.bind(document);
-        vi.spyOn(document, 'createElement').mockImplementation((tagName: string) => {
-            const el = originalCreateElement(tagName);
-            if (tagName === 'a') {
-                anchorElement = el as HTMLAnchorElement;
-                vi.spyOn(el, 'click');
-            }
-            return el;
-        });
-        createObjectURLSpy = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:mock-url');
     });
 });
