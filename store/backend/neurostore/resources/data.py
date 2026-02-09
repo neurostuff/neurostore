@@ -1133,6 +1133,7 @@ class BaseStudiesView(ObjectView, ListView):
         "y": fields.Float(required=False, allow_none=True),
         "z": fields.Float(required=False, allow_none=True),
         "radius": fields.Float(required=False, allow_none=True),
+        "neurovault_id": fields.String(load_default=None),
         **LIST_NESTED_ARGS,
     }
 
@@ -1143,7 +1144,6 @@ class BaseStudiesView(ObjectView, ListView):
         "description",
         "source_id",
         "source",
-        "neurovault_id",
         "authors",
         "publication",
         "doi",
@@ -1381,6 +1381,22 @@ class BaseStudiesView(ObjectView, ListView):
             q = q.filter(spatial_filter)
         elif any(v is not None for v in [x, y, z, radius]):
             abort_validation("Spatial query requires x, y, z, and radius together.")
+
+        neurovault_id = args.get("neurovault_id")
+        if neurovault_id:
+            neurovault_study = aliased(Study)
+            neurovault_filter = (
+                sa.select(sa.literal(True))
+                .select_from(neurovault_study)
+                .where(
+                    neurovault_study.base_study_id == self._model.id,
+                    neurovault_study.source == "neurovault",
+                    neurovault_study.source_id == str(neurovault_id),
+                )
+                .correlate(self._model)
+                .exists()
+            )
+            q = q.filter(neurovault_filter)
 
         # search studies for data_type
         if args.get("data_type"):

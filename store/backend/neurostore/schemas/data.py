@@ -490,7 +490,6 @@ class BaseStudySchema(BaseDataSchema):
     doi = fields.String(allow_none=True)
     pmid = fields.String(allow_none=True)
     pmcid = fields.String(allow_none=True)
-    neurovault_id = fields.String(allow_none=True)
     authors = fields.String(allow_none=True)
     year = fields.Integer(allow_none=True)
     level = fields.String(allow_none=True)
@@ -540,21 +539,12 @@ class BaseStudySchema(BaseDataSchema):
             "doi",
             "pmid",
             "pmcid",
-            "neurovault_id",
             "authors",
         ]
         for attr in text_fields:
             val = data.get(attr, None)
             if isinstance(val, str) and (val == "" or val.isspace()):
                 data[attr] = None
-
-        neurovault_id = data.get("neurovault_id")
-        if isinstance(neurovault_id, (int, float)) and not isinstance(
-            neurovault_id, bool
-        ):
-            if isinstance(neurovault_id, float) and neurovault_id.is_integer():
-                neurovault_id = int(neurovault_id)
-            data["neurovault_id"] = str(neurovault_id)
 
         # Clean DOI
         if data.get("doi"):

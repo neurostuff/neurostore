@@ -192,7 +192,6 @@ class BaseStudy(BaseMixin, db.Model):
     doi = db.Column(db.String, nullable=True, index=True)
     pmid = db.Column(db.String, nullable=True, index=True)
     pmcid = db.Column(db.String, nullable=True, index=True)
-    neurovault_id = db.Column(db.String, nullable=True, index=True)
     authors = db.Column(db.String, index=True)
     year = db.Column(db.Integer, index=True)
     public = db.Column(db.Boolean, default=True)
@@ -247,12 +246,7 @@ class BaseStudy(BaseMixin, db.Model):
 
     __table_args__ = (
         db.CheckConstraint(level.in_(["group", "meta"])),
-        db.UniqueConstraint(
-            "doi",
-            "pmid",
-            "neurovault_id",
-            name="doi_pmid_neurovault_id",
-        ),
+        db.UniqueConstraint("doi", "pmid", name="doi_pmid"),
         db.CheckConstraint("pmid ~ '^(?=.*\\S).+$' OR name IS NULL"),
         db.CheckConstraint("doi ~ '^(?=.*\\S).+$' OR name IS NULL"),
         db.CheckConstraint("id != superseded_by", name="no_self_reference"),
