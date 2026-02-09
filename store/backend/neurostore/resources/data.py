@@ -1143,6 +1143,7 @@ class BaseStudiesView(ObjectView, ListView):
         "description",
         "source_id",
         "source",
+        "neurovault_id",
         "authors",
         "publication",
         "doi",

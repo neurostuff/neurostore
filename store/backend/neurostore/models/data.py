@@ -192,6 +192,7 @@ class BaseStudy(BaseMixin, db.Model):
     doi = db.Column(db.String, nullable=True, index=True)
     pmid = db.Column(db.String, nullable=True, index=True)
     pmcid = db.Column(db.String, nullable=True, index=True)
+    neurovault_id = db.Column(db.String, nullable=True, index=True)
     authors = db.Column(db.String, index=True)
     year = db.Column(db.Integer, index=True)
     public = db.Column(db.Boolean, default=True)

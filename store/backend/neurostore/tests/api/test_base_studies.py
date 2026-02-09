@@ -190,6 +190,49 @@ def test_field_sanitization(auth_client):
     assert created_studies[2]["description"] is None
 
 
+def test_neurovault_id_supports_public_and_private_values(auth_client):
+    public_resp = auth_client.post(
+        "/api/base-studies/",
+        data={
+            "name": "Public Neurovault Study",
+            "level": "group",
+            "neurovault_id": 19125,
+        },
+    )
+    assert public_resp.status_code == 200
+    assert public_resp.json()["neurovault_id"] == "19125"
+
+    private_resp = auth_client.post(
+        "/api/base-studies/",
+        data={
+            "name": "Private Neurovault Study",
+            "level": "group",
+            "neurovault_id": "private-collection-token-abc123",
+        },
+    )
+    assert private_resp.status_code == 200
+    assert private_resp.json()["neurovault_id"] == "private-collection-token-abc123"
+
+
+def test_filter_base_study_by_neurovault_id(auth_client):
+    create_resp = auth_client.post(
+        "/api/base-studies/",
+        data={
+            "name": "Neurovault Filter Study",
+            "level": "group",
+            "neurovault_id": "nv-filter-0001",
+        },
+    )
+    assert create_resp.status_code == 200
+    created = create_resp.json()
+
+    filter_resp = auth_client.get("/api/base-studies/?neurovault_id=nv-filter-0001")
+    assert filter_resp.status_code == 200
+
+    result_ids = {result["id"] for result in filter_resp.json()["results"]}
+    assert created["id"] in result_ids
+
+
 def test_flat_base_study(auth_client, ingest_neurosynth, session):
     flat_resp = auth_client.get("/api/base-studies/?flat=true")
     reg_resp = auth_client.get("/api/base-studies/?flat=false")

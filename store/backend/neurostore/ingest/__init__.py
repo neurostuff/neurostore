@@ -57,21 +57,29 @@ def ingest_neurovault(verbose=False, limit=20, overwrite=False, max_images=None)
             print("Skipping {} (already exists)...".format(data["DOI"]))
             return
         collection_id = data.pop("id")
+        neurovault_id = str(collection_id)
         doi = data.pop("DOI", None)
         base_study = None
         if doi:
             base_study = BaseStudy.query.filter_by(doi=doi).one_or_none()
+        if base_study is None:
+            base_study = BaseStudy.query.filter_by(
+                neurovault_id=neurovault_id
+            ).one_or_none()
 
         if base_study is None:
             base_study = BaseStudy(
                 name=data.pop("name", None),
                 description=data.pop("description", None),
-                doi=data.pop("DOI", None),
+                doi=doi,
+                neurovault_id=neurovault_id,
                 authors=data.pop("authors", None),
                 publication=data.pop("journal_name", None),
                 metadata_=data,
                 level="group",
             )
+        elif base_study.neurovault_id is None:
+            base_study.neurovault_id = neurovault_id
         s = Study(
             name=data.pop("name", None) or base_study.name,
             description=data.pop("description", None) or base_study.description,
@@ -148,7 +156,7 @@ def ingest_neurovault(verbose=False, limit=20, overwrite=False, max_images=None)
             [base_study] + [s] + list(analyses.values()) + images + list(conditions)
         )
         db.session.commit()
-        all_studies[s.name] = s
+        all_studies[s.doi] = s
         return s
 
     url = "https://neurovault.org/api/collections.json"
