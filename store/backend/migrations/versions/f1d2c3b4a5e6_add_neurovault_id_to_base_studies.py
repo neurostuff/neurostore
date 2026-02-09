@@ -18,15 +18,30 @@ depends_on = None
 
 
 def upgrade():
-    op.add_column("base_studies", sa.Column("neurovault_id", sa.String(), nullable=True))
+    op.add_column(
+        "base_studies",
+        sa.Column("neurovault_id", sa.String(), nullable=True),
+    )
     op.create_index(
         op.f("ix_base_studies_neurovault_id"),
         "base_studies",
         ["neurovault_id"],
         unique=False,
     )
+    op.drop_constraint("doi_pmid", "base_studies", type_="unique")
+    op.create_unique_constraint(
+        "doi_pmid_neurovault_id",
+        "base_studies",
+        ["doi", "pmid", "neurovault_id"],
+    )
 
 
 def downgrade():
+    op.drop_constraint(
+        "doi_pmid_neurovault_id",
+        "base_studies",
+        type_="unique",
+    )
+    op.create_unique_constraint("doi_pmid", "base_studies", ["doi", "pmid"])
     op.drop_index(op.f("ix_base_studies_neurovault_id"), table_name="base_studies")
     op.drop_column("base_studies", "neurovault_id")

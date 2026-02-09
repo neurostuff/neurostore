@@ -233,6 +233,43 @@ def test_filter_base_study_by_neurovault_id(auth_client):
     assert created["id"] in result_ids
 
 
+def test_duplicate_identifiers_allowed_when_neurovault_id_differs(auth_client):
+    payload_common = {
+        "name": "Duplicate Identifiers Different Neurovault IDs",
+        "level": "group",
+        "doi": "10.9999/duplicate-neurovault-id-case",
+        "pmid": "999001",
+        "pmcid": "PMC999001",
+    }
+    first_resp = auth_client.post(
+        "/api/base-studies/",
+        data={**payload_common, "neurovault_id": "nv-dup-1"},
+    )
+    second_resp = auth_client.post(
+        "/api/base-studies/",
+        data={**payload_common, "neurovault_id": "nv-dup-2"},
+    )
+
+    assert first_resp.status_code == 200
+    assert second_resp.status_code == 200
+    assert first_resp.json()["id"] != second_resp.json()["id"]
+
+    by_doi = auth_client.get(
+        "/api/base-studies/?doi=10.9999/duplicate-neurovault-id-case"
+    )
+    assert by_doi.status_code == 200
+    doi_ids = {result["id"] for result in by_doi.json()["results"]}
+    assert first_resp.json()["id"] in doi_ids
+    assert second_resp.json()["id"] in doi_ids
+
+    by_nv_1 = auth_client.get("/api/base-studies/?neurovault_id=nv-dup-1")
+    by_nv_2 = auth_client.get("/api/base-studies/?neurovault_id=nv-dup-2")
+    assert by_nv_1.status_code == 200
+    assert by_nv_2.status_code == 200
+    assert first_resp.json()["id"] in {r["id"] for r in by_nv_1.json()["results"]}
+    assert second_resp.json()["id"] in {r["id"] for r in by_nv_2.json()["results"]}
+
+
 def test_flat_base_study(auth_client, ingest_neurosynth, session):
     flat_resp = auth_client.get("/api/base-studies/?flat=true")
     reg_resp = auth_client.get("/api/base-studies/?flat=false")

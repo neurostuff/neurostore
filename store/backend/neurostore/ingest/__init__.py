@@ -50,22 +50,29 @@ def _coerce_optional_int(value):
 
 def ingest_neurovault(verbose=False, limit=20, overwrite=False, max_images=None):
     # Store existing studies for quick lookup
-    all_studies = {s.doi: s for s in Study.query.filter_by(source="neurovault").all()}
+    all_studies = {
+        str(s.source_id): s for s in Study.query.filter_by(source="neurovault").all()
+    }
 
     def add_collection(data):
-        if data["DOI"] in all_studies and not overwrite:
-            print("Skipping {} (already exists)...".format(data["DOI"]))
+        collection_id = data.get("id")
+        if str(collection_id) in all_studies and not overwrite:
+            print(
+                "Skipping collection {} with DOI {} (already exists)...".format(
+                    collection_id, data.get("DOI")
+                )
+            )
             return
         collection_id = data.pop("id")
         neurovault_id = str(collection_id)
         doi = data.pop("DOI", None)
-        base_study = None
-        if doi:
-            base_study = BaseStudy.query.filter_by(doi=doi).one_or_none()
-        if base_study is None:
-            base_study = BaseStudy.query.filter_by(
-                neurovault_id=neurovault_id
-            ).one_or_none()
+        base_study = BaseStudy.query.filter_by(
+            neurovault_id=neurovault_id
+        ).one_or_none()
+        if base_study is None and doi:
+            doi_matches = BaseStudy.query.filter_by(doi=doi).all()
+            if len(doi_matches) == 1 and doi_matches[0].neurovault_id is None:
+                base_study = doi_matches[0]
 
         if base_study is None:
             base_study = BaseStudy(
@@ -156,7 +163,7 @@ def ingest_neurovault(verbose=False, limit=20, overwrite=False, max_images=None)
             [base_study] + [s] + list(analyses.values()) + images + list(conditions)
         )
         db.session.commit()
-        all_studies[s.doi] = s
+        all_studies[str(s.source_id)] = s
         return s
 
     url = "https://neurovault.org/api/collections.json"
