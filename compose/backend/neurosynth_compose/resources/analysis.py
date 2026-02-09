@@ -1324,22 +1324,6 @@ def create_neurovault_collection(nv_collection):
     return nv_collection
 
 
-def _project_study_payload(project):
-    return {
-        "name": getattr(project, "name", "Untitled"),
-        "description": getattr(project, "description", None),
-        "level": "meta",
-    }
-
-
-def _expect_ok(response, action):
-    if response.status_code < 200 or response.status_code >= 300:
-        raise ValueError(
-            f"{action} failed with status {response.status_code}: "
-            f"{getattr(response, 'text', '')}"
-        )
-
-
 def create_or_update_neurostore_study(ns_study):
     from flask import request
     from auth0.authentication.get_token import GetToken
@@ -1362,43 +1346,17 @@ def create_or_update_neurostore_study(ns_study):
 
     ns_ses = neurostore_session(access_token)
 
-    study_data = _project_study_payload(ns_study.project)
-    base_study_data = deepcopy(study_data)
+    study_data = {
+        "name": getattr(ns_study.project, "name", "Untitled"),
+        "description": getattr(ns_study.project, "description", None),
+        "level": "meta",
+    }
 
     try:
-        base_study_id = None
         if ns_study.neurostore_id:
-            study_res = ns_ses.get(f"/api/studies/{ns_study.neurostore_id}")
-            if study_res.status_code == 200:
-                base_study_id = study_res.json().get("base_study")
-            elif study_res.status_code == 404:
-                # Remote study was removed, so create a fresh study record below.
-                ns_study.neurostore_id = None
-            else:
-                _expect_ok(study_res, "fetch neurostore study")
-
-        if base_study_id:
-            base_study_res = ns_ses.put(
-                f"/api/base-studies/{base_study_id}", json=base_study_data
-            )
-            if base_study_res.status_code == 404:
-                base_study_id = None
-            else:
-                _expect_ok(base_study_res, "update neurostore base study")
-        if not base_study_id:
-            base_study_res = ns_ses.post("/api/base-studies/", json=base_study_data)
-            _expect_ok(base_study_res, "create neurostore base study")
-            base_study_id = base_study_res.json()["id"]
-
-        study_data["base_study"] = base_study_id
-        if ns_study.neurostore_id:
-            ns_study_res = ns_ses.put(
-                f"/api/studies/{ns_study.neurostore_id}", json=study_data
-            )
+            ns_ses.put(f"/api/studies/{ns_study.neurostore_id}", json=study_data)
         else:
             ns_study_res = ns_ses.post("/api/studies/", json=study_data)
-        _expect_ok(ns_study_res, "sync neurostore study")
-        if not ns_study.neurostore_id:
             ns_study.neurostore_id = ns_study_res.json()["id"]
         ns_study.status = "OK"
         ns_study.exception = None
