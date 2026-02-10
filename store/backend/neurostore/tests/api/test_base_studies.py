@@ -9,10 +9,14 @@ from neurostore.models import (
     PipelineConfig,
     PipelineStudyResult,
     BaseStudy,
+    BaseStudyFlagOutbox,
     Analysis,
+    Image,
+    Study,
     User,
 )
 from neurostore.schemas import StudySchema
+from neurostore.services.base_study_flags import process_base_study_flag_outbox_batch
 
 
 def test_features_query(auth_client, ingest_demographic_features):
@@ -436,6 +440,320 @@ def test_has_coordinates_images(auth_client, session):
     session.refresh(base_study_2)
     assert base_study_2.has_coordinates is False
     assert base_study_2.has_images is False
+
+
+def test_base_study_emits_all_media_flags(auth_client, session):
+    create_study = auth_client.post(
+        "/api/studies/",
+        data={
+            "name": "base-study-media-flags",
+            "pmid": "910001",
+            "doi": "10.1000/base-study-media-flags",
+            "analyses": [
+                {
+                    "name": "analysis-media-flags",
+                    "images": [
+                        {"filename": "z-map.nii.gz", "value_type": "Z map"},
+                        {"filename": "t-map.nii.gz", "value_type": "T"},
+                        {"filename": "beta-map.nii.gz", "value_type": "U"},
+                        {"filename": "variance-map.nii.gz", "value_type": "V"},
+                    ],
+                }
+            ],
+        },
+    )
+    assert create_study.status_code == 200
+
+    base_study = BaseStudy.query.filter_by(
+        pmid="910001", doi="10.1000/base-study-media-flags"
+    ).one()
+    response = auth_client.get(f"/api/base-studies/{base_study.id}")
+    assert response.status_code == 200
+    payload = response.json()
+
+    assert payload["has_coordinates"] is False
+    assert payload["has_images"] is True
+    assert payload["has_z_maps"] is True
+    assert payload["has_t_maps"] is True
+    assert payload["has_beta_and_variance_maps"] is True
+
+
+def test_async_image_reassignment_updates_hierarchy_flags(auth_client, session, app):
+    async_original = app.config.get("BASE_STUDY_FLAGS_ASYNC", False)
+    app.config["BASE_STUDY_FLAGS_ASYNC"] = True
+
+    try:
+        doi_a = "10.1000/async-flags-a"
+        doi_b = "10.1000/async-flags-b"
+        pmid_a = "900001"
+        pmid_b = "900002"
+
+        create_study_a = auth_client.post(
+            "/api/studies/",
+            data={
+                "name": "async flags study a",
+                "pmid": pmid_a,
+                "doi": doi_a,
+                "analyses": [
+                    {
+                        "name": "analysis a",
+                        "images": [{"filename": "image-a.nii.gz"}],
+                    }
+                ],
+            },
+        )
+        create_study_b = auth_client.post(
+            "/api/studies/",
+            data={
+                "name": "async flags study b",
+                "pmid": pmid_b,
+                "doi": doi_b,
+                "analyses": [
+                    {
+                        "name": "analysis b",
+                    }
+                ],
+            },
+        )
+
+        assert create_study_a.status_code == 200
+        assert create_study_b.status_code == 200
+
+        analysis_a_id = create_study_a.json()["analyses"][0]
+        analysis_b_id = create_study_b.json()["analyses"][0]
+
+        analysis_a_resp = auth_client.get(f"/api/analyses/{analysis_a_id}")
+        assert analysis_a_resp.status_code == 200
+        image_id = analysis_a_resp.json()["images"][0]
+
+        base_study_a = BaseStudy.query.filter_by(doi=doi_a, pmid=pmid_a).one()
+        base_study_b = BaseStudy.query.filter_by(doi=doi_b, pmid=pmid_b).one()
+        study_a = Study.query.filter_by(id=create_study_a.json()["id"]).one()
+        study_b = Study.query.filter_by(id=create_study_b.json()["id"]).one()
+        analysis_a = Analysis.query.filter_by(id=analysis_a_id).one()
+        analysis_b = Analysis.query.filter_by(id=analysis_b_id).one()
+
+        queued_before_move = {
+            row.base_study_id for row in BaseStudyFlagOutbox.query.all()
+        }
+        assert base_study_a.id in queued_before_move
+        assert base_study_b.id in queued_before_move
+
+        move_image = auth_client.put(
+            f"/api/images/{image_id}", data={"analysis": analysis_b_id}
+        )
+        assert move_image.status_code == 200
+
+        queued_after_move = {
+            row.base_study_id for row in BaseStudyFlagOutbox.query.all()
+        }
+        assert base_study_a.id in queued_after_move
+        assert base_study_b.id in queued_after_move
+
+        for _ in range(10):
+            processed = process_base_study_flag_outbox_batch(batch_size=200)
+            if processed == 0:
+                break
+
+        session.refresh(base_study_a)
+        session.refresh(base_study_b)
+        session.refresh(study_a)
+        session.refresh(study_b)
+        session.refresh(analysis_a)
+        session.refresh(analysis_b)
+
+        assert analysis_a.has_images is False
+        assert analysis_b.has_images is True
+        assert analysis_a.has_coordinates is False
+        assert analysis_b.has_coordinates is False
+
+        assert study_a.has_images is False
+        assert study_b.has_images is True
+        assert study_a.has_coordinates is False
+        assert study_b.has_coordinates is False
+
+        assert base_study_a.has_images is False
+        assert base_study_b.has_images is True
+        assert base_study_a.has_coordinates is False
+        assert base_study_b.has_coordinates is False
+    finally:
+        app.config["BASE_STUDY_FLAGS_ASYNC"] = async_original
+
+
+def test_async_worker_map_type_flag_transitions(auth_client, session, app):
+    async_original = app.config.get("BASE_STUDY_FLAGS_ASYNC", False)
+    app.config["BASE_STUDY_FLAGS_ASYNC"] = True
+
+    def drain_outbox():
+        for _ in range(20):
+            processed = process_base_study_flag_outbox_batch(batch_size=200)
+            if processed == 0:
+                break
+
+    def refresh_all(*records):
+        for record in records:
+            session.refresh(record)
+
+    try:
+        create_study_a = auth_client.post(
+            "/api/studies/",
+            data={
+                "name": "worker-map-flags-a",
+                "pmid": "920001",
+                "doi": "10.1000/worker-map-flags-a",
+                "analyses": [
+                    {
+                        "name": "analysis-a",
+                        "images": [
+                            {"filename": "beta-a.nii.gz", "value_type": "U"},
+                            {"filename": "variance-a.nii.gz", "value_type": "V"},
+                        ],
+                    }
+                ],
+            },
+        )
+        create_study_b = auth_client.post(
+            "/api/studies/",
+            data={
+                "name": "worker-map-flags-b",
+                "pmid": "920002",
+                "doi": "10.1000/worker-map-flags-b",
+                "analyses": [{"name": "analysis-b"}],
+            },
+        )
+
+        assert create_study_a.status_code == 200
+        assert create_study_b.status_code == 200
+
+        analysis_a_id = create_study_a.json()["analyses"][0]
+        analysis_b_id = create_study_b.json()["analyses"][0]
+
+        analysis_a = Analysis.query.filter_by(id=analysis_a_id).one()
+        analysis_b = Analysis.query.filter_by(id=analysis_b_id).one()
+        study_a = Study.query.filter_by(id=create_study_a.json()["id"]).one()
+        study_b = Study.query.filter_by(id=create_study_b.json()["id"]).one()
+        base_study_a = BaseStudy.query.filter_by(
+            doi="10.1000/worker-map-flags-a", pmid="920001"
+        ).one()
+        base_study_b = BaseStudy.query.filter_by(
+            doi="10.1000/worker-map-flags-b", pmid="920002"
+        ).one()
+
+        drain_outbox()
+        refresh_all(analysis_a, analysis_b, study_a, study_b, base_study_a, base_study_b)
+
+        # Initial state: analysis_a has beta+variance maps, analysis_b has none.
+        assert analysis_a.has_beta_and_variance_maps is True
+        assert study_a.has_beta_and_variance_maps is True
+        assert base_study_a.has_beta_and_variance_maps is True
+        assert analysis_b.has_beta_and_variance_maps is False
+        assert study_b.has_beta_and_variance_maps is False
+        assert base_study_b.has_beta_and_variance_maps is False
+
+        beta_image = Image.query.filter_by(
+            analysis_id=analysis_a_id, filename="beta-a.nii.gz"
+        ).one()
+        variance_image = Image.query.filter_by(
+            analysis_id=analysis_a_id, filename="variance-a.nii.gz"
+        ).one()
+
+        # variance removed => beta only => has_beta_and_variance_maps should be false
+        delete_variance = auth_client.delete(f"/api/images/{variance_image.id}")
+        assert delete_variance.status_code == 200
+        drain_outbox()
+        refresh_all(analysis_a, study_a, base_study_a)
+        assert analysis_a.has_beta_and_variance_maps is False
+        assert study_a.has_beta_and_variance_maps is False
+        assert base_study_a.has_beta_and_variance_maps is False
+
+        # add variance back => true again
+        add_variance = auth_client.post(
+            "/api/images/",
+            data={
+                "analysis": analysis_a_id,
+                "filename": "variance-a-2.nii.gz",
+                "value_type": "variance",
+            },
+        )
+        assert add_variance.status_code == 200
+        variance_image_2_id = add_variance.json()["id"]
+        drain_outbox()
+        refresh_all(analysis_a, study_a, base_study_a)
+        assert analysis_a.has_beta_and_variance_maps is True
+        assert study_a.has_beta_and_variance_maps is True
+        assert base_study_a.has_beta_and_variance_maps is True
+
+        # move variance away => old scope beta-only false, new scope variance-only false
+        move_variance = auth_client.put(
+            f"/api/images/{variance_image_2_id}", data={"analysis": analysis_b_id}
+        )
+        assert move_variance.status_code == 200
+        drain_outbox()
+        refresh_all(analysis_a, analysis_b, study_a, study_b, base_study_a, base_study_b)
+        assert analysis_a.has_beta_and_variance_maps is False
+        assert study_a.has_beta_and_variance_maps is False
+        assert base_study_a.has_beta_and_variance_maps is False
+        assert analysis_b.has_beta_and_variance_maps is False
+        assert study_b.has_beta_and_variance_maps is False
+        assert base_study_b.has_beta_and_variance_maps is False
+
+        # move beta too => new scope has both => true
+        move_beta = auth_client.put(
+            f"/api/images/{beta_image.id}", data={"analysis": analysis_b_id}
+        )
+        assert move_beta.status_code == 200
+        drain_outbox()
+        refresh_all(analysis_a, analysis_b, study_a, study_b, base_study_a, base_study_b)
+        assert analysis_a.has_beta_and_variance_maps is False
+        assert study_a.has_beta_and_variance_maps is False
+        assert base_study_a.has_beta_and_variance_maps is False
+        assert analysis_b.has_beta_and_variance_maps is True
+        assert study_b.has_beta_and_variance_maps is True
+        assert base_study_b.has_beta_and_variance_maps is True
+
+        # add z and t maps to analysis_b and validate z/t flags
+        add_z = auth_client.post(
+            "/api/images/",
+            data={
+                "analysis": analysis_b_id,
+                "filename": "z-b.nii.gz",
+                "value_type": "Z",
+            },
+        )
+        add_t = auth_client.post(
+            "/api/images/",
+            data={
+                "analysis": analysis_b_id,
+                "filename": "t-b.nii.gz",
+                "value_type": "T map",
+            },
+        )
+        assert add_z.status_code == 200
+        assert add_t.status_code == 200
+        z_image_id = add_z.json()["id"]
+
+        drain_outbox()
+        refresh_all(analysis_b, study_b, base_study_b)
+        assert analysis_b.has_z_maps is True
+        assert analysis_b.has_t_maps is True
+        assert study_b.has_z_maps is True
+        assert study_b.has_t_maps is True
+        assert base_study_b.has_z_maps is True
+        assert base_study_b.has_t_maps is True
+
+        # move z map from b -> a and validate old/new scope transitions
+        move_z = auth_client.put(f"/api/images/{z_image_id}", data={"analysis": analysis_a_id})
+        assert move_z.status_code == 200
+        drain_outbox()
+        refresh_all(analysis_a, analysis_b, study_a, study_b, base_study_a, base_study_b)
+        assert analysis_a.has_z_maps is True
+        assert study_a.has_z_maps is True
+        assert base_study_a.has_z_maps is True
+        assert analysis_b.has_z_maps is False
+        assert study_b.has_z_maps is False
+        assert base_study_b.has_z_maps is False
+    finally:
+        app.config["BASE_STUDY_FLAGS_ASYNC"] = async_original
 
 
 def test_filter_by_is_oa(auth_client, session):

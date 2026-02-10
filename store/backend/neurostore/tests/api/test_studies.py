@@ -50,6 +50,39 @@ def test_get_studies(auth_client, ingest_neurosynth, ingest_neuroquery, session)
     assert full_study["id"] == s_id
 
 
+def test_study_emits_all_media_flags(auth_client, session):
+    create_study = auth_client.post(
+        "/api/studies/",
+        data={
+            "name": "study-media-flags",
+            "pmid": "910011",
+            "doi": "10.1000/study-media-flags",
+            "analyses": [
+                {
+                    "name": "analysis-media-flags",
+                    "images": [
+                        {"filename": "z-map.nii.gz", "value_type": "Z"},
+                        {"filename": "t-map.nii.gz", "value_type": "T map"},
+                        {"filename": "beta-map.nii.gz", "value_type": "M"},
+                        {"filename": "variance-map.nii.gz", "value_type": "variance"},
+                    ],
+                }
+            ],
+        },
+    )
+    assert create_study.status_code == 200
+
+    response = auth_client.get(f"/api/studies/{create_study.json()['id']}")
+    assert response.status_code == 200
+    payload = response.json()
+
+    assert payload["has_coordinates"] is False
+    assert payload["has_images"] is True
+    assert payload["has_z_maps"] is True
+    assert payload["has_t_maps"] is True
+    assert payload["has_beta_and_variance_maps"] is True
+
+
 @pytest.mark.parametrize(
     "data",
     [

@@ -53,6 +53,40 @@ def test_get_analyses(auth_client, ingest_neurosynth, session):
     assert resp_json["id"] == a_id
 
 
+def test_analysis_emits_all_media_flags(auth_client, session):
+    create_study = auth_client.post(
+        "/api/studies/",
+        data={
+            "name": "analysis-media-flags",
+            "pmid": "910021",
+            "doi": "10.1000/analysis-media-flags",
+            "analyses": [
+                {
+                    "name": "analysis-with-map-types",
+                    "images": [
+                        {"filename": "z-map.nii.gz", "value_type": "Z map"},
+                        {"filename": "t-map.nii.gz", "value_type": "T"},
+                        {"filename": "beta-map.nii.gz", "value_type": "U"},
+                        {"filename": "variance-map.nii.gz", "value_type": "V"},
+                    ],
+                }
+            ],
+        },
+    )
+    assert create_study.status_code == 200
+
+    analysis_id = create_study.json()["analyses"][0]
+    response = auth_client.get(f"/api/analyses/{analysis_id}")
+    assert response.status_code == 200
+    payload = response.json()
+
+    assert payload["has_coordinates"] is False
+    assert payload["has_images"] is True
+    assert payload["has_z_maps"] is True
+    assert payload["has_t_maps"] is True
+    assert payload["has_beta_and_variance_maps"] is True
+
+
 def test_post_analyses(auth_client, ingest_neurosynth, session):
     analysis_db = Analysis.query.first()
     analysis = AnalysisSchema().dump(analysis_db)

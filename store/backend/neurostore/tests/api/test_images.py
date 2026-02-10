@@ -88,3 +88,58 @@ def test_delete_images(auth_client, session):
     auth_client.delete(f"/api/images/{image_id}")
 
     assert Image.query.filter_by(id=image_id).first() is None
+
+
+def test_image_value_type_is_canonicalized_on_write(auth_client, session):
+    user = User.query.filter_by(external_id=auth_client.username).first()
+    study = Study(
+        name="fake", user=user, analyses=[Analysis(name="my analysis", user=user)]
+    )
+    session.add(study)
+    session.commit()
+
+    payload = {
+        "url": "made up",
+        "filename": "made up again",
+        "analysis": study.analyses[0].id,
+        "value_type": "P map (given null hypothesis)",
+    }
+    resp = auth_client.post("/api/images/", data=payload)
+
+    assert resp.status_code == 200
+    assert resp.json()["value_type"] == "P map (given null hypothesis)"
+    assert "value_type_label" not in resp.json()
+
+    image = Image.query.filter_by(id=resp.json()["id"]).one()
+    assert image.value_type == "P"
+
+
+def test_image_value_type_is_canonicalized_on_read(auth_client, session):
+    user = User.query.filter_by(external_id=auth_client.username).first()
+    study = Study(
+        name="fake",
+        user=user,
+        analyses=[
+            Analysis(
+                name="my analysis",
+                user=user,
+                images=[
+                    Image(
+                        filename="fake",
+                        url="also fake",
+                        user=user,
+                        value_type="Z map",
+                    )
+                ],
+            )
+        ],
+    )
+    session.add(study)
+    session.commit()
+
+    image_id = study.analyses[0].images[0].id
+    resp = auth_client.get(f"/api/images/{image_id}")
+
+    assert resp.status_code == 200
+    assert resp.json()["value_type"] == "Z map"
+    assert "value_type_label" not in resp.json()
