@@ -112,6 +112,223 @@ def get_current_user():
 _UNSET = object()
 
 
+# NiMARE 0.9.0 emits table files from MetaResult.save_tables using:
+# <table_key>.tsv where table_key comes from Diagnostics.transform.
+NIMARE_TABLE_FILENAME_PATTERNS = {
+    "cluster": "<target_image>_tab-clust.tsv",
+    "diagnostic": (
+        "<target_image>_diag-<FocusCounter|Jackknife>_tab-counts.tsv",
+        "<target_image>_diag-<FocusCounter|Jackknife>_tab-counts_tail-"
+        "<positive|negative>.tsv",
+    ),
+}
+
+# Central tracker for cluster-table target names we match.
+# Keep these in one place so naming adjustments are easy and auditable.
+NIMARE_CLUSTER_TABLE_TARGET_NAME = {
+    "uncorrected": {
+        "single": ["z"],
+        "pairwise": [
+            "z_desc-group1MinusGroup2",
+            "z_desc-association",
+            "z_desc-uniformity",
+            "z",
+        ],
+    },
+    "fwe_montecarlo": {
+        "pairwise_mass": [
+            "z_desc-group1MinusGroup2Mass_level-cluster_corr-FWE_method-montecarlo",
+            "z_desc-associationMass_level-cluster_corr-FWE_method-montecarlo",
+        ],
+        "pairwise_size": [
+            "z_desc-group1MinusGroup2Size_level-cluster_corr-FWE_method-montecarlo",
+            "z_desc-associationSize_level-cluster_corr-FWE_method-montecarlo",
+        ],
+        "single_mass": [
+            "z_desc-mass_level-cluster_corr-FWE_method-montecarlo",
+        ],
+        "single_size": [
+            "z_desc-size_level-cluster_corr-FWE_method-montecarlo",
+        ],
+        "pairwise_voxel": [
+            "z_desc-group1MinusGroup2_level-voxel_corr-FWE_method-montecarlo",
+            "z_desc-association_level-voxel_corr-FWE_method-montecarlo",
+        ],
+        "single_voxel": [
+            "z_level-voxel_corr-FWE_method-montecarlo",
+        ],
+    },
+    "pairwise_corrected_prefixes": [
+        "z_desc-group1MinusGroup2",
+        "z_desc-association",
+        "z_desc-uniformity",
+    ],
+    "single_corrected_prefixes": [
+        "z",
+    ],
+}
+
+
+def _as_specification_dict(specification):
+    if specification is None:
+        return {}
+    if isinstance(specification, dict):
+        return specification
+    # SQLAlchemy model path (Specification.corrector/estimator are JSON columns).
+    return {
+        "corrector": getattr(specification, "corrector", None),
+        "estimator": getattr(specification, "estimator", None),
+    }
+
+
+def _canonical_corrector_type(corrector):
+    if not isinstance(corrector, dict):
+        return None
+    corr_type = str(corrector.get("type") or "").strip()
+    if not corr_type:
+        return None
+    corr_type_lower = corr_type.lower()
+    if corr_type_lower.endswith("corrector"):
+        corr_type_lower = corr_type_lower[: -len("corrector")]
+    if corr_type_lower in {"fdr", "fwe"}:
+        return corr_type_lower.upper()
+    return corr_type.upper()
+
+
+def _corrector_method(corrector, corr_type):
+    if not isinstance(corrector, dict):
+        return None
+
+    args = corrector.get("args")
+    if isinstance(args, dict):
+        method = args.get("method")
+        if method:
+            return str(method)
+
+    # NiMARE class defaults
+    if corr_type == "FDR":
+        return "indep"
+    if corr_type == "FWE":
+        return "bonferroni"
+    return None
+
+
+def _is_pairwise_estimator(specification_dict):
+    estimator = specification_dict.get("estimator")
+    if not isinstance(estimator, dict):
+        return False
+    est_type = str(estimator.get("type") or "").lower()
+    return any(hint in est_type for hint in ("subtraction", "chi2", "pairwise"))
+
+
+def _expected_cluster_table_targets(specification):
+    """Return ordered NiMARE target-image keys expected from the specification."""
+    specification_provided = specification is not None
+    specification_dict = _as_specification_dict(specification)
+    corrector = specification_dict.get("corrector")
+    corr_type = _canonical_corrector_type(corrector)
+    corr_method = _corrector_method(corrector, corr_type)
+    is_pairwise = _is_pairwise_estimator(specification_dict)
+
+    # If spec is present and no corrector is specified, prefer uncorrected output.
+    if not corr_type:
+        if specification_provided:
+            if is_pairwise:
+                return list(NIMARE_CLUSTER_TABLE_TARGET_NAME["uncorrected"]["pairwise"])
+            return list(NIMARE_CLUSTER_TABLE_TARGET_NAME["uncorrected"]["single"])
+        return []
+    if not corr_method:
+        return []
+
+    if corr_type == "FWE" and corr_method == "montecarlo":
+        if is_pairwise:
+            return (
+                list(NIMARE_CLUSTER_TABLE_TARGET_NAME["fwe_montecarlo"]["pairwise_mass"])
+                + list(NIMARE_CLUSTER_TABLE_TARGET_NAME["fwe_montecarlo"]["pairwise_voxel"])
+            )
+        # NiMARE workflow prioritizes desc-mass for montecarlo diagnostics.
+        return (
+            list(NIMARE_CLUSTER_TABLE_TARGET_NAME["fwe_montecarlo"]["single_mass"])
+            # Backward-compatible fallback in case uploads were generated with desc-size.
+            + list(NIMARE_CLUSTER_TABLE_TARGET_NAME["fwe_montecarlo"]["single_size"])
+            + list(NIMARE_CLUSTER_TABLE_TARGET_NAME["fwe_montecarlo"]["single_voxel"])
+        )
+
+    suffix = f"_corr-{corr_type}_method-{corr_method}"
+    if is_pairwise:
+        return [
+            f"{prefix}{suffix}"
+            for prefix in NIMARE_CLUSTER_TABLE_TARGET_NAME["pairwise_corrected_prefixes"]
+        ]
+    return [
+        f"{prefix}{suffix}"
+        for prefix in NIMARE_CLUSTER_TABLE_TARGET_NAME["single_corrected_prefixes"]
+    ]
+
+
+def select_cluster_table_for_specification(cluster_table_fnames, specification):
+    """Select one NiMARE cluster table path deterministically for Neurostore upload."""
+    if not cluster_table_fnames:
+        return None
+
+    named_paths = sorted(
+        [
+            (pathlib.Path(path).name.lower(), pathlib.Path(path))
+            for path in cluster_table_fnames
+        ],
+        key=itemgetter(0),
+    )
+
+    def _select_by_suffixes(expected_suffixes):
+        for expected_suffix in expected_suffixes:
+            for name, path in named_paths:
+                # Support optional prefixes in save_tables(prefix=...).
+                if name == expected_suffix or name.endswith(expected_suffix):
+                    return path
+        return None
+
+    expected_targets = _expected_cluster_table_targets(specification)
+    expected_suffixes = [
+        f"{target}_tab-clust.tsv".lower() for target in expected_targets
+    ]
+    selected = _select_by_suffixes(expected_suffixes)
+    if expected_targets:
+        # Deterministic spec-driven selection:
+        # if expected corrected table is missing, do not upload coordinates.
+        return selected
+    if selected is not None:
+        return selected
+
+    # Default behavior: prefer corrected outputs; for FWE Monte Carlo,
+    # prioritize cluster-mass tables over cluster-size tables.
+    preferred_corrected_targets = [
+        f"{target}_tab-clust.tsv".lower()
+        for target in (
+            # Pairwise (e.g., ALESubtraction) mass-table naming
+            list(NIMARE_CLUSTER_TABLE_TARGET_NAME["fwe_montecarlo"]["pairwise_mass"])
+            # Non-pairwise mass-table naming
+            + list(NIMARE_CLUSTER_TABLE_TARGET_NAME["fwe_montecarlo"]["single_mass"])
+            # Cluster-size fallbacks
+            + list(NIMARE_CLUSTER_TABLE_TARGET_NAME["fwe_montecarlo"]["pairwise_size"])
+            + list(NIMARE_CLUSTER_TABLE_TARGET_NAME["fwe_montecarlo"]["single_size"])
+        )
+    ]
+    selected = _select_by_suffixes(preferred_corrected_targets)
+    if selected is not None:
+        return selected
+
+    corrected_tables = [
+        path
+        for name, path in named_paths
+        if "_corr-" in name and name.endswith("_tab-clust.tsv")
+    ]
+    if corrected_tables:
+        return corrected_tables[0]
+
+    # No corrected cluster table could be identified.
+    return None
+
+
 def is_user_admin(user=_UNSET):
     """Check if the user has the admin role
 
@@ -891,10 +1108,14 @@ class MetaAnalysisResultsView(ObjectView, ListView):
 
             # get access token from user if it exists
             access_token = request.headers.get("Authorization")
+            selected_cluster_table = select_cluster_table_for_specification(
+                cluster_table_fnames,
+                result.meta_analysis.specification if result.meta_analysis else None,
+            )
             neurostore_analysis_upload = create_or_update_neurostore_analysis.si(
                 ns_analysis_id=ns_analysis.id,
                 cluster_table=(
-                    str(cluster_table_fnames[0]) if cluster_table_fnames else None
+                    str(selected_cluster_table) if selected_cluster_table else None
                 ),
                 nv_collection_id=result.neurovault_collection.id,
                 access_token=access_token,
