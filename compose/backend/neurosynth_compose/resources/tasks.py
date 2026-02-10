@@ -6,6 +6,7 @@ from flask import current_app as app
 
 from ..core import celery_app
 from ..database import db
+from ..map_types import canonicalize_map_type
 from sqlalchemy import select
 from ..models import NeurovaultFile, NeurovaultCollection, NeurostoreAnalysis
 
@@ -36,6 +37,7 @@ def file_upload_neurovault(self, fpath, id):
         map_type = "P"
     elif fname.startswith("stat"):
         map_type = "U"
+    map_type = canonicalize_map_type(map_type)
 
     try:
         nv_file = api.add_image(
@@ -162,7 +164,7 @@ def create_or_update_neurostore_analysis(
                 "url": nv_file.url,
                 "filename": nv_file.filename,
                 "space": nv_file.space,
-                "value_type": nv_file.value_type,
+                "value_type": canonicalize_map_type(nv_file.value_type, default=None),
             }
             images.append(image)
 

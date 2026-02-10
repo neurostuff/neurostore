@@ -1,5 +1,7 @@
 from marshmallow import fields, Schema, utils, post_load, post_dump, pre_load
 
+from ..map_types import canonicalize_map_type, map_type_label
+
 
 # neurovault api base URL
 NV_BASE = "https://neurovault.org/api"
@@ -399,12 +401,25 @@ class NeurovaultFileSchema(BaseSchema):
     status = fields.String()
     file = BytesField()
     name = fields.String()
-    map_type = fields.String()
+    map_type = fields.String(attribute="value_type")
     url = fields.String(dump_only=True)
     cognitive_contrast_cogatlas = fields.String()
     cognitive_contrast_cogatlas_id = fields.String()
     cognitive_paradigm_cogatlas = fields.String()
     cognitive_paradigm_cogatlas_id = fields.String()
+
+    @pre_load
+    def canonicalize_map_type_value(self, data, **kwargs):
+        if isinstance(data, dict) and data.get("map_type") is not None:
+            data["map_type"] = canonicalize_map_type(data["map_type"])
+        return data
+
+    @post_dump
+    def humanize_map_type(self, data, **kwargs):
+        if "map_type" not in data:
+            return data
+        data["map_type"] = map_type_label(data.get("map_type"), default=None)
+        return data
 
     @post_dump
     def create_neurovault_url(self, data, **kwargs):
