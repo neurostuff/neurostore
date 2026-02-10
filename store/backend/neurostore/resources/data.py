@@ -87,6 +87,26 @@ LIST_NESTED_ARGS = {
     "nested": fields.Boolean(load_default=False),
 }
 
+MAP_TYPE_QUERY_FIELDS = {
+    "z": "has_z_maps",
+    "t": "has_t_maps",
+    "beta_variance": "has_beta_and_variance_maps",
+}
+
+
+def apply_map_type_filter(query, model, map_type):
+    if not map_type:
+        return query
+
+    normalized = str(map_type).strip().lower()
+    if normalized == "any":
+        return query.filter(model.has_images.is_(True))
+
+    mapped_field = MAP_TYPE_QUERY_FIELDS.get(normalized)
+    if mapped_field is None:
+        abort_validation("map_type must be one of: z, t, beta_variance, any")
+    return query.filter(getattr(model, mapped_field).is_(True))
+
 # Individual resource views
 
 
@@ -1122,6 +1142,7 @@ class BaseStudiesView(ObjectView, ListView):
         "flat": fields.Boolean(load_default=False),
         "info": fields.Boolean(load_default=False),
         "data_type": fields.String(load_default=None),
+        "map_type": fields.String(load_default=None),
         "is_oa": fields.Boolean(load_default=None, allow_none=True),
         "feature_filter": fields.List(fields.String(load_default=None)),
         "pipeline_config": fields.List(fields.String(load_default=None)),
@@ -1394,6 +1415,7 @@ class BaseStudiesView(ObjectView, ListView):
                         self._model.has_images.is_(True),
                     ),
                 )
+        q = apply_map_type_filter(q, self._model, args.get("map_type"))
         is_oa = args.get("is_oa", None)
         if is_oa is not None and not isinstance(is_oa, bool):
             abort_validation("is_oa must be a boolean.")
@@ -1751,6 +1773,7 @@ class StudiesView(ObjectView, ListView):
     _view_fields = {
         **{
             "data_type": fields.String(load_default=None),
+            "map_type": fields.String(load_default=None),
             "studyset_owner": fields.String(load_default=None),
             "level": fields.String(dump_default="group", load_default="group"),
             "flat": fields.Boolean(load_default=False),
@@ -1890,25 +1913,19 @@ class StudiesView(ObjectView, ListView):
         return q
 
     def view_search(self, q, args):
-        # search studies for data_type
-        q = q.options(
-            defaultload(Study.analyses).options(
-                selectinload(Analysis.images).options(raiseload("*", sql_only=True)),
-                selectinload(Analysis.points).options(raiseload("*", sql_only=True)),
-            )
-        )
         if args.get("data_type"):
             if args["data_type"] == "coordinate":
-                q = q.filter(self._model.analyses.any(Analysis.points.any()))
+                q = q.filter(self._model.has_coordinates.is_(True))
             elif args["data_type"] == "image":
-                q = q.filter(self._model.analyses.any(Analysis.images.any()))
+                q = q.filter(self._model.has_images.is_(True))
             elif args["data_type"] == "both":
                 q = q.filter(
                     sae.or_(
-                        self._model.analyses.any(Analysis.images.any()),
-                        self._model.analyses.any(Analysis.points.any()),
+                        self._model.has_images.is_(True),
+                        self._model.has_coordinates.is_(True),
                     )
                 )
+        q = apply_map_type_filter(q, self._model, args.get("map_type"))
         # filter by level of analysis (group or meta)
         q = q.filter(self._model.level == args.get("level"))
         # only return unique studies

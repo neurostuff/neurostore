@@ -3,7 +3,6 @@ Ingest and sync data from various sources (Neurosynth, NeuroVault, etc.).
 """
 
 import os.path as op
-import re
 from pathlib import Path
 
 import numpy as np
@@ -29,6 +28,7 @@ from neurostore.models import (
     Entity,
 )
 from neurostore.models.data import StudysetStudy, _check_type
+from neurostore.map_types import canonicalize_map_type
 
 META_ANALYSIS_WORDS = ["meta analysis", "meta-analysis", "systematic review"]
 
@@ -126,9 +126,7 @@ def ingest_neurovault(verbose=False, limit=20, overwrite=False, max_images=None)
             else:
                 analysis = analyses[aname]
             space = space or "Unknown" if img.get("not_mni", False) else "MNI"
-            type_ = img.get("map_type", "Unknown")
-            if re.match(r"\w\smap.*", type_):
-                type_ = type_[0]
+            type_ = canonicalize_map_type(img.get("map_type"), default="Other")
             image = Image(
                 url=img["file"],
                 space=space,
