@@ -36,15 +36,16 @@ from ..models import (
     AnnotationAnalysis,
     Studyset,
     BaseStudy,
-    Study,
     Analysis,
-    Point,
-    Image,
     User,
     Annotation,
 )
 from ..schemas.data import StudysetSnapshot
 from . import data as viewdata
+from ..services.base_study_flags import (
+    enqueue_base_study_flag_updates,
+    recompute_media_flags,
+)
 
 
 @parser.error_handler
@@ -94,6 +95,24 @@ class BaseView(MethodView):
         Affected meaning the output from that endpoint would change.
         """
         return {"base-studies": []}
+
+    @staticmethod
+    def merge_unique_ids(*unique_ids_dicts):
+        merged = {}
+        for unique_ids in unique_ids_dicts:
+            if not unique_ids:
+                continue
+            for key, values in unique_ids.items():
+                if not values:
+                    continue
+                if isinstance(values, set):
+                    vals = values
+                elif isinstance(values, (list, tuple)):
+                    vals = {v for v in values if v}
+                else:
+                    vals = {values}
+                merged.setdefault(key, set()).update(vals)
+        return merged
 
     def update_annotations(self, annotations):
         if not annotations:
@@ -156,64 +175,18 @@ class BaseView(MethodView):
             )
 
     def update_base_studies(self, base_studies):
-        # See if any base_studies are affected
         if not base_studies:
             return
 
-        studies_for_base_study = (
-            sa.select(Study.id)
-            .where(Study.base_study_id == BaseStudy.id)
-            .correlate(BaseStudy)
-            .scalar_subquery()
-        )
+        base_studies = {id_ for id_ in base_studies if id_}
+        if not base_studies:
+            return
 
-        # Subquery for new_has_coordinates using EXISTS for early exit
-        new_has_coordinates_subquery = (
-            sa.select(sa.literal(1))
-            .select_from(Analysis)
-            .join(Point, Point.analysis_id == Analysis.id)
-            .where(Analysis.study_id.in_(studies_for_base_study))
-            .exists()
-        )
-
-        # Subquery for new_has_images using EXISTS for early exit
-        new_has_images_subquery = (
-            sa.select(sa.literal(1))
-            .select_from(Analysis)
-            .join(Image, Image.analysis_id == Analysis.id)
-            .where(Analysis.study_id.in_(studies_for_base_study))
-            .exists()
-        )
-
-        # Main query
-        query = sa.select(
-            BaseStudy.id,
-            BaseStudy.has_images,
-            BaseStudy.has_coordinates,
-            new_has_coordinates_subquery.label("new_has_coordinates"),
-            new_has_images_subquery.label("new_has_images"),
-        ).where(BaseStudy.id.in_(base_studies))
-
-        affected_base_studies = db.session.execute(query).fetchall()
-        update_base_studies = []
-        for bs in affected_base_studies:
-            if (
-                bs.new_has_images != bs.has_images
-                or bs.new_has_coordinates != bs.has_coordinates
-            ):
-                update_base_studies.append(
-                    {
-                        "id": bs.id,
-                        "has_images": bs.new_has_images,
-                        "has_coordinates": bs.new_has_coordinates,
-                    }
-                )
-
-        if update_base_studies:
-            db.session.execute(
-                sa.update(BaseStudy),
-                update_base_studies,
-            )
+        if current_app.config.get("BASE_STUDY_FLAGS_ASYNC", True):
+            reason = f"{self.__class__.__name__}.update_base_studies"
+            enqueue_base_study_flag_updates(base_studies, reason=reason)
+        else:
+            recompute_media_flags(base_studies)
 
     def eager_load(self, q, args):
         return q
@@ -522,6 +495,7 @@ class ObjectView(BaseView):
         q = self._model.query.filter_by(id=id)
         q = self.eager_load(q, args)
         input_record = q.one()
+        pre_unique_ids = self.get_affected_ids([id])
         self.db_validation(input_record, data)
 
         with db.session.no_autoflush:
@@ -530,8 +504,8 @@ class ObjectView(BaseView):
         # clear relevant caches
         # clear the cache for this endpoint
         with db.session.no_autoflush:
-            # unique_ids = self.get_affected_ids([record.id])
-            unique_ids = self.get_affected_ids([id])
+            post_unique_ids = self.get_affected_ids([id])
+            unique_ids = self.merge_unique_ids(pre_unique_ids, post_unique_ids)
             clear_cache(unique_ids)
 
         try:
