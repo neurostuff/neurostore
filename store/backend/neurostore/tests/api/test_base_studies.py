@@ -997,7 +997,7 @@ def test_metadata_worker_merges_duplicates_and_keeps_existing_metadata(
     monkeypatch.setattr(metadata_service, "fetch_metadata_pubmed", fake_metadata_pubmed)
     monkeypatch.setattr(
         metadata_service,
-        "clear_cache_for_ids",
+        "bump_cache_versions",
         lambda unique_ids: captured_cache_ids.append(unique_ids),
     )
 
