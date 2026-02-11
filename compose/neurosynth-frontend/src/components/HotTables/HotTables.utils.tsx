@@ -43,7 +43,7 @@ export const noteKeyArrToObj = (
 
 export const getDefaultForNoteKey = (key: string, type: EPropertyType): AnnotationNoteValue | undefined => {
     if (type !== EPropertyType.BOOLEAN) return undefined;
-    return key === 'included' ? true : false;
+    return key === 'included';
 };
 
 export const booleanValidator = (value: CellValue, callback: (isValid: boolean) => void) => {
