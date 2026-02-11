@@ -3,7 +3,7 @@ import { useQuery } from 'react-query';
 import API from 'api/api.config';
 
 export const baseStudiesSearchHelper = (searchCriteria: Partial<SearchCriteria>) => {
-    return API.NeurostoreServices.StudiesService.baseStudiesGet(
+    return API.NeurostoreServices.BaseStudiesService.baseStudiesGet(
         searchCriteria.isNested,
         undefined, // year_min
         undefined, // x
