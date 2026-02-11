@@ -1,7 +1,7 @@
 """add neurovault partial source/source_id index
 
-Revision ID: c1e2f3a4b5c6
-Revises: b7c8d9e0f1a2
+Revision ID: d2f4a6b8c0e2
+Revises: c1e2f3a4b5c6
 Create Date: 2026-02-09 16:40:00.000000
 
 """
@@ -11,8 +11,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = "c1e2f3a4b5c6"
-down_revision = "b7c8d9e0f1a2"
+revision = "d2f4a6b8c0e2"
+down_revision = "c1e2f3a4b5c6"
 branch_labels = None
 depends_on = None
 
