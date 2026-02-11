@@ -7,6 +7,7 @@ import time
 
 import click
 from flask_migrate import Migrate
+from sqlalchemy import func, select
 
 from neurostore.core import app, db
 from neurostore import ingest
@@ -108,3 +109,57 @@ def process_base_study_flag_outbox(batch_size, loop, sleep_seconds):
             time.sleep(sleep_seconds)
 
     click.echo(f"Processed {processed_total} base-study flag outbox rows.")
+
+
+@app.cli.command()
+@click.option(
+    "--max-pending",
+    default=5000,
+    show_default=True,
+    help="Fail if pending outbox rows exceed this value. Set <0 to disable.",
+)
+@click.option(
+    "--max-oldest-seconds",
+    default=900,
+    show_default=True,
+    help="Fail if oldest queued row age exceeds this value. Set <0 to disable.",
+)
+def check_base_study_flag_outbox(max_pending, max_oldest_seconds):
+    """Small monitoring check for base-study flag outbox backlog health."""
+    from neurostore.models import BaseStudyFlagOutbox
+
+    pending_rows, oldest_age_seconds = db.session.execute(
+        select(
+            func.count(BaseStudyFlagOutbox.base_study_id),
+            func.coalesce(
+                func.max(
+                    func.extract(
+                        "epoch",
+                        func.now() - BaseStudyFlagOutbox.updated_at,
+                    )
+                ),
+                0.0,
+            ),
+        )
+    ).one()
+
+    pending_rows = int(pending_rows or 0)
+    oldest_age_seconds = float(oldest_age_seconds or 0.0)
+
+    failures = []
+    if max_pending >= 0 and pending_rows > max_pending:
+        failures.append(f"pending={pending_rows} exceeds max_pending={max_pending}")
+    if max_oldest_seconds >= 0 and oldest_age_seconds > float(max_oldest_seconds):
+        failures.append(
+            f"oldest_age_seconds={oldest_age_seconds:.1f} exceeds "
+            f"max_oldest_seconds={float(max_oldest_seconds):.1f}"
+        )
+
+    status = "OK" if not failures else "UNHEALTHY"
+    click.echo(
+        f"outbox_status={status} pending={pending_rows} "
+        f"oldest_age_seconds={oldest_age_seconds:.1f}"
+    )
+
+    if failures:
+        raise click.ClickException("; ".join(failures))
