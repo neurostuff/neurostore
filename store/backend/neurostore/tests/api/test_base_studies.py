@@ -1,5 +1,7 @@
 """Test Base Study Endpoint"""
 
+import datetime as dt
+
 from sqlalchemy import text
 from sqlalchemy.orm import aliased
 from sqlalchemy.sql import func
@@ -19,6 +21,7 @@ from neurostore.models import (
 from neurostore.schemas import StudySchema
 from neurostore.services.has_media_flags import process_base_study_flag_outbox_batch
 from neurostore.services.base_study_metadata_enrichment import (
+    enqueue_base_study_metadata_updates,
     process_base_study_metadata_outbox_batch,
 )
 
@@ -886,6 +889,31 @@ def test_base_study_create_enqueues_metadata_outbox(auth_client, app):
         app.config["BASE_STUDY_METADATA_ASYNC"] = async_original
 
 
+def test_base_study_bulk_create_enqueues_metadata_outbox(auth_client, app):
+    async_original = app.config.get("BASE_STUDY_METADATA_ASYNC", False)
+    app.config["BASE_STUDY_METADATA_ASYNC"] = True
+    try:
+        response = auth_client.post(
+            "/api/base-studies/",
+            data=[
+                {
+                    "name": "metadata-enqueue-study-bulk",
+                    "pmid": "930002",
+                    "level": "group",
+                }
+            ],
+        )
+        assert response.status_code == 200
+        assert len(response.json()) == 1
+
+        outbox_entry = BaseStudyMetadataOutbox.query.filter_by(
+            base_study_id=response.json()[0]["id"]
+        ).one_or_none()
+        assert outbox_entry is not None
+    finally:
+        app.config["BASE_STUDY_METADATA_ASYNC"] = async_original
+
+
 def test_metadata_worker_merges_duplicates_and_keeps_existing_metadata(
     session, app, monkeypatch
 ):
@@ -911,6 +939,9 @@ def test_metadata_worker_merges_duplicates_and_keeps_existing_metadata(
         level="group",
         base_study=duplicate,
     )
+    now = dt.datetime.now(dt.timezone.utc)
+    primary.created_at = now - dt.timedelta(seconds=10)
+    duplicate.created_at = now
     session.add_all([primary, duplicate, primary_study, duplicate_study])
     session.commit()
 
@@ -1003,6 +1034,143 @@ def test_metadata_worker_merges_duplicates_and_keeps_existing_metadata(
     assert any(primary.id in ids.get("base-studies", set()) for ids in captured_cache_ids)
     assert any(
         duplicate_study.id in ids.get("studies", set()) for ids in captured_cache_ids
+    )
+
+
+def test_metadata_worker_merge_avoids_doi_pmid_unique_conflict(session, monkeypatch):
+    from neurostore.services import base_study_metadata_enrichment as metadata_service
+
+    primary = BaseStudy(
+        name="Primary Record",
+        doi="10.2000/unique-merge",
+        level="group",
+    )
+    duplicate = BaseStudy(
+        name="Duplicate Record",
+        doi="10.2000/unique-merge",
+        pmid="950001",
+        level="group",
+    )
+    now = dt.datetime.now(dt.timezone.utc)
+    primary.created_at = now - dt.timedelta(seconds=10)
+    duplicate.created_at = now
+    session.add_all([primary, duplicate])
+    session.commit()
+
+    session.add(
+        BaseStudyMetadataOutbox(
+            base_study_id=primary.id,
+            reason="test-unique-merge",
+        )
+    )
+    session.commit()
+
+    monkeypatch.setattr(
+        metadata_service, "lookup_ids_semantic_scholar", lambda *_args, **_kwargs: {}
+    )
+    monkeypatch.setattr(
+        metadata_service, "lookup_ids_pubmed", lambda *_args, **_kwargs: {}
+    )
+    monkeypatch.setattr(
+        metadata_service, "lookup_ids_openalex", lambda *_args, **_kwargs: {}
+    )
+    monkeypatch.setattr(
+        metadata_service, "fetch_metadata_semantic_scholar", lambda *_args, **_kwargs: {}
+    )
+    monkeypatch.setattr(
+        metadata_service, "fetch_metadata_pubmed", lambda *_args, **_kwargs: {}
+    )
+
+    processed = process_base_study_metadata_outbox_batch(batch_size=10)
+    assert processed == 1
+
+    session.refresh(primary)
+    session.refresh(duplicate)
+    assert primary.pmid == "950001"
+    assert duplicate.is_active is False
+    assert duplicate.superseded_by == primary.id
+    assert (
+        BaseStudyMetadataOutbox.query.filter_by(base_study_id=primary.id).one_or_none()
+        is None
+    )
+
+
+def test_metadata_worker_defers_failed_rows(session, app, monkeypatch):
+    from neurostore.services import base_study_metadata_enrichment as metadata_service
+
+    delay_original = app.config.get("BASE_STUDY_METADATA_RETRY_DELAY_SECONDS", "30")
+    app.config["BASE_STUDY_METADATA_RETRY_DELAY_SECONDS"] = "120"
+    try:
+        base_study = BaseStudy(
+            name="Retry Row",
+            pmid="960001",
+            level="group",
+        )
+        session.add(base_study)
+        session.commit()
+
+        old_updated_at = dt.datetime.now(dt.timezone.utc) - dt.timedelta(hours=1)
+        session.add(
+            BaseStudyMetadataOutbox(
+                base_study_id=base_study.id,
+                reason="test-retry-delay",
+                updated_at=old_updated_at,
+            )
+        )
+        session.commit()
+
+        monkeypatch.setattr(
+            metadata_service,
+            "enrich_base_study_metadata",
+            lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("boom")),
+        )
+
+        processed = process_base_study_metadata_outbox_batch(batch_size=10)
+        assert processed == 0
+
+        outbox_entry = BaseStudyMetadataOutbox.query.filter_by(
+            base_study_id=base_study.id
+        ).one()
+        assert outbox_entry.updated_at > old_updated_at
+    finally:
+        app.config["BASE_STUDY_METADATA_RETRY_DELAY_SECONDS"] = delay_original
+
+
+def test_enqueue_metadata_updates_treats_blank_values_as_missing(session):
+    base_study = BaseStudy(
+        name="Metadata Missing",
+        pmid="970001",
+        doi="10.9700/test",
+        publication="   ",
+        level="group",
+    )
+    session.add(base_study)
+    session.commit()
+
+    enqueued = enqueue_base_study_metadata_updates([base_study.id], reason="test-blank")
+    assert enqueued == 1
+    assert (
+        BaseStudyMetadataOutbox.query.filter_by(base_study_id=base_study.id).one_or_none()
+        is not None
+    )
+
+
+def test_enqueue_metadata_updates_skips_blank_identifier_only_rows(session):
+    base_study = BaseStudy(
+        name=None,
+        pmid="   ",
+        doi="",
+        pmcid="",
+        level="group",
+    )
+    session.add(base_study)
+    session.commit()
+
+    enqueued = enqueue_base_study_metadata_updates([base_study.id], reason="test-skip")
+    assert enqueued == 0
+    assert (
+        BaseStudyMetadataOutbox.query.filter_by(base_study_id=base_study.id).one_or_none()
+        is None
     )
 
 

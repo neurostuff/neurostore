@@ -1793,13 +1793,15 @@ class BaseStudiesView(ObjectView, ListView):
             #         if len(version.studysets) < len(alt_version.studysets):
             #             version = alt_version
 
+        if to_commit:
+            db.session.add_all(to_commit)
+            db.session.flush()
+
         # clear the cache for this record
         unique_ids = self.get_affected_ids([bs.id for bs in base_studies])
         clear_cache(unique_ids)
         self.update_base_studies(unique_ids.get("base-studies"))
 
-        if to_commit:
-            db.session.add_all(to_commit)
         db.session.commit()
 
         return self._schema(context={"info": True}, many=True).dump(base_studies)

@@ -23,7 +23,7 @@ from .has_media_flags import enqueue_base_study_flag_updates
 
 ID_FIELDS = ("pmid", "doi", "pmcid")
 METADATA_FIELDS = ("name", "description", "publication", "authors", "year", "is_oa")
-MERGE_FIELDS = ID_FIELDS + METADATA_FIELDS + ("ace_fulltext", "pubget_fulltext")
+CONTENT_FIELDS = METADATA_FIELDS + ("ace_fulltext", "pubget_fulltext")
 TRANSIENT_HTTP_STATUS = {408, 409, 425, 429, 500, 502, 503, 504}
 
 
@@ -61,6 +61,14 @@ def _has_value(value):
     if isinstance(value, str):
         return bool(value.strip())
     return True
+
+
+def _has_text_sql(column):
+    return sa.func.nullif(sa.func.btrim(column), "").isnot(None)
+
+
+def _missing_text_sql(column):
+    return sa.or_(column.is_(None), sa.func.btrim(column) == "")
 
 
 def _normalize_doi(value):
@@ -163,6 +171,15 @@ def _request_timeout():
     except (TypeError, ValueError):
         timeout = 10.0
     return max(1.0, timeout)
+
+
+def _retry_delay_seconds():
+    delay = current_app.config.get("BASE_STUDY_METADATA_RETRY_DELAY_SECONDS", 30)
+    try:
+        delay = float(delay)
+    except (TypeError, ValueError):
+        delay = 30.0
+    return max(0.0, delay)
 
 
 def _provider_error(provider_name, exc):
@@ -532,7 +549,7 @@ def _find_active_duplicates(primary, identifiers):
             sa.or_(*filters),
         )
         .order_by(BaseStudy.created_at.asc(), BaseStudy.id.asc())
-        .with_for_update()
+        .with_for_update(of=BaseStudy, skip_locked=True)
     )
     return list(db.session.scalars(query).all())
 
@@ -545,9 +562,9 @@ def _oldest_base_study(base_studies):
     return sorted(base_studies, key=_sort_key)[0]
 
 
-def _copy_missing_attrs(target, source):
+def _copy_missing_attrs(target, source, fields=CONTENT_FIELDS):
     changed = False
-    for field in MERGE_FIELDS:
+    for field in fields:
         target_value = getattr(target, field, None)
         source_value = getattr(source, field, None)
         if not _has_value(target_value) and _has_value(source_value):
@@ -570,7 +587,18 @@ def _copy_missing_attrs(target, source):
 def _merge_duplicate_into_primary(primary, duplicate):
     cache_ids = {"base-studies": {primary.id, duplicate.id}, "studies": set()}
 
+    duplicate_identifiers = _extract_identifiers(duplicate)
     _copy_missing_attrs(primary, duplicate)
+    # Break potential unique(doi, pmid) collisions before we copy identifiers.
+    db.session.execute(
+        sa.update(BaseStudy)
+        .where(BaseStudy.id == duplicate.id)
+        .values(doi=None, pmid=None, pmcid=None)
+    )
+    duplicate.doi = None
+    duplicate.pmid = None
+    duplicate.pmcid = None
+    _apply_missing_ids(primary, duplicate_identifiers)
 
     moved_study_ids = list(
         db.session.scalars(
@@ -686,6 +714,60 @@ def _merge_duplicates(primary):
 
 
 def enrich_base_study_metadata(base_study_id):
+    base_study_snapshot = db.session.scalar(
+        sa.select(BaseStudy).where(BaseStudy.id == base_study_id)
+    )
+    if base_study_snapshot is None or base_study_snapshot.is_active is False:
+        return {"base-studies": set(), "studies": set()}
+    if not _needs_enrichment(base_study_snapshot):
+        return {"base-studies": {base_study_snapshot.id}, "studies": set()}
+
+    config = current_app.config
+    semantic_scholar_api_key = config.get("SEMANTIC_SCHOLAR_API_KEY")
+    pubmed_email = config.get("PUBMED_EMAIL")
+    pubmed_api_key = config.get("PUBMED_API_KEY")
+    pubmed_tool = config.get("PUBMED_TOOL", "neurostore")
+    openalex_email = config.get("OPENALEX_EMAIL")
+
+    external_identifiers = _extract_identifiers(base_study_snapshot)
+    _merge_ids_in_place(
+        external_identifiers,
+        lookup_ids_semantic_scholar(
+            external_identifiers, api_key=semantic_scholar_api_key
+        ),
+    )
+    _merge_ids_in_place(
+        external_identifiers,
+        lookup_ids_pubmed(
+            external_identifiers,
+            email=pubmed_email,
+            api_key=pubmed_api_key,
+            tool=pubmed_tool,
+        ),
+    )
+    _merge_ids_in_place(
+        external_identifiers,
+        lookup_ids_openalex(external_identifiers, email=openalex_email),
+    )
+
+    metadata_candidates = []
+    semantic_metadata = fetch_metadata_semantic_scholar(
+        external_identifiers, api_key=semantic_scholar_api_key
+    )
+    if semantic_metadata:
+        metadata_candidates.append(semantic_metadata)
+        _merge_ids_in_place(external_identifiers, semantic_metadata)
+
+    pubmed_metadata = fetch_metadata_pubmed(
+        external_identifiers,
+        email=pubmed_email,
+        api_key=pubmed_api_key,
+        tool=pubmed_tool,
+    )
+    if pubmed_metadata:
+        metadata_candidates.append(pubmed_metadata)
+        _merge_ids_in_place(external_identifiers, pubmed_metadata)
+
     base_study = db.session.scalar(
         sa.select(BaseStudy)
         .where(BaseStudy.id == base_study_id)
@@ -698,55 +780,7 @@ def enrich_base_study_metadata(base_study_id):
 
     cache_ids = {"base-studies": {base_study.id}, "studies": set()}
     identifiers = _extract_identifiers(base_study)
-
-    config = current_app.config
-    semantic_scholar_api_key = config.get("SEMANTIC_SCHOLAR_API_KEY")
-    pubmed_email = config.get("PUBMED_EMAIL")
-    pubmed_api_key = config.get("PUBMED_API_KEY")
-    pubmed_tool = config.get("PUBMED_TOOL", "neurostore")
-    openalex_email = config.get("OPENALEX_EMAIL")
-
-    _merge_ids_in_place(
-        identifiers,
-        lookup_ids_semantic_scholar(identifiers, api_key=semantic_scholar_api_key),
-    )
-    _merge_ids_in_place(
-        identifiers,
-        lookup_ids_pubmed(
-            identifiers,
-            email=pubmed_email,
-            api_key=pubmed_api_key,
-            tool=pubmed_tool,
-        ),
-    )
-    _merge_ids_in_place(
-        identifiers,
-        lookup_ids_openalex(identifiers, email=openalex_email),
-    )
-
-    _apply_missing_ids(base_study, identifiers)
-
-    base_study, merged_cache_ids = _merge_duplicates(base_study)
-    cache_ids = _merge_unique_ids(cache_ids, merged_cache_ids)
-
-    metadata_candidates = []
-    semantic_metadata = fetch_metadata_semantic_scholar(
-        identifiers, api_key=semantic_scholar_api_key
-    )
-    if semantic_metadata:
-        metadata_candidates.append(semantic_metadata)
-        _merge_ids_in_place(identifiers, semantic_metadata)
-
-    pubmed_metadata = fetch_metadata_pubmed(
-        identifiers,
-        email=pubmed_email,
-        api_key=pubmed_api_key,
-        tool=pubmed_tool,
-    )
-    if pubmed_metadata:
-        metadata_candidates.append(pubmed_metadata)
-        _merge_ids_in_place(identifiers, pubmed_metadata)
-
+    _merge_ids_in_place(identifiers, external_identifiers)
     _apply_missing_ids(base_study, identifiers)
     base_study, merged_cache_ids = _merge_duplicates(base_study)
     cache_ids = _merge_unique_ids(cache_ids, merged_cache_ids)
@@ -762,20 +796,20 @@ def enqueue_base_study_metadata_updates(base_study_ids, reason="api-write"):
         return 0
 
     has_identifier = sa.or_(
-        BaseStudy.pmid.isnot(None),
-        BaseStudy.doi.isnot(None),
-        BaseStudy.pmcid.isnot(None),
+        _has_text_sql(BaseStudy.pmid),
+        _has_text_sql(BaseStudy.doi),
+        _has_text_sql(BaseStudy.pmcid),
     )
     missing_identifier = sa.or_(
-        BaseStudy.pmid.is_(None),
-        BaseStudy.doi.is_(None),
-        BaseStudy.pmcid.is_(None),
+        _missing_text_sql(BaseStudy.pmid),
+        _missing_text_sql(BaseStudy.doi),
+        _missing_text_sql(BaseStudy.pmcid),
     )
     missing_metadata = sa.or_(
-        BaseStudy.name.is_(None),
-        BaseStudy.description.is_(None),
-        BaseStudy.publication.is_(None),
-        BaseStudy.authors.is_(None),
+        _missing_text_sql(BaseStudy.name),
+        _missing_text_sql(BaseStudy.description),
+        _missing_text_sql(BaseStudy.publication),
+        _missing_text_sql(BaseStudy.authors),
         BaseStudy.year.is_(None),
         BaseStudy.is_oa.is_(None),
     )
@@ -845,6 +879,14 @@ def process_base_study_metadata_outbox_batch(batch_size=50):
                 "base-study metadata enrichment failed for %s: %s",
                 base_study_id,
                 exc,
+            )
+            retry_at = dt.datetime.now(dt.timezone.utc) + dt.timedelta(
+                seconds=_retry_delay_seconds()
+            )
+            db.session.execute(
+                sa.update(BaseStudyMetadataOutbox)
+                .where(BaseStudyMetadataOutbox.base_study_id == base_study_id)
+                .values(updated_at=retry_at)
             )
 
     if successful_ids:
