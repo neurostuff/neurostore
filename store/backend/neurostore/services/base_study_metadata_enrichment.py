@@ -8,6 +8,7 @@ from flask import current_app
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
 
+from ..cache_versioning import bump_cache_versions
 from ..database import db
 from ..models import (
     BaseStudy,
@@ -19,7 +20,7 @@ from ..models import (
     StudysetStudy,
 )
 from .has_media_flags import enqueue_base_study_flag_updates
-from .utils import clear_cache_for_ids, merge_unique_ids, normalize_ids
+from .utils import merge_unique_ids, normalize_ids
 
 ID_FIELDS = ("pmid", "doi", "pmcid")
 METADATA_FIELDS = ("name", "description", "publication", "authors", "year", "is_oa")
@@ -903,5 +904,5 @@ def process_base_study_metadata_outbox_batch(batch_size=50):
 
     db.session.commit()
     if cache_ids:
-        clear_cache_for_ids(cache_ids)
+        bump_cache_versions(cache_ids)
     return len(successful_ids)

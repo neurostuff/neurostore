@@ -1,6 +1,5 @@
 import sqlalchemy as sa
 
-from ..cache_versioning import bump_cache_versions
 from ..database import db
 
 
@@ -26,10 +25,6 @@ def merge_unique_ids(*unique_ids_dicts):
                 vals = {values}
             merged.setdefault(key, set()).update(vals)
     return merged
-
-
-def clear_cache_for_ids(unique_ids):
-    bump_cache_versions(unique_ids)
 
 
 def outbox_health_snapshot(

@@ -29,7 +29,7 @@ from webargs.flaskparser import parser
 from webargs import fields
 
 from ..core import cache
-from ..cache_versioning import get_cache_version_for_path
+from ..cache_versioning import bump_cache_versions, get_cache_version_for_path
 from ..database import db
 from .utils import (
     get_current_user,
@@ -55,7 +55,7 @@ from ..services.has_media_flags import (
 from ..services.base_study_metadata_enrichment import (
     enqueue_base_study_metadata_updates,
 )
-from ..services.utils import clear_cache_for_ids, merge_unique_ids
+from ..services.utils import merge_unique_ids
 
 
 @parser.error_handler
@@ -416,7 +416,7 @@ CAMEL_CASE_MATCH = re.compile(r"(?<!^)(?=[A-Z])")
 # to clear a cache, I want to invalidate all the o2m of the current class
 # and then every m2o of every class above it
 def clear_cache(unique_ids):
-    clear_cache_for_ids(unique_ids)
+    bump_cache_versions(unique_ids)
 
 
 def cache_key_creator(*args, **kwargs):

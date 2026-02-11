@@ -2,6 +2,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from ..database import db
+from ..cache_versioning import bump_cache_versions
 from ..map_types import (
     BETA_MAP_CODES,
     T_MAP_CODES,
@@ -16,7 +17,7 @@ from ..models import (
     Point,
     Study,
 )
-from .utils import clear_cache_for_ids, normalize_ids
+from .utils import normalize_ids
 
 Z_MAP_SQL_VALUES = tuple(sorted(Z_MAP_CODES))
 T_MAP_SQL_VALUES = tuple(sorted(T_MAP_CODES))
@@ -334,5 +335,5 @@ def process_base_study_flag_outbox_batch(batch_size=200):
         db.session.rollback()
         raise
 
-    clear_cache_for_ids(cache_ids)
+    bump_cache_versions(cache_ids)
     return len(claimed_ids)
