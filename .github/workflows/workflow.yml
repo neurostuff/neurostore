@@ -66,8 +66,8 @@ jobs:
           workdir: compose
           source: "{{defaultContext}}:compose"
           set: |
-              compose.tags=ghcr.io/${{ github.repository_owner }}/neurosynth_compose:${{ hashFiles('**/compose/backend/neurosynth_compose/**') }}
-              compose.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/neurosynth_compose:${{ hashFiles('**/compose/backend/neurosynth_compose/**') }}
+              compose.tags=ghcr.io/${{ github.repository_owner }}/neurosynth_compose:${{ hashFiles('compose/backend/neurosynth_compose/**', 'compose/backend/migrations/**', 'compose/backend/pyproject.toml', 'compose/backend/Dockerfile') }}
+              compose.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/neurosynth_compose:${{ hashFiles('compose/backend/neurosynth_compose/**', 'compose/backend/migrations/**', 'compose/backend/pyproject.toml', 'compose/backend/Dockerfile') }}
               compose.cache-from=type=gha,scope=cached-compose
               compose.cache-to=type=gha,scope=cached-compose,mode=max,ignore-error=true
               compose_nginx.tags=ghcr.io/${{ github.repository_owner }}/compose_nginx:${{ hashFiles('**/compose/nginx/**') }}
@@ -82,8 +82,8 @@ jobs:
               compose-pgsql17.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/compose_pgsql17:${{ hashFiles('**/compose/postgres/**') }}
               compose-pgsql17.cache-from=type=gha,scope=cached-compose-pgsql17
               compose-pgsql17.cache-to=type=gha,scope=cached-compose-pgsql17,mode=max,ignore-error=true
-              compose_worker.tags=ghcr.io/${{ github.repository_owner }}/compose_worker:${{ hashFiles('**/compose/backend/neurosynth_compose/**') }}
-              compose_worker.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/compose_worker:${{ hashFiles('**/compose/backend/neurosynth_compose/**') }}
+              compose_worker.tags=ghcr.io/${{ github.repository_owner }}/compose_worker:${{ hashFiles('compose/backend/neurosynth_compose/**', 'compose/backend/migrations/**', 'compose/backend/pyproject.toml', 'compose/backend/Dockerfile') }}
+              compose_worker.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/compose_worker:${{ hashFiles('compose/backend/neurosynth_compose/**', 'compose/backend/migrations/**', 'compose/backend/pyproject.toml', 'compose/backend/Dockerfile') }}
               compose_worker.cache-from=type=gha,scope=cached-compose-worker
               compose_worker.cache-to=type=gha,scope=cached-compose-worker,mode=max,ignore-error=true
 
@@ -123,8 +123,8 @@ jobs:
           workdir: store
           source: "{{defaultContext}}:store"
           set: |
-              neurostore.tags=ghcr.io/${{ github.repository_owner }}/neurostore:${{ hashFiles('**/store/backend/neurostore/**') }}
-              neurostore.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/neurostore:${{ hashFiles('**/store/backend/neurostore/**') }}
+              neurostore.tags=ghcr.io/${{ github.repository_owner }}/neurostore:${{ hashFiles('store/backend/neurostore/**', 'store/backend/migrations/**', 'store/backend/manage.py', 'store/backend/pyproject.toml', 'store/backend/Dockerfile') }}
+              neurostore.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/neurostore:${{ hashFiles('store/backend/neurostore/**', 'store/backend/migrations/**', 'store/backend/manage.py', 'store/backend/pyproject.toml', 'store/backend/Dockerfile') }}
               neurostore.cache-from=type=gha,scope=cached-neurostore
               neurostore.cache-to=type=gha,scope=cached-neurostore,mode=max,ignore-error=true
               store_nginx.tags=ghcr.io/${{ github.repository_owner }}/store_nginx:${{ hashFiles('**/store/nginx/**') }}

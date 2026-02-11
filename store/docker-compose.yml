@@ -24,11 +24,8 @@ services:
     container_name: neurostore
 
   store_outbox_worker:
-    image: store_outbox_worker
+    image: neurostore
     restart: always
-    build:
-      context: ./backend
-      dockerfile: ./Dockerfile
     depends_on:
       store-pgsql17:
         condition: service_healthy
@@ -158,5 +155,5 @@ volumes:
 
 networks:
   default:
-    external:
-      name: nginx-proxy
+    name: nginx-proxy
+    external: true
