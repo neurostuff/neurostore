@@ -992,7 +992,7 @@ def test_metadata_worker_merges_duplicates_and_keeps_existing_metadata(
     )
     monkeypatch.setattr(
         metadata_service,
-        "bump_cache_versions",
+        "clear_cache_for_ids",
         lambda unique_ids: captured_cache_ids.append(unique_ids),
     )
 
@@ -1134,6 +1134,95 @@ def test_metadata_worker_defers_failed_rows(session, app, monkeypatch):
         assert outbox_entry.updated_at > old_updated_at
     finally:
         app.config["BASE_STUDY_METADATA_RETRY_DELAY_SECONDS"] = delay_original
+
+
+def test_metadata_worker_stops_after_first_satisfied_provider(session, monkeypatch):
+    from neurostore.services import base_study_metadata_enrichment as metadata_service
+
+    base_study = BaseStudy(
+        name=None,
+        pmid="980001",
+        level="group",
+    )
+    session.add(base_study)
+    session.commit()
+
+    session.add(
+        BaseStudyMetadataOutbox(
+            base_study_id=base_study.id,
+            reason="test-provider-short-circuit",
+        )
+    )
+    session.commit()
+
+    call_counts = {
+        "lookup_pubmed": 0,
+        "lookup_openalex": 0,
+        "fetch_pubmed": 0,
+    }
+
+    monkeypatch.setattr(
+        metadata_service,
+        "lookup_ids_semantic_scholar",
+        lambda *_args, **_kwargs: {
+            "doi": "10.9800/short-circuit",
+            "pmcid": "PMC980001",
+        },
+    )
+
+    def _unexpected_lookup_pubmed(*_args, **_kwargs):
+        call_counts["lookup_pubmed"] += 1
+        return {}
+
+    def _unexpected_lookup_openalex(*_args, **_kwargs):
+        call_counts["lookup_openalex"] += 1
+        return {}
+
+    monkeypatch.setattr(
+        metadata_service, "lookup_ids_pubmed", _unexpected_lookup_pubmed
+    )
+    monkeypatch.setattr(
+        metadata_service, "lookup_ids_openalex", _unexpected_lookup_openalex
+    )
+    monkeypatch.setattr(
+        metadata_service,
+        "fetch_metadata_semantic_scholar",
+        lambda *_args, **_kwargs: {
+            "name": "Semantic Title",
+            "description": "Semantic abstract",
+            "publication": "Semantic Journal",
+            "authors": "Author A, Author B",
+            "year": 2023,
+            "is_oa": True,
+            "doi": "10.9800/short-circuit",
+            "pmid": "980001",
+            "pmcid": "PMC980001",
+        },
+    )
+
+    def _unexpected_fetch_pubmed(*_args, **_kwargs):
+        call_counts["fetch_pubmed"] += 1
+        return {}
+
+    monkeypatch.setattr(
+        metadata_service, "fetch_metadata_pubmed", _unexpected_fetch_pubmed
+    )
+
+    processed = process_base_study_metadata_outbox_batch(batch_size=10)
+    assert processed == 1
+
+    session.refresh(base_study)
+    assert base_study.doi == "10.9800/short-circuit"
+    assert base_study.pmcid == "PMC980001"
+    assert base_study.name == "Semantic Title"
+    assert base_study.publication == "Semantic Journal"
+    assert base_study.authors == "Author A, Author B"
+    assert base_study.year == 2023
+    assert base_study.is_oa is True
+
+    assert call_counts["lookup_pubmed"] == 0
+    assert call_counts["lookup_openalex"] == 0
+    assert call_counts["fetch_pubmed"] == 0
 
 
 def test_enqueue_metadata_updates_treats_blank_values_as_missing(session):

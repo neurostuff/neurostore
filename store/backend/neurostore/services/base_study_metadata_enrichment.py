@@ -8,7 +8,6 @@ from flask import current_app
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
 
-from ..cache_versioning import bump_cache_versions
 from ..database import db
 from ..models import (
     BaseStudy,
@@ -20,39 +19,12 @@ from ..models import (
     StudysetStudy,
 )
 from .has_media_flags import enqueue_base_study_flag_updates
+from .utils import clear_cache_for_ids, merge_unique_ids, normalize_ids
 
 ID_FIELDS = ("pmid", "doi", "pmcid")
 METADATA_FIELDS = ("name", "description", "publication", "authors", "year", "is_oa")
 CONTENT_FIELDS = METADATA_FIELDS + ("ace_fulltext", "pubget_fulltext")
 TRANSIENT_HTTP_STATUS = {408, 409, 425, 429, 500, 502, 503, 504}
-
-
-def _normalize_ids(ids):
-    if not ids:
-        return []
-    return sorted({id_ for id_ in ids if id_})
-
-
-def _merge_unique_ids(*unique_ids_dicts):
-    merged = {}
-    for unique_ids in unique_ids_dicts:
-        if not unique_ids:
-            continue
-        for key, values in unique_ids.items():
-            if not values:
-                continue
-            if isinstance(values, set):
-                vals = values
-            elif isinstance(values, (list, tuple)):
-                vals = {v for v in values if v}
-            else:
-                vals = {values}
-            merged.setdefault(key, set()).update(vals)
-    return merged
-
-
-def _clear_cache_for_ids(unique_ids):
-    bump_cache_versions(unique_ids)
 
 
 def _has_value(value):
@@ -137,6 +109,24 @@ def _needs_enrichment(base_study):
         not _has_value(getattr(base_study, field, None)) for field in METADATA_FIELDS
     )
     return missing_ids or missing_metadata
+
+
+def _missing_id_fields(identifiers):
+    return {field for field in ID_FIELDS if not _has_value(identifiers.get(field))}
+
+
+def _missing_metadata_fields(base_study):
+    return {
+        field
+        for field in METADATA_FIELDS
+        if not _has_value(getattr(base_study, field, None))
+    }
+
+
+def _remaining_missing_fields(missing_fields, candidate):
+    if not missing_fields:
+        return set()
+    return {field for field in missing_fields if not _has_value(candidate.get(field))}
 
 
 def _is_retryable_request_exception(exc):
@@ -701,14 +691,14 @@ def _merge_duplicates(primary):
 
         if canonical.id != primary.id:
             ids_from_primary_merge = _merge_duplicate_into_primary(canonical, primary)
-            cache_ids = _merge_unique_ids(cache_ids, ids_from_primary_merge)
+            cache_ids = merge_unique_ids(cache_ids, ids_from_primary_merge)
             primary = canonical
 
         for duplicate in duplicates:
             if duplicate.id == primary.id:
                 continue
             duplicate_cache_ids = _merge_duplicate_into_primary(primary, duplicate)
-            cache_ids = _merge_unique_ids(cache_ids, duplicate_cache_ids)
+            cache_ids = merge_unique_ids(cache_ids, duplicate_cache_ids)
 
     return primary, cache_ids
 
@@ -730,43 +720,55 @@ def enrich_base_study_metadata(base_study_id):
     openalex_email = config.get("OPENALEX_EMAIL")
 
     external_identifiers = _extract_identifiers(base_study_snapshot)
-    _merge_ids_in_place(
-        external_identifiers,
-        lookup_ids_semantic_scholar(
+    missing_ids = _missing_id_fields(external_identifiers)
+    if missing_ids:
+        _merge_ids_in_place(
+            external_identifiers,
+            lookup_ids_semantic_scholar(
+                external_identifiers, api_key=semantic_scholar_api_key
+            ),
+        )
+        missing_ids = _missing_id_fields(external_identifiers)
+    if missing_ids:
+        _merge_ids_in_place(
+            external_identifiers,
+            lookup_ids_pubmed(
+                external_identifiers,
+                email=pubmed_email,
+                api_key=pubmed_api_key,
+                tool=pubmed_tool,
+            ),
+        )
+        missing_ids = _missing_id_fields(external_identifiers)
+    if missing_ids:
+        _merge_ids_in_place(
+            external_identifiers,
+            lookup_ids_openalex(external_identifiers, email=openalex_email),
+        )
+
+    metadata_candidates = []
+    missing_metadata = _missing_metadata_fields(base_study_snapshot)
+    if missing_metadata:
+        semantic_metadata = fetch_metadata_semantic_scholar(
             external_identifiers, api_key=semantic_scholar_api_key
-        ),
-    )
-    _merge_ids_in_place(
-        external_identifiers,
-        lookup_ids_pubmed(
+        )
+        if semantic_metadata:
+            metadata_candidates.append(semantic_metadata)
+            _merge_ids_in_place(external_identifiers, semantic_metadata)
+            missing_metadata = _remaining_missing_fields(
+                missing_metadata, semantic_metadata
+            )
+
+    if missing_metadata:
+        pubmed_metadata = fetch_metadata_pubmed(
             external_identifiers,
             email=pubmed_email,
             api_key=pubmed_api_key,
             tool=pubmed_tool,
-        ),
-    )
-    _merge_ids_in_place(
-        external_identifiers,
-        lookup_ids_openalex(external_identifiers, email=openalex_email),
-    )
-
-    metadata_candidates = []
-    semantic_metadata = fetch_metadata_semantic_scholar(
-        external_identifiers, api_key=semantic_scholar_api_key
-    )
-    if semantic_metadata:
-        metadata_candidates.append(semantic_metadata)
-        _merge_ids_in_place(external_identifiers, semantic_metadata)
-
-    pubmed_metadata = fetch_metadata_pubmed(
-        external_identifiers,
-        email=pubmed_email,
-        api_key=pubmed_api_key,
-        tool=pubmed_tool,
-    )
-    if pubmed_metadata:
-        metadata_candidates.append(pubmed_metadata)
-        _merge_ids_in_place(external_identifiers, pubmed_metadata)
+        )
+        if pubmed_metadata:
+            metadata_candidates.append(pubmed_metadata)
+            _merge_ids_in_place(external_identifiers, pubmed_metadata)
 
     base_study = db.session.scalar(
         sa.select(BaseStudy)
@@ -783,7 +785,7 @@ def enrich_base_study_metadata(base_study_id):
     _merge_ids_in_place(identifiers, external_identifiers)
     _apply_missing_ids(base_study, identifiers)
     base_study, merged_cache_ids = _merge_duplicates(base_study)
-    cache_ids = _merge_unique_ids(cache_ids, merged_cache_ids)
+    cache_ids = merge_unique_ids(cache_ids, merged_cache_ids)
 
     _apply_missing_metadata(base_study, metadata_candidates)
     cache_ids.setdefault("base-studies", set()).add(base_study.id)
@@ -791,7 +793,7 @@ def enrich_base_study_metadata(base_study_id):
 
 
 def enqueue_base_study_metadata_updates(base_study_ids, reason="api-write"):
-    base_study_ids = _normalize_ids(base_study_ids)
+    base_study_ids = normalize_ids(base_study_ids)
     if not base_study_ids:
         return 0
 
@@ -871,7 +873,7 @@ def process_base_study_metadata_outbox_batch(batch_size=50):
         try:
             with db.session.begin_nested():
                 affected_ids = enrich_base_study_metadata(base_study_id)
-                cache_ids = _merge_unique_ids(cache_ids, affected_ids)
+                cache_ids = merge_unique_ids(cache_ids, affected_ids)
                 flag_update_ids.update(affected_ids.get("base-studies", set()))
                 successful_ids.append(base_study_id)
         except Exception as exc:  # noqa: BLE001
@@ -902,5 +904,5 @@ def process_base_study_metadata_outbox_batch(batch_size=50):
 
     db.session.commit()
     if cache_ids:
-        _clear_cache_for_ids(cache_ids)
+        clear_cache_for_ids(cache_ids)
     return len(successful_ids)

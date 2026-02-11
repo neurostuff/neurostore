@@ -7,7 +7,6 @@ import time
 
 import click
 from flask_migrate import Migrate
-from sqlalchemy import func, select
 
 from neurostore.core import app, db
 from neurostore import ingest
@@ -16,6 +15,7 @@ from neurostore.services.has_media_flags import process_base_study_flag_outbox_b
 from neurostore.services.base_study_metadata_enrichment import (
     process_base_study_metadata_outbox_batch,
 )
+from neurostore.services.utils import outbox_health_snapshot
 
 if not getattr(app, "config", None):
     app = app._app
@@ -79,6 +79,37 @@ def ingest_neuroquery(max_rows):
     ingest.ingest_neuroquery(max_rows=max_rows)
 
 
+def _run_outbox_processor(process_fn, batch_size, loop, sleep_seconds):
+    processed_total = 0
+    while True:
+        processed = process_fn(batch_size=batch_size)
+        processed_total += processed
+        if not loop:
+            break
+        if processed == 0:
+            time.sleep(sleep_seconds)
+    return processed_total
+
+
+def _emit_outbox_health(model_cls, max_pending, max_oldest_seconds):
+    pending_rows, oldest_age_seconds = outbox_health_snapshot(model_cls)
+    failures = []
+    if max_pending >= 0 and pending_rows > max_pending:
+        failures.append(f"pending={pending_rows} exceeds max_pending={max_pending}")
+    if max_oldest_seconds >= 0 and oldest_age_seconds > float(max_oldest_seconds):
+        failures.append(
+            f"oldest_age_seconds={oldest_age_seconds:.1f} exceeds "
+            f"max_oldest_seconds={float(max_oldest_seconds):.1f}"
+        )
+    status = "OK" if not failures else "UNHEALTHY"
+    click.echo(
+        f"outbox_status={status} pending={pending_rows} "
+        f"oldest_age_seconds={oldest_age_seconds:.1f}"
+    )
+    if failures:
+        raise click.ClickException("; ".join(failures))
+
+
 @app.cli.command()
 @click.option(
     "--batch-size",
@@ -100,17 +131,9 @@ def ingest_neuroquery(max_rows):
 )
 def process_base_study_flag_outbox(batch_size, loop, sleep_seconds):
     """Process async base-study flag updates from Postgres outbox."""
-    processed_total = 0
-
-    while True:
-        processed = process_base_study_flag_outbox_batch(batch_size=batch_size)
-        processed_total += processed
-
-        if not loop:
-            break
-        if processed == 0:
-            time.sleep(sleep_seconds)
-
+    processed_total = _run_outbox_processor(
+        process_base_study_flag_outbox_batch, batch_size, loop, sleep_seconds
+    )
     click.echo(f"Processed {processed_total} base-study flag outbox rows.")
 
 
@@ -131,41 +154,7 @@ def check_base_study_flag_outbox(max_pending, max_oldest_seconds):
     """Small monitoring check for base-study flag outbox backlog health."""
     from neurostore.models import BaseStudyFlagOutbox
 
-    pending_rows, oldest_age_seconds = db.session.execute(
-        select(
-            func.count(BaseStudyFlagOutbox.base_study_id),
-            func.coalesce(
-                func.max(
-                    func.extract(
-                        "epoch",
-                        func.now() - BaseStudyFlagOutbox.updated_at,
-                    )
-                ),
-                0.0,
-            ),
-        )
-    ).one()
-
-    pending_rows = int(pending_rows or 0)
-    oldest_age_seconds = float(oldest_age_seconds or 0.0)
-
-    failures = []
-    if max_pending >= 0 and pending_rows > max_pending:
-        failures.append(f"pending={pending_rows} exceeds max_pending={max_pending}")
-    if max_oldest_seconds >= 0 and oldest_age_seconds > float(max_oldest_seconds):
-        failures.append(
-            f"oldest_age_seconds={oldest_age_seconds:.1f} exceeds "
-            f"max_oldest_seconds={float(max_oldest_seconds):.1f}"
-        )
-
-    status = "OK" if not failures else "UNHEALTHY"
-    click.echo(
-        f"outbox_status={status} pending={pending_rows} "
-        f"oldest_age_seconds={oldest_age_seconds:.1f}"
-    )
-
-    if failures:
-        raise click.ClickException("; ".join(failures))
+    _emit_outbox_health(BaseStudyFlagOutbox, max_pending, max_oldest_seconds)
 
 
 @app.cli.command()
@@ -189,17 +178,9 @@ def check_base_study_flag_outbox(max_pending, max_oldest_seconds):
 )
 def process_base_study_metadata_outbox(batch_size, loop, sleep_seconds):
     """Process async base-study metadata enrichment jobs from Postgres outbox."""
-    processed_total = 0
-
-    while True:
-        processed = process_base_study_metadata_outbox_batch(batch_size=batch_size)
-        processed_total += processed
-
-        if not loop:
-            break
-        if processed == 0:
-            time.sleep(sleep_seconds)
-
+    processed_total = _run_outbox_processor(
+        process_base_study_metadata_outbox_batch, batch_size, loop, sleep_seconds
+    )
     click.echo(f"Processed {processed_total} base-study metadata outbox rows.")
 
 
@@ -220,38 +201,4 @@ def check_base_study_metadata_outbox(max_pending, max_oldest_seconds):
     """Small monitoring check for base-study metadata outbox backlog health."""
     from neurostore.models import BaseStudyMetadataOutbox
 
-    pending_rows, oldest_age_seconds = db.session.execute(
-        select(
-            func.count(BaseStudyMetadataOutbox.base_study_id),
-            func.coalesce(
-                func.max(
-                    func.extract(
-                        "epoch",
-                        func.now() - BaseStudyMetadataOutbox.updated_at,
-                    )
-                ),
-                0.0,
-            ),
-        )
-    ).one()
-
-    pending_rows = int(pending_rows or 0)
-    oldest_age_seconds = float(oldest_age_seconds or 0.0)
-
-    failures = []
-    if max_pending >= 0 and pending_rows > max_pending:
-        failures.append(f"pending={pending_rows} exceeds max_pending={max_pending}")
-    if max_oldest_seconds >= 0 and oldest_age_seconds > float(max_oldest_seconds):
-        failures.append(
-            f"oldest_age_seconds={oldest_age_seconds:.1f} exceeds "
-            f"max_oldest_seconds={float(max_oldest_seconds):.1f}"
-        )
-
-    status = "OK" if not failures else "UNHEALTHY"
-    click.echo(
-        f"outbox_status={status} pending={pending_rows} "
-        f"oldest_age_seconds={oldest_age_seconds:.1f}"
-    )
-
-    if failures:
-        raise click.ClickException("; ".join(failures))
+    _emit_outbox_health(BaseStudyMetadataOutbox, max_pending, max_oldest_seconds)

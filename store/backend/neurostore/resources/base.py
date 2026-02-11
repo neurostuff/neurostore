@@ -29,7 +29,7 @@ from webargs.flaskparser import parser
 from webargs import fields
 
 from ..core import cache
-from ..cache_versioning import bump_cache_versions, get_cache_version_for_path
+from ..cache_versioning import get_cache_version_for_path
 from ..database import db
 from .utils import (
     get_current_user,
@@ -55,6 +55,7 @@ from ..services.has_media_flags import (
 from ..services.base_study_metadata_enrichment import (
     enqueue_base_study_metadata_updates,
 )
+from ..services.utils import clear_cache_for_ids, merge_unique_ids
 
 
 @parser.error_handler
@@ -107,21 +108,7 @@ class BaseView(MethodView):
 
     @staticmethod
     def merge_unique_ids(*unique_ids_dicts):
-        merged = {}
-        for unique_ids in unique_ids_dicts:
-            if not unique_ids:
-                continue
-            for key, values in unique_ids.items():
-                if not values:
-                    continue
-                if isinstance(values, set):
-                    vals = values
-                elif isinstance(values, (list, tuple)):
-                    vals = {v for v in values if v}
-                else:
-                    vals = {values}
-                merged.setdefault(key, set()).update(vals)
-        return merged
+        return merge_unique_ids(*unique_ids_dicts)
 
     def update_annotations(self, annotations):
         if not annotations:
@@ -429,7 +416,7 @@ CAMEL_CASE_MATCH = re.compile(r"(?<!^)(?=[A-Z])")
 # to clear a cache, I want to invalidate all the o2m of the current class
 # and then every m2o of every class above it
 def clear_cache(unique_ids):
-    bump_cache_versions(unique_ids)
+    clear_cache_for_ids(unique_ids)
 
 
 def cache_key_creator(*args, **kwargs):
