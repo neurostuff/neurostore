@@ -33,12 +33,19 @@ services:
     volumes:
       - ./backend/migrations:/migrations
       - ./:/store
-    command: flask process-base-study-flag-outbox --loop
+    command: >
+      bash -c '
+        until flask db upgrade; do
+          echo "store_outbox_worker: waiting for successful db upgrade..."
+          sleep 3
+        done
+        exec flask process-base-study-flag-outbox --loop
+      '
     healthcheck:
       test:
         [
           "CMD-SHELL",
-          "flask check-base-study-flag-outbox --max-pending ${OUTBOX_HEALTH_MAX_PENDING:-5000} --max-oldest-seconds ${OUTBOX_HEALTH_MAX_OLDEST_SECONDS:-900}",
+          "flask check-base-study-flag-outbox",
         ]
       interval: 30s
       timeout: 10s
