@@ -520,6 +520,12 @@ class Study(BaseMixin, db.Model):
         db.CheckConstraint(level.in_(["group", "meta"])),
         db.CheckConstraint("pmid ~ '^(?=.*\\S).+$' OR name IS NULL"),
         db.CheckConstraint("doi ~ '^(?=.*\\S).+$' OR name IS NULL"),
+        sa.Index(
+            "ix_studies_source_source_id_neurovault",
+            "source",
+            "source_id",
+            postgresql_where=sa.text("source = 'neurovault'"),
+        ),
         sa.Index("ix_study___ts_vector__", _ts_vector, postgresql_using="gin"),
     )
 

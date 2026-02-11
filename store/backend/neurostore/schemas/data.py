@@ -543,7 +543,7 @@ class BaseStudySchema(BaseDataSchema):
         ]
         for attr in text_fields:
             val = data.get(attr, None)
-            if val is not None and (val == "" or val.isspace()):
+            if isinstance(val, str) and (val == "" or val.isspace()):
                 data[attr] = None
 
         # Clean DOI
