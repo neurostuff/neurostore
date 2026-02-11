@@ -13,6 +13,7 @@ import shortuuid
 
 from .migration_types import TSVector, VectorType
 from ..database import db
+from ..map_types import MAP_TYPE_CODES, canonicalize_map_type
 from ..utils import parse_json_filter, build_jsonpath
 
 # status of pipeline run
@@ -26,6 +27,9 @@ STATUS_ENUM = PGEnum(
 )
 
 SEMVER_REGEX = r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$"  # noqa E501
+IMAGE_VALUE_TYPE_CHECK_SQL = "value_type IS NULL OR value_type IN ({})".format(
+    ", ".join(f"'{code}'" for code in MAP_TYPE_CODES)
+)
 
 
 def _check_type(x):
@@ -100,9 +104,10 @@ class Studyset(BaseMixin, db.Model):
     )
     annotations = relationship(
         "Annotation",
-        backref="studyset",
+        backref=backref("studyset", cascade_backrefs=False),
         passive_deletes=True,
         cascade="all, delete-orphan",
+        cascade_backrefs=False,
     )
     _ts_vector = db.Column(
         "__ts_vector__",
@@ -200,6 +205,9 @@ class BaseStudy(BaseMixin, db.Model):
     is_oa = db.Column(db.Boolean, default=None, nullable=True)
     has_coordinates = db.Column(db.Boolean, default=False, nullable=False)
     has_images = db.Column(db.Boolean, default=False, nullable=False)
+    has_z_maps = db.Column(db.Boolean, default=False, nullable=False)
+    has_t_maps = db.Column(db.Boolean, default=False, nullable=False)
+    has_beta_and_variance_maps = db.Column(db.Boolean, default=False, nullable=False)
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"), index=True)
     ace_fulltext = db.Column(db.Text)
     pubget_fulltext = db.Column(db.Text)
@@ -310,9 +318,10 @@ class BaseStudy(BaseMixin, db.Model):
         self.has_images = value
 
     def update_has_images_and_points(self):
-        # Calculate has_images and has_coordinates for the BaseStudy
-        self.has_images = self.images_exist
-        self.has_coordinates = self.points_exist
+        # Keep analysis/study/base flags consistent for this base study.
+        from ..services.has_media_flags import recompute_media_flags
+
+        recompute_media_flags([self.id])
 
     def display_features(self, pipelines=None, pipeline_configs=None):
         """
@@ -458,6 +467,34 @@ class BaseStudy(BaseMixin, db.Model):
         return features
 
 
+class BaseStudyFlagOutbox(db.Model):
+    __tablename__ = "base_study_flag_outbox"
+
+    base_study_id = db.Column(
+        db.Text,
+        db.ForeignKey("base_studies.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    reason = db.Column(db.String, nullable=True)
+    enqueued_at = db.Column(
+        db.DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        index=True,
+    )
+    updated_at = db.Column(
+        db.DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        onupdate=func.now(),
+        index=True,
+    )
+
+    base_study = relationship(
+        "BaseStudy", backref=backref("flag_outbox_entry", passive_deletes=True)
+    )
+
+
 class Study(BaseMixin, db.Model):
     __tablename__ = "studies"
 
@@ -478,6 +515,11 @@ class Study(BaseMixin, db.Model):
     source_updated_at = db.Column(db.DateTime(timezone=True))
     base_study_id = db.Column(db.Text, db.ForeignKey("base_studies.id"), index=True)
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"), index=True)
+    has_coordinates = db.Column(db.Boolean, default=False, nullable=False)
+    has_images = db.Column(db.Boolean, default=False, nullable=False)
+    has_z_maps = db.Column(db.Boolean, default=False, nullable=False)
+    has_t_maps = db.Column(db.Boolean, default=False, nullable=False)
+    has_beta_and_variance_maps = db.Column(db.Boolean, default=False, nullable=False)
     _ts_vector = db.Column(
         "__ts_vector__",
         TSVector(),
@@ -606,6 +648,11 @@ class Analysis(BaseMixin, db.Model):
     description = db.Column(db.String)
     metadata_ = db.Column(JSONB)
     order = db.Column(db.Integer)
+    has_coordinates = db.Column(db.Boolean, default=False, nullable=False)
+    has_images = db.Column(db.Boolean, default=False, nullable=False)
+    has_z_maps = db.Column(db.Boolean, default=False, nullable=False)
+    has_t_maps = db.Column(db.Boolean, default=False, nullable=False)
+    has_beta_and_variance_maps = db.Column(db.Boolean, default=False, nullable=False)
     points = relationship(
         "Point",
         backref=backref("analysis", passive_deletes=True),
@@ -622,7 +669,13 @@ class Analysis(BaseMixin, db.Model):
     )
     weights = association_proxy("analysis_conditions", "weight")
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"), index=True)
-    user = relationship("User", backref=backref("analyses", passive_deletes=True))
+    user = relationship(
+        "User",
+        backref=backref(
+            "analyses", cascade_backrefs=False, passive_deletes=True
+        ),
+        cascade_backrefs=False,
+    )
     analysis_conditions = relationship(
         "AnalysisConditions",
         backref=backref("analysis"),
@@ -768,6 +821,12 @@ class Point(BaseMixin, db.Model):
 
 class Image(BaseMixin, db.Model):
     __tablename__ = "images"
+    __table_args__ = (
+        db.CheckConstraint(
+            IMAGE_VALUE_TYPE_CHECK_SQL,
+            name="ck_images_value_type",
+        ),
+    )
 
     url = db.Column(db.String)
     filename = db.Column(db.String)
@@ -788,6 +847,10 @@ class Image(BaseMixin, db.Model):
     )
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"), index=True)
     user = relationship("User", backref=backref("images", passive_deletes=True))
+
+    @validates("value_type")
+    def validate_value_type(self, key, value):
+        return canonicalize_map_type(value)
 
 
 class PointValue(BaseMixin, db.Model):
@@ -862,7 +925,9 @@ class PipelineStudyResult(BaseMixin, db.Model):
     file_inputs = db.Column(JSONB)
     status = db.Column(STATUS_ENUM)
     config = relationship(
-        "PipelineConfig", backref=backref("results", passive_deletes=True)
+        "PipelineConfig",
+        backref=backref("results", cascade_backrefs=False, passive_deletes=True),
+        cascade_backrefs=False,
     )
 
 

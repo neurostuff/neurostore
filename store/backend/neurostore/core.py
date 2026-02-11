@@ -35,6 +35,7 @@ from neurostore.models import (
     StudysetStudy,
     Annotation,
     BaseStudy,
+    BaseStudyFlagOutbox,
     Study,
     Analysis,
     Table,
@@ -122,6 +123,7 @@ admin.add_view(SecureModelView(Studyset, db.session, category="Data"))
 admin.add_view(SecureModelView(StudysetStudy, db.session, category="Data"))
 admin.add_view(SecureModelView(Annotation, db.session, category="Data"))
 admin.add_view(SecureModelView(BaseStudy, db.session, category="Studies"))
+admin.add_view(SecureModelView(BaseStudyFlagOutbox, db.session, category="Studies"))
 admin.add_view(SecureModelView(Study, db.session, category="Studies"))
 admin.add_view(SecureModelView(Analysis, db.session, category="Studies"))
 admin.add_view(SecureModelView(Table, db.session, category="Studies"))

@@ -29,22 +29,29 @@ from webargs.flaskparser import parser
 from webargs import fields
 
 from ..core import cache
+from ..cache_versioning import bump_cache_versions, get_cache_version_for_path
 from ..database import db
-from .utils import get_current_user, is_user_admin, validate_search_query, pubmed_to_tsquery
+from .utils import (
+    get_current_user,
+    is_user_admin,
+    validate_search_query,
+    pubmed_to_tsquery,
+)
 from ..models import (
     StudysetStudy,
     AnnotationAnalysis,
     Studyset,
     BaseStudy,
-    Study,
     Analysis,
-    Point,
-    Image,
     User,
     Annotation,
 )
 from ..schemas.data import StudysetSnapshot
 from . import data as viewdata
+from ..services.has_media_flags import (
+    enqueue_base_study_flag_updates,
+    recompute_media_flags,
+)
 
 
 @parser.error_handler
@@ -94,6 +101,24 @@ class BaseView(MethodView):
         Affected meaning the output from that endpoint would change.
         """
         return {"base-studies": []}
+
+    @staticmethod
+    def merge_unique_ids(*unique_ids_dicts):
+        merged = {}
+        for unique_ids in unique_ids_dicts:
+            if not unique_ids:
+                continue
+            for key, values in unique_ids.items():
+                if not values:
+                    continue
+                if isinstance(values, set):
+                    vals = values
+                elif isinstance(values, (list, tuple)):
+                    vals = {v for v in values if v}
+                else:
+                    vals = {values}
+                merged.setdefault(key, set()).update(vals)
+        return merged
 
     def update_annotations(self, annotations):
         if not annotations:
@@ -156,64 +181,18 @@ class BaseView(MethodView):
             )
 
     def update_base_studies(self, base_studies):
-        # See if any base_studies are affected
         if not base_studies:
             return
 
-        studies_for_base_study = (
-            sa.select(Study.id)
-            .where(Study.base_study_id == BaseStudy.id)
-            .correlate(BaseStudy)
-            .scalar_subquery()
-        )
+        base_studies = {id_ for id_ in base_studies if id_}
+        if not base_studies:
+            return
 
-        # Subquery for new_has_coordinates using EXISTS for early exit
-        new_has_coordinates_subquery = (
-            sa.select(sa.literal(1))
-            .select_from(Analysis)
-            .join(Point, Point.analysis_id == Analysis.id)
-            .where(Analysis.study_id.in_(studies_for_base_study))
-            .exists()
-        )
-
-        # Subquery for new_has_images using EXISTS for early exit
-        new_has_images_subquery = (
-            sa.select(sa.literal(1))
-            .select_from(Analysis)
-            .join(Image, Image.analysis_id == Analysis.id)
-            .where(Analysis.study_id.in_(studies_for_base_study))
-            .exists()
-        )
-
-        # Main query
-        query = sa.select(
-            BaseStudy.id,
-            BaseStudy.has_images,
-            BaseStudy.has_coordinates,
-            new_has_coordinates_subquery.label("new_has_coordinates"),
-            new_has_images_subquery.label("new_has_images"),
-        ).where(BaseStudy.id.in_(base_studies))
-
-        affected_base_studies = db.session.execute(query).fetchall()
-        update_base_studies = []
-        for bs in affected_base_studies:
-            if (
-                bs.new_has_images != bs.has_images
-                or bs.new_has_coordinates != bs.has_coordinates
-            ):
-                update_base_studies.append(
-                    {
-                        "id": bs.id,
-                        "has_images": bs.new_has_images,
-                        "has_coordinates": bs.new_has_coordinates,
-                    }
-                )
-
-        if update_base_studies:
-            db.session.execute(
-                sa.update(BaseStudy),
-                update_base_studies,
-            )
+        if current_app.config.get("BASE_STUDY_FLAGS_ASYNC", True):
+            reason = f"{self.__class__.__name__}.update_base_studies"
+            enqueue_base_study_flag_updates(base_studies, reason=reason)
+        else:
+            recompute_media_flags(base_studies)
 
     def eager_load(self, q, args):
         return q
@@ -325,6 +304,10 @@ class BaseView(MethodView):
         # check to see if duplicate
         duplicate = cls.check_duplicate(data, record)
         if duplicate:
+            if sa.inspect(record).transient:
+                # Duplicate short-circuit: discard the transient placeholder so
+                # its user backref does not leak into a later flush.
+                record.user = None
             return duplicate
 
         # Update all non-nested attributes
@@ -336,9 +319,11 @@ class BaseView(MethodView):
                 v = PrtCls._model.query.filter_by(id=v["id"]).first()
                 if PrtCls._model is BaseStudy:
                     pass
-                elif (current_user != v.user and
-                      current_user.external_id != compose_bot and
-                      not is_admin):
+                elif (
+                    current_user != v.user
+                    and current_user.external_id != compose_bot
+                    and not is_admin
+                ):
                     abort_permission(
                         "You do not have permission to link to this parent "
                         "record. You must own the parent record, be the "
@@ -437,17 +422,7 @@ CAMEL_CASE_MATCH = re.compile(r"(?<!^)(?=[A-Z])")
 # to clear a cache, I want to invalidate all the o2m of the current class
 # and then every m2o of every class above it
 def clear_cache(unique_ids):
-    for resource, ids in unique_ids.items():
-        base_path = f"/api/{resource}/"
-        base_keys = cache.cache._write_client.keys(f"*{base_path}/_*")
-        base_keys = [k.decode("utf8") for k in base_keys]
-        cache.delete_many(*base_keys)
-
-        for id in ids:
-            path = f"{base_path}{id}"
-            keys = cache.cache._write_client.keys(f"*{path}*")
-            keys = [k.decode("utf8") for k in keys]
-            cache.delete_many(*keys)
+    bump_cache_versions(unique_ids)
 
 
 def cache_key_creator(*args, **kwargs):
@@ -474,8 +449,9 @@ def cache_key_creator(*args, **kwargs):
 
     args_as_sorted_tuple = tuple(sorted(query_items))
     query_args = str(args_as_sorted_tuple)
+    version = get_cache_version_for_path(path)
 
-    cache_key = "_".join([path, query_args, user])
+    cache_key = "_".join([path, query_args, user, f"v={version}"])
 
     return cache_key
 
@@ -522,6 +498,7 @@ class ObjectView(BaseView):
         q = self._model.query.filter_by(id=id)
         q = self.eager_load(q, args)
         input_record = q.one()
+        pre_unique_ids = self.get_affected_ids([id])
         self.db_validation(input_record, data)
 
         with db.session.no_autoflush:
@@ -530,8 +507,8 @@ class ObjectView(BaseView):
         # clear relevant caches
         # clear the cache for this endpoint
         with db.session.no_autoflush:
-            # unique_ids = self.get_affected_ids([record.id])
-            unique_ids = self.get_affected_ids([id])
+            post_unique_ids = self.get_affected_ids([id])
+            unique_ids = self.merge_unique_ids(pre_unique_ids, post_unique_ids)
             clear_cache(unique_ids)
 
         try:
@@ -671,7 +648,9 @@ class ListView(BaseView):
             is_admin = is_user_admin(current_user)
             # Admins can see all records, others see public or their own
             if not is_admin:
-                q = q.filter(sae.or_(m.public == True, m.user == current_user))  # noqa E712
+                q = q.filter(
+                    sae.or_(m.public == True, m.user == current_user)  # noqa E712
+                )
 
         # Search
         s = args["search"]

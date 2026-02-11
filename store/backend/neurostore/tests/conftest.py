@@ -260,25 +260,35 @@ def session(db):
 
     connection = db.engine.connect()
     transaction = connection.begin()
+    original_session = db.session
+    scopefunc = None
+    if hasattr(original_session, "registry"):
+        scopefunc = getattr(original_session.registry, "scopefunc", None)
 
-    session = scoped_session(
-        session_factory=sessionmaker(
-            bind=connection,
-            join_transaction_mode="create_savepoint",
-        )
+    session_factory = sessionmaker(
+        bind=connection,
+        join_transaction_mode="create_savepoint",
     )
+    if scopefunc is not None:
+        session = scoped_session(session_factory=session_factory, scopefunc=scopefunc)
+    else:
+        session = scoped_session(session_factory=session_factory)
     db.session = session
     cache.clear()
     yield session
 
     cache.clear()
+    # The outer transaction rollback is sufficient to isolate tests; avoid
+    # issuing an extra session.rollback() after commits that have already
+    # de-associated nested savepoints.
     try:
-        session.rollback()
-    except:  # noqa
+        session.remove()
+    except Exception:  # noqa: BLE001
         pass
-    session.close()
-    transaction.rollback()
+    if transaction.is_active:
+        transaction.rollback()
     connection.close()
+    db.session = original_session
 
 
 @pytest.fixture(scope="session")
@@ -645,15 +655,14 @@ def simple_neurosynth_annotation(session, ingest_neurosynth):
                     note={"animal": note.note["animal"]},
                 )
             )
-
-            smol_annot = Annotation(
-                name="smol " + annot.name,
-                source="neurostore",
-                studyset=annot.studyset,
-                note_keys=ordered_note_keys({"animal": "number"}),
-                annotation_analyses=smol_notes,
-            )
-    session.add(smol_annot)
+        smol_annot = Annotation(
+            name="smol " + annot.name,
+            source="neurostore",
+            studyset=annot.studyset,
+            note_keys=ordered_note_keys({"animal": "number"}),
+        )
+        session.add(smol_annot)
+        smol_annot.annotation_analyses = smol_notes
     session.commit()
 
     return smol_annot

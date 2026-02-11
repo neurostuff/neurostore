@@ -3,7 +3,6 @@ Ingest and sync data from various sources (Neurosynth, NeuroVault, etc.).
 """
 
 import os.path as op
-import re
 from pathlib import Path
 
 import numpy as np
@@ -29,6 +28,7 @@ from neurostore.models import (
     Entity,
 )
 from neurostore.models.data import StudysetStudy, _check_type
+from neurostore.map_types import canonicalize_map_type
 
 META_ANALYSIS_WORDS = ["meta analysis", "meta-analysis", "systematic review"]
 
@@ -101,6 +101,7 @@ def ingest_neurovault(verbose=False, limit=20, overwrite=False, max_images=None)
         analyses = {}
         images = []
         conditions = set()
+        existing_conditions = {cond.name: cond for cond in Condition.query.all()}
         order = 0
         for img in data["results"]:
             aname = img["name"]
@@ -116,26 +117,28 @@ def ingest_neurovault(verbose=False, limit=20, overwrite=False, max_images=None)
                 analysis = Analysis(**analysis_kwargs)
                 if condition:
                     cond = next(
-                        (
-                            cond
-                            for cond in list(conditions) + Condition.query.all()
-                            if cond.name == condition
-                        ),
-                        Condition(name=condition),
+                        (cond for cond in conditions if cond.name == condition),
+                        existing_conditions.get(condition),
                     )
+                    if cond is None:
+                        cond = Condition(name=condition)
+                        existing_conditions[condition] = cond
                     conditions.add(cond)
 
-                    analysis.analysis_conditions.append(
-                        AnalysisConditions(weight=1, condition=cond)
-                    )
+                    if getattr(cond, "id", None):
+                        analysis.analysis_conditions.append(
+                            AnalysisConditions(weight=1, condition_id=cond.id)
+                        )
+                    else:
+                        analysis.analysis_conditions.append(
+                            AnalysisConditions(weight=1, condition=cond)
+                        )
 
                 analyses[aname] = analysis
             else:
                 analysis = analyses[aname]
             space = space or "Unknown" if img.get("not_mni", False) else "MNI"
-            type_ = img.get("map_type", "Unknown")
-            if re.match(r"\w\smap.*", type_):
-                type_ = type_[0]
+            type_ = canonicalize_map_type(img.get("map_type"))
             image = Image(
                 url=img["file"],
                 space=space,

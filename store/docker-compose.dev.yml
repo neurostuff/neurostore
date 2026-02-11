@@ -1,4 +1,3 @@
-version: "2"
 services:
   store_nginx:
     ports:
@@ -11,3 +10,6 @@ services:
     restart: "no"
     stdin_open: true # docker run -i
     tty: true        # docker run -t
+
+  store_outbox_worker:
+    restart: "no"

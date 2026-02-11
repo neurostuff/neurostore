@@ -2,6 +2,7 @@ from urllib.parse import urlencode
 import pytest
 from ...models import Study, BaseStudy
 from ...schemas.data import StudysetSchema, StudySchema, AnalysisSchema, StringOrNested
+from ...services.has_media_flags import recompute_media_flags
 from ..conftest import valid_queries, invalid_queries
 
 
@@ -65,6 +66,94 @@ def test_data_type(
         == len(get_both.json()["results"])
         != 0
     )
+
+
+@pytest.mark.parametrize("endpoint", ["studies", "base-studies"])
+def test_map_type_filter(auth_client, session, endpoint):
+    prefix = f"MapTypeFilter{endpoint.replace('-', '')}"
+    z_doi = f"10.1000/{prefix.lower()}-z"
+    t_doi = f"10.1000/{prefix.lower()}-t"
+    beta_var_doi = f"10.1000/{prefix.lower()}-beta-var"
+    any_doi = f"10.1000/{prefix.lower()}-any"
+    base_payload = {
+        "pmid": "950001",
+        "doi": z_doi,
+        "name": f"{prefix}-Z",
+        "level": "group",
+        "analyses": [{"name": "z-analysis", "images": [{"value_type": "Z map"}]}],
+    }
+    t_payload = {
+        "pmid": "950002",
+        "doi": t_doi,
+        "name": f"{prefix}-T",
+        "level": "group",
+        "analyses": [{"name": "t-analysis", "images": [{"value_type": "T map"}]}],
+    }
+    beta_var_payload = {
+        "pmid": "950003",
+        "doi": beta_var_doi,
+        "name": f"{prefix}-BetaVariance",
+        "level": "group",
+        "analyses": [
+            {
+                "name": "beta-var-analysis",
+                "images": [{"value_type": "U"}, {"value_type": "V"}],
+            }
+        ],
+    }
+    any_payload = {
+        "pmid": "950004",
+        "doi": any_doi,
+        "name": f"{prefix}-Any",
+        "level": "group",
+        "analyses": [{"name": "any-analysis", "images": [{"value_type": "Other"}]}],
+    }
+
+    created_study_ids = []
+    for payload in [base_payload, t_payload, beta_var_payload, any_payload]:
+        response = auth_client.post("/api/studies/", data=payload)
+        assert response.status_code == 200
+        created_study_ids.append(response.json()["id"])
+
+    base_study_ids = {
+        Study.query.filter_by(id=study_id).one().base_study_id
+        for study_id in created_study_ids
+    }
+    recompute_media_flags(base_study_ids)
+    session.commit()
+
+    z_match = auth_client.get(f"/api/{endpoint}/?doi={z_doi}&map_type=z")
+    z_miss = auth_client.get(f"/api/{endpoint}/?doi={t_doi}&map_type=z")
+    t_match = auth_client.get(f"/api/{endpoint}/?doi={t_doi}&map_type=t")
+    t_miss = auth_client.get(f"/api/{endpoint}/?doi={z_doi}&map_type=t")
+    beta_var_match = auth_client.get(
+        f"/api/{endpoint}/?doi={beta_var_doi}&map_type=beta_variance"
+    )
+    beta_var_miss = auth_client.get(
+        f"/api/{endpoint}/?doi={z_doi}&map_type=beta_variance"
+    )
+    any_match = auth_client.get(f"/api/{endpoint}/?doi={any_doi}&map_type=any")
+    any_match_z = auth_client.get(f"/api/{endpoint}/?doi={z_doi}&map_type=any")
+
+    assert z_match.status_code == 200
+    assert z_miss.status_code == 200
+    assert t_match.status_code == 200
+    assert t_miss.status_code == 200
+    assert beta_var_match.status_code == 200
+    assert beta_var_miss.status_code == 200
+    assert any_match.status_code == 200
+    assert any_match_z.status_code == 200
+
+    assert {row["name"] for row in z_match.json()["results"]} == {f"{prefix}-Z"}
+    assert z_miss.json()["results"] == []
+    assert {row["name"] for row in t_match.json()["results"]} == {f"{prefix}-T"}
+    assert t_miss.json()["results"] == []
+    assert {row["name"] for row in beta_var_match.json()["results"]} == {
+        f"{prefix}-BetaVariance"
+    }
+    assert beta_var_miss.json()["results"] == []
+    assert {row["name"] for row in any_match.json()["results"]} == {f"{prefix}-Any"}
+    assert {row["name"] for row in any_match_z.json()["results"]} == {f"{prefix}-Z"}
 
 
 def test_page_size(auth_client, ingest_neurosynth, session):

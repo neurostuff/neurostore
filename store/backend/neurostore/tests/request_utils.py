@@ -57,13 +57,25 @@ class Client(object):
                 "params": params,
             }
 
-            if data is not None and json_dump is True:
-                data = json.dumps(data)
-                kwargs["data"] = data
+            if data is not None:
+                if json_dump and content_type == "application/json":
+                    kwargs["json"] = data
+                else:
+                    # Raw payload path for non-JSON content types.
+                    kwargs["content"] = data
 
             return request_function(route, **kwargs)
         else:
-            return request_function(route, json=data, headers=headers, params=params)
+            kwargs = {
+                "headers": headers,
+                "params": params,
+            }
+            if data is not None:
+                if json_dump and content_type == "application/json":
+                    kwargs["json"] = data
+                else:
+                    kwargs["content"] = data
+            return request_function(route, **kwargs)
 
     get = partialmethod(_make_request, "get")
     post = partialmethod(_make_request, "post")

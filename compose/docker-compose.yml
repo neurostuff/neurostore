@@ -1,4 +1,3 @@
-version: "2"
 services:
   compose:
     image: compose
@@ -156,5 +155,5 @@ volumes:
 
 networks:
   default:
-    external:
-      name: nginx-proxy
+    name: nginx-proxy
+    external: true

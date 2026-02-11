@@ -87,6 +87,27 @@ LIST_NESTED_ARGS = {
     "nested": fields.Boolean(load_default=False),
 }
 
+MAP_TYPE_QUERY_FIELDS = {
+    "z": "has_z_maps",
+    "t": "has_t_maps",
+    "beta_variance": "has_beta_and_variance_maps",
+}
+
+
+def apply_map_type_filter(query, model, map_type):
+    if not map_type:
+        return query
+
+    normalized = str(map_type).strip().lower()
+    if normalized == "any":
+        return query.filter(model.has_images.is_(True))
+
+    mapped_field = MAP_TYPE_QUERY_FIELDS.get(normalized)
+    if mapped_field is None:
+        abort_validation("map_type must be one of: z, t, beta_variance, any")
+    return query.filter(getattr(model, mapped_field).is_(True))
+
+
 # Individual resource views
 
 
@@ -296,24 +317,39 @@ class StudysetsView(ObjectView, ListView):
                 s.id for s in getattr(record, "studies", []) if getattr(s, "id", None)
             }
 
-            # Load existing associations directly to avoid
-            # duplicate pending rows in the relationship.
-            existing = {
-                assoc.study_id: assoc
-                for assoc in StudysetStudy.query.filter_by(studyset_id=record.id).all()
-            }
+            # Reconcile through ORM collection state only. Mixing bulk SQL DELETEs
+            # with relationship replacement can schedule duplicate deletes for the
+            # same association rows and produce rowcount warnings on flush.
+            existing = {assoc.study_id: assoc for assoc in record.studyset_studies}
 
-            # Remove stale associations in bulk
-            if existing:
-                stale_ids = set(existing.keys()) - current_ids
-                if stale_ids:
-                    (
-                        StudysetStudy.query.filter_by(studyset_id=record.id)
-                        .filter(StudysetStudy.study_id.in_(stale_ids))
-                        .delete(synchronize_session=False)
-                    )
-                    for sid in stale_ids:
-                        existing.pop(sid, None)
+            stale_ids = set(existing.keys()) - current_ids
+            stale_assocs = []
+            for sid in stale_ids:
+                assoc = existing.pop(sid, None)
+                if assoc is not None:
+                    stale_assocs.append(assoc)
+
+            # First sync removes stale rows via delete-orphan cascade.
+            if stale_assocs:
+                record.studyset_studies = list(existing.values())
+
+            missing_ids = current_ids - set(existing.keys())
+            # If a stub UUID is being re-mapped from a removed association to a new
+            # association in this same request, flush deletes first to satisfy the
+            # per-studyset uniqueness constraint on curation_stub_uuid.
+            if missing_ids and stale_assocs:
+                stale_stub_uuids = {
+                    assoc.curation_stub_uuid
+                    for assoc in stale_assocs
+                    if assoc.curation_stub_uuid
+                }
+                incoming_stub_uuids = {
+                    stub_map.get(study_id)
+                    for study_id in missing_ids
+                    if stub_map.get(study_id)
+                }
+                if stale_stub_uuids.intersection(incoming_stub_uuids):
+                    db.session.flush()
 
             # Ensure each study has an association and apply stub UUIDs
             for study_id in current_ids:
@@ -1122,6 +1158,7 @@ class BaseStudiesView(ObjectView, ListView):
         "flat": fields.Boolean(load_default=False),
         "info": fields.Boolean(load_default=False),
         "data_type": fields.String(load_default=None),
+        "map_type": fields.String(load_default=None),
         "is_oa": fields.Boolean(load_default=None, allow_none=True),
         "feature_filter": fields.List(fields.String(load_default=None)),
         "pipeline_config": fields.List(fields.String(load_default=None)),
@@ -1411,6 +1448,7 @@ class BaseStudiesView(ObjectView, ListView):
                         self._model.has_images.is_(True),
                     ),
                 )
+        q = apply_map_type_filter(q, self._model, args.get("map_type"))
         is_oa = args.get("is_oa", None)
         if is_oa is not None and not isinstance(is_oa, bool):
             abort_validation("is_oa must be a boolean.")
@@ -1768,6 +1806,7 @@ class StudiesView(ObjectView, ListView):
     _view_fields = {
         **{
             "data_type": fields.String(load_default=None),
+            "map_type": fields.String(load_default=None),
             "studyset_owner": fields.String(load_default=None),
             "level": fields.String(dump_default="group", load_default="group"),
             "flat": fields.Boolean(load_default=False),
@@ -1907,25 +1946,19 @@ class StudiesView(ObjectView, ListView):
         return q
 
     def view_search(self, q, args):
-        # search studies for data_type
-        q = q.options(
-            defaultload(Study.analyses).options(
-                selectinload(Analysis.images).options(raiseload("*", sql_only=True)),
-                selectinload(Analysis.points).options(raiseload("*", sql_only=True)),
-            )
-        )
         if args.get("data_type"):
             if args["data_type"] == "coordinate":
-                q = q.filter(self._model.analyses.any(Analysis.points.any()))
+                q = q.filter(self._model.has_coordinates.is_(True))
             elif args["data_type"] == "image":
-                q = q.filter(self._model.analyses.any(Analysis.images.any()))
+                q = q.filter(self._model.has_images.is_(True))
             elif args["data_type"] == "both":
                 q = q.filter(
                     sae.or_(
-                        self._model.analyses.any(Analysis.images.any()),
-                        self._model.analyses.any(Analysis.points.any()),
+                        self._model.has_images.is_(True),
+                        self._model.has_coordinates.is_(True),
                     )
                 )
+        q = apply_map_type_filter(q, self._model, args.get("map_type"))
         # filter by level of analysis (group or meta)
         q = q.filter(self._model.level == args.get("level"))
         # only return unique studies

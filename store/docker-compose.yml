@@ -1,4 +1,3 @@
-version: "2"
 services:
   neurostore:
     image: neurostore
@@ -22,6 +21,31 @@ services:
     env_file:
       - .env
     container_name: neurostore
+
+  store_outbox_worker:
+    image: neurostore
+    restart: always
+    depends_on:
+      store-pgsql17:
+        condition: service_healthy
+      store_redis:
+        condition: service_healthy
+    volumes:
+      - ./backend/migrations:/migrations
+      - ./:/store
+    command: flask process-base-study-flag-outbox --loop
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "flask check-base-study-flag-outbox --max-pending ${OUTBOX_HEALTH_MAX_PENDING:-5000} --max-oldest-seconds ${OUTBOX_HEALTH_MAX_OLDEST_SECONDS:-900}",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    env_file:
+      - .env
   
   store_redis:
     image: redis
@@ -130,5 +154,5 @@ volumes:
 
 networks:
   default:
-    external:
-      name: nginx-proxy
+    name: nginx-proxy
+    external: true

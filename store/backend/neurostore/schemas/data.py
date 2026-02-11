@@ -15,6 +15,7 @@ from sqlalchemy import func
 import orjson
 
 from neurostore.core import db
+from neurostore.map_types import canonicalize_map_type, map_type_label
 from neurostore.models import Analysis, Point
 
 # context parameters
@@ -306,6 +307,19 @@ class ImageSchema(BaseDataSchema):
     space = fields.String(allow_none=True)
     value_type = fields.String(allow_none=True)
 
+    @pre_load
+    def canonicalize_value_type(self, data, **kwargs):
+        if isinstance(data, dict) and data.get("value_type") is not None:
+            data["value_type"] = canonicalize_map_type(data["value_type"])
+        return data
+
+    @post_dump
+    def humanize_value_type(self, data, **kwargs):
+        if "value_type" not in data:
+            return data
+        data["value_type"] = map_type_label(data.get("value_type"))
+        return data
+
 
 class PointValueSchema(BaseSchema):
     kind = fields.String(allow_none=True)
@@ -415,6 +429,11 @@ class AnalysisSchema(BaseDataSchema):
     )
     metadata = fields.Dict(attribute="metadata_", dump_only=True)
     metadata_ = fields.Dict(data_key="metadata", load_only=True, allow_none=True)
+    has_coordinates = fields.Bool(dump_only=True)
+    has_images = fields.Bool(dump_only=True)
+    has_z_maps = fields.Bool(dump_only=True)
+    has_t_maps = fields.Bool(dump_only=True)
+    has_beta_and_variance_maps = fields.Bool(dump_only=True)
     # study = fields.Pluck("StudySchema", "id", metadata={"id_field": True})
     conditions = StringOrNested(ConditionSchema, many=True, dump_only=True)
     order = fields.Integer()
@@ -494,6 +513,11 @@ class BaseStudySchema(BaseDataSchema):
     year = fields.Integer(allow_none=True)
     level = fields.String(allow_none=True)
     is_oa = fields.Boolean(allow_none=True)
+    has_coordinates = fields.Bool(dump_only=True)
+    has_images = fields.Bool(dump_only=True)
+    has_z_maps = fields.Bool(dump_only=True)
+    has_t_maps = fields.Bool(dump_only=True)
+    has_beta_and_variance_maps = fields.Bool(dump_only=True)
     versions = StringOrNested("StudySchema", many=True)
     features = fields.Method("get_features")
     ace_fulltext = fields.String(load_only=True, allow_none=True)
@@ -588,11 +612,14 @@ class StudySchema(BaseDataSchema):
     base_study_id = fields.String(data_key="base_study", allow_none=True)
     has_coordinates = fields.Bool(dump_only=True)
     has_images = fields.Bool(dump_only=True)
+    has_z_maps = fields.Bool(dump_only=True)
+    has_t_maps = fields.Bool(dump_only=True)
+    has_beta_and_variance_maps = fields.Bool(dump_only=True)
     source_updated_at = fields.DateTime(dump_only=True, allow_none=True)
 
     class Meta:
-        # by default exclude this
-        exclude = ("has_coordinates", "has_images", "studysets")
+        # studysets can be very large and are hidden by default.
+        exclude = ("studysets",)
 
     @pre_load
     def check_nulls(self, data, **kwargs):
@@ -900,7 +927,7 @@ class ImageSnapshot(BaseSnapshot):
             "user": i.user_id,
             "url": i.url,
             "space": i.space,
-            "value_type": i.value_type,
+            "value_type": map_type_label(i.value_type),
             "filename": i.filename,
             "add_date": i.add_date,
         }
