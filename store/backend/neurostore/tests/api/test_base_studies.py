@@ -10,6 +10,7 @@ from neurostore.models import (
     PipelineStudyResult,
     BaseStudy,
     BaseStudyFlagOutbox,
+    BaseStudyMetadataOutbox,
     Analysis,
     Image,
     Study,
@@ -17,6 +18,9 @@ from neurostore.models import (
 )
 from neurostore.schemas import StudySchema
 from neurostore.services.has_media_flags import process_base_study_flag_outbox_batch
+from neurostore.services.base_study_metadata_enrichment import (
+    process_base_study_metadata_outbox_batch,
+)
 
 
 def test_features_query(auth_client, ingest_demographic_features):
@@ -858,6 +862,148 @@ def test_async_worker_map_type_flag_transitions(auth_client, session, app):
         assert base_study_b.has_z_maps is False
     finally:
         app.config["BASE_STUDY_FLAGS_ASYNC"] = async_original
+
+
+def test_base_study_create_enqueues_metadata_outbox(auth_client, app):
+    async_original = app.config.get("BASE_STUDY_METADATA_ASYNC", False)
+    app.config["BASE_STUDY_METADATA_ASYNC"] = True
+    try:
+        response = auth_client.post(
+            "/api/base-studies/",
+            data={
+                "name": "metadata-enqueue-study",
+                "pmid": "930001",
+                "level": "group",
+            },
+        )
+        assert response.status_code == 200
+
+        outbox_entry = BaseStudyMetadataOutbox.query.filter_by(
+            base_study_id=response.json()["id"]
+        ).one_or_none()
+        assert outbox_entry is not None
+    finally:
+        app.config["BASE_STUDY_METADATA_ASYNC"] = async_original
+
+
+def test_metadata_worker_merges_duplicates_and_keeps_existing_metadata(
+    session, app, monkeypatch
+):
+    from neurostore.services import base_study_metadata_enrichment as metadata_service
+
+    primary = BaseStudy(
+        name="Curated Title",
+        pmid="940001",
+        level="group",
+    )
+    duplicate = BaseStudy(
+        name="Duplicate Title",
+        doi="10.1000/metadata-merge",
+        level="group",
+    )
+    primary_study = Study(
+        name="primary-study-version",
+        level="group",
+        base_study=primary,
+    )
+    duplicate_study = Study(
+        name="duplicate-study-version",
+        level="group",
+        base_study=duplicate,
+    )
+    session.add_all([primary, duplicate, primary_study, duplicate_study])
+    session.commit()
+
+    session.add(
+        BaseStudyMetadataOutbox(
+            base_study_id=primary.id,
+            reason="test-enrichment",
+        )
+    )
+    session.commit()
+
+    def fake_lookup_semantic(_identifiers, api_key=None):
+        return {"doi": "10.1000/metadata-merge", "pmcid": "PMC940001"}
+
+    def fake_lookup_pubmed(_identifiers, email=None, api_key=None, tool=None):
+        return {"pmcid": "PMC940001"}
+
+    def fake_lookup_openalex(_identifiers, email=None):
+        return {"doi": "10.1000/metadata-merge"}
+
+    def fake_metadata_semantic(_identifiers, api_key=None):
+        return {
+            "name": "Provider Title Should Not Override",
+            "description": "Provider abstract",
+            "publication": "Provider Journal",
+            "authors": "Provider A, Provider B",
+            "year": 2025,
+            "is_oa": True,
+            "doi": "10.1000/metadata-merge",
+            "pmcid": "PMC940001",
+        }
+
+    def fake_metadata_pubmed(_identifiers, email=None, api_key=None, tool=None):
+        return {"publication": "PubMed Journal", "year": 2024}
+
+    captured_cache_ids = []
+
+    monkeypatch.setattr(
+        metadata_service, "lookup_ids_semantic_scholar", fake_lookup_semantic
+    )
+    monkeypatch.setattr(metadata_service, "lookup_ids_pubmed", fake_lookup_pubmed)
+    monkeypatch.setattr(metadata_service, "lookup_ids_openalex", fake_lookup_openalex)
+    monkeypatch.setattr(
+        metadata_service, "fetch_metadata_semantic_scholar", fake_metadata_semantic
+    )
+    monkeypatch.setattr(
+        metadata_service, "fetch_metadata_pubmed", fake_metadata_pubmed
+    )
+    monkeypatch.setattr(
+        metadata_service,
+        "bump_cache_versions",
+        lambda unique_ids: captured_cache_ids.append(unique_ids),
+    )
+
+    processed = process_base_study_metadata_outbox_batch(batch_size=10)
+    assert processed == 1
+
+    session.refresh(primary)
+    session.refresh(duplicate)
+    session.refresh(primary_study)
+    session.refresh(duplicate_study)
+
+    # Older record remains canonical and preserves curated metadata.
+    assert primary.name == "Curated Title"
+    assert primary.doi == "10.1000/metadata-merge"
+    assert primary.pmcid == "PMC940001"
+    assert primary.description == "Provider abstract"
+    assert primary.publication == "Provider Journal"
+    assert primary.authors == "Provider A, Provider B"
+    assert primary.year == 2025
+    assert primary.is_oa is True
+
+    # Newer duplicate is superseded and all versions are merged into canonical.
+    assert duplicate.is_active is False
+    assert duplicate.superseded_by == primary.id
+    assert primary_study.base_study_id == primary.id
+    assert duplicate_study.base_study_id == primary.id
+
+    assert (
+        BaseStudyMetadataOutbox.query.filter_by(base_study_id=primary.id).one_or_none()
+        is None
+    )
+    assert (
+        BaseStudyMetadataOutbox.query.filter_by(base_study_id=duplicate.id).one_or_none()
+        is None
+    )
+    assert BaseStudyFlagOutbox.query.filter_by(base_study_id=primary.id).first()
+
+    assert captured_cache_ids, "Expected metadata worker to invalidate cache versions"
+    assert any(primary.id in ids.get("base-studies", set()) for ids in captured_cache_ids)
+    assert any(
+        duplicate_study.id in ids.get("studies", set()) for ids in captured_cache_ids
+    )
 
 
 def test_filter_by_is_oa(auth_client, session):

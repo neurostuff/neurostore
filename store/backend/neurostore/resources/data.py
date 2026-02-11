@@ -1191,6 +1191,9 @@ class BaseStudiesView(ObjectView, ListView):
         super().__init__(*args, **kwargs)
         self.context = {}
 
+    def get_affected_ids(self, ids):
+        return {"base-studies": set(ids)}
+
     def ann_query_object(
         self,
         q,  # an existing SQLAlchemy Query object
@@ -1793,10 +1796,11 @@ class BaseStudiesView(ObjectView, ListView):
         # clear the cache for this record
         unique_ids = self.get_affected_ids([bs.id for bs in base_studies])
         clear_cache(unique_ids)
+        self.update_base_studies(unique_ids.get("base-studies"))
 
         if to_commit:
             db.session.add_all(to_commit)
-            db.session.commit()
+        db.session.commit()
 
         return self._schema(context={"info": True}, many=True).dump(base_studies)
 

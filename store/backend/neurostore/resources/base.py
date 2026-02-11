@@ -52,6 +52,9 @@ from ..services.has_media_flags import (
     enqueue_base_study_flag_updates,
     recompute_media_flags,
 )
+from ..services.base_study_metadata_enrichment import (
+    enqueue_base_study_metadata_updates,
+)
 
 
 @parser.error_handler
@@ -193,6 +196,10 @@ class BaseView(MethodView):
             enqueue_base_study_flag_updates(base_studies, reason=reason)
         else:
             recompute_media_flags(base_studies)
+
+        if current_app.config.get("BASE_STUDY_METADATA_ASYNC", True):
+            reason = f"{self.__class__.__name__}.update_base_studies"
+            enqueue_base_study_metadata_updates(base_studies, reason=reason)
 
     def eager_load(self, q, args):
         return q

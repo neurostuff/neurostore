@@ -31,6 +31,22 @@ class Config(object):
         "yes",
         "on",
     )
+    BASE_STUDY_METADATA_ASYNC = os.environ.get(
+        "BASE_STUDY_METADATA_ASYNC", "true"
+    ).lower() in (
+        "1",
+        "true",
+        "yes",
+        "on",
+    )
+    BASE_STUDY_METADATA_REQUEST_TIMEOUT_SECONDS = os.environ.get(
+        "BASE_STUDY_METADATA_REQUEST_TIMEOUT_SECONDS", "10"
+    )
+    SEMANTIC_SCHOLAR_API_KEY = os.environ.get("SEMANTIC_SCHOLAR_API_KEY")
+    PUBMED_EMAIL = os.environ.get("PUBMED_EMAIL")
+    PUBMED_API_KEY = os.environ.get("PUBMED_API_KEY")
+    PUBMED_TOOL = os.environ.get("PUBMED_TOOL", "neurostore")
+    OPENALEX_EMAIL = os.environ.get("OPENALEX_EMAIL")
     PROPAGATE_EXCEPTIONS = True
 
     GITHUB_CLIENT_ID = "github-id"
@@ -104,6 +120,7 @@ class TestingConfig(Config):
         f"postgresql://postgres:" f"{POSTGRES_PASSWORD}@{POSTGRES_HOST}:5432/{DB_NAME}"
     )
     BASE_STUDY_FLAGS_ASYNC = False
+    BASE_STUDY_METADATA_ASYNC = False
 
 
 class DockerTestConfig(TestingConfig):

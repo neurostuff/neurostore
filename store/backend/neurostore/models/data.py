@@ -495,6 +495,34 @@ class BaseStudyFlagOutbox(db.Model):
     )
 
 
+class BaseStudyMetadataOutbox(db.Model):
+    __tablename__ = "base_study_metadata_outbox"
+
+    base_study_id = db.Column(
+        db.Text,
+        db.ForeignKey("base_studies.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    reason = db.Column(db.String, nullable=True)
+    enqueued_at = db.Column(
+        db.DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        index=True,
+    )
+    updated_at = db.Column(
+        db.DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        onupdate=func.now(),
+        index=True,
+    )
+
+    base_study = relationship(
+        "BaseStudy", backref=backref("metadata_outbox_entry", passive_deletes=True)
+    )
+
+
 class Study(BaseMixin, db.Model):
     __tablename__ = "studies"
 
