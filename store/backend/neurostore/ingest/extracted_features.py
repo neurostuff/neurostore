@@ -214,6 +214,7 @@ def ingest_feature(
 
     # get a list of all the paper directories in the feature directory
     paper_dirs = [d for d in Path(feature_directory).iterdir() if d.is_dir()]
+    valid_base_study_ids = set(db.session.scalars(sa.select(BaseStudy.id)).all())
 
     # for each subject directory, read the results.json file and the info.json file
     pipeline_study_results = []
@@ -225,7 +226,7 @@ def ingest_feature(
         # use the directory name as the base_study_id
         base_study_id = paper_dir.name
 
-        if BaseStudy.query.filter_by(id=base_study_id).first() is None:
+        if base_study_id not in valid_base_study_ids:
             logging.warning(
                 "Skipping %s as it does not correspond to a valid base_study_id",
                 paper_dir,
@@ -385,7 +386,7 @@ def ingest_feature(
                         result_data=results,
                         date_executed=parse_date(dt) if dt else None,
                         file_inputs=info.get("inputs"),
-                        config=pipeline_config,
+                        config_id=pipeline_config.id,
                         status="SUCCESS",
                     )
                 )

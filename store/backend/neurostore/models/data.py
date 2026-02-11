@@ -104,9 +104,10 @@ class Studyset(BaseMixin, db.Model):
     )
     annotations = relationship(
         "Annotation",
-        backref="studyset",
+        backref=backref("studyset", cascade_backrefs=False),
         passive_deletes=True,
         cascade="all, delete-orphan",
+        cascade_backrefs=False,
     )
     _ts_vector = db.Column(
         "__ts_vector__",
@@ -668,7 +669,13 @@ class Analysis(BaseMixin, db.Model):
     )
     weights = association_proxy("analysis_conditions", "weight")
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"), index=True)
-    user = relationship("User", backref=backref("analyses", passive_deletes=True))
+    user = relationship(
+        "User",
+        backref=backref(
+            "analyses", cascade_backrefs=False, passive_deletes=True
+        ),
+        cascade_backrefs=False,
+    )
     analysis_conditions = relationship(
         "AnalysisConditions",
         backref=backref("analysis"),
@@ -918,7 +925,9 @@ class PipelineStudyResult(BaseMixin, db.Model):
     file_inputs = db.Column(JSONB)
     status = db.Column(STATUS_ENUM)
     config = relationship(
-        "PipelineConfig", backref=backref("results", passive_deletes=True)
+        "PipelineConfig",
+        backref=backref("results", cascade_backrefs=False, passive_deletes=True),
+        cascade_backrefs=False,
     )
 
 

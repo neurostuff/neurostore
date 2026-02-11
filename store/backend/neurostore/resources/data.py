@@ -317,24 +317,39 @@ class StudysetsView(ObjectView, ListView):
                 s.id for s in getattr(record, "studies", []) if getattr(s, "id", None)
             }
 
-            # Load existing associations directly to avoid
-            # duplicate pending rows in the relationship.
-            existing = {
-                assoc.study_id: assoc
-                for assoc in StudysetStudy.query.filter_by(studyset_id=record.id).all()
-            }
+            # Reconcile through ORM collection state only. Mixing bulk SQL DELETEs
+            # with relationship replacement can schedule duplicate deletes for the
+            # same association rows and produce rowcount warnings on flush.
+            existing = {assoc.study_id: assoc for assoc in record.studyset_studies}
 
-            # Remove stale associations in bulk
-            if existing:
-                stale_ids = set(existing.keys()) - current_ids
-                if stale_ids:
-                    (
-                        StudysetStudy.query.filter_by(studyset_id=record.id)
-                        .filter(StudysetStudy.study_id.in_(stale_ids))
-                        .delete(synchronize_session=False)
-                    )
-                    for sid in stale_ids:
-                        existing.pop(sid, None)
+            stale_ids = set(existing.keys()) - current_ids
+            stale_assocs = []
+            for sid in stale_ids:
+                assoc = existing.pop(sid, None)
+                if assoc is not None:
+                    stale_assocs.append(assoc)
+
+            # First sync removes stale rows via delete-orphan cascade.
+            if stale_assocs:
+                record.studyset_studies = list(existing.values())
+
+            missing_ids = current_ids - set(existing.keys())
+            # If a stub UUID is being re-mapped from a removed association to a new
+            # association in this same request, flush deletes first to satisfy the
+            # per-studyset uniqueness constraint on curation_stub_uuid.
+            if missing_ids and stale_assocs:
+                stale_stub_uuids = {
+                    assoc.curation_stub_uuid
+                    for assoc in stale_assocs
+                    if assoc.curation_stub_uuid
+                }
+                incoming_stub_uuids = {
+                    stub_map.get(study_id)
+                    for study_id in missing_ids
+                    if stub_map.get(study_id)
+                }
+                if stale_stub_uuids.intersection(incoming_stub_uuids):
+                    db.session.flush()
 
             # Ensure each study has an association and apply stub UUIDs
             for study_id in current_ids:

@@ -304,6 +304,10 @@ class BaseView(MethodView):
         # check to see if duplicate
         duplicate = cls.check_duplicate(data, record)
         if duplicate:
+            if sa.inspect(record).transient:
+                # Duplicate short-circuit: discard the transient placeholder so
+                # its user backref does not leak into a later flush.
+                record.user = None
             return duplicate
 
         # Update all non-nested attributes

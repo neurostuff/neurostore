@@ -50,28 +50,28 @@ def _create_annotation_with_two_analyses(session, user, analysis_orders=None):
     session.add(annotation)
     session.flush()
 
-    annotation.annotation_analyses = [
-        AnnotationAnalysis(
-            analysis=analysis1,
-            studyset_study=studyset_study,
-            annotation=annotation,
-            note={"existing": "A1"},
-            user=user,
-            study_id=analysis1.study_id,
-            studyset_id=studyset_study.studyset_id,
-        ),
-        AnnotationAnalysis(
-            analysis=analysis2,
-            studyset_study=studyset_study,
-            annotation=annotation,
-            note={"existing": "A2"},
-            user=user,
-            study_id=analysis2.study_id,
-            studyset_id=studyset_study.studyset_id,
-        ),
-    ]
-
-    session.add_all(annotation.annotation_analyses)
+    with session.no_autoflush:
+        annotation.annotation_analyses = [
+            AnnotationAnalysis(
+                analysis=analysis1,
+                studyset_study=studyset_study,
+                annotation=annotation,
+                note={"existing": "A1"},
+                user=user,
+                study_id=analysis1.study_id,
+                studyset_id=studyset_study.studyset_id,
+            ),
+            AnnotationAnalysis(
+                analysis=analysis2,
+                studyset_study=studyset_study,
+                annotation=annotation,
+                note={"existing": "A2"},
+                user=user,
+                study_id=analysis2.study_id,
+                studyset_id=studyset_study.studyset_id,
+            ),
+        ]
+        session.add_all(annotation.annotation_analyses)
     session.commit()
     return annotation, base_study
 
