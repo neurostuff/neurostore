@@ -20,10 +20,14 @@ RUN curl -L https://github.com/pgvector/pgvector/archive/refs/tags/v0.8.0.tar.gz
 COPY pg_dump-to-s3 /home
 RUN chmod +x /home/pg_dump-to-s3.sh /home/s3-autodelete.sh
 RUN crontab /home/backup.txt
-RUN service cron start
 RUN dos2unix /home/pg_dump-to-s3.sh
 RUN dos2unix /home/s3-autodelete.sh
+COPY docker-entrypoint-cron.sh /usr/local/bin/docker-entrypoint-cron.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint-cron.sh
 
 COPY postgresql.conf /etc/postgresql/postgresql.conf
 COPY pg_stat_statements.sql /docker-entrypoint-initdb.d/
 COPY init-pgvector.sql /docker-entrypoint-initdb.d/
+
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint-cron.sh"]
+CMD ["postgres"]
