@@ -43,7 +43,7 @@ from ..models import (
 )
 from ..schemas.data import StudysetSnapshot
 from . import data as viewdata
-from ..services.base_study_flags import (
+from ..services.has_media_flags import (
     enqueue_base_study_flag_updates,
     recompute_media_flags,
 )

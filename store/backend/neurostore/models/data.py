@@ -314,7 +314,7 @@ class BaseStudy(BaseMixin, db.Model):
 
     def update_has_images_and_points(self):
         # Keep analysis/study/base flags consistent for this base study.
-        from ..services.base_study_flags import recompute_media_flags
+        from ..services.has_media_flags import recompute_media_flags
 
         recompute_media_flags([self.id])
 

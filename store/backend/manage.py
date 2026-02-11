@@ -11,7 +11,7 @@ from flask_migrate import Migrate
 from neurostore.core import app, db
 from neurostore import ingest
 from neurostore import models
-from neurostore.services.base_study_flags import process_base_study_flag_outbox_batch
+from neurostore.services.has_media_flags import process_base_study_flag_outbox_batch
 
 if not getattr(app, "config", None):
     app = app._app

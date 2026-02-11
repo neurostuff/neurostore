@@ -16,7 +16,7 @@ from neurostore.models import (
     User,
 )
 from neurostore.schemas import StudySchema
-from neurostore.services.base_study_flags import process_base_study_flag_outbox_batch
+from neurostore.services.has_media_flags import process_base_study_flag_outbox_batch
 
 
 def test_features_query(auth_client, ingest_demographic_features):

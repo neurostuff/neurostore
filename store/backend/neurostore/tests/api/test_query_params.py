@@ -2,7 +2,7 @@ from urllib.parse import urlencode
 import pytest
 from ...models import Study, BaseStudy
 from ...schemas.data import StudysetSchema, StudySchema, AnalysisSchema, StringOrNested
-from ...services.base_study_flags import recompute_media_flags
+from ...services.has_media_flags import recompute_media_flags
 from ..conftest import valid_queries, invalid_queries
 
 
