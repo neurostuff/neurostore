@@ -4,10 +4,10 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from ..cache_versioning import bump_cache_versions
 from ..database import db
 from ..map_types import (
-    BETA_MAP_NORMALIZED_VALUES,
-    T_MAP_NORMALIZED_VALUES,
-    VARIANCE_MAP_NORMALIZED_VALUES,
-    Z_MAP_NORMALIZED_VALUES,
+    BETA_MAP_CODES,
+    T_MAP_CODES,
+    VARIANCE_MAP_CODES,
+    Z_MAP_CODES,
 )
 from ..models import (
     Analysis,
@@ -18,6 +18,11 @@ from ..models import (
     Study,
 )
 
+Z_MAP_SQL_VALUES = tuple(sorted(Z_MAP_CODES))
+T_MAP_SQL_VALUES = tuple(sorted(T_MAP_CODES))
+BETA_MAP_SQL_VALUES = tuple(sorted(BETA_MAP_CODES))
+VARIANCE_MAP_SQL_VALUES = tuple(sorted(VARIANCE_MAP_CODES))
+
 
 def _normalize_ids(ids):
     if not ids:
@@ -25,19 +30,14 @@ def _normalize_ids(ids):
     return sorted({id_ for id_ in ids if id_})
 
 
-def _normalized_value_type(column):
-    return sa.func.lower(
-        sa.func.regexp_replace(
-            sa.func.btrim(sa.func.coalesce(column, "")),
-            r"\s+",
-            " ",
-            "g",
-        )
-    )
-
-
 def _matches_values(column, accepted_values):
-    return _normalized_value_type(column).in_(sorted(accepted_values))
+    return column.in_(accepted_values)
+
+
+def _analysis_in_scope(base_study_ids):
+    return Analysis.study_id.in_(
+        sa.select(Study.id).where(Study.base_study_id.in_(base_study_ids))
+    )
 
 
 def _clear_cache_for_ids(unique_ids):
@@ -73,207 +73,189 @@ def recompute_media_flags(base_study_ids):
     if not base_study_ids:
         return {"base-studies": set(), "studies": set(), "analyses": set()}
 
-    study_ids = set(
+    analysis_scope = _analysis_in_scope(base_study_ids)
+    study_scope = Study.base_study_id.in_(base_study_ids)
+
+    # Analysis flags from direct child rows
+    analysis_points_exist = sa.exists(
+        sa.select(sa.literal(1))
+        .select_from(Point)
+        .where(Point.analysis_id == Analysis.id)
+    )
+    analysis_images_exist = sa.exists(
+        sa.select(sa.literal(1))
+        .select_from(Image)
+        .where(Image.analysis_id == Analysis.id)
+    )
+    analysis_z_maps_exist = sa.exists(
+        sa.select(sa.literal(1))
+        .select_from(Image)
+        .where(
+            Image.analysis_id == Analysis.id,
+            _matches_values(Image.value_type, Z_MAP_SQL_VALUES),
+        )
+    )
+    analysis_t_maps_exist = sa.exists(
+        sa.select(sa.literal(1))
+        .select_from(Image)
+        .where(
+            Image.analysis_id == Analysis.id,
+            _matches_values(Image.value_type, T_MAP_SQL_VALUES),
+        )
+    )
+    analysis_beta_maps_exist = sa.exists(
+        sa.select(sa.literal(1))
+        .select_from(Image)
+        .where(
+            Image.analysis_id == Analysis.id,
+            _matches_values(Image.value_type, BETA_MAP_SQL_VALUES),
+        )
+    )
+    analysis_variance_maps_exist = sa.exists(
+        sa.select(sa.literal(1))
+        .select_from(Image)
+        .where(
+            Image.analysis_id == Analysis.id,
+            _matches_values(Image.value_type, VARIANCE_MAP_SQL_VALUES),
+        )
+    )
+    analysis_beta_and_variance_maps = sa.and_(
+        analysis_beta_maps_exist, analysis_variance_maps_exist
+    )
+    changed_analysis_ids = set(
         db.session.scalars(
-            sa.select(Study.id).where(Study.base_study_id.in_(base_study_ids))
+            sa.update(Analysis)
+            .where(analysis_scope)
+            .where(
+                sa.or_(
+                    Analysis.has_coordinates != analysis_points_exist,
+                    Analysis.has_images != analysis_images_exist,
+                    Analysis.has_z_maps != analysis_z_maps_exist,
+                    Analysis.has_t_maps != analysis_t_maps_exist,
+                    Analysis.has_beta_and_variance_maps
+                    != analysis_beta_and_variance_maps,
+                )
+            )
+            .values(
+                has_coordinates=analysis_points_exist,
+                has_images=analysis_images_exist,
+                has_z_maps=analysis_z_maps_exist,
+                has_t_maps=analysis_t_maps_exist,
+                has_beta_and_variance_maps=analysis_beta_and_variance_maps,
+            )
+            .returning(Analysis.id)
         ).all()
     )
 
-    analysis_ids = set()
-    if study_ids:
-        analysis_ids = set(
-            db.session.scalars(
-                sa.select(Analysis.id).where(Analysis.study_id.in_(study_ids))
-            ).all()
-        )
-
-    changed_analysis_ids = set()
-    changed_study_ids = set()
-    changed_base_study_ids = set()
-
-    # Analysis flags from direct child rows
-    if analysis_ids:
-        analysis_points_exist = sa.exists(
-            sa.select(sa.literal(1))
-            .select_from(Point)
-            .where(Point.analysis_id == Analysis.id)
-        )
-        analysis_images_exist = sa.exists(
-            sa.select(sa.literal(1))
-            .select_from(Image)
-            .where(Image.analysis_id == Analysis.id)
-        )
-        analysis_z_maps_exist = sa.exists(
-            sa.select(sa.literal(1))
-            .select_from(Image)
-            .where(
-                Image.analysis_id == Analysis.id,
-                _matches_values(Image.value_type, Z_MAP_NORMALIZED_VALUES),
-            )
-        )
-        analysis_t_maps_exist = sa.exists(
-            sa.select(sa.literal(1))
-            .select_from(Image)
-            .where(
-                Image.analysis_id == Analysis.id,
-                _matches_values(Image.value_type, T_MAP_NORMALIZED_VALUES),
-            )
-        )
-        analysis_beta_maps_exist = sa.exists(
-            sa.select(sa.literal(1))
-            .select_from(Image)
-            .where(
-                Image.analysis_id == Analysis.id,
-                _matches_values(Image.value_type, BETA_MAP_NORMALIZED_VALUES),
-            )
-        )
-        analysis_variance_maps_exist = sa.exists(
-            sa.select(sa.literal(1))
-            .select_from(Image)
-            .where(
-                Image.analysis_id == Analysis.id,
-                _matches_values(Image.value_type, VARIANCE_MAP_NORMALIZED_VALUES),
-            )
-        )
-        analysis_beta_and_variance_maps = sa.and_(
-            analysis_beta_maps_exist, analysis_variance_maps_exist
-        )
-        changed_analysis_ids = set(
-            db.session.scalars(
-                sa.update(Analysis)
-                .where(Analysis.id.in_(analysis_ids))
-                .where(
-                    sa.or_(
-                        Analysis.has_coordinates != analysis_points_exist,
-                        Analysis.has_images != analysis_images_exist,
-                        Analysis.has_z_maps != analysis_z_maps_exist,
-                        Analysis.has_t_maps != analysis_t_maps_exist,
-                        Analysis.has_beta_and_variance_maps
-                        != analysis_beta_and_variance_maps,
-                    )
-                )
-                .values(
-                    has_coordinates=analysis_points_exist,
-                    has_images=analysis_images_exist,
-                    has_z_maps=analysis_z_maps_exist,
-                    has_t_maps=analysis_t_maps_exist,
-                    has_beta_and_variance_maps=analysis_beta_and_variance_maps,
-                )
-                .returning(Analysis.id)
-            ).all()
-        )
-
     # Study flags from analyses + child rows
-    if study_ids:
-        study_points_exist = sa.exists(
-            sa.select(sa.literal(1))
-            .select_from(Analysis)
-            .join(Point, Point.analysis_id == Analysis.id)
-            .where(Analysis.study_id == Study.id)
+    study_points_exist = sa.exists(
+        sa.select(sa.literal(1))
+        .select_from(Analysis)
+        .where(
+            Analysis.study_id == Study.id,
+            Analysis.has_coordinates.is_(True),
         )
-        study_images_exist = sa.exists(
-            sa.select(sa.literal(1))
-            .select_from(Analysis)
-            .join(Image, Image.analysis_id == Analysis.id)
-            .where(Analysis.study_id == Study.id)
+    )
+    study_images_exist = sa.exists(
+        sa.select(sa.literal(1))
+        .select_from(Analysis)
+        .where(
+            Analysis.study_id == Study.id,
+            Analysis.has_images.is_(True),
         )
-        study_z_maps_exist = sa.exists(
-            sa.select(sa.literal(1))
-            .select_from(Analysis)
-            .join(Image, Image.analysis_id == Analysis.id)
+    )
+    study_z_maps_exist = sa.exists(
+        sa.select(sa.literal(1))
+        .select_from(Analysis)
+        .where(
+            Analysis.study_id == Study.id,
+            Analysis.has_z_maps.is_(True),
+        )
+    )
+    study_t_maps_exist = sa.exists(
+        sa.select(sa.literal(1))
+        .select_from(Analysis)
+        .where(
+            Analysis.study_id == Study.id,
+            Analysis.has_t_maps.is_(True),
+        )
+    )
+    study_beta_maps_exist = sa.exists(
+        sa.select(sa.literal(1))
+        .select_from(Analysis)
+        .join(Image, Image.analysis_id == Analysis.id)
+        .where(
+            Analysis.study_id == Study.id,
+            _matches_values(Image.value_type, BETA_MAP_SQL_VALUES),
+        )
+    )
+    study_variance_maps_exist = sa.exists(
+        sa.select(sa.literal(1))
+        .select_from(Analysis)
+        .join(Image, Image.analysis_id == Analysis.id)
+        .where(
+            Analysis.study_id == Study.id,
+            _matches_values(Image.value_type, VARIANCE_MAP_SQL_VALUES),
+        )
+    )
+    study_beta_and_variance_maps = sa.and_(
+        study_beta_maps_exist, study_variance_maps_exist
+    )
+    changed_study_ids = set(
+        db.session.scalars(
+            sa.update(Study)
+            .where(study_scope)
             .where(
-                Analysis.study_id == Study.id,
-                _matches_values(Image.value_type, Z_MAP_NORMALIZED_VALUES),
-            )
-        )
-        study_t_maps_exist = sa.exists(
-            sa.select(sa.literal(1))
-            .select_from(Analysis)
-            .join(Image, Image.analysis_id == Analysis.id)
-            .where(
-                Analysis.study_id == Study.id,
-                _matches_values(Image.value_type, T_MAP_NORMALIZED_VALUES),
-            )
-        )
-        study_beta_maps_exist = sa.exists(
-            sa.select(sa.literal(1))
-            .select_from(Analysis)
-            .join(Image, Image.analysis_id == Analysis.id)
-            .where(
-                Analysis.study_id == Study.id,
-                _matches_values(Image.value_type, BETA_MAP_NORMALIZED_VALUES),
-            )
-        )
-        study_variance_maps_exist = sa.exists(
-            sa.select(sa.literal(1))
-            .select_from(Analysis)
-            .join(Image, Image.analysis_id == Analysis.id)
-            .where(
-                Analysis.study_id == Study.id,
-                _matches_values(Image.value_type, VARIANCE_MAP_NORMALIZED_VALUES),
-            )
-        )
-        study_beta_and_variance_maps = sa.and_(
-            study_beta_maps_exist, study_variance_maps_exist
-        )
-        changed_study_ids = set(
-            db.session.scalars(
-                sa.update(Study)
-                .where(Study.id.in_(study_ids))
-                .where(
-                    sa.or_(
-                        Study.has_coordinates != study_points_exist,
-                        Study.has_images != study_images_exist,
-                        Study.has_z_maps != study_z_maps_exist,
-                        Study.has_t_maps != study_t_maps_exist,
-                        Study.has_beta_and_variance_maps
-                        != study_beta_and_variance_maps,
-                    )
+                sa.or_(
+                    Study.has_coordinates != study_points_exist,
+                    Study.has_images != study_images_exist,
+                    Study.has_z_maps != study_z_maps_exist,
+                    Study.has_t_maps != study_t_maps_exist,
+                    Study.has_beta_and_variance_maps != study_beta_and_variance_maps,
                 )
-                .values(
-                    has_coordinates=study_points_exist,
-                    has_images=study_images_exist,
-                    has_z_maps=study_z_maps_exist,
-                    has_t_maps=study_t_maps_exist,
-                    has_beta_and_variance_maps=study_beta_and_variance_maps,
-                )
-                .returning(Study.id)
-            ).all()
-        )
+            )
+            .values(
+                has_coordinates=study_points_exist,
+                has_images=study_images_exist,
+                has_z_maps=study_z_maps_exist,
+                has_t_maps=study_t_maps_exist,
+                has_beta_and_variance_maps=study_beta_and_variance_maps,
+            )
+            .returning(Study.id)
+        ).all()
+    )
 
     # Base-study flags from studies + analyses + child rows
     base_points_exist = sa.exists(
         sa.select(sa.literal(1))
         .select_from(Study)
-        .join(Analysis, Analysis.study_id == Study.id)
-        .join(Point, Point.analysis_id == Analysis.id)
-        .where(Study.base_study_id == BaseStudy.id)
+        .where(
+            Study.base_study_id == BaseStudy.id,
+            Study.has_coordinates.is_(True),
+        )
     )
     base_images_exist = sa.exists(
         sa.select(sa.literal(1))
         .select_from(Study)
-        .join(Analysis, Analysis.study_id == Study.id)
-        .join(Image, Image.analysis_id == Analysis.id)
-        .where(Study.base_study_id == BaseStudy.id)
+        .where(
+            Study.base_study_id == BaseStudy.id,
+            Study.has_images.is_(True),
+        )
     )
     base_z_maps_exist = sa.exists(
         sa.select(sa.literal(1))
         .select_from(Study)
-        .join(Analysis, Analysis.study_id == Study.id)
-        .join(Image, Image.analysis_id == Analysis.id)
         .where(
             Study.base_study_id == BaseStudy.id,
-            _matches_values(Image.value_type, Z_MAP_NORMALIZED_VALUES),
+            Study.has_z_maps.is_(True),
         )
     )
     base_t_maps_exist = sa.exists(
         sa.select(sa.literal(1))
         .select_from(Study)
-        .join(Analysis, Analysis.study_id == Study.id)
-        .join(Image, Image.analysis_id == Analysis.id)
         .where(
             Study.base_study_id == BaseStudy.id,
-            _matches_values(Image.value_type, T_MAP_NORMALIZED_VALUES),
+            Study.has_t_maps.is_(True),
         )
     )
     base_beta_maps_exist = sa.exists(
@@ -283,7 +265,7 @@ def recompute_media_flags(base_study_ids):
         .join(Image, Image.analysis_id == Analysis.id)
         .where(
             Study.base_study_id == BaseStudy.id,
-            _matches_values(Image.value_type, BETA_MAP_NORMALIZED_VALUES),
+            _matches_values(Image.value_type, BETA_MAP_SQL_VALUES),
         )
     )
     base_variance_maps_exist = sa.exists(
@@ -293,7 +275,7 @@ def recompute_media_flags(base_study_ids):
         .join(Image, Image.analysis_id == Analysis.id)
         .where(
             Study.base_study_id == BaseStudy.id,
-            _matches_values(Image.value_type, VARIANCE_MAP_NORMALIZED_VALUES),
+            _matches_values(Image.value_type, VARIANCE_MAP_SQL_VALUES),
         )
     )
     base_beta_and_variance_maps = sa.and_(

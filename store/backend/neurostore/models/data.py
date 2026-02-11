@@ -13,6 +13,7 @@ import shortuuid
 
 from .migration_types import TSVector, VectorType
 from ..database import db
+from ..map_types import MAP_TYPE_CODES, canonicalize_map_type
 from ..utils import parse_json_filter, build_jsonpath
 
 # status of pipeline run
@@ -26,6 +27,9 @@ STATUS_ENUM = PGEnum(
 )
 
 SEMVER_REGEX = r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$"  # noqa E501
+IMAGE_VALUE_TYPE_CHECK_SQL = "value_type IS NULL OR value_type IN ({})".format(
+    ", ".join(f"'{code}'" for code in MAP_TYPE_CODES)
+)
 
 
 def _check_type(x):
@@ -804,6 +808,12 @@ class Point(BaseMixin, db.Model):
 
 class Image(BaseMixin, db.Model):
     __tablename__ = "images"
+    __table_args__ = (
+        db.CheckConstraint(
+            IMAGE_VALUE_TYPE_CHECK_SQL,
+            name="ck_images_value_type",
+        ),
+    )
 
     url = db.Column(db.String)
     filename = db.Column(db.String)
@@ -824,6 +834,10 @@ class Image(BaseMixin, db.Model):
     )
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"), index=True)
     user = relationship("User", backref=backref("images", passive_deletes=True))
+
+    @validates("value_type")
+    def validate_value_type(self, key, value):
+        return canonicalize_map_type(value)
 
 
 class PointValue(BaseMixin, db.Model):

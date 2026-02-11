@@ -169,6 +169,48 @@ def upgrade():
         ["updated_at"],
         unique=False,
     )
+    op.create_index(
+        "ix_base_study_flag_outbox_updated_at_base_study_id",
+        "base_study_flag_outbox",
+        ["updated_at", "base_study_id"],
+        unique=False,
+    )
+
+    # Canonicalize value_type once: missing -> NULL, unknown non-empty -> Other.
+    op.execute(
+        """
+        UPDATE images AS i
+        SET value_type = CASE
+            WHEN norm.normalized = '' THEN NULL
+            WHEN norm.normalized IN ('t', 't map') THEN 'T'
+            WHEN norm.normalized IN ('z', 'z map') THEN 'Z'
+            WHEN norm.normalized IN ('f', 'f map') THEN 'F'
+            WHEN norm.normalized IN ('x2', 'x^2', 'chi squared map', 'chi-squared map', 'chi square map') THEN 'X2'
+            WHEN norm.normalized IN ('p', 'p map', 'p map (given null hypothesis)') THEN 'P'
+            WHEN norm.normalized IN ('ip', '1-p map ("inverted" probability)', '1-p map (''inverted'' probability)') THEN 'IP'
+            WHEN norm.normalized IN ('m', 'm map', 'multivariate-beta map', 'multivariate beta map') THEN 'M'
+            WHEN norm.normalized IN ('u', 'u map', 'univariate-beta map', 'univariate beta map', 'beta', 'beta map') THEN 'U'
+            WHEN norm.normalized IN ('r', 'roi/mask', 'roi / mask') THEN 'R'
+            WHEN norm.normalized IN ('pa', 'parcellation') THEN 'Pa'
+            WHEN norm.normalized IN ('a', 'anatomical') THEN 'A'
+            WHEN norm.normalized IN ('v', 'v map', 'variance', 'variance map') THEN 'V'
+            WHEN norm.normalized = 'other' THEN 'Other'
+            ELSE 'Other'
+        END
+        FROM (
+            SELECT
+                id,
+                lower(regexp_replace(btrim(coalesce(value_type, '')), '\\s+', ' ', 'g')) AS normalized
+            FROM images
+        ) AS norm
+        WHERE i.id = norm.id
+        """
+    )
+    op.create_check_constraint(
+        "ck_images_value_type",
+        "images",
+        "value_type IS NULL OR value_type IN ('T', 'Z', 'F', 'X2', 'P', 'IP', 'M', 'U', 'R', 'Pa', 'A', 'V', 'Other')",
+    )
 
     # Backfill analysis-level flags
     op.execute(
@@ -189,32 +231,26 @@ def upgrade():
                 SELECT 1
                 FROM images AS i
                 WHERE i.analysis_id = a.id
-                  AND lower(btrim(coalesce(i.value_type, ''))) IN ('z', 'z map')
+                  AND i.value_type IN ('Z')
             ),
             has_t_maps = EXISTS (
                 SELECT 1
                 FROM images AS i
                 WHERE i.analysis_id = a.id
-                  AND lower(btrim(coalesce(i.value_type, ''))) IN ('t', 't map')
+                  AND i.value_type IN ('T')
             ),
             has_beta_and_variance_maps = (
                 EXISTS (
                     SELECT 1
                     FROM images AS i
                     WHERE i.analysis_id = a.id
-                      AND lower(btrim(coalesce(i.value_type, ''))) IN (
-                          'u', 'm', 'u map', 'm map', 'beta', 'beta map',
-                          'univariate-beta map', 'multivariate-beta map',
-                          'univariate beta map', 'multivariate beta map'
-                      )
+                      AND i.value_type IN ('U', 'M')
                 )
                 AND EXISTS (
                     SELECT 1
                     FROM images AS i
                     WHERE i.analysis_id = a.id
-                      AND lower(btrim(coalesce(i.value_type, ''))) IN (
-                          'v', 'v map', 'variance', 'variance map'
-                      )
+                      AND i.value_type IN ('V')
                 )
             )
         """
@@ -242,14 +278,14 @@ def upgrade():
                 FROM analyses AS a
                 JOIN images AS i ON i.analysis_id = a.id
                 WHERE a.study_id = s.id
-                  AND lower(btrim(coalesce(i.value_type, ''))) IN ('z', 'z map')
+                  AND i.value_type IN ('Z')
             ),
             has_t_maps = EXISTS (
                 SELECT 1
                 FROM analyses AS a
                 JOIN images AS i ON i.analysis_id = a.id
                 WHERE a.study_id = s.id
-                  AND lower(btrim(coalesce(i.value_type, ''))) IN ('t', 't map')
+                  AND i.value_type IN ('T')
             ),
             has_beta_and_variance_maps = (
                 EXISTS (
@@ -257,20 +293,14 @@ def upgrade():
                     FROM analyses AS a
                     JOIN images AS i ON i.analysis_id = a.id
                     WHERE a.study_id = s.id
-                      AND lower(btrim(coalesce(i.value_type, ''))) IN (
-                          'u', 'm', 'u map', 'm map', 'beta', 'beta map',
-                          'univariate-beta map', 'multivariate-beta map',
-                          'univariate beta map', 'multivariate beta map'
-                      )
+                      AND i.value_type IN ('U', 'M')
                 )
                 AND EXISTS (
                     SELECT 1
                     FROM analyses AS a
                     JOIN images AS i ON i.analysis_id = a.id
                     WHERE a.study_id = s.id
-                      AND lower(btrim(coalesce(i.value_type, ''))) IN (
-                          'v', 'v map', 'variance', 'variance map'
-                      )
+                      AND i.value_type IN ('V')
                 )
             )
         """
@@ -301,7 +331,7 @@ def upgrade():
                 JOIN analyses AS a ON a.study_id = s.id
                 JOIN images AS i ON i.analysis_id = a.id
                 WHERE s.base_study_id = bs.id
-                  AND lower(btrim(coalesce(i.value_type, ''))) IN ('z', 'z map')
+                  AND i.value_type IN ('Z')
             ),
             has_t_maps = EXISTS (
                 SELECT 1
@@ -309,7 +339,7 @@ def upgrade():
                 JOIN analyses AS a ON a.study_id = s.id
                 JOIN images AS i ON i.analysis_id = a.id
                 WHERE s.base_study_id = bs.id
-                  AND lower(btrim(coalesce(i.value_type, ''))) IN ('t', 't map')
+                  AND i.value_type IN ('T')
             ),
             has_beta_and_variance_maps = (
                 EXISTS (
@@ -318,11 +348,7 @@ def upgrade():
                     JOIN analyses AS a ON a.study_id = s.id
                     JOIN images AS i ON i.analysis_id = a.id
                     WHERE s.base_study_id = bs.id
-                      AND lower(btrim(coalesce(i.value_type, ''))) IN (
-                          'u', 'm', 'u map', 'm map', 'beta', 'beta map',
-                          'univariate-beta map', 'multivariate-beta map',
-                          'univariate beta map', 'multivariate beta map'
-                      )
+                      AND i.value_type IN ('U', 'M')
                 )
                 AND EXISTS (
                     SELECT 1
@@ -330,9 +356,7 @@ def upgrade():
                     JOIN analyses AS a ON a.study_id = s.id
                     JOIN images AS i ON i.analysis_id = a.id
                     WHERE s.base_study_id = bs.id
-                      AND lower(btrim(coalesce(i.value_type, ''))) IN (
-                          'v', 'v map', 'variance', 'variance map'
-                      )
+                      AND i.value_type IN ('V')
                 )
             )
         """
@@ -379,6 +403,12 @@ def downgrade():
         op.execute(
             """
             DROP INDEX CONCURRENTLY IF EXISTS
+            ix_base_study_flag_outbox_updated_at_base_study_id
+            """
+        )
+        op.execute(
+            """
+            DROP INDEX CONCURRENTLY IF EXISTS
             ix_base_studies_has_beta_variance_true_created_at_id
             """
         )
@@ -405,6 +435,7 @@ def downgrade():
         op.f("ix_base_study_flag_outbox_updated_at"),
         table_name="base_study_flag_outbox",
     )
+    op.drop_constraint("ck_images_value_type", "images", type_="check")
     op.drop_index(
         op.f("ix_base_study_flag_outbox_enqueued_at"),
         table_name="base_study_flag_outbox",

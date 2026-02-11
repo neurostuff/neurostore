@@ -20,6 +20,7 @@ MAP_TYPE_CHOICES = (
 )
 
 MAP_TYPE_LABELS = dict(MAP_TYPE_CHOICES)
+MAP_TYPE_CODES = tuple(code for code, _ in MAP_TYPE_CHOICES)
 
 # These groups drive stored summary flags in Study/Analysis/BaseStudy.
 Z_MAP_CODES = frozenset({"Z"})

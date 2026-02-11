@@ -20,6 +20,7 @@ MAP_TYPE_CHOICES = (
 )
 
 MAP_TYPE_LABELS = dict(MAP_TYPE_CHOICES)
+MAP_TYPE_CODES = tuple(code for code, _ in MAP_TYPE_CHOICES)
 
 
 def _normalize(raw_value):
