@@ -3,7 +3,6 @@ from collections import Counter, OrderedDict
 from copy import deepcopy
 from datetime import datetime
 from sqlalchemy import func, text
-from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.exc import SQLAlchemyError
 
 from pgvector.sqlalchemy import Vector
@@ -313,67 +312,61 @@ class StudysetsView(ObjectView, ListView):
         )
 
         if getattr(record, "studyset_studies", None) is not None:
-            # Ensure associations match the current studies and apply stub mappings
-            # using a SQL diff/apply flow:
-            # 1) bulk-delete stale rows
-            # 2) bulk-upsert desired rows
-            # This keeps writes fast while avoiding ORM + bulk delete conflicts.
-            if not getattr(record, "id", None):
-                if flush:
-                    db.session.flush()
-                if not getattr(record, "id", None):
-                    return record
-
+            # Ensure associations match the current studies and apply stub mappings.
             current_ids = {
                 s.id for s in getattr(record, "studies", []) if getattr(s, "id", None)
             }
 
-            existing_rows = {
-                row.study_id: row.curation_stub_uuid
-                for row in db.session.execute(
-                    sa.select(StudysetStudy.study_id, StudysetStudy.curation_stub_uuid)
-                    .where(StudysetStudy.studyset_id == record.id)
-                )
-            }
-            existing_ids = set(existing_rows.keys())
+            # Reconcile through ORM collection state only. Mixing bulk SQL DELETEs
+            # with relationship replacement can schedule duplicate deletes for the
+            # same association rows and produce rowcount warnings on flush.
+            existing = {assoc.study_id: assoc for assoc in record.studyset_studies}
 
-            stale_ids = existing_ids - current_ids
-            if stale_ids:
-                db.session.execute(
-                    sa.delete(StudysetStudy).where(
-                        StudysetStudy.studyset_id == record.id,
-                        StudysetStudy.study_id.in_(stale_ids),
-                    )
-                )
+            stale_ids = set(existing.keys()) - current_ids
+            stale_assocs = []
+            for sid in stale_ids:
+                assoc = existing.pop(sid, None)
+                if assoc is not None:
+                    stale_assocs.append(assoc)
 
-            desired_rows = [
-                {
-                    "study_id": study_id,
-                    "studyset_id": record.id,
-                    # Preserve existing mapping when stub is omitted in payload.
-                    "curation_stub_uuid": (
-                        stub_map[study_id]
-                        if study_id in stub_map
-                        else existing_rows.get(study_id)
-                    ),
+            # First sync removes stale rows via delete-orphan cascade.
+            if stale_assocs:
+                record.studyset_studies = list(existing.values())
+
+            missing_ids = current_ids - set(existing.keys())
+            # If a stub UUID is being re-mapped from a removed association to a new
+            # association in this same request, flush deletes first to satisfy the
+            # per-studyset uniqueness constraint on curation_stub_uuid.
+            if missing_ids and stale_assocs:
+                stale_stub_uuids = {
+                    assoc.curation_stub_uuid
+                    for assoc in stale_assocs
+                    if assoc.curation_stub_uuid
                 }
-                for study_id in current_ids
-            ]
-            if desired_rows:
-                upsert_stmt = pg_insert(StudysetStudy).values(desired_rows)
-                upsert_stmt = upsert_stmt.on_conflict_do_update(
-                    index_elements=[
-                        StudysetStudy.studyset_id,
-                        StudysetStudy.study_id,
-                    ],
-                    set_={
-                        "curation_stub_uuid": upsert_stmt.excluded.curation_stub_uuid
-                    },
-                )
-                db.session.execute(upsert_stmt)
+                incoming_stub_uuids = {
+                    stub_map.get(study_id)
+                    for study_id in missing_ids
+                    if stub_map.get(study_id)
+                }
+                if stale_stub_uuids.intersection(incoming_stub_uuids):
+                    db.session.flush()
 
-            # Keep serialized response consistent with DB-applied diff.
-            db.session.expire(record, ["studyset_studies", "studies"])
+            # Ensure each study has an association and apply stub UUIDs
+            for study_id in current_ids:
+                assoc = existing.get(study_id)
+                if not assoc:
+                    assoc = StudysetStudy(
+                        study_id=study_id,
+                        studyset_id=record.id,
+                        curation_stub_uuid=None,
+                    )
+                    db.session.add(assoc)
+                    existing[study_id] = assoc
+                if study_id in stub_map:
+                    assoc.curation_stub_uuid = stub_map[study_id]
+
+            # Sync the relationship collection to the de-duplicated set for serialization.
+            record.studyset_studies = list(existing.values())
 
         return record
 
