@@ -673,3 +673,18 @@ def test_annotation_analyses_post(auth_client, ingest_neurosynth, session):
     }
     for analysis_id, value in updated_by_analysis.items():
         assert current_by_analysis[analysis_id] == value == new_value
+
+
+def test_annotation_analyses_post_no_valid_ids_noop(auth_client, ingest_neurosynth):
+    dset = Studyset.query.first()
+    payload = [
+        {
+            "study": dset.studies[0].id,
+            "analysis": dset.studies[0].analyses[0].id,
+            "note": {"foo": "bar"},
+        }
+    ]
+
+    resp = auth_client.post("/api/annotation-analyses/", data=payload)
+    assert resp.status_code == 200
+    assert resp.json() == []
