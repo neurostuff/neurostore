@@ -1138,6 +1138,12 @@ def test_metadata_worker_merge_reassigns_pipeline_rows(
     session.add(duplicate)
     session.commit()
 
+    # Ensure the seeded study remains canonical during duplicate merge.
+    now = dt.datetime.now(dt.timezone.utc)
+    primary.created_at = now - dt.timedelta(seconds=10)
+    duplicate.created_at = now
+    session.commit()
+
     pipeline_result = (
         session.query(PipelineStudyResult)
         .filter(PipelineStudyResult.base_study_id == primary.id)
