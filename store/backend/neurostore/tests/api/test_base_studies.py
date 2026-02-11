@@ -204,7 +204,9 @@ def test_field_sanitization(auth_client):
 def test_filter_base_study_by_public_and_private_neurovault_ids(auth_client, session):
     user = session.query(User).first()
     public_base_study = BaseStudy(name="Public Neurovault Filter Study", level="group")
-    private_base_study = BaseStudy(name="Private Neurovault Filter Study", level="group")
+    private_base_study = BaseStudy(
+        name="Private Neurovault Filter Study", level="group"
+    )
     public_study = Study(
         name="Public Neurovault Study Version",
         level="group",
@@ -221,7 +223,9 @@ def test_filter_base_study_by_public_and_private_neurovault_ids(auth_client, ses
         base_study=private_base_study,
         user=user,
     )
-    session.add_all([public_base_study, private_base_study, public_study, private_study])
+    session.add_all(
+        [public_base_study, private_base_study, public_study, private_study]
+    )
     session.commit()
 
     public_filter = auth_client.get("/api/base-studies/?neurovault_id=19125")
@@ -282,7 +286,9 @@ def test_multiple_neurovault_collections_share_base_study(auth_client, session):
     assert first_study.base_study_id == second_study.base_study_id
     shared_base_study_id = first_study.base_study_id
 
-    by_doi = auth_client.get("/api/base-studies/?doi=10.9999/same-paper-multi-collection")
+    by_doi = auth_client.get(
+        "/api/base-studies/?doi=10.9999/same-paper-multi-collection"
+    )
     assert by_doi.status_code == 200
     doi_ids = {result["id"] for result in by_doi.json()["results"]}
     assert shared_base_study_id in doi_ids
@@ -987,9 +993,7 @@ def test_metadata_worker_merges_duplicates_and_keeps_existing_metadata(
     monkeypatch.setattr(
         metadata_service, "fetch_metadata_semantic_scholar", fake_metadata_semantic
     )
-    monkeypatch.setattr(
-        metadata_service, "fetch_metadata_pubmed", fake_metadata_pubmed
-    )
+    monkeypatch.setattr(metadata_service, "fetch_metadata_pubmed", fake_metadata_pubmed)
     monkeypatch.setattr(
         metadata_service,
         "clear_cache_for_ids",
@@ -1025,13 +1029,17 @@ def test_metadata_worker_merges_duplicates_and_keeps_existing_metadata(
         is None
     )
     assert (
-        BaseStudyMetadataOutbox.query.filter_by(base_study_id=duplicate.id).one_or_none()
+        BaseStudyMetadataOutbox.query.filter_by(
+            base_study_id=duplicate.id
+        ).one_or_none()
         is None
     )
     assert BaseStudyFlagOutbox.query.filter_by(base_study_id=primary.id).first()
 
     assert captured_cache_ids, "Expected metadata worker to invalidate cache versions"
-    assert any(primary.id in ids.get("base-studies", set()) for ids in captured_cache_ids)
+    assert any(
+        primary.id in ids.get("base-studies", set()) for ids in captured_cache_ids
+    )
     assert any(
         duplicate_study.id in ids.get("studies", set()) for ids in captured_cache_ids
     )
@@ -1075,7 +1083,9 @@ def test_metadata_worker_merge_avoids_doi_pmid_unique_conflict(session, monkeypa
         metadata_service, "lookup_ids_openalex", lambda *_args, **_kwargs: {}
     )
     monkeypatch.setattr(
-        metadata_service, "fetch_metadata_semantic_scholar", lambda *_args, **_kwargs: {}
+        metadata_service,
+        "fetch_metadata_semantic_scholar",
+        lambda *_args, **_kwargs: {},
     )
     monkeypatch.setattr(
         metadata_service, "fetch_metadata_pubmed", lambda *_args, **_kwargs: {}
@@ -1239,7 +1249,9 @@ def test_enqueue_metadata_updates_treats_blank_values_as_missing(session):
     enqueued = enqueue_base_study_metadata_updates([base_study.id], reason="test-blank")
     assert enqueued == 1
     assert (
-        BaseStudyMetadataOutbox.query.filter_by(base_study_id=base_study.id).one_or_none()
+        BaseStudyMetadataOutbox.query.filter_by(
+            base_study_id=base_study.id
+        ).one_or_none()
         is not None
     )
 
@@ -1258,7 +1270,9 @@ def test_enqueue_metadata_updates_skips_blank_identifier_only_rows(session):
     enqueued = enqueue_base_study_metadata_updates([base_study.id], reason="test-skip")
     assert enqueued == 0
     assert (
-        BaseStudyMetadataOutbox.query.filter_by(base_study_id=base_study.id).one_or_none()
+        BaseStudyMetadataOutbox.query.filter_by(
+            base_study_id=base_study.id
+        ).one_or_none()
         is None
     )
 

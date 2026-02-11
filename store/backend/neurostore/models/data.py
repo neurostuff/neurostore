@@ -699,9 +699,7 @@ class Analysis(BaseMixin, db.Model):
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"), index=True)
     user = relationship(
         "User",
-        backref=backref(
-            "analyses", cascade_backrefs=False, passive_deletes=True
-        ),
+        backref=backref("analyses", cascade_backrefs=False, passive_deletes=True),
         cascade_backrefs=False,
     )
     analysis_conditions = relationship(
