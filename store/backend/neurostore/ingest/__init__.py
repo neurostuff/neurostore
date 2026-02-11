@@ -50,11 +50,18 @@ def _coerce_optional_int(value):
 
 def ingest_neurovault(verbose=False, limit=20, overwrite=False, max_images=None):
     # Store existing studies for quick lookup
-    all_studies = {s.doi: s for s in Study.query.filter_by(source="neurovault").all()}
+    all_studies = {
+        str(s.source_id): s for s in Study.query.filter_by(source="neurovault").all()
+    }
 
     def add_collection(data):
-        if data["DOI"] in all_studies and not overwrite:
-            print("Skipping {} (already exists)...".format(data["DOI"]))
+        collection_id = data.get("id")
+        if str(collection_id) in all_studies and not overwrite:
+            print(
+                "Skipping collection {} with DOI {} (already exists)...".format(
+                    collection_id, data.get("DOI")
+                )
+            )
             return
         collection_id = data.pop("id")
         doi = data.pop("DOI", None)
@@ -66,7 +73,7 @@ def ingest_neurovault(verbose=False, limit=20, overwrite=False, max_images=None)
             base_study = BaseStudy(
                 name=data.pop("name", None),
                 description=data.pop("description", None),
-                doi=data.pop("DOI", None),
+                doi=doi,
                 authors=data.pop("authors", None),
                 publication=data.pop("journal_name", None),
                 metadata_=data,
@@ -146,7 +153,7 @@ def ingest_neurovault(verbose=False, limit=20, overwrite=False, max_images=None)
             [base_study] + [s] + list(analyses.values()) + images + list(conditions)
         )
         db.session.commit()
-        all_studies[s.name] = s
+        all_studies[str(s.source_id)] = s
         return s
 
     url = "https://neurovault.org/api/collections.json"

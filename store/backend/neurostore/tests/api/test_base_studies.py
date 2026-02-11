@@ -194,6 +194,100 @@ def test_field_sanitization(auth_client):
     assert created_studies[2]["description"] is None
 
 
+def test_filter_base_study_by_public_and_private_neurovault_ids(auth_client, session):
+    user = session.query(User).first()
+    public_base_study = BaseStudy(name="Public Neurovault Filter Study", level="group")
+    private_base_study = BaseStudy(name="Private Neurovault Filter Study", level="group")
+    public_study = Study(
+        name="Public Neurovault Study Version",
+        level="group",
+        source="neurovault",
+        source_id="19125",
+        base_study=public_base_study,
+        user=user,
+    )
+    private_study = Study(
+        name="Private Neurovault Study Version",
+        level="group",
+        source="neurovault",
+        source_id="private-collection-token-abc123",
+        base_study=private_base_study,
+        user=user,
+    )
+    session.add_all([public_base_study, private_base_study, public_study, private_study])
+    session.commit()
+
+    public_filter = auth_client.get("/api/base-studies/?neurovault_id=19125")
+    private_filter = auth_client.get(
+        "/api/base-studies/?neurovault_id=private-collection-token-abc123"
+    )
+
+    assert public_filter.status_code == 200
+    assert private_filter.status_code == 200
+    assert public_base_study.id in {r["id"] for r in public_filter.json()["results"]}
+    assert private_base_study.id in {r["id"] for r in private_filter.json()["results"]}
+
+
+def test_filter_base_study_by_neurovault_id(auth_client, session):
+    user = session.query(User).first()
+    base_study = BaseStudy(name="Neurovault Filter Study", level="group", user=user)
+    study = Study(
+        name="Neurovault-backed Study Version",
+        level="group",
+        source="neurovault",
+        source_id="nv-filter-0001",
+        base_study=base_study,
+        user=user,
+    )
+    session.add_all([base_study, study])
+    session.commit()
+
+    filter_resp = auth_client.get("/api/base-studies/?neurovault_id=nv-filter-0001")
+    assert filter_resp.status_code == 200
+
+    result_ids = {result["id"] for result in filter_resp.json()["results"]}
+    assert base_study.id in result_ids
+
+
+def test_multiple_neurovault_collections_share_base_study(auth_client, session):
+    payload_common = {
+        "name": "Same Paper Multiple Neurovault Collections",
+        "level": "group",
+        "doi": "10.9999/same-paper-multi-collection",
+        "pmid": "999002",
+        "pmcid": "PMC999002",
+    }
+    first_resp = auth_client.post("/api/studies/", data=payload_common)
+    second_resp = auth_client.post("/api/studies/", data=payload_common)
+
+    assert first_resp.status_code == 200
+    assert second_resp.status_code == 200
+    assert first_resp.json()["id"] != second_resp.json()["id"]
+
+    first_study = session.query(Study).filter_by(id=first_resp.json()["id"]).one()
+    second_study = session.query(Study).filter_by(id=second_resp.json()["id"]).one()
+    first_study.source = "neurovault"
+    first_study.source_id = "nv-dup-1"
+    second_study.source = "neurovault"
+    second_study.source_id = "nv-dup-2"
+    session.commit()
+
+    assert first_study.base_study_id == second_study.base_study_id
+    shared_base_study_id = first_study.base_study_id
+
+    by_doi = auth_client.get("/api/base-studies/?doi=10.9999/same-paper-multi-collection")
+    assert by_doi.status_code == 200
+    doi_ids = {result["id"] for result in by_doi.json()["results"]}
+    assert shared_base_study_id in doi_ids
+
+    by_nv_1 = auth_client.get("/api/base-studies/?neurovault_id=nv-dup-1")
+    by_nv_2 = auth_client.get("/api/base-studies/?neurovault_id=nv-dup-2")
+    assert by_nv_1.status_code == 200
+    assert by_nv_2.status_code == 200
+    assert shared_base_study_id in {r["id"] for r in by_nv_1.json()["results"]}
+    assert shared_base_study_id in {r["id"] for r in by_nv_2.json()["results"]}
+
+
 def test_flat_base_study(auth_client, ingest_neurosynth, session):
     flat_resp = auth_client.get("/api/base-studies/?flat=true")
     reg_resp = auth_client.get("/api/base-studies/?flat=false")
