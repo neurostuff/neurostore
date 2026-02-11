@@ -55,12 +55,11 @@ const SelectAnalysesSummaryComponent: React.FC<{
                     return;
                 }
 
-                const analysisWithPointCount = analysis as AnalysisReturn & { point_count?: unknown };
-                if (typeof analysisWithPointCount.point_count !== 'number') {
+                if (typeof analysis.point_count !== 'number') {
                     throw new Error('Expected analysis.point_count in summary studyset payload');
                 }
 
-                numCoordinatesSelected = numCoordinatesSelected + analysisWithPointCount.point_count;
+                numCoordinatesSelected = numCoordinatesSelected + analysis.point_count;
             });
         });
 

@@ -16,11 +16,7 @@ const useGetStudysetById = (studysetId?: string, nested?: boolean, summary?: boo
     >(
         [STUDYSET_QUERY_STRING, studysetId, nested, summary],
         () =>
-            API.NeurostoreServices.StudySetsService.studysetsIdGet(studysetId || '', nested, undefined, {
-                params: {
-                    summary: summary || undefined,
-                },
-            }),
+            API.NeurostoreServices.StudySetsService.studysetsIdGet(studysetId || '', nested, summary, undefined),
         {
             enabled: !!studysetId,
             onError: () => {
