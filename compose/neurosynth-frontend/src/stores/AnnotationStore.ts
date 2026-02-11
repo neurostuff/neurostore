@@ -148,11 +148,10 @@ export const useAnnotationStore = create<
         },
         createAnnotationColumn: (noteKey) => {
             setUnloadHandler('annotation');
-            const resolvedDefault =
-                noteKey.default ?? getDefaultForNoteKey(noteKey.key, noteKey.type);
+            const resolvedDefault = noteKey.default ?? getDefaultForNoteKey(noteKey.key, noteKey.type);
             const normalizedNoteKey = {
                 ...noteKey,
-                ...(resolvedDefault !== undefined ? { default: resolvedDefault } : {}),
+                default: resolvedDefault,
             };
             set((state) => ({
                 ...state,
@@ -166,9 +165,7 @@ export const useAnnotationStore = create<
                         ...note,
                         note: {
                             ...note.note,
-                            [noteKey.key]: Object.prototype.hasOwnProperty.call(normalizedNoteKey, 'default')
-                                ? (normalizedNoteKey.default ?? null)
-                                : null,
+                            [noteKey.key]: normalizedNoteKey.default ?? null,
                         },
                     })),
                 },

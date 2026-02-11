@@ -189,7 +189,7 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
      * 3. add handleCellMouseDown to prevent the user from selecting an entire row - for stylistic reasons but also theres no reason for them to select a row
      */
     const handleCellMouseDown = (event: MouseEvent, coords: CellCoords): void => {
-        const isRowHeader = coords.col === -1 || coords.col === 0;
+        const isRowHeader = coords.col < 2;
         if (isRowHeader) {
             event.stopImmediatePropagation();
             return;
@@ -298,7 +298,7 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
                     type: columnType,
                     order: 0,
                     isNew: true,
-                    ...(defaultValue !== undefined ? { default: defaultValue } : {}),
+                    default: defaultValue,
                 },
                 ...prev.noteKeys,
             ].map((noteKey, index) => ({ ...noteKey, order: index }));

@@ -73,7 +73,7 @@ const EditStudyAnnotationsHotTable: React.FC<{ readonly?: boolean }> = ({ readon
         createAnnotationColumn({
             key: trimmedKey,
             type: columnType,
-            ...(defaultValue !== undefined ? { default: defaultValue } : {}),
+            default: defaultValue,
         });
 
         return true;

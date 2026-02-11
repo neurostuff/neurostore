@@ -10,12 +10,11 @@ export const noteKeyObjToArr = (noteKeys?: object | null): NoteKeyType[] => {
     const arr = Object.entries(noteKeyTypes)
         .map(([key, descriptor]) => {
             if (!descriptor?.type) throw new Error('Invalid note_keys descriptor: missing type');
-            const hasDefault = Object.prototype.hasOwnProperty.call(descriptor, 'default');
             return {
                 type: descriptor.type,
                 key,
                 order: descriptor.order ?? 0,
-                default: hasDefault ? descriptor.default : undefined,
+                ...(descriptor.default !== undefined ? { default: descriptor.default } : {}),
             };
         })
         .sort((a, b) => a.order - b.order || a.key.localeCompare(b.key))
@@ -28,13 +27,14 @@ export const noteKeyArrToObj = (
 ): { [key: string]: { type: EPropertyType; order: number; default?: AnnotationNoteValue } } => {
     const noteKeyObj = noteKeyArr.reduce(
         (acc, curr, index) => {
-            acc[curr.key] = {
+            const descriptor: { type: EPropertyType; order: number; default?: AnnotationNoteValue } = {
                 type: curr.type,
                 order: curr.order ?? index,
             };
-            if (Object.prototype.hasOwnProperty.call(curr, 'default')) {
-                (acc[curr.key] as { default?: AnnotationNoteValue }).default = curr.default;
+            if (curr.default !== undefined) {
+                descriptor.default = curr.default;
             }
+            acc[curr.key] = descriptor;
             return acc;
         },
         {} as { [key: string]: { type: EPropertyType; order: number; default?: AnnotationNoteValue } }
