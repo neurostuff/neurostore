@@ -148,7 +148,8 @@ export const useAnnotationStore = create<
         },
         createAnnotationColumn: (noteKey) => {
             setUnloadHandler('annotation');
-            const resolvedDefault = noteKey.default ?? getDefaultForNoteKey(noteKey.key, noteKey.type);
+            const resolvedDefault =
+                noteKey.default !== undefined ? noteKey.default : getDefaultForNoteKey(noteKey.key, noteKey.type) ?? null;
             const normalizedNoteKey = {
                 ...noteKey,
                 default: resolvedDefault,

@@ -13,7 +13,7 @@ describe('HotTables utils - note key conversions', () => {
         const result = noteKeyObjToArr(input);
 
         expect(result).toEqual([
-            { key: 'alpha', type: EPropertyType.NUMBER, order: 0 },
+            { key: 'alpha', type: EPropertyType.NUMBER, order: 0, default: null },
             { key: 'gamma', type: EPropertyType.BOOLEAN, order: 1, default: false },
             { key: 'beta', type: EPropertyType.STRING, order: 2, default: 'demo' },
         ]);
@@ -39,7 +39,7 @@ describe('HotTables utils - note key conversions', () => {
         expect(result).toEqual({
             first: { type: EPropertyType.STRING, order: 2, default: 'hello' },
             second: { type: EPropertyType.BOOLEAN, order: 0, default: false },
-            third: { type: EPropertyType.NUMBER, order: 2 },
+            third: { type: EPropertyType.NUMBER, order: 2, default: null },
         });
     });
 

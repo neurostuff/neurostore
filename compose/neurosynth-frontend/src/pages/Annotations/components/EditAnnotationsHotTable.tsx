@@ -298,7 +298,7 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
                     type: columnType,
                     order: 0,
                     isNew: true,
-                    default: defaultValue,
+                    default: defaultValue ?? null,
                 },
                 ...prev.noteKeys,
             ].map((noteKey, index) => ({ ...noteKey, order: index }));

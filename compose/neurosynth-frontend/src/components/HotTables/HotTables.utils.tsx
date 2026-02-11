@@ -14,7 +14,7 @@ export const noteKeyObjToArr = (noteKeys?: object | null): NoteKeyType[] => {
                 type: descriptor.type,
                 key,
                 order: descriptor.order ?? 0,
-                ...(descriptor.default !== undefined ? { default: descriptor.default } : {}),
+                default: descriptor.default ?? null,
             };
         })
         .sort((a, b) => a.order - b.order || a.key.localeCompare(b.key))
@@ -30,10 +30,8 @@ export const noteKeyArrToObj = (
             const descriptor: { type: EPropertyType; order: number; default?: AnnotationNoteValue } = {
                 type: curr.type,
                 order: curr.order ?? index,
+                default: curr.default ?? null,
             };
-            if (curr.default !== undefined) {
-                descriptor.default = curr.default;
-            }
             acc[curr.key] = descriptor;
             return acc;
         },
