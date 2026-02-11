@@ -5,7 +5,7 @@ from flask import current_app
 TOKEN = "INSERT TOKEN"
 
 
-# In v5, ManagementClient replaces the old Auth0 client
+# In v5, ManagementClient replaces the Users class
 # Users are accessed via client.users instead of Users class directly
 management_client = ManagementClient(
     domain=current_app.config["AUTH0_BASE_URL"].removeprefix("https://"),
@@ -14,7 +14,6 @@ management_client = ManagementClient(
 
 # In v5, list() returns a SyncPager that can be iterated
 # The response items are Pydantic models, not dicts
-# Use model_dump() to convert to dict if needed
 result_pager = management_client.users.list(per_page=100)
 
 sql_users = []
