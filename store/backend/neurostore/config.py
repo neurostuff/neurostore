@@ -23,7 +23,9 @@ class Config(object):
     SQLALCHEMY_DATABASE_URI = (
         f"postgresql://postgres:" f"{POSTGRES_PASSWORD}@{POSTGRES_HOST}:5432/{DB_NAME}"
     )
-    BASE_STUDY_FLAGS_ASYNC = os.environ.get("BASE_STUDY_FLAGS_ASYNC", "true").lower() in (
+    BASE_STUDY_FLAGS_ASYNC = os.environ.get(
+        "BASE_STUDY_FLAGS_ASYNC", "true"
+    ).lower() in (
         "1",
         "true",
         "yes",

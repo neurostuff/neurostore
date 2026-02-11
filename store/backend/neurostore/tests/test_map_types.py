@@ -10,7 +10,7 @@ from neurostore.map_types import canonicalize_map_type, map_type_label
         ("Z map", "Z", "Z map"),
         ("Chi squared map", "X2", "Chi squared map"),
         (
-            "1-P map (\"inverted\" probability)",
+            '1-P map ("inverted" probability)',
             "IP",
             '1-P map ("inverted" probability)',
         ),

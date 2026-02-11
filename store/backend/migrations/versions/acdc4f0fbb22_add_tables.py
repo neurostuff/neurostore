@@ -5,6 +5,7 @@ Revises: 9f072fcaec39
 Create Date: 2025-02-14 00:00:00.000000
 
 """
+
 from alembic import op
 import sqlalchemy as sa
 import sqlalchemy_utils  # noqa: F401
@@ -22,7 +23,12 @@ def upgrade():
     op.create_table(
         "tables",
         sa.Column("id", sa.Text(), nullable=False),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=True),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=True,
+        ),
         sa.Column("updated_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("study_id", sa.Text(), nullable=True),
         sa.Column("t_id", sa.Text(), nullable=True),

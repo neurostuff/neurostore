@@ -63,9 +63,7 @@ def bump_cache_versions(unique_ids):
                 continue
 
             normalized_ids = {
-                id_
-                for id_ in ids
-                if id_ is not None and str(id_).strip() != ""
+                id_ for id_ in ids if id_ is not None and str(id_).strip() != ""
             }
             if not normalized_ids:
                 continue

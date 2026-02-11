@@ -640,7 +640,9 @@ def test_async_worker_map_type_flag_transitions(auth_client, session, app):
         ).one()
 
         drain_outbox()
-        refresh_all(analysis_a, analysis_b, study_a, study_b, base_study_a, base_study_b)
+        refresh_all(
+            analysis_a, analysis_b, study_a, study_b, base_study_a, base_study_b
+        )
 
         # Initial state: analysis_a has beta+variance maps, analysis_b has none.
         assert analysis_a.has_beta_and_variance_maps is True
@@ -689,7 +691,9 @@ def test_async_worker_map_type_flag_transitions(auth_client, session, app):
         )
         assert move_variance.status_code == 200
         drain_outbox()
-        refresh_all(analysis_a, analysis_b, study_a, study_b, base_study_a, base_study_b)
+        refresh_all(
+            analysis_a, analysis_b, study_a, study_b, base_study_a, base_study_b
+        )
         assert analysis_a.has_beta_and_variance_maps is False
         assert study_a.has_beta_and_variance_maps is False
         assert base_study_a.has_beta_and_variance_maps is False
@@ -703,7 +707,9 @@ def test_async_worker_map_type_flag_transitions(auth_client, session, app):
         )
         assert move_beta.status_code == 200
         drain_outbox()
-        refresh_all(analysis_a, analysis_b, study_a, study_b, base_study_a, base_study_b)
+        refresh_all(
+            analysis_a, analysis_b, study_a, study_b, base_study_a, base_study_b
+        )
         assert analysis_a.has_beta_and_variance_maps is False
         assert study_a.has_beta_and_variance_maps is False
         assert base_study_a.has_beta_and_variance_maps is False
@@ -742,10 +748,14 @@ def test_async_worker_map_type_flag_transitions(auth_client, session, app):
         assert base_study_b.has_t_maps is True
 
         # move z map from b -> a and validate old/new scope transitions
-        move_z = auth_client.put(f"/api/images/{z_image_id}", data={"analysis": analysis_a_id})
+        move_z = auth_client.put(
+            f"/api/images/{z_image_id}", data={"analysis": analysis_a_id}
+        )
         assert move_z.status_code == 200
         drain_outbox()
-        refresh_all(analysis_a, analysis_b, study_a, study_b, base_study_a, base_study_b)
+        refresh_all(
+            analysis_a, analysis_b, study_a, study_b, base_study_a, base_study_b
+        )
         assert analysis_a.has_z_maps is True
         assert study_a.has_z_maps is True
         assert base_study_a.has_z_maps is True
@@ -1115,16 +1125,10 @@ def test_superseded_by_relationship(session):
     """Test that superseded_by creates a valid relationship"""
     # Create two base studies
     study1 = BaseStudy(
-        name="Old Study",
-        doi="10.1234/old.study",
-        pmid="11111111",
-        is_active=False
+        name="Old Study", doi="10.1234/old.study", pmid="11111111", is_active=False
     )
     study2 = BaseStudy(
-        name="New Study",
-        doi="10.1234/new.study",
-        pmid="22222222",
-        is_active=True
+        name="New Study", doi="10.1234/new.study", pmid="22222222", is_active=True
     )
     session.add(study1)
     session.add(study2)

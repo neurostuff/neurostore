@@ -107,6 +107,7 @@ def apply_map_type_filter(query, model, map_type):
         abort_validation("map_type must be one of: z, t, beta_variance, any")
     return query.filter(getattr(model, mapped_field).is_(True))
 
+
 # Individual resource views
 
 

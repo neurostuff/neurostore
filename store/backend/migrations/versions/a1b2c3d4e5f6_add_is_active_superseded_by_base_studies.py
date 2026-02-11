@@ -4,6 +4,7 @@ Revision ID: a1b2c3d4e5f6
 Revises: 8e3f3d8a9b5b
 Create Date: 2026-01-21 00:00:00.000000
 """
+
 import sqlalchemy as sa
 from alembic import op
 
@@ -18,7 +19,9 @@ def upgrade():
     # Add is_active column with default True
     op.add_column(
         "base_studies",
-        sa.Column("is_active", sa.Boolean(), nullable=False, server_default=sa.text("true")),
+        sa.Column(
+            "is_active", sa.Boolean(), nullable=False, server_default=sa.text("true")
+        ),
     )
     # Create index on is_active for better query performance
     op.create_index(
@@ -53,7 +56,9 @@ def downgrade():
     op.drop_constraint("no_self_reference", "base_studies", type_="check")
 
     # Drop foreign key constraint
-    op.drop_constraint("fk_base_studies_superseded_by", "base_studies", type_="foreignkey")
+    op.drop_constraint(
+        "fk_base_studies_superseded_by", "base_studies", type_="foreignkey"
+    )
 
     # Drop superseded_by column
     op.drop_column("base_studies", "superseded_by")

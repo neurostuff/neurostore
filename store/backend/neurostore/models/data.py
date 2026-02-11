@@ -472,7 +472,10 @@ class BaseStudyFlagOutbox(db.Model):
     )
     reason = db.Column(db.String, nullable=True)
     enqueued_at = db.Column(
-        db.DateTime(timezone=True), nullable=False, server_default=func.now(), index=True
+        db.DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        index=True,
     )
     updated_at = db.Column(
         db.DateTime(timezone=True),

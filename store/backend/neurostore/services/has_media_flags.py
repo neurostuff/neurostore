@@ -18,6 +18,7 @@ from ..models import (
     Study,
 )
 
+
 def _normalize_ids(ids):
     if not ids:
         return []

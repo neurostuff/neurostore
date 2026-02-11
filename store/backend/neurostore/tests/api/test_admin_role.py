@@ -1,6 +1,7 @@
 """
 Tests for admin role functionality
 """
+
 from ...models import User, Role, Study, Studyset
 from ...resources.utils import is_user_admin
 
@@ -62,10 +63,7 @@ def test_admin_can_modify_others_records(auth_clients, user_data, session):
 
     # Try to modify the study as admin
     new_name = "Modified by admin"
-    resp = admin_client.put(
-        f"/api/studies/{study.id}",
-        data={"name": new_name}
-    )
+    resp = admin_client.put(f"/api/studies/{study.id}", data={"name": new_name})
 
     assert resp.status_code == 200
     assert resp.json()["name"] == new_name
@@ -114,9 +112,7 @@ def test_admin_can_see_private_records(auth_clients, user_data, session):
     # Create a private studyset owned by user1
     regular_user = User.query.filter_by(name="user1").first()
     private_studyset = Studyset(
-        name="Private Studyset",
-        user=regular_user,
-        public=False
+        name="Private Studyset", user=regular_user, public=False
     )
     session.add(private_studyset)
     session.commit()
@@ -156,8 +152,7 @@ def test_non_admin_cannot_modify_others_records(auth_clients, user_data, session
 
     # Try to modify user2's study as user1 (should fail)
     resp = user1_client.put(
-        f"/api/studies/{study.id}",
-        data={"name": "Unauthorized modification"}
+        f"/api/studies/{study.id}", data={"name": "Unauthorized modification"}
     )
 
     assert resp.status_code == 403

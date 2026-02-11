@@ -129,7 +129,9 @@ def test_map_type_filter(auth_client, session, endpoint):
     beta_var_match = auth_client.get(
         f"/api/{endpoint}/?doi={beta_var_doi}&map_type=beta_variance"
     )
-    beta_var_miss = auth_client.get(f"/api/{endpoint}/?doi={z_doi}&map_type=beta_variance")
+    beta_var_miss = auth_client.get(
+        f"/api/{endpoint}/?doi={z_doi}&map_type=beta_variance"
+    )
     any_match = auth_client.get(f"/api/{endpoint}/?doi={any_doi}&map_type=any")
     any_match_z = auth_client.get(f"/api/{endpoint}/?doi={z_doi}&map_type=any")
 
