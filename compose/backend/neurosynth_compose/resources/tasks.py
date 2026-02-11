@@ -164,7 +164,7 @@ def create_or_update_neurostore_analysis(
                 "url": nv_file.url,
                 "filename": nv_file.filename,
                 "space": nv_file.space,
-                "value_type": canonicalize_map_type(nv_file.value_type, default=None),
+                "value_type": canonicalize_map_type(nv_file.value_type),
             }
             images.append(image)
 

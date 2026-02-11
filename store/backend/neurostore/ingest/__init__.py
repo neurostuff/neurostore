@@ -126,7 +126,7 @@ def ingest_neurovault(verbose=False, limit=20, overwrite=False, max_images=None)
             else:
                 analysis = analyses[aname]
             space = space or "Unknown" if img.get("not_mni", False) else "MNI"
-            type_ = canonicalize_map_type(img.get("map_type"), default="Other")
+            type_ = canonicalize_map_type(img.get("map_type"))
             image = Image(
                 url=img["file"],
                 space=space,

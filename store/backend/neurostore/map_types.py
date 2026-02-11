@@ -21,6 +21,12 @@ MAP_TYPE_CHOICES = (
 
 MAP_TYPE_LABELS = dict(MAP_TYPE_CHOICES)
 
+# These groups drive stored summary flags in Study/Analysis/BaseStudy.
+Z_MAP_CODES = frozenset({"Z"})
+T_MAP_CODES = frozenset({"T"})
+BETA_MAP_CODES = frozenset({"U", "M"})
+VARIANCE_MAP_CODES = frozenset({"V"})
+
 
 def _normalize(raw_value):
     if raw_value is None:
@@ -44,28 +50,53 @@ _MAP_TYPE_LOOKUP.update(
         "x^2": "X2",
         "1-p map ('inverted' probability)": "IP",
         "roi / mask": "R",
+        "u map": "U",
+        "m map": "M",
+        "v map": "V",
+        "variance map": "V",
+        "beta": "U",
+        "beta map": "U",
         "univariate beta map": "U",
         "multivariate beta map": "M",
-        "unknown": "Other",
-        "none": "Other",
-        "n/a": "Other",
     }
 )
 
 
-def canonicalize_map_type(value, default="Other"):
-    """Convert a map type code/label/alias to a canonical NeuroVault code."""
+def normalized_aliases_for_codes(codes):
+    code_set = set(codes)
+    return frozenset(
+        alias for alias, code in _MAP_TYPE_LOOKUP.items() if code in code_set
+    )
+
+
+Z_MAP_NORMALIZED_VALUES = normalized_aliases_for_codes(Z_MAP_CODES)
+T_MAP_NORMALIZED_VALUES = normalized_aliases_for_codes(T_MAP_CODES)
+BETA_MAP_NORMALIZED_VALUES = normalized_aliases_for_codes(BETA_MAP_CODES)
+VARIANCE_MAP_NORMALIZED_VALUES = normalized_aliases_for_codes(VARIANCE_MAP_CODES)
+
+
+def canonicalize_map_type(value, default="Other", missing_default=None):
+    """Convert a map type code/label/alias to a canonical NeuroVault code.
+
+    Behavior:
+    - Missing/null/empty input -> ``missing_default`` (default: None)
+    - Unknown non-empty input -> ``default`` (default: "Other")
+    """
 
     normalized = _normalize(value)
     if normalized is None:
-        return default
+        return missing_default
     return _MAP_TYPE_LOOKUP.get(normalized, default)
 
 
-def map_type_label(value, default="Other"):
+def map_type_label(value, default="Other", missing_default=None):
     """Return a user-facing NeuroVault map type label."""
 
-    code = canonicalize_map_type(value, default=default)
+    code = canonicalize_map_type(
+        value,
+        default=default,
+        missing_default=missing_default,
+    )
     if code is None:
         return None
     return MAP_TYPE_LABELS.get(code, MAP_TYPE_LABELS["Other"])

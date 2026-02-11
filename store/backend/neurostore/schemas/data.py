@@ -317,7 +317,7 @@ class ImageSchema(BaseDataSchema):
     def humanize_value_type(self, data, **kwargs):
         if "value_type" not in data:
             return data
-        data["value_type"] = map_type_label(data.get("value_type"), default=None)
+        data["value_type"] = map_type_label(data.get("value_type"))
         return data
 
 
@@ -927,7 +927,7 @@ class ImageSnapshot(BaseSnapshot):
             "user": i.user_id,
             "url": i.url,
             "space": i.space,
-            "value_type": map_type_label(i.value_type, default=None),
+            "value_type": map_type_label(i.value_type),
             "filename": i.filename,
             "add_date": i.add_date,
         }

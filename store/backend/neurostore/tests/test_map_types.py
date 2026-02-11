@@ -17,10 +17,11 @@ from neurostore.map_types import canonicalize_map_type, map_type_label
         ("parcellation", "Pa", "parcellation"),
         ("other", "Other", "other"),
         ("unknown", "Other", "other"),
+        ("something custom", "Other", "other"),
         ("", None, None),
         (None, None, None),
     ],
 )
 def test_map_type_normalization(raw, expected_code, expected_label):
-    assert canonicalize_map_type(raw, default=None) == expected_code
-    assert map_type_label(raw, default=None) == expected_label
+    assert canonicalize_map_type(raw) == expected_code
+    assert map_type_label(raw) == expected_label

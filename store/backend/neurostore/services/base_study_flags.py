@@ -1,8 +1,14 @@
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
-from ..core import cache
+from ..cache_versioning import bump_cache_versions
 from ..database import db
+from ..map_types import (
+    BETA_MAP_NORMALIZED_VALUES,
+    T_MAP_NORMALIZED_VALUES,
+    VARIANCE_MAP_NORMALIZED_VALUES,
+    Z_MAP_NORMALIZED_VALUES,
+)
 from ..models import (
     Analysis,
     BaseStudy,
@@ -12,25 +18,6 @@ from ..models import (
     Study,
 )
 
-Z_MAP_VALUES = frozenset({"z", "z map"})
-T_MAP_VALUES = frozenset({"t", "t map"})
-BETA_MAP_VALUES = frozenset(
-    {
-        "u",
-        "m",
-        "u map",
-        "m map",
-        "beta",
-        "beta map",
-        "univariate-beta map",
-        "multivariate-beta map",
-        "univariate beta map",
-        "multivariate beta map",
-    }
-)
-VARIANCE_MAP_VALUES = frozenset({"v", "v map", "variance", "variance map"})
-
-
 def _normalize_ids(ids):
     if not ids:
         return []
@@ -38,7 +25,14 @@ def _normalize_ids(ids):
 
 
 def _normalized_value_type(column):
-    return sa.func.lower(sa.func.btrim(sa.func.coalesce(column, "")))
+    return sa.func.lower(
+        sa.func.regexp_replace(
+            sa.func.btrim(sa.func.coalesce(column, "")),
+            r"\s+",
+            " ",
+            "g",
+        )
+    )
 
 
 def _matches_values(column, accepted_values):
@@ -46,21 +40,7 @@ def _matches_values(column, accepted_values):
 
 
 def _clear_cache_for_ids(unique_ids):
-    for resource, ids in unique_ids.items():
-        if not ids:
-            continue
-        base_path = f"/api/{resource}/"
-        base_keys = cache.cache._write_client.keys(f"*{base_path}/_*")
-        base_keys = [k.decode("utf8") for k in base_keys]
-        if base_keys:
-            cache.delete_many(*base_keys)
-
-        for id_ in ids:
-            path = f"{base_path}{id_}"
-            keys = cache.cache._write_client.keys(f"*{path}*")
-            keys = [k.decode("utf8") for k in keys]
-            if keys:
-                cache.delete_many(*keys)
+    bump_cache_versions(unique_ids)
 
 
 def enqueue_base_study_flag_updates(base_study_ids, reason="api-write"):
@@ -127,7 +107,7 @@ def recompute_media_flags(base_study_ids):
             .select_from(Image)
             .where(
                 Image.analysis_id == Analysis.id,
-                _matches_values(Image.value_type, Z_MAP_VALUES),
+                _matches_values(Image.value_type, Z_MAP_NORMALIZED_VALUES),
             )
         )
         analysis_t_maps_exist = sa.exists(
@@ -135,7 +115,7 @@ def recompute_media_flags(base_study_ids):
             .select_from(Image)
             .where(
                 Image.analysis_id == Analysis.id,
-                _matches_values(Image.value_type, T_MAP_VALUES),
+                _matches_values(Image.value_type, T_MAP_NORMALIZED_VALUES),
             )
         )
         analysis_beta_maps_exist = sa.exists(
@@ -143,7 +123,7 @@ def recompute_media_flags(base_study_ids):
             .select_from(Image)
             .where(
                 Image.analysis_id == Analysis.id,
-                _matches_values(Image.value_type, BETA_MAP_VALUES),
+                _matches_values(Image.value_type, BETA_MAP_NORMALIZED_VALUES),
             )
         )
         analysis_variance_maps_exist = sa.exists(
@@ -151,7 +131,7 @@ def recompute_media_flags(base_study_ids):
             .select_from(Image)
             .where(
                 Image.analysis_id == Analysis.id,
-                _matches_values(Image.value_type, VARIANCE_MAP_VALUES),
+                _matches_values(Image.value_type, VARIANCE_MAP_NORMALIZED_VALUES),
             )
         )
         analysis_beta_and_variance_maps = sa.and_(
@@ -202,7 +182,7 @@ def recompute_media_flags(base_study_ids):
             .join(Image, Image.analysis_id == Analysis.id)
             .where(
                 Analysis.study_id == Study.id,
-                _matches_values(Image.value_type, Z_MAP_VALUES),
+                _matches_values(Image.value_type, Z_MAP_NORMALIZED_VALUES),
             )
         )
         study_t_maps_exist = sa.exists(
@@ -211,7 +191,7 @@ def recompute_media_flags(base_study_ids):
             .join(Image, Image.analysis_id == Analysis.id)
             .where(
                 Analysis.study_id == Study.id,
-                _matches_values(Image.value_type, T_MAP_VALUES),
+                _matches_values(Image.value_type, T_MAP_NORMALIZED_VALUES),
             )
         )
         study_beta_maps_exist = sa.exists(
@@ -220,7 +200,7 @@ def recompute_media_flags(base_study_ids):
             .join(Image, Image.analysis_id == Analysis.id)
             .where(
                 Analysis.study_id == Study.id,
-                _matches_values(Image.value_type, BETA_MAP_VALUES),
+                _matches_values(Image.value_type, BETA_MAP_NORMALIZED_VALUES),
             )
         )
         study_variance_maps_exist = sa.exists(
@@ -229,7 +209,7 @@ def recompute_media_flags(base_study_ids):
             .join(Image, Image.analysis_id == Analysis.id)
             .where(
                 Analysis.study_id == Study.id,
-                _matches_values(Image.value_type, VARIANCE_MAP_VALUES),
+                _matches_values(Image.value_type, VARIANCE_MAP_NORMALIZED_VALUES),
             )
         )
         study_beta_and_variance_maps = sa.and_(
@@ -282,7 +262,7 @@ def recompute_media_flags(base_study_ids):
         .join(Image, Image.analysis_id == Analysis.id)
         .where(
             Study.base_study_id == BaseStudy.id,
-            _matches_values(Image.value_type, Z_MAP_VALUES),
+            _matches_values(Image.value_type, Z_MAP_NORMALIZED_VALUES),
         )
     )
     base_t_maps_exist = sa.exists(
@@ -292,7 +272,7 @@ def recompute_media_flags(base_study_ids):
         .join(Image, Image.analysis_id == Analysis.id)
         .where(
             Study.base_study_id == BaseStudy.id,
-            _matches_values(Image.value_type, T_MAP_VALUES),
+            _matches_values(Image.value_type, T_MAP_NORMALIZED_VALUES),
         )
     )
     base_beta_maps_exist = sa.exists(
@@ -302,7 +282,7 @@ def recompute_media_flags(base_study_ids):
         .join(Image, Image.analysis_id == Analysis.id)
         .where(
             Study.base_study_id == BaseStudy.id,
-            _matches_values(Image.value_type, BETA_MAP_VALUES),
+            _matches_values(Image.value_type, BETA_MAP_NORMALIZED_VALUES),
         )
     )
     base_variance_maps_exist = sa.exists(
@@ -312,7 +292,7 @@ def recompute_media_flags(base_study_ids):
         .join(Image, Image.analysis_id == Analysis.id)
         .where(
             Study.base_study_id == BaseStudy.id,
-            _matches_values(Image.value_type, VARIANCE_MAP_VALUES),
+            _matches_values(Image.value_type, VARIANCE_MAP_NORMALIZED_VALUES),
         )
     )
     base_beta_and_variance_maps = sa.and_(

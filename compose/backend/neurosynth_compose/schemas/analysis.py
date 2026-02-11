@@ -418,7 +418,7 @@ class NeurovaultFileSchema(BaseSchema):
     def humanize_map_type(self, data, **kwargs):
         if "map_type" not in data:
             return data
-        data["map_type"] = map_type_label(data.get("map_type"), default=None)
+        data["map_type"] = map_type_label(data.get("map_type"))
         return data
 
     @post_dump

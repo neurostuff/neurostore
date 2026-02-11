@@ -29,6 +29,7 @@ from webargs.flaskparser import parser
 from webargs import fields
 
 from ..core import cache
+from ..cache_versioning import bump_cache_versions, get_cache_version_for_path
 from ..database import db
 from .utils import get_current_user, is_user_admin, validate_search_query, pubmed_to_tsquery
 from ..models import (
@@ -410,17 +411,7 @@ CAMEL_CASE_MATCH = re.compile(r"(?<!^)(?=[A-Z])")
 # to clear a cache, I want to invalidate all the o2m of the current class
 # and then every m2o of every class above it
 def clear_cache(unique_ids):
-    for resource, ids in unique_ids.items():
-        base_path = f"/api/{resource}/"
-        base_keys = cache.cache._write_client.keys(f"*{base_path}/_*")
-        base_keys = [k.decode("utf8") for k in base_keys]
-        cache.delete_many(*base_keys)
-
-        for id in ids:
-            path = f"{base_path}{id}"
-            keys = cache.cache._write_client.keys(f"*{path}*")
-            keys = [k.decode("utf8") for k in keys]
-            cache.delete_many(*keys)
+    bump_cache_versions(unique_ids)
 
 
 def cache_key_creator(*args, **kwargs):
@@ -447,8 +438,9 @@ def cache_key_creator(*args, **kwargs):
 
     args_as_sorted_tuple = tuple(sorted(query_items))
     query_args = str(args_as_sorted_tuple)
+    version = get_cache_version_for_path(path)
 
-    cache_key = "_".join([path, query_args, user])
+    cache_key = "_".join([path, query_args, user, f"v={version}"])
 
     return cache_key
 

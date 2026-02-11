@@ -44,28 +44,40 @@ _MAP_TYPE_LOOKUP.update(
         "x^2": "X2",
         "1-p map ('inverted' probability)": "IP",
         "roi / mask": "R",
+        "u map": "U",
+        "m map": "M",
+        "v map": "V",
+        "variance map": "V",
+        "beta": "U",
+        "beta map": "U",
         "univariate beta map": "U",
         "multivariate beta map": "M",
-        "unknown": "Other",
-        "none": "Other",
-        "n/a": "Other",
     }
 )
 
 
-def canonicalize_map_type(value, default="Other"):
-    """Convert a map type code/label/alias to a canonical NeuroVault code."""
+def canonicalize_map_type(value, default="Other", missing_default=None):
+    """Convert a map type code/label/alias to a canonical NeuroVault code.
+
+    Behavior:
+    - Missing/null/empty input -> ``missing_default`` (default: None)
+    - Unknown non-empty input -> ``default`` (default: "Other")
+    """
 
     normalized = _normalize(value)
     if normalized is None:
-        return default
+        return missing_default
     return _MAP_TYPE_LOOKUP.get(normalized, default)
 
 
-def map_type_label(value, default="Other"):
+def map_type_label(value, default="Other", missing_default=None):
     """Return a user-facing NeuroVault map type label."""
 
-    code = canonicalize_map_type(value, default=default)
+    code = canonicalize_map_type(
+        value,
+        default=default,
+        missing_default=missing_default,
+    )
     if code is None:
         return None
     return MAP_TYPE_LABELS.get(code, MAP_TYPE_LABELS["Other"])
