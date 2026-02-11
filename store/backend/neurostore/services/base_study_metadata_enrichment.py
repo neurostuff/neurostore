@@ -714,10 +714,9 @@ def enrich_base_study_metadata(base_study_id):
 
     config = current_app.config
     semantic_scholar_api_key = config.get("SEMANTIC_SCHOLAR_API_KEY")
-    pubmed_email = config.get("PUBMED_EMAIL")
-    pubmed_api_key = config.get("PUBMED_API_KEY")
+    contact_email = config.get("EMAIL")
+    pubmed_api_key = config.get("PUBMED_TOOL_API_KEY")
     pubmed_tool = config.get("PUBMED_TOOL", "neurostore")
-    openalex_email = config.get("OPENALEX_EMAIL")
 
     external_identifiers = _extract_identifiers(base_study_snapshot)
     missing_ids = _missing_id_fields(external_identifiers)
@@ -734,7 +733,7 @@ def enrich_base_study_metadata(base_study_id):
             external_identifiers,
             lookup_ids_pubmed(
                 external_identifiers,
-                email=pubmed_email,
+                email=contact_email,
                 api_key=pubmed_api_key,
                 tool=pubmed_tool,
             ),
@@ -743,7 +742,7 @@ def enrich_base_study_metadata(base_study_id):
     if missing_ids:
         _merge_ids_in_place(
             external_identifiers,
-            lookup_ids_openalex(external_identifiers, email=openalex_email),
+            lookup_ids_openalex(external_identifiers, email=contact_email),
         )
 
     metadata_candidates = []
@@ -762,7 +761,7 @@ def enrich_base_study_metadata(base_study_id):
     if missing_metadata:
         pubmed_metadata = fetch_metadata_pubmed(
             external_identifiers,
-            email=pubmed_email,
+            email=contact_email,
             api_key=pubmed_api_key,
             tool=pubmed_tool,
         )

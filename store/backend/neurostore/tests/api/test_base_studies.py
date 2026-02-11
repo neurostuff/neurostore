@@ -10,6 +10,7 @@ from neurostore.models import (
     Pipeline,
     PipelineConfig,
     PipelineStudyResult,
+    PipelineEmbedding,
     BaseStudy,
     BaseStudyFlagOutbox,
     BaseStudyMetadataOutbox,
@@ -1105,6 +1106,128 @@ def test_metadata_worker_merge_avoids_doi_pmid_unique_conflict(session, monkeypa
     )
 
 
+def test_metadata_worker_merge_reassigns_pipeline_rows(
+    session, ingest_demographic_features, monkeypatch
+):
+    from neurostore.services import base_study_metadata_enrichment as metadata_service
+
+    primary = (
+        session.query(BaseStudy)
+        .join(PipelineStudyResult, PipelineStudyResult.base_study_id == BaseStudy.id)
+        .join(PipelineEmbedding, PipelineEmbedding.base_study_id == BaseStudy.id)
+        .first()
+    )
+    assert primary is not None
+
+    shared_identifier = None
+    identifier_field = None
+    for field in ("pmid", "doi", "pmcid"):
+        value = getattr(primary, field)
+        if value:
+            shared_identifier = value
+            identifier_field = field
+            break
+    assert shared_identifier is not None, "Expected seeded base study to have an identifier"
+
+    duplicate_kwargs = {
+        "name": "Pipeline Duplicate",
+        "level": "group",
+        identifier_field: shared_identifier,
+    }
+    duplicate = BaseStudy(**duplicate_kwargs)
+    session.add(duplicate)
+    session.commit()
+
+    pipeline_result = (
+        session.query(PipelineStudyResult)
+        .filter(PipelineStudyResult.base_study_id == primary.id)
+        .first()
+    )
+    pipeline_embedding = (
+        session.query(PipelineEmbedding)
+        .filter(PipelineEmbedding.base_study_id == primary.id)
+        .first()
+    )
+    assert pipeline_result is not None
+    assert pipeline_embedding is not None
+
+    pipeline_result_id = pipeline_result.id
+    pipeline_embedding_id = pipeline_embedding.id
+    pipeline_embedding_config_id = pipeline_embedding.config_id
+
+    pipeline_result.base_study_id = duplicate.id
+    pipeline_embedding.base_study_id = duplicate.id
+    session.commit()
+
+    session.add(
+        BaseStudyMetadataOutbox(
+            base_study_id=duplicate.id,
+            reason="test-pipeline-row-reassign",
+        )
+    )
+    session.commit()
+
+    monkeypatch.setattr(
+        metadata_service, "lookup_ids_semantic_scholar", lambda *_args, **_kwargs: {}
+    )
+    monkeypatch.setattr(
+        metadata_service, "lookup_ids_pubmed", lambda *_args, **_kwargs: {}
+    )
+    monkeypatch.setattr(
+        metadata_service, "lookup_ids_openalex", lambda *_args, **_kwargs: {}
+    )
+    monkeypatch.setattr(
+        metadata_service, "fetch_metadata_semantic_scholar", lambda *_args, **_kwargs: {}
+    )
+    monkeypatch.setattr(
+        metadata_service, "fetch_metadata_pubmed", lambda *_args, **_kwargs: {}
+    )
+
+    processed = process_base_study_metadata_outbox_batch(batch_size=10)
+    assert processed == 1
+
+    session.refresh(primary)
+    session.refresh(duplicate)
+    assert duplicate.is_active is False
+    assert duplicate.superseded_by == primary.id
+
+    reassigned_result = (
+        session.query(PipelineStudyResult)
+        .filter(PipelineStudyResult.id == pipeline_result_id)
+        .one()
+    )
+    reassigned_embedding = (
+        session.query(PipelineEmbedding)
+        .filter(
+            PipelineEmbedding.id == pipeline_embedding_id,
+            PipelineEmbedding.config_id == pipeline_embedding_config_id,
+        )
+        .one()
+    )
+    assert reassigned_result.base_study_id == primary.id
+    assert reassigned_embedding.base_study_id == primary.id
+
+    assert (
+        session.query(PipelineStudyResult)
+        .filter(
+            PipelineStudyResult.id == pipeline_result_id,
+            PipelineStudyResult.base_study_id == duplicate.id,
+        )
+        .count()
+        == 0
+    )
+    assert (
+        session.query(PipelineEmbedding)
+        .filter(
+            PipelineEmbedding.id == pipeline_embedding_id,
+            PipelineEmbedding.config_id == pipeline_embedding_config_id,
+            PipelineEmbedding.base_study_id == duplicate.id,
+        )
+        .count()
+        == 0
+    )
+
+
 def test_metadata_worker_defers_failed_rows(session, app, monkeypatch):
     from neurostore.services import base_study_metadata_enrichment as metadata_service
 
@@ -1233,6 +1356,94 @@ def test_metadata_worker_stops_after_first_satisfied_provider(session, monkeypat
     assert call_counts["lookup_pubmed"] == 0
     assert call_counts["lookup_openalex"] == 0
     assert call_counts["fetch_pubmed"] == 0
+
+
+def test_metadata_worker_uses_new_provider_config_keys(session, app, monkeypatch):
+    from neurostore.services import base_study_metadata_enrichment as metadata_service
+
+    base_study = BaseStudy(
+        name=None,
+        pmid="990001",
+        level="group",
+    )
+    session.add(base_study)
+    session.commit()
+
+    captured_kwargs = {}
+
+    def _fake_lookup_semantic(_identifiers, api_key=None):
+        captured_kwargs["semantic_lookup_api_key"] = api_key
+        return {}
+
+    def _fake_lookup_pubmed(_identifiers, email=None, api_key=None, tool=None):
+        captured_kwargs["pubmed_lookup"] = {
+            "email": email,
+            "api_key": api_key,
+            "tool": tool,
+        }
+        return {}
+
+    def _fake_lookup_openalex(_identifiers, email=None):
+        captured_kwargs["openalex_lookup_email"] = email
+        return {}
+
+    def _fake_fetch_semantic(_identifiers, api_key=None):
+        captured_kwargs["semantic_fetch_api_key"] = api_key
+        return {}
+
+    def _fake_fetch_pubmed(_identifiers, email=None, api_key=None, tool=None):
+        captured_kwargs["pubmed_fetch"] = {
+            "email": email,
+            "api_key": api_key,
+            "tool": tool,
+        }
+        return {}
+
+    monkeypatch.setattr(
+        metadata_service, "lookup_ids_semantic_scholar", _fake_lookup_semantic
+    )
+    monkeypatch.setattr(metadata_service, "lookup_ids_pubmed", _fake_lookup_pubmed)
+    monkeypatch.setattr(metadata_service, "lookup_ids_openalex", _fake_lookup_openalex)
+    monkeypatch.setattr(
+        metadata_service, "fetch_metadata_semantic_scholar", _fake_fetch_semantic
+    )
+    monkeypatch.setattr(metadata_service, "fetch_metadata_pubmed", _fake_fetch_pubmed)
+
+    original_values = {
+        "SEMANTIC_SCHOLAR_API_KEY": app.config.get("SEMANTIC_SCHOLAR_API_KEY"),
+        "PUBMED_TOOL_API_KEY": app.config.get("PUBMED_TOOL_API_KEY"),
+        "EMAIL": app.config.get("EMAIL"),
+        "PUBMED_TOOL": app.config.get("PUBMED_TOOL"),
+        "PUBMED_API_KEY": app.config.get("PUBMED_API_KEY"),
+        "PUBMED_EMAIL": app.config.get("PUBMED_EMAIL"),
+        "OPENALEX_EMAIL": app.config.get("OPENALEX_EMAIL"),
+    }
+    app.config["SEMANTIC_SCHOLAR_API_KEY"] = "semantic-new-key"
+    app.config["PUBMED_TOOL_API_KEY"] = "pubmed-new-key"
+    app.config["EMAIL"] = "new@example.org"
+    app.config["PUBMED_TOOL"] = "neurostore-test-tool"
+    app.config["PUBMED_API_KEY"] = "pubmed-old-key"
+    app.config["PUBMED_EMAIL"] = "old-pubmed@example.org"
+    app.config["OPENALEX_EMAIL"] = "old-openalex@example.org"
+    try:
+        metadata_service.enrich_base_study_metadata(base_study.id)
+    finally:
+        for key, value in original_values.items():
+            app.config[key] = value
+
+    assert captured_kwargs["semantic_lookup_api_key"] == "semantic-new-key"
+    assert captured_kwargs["semantic_fetch_api_key"] == "semantic-new-key"
+    assert captured_kwargs["pubmed_lookup"] == {
+        "email": "new@example.org",
+        "api_key": "pubmed-new-key",
+        "tool": "neurostore-test-tool",
+    }
+    assert captured_kwargs["pubmed_fetch"] == {
+        "email": "new@example.org",
+        "api_key": "pubmed-new-key",
+        "tool": "neurostore-test-tool",
+    }
+    assert captured_kwargs["openalex_lookup_email"] == "new@example.org"
 
 
 def test_enqueue_metadata_updates_treats_blank_values_as_missing(session):
