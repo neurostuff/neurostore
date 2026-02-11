@@ -182,7 +182,7 @@ jobs:
         run: |
           set -o pipefail
           docker network create nginx-proxy
-          docker compose pull --ignore-buildable 
+          docker compose pull store_redis store-pghero store-grafana
           docker compose \
             -f docker-compose.yml \
             -f docker-compose.dev.yml \
@@ -458,7 +458,7 @@ jobs:
       run: |
         set -o pipefail
         cd store
-        docker compose pull --ignore-buildable 
+        docker compose pull store_redis store-pghero store-grafana
         docker compose \
           -f docker-compose.yml \
           -f docker-compose.dev.yml \
