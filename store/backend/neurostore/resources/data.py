@@ -2651,11 +2651,13 @@ class AnnotationAnalysesView(ObjectView, ListView):
 
         db.session.commit()
 
+        annotation_ids = {record.annotation_id for record in records}
         unique_ids = {
             "annotation-analyses": set(list(ids)),
-            "annotations": {input_record.annotation_id},
+            "annotations": annotation_ids,
         }
-        clear_cache(unique_ids)
+        if unique_ids["annotation-analyses"] or unique_ids["annotations"]:
+            clear_cache(unique_ids)
 
         return response
 

@@ -450,7 +450,6 @@ def cache_key_creator(*args, **kwargs):
     args_as_sorted_tuple = tuple(sorted(query_items))
     query_args = str(args_as_sorted_tuple)
     version = get_cache_version_for_path(path)
-
     cache_key = "_".join([path, query_args, user, f"v={version}"])
 
     return cache_key
