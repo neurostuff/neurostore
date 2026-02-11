@@ -22,7 +22,7 @@ import { STUDYSET_QUERY_STRING } from 'hooks/studysets/useGetStudysetById';
 const ExtractionOutOfSync: React.FC = () => {
     const studysetId = useProjectExtractionStudysetId();
     const annotationId = useProjectExtractionAnnotationId();
-    const { data: studyset } = useGetStudysetById(studysetId, true); // set this to true as it is already cached in extractionPage
+    const { data: studyset } = useGetStudysetById(studysetId, false, true); // summary payload should already be cached by ExtractionPage
     const numColumns = useProjectNumCurationColumns();
     const setAllowEditMetaAnalyses = useAllowEditMetaAnalyses();
     const curationIncludedStudies = useProjectCurationColumn(numColumns - 1);

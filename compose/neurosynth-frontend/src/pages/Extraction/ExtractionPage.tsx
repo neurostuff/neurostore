@@ -44,7 +44,7 @@ const ExtractionPage: React.FC = () => {
         isLoading: getStudysetIsLoading,
         isRefetching: getStudysetIsRefetching,
         isError: getStudysetIsError,
-    } = useGetStudysetById(studysetId, true);
+    } = useGetStudysetById(studysetId, false, true);
 
     const { mutate } = useUpdateStudyset();
 

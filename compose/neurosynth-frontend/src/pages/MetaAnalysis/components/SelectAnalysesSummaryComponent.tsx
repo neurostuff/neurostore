@@ -11,7 +11,7 @@ const SelectAnalysesSummaryComponent: React.FC<{
     selectedValue: IAnalysesSelection | undefined;
 }> = (props) => {
     const { data: annotation } = useGetAnnotationById(props.annotationdId);
-    const { data: studyset } = useGetStudysetById(props.studysetId, true);
+    const { data: studyset } = useGetStudysetById(props.studysetId, false, true);
 
     const [count, setCount] = useState({
         studies: 0,
@@ -55,7 +55,12 @@ const SelectAnalysesSummaryComponent: React.FC<{
                     return;
                 }
 
-                numCoordinatesSelected = numCoordinatesSelected + (analysis.points || []).length;
+                const analysisWithPointCount = analysis as AnalysisReturn & { point_count?: unknown };
+                if (typeof analysisWithPointCount.point_count !== 'number') {
+                    throw new Error('Expected analysis.point_count in summary studyset payload');
+                }
+
+                numCoordinatesSelected = numCoordinatesSelected + analysisWithPointCount.point_count;
             });
         });
 

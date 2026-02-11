@@ -87,6 +87,10 @@ LIST_NESTED_ARGS = {
     "nested": fields.Boolean(load_default=False),
 }
 
+LIST_SUMMARY_ARGS = {
+    "summary": fields.Boolean(load_default=False),
+}
+
 MAP_TYPE_QUERY_FIELDS = {
     "z": "has_z_maps",
     "t": "has_t_maps",
@@ -116,6 +120,7 @@ class StudysetsView(ObjectView, ListView):
     _view_fields = {
         **LIST_CLONE_ARGS,
         **LIST_NESTED_ARGS,
+        **LIST_SUMMARY_ARGS,
         "copy_annotations": fields.Boolean(load_default=True),
     }
     # reorg int o2m and m2o
@@ -182,6 +187,11 @@ class StudysetsView(ObjectView, ListView):
 
     def eager_load(self, q, args=None):
         args = args or {}
+        if args.get("summary"):
+            if args.get("load_annotations"):
+                q = q.options(selectinload(Studyset.annotations))
+            return q
+
         q = q.options(
             selectinload(Studyset.studyset_studies).options(
                 load_only(
@@ -250,6 +260,98 @@ class StudysetsView(ObjectView, ListView):
             content = [snapshot.dump(r) for r in records]
             return content
         return super().serialize_records(records, args)
+
+    @staticmethod
+    def _serialize_dt(dt):
+        return dt.isoformat() if dt else dt
+
+    def serialize_studyset_summary(self, record):
+        study_rows = db.session.execute(
+            sa.select(
+                StudysetStudy.study_id,
+                StudysetStudy.curation_stub_uuid,
+                Study.name,
+                Study.authors,
+                Study.publication,
+                Study.pmid,
+                Study.doi,
+                Study.year,
+            )
+            .select_from(StudysetStudy)
+            .join(Study, Study.id == StudysetStudy.study_id)
+            .where(StudysetStudy.studyset_id == record.id)
+            .order_by(
+                sa.func.lower(sa.func.coalesce(Study.name, "")),
+                StudysetStudy.study_id,
+            )
+        ).all()
+
+        analysis_rows = db.session.execute(
+            sa.select(
+                Analysis.study_id,
+                Analysis.id,
+                Analysis.point_count,
+            )
+            .select_from(Analysis)
+            .join(
+                StudysetStudy,
+                sa.and_(
+                    StudysetStudy.study_id == Analysis.study_id,
+                    StudysetStudy.studyset_id == record.id,
+                ),
+            )
+            .order_by(Analysis.study_id, Analysis.id)
+        ).all()
+
+        analyses_by_study = {}
+        for row in analysis_rows:
+            analyses_by_study.setdefault(row.study_id, []).append(
+                {
+                    "id": row.id,
+                    "point_count": int(row.point_count or 0),
+                }
+            )
+
+        studies_payload = []
+        for row in study_rows:
+            analyses = analyses_by_study.get(row.study_id, [])
+            studies_payload.append(
+                {
+                    "id": row.study_id,
+                    "name": row.name,
+                    "authors": row.authors,
+                    "publication": row.publication,
+                    "pmid": row.pmid,
+                    "doi": row.doi,
+                    "year": row.year,
+                    "analyses": analyses,
+                }
+            )
+
+        studyset_studies = sorted(
+            [
+                {
+                    "id": row.study_id,
+                    "curation_stub_uuid": row.curation_stub_uuid,
+                }
+                for row in study_rows
+            ],
+            key=lambda assoc: assoc["id"] or "",
+        )
+
+        return {
+            "id": record.id,
+            "name": record.name,
+            "user": record.user_id,
+            "description": record.description,
+            "publication": record.publication,
+            "doi": record.doi,
+            "pmid": record.pmid,
+            "created_at": self._serialize_dt(record.created_at),
+            "updated_at": self._serialize_dt(record.updated_at),
+            "studies": studies_payload,
+            "studyset_studies": studyset_studies,
+        }
 
     def post(self):
         args = parser.parse(self._user_args, request, location="query")

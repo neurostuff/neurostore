@@ -104,6 +104,79 @@ def test_delete_points(auth_client, session):
     assert Point.query.filter_by(id=point_id).first() is None
 
 
+def test_analysis_point_count_updates_on_point_writes(auth_client, session):
+    id_ = auth_client.username
+    user = User.query.filter_by(external_id=id_).first()
+    study = Study(
+        name="point count study",
+        user=user,
+        analyses=[
+            Analysis(
+                name="analysis-a",
+                user=user,
+                points=[
+                    Point(
+                        x=0,
+                        y=0,
+                        z=0,
+                        space="MNI",
+                        user=user,
+                        order=1,
+                    )
+                ],
+            ),
+            Analysis(name="analysis-b", user=user),
+        ],
+    )
+    session.add(study)
+    session.commit()
+
+    analysis_a = study.analyses[0]
+    analysis_b = study.analyses[1]
+    session.refresh(analysis_a)
+    session.refresh(analysis_b)
+    assert analysis_a.point_count == 1
+    assert analysis_b.point_count == 0
+
+    create_resp = auth_client.post(
+        "/api/points/",
+        data={
+            "analysis": analysis_b.id,
+            "x": 1,
+            "y": 1,
+            "z": 1,
+            "space": "MNI",
+            "order": 1,
+        },
+    )
+    assert create_resp.status_code == 200
+    created_point_id = create_resp.json()["id"]
+
+    session.expire_all()
+    analysis_a = Analysis.query.filter_by(id=analysis_a.id).first()
+    analysis_b = Analysis.query.filter_by(id=analysis_b.id).first()
+    assert analysis_a.point_count == 1
+    assert analysis_b.point_count == 1
+
+    move_resp = auth_client.put(
+        f"/api/points/{created_point_id}", data={"analysis": analysis_a.id}
+    )
+    assert move_resp.status_code == 200
+
+    session.expire_all()
+    analysis_a = Analysis.query.filter_by(id=analysis_a.id).first()
+    analysis_b = Analysis.query.filter_by(id=analysis_b.id).first()
+    assert analysis_a.point_count == 2
+    assert analysis_b.point_count == 0
+
+    delete_resp = auth_client.delete(f"/api/points/{created_point_id}")
+    assert delete_resp.status_code == 200
+
+    session.expire_all()
+    analysis_a = Analysis.query.filter_by(id=analysis_a.id).first()
+    assert analysis_a.point_count == 1
+
+
 def test_post_point_without_order(auth_client, ingest_neurosynth, session):
     # Get an existing analysis from the database
     point_db = Point.query.first()

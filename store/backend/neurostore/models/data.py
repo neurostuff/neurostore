@@ -682,6 +682,7 @@ class Analysis(BaseMixin, db.Model):
     description = db.Column(db.String)
     metadata_ = db.Column(JSONB)
     order = db.Column(db.Integer)
+    point_count = db.Column(db.Integer, default=0, nullable=False)
     has_coordinates = db.Column(db.Boolean, default=False, nullable=False)
     has_images = db.Column(db.Boolean, default=False, nullable=False)
     has_z_maps = db.Column(db.Boolean, default=False, nullable=False)
@@ -991,6 +992,6 @@ class PipelineEmbedding(db.Model):
     embedding = db.Column(VectorType(), nullable=False)
 
 
-# from . import event_listeners  # noqa E402
+from . import point_count_listeners  # noqa E402
 
-# del event_listeners
+del point_count_listeners

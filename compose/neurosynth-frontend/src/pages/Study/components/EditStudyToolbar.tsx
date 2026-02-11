@@ -63,7 +63,7 @@ const EditStudyToolbar: React.FC = () => {
     const mdDown = useMediaQuery(theme.breakpoints.down('md'));
 
     const studysetId = useProjectExtractionStudysetId();
-    const { data, isLoading, isError } = useGetStudysetById(studysetId || '', true);
+    const { data, isLoading, isError } = useGetStudysetById(studysetId || '', false, true);
 
     // derived from the extraction table
     const [extractionTableState, setExtractionTableState] = useState<IExtractionTableState>({
