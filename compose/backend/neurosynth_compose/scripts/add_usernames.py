@@ -5,20 +5,15 @@ from flask import current_app
 TOKEN = "INSERT TOKEN"
 
 
-# In v5, ManagementClient replaces the Users class
-# Users are accessed via client.users instead of Users class directly
 management_client = ManagementClient(
     domain=current_app.config["AUTH0_BASE_URL"].removeprefix("https://"),
     token=TOKEN
 )
 
-# In v5, list() returns a SyncPager that can be iterated
-# The response items are Pydantic models, not dicts
 result_pager = management_client.users.list(per_page=100)
 
 sql_users = []
 for user in result_pager:
-    # user is now a Pydantic model, access attributes directly
     print(user.name)
     sql_user = User.query.filter_by(external_id=user.user_id).one_or_none()
     if sql_user is None:
