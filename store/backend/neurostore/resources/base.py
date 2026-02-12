@@ -52,6 +52,10 @@ from ..services.has_media_flags import (
     enqueue_base_study_flag_updates,
     recompute_media_flags,
 )
+from ..services.base_study_metadata_enrichment import (
+    enqueue_base_study_metadata_updates,
+)
+from ..services.utils import merge_unique_ids
 
 
 @parser.error_handler
@@ -104,21 +108,7 @@ class BaseView(MethodView):
 
     @staticmethod
     def merge_unique_ids(*unique_ids_dicts):
-        merged = {}
-        for unique_ids in unique_ids_dicts:
-            if not unique_ids:
-                continue
-            for key, values in unique_ids.items():
-                if not values:
-                    continue
-                if isinstance(values, set):
-                    vals = values
-                elif isinstance(values, (list, tuple)):
-                    vals = {v for v in values if v}
-                else:
-                    vals = {values}
-                merged.setdefault(key, set()).update(vals)
-        return merged
+        return merge_unique_ids(*unique_ids_dicts)
 
     def update_annotations(self, annotations):
         if not annotations:
@@ -193,6 +183,10 @@ class BaseView(MethodView):
             enqueue_base_study_flag_updates(base_studies, reason=reason)
         else:
             recompute_media_flags(base_studies)
+
+        if current_app.config.get("BASE_STUDY_METADATA_ASYNC", True):
+            reason = f"{self.__class__.__name__}.update_base_studies"
+            enqueue_base_study_metadata_updates(base_studies, reason=reason)
 
     def eager_load(self, q, args):
         return q

@@ -53,6 +53,38 @@ services:
       start_period: 30s
     env_file:
       - .env
+
+  store_metadata_outbox_worker:
+    image: neurostore
+    restart: always
+    depends_on:
+      store-pgsql17:
+        condition: service_healthy
+      store_redis:
+        condition: service_healthy
+    volumes:
+      - ./backend/migrations:/migrations
+      - ./:/store
+    command: >
+      bash -c '
+        until flask db upgrade; do
+          echo "store_metadata_outbox_worker: waiting for successful db upgrade..."
+          sleep 3
+        done
+        exec flask process-base-study-metadata-outbox --loop
+      '
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "flask check-base-study-metadata-outbox",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    env_file:
+      - .env
   
   store_redis:
     image: redis
