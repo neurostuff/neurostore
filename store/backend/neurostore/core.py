@@ -2,6 +2,8 @@ import os
 from pathlib import Path
 import json
 
+import yaml
+
 
 from connexion.middleware import MiddlewarePosition
 from starlette.middleware.cors import CORSMiddleware
@@ -140,6 +142,65 @@ options = {"swagger_ui": True}
 openapi_file = Path(os.path.dirname(__file__) + "/openapi/neurostore-openapi.yml")
 
 
+def _load_patched_spec(spec_path):
+    """Load OpenAPI spec and patch point coordinate fields to allow null values.
+
+    The upstream spec (neurostore-spec submodule) defines x, y, z as strict
+    numbers. We allow nullable coordinates so users can create/update points
+    incrementally before all coordinates are known.
+
+    Returns a path to a patched spec file in the same directory (so that
+    relative $ref paths still resolve correctly).
+    """
+    import logging
+
+    logger = logging.getLogger(__name__)
+
+    with open(spec_path, "r") as f:
+        spec = yaml.safe_load(f)
+
+    # Patch x, y, z in point-relationships to be nullable
+    point_rel = (
+        spec.get("components", {}).get("schemas", {}).get("point-relationships", {})
+    )
+    for coord in ("x", "y", "z"):
+        if coord in point_rel.get("properties", {}):
+            point_rel["properties"][coord]["nullable"] = True
+
+    # Patch coordinate items in pointBase $ref (used by point-return/request).
+    # Find and inline the external pointBase reference so we can modify it.
+    for schema_name in ("point-return", "point-request"):
+        schema = (
+            spec.get("components", {}).get("schemas", {}).get(schema_name, {})
+        )
+        for i, entry in enumerate(schema.get("allOf", [])):
+            ref = entry.get("$ref", "")
+            if ref.endswith("pointBase.yaml"):
+                ref_path = spec_path.parent / ref
+                if ref_path.exists():
+                    with open(ref_path, "r") as f:
+                        point_base = yaml.safe_load(f)
+                    coords = point_base.get("properties", {}).get(
+                        "coordinates", {}
+                    )
+                    if coords.get("items"):
+                        coords["items"]["nullable"] = True
+                    schema["allOf"][i] = point_base
+                else:
+                    logger.warning(
+                        "Cannot patch %s: referenced file %s not found",
+                        schema_name,
+                        ref_path,
+                    )
+
+    # Write patched spec next to the original so any remaining $ref paths resolve
+    patched_path = spec_path.parent / ".neurostore-openapi-patched.yml"
+    with open(patched_path, "w") as f:
+        yaml.dump(spec, f, default_flow_style=False, sort_keys=False)
+
+    return patched_path
+
+
 # Enable CORS for both ASGI and WSGI (moved before error handling)
 connexion_app.add_middleware(
     CORSMiddleware,
@@ -188,8 +249,10 @@ def _flask_general_handler(exc):
 app.register_error_handler(NeuroStoreException, _flask_neurostore_handler)
 app.register_error_handler(Exception, _flask_general_handler)
 
+openapi_spec = _load_patched_spec(openapi_file)
+
 connexion_app.add_api(
-    openapi_file,
+    openapi_spec,
     base_path="/api",
     options=options,
     arguments={"title": "NeuroStore API"},
