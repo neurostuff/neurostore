@@ -125,6 +125,64 @@ def test_post_point_without_order(auth_client, ingest_neurosynth, session):
     assert resp.json()["order"] is not None
 
 
+def test_post_points_with_null_coordinates(auth_client, session):
+    id_ = auth_client.username
+    user = User.query.filter_by(external_id=id_).first()
+    study = Study(
+        name="null coordinate post",
+        user=user,
+        analyses=[Analysis(name="analysis", user=user)],
+    )
+    session.add(study)
+    session.commit()
+
+    analysis_id = study.analyses[0].id
+    post_point = {
+        "analysis": analysis_id,
+        "x": None,
+        "y": None,
+        "z": None,
+        "order": 1,
+    }
+    resp = auth_client.post("/api/points/", data=post_point)
+    assert resp.status_code == 200
+    assert resp.json()["coordinates"] == [None, None, None]
+
+    point_id = resp.json()["id"]
+    db_point = Point.query.filter_by(id=point_id).first()
+    assert db_point is not None
+    assert db_point.coordinates == [None, None, None]
+
+
+def test_put_points_with_null_coordinates(auth_client, session):
+    id_ = auth_client.username
+    user = User.query.filter_by(external_id=id_).first()
+    study = Study(
+        name="null coordinate put",
+        user=user,
+        analyses=[
+            Analysis(
+                name="analysis",
+                user=user,
+                points=[Point(x=1, y=2, z=3, user=user, order=1)],
+            )
+        ],
+    )
+    session.add(study)
+    session.commit()
+
+    point_id = study.analyses[0].points[0].id
+    resp = auth_client.put(
+        f"/api/points/{point_id}",
+        data={"x": None, "y": None, "z": None},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["coordinates"] == [None, None, None]
+
+    db_point = Point.query.filter_by(id=point_id).first()
+    assert db_point.coordinates == [None, None, None]
+
+
 def test_point_deactivation_column(auth_client, session):
     from ...models import User, Point, Analysis, Study
 

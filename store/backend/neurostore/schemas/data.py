@@ -359,24 +359,13 @@ class PointSchema(BaseDataSchema):
         # Only process coordinates if they exist in the data
         if "coordinates" in data and data["coordinates"] is not None:
             coords = data.pop("coordinates")
-
-            # Check if all coordinates are null
-            if all(c is None for c in coords):
-                # During cloning, allow null coordinates but store them as None
-                if self.context.get("clone"):
-                    data["x"], data["y"], data["z"] = None, None, None
-                else:
-                    # Don't save points with all null coordinates to database
-                    raise ValidationError("Points cannot have all null coordinates")
-            else:
-                # Convert coordinates to float, handling potential null values
-                try:
-                    converted_coords = [
-                        float(c) if c is not None else None for c in coords
-                    ]
-                    data["x"], data["y"], data["z"] = converted_coords
-                except (TypeError, ValueError) as e:
-                    raise ValidationError(f"Invalid coordinate values: {e}")
+            # Convert coordinates to float, handling potential null values.
+            # All-null coordinates are valid because points may be saved incrementally.
+            try:
+                converted_coords = [float(c) if c is not None else None for c in coords]
+                data["x"], data["y"], data["z"] = converted_coords
+            except (TypeError, ValueError) as e:
+                raise ValidationError(f"Invalid coordinate values: {e}")
 
         if not partial and data.get("order") is None:
             # Extract analysis_id first, then check if it exists

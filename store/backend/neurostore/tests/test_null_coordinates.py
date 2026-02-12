@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 
 import pytest
-from marshmallow import ValidationError
 
 
-def test_point_schema_null_coordinates_validation():
-    """Test that PointSchema rejects null coordinates for new points"""
+def test_point_schema_null_coordinates_allowed():
+    """Test that PointSchema allows null coordinates for incremental saves"""
     from neurostore.schemas.data import PointSchema
 
     point_data = {
@@ -16,11 +15,10 @@ def test_point_schema_null_coordinates_validation():
     }
 
     schema = PointSchema()
-
-    with pytest.raises(ValidationError) as exc_info:
-        schema.load(point_data)
-
-    assert "Points cannot have all null coordinates" in str(exc_info.value)
+    result = schema.load(point_data)
+    assert result["x"] is None
+    assert result["y"] is None
+    assert result["z"] is None
 
 
 def test_point_schema_null_coordinates_cloning():
