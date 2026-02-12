@@ -235,7 +235,12 @@ def test_point_cluster_measurement_unit(auth_client, session):
 
 
 def test_post_point_with_null_coordinates(auth_client, ingest_neurosynth, session):
-    """Test that POST with null x,y,z coordinates is accepted."""
+    """Test that POST with null x,y,z coordinates is accepted.
+
+    Note: This test requires the OpenAPI spec (neurostore-spec submodule) to
+    mark x, y, z as nullable. If the spec has not been updated, connexion will
+    reject the request before the schema processes it.
+    """
     point_db = Point.query.first()
     point = PointSchema().dump(point_db)
     id_ = auth_client.username
@@ -260,7 +265,11 @@ def test_post_point_with_null_coordinates(auth_client, ingest_neurosynth, sessio
 def test_post_point_with_null_coordinates_array(
     auth_client, ingest_neurosynth, session
 ):
-    """Test that POST with coordinates=[None,None,None] is accepted."""
+    """Test that POST with coordinates=[None,None,None] is accepted.
+
+    Note: This test requires the OpenAPI spec (neurostore-spec submodule) to
+    mark coordinate array items as nullable.
+    """
     point_db = Point.query.first()
     point = PointSchema().dump(point_db)
     id_ = auth_client.username
@@ -281,7 +290,11 @@ def test_post_point_with_null_coordinates_array(
 
 
 def test_put_point_with_null_coordinates(auth_client, session):
-    """Test that PUT with null coordinates is accepted."""
+    """Test that PUT with null coordinates is accepted.
+
+    Note: This test requires the OpenAPI spec (neurostore-spec submodule) to
+    mark x, y, z as nullable.
+    """
     id_ = auth_client.username
     user = User.query.filter_by(external_id=id_).first()
     s = Study(
