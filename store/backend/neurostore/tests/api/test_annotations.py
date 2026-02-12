@@ -1,5 +1,8 @@
 from datetime import datetime, timezone
 
+from sqlalchemy import event
+
+from ...database import db
 from ...models import (
     Studyset,
     Annotation,
@@ -14,6 +17,16 @@ from ...models import (
     PipelineStudyResult,
 )
 from ..utils import ordered_note_keys
+
+
+def _is_annotation_analysis_concat_id_lookup(statement):
+    normalized_statement = " ".join(statement.lower().split())
+    return (
+        "from annotation_analyses" in normalized_statement
+        and "annotation_analyses.annotation_id" in normalized_statement
+        and "||" in normalized_statement
+        and "limit" in normalized_statement
+    )
 
 
 def _create_annotation_with_two_analyses(session, user, analysis_orders=None):
@@ -489,6 +502,93 @@ def test_correct_note_overwrite(auth_client, ingest_neurosynth, session):
     target_analysis_id = data[0]["analysis"]
     notes_by_analysis = {note["analysis"]: note for note in get_resp.json()["notes"]}
     assert notes_by_analysis[target_analysis_id]["note"]["doo"] == new_value
+
+
+def test_put_annotation_avoids_concat_id_annotation_analysis_lookup(
+    auth_client, ingest_neurosynth, session
+):
+    dset = Studyset.query.first()
+    notes = [
+        {"study": s.id, "analysis": a.id, "note": {"foo": a.id, "doo": s.id}}
+        for s in dset.studies
+        for a in s.analyses
+    ]
+    payload = {
+        "studyset": dset.id,
+        "notes": notes,
+        "note_keys": ordered_note_keys({"foo": "string", "doo": "string"}),
+        "name": "put-perf-test",
+    }
+    annot_resp = auth_client.post("/api/annotations/", data=payload)
+    assert annot_resp.status_code == 200
+    annotation_id = annot_resp.json()["id"]
+
+    put_notes = [
+        {
+            "study": note["study"],
+            "analysis": note["analysis"],
+            "annotation": annotation_id,
+            "note": {
+                **note["note"],
+                "doo": "updated",
+            },
+        }
+        for note in notes
+    ]
+
+    concat_id_lookups = []
+
+    def before_cursor_execute(
+        conn, cursor, statement, parameters, context, executemany
+    ):
+        if _is_annotation_analysis_concat_id_lookup(statement):
+            concat_id_lookups.append(statement)
+
+    event.listen(db.engine, "before_cursor_execute", before_cursor_execute)
+    try:
+        put_resp = auth_client.put(
+            f"/api/annotations/{annotation_id}",
+            data={"notes": put_notes},
+        )
+    finally:
+        event.remove(db.engine, "before_cursor_execute", before_cursor_execute)
+
+    assert put_resp.status_code == 200
+    assert concat_id_lookups == []
+
+
+def test_post_annotation_avoids_concat_id_annotation_analysis_lookup(
+    auth_client, ingest_neurosynth, session
+):
+    dset = Studyset.query.first()
+    notes = [
+        {"study": s.id, "analysis": a.id, "note": {"foo": a.id, "doo": s.id}}
+        for s in dset.studies
+        for a in s.analyses
+    ]
+    payload = {
+        "studyset": dset.id,
+        "notes": notes,
+        "note_keys": ordered_note_keys({"foo": "string", "doo": "string"}),
+        "name": "post-perf-test",
+    }
+
+    concat_id_lookups = []
+
+    def before_cursor_execute(
+        conn, cursor, statement, parameters, context, executemany
+    ):
+        if _is_annotation_analysis_concat_id_lookup(statement):
+            concat_id_lookups.append(statement)
+
+    event.listen(db.engine, "before_cursor_execute", before_cursor_execute)
+    try:
+        post_resp = auth_client.post("/api/annotations/", data=payload)
+    finally:
+        event.remove(db.engine, "before_cursor_execute", before_cursor_execute)
+
+    assert post_resp.status_code == 200
+    assert concat_id_lookups == []
 
 
 def test_put_annotation_applies_pipeline_columns(auth_client, session):

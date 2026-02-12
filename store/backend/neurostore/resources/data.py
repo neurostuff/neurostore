@@ -762,6 +762,13 @@ class AnnotationsView(ObjectView, ListView):
             specs, column_counter = self._normalize_pipeline_specs(pipeline_payload)
             self._apply_pipeline_columns(input_record, data, specs, column_counter)
 
+        if data.get("annotation_analyses"):
+            data["_preloaded_nested_records"] = {
+                "annotation_analyses": {
+                    aa.id: aa for aa in input_record.annotation_analyses
+                }
+            }
+
         self.db_validation(input_record, data)
 
         with db.session.no_autoflush:
