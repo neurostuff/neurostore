@@ -1129,7 +1129,9 @@ def test_metadata_worker_merge_reassigns_pipeline_rows(
             shared_identifier = value
             identifier_field = field
             break
-    assert shared_identifier is not None, "Expected seeded base study to have an identifier"
+    assert (
+        shared_identifier is not None
+    ), "Expected seeded base study to have an identifier"
 
     duplicate_kwargs = {
         "name": "Pipeline Duplicate",
@@ -1185,7 +1187,9 @@ def test_metadata_worker_merge_reassigns_pipeline_rows(
         metadata_service, "lookup_ids_openalex", lambda *_args, **_kwargs: {}
     )
     monkeypatch.setattr(
-        metadata_service, "fetch_metadata_semantic_scholar", lambda *_args, **_kwargs: {}
+        metadata_service,
+        "fetch_metadata_semantic_scholar",
+        lambda *_args, **_kwargs: {},
     )
     monkeypatch.setattr(
         metadata_service, "fetch_metadata_pubmed", lambda *_args, **_kwargs: {}
