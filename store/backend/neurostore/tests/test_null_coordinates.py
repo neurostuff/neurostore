@@ -1,11 +1,8 @@
 #!/usr/bin/env python3
 
-import pytest
-from marshmallow import ValidationError
 
-
-def test_point_schema_null_coordinates_validation():
-    """Test that PointSchema rejects null coordinates for new points"""
+def test_point_schema_null_coordinates_allowed():
+    """Test that PointSchema allows null coordinates for new points"""
     from neurostore.schemas.data import PointSchema
 
     point_data = {
@@ -16,11 +13,11 @@ def test_point_schema_null_coordinates_validation():
     }
 
     schema = PointSchema()
+    result = schema.load(point_data)
 
-    with pytest.raises(ValidationError) as exc_info:
-        schema.load(point_data)
-
-    assert "Points cannot have all null coordinates" in str(exc_info.value)
+    assert result["x"] is None
+    assert result["y"] is None
+    assert result["z"] is None
 
 
 def test_point_schema_null_coordinates_cloning():
@@ -44,6 +41,25 @@ def test_point_schema_null_coordinates_cloning():
     assert result["z"] is None
 
 
+def test_point_schema_partial_null_coordinates():
+    """Test that PointSchema allows partial null coordinates"""
+    from neurostore.schemas.data import PointSchema
+
+    point_data = {
+        "analysis": "test_analysis_id",
+        "coordinates": [1.0, None, 3.0],
+        "space": "MNI",
+        "order": 0,
+    }
+
+    schema = PointSchema()
+    result = schema.load(point_data)
+
+    assert result["x"] == 1.0
+    assert result["y"] is None
+    assert result["z"] == 3.0
+
+
 def test_point_schema_valid_coordinates():
     """Test that valid coordinates work normally"""
     from neurostore.schemas.data import PointSchema
@@ -63,8 +79,8 @@ def test_point_schema_valid_coordinates():
     assert result["z"] == 3.0
 
 
-def test_analysis_schema_allows_null_coordinates_during_cloning():
-    """Test that AnalysisSchema allows null coordinate points during cloning"""
+def test_analysis_schema_allows_null_coordinates():
+    """Test that AnalysisSchema allows null coordinate points"""
     from neurostore.schemas.data import AnalysisSchema
 
     analysis_data = {
@@ -86,7 +102,7 @@ def test_analysis_schema_allows_null_coordinates_during_cloning():
         ],
     }
 
-    schema = AnalysisSchema(context={"clone": True, "nested": True})
+    schema = AnalysisSchema(context={"nested": True})
     result = schema.load(analysis_data)
 
     # Should have both points, including the null coordinate one

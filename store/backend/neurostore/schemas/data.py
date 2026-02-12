@@ -360,12 +360,7 @@ class PointSchema(BaseDataSchema):
 
             # Check if all coordinates are null
             if all(c is None for c in coords):
-                # During cloning, allow null coordinates but store them as None
-                if self.context.get("clone"):
-                    data["x"], data["y"], data["z"] = None, None, None
-                else:
-                    # Don't save points with all null coordinates to database
-                    raise ValidationError("Points cannot have all null coordinates")
+                data["x"], data["y"], data["z"] = None, None, None
             else:
                 # Convert coordinates to float, handling potential null values
                 try:

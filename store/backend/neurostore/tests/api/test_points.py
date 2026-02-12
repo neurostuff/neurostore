@@ -232,3 +232,83 @@ def test_point_cluster_measurement_unit(auth_client, session):
     )
     assert resp_update.status_code == 200
     assert resp_update.json()["cluster_measurement_unit"] == "voxels"
+
+
+def test_post_point_with_null_coordinates(auth_client, ingest_neurosynth, session):
+    """Test that POST with null x,y,z coordinates is accepted."""
+    point_db = Point.query.first()
+    point = PointSchema().dump(point_db)
+    id_ = auth_client.username
+    user = User.query.filter_by(external_id=id_).first()
+    point_db.analysis.user = user
+    session.add(point_db.analysis)
+    session.commit()
+    post_point = {
+        "analysis": point["analysis"],
+        "space": point["space"],
+        "x": None,
+        "y": None,
+        "z": None,
+        "order": 1,
+    }
+    resp = auth_client.post("/api/points/", data=post_point)
+
+    assert resp.status_code == 200
+    assert resp.json()["coordinates"] == [None, None, None]
+
+
+def test_post_point_with_null_coordinates_array(
+    auth_client, ingest_neurosynth, session
+):
+    """Test that POST with coordinates=[None,None,None] is accepted."""
+    point_db = Point.query.first()
+    point = PointSchema().dump(point_db)
+    id_ = auth_client.username
+    user = User.query.filter_by(external_id=id_).first()
+    point_db.analysis.user = user
+    session.add(point_db.analysis)
+    session.commit()
+    post_point = {
+        "analysis": point["analysis"],
+        "space": point["space"],
+        "coordinates": [None, None, None],
+        "order": 1,
+    }
+    resp = auth_client.post("/api/points/", data=post_point)
+
+    assert resp.status_code == 200
+    assert resp.json()["coordinates"] == [None, None, None]
+
+
+def test_put_point_with_null_coordinates(auth_client, session):
+    """Test that PUT with null coordinates is accepted."""
+    id_ = auth_client.username
+    user = User.query.filter_by(external_id=id_).first()
+    s = Study(
+        name="fake",
+        user=user,
+        analyses=[
+            Analysis(
+                name="my analysis",
+                user=user,
+                points=[
+                    Point(
+                        x=10,
+                        y=20,
+                        z=30,
+                        user=user,
+                        order=1,
+                    )
+                ],
+            )
+        ],
+    )
+    session.add(s)
+    session.commit()
+
+    point_id = s.analyses[0].points[0].id
+    new_data = {"x": None, "y": None, "z": None}
+    resp = auth_client.put(f"/api/points/{point_id}", data=new_data)
+
+    assert resp.status_code == 200
+    assert resp.json()["coordinates"] == [None, None, None]
