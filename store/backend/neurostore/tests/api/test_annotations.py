@@ -29,6 +29,16 @@ def _is_annotation_analysis_concat_id_lookup(statement):
     )
 
 
+def _is_annotation_analysis_pk_lookup(statement):
+    normalized_statement = " ".join(statement.lower().split())
+    return (
+        normalized_statement.startswith("select")
+        and "from annotation_analyses" in normalized_statement
+        and "where annotation_analyses.annotation_id =" in normalized_statement
+        and "annotation_analyses.analysis_id =" in normalized_statement
+    )
+
+
 def _create_annotation_with_two_analyses(session, user, analysis_orders=None):
     order_one = None
     order_two = None
@@ -207,6 +217,43 @@ def test_get_annotation_orders_notes_by_analysis_order(auth_client, session):
         "Analysis 2",
         "Analysis 1",
     ]
+
+
+def test_get_annotation_avoids_per_note_annotation_analysis_pk_lookup(
+    auth_client, ingest_neurosynth, session
+):
+    dset = Studyset.query.first()
+    data = [
+        {"study": s.id, "analysis": a.id, "note": {"foo": a.id}}
+        for s in dset.studies
+        for a in s.analyses
+    ]
+    payload = {
+        "studyset": dset.id,
+        "notes": data,
+        "note_keys": ordered_note_keys({"foo": "string"}),
+        "name": "get-perf-test",
+    }
+    post_resp = auth_client.post("/api/annotations/", data=payload)
+    assert post_resp.status_code == 200
+    annotation_id = post_resp.json()["id"]
+
+    pk_lookups = []
+
+    def before_cursor_execute(
+        conn, cursor, statement, parameters, context, executemany
+    ):
+        if _is_annotation_analysis_pk_lookup(statement):
+            pk_lookups.append(statement)
+
+    event.listen(db.engine, "before_cursor_execute", before_cursor_execute)
+    try:
+        get_resp = auth_client.get(f"/api/annotations/{annotation_id}")
+    finally:
+        event.remove(db.engine, "before_cursor_execute", before_cursor_execute)
+
+    assert get_resp.status_code == 200
+    assert pk_lookups == []
 
 
 def test_clone_annotation(auth_client, simple_neurosynth_annotation, session):
