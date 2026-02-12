@@ -1100,6 +1100,8 @@ def test_metadata_worker_merge_avoids_doi_pmid_unique_conflict(session, monkeypa
     assert primary.pmid == "950001"
     assert duplicate.is_active is False
     assert duplicate.superseded_by == primary.id
+    assert duplicate.doi == "10.2000/unique-merge"
+    assert duplicate.pmid == "950001"
     assert (
         BaseStudyMetadataOutbox.query.filter_by(base_study_id=primary.id).one_or_none()
         is None

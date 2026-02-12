@@ -604,15 +604,15 @@ def _merge_duplicate_into_primary(primary, duplicate):
 
     duplicate_identifiers = _extract_identifiers(duplicate)
     _copy_missing_attrs(primary, duplicate)
-    # Break potential unique(doi, pmid) collisions before we copy identifiers.
+    # Mark duplicate inactive first so active-only doi+pmid uniqueness is preserved
+    # while we copy any missing identifiers onto the canonical study.
     db.session.execute(
         sa.update(BaseStudy)
         .where(BaseStudy.id == duplicate.id)
-        .values(doi=None, pmid=None, pmcid=None)
+        .values(is_active=False, superseded_by=primary.id)
     )
-    duplicate.doi = None
-    duplicate.pmid = None
-    duplicate.pmcid = None
+    duplicate.is_active = False
+    duplicate.superseded_by = primary.id
     _apply_missing_ids(primary, duplicate_identifiers)
 
     moved_study_ids = list(
@@ -660,8 +660,6 @@ def _merge_duplicate_into_primary(primary, duplicate):
         )
     )
 
-    duplicate.is_active = False
-    duplicate.superseded_by = primary.id
     return cache_ids
 
 
