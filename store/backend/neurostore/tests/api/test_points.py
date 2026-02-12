@@ -232,3 +232,41 @@ def test_point_cluster_measurement_unit(auth_client, session):
     )
     assert resp_update.status_code == 200
     assert resp_update.json()["cluster_measurement_unit"] == "voxels"
+
+
+def test_point_is_seed_column(auth_client, session):
+    from ...models import User, Point, Analysis, Study
+
+    id_ = auth_client.username
+    user = User.query.filter_by(external_id=id_).first()
+    s = Study(
+        name="is_seed test",
+        user=user,
+        analyses=[
+            Analysis(
+                name="analysis",
+                user=user,
+                points=[
+                    Point(x=1, y=2, z=3, user=user, order=1, is_seed=True),
+                    Point(x=4, y=5, z=6, user=user, order=2),  # default False
+                ],
+            )
+        ],
+    )
+    session.add(s)
+    session.commit()
+
+    point_true = s.analyses[0].points[0]
+    point_false = s.analyses[0].points[1]
+
+    resp_true = auth_client.get(f"/api/points/{point_true.id}")
+    resp_false = auth_client.get(f"/api/points/{point_false.id}")
+
+    assert resp_true.status_code == 200
+    assert resp_false.status_code == 200
+    assert resp_true.json()["is_seed"] is True
+    assert resp_false.json()["is_seed"] is False
+
+    resp_update = auth_client.put(f"/api/points/{point_false.id}", data={"is_seed": True})
+    assert resp_update.status_code == 200
+    assert resp_update.json()["is_seed"] is True

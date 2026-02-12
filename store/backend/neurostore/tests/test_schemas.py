@@ -136,6 +136,31 @@ def test_PointSchema_deactivation_field():
     assert result["deactivation"] is False
 
 
+def test_PointSchema_is_seed_field():
+    """Test is_seed field behavior in PointSchema"""
+    schema = PointSchema()
+
+    # Test 1: When is_seed is explicitly set to None, it should convert to False
+    data_with_none = {"x": 1.0, "y": 2.0, "z": 3.0, "is_seed": None}
+    result = schema.load(data_with_none)
+    assert result["is_seed"] is False
+
+    # Test 2: When is_seed is not included in input, it should default to False
+    data_without_is_seed = {"x": 1.0, "y": 2.0, "z": 3.0}
+    result = schema.load(data_without_is_seed)
+    assert result["is_seed"] is False
+
+    # Test 3: When is_seed is explicitly set to True, it should remain True
+    data_with_true = {"x": 1.0, "y": 2.0, "z": 3.0, "is_seed": True}
+    result = schema.load(data_with_true)
+    assert result["is_seed"] is True
+
+    # Test 4: When is_seed is explicitly set to False, it should remain False
+    data_with_false = {"x": 1.0, "y": 2.0, "z": 3.0, "is_seed": False}
+    result = schema.load(data_with_false)
+    assert result["is_seed"] is False
+
+
 def test_condition_cloning_direct_schema(ingest_neurosynth, session):
     """
     Test condition cloning behavior directly at the schema level.

@@ -336,6 +336,7 @@ class PointSchema(BaseDataSchema):
     cluster_measurement_unit = fields.String(allow_none=True)
     subpeak = fields.Boolean(allow_none=True)
     deactivation = fields.Boolean(load_default=False, allow_none=True)
+    is_seed = fields.Boolean(load_default=False, allow_none=True)
     order = fields.Integer()
     coordinates = fields.List(fields.Float(), dump_only=True)
     kind = fields.String(allow_none=True)
@@ -395,6 +396,8 @@ class PointSchema(BaseDataSchema):
         # Convert deactivation None to False
         if data.get("deactivation") is None:
             data["deactivation"] = False
+        if data.get("is_seed") is None:
+            data["is_seed"] = False
 
         return data
 
