@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 
-import pytest
-
 
 def test_point_schema_null_coordinates_allowed():
     """Test that PointSchema allows null coordinates for incremental saves"""
