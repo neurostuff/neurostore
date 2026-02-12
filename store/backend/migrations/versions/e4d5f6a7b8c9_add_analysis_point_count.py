@@ -1,7 +1,7 @@
 """add analysis point_count column
 
 Revision ID: e4d5f6a7b8c9
-Revises: d2f4a6b8c0e2
+Revises: c3e9f8a1b6d2
 Create Date: 2026-02-11 01:40:00.000000
 """
 
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = "e4d5f6a7b8c9"
-down_revision = "d2f4a6b8c0e2"
+down_revision = "c3e9f8a1b6d2"
 branch_labels = None
 depends_on = None
 
