@@ -1487,6 +1487,74 @@ def test_metadata_worker_propagates_metadata_to_study_versions(session, monkeypa
     )
 
 
+def test_metadata_worker_treats_year_zero_as_missing(session, monkeypatch):
+    from neurostore.services import base_study_metadata_enrichment as metadata_service
+
+    base_study = BaseStudy(
+        name="Existing Name",
+        description="Existing Description",
+        publication="Existing Journal",
+        authors="Existing Author",
+        year=0,
+        is_oa=True,
+        pmid="990020",
+        doi="10.9900/year-zero",
+        pmcid="PMC990020",
+        level="group",
+    )
+    session.add(base_study)
+    session.commit()
+
+    session.add(
+        BaseStudyMetadataOutbox(
+            base_study_id=base_study.id,
+            reason="test-year-zero-missing",
+        )
+    )
+    session.commit()
+
+    fetch_counts = {"semantic": 0, "pubmed": 0}
+
+    monkeypatch.setattr(
+        metadata_service, "lookup_ids_semantic_scholar", lambda *_args, **_kwargs: {}
+    )
+    monkeypatch.setattr(
+        metadata_service, "lookup_ids_pubmed", lambda *_args, **_kwargs: {}
+    )
+    monkeypatch.setattr(
+        metadata_service, "lookup_ids_openalex", lambda *_args, **_kwargs: {}
+    )
+
+    def _semantic_with_invalid_year(*_args, **_kwargs):
+        fetch_counts["semantic"] += 1
+        return {
+            "year": 0,
+            "name": "Provider Name",
+            "description": "Provider Description",
+            "publication": "Provider Journal",
+            "authors": "Provider Author",
+        }
+
+    def _pubmed_with_valid_year(*_args, **_kwargs):
+        fetch_counts["pubmed"] += 1
+        return {"year": 2023}
+
+    monkeypatch.setattr(
+        metadata_service, "fetch_metadata_semantic_scholar", _semantic_with_invalid_year
+    )
+    monkeypatch.setattr(
+        metadata_service, "fetch_metadata_pubmed", _pubmed_with_valid_year
+    )
+
+    processed = process_base_study_metadata_outbox_batch(batch_size=10)
+    assert processed == 1
+
+    session.refresh(base_study)
+    assert base_study.year == 2023
+    assert fetch_counts["semantic"] == 1
+    assert fetch_counts["pubmed"] == 1
+
+
 def test_metadata_worker_uses_new_provider_config_keys(session, app, monkeypatch):
     from neurostore.services import base_study_metadata_enrichment as metadata_service
 
@@ -1587,6 +1655,29 @@ def test_enqueue_metadata_updates_treats_blank_values_as_missing(session):
     session.commit()
 
     enqueued = enqueue_base_study_metadata_updates([base_study.id], reason="test-blank")
+    assert enqueued == 1
+    assert (
+        BaseStudyMetadataOutbox.query.filter_by(
+            base_study_id=base_study.id
+        ).one_or_none()
+        is not None
+    )
+
+
+def test_enqueue_metadata_updates_treats_year_zero_as_missing(session):
+    base_study = BaseStudy(
+        name="Year Zero Metadata",
+        pmid="970002",
+        doi="10.9700/year-zero",
+        year=0,
+        level="group",
+    )
+    session.add(base_study)
+    session.commit()
+
+    enqueued = enqueue_base_study_metadata_updates(
+        [base_study.id], reason="test-year-zero"
+    )
     assert enqueued == 1
     assert (
         BaseStudyMetadataOutbox.query.filter_by(

@@ -37,6 +37,19 @@ def _has_value(value):
     return True
 
 
+def _normalize_year(value):
+    year = _int_or_none(value)
+    if year is None or year <= 0:
+        return None
+    return year
+
+
+def _has_metadata_value(field, value):
+    if field == "year":
+        return _normalize_year(value) is not None
+    return _has_value(value)
+
+
 def _has_text_sql(column):
     return sa.func.nullif(sa.func.btrim(column), "").isnot(None)
 
@@ -108,7 +121,8 @@ def _needs_enrichment(base_study):
 
     missing_ids = any(not _has_value(identifiers.get(field)) for field in ID_FIELDS)
     missing_metadata = any(
-        not _has_value(getattr(base_study, field, None)) for field in METADATA_FIELDS
+        not _has_metadata_value(field, getattr(base_study, field, None))
+        for field in METADATA_FIELDS
     )
     return missing_ids or missing_metadata
 
@@ -121,14 +135,18 @@ def _missing_metadata_fields(base_study):
     return {
         field
         for field in METADATA_FIELDS
-        if not _has_value(getattr(base_study, field, None))
+        if not _has_metadata_value(field, getattr(base_study, field, None))
     }
 
 
 def _remaining_missing_fields(missing_fields, candidate):
     if not missing_fields:
         return set()
-    return {field for field in missing_fields if not _has_value(candidate.get(field))}
+    return {
+        field
+        for field in missing_fields
+        if not _has_metadata_value(field, candidate.get(field))
+    }
 
 
 def _is_retryable_request_exception(exc):
@@ -417,7 +435,7 @@ def fetch_metadata_semantic_scholar(identifiers, api_key=None):
                 else record.get("venue")
             ),
             "authors": ", ".join(author_names) if author_names else None,
-            "year": _int_or_none(record.get("year")),
+            "year": _normalize_year(record.get("year")),
             "is_oa": (
                 bool(record.get("isOpenAccess"))
                 if record.get("isOpenAccess") is not None
@@ -479,9 +497,9 @@ def fetch_metadata_pubmed(identifiers, email=None, api_key=None, tool="neurostor
     abstract = "\n".join(abstract_parts) if abstract_parts else None
 
     publication = _joined_text(article.find(".//Journal/Title"))
-    year = _int_or_none(_joined_text(article.find(".//PubDate/Year")))
+    year = _normalize_year(_joined_text(article.find(".//PubDate/Year")))
     if year is None:
-        year = _int_or_none(_joined_text(article.find(".//PubDate/MedlineDate")))
+        year = _normalize_year(_joined_text(article.find(".//PubDate/MedlineDate")))
 
     authors = []
     for author in article.findall(".//AuthorList/Author"):
@@ -559,7 +577,12 @@ def _copy_missing_attrs(target, source, fields=CONTENT_FIELDS):
     for field in fields:
         target_value = getattr(target, field, None)
         source_value = getattr(source, field, None)
-        if not _has_value(target_value) and _has_value(source_value):
+        if field == "year":
+            target_value = _normalize_year(target_value)
+            source_value = _normalize_year(source_value)
+        if not _has_metadata_value(field, target_value) and _has_metadata_value(
+            field, source_value
+        ):
             setattr(target, field, source_value)
             changed = True
 
@@ -668,11 +691,13 @@ def _apply_missing_ids(primary, identifiers):
 def _apply_missing_metadata(primary, metadata_candidates):
     changed = False
     for field in METADATA_FIELDS:
-        if _has_value(getattr(primary, field, None)):
+        if _has_metadata_value(field, getattr(primary, field, None)):
             continue
         for candidate in metadata_candidates:
             value = candidate.get(field)
-            if _has_value(value):
+            if field == "year":
+                value = _normalize_year(value)
+            if _has_metadata_value(field, value):
                 setattr(primary, field, value)
                 changed = True
                 break
@@ -696,7 +721,12 @@ def _propagate_base_study_metadata_to_versions(base_study):
         changed = False
         for field, source_value in source_values.items():
             target_value = getattr(version, field, None)
-            if _has_value(source_value) and not _has_value(target_value):
+            if field == "year":
+                source_value = _normalize_year(source_value)
+                target_value = _normalize_year(target_value)
+            if _has_metadata_value(field, source_value) and not _has_metadata_value(
+                field, target_value
+            ):
                 setattr(version, field, source_value)
                 changed = True
         if changed:
@@ -845,7 +875,7 @@ def enqueue_base_study_metadata_updates(base_study_ids, reason="api-write"):
         _missing_text_sql(BaseStudy.description),
         _missing_text_sql(BaseStudy.publication),
         _missing_text_sql(BaseStudy.authors),
-        BaseStudy.year.is_(None),
+        sa.or_(BaseStudy.year.is_(None), BaseStudy.year <= 0),
         BaseStudy.is_oa.is_(None),
     )
 
