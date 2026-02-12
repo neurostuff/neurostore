@@ -9,7 +9,7 @@ const useUpdateAnnotationByAnnotationAndAnalysisId = (annotationId: string | und
     const { enqueueSnackbar } = useSnackbar();
 
     return useMutation<AxiosResponse<NoteCollectionReturn[]>, AxiosError, NoteCollectionRequest[], unknown>(
-        (update) => API.NeurostoreServices.AnnotationsService.annotationAnalysesPost(update),
+        (update) => API.NeurostoreServices.AnalysesService.annotationAnalysesPost(update),
         {
             onSuccess: () => {
                 queryClient.invalidateQueries(['annotations', annotationId]);
