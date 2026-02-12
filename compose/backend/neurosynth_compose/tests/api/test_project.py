@@ -227,3 +227,92 @@ def test_clone_public_project_without_annotations(
         for call in MockNeurostoreSession.call_log
         if call["method"] == "POST" and call["path"].startswith("/api/studysets")
     )
+
+
+def test_update_project_public_without_meta_cascade(
+    session, auth_client, user_data, reset_ns_session, mock_ns
+):
+    project = (
+        session.execute(
+            select(Project)
+            .join(Project.user)
+            .where(User.external_id == auth_client.username)
+            .where(Project.meta_analyses.any())
+        )
+        .scalars()
+        .first()
+    )
+    assert project is not None
+
+    project.public = False
+    for meta in project.meta_analyses:
+        meta.public = False
+    session.add(project)
+    session.flush()
+
+    response = auth_client.put(f"/api/projects/{project.id}", data={"public": True})
+    assert response.status_code == 200
+    assert response.json["public"] is True
+
+    session.expire_all()
+    updated_project = (
+        session.execute(select(Project).where(Project.id == project.id))
+        .scalars()
+        .one()
+    )
+    assert updated_project.public is True
+    assert all(meta.public is False for meta in updated_project.meta_analyses)
+
+
+def test_update_project_public_with_meta_cascade(
+    session, auth_client, user_data, reset_ns_session, mock_ns
+):
+    project = (
+        session.execute(
+            select(Project)
+            .join(Project.user)
+            .where(User.external_id == auth_client.username)
+            .where(Project.meta_analyses.any())
+        )
+        .scalars()
+        .first()
+    )
+    assert project is not None
+
+    project.public = False
+    for meta in project.meta_analyses:
+        meta.public = False
+    session.add(project)
+    session.flush()
+
+    update_public = auth_client.put(
+        f"/api/projects/{project.id}?sync_meta_analyses_public=true",
+        data={"public": True},
+    )
+    assert update_public.status_code == 200
+    assert update_public.json["public"] is True
+
+    session.expire_all()
+    updated_project = (
+        session.execute(select(Project).where(Project.id == project.id))
+        .scalars()
+        .one()
+    )
+    assert updated_project.public is True
+    assert all(meta.public is True for meta in updated_project.meta_analyses)
+
+    update_private = auth_client.put(
+        f"/api/projects/{project.id}?sync_meta_analyses_public=true",
+        data={"public": False},
+    )
+    assert update_private.status_code == 200
+    assert update_private.json["public"] is False
+
+    session.expire_all()
+    private_project = (
+        session.execute(select(Project).where(Project.id == project.id))
+        .scalars()
+        .one()
+    )
+    assert private_project.public is False
+    assert all(meta.public is False for meta in private_project.meta_analyses)

@@ -14,7 +14,7 @@ from flask.views import MethodView
 from sqlalchemy.orm import selectinload
 from marshmallow.exceptions import ValidationError
 import sqlalchemy.sql.expression as sae
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from webargs.flaskparser import parser
 from webargs import fields
 
@@ -767,6 +767,14 @@ class MetaAnalysesView(ObjectView, ListView):
         if isinstance(tags, list):
             current_user = get_current_user()
             data["tags"] = cls._normalize_tags(tags, current_user)
+        if id is None and "public" not in data:
+            project_id = data.get("project_id")
+            if project_id:
+                project = db.session.execute(
+                    select(Project).where(Project.id == project_id)
+                ).scalar_one_or_none()
+                if project is not None:
+                    data["public"] = project.public
         return super().update_or_create(data, id=id, commit=commit)
 
     @staticmethod
@@ -1148,6 +1156,9 @@ class ProjectsView(ObjectView, ListView):
         "annotation": "AnnotationsView",
         "meta_analyses": "MetaAnalysesView",
     }
+    _project_put_args = {
+        "sync_meta_analyses_public": fields.Boolean(load_default=False),
+    }
 
     def db_validation(self, data):
         proj = db.session.execute(
@@ -1196,6 +1207,29 @@ class ProjectsView(ObjectView, ListView):
             create_or_update_neurostore_study(ns_study)
             db.session.add(ns_study)
             commit_session()
+        payload = self.__class__._schema().dump(record)
+        return _make_json_response(payload)
+
+    def put(self, id):
+        id = id.replace("\x00", "\uFFFD")
+        query_args = parser.parse(self._project_put_args, request, location="query")
+        request_data = self.insert_data(id, request.json)
+        try:
+            data = self.__class__._schema().load(request_data)
+        except ValidationError as e:
+            abort(422, description=f"input does not conform to specification: {str(e)}")
+
+        with db.session.no_autoflush:
+            record = self.__class__.update_or_create(data, id)
+            if query_args.get("sync_meta_analyses_public") and "public" in data:
+                db.session.execute(
+                    update(MetaAnalysis)
+                    .where(MetaAnalysis.project_id == record.id)
+                    .values(public=record.public)
+                    .execution_options(synchronize_session=False)
+                )
+                commit_session()
+
         payload = self.__class__._schema().dump(record)
         return _make_json_response(payload)
 
@@ -1365,6 +1399,7 @@ class ProjectsView(ObjectView, ListView):
         cloned_meta = MetaAnalysis(
             name=meta.name,
             description=meta.description,
+            public=project.public,
             specification=cloned_spec,
             studyset=new_studyset,
             annotation=new_annotation,

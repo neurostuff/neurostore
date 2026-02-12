@@ -1,4 +1,4 @@
-from neurosynth_compose.models import MetaAnalysis, MetaAnalysisResult
+from neurosynth_compose.models import MetaAnalysis, MetaAnalysisResult, User
 from sqlalchemy import select
 
 
@@ -20,9 +20,10 @@ def test_get_meta_analyses(session, app, auth_client, user_data, db):
 
 
 def test_get_specific_meta_analyses(session, app, auth_client, user_data, db):
-    metas = db.session.execute(select(MetaAnalysis).limit(3)).scalars().all()
-    ids = set([m.id for m in metas])
-    ids_str = "&".join([f"ids={m.id}" for m in metas])
+    visible_resp = auth_client.get("/api/meta-analyses?page_size=100")
+    assert visible_resp.status_code == 200
+    ids = set([m["id"] for m in visible_resp.json["results"][:3]])
+    ids_str = "&".join([f"ids={m_id}" for m_id in ids])
     get_all = auth_client.get(f"/api/meta-analyses?{ids_str}")
     assert get_all.status_code == 200
 
@@ -32,7 +33,15 @@ def test_get_specific_meta_analyses(session, app, auth_client, user_data, db):
 
 
 def test_delete_meta_analysis(session, app, auth_client, user_data, db):
-    meta_analysis = db.session.execute(select(MetaAnalysis)).scalars().first()
+    meta_analysis = (
+        db.session.execute(
+            select(MetaAnalysis)
+            .join(MetaAnalysis.user)
+            .where(User.external_id == auth_client.username)
+        )
+        .scalars()
+        .first()
+    )
 
     # add a meta-analysis result
     meta_analysis.results.append(MetaAnalysisResult())
@@ -55,3 +64,30 @@ def test_delete_meta_analysis(session, app, auth_client, user_data, db):
 
 def test_ingest_neurostore(session, neurostore_data):
     pass
+
+
+def test_update_meta_analysis_public(session, auth_client, user_data, db):
+    meta_analysis = (
+        db.session.execute(
+            select(MetaAnalysis)
+            .join(MetaAnalysis.user)
+            .where(User.external_id == auth_client.username)
+        )
+        .scalars()
+        .first()
+    )
+    assert meta_analysis is not None
+
+    update_public = auth_client.put(
+        f"/api/meta-analyses/{meta_analysis.id}",
+        data={"public": True},
+    )
+    assert update_public.status_code == 200
+    assert update_public.json["public"] is True
+
+    update_private = auth_client.put(
+        f"/api/meta-analyses/{meta_analysis.id}",
+        data={"public": False},
+    )
+    assert update_private.status_code == 200
+    assert update_private.json["public"] is False
