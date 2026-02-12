@@ -24,6 +24,7 @@ from .utils import merge_unique_ids, normalize_ids
 
 ID_FIELDS = ("pmid", "doi", "pmcid")
 METADATA_FIELDS = ("name", "description", "publication", "authors", "year", "is_oa")
+STUDY_METADATA_FIELDS = ("name", "description", "publication", "authors", "year")
 CONTENT_FIELDS = METADATA_FIELDS + ("ace_fulltext", "pubget_fulltext")
 TRANSIENT_HTTP_STATUS = {408, 409, 425, 429, 500, 502, 503, 504}
 
@@ -678,6 +679,31 @@ def _apply_missing_metadata(primary, metadata_candidates):
     return changed
 
 
+def _propagate_base_study_metadata_to_versions(base_study):
+    source_values = {
+        field: getattr(base_study, field, None)
+        for field in ID_FIELDS + STUDY_METADATA_FIELDS
+    }
+    changed_study_ids = set()
+    versions = list(
+        db.session.scalars(
+            sa.select(Study)
+            .where(Study.base_study_id == base_study.id)
+            .with_for_update(of=Study)
+        ).all()
+    )
+    for version in versions:
+        changed = False
+        for field, source_value in source_values.items():
+            target_value = getattr(version, field, None)
+            if _has_value(source_value) and not _has_value(target_value):
+                setattr(version, field, source_value)
+                changed = True
+        if changed:
+            changed_study_ids.add(version.id)
+    return changed_study_ids
+
+
 def _merge_duplicates(primary):
     cache_ids = {"base-studies": {primary.id}, "studies": set()}
 
@@ -778,7 +804,11 @@ def enrich_base_study_metadata(base_study_id):
     if base_study is None or base_study.is_active is False:
         return {"base-studies": set(), "studies": set()}
     if not _needs_enrichment(base_study):
-        return {"base-studies": {base_study.id}, "studies": set()}
+        changed_study_ids = _propagate_base_study_metadata_to_versions(base_study)
+        return {
+            "base-studies": {base_study.id},
+            "studies": changed_study_ids,
+        }
 
     cache_ids = {"base-studies": {base_study.id}, "studies": set()}
     identifiers = _extract_identifiers(base_study)
@@ -788,6 +818,9 @@ def enrich_base_study_metadata(base_study_id):
     cache_ids = merge_unique_ids(cache_ids, merged_cache_ids)
 
     _apply_missing_metadata(base_study, metadata_candidates)
+    cache_ids.setdefault("studies", set()).update(
+        _propagate_base_study_metadata_to_versions(base_study)
+    )
     cache_ids.setdefault("base-studies", set()).add(base_study.id)
     return cache_ids
 

@@ -1364,6 +1364,129 @@ def test_metadata_worker_stops_after_first_satisfied_provider(session, monkeypat
     assert call_counts["fetch_pubmed"] == 0
 
 
+def test_metadata_worker_propagates_metadata_to_study_versions(session, monkeypatch):
+    from neurostore.services import base_study_metadata_enrichment as metadata_service
+
+    base_study = BaseStudy(
+        name=None,
+        pmid="990010",
+        level="group",
+    )
+    version_missing = Study(
+        name=None,
+        publication=None,
+        authors=None,
+        year=None,
+        doi=None,
+        pmid=None,
+        pmcid=None,
+        level="group",
+        base_study=base_study,
+    )
+    version_curated = Study(
+        name="Curated Study Title",
+        publication=None,
+        authors="Curated Author",
+        year=None,
+        doi="10.7777/curated",
+        pmid=None,
+        pmcid=None,
+        level="group",
+        base_study=base_study,
+    )
+    session.add_all([base_study, version_missing, version_curated])
+    session.commit()
+
+    session.add(
+        BaseStudyMetadataOutbox(
+            base_study_id=base_study.id,
+            reason="test-study-version-propagation",
+        )
+    )
+    session.commit()
+
+    monkeypatch.setattr(
+        metadata_service,
+        "lookup_ids_semantic_scholar",
+        lambda *_args, **_kwargs: {
+            "doi": "10.9900/propagate",
+            "pmcid": "PMC990010",
+        },
+    )
+    monkeypatch.setattr(
+        metadata_service, "lookup_ids_pubmed", lambda *_args, **_kwargs: {}
+    )
+    monkeypatch.setattr(
+        metadata_service, "lookup_ids_openalex", lambda *_args, **_kwargs: {}
+    )
+    monkeypatch.setattr(
+        metadata_service,
+        "fetch_metadata_semantic_scholar",
+        lambda *_args, **_kwargs: {
+            "name": "Provider Title",
+            "description": "Provider abstract",
+            "publication": "Provider Journal",
+            "authors": "Provider Author",
+            "year": 2024,
+            "is_oa": True,
+            "doi": "10.9900/propagate",
+            "pmid": "990010",
+            "pmcid": "PMC990010",
+        },
+    )
+    monkeypatch.setattr(
+        metadata_service, "fetch_metadata_pubmed", lambda *_args, **_kwargs: {}
+    )
+
+    captured_cache_ids = []
+    monkeypatch.setattr(
+        metadata_service,
+        "bump_cache_versions",
+        lambda unique_ids: captured_cache_ids.append(unique_ids),
+    )
+
+    processed = process_base_study_metadata_outbox_batch(batch_size=10)
+    assert processed == 1
+
+    session.refresh(base_study)
+    session.refresh(version_missing)
+    session.refresh(version_curated)
+
+    assert base_study.name == "Provider Title"
+    assert base_study.description == "Provider abstract"
+    assert base_study.publication == "Provider Journal"
+    assert base_study.authors == "Provider Author"
+    assert base_study.year == 2024
+    assert base_study.doi == "10.9900/propagate"
+    assert base_study.pmcid == "PMC990010"
+
+    assert version_missing.name == "Provider Title"
+    assert version_missing.publication == "Provider Journal"
+    assert version_missing.authors == "Provider Author"
+    assert version_missing.year == 2024
+    assert version_missing.doi == "10.9900/propagate"
+    assert version_missing.pmid == "990010"
+    assert version_missing.pmcid == "PMC990010"
+
+    # Existing version metadata remains unchanged.
+    assert version_curated.name == "Curated Study Title"
+    assert version_curated.authors == "Curated Author"
+    assert version_curated.doi == "10.7777/curated"
+    # Missing fields still get backfilled.
+    assert version_curated.publication == "Provider Journal"
+    assert version_curated.year == 2024
+    assert version_curated.pmid == "990010"
+    assert version_curated.pmcid == "PMC990010"
+
+    assert captured_cache_ids, "Expected metadata worker to invalidate cache versions"
+    assert any(
+        version_missing.id in ids.get("studies", set()) for ids in captured_cache_ids
+    )
+    assert any(
+        version_curated.id in ids.get("studies", set()) for ids in captured_cache_ids
+    )
+
+
 def test_metadata_worker_uses_new_provider_config_keys(session, app, monkeypatch):
     from neurostore.services import base_study_metadata_enrichment as metadata_service
 
