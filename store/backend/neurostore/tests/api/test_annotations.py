@@ -71,6 +71,15 @@ def _is_studyset_study_lookup(statement):
     )
 
 
+def _is_user_external_id_lookup(statement):
+    normalized_statement = " ".join(statement.lower().split())
+    return (
+        normalized_statement.startswith("select")
+        and "from users" in normalized_statement
+        and "where users.external_id =" in normalized_statement
+    )
+
+
 def _create_annotation_with_two_analyses(session, user, analysis_orders=None):
     order_one = None
     order_two = None
@@ -619,6 +628,7 @@ def test_put_annotation_avoids_concat_id_annotation_analysis_lookup(
     analysis_lookups = []
     studyset_study_lookups = []
     annotation_analysis_user_id_lookups = []
+    user_external_id_lookups = []
 
     def before_cursor_execute(
         conn, cursor, statement, parameters, context, executemany
@@ -631,6 +641,8 @@ def test_put_annotation_avoids_concat_id_annotation_analysis_lookup(
             analysis_lookups.append(statement)
         if _is_studyset_study_lookup(statement):
             studyset_study_lookups.append(statement)
+        if _is_user_external_id_lookup(statement):
+            user_external_id_lookups.append(statement)
 
     event.listen(db.engine, "before_cursor_execute", before_cursor_execute)
     try:
@@ -646,6 +658,7 @@ def test_put_annotation_avoids_concat_id_annotation_analysis_lookup(
     assert annotation_analysis_user_id_lookups == []
     assert analysis_lookups == []
     assert studyset_study_lookups == []
+    assert len(user_external_id_lookups) < len(put_notes)
 
 
 def test_post_annotation_avoids_concat_id_annotation_analysis_lookup(
