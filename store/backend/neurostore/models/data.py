@@ -254,7 +254,13 @@ class BaseStudy(BaseMixin, db.Model):
 
     __table_args__ = (
         db.CheckConstraint(level.in_(["group", "meta"])),
-        db.UniqueConstraint("doi", "pmid", name="doi_pmid"),
+        sa.Index(
+            "uq_base_studies_doi_pmid_active",
+            "doi",
+            "pmid",
+            unique=True,
+            postgresql_where=sa.text("is_active = true"),
+        ),
         db.CheckConstraint("pmid ~ '^(?=.*\\S).+$' OR name IS NULL"),
         db.CheckConstraint("doi ~ '^(?=.*\\S).+$' OR name IS NULL"),
         db.CheckConstraint("id != superseded_by", name="no_self_reference"),
@@ -495,6 +501,34 @@ class BaseStudyFlagOutbox(db.Model):
     )
 
 
+class BaseStudyMetadataOutbox(db.Model):
+    __tablename__ = "base_study_metadata_outbox"
+
+    base_study_id = db.Column(
+        db.Text,
+        db.ForeignKey("base_studies.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    reason = db.Column(db.String, nullable=True)
+    enqueued_at = db.Column(
+        db.DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        index=True,
+    )
+    updated_at = db.Column(
+        db.DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        onupdate=func.now(),
+        index=True,
+    )
+
+    base_study = relationship(
+        "BaseStudy", backref=backref("metadata_outbox_entry", passive_deletes=True)
+    )
+
+
 class Study(BaseMixin, db.Model):
     __tablename__ = "studies"
 
@@ -671,9 +705,7 @@ class Analysis(BaseMixin, db.Model):
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"), index=True)
     user = relationship(
         "User",
-        backref=backref(
-            "analyses", cascade_backrefs=False, passive_deletes=True
-        ),
+        backref=backref("analyses", cascade_backrefs=False, passive_deletes=True),
         cascade_backrefs=False,
     )
     analysis_conditions = relationship(
@@ -807,6 +839,7 @@ class Point(BaseMixin, db.Model):
     cluster_measurement_unit = db.Column(db.String)
     subpeak = db.Column(db.Boolean)
     deactivation = db.Column(db.Boolean, default=False, index=True)
+    is_seed = db.Column(db.Boolean, default=False, nullable=False)
     order = db.Column(db.Integer)
 
     entities = relationship(

@@ -13,3 +13,6 @@ services:
 
   store_outbox_worker:
     restart: "no"
+
+  store_metadata_outbox_worker:
+    restart: "no"

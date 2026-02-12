@@ -1,8 +1,8 @@
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
-from ..cache_versioning import bump_cache_versions
 from ..database import db
+from ..cache_versioning import bump_cache_versions
 from ..map_types import (
     BETA_MAP_CODES,
     T_MAP_CODES,
@@ -17,17 +17,12 @@ from ..models import (
     Point,
     Study,
 )
+from .utils import normalize_ids
 
 Z_MAP_SQL_VALUES = tuple(sorted(Z_MAP_CODES))
 T_MAP_SQL_VALUES = tuple(sorted(T_MAP_CODES))
 BETA_MAP_SQL_VALUES = tuple(sorted(BETA_MAP_CODES))
 VARIANCE_MAP_SQL_VALUES = tuple(sorted(VARIANCE_MAP_CODES))
-
-
-def _normalize_ids(ids):
-    if not ids:
-        return []
-    return sorted({id_ for id_ in ids if id_})
 
 
 def _matches_values(column, accepted_values):
@@ -40,12 +35,8 @@ def _analysis_in_scope(base_study_ids):
     )
 
 
-def _clear_cache_for_ids(unique_ids):
-    bump_cache_versions(unique_ids)
-
-
 def enqueue_base_study_flag_updates(base_study_ids, reason="api-write"):
-    base_study_ids = _normalize_ids(base_study_ids)
+    base_study_ids = normalize_ids(base_study_ids)
     if not base_study_ids:
         return 0
 
@@ -69,7 +60,7 @@ def enqueue_base_study_flag_updates(base_study_ids, reason="api-write"):
 
 
 def recompute_media_flags(base_study_ids):
-    base_study_ids = _normalize_ids(base_study_ids)
+    base_study_ids = normalize_ids(base_study_ids)
     if not base_study_ids:
         return {"base-studies": set(), "studies": set(), "analyses": set()}
 
@@ -344,5 +335,5 @@ def process_base_study_flag_outbox_batch(batch_size=200):
         db.session.rollback()
         raise
 
-    _clear_cache_for_ids(cache_ids)
+    bump_cache_versions(cache_ids)
     return len(claimed_ids)

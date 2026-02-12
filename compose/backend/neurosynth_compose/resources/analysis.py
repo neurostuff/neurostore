@@ -73,7 +73,7 @@ def _make_json_response(payload, status=200):
 
 def create_user():
     from auth0.authentication.users import Users
-    from auth0.exceptions import Auth0Error
+    from auth0.authentication.exceptions import Auth0Error
 
     auth = request.headers.get("Authorization", None)
     if auth is None:

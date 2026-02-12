@@ -336,6 +336,7 @@ class PointSchema(BaseDataSchema):
     cluster_measurement_unit = fields.String(allow_none=True)
     subpeak = fields.Boolean(allow_none=True)
     deactivation = fields.Boolean(load_default=False, allow_none=True)
+    is_seed = fields.Boolean(load_default=False, allow_none=True)
     order = fields.Integer()
     coordinates = fields.List(fields.Float(), dump_only=True)
     kind = fields.String(allow_none=True)
@@ -353,30 +354,20 @@ class PointSchema(BaseDataSchema):
         # Handle case where data might be a string ID instead of dict
         if not isinstance(data, dict):
             return data
+        partial = bool(kwargs.get("partial"))
 
         # Only process coordinates if they exist in the data
         if "coordinates" in data and data["coordinates"] is not None:
             coords = data.pop("coordinates")
+            # Convert coordinates to float, handling potential null values.
+            # All-null coordinates are valid because points may be saved incrementally.
+            try:
+                converted_coords = [float(c) if c is not None else None for c in coords]
+                data["x"], data["y"], data["z"] = converted_coords
+            except (TypeError, ValueError) as e:
+                raise ValidationError(f"Invalid coordinate values: {e}")
 
-            # Check if all coordinates are null
-            if all(c is None for c in coords):
-                # During cloning, allow null coordinates but store them as None
-                if self.context.get("clone"):
-                    data["x"], data["y"], data["z"] = None, None, None
-                else:
-                    # Don't save points with all null coordinates to database
-                    raise ValidationError("Points cannot have all null coordinates")
-            else:
-                # Convert coordinates to float, handling potential null values
-                try:
-                    converted_coords = [
-                        float(c) if c is not None else None for c in coords
-                    ]
-                    data["x"], data["y"], data["z"] = converted_coords
-                except (TypeError, ValueError) as e:
-                    raise ValidationError(f"Invalid coordinate values: {e}")
-
-        if data.get("order") is None:
+        if not partial and data.get("order") is None:
             # Extract analysis_id first, then check if it exists
             analysis_id = data.get("analysis_id") or (
                 data.get("analysis") if isinstance(data.get("analysis"), str) else None
@@ -392,9 +383,16 @@ class PointSchema(BaseDataSchema):
             else:
                 data["order"] = 1
 
-        # Convert deactivation None to False
-        if data.get("deactivation") is None:
+        # Convert explicit nulls to False. For non-partial loads,
+        # missing values should also default to False.
+        if (not partial and data.get("deactivation") is None) or (
+            partial and "deactivation" in data and data.get("deactivation") is None
+        ):
             data["deactivation"] = False
+        if (not partial and data.get("is_seed") is None) or (
+            partial and "is_seed" in data and data.get("is_seed") is None
+        ):
+            data["is_seed"] = False
 
         return data
 
@@ -447,6 +445,7 @@ class AnalysisSchema(BaseDataSchema):
 
     @pre_load
     def load_values(self, data, **kwargs):
+        partial = bool(kwargs.get("partial"))
         # conditions/weights need special processing
         if data.get("conditions") is not None and data.get("weights") is not None:
             assert len(data.get("conditions")) == len(data.get("weights"))
@@ -462,7 +461,7 @@ class AnalysisSchema(BaseDataSchema):
         data.pop("conditions", None)
         data.pop("weights", None)
 
-        if data.get("order") is None:
+        if not partial and data.get("order") is None:
             if data.get("study_id") is not None:
                 max_order = (
                     db.session.query(func.max(Analysis.order))

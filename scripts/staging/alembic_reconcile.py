@@ -234,15 +234,18 @@ def main() -> int:
     print(f"[{args.service}] current DB revision: {current_revision}")
     print(f"[{args.service}] incoming head: {incoming_head}")
 
+    # If workers already ran `flask db upgrade` and moved the DB to incoming
+    # head, treat reconcile as complete instead of requiring membership in the
+    # "current" snapshot.
+    if current_revision == incoming_head:
+        print(f"[{args.service}] already at incoming head.")
+        return 0
+
     if current_revision != BASE_REVISION and current_revision not in current_revisions:
         raise RuntimeError(
             "Current DB revision is missing from current migrations history. "
             f"Missing: {current_revision}"
         )
-
-    if current_revision == incoming_head:
-        print(f"[{args.service}] already at incoming head.")
-        return 0
 
     incoming_ancestors = ancestors(incoming_head, incoming_down_map)
     current_ancestors = ancestors(current_revision, current_down_map)

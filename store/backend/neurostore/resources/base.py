@@ -52,6 +52,10 @@ from ..services.has_media_flags import (
     enqueue_base_study_flag_updates,
     recompute_media_flags,
 )
+from ..services.base_study_metadata_enrichment import (
+    enqueue_base_study_metadata_updates,
+)
+from ..services.utils import merge_unique_ids
 
 
 @parser.error_handler
@@ -104,21 +108,7 @@ class BaseView(MethodView):
 
     @staticmethod
     def merge_unique_ids(*unique_ids_dicts):
-        merged = {}
-        for unique_ids in unique_ids_dicts:
-            if not unique_ids:
-                continue
-            for key, values in unique_ids.items():
-                if not values:
-                    continue
-                if isinstance(values, set):
-                    vals = values
-                elif isinstance(values, (list, tuple)):
-                    vals = {v for v in values if v}
-                else:
-                    vals = {values}
-                merged.setdefault(key, set()).update(vals)
-        return merged
+        return merge_unique_ids(*unique_ids_dicts)
 
     def update_annotations(self, annotations):
         if not annotations:
@@ -194,6 +184,10 @@ class BaseView(MethodView):
         else:
             recompute_media_flags(base_studies)
 
+        if current_app.config.get("BASE_STUDY_METADATA_ASYNC", True):
+            reason = f"{self.__class__.__name__}.update_base_studies"
+            enqueue_base_study_metadata_updates(base_studies, reason=reason)
+
     def eager_load(self, q, args):
         return q
 
@@ -261,6 +255,11 @@ class BaseView(MethodView):
                 current_user = User.query.filter_by(external_id=context["user"]).first()
 
         id = id or data.get("id", None)  # want to handle case of {"id": "asdfasf"}
+
+        # Internal preload hints can be passed by parent resources to avoid
+        # repeated lookups for nested records.
+        preloaded_studies = data.pop("preloaded_studies", None)
+        preloaded_nested_records = data.pop("_preloaded_nested_records", None)
 
         only_ids = set(data.keys()) - set(["id"]) == set()
 
@@ -376,6 +375,12 @@ class BaseView(MethodView):
         for field, res_name in cls._nested.items():
             ResCls = getattr(viewdata, res_name)
             if data.get(field) is not None:
+                field_preloaded_records = None
+                if isinstance(preloaded_nested_records, dict):
+                    field_preloaded_records = preloaded_nested_records.get(field)
+                if field_preloaded_records is None:
+                    field_preloaded_records = preloaded_studies
+
                 if isinstance(data.get(field), list):
                     nested = []
                     for rec in data.get(field):
@@ -384,8 +389,8 @@ class BaseView(MethodView):
                             id = rec.get("id")
                         elif isinstance(rec, str):
                             id = rec
-                        if data.get("preloaded_studies") and id:
-                            nested_record = data["preloaded_studies"].get(id)
+                        if isinstance(field_preloaded_records, dict) and id:
+                            nested_record = field_preloaded_records.get(id)
                         else:
                             nested_record = None
                         nested.append(
@@ -404,8 +409,8 @@ class BaseView(MethodView):
                         id = rec.get("id")
                     elif isinstance(rec, str):
                         id = rec
-                    if data.get("preloaded_studies") and id:
-                        nested_record = data["preloaded_studies"].get(id)
+                    if isinstance(field_preloaded_records, dict) and id:
+                        nested_record = field_preloaded_records.get(id)
                     else:
                         nested_record = None
                     nested = ResCls.update_or_create(
@@ -497,7 +502,7 @@ class ObjectView(BaseView):
     def put(self, id):
         request_data = self.insert_data(id, request.json)
         schema = self.__class__._schema()
-        data = schema.load(request_data)
+        data = schema.load(request_data, partial=True)
 
         args = {}
         if set(self._o2m.keys()).intersection(set(data.keys())):
