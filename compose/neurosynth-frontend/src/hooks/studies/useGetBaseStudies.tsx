@@ -29,10 +29,12 @@ export const baseStudiesSearchHelper = (searchCriteria: Partial<SearchCriteria>)
         searchCriteria.authorSearch || undefined,
         'group',
         searchCriteria.dataType === SearchDataType.ALL ? 'both' : searchCriteria.dataType,
+        undefined,
         undefined, // is_oa
         searchCriteria.journalSearch || undefined,
         searchCriteria.pmid,
         searchCriteria.doi,
+        undefined,
         searchCriteria.flat,
         searchCriteria.info
     );

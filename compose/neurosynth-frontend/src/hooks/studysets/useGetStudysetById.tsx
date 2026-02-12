@@ -6,7 +6,7 @@ import API from 'api/api.config';
 
 export const STUDYSET_QUERY_STRING = 'studysets';
 
-const useGetStudysetById = (studysetId?: string, nested?: boolean, summary?: boolean) => {
+const useGetStudysetById = (studysetId?: string, nested: boolean = false, summary: boolean = false) => {
     const { enqueueSnackbar } = useSnackbar();
     const { data, isLoading, isError, error, refetch, isRefetching } = useQuery<
         AxiosResponse<StudysetReturn>,
@@ -15,8 +15,7 @@ const useGetStudysetById = (studysetId?: string, nested?: boolean, summary?: boo
         [string, string | undefined, boolean | undefined, boolean | undefined]
     >(
         [STUDYSET_QUERY_STRING, studysetId, nested, summary],
-        () =>
-            API.NeurostoreServices.StudySetsService.studysetsIdGet(studysetId || '', nested, summary, undefined),
+        () => API.NeurostoreServices.StudySetsService.studysetsIdGet(studysetId || '', nested, summary, undefined),
         {
             enabled: !!studysetId,
             onError: () => {
