@@ -479,7 +479,7 @@ class ObjectView(BaseView):
     def put(self, id):
         request_data = self.insert_data(id, request.json)
         schema = self.__class__._schema()
-        data = schema.load(request_data)
+        data = schema.load(request_data, partial=True)
 
         args = {}
         if set(self._o2m.keys()).intersection(set(data.keys())):

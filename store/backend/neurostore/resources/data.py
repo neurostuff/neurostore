@@ -743,7 +743,7 @@ class AnnotationsView(ObjectView, ListView):
     def put(self, id):
         request_data = self.insert_data(id, request.json)
         schema = self._schema()
-        data = schema.load(request_data)
+        data = schema.load(request_data, partial=True)
 
         if "note_keys" in data:
             data["note_keys"] = self._normalize_note_keys(data["note_keys"])
