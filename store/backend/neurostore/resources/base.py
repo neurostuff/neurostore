@@ -244,6 +244,11 @@ class BaseView(MethodView):
 
         id = id or data.get("id", None)  # want to handle case of {"id": "asdfasf"}
 
+        # Internal preload hints can be passed by parent resources to avoid
+        # repeated lookups for nested records.
+        preloaded_studies = data.pop("preloaded_studies", None)
+        preloaded_nested_records = data.pop("_preloaded_nested_records", None)
+
         only_ids = set(data.keys()) - set(["id"]) == set()
 
         # allow compose bot to make changes
@@ -358,6 +363,12 @@ class BaseView(MethodView):
         for field, res_name in cls._nested.items():
             ResCls = getattr(viewdata, res_name)
             if data.get(field) is not None:
+                field_preloaded_records = None
+                if isinstance(preloaded_nested_records, dict):
+                    field_preloaded_records = preloaded_nested_records.get(field)
+                if field_preloaded_records is None:
+                    field_preloaded_records = preloaded_studies
+
                 if isinstance(data.get(field), list):
                     nested = []
                     for rec in data.get(field):
@@ -366,8 +377,8 @@ class BaseView(MethodView):
                             id = rec.get("id")
                         elif isinstance(rec, str):
                             id = rec
-                        if data.get("preloaded_studies") and id:
-                            nested_record = data["preloaded_studies"].get(id)
+                        if isinstance(field_preloaded_records, dict) and id:
+                            nested_record = field_preloaded_records.get(id)
                         else:
                             nested_record = None
                         nested.append(
@@ -386,8 +397,8 @@ class BaseView(MethodView):
                         id = rec.get("id")
                     elif isinstance(rec, str):
                         id = rec
-                    if data.get("preloaded_studies") and id:
-                        nested_record = data["preloaded_studies"].get(id)
+                    if isinstance(field_preloaded_records, dict) and id:
+                        nested_record = field_preloaded_records.get(id)
                     else:
                         nested_record = None
                     nested = ResCls.update_or_create(

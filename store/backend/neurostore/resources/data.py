@@ -619,8 +619,13 @@ class AnnotationsView(ObjectView, ListView):
                 AnnotationAnalysis.study_id,
                 AnnotationAnalysis.studyset_id,
                 AnnotationAnalysis.annotation_id,
+                AnnotationAnalysis.note,
+                AnnotationAnalysis.user_id,
             )
             .options(
+                joinedload(AnnotationAnalysis.user)
+                .load_only(User.external_id)
+                .options(raiseload("*", sql_only=True)),
                 joinedload(AnnotationAnalysis.analysis)
                 .load_only(
                     Analysis.id,
@@ -740,6 +745,56 @@ class AnnotationsView(ObjectView, ListView):
                 "annotation request must contain all analyses from the studyset."
             )
 
+    @staticmethod
+    def _is_fast_note_update_candidate(data):
+        if not data.get("annotation_analyses"):
+            return False
+        allowed = {"annotation_analyses", "note_keys", "studyset"}
+        return not (set(data.keys()) - allowed)
+
+    def _try_fast_note_update(self, annotation, data):
+        # Preserve permission semantics and user bootstrap behavior.
+        self.__class__.update_or_create(
+            {"id": annotation.id},
+            id=annotation.id,
+            record=annotation,
+            flush=False,
+        )
+
+        if "note_keys" in data:
+            annotation.note_keys = data["note_keys"]
+
+        notes_by_id = {aa.id: aa for aa in annotation.annotation_analyses}
+        current_user = get_current_user()
+        current_user_id = current_user.external_id if current_user else None
+
+        for note in data.get("annotation_analyses", []):
+            if not isinstance(note, dict):
+                return False
+
+            note_id = note.get("id")
+            if not note_id:
+                analysis = note.get("analysis")
+                analysis_id = (
+                    analysis.get("id")
+                    if isinstance(analysis, dict)
+                    else analysis if isinstance(analysis, str) else None
+                )
+                if not analysis_id:
+                    return False
+                note_id = f"{annotation.id}_{analysis_id}"
+
+            aa_record = notes_by_id.get(note_id)
+            if aa_record is None:
+                return False
+
+            if "note" in note:
+                aa_record.note = note.get("note")
+            if current_user_id:
+                aa_record.user_id = current_user_id
+
+        return True
+
     def put(self, id):
         request_data = self.insert_data(id, request.json)
         schema = self._schema()
@@ -762,10 +817,96 @@ class AnnotationsView(ObjectView, ListView):
             specs, column_counter = self._normalize_pipeline_specs(pipeline_payload)
             self._apply_pipeline_columns(input_record, data, specs, column_counter)
 
+        fast_note_update_candidate = self._is_fast_note_update_candidate(data)
+
+        if data.get("annotation_analyses") and not fast_note_update_candidate:
+            by_id = {aa.id: aa for aa in input_record.annotation_analyses}
+            by_analysis_id = {
+                aa.analysis_id: aa.analysis
+                for aa in input_record.annotation_analyses
+                if aa.analysis is not None
+            }
+            by_studyset_study = {
+                (aa.study_id, aa.studyset_id): aa.studyset_study
+                for aa in input_record.annotation_analyses
+                if aa.studyset_study is not None
+            }
+
+            for note in data["annotation_analyses"]:
+                if not isinstance(note, dict):
+                    continue
+
+                preloaded_aa = by_id.get(note.get("id"))
+
+                analysis_payload = note.get("analysis")
+                analysis_id = None
+                if isinstance(analysis_payload, dict):
+                    analysis_id = analysis_payload.get("id")
+                elif isinstance(analysis_payload, str):
+                    analysis_id = analysis_payload
+                    analysis_payload = {"id": analysis_id}
+                    note["analysis"] = analysis_payload
+
+                if preloaded_aa is not None:
+                    if not isinstance(analysis_payload, dict):
+                        analysis_payload = {"id": preloaded_aa.analysis_id}
+                        note["analysis"] = analysis_payload
+                    if preloaded_aa.analysis is not None:
+                        analysis_payload["preloaded_data"] = preloaded_aa.analysis
+                elif isinstance(analysis_payload, dict):
+                    preloaded_analysis = by_analysis_id.get(analysis_id)
+                    if preloaded_analysis is not None:
+                        analysis_payload["preloaded_data"] = preloaded_analysis
+
+                studyset_study_payload = note.get("studyset_study")
+                if not isinstance(studyset_study_payload, dict):
+                    studyset_study_payload = {}
+                    note["studyset_study"] = studyset_study_payload
+
+                study_payload = studyset_study_payload.get("study")
+                studyset_payload = studyset_study_payload.get("studyset")
+                study_id = (
+                    study_payload.get("id") if isinstance(study_payload, dict) else None
+                )
+                studyset_id = (
+                    studyset_payload.get("id")
+                    if isinstance(studyset_payload, dict)
+                    else None
+                )
+
+                preloaded_ss = None
+                if preloaded_aa is not None and preloaded_aa.studyset_study is not None:
+                    preloaded_ss = preloaded_aa.studyset_study
+                elif study_id and studyset_id:
+                    preloaded_ss = by_studyset_study.get((study_id, studyset_id))
+
+                if preloaded_ss is not None:
+                    studyset_study_payload["preloaded_data"] = preloaded_ss
+
+            data["_preloaded_nested_records"] = {
+                "annotation_analyses": {
+                    aa.id: aa for aa in input_record.annotation_analyses
+                }
+            }
+
         self.db_validation(input_record, data)
 
         with db.session.no_autoflush:
-            record = self.__class__.update_or_create(data, id, record=input_record)
+            if fast_note_update_candidate:
+                fast_path_succeeded = self._try_fast_note_update(input_record, data)
+                if fast_path_succeeded:
+                    record = input_record
+                else:
+                    data["_preloaded_nested_records"] = {
+                        "annotation_analyses": {
+                            aa.id: aa for aa in input_record.annotation_analyses
+                        }
+                    }
+                    record = self.__class__.update_or_create(
+                        data, id, record=input_record
+                    )
+            else:
+                record = self.__class__.update_or_create(data, id, record=input_record)
 
         with db.session.no_autoflush:
             unique_ids = self.get_affected_ids([id])
