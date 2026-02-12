@@ -2111,6 +2111,48 @@ def test_superseded_by_no_self_reference(session):
         # Expected behavior
 
 
+def test_doi_pmid_unique_applies_only_to_active_base_studies(session):
+    from sqlalchemy.exc import IntegrityError
+
+    shared_doi = "10.1234/active-only-unique"
+    shared_pmid = "77777777"
+    active = BaseStudy(
+        name="Active Study",
+        doi=shared_doi,
+        pmid=shared_pmid,
+        level="group",
+        is_active=True,
+    )
+    inactive_duplicate = BaseStudy(
+        name="Inactive Duplicate",
+        doi=shared_doi,
+        pmid=shared_pmid,
+        level="group",
+        is_active=False,
+    )
+    session.add_all([active, inactive_duplicate])
+    session.commit()
+
+    conflicting_active = BaseStudy(
+        name="Conflicting Active",
+        doi=shared_doi,
+        pmid=shared_pmid,
+        level="group",
+        is_active=True,
+    )
+    session.add(conflicting_active)
+
+    try:
+        session.commit()
+        assert False, "Should have raised IntegrityError for active duplicate"
+    except IntegrityError:
+        session.rollback()
+
+    rows = session.query(BaseStudy).filter_by(doi=shared_doi, pmid=shared_pmid).all()
+    assert len(rows) == 2
+    assert {row.is_active for row in rows} == {True, False}
+
+
 def test_is_active_not_exposed_in_api(auth_client, ingest_neurosynth):
     """Test that is_active and superseded_by are not exposed in API responses"""
     # Get a base study

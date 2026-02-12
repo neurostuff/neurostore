@@ -254,7 +254,13 @@ class BaseStudy(BaseMixin, db.Model):
 
     __table_args__ = (
         db.CheckConstraint(level.in_(["group", "meta"])),
-        db.UniqueConstraint("doi", "pmid", name="doi_pmid"),
+        sa.Index(
+            "uq_base_studies_doi_pmid_active",
+            "doi",
+            "pmid",
+            unique=True,
+            postgresql_where=sa.text("is_active = true"),
+        ),
         db.CheckConstraint("pmid ~ '^(?=.*\\S).+$' OR name IS NULL"),
         db.CheckConstraint("doi ~ '^(?=.*\\S).+$' OR name IS NULL"),
         db.CheckConstraint("id != superseded_by", name="no_self_reference"),
