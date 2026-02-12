@@ -267,6 +267,11 @@ def test_point_is_seed_column(auth_client, session):
     assert resp_true.json()["is_seed"] is True
     assert resp_false.json()["is_seed"] is False
 
+    # Partial PUT should not reset is_seed when omitted from payload.
+    resp_partial = auth_client.put(f"/api/points/{point_true.id}", data={"x": 10})
+    assert resp_partial.status_code == 200
+    assert resp_partial.json()["is_seed"] is True
+
     resp_update = auth_client.put(f"/api/points/{point_false.id}", data={"is_seed": True})
     assert resp_update.status_code == 200
     assert resp_update.json()["is_seed"] is True

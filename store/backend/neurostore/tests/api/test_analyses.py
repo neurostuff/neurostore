@@ -1,4 +1,4 @@
-from ...models import Analysis, User, Point, Image
+from ...models import Analysis, User, Point, Image, Study
 from ...schemas import AnalysisSchema
 
 
@@ -186,6 +186,25 @@ def test_post_analysis_without_order(auth_client, ingest_neurosynth, session):
 
     # Check if the 'order' field is not None
     assert resp.json()["order"] is not None
+
+
+def test_put_analysis_partial_does_not_reset_order(auth_client, session):
+    id_ = auth_client.username
+    user = User.query.filter_by(external_id=id_).first()
+    study = Study(
+        name="partial analysis update",
+        user=user,
+        analyses=[Analysis(name="analysis", user=user, order=3)],
+    )
+    session.add(study)
+    session.commit()
+
+    analysis_id = study.analyses[0].id
+    resp = auth_client.put(f"/api/analyses/{analysis_id}", data={"name": "renamed"})
+
+    assert resp.status_code == 200
+    assert resp.json()["name"] == "renamed"
+    assert resp.json()["order"] == 3
 
 
 def test_create_duplicate_analysis(auth_client, ingest_neurosynth, session):

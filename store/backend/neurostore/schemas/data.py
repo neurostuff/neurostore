@@ -354,6 +354,7 @@ class PointSchema(BaseDataSchema):
         # Handle case where data might be a string ID instead of dict
         if not isinstance(data, dict):
             return data
+        partial = bool(kwargs.get("partial"))
 
         # Only process coordinates if they exist in the data
         if "coordinates" in data and data["coordinates"] is not None:
@@ -377,7 +378,7 @@ class PointSchema(BaseDataSchema):
                 except (TypeError, ValueError) as e:
                     raise ValidationError(f"Invalid coordinate values: {e}")
 
-        if data.get("order") is None:
+        if not partial and data.get("order") is None:
             # Extract analysis_id first, then check if it exists
             analysis_id = data.get("analysis_id") or (
                 data.get("analysis") if isinstance(data.get("analysis"), str) else None
@@ -393,10 +394,15 @@ class PointSchema(BaseDataSchema):
             else:
                 data["order"] = 1
 
-        # Convert deactivation None to False
-        if data.get("deactivation") is None:
+        # Convert explicit nulls to False. For non-partial loads,
+        # missing values should also default to False.
+        if (not partial and data.get("deactivation") is None) or (
+            partial and "deactivation" in data and data.get("deactivation") is None
+        ):
             data["deactivation"] = False
-        if data.get("is_seed") is None:
+        if (not partial and data.get("is_seed") is None) or (
+            partial and "is_seed" in data and data.get("is_seed") is None
+        ):
             data["is_seed"] = False
 
         return data
@@ -450,6 +456,7 @@ class AnalysisSchema(BaseDataSchema):
 
     @pre_load
     def load_values(self, data, **kwargs):
+        partial = bool(kwargs.get("partial"))
         # conditions/weights need special processing
         if data.get("conditions") is not None and data.get("weights") is not None:
             assert len(data.get("conditions")) == len(data.get("weights"))
@@ -465,7 +472,7 @@ class AnalysisSchema(BaseDataSchema):
         data.pop("conditions", None)
         data.pop("weights", None)
 
-        if data.get("order") is None:
+        if not partial and data.get("order") is None:
             if data.get("study_id") is not None:
                 max_order = (
                     db.session.query(func.max(Analysis.order))

@@ -1,6 +1,12 @@
 import pytest
 
-from ..schemas import StudySchema, StudysetSchema, StudysetSnapshot, PointSchema
+from ..schemas import (
+    StudySchema,
+    StudysetSchema,
+    StudysetSnapshot,
+    PointSchema,
+    AnalysisSchema,
+)
 from ..models import Study, Studyset
 from neurostore.schemas.pipeline import (
     PipelineSchema,
@@ -159,6 +165,21 @@ def test_PointSchema_is_seed_field():
     data_with_false = {"x": 1.0, "y": 2.0, "z": 3.0, "is_seed": False}
     result = schema.load(data_with_false)
     assert result["is_seed"] is False
+
+
+def test_PointSchema_partial_load_does_not_apply_missing_defaults():
+    schema = PointSchema()
+    result = schema.load({"x": 1.0}, partial=True)
+    assert "deactivation" not in result
+    assert "is_seed" not in result
+    assert "order" not in result
+
+
+def test_AnalysisSchema_partial_load_does_not_apply_missing_order():
+    schema = AnalysisSchema()
+    result = schema.load({"name": "updated analysis"}, partial=True)
+    assert result["name"] == "updated analysis"
+    assert "order" not in result
 
 
 def test_condition_cloning_direct_schema(ingest_neurosynth, session):
