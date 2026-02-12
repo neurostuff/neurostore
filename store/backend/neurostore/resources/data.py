@@ -620,6 +620,7 @@ class AnnotationsView(ObjectView, ListView):
                 AnnotationAnalysis.studyset_id,
                 AnnotationAnalysis.annotation_id,
                 AnnotationAnalysis.note,
+                AnnotationAnalysis.user_id,
             )
             .options(
                 joinedload(AnnotationAnalysis.analysis)
