@@ -39,6 +39,27 @@ def _is_annotation_analysis_pk_lookup(statement):
     )
 
 
+def _is_analysis_id_lookup(statement):
+    normalized_statement = " ".join(statement.lower().split())
+    return (
+        normalized_statement.startswith("select")
+        and "from analyses" in normalized_statement
+        and "where analyses.id =" in normalized_statement
+        and "limit" in normalized_statement
+    )
+
+
+def _is_studyset_study_lookup(statement):
+    normalized_statement = " ".join(statement.lower().split())
+    return (
+        normalized_statement.startswith("select")
+        and "from studyset_studies" in normalized_statement
+        and "studyset_studies.study_id =" in normalized_statement
+        and "studyset_studies.studyset_id =" in normalized_statement
+        and "limit" in normalized_statement
+    )
+
+
 def _create_annotation_with_two_analyses(session, user, analysis_orders=None):
     order_one = None
     order_two = None
@@ -584,12 +605,18 @@ def test_put_annotation_avoids_concat_id_annotation_analysis_lookup(
     ]
 
     concat_id_lookups = []
+    analysis_lookups = []
+    studyset_study_lookups = []
 
     def before_cursor_execute(
         conn, cursor, statement, parameters, context, executemany
     ):
         if _is_annotation_analysis_concat_id_lookup(statement):
             concat_id_lookups.append(statement)
+        if _is_analysis_id_lookup(statement):
+            analysis_lookups.append(statement)
+        if _is_studyset_study_lookup(statement):
+            studyset_study_lookups.append(statement)
 
     event.listen(db.engine, "before_cursor_execute", before_cursor_execute)
     try:
@@ -602,6 +629,8 @@ def test_put_annotation_avoids_concat_id_annotation_analysis_lookup(
 
     assert put_resp.status_code == 200
     assert concat_id_lookups == []
+    assert analysis_lookups == []
+    assert studyset_study_lookups == []
 
 
 def test_post_annotation_avoids_concat_id_annotation_analysis_lookup(
