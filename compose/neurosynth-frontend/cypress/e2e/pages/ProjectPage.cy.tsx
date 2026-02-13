@@ -26,6 +26,7 @@ describe(PAGE_NAME, () => {
         cy.visit(PATH).wait('@projectFixture');
         cy.contains('button', 'Public').click();
         cy.wait('@updateProjectFixture').then((res) => {
+            console.log(res.request);
             assert.exists(res.request.body.public);
             assert.isTrue(res.request.body.public);
         });
