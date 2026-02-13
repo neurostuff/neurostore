@@ -12,7 +12,7 @@ const useUpdateProject = () => {
         AxiosError,
         { projectId: string; project: INeurosynthProject },
         unknown
-    >((args) => API.NeurosynthServices.ProjectsService.projectsIdPut(args.projectId, args.project), {
+    >((args) => API.NeurosynthServices.ProjectsService.projectsIdPut(args.projectId, undefined, args.project), {
         onSuccess: (res) => {
             queryClient.setQueryData(['projects', res.data.id], res);
             queryClient.invalidateQueries('projects');
