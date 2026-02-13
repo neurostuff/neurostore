@@ -27,9 +27,6 @@ const StudiesPage = React.lazy(() => import('pages/Studies/StudiesPage'));
 
 const MetaAnalysesPage = React.lazy(() => import('pages/MetaAnalyses/MetaAnalysesPage'));
 const MetaAnalysisPage = React.lazy(() => import('pages/MetaAnalysis/MetaAnalysisPage'));
-const FakeMetaAnalysisResultsPreview = React.lazy(
-    () => import('pages/MetaAnalysis/components/FakeMetaAnalysisResultsPreview')
-);
 
 // const ProjectsPage = React.lazy(() => import('pages/Projects/ProjectsPage'));
 
@@ -67,16 +64,6 @@ const BaseNavigation: React.FC = () => {
             >
                 <Routes>
                     <Route path="/" element={<LandingPage />} />
-                    {import.meta.env.DEV && (
-                        <Route
-                            path="/dev/meta-analysis-results-preview"
-                            element={
-                                <Box sx={BaseNavigationStyles.pagesContainer}>
-                                    <FakeMetaAnalysisResultsPreview />
-                                </Box>
-                            }
-                        />
-                    )}
                     <Route
                         path="/projects"
                         element={
