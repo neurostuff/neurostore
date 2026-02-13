@@ -38,6 +38,7 @@ const LandingPageStyles: Style = {
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'center',
+        position: 'relative',
         padding: {
             xs: '2rem',
             md: '2rem 2rem 2rem 0rem',

@@ -14,7 +14,9 @@ const MockNavToolbarPopupSubMenu: React.FC<INavToolbarPopupSubMenu> = (props) =>
                 {showPopup &&
                     props.options.map((option, index) => (
                         <React.Fragment key={index}>
-                            <li>{option.label}</li>
+                            <li>
+                                <button onClick={option.onClick}>{option.label}</button>
+                            </li>
                             <li>{option.secondary}</li>
                         </React.Fragment>
                     ))}
