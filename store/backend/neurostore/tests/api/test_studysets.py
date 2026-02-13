@@ -1,4 +1,5 @@
 import random
+import re
 import string
 from sqlalchemy import event
 from neurostore.models import Studyset, Study, StudysetStudy, User
@@ -545,3 +546,48 @@ def test_studyset_put_studies_only_avoids_point_value_loading(
     assert resp.status_code == 200
     point_value_queries = [stmt for stmt in statements if "from point_values" in stmt]
     assert len(point_value_queries) < 10
+
+
+def test_studyset_put_studies_only_uses_deterministic_insert_order(
+    auth_client, ingest_neurosynth, session
+):
+    ordered_ids = [
+        sid for (sid,) in session.query(Study.id).order_by(Study.id).limit(3).all()
+    ]
+    assert len(ordered_ids) == 3
+
+    payload_order = [ordered_ids[2], ordered_ids[0], ordered_ids[1]]
+    created = auth_client.post(
+        "/api/studysets/", data={"name": "deterministic-insert-order"}
+    )
+    assert created.status_code == 200
+
+    insert_orders = []
+    study_id_key = re.compile(r"study_id__(\d+)$")
+
+    def _capture_insert_order(conn, cursor, statement, parameters, context, executemany):
+        normalized_statement = " ".join(statement.lower().split())
+        if "insert into studyset_studies" not in normalized_statement:
+            return
+
+        if isinstance(parameters, dict):
+            indexed_values = []
+            for key, value in parameters.items():
+                match = study_id_key.match(key)
+                if match:
+                    indexed_values.append((int(match.group(1)), value))
+            if indexed_values:
+                insert_orders.append([value for _, value in sorted(indexed_values)])
+
+    event.listen(session.bind, "before_cursor_execute", _capture_insert_order)
+    try:
+        update_resp = auth_client.put(
+            f"/api/studysets/{created.json()['id']}",
+            data={"studies": payload_order},
+        )
+    finally:
+        event.remove(session.bind, "before_cursor_execute", _capture_insert_order)
+
+    assert update_resp.status_code == 200
+    assert insert_orders
+    assert max(insert_orders, key=len) == sorted(payload_order)
