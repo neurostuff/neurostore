@@ -59,37 +59,6 @@ const LandingPageStyles: Style = {
             md: '1rem 0',
         },
     },
-    publicationBlurbContainer: {
-        display: 'flex',
-        alignItems: 'center',
-        width: '100%',
-        maxWidth: '700px',
-        position: 'relative',
-        justifyContent: {
-            xs: 'center',
-            lg: 'flex-start',
-        },
-        marginTop: '1rem',
-        transform: {
-            lg: 'translateY(3rem)',
-        },
-        zIndex: 1,
-    },
-    publicationBlurbLink: {
-        color: 'primary.contrastText',
-        opacity: 0.95,
-        fontWeight: 'bold',
-        textAlign: {
-            xs: 'center',
-            lg: 'left',
-        },
-        textDecoration: 'underline',
-        textDecorationThickness: '1px',
-        textUnderlineOffset: '3px',
-        '&:hover': {
-            opacity: 1,
-        },
-    },
     heroButtonContainer: {
         display: 'flex',
         flexDirection: {

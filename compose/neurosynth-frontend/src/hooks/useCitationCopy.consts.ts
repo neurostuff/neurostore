@@ -5,6 +5,15 @@ export type CitationInfo = {
     apaText: string;
 };
 
+export type CitationFormat = 'apa' | 'vancouver' | 'harvard1' | 'bibtex';
+
+export const FORMAT_LABELS: Record<CitationFormat, string> = {
+    apa: 'APA',
+    bibtex: 'BibTeX',
+    vancouver: 'Vancouver',
+    harvard1: 'Harvard',
+};
+
 export const NEUROSYNTH_COMPOSE_CITATION: CitationInfo = {
     key: 'neurosynth_compose',
     doi: '10.1162/IMAG.a.1114',

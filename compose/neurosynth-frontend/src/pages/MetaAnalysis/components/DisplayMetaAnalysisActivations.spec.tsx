@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react';
-import { APA_CITATIONS_TEXT, NEUROSYNTH_COMPOSE_CITATION, NIMARE_CITATION } from 'constants/citations';
+import { APA_CITATIONS_TEXT, NEUROSYNTH_COMPOSE_CITATION, NIMARE_CITATION } from 'hooks/useCitationCopy.consts';
 import userEvent from '@testing-library/user-event';
 import DisplayMetaAnalysisActivations from './DisplayMetaAnalysisActivations';
 
@@ -50,7 +50,9 @@ describe('DisplayMetaAnalysisActivations', () => {
 
         expect(screen.getByText('Citations (APA)')).toBeInTheDocument();
         expect(
-            screen.getByText(/Neurosynth Compose: A web-based platform for flexible and reproducible neuroimaging meta-analysis/)
+            screen.getByText(
+                /Neurosynth Compose: A web-based platform for flexible and reproducible neuroimaging meta-analysis/
+            )
         ).toBeInTheDocument();
         expect(screen.getByText(/NiMARE: Neuroimaging Meta-Analysis Research Environment/)).toBeInTheDocument();
         expect(screen.getByText(NEUROSYNTH_COMPOSE_CITATION.doiUrl)).toBeInTheDocument();

@@ -2,7 +2,7 @@ import { ContentCopy, Download } from '@mui/icons-material';
 import { Box, Button, IconButton, Link, Paper, Tooltip, Typography } from '@mui/material';
 import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
-import { APA_CITATIONS_TEXT, NEUROSYNTH_COMPOSE_CITATION, NIMARE_CITATION } from 'constants/citations';
+import { APA_CITATIONS_TEXT, NEUROSYNTH_COMPOSE_CITATION, NIMARE_CITATION } from 'hooks/useCitationCopy.consts';
 import { downloadFile, toCSV } from 'helpers/downloadFile.helpers';
 import useGetAnalysisById from 'hooks/analyses/useGetAnalysisById';
 import { PointReturn } from 'neurostore-typescript-sdk';

@@ -12,6 +12,7 @@ import MetaAnalysisExecution from './MetaAnalysisExecution';
 import MetaAnalysisStatusAlert from './MetaAnalysisStatusAlert';
 import DisplayMetaAnalysisSpecification from './MetaAnalysisSpecification';
 import MetaAnalysisInstructions from './MetaAnalysisInstructions';
+import CiteMe from './CiteMe';
 
 function MetaAnalysisDetails() {
     const projectUser = useProjectUser();
@@ -76,6 +77,7 @@ function MetaAnalysisDetails() {
                     label={hasResults || hasJobs || !editsAllowed ? 'View Specification' : 'Edit Specification'}
                 />
                 {editsAllowed && <Tab value={2} label={hasResults || hasJobs ? 'Run Again' : 'Settings'} />}
+                <Tab value={3} label="Cite Me" />
             </Tabs>
             <Box mt={2}>
                 {tab === 0 ? (
@@ -124,7 +126,7 @@ function MetaAnalysisDetails() {
                             )}
                         </Box>
                     </Box>
-                ) : (
+                ) : tab === 2 ? (
                     <Box>
                         {hasResults || hasJobs ? (
                             <MetaAnalysisInstructions
@@ -137,7 +139,9 @@ function MetaAnalysisDetails() {
                             <MetaAnalysisDangerZone metaAnalysisId={metaAnalysisId} />
                         )}
                     </Box>
-                )}
+                ) : tab === 3 ? (
+                    <CiteMe />
+                ) : null}
             </Box>
         </StateHandlerComponent>
     );

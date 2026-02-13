@@ -1,7 +1,7 @@
 import { Box, Button, Typography } from '@mui/material';
 import { SystemStyleObject } from '@mui/system';
-import { useState } from 'react';
 import CodeSnippetStyles from './CodeSnippet.styles';
+import useCopyToClipboard from 'hooks/useCopyToClipboard';
 
 const CodeSnippet: React.FC<{
     linesOfCode: string[];
@@ -9,17 +9,13 @@ const CodeSnippet: React.FC<{
     sx?: SystemStyleObject;
     title?: string;
 }> = (props) => {
-    const [copied, setCopied] = useState(false);
+    const { copied, copyToClipboard } = useCopyToClipboard();
 
-    const copyToClipboard = () => {
-        setCopied(true);
+    const handleCopyToClipboard = () => {
         const codeString = props.linesOfCode.reduce((prev, curr, index) => {
             return index === 0 ? curr : `${prev}\n${curr}`;
         }, '');
-        navigator.clipboard.writeText(codeString);
-        setTimeout(() => {
-            setCopied(false);
-        }, 2000);
+        copyToClipboard(codeString);
     };
 
     return (
@@ -33,7 +29,7 @@ const CodeSnippet: React.FC<{
                         <Button
                             size="small"
                             sx={{ fontSize: '12px', height: '24px', color: copied ? 'success.main' : 'white' }}
-                            onClick={copyToClipboard}
+                            onClick={handleCopyToClipboard}
                             disableElevation
                             variant="contained"
                         >
