@@ -46,6 +46,7 @@ describe('HotTables utils - note key conversions', () => {
     it('returns the correct default for boolean note keys', () => {
         expect(getDefaultForNoteKey('included', EPropertyType.BOOLEAN)).toBe(true);
         expect(getDefaultForNoteKey('flag', EPropertyType.BOOLEAN)).toBe(false);
-        expect(getDefaultForNoteKey('title', EPropertyType.STRING)).toBeUndefined();
+        expect(getDefaultForNoteKey('title', EPropertyType.STRING)).toBeNull();
+        expect(getDefaultForNoteKey('quality', EPropertyType.NUMBER)).toBeNull();
     });
 });
