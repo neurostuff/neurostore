@@ -1,0 +1,13 @@
+{
+  "type": "article-journal",
+  "id": "10.52294/001c.87681",
+  "title": "NiMARE: Neuroimaging Meta-Analysis Research Environment",
+  "author": [
+    { "family": "Salo", "given": "T." },
+    { "family": "Yarkoni", "given": "T." },
+    { "family": "Laird", "given": "A. R." }
+  ],
+  "issued": { "date-parts": [[2023]] },
+  "DOI": "10.52294/001c.87681",
+  "container-title": "Aperture Neuro"
+}

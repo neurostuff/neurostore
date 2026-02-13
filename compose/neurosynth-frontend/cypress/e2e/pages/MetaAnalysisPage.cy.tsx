@@ -443,4 +443,55 @@ describe(PAGE_NAME, () => {
             cy.get('button').contains('Edit Specification').should('be.disabled');
         });
     });
+
+    describe('Cite Me', () => {
+        beforeEach(() => {
+            cy.intercept('GET', `**/api/meta-analyses/**`, {
+                fixture: 'MetaAnalysis/metaAnalysisWithResult',
+            }).as('metaAnalysisFixture');
+            cy.intercept('GET', `**/api/meta-analysis-jobs`, {
+                fixture: 'MetaAnalysis/jobs/noJobs',
+            }).as('jobsFixture');
+            cy.intercept('GET', `**/api/meta-analysis-results/*`, {
+                fixture: 'MetaAnalysis/resultSuccess',
+            }).as('resultFixture');
+            cy.intercept('GET', 'https://doi.org/*', (req) => {
+                if (req.url.includes('10.1162/IMAG.a.1114')) {
+                    req.reply({ fixture: 'citation/neurosynthComposeCsl.json' });
+                } else if (req.url.includes('10.52294/001c.87681')) {
+                    req.reply({ fixture: 'citation/nimareCsl.json' });
+                } else {
+                    req.reply({ statusCode: 404 });
+                }
+            }).as('doiRequest');
+        });
+
+        it('should show the cite me component when tab is clicked', () => {
+            cy.login('mocked').visit(PROJECT_PATH).wait('@metaAnalysisFixture');
+
+            cy.contains('Cite Me').click();
+            cy.contains('Copy citations in your preferred format:').should('exist');
+        });
+
+        it('should show citation format dropdown and citation content after loading', () => {
+            cy.login('mocked').visit(PROJECT_PATH).wait('@metaAnalysisFixture');
+
+            cy.contains('Cite Me').click();
+            cy.get('[role="combobox"]', { timeout: 15000 }).should('exist');
+            cy.contains('Neurosynth Compose').should('exist');
+        });
+
+        it('should allow selecting different citation formats from dropdown', () => {
+            cy.login('mocked').visit(PROJECT_PATH).wait('@metaAnalysisFixture');
+
+            cy.contains('Cite Me').click();
+            cy.get('[role="combobox"]', { timeout: 15000 }).should('exist').click();
+            cy.get('[role="option"]').contains('BibTeX').click();
+            cy.contains('@').should('exist');
+
+            cy.get('[role="combobox"]').click();
+            cy.get('[role="option"]').contains('Vancouver').click();
+            cy.contains('NiMARE').should('exist');
+        });
+    });
 });
