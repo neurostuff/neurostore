@@ -3,7 +3,7 @@ import { useQuery } from 'react-query';
 import API from 'api/api.config';
 
 export const baseStudiesSearchHelper = (searchCriteria: Partial<SearchCriteria>) => {
-    return API.NeurostoreServices.StudiesService.baseStudiesGet(
+    return API.NeurostoreServices.BaseStudiesService.baseStudiesGet(
         searchCriteria.isNested,
         undefined, // year_min
         undefined, // x
@@ -29,10 +29,12 @@ export const baseStudiesSearchHelper = (searchCriteria: Partial<SearchCriteria>)
         searchCriteria.authorSearch || undefined,
         'group',
         searchCriteria.dataType === SearchDataType.ALL ? 'both' : searchCriteria.dataType,
+        undefined,
         undefined, // is_oa
         searchCriteria.journalSearch || undefined,
         searchCriteria.pmid,
         searchCriteria.doi,
+        undefined,
         searchCriteria.flat,
         searchCriteria.info
     );

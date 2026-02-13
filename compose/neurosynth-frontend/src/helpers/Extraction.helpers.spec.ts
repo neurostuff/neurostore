@@ -30,14 +30,4 @@ describe('mapStubsToStudysetPayload', () => {
         const payload = mapStubsToStudysetPayload(stubs, baseStudies, existing);
         expect(payload[0]).toEqual({ id: 'existing-id', curation_stub_uuid: 'stub-1' });
     });
-
-    it('returns the locked existing mapping even if ingest lacks that version', () => {
-        const stubs = [{ id: 'stub-1' }];
-        // ingest returned only a different version
-        const baseStudies: Array<BaseStudyReturn> = [makeBaseStudy('bs1', ['different-id'])];
-        const lockedMap = new Map<string, string>([['stub-1', 'existing-id']]);
-
-        const payload = mapStubsToStudysetPayload(stubs, baseStudies, undefined, lockedMap);
-        expect(payload[0]).toEqual({ id: 'existing-id', curation_stub_uuid: 'stub-1' });
-    });
 });

@@ -85,16 +85,14 @@ def parse_versions_dir(versions_dir: str):
 
 
 def get_current_revision() -> str | None:
-    try:
-        output = subprocess.check_output(
-            ["flask", "db", "current"],
-            stderr=subprocess.STDOUT,
-            text=True,
-        )
-    except subprocess.CalledProcessError as exc:
-        raise RuntimeError(
-            f"Failed to read current Alembic revision. Output:\n{exc.output}"
-        ) from exc
+    proc = subprocess.run(
+        ["flask", "db", "current"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        check=False,
+    )
+    output = proc.stdout or ""
 
     revisions = re.findall(r"\b[0-9a-f]{6,}\b", output)
     unique = []
@@ -103,8 +101,35 @@ def get_current_revision() -> str | None:
             unique.append(rev)
 
     if not unique:
-        if "None" in output or "no current" in output.lower():
+        stripped_lines = [line.strip() for line in output.splitlines() if line.strip()]
+        lower_output = output.lower()
+        info_only = stripped_lines and all(
+            line.startswith("INFO  [alembic.runtime.migration]")
+            or line.startswith("INFO [alembic.runtime.migration]")
+            for line in stripped_lines
+        )
+
+        if (
+            "None" in output
+            or "no current" in lower_output
+            or info_only
+            or not stripped_lines
+        ):
             return None
+
+        if proc.returncode != 0:
+            missing_rev = re.search(
+                r"identified by ['\"]([0-9a-f]{6,})['\"]",
+                lower_output,
+            )
+            if missing_rev:
+                return missing_rev.group(1)
+
+            raise RuntimeError(
+                "Failed to read current Alembic revision "
+                f"(exit code {proc.returncode}). Output:\n{output}"
+            )
+
         raise RuntimeError(
             "Unable to parse current Alembic revision from output:\n" + output
         )

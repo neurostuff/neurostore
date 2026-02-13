@@ -18,7 +18,6 @@ import ProgressLoader from 'components/ProgressLoader';
 import GlobalStyles from 'global.styles';
 import { hasUnsavedStudyChanges, unsetUnloadHandler } from 'helpers/BeforeUnload.helpers';
 import { useGetExtractionSummary, useGetStudysetById, useUserCanEdit } from 'hooks';
-import { StudyReturn } from 'neurostore-typescript-sdk';
 import {
     IExtractionTableState,
     retrieveExtractionTableState,
@@ -63,7 +62,7 @@ const EditStudyToolbar: React.FC = () => {
     const mdDown = useMediaQuery(theme.breakpoints.down('md'));
 
     const studysetId = useProjectExtractionStudysetId();
-    const { data, isLoading, isError } = useGetStudysetById(studysetId || '', true);
+    const { data, isLoading, isError } = useGetStudysetById(studysetId || '', false, false);
 
     // derived from the extraction table
     const [extractionTableState, setExtractionTableState] = useState<IExtractionTableState>({
@@ -80,7 +79,7 @@ const EditStudyToolbar: React.FC = () => {
         if (!stateFromSessionStorage || stateFromSessionStorage.studies.length === 0) {
             setExtractionTableState((prev) => ({
                 ...prev,
-                studies: (data?.studies || []).map((study) => (study as StudyReturn).id as string),
+                studies: (data?.studies ?? []) as string[],
             }));
         } else {
             setExtractionTableState(stateFromSessionStorage);

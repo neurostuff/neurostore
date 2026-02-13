@@ -1,6 +1,7 @@
 import { useSnackbar } from 'notistack';
 import { useMutation, useQueryClient } from 'react-query';
 import API from 'api/api.config';
+import { STUDYSET_QUERY_STRING } from './useGetStudysetById';
 
 const useDeleteStudyset = () => {
     const queryClient = useQueryClient();
@@ -8,7 +9,7 @@ const useDeleteStudyset = () => {
     return useMutation((id: string) => API.NeurostoreServices.StudySetsService.studysetsIdDelete(id), {
         onSuccess: () => {
             // we need to send a request to retrieve studies again with its associated analyses and points
-            queryClient.invalidateQueries('studysets');
+            queryClient.invalidateQueries(STUDYSET_QUERY_STRING);
             enqueueSnackbar('studyset deleted successfully', { variant: 'success' });
         },
         onError: () => {

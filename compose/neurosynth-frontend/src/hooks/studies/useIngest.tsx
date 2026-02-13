@@ -10,7 +10,7 @@ const useIngest = () => {
     const queryClient = useQueryClient();
     const { enqueueSnackbar } = useSnackbar();
     return useMutation<AxiosResponse<BaseStudiesPost200Response>, AxiosError, BaseStudiesPostRequest, unknown>(
-        (stubs) => API.NeurostoreServices.StudiesService.baseStudiesPost(stubs),
+        (stubs) => API.NeurostoreServices.BaseStudiesService.baseStudiesPost(stubs),
         {
             onSuccess: () => {
                 queryClient.invalidateQueries('studies');
