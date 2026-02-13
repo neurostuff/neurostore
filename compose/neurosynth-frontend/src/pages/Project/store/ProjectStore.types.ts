@@ -161,6 +161,7 @@ export type ProjectStoreActions = {
     promoteAllUncategorized: () => void; // TODO: improve this
     updateExtractionMetadata: (metadata: Partial<IExtractionMetadata>) => void;
     addOrUpdateStudyListStatus: (id: string, status: EExtractionStatus) => void;
+    removeStudyListStatus: (id: string) => void;
     replaceStudyListStatusId: (idToFindAndReplace: string, replaceWithId: string) => void;
     setGivenStudyStatusesAsComplete: (studyIdList: string[]) => void;
     allowEditMetaAnalyses: (allowEditMetaAnalysis: boolean) => void;

@@ -666,6 +666,20 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
 
             get().updateProjectInDBDebounced();
         },
+        removeStudyListStatus: (id) => {
+            set((state) => ({
+                ...state,
+                provenance: {
+                    ...state.provenance,
+                    extractionMetadata: {
+                        ...state.provenance.extractionMetadata,
+                        studyStatusList: state.provenance.extractionMetadata.studyStatusList.filter((x) => x.id !== id),
+                    },
+                },
+            }));
+
+            get().updateProjectInDBDebounced();
+        },
         replaceStudyListStatusId: (idToFindAndReplace, replaceWithId) => {
             set((state) => ({
                 ...state,
@@ -865,6 +879,13 @@ export const useInitProjectStoreIfRequired = () => {
 
 // extraction updater hooks
 export const useUpdateExtractionMetadata = () => useProjectStore((state) => state.updateExtractionMetadata);
+export const useRemoveStudyListStatus = () => useProjectStore((state) => state.removeStudyListStatus);
+export const useProjectExtractionAddOrUpdateStudyListStatus = () =>
+    useProjectStore((state) => state.addOrUpdateStudyListStatus);
+export const useProjectExtractionReplaceStudyListStatusId = () =>
+    useProjectStore((state) => state.replaceStudyListStatusId);
+export const useProjectExtractionSetGivenStudyStatusesAsComplete = () =>
+    useProjectStore((state) => state.setGivenStudyStatusesAsComplete);
 
 // extraction retrieval hooks
 export const useProjectExtractionStudysetId = () =>
@@ -875,12 +896,6 @@ export const useProjectExtractionStudyStatusList = () =>
     useProjectStore((state) => state.provenance.extractionMetadata.studyStatusList);
 export const useProjectExtractionStudyStatus = (studyId: string) =>
     useProjectStore((state) => state.provenance.extractionMetadata.studyStatusList.find((x) => x.id === studyId));
-export const useProjectExtractionAddOrUpdateStudyListStatus = () =>
-    useProjectStore((state) => state.addOrUpdateStudyListStatus);
-export const useProjectExtractionReplaceStudyListStatusId = () =>
-    useProjectStore((state) => state.replaceStudyListStatusId);
-export const useProjectExtractionSetGivenStudyStatusesAsComplete = () =>
-    useProjectStore((state) => state.setGivenStudyStatusesAsComplete);
 
 // metaAnalysisAlgorithm updater hooks
 export const useAllowEditMetaAnalyses = () => useProjectStore((state) => state.allowEditMetaAnalyses);
