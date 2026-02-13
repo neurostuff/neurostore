@@ -23,22 +23,19 @@ describe('CodeSnippet', () => {
             });
         });
 
-        it('should change text to copied and back to copy', () => {
+        it('should change text to copied and back to copy', async () => {
             render(<CodeSnippet linesOfCode={['example 1']} />);
             const copybutton = screen.getByRole('button', { name: 'copy' });
 
             userEvent.click(copybutton);
 
-            let copyText = screen.queryByText('✓');
-            expect(copyText).toBeInTheDocument();
+            expect(await screen.findByText('✓')).toBeInTheDocument();
 
-            act(() => {
-                // set text back to copy
+            await act(async () => {
                 vi.advanceTimersByTime(2500);
             });
 
-            copyText = screen.queryByText('copy');
-            expect(copyText).toBeInTheDocument();
+            expect(screen.getByText('copy')).toBeInTheDocument();
         });
 
         it('should write the text to clipboard when clicked', () => {

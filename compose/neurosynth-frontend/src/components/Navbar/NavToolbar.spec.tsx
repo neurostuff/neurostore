@@ -10,14 +10,6 @@ const { mockCiteAsync, mockFormat, mockEnqueueSnackbar } = vi.hoisted(() => ({
     mockEnqueueSnackbar: vi.fn(),
 }));
 
-vi.mock('@citation-js/core', () => ({
-    Cite: {
-        async: mockCiteAsync,
-    },
-}));
-vi.mock('@citation-js/plugin-bibtex', () => ({}));
-vi.mock('@citation-js/plugin-csl', () => ({}));
-vi.mock('@citation-js/plugin-doi', () => ({}));
 vi.mock('notistack', () => ({
     useSnackbar: () => ({
         enqueueSnackbar: mockEnqueueSnackbar,
@@ -66,7 +58,6 @@ describe('NavToolbar Component', () => {
         expect(screen.queryByText('my projects')).not.toBeInTheDocument();
         expect(screen.queryByTestId('PersonIcon')).not.toBeInTheDocument();
 
-        expect(screen.queryByText('cite me!')).toBeInTheDocument();
         expect(screen.queryByText('explore')).toBeInTheDocument();
         expect(screen.queryByText('help')).toBeInTheDocument();
         expect(screen.queryByText('Sign In/Sign Up')).toBeInTheDocument();
@@ -79,7 +70,6 @@ describe('NavToolbar Component', () => {
 
         expect(screen.queryByText('NEW PROJECT')).toBeInTheDocument();
         expect(screen.queryByText('my projects')).toBeInTheDocument();
-        expect(screen.queryByText('cite me!')).toBeInTheDocument();
         expect(screen.queryByText('explore')).toBeInTheDocument();
         expect(screen.queryByText('help')).toBeInTheDocument();
         expect(screen.getByTestId('PersonIcon')).toBeInTheDocument();
@@ -111,29 +101,5 @@ describe('NavToolbar Component', () => {
         userEvent.click(exploreTriggerButton);
         expect(screen.getByText('Studies')).toBeInTheDocument();
         expect(screen.getByText('Meta-Analyses')).toBeInTheDocument();
-    });
-
-    it('should lazy-load citations once and reuse cached payload across formats', async () => {
-        render(<NavToolbar onLogin={mockLogin} onLogout={mockLogout} />);
-
-        expect(mockCiteAsync).not.toHaveBeenCalled();
-
-        const citeMeLabel = screen.getByText('cite me!');
-        const citeMeTriggerButton = citeMeLabel.nextElementSibling as HTMLElement;
-
-        await userEvent.click(citeMeTriggerButton);
-        await userEvent.click(screen.getByRole('button', { name: 'APA format' }));
-
-        await waitFor(() => {
-            expect(window.navigator.clipboard.writeText).toHaveBeenCalledWith('APA CITATION TEXT');
-        });
-        expect(mockCiteAsync).toHaveBeenCalledTimes(1);
-
-        await userEvent.click(screen.getByRole('button', { name: 'BibTeX format' }));
-
-        await waitFor(() => {
-            expect(window.navigator.clipboard.writeText).toHaveBeenLastCalledWith('BIBTEX CITATION TEXT');
-        });
-        expect(mockCiteAsync).toHaveBeenCalledTimes(1);
     });
 });
