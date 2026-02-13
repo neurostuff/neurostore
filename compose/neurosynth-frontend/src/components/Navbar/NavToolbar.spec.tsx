@@ -122,14 +122,14 @@ describe('NavToolbar Component', () => {
         const citeMeTriggerButton = citeMeLabel.nextElementSibling as HTMLElement;
 
         await userEvent.click(citeMeTriggerButton);
-        await userEvent.click(screen.getByRole('button', { name: 'Copy APA citations' }));
+        await userEvent.click(screen.getByRole('button', { name: 'APA format' }));
 
         await waitFor(() => {
             expect(window.navigator.clipboard.writeText).toHaveBeenCalledWith('APA CITATION TEXT');
         });
         expect(mockCiteAsync).toHaveBeenCalledTimes(1);
 
-        await userEvent.click(screen.getByRole('button', { name: 'Copy BibTeX citations' }));
+        await userEvent.click(screen.getByRole('button', { name: 'BibTeX format' }));
 
         await waitFor(() => {
             expect(window.navigator.clipboard.writeText).toHaveBeenLastCalledWith('BIBTEX CITATION TEXT');

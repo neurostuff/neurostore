@@ -135,6 +135,7 @@ const NavToolbar: React.FC<INav> = (props) => {
                                 onClick: () => copyCitations('bibtex'),
                             },
                         ]}
+                        compactOptions
                         buttonLabel="cite me!"
                     />
                 </Box>
