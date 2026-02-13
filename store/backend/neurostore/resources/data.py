@@ -160,10 +160,33 @@ class StudysetsView(ObjectView, ListView):
 
         return unique_ids
 
+    @staticmethod
+    def _is_study_membership_only_payload(data):
+        if not isinstance(data, dict):
+            return False
+
+        allowed_top_level = {"studies", "curation_stub_map"}
+        if set(data.keys()) - allowed_top_level:
+            return False
+
+        studies = data.get("studies")
+        if not isinstance(studies, list):
+            return False
+
+        for item in studies:
+            if isinstance(item, str):
+                continue
+            if isinstance(item, dict) and set(item.keys()) <= {"id"} and item.get("id"):
+                continue
+            return False
+
+        return True
+
     @classmethod
     def load_nested_records(cls, data, record=None):
         if not data or not data.get("studies"):
             return data
+        membership_only_payload = cls._is_study_membership_only_payload(data)
         studies = data.get("studies")
         existing_studies = []
         for s in studies:
@@ -171,14 +194,15 @@ class StudysetsView(ObjectView, ListView):
                 existing_studies.append(s.get("id"))
             elif isinstance(s, str):
                 existing_studies.append(s)
-        study_results = (
-            Study.query.filter(Study.id.in_(existing_studies))
-            .options(
+        q = Study.query.filter(Study.id.in_(existing_studies))
+        if membership_only_payload:
+            q = q.options(load_only(Study.id))
+        else:
+            q = q.options(
                 selectinload(Study.analyses),
                 selectinload(Study.user),
             )
-            .all()
-        )
+        study_results = q.all()
         study_dict = {s.id: s for s in study_results}
         # Modification of data in place
         if study_dict:
@@ -201,6 +225,13 @@ class StudysetsView(ObjectView, ListView):
                 )
             )
         )
+        if args.get("membership_only"):
+            q = q.options(
+                selectinload(Studyset.user)
+                .load_only(User.name, User.external_id)
+                .options(raiseload("*", sql_only=True)),
+            )
+            return q
         if args.get("nested"):
             q = q.options(
                 selectinload(Studyset.studies).options(
@@ -398,6 +429,48 @@ class StudysetsView(ObjectView, ListView):
 
         response_context = dict(args)
         response = self.__class__._schema(context=response_context).dump(record)
+
+        db.session.commit()
+
+        return response
+
+    def put(self, id):
+        request_data = self.insert_data(id, request.json)
+        schema = self.__class__._schema()
+        data = schema.load(request_data, partial=True)
+
+        args = {}
+        if set(self._o2m.keys()).intersection(set(data.keys())):
+            if self._is_study_membership_only_payload(data):
+                args["membership_only"] = True
+            else:
+                args["nested"] = True
+
+        q = self._model.query.filter_by(id=id)
+        q = self.eager_load(q, args)
+        input_record = q.one()
+
+        pre_unique_ids = self.get_affected_ids([id])
+        self.db_validation(input_record, data)
+
+        with db.session.no_autoflush:
+            record = self.__class__.update_or_create(data, id, record=input_record)
+
+        with db.session.no_autoflush:
+            post_unique_ids = self.get_affected_ids([id])
+            unique_ids = self.merge_unique_ids(pre_unique_ids, post_unique_ids)
+            clear_cache(unique_ids)
+
+        try:
+            self.update_base_studies(unique_ids.get("base-studies"))
+            self.update_annotations(unique_ids.get("annotations"))
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            abort_validation(str(e))
+
+        db.session.flush()
+
+        response = schema.dump(record)
 
         db.session.commit()
 
