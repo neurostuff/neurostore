@@ -1,13 +1,15 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import AutoAwesomeMotionIcon from '@mui/icons-material/AutoAwesomeMotion';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import IosShareIcon from '@mui/icons-material/IosShare';
 import OpenInNew from '@mui/icons-material/OpenInNew';
 import SearchIcon from '@mui/icons-material/Search';
 import SettingsIcon from '@mui/icons-material/Settings';
-import { Box, Button, Card, CardContent, Typography } from '@mui/material';
+import { Box, Button, Card, CardContent, IconButton, Tooltip, Typography } from '@mui/material';
 import NeurosynthActivitySummary from 'components/NeurosynthActivitySummary';
 import { useGuard } from 'hooks';
 import useAuthenticate from 'hooks/useAuthenticate';
+import { useSnackbar } from 'notistack';
 import { usePrerenderReady, usePageMetadata } from '../../../seo/hooks';
 import PlatformComparisonTable from 'pages/LandingPage/components/PlatformComparisonTable';
 import { LOGOS } from 'pages/LandingPage/LandingPage.helpers';
@@ -61,8 +63,12 @@ const SEO_GRAPH_DATA = JSON.stringify({
     ],
 });
 
+const NEUROSYNTH_COMPOSE_APA_CITATION =
+    'Kent, J. D., Lee, N., Laird, A. R., Salo, T., Peraza, J., Bottenhorn, K. L., Oudyk, K., Nichols, T. E., Poline, J.-B., & de la Vega, A. (2026). Neurosynth Compose: A web-based platform for flexible and reproducible neuroimaging meta-analysis. Imaging Neuroscience, 4. https://doi.org/10.1162/IMAG.a.1114';
+
 const LandingPage = () => {
     const { isAuthenticated, isLoading } = useAuth0();
+    const { enqueueSnackbar } = useSnackbar();
     useGuard('/projects', '', isAuthenticated, isLoading, true);
     const { handleLogin } = useAuthenticate();
     usePageMetadata({
@@ -73,11 +79,25 @@ const LandingPage = () => {
     });
     usePrerenderReady(true);
 
+    const handleCopyCitation = async () => {
+        try {
+            await navigator.clipboard.writeText(NEUROSYNTH_COMPOSE_APA_CITATION);
+            enqueueSnackbar('Copied APA citation', { variant: 'success' });
+        } catch {
+            enqueueSnackbar('Unable to copy citation', { variant: 'error' });
+        }
+    };
+
     return (
         <>
             <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: SEO_GRAPH_DATA }} />
             <Box sx={[LandingPageStyles.sectionContainer, { backgroundColor: 'primary.main' }]}>
-                <Box sx={[LandingPageStyles.sectionContents, LandingPageStyles.heroBannerContentContainer]}>
+                <Box
+                    sx={[
+                        LandingPageStyles.sectionContents,
+                        LandingPageStyles.heroBannerContentContainer,
+                    ]}
+                >
                     <Box sx={LandingPageStyles.heroBannerTextContainer}>
                         <Typography sx={LandingPageStyles.title} variant="h3">
                             A free and open platform for neuroimaging meta-analysis
@@ -113,6 +133,20 @@ const LandingPage = () => {
                             >
                                 Learn More
                             </Button>
+                        </Box>
+                        <Box sx={LandingPageStyles.citationContainer}>
+                            <Typography variant="body2" sx={LandingPageStyles.citationText}>
+                                {NEUROSYNTH_COMPOSE_APA_CITATION}
+                            </Typography>
+                            <Tooltip title="Copy APA citation">
+                                <IconButton
+                                    aria-label="Copy Neurosynth Compose APA citation"
+                                    onClick={handleCopyCitation}
+                                    sx={LandingPageStyles.copyCitationButton}
+                                >
+                                    <ContentCopyIcon />
+                                </IconButton>
+                            </Tooltip>
                         </Box>
                     </Box>
                     <Box sx={LandingPageStyles.imageContainer}>

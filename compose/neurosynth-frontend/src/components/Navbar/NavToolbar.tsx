@@ -119,19 +119,19 @@ const NavToolbar: React.FC<INav> = (props) => {
                         }}
                         options={[
                             {
-                                label: 'Copy APA citations',
+                                label: 'APA format',
                                 onClick: () => copyCitations('apa'),
                             },
                             {
-                                label: 'Copy Vancouver citations',
+                                label: 'Vancouver format',
                                 onClick: () => copyCitations('vancouver'),
                             },
                             {
-                                label: 'Copy Harvard citations',
+                                label: 'Harvard format',
                                 onClick: () => copyCitations('harvard1'),
                             },
                             {
-                                label: 'Copy BibTeX citations',
+                                label: 'BibTeX format',
                                 onClick: () => copyCitations('bibtex'),
                             },
                         ]}
