@@ -280,7 +280,7 @@ export const useAnnotationStore = create<
                     });
                 } else {
                     // if there are no new note keys, we can use the optimized annotation endpoint
-                    await API.NeurostoreServices.AnnotationsService.annotationAnalysesPost(
+                    await API.NeurostoreServices.AnalysesService.annotationAnalysesPost(
                         state.annotation.notes
                             .filter((note) => note.isEdited)
                             .map((note) => ({

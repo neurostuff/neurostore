@@ -162,7 +162,7 @@ describe('EditStudyToolbar Component', () => {
             (useUserCanEdit as Mock).mockReturnValue(true);
 
             (useGetStudysetById as Mock).mockReturnValue({
-                data: { studies: [{ id: 'study-2' }, { id: 'study-3' }, { id: 'study-4' }] },
+                data: { studies: ['study-2', 'study-3', 'study-4'] },
             });
 
             render(<EditStudyToolbar />);
@@ -248,7 +248,7 @@ describe('EditStudyToolbar Component', () => {
             (useUserCanEdit as Mock).mockReturnValue(true);
 
             (useGetStudysetById as Mock).mockReturnValue({
-                data: { studies: [{ id: 'study-2' }, { id: 'study-3' }, { id: 'study-4' }] },
+                data: { studies: ['study-2', 'study-3', 'study-4'] },
             });
 
             render(<EditStudyToolbar />);
@@ -265,6 +265,7 @@ describe('EditStudyToolbar Component', () => {
                 JSON.stringify({
                     columnFilters: [],
                     sorting: [],
+                    pagination: { pageIndex: 0, pageSize: 25 },
                     studies: ['study-1', 'study-2', 'study-3', 'study-4'],
                 })
             );

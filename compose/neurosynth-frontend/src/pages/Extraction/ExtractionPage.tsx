@@ -8,7 +8,7 @@ import useGetExtractionSummary from 'hooks/useGetExtractionSummary';
 import useUserCanEdit from 'hooks/useUserCanEdit';
 import { StudyReturn } from 'neurostore-typescript-sdk';
 import ExtractionOutOfSync from 'pages/Extraction/components/ExtractionOutOfSync';
-import { resolveStudysetAndCurationDifferences } from 'pages/Extraction/Extraction.helpers';
+import { hasDifferenceBetweenStudysetAndCuration } from 'pages/Extraction/ExtractionPage.helpers';
 import { IProjectPageLocationState } from 'pages/Project/ProjectPage';
 import {
     useGetProjectIsLoading,
@@ -44,7 +44,7 @@ const ExtractionPage: React.FC = () => {
         isLoading: getStudysetIsLoading,
         isRefetching: getStudysetIsRefetching,
         isError: getStudysetIsError,
-    } = useGetStudysetById(studysetId, true);
+    } = useGetStudysetById(studysetId, false, true);
 
     const { mutate } = useUpdateStudyset();
 
@@ -54,7 +54,7 @@ const ExtractionPage: React.FC = () => {
     useEffect(() => {
         if (!loading && !getStudysetIsLoading && columns.length > 0 && studyset?.studies) {
             const includedStudies = columns[columns.length - 1].stubStudies;
-            const isDifferent = resolveStudysetAndCurationDifferences(
+            const isDifferent = hasDifferenceBetweenStudysetAndCuration(
                 includedStudies,
                 studyset.studies as StudyReturn[]
             );

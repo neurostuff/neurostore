@@ -94,6 +94,7 @@ const queryClient = new QueryClient({
     defaultOptions: {
         queries: {
             retry: 0,
+            staleTime: 1000 * 5, // 5 seconds
             refetchOnWindowFocus: false,
             // staleTime: 5000, // https://tkdodo.eu/blog/practical-react-query#the-defaults-explained
         },

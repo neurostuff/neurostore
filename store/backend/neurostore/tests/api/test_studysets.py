@@ -99,6 +99,40 @@ def test_get_nested_nonnested_studysets(auth_client, ingest_neurosynth, session)
     assert isinstance(nested.json()["studies"][0], dict)
 
 
+def test_get_summary_studyset(auth_client, ingest_neurosynth, session):
+    studyset_id = Studyset.query.first().id
+    summary = auth_client.get(f"/api/studysets/{studyset_id}?summary=true")
+    assert summary.status_code == 200
+    payload = summary.json()
+
+    assert isinstance(payload.get("studies"), list)
+    assert isinstance(payload.get("studyset_studies"), list)
+    summary_study_ids = {s["id"] for s in payload["studyset_studies"] if s.get("id")}
+    study_payload_ids = {s["id"] for s in payload["studies"] if s.get("id")}
+    assert summary_study_ids == study_payload_ids
+
+    if payload["studies"]:
+        study = payload["studies"][0]
+        for field in ["id", "name", "authors", "publication", "pmid", "doi", "year"]:
+            assert field in study
+        assert isinstance(study.get("analyses"), list)
+
+        if study["analyses"]:
+            analysis = study["analyses"][0]
+            assert "id" in analysis
+            assert isinstance(analysis.get("point_count"), int)
+            assert "metadata" not in analysis
+            assert "points" not in analysis
+            assert "images" not in analysis
+
+
+def test_summary_and_nested_are_incompatible(auth_client, ingest_neurosynth, session):
+    studyset_id = Studyset.query.first().id
+    resp = auth_client.get(f"/api/studysets/{studyset_id}?nested=true&summary=true")
+    assert resp.status_code == 400
+    assert "incompatible" in (resp.json().get("detail") or "").lower()
+
+
 def test_hot_swap_study_in_studyset(auth_client, ingest_neurosynth, session):
     # create studyset
     create_ss = auth_client.post("/api/studysets/", data={"name": "test"})

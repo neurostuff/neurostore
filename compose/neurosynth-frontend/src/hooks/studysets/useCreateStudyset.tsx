@@ -2,6 +2,7 @@ import { AxiosError, AxiosResponse } from 'axios';
 import { StudysetRequest, StudysetReturn } from 'neurostore-typescript-sdk';
 import { useMutation, useQueryClient } from 'react-query';
 import API from 'api/api.config';
+import { STUDYSET_QUERY_STRING } from './useGetStudysetById';
 
 const useCreateStudyset = () => {
     const queryClient = useQueryClient();
@@ -10,7 +11,7 @@ const useCreateStudyset = () => {
         {
             onSuccess: () => {
                 // update study
-                queryClient.invalidateQueries('studysets');
+                queryClient.invalidateQueries(STUDYSET_QUERY_STRING);
             },
         }
     );

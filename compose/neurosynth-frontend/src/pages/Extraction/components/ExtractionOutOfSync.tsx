@@ -3,7 +3,7 @@ import { Box, Typography } from '@mui/material';
 import LoadingButton from 'components/Buttons/LoadingButton';
 import { useGetStudysetById, useUpdateStudyset } from 'hooks';
 import useIngest from 'hooks/studies/useIngest';
-import { BaseStudy, BaseStudyReturn, StudyReturn } from 'neurostore-typescript-sdk';
+import { BaseStudy, BaseStudyReturn } from 'neurostore-typescript-sdk';
 import { useSnackbar } from 'notistack';
 import {
     useAllowEditMetaAnalyses,
@@ -21,13 +21,13 @@ import { STUDYSET_QUERY_STRING } from 'hooks/studysets/useGetStudysetById';
 const ExtractionOutOfSync: React.FC = () => {
     const studysetId = useProjectExtractionStudysetId();
     const annotationId = useProjectExtractionAnnotationId();
-    const { data: studyset } = useGetStudysetById(studysetId, true); // set this to true as it is already cached in extractionPage
+    const { data: studyset } = useGetStudysetById(studysetId, false, false);
     const numColumns = useProjectNumCurationColumns();
     const setAllowEditMetaAnalyses = useAllowEditMetaAnalyses();
     const curationIncludedStudies = useProjectCurationColumn(numColumns - 1);
     const { mutateAsync: ingest } = useIngest();
     const { mutateAsync: updateStudyset } = useUpdateStudyset();
-    const getStudysetIsRefetching = useIsFetching('studysets');
+    const getStudysetIsRefetching = useIsFetching(STUDYSET_QUERY_STRING);
     const { enqueueSnackbar } = useSnackbar();
     const queryClient = useQueryClient();
 
@@ -37,19 +37,15 @@ const ExtractionOutOfSync: React.FC = () => {
         if (!studysetId || !annotationId) return;
         setIsLoading(true);
 
-        // create stub to study version mapping
+        // studyset_studies is the canonical list (id + curation_stub_uuid); studies is always in sync with it.
+        const studysetStudies = studyset?.studyset_studies || [];
         const stubToStudyId = new Map<string, string>();
-        // studyset.studyset_studies is the backend mapping of study IDs to curation stub IDs
-        (studyset?.studyset_studies || []).forEach((studysetStudy) => {
-            if (studysetStudy.curation_stub_uuid && studysetStudy.id) {
-                stubToStudyId.set(studysetStudy.curation_stub_uuid, studysetStudy.id);
-            }
-        });
-
-        // create set of all study versions in the studyset
         const studiesInStudyset = new Set<string>();
-        ((studyset?.studies || []) as Array<StudyReturn>).forEach((study) => {
-            if (study.id) studiesInStudyset.add(study.id);
+        studysetStudies.forEach((assoc) => {
+            if (assoc.id) studiesInStudyset.add(assoc.id);
+            if (assoc.curation_stub_uuid && assoc.id) {
+                stubToStudyId.set(assoc.curation_stub_uuid, assoc.id);
+            }
         });
 
         // get stubs that are in the studyset
@@ -90,8 +86,7 @@ const ExtractionOutOfSync: React.FC = () => {
             const newStubPayload = mapStubsToStudysetPayload(
                 stubsNeedingIngest,
                 returnedBaseStudies,
-                studiesInStudyset,
-                stubToStudyId
+                studiesInStudyset
             );
             const studiesPayload = [...existingStubPayload, ...newStubPayload];
 

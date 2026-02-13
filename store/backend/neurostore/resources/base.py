@@ -480,12 +480,23 @@ class ObjectView(BaseView):
         args = parser.parse(self._view_fields, request, location="query")
         if args.get("nested") is None:
             args["nested"] = request.args.get("nested", False) == "true"
+        if args.get("summary") is None:
+            args["summary"] = request.args.get("summary", False) == "true"
 
         q = self._model.query
         q = self.eager_load(q, args)
         record = q.filter_by(id=id).first()
         if record is None:
             abort_not_found(self._model.__name__, id)
+
+        if self._model is Studyset and args.get("nested") and args.get("summary"):
+            abort_validation("query parameters 'nested' and 'summary' are incompatible")
+
+        if self._model is Studyset and args.get("summary"):
+            serializer = getattr(self, "serialize_studyset_summary", None)
+            if serializer is None:
+                abort_validation("summary view is not available for this resource")
+            return serializer(record), 200, {"Content-Type": "application/json"}
 
         if self._model is Studyset and args["nested"]:
             snapshot = StudysetSnapshot()
