@@ -3,7 +3,7 @@ import { Box } from '@mui/material';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import AddMetadataRow from 'components/EditMetadata/AddMetadataRow';
 import { getType, IMetadataRowModel } from 'components/EditMetadata/EditMetadata.types';
-import { sanitizePaste } from 'components/HotTables/HotTables.utils';
+import { getDefaultForNoteKey, sanitizePaste } from 'components/HotTables/HotTables.utils';
 import CellCoords from 'handsontable/3rdparty/walkontable/src/cell/coords';
 import { CellChange } from 'handsontable/common';
 import { useUserCanEdit } from 'hooks';
@@ -67,9 +67,13 @@ const EditStudyAnnotationsHotTable: React.FC<{ readonly?: boolean }> = ({ readon
         const trimmedKey = row.metadataKey.trim();
         if (noteKeys.find((x) => x.key === trimmedKey)) return false;
 
+        const columnType = getType(row.metadataValue);
+        const defaultValue = getDefaultForNoteKey(trimmedKey, columnType);
+
         createAnnotationColumn({
             key: trimmedKey,
-            type: getType(row.metadataValue),
+            type: columnType,
+            default: defaultValue ?? null,
         });
 
         return true;

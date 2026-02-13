@@ -747,6 +747,28 @@ class AnnotationsView(ObjectView, ListView):
                     f"'{key}', choose from: ['boolean', 'number', 'string']."
                 )
 
+            default_provided = isinstance(descriptor, dict) and "default" in descriptor
+            default_value = descriptor.get("default") if default_provided else None
+            if default_provided and default_value is not None:
+                if note_type == "boolean" and not isinstance(default_value, bool):
+                    abort_validation(
+                        f"Invalid default for note_keys entry '{key}'; "
+                        "expected a boolean."
+                    )
+                if note_type == "number" and (
+                    not isinstance(default_value, (int, float))
+                    or isinstance(default_value, bool)
+                ):
+                    abort_validation(
+                        f"Invalid default for note_keys entry '{key}'; "
+                        "expected a number."
+                    )
+                if note_type == "string" and not isinstance(default_value, str):
+                    abort_validation(
+                        f"Invalid default for note_keys entry '{key}'; "
+                        "expected a string."
+                    )
+
             order = descriptor.get("order")
             if isinstance(order, bool) or (
                 order is not None and not isinstance(order, int)
@@ -765,6 +787,8 @@ class AnnotationsView(ObjectView, ListView):
                 next_order += 1
 
             normalized[key] = {"type": note_type, "order": order}
+            if default_provided:
+                normalized[key]["default"] = default_value
 
         return normalized
 

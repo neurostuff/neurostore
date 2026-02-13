@@ -781,6 +781,8 @@ class NoteKeysField(fields.Field):
                 "type": descriptor.get("type"),
                 "order": descriptor.get("order"),
             }
+            if "default" in descriptor:
+                serialized[key]["default"] = descriptor.get("default")
         return serialized
 
     def _deserialize(self, value, attr, data, **kwargs):
@@ -809,6 +811,25 @@ class NoteKeysField(fields.Field):
                     f"Invalid note type for '{key}', choose from: {sorted(self.allowed_types)}"
                 )
 
+            default_provided = "default" in descriptor
+            default_value = descriptor.get("default") if default_provided else None
+            if default_provided and default_value is not None:
+                if note_type == "boolean" and not isinstance(default_value, bool):
+                    raise ValidationError(
+                        f"Invalid default for '{key}', expected a boolean."
+                    )
+                if note_type == "number" and (
+                    not isinstance(default_value, (int, float))
+                    or isinstance(default_value, bool)
+                ):
+                    raise ValidationError(
+                        f"Invalid default for '{key}', expected a number."
+                    )
+                if note_type == "string" and not isinstance(default_value, str):
+                    raise ValidationError(
+                        f"Invalid default for '{key}', expected a string."
+                    )
+
             order = descriptor.get("order")
             if isinstance(order, bool) or (
                 order is not None and not isinstance(order, int)
@@ -827,6 +848,8 @@ class NoteKeysField(fields.Field):
                 next_order += 1
 
             normalized[key] = {"type": note_type, "order": order}
+            if default_provided:
+                normalized[key]["default"] = default_value
 
         return normalized
 

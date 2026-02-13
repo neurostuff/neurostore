@@ -176,6 +176,31 @@ def test_blank_annotation_populates_note_fields(
         assert all(value is None for value in note["note"].values())
 
 
+def test_blank_annotation_populates_note_fields_with_defaults(
+    auth_client, ingest_neurosynth, session
+):
+    dset = Studyset.query.first()
+    note_keys = {
+        "included": {"type": "boolean", "order": 0, "default": False},
+        "quality": {"type": "string", "order": 1, "default": "low"},
+        "score": {"type": "number", "order": 2, "default": 1.5},
+    }
+    payload = {
+        "studyset": dset.id,
+        "note_keys": note_keys,
+        "name": "with defaults",
+    }
+
+    resp = auth_client.post("/api/annotations/", data=payload)
+    assert resp.status_code == 200
+
+    for note in resp.json()["notes"]:
+        assert set(note["note"].keys()) == set(note_keys.keys())
+        assert note["note"]["included"] is False
+        assert note["note"]["quality"] == "low"
+        assert note["note"]["score"] == 1.5
+
+
 def test_annotation_rejects_empty_note(auth_client, ingest_neurosynth, session):
     dset = Studyset.query.first()
     study = dset.studies[0]

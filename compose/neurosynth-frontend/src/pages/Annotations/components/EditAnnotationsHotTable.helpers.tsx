@@ -238,7 +238,7 @@ export const getRowHeights = (
     const rowHeights: number[] = [];
     let currIndex = 0;
 
-    mergeCells.forEach(({ row, col, rowspan, colspan }) => {
+    mergeCells.forEach(({ row, rowspan }) => {
         while (currIndex < row) {
             // sometimes the merge cells skip a few rows as they do not need to be merged.
             // we therefore need to account for that by calculting those row heights (which have rowspan = 1)

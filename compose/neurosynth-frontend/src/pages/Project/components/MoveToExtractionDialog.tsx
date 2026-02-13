@@ -2,8 +2,8 @@ import { Box, CircularProgress, LinearProgress, Typography } from '@mui/material
 import BaseDialog, { IDialog } from 'components/Dialogs/BaseDialog';
 import { EPropertyType } from 'components/EditMetadata/EditMetadata.types';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
-import { setAnalysesInAnnotationAsIncluded } from 'helpers/Annotation.helpers';
 import { mapStubsToStudysetPayload } from 'helpers/Extraction.helpers';
+import { getDefaultForNoteKey } from 'components/HotTables/HotTables.utils';
 import { useCreateAnnotation, useCreateStudyset, useUpdateStudyset } from 'hooks';
 import useIngest from 'hooks/studies/useIngest';
 import { BaseStudy, BaseStudyReturn } from 'neurostore-typescript-sdk';
@@ -103,7 +103,13 @@ const MoveToExtractionDialog: React.FC<IDialog> = (props) => {
                     annotation: {
                         name: `Annotation for studyset ${newStudysetId}`,
                         description: '',
-                        note_keys: { included: { type: EPropertyType.BOOLEAN, order: 0 } },
+                        note_keys: {
+                            included: {
+                                type: EPropertyType.BOOLEAN,
+                                order: 0,
+                                default: getDefaultForNoteKey('included', EPropertyType.BOOLEAN),
+                            },
+                        },
                         studyset: newStudysetId,
                     },
                 });
@@ -158,7 +164,6 @@ const MoveToExtractionDialog: React.FC<IDialog> = (props) => {
                 },
             });
 
-            await setAnalysesInAnnotationAsIncluded(newAnnotationId);
             setLoadingStatus((prev) => ({
                 ...prev,
                 ingested: true,
