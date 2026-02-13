@@ -1,7 +1,8 @@
-import { Download } from '@mui/icons-material';
-import { Box, Button, Link, Paper, Typography } from '@mui/material';
+import { ContentCopy, Download } from '@mui/icons-material';
+import { Box, Button, IconButton, Link, Paper, Tooltip, Typography } from '@mui/material';
 import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
+import { APA_CITATIONS_TEXT, NEUROSYNTH_COMPOSE_CITATION, NIMARE_CITATION } from 'constants/citations';
 import { downloadFile, toCSV } from 'helpers/downloadFile.helpers';
 import useGetAnalysisById from 'hooks/analyses/useGetAnalysisById';
 import { PointReturn } from 'neurostore-typescript-sdk';
@@ -41,6 +42,11 @@ const DisplayMetaAnalysisActivations: React.FC<{
         downloadFile(props.metaAnalysis?.name ?? '', csv, 'text/csv;charset=utf-8');
     };
 
+    const handleCopyCitations = async () => {
+        if (!navigator?.clipboard?.writeText) return;
+        await navigator.clipboard.writeText(APA_CITATIONS_TEXT);
+    };
+
     const heightInPx = points.length * 50 > 500 ? 500 : points.length * 50;
 
     return (
@@ -76,6 +82,45 @@ const DisplayMetaAnalysisActivations: React.FC<{
                     />
                 </StateHandlerComponent>
             </NeurosynthAccordion>
+            <Paper
+                elevation={0}
+                sx={{
+                    mt: 1.5,
+                    p: 2,
+                    pr: 5,
+                    position: 'relative',
+                    borderRadius: '8px',
+                    border: '1px solid',
+                    borderColor: 'grey.300',
+                    backgroundColor: 'grey.50',
+                }}
+            >
+                <Tooltip title="Copy citations">
+                    <IconButton
+                        aria-label="Copy APA citations"
+                        onClick={handleCopyCitations}
+                        size="small"
+                        sx={{ position: 'absolute', top: 8, right: 8 }}
+                    >
+                        <ContentCopy fontSize="small" />
+                    </IconButton>
+                </Tooltip>
+                <Typography variant="subtitle2" sx={{ mb: 0.6, fontWeight: 'bold' }}>
+                    Citations (APA)
+                </Typography>
+                <Typography variant="body2" sx={{ mb: 0.75 }}>
+                    {NEUROSYNTH_COMPOSE_CITATION.apaText}{' '}
+                    <Link href={NEUROSYNTH_COMPOSE_CITATION.doiUrl} target="_blank" rel="noreferrer">
+                        {NEUROSYNTH_COMPOSE_CITATION.doiUrl}
+                    </Link>
+                </Typography>
+                <Typography variant="body2">
+                    {NIMARE_CITATION.apaText}{' '}
+                    <Link href={NIMARE_CITATION.doiUrl} target="_blank" rel="noreferrer">
+                        {NIMARE_CITATION.doiUrl}
+                    </Link>
+                </Typography>
+            </Paper>
         </Box>
     );
 };

@@ -59,63 +59,35 @@ const LandingPageStyles: Style = {
             md: '1rem 0',
         },
     },
-    citationContainer: {
+    publicationBlurbContainer: {
         display: 'flex',
-        alignItems: 'flex-start',
+        alignItems: 'center',
         width: '100%',
-        maxWidth: '950px',
+        maxWidth: '700px',
         position: 'relative',
         justifyContent: {
             xs: 'center',
             lg: 'flex-start',
         },
-        gap: '0.5rem',
         marginTop: '1rem',
         transform: {
             lg: 'translateY(3rem)',
         },
-        padding: {
-            xs: '0.72rem 0.75rem',
-            md: '0.75rem 0.85rem',
-        },
-        borderRadius: '10px',
-        backgroundColor: 'rgba(0, 0, 0, 0.17)',
-        boxShadow: 'inset 0 1px 3px rgba(0, 0, 0, 0.25)',
         zIndex: 1,
     },
-    citationText: {
+    publicationBlurbLink: {
         color: 'primary.contrastText',
-        opacity: 0.98,
-        lineHeight: {
-            xs: 1.5,
-            lg: 1.4,
+        opacity: 0.95,
+        fontWeight: 'bold',
+        textAlign: {
+            xs: 'center',
+            lg: 'left',
         },
-        flex: 1,
-        textAlign: 'left',
-        paddingRight: {
-            xs: '2.1rem',
-            lg: '1.85rem',
-        },
-        fontSize: {
-            xs: '0.75rem',
-            lg: '0.82rem',
-        },
-    },
-    copyCitationButton: {
-        color: 'primary.contrastText',
-        position: 'absolute',
-        top: '0.2rem',
-        right: '0.2rem',
-        width: '1.5rem',
-        height: '1.5rem',
-        padding: '0.15rem',
-        borderRadius: '8px',
-        backgroundColor: 'rgba(255, 255, 255, 0.08)',
-        '& .MuiSvgIcon-root': {
-            fontSize: '0.85rem',
-        },
+        textDecoration: 'underline',
+        textDecorationThickness: '1px',
+        textUnderlineOffset: '3px',
         '&:hover': {
-            backgroundColor: 'rgba(255, 255, 255, 0.16)',
+            opacity: 1,
         },
     },
     heroButtonContainer: {

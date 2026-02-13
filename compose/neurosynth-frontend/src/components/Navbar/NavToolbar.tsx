@@ -4,6 +4,7 @@ import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { Box, Button, Toolbar, Typography } from '@mui/material';
 import CreateProjectButton from 'components/Buttons/CreateProjectButton';
 import NeurosynthAvatar from 'components/Navbar/NeurosynthAvatar';
+import { CITATION_DOIS } from 'constants/citations';
 import { useSnackbar } from 'notistack';
 import { NavLink, useNavigate } from 'react-router-dom';
 import NavToolbarPopupSubMenu from './NavToolbarPopupSubMenu';
@@ -19,8 +20,6 @@ const FORMAT_LABELS: Record<CitationFormat, string> = {
     vancouver: 'Vancouver',
     harvard1: 'Harvard',
 };
-
-const CITATION_DOIS = ['10.1162/IMAG.a.1114', '10.52294/001c.87681'];
 
 let citationPayload: Record<CitationFormat, string> | undefined;
 let citationPayloadPromise: Promise<Record<CitationFormat, string>> | undefined;
