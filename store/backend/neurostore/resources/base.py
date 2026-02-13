@@ -114,55 +114,55 @@ class BaseView(MethodView):
         if not annotations:
             return
 
+        # Identify only missing annotation-analysis links. This avoids materializing
+        # existing links and removes a costly join pattern on large studysets.
         query = (
             sa.select(
-                Annotation.id,
+                Annotation.id.label("annotation_id"),
                 Annotation.note_keys,
                 Annotation.user_id,
-                AnnotationAnalysis.analysis_id.label("annotation_analysis_id"),
-                AnnotationAnalysis.annotation_id.label("annotation_id"),
-                AnnotationAnalysis.note,
                 StudysetStudy.studyset_id,
                 StudysetStudy.study_id,
                 Analysis.id.label("analysis_id"),
             )
             .select_from(Annotation)
-            .join(Studyset, Studyset.id == Annotation.studyset_id)
-            .join(StudysetStudy, StudysetStudy.studyset_id == Studyset.id)
+            .join(StudysetStudy, StudysetStudy.studyset_id == Annotation.studyset_id)
             .join(Analysis, Analysis.study_id == StudysetStudy.study_id)
             .outerjoin(
                 AnnotationAnalysis,
                 sa.and_(
                     AnnotationAnalysis.annotation_id == Annotation.id,
-                    sa.or_(
-                        AnnotationAnalysis.analysis_id == Analysis.id,
-                        AnnotationAnalysis.analysis_id == None,  # noqa E711
-                    ),
+                    AnnotationAnalysis.analysis_id == Analysis.id,
                 ),
             )
             .where(Annotation.id.in_(annotations))
+            .where(AnnotationAnalysis.annotation_id.is_(None))
         )
 
-        results = db.session.execute(query).fetchall()
+        results = db.session.execute(query).all()
 
         if not results:
             return
 
+        default_notes = {}
         create_annotation_analyses = []
         for result in results:
-            if result.analysis_id and not result.annotation_analysis_id:
-                note_payload = result.note or self._build_default_note(result.note_keys)
-                if note_payload is None:
-                    note_payload = {}
-                params = {
-                    "analysis_id": result.analysis_id,
-                    "annotation_id": result.id,
-                    "note": note_payload,
-                    "user_id": result.user_id,
-                    "study_id": result.study_id,
-                    "studyset_id": result.studyset_id,
-                }
-                create_annotation_analyses.append(params)
+            annotation_id = result.annotation_id
+            if annotation_id not in default_notes:
+                note_payload = self._build_default_note(result.note_keys)
+                default_notes[annotation_id] = (
+                    note_payload if note_payload is not None else {}
+                )
+
+            params = {
+                "analysis_id": result.analysis_id,
+                "annotation_id": annotation_id,
+                "note": default_notes[annotation_id],
+                "user_id": result.user_id,
+                "study_id": result.study_id,
+                "studyset_id": result.studyset_id,
+            }
+            create_annotation_analyses.append(params)
 
         if create_annotation_analyses:
             db.session.execute(
@@ -246,10 +246,8 @@ class BaseView(MethodView):
 
         # Internal preload hints can be passed by parent resources to avoid
         # repeated lookups for nested records.
-        preloaded_studies = data.pop("preloaded_studies", None)
-        preloaded_nested_records = data.pop("_preloaded_nested_records", None)
-
-        only_ids = set(data.keys()) - set(["id"]) == set()
+        preloaded_studies = None
+        preloaded_nested_records = None
 
         # allow compose bot to make changes
         compose_bot = current_app.config["COMPOSE_AUTH0_CLIENT_ID"] + "@clients"
@@ -268,12 +266,16 @@ class BaseView(MethodView):
                 abort_not_found(f"Record {id} not found in {str(cls._model)}")
 
         data = cls.load_nested_records(data, record)
+        preloaded_studies = data.pop("preloaded_studies", None)
+        preloaded_nested_records = data.pop("_preloaded_nested_records", None)
+
+        only_ids = set(data.keys()) - set(["id"]) == set()
 
         is_admin = is_user_admin(current_user)
         if (
             not sa.inspect(record).pending
-            and record.user != current_user
             and not only_ids
+            and record.user != current_user
             and current_user.external_id != compose_bot
             and not is_admin
         ):
