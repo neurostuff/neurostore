@@ -400,6 +400,15 @@ def mock_add_users(app, db, mock_auth, session):
             "id": uid,
         }
 
+    # Upload-key auth resolves to sub="neurosynth_compose"; ensure that user exists
+    # so get_current_user() succeeds without needing Auth0 profile creation.
+    service_user = session.execute(
+        select(User).where(User.external_id == "neurosynth_compose")
+    ).scalar_one_or_none()
+    if service_user is None:
+        session.add(User(name="neurosynth_compose", external_id="neurosynth_compose"))
+        session.flush()
+
     yield tokens
 
 
@@ -543,6 +552,7 @@ def user_data(app, db, mock_add_users, session):
                     name=user.id + "'s meta analysis",
                     description=user.id + "'s meta analysis",
                     user=user,
+                    public=public,
                     specification=specification,
                     studyset=studyset,
                     annotation=annotation,

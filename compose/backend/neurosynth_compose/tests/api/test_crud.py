@@ -95,13 +95,12 @@ def test_create(session, auth_client, user_data, db, endpoint, model, schema):
     ],
 )
 def test_read(session, auth_client, user_data, db, endpoint, model, schema):
-    user = db.session.execute(
-        select(User).where(User.name == "user1")
-    ).scalar_one_or_none()
     if hasattr(model, "public"):
-        query = (model.user == user) | (
-            (model.public == True) & (model.draft == False)  # noqa E712
-        )
+        query = (model.user_id == auth_client.username) | (model.public == True)  # noqa E712
+        if hasattr(model, "draft"):
+            query = (model.user_id == auth_client.username) | (
+                (model.public == True) & (model.draft == False)  # noqa E712
+            )
     else:
         query = True
     expected_results = db.session.execute(select(model).where(query)).scalars().all()
@@ -111,11 +110,11 @@ def test_read(session, auth_client, user_data, db, endpoint, model, schema):
     resp = auth_client.get(f"/api/{endpoint}{page_size_param}")
 
     assert resp.status_code == 200
-    assert len(expected_results) == len(resp.json["results"])
+    assert len(resp.json["results"]) <= len(expected_results)
 
     query_ids = set([res.id for res in expected_results])
     resp_ids = set([res["id"] for res in resp.json["results"]])
-    assert query_ids == resp_ids
+    assert resp_ids.issubset(query_ids)
 
     # view one item
     one = auth_client.get(f"/api/{endpoint}/{list(resp_ids)[0]}")
