@@ -187,6 +187,8 @@ class StudysetsView(ObjectView, ListView):
         if not data or not data.get("studies"):
             return data
         membership_only_payload = cls._is_study_membership_only_payload(data)
+        if membership_only_payload:
+            return data
         studies = data.get("studies")
         existing_studies = []
         for s in studies:
@@ -481,16 +483,49 @@ class StudysetsView(ObjectView, ListView):
         """
         Extend base behavior to attach optional curation_stub_uuid to studyset-study links.
         """
+        membership_only_payload = cls._is_study_membership_only_payload(data)
         stub_map = data.pop("curation_stub_map", {}) or {}
+        current_ids = None
+        if membership_only_payload and isinstance(data.get("studies"), list):
+            current_ids = []
+            for item in data.get("studies") or []:
+                if isinstance(item, dict):
+                    sid = item.get("id")
+                elif isinstance(item, str):
+                    sid = item
+                else:
+                    sid = None
+                if sid:
+                    current_ids.append(sid)
+
+            if current_ids:
+                found_ids = {
+                    sid
+                    for (sid,) in db.session.execute(
+                        sa.select(Study.id).where(Study.id.in_(current_ids))
+                    ).all()
+                }
+                missing_ids = [sid for sid in current_ids if sid not in found_ids]
+                if missing_ids:
+                    abort_not_found(Study.__name__, missing_ids[0])
+
+            # Fast path: skip nested Study update recursion for id-only membership updates.
+            data = {k: v for k, v in data.items() if k != "studies"}
+
         record = super().update_or_create(
             data, id=id, user=user, record=record, flush=flush
         )
 
         if getattr(record, "studyset_studies", None) is not None:
             # Ensure associations match the current studies and apply stub mappings.
-            current_ids = {
-                s.id for s in getattr(record, "studies", []) if getattr(s, "id", None)
-            }
+            if current_ids is None:
+                current_ids = {
+                    s.id
+                    for s in getattr(record, "studies", [])
+                    if getattr(s, "id", None)
+                }
+            else:
+                current_ids = set(current_ids)
 
             # Reconcile through ORM collection state only. Mixing bulk SQL DELETEs
             # with relationship replacement can schedule duplicate deletes for the
