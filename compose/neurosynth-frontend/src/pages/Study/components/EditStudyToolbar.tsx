@@ -18,7 +18,6 @@ import ProgressLoader from 'components/ProgressLoader';
 import GlobalStyles from 'global.styles';
 import { hasUnsavedStudyChanges, unsetUnloadHandler } from 'helpers/BeforeUnload.helpers';
 import { useGetExtractionSummary, useGetStudysetById, useUserCanEdit } from 'hooks';
-import { StudyReturn } from 'neurostore-typescript-sdk';
 import {
     IExtractionTableState,
     retrieveExtractionTableState,

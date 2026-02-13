@@ -116,7 +116,7 @@ const useGetExtractionSummary = vi.fn().mockReturnValue({
 // need to do this to prevent an infinite loop
 const studysetNested = mockStudysetNested();
 const studysetNotNested = mockStudysetNotNested();
-const useGetStudysetById = vi.fn().mockImplementation((studysetId: string, isNested: boolean) => {
+const useGetStudysetById = vi.fn().mockImplementation((studysetId: string, isNested: boolean, summary: boolean) => {
     return {
         isLoading: false,
         isError: false,
