@@ -184,6 +184,7 @@ class MetaAnalysis(BaseMixin, db.Model):
     cached_annotation_id = Column(Text, ForeignKey("annotations.id"))
     project_id = Column(Text, ForeignKey("projects.id"))
     user_id = Column(Text, ForeignKey("users.external_id"))
+    public = Column(Boolean, default=True, index=True)
     provenance = Column(JSON)
     run_key = Column(
         Text, default=generate_api_key

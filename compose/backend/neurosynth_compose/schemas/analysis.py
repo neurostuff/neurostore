@@ -335,6 +335,7 @@ class MetaAnalysisResultSchema(BaseSchema):
 class MetaAnalysisSchema(BaseSchema):
     name = fields.String(allow_none=True, metadata={"info_field": True})
     description = fields.String(allow_none=True, metadata={"info_field": True})
+    public = fields.Boolean()
     provenance = fields.Dict(allow_none=True)
     tags = StringOrNested(
         TagSchema,
