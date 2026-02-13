@@ -25,24 +25,21 @@ export const noteKeyObjToArr = (noteKeys?: object | null): NoteKeyType[] => {
 export const noteKeyArrToObj = (
     noteKeyArr: NoteKeyType[]
 ): { [key: string]: { type: EPropertyType; order: number; default?: AnnotationNoteValue } } => {
-    const noteKeyObj = noteKeyArr.reduce(
+    return noteKeyArr.reduce(
         (acc, curr, index) => {
-            const descriptor: { type: EPropertyType; order: number; default?: AnnotationNoteValue } = {
+            acc[curr.key] = {
                 type: curr.type,
                 order: curr.order ?? index,
                 default: curr.default ?? null,
             };
-            acc[curr.key] = descriptor;
             return acc;
         },
         {} as { [key: string]: { type: EPropertyType; order: number; default?: AnnotationNoteValue } }
     );
-
-    return noteKeyObj;
 };
 
-export const getDefaultForNoteKey = (key: string, type: EPropertyType): AnnotationNoteValue | undefined => {
-    if (type !== EPropertyType.BOOLEAN) return undefined;
+export const getDefaultForNoteKey = (key: string, type: EPropertyType): AnnotationNoteValue => {
+    if (type !== EPropertyType.BOOLEAN) return null;
     return key === 'included';
 };
 
@@ -52,7 +49,8 @@ export const booleanValidator = (value: CellValue, callback: (isValid: boolean) 
     callback(isValid);
 };
 
-export const replaceString = (val: string) => {
+export const replaceString = (val: unknown) => {
+    if (typeof val !== 'string') return val;
     // replace = ['֊', '‐', '‑', '⁃', '﹣', '－', '‒', '–', '—', '﹘', '−', '-']
 
     return val.replaceAll(new RegExp('֊|‐|‑|⁃|﹣|－|‒|–|—|﹘|−|-', 'g'), '-');

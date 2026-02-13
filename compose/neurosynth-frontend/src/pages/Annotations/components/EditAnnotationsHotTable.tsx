@@ -298,7 +298,7 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
                     type: columnType,
                     order: 0,
                     isNew: true,
-                    default: defaultValue ?? null,
+                    default: defaultValue,
                 },
                 ...prev.noteKeys,
             ].map((noteKey, index) => ({ ...noteKey, order: index }));
@@ -310,7 +310,7 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
                 hotColumns: createColumns(updatedNoteKeys, !canEdit),
                 hotData: [...prev.hotData].map((row) => {
                     const updatedRow = [...row];
-                    updatedRow.splice(2, 0, defaultValue ?? null);
+                    updatedRow.splice(2, 0, defaultValue);
                     return updatedRow;
                 }),
             };

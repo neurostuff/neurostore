@@ -3,7 +3,11 @@ import { NoteKeyType } from 'components/HotTables/HotTables.types';
 import { getDefaultForNoteKey, noteKeyArrToObj, noteKeyObjToArr } from 'components/HotTables/HotTables.utils';
 import { setUnloadHandler } from 'helpers/BeforeUnload.helpers';
 import { AnnotationReturnOneOf, NoteCollectionReturn } from 'neurostore-typescript-sdk';
-import { noteKeyArrToDefaultNoteKeyObj, storeNotesToDBNotes, updateNoteDetailsHelper } from 'stores/AnnotationStore.helpers';
+import {
+    noteKeyArrToDefaultNoteKeyObj,
+    storeNotesToDBNotes,
+    updateNoteDetailsHelper,
+} from 'stores/AnnotationStore.helpers';
 import {
     AnnotationStoreActions,
     AnnotationStoreMetadata,
@@ -148,25 +152,25 @@ export const useAnnotationStore = create<
         },
         createAnnotationColumn: (noteKey) => {
             setUnloadHandler('annotation');
-            const resolvedDefault =
-                noteKey.default !== undefined ? noteKey.default : getDefaultForNoteKey(noteKey.key, noteKey.type) ?? null;
-            const normalizedNoteKey = {
-                ...noteKey,
-                default: resolvedDefault,
-            };
+            const resolvedDefault = noteKey.default ?? getDefaultForNoteKey(noteKey.key, noteKey.type);
             set((state) => ({
                 ...state,
                 annotation: {
                     ...state.annotation,
                     note_keys: normalizeNoteKeyOrder([
-                        { ...normalizedNoteKey, isNew: true, order: 0 },
+                        {
+                            ...noteKey,
+                            default: resolvedDefault,
+                            isNew: true,
+                            order: 0,
+                        },
                         ...(state.annotation.note_keys ?? []),
                     ]),
                     notes: (state.annotation.notes ?? []).map((note) => ({
                         ...note,
                         note: {
                             ...note.note,
-                            [noteKey.key]: normalizedNoteKey.default ?? null,
+                            [noteKey.key]: resolvedDefault,
                         },
                     })),
                 },
