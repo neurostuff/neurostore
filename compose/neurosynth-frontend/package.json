@@ -7,6 +7,7 @@
         "@citation-js/core": "^0.7.18",
         "@citation-js/plugin-bibjson": "^0.7.14",
         "@citation-js/plugin-bibtex": "^0.7.14",
+        "@citation-js/plugin-csl": "^0.7.22",
         "@citation-js/plugin-doi": "^0.7.14",
         "@citation-js/plugin-enw": "^0.3.0",
         "@citation-js/plugin-ris": "^0.7.14",
