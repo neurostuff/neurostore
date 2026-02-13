@@ -182,6 +182,14 @@ class StudysetsView(ObjectView, ListView):
 
         return True
 
+    @staticmethod
+    def _canonicalize_study_ids(study_ids):
+        """
+        Keep study membership deterministic so FK lock acquisition order is stable
+        across concurrent requests.
+        """
+        return sorted({study_id for study_id in study_ids if study_id})
+
     @classmethod
     def load_nested_records(cls, data, record=None):
         if not data or not data.get("studies"):
@@ -508,6 +516,7 @@ class StudysetsView(ObjectView, ListView):
                 missing_ids = [sid for sid in current_ids if sid not in found_ids]
                 if missing_ids:
                     abort_not_found(Study.__name__, missing_ids[0])
+                current_ids = cls._canonicalize_study_ids(current_ids)
 
             # Fast path: skip nested Study update recursion for id-only membership updates.
             data = {k: v for k, v in data.items() if k != "studies"}
@@ -519,20 +528,21 @@ class StudysetsView(ObjectView, ListView):
         if getattr(record, "studyset_studies", None) is not None:
             # Ensure associations match the current studies and apply stub mappings.
             if current_ids is None:
-                current_ids = {
-                    s.id
-                    for s in getattr(record, "studies", [])
-                    if getattr(s, "id", None)
-                }
-            else:
-                current_ids = set(current_ids)
+                current_ids = cls._canonicalize_study_ids(
+                    [
+                        s.id
+                        for s in getattr(record, "studies", [])
+                        if getattr(s, "id", None)
+                    ]
+                )
+            current_id_set = set(current_ids)
 
             # Reconcile through ORM collection state only. Mixing bulk SQL DELETEs
             # with relationship replacement can schedule duplicate deletes for the
             # same association rows and produce rowcount warnings on flush.
             existing = {assoc.study_id: assoc for assoc in record.studyset_studies}
 
-            stale_ids = set(existing.keys()) - current_ids
+            stale_ids = sorted(set(existing.keys()) - current_id_set)
             stale_assocs = []
             for sid in stale_ids:
                 assoc = existing.pop(sid, None)
@@ -541,9 +551,9 @@ class StudysetsView(ObjectView, ListView):
 
             # First sync removes stale rows via delete-orphan cascade.
             if stale_assocs:
-                record.studyset_studies = list(existing.values())
+                record.studyset_studies = [existing[sid] for sid in sorted(existing)]
 
-            missing_ids = current_ids - set(existing.keys())
+            missing_ids = [study_id for study_id in current_ids if study_id not in existing]
             # If a stub UUID is being re-mapped from a removed association to a new
             # association in this same request, flush deletes first to satisfy the
             # per-studyset uniqueness constraint on curation_stub_uuid.
@@ -576,7 +586,7 @@ class StudysetsView(ObjectView, ListView):
                     assoc.curation_stub_uuid = stub_map[study_id]
 
             # Sync the relationship collection to the de-duplicated set for serialization.
-            record.studyset_studies = list(existing.values())
+            record.studyset_studies = [existing[sid] for sid in current_ids]
 
         return record
 
