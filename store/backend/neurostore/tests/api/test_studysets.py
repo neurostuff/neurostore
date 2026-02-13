@@ -1,6 +1,7 @@
 import random
 import string
-from neurostore.models import Studyset, Study, StudysetStudy
+from sqlalchemy import event
+from neurostore.models import Studyset, Study, StudysetStudy, User
 
 
 def test_post_and_get_studysets(auth_client, ingest_neurosynth, session):
@@ -505,3 +506,42 @@ def test_stub_mapping_updates_when_switching_versions(
         assoc.get("id") == study_ids[0] and assoc.get("curation_stub_uuid") == stub_uuid
         for assoc in data.get("studyset_studies") or []
     )
+
+
+def test_studyset_put_studies_only_avoids_point_value_loading(
+    auth_client, ingest_neurosynth_enormous, session
+):
+    studyset = Studyset.query.first()
+    user = User.query.filter_by(external_id=auth_client.username).first()
+    studyset.user = user
+    session.commit()
+    study_ids = [
+        sid
+        for (sid,) in session.query(StudysetStudy.study_id)
+        .filter_by(studyset_id=studyset.id)
+        .all()
+    ]
+    assert len(study_ids) >= 2
+
+    swapped = study_ids[:-1]
+    replacement = auth_client.post(
+        "/api/studies/",
+        data={"name": "replacement study for fast-path test"},
+    )
+    assert replacement.status_code == 200
+    swapped.append(replacement.json()["id"])
+
+    statements = []
+
+    def _capture_sql(conn, cursor, statement, parameters, context, executemany):
+        statements.append(" ".join(statement.lower().split()))
+
+    event.listen(session.bind, "before_cursor_execute", _capture_sql)
+    try:
+        resp = auth_client.put(f"/api/studysets/{studyset.id}", data={"studies": swapped})
+    finally:
+        event.remove(session.bind, "before_cursor_execute", _capture_sql)
+
+    assert resp.status_code == 200
+    point_value_queries = [stmt for stmt in statements if "from point_values" in stmt]
+    assert len(point_value_queries) < 10
