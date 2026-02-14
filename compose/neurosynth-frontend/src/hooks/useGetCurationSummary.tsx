@@ -1,6 +1,6 @@
 import { ICurationColumn } from 'pages/Curation/Curation.types';
 import { useProjectCurationColumns } from 'pages/Project/store/ProjectStore';
-import { ENeurosynthTagIds } from 'pages/Project/store/ProjectStore.types';
+import { ENeurosynthTagIds } from 'pages/Project/store/ProjectStore.consts';
 import { useEffect, useState } from 'react';
 
 export interface ICurationSummary {

@@ -4,7 +4,7 @@ import StateHandlerComponent from 'components/StateHandlerComponent/StateHandler
 import { useFetchPubMedIds } from 'hooks';
 import { useSnackbar } from 'notistack';
 import { ICurationStubStudy } from 'pages/Curation/Curation.types';
-import { defaultIdentificationSources } from 'pages/Project/store/ProjectStore.types';
+import { defaultIdentificationSources } from 'pages/Project/store/ProjectStore.consts';
 import React from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { IImportArgs } from './CurationImportDoImport';

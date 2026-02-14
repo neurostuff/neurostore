@@ -195,7 +195,7 @@ const useSaveStudy = () => {
 
             const updatedClone = (await API.NeurostoreServices.StudiesService.studiesIdGet(clonedStudyId, true)).data;
 
-            // 3. update the studyset containing the study with our new clone
+            // 2. update the studyset containing the study with our new clone
             const updatedStudies = [...(studyset.studies as string[])];
             updatedStudies[currentStudyBeingEditedIndex] = clonedStudyId;
 
@@ -219,11 +219,11 @@ const useSaveStudy = () => {
             });
             queryClient.invalidateQueries(STUDYSET_QUERY_STRING);
 
-            // 4. update the project as this keeps track of completion status of studies
+            // 3. update the project as this keeps track of completion status of studies
             replaceStudyWithNewClonedStudy(storeStudy.id, clonedStudyId);
             updateExtractionTableStateStudySwapInStorage(projectId, storeStudy.id, clonedStudyId);
 
-            // 5. as this is a completely new study, that we've just created, the annotations are cleared.
+            // 4. as this is a completely new study, that we've just created, the annotations are cleared.
             // We need to update the annotations with our latest changes, and associate newly created analyses with their corresponding analysis changes.
             //      - we do this based on the analysis names since the IDs are reinitialized by neurostore
             const updatedNotes = [...(notes || [])];

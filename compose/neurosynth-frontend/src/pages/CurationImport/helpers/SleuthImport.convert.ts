@@ -1,7 +1,7 @@
 import { stringToNumber } from 'helpers/utils';
 import { BaseStudy } from 'neurostore-typescript-sdk';
 import { ICurationStubStudy } from 'pages/Curation/Curation.types';
-import { defaultIdentificationSources } from 'pages/Project/store/ProjectStore.types';
+import { defaultIdentificationSources } from 'pages/Project/store/ProjectStore.consts';
 import { v4 as uuidv4 } from 'uuid';
 import {
     cleanLine,

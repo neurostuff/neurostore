@@ -5,6 +5,11 @@ export const saveExtractionTableState = (projectId: string | undefined, state: I
     window.sessionStorage.setItem(`${projectId}-extraction-table`, JSON.stringify(state));
 };
 
+export const clearExtractionTableState = (projectId: string | undefined) => {
+    if (!projectId) return;
+    window.sessionStorage.removeItem(`${projectId}-extraction-table`);
+};
+
 export const updateExtractionTableState = (projectId: string | undefined, state: Partial<IExtractionTableState>) => {
     if (!projectId) return;
     const extractionTableState = retrieveExtractionTableState(projectId);

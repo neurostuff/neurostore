@@ -17,7 +17,7 @@ import {
     useProjectId,
     useUpdateCurationColumns,
 } from 'pages/Project/store/ProjectStore';
-import { defaultExclusionTags } from 'pages/Project/store/ProjectStore.types';
+import { defaultExclusionTags } from 'pages/Project/store/ProjectStore.consts';
 import { SearchCriteria } from 'pages/Study/Study.types';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
