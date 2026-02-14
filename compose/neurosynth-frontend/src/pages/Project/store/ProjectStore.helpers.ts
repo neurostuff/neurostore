@@ -15,7 +15,7 @@ import {
     defaultIdentificationSources,
     defaultInfoTags,
     ENeurosynthTagIds,
-} from 'pages/Project/store/ProjectStore.types';
+} from 'pages/Project/store/ProjectStore.consts';
 import { ICurationColumn, ICurationStubStudy } from 'pages/Curation/Curation.types';
 
 export const handleDragEndHelper = (
@@ -306,8 +306,10 @@ export const createNewExclusionHelper = (
     const updatedState = { ...state };
 
     if (!phase) {
+        if (updatedState.exclusionTags.find((x) => x.id === newExclusion.id)) return updatedState;
         updatedState.exclusionTags = [...updatedState.exclusionTags, { ...newExclusion }];
     } else {
+        if (updatedState.prismaConfig[phase].exclusionTags.find((x) => x.id === newExclusion.id)) return updatedState;
         updatedState.prismaConfig = {
             ...updatedState.prismaConfig,
             [phase]: {

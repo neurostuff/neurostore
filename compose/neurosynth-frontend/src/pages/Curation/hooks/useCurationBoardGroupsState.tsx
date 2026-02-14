@@ -10,7 +10,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { IGroupListItem } from '../components/CurationBoardAIGroupsList';
 import { ECurationBoardAIInterface } from '../components/CurationBoardAi';
 import { SxProps } from '@mui/system';
-import { defaultExclusionTags } from 'pages/Project/store/ProjectStore.types';
+import { defaultExclusionTags } from 'pages/Project/store/ProjectStore.consts';
 import { useParams } from 'react-router-dom';
 
 const excludedListItemStyles: SxProps = {

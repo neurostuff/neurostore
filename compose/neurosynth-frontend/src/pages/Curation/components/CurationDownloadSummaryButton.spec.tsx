@@ -4,7 +4,7 @@ import CurationDownloadSummaryButton from 'pages/Curation/components/CurationDow
 import userEvent from '@testing-library/user-event';
 import { useProjectCurationColumns, useProjectExclusionTags } from 'pages/Project/store/ProjectStore';
 import { ICurationColumn } from '../Curation.types';
-import { defaultIdentificationSources } from 'pages/Project/store/ProjectStore.types';
+import { defaultIdentificationSources } from 'pages/Project/store/ProjectStore.consts';
 import { downloadFile } from 'helpers/downloadFile.helpers';
 
 vi.mock('react-query');

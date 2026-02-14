@@ -1,4 +1,4 @@
-import { Box, Button, Link, Tooltip, Typography } from '@mui/material';
+import { Box, Tooltip, Typography } from '@mui/material';
 import DisplayLink from 'components/DisplayStudyLink/DisplayLink';
 import DisplayStudyLinkFullText from 'components/DisplayStudyLink/DisplayStudyLinkFullText';
 import LoadingStateIndicatorProject from 'components/LoadingStateIndicator/LoadingStateIndicatorProject';
@@ -15,8 +15,7 @@ import {
     useStudyUsername,
     useStudyYear,
 } from 'pages/Study/store/StudyStore';
-import { useMemo, useState } from 'react';
-import RelegateExtractionStudyDialog from './RelegateExtractionStudyDialog';
+import { useMemo } from 'react';
 
 const EditStudyPageHeader: React.FC = () => {
     const projectId = useProjectId();
@@ -29,8 +28,6 @@ const EditStudyPageHeader: React.FC = () => {
     const doi = useStudyDOI();
     const pmid = useStudyPMID();
     const pmcid = useStudyPMCID();
-
-    const [relegateExtractionStudyDialogState, setRelegateExtractionStudyDialogState] = useState(false);
 
     const nicelyFormattedDate = useMemo(() => {
         const date = new Date(lastUpdatedAt || '');
@@ -103,22 +100,6 @@ const EditStudyPageHeader: React.FC = () => {
                     </Tooltip>
                 )}
                 {studyName && <DisplayStudyLinkFullText sx={{ marginRight: '1rem' }} studyName={studyName} />}
-                <Box sx={{ marginLeft: 'auto' }}>
-                    <RelegateExtractionStudyDialog
-                        isOpen={relegateExtractionStudyDialogState}
-                        onCloseDialog={() => setRelegateExtractionStudyDialogState(false)}
-                    />
-                    <Link
-                        variant="body2"
-                        underline="hover"
-                        sx={{
-                            cursor: 'pointer',
-                        }}
-                        onClick={() => setRelegateExtractionStudyDialogState(true)}
-                    >
-                        I couldn't find coordinates for this study
-                    </Link>
-                </Box>
             </Box>
         </Box>
     );

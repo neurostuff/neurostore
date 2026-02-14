@@ -116,7 +116,7 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
             };
             const id = useProjectStore.getState().id;
 
-            const res = await API.NeurosynthServices.ProjectsService.projectsIdPut(id || '', {
+            const res = await API.NeurosynthServices.ProjectsService.projectsIdPut(id || '', true, {
                 provenance: emptyProvenance,
             });
             set((state) => ({

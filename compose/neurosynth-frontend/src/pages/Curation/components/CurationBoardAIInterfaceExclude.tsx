@@ -13,7 +13,7 @@ import { IGroupListItem } from './CurationBoardAIGroupsList';
 import CurationEditableStubSummary from './CurationEditableStubSummary';
 import CurationStubListItemVirtualizedContainer from './CurationStubListItemVirtualizedContainer';
 import TextEdit from 'components/TextEdit/TextEdit';
-import { ENeurosynthTagIds } from 'pages/Project/store/ProjectStore.types';
+import { ENeurosynthTagIds } from 'pages/Project/store/ProjectStore.consts';
 
 const CurationBoardAIInterfaceExclude: React.FC<{
     group: IGroupListItem;
