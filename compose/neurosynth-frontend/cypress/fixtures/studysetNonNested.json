@@ -1,0 +1,26 @@
+{
+    "id": "5ATjENA3VVyE",
+    "name": "a test studyset",
+    "user": "auth0|62de78bc11222b208cd022c8",
+    "description": "some new studyset",
+    "publication": null,
+    "doi": null,
+    "pmid": null,
+    "created_at": "2022-07-25T11:08:25.999097+00:00",
+    "updated_at": null,
+    "studies": ["a-mock-study-id", "b-mock-study-id", "c-mock-study-id"],
+    "studyset_studies": [
+        {
+            "id": "a-mock-study-id",
+            "curation_stub_uuid": "123e4567-e89b-12d3-a456-426614174999"
+        },
+        {
+            "id": "b-mock-study-id",
+            "curation_stub_uuid": "223e4567-e89b-12d3-a456-426614174999"
+        },
+        {
+            "id": "c-mock-study-id",
+            "curation_stub_uuid": "323e4567-e89b-12d3-a456-426614174999"
+        }
+    ]
+}

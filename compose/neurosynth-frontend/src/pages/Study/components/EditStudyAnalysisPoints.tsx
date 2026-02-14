@@ -28,15 +28,23 @@ const EditStudyAnalysisPoints: React.FC<{ analysisId?: string }> = (props) => {
 
     return (
         <Box sx={{ marginTop: '2rem' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', margin: '0.5rem 0' }}>
-                <Typography sx={{ fontWeight: 'bold', marginRight: '4px' }}>Analysis Coordinates</Typography>
-                <Tooltip
-                    title="To add or remove rows, right click on a cell to open the context menu. You must enter all coordinates in order to save the overall study. Please note that the ordering of points is not guaranteed."
-                    placement="right"
-                >
-                    <HelpIcon color="primary" />
-                </Tooltip>
-                <Box sx={{ marginLeft: 'auto' }}>
+            <Box
+                sx={{
+                    display: 'flex',
+                    flexDirection: { xs: 'column', md: 'row' },
+                    margin: '0.5rem 0',
+                }}
+            >
+                <Box sx={{ display: 'flex' }}>
+                    <Typography sx={{ fontWeight: 'bold', marginRight: '4px' }}>Analysis Coordinates</Typography>
+                    <Tooltip
+                        title="To add or remove rows, right click on a cell to open the context menu. You must enter all coordinates in order to save the overall study. Please note that the ordering of points is not guaranteed."
+                        placement="right"
+                    >
+                        <HelpIcon color="primary" />
+                    </Tooltip>
+                </Box>
+                <Box sx={{ marginLeft: { xs: 0, md: 'auto' } }}>
                     <RelegateExtractionStudyDialog
                         isOpen={relegateExtractionStudyDialogState}
                         onCloseDialog={handleRelegateExtractionStudy}
