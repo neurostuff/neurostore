@@ -17,7 +17,7 @@ import {
     useProjectCurationPrismaConfig,
     useProjectUser,
 } from 'pages/Project/store/ProjectStore';
-import { ENeurosynthTagIds } from 'pages/Project/store/ProjectStore.types';
+import { ENeurosynthTagIds } from 'pages/Project/store/ProjectStore.consts';
 import React, { useEffect, useMemo, useState } from 'react';
 import { FixedSizeList, ListChildComponentProps } from 'react-window';
 
