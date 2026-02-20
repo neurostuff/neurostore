@@ -40,11 +40,6 @@ const CreateMetaAnalysisSpecificationAlgorithmStep: React.FC<{
 
     const nextButtonDisabled =
         !algorithmSpec.estimator?.label || (isUsingSampleSize && studiesMissingSampleSize.length > 0);
-    console.log({
-        label: !algorithmSpec.estimator?.label,
-        isUsingSampleSize,
-        studiesMissingSampleSize: studiesMissingSampleSize.length > 0,
-    });
 
     return (
         <Box>

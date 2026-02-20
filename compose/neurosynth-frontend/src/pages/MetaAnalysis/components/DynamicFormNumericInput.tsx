@@ -15,6 +15,7 @@ const DynamicFormNumericInput: React.FC<IDynamicFormInput> = (props) => {
             <Box sx={{ width: '50%' }}>
                 <TextField
                     disabled={props.disabled}
+                    name={props.parameterName}
                     onWheel={(event) => {
                         event.preventDefault();
                     }}

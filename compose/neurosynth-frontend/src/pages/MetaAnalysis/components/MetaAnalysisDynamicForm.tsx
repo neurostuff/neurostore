@@ -164,16 +164,11 @@ const MetaAnalysisDynamicForm: React.FC<IDynamicForm> = (props) => {
                     const shouldHide =
                         isALE(props.correctorOrEstimatorLabel) && isUsingSampleSize && isSampleSizeParameter;
 
-                    return (
-                        <Box
-                            key={parameterAsInput.parameterName}
-                            sx={{
-                                display: shouldHide ? 'none' : 'block',
-                            }}
-                        >
-                            <DynamicInputComponent {...parameterAsInput} />
-                        </Box>
-                    );
+                    if (shouldHide) {
+                        return null;
+                    }
+
+                    return <DynamicInputComponent {...parameterAsInput} />;
                 })}
             {parametersAsInputList.length === 0 && <Box sx={{ color: 'warning.dark' }}>No arguments available</Box>}
         </Box>

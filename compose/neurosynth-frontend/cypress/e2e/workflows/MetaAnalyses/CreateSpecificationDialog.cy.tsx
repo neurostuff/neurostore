@@ -64,4 +64,60 @@ describe('CreateSpecificationDialog', () => {
         cy.contains('button', 'Next').click();
         cy.contains('button', 'Create Meta-Analysis Specification').click();
     });
+
+    describe('ALE validation', () => {
+        const openDialogAndSelectALE = () => {
+            cy.login('mocked', { sub: 'github|26612023' }).visit('/projects/abc123').wait('@projectFixture');
+            cy.contains('button', 'Meta-Analyses').click();
+            cy.contains('button', 'Meta-Analysis Specification').click();
+            cy.get('.MuiDialog-container').should('be.visible');
+            cy.get('.MuiDialog-container input').first().click();
+            cy.get('[role="option"]').contains('ALE').click();
+            cy.contains('Algorithm arguments').click();
+        };
+
+        it('hides kernel__fwhm and kernel__sample_size when "Use Study/Analysis Specific Sample Sizes" is checked', () => {
+            openDialogAndSelectALE();
+            cy.get('input[name="kernel__fwhm"]').should('exist');
+            cy.get('input[name="kernel__sample_size"]').should('exist');
+            cy.contains('Use Study/Analysis Specific Sample Sizes').click();
+            cy.get('input[name="kernel__fwhm"]').should('not.exist');
+            cy.get('input[name="kernel__sample_size"]').should('not.exist');
+        });
+
+        it('shows expected links when studies are missing sample size', () => {
+            openDialogAndSelectALE();
+            cy.contains('Use Study/Analysis Specific Sample Sizes').click();
+            cy.contains('The following studies are missing sample sizes').should('be.visible');
+            cy.get('a[href*="/extraction/studies/"]').should('have.length.at.least', 1);
+        });
+
+        it('disables Next button when studies are missing sample size and checkbox is checked', () => {
+            openDialogAndSelectALE();
+            cy.contains('Use Study/Analysis Specific Sample Sizes').click();
+            cy.contains('button', 'Next').should('be.disabled');
+        });
+
+        it('disables kernel__fwhm input when kernel__sample_size has a value', () => {
+            openDialogAndSelectALE();
+            cy.get('input[name="kernel__fwhm"]').clear();
+            cy.get('input[name="kernel__sample_size"]').clear().type('20');
+            cy.get('input[name="kernel__fwhm"]').should('be.disabled');
+        });
+
+        it('disables kernel__sample_size input when kernel__fwhm has a value', () => {
+            openDialogAndSelectALE();
+            cy.get('input[name="kernel__sample_size"]').should('be.disabled');
+        });
+
+        it('shows OK when all studies have sample size and Next button is enabled', () => {
+            cy.intercept('GET', '**/api/annotations/*', {
+                fixture: 'MetaAnalysis/annotationAllHaveSampleSize',
+            }).as('annotationAllHaveSampleSize');
+            openDialogAndSelectALE();
+            cy.contains('Use Study/Analysis Specific Sample Sizes').click();
+            cy.contains('All studies in the studyset have sample size values.').should('be.visible');
+            cy.contains('button', 'Next').should('not.be.disabled');
+        });
+    });
 });
