@@ -151,11 +151,7 @@ const EditSpecificationDialog: React.FC<IDialog> = (props) => {
             maxWidth="lg"
         >
             <StateHandlerComponent isLoading={getMetaAnalysisIsLoading} isError={getMetaAnalysisIsError}>
-                <Box
-                    sx={{
-                        margin: '1rem 2rem',
-                    }}
-                >
+                <Box sx={{ margin: '0rem 2rem' }}>
                     <Typography variant="h6" sx={{ fontWeight: 'bold' }} gutterBottom>
                         Edit Algorithm:
                     </Typography>
@@ -164,11 +160,7 @@ const EditSpecificationDialog: React.FC<IDialog> = (props) => {
                         onSelectSpecification={(update) => setAlgorithmSpec(update)}
                     />
 
-                    <Typography
-                        variant="h6"
-                        sx={{ marginBottom: '1rem', fontWeight: 'bold', marginTop: '1rem' }}
-                        gutterBottom
-                    >
+                    <Typography variant="h6" sx={{ marginBottom: '1rem', marginTop: '1rem' }} gutterBottom>
                         Edit Analyses Selection:
                     </Typography>
                     <SelectAnalysesComponent

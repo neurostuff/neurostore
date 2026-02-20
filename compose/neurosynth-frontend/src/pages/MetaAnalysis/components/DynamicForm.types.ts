@@ -17,8 +17,8 @@ export interface IDynamicFormInput {
     parameterName: string;
     parameter: IParameter;
     value: any;
-
     onUpdate: (arg: IDynamicValueType) => void;
+    disabled?: boolean;
 }
 
 export interface IParameter {
