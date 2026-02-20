@@ -120,11 +120,15 @@ export const projectsSearchHelper = (projectSearchCriteria: Partial<ProjectSearc
     );
 };
 
-const useGetProjects = (projectSearchCriteria: ProjectSearchCriteria) => {
-    return useQuery(['projects', { ...projectSearchCriteria }], () => projectsSearchHelper(projectSearchCriteria), {
-        select: (axiosResponse) => (axiosResponse.data.results as INeurosynthProjectReturn[]) || [],
-        refetchOnWindowFocus: false,
-    });
+const useGetProjects = (projectSearchCriteria: ProjectSearchCriteria, userSub?: string) => {
+    return useQuery(
+        ['projects', { ...projectSearchCriteria }, userSub],
+        () => projectsSearchHelper(projectSearchCriteria, userSub),
+        {
+            select: (axiosResponse) => (axiosResponse.data.results as INeurosynthProjectReturn[]) || [],
+            refetchOnWindowFocus: false,
+        }
+    );
 };
 
 export default useGetProjects;
