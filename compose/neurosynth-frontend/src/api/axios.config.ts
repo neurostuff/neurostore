@@ -6,10 +6,15 @@ const env = import.meta.env.VITE_APP_ENV as 'DEV' | 'STAGING' | 'PROD';
 axiosInstance.interceptors.request.use(
     async (config) => {
         if (!_getAccessTokenSilentlyFunc) throw new Error('Auth not initialized');
-        const token = await _getAccessTokenSilentlyFunc();
-        if (env === 'DEV' || env === 'STAGING') console.log(token);
-        config.headers['Authorization'] = `Bearer ${token}`;
-        return config;
+        try {
+            const token = await _getAccessTokenSilentlyFunc();
+            if (env === 'DEV' || env === 'STAGING') console.log(token);
+            config.headers['Authorization'] = `Bearer ${token}`;
+            return config;
+        } catch (error) {
+            console.error(error);
+            throw new Error('Error getting access token');
+        }
     },
     (err) => {
         if (err?.response?.status === 403) {
