@@ -11,6 +11,7 @@ const DynamicFormStringInput: React.FC<IDynamicFormInput> = (props) => {
             <Box sx={{ width: '50%' }}>
                 <TextField
                     value={props.value || ''}
+                    name={props.parameterName}
                     label="text"
                     sx={{ width: '100%' }}
                     type="text"

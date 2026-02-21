@@ -19,6 +19,7 @@ const DynamicFormSelectInput: React.FC<IDynamicFormInput> = (props) => {
 
             <Select
                 sx={{ width: '50%' }}
+                name={props.parameterName}
                 value={props.value || ''}
                 onChange={(event) =>
                     props.onUpdate({

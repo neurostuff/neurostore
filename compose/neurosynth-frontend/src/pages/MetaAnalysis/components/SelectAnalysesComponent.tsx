@@ -5,7 +5,6 @@ import NeurosynthTableStyles from 'components/NeurosynthTable/NeurosynthTable.st
 import { useGetAnnotationById } from 'hooks';
 import { NoteCollectionReturn } from 'neurostore-typescript-sdk';
 import { useEffect, useMemo, useRef } from 'react';
-import CreateMetaAnalysisSpecificationDialogBaseStyles from 'pages/MetaAnalysis/components/CreateMetaAnalysisSpecificationDialogBase.styles';
 import {
     IAlgorithmSelection,
     IAnalysesSelection,
@@ -89,9 +88,8 @@ const SelectAnalysesComponent: React.FC<{
     };
 
     return (
-        <Box>
+        <Box sx={{ marginBottom: '3rem' }}>
             <NeurosynthAutocomplete
-                sx={CreateMetaAnalysisSpecificationDialogBaseStyles.highlightInput}
                 label="Inclusion Column"
                 shouldDisable={false}
                 isOptionEqualToValue={(option, value) => option?.selectionKey === value?.selectionKey}

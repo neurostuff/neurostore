@@ -6,10 +6,16 @@ import DynamicFormStyles from 'pages/MetaAnalysis/components//DynamicFormStyles'
 const DynamicFormNumericInput: React.FC<IDynamicFormInput> = (props) => {
     return (
         <Box sx={DynamicFormStyles.input}>
-            <MetaAnalysisDynamicFormTitle name={props.parameterName} description={props.parameter.description} />
+            <MetaAnalysisDynamicFormTitle
+                disabled={props.disabled}
+                name={props.parameterName}
+                description={props.parameter.description}
+            />
 
             <Box sx={{ width: '50%' }}>
                 <TextField
+                    disabled={props.disabled}
+                    name={props.parameterName}
                     onWheel={(event) => {
                         event.preventDefault();
                     }}
@@ -29,7 +35,7 @@ const DynamicFormNumericInput: React.FC<IDynamicFormInput> = (props) => {
                     }}
                     value={props.value || ''}
                     label="number"
-                    sx={{ width: '100%' }}
+                    sx={{ width: '100%', opacity: props.disabled ? 0.4 : 1 }}
                     type="number"
                 />
             </Box>

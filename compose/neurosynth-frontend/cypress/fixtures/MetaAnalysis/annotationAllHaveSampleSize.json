@@ -1,0 +1,47 @@
+{
+    "created_at": "2023-11-02T19:05:58.374860+00:00",
+    "description": "",
+    "id": "5LSBDTGqA6RF",
+    "metadata": null,
+    "name": "Annotation for studyset 73HRs8HaJbR8",
+    "note_keys": { "included": { "type": "boolean", "order": 0 }, "sample_size": { "type": "number", "order": 1 } },
+    "notes": [
+        {
+            "analysis": "6h7WzZ7sXd7S",
+            "analysis_name": "Analysis 1",
+            "authors": "Corbetta M",
+            "note": { "included": true, "sample_size": 20 },
+            "publication": "Neuron",
+            "study": "3Jvrv4Pct3hb",
+            "study_name": "A common network of functional areas for attention and eye movements.",
+            "study_year": 1998
+        },
+        {
+            "analysis": "5pDk47P9JdU5",
+            "analysis_name": "Analysis 2",
+            "authors": "Silvia U. Maier",
+            "note": { "included": true, "sample_size": 70 },
+            "publication": "Neuron",
+            "study": "36nHEsLLPwBB",
+            "study_name": "Acute Stress Impairs Self-Control in Goal-Directed Choice",
+            "study_year": 1999
+        },
+        {
+            "analysis": "5Z95x7T3TAQW",
+            "analysis_name": "Analysis 3",
+            "authors": "Ethan M. McCormick",
+            "note": { "included": true, "sample_size": 30 },
+            "publication": "Frontiers in Human Neuroscience",
+            "study": "3zutS8kyg2sy",
+            "study_name": "Activation in Context: Differential Conclusions",
+            "study_year": 2000
+        }
+    ],
+    "source": null,
+    "source_id": null,
+    "source_updated_at": null,
+    "studyset": "73HRs8HaJbR8",
+    "updated_at": null,
+    "user": "github|26612023",
+    "username": "Nicholas Lee"
+}
