@@ -422,6 +422,20 @@ export const setGivenStudyStatusesAsCompleteHelper = (studyIds: string[]): IStud
         }));
 };
 
+const UNTITLED_REGEX = /^Untitled( (\d+))?$/;
+
+export const getNextUntitledProjectName = (existingProjectNames: string[]): string => {
+    const numbers = existingProjectNames
+        .map((projectName) => {
+            const m = (projectName ?? '').trim().match(UNTITLED_REGEX);
+            if (!m) return null;
+            return m[2] ? parseInt(m[2], 10) : 1;
+        })
+        .filter((x) => x !== null);
+    const max = numbers.length === 0 ? 0 : Math.max(...numbers);
+    return max === 0 ? 'Untitled' : `Untitled ${max + 1}`;
+};
+
 export const generateNewProjectData = (name?: string, description?: string): INeurosynthProjectReturn => {
     return {
         name: name || '',

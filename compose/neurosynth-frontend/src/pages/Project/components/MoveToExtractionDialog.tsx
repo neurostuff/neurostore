@@ -69,7 +69,7 @@ const MoveToExtractionDialog: React.FC<IDialog> = (props) => {
                 tempStudysetId = studysetId;
             } else {
                 const newStudyset = await createStudyset({
-                    name: `Studyset for ${projectName}`,
+                    name: `${projectName} Studyset`,
                     description: projectDescription,
                 });
 
