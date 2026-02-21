@@ -1,17 +1,26 @@
+import { useAuth0 } from '@auth0/auth0-react';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import LoadingButton from 'components/Buttons/LoadingButton';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import NavToolbarStyles from 'components/Navbar/NavToolbar.styles';
 import { hasUnsavedChanges, unsetUnloadHandler } from 'helpers/BeforeUnload.helpers';
 import { useCreateProject } from 'hooks';
+import { ProjectSearchCriteria, projectsSearchHelper } from 'hooks/projects/useGetProjects';
 import { generateNewProjectData } from 'pages/Project/store/ProjectStore.helpers';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const CreateProjectButton: React.FC = () => {
     const { mutate, isLoading: createProjectIsLoading } = useCreateProject();
     const navigate = useNavigate();
     const [confirmationDialogIsOpen, setConfirmationDialogIsOpen] = useState(false);
+
+    const { user } = useAuth0();
+    useEffect(() => {
+        projectsSearchHelper(new ProjectSearchCriteria(1, 1000), user?.sub).then((res) => {
+            console.log({ res });
+        });
+    }, [user?.sub]);
 
     const handleCreateProject = () => {
         mutate(generateNewProjectData('Untitled', ''), {
