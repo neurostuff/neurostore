@@ -1,24 +1,42 @@
+import { useAuth0 } from '@auth0/auth0-react';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import LoadingButton from 'components/Buttons/LoadingButton';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import NavToolbarStyles from 'components/Navbar/NavToolbar.styles';
 import { hasUnsavedChanges, unsetUnloadHandler } from 'helpers/BeforeUnload.helpers';
 import { useCreateProject } from 'hooks';
-import { generateNewProjectData } from 'pages/Project/store/ProjectStore.helpers';
+import { ProjectSearchCriteria, projectsSearchHelper } from 'hooks/projects/useGetProjects';
+import { generateNewProjectData, getNextUntitledProjectName } from 'pages/Project/store/ProjectStore.helpers';
 import { useState } from 'react';
+import { useQueryClient } from 'react-query';
 import { useNavigate } from 'react-router-dom';
+
+const projectSearchCriteria = new ProjectSearchCriteria(1, 1000);
 
 const CreateProjectButton: React.FC = () => {
     const { mutate, isLoading: createProjectIsLoading } = useCreateProject();
     const navigate = useNavigate();
     const [confirmationDialogIsOpen, setConfirmationDialogIsOpen] = useState(false);
+    const { user } = useAuth0();
+    const [getProjectsIsLoading, setGetProjectsIsLoading] = useState(false);
 
-    const handleCreateProject = () => {
-        mutate(generateNewProjectData('Untitled', ''), {
-            onSuccess: (arg) => {
-                navigate(`/projects/${arg.data.id || ''}`);
-            },
-        });
+    const handleCreateProject = async () => {
+        try {
+            setGetProjectsIsLoading(true);
+            const userProjects = await projectsSearchHelper(projectSearchCriteria, user?.sub);
+            const newProjectName = getNextUntitledProjectName(
+                userProjects?.data?.results?.map((p) => p.name ?? '') ?? []
+            );
+            mutate(generateNewProjectData(newProjectName, ''), {
+                onSuccess: (arg) => {
+                    navigate(`/projects/${arg.data.id || ''}`);
+                },
+            });
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setGetProjectsIsLoading(false);
+        }
     };
 
     const handleButtonClick = () => {
@@ -57,7 +75,7 @@ const CreateProjectButton: React.FC = () => {
                 disableElevation
                 loaderColor="primary"
                 onClick={handleButtonClick}
-                isLoading={createProjectIsLoading}
+                isLoading={createProjectIsLoading || getProjectsIsLoading}
                 sx={[NavToolbarStyles.menuItem, NavToolbarStyles.createProjectButton]}
                 startIcon={<AddCircleOutlineIcon />}
                 text="NEW PROJECT"

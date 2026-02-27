@@ -12,15 +12,17 @@ import {
     useProjectUser,
 } from 'pages/Project/store/ProjectStore';
 import { useState } from 'react';
+import { useQueryClient } from 'react-query';
 import { useNavigate, useParams } from 'react-router-dom';
 
 const DangerZone: React.FC = () => {
     const env = import.meta.env.VITE_APP_ENV as 'DEV' | 'STAGING' | 'PROD';
     const isLocalhost = window.location.hostname === 'localhost';
+    const queryClient = useQueryClient();
 
     const { projectId } = useParams<{ projectId: string }>();
     const projectUser = useProjectUser();
-    const { mutate: deleteProject } = useDeleteProject();
+    const { mutate: deleteProject, isLoading } = useDeleteProject();
     const clearProvenance = useClearProvenance();
     const navigate = useNavigate();
     const { enqueueSnackbar } = useSnackbar();
@@ -37,14 +39,18 @@ const DangerZone: React.FC = () => {
 
         if (confirm) {
             deleteProject(projectId, {
-                onSuccess: () => {
+                onSuccess: (data, variables) => {
                     enqueueSnackbar('Deleted project successfully', { variant: 'success' });
                     navigate('/projects');
+                    setConfirmationDialogIsOpen(false);
+
+                    queryClient.removeQueries({ queryKey: ['projects', variables] });
+                    return queryClient.invalidateQueries({ queryKey: ['projects'] });
                 },
             });
+        } else {
+            setConfirmationDialogIsOpen(false);
         }
-
-        setConfirmationDialogIsOpen(false);
     };
 
     if (!userCanEdit) {
@@ -70,6 +76,7 @@ const DangerZone: React.FC = () => {
                 dialogTitle="Are you sure you want to delete the project?"
                 dialogMessage="This action cannot be undone"
                 onCloseDialog={handleDeleteProject}
+                confirmButtonProps={{ isLoading: isLoading, loaderColor: 'secondary' }}
                 confirmText="Confirm"
             />
             <Button
