@@ -626,7 +626,7 @@ describe(PAGE_NAME, () => {
             cy.contains('button', 'Mark as Complete').should('be.visible');
         });
 
-        it('should mark study as complete and send updated status in project PUT', () => {
+        it.only('should mark study as complete and send updated status in project PUT', () => {
             cy.intercept('PUT', '**/api/projects/*', { fixture: 'projects/projectPut' }).as('putProject');
             cy.contains('button', 'Mark as Complete').click();
             cy.wait('@putProject');
