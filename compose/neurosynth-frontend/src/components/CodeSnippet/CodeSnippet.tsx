@@ -1,8 +1,8 @@
-import { Box, Button, IconButton, Tooltip, Typography } from '@mui/material';
-import { SystemStyleObject } from '@mui/system';
 import { ContentCopy } from '@mui/icons-material';
-import CodeSnippetStyles from './CodeSnippet.styles';
+import { Box, IconButton, Tooltip, Typography } from '@mui/material';
+import { SystemStyleObject } from '@mui/system';
 import useCopyToClipboard from 'hooks/useCopyToClipboard';
+import CodeSnippetStyles from './CodeSnippet.styles';
 
 const CodeSnippet: React.FC<{
     linesOfCode: string[];
