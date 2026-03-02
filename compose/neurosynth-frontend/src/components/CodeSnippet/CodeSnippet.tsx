@@ -1,5 +1,6 @@
-import { Box, Button, Typography } from '@mui/material';
+import { Box, Button, IconButton, Tooltip, Typography } from '@mui/material';
 import { SystemStyleObject } from '@mui/system';
+import { ContentCopy } from '@mui/icons-material';
 import CodeSnippetStyles from './CodeSnippet.styles';
 import useCopyToClipboard from 'hooks/useCopyToClipboard';
 
@@ -26,20 +27,26 @@ const CodeSnippet: React.FC<{
                 </Box>
                 {props.noCopyButton ? null : (
                     <Box>
-                        <Button
-                            size="small"
-                            sx={{ fontSize: '12px', height: '24px', color: copied ? 'success.main' : 'white' }}
-                            onClick={handleCopyToClipboard}
-                            disableElevation
-                            variant="contained"
-                        >
-                            {copied ? '✓' : 'copy'}
-                        </Button>
+                        <Tooltip title="Copy to clipboard">
+                            <IconButton
+                                size="small"
+                                onClick={handleCopyToClipboard}
+                                sx={{
+                                    color: copied ? 'success.main' : 'white',
+                                    fontSize: '16px',
+                                    width: '28px',
+                                    height: '28px',
+                                    ':hover': { backgroundColor: '#717171' },
+                                }}
+                            >
+                                {copied ? '✓' : <ContentCopy sx={{ fontSize: '16px' }} />}
+                            </IconButton>
+                        </Tooltip>
                     </Box>
                 )}
             </Box>
-            <Box sx={[CodeSnippetStyles.codeBlock, props.sx ?? {}]}>
-                <Box sx={{ whiteSpace: 'nowrap', overflow: 'auto' }} className="sleek-scrollbar">
+            <Box sx={{ backgroundColor: '#585858', padding: '0.75rem' }}>
+                <Box sx={[CodeSnippetStyles.codeBlock, props.sx ?? {}]} className="sleek-scrollbar">
                     {props.linesOfCode.map((code, index) => (
                         <Box key={index} sx={{ marginBottom: '3px', minHeight: '15px' }}>
                             {code}

@@ -57,7 +57,11 @@ const CiteMe: React.FC = () => {
                 </Select>
             </FormControl>
             {selectedCitation && (
-                <CodeSnippet title={FORMAT_LABELS[selectedFormat]} linesOfCode={selectedCitation.split('\n')} />
+                <CodeSnippet
+                    sx={{ whiteSpace: 'normal', overflow: 'auto' }}
+                    title={FORMAT_LABELS[selectedFormat]}
+                    linesOfCode={selectedCitation.split('\n')}
+                />
             )}
         </Box>
     );
