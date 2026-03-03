@@ -91,6 +91,11 @@ if [ -z "$PROJECT_NAME" ]; then
   PROJECT_NAME="production-regression-${SERVICE}-${LABEL}"
 fi
 
+if [ -f "${TARGET_REPO_ROOT}/.gitmodules" ]; then
+  git -C "${TARGET_REPO_ROOT}" submodule sync --recursive
+  git -C "${TARGET_REPO_ROOT}" submodule update --init --recursive
+fi
+
 ARTIFACT_DIR="${SERVICE_DIR}/.regression-artifacts"
 RESULT_PATH="${ARTIFACT_DIR}/${LABEL}.json"
 mkdir -p "${ARTIFACT_DIR}"
