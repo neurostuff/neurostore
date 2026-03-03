@@ -37,6 +37,25 @@ def _request(client: Client, method: str, path: str, *, data=None, params=None):
     return response
 
 
+def _request_with_nested_fallback(client: Client, path: str, *, params: dict):
+    response = client.get(path, params=params)
+    if response.status_code < 400:
+        return response, True
+
+    if (
+        response.status_code == 400
+        and params.get("nested") == "true"
+        and b"Extra query parameter(s) nested not in spec" in response.data
+    ):
+        fallback_params = dict(params)
+        fallback_params.pop("nested", None)
+        return _request(client, "get", path, params=fallback_params), False
+
+    raise RuntimeError(
+        f"GET {path} failed with {response.status_code}: {response.data}"
+    )
+
+
 def _ensure_user() -> None:
     user = db.session.execute(
         select(User).where(User.external_id == "user1-id")
@@ -144,6 +163,31 @@ def _benchmark_case(name: str, iterations: int, fn) -> dict:
         "median_seconds": statistics.median(durations),
         "metadata": last_metadata,
     }
+
+
+def _list_with_optional_nested(
+    client: Client, path: str, *, page_size: str, sort: str = "created_at"
+) -> dict:
+    response, nested_supported = _request_with_nested_fallback(
+        client,
+        path,
+        params={"page_size": page_size, "sort": sort, "nested": "true"},
+    )
+    payload = _response_json(response)
+    return {
+        "total_count": payload["metadata"]["total_count"],
+        "nested_supported": nested_supported,
+    }
+
+
+def _detail_with_optional_nested(client: Client, path: str, *, id_key: str) -> dict:
+    response, nested_supported = _request_with_nested_fallback(
+        client,
+        path,
+        params={"nested": "true"},
+    )
+    payload = _response_json(response)
+    return {id_key: payload["id"], "nested_supported": nested_supported}
 
 
 def _create_project(
@@ -312,24 +356,6 @@ def run(iterations: int) -> dict:
                 },
             ),
             _benchmark_case(
-                "list_projects_nested",
-                iterations,
-                lambda _index: {
-                    "total_count": _response_json(
-                        _request(
-                            client,
-                            "get",
-                            "/api/projects",
-                            params={
-                                "page_size": "10",
-                                "sort": "created_at",
-                                "nested": "true",
-                            },
-                        )
-                    )["metadata"]["total_count"]
-                },
-            ),
-            _benchmark_case(
                 "list_meta_analyses",
                 iterations,
                 lambda _index: {
@@ -346,20 +372,11 @@ def run(iterations: int) -> dict:
             _benchmark_case(
                 "list_meta_analyses_nested",
                 iterations,
-                lambda _index: {
-                    "total_count": _response_json(
-                        _request(
-                            client,
-                            "get",
-                            "/api/meta-analyses",
-                            params={
-                                "page_size": "10",
-                                "sort": "created_at",
-                                "nested": "true",
-                            },
-                        )
-                    )["metadata"]["total_count"]
-                },
+                lambda _index: _list_with_optional_nested(
+                    client,
+                    "/api/meta-analyses",
+                    page_size="10",
+                ),
             ),
         ]
 
@@ -371,22 +388,6 @@ def run(iterations: int) -> dict:
                     lambda _index: {
                         "project_id": _response_json(
                             _request(client, "get", f"/api/projects/{project_id}")
-                        )["id"]
-                    },
-                )
-            )
-            cases.append(
-                _benchmark_case(
-                    "get_project_detail_nested",
-                    iterations,
-                    lambda _index: {
-                        "project_id": _response_json(
-                            _request(
-                                client,
-                                "get",
-                                f"/api/projects/{project_id}",
-                                params={"nested": "true"},
-                            )
                         )["id"]
                     },
                 )
@@ -408,16 +409,11 @@ def run(iterations: int) -> dict:
                 _benchmark_case(
                     "get_meta_analysis_detail_nested",
                     iterations,
-                    lambda _index: {
-                        "meta_analysis_id": _response_json(
-                            _request(
-                                client,
-                                "get",
-                                f"/api/meta-analyses/{meta_id}",
-                                params={"nested": "true"},
-                            )
-                        )["id"]
-                    },
+                    lambda _index: _detail_with_optional_nested(
+                        client,
+                        f"/api/meta-analyses/{meta_id}",
+                        id_key="meta_analysis_id",
+                    ),
                 )
             )
 
