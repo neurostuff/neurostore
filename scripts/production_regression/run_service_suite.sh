@@ -3,7 +3,7 @@ set -euo pipefail
 
 usage() {
   cat <<'EOF'
-Usage: run_service_suite.sh --service <store|compose> --label <name> [--iterations <n>] [--project-name <name>] [--target-repo-root <path>]
+Usage: run_service_suite.sh --service <store|compose> --label <name> [--iterations <n>] [--project-name <name>] [--target-repo-root <path>] [--skip-build]
 EOF
 }
 
@@ -12,6 +12,7 @@ LABEL=""
 ITERATIONS="5"
 PROJECT_NAME=""
 TARGET_REPO_ROOT=""
+SKIP_BUILD="0"
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
@@ -34,6 +35,10 @@ while [ "$#" -gt 0 ]; do
     --target-repo-root)
       TARGET_REPO_ROOT="$2"
       shift 2
+      ;;
+    --skip-build)
+      SKIP_BUILD="1"
+      shift 1
       ;;
     *)
       usage
@@ -115,8 +120,12 @@ trap cleanup EXIT
 docker network inspect nginx-proxy >/dev/null 2>&1 || docker network create nginx-proxy
 
 cd "${SERVICE_DIR}"
-docker compose build "${BUILD_SERVICES[@]}"
-docker compose up -d "${UP_SERVICES[@]}"
+if [ "${SKIP_BUILD}" != "1" ]; then
+  docker compose build "${BUILD_SERVICES[@]}"
+  docker compose up -d "${UP_SERVICES[@]}"
+else
+  docker compose up -d --no-build "${UP_SERVICES[@]}"
+fi
 
 python3 "${TOOLING_REPO_ROOT}/scripts/production_regression/restore_latest_backup.py" \
   --compose-dir "${SERVICE_DIR}" \

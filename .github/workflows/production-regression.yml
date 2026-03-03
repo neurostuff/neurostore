@@ -34,6 +34,16 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Resolve base ref
         id: base_ref
         shell: bash
@@ -68,9 +78,84 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          BASE_DIR="${RUNNER_TEMP}/production-regression-base"
+          BASE_DIR="${{ github.workspace }}/production-regression-base"
           git worktree add --force "${BASE_DIR}" FETCH_HEAD
           echo "BASE_DIR=${BASE_DIR}" >> "$GITHUB_ENV"
+
+      - name: Initialize base submodules
+        shell: bash
+        run: |
+          set -euo pipefail
+          git -C "${BASE_DIR}" submodule sync --recursive
+          git -C "${BASE_DIR}" submodule update --init --recursive
+
+      - name: Load Cached Base Store Images
+        if: ${{ matrix.service == 'store' }}
+        uses: docker/bake-action@v6.0.0
+        with:
+          targets: neurostore,store-pgsql17
+          files: docker-compose.yml,docker-compose.dev.yml
+          push: false
+          load: true
+          workdir: ${{ env.BASE_DIR }}/store
+          source: "{{defaultContext}}:production-regression-base/store"
+          set: |
+            neurostore.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/neurostore:${{ hashFiles('production-regression-base/store/backend/neurostore/**', 'production-regression-base/store/backend/migrations/**', 'production-regression-base/store/backend/manage.py', 'production-regression-base/store/backend/pyproject.toml', 'production-regression-base/store/backend/Dockerfile') }}
+            neurostore.cache-from=type=gha,scope=cached-neurostore
+            store-pgsql17.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/store-pgsql17:${{ hashFiles('production-regression-base/store/postgres/**') }}
+            store-pgsql17.cache-from=type=gha,scope=cached-store-pgsql17
+
+      - name: Load Cached Base Compose Images
+        if: ${{ matrix.service == 'compose' }}
+        uses: docker/bake-action@v6.0.0
+        with:
+          targets: compose,compose_worker,compose-pgsql17
+          files: docker-compose.yml,docker-compose.dev.yml
+          push: false
+          load: true
+          workdir: ${{ env.BASE_DIR }}/compose
+          source: "{{defaultContext}}:production-regression-base/compose"
+          set: |
+            compose.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/neurosynth_compose:${{ hashFiles('production-regression-base/compose/backend/neurosynth_compose/**', 'production-regression-base/compose/backend/migrations/**', 'production-regression-base/compose/backend/pyproject.toml', 'production-regression-base/compose/backend/Dockerfile') }}
+            compose.cache-from=type=gha,scope=cached-compose
+            compose_worker.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/compose_worker:${{ hashFiles('production-regression-base/compose/backend/neurosynth_compose/**', 'production-regression-base/compose/backend/migrations/**', 'production-regression-base/compose/backend/pyproject.toml', 'production-regression-base/compose/backend/Dockerfile') }}
+            compose_worker.cache-from=type=gha,scope=cached-compose-worker
+            compose-pgsql17.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/compose_pgsql17:${{ hashFiles('production-regression-base/compose/postgres/**') }}
+            compose-pgsql17.cache-from=type=gha,scope=cached-compose-pgsql17
+
+      - name: Load Cached Head Store Images
+        if: ${{ matrix.service == 'store' }}
+        uses: docker/bake-action@v6.0.0
+        with:
+          targets: neurostore,store-pgsql17
+          files: docker-compose.yml,docker-compose.dev.yml
+          push: false
+          load: true
+          workdir: store
+          source: "{{defaultContext}}:store"
+          set: |
+            neurostore.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/neurostore:${{ hashFiles('store/backend/neurostore/**', 'store/backend/migrations/**', 'store/backend/manage.py', 'store/backend/pyproject.toml', 'store/backend/Dockerfile') }}
+            neurostore.cache-from=type=gha,scope=cached-neurostore
+            store-pgsql17.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/store-pgsql17:${{ hashFiles('store/postgres/**') }}
+            store-pgsql17.cache-from=type=gha,scope=cached-store-pgsql17
+
+      - name: Load Cached Head Compose Images
+        if: ${{ matrix.service == 'compose' }}
+        uses: docker/bake-action@v6.0.0
+        with:
+          targets: compose,compose_worker,compose-pgsql17
+          files: docker-compose.yml,docker-compose.dev.yml
+          push: false
+          load: true
+          workdir: compose
+          source: "{{defaultContext}}:compose"
+          set: |
+            compose.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/neurosynth_compose:${{ hashFiles('compose/backend/neurosynth_compose/**', 'compose/backend/migrations/**', 'compose/backend/pyproject.toml', 'compose/backend/Dockerfile') }}
+            compose.cache-from=type=gha,scope=cached-compose
+            compose_worker.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/compose_worker:${{ hashFiles('compose/backend/neurosynth_compose/**', 'compose/backend/migrations/**', 'compose/backend/pyproject.toml', 'compose/backend/Dockerfile') }}
+            compose_worker.cache-from=type=gha,scope=cached-compose-worker
+            compose-pgsql17.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/compose_pgsql17:${{ hashFiles('compose/postgres/**') }}
+            compose-pgsql17.cache-from=type=gha,scope=cached-compose-pgsql17
 
       - name: Benchmark base branch
         shell: bash
@@ -81,7 +166,8 @@ jobs:
             --label "base-${{ matrix.service }}" \
             --iterations "${ITERATIONS}" \
             --project-name "prodreg-${{ matrix.service }}-base" \
-            --target-repo-root "${BASE_DIR}"
+            --target-repo-root "${BASE_DIR}" \
+            --skip-build
 
       - name: Benchmark pull request branch
         shell: bash
@@ -91,7 +177,8 @@ jobs:
             --service "${{ matrix.service }}" \
             --label "head-${{ matrix.service }}" \
             --iterations "${ITERATIONS}" \
-            --project-name "prodreg-${{ matrix.service }}-head"
+            --project-name "prodreg-${{ matrix.service }}-head" \
+            --skip-build
 
       - name: Compare timings
         shell: bash
