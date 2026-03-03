@@ -37,15 +37,27 @@ def _normalize_note_keys(note_keys):
         descriptor = note_keys.get(key)
         note_type = None
         order = None
+        default_provided = False
+        default_value = None
 
         if isinstance(descriptor, dict):
             note_type = descriptor.get("type")
             order = descriptor.get("order")
+            default_provided = "default" in descriptor
+            default_value = descriptor.get("default") if default_provided else None
         else:
             note_type = descriptor
 
         if note_type not in ALLOWED_TYPES:
             note_type = "string"
+
+        if (
+            key == "included"
+            and note_type == "boolean"
+            and (not default_provided or default_value is None)
+        ):
+            default_provided = True
+            default_value = True
 
         if isinstance(order, bool) or (
             order is not None and not isinstance(order, int)
@@ -64,6 +76,8 @@ def _normalize_note_keys(note_keys):
             next_order += 1
 
         normalized[key] = {"type": note_type, "order": order}
+        if default_provided:
+            normalized[key]["default"] = default_value
 
     return normalized
 

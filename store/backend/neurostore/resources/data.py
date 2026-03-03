@@ -749,6 +749,13 @@ class AnnotationsView(ObjectView, ListView):
 
             default_provided = isinstance(descriptor, dict) and "default" in descriptor
             default_value = descriptor.get("default") if default_provided else None
+            if (
+                key == "included"
+                and note_type == "boolean"
+                and (not default_provided or default_value is None)
+            ):
+                default_provided = True
+                default_value = True
             if default_provided and default_value is not None:
                 if note_type == "boolean" and not isinstance(default_value, bool):
                     abort_validation(
@@ -996,6 +1003,24 @@ class AnnotationsView(ObjectView, ListView):
         allowed = {"annotation_analyses", "note_keys", "studyset"}
         return not (set(data.keys()) - allowed)
 
+    def _sync_annotation_notes_to_note_keys(self, annotation, note_keys):
+        ordered_keys = self._ordered_note_keys(note_keys)
+        default_note = self._build_default_note(note_keys) or {}
+
+        for annotation_analysis in annotation.annotation_analyses:
+            existing_note = (
+                annotation_analysis.note
+                if isinstance(annotation_analysis.note, dict)
+                else {}
+            )
+            synced_note = OrderedDict()
+            for key in ordered_keys:
+                if key in existing_note:
+                    synced_note[key] = existing_note[key]
+                else:
+                    synced_note[key] = default_note.get(key)
+            annotation_analysis.note = synced_note
+
     def _try_fast_note_update(self, annotation, data):
         # Preserve permission semantics and user bootstrap behavior.
         self.__class__.update_or_create(
@@ -1136,6 +1161,10 @@ class AnnotationsView(ObjectView, ListView):
         self.db_validation(input_record, data)
 
         with db.session.no_autoflush:
+            if "note_keys" in data and "annotation_analyses" not in data:
+                self._sync_annotation_notes_to_note_keys(
+                    input_record, data["note_keys"]
+                )
             if fast_note_update_candidate:
                 fast_path_succeeded = self._try_fast_note_update(input_record, data)
                 if fast_path_succeeded:

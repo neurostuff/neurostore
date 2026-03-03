@@ -173,7 +173,8 @@ def test_blank_annotation_populates_note_fields(
 
     for note in resp.json()["notes"]:
         assert set(note["note"].keys()) == set(note_keys.keys())
-        assert all(value is None for value in note["note"].values())
+        assert note["note"]["included"] is True
+        assert note["note"]["quality"] is None
 
 
 def test_blank_annotation_populates_note_fields_with_defaults(
@@ -199,6 +200,82 @@ def test_blank_annotation_populates_note_fields_with_defaults(
         assert note["note"]["included"] is False
         assert note["note"]["quality"] == "low"
         assert note["note"]["score"] == 1.5
+
+
+def test_put_annotation_defaults_included_when_missing(
+    auth_client, ingest_neurosynth, session
+):
+    dset = Studyset.query.first()
+    payload = {
+        "studyset": dset.id,
+        "note_keys": ordered_note_keys({"included": "boolean", "quality": "string"}),
+        "name": "normalize included default",
+    }
+
+    post_resp = auth_client.post("/api/annotations/", data=payload)
+    assert post_resp.status_code == 200
+
+    notes = [
+        {
+            "study": note["study"],
+            "analysis": note["analysis"],
+            "note": note["note"],
+        }
+        for note in post_resp.json()["notes"]
+    ]
+    put_resp = auth_client.put(
+        f"/api/annotations/{post_resp.json()['id']}",
+        data={
+            "note_keys": {
+                "included": {"type": "boolean", "order": 0, "default": None},
+                "quality": {"type": "string", "order": 1},
+            },
+            "notes": notes,
+        },
+    )
+
+    assert put_resp.status_code == 200
+    assert put_resp.json()["note_keys"]["included"]["default"] is True
+    assert "default" not in put_resp.json()["note_keys"]["quality"]
+
+
+def test_put_annotation_note_keys_only_updates_existing_notes(
+    auth_client, ingest_neurosynth, session
+):
+    dset = Studyset.query.first()
+    notes = [
+        {"study": s.id, "analysis": a.id, "note": {"foo": a.id, "doo": s.id}}
+        for s in dset.studies
+        for a in s.analyses
+    ]
+    post_resp = auth_client.post(
+        "/api/annotations/",
+        data={
+            "studyset": dset.id,
+            "notes": notes,
+            "note_keys": ordered_note_keys({"foo": "string", "doo": "string"}),
+            "name": "note-key-only update",
+        },
+    )
+
+    assert post_resp.status_code == 200
+
+    put_resp = auth_client.put(
+        f"/api/annotations/{post_resp.json()['id']}",
+        data={
+            "note_keys": {
+                "foo": {"type": "string", "order": 0},
+                "bar": {"type": "boolean", "order": 1, "default": False},
+            }
+        },
+    )
+
+    assert put_resp.status_code == 200
+    assert set(put_resp.json()["note_keys"].keys()) == {"foo", "bar"}
+    for note in put_resp.json()["notes"]:
+        assert set(note["note"].keys()) == {"foo", "bar"}
+        assert note["note"]["foo"] == note["analysis"]
+        assert note["note"]["bar"] is False
 
 
 def test_annotation_rejects_empty_note(auth_client, ingest_neurosynth, session):

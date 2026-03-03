@@ -5,7 +5,6 @@ import { setUnloadHandler } from 'helpers/BeforeUnload.helpers';
 import { AnnotationReturnOneOf, NoteCollectionReturn } from 'neurostore-typescript-sdk';
 import {
     noteKeyArrToDefaultNoteKeyObj,
-    storeNotesToDBNotes,
     updateNoteDetailsHelper,
 } from 'stores/AnnotationStore.helpers';
 import {
@@ -44,6 +43,7 @@ export const useAnnotationStore = create<
         },
         storeMetadata: {
             annotationIsEdited: false,
+            noteKeysHaveChanged: false,
             annotationIsLoading: false,
             getAnnotationIsLoading: false,
             updateAnnotationIsLoading: false,
@@ -81,6 +81,7 @@ export const useAnnotationStore = create<
                     storeMetadata: {
                         ...state.storeMetadata,
                         annotationIsEdited: false,
+                        noteKeysHaveChanged: false,
                         getAnnotationIsLoading: false,
                         updateAnnotationIsLoading: false,
                         isError: false,
@@ -92,6 +93,7 @@ export const useAnnotationStore = create<
                     ...state,
                     storeMetadata: {
                         ...state.storeMetadata,
+                        noteKeysHaveChanged: false,
                         getAnnotationIsLoading: false,
                         updateAnnotationIsLoading: false,
                         isError: true,
@@ -130,6 +132,7 @@ export const useAnnotationStore = create<
                 },
                 storeMetadata: {
                     annotationIsEdited: false,
+                    noteKeysHaveChanged: false,
                     getAnnotationIsLoading: false,
                     updateAnnotationIsLoading: false,
                     isError: false,
@@ -177,6 +180,7 @@ export const useAnnotationStore = create<
                 storeMetadata: {
                     ...state.storeMetadata,
                     annotationIsEdited: true,
+                    noteKeysHaveChanged: true,
                 },
             }));
         },
@@ -204,6 +208,7 @@ export const useAnnotationStore = create<
                     storeMetadata: {
                         ...state.storeMetadata,
                         annotationIsEdited: true,
+                        noteKeysHaveChanged: true,
                     },
                 };
             });
@@ -275,22 +280,25 @@ export const useAnnotationStore = create<
                 }));
 
                 const hasNewNoteKey = (state.annotation.note_keys ?? []).some((noteKey) => !!noteKey.isNew);
+                const noteKeysHaveChanged = state.storeMetadata.noteKeysHaveChanged;
+                const editedNotes = state.annotation.notes
+                    .filter((note) => note.isEdited)
+                    .map((note) => ({
+                        id: `${state.annotation.id}_${note.analysis}`,
+                        note: note.note,
+                    }));
 
-                if (hasNewNoteKey) {
-                    // if there are new note keys, we need to update the annotation using the generic update endpoint
+                if (hasNewNoteKey || noteKeysHaveChanged) {
+                    // note key definitions are updated separately from individual note edits
                     await API.NeurostoreServices.AnnotationsService.annotationsIdPut(state.annotation.id, {
                         note_keys: noteKeyArrToObj(state.annotation.note_keys ?? []),
-                        notes: storeNotesToDBNotes(state.annotation.notes),
                     });
-                } else {
-                    // if there are no new note keys, we can use the optimized annotation endpoint
+                }
+
+                if (editedNotes.length > 0) {
+                    // individual note edits continue to use the optimized annotation-analysis endpoint
                     await API.NeurostoreServices.AnalysesService.annotationAnalysesPost(
-                        state.annotation.notes
-                            .filter((note) => note.isEdited)
-                            .map((note) => ({
-                                id: `${state.annotation.id}_${note.analysis}`,
-                                note: note.note,
-                            }))
+                        editedNotes
                     );
                 }
 
@@ -311,6 +319,7 @@ export const useAnnotationStore = create<
                     storeMetadata: {
                         ...state.storeMetadata,
                         annotationIsEdited: false,
+                        noteKeysHaveChanged: false,
                         updateAnnotationIsLoading: false,
                         isError: false,
                     },

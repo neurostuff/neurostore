@@ -4,14 +4,19 @@ import { NoteCollectionRequest, NoteCollectionReturn } from 'neurostore-typescri
 import { useSnackbar } from 'notistack';
 import { useMutation, useQueryClient } from 'react-query';
 
-const useUpdateAnnotationByAnnotationAndAnalysisId = (annotationId: string | undefined | null) => {
+const useUpdateAnnotationByAnnotationAndAnalysisId = (
+    annotationId: string | undefined | null,
+    options?: { invalidateOnSuccess?: boolean }
+) => {
     const queryClient = useQueryClient();
     const { enqueueSnackbar } = useSnackbar();
+    const invalidateOnSuccess = options?.invalidateOnSuccess ?? true;
 
     return useMutation<AxiosResponse<NoteCollectionReturn[]>, AxiosError, NoteCollectionRequest[], unknown>(
         (update) => API.NeurostoreServices.AnalysesService.annotationAnalysesPost(update),
         {
             onSuccess: () => {
+                if (!invalidateOnSuccess) return;
                 queryClient.invalidateQueries(['annotations', annotationId]);
             },
             onError: () => {

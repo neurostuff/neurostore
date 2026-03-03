@@ -204,8 +204,10 @@ class BaseView(MethodView):
             if isinstance(descriptor, dict):
                 if "default" in descriptor:
                     default_value = descriptor.get("default")
+                if key == "included" and descriptor.get("type") == "boolean" and default_value is None:
+                    default_value = True
             elif descriptor == "boolean":
-                default_value = None
+                default_value = True if key == "included" else None
             defaults[key] = default_value
         return defaults
 

@@ -1,18 +1,23 @@
 import { AxiosError, AxiosResponse } from 'axios';
 import { useMutation, useQueryClient } from 'react-query';
 import API, { NeurostoreAnnotation } from 'api/api.config';
+import { AnnotationRequestOneOf } from 'neurostore-typescript-sdk';
 import { useSnackbar } from 'notistack';
 
-const useUpdateAnnotationById = (annotationId: string | undefined | null) => {
+const useUpdateAnnotationById = (
+    annotationId: string | undefined | null,
+    options?: { invalidateOnSuccess?: boolean }
+) => {
     const queryClient = useQueryClient();
     const { enqueueSnackbar } = useSnackbar();
+    const invalidateOnSuccess = options?.invalidateOnSuccess ?? true;
 
     return useMutation<
         AxiosResponse<NeurostoreAnnotation>,
         AxiosError,
         {
             argAnnotationId: string;
-            annotation: NeurostoreAnnotation;
+            annotation: AnnotationRequestOneOf;
         },
         unknown
     >(
@@ -20,6 +25,7 @@ const useUpdateAnnotationById = (annotationId: string | undefined | null) => {
             API.NeurostoreServices.AnnotationsService.annotationsIdPut(update.argAnnotationId, update.annotation),
         {
             onSuccess: () => {
+                if (!invalidateOnSuccess) return;
                 queryClient.invalidateQueries(['annotations', annotationId]);
             },
             onError: () => {

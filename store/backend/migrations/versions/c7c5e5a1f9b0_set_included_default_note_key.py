@@ -27,6 +27,11 @@ def upgrade():
             SET note_keys = jsonb_set(note_keys, '{included,default}', 'true'::jsonb, true)
             WHERE note_keys IS NOT NULL
               AND note_keys ? 'included'
+              AND jsonb_typeof(note_keys->'included') = 'object'
+              AND (
+                  NOT ((note_keys->'included') ? 'default')
+                  OR note_keys->'included'->'default' = 'null'::jsonb
+              )
             """
         )
     )
