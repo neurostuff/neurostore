@@ -15,7 +15,7 @@ from jose.jwt import encode
 from sqlalchemy import select
 
 from neurosynth_compose.database import db
-from neurosynth_compose.models import MetaAnalysis, Project, User
+from neurosynth_compose.models import Annotation, MetaAnalysis, Project, Studyset, User
 from neurosynth_compose.tests.request_utils import Client
 
 TOKEN = encode({"sub": "user1-id"}, "abc", algorithm="HS256")
@@ -113,6 +113,24 @@ def _fallback_ids() -> tuple[str | None, str | None]:
     return project_id, meta_id
 
 
+def _resolve_cached_ids(meta_id: str | None) -> tuple[str | None, str | None]:
+    if meta_id is not None:
+        cached_ids = db.session.execute(
+            select(MetaAnalysis.cached_studyset_id, MetaAnalysis.cached_annotation_id)
+            .where(MetaAnalysis.id == meta_id)
+        ).one_or_none()
+        if cached_ids and cached_ids[1]:
+            return cached_ids[0], cached_ids[1]
+
+    studyset_id = db.session.execute(
+        select(Studyset.id).order_by(Studyset.id).limit(1)
+    ).scalar_one_or_none()
+    annotation_id = db.session.execute(
+        select(Annotation.id).order_by(Annotation.id).limit(1)
+    ).scalar_one_or_none()
+    return studyset_id, annotation_id
+
+
 def _benchmark_case(name: str, iterations: int, fn) -> dict:
     durations = []
     last_metadata = {}
@@ -128,23 +146,58 @@ def _benchmark_case(name: str, iterations: int, fn) -> dict:
     }
 
 
-def _create_project(client: Client, *, suffix: str) -> dict:
+def _create_project(
+    client: Client,
+    *,
+    suffix: str,
+    cached_studyset_id: str | None = None,
+    cached_annotation_id: str | None = None,
+) -> dict:
     payload = {
         "name": f"production-regression-project-{suffix}",
         "description": "local compose benchmark project",
         "public": False,
         "draft": True,
     }
+    if cached_studyset_id is not None:
+        payload["cached_studyset_id"] = cached_studyset_id
+    if cached_annotation_id is not None:
+        payload["cached_annotation_id"] = cached_annotation_id
     return _response_json(_request(client, "post", "/api/projects", data=payload))
 
 
-def _create_meta_analysis(client: Client, project_id: str, *, suffix: str) -> dict:
+def _create_specification(client: Client, *, suffix: str) -> dict:
+    payload = {
+        "type": "cbma",
+        "estimator": {"type": "ALE"},
+        "corrector": {"type": "FDRCorrector"},
+        "filter": f"production-regression-filter-{suffix}",
+        "conditions": [f"condition-{suffix}"],
+        "weights": [1],
+    }
+    return _response_json(_request(client, "post", "/api/specifications", data=payload))
+
+
+def _create_meta_analysis(
+    client: Client,
+    project_id: str,
+    *,
+    suffix: str,
+    specification_id: str,
+    cached_studyset_id: str | None = None,
+    cached_annotation_id: str | None = None,
+) -> dict:
     payload = {
         "name": f"production-regression-meta-{suffix}",
         "description": "local compose benchmark meta-analysis",
         "project": project_id,
+        "specification": specification_id,
         "public": False,
     }
+    if cached_studyset_id is not None:
+        payload["cached_studyset_id"] = cached_studyset_id
+    if cached_annotation_id is not None:
+        payload["cached_annotation_id"] = cached_annotation_id
     return _response_json(_request(client, "post", "/api/meta-analyses", data=payload))
 
 
@@ -181,9 +234,29 @@ def run(iterations: int) -> dict:
             project_id = project_id or fallback_project_id
             meta_id = meta_id or fallback_meta_id
 
-        seeded_project = _create_project(client, suffix="seed")
+        cached_studyset_id, cached_annotation_id = _resolve_cached_ids(meta_id)
+        if cached_annotation_id is None:
+            raise RuntimeError(
+                "Need at least one cached annotation in the restored compose database"
+            )
+
+        seeded_project = _create_project(
+            client,
+            suffix="seed",
+            cached_studyset_id=cached_studyset_id,
+            cached_annotation_id=cached_annotation_id,
+        )
         seeded_project_id = seeded_project["id"]
-        seeded_meta_analysis = _create_meta_analysis(client, seeded_project_id, suffix="seed")
+        seeded_specification = _create_specification(client, suffix="seed")
+        seeded_specification_id = seeded_specification["id"]
+        seeded_meta_analysis = _create_meta_analysis(
+            client,
+            seeded_project_id,
+            suffix="seed",
+            specification_id=seeded_specification_id,
+            cached_studyset_id=cached_studyset_id,
+            cached_annotation_id=cached_annotation_id,
+        )
         seeded_meta_analysis_id = seeded_meta_analysis["id"]
 
         cases = [
@@ -192,7 +265,10 @@ def run(iterations: int) -> dict:
                 iterations,
                 lambda index: {
                     "project_id": _create_project(
-                        client, suffix=f"{index}-{uuid4().hex[:8]}"
+                        client,
+                        suffix=f"{index}-{uuid4().hex[:8]}",
+                        cached_studyset_id=cached_studyset_id,
+                        cached_annotation_id=cached_annotation_id,
                     )["id"]
                 },
             ),
@@ -204,6 +280,9 @@ def run(iterations: int) -> dict:
                         client,
                         seeded_project_id,
                         suffix=f"{index}-{uuid4().hex[:8]}",
+                        specification_id=seeded_specification_id,
+                        cached_studyset_id=cached_studyset_id,
+                        cached_annotation_id=cached_annotation_id,
                     )["id"]
                 },
             ),
@@ -347,7 +426,10 @@ def run(iterations: int) -> dict:
             "generated_at": datetime.now(timezone.utc).isoformat(),
             "iterations_per_case": iterations,
             "seeded_project_id": seeded_project_id,
+            "seeded_specification_id": seeded_specification_id,
             "seeded_meta_analysis_id": seeded_meta_analysis_id,
+            "seeded_cached_studyset_id": cached_studyset_id,
+            "seeded_cached_annotation_id": cached_annotation_id,
             "cases": cases,
         }
     finally:

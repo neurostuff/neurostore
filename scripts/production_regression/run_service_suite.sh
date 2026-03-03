@@ -145,6 +145,32 @@ run_step() {
   FAILED_COMMAND=""
 }
 
+wait_for_services() {
+  local deadline=$((SECONDS + 180))
+  local service=""
+
+  for service in "${UP_SERVICES[@]}"; do
+    while true; do
+      local container_id=""
+      local status=""
+      container_id="$(docker compose ps -q "${service}")"
+      if [ -n "${container_id}" ]; then
+        status="$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "${container_id}")"
+        if [ "${status}" = "healthy" ] || [ "${status}" = "running" ]; then
+          break
+        fi
+      fi
+
+      if [ "${SECONDS}" -ge "${deadline}" ]; then
+        echo "Timed out waiting for ${service} to become ready (last status: ${status:-unknown})" >&2
+        return 1
+      fi
+
+      sleep 2
+    done
+  done
+}
+
 docker network inspect nginx-proxy >/dev/null 2>&1 || docker network create nginx-proxy
 
 cd "${SERVICE_DIR}"
@@ -155,6 +181,7 @@ if [ "${SKIP_BUILD}" != "1" ]; then
 else
   run_step "Start services from cached images" docker compose up -d --no-build "${UP_SERVICES[@]}"
 fi
+run_step "Wait for services" wait_for_services
 
 RESTORE_CMD=(
   python3
@@ -177,7 +204,7 @@ run_step "Apply database migrations" \
   docker compose run --rm -T \
   -e "APP_SETTINGS=${APP_SETTINGS_VALUE}" \
   "${BENCH_SERVICE}" \
-  bash -lc "flask db upgrade"
+  bash -lc "flask db upgrade heads"
 
 run_step "Run regression benchmark module" \
   docker compose run --rm -T \
