@@ -40,6 +40,32 @@ def latest_s3_key(bucket: str) -> str:
     return key
 
 
+def download_dump(bucket: str, key: str, destination: Path) -> None:
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    subprocess.run(
+        ["aws", "s3", "cp", f"s3://{bucket}/{key}", str(destination)],
+        check=True,
+    )
+
+
+def resolve_cached_dump(bucket: str, cache_dir: Path) -> tuple[str, Path]:
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    key_record_path = cache_dir / "selected-key.txt"
+    if key_record_path.exists():
+        key = key_record_path.read_text().strip()
+        if key:
+            dump_path = cache_dir / Path(key).name
+            if dump_path.exists():
+                return key, dump_path
+
+    key = latest_s3_key(bucket)
+    dump_path = cache_dir / Path(key).name
+    if not dump_path.exists():
+        download_dump(bucket, key, dump_path)
+    key_record_path.write_text(key)
+    return key, dump_path
+
+
 def recreate_database(
     compose_dir: Path, container: str, database: str, *, with_vector: bool
 ) -> None:
@@ -111,7 +137,7 @@ def restore_dump(compose_dir: Path, container: str, database: str, dump_path: Pa
         (
             "cat >/tmp/restore.dump && "
             f"pg_restore -U postgres -d {database} "
-            "--clean --if-exists --no-owner --no-privileges /tmp/restore.dump && "
+            "--no-owner --no-privileges /tmp/restore.dump && "
             "rm -f /tmp/restore.dump"
         ),
     ]
@@ -125,19 +151,15 @@ def main() -> int:
     parser.add_argument("--bucket", required=True)
     parser.add_argument("--container", required=True)
     parser.add_argument("--database", default="test_db")
+    parser.add_argument("--cache-dir")
     parser.add_argument("--with-vector-extension", action="store_true")
     args = parser.parse_args()
 
     compose_dir = Path(args.compose_dir).resolve()
     compose_dir.mkdir(parents=True, exist_ok=True)
 
-    key = latest_s3_key(args.bucket)
-    with tempfile.TemporaryDirectory(prefix="production-regression-") as temp_dir:
-        dump_path = Path(temp_dir) / Path(key).name
-        subprocess.run(
-            ["aws", "s3", "cp", f"s3://{args.bucket}/{key}", str(dump_path)],
-            check=True,
-        )
+    if args.cache_dir:
+        key, dump_path = resolve_cached_dump(args.bucket, Path(args.cache_dir).resolve())
         recreate_database(
             compose_dir,
             args.container,
@@ -145,6 +167,18 @@ def main() -> int:
             with_vector=args.with_vector_extension,
         )
         restore_dump(compose_dir, args.container, args.database, dump_path)
+    else:
+        key = latest_s3_key(args.bucket)
+        with tempfile.TemporaryDirectory(prefix="production-regression-") as temp_dir:
+            dump_path = Path(temp_dir) / Path(key).name
+            download_dump(args.bucket, key, dump_path)
+            recreate_database(
+                compose_dir,
+                args.container,
+                args.database,
+                with_vector=args.with_vector_extension,
+            )
+            restore_dump(compose_dir, args.container, args.database, dump_path)
 
     json.dump(
         {

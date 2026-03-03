@@ -29,6 +29,7 @@ jobs:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+      PRODUCTION_REGRESSION_DUMP_CACHE_DIR: ${{ runner.temp }}/production-regression-dumps/${{ matrix.service }}
     steps:
       - name: Checkout head
         uses: actions/checkout@v4
@@ -136,6 +137,18 @@ jobs:
             --load \
             compose compose_worker compose-pgsql17
 
+      - name: Benchmark base branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          "./scripts/production_regression/run_service_suite.sh" \
+            --service "${{ matrix.service }}" \
+            --label "base-${{ matrix.service }}" \
+            --iterations "${ITERATIONS}" \
+            --project-name "prodreg-${{ matrix.service }}-base" \
+            --target-repo-root "${BASE_DIR}" \
+            --skip-build
+
       - name: Load Cached Head Store Images
         if: ${{ matrix.service == 'store' }}
         uses: docker/bake-action@v6.0.0
@@ -169,18 +182,6 @@ jobs:
             compose_worker.cache-from=type=gha,scope=cached-compose-worker
             compose-pgsql17.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/compose_pgsql17:${{ hashFiles('compose/postgres/**') }}
             compose-pgsql17.cache-from=type=gha,scope=cached-compose-pgsql17
-
-      - name: Benchmark base branch
-        shell: bash
-        run: |
-          set -euo pipefail
-          "./scripts/production_regression/run_service_suite.sh" \
-            --service "${{ matrix.service }}" \
-            --label "base-${{ matrix.service }}" \
-            --iterations "${ITERATIONS}" \
-            --project-name "prodreg-${{ matrix.service }}-base" \
-            --target-repo-root "${BASE_DIR}" \
-            --skip-build
 
       - name: Benchmark pull request branch
         shell: bash

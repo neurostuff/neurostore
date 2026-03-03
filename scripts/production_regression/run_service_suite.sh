@@ -69,7 +69,7 @@ case "$SERVICE" in
     DB_CONTAINER="store-pgsql17"
     BUCKET="neurostore-backup"
     APP_SETTINGS_VALUE="neurostore.config.DockerTestConfig"
-    BENCH_MODULE="neurostore.production_regression"
+    BENCH_SCRIPT_PATH="/production-regression-tooling/store/backend/neurostore/production_regression.py"
     BENCH_SERVICE="neurostore"
     BEARERINFO_FUNC_VALUE="neurostore.tests.conftest.mock_decode_token"
     BUILD_SERVICES=(neurostore store-pgsql17)
@@ -81,7 +81,7 @@ case "$SERVICE" in
     DB_CONTAINER="compose-pgsql17"
     BUCKET="neurosynth-backup"
     APP_SETTINGS_VALUE="neurosynth_compose.config.DockerTestConfig"
-    BENCH_MODULE="neurosynth_compose.production_regression"
+    BENCH_SCRIPT_PATH="/production-regression-tooling/compose/backend/neurosynth_compose/production_regression.py"
     BENCH_SERVICE="compose"
     BEARERINFO_FUNC_VALUE="neurosynth_compose.tests.conftest.mock_decode_token"
     BUILD_SERVICES=(compose compose_worker compose-pgsql17)
@@ -96,11 +96,6 @@ esac
 
 if [ -z "$PROJECT_NAME" ]; then
   PROJECT_NAME="production-regression-${SERVICE}-${LABEL}"
-fi
-
-if [ -f "${TARGET_REPO_ROOT}/.gitmodules" ]; then
-  git -C "${TARGET_REPO_ROOT}" submodule sync --recursive
-  git -C "${TARGET_REPO_ROOT}" submodule update --init --recursive
 fi
 
 ARTIFACT_DIR="${SERVICE_DIR}/.regression-artifacts"
@@ -161,13 +156,22 @@ else
   run_step "Start services from cached images" docker compose up -d --no-build "${UP_SERVICES[@]}"
 fi
 
-run_step "Restore latest backup" \
-  python3 "${TOOLING_REPO_ROOT}/scripts/production_regression/restore_latest_backup.py" \
-  --compose-dir "${SERVICE_DIR}" \
-  --bucket "${BUCKET}" \
-  --container "${DB_CONTAINER}" \
-  --database test_db \
-  "${RESTORE_EXTRA_ARGS[@]}"
+RESTORE_CMD=(
+  python3
+  "${TOOLING_REPO_ROOT}/scripts/production_regression/restore_latest_backup.py"
+  --compose-dir "${SERVICE_DIR}"
+  --bucket "${BUCKET}"
+  --container "${DB_CONTAINER}"
+  --database test_db
+)
+
+if [ -n "${PRODUCTION_REGRESSION_DUMP_CACHE_DIR:-}" ]; then
+  RESTORE_CMD+=(--cache-dir "${PRODUCTION_REGRESSION_DUMP_CACHE_DIR}")
+fi
+
+RESTORE_CMD+=("${RESTORE_EXTRA_ARGS[@]}")
+
+run_step "Restore latest backup" "${RESTORE_CMD[@]}"
 
 run_step "Apply database migrations" \
   docker compose run --rm -T \
@@ -177,9 +181,10 @@ run_step "Apply database migrations" \
 
 run_step "Run regression benchmark module" \
   docker compose run --rm -T \
+  -v "${TOOLING_REPO_ROOT}:/production-regression-tooling:ro" \
   -e "APP_SETTINGS=${APP_SETTINGS_VALUE}" \
   -e "BEARERINFO_FUNC=${BEARERINFO_FUNC_VALUE}" \
   "${BENCH_SERVICE}" \
-  bash -lc "python -m ${BENCH_MODULE} --iterations ${ITERATIONS} --output /${SERVICE}/.regression-artifacts/${LABEL}.json"
+  bash -lc "python ${BENCH_SCRIPT_PATH} --iterations ${ITERATIONS} --output /${SERVICE}/.regression-artifacts/${LABEL}.json"
 
 echo "${RESULT_PATH}"
