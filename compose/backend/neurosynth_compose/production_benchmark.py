@@ -157,7 +157,9 @@ def _create_meta_analysis(
     return _response_json(_request(client, "post", "/api/meta-analyses", data=payload))
 
 
-def _update_meta_analysis(client: Client, meta_analysis_id: str, *, variant: bool) -> dict:
+def _update_meta_analysis(
+    client: Client, meta_analysis_id: str, *, variant: bool
+) -> dict:
     payload = {
         "name": (
             "production-benchmark-meta-updated-a"
@@ -309,7 +311,9 @@ def run(iterations: int) -> dict:
                 lambda _index: {
                     "meta_analysis_id": _response_json(
                         _request(
-                            client, "get", f"/api/meta-analyses/{seeded_meta_analysis_id}"
+                            client,
+                            "get",
+                            f"/api/meta-analyses/{seeded_meta_analysis_id}",
                         )
                     )["id"]
                 },

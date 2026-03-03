@@ -70,7 +70,9 @@ def _extract_search_term(base_study_name: str, fallback_id: str) -> str:
     return str(fallback_id)[:8]
 
 
-def _pick_seed_studies_from_base_studies(limit: int = 500) -> tuple[list[str], list[str], str]:
+def _pick_seed_studies_from_base_studies(
+    limit: int = 500,
+) -> tuple[list[str], list[str], str]:
     candidate_queries = [
         select(BaseStudy.id, BaseStudy.name, Study.id)
         .join(Study, Study.base_study_id == BaseStudy.id)
@@ -296,7 +298,9 @@ def run(iterations: int) -> dict:
         ctx.pop()
 
 
-def _update_annotation_case(client: Client, annotation_id: str, *, variant: bool) -> dict:
+def _update_annotation_case(
+    client: Client, annotation_id: str, *, variant: bool
+) -> dict:
     payload = _load_annotation_payload(client, annotation_id)
     payload["name"] = (
         "production-benchmark-annotation-updated-a"
@@ -321,7 +325,9 @@ def _update_annotation_case(client: Client, annotation_id: str, *, variant: bool
         note["note"]["priority"] = 2 if variant else 1
         note["note"]["reviewed"] = variant
 
-    response = _request(client, "put", f"/api/annotations/{annotation_id}", data=payload)
+    response = _request(
+        client, "put", f"/api/annotations/{annotation_id}", data=payload
+    )
     body = _response_json(response)
     return {"note_count": len(body.get("notes", []))}
 

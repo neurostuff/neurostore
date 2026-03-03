@@ -21,7 +21,9 @@ def format_seconds(value: float) -> str:
     return f"{value:.4f}s"
 
 
-def build_rows(baseline_cases: dict, candidate_cases: dict, threshold: float) -> tuple[list[dict], list[dict]]:
+def build_rows(
+    baseline_cases: dict, candidate_cases: dict, threshold: float
+) -> tuple[list[dict], list[dict]]:
     rows = []
     slowdowns = []
 
@@ -66,7 +68,9 @@ def build_rows(baseline_cases: dict, candidate_cases: dict, threshold: float) ->
     return rows, slowdowns
 
 
-def render_report(service: str, rows: list[dict], slowdowns: list[dict], threshold: float) -> str:
+def render_report(
+    service: str, rows: list[dict], slowdowns: list[dict], threshold: float
+) -> str:
     lines = [
         f"Service: {service}",
         f"Threshold: {format_pct(threshold)} slower",

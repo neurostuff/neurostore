@@ -11,7 +11,9 @@ import tempfile
 from pathlib import Path
 
 
-def run(cmd: list[str], cwd: Path, *, capture_output: bool = False) -> subprocess.CompletedProcess:
+def run(
+    cmd: list[str], cwd: Path, *, capture_output: bool = False
+) -> subprocess.CompletedProcess:
     return subprocess.run(
         cmd,
         cwd=cwd,
@@ -125,7 +127,9 @@ def recreate_database(
         )
 
 
-def restore_dump(compose_dir: Path, container: str, database: str, dump_path: Path) -> None:
+def restore_dump(
+    compose_dir: Path, container: str, database: str, dump_path: Path
+) -> None:
     cmd = [
         "docker",
         "compose",
@@ -159,7 +163,9 @@ def main() -> int:
     compose_dir.mkdir(parents=True, exist_ok=True)
 
     if args.cache_dir:
-        key, dump_path = resolve_cached_dump(args.bucket, Path(args.cache_dir).resolve())
+        key, dump_path = resolve_cached_dump(
+            args.bucket, Path(args.cache_dir).resolve()
+        )
         recreate_database(
             compose_dir,
             args.container,
