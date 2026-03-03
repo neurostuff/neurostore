@@ -1,7 +1,7 @@
 """backfill note key defaults
 
 Revision ID: 9c9f3aa4b5d1
-Revises: f3a4b5c6d7e8
+Revises: 9a7c4d2e1f0b
 Create Date: 2026-03-03 00:00:00.000000
 """
 
@@ -12,7 +12,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "9c9f3aa4b5d1"
-down_revision = "f3a4b5c6d7e8"
+down_revision = "9a7c4d2e1f0b"
 branch_labels = None
 depends_on = None
 
