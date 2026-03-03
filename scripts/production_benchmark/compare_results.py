@@ -72,8 +72,8 @@ def render_report(
     service: str, rows: list[dict], slowdowns: list[dict], threshold: float
 ) -> str:
     lines = [
-        f"Service: {service}",
-        f"Threshold: {format_pct(threshold)} slower",
+        f"**Service:** `{service}`",
+        f"**Threshold:** `{format_pct(threshold)} slower`",
         "",
         "| Case | Baseline | Candidate | Delta | Status |",
         "| --- | ---: | ---: | ---: | --- |",
@@ -120,9 +120,8 @@ def maybe_append_summary(path: str | None, report: str) -> None:
         return
     with Path(path).open("a") as handle:
         handle.write("## Production Benchmark Comparison\n\n")
-        handle.write("```\n")
         handle.write(report)
-        handle.write("\n```\n")
+        handle.write("\n\n")
 
 
 def main() -> int:

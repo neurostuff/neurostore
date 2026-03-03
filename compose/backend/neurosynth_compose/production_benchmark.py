@@ -82,7 +82,8 @@ def _pick_seed_cached_ids() -> tuple[str | None, str]:
     ).one_or_none()
     if not cached_ids:
         raise RuntimeError(
-            "Need at least one meta-analysis with a cached annotation in the restored compose database"
+            "Need at least one meta-analysis with a cached annotation "
+            "in the restored compose database"
         )
     return cached_ids[0], cached_ids[1]
 
