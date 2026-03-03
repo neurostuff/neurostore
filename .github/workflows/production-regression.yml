@@ -76,11 +76,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          "${BASE_DIR}/scripts/production_regression/run_service_suite.sh" \
+          "./scripts/production_regression/run_service_suite.sh" \
             --service "${{ matrix.service }}" \
             --label "base-${{ matrix.service }}" \
             --iterations "${ITERATIONS}" \
-            --project-name "prodreg-${{ matrix.service }}-base"
+            --project-name "prodreg-${{ matrix.service }}-base" \
+            --target-repo-root "${BASE_DIR}"
 
       - name: Benchmark pull request branch
         shell: bash

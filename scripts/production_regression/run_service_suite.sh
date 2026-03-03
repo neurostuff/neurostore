@@ -3,7 +3,7 @@ set -euo pipefail
 
 usage() {
   cat <<'EOF'
-Usage: run_service_suite.sh --service <store|compose> --label <name> [--iterations <n>] [--project-name <name>]
+Usage: run_service_suite.sh --service <store|compose> --label <name> [--iterations <n>] [--project-name <name>] [--target-repo-root <path>]
 EOF
 }
 
@@ -11,6 +11,7 @@ SERVICE=""
 LABEL=""
 ITERATIONS="5"
 PROJECT_NAME=""
+TARGET_REPO_ROOT=""
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
@@ -30,6 +31,10 @@ while [ "$#" -gt 0 ]; do
       PROJECT_NAME="$2"
       shift 2
       ;;
+    --target-repo-root)
+      TARGET_REPO_ROOT="$2"
+      shift 2
+      ;;
     *)
       usage
       exit 1
@@ -43,11 +48,17 @@ if [ -z "$SERVICE" ] || [ -z "$LABEL" ]; then
 fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+TOOLING_REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+
+if [ -z "$TARGET_REPO_ROOT" ]; then
+  TARGET_REPO_ROOT="$TOOLING_REPO_ROOT"
+else
+  TARGET_REPO_ROOT="$(cd "${TARGET_REPO_ROOT}" && pwd)"
+fi
 
 case "$SERVICE" in
   store)
-    SERVICE_DIR="${REPO_ROOT}/store"
+    SERVICE_DIR="${TARGET_REPO_ROOT}/store"
     DB_CONTAINER="store-pgsql17"
     BUCKET="neurostore-backup"
     APP_SETTINGS_VALUE="neurostore.config.DockerTestConfig"
@@ -59,7 +70,7 @@ case "$SERVICE" in
     RESTORE_EXTRA_ARGS=(--with-vector-extension)
     ;;
   compose)
-    SERVICE_DIR="${REPO_ROOT}/compose"
+    SERVICE_DIR="${TARGET_REPO_ROOT}/compose"
     DB_CONTAINER="compose-pgsql17"
     BUCKET="neurosynth-backup"
     APP_SETTINGS_VALUE="neurosynth_compose.config.DockerTestConfig"
@@ -102,7 +113,7 @@ cd "${SERVICE_DIR}"
 docker compose build "${BUILD_SERVICES[@]}"
 docker compose up -d "${UP_SERVICES[@]}"
 
-python3 "${REPO_ROOT}/scripts/production_regression/restore_latest_backup.py" \
+python3 "${TOOLING_REPO_ROOT}/scripts/production_regression/restore_latest_backup.py" \
   --compose-dir "${SERVICE_DIR}" \
   --bucket "${BUCKET}" \
   --container "${DB_CONTAINER}" \
