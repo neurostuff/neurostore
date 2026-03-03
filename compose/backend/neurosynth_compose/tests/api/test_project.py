@@ -99,6 +99,31 @@ def test_total_count(session, app, auth_client, user_data):
     assert "total_count" in response.json["metadata"]
 
 
+def test_projects_list_allows_missing_neurostore_study(
+    session, app, auth_client, user_data
+):
+    user = session.execute(
+        select(User).where(User.external_id == auth_client.username)
+    ).scalar_one()
+    project = Project(
+        name="legacy project without neurostore study",
+        user=user,
+        public=True,
+        draft=False,
+    )
+    session.add(project)
+    session.flush()
+
+    response = auth_client.get("/api/projects")
+    assert response.status_code == 200
+
+    returned_project = next(
+        p for p in response.json["results"] if p["id"] == project.id
+    )
+    assert returned_project["neurostore_study"] is None
+    assert returned_project["neurostore_url"] is None
+
+
 def test_filter_by_user_id(session, app, auth_client, user_data):
     # Add some projects to the database
     # ...

@@ -526,7 +526,9 @@ class ProjectSchema(BaseSchema):
         load_only=True,
         many=True,
     )
-    neurostore_study = fields.Nested("NeurostoreStudySchema", exclude=("id",))
+    neurostore_study = fields.Nested(
+        "NeurostoreStudySchema", exclude=("id",), allow_none=True
+    )
     neurostore_url = fields.String(dump_only=True)
 
     @post_dump
