@@ -69,7 +69,7 @@ case "$SERVICE" in
     DB_CONTAINER="store-pgsql17"
     BUCKET="neurostore-backup"
     APP_SETTINGS_VALUE="neurostore.config.DockerTestConfig"
-    BENCH_SCRIPT_PATH="/production-regression-tooling/store/backend/neurostore/production_regression.py"
+    BENCH_SCRIPT_PATH="/production-benchmark-tooling/store/backend/neurostore/production_benchmark.py"
     BENCH_SERVICE="neurostore"
     BEARERINFO_FUNC_VALUE="neurostore.tests.conftest.mock_decode_token"
     BUILD_SERVICES=(neurostore store-pgsql17)
@@ -81,7 +81,7 @@ case "$SERVICE" in
     DB_CONTAINER="compose-pgsql17"
     BUCKET="neurosynth-backup"
     APP_SETTINGS_VALUE="neurosynth_compose.config.DockerTestConfig"
-    BENCH_SCRIPT_PATH="/production-regression-tooling/compose/backend/neurosynth_compose/production_regression.py"
+    BENCH_SCRIPT_PATH="/production-benchmark-tooling/compose/backend/neurosynth_compose/production_benchmark.py"
     BENCH_SERVICE="compose"
     BEARERINFO_FUNC_VALUE="neurosynth_compose.tests.conftest.mock_decode_token"
     BUILD_SERVICES=(compose compose_worker compose-pgsql17)
@@ -95,10 +95,10 @@ case "$SERVICE" in
 esac
 
 if [ -z "$PROJECT_NAME" ]; then
-  PROJECT_NAME="production-regression-${SERVICE}-${LABEL}"
+  PROJECT_NAME="production-benchmark-${SERVICE}-${LABEL}"
 fi
 
-ARTIFACT_DIR="${SERVICE_DIR}/.regression-artifacts"
+ARTIFACT_DIR="${SERVICE_DIR}/.benchmark-artifacts"
 RESULT_PATH="${ARTIFACT_DIR}/${LABEL}.json"
 mkdir -p "${ARTIFACT_DIR}"
 
@@ -111,9 +111,9 @@ export COMPOSE_PROJECT_NAME="${PROJECT_NAME}"
 on_error() {
   local exit_code="$1"
   if [ -n "${FAILED_COMMAND}" ]; then
-    echo "Regression runner failed while executing: ${FAILED_COMMAND}" >&2
+    echo "Benchmark runner failed while executing: ${FAILED_COMMAND}" >&2
   else
-    echo "Regression runner failed with exit code ${exit_code}" >&2
+    echo "Benchmark runner failed with exit code ${exit_code}" >&2
   fi
 
   if [ -d "${SERVICE_DIR:-}" ]; then
@@ -185,15 +185,15 @@ run_step "Wait for services" wait_for_services
 
 RESTORE_CMD=(
   python3
-  "${TOOLING_REPO_ROOT}/scripts/production_regression/restore_latest_backup.py"
+  "${TOOLING_REPO_ROOT}/scripts/production_benchmark/restore_latest_backup.py"
   --compose-dir "${SERVICE_DIR}"
   --bucket "${BUCKET}"
   --container "${DB_CONTAINER}"
   --database test_db
 )
 
-if [ -n "${PRODUCTION_REGRESSION_DUMP_CACHE_DIR:-}" ]; then
-  RESTORE_CMD+=(--cache-dir "${PRODUCTION_REGRESSION_DUMP_CACHE_DIR}")
+if [ -n "${PRODUCTION_BENCHMARK_DUMP_CACHE_DIR:-}" ]; then
+  RESTORE_CMD+=(--cache-dir "${PRODUCTION_BENCHMARK_DUMP_CACHE_DIR}")
 fi
 
 RESTORE_CMD+=("${RESTORE_EXTRA_ARGS[@]}")
@@ -206,12 +206,12 @@ run_step "Apply database migrations" \
   "${BENCH_SERVICE}" \
   bash -lc "flask db upgrade heads"
 
-run_step "Run regression benchmark module" \
+run_step "Run benchmark module" \
   docker compose run --rm -T \
-  -v "${TOOLING_REPO_ROOT}:/production-regression-tooling:ro" \
+  -v "${TOOLING_REPO_ROOT}:/production-benchmark-tooling:ro" \
   -e "APP_SETTINGS=${APP_SETTINGS_VALUE}" \
   -e "BEARERINFO_FUNC=${BEARERINFO_FUNC_VALUE}" \
   "${BENCH_SERVICE}" \
-  bash -lc "python ${BENCH_SCRIPT_PATH} --iterations ${ITERATIONS} --output /${SERVICE}/.regression-artifacts/${LABEL}.json"
+  bash -lc "python ${BENCH_SCRIPT_PATH} --iterations ${ITERATIONS} --output /${SERVICE}/.benchmark-artifacts/${LABEL}.json"
 
 echo "${RESULT_PATH}"

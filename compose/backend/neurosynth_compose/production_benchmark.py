@@ -15,7 +15,7 @@ from jose.jwt import encode
 from sqlalchemy import select
 
 from neurosynth_compose.database import db
-from neurosynth_compose.models import Annotation, MetaAnalysis, Project, Studyset, User
+from neurosynth_compose.models import MetaAnalysis, User
 from neurosynth_compose.tests.request_utils import Client
 
 TOKEN = encode({"sub": "user1-id"}, "abc", algorithm="HS256")
@@ -37,31 +37,12 @@ def _request(client: Client, method: str, path: str, *, data=None, params=None):
     return response
 
 
-def _request_with_nested_fallback(client: Client, path: str, *, params: dict):
-    response = client.get(path, params=params)
-    if response.status_code < 400:
-        return response, True
-
-    if (
-        response.status_code == 400
-        and params.get("nested") == "true"
-        and b"Extra query parameter(s) nested not in spec" in response.data
-    ):
-        fallback_params = dict(params)
-        fallback_params.pop("nested", None)
-        return _request(client, "get", path, params=fallback_params), False
-
-    raise RuntimeError(
-        f"GET {path} failed with {response.status_code}: {response.data}"
-    )
-
-
 def _ensure_user() -> None:
     user = db.session.execute(
         select(User).where(User.external_id == "user1-id")
     ).scalar_one_or_none()
     if user is None:
-        db.session.add(User(name="production-regression", external_id="user1-id"))
+        db.session.add(User(name="production-benchmark", external_id="user1-id"))
         db.session.commit()
 
 
@@ -92,62 +73,18 @@ def _install_local_neurostore_stub(analysis_resources) -> None:
     )
 
 
-def _first_accessible_ids(client: Client) -> tuple[str | None, str | None]:
-    project_list = _response_json(
-        _request(
-            client,
-            "get",
-            "/api/projects",
-            params={"page_size": "1", "sort": "created_at"},
-        )
-    )
-    meta_list = _response_json(
-        _request(
-            client,
-            "get",
-            "/api/meta-analyses",
-            params={"page_size": "1", "sort": "created_at"},
-        )
-    )
-
-    project_id = None
-    meta_id = None
-    if project_list["results"]:
-        project_id = project_list["results"][0]["id"]
-    if meta_list["results"]:
-        meta_id = meta_list["results"][0]["id"]
-    return project_id, meta_id
-
-
-def _fallback_ids() -> tuple[str | None, str | None]:
-    project_id = db.session.execute(
-        select(Project.id).where(Project.public.is_(True)).order_by(Project.id).limit(1)
-    ).scalar_one_or_none()
-    meta_id = db.session.execute(
-        select(MetaAnalysis.id)
-        .where(MetaAnalysis.public.is_(True))
-        .order_by(MetaAnalysis.id)
+def _pick_seed_cached_ids() -> tuple[str | None, str]:
+    cached_ids = db.session.execute(
+        select(MetaAnalysis.cached_studyset_id, MetaAnalysis.cached_annotation_id)
+        .where(MetaAnalysis.cached_annotation_id.is_not(None))
+        .order_by(MetaAnalysis.public.desc(), MetaAnalysis.id)
         .limit(1)
-    ).scalar_one_or_none()
-    return project_id, meta_id
-
-
-def _resolve_cached_ids(meta_id: str | None) -> tuple[str | None, str | None]:
-    if meta_id is not None:
-        cached_ids = db.session.execute(
-            select(MetaAnalysis.cached_studyset_id, MetaAnalysis.cached_annotation_id)
-            .where(MetaAnalysis.id == meta_id)
-        ).one_or_none()
-        if cached_ids and cached_ids[1]:
-            return cached_ids[0], cached_ids[1]
-
-    studyset_id = db.session.execute(
-        select(Studyset.id).order_by(Studyset.id).limit(1)
-    ).scalar_one_or_none()
-    annotation_id = db.session.execute(
-        select(Annotation.id).order_by(Annotation.id).limit(1)
-    ).scalar_one_or_none()
-    return studyset_id, annotation_id
+    ).one_or_none()
+    if not cached_ids:
+        raise RuntimeError(
+            "Need at least one meta-analysis with a cached annotation in the restored compose database"
+        )
+    return cached_ids[0], cached_ids[1]
 
 
 def _benchmark_case(name: str, iterations: int, fn) -> dict:
@@ -165,31 +102,6 @@ def _benchmark_case(name: str, iterations: int, fn) -> dict:
     }
 
 
-def _list_with_optional_nested(
-    client: Client, path: str, *, page_size: str, sort: str = "created_at"
-) -> dict:
-    response, nested_supported = _request_with_nested_fallback(
-        client,
-        path,
-        params={"page_size": page_size, "sort": sort, "nested": "true"},
-    )
-    payload = _response_json(response)
-    return {
-        "total_count": payload["metadata"]["total_count"],
-        "nested_supported": nested_supported,
-    }
-
-
-def _detail_with_optional_nested(client: Client, path: str, *, id_key: str) -> dict:
-    response, nested_supported = _request_with_nested_fallback(
-        client,
-        path,
-        params={"nested": "true"},
-    )
-    payload = _response_json(response)
-    return {id_key: payload["id"], "nested_supported": nested_supported}
-
-
 def _create_project(
     client: Client,
     *,
@@ -198,7 +110,7 @@ def _create_project(
     cached_annotation_id: str | None = None,
 ) -> dict:
     payload = {
-        "name": f"production-regression-project-{suffix}",
+        "name": f"production-benchmark-project-{suffix}",
         "description": "local compose benchmark project",
         "public": False,
         "draft": True,
@@ -215,7 +127,7 @@ def _create_specification(client: Client, *, suffix: str) -> dict:
         "type": "cbma",
         "estimator": {"type": "ALE"},
         "corrector": {"type": "FDRCorrector"},
-        "filter": f"production-regression-filter-{suffix}",
+        "filter": f"production-benchmark-filter-{suffix}",
         "conditions": [f"condition-{suffix}"],
         "weights": [1],
     }
@@ -232,7 +144,7 @@ def _create_meta_analysis(
     cached_annotation_id: str | None = None,
 ) -> dict:
     payload = {
-        "name": f"production-regression-meta-{suffix}",
+        "name": f"production-benchmark-meta-{suffix}",
         "description": "local compose benchmark meta-analysis",
         "project": project_id,
         "specification": specification_id,
@@ -248,9 +160,9 @@ def _create_meta_analysis(
 def _update_meta_analysis(client: Client, meta_analysis_id: str, *, variant: bool) -> dict:
     payload = {
         "name": (
-            "production-regression-meta-updated-a"
+            "production-benchmark-meta-updated-a"
             if variant
-            else "production-regression-meta-updated-b"
+            else "production-benchmark-meta-updated-b"
         ),
         "description": (
             "updated compose benchmark meta-analysis A"
@@ -272,17 +184,7 @@ def run(iterations: int) -> dict:
 
     try:
         _ensure_user()
-        project_id, meta_id = _first_accessible_ids(client)
-        if project_id is None or meta_id is None:
-            fallback_project_id, fallback_meta_id = _fallback_ids()
-            project_id = project_id or fallback_project_id
-            meta_id = meta_id or fallback_meta_id
-
-        cached_studyset_id, cached_annotation_id = _resolve_cached_ids(meta_id)
-        if cached_annotation_id is None:
-            raise RuntimeError(
-                "Need at least one cached annotation in the restored compose database"
-            )
+        cached_studyset_id, cached_annotation_id = _pick_seed_cached_ids()
 
         seeded_project = _create_project(
             client,
@@ -372,50 +274,63 @@ def run(iterations: int) -> dict:
             _benchmark_case(
                 "list_meta_analyses_nested",
                 iterations,
-                lambda _index: _list_with_optional_nested(
-                    client,
-                    "/api/meta-analyses",
-                    page_size="10",
-                ),
+                lambda _index: {
+                    "total_count": _response_json(
+                        _request(
+                            client,
+                            "get",
+                            "/api/meta-analyses",
+                            params={
+                                "page_size": "10",
+                                "sort": "created_at",
+                                "nested": "true",
+                            },
+                        )
+                    )["metadata"]["total_count"]
+                },
             ),
         ]
 
-        if project_id is not None:
-            cases.append(
-                _benchmark_case(
-                    "get_project_detail",
-                    iterations,
-                    lambda _index: {
-                        "project_id": _response_json(
-                            _request(client, "get", f"/api/projects/{project_id}")
-                        )["id"]
-                    },
-                )
+        cases.append(
+            _benchmark_case(
+                "get_project_detail",
+                iterations,
+                lambda _index: {
+                    "project_id": _response_json(
+                        _request(client, "get", f"/api/projects/{seeded_project_id}")
+                    )["id"]
+                },
             )
-
-        if meta_id is not None:
-            cases.append(
-                _benchmark_case(
-                    "get_meta_analysis_detail",
-                    iterations,
-                    lambda _index: {
-                        "meta_analysis_id": _response_json(
-                            _request(client, "get", f"/api/meta-analyses/{meta_id}")
-                        )["id"]
-                    },
-                )
+        )
+        cases.append(
+            _benchmark_case(
+                "get_meta_analysis_detail",
+                iterations,
+                lambda _index: {
+                    "meta_analysis_id": _response_json(
+                        _request(
+                            client, "get", f"/api/meta-analyses/{seeded_meta_analysis_id}"
+                        )
+                    )["id"]
+                },
             )
-            cases.append(
-                _benchmark_case(
-                    "get_meta_analysis_detail_nested",
-                    iterations,
-                    lambda _index: _detail_with_optional_nested(
-                        client,
-                        f"/api/meta-analyses/{meta_id}",
-                        id_key="meta_analysis_id",
-                    ),
-                )
+        )
+        cases.append(
+            _benchmark_case(
+                "get_meta_analysis_detail_nested",
+                iterations,
+                lambda _index: {
+                    "meta_analysis_id": _response_json(
+                        _request(
+                            client,
+                            "get",
+                            f"/api/meta-analyses/{seeded_meta_analysis_id}",
+                            params={"nested": "true"},
+                        )
+                    )["id"]
+                },
             )
+        )
 
         return {
             "service": "compose",

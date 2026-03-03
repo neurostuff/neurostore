@@ -1,4 +1,4 @@
-name: Production Regression Workflow
+name: Production Benchmark Workflow
 
 on:
   pull_request:
@@ -45,7 +45,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          echo "PRODUCTION_REGRESSION_DUMP_CACHE_DIR=${RUNNER_TEMP}/production-regression-dumps/${{ matrix.service }}" >> "$GITHUB_ENV"
+          echo "PRODUCTION_BENCHMARK_DUMP_CACHE_DIR=${RUNNER_TEMP}/production-benchmark-dumps/${{ matrix.service }}" >> "$GITHUB_ENV"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -91,7 +91,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          BASE_DIR="${{ github.workspace }}/production-regression-base"
+          BASE_DIR="${{ github.workspace }}/production-benchmark-base"
           git worktree add --force "${BASE_DIR}" FETCH_HEAD
           echo "BASE_DIR=${BASE_DIR}" >> "$GITHUB_ENV"
 
@@ -117,9 +117,9 @@ jobs:
           docker buildx bake \
             --file docker-compose.yml \
             --file docker-compose.dev.yml \
-            --set "neurostore.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/neurostore:${{ hashFiles('production-regression-base/store/backend/neurostore/**', 'production-regression-base/store/backend/migrations/**', 'production-regression-base/store/backend/manage.py', 'production-regression-base/store/backend/pyproject.toml', 'production-regression-base/store/backend/Dockerfile') }}" \
+            --set "neurostore.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/neurostore:${{ hashFiles('production-benchmark-base/store/backend/neurostore/**', 'production-benchmark-base/store/backend/migrations/**', 'production-benchmark-base/store/backend/manage.py', 'production-benchmark-base/store/backend/pyproject.toml', 'production-benchmark-base/store/backend/Dockerfile') }}" \
             --set "neurostore.cache-from=type=gha,scope=cached-neurostore" \
-            --set "store-pgsql17.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/store-pgsql17:${{ hashFiles('production-regression-base/store/postgres/**') }}" \
+            --set "store-pgsql17.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/store-pgsql17:${{ hashFiles('production-benchmark-base/store/postgres/**') }}" \
             --set "store-pgsql17.cache-from=type=gha,scope=cached-store-pgsql17" \
             --load \
             neurostore store-pgsql17
@@ -133,11 +133,11 @@ jobs:
           docker buildx bake \
             --file docker-compose.yml \
             --file docker-compose.dev.yml \
-            --set "compose.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/neurosynth_compose:${{ hashFiles('production-regression-base/compose/backend/neurosynth_compose/**', 'production-regression-base/compose/backend/migrations/**', 'production-regression-base/compose/backend/pyproject.toml', 'production-regression-base/compose/backend/Dockerfile') }}" \
+            --set "compose.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/neurosynth_compose:${{ hashFiles('production-benchmark-base/compose/backend/neurosynth_compose/**', 'production-benchmark-base/compose/backend/migrations/**', 'production-benchmark-base/compose/backend/pyproject.toml', 'production-benchmark-base/compose/backend/Dockerfile') }}" \
             --set "compose.cache-from=type=gha,scope=cached-compose" \
-            --set "compose_worker.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/compose_worker:${{ hashFiles('production-regression-base/compose/backend/neurosynth_compose/**', 'production-regression-base/compose/backend/migrations/**', 'production-regression-base/compose/backend/pyproject.toml', 'production-regression-base/compose/backend/Dockerfile') }}" \
+            --set "compose_worker.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/compose_worker:${{ hashFiles('production-benchmark-base/compose/backend/neurosynth_compose/**', 'production-benchmark-base/compose/backend/migrations/**', 'production-benchmark-base/compose/backend/pyproject.toml', 'production-benchmark-base/compose/backend/Dockerfile') }}" \
             --set "compose_worker.cache-from=type=gha,scope=cached-compose-worker" \
-            --set "compose-pgsql17.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/compose_pgsql17:${{ hashFiles('production-regression-base/compose/postgres/**') }}" \
+            --set "compose-pgsql17.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/compose_pgsql17:${{ hashFiles('production-benchmark-base/compose/postgres/**') }}" \
             --set "compose-pgsql17.cache-from=type=gha,scope=cached-compose-pgsql17" \
             --load \
             compose compose_worker compose-pgsql17
@@ -146,11 +146,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          "./scripts/production_regression/run_service_suite.sh" \
+          "./scripts/production_benchmark/run_service_suite.sh" \
             --service "${{ matrix.service }}" \
             --label "base-${{ matrix.service }}" \
             --iterations "${ITERATIONS}" \
-            --project-name "prodreg-${{ matrix.service }}-base" \
+            --project-name "prodbench-${{ matrix.service }}-base" \
             --target-repo-root "${BASE_DIR}" \
             --skip-build
 
@@ -192,20 +192,20 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          "./scripts/production_regression/run_service_suite.sh" \
+          "./scripts/production_benchmark/run_service_suite.sh" \
             --service "${{ matrix.service }}" \
             --label "head-${{ matrix.service }}" \
             --iterations "${ITERATIONS}" \
-            --project-name "prodreg-${{ matrix.service }}-head" \
+            --project-name "prodbench-${{ matrix.service }}-head" \
             --skip-build
 
       - name: Compare timings
         shell: bash
         run: |
           set -euo pipefail
-          python3 scripts/production_regression/compare_results.py \
-            --baseline "${BASE_DIR}/${{ matrix.service }}/.regression-artifacts/base-${{ matrix.service }}.json" \
-            --candidate "${{ github.workspace }}/${{ matrix.service }}/.regression-artifacts/head-${{ matrix.service }}.json" \
+          python3 scripts/production_benchmark/compare_results.py \
+            --baseline "${BASE_DIR}/${{ matrix.service }}/.benchmark-artifacts/base-${{ matrix.service }}.json" \
+            --candidate "${{ github.workspace }}/${{ matrix.service }}/.benchmark-artifacts/head-${{ matrix.service }}.json" \
             --threshold 0.2 \
             --summary-file "${GITHUB_STEP_SUMMARY}"
 
@@ -213,10 +213,10 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: production-regression-${{ matrix.service }}
+          name: production-benchmark-${{ matrix.service }}
           path: |
-            ${{ github.workspace }}/${{ matrix.service }}/.regression-artifacts/head-${{ matrix.service }}.json
-            ${{ env.BASE_DIR }}/${{ matrix.service }}/.regression-artifacts/base-${{ matrix.service }}.json
+            ${{ github.workspace }}/${{ matrix.service }}/.benchmark-artifacts/head-${{ matrix.service }}.json
+            ${{ env.BASE_DIR }}/${{ matrix.service }}/.benchmark-artifacts/base-${{ matrix.service }}.json
 
       - name: Cleanup base worktree
         if: always()

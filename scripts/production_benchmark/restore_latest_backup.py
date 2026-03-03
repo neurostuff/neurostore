@@ -169,7 +169,7 @@ def main() -> int:
         restore_dump(compose_dir, args.container, args.database, dump_path)
     else:
         key = latest_s3_key(args.bucket)
-        with tempfile.TemporaryDirectory(prefix="production-regression-") as temp_dir:
+        with tempfile.TemporaryDirectory(prefix="production-benchmark-") as temp_dir:
             dump_path = Path(temp_dir) / Path(key).name
             download_dump(args.bucket, key, dump_path)
             recreate_database(

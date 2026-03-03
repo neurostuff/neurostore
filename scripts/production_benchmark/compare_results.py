@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Compare median endpoint timings and fail only on material regressions."""
+"""Compare median benchmark timings and fail only on material slowdowns."""
 
 from __future__ import annotations
 
@@ -23,12 +23,12 @@ def format_seconds(value: float) -> str:
 
 def build_rows(baseline_cases: dict, candidate_cases: dict, threshold: float) -> tuple[list[dict], list[dict]]:
     rows = []
-    regressions = []
+    slowdowns = []
 
     for name, candidate in candidate_cases.items():
         baseline = baseline_cases.get(name)
         if baseline is None:
-            regressions.append(
+            slowdowns.append(
                 {
                     "name": name,
                     "reason": "missing in baseline",
@@ -49,13 +49,13 @@ def build_rows(baseline_cases: dict, candidate_cases: dict, threshold: float) ->
             "status": "ok",
         }
         if ratio > threshold:
-            row["status"] = "regression"
-            regressions.append(row)
+            row["status"] = "slow"
+            slowdowns.append(row)
         rows.append(row)
 
     for name in baseline_cases:
         if name not in candidate_cases:
-            regressions.append(
+            slowdowns.append(
                 {
                     "name": name,
                     "reason": "missing in candidate",
@@ -63,10 +63,10 @@ def build_rows(baseline_cases: dict, candidate_cases: dict, threshold: float) ->
             )
 
     rows.sort(key=lambda row: row["name"])
-    return rows, regressions
+    return rows, slowdowns
 
 
-def render_report(service: str, rows: list[dict], regressions: list[dict], threshold: float) -> str:
+def render_report(service: str, rows: list[dict], slowdowns: list[dict], threshold: float) -> str:
     lines = [
         f"Service: {service}",
         f"Threshold: {format_pct(threshold)} slower",
@@ -91,22 +91,22 @@ def render_report(service: str, rows: list[dict], regressions: list[dict], thres
             )
         )
 
-    if regressions:
-        lines.extend(["", "Regressions:"])
-        for regression in regressions:
-            if "reason" in regression:
-                lines.append(f"- {regression['name']}: {regression['reason']}")
+    if slowdowns:
+        lines.extend(["", "Slowdowns:"])
+        for slowdown in slowdowns:
+            if "reason" in slowdown:
+                lines.append(f"- {slowdown['name']}: {slowdown['reason']}")
                 continue
             lines.append(
                 "- {name}: candidate median {candidate} vs baseline {baseline} ({ratio})".format(
-                    name=regression["name"],
-                    candidate=format_seconds(regression["candidate"]),
-                    baseline=format_seconds(regression["baseline"]),
-                    ratio=format_pct(regression["ratio"]),
+                    name=slowdown["name"],
+                    candidate=format_seconds(slowdown["candidate"]),
+                    baseline=format_seconds(slowdown["baseline"]),
+                    ratio=format_pct(slowdown["ratio"]),
                 )
             )
     else:
-        lines.extend(["", "No regressions over the configured threshold."])
+        lines.extend(["", "No slowdowns over the configured threshold."])
 
     return "\n".join(lines)
 
@@ -115,7 +115,7 @@ def maybe_append_summary(path: str | None, report: str) -> None:
     if not path:
         return
     with Path(path).open("a") as handle:
-        handle.write("## Production Regression Comparison\n\n")
+        handle.write("## Production Benchmark Comparison\n\n")
         handle.write("```\n")
         handle.write(report)
         handle.write("\n```\n")
@@ -135,12 +135,12 @@ def main() -> int:
 
     baseline_cases = {case["name"]: case for case in baseline.get("cases", [])}
     candidate_cases = {case["name"]: case for case in candidate.get("cases", [])}
-    rows, regressions = build_rows(baseline_cases, candidate_cases, args.threshold)
-    report = render_report(service, rows, regressions, args.threshold)
+    rows, slowdowns = build_rows(baseline_cases, candidate_cases, args.threshold)
+    report = render_report(service, rows, slowdowns, args.threshold)
 
     print(report)
     maybe_append_summary(args.summary_file, report)
-    return 1 if regressions else 0
+    return 1 if slowdowns else 0
 
 
 if __name__ == "__main__":

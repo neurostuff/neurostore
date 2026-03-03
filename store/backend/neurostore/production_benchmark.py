@@ -59,7 +59,7 @@ def _ensure_user() -> None:
         select(User).where(User.external_id == "user1-id")
     ).scalar_one_or_none()
     if user is None:
-        db.session.add(User(name="production-regression", external_id="user1-id"))
+        db.session.add(User(name="production-benchmark", external_id="user1-id"))
         db.session.commit()
 
 
@@ -117,7 +117,7 @@ def _pick_seed_studies_from_base_studies(limit: int = 500) -> tuple[list[str], l
 
 def _create_large_studyset(client: Client, study_ids: list[str], *, suffix: str) -> str:
     payload = {
-        "name": f"production-regression-studyset-{suffix}",
+        "name": f"production-benchmark-studyset-{suffix}",
         "studies": [{"id": study_id} for study_id in study_ids],
     }
     response = _request(client, "post", "/api/studysets/", data=payload)
@@ -128,7 +128,7 @@ def _create_large_studyset(client: Client, study_ids: list[str], *, suffix: str)
 def _create_large_annotation(client: Client, studyset_id: str, *, suffix: str) -> str:
     payload = {
         "studyset": studyset_id,
-        "name": f"production-regression-annotation-{suffix}",
+        "name": f"production-benchmark-annotation-{suffix}",
         "note_keys": {
             "included": {"type": "boolean", "order": 0, "default": True},
             "confidence": {"type": "string", "order": 1, "default": "high"},
@@ -299,9 +299,9 @@ def run(iterations: int) -> dict:
 def _update_annotation_case(client: Client, annotation_id: str, *, variant: bool) -> dict:
     payload = _load_annotation_payload(client, annotation_id)
     payload["name"] = (
-        "production-regression-annotation-updated-a"
+        "production-benchmark-annotation-updated-a"
         if variant
-        else "production-regression-annotation-updated-b"
+        else "production-benchmark-annotation-updated-b"
     )
     payload["note_keys"] = {
         "included": {"type": "boolean", "order": 0, "default": variant},
