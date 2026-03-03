@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+FAILED_COMMAND=""
+
 usage() {
   cat <<'EOF'
 Usage: run_service_suite.sh --service <store|compose> --label <name> [--iterations <n>] [--project-name <name>] [--target-repo-root <path>] [--skip-build]
@@ -111,35 +113,69 @@ fi
 
 export COMPOSE_PROJECT_NAME="${PROJECT_NAME}"
 
+on_error() {
+  local exit_code="$1"
+  if [ -n "${FAILED_COMMAND}" ]; then
+    echo "Regression runner failed while executing: ${FAILED_COMMAND}" >&2
+  else
+    echo "Regression runner failed with exit code ${exit_code}" >&2
+  fi
+
+  if [ -d "${SERVICE_DIR:-}" ]; then
+    (
+      cd "${SERVICE_DIR}"
+      echo "Compose process state:" >&2
+      docker compose ps >&2 || true
+      echo "Recent compose service logs:" >&2
+      docker compose logs --tail=200 "${UP_SERVICES[@]}" "${BENCH_SERVICE}" >&2 || true
+    )
+  fi
+
+  exit "${exit_code}"
+}
+
 cleanup() {
   (cd "${SERVICE_DIR}" && docker compose down -v --remove-orphans) >/dev/null 2>&1 || true
 }
 
+trap 'on_error $?' ERR
 trap cleanup EXIT
+
+run_step() {
+  local description="$1"
+  shift
+  echo "==> ${description}"
+  FAILED_COMMAND="$*"
+  "$@"
+  FAILED_COMMAND=""
+}
 
 docker network inspect nginx-proxy >/dev/null 2>&1 || docker network create nginx-proxy
 
 cd "${SERVICE_DIR}"
 if [ "${SKIP_BUILD}" != "1" ]; then
-  docker compose build "${BUILD_SERVICES[@]}"
-  docker compose up -d "${UP_SERVICES[@]}"
+  run_step "Build images" docker compose build "${BUILD_SERVICES[@]}"
+  run_step "Start services" docker compose up -d "${UP_SERVICES[@]}"
 else
-  docker compose up -d --no-build "${UP_SERVICES[@]}"
+  run_step "Start services from cached images" docker compose up -d --no-build "${UP_SERVICES[@]}"
 fi
 
-python3 "${TOOLING_REPO_ROOT}/scripts/production_regression/restore_latest_backup.py" \
+run_step "Restore latest backup" \
+  python3 "${TOOLING_REPO_ROOT}/scripts/production_regression/restore_latest_backup.py" \
   --compose-dir "${SERVICE_DIR}" \
   --bucket "${BUCKET}" \
   --container "${DB_CONTAINER}" \
   --database test_db \
   "${RESTORE_EXTRA_ARGS[@]}"
 
-docker compose run --rm \
+run_step "Apply database migrations" \
+  docker compose run --rm -T \
   -e "APP_SETTINGS=${APP_SETTINGS_VALUE}" \
   "${BENCH_SERVICE}" \
   bash -lc "flask db upgrade"
 
-docker compose run --rm \
+run_step "Run regression benchmark module" \
+  docker compose run --rm -T \
   -e "APP_SETTINGS=${APP_SETTINGS_VALUE}" \
   -e "BEARERINFO_FUNC=${BEARERINFO_FUNC_VALUE}" \
   "${BENCH_SERVICE}" \

@@ -98,7 +98,7 @@ jobs:
           push: false
           load: true
           workdir: ${{ env.BASE_DIR }}/store
-          source: "{{defaultContext}}:production-regression-base/store"
+          source: ${{ env.BASE_DIR }}/store
           set: |
             neurostore.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/neurostore:${{ hashFiles('production-regression-base/store/backend/neurostore/**', 'production-regression-base/store/backend/migrations/**', 'production-regression-base/store/backend/manage.py', 'production-regression-base/store/backend/pyproject.toml', 'production-regression-base/store/backend/Dockerfile') }}
             neurostore.cache-from=type=gha,scope=cached-neurostore
@@ -114,7 +114,7 @@ jobs:
           push: false
           load: true
           workdir: ${{ env.BASE_DIR }}/compose
-          source: "{{defaultContext}}:production-regression-base/compose"
+          source: ${{ env.BASE_DIR }}/compose
           set: |
             compose.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/neurosynth_compose:${{ hashFiles('production-regression-base/compose/backend/neurosynth_compose/**', 'production-regression-base/compose/backend/migrations/**', 'production-regression-base/compose/backend/pyproject.toml', 'production-regression-base/compose/backend/Dockerfile') }}
             compose.cache-from=type=gha,scope=cached-compose
