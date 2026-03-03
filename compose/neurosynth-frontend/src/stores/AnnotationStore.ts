@@ -309,6 +309,7 @@ export const useAnnotationStore = create<
                     storeMetadata: {
                         ...state.storeMetadata,
                         annotationIsEdited: false,
+                        noteKeysHaveChanged: false,
                         updateAnnotationIsLoading: false,
                         isError: false,
                     },
