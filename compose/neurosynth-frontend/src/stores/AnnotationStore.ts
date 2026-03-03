@@ -294,7 +294,6 @@ export const useAnnotationStore = create<
                     );
                 }
 
-                const noteKeysArr = (state.annotation.note_keys ?? []).map((noteKey) => ({ ...noteKey }));
                 const notesAfterDBUpdate = state.annotation.notes.map((note) => ({
                     ...note,
                     isEdited: false,
@@ -306,7 +305,6 @@ export const useAnnotationStore = create<
                     annotation: {
                         ...state.annotation,
                         notes: notesAfterDBUpdate,
-                        note_keys: noteKeysArr,
                     },
                     storeMetadata: {
                         ...state.storeMetadata,
