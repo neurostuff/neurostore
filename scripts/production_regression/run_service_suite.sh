@@ -153,6 +153,7 @@ run_step() {
 docker network inspect nginx-proxy >/dev/null 2>&1 || docker network create nginx-proxy
 
 cd "${SERVICE_DIR}"
+run_step "Pull non-buildable dependency images" docker compose pull --ignore-buildable "${UP_SERVICES[@]}"
 if [ "${SKIP_BUILD}" != "1" ]; then
   run_step "Build images" docker compose build "${BUILD_SERVICES[@]}"
   run_step "Start services" docker compose up -d "${UP_SERVICES[@]}"

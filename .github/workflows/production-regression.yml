@@ -16,6 +16,7 @@ on:
 
 permissions:
   contents: read
+  packages: read
 
 jobs:
   benchmark:
@@ -33,6 +34,12 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: recursive
+
+      - name: Prepare head service environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp "${{ matrix.service }}/.env.example" "${{ matrix.service }}/.env"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -88,6 +95,12 @@ jobs:
           set -euo pipefail
           git -C "${BASE_DIR}" submodule sync --recursive
           git -C "${BASE_DIR}" submodule update --init --recursive
+
+      - name: Prepare base service environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp "${BASE_DIR}/${{ matrix.service }}/.env.example" "${BASE_DIR}/${{ matrix.service }}/.env"
 
       - name: Load Cached Base Store Images
         if: ${{ matrix.service == 'store' }}
