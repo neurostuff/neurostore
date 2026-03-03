@@ -48,8 +48,6 @@ const MetaAnalysisPage: React.FC = () => {
     const studyset = metaAnalysis?.studyset as StudysetReturn;
     const annotation = metaAnalysis?.annotation as NeurostoreAnnotation;
 
-    const viewingThisPageFromProject = !!projectId;
-
     const updateName = (updatedName: string) => {
         if (metaAnalysis?.id && specification?.id && studyset?.id && annotation?.id) {
             updateMetaAnalysisName({
@@ -79,29 +77,25 @@ const MetaAnalysisPage: React.FC = () => {
                 isError={getMetaAnalysisIsError}
                 errorMessage="There was an error getting your meta-analysis"
             >
-                {viewingThisPageFromProject && (
-                    <Box>
-                        <NeurosynthBreadcrumbs
-                            breadcrumbItems={[
-                                {
-                                    link: '/projects',
-                                    text: 'Projects',
-                                    isCurrentPage: false,
-                                },
-                                {
-                                    link: `/projects/${projectId}/meta-analyses`,
-                                    text: `${projectName}`,
-                                    isCurrentPage: false,
-                                },
-                                {
-                                    link: '',
-                                    text: metaAnalysis?.name || '',
-                                    isCurrentPage: true,
-                                },
-                            ]}
-                        />
-                    </Box>
-                )}
+                <NeurosynthBreadcrumbs
+                    breadcrumbItems={[
+                        {
+                            link: '/projects',
+                            text: 'Projects',
+                            isCurrentPage: false,
+                        },
+                        {
+                            link: `/projects/${projectId}/meta-analyses`,
+                            text: `${projectName}`,
+                            isCurrentPage: false,
+                        },
+                        {
+                            link: '',
+                            text: metaAnalysis?.name || '',
+                            isCurrentPage: true,
+                        },
+                    ]}
+                />
 
                 <Box sx={{ display: 'flex', flexDirection: 'column', marginBottom: '1rem', mt: 1 }}>
                     <TextEdit
