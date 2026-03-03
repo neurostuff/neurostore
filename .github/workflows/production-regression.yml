@@ -91,37 +91,37 @@ jobs:
 
       - name: Load Cached Base Store Images
         if: ${{ matrix.service == 'store' }}
-        uses: docker/bake-action@v6.0.0
-        with:
-          targets: neurostore,store-pgsql17
-          files: docker-compose.yml,docker-compose.dev.yml
-          push: false
-          load: true
-          workdir: ${{ env.BASE_DIR }}/store
-          source: ${{ env.BASE_DIR }}/store
-          set: |
-            neurostore.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/neurostore:${{ hashFiles('production-regression-base/store/backend/neurostore/**', 'production-regression-base/store/backend/migrations/**', 'production-regression-base/store/backend/manage.py', 'production-regression-base/store/backend/pyproject.toml', 'production-regression-base/store/backend/Dockerfile') }}
-            neurostore.cache-from=type=gha,scope=cached-neurostore
-            store-pgsql17.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/store-pgsql17:${{ hashFiles('production-regression-base/store/postgres/**') }}
-            store-pgsql17.cache-from=type=gha,scope=cached-store-pgsql17
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "${BASE_DIR}/store"
+          docker buildx bake \
+            --file docker-compose.yml \
+            --file docker-compose.dev.yml \
+            --set "neurostore.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/neurostore:${{ hashFiles('production-regression-base/store/backend/neurostore/**', 'production-regression-base/store/backend/migrations/**', 'production-regression-base/store/backend/manage.py', 'production-regression-base/store/backend/pyproject.toml', 'production-regression-base/store/backend/Dockerfile') }}" \
+            --set "neurostore.cache-from=type=gha,scope=cached-neurostore" \
+            --set "store-pgsql17.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/store-pgsql17:${{ hashFiles('production-regression-base/store/postgres/**') }}" \
+            --set "store-pgsql17.cache-from=type=gha,scope=cached-store-pgsql17" \
+            --load \
+            neurostore store-pgsql17
 
       - name: Load Cached Base Compose Images
         if: ${{ matrix.service == 'compose' }}
-        uses: docker/bake-action@v6.0.0
-        with:
-          targets: compose,compose_worker,compose-pgsql17
-          files: docker-compose.yml,docker-compose.dev.yml
-          push: false
-          load: true
-          workdir: ${{ env.BASE_DIR }}/compose
-          source: ${{ env.BASE_DIR }}/compose
-          set: |
-            compose.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/neurosynth_compose:${{ hashFiles('production-regression-base/compose/backend/neurosynth_compose/**', 'production-regression-base/compose/backend/migrations/**', 'production-regression-base/compose/backend/pyproject.toml', 'production-regression-base/compose/backend/Dockerfile') }}
-            compose.cache-from=type=gha,scope=cached-compose
-            compose_worker.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/compose_worker:${{ hashFiles('production-regression-base/compose/backend/neurosynth_compose/**', 'production-regression-base/compose/backend/migrations/**', 'production-regression-base/compose/backend/pyproject.toml', 'production-regression-base/compose/backend/Dockerfile') }}
-            compose_worker.cache-from=type=gha,scope=cached-compose-worker
-            compose-pgsql17.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/compose_pgsql17:${{ hashFiles('production-regression-base/compose/postgres/**') }}
-            compose-pgsql17.cache-from=type=gha,scope=cached-compose-pgsql17
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "${BASE_DIR}/compose"
+          docker buildx bake \
+            --file docker-compose.yml \
+            --file docker-compose.dev.yml \
+            --set "compose.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/neurosynth_compose:${{ hashFiles('production-regression-base/compose/backend/neurosynth_compose/**', 'production-regression-base/compose/backend/migrations/**', 'production-regression-base/compose/backend/pyproject.toml', 'production-regression-base/compose/backend/Dockerfile') }}" \
+            --set "compose.cache-from=type=gha,scope=cached-compose" \
+            --set "compose_worker.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/compose_worker:${{ hashFiles('production-regression-base/compose/backend/neurosynth_compose/**', 'production-regression-base/compose/backend/migrations/**', 'production-regression-base/compose/backend/pyproject.toml', 'production-regression-base/compose/backend/Dockerfile') }}" \
+            --set "compose_worker.cache-from=type=gha,scope=cached-compose-worker" \
+            --set "compose-pgsql17.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/compose_pgsql17:${{ hashFiles('production-regression-base/compose/postgres/**') }}" \
+            --set "compose-pgsql17.cache-from=type=gha,scope=cached-compose-pgsql17" \
+            --load \
+            compose compose_worker compose-pgsql17
 
       - name: Load Cached Head Store Images
         if: ${{ matrix.service == 'store' }}
