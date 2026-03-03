@@ -4,7 +4,7 @@ import LoadingButton from 'components/Buttons/LoadingButton';
 import { IMetadataRowModel, getType } from 'components/EditMetadata/EditMetadata.types';
 import AddMetadataRow from 'components/EditMetadata/AddMetadataRow';
 import useEditAnnotationsHotTable from 'pages/Annotations/hooks/useEditAnnotationsHotTable';
-import { getDefaultForNoteKey } from 'components/HotTables/HotTables.utils';
+import { getDefaultForNoteKey, noteKeyArrToObj } from 'components/HotTables/HotTables.utils';
 import { CellCoords } from 'handsontable';
 import { registerAllModules } from 'handsontable/registry';
 import { useGetWindowHeight, useUpdateAnnotationById } from 'hooks';
@@ -12,24 +12,20 @@ import useUserCanEdit from 'hooks/useUserCanEdit';
 import { useSnackbar } from 'notistack';
 import { useProjectUser } from 'pages/Project/store/ProjectStore';
 import React, { useEffect, useRef } from 'react';
-import { useQueryClient } from 'react-query';
 import { createColumns, hotDataToAnnotationNotes, hotSettings } from './EditAnnotationsHotTable.helpers';
 import useUpdateAnnotationByAnnotationAndAnalysisId from 'hooks/annotations/useUpdateAnnotationByAnnotationAndAnalysisId';
 import { CellChange } from 'handsontable/common';
 import { NoteKeyType } from 'components/HotTables/HotTables.types';
-import { buildAnnotationSavePlan } from 'stores/AnnotationStore.helpers';
 
 registerAllModules();
 
 const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((props) => {
     const { enqueueSnackbar } = useSnackbar();
-    const queryClient = useQueryClient();
-    const { mutateAsync: updateAnnotation, isLoading: updateAnnotationIsLoading } = useUpdateAnnotationById(
-        props.annotationId,
-        { invalidateOnSuccess: false }
+    const { mutate: updateAnnotation, isLoading: updateAnnotationIsLoading } = useUpdateAnnotationById(
+        props.annotationId
     );
-    const { mutateAsync: updateAnnotationNoNoteKeys, isLoading: updateAnnotationNoNoteKeysIsLoading } =
-        useUpdateAnnotationByAnnotationAndAnalysisId(props.annotationId, { invalidateOnSuccess: false });
+    const { mutate: updateAnnotationNoNoteKeys, isLoading: updateAnnotationNoNoteKeysIsLoading } =
+        useUpdateAnnotationByAnnotationAndAnalysisId(props.annotationId);
     const projectUser = useProjectUser();
     const canEdit = useUserCanEdit(projectUser || undefined);
     const hotTableRef = useRef<HotTable>(null);
@@ -46,8 +42,8 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
         noteKeys,
         hotDataToStudyMapping,
         isEdited,
-        noteKeysHaveChanged,
         rowHeights,
+        noteKeysHaveChanged,
     } = useEditAnnotationsHotTable(props.annotationId, !canEdit);
 
     useEffect(() => {
@@ -83,7 +79,7 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
         };
     }, [windowSize]);
 
-    const handleClickSave = async () => {
+    const handleClickSave = () => {
         if (!props.annotationId) return;
         if (!theUserOwnsThisAnnotation) {
             enqueueSnackbar('You do not have permission to edit this annotation', {
@@ -93,50 +89,60 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
         }
 
         const updatedAnnotationNotes = hotDataToAnnotationNotes(hotData, hotDataToStudyMapping, noteKeys);
-        const savePlan = buildAnnotationSavePlan({
-            annotationId: props.annotationId,
-            noteKeys,
-            noteKeysHaveChanged,
-            notes: updatedAnnotationNotes.map((annotationNote, index) => ({
-                ...annotationNote,
-                isEdited: hotDataToStudyMapping.get(index)?.isEdited,
-            })),
-        });
+        const updatedNoteKeyObj = noteKeyArrToObj(noteKeys);
 
-        try {
-            if (savePlan.annotationUpdate) {
-                await updateAnnotation({
+        if (noteKeysHaveChanged) {
+            updateAnnotation(
+                {
                     argAnnotationId: props.annotationId,
-                    annotation: savePlan.annotationUpdate,
-                });
-            }
-
-            if (savePlan.noteUpdates.length > 0) {
-                await updateAnnotationNoNoteKeys(savePlan.noteUpdates);
-            }
-
-            if (savePlan.hasChanges) {
-                await queryClient.invalidateQueries(['annotations', props.annotationId]);
-            }
-
-            setAnnotationsHotState((prev) => {
-                const newMapping = new Map(prev.hotDataToStudyMapping);
-                for (const [index, studyMapping] of newMapping.entries()) {
-                    if (studyMapping.isEdited) {
-                        newMapping.set(index, { ...studyMapping, isEdited: false });
-                    }
+                    annotation: {
+                        notes: updatedAnnotationNotes.map((annotationNote) => ({
+                            note: annotationNote.note,
+                            analysis: annotationNote.analysis,
+                            study: annotationNote.study,
+                            annotation: props.annotationId,
+                        })),
+                        note_keys: updatedNoteKeyObj,
+                    },
+                },
+                {
+                    onSuccess: () => {
+                        setAnnotationsHotState((prev) => ({ ...prev, noteKeysHaveChanged: false, isEdited: false }));
+                        enqueueSnackbar('annotation updated successfully', { variant: 'success' });
+                    },
                 }
-                return {
-                    ...prev,
-                    hotDataToStudyMapping: newMapping,
-                    isEdited: false,
-                    noteKeysHaveChanged: false,
-                    noteKeys: prev.noteKeys.map((noteKey) => ({ ...noteKey, isNew: false })),
-                };
-            });
-            enqueueSnackbar('annotation updated successfully', { variant: 'success' });
-        } catch {
-            return;
+            );
+        } else {
+            updateAnnotationNoNoteKeys(
+                updatedAnnotationNotes
+                    .filter((_, index) => {
+                        const studyMapping = hotDataToStudyMapping.get(index);
+                        return studyMapping?.isEdited;
+                    })
+                    .map((annotationNote) => ({
+                        id: `${props.annotationId}_${annotationNote.analysis}`,
+                        note: annotationNote.note,
+                    })),
+                {
+                    onSuccess: () => {
+                        setAnnotationsHotState((prev) => {
+                            const newMapping = new Map(prev.hotDataToStudyMapping);
+                            for (const [index, studyMapping] of newMapping.entries()) {
+                                if (studyMapping.isEdited) {
+                                    newMapping.set(index, { ...studyMapping, isEdited: false });
+                                }
+                            }
+                            return {
+                                // reset state to reflect that no changes have been made
+                                ...prev,
+                                hotDataToStudyMapping: newMapping,
+                                isEdited: false,
+                            };
+                        });
+                        enqueueSnackbar('annotation updated successfully', { variant: 'success' });
+                    },
+                }
+            );
         }
     };
 
@@ -289,7 +295,6 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
                     key: trimmedKey,
                     type: columnType,
                     order: 0,
-                    isNew: true,
                     default: defaultValue,
                 },
                 ...prev.noteKeys,

@@ -1,11 +1,11 @@
 import API from 'api/api.config';
 import { NoteKeyType } from 'components/HotTables/HotTables.types';
-import { getDefaultForNoteKey, noteKeyObjToArr } from 'components/HotTables/HotTables.utils';
+import { getDefaultForNoteKey, noteKeyArrToObj, noteKeyObjToArr } from 'components/HotTables/HotTables.utils';
 import { setUnloadHandler } from 'helpers/BeforeUnload.helpers';
 import { AnnotationReturnOneOf, NoteCollectionReturn } from 'neurostore-typescript-sdk';
 import {
-    buildAnnotationSavePlan,
     noteKeyArrToDefaultNoteKeyObj,
+    storeNotesToDBNotes,
     updateNoteDetailsHelper,
 } from 'stores/AnnotationStore.helpers';
 import {
@@ -45,7 +45,6 @@ export const useAnnotationStore = create<
         storeMetadata: {
             annotationIsEdited: false,
             noteKeysHaveChanged: false,
-            annotationIsLoading: false,
             getAnnotationIsLoading: false,
             updateAnnotationIsLoading: false,
             isError: false,
@@ -82,7 +81,6 @@ export const useAnnotationStore = create<
                     storeMetadata: {
                         ...state.storeMetadata,
                         annotationIsEdited: false,
-                        noteKeysHaveChanged: false,
                         getAnnotationIsLoading: false,
                         updateAnnotationIsLoading: false,
                         isError: false,
@@ -94,7 +92,6 @@ export const useAnnotationStore = create<
                     ...state,
                     storeMetadata: {
                         ...state.storeMetadata,
-                        noteKeysHaveChanged: false,
                         getAnnotationIsLoading: false,
                         updateAnnotationIsLoading: false,
                         isError: true,
@@ -133,9 +130,9 @@ export const useAnnotationStore = create<
                 },
                 storeMetadata: {
                     annotationIsEdited: false,
-                    noteKeysHaveChanged: false,
                     getAnnotationIsLoading: false,
                     updateAnnotationIsLoading: false,
+                    noteKeysHaveChanged: false,
                     isError: false,
                 },
             }));
@@ -165,7 +162,6 @@ export const useAnnotationStore = create<
                         {
                             ...noteKey,
                             default: resolvedDefault,
-                            isNew: true,
                             order: 0,
                         },
                         ...(state.annotation.note_keys ?? []),
@@ -180,8 +176,8 @@ export const useAnnotationStore = create<
                 },
                 storeMetadata: {
                     ...state.storeMetadata,
-                    annotationIsEdited: true,
                     noteKeysHaveChanged: true,
+                    annotationIsEdited: true,
                 },
             }));
         },
@@ -208,8 +204,8 @@ export const useAnnotationStore = create<
                     },
                     storeMetadata: {
                         ...state.storeMetadata,
-                        annotationIsEdited: true,
                         noteKeysHaveChanged: true,
+                        annotationIsEdited: true,
                     },
                 };
             });
@@ -280,28 +276,25 @@ export const useAnnotationStore = create<
                     },
                 }));
 
-                const savePlan = buildAnnotationSavePlan({
-                    annotationId: state.annotation.id,
-                    noteKeys: state.annotation.note_keys ?? [],
-                    noteKeysHaveChanged: state.storeMetadata.noteKeysHaveChanged,
-                    notes: state.annotation.notes,
-                });
-
-                if (savePlan.annotationUpdate) {
-                    await API.NeurostoreServices.AnnotationsService.annotationsIdPut(
-                        state.annotation.id,
-                        savePlan.annotationUpdate
-                    );
-                }
-
-                if (savePlan.noteUpdates.length > 0) {
-                    // individual note edits continue to use the optimized annotation-analysis endpoint
+                if (state.storeMetadata.noteKeysHaveChanged) {
+                    // if there are new note keys, we need to update the annotation using the generic update endpoint
+                    await API.NeurostoreServices.AnnotationsService.annotationsIdPut(state.annotation.id, {
+                        note_keys: noteKeyArrToObj(state.annotation.note_keys ?? []),
+                        notes: storeNotesToDBNotes(state.annotation.notes),
+                    });
+                } else {
+                    // if there are no new note keys, we can use the optimized annotation endpoint
                     await API.NeurostoreServices.AnalysesService.annotationAnalysesPost(
-                        savePlan.noteUpdates
+                        state.annotation.notes
+                            .filter((note) => note.isEdited)
+                            .map((note) => ({
+                                id: `${state.annotation.id}_${note.analysis}`,
+                                note: note.note,
+                            }))
                     );
                 }
 
-                const noteKeysArr = (state.annotation.note_keys ?? []).map((noteKey) => ({ ...noteKey, isNew: false }));
+                const noteKeysArr = (state.annotation.note_keys ?? []).map((noteKey) => ({ ...noteKey }));
                 const notesAfterDBUpdate = state.annotation.notes.map((note) => ({
                     ...note,
                     isEdited: false,
@@ -318,7 +311,6 @@ export const useAnnotationStore = create<
                     storeMetadata: {
                         ...state.storeMetadata,
                         annotationIsEdited: false,
-                        noteKeysHaveChanged: false,
                         updateAnnotationIsLoading: false,
                         isError: false,
                     },

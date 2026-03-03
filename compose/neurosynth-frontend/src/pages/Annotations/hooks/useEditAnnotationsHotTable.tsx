@@ -28,6 +28,7 @@ const useEditAnnotationsHotTable = (annotationId?: string, disableEdit?: boolean
         hotColumns: ColumnSettings[];
         mergeCells: MergeCellsSettings[];
         isEdited: boolean;
+        isReordered: boolean;
         noteKeysHaveChanged: boolean;
     }>({
         hotDataToStudyMapping: new Map<number, { studyId: string; analysisId: string; isEdited: boolean }>(),
@@ -36,6 +37,7 @@ const useEditAnnotationsHotTable = (annotationId?: string, disableEdit?: boolean
         hotColumns: [],
         mergeCells: [],
         isEdited: false,
+        isReordered: false,
         noteKeysHaveChanged: false,
     });
 
@@ -67,6 +69,7 @@ const useEditAnnotationsHotTable = (annotationId?: string, disableEdit?: boolean
             hotData: hotData,
             mergeCells: getMergeCells(hotDataToStudyMapping),
             isEdited: false,
+            isReordered: false,
             noteKeysHaveChanged: false,
         });
     }, [annotations, disableEdit]);
