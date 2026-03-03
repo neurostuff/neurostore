@@ -1,0 +1,123 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+Usage: run_service_suite.sh --service <store|compose> --label <name> [--iterations <n>] [--project-name <name>]
+EOF
+}
+
+SERVICE=""
+LABEL=""
+ITERATIONS="5"
+PROJECT_NAME=""
+
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --service)
+      SERVICE="$2"
+      shift 2
+      ;;
+    --label)
+      LABEL="$2"
+      shift 2
+      ;;
+    --iterations)
+      ITERATIONS="$2"
+      shift 2
+      ;;
+    --project-name)
+      PROJECT_NAME="$2"
+      shift 2
+      ;;
+    *)
+      usage
+      exit 1
+      ;;
+  esac
+done
+
+if [ -z "$SERVICE" ] || [ -z "$LABEL" ]; then
+  usage
+  exit 1
+fi
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+
+case "$SERVICE" in
+  store)
+    SERVICE_DIR="${REPO_ROOT}/store"
+    DB_CONTAINER="store-pgsql17"
+    BUCKET="neurostore-backup"
+    APP_SETTINGS_VALUE="neurostore.config.DockerTestConfig"
+    BENCH_MODULE="neurostore.production_regression"
+    BENCH_SERVICE="neurostore"
+    BEARERINFO_FUNC_VALUE="neurostore.tests.conftest.mock_decode_token"
+    BUILD_SERVICES=(neurostore store-pgsql17)
+    UP_SERVICES=(store-pgsql17 store_redis)
+    RESTORE_EXTRA_ARGS=(--with-vector-extension)
+    ;;
+  compose)
+    SERVICE_DIR="${REPO_ROOT}/compose"
+    DB_CONTAINER="compose-pgsql17"
+    BUCKET="neurosynth-backup"
+    APP_SETTINGS_VALUE="neurosynth_compose.config.DockerTestConfig"
+    BENCH_MODULE="neurosynth_compose.production_regression"
+    BENCH_SERVICE="compose"
+    BEARERINFO_FUNC_VALUE="neurosynth_compose.tests.conftest.mock_decode_token"
+    BUILD_SERVICES=(compose compose_worker compose-pgsql17)
+    UP_SERVICES=(compose-pgsql17 compose_redis compose_worker)
+    RESTORE_EXTRA_ARGS=()
+    ;;
+  *)
+    echo "Unsupported service: ${SERVICE}" >&2
+    exit 1
+    ;;
+esac
+
+if [ -z "$PROJECT_NAME" ]; then
+  PROJECT_NAME="production-regression-${SERVICE}-${LABEL}"
+fi
+
+ARTIFACT_DIR="${SERVICE_DIR}/.regression-artifacts"
+RESULT_PATH="${ARTIFACT_DIR}/${LABEL}.json"
+mkdir -p "${ARTIFACT_DIR}"
+
+if [ ! -f "${SERVICE_DIR}/.env" ]; then
+  cp "${SERVICE_DIR}/.env.example" "${SERVICE_DIR}/.env"
+fi
+
+export COMPOSE_PROJECT_NAME="${PROJECT_NAME}"
+
+cleanup() {
+  (cd "${SERVICE_DIR}" && docker compose down -v --remove-orphans) >/dev/null 2>&1 || true
+}
+
+trap cleanup EXIT
+
+docker network inspect nginx-proxy >/dev/null 2>&1 || docker network create nginx-proxy
+
+cd "${SERVICE_DIR}"
+docker compose build "${BUILD_SERVICES[@]}"
+docker compose up -d "${UP_SERVICES[@]}"
+
+python3 "${REPO_ROOT}/scripts/production_regression/restore_latest_backup.py" \
+  --compose-dir "${SERVICE_DIR}" \
+  --bucket "${BUCKET}" \
+  --container "${DB_CONTAINER}" \
+  --database test_db \
+  "${RESTORE_EXTRA_ARGS[@]}"
+
+docker compose run --rm \
+  -e "APP_SETTINGS=${APP_SETTINGS_VALUE}" \
+  "${BENCH_SERVICE}" \
+  bash -lc "flask db upgrade"
+
+docker compose run --rm \
+  -e "APP_SETTINGS=${APP_SETTINGS_VALUE}" \
+  -e "BEARERINFO_FUNC=${BEARERINFO_FUNC_VALUE}" \
+  "${BENCH_SERVICE}" \
+  bash -lc "python -m ${BENCH_MODULE} --iterations ${ITERATIONS} --output /${SERVICE}/.regression-artifacts/${LABEL}.json"
+
+echo "${RESULT_PATH}"
