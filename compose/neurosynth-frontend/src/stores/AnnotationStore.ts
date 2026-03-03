@@ -1,11 +1,11 @@
 import API from 'api/api.config';
 import { NoteKeyType } from 'components/HotTables/HotTables.types';
-import { getDefaultForNoteKey, noteKeyArrToObj, noteKeyObjToArr } from 'components/HotTables/HotTables.utils';
+import { getDefaultForNoteKey, noteKeyObjToArr } from 'components/HotTables/HotTables.utils';
 import { setUnloadHandler } from 'helpers/BeforeUnload.helpers';
 import { AnnotationReturnOneOf, NoteCollectionReturn } from 'neurostore-typescript-sdk';
 import {
+    buildAnnotationSavePlan,
     noteKeyArrToDefaultNoteKeyObj,
-    storeNotesToDBNotes,
     updateNoteDetailsHelper,
 } from 'stores/AnnotationStore.helpers';
 import {
@@ -280,41 +280,25 @@ export const useAnnotationStore = create<
                     },
                 }));
 
-                const hasNewNoteKey = (state.annotation.note_keys ?? []).some((noteKey) => !!noteKey.isNew);
-                const noteKeysHaveChanged = state.storeMetadata.noteKeysHaveChanged;
-                const hasNewNotes = state.annotation.notes.some((note) => note.isNew);
-                const editedExistingNotes = state.annotation.notes
-                    .filter((note) => note.isEdited && !note.isNew)
-                    .map((note) => ({
-                        id: `${state.annotation.id}_${note.analysis}`,
-                        note: note.note,
-                    }));
+                const savePlan = buildAnnotationSavePlan({
+                    annotationId: state.annotation.id,
+                    noteKeys: state.annotation.note_keys ?? [],
+                    noteKeysHaveChanged: state.storeMetadata.noteKeysHaveChanged,
+                    notes: state.annotation.notes,
+                });
 
-                if (hasNewNotes) {
-                    const annotationUpdate: {
-                        note_keys?: ReturnType<typeof noteKeyArrToObj>;
-                        notes: ReturnType<typeof storeNotesToDBNotes>;
-                    } = {
-                        notes: storeNotesToDBNotes(state.annotation.notes),
-                    };
-                    if (hasNewNoteKey || noteKeysHaveChanged) {
-                        annotationUpdate.note_keys = noteKeyArrToObj(state.annotation.note_keys ?? []);
-                    }
-                    await API.NeurostoreServices.AnnotationsService.annotationsIdPut(state.annotation.id, annotationUpdate);
-                } else {
-                    if (hasNewNoteKey || noteKeysHaveChanged) {
-                        // note key definitions are updated separately from individual note edits
-                        await API.NeurostoreServices.AnnotationsService.annotationsIdPut(state.annotation.id, {
-                            note_keys: noteKeyArrToObj(state.annotation.note_keys ?? []),
-                        });
-                    }
+                if (savePlan.annotationUpdate) {
+                    await API.NeurostoreServices.AnnotationsService.annotationsIdPut(
+                        state.annotation.id,
+                        savePlan.annotationUpdate
+                    );
+                }
 
-                    if (editedExistingNotes.length > 0) {
-                        // individual note edits continue to use the optimized annotation-analysis endpoint
-                        await API.NeurostoreServices.AnalysesService.annotationAnalysesPost(
-                            editedExistingNotes
-                        );
-                    }
+                if (savePlan.noteUpdates.length > 0) {
+                    // individual note edits continue to use the optimized annotation-analysis endpoint
+                    await API.NeurostoreServices.AnalysesService.annotationAnalysesPost(
+                        savePlan.noteUpdates
+                    );
                 }
 
                 const noteKeysArr = (state.annotation.note_keys ?? []).map((noteKey) => ({ ...noteKey, isNew: false }));
