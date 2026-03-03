@@ -25,7 +25,7 @@ describe('CodeSnippet', () => {
 
         it('should change text to copied and back to copy', async () => {
             render(<CodeSnippet linesOfCode={['example 1']} />);
-            const copybutton = screen.getByRole('button', { name: 'copy' });
+            const copybutton = screen.getByTestId('ContentCopyIcon');
 
             userEvent.click(copybutton);
 
@@ -35,13 +35,13 @@ describe('CodeSnippet', () => {
                 vi.advanceTimersByTime(2500);
             });
 
-            expect(screen.getByText('copy')).toBeInTheDocument();
+            expect(screen.getByTestId('ContentCopyIcon')).toBeInTheDocument();
         });
 
         it('should write the text to clipboard when clicked', () => {
             render(<CodeSnippet linesOfCode={['example 1', 'example 2']} />);
 
-            const copybutton = screen.getByRole('button', { name: 'copy' });
+            const copybutton = screen.getByTestId('ContentCopyIcon');
             userEvent.click(copybutton);
             expect(navigator.clipboard.writeText).toHaveBeenCalledWith('example 1\nexample 2');
         });
