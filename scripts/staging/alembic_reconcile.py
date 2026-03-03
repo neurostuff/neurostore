@@ -242,9 +242,7 @@ def main() -> int:
     if not os.path.isdir(args.current_versions):
         raise RuntimeError(f"Current versions dir not found: {args.current_versions}")
     if not os.path.isdir(args.incoming_versions):
-        raise RuntimeError(
-            f"Incoming versions dir not found: {args.incoming_versions}"
-        )
+        raise RuntimeError(f"Incoming versions dir not found: {args.incoming_versions}")
 
     current_revisions, current_down_map, _current_head = parse_versions_dir(
         args.current_versions
@@ -304,9 +302,7 @@ def main() -> int:
 
     if args.phase == "current":
         if downgrade_target and current_revision != downgrade_target:
-            print(
-                f"[{args.service}] downgrading -> {downgrade_target} (current phase)"
-            )
+            print(f"[{args.service}] downgrading -> {downgrade_target} (current phase)")
             run_flask_db("downgrade", downgrade_target)
         else:
             print(f"[{args.service}] no downgrade needed in current phase.")
@@ -318,7 +314,11 @@ def main() -> int:
             "Run the current phase first."
         )
 
-    if upgrade_target and upgrade_target != BASE_REVISION and current_revision != upgrade_target:
+    if (
+        upgrade_target
+        and upgrade_target != BASE_REVISION
+        and current_revision != upgrade_target
+    ):
         print(f"[{args.service}] upgrading -> {upgrade_target} (incoming phase)")
         run_flask_db("upgrade", upgrade_target)
     else:

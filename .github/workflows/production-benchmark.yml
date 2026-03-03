@@ -1,0 +1,226 @@
+name: Production Benchmark Workflow
+
+on:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      base_ref:
+        description: "Base ref to compare against (defaults to the repository default branch)"
+        required: false
+        type: string
+      iterations:
+        description: "Iterations per endpoint benchmark (5-10 recommended)"
+        required: false
+        default: "5"
+        type: string
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  benchmark:
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [store, compose]
+    runs-on: ubuntu-latest
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+    steps:
+      - name: Checkout head
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Prepare head service environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp "${{ matrix.service }}/.env.example" "${{ matrix.service }}/.env"
+
+      - name: Resolve dump cache directory
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "PRODUCTION_BENCHMARK_DUMP_CACHE_DIR=${RUNNER_TEMP}/production-benchmark-dumps/${{ matrix.service }}" >> "$GITHUB_ENV"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Resolve base ref
+        id: base_ref
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE_REF_INPUT="${{ github.event.inputs.base_ref }}"
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "ref=${{ github.base_ref }}" >> "$GITHUB_OUTPUT"
+          elif [ -n "${BASE_REF_INPUT}" ]; then
+            echo "ref=${BASE_REF_INPUT}" >> "$GITHUB_OUTPUT"
+          else
+            echo "ref=${{ github.event.repository.default_branch }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Fetch base ref
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --depth=1 origin "${{ steps.base_ref.outputs.ref }}"
+
+      - name: Resolve iterations
+        shell: bash
+        run: |
+          set -euo pipefail
+          ITERATIONS="${{ github.event.inputs.iterations }}"
+          if [ -z "${ITERATIONS}" ]; then
+            ITERATIONS="5"
+          fi
+          echo "ITERATIONS=${ITERATIONS}" >> "$GITHUB_ENV"
+
+      - name: Create base worktree
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE_DIR="${{ github.workspace }}/production-benchmark-base"
+          git worktree add --force "${BASE_DIR}" FETCH_HEAD
+          echo "BASE_DIR=${BASE_DIR}" >> "$GITHUB_ENV"
+
+      - name: Initialize base submodules
+        shell: bash
+        run: |
+          set -euo pipefail
+          git -C "${BASE_DIR}" submodule sync --recursive
+          git -C "${BASE_DIR}" submodule update --init --recursive
+
+      - name: Prepare base service environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp "${BASE_DIR}/${{ matrix.service }}/.env.example" "${BASE_DIR}/${{ matrix.service }}/.env"
+
+      - name: Load Cached Base Store Images
+        if: ${{ matrix.service == 'store' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "${BASE_DIR}/store"
+          docker buildx bake \
+            --file docker-compose.yml \
+            --file docker-compose.dev.yml \
+            --set "neurostore.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/neurostore:${{ hashFiles('production-benchmark-base/store/backend/neurostore/**', 'production-benchmark-base/store/backend/migrations/**', 'production-benchmark-base/store/backend/manage.py', 'production-benchmark-base/store/backend/pyproject.toml', 'production-benchmark-base/store/backend/Dockerfile') }}" \
+            --set "neurostore.cache-from=type=gha,scope=cached-neurostore" \
+            --set "store-pgsql17.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/store-pgsql17:${{ hashFiles('production-benchmark-base/store/postgres/**') }}" \
+            --set "store-pgsql17.cache-from=type=gha,scope=cached-store-pgsql17" \
+            --load \
+            neurostore store-pgsql17
+
+      - name: Load Cached Base Compose Images
+        if: ${{ matrix.service == 'compose' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "${BASE_DIR}/compose"
+          docker buildx bake \
+            --file docker-compose.yml \
+            --file docker-compose.dev.yml \
+            --set "compose.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/neurosynth_compose:${{ hashFiles('production-benchmark-base/compose/backend/neurosynth_compose/**', 'production-benchmark-base/compose/backend/migrations/**', 'production-benchmark-base/compose/backend/pyproject.toml', 'production-benchmark-base/compose/backend/Dockerfile') }}" \
+            --set "compose.cache-from=type=gha,scope=cached-compose" \
+            --set "compose_worker.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/compose_worker:${{ hashFiles('production-benchmark-base/compose/backend/neurosynth_compose/**', 'production-benchmark-base/compose/backend/migrations/**', 'production-benchmark-base/compose/backend/pyproject.toml', 'production-benchmark-base/compose/backend/Dockerfile') }}" \
+            --set "compose_worker.cache-from=type=gha,scope=cached-compose-worker" \
+            --set "compose-pgsql17.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/compose_pgsql17:${{ hashFiles('production-benchmark-base/compose/postgres/**') }}" \
+            --set "compose-pgsql17.cache-from=type=gha,scope=cached-compose-pgsql17" \
+            --load \
+            compose compose_worker compose-pgsql17
+
+      - name: Benchmark base branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          "./scripts/production_benchmark/run_service_suite.sh" \
+            --service "${{ matrix.service }}" \
+            --label "base-${{ matrix.service }}" \
+            --iterations "${ITERATIONS}" \
+            --project-name "prodbench-${{ matrix.service }}-base" \
+            --target-repo-root "${BASE_DIR}" \
+            --skip-build
+
+      - name: Load Cached Head Store Images
+        if: ${{ matrix.service == 'store' }}
+        uses: docker/bake-action@v6.0.0
+        with:
+          targets: neurostore,store-pgsql17
+          files: docker-compose.yml,docker-compose.dev.yml
+          push: false
+          load: true
+          workdir: store
+          source: "{{defaultContext}}:store"
+          set: |
+            neurostore.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/neurostore:${{ hashFiles('store/backend/neurostore/**', 'store/backend/migrations/**', 'store/backend/manage.py', 'store/backend/pyproject.toml', 'store/backend/Dockerfile') }}
+            neurostore.cache-from=type=gha,scope=cached-neurostore
+            store-pgsql17.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/store-pgsql17:${{ hashFiles('store/postgres/**') }}
+            store-pgsql17.cache-from=type=gha,scope=cached-store-pgsql17
+
+      - name: Load Cached Head Compose Images
+        if: ${{ matrix.service == 'compose' }}
+        uses: docker/bake-action@v6.0.0
+        with:
+          targets: compose,compose_worker,compose-pgsql17
+          files: docker-compose.yml,docker-compose.dev.yml
+          push: false
+          load: true
+          workdir: compose
+          source: "{{defaultContext}}:compose"
+          set: |
+            compose.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/neurosynth_compose:${{ hashFiles('compose/backend/neurosynth_compose/**', 'compose/backend/migrations/**', 'compose/backend/pyproject.toml', 'compose/backend/Dockerfile') }}
+            compose.cache-from=type=gha,scope=cached-compose
+            compose_worker.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/compose_worker:${{ hashFiles('compose/backend/neurosynth_compose/**', 'compose/backend/migrations/**', 'compose/backend/pyproject.toml', 'compose/backend/Dockerfile') }}
+            compose_worker.cache-from=type=gha,scope=cached-compose-worker
+            compose-pgsql17.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/compose_pgsql17:${{ hashFiles('compose/postgres/**') }}
+            compose-pgsql17.cache-from=type=gha,scope=cached-compose-pgsql17
+
+      - name: Benchmark pull request branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          "./scripts/production_benchmark/run_service_suite.sh" \
+            --service "${{ matrix.service }}" \
+            --label "head-${{ matrix.service }}" \
+            --iterations "${ITERATIONS}" \
+            --project-name "prodbench-${{ matrix.service }}-head" \
+            --skip-build
+
+      - name: Compare timings
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/production_benchmark/compare_results.py \
+            --baseline "${BASE_DIR}/${{ matrix.service }}/.benchmark-artifacts/base-${{ matrix.service }}.json" \
+            --candidate "${{ github.workspace }}/${{ matrix.service }}/.benchmark-artifacts/head-${{ matrix.service }}.json" \
+            --threshold 0.2 \
+            --summary-file "${GITHUB_STEP_SUMMARY}"
+
+      - name: Upload benchmark artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-benchmark-${{ matrix.service }}
+          path: |
+            ${{ github.workspace }}/${{ matrix.service }}/.benchmark-artifacts/head-${{ matrix.service }}.json
+            ${{ env.BASE_DIR }}/${{ matrix.service }}/.benchmark-artifacts/base-${{ matrix.service }}.json
+
+      - name: Cleanup base worktree
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git worktree remove --force "${BASE_DIR}" || true
