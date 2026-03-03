@@ -17,6 +17,7 @@ import orjson
 from neurostore.core import db
 from neurostore.map_types import canonicalize_map_type, map_type_label
 from neurostore.models import Analysis, Point
+from neurostore.note_keys import ALLOWED_NOTE_KEY_TYPES, resolve_note_key_default
 
 # context parameters
 # clone: create a new object with new ids (true or false)
@@ -768,7 +769,7 @@ class AnnotationPipelineSchema(BaseSchema):
 
 
 class NoteKeysField(fields.Field):
-    allowed_types = {"string", "number", "boolean"}
+    allowed_types = ALLOWED_NOTE_KEY_TYPES
 
     def _serialize(self, value, attr, obj, **kwargs):
         if not value:
@@ -780,9 +781,13 @@ class NoteKeysField(fields.Field):
             serialized[key] = {
                 "type": descriptor.get("type"),
                 "order": descriptor.get("order"),
+                "default": resolve_note_key_default(
+                    key,
+                    descriptor.get("type"),
+                    default_provided="default" in descriptor,
+                    default_value=descriptor.get("default"),
+                ),
             }
-            if "default" in descriptor:
-                serialized[key]["default"] = descriptor.get("default")
         return serialized
 
     def _deserialize(self, value, attr, data, **kwargs):
@@ -847,9 +852,16 @@ class NoteKeysField(fields.Field):
                 used_orders.add(order)
                 next_order += 1
 
-            normalized[key] = {"type": note_type, "order": order}
-            if default_provided:
-                normalized[key]["default"] = default_value
+            normalized[key] = {
+                "type": note_type,
+                "order": order,
+                "default": resolve_note_key_default(
+                    key,
+                    note_type,
+                    default_provided=default_provided,
+                    default_value=default_value,
+                ),
+            }
 
         return normalized
 

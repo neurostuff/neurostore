@@ -52,6 +52,7 @@ from ..models import (
     Pipeline,
 )
 from ..models.data import StudysetStudy, BaseStudy, _check_type
+from ..note_keys import ALLOWED_NOTE_KEY_TYPES, resolve_note_key_default
 from ..utils import parse_json_filter, build_jsonpath
 
 
@@ -741,21 +742,14 @@ class AnnotationsView(ObjectView, ListView):
         for key in ordered_keys:
             descriptor = note_keys.get(key) or {}
             note_type = descriptor.get("type")
-            if note_type not in {"string", "number", "boolean"}:
+            if note_type not in ALLOWED_NOTE_KEY_TYPES:
                 abort_validation(
                     "Invalid `type` for note_keys entry "
-                    f"'{key}', choose from: ['boolean', 'number', 'string']."
+                    f"'{key}', choose from: {sorted(ALLOWED_NOTE_KEY_TYPES)}."
                 )
 
             default_provided = isinstance(descriptor, dict) and "default" in descriptor
             default_value = descriptor.get("default") if default_provided else None
-            if (
-                key == "included"
-                and note_type == "boolean"
-                and (not default_provided or default_value is None)
-            ):
-                default_provided = True
-                default_value = True
             if default_provided and default_value is not None:
                 if note_type == "boolean" and not isinstance(default_value, bool):
                     abort_validation(
@@ -793,9 +787,16 @@ class AnnotationsView(ObjectView, ListView):
                 used_orders.add(order)
                 next_order += 1
 
-            normalized[key] = {"type": note_type, "order": order}
-            if default_provided:
-                normalized[key]["default"] = default_value
+            normalized[key] = {
+                "type": note_type,
+                "order": order,
+                "default": resolve_note_key_default(
+                    key,
+                    note_type,
+                    default_provided=default_provided,
+                    default_value=default_value,
+                ),
+            }
 
         return normalized
 

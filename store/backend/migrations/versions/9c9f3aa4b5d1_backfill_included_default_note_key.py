@@ -1,4 +1,4 @@
-"""backfill included default note key
+"""backfill note key defaults
 
 Revision ID: 9c9f3aa4b5d1
 Revises: f3a4b5c6d7e8
@@ -17,42 +17,51 @@ branch_labels = None
 depends_on = None
 
 
-def _normalize_included_descriptor(note_keys):
-    if not isinstance(note_keys, dict) or "included" not in note_keys:
+def _implicit_default(key, note_type):
+    if note_type == "boolean":
+        return key == "included"
+    if note_type in {"string", "number"}:
         return None
-
-    updated = deepcopy(note_keys)
-    descriptor = updated.get("included")
-
-    if isinstance(descriptor, dict):
-        if descriptor.get("type") == "boolean" and descriptor.get("default") is None:
-            descriptor["default"] = True
-            updated["included"] = descriptor
-            return updated
-        return None
-
-    if descriptor == "boolean":
-        updated["included"] = {"type": "boolean", "default": True}
-        return updated
-
     return None
 
 
-def _remove_included_default(note_keys):
-    if not isinstance(note_keys, dict) or "included" not in note_keys:
+def _backfill_note_key_defaults(note_keys):
+    if not isinstance(note_keys, dict):
         return None
 
     updated = deepcopy(note_keys)
-    descriptor = updated.get("included")
+    changed = False
 
-    if not isinstance(descriptor, dict) or "default" not in descriptor:
+    for key, descriptor in updated.items():
+        if not isinstance(descriptor, dict):
+            continue
+        if "default" in descriptor:
+            continue
+        descriptor["default"] = _implicit_default(key, descriptor.get("type"))
+        updated[key] = descriptor
+        changed = True
+
+    if not changed:
+        return None
+    return updated
+
+
+def _remove_note_key_defaults(note_keys):
+    if not isinstance(note_keys, dict):
         return None
 
-    descriptor.pop("default", None)
-    if descriptor == {"type": "boolean"}:
-        updated["included"] = "boolean"
-    else:
-        updated["included"] = descriptor
+    updated = deepcopy(note_keys)
+    changed = False
+
+    for key, descriptor in updated.items():
+        if not isinstance(descriptor, dict) or "default" not in descriptor:
+            continue
+        descriptor.pop("default", None)
+        updated[key] = descriptor
+        changed = True
+
+    if not changed:
+        return None
     return updated
 
 
@@ -69,7 +78,7 @@ def upgrade():
     )
 
     for row in rows:
-        updated_note_keys = _normalize_included_descriptor(row.note_keys)
+        updated_note_keys = _backfill_note_key_defaults(row.note_keys)
         if updated_note_keys is None:
             continue
         conn.execute(update_stmt, {"id": row.id, "note_keys": updated_note_keys})
@@ -88,7 +97,7 @@ def downgrade():
     )
 
     for row in rows:
-        updated_note_keys = _remove_included_default(row.note_keys)
+        updated_note_keys = _remove_note_key_defaults(row.note_keys)
         if updated_note_keys is None:
             continue
         conn.execute(update_stmt, {"id": row.id, "note_keys": updated_note_keys})

@@ -29,6 +29,7 @@ from neurostore.models import (
 )
 from neurostore.models.data import StudysetStudy, _check_type
 from neurostore.map_types import canonicalize_map_type
+from neurostore.note_keys import resolve_note_key_default
 
 META_ANALYSIS_WORDS = ["meta analysis", "meta-analysis", "systematic review"]
 
@@ -388,10 +389,14 @@ def ingest_neurosynth(max_rows=None):
                 notes.append(aa)
 
         # add notes to annotation
-        annot.note_keys = {
-            k: {"type": _check_type(v) or "string", "order": idx}
-            for idx, (k, v) in enumerate(annotation_row._asdict().items())
-        }
+        annot.note_keys = {}
+        for idx, (k, v) in enumerate(annotation_row._asdict().items()):
+            note_type = _check_type(v) or "string"
+            annot.note_keys[k] = {
+                "type": note_type,
+                "order": idx,
+                "default": resolve_note_key_default(k, note_type),
+            }
         annot.annotation_analyses = notes
         for note in notes:
             to_commit.append(note.analysis)
