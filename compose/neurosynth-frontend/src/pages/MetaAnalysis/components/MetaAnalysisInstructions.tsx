@@ -125,6 +125,7 @@ const MetaAnalysisInstructions: React.FC<{
                     />
                     <CardContent sx={{ flexGrow: 1 }}>
                         <CodeSnippet
+                            sx={{ overflow: 'auto', whiteSpace: 'normal' }}
                             linesOfCode={[
                                 `docker run ghcr.io/neurostuff/nsc-runner:latest ${metaAnalysisId} --n-cores 1`,
                             ]}

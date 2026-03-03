@@ -12,6 +12,13 @@ describe(PAGE_NAME, () => {
         cy.intercept('GET', `**/api/studysets/*`, { fixture: 'studyset' }).as('studysetFixture');
         cy.intercept('GET', 'https://api.appzi.io/**', { fixture: 'appzi' }).as('appziFixture');
         cy.intercept('GET', `**/api/projects/*`, { fixture: 'projects/project' }).as('projectFixture');
+
+        cy.intercept('GET', 'https://neurovault.org/api/images/1013647', {
+            fixture: 'MetaAnalysis/neurovaultImage1013647',
+        }).as('neurovaultImageFixture');
+        cy.intercept('GET', 'https://neurovault.org/api/images/1013650', {
+            fixture: 'MetaAnalysis/neurovaultImage1013650',
+        }).as('neurovaultImageFixture');
     });
 
     describe('Basic page load', () => {
@@ -165,9 +172,9 @@ describe(PAGE_NAME, () => {
 
     describe('Job exists - SUCCEEDED', () => {
         beforeEach(() => {
-            // cy.intercept('GET', `**/api/specifications/**`, { fixture: 'MetaAnalysis/specification' }).as(
-            //     'specificationFixture'
-            // );
+            cy.intercept('GET', `**/api/analyses/*`, {
+                fixture: 'MetaAnalysis/analysis',
+            }).as('analysisFixture');
             cy.intercept('GET', `**/api/meta-analyses/**`, {
                 fixture: 'MetaAnalysis/metaAnalysisWithResult',
             }).as('metaAnalysisFixture');
