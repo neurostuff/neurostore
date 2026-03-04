@@ -264,6 +264,10 @@ describe(PAGE_NAME, () => {
             cy.contains('Study Annotations').should('be.visible');
         });
 
+        it('included column header should not have a remove icon', () => {
+            cy.get('.htCore').first().contains('th', 'included').find('[data-testid="CancelIcon"]').should('not.exist');
+        });
+
         it('should show confirmation when deleting an annotation column', () => {
             cy.get('[data-testid="CancelIcon"]').eq(1).click({ force: true });
             cy.contains('Are you sure you want to remove this column?').should('be.visible');
@@ -324,6 +328,91 @@ describe(PAGE_NAME, () => {
             cy.get('.htCore').first().find('tbody td').eq(3).click();
             cy.focused().type(' updated').type('{enter}');
             cy.get('button').find('[data-testid="SaveIcon"]').parent().should('not.be.disabled');
+        });
+
+        it('when a column is added, request body should have that note_key and request should be to /annotations', () => {
+            const newNoteKey = 'added_column_key';
+            cy.intercept('PUT', '**/api/annotations/*', (req) => req.reply(200, {})).as('putAnnotations');
+            cy.intercept('POST', '**/api/annotation-analyses/**', (req) => req.reply(200, [])).as(
+                'postAnnotationAnalyses'
+            );
+
+            cy.get('input[placeholder="New Column"]').type(newNoteKey);
+            cy.contains('button', 'ADD').click();
+            cy.contains(newNoteKey).should('exist');
+            cy.get('button').find('[data-testid="SaveIcon"]').parent().click();
+
+            cy.get('@putAnnotations')
+                .its('request.url')
+                .should('include', '/annotations')
+                .and('not.include', 'annotation-analyses');
+            cy.get('@putAnnotations')
+                .its('request.body')
+                .then(
+                    (body: { note_keys: Record<string, unknown>; notes: Array<{ note: Record<string, unknown> }> }) => {
+                        expect(body.note_keys).to.have.property(newNoteKey);
+                        expect(body.notes).to.be.an('array').and.not.to.be.empty;
+                        body.notes.forEach((note) => {
+                            expect(note.note).to.have.property(newNoteKey);
+                        });
+                    }
+                );
+        });
+
+        it('when a column is removed, request body should not have that note_key and request should be to /annotations', () => {
+            cy.intercept('PUT', '**/api/annotations/*', (req) => req.reply(200, {})).as('putAnnotations');
+            cy.intercept('POST', '**/api/annotation-analyses/**', (req) => req.reply(200, [])).as(
+                'postAnnotationAnalyses'
+            );
+
+            cy.get('[data-testid="CancelIcon"]').eq(1).click({ force: true });
+            cy.contains('Are you sure you want to remove this column?').should('be.visible');
+            cy.contains('button', 'Remove').click();
+            cy.get('button').find('[data-testid="SaveIcon"]').parent().click();
+
+            cy.get('@putAnnotations')
+                .its('request.url')
+                .should('include', '/annotations')
+                .and('not.include', 'annotation-analyses');
+            cy.get('@putAnnotations')
+                .its('request.body')
+                .then(
+                    (body: { note_keys: Record<string, unknown>; notes: Array<{ note: Record<string, unknown> }> }) => {
+                        expect(body.notes).to.be.an('array').and.not.to.be.empty;
+                        body.notes.forEach((note) => {
+                            expect(note.note).not.to.have.property('string_key');
+                        });
+                        expect(body.note_keys).not.to.have.property('string_key');
+                    }
+                );
+        });
+
+        it('when a row is updated with a value, request body should have that value and request should be to /annotation-analyses', () => {
+            cy.intercept('PUT', '**/api/annotations/*', (req) => req.reply(200, {})).as('putAnnotations');
+            cy.intercept('POST', '**/api/annotation-analyses/**', (req) => req.reply(200, [])).as(
+                'postAnnotationAnalyses'
+            );
+
+            cy.get('.htCore').first().find('tbody td').eq(3).click();
+            cy.focused().type('_cell_updated').type('{enter}');
+            cy.get('button').find('[data-testid="SaveIcon"]').parent().click();
+
+            cy.get('@postAnnotationAnalyses')
+                .its('request.url')
+                .should('include', 'annotation-analyses')
+                .and('not.include', '/annotations/');
+            cy.get('@postAnnotationAnalyses')
+                .its('request.body')
+                .then((body: Array<{ note: Record<string, unknown> }>) => {
+                    expect(body).to.be.an('array').and.not.to.be.empty;
+                    const hasUpdatedValue = body.some(
+                        (item) =>
+                            item.note &&
+                            typeof item.note === 'object' &&
+                            Object.values(item.note).includes('_cell_updated')
+                    );
+                    expect(hasUpdatedValue).to.be.true;
+                });
         });
     });
 
@@ -626,7 +715,7 @@ describe(PAGE_NAME, () => {
             cy.contains('button', 'Mark as Complete').should('be.visible');
         });
 
-        it.only('should mark study as complete and send updated status in project PUT', () => {
+        it('should mark study as complete and send updated status in project PUT', () => {
             cy.intercept('PUT', '**/api/projects/*', { fixture: 'projects/projectPut' }).as('putProject');
             cy.contains('button', 'Mark as Complete').click();
             cy.wait('@putProject');

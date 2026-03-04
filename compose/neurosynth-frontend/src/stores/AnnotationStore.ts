@@ -44,7 +44,7 @@ export const useAnnotationStore = create<
         },
         storeMetadata: {
             annotationIsEdited: false,
-            annotationIsLoading: false,
+            noteKeysHaveChanged: false,
             getAnnotationIsLoading: false,
             updateAnnotationIsLoading: false,
             isError: false,
@@ -132,6 +132,7 @@ export const useAnnotationStore = create<
                     annotationIsEdited: false,
                     getAnnotationIsLoading: false,
                     updateAnnotationIsLoading: false,
+                    noteKeysHaveChanged: false,
                     isError: false,
                 },
             }));
@@ -161,7 +162,6 @@ export const useAnnotationStore = create<
                         {
                             ...noteKey,
                             default: resolvedDefault,
-                            isNew: true,
                             order: 0,
                         },
                         ...(state.annotation.note_keys ?? []),
@@ -176,6 +176,7 @@ export const useAnnotationStore = create<
                 },
                 storeMetadata: {
                     ...state.storeMetadata,
+                    noteKeysHaveChanged: true,
                     annotationIsEdited: true,
                 },
             }));
@@ -203,6 +204,7 @@ export const useAnnotationStore = create<
                     },
                     storeMetadata: {
                         ...state.storeMetadata,
+                        noteKeysHaveChanged: true,
                         annotationIsEdited: true,
                     },
                 };
@@ -274,9 +276,7 @@ export const useAnnotationStore = create<
                     },
                 }));
 
-                const hasNewNoteKey = (state.annotation.note_keys ?? []).some((noteKey) => !!noteKey.isNew);
-
-                if (hasNewNoteKey) {
+                if (state.storeMetadata.noteKeysHaveChanged) {
                     // if there are new note keys, we need to update the annotation using the generic update endpoint
                     await API.NeurostoreServices.AnnotationsService.annotationsIdPut(state.annotation.id, {
                         note_keys: noteKeyArrToObj(state.annotation.note_keys ?? []),
@@ -294,7 +294,6 @@ export const useAnnotationStore = create<
                     );
                 }
 
-                const noteKeysArr = (state.annotation.note_keys ?? []).map((noteKey) => ({ ...noteKey, isNew: false }));
                 const notesAfterDBUpdate = state.annotation.notes.map((note) => ({
                     ...note,
                     isEdited: false,
@@ -306,11 +305,11 @@ export const useAnnotationStore = create<
                     annotation: {
                         ...state.annotation,
                         notes: notesAfterDBUpdate,
-                        note_keys: noteKeysArr,
                     },
                     storeMetadata: {
                         ...state.storeMetadata,
                         annotationIsEdited: false,
+                        noteKeysHaveChanged: false,
                         updateAnnotationIsLoading: false,
                         isError: false,
                     },

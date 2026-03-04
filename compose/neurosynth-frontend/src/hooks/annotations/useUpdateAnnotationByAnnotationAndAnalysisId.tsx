@@ -4,7 +4,11 @@ import { NoteCollectionRequest, NoteCollectionReturn } from 'neurostore-typescri
 import { useSnackbar } from 'notistack';
 import { useMutation, useQueryClient } from 'react-query';
 
-const useUpdateAnnotationByAnnotationAndAnalysisId = (annotationId: string | undefined | null) => {
+const useUpdateAnnotationByAnnotationAndAnalysisId = (
+    annotationId: string | undefined | null,
+    options?: { invalidateOnSuccess?: boolean }
+) => {
+    const invalidateOnSuccess = options?.invalidateOnSuccess ?? true;
     const queryClient = useQueryClient();
     const { enqueueSnackbar } = useSnackbar();
 
@@ -12,7 +16,9 @@ const useUpdateAnnotationByAnnotationAndAnalysisId = (annotationId: string | und
         (update) => API.NeurostoreServices.AnalysesService.annotationAnalysesPost(update),
         {
             onSuccess: () => {
-                queryClient.invalidateQueries(['annotations', annotationId]);
+                if (invalidateOnSuccess) {
+                    queryClient.invalidateQueries(['annotations', annotationId]);
+                }
             },
             onError: () => {
                 enqueueSnackbar('there was an error updating the annotation', { variant: 'error' });

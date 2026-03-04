@@ -42,8 +42,8 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
         noteKeys,
         hotDataToStudyMapping,
         isEdited,
-        isReordered,
         rowHeights,
+        noteKeysHaveChanged,
     } = useEditAnnotationsHotTable(props.annotationId, !canEdit);
 
     useEffect(() => {
@@ -88,11 +88,10 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
             return;
         }
 
-        const hasNewNoteKey = noteKeys.some((x) => !!x.isNew);
         const updatedAnnotationNotes = hotDataToAnnotationNotes(hotData, hotDataToStudyMapping, noteKeys);
         const updatedNoteKeyObj = noteKeyArrToObj(noteKeys);
 
-        if (hasNewNoteKey || isReordered) {
+        if (noteKeysHaveChanged) {
             updateAnnotation(
                 {
                     argAnnotationId: props.annotationId,
@@ -108,7 +107,7 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
                 },
                 {
                     onSuccess: () => {
-                        setAnnotationsHotState((prev) => ({ ...prev, isEdited: false }));
+                        setAnnotationsHotState((prev) => ({ ...prev, noteKeysHaveChanged: false, isEdited: false }));
                         enqueueSnackbar('annotation updated successfully', { variant: 'success' });
                     },
                 }
@@ -138,8 +137,6 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
                                 ...prev,
                                 hotDataToStudyMapping: newMapping,
                                 isEdited: false,
-                                noteKeys: prev.noteKeys.map((noteKey) => ({ ...noteKey, isNew: false })),
-                                isReordered: false,
                             };
                         });
                         enqueueSnackbar('annotation updated successfully', { variant: 'success' });
@@ -165,6 +162,7 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
             return {
                 ...prev,
                 isEdited: true,
+                noteKeysHaveChanged: true,
                 noteKeys: reindexedNoteKeys,
                 hotColumns: createColumns(reindexedNoteKeys, !canEdit),
                 hotData: [...prev.hotData].map((row) => {
@@ -269,7 +267,7 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
             return {
                 ...prev,
                 isEdited: true,
-                isReordered: true,
+                noteKeysHaveChanged: true,
                 noteKeys: updatedNoteKeys,
                 hotColumns: createColumns(updatedNoteKeys, !canEdit),
                 hotData: updatedHotData,
@@ -297,7 +295,6 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
                     key: trimmedKey,
                     type: columnType,
                     order: 0,
-                    isNew: true,
                     default: defaultValue,
                 },
                 ...prev.noteKeys,
@@ -306,6 +303,7 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
             return {
                 ...prev,
                 isEdited: true,
+                noteKeysHaveChanged: true,
                 noteKeys: updatedNoteKeys,
                 hotColumns: createColumns(updatedNoteKeys, !canEdit),
                 hotData: [...prev.hotData].map((row) => {

@@ -52,6 +52,7 @@ from ..models import (
     Pipeline,
 )
 from ..models.data import StudysetStudy, BaseStudy, _check_type
+from ..note_keys import canonicalize_note_keys, ordered_note_key_names
 from ..utils import parse_json_filter, build_jsonpath
 
 
@@ -718,79 +719,25 @@ class AnnotationsView(ObjectView, ListView):
 
     @staticmethod
     def _ordered_note_keys(note_keys):
-        if not note_keys:
-            return []
-        keys = list(note_keys.keys())
-        alphabetical = sorted(keys)
-        if keys == alphabetical:
-            return alphabetical
-        return keys
+        return ordered_note_key_names(note_keys)
 
     @classmethod
     def _normalize_note_keys(cls, note_keys):
         if note_keys is None:
             return None
-        if not isinstance(note_keys, dict):
-            abort_validation("`note_keys` must be an object.")
-
-        ordered_keys = cls._ordered_note_keys(note_keys)
-        normalized = OrderedDict()
-        used_orders = set()
-        next_order = 0
-
-        for key in ordered_keys:
-            descriptor = note_keys.get(key) or {}
-            note_type = descriptor.get("type")
-            if note_type not in {"string", "number", "boolean"}:
-                abort_validation(
-                    "Invalid `type` for note_keys entry "
-                    f"'{key}', choose from: ['boolean', 'number', 'string']."
-                )
-
-            default_provided = isinstance(descriptor, dict) and "default" in descriptor
-            default_value = descriptor.get("default") if default_provided else None
-            if default_provided and default_value is not None:
-                if note_type == "boolean" and not isinstance(default_value, bool):
-                    abort_validation(
-                        f"Invalid default for note_keys entry '{key}'; "
-                        "expected a boolean."
-                    )
-                if note_type == "number" and (
-                    not isinstance(default_value, (int, float))
-                    or isinstance(default_value, bool)
-                ):
-                    abort_validation(
-                        f"Invalid default for note_keys entry '{key}'; "
-                        "expected a number."
-                    )
-                if note_type == "string" and not isinstance(default_value, str):
-                    abort_validation(
-                        f"Invalid default for note_keys entry '{key}'; "
-                        "expected a string."
-                    )
-
-            order = descriptor.get("order")
-            if isinstance(order, bool) or (
-                order is not None and not isinstance(order, int)
-            ):
-                order = None
-
-            if isinstance(order, int) and order not in used_orders:
-                used_orders.add(order)
-                if order >= next_order:
-                    next_order = order + 1
-            else:
-                while next_order in used_orders:
-                    next_order += 1
-                order = next_order
-                used_orders.add(order)
-                next_order += 1
-
-            normalized[key] = {"type": note_type, "order": order}
-            if default_provided:
-                normalized[key]["default"] = default_value
-
-        return normalized
+        return canonicalize_note_keys(
+            note_keys,
+            abort_validation,
+            mapping_factory=OrderedDict,
+            invalid_type_message=lambda key: (
+                "Invalid `type` for note_keys entry "
+                f"'{key}', choose from: ['boolean', 'number', 'string']."
+            ),
+            invalid_default_message=lambda key, note_type: (
+                f"Invalid default for note_keys entry '{key}'; "
+                f"expected a {note_type}."
+            ),
+        )
 
     @classmethod
     def _merge_note_keys(cls, existing, additions):
@@ -816,7 +763,7 @@ class AnnotationsView(ObjectView, ListView):
             base[key] = descriptor
             next_order += 1
 
-        return base
+        return cls._normalize_note_keys(base)
 
     @classmethod
     def load_nested_records(cls, data, record=None):
@@ -996,6 +943,24 @@ class AnnotationsView(ObjectView, ListView):
         allowed = {"annotation_analyses", "note_keys", "studyset"}
         return not (set(data.keys()) - allowed)
 
+    def _sync_annotation_notes_to_note_keys(self, annotation, note_keys):
+        ordered_keys = self._ordered_note_keys(note_keys)
+        default_note = self._build_default_note(note_keys) or {}
+
+        for annotation_analysis in annotation.annotation_analyses:
+            existing_note = (
+                annotation_analysis.note
+                if isinstance(annotation_analysis.note, dict)
+                else {}
+            )
+            synced_note = OrderedDict()
+            for key in ordered_keys:
+                if key in existing_note:
+                    synced_note[key] = existing_note[key]
+                else:
+                    synced_note[key] = default_note.get(key)
+            annotation_analysis.note = synced_note
+
     def _try_fast_note_update(self, annotation, data):
         # Preserve permission semantics and user bootstrap behavior.
         self.__class__.update_or_create(
@@ -1043,9 +1008,6 @@ class AnnotationsView(ObjectView, ListView):
         request_data = self.insert_data(id, request.json)
         schema = self._schema()
         data = schema.load(request_data, partial=True)
-
-        if "note_keys" in data:
-            data["note_keys"] = self._normalize_note_keys(data["note_keys"])
 
         pipeline_payload = data.pop("pipelines", [])
 
@@ -1136,6 +1098,10 @@ class AnnotationsView(ObjectView, ListView):
         self.db_validation(input_record, data)
 
         with db.session.no_autoflush:
+            if "note_keys" in data and "annotation_analyses" not in data:
+                self._sync_annotation_notes_to_note_keys(
+                    input_record, data["note_keys"]
+                )
             if fast_note_update_candidate:
                 fast_path_succeeded = self._try_fast_note_update(input_record, data)
                 if fast_path_succeeded:

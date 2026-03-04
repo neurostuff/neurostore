@@ -32,8 +32,6 @@ const EditStudyAnnotationsHotTable: React.FC<{ readonly?: boolean }> = ({ readon
         colKey: '',
     });
 
-    console.log({ data, hiddenRows });
-
     const handleAfterChange = (changes: CellChange[] | null) => {
         if (!data || !noteKeys || !changes) return;
 

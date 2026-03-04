@@ -17,6 +17,11 @@ import orjson
 from neurostore.core import db
 from neurostore.map_types import canonicalize_map_type, map_type_label
 from neurostore.models import Analysis, Point
+from neurostore.note_keys import (
+    ALLOWED_NOTE_KEY_TYPES,
+    canonicalize_note_keys,
+    resolve_note_key_default,
+)
 
 # context parameters
 # clone: create a new object with new ids (true or false)
@@ -768,7 +773,7 @@ class AnnotationPipelineSchema(BaseSchema):
 
 
 class NoteKeysField(fields.Field):
-    allowed_types = {"string", "number", "boolean"}
+    allowed_types = ALLOWED_NOTE_KEY_TYPES
 
     def _serialize(self, value, attr, obj, **kwargs):
         if not value:
@@ -780,78 +785,23 @@ class NoteKeysField(fields.Field):
             serialized[key] = {
                 "type": descriptor.get("type"),
                 "order": descriptor.get("order"),
+                "default": resolve_note_key_default(
+                    key,
+                    descriptor.get("type"),
+                    default_provided="default" in descriptor,
+                    default_value=descriptor.get("default"),
+                ),
             }
-            if "default" in descriptor:
-                serialized[key]["default"] = descriptor.get("default")
         return serialized
 
     def _deserialize(self, value, attr, data, **kwargs):
         if value is None:
             return {}
-        if not isinstance(value, dict):
-            raise ValidationError("`note_keys` must be an object.")
 
-        normalized = {}
-        used_orders = set()
-        explicit_orders = []
-        for descriptor in value.values():
-            if isinstance(descriptor, dict) and isinstance(
-                descriptor.get("order"), int
-            ):
-                explicit_orders.append(descriptor["order"])
-        next_order = max(explicit_orders, default=-1) + 1
+        def _fail(message):
+            raise ValidationError(message)
 
-        for key, descriptor in value.items():
-            if not isinstance(descriptor, dict):
-                raise ValidationError("Each note key must map to an object.")
-
-            note_type = descriptor.get("type")
-            if note_type not in self.allowed_types:
-                raise ValidationError(
-                    f"Invalid note type for '{key}', choose from: {sorted(self.allowed_types)}"
-                )
-
-            default_provided = "default" in descriptor
-            default_value = descriptor.get("default") if default_provided else None
-            if default_provided and default_value is not None:
-                if note_type == "boolean" and not isinstance(default_value, bool):
-                    raise ValidationError(
-                        f"Invalid default for '{key}', expected a boolean."
-                    )
-                if note_type == "number" and (
-                    not isinstance(default_value, (int, float))
-                    or isinstance(default_value, bool)
-                ):
-                    raise ValidationError(
-                        f"Invalid default for '{key}', expected a number."
-                    )
-                if note_type == "string" and not isinstance(default_value, str):
-                    raise ValidationError(
-                        f"Invalid default for '{key}', expected a string."
-                    )
-
-            order = descriptor.get("order")
-            if isinstance(order, bool) or (
-                order is not None and not isinstance(order, int)
-            ):
-                order = None
-
-            if isinstance(order, int) and order not in used_orders:
-                used_orders.add(order)
-                if order >= next_order:
-                    next_order = order + 1
-            else:
-                while next_order in used_orders:
-                    next_order += 1
-                order = next_order
-                used_orders.add(order)
-                next_order += 1
-
-            normalized[key] = {"type": note_type, "order": order}
-            if default_provided:
-                normalized[key]["default"] = default_value
-
-        return normalized
+        return canonicalize_note_keys(value, _fail, mapping_factory=dict)
 
 
 class AnnotationSchema(BaseDataSchema):

@@ -56,6 +56,7 @@ from ..services.base_study_metadata_enrichment import (
     enqueue_base_study_metadata_updates,
 )
 from ..services.utils import merge_unique_ids
+from ..note_keys import resolve_note_key_default
 
 
 @parser.error_handler
@@ -200,12 +201,15 @@ class BaseView(MethodView):
 
         defaults = {}
         for key, descriptor in note_keys.items():
-            default_value = None
             if isinstance(descriptor, dict):
-                if "default" in descriptor:
-                    default_value = descriptor.get("default")
-            elif descriptor == "boolean":
-                default_value = None
+                default_value = resolve_note_key_default(
+                    key,
+                    descriptor.get("type"),
+                    default_provided="default" in descriptor,
+                    default_value=descriptor.get("default"),
+                )
+            else:
+                default_value = resolve_note_key_default(key, descriptor)
             defaults[key] = default_value
         return defaults
 
