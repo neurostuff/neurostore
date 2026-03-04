@@ -1,6 +1,6 @@
 /// <reference types="cypress" />
 
-import { AnnotationReturnOneOf, NoteCollectionReturn } from 'neurostore-typescript-sdk';
+import { AnnotationReturnOneOf } from 'neurostore-typescript-sdk';
 import { ProjectReturn } from 'neurosynth-compose-typescript-sdk';
 
 export {};
