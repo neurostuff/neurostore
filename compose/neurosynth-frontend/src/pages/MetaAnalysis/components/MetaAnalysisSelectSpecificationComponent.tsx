@@ -2,7 +2,7 @@ import { Box, ListItem, ListItemText, Typography } from '@mui/material';
 import MetaAnalysisDynamicForm from 'pages/MetaAnalysis/components/MetaAnalysisDynamicForm';
 import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
 import NeurosynthAutocomplete from 'components/NeurosynthAutocomplete/NeurosynthAutocomplete';
-import { EAnalysisType } from 'hooks/metaAnalyses/useCreateAlgorithmSpecification';
+import { EAnalysisType } from 'hooks/projects/Project.types';
 import { IAlgorithmSelection } from './CreateMetaAnalysisSpecificationDialogBase.types';
 import {
     correctorOptions,

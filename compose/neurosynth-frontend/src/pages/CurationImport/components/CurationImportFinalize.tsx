@@ -1,16 +1,14 @@
 import { Box, Button, TextField, Typography } from '@mui/material';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons';
 import { getURLFromSearchCriteria } from 'components/Search/search.helpers';
-import { IImport } from 'hooks/projects/useGetProjects';
 import { useSnackbar } from 'notistack';
-import { ICurationStubStudy } from 'pages/Curation/Curation.types';
+import { ICurationStubStudy, IImport, EImportMode } from 'pages/Curation/Curation.types';
 import { SELECTED_CURATION_STEP_LOCAL_STORAGE_KEY_SUFFIX } from 'pages/Curation/hooks/useCurationBoardGroupsState';
 import {
     automaticallyResolveDuplicates,
     createDuplicateMap,
     hasDuplicates,
 } from 'pages/CurationImport/CurationImport.helpers';
-import { EImportMode } from 'pages/CurationImport/CurationImport.types';
 import {
     useCreateNewCurationImport,
     useProjectCurationColumns,

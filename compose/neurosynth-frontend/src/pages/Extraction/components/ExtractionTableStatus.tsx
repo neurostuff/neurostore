@@ -4,7 +4,7 @@ import BookmarkIcon from '@mui/icons-material/Bookmark';
 import { Box, Button, ButtonGroup, IconButton, Tooltip, Typography } from '@mui/material';
 import { CellContext, HeaderContext } from '@tanstack/react-table';
 import { useProjectExtractionAddOrUpdateStudyListStatus, useProjectUser } from 'pages/Project/store/ProjectStore';
-import { EExtractionStatus } from '../ExtractionPage';
+import { EExtractionStatus } from 'pages/Extraction/Extraction.types';
 import { IExtractionTableStudy } from './ExtractionTable';
 import { useUserCanEdit } from 'hooks';
 

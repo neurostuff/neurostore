@@ -3,9 +3,9 @@ import { ArrowCircleLeftOutlined } from '@mui/icons-material';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import { Box, Button, Chip } from '@mui/material';
 import { useUserCanEdit } from 'hooks';
-import { indexToPRISMAMapping, ITag } from 'hooks/projects/useGetProjects';
+import { indexToPRISMAMapping } from 'hooks/projects/useGetProjects';
 import CurationPopupExclusionSelector from 'pages/Curation/components/CurationPopupExclusionSelector';
-import { ICurationStubStudy } from 'pages/Curation/Curation.types';
+import { ICurationStubStudy, ITag } from 'pages/Curation/Curation.types';
 import {
     useAddTagToStub,
     useCreateNewExclusion,

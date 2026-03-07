@@ -22,7 +22,7 @@ import {
     IExtractionTableState,
     retrieveExtractionTableState,
 } from 'pages/Extraction/components/ExtractionTable.helpers';
-import { EExtractionStatus } from 'pages/Extraction/ExtractionPage';
+import { EExtractionStatus } from 'pages/Extraction/Extraction.types';
 import { IProjectPageLocationState } from 'pages/Project/ProjectPage';
 import {
     useProjectExtractionAddOrUpdateStudyListStatus,

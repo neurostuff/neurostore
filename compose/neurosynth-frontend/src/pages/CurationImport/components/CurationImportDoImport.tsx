@@ -1,7 +1,7 @@
 import { Box } from '@mui/material';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons';
 import { ICurationStubStudy } from 'pages/Curation/Curation.types';
-import { EImportMode } from 'pages/CurationImport/CurationImport.types';
+import { EImportMode } from 'pages/Curation/Curation.types';
 import CurationImportCreateStub from 'pages/CurationImport/components/CurationImportCreateStub';
 import CurationImportNeurostore from 'pages/CurationImport/components/CurationImportNeurostore';
 import CurationImportPMIDs from 'pages/CurationImport/components/CurationImportPMIDs';

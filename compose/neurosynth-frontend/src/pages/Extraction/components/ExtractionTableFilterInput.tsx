@@ -2,7 +2,7 @@ import { Box } from '@mui/material';
 import { Column, Table } from '@tanstack/react-table';
 import DebouncedTextField from 'components/DebouncedTextField';
 import { useCallback } from 'react';
-import { EExtractionStatus } from '../ExtractionPage';
+import { EExtractionStatus } from 'pages/Extraction/Extraction.types';
 import { IExtractionTableStudy } from './ExtractionTable';
 import ExtractionTableJournalAutocomplete from './ExtractionTableJournalAutocomplete';
 import ExtractionTableStatusFilter from './ExtractionTableStatusFilter';

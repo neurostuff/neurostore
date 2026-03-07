@@ -1,6 +1,6 @@
 import { Box, Chip, Link as MuiLink, Stepper, Typography } from '@mui/material';
 import { useGetMetaAnalysesByIds, useGetStudysetById } from 'hooks';
-import { INeurosynthProjectReturn } from 'hooks/projects/useGetProjects';
+import { INeurosynthProjectReturn } from 'hooks/projects/Project.types';
 import { getCurationSummary } from 'hooks/useGetCurationSummary';
 import { getExtractionSummary } from 'hooks/useGetExtractionSummary';
 import { useMemo } from 'react';

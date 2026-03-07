@@ -4,7 +4,7 @@ import DebouncedTextField from 'components/DebouncedTextField';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import { useGetWindowHeight, useUserCanEdit } from 'hooks';
 import CurationImportFinalizeReviewVirtualizedListItem from 'pages/CurationImport/components/CurationImportFinalizeReviewVirtualizedListItem';
-import { EImportMode } from 'pages/CurationImport/CurationImport.types';
+import { EImportMode } from 'pages/Curation/Curation.types';
 import { useProjectCurationColumns, useProjectCurationImport } from 'pages/Project/store/ProjectStore';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { FixedSizeList } from 'react-window';

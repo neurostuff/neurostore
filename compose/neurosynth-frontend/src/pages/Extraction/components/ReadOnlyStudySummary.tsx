@@ -4,7 +4,7 @@ import StudyListItemStyles from './ReadOnlyStudySummary.styles';
 import CheckIcon from '@mui/icons-material/Check';
 import BookmarkIcon from '@mui/icons-material/Bookmark';
 import { useNavigate, useParams } from 'react-router-dom';
-import { EExtractionStatus } from 'pages/Extraction/ExtractionPage';
+import { EExtractionStatus } from 'pages/Extraction/Extraction.types';
 import { useProjectExtractionAddOrUpdateStudyListStatus, useProjectUser } from 'pages/Project/store/ProjectStore';
 import useUserCanEdit from 'hooks/useUserCanEdit';
 

@@ -12,7 +12,7 @@ import DynamicFormNumericInput from './DynamicFormNumericInput';
 import DynamicFormSelectInput from './DynamicFormSelectInput';
 import DynamicFormStringInput from './DynamicFormStringInput';
 import metaAnalysisSpec from 'assets/config/meta_analysis_params.json';
-import { EAnalysisType } from 'hooks/metaAnalyses/useCreateAlgorithmSpecification';
+import { EAnalysisType } from 'hooks/projects/Project.types';
 import { useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import DynamicFormStyles from './DynamicFormStyles';

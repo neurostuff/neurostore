@@ -1,7 +1,8 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import { setUnloadHandler, unsetUnloadHandler } from 'helpers/BeforeUnload.helpers';
 import useGetProjectById from 'hooks/projects/useGetProjectById';
-import { INeurosynthProject, INeurosynthProjectReturn, ISource, ITag } from 'hooks/projects/useGetProjects';
+import { INeurosynthProject, INeurosynthProjectReturn } from 'hooks/projects/Project.types';
+import { ISource, ITag } from 'pages/Curation/Curation.types';
 import useUpdateProject from 'hooks/projects/useUpdateProject';
 import { useSnackbar } from 'notistack';
 import {

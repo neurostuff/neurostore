@@ -21,12 +21,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import ExtractionTable from './components/ExtractionTable';
 
-export enum EExtractionStatus {
-    'COMPLETED' = 'completed',
-    'SAVEDFORLATER' = 'savedforlater',
-    'UNCATEGORIZED' = 'uncategorized',
-}
-
 const ExtractionPage: React.FC = () => {
     const { projectId } = useParams<{ projectId: string | undefined }>();
     const navigate = useNavigate();

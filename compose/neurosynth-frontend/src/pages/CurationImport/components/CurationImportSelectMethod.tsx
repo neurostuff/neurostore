@@ -2,7 +2,7 @@ import { Box, Button, FormControl, FormControlLabel, Radio, RadioGroup, Typograp
 import { ENavigationButton } from 'components/Buttons/NavigationButtons';
 import CurationImportSelectMethodStyles from 'pages/CurationImport/components/CurationImportSelectMethod.styles';
 import CurationImportStyles from 'pages/CurationImport/components/CurationImport.styles';
-import { EImportMode } from 'pages/CurationImport/CurationImport.types';
+import { EImportMode } from 'pages/Curation/Curation.types';
 
 const CurationImportSelectMethod: React.FC<{
     importMethod: EImportMode;

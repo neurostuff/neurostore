@@ -1,6 +1,6 @@
 import { Box, useMediaQuery, useTheme } from '@mui/material';
 import LoadingButton from 'components/Buttons/LoadingButton';
-import { EExtractionStatus } from 'pages/Extraction/ExtractionPage';
+import { EExtractionStatus } from 'pages/Extraction/Extraction.types';
 import {
     useProjectExtractionAddOrUpdateStudyListStatus,
     useProjectExtractionStudyStatus,

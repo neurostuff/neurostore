@@ -2,7 +2,7 @@ import { vi, Mock } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useGetExtractionSummary, useGetStudysetById, useUserCanEdit } from 'hooks';
-import { EExtractionStatus } from 'pages/Extraction/ExtractionPage';
+import { EExtractionStatus } from 'pages/Extraction/Extraction.types';
 import {
     useProjectExtractionAddOrUpdateStudyListStatus,
     useProjectExtractionStudysetId,

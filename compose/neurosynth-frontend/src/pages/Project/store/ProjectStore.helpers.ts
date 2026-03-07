@@ -1,22 +1,16 @@
 import { DropResult, ResponderProvided } from '@hello-pangea/dnd';
-import {
-    ICurationMetadata,
-    INeurosynthProjectReturn,
-    IPRISMAConfig,
-    IProvenance,
-    ISource,
-    IStudyExtractionStatus,
-    ITag,
-} from 'hooks/projects/useGetProjects';
+import { INeurosynthProjectReturn, IProvenance } from 'hooks/projects/Project.types';
+import { IPRISMAConfig, ITag, ISource } from 'pages/Curation/Curation.types';
 import { v4 as uuidv4 } from 'uuid';
-import { EExtractionStatus } from 'pages/Extraction/ExtractionPage';
+import { EExtractionStatus, IStudyExtractionStatus } from 'pages/Extraction/Extraction.types';
 import {
     defaultExclusionTags,
     defaultIdentificationSources,
     defaultInfoTags,
     ENeurosynthTagIds,
 } from 'pages/Project/store/ProjectStore.consts';
-import { ICurationColumn, ICurationStubStudy } from 'pages/Curation/Curation.types';
+import { ICurationColumn, ICurationMetadata, ICurationStubStudy } from 'pages/Curation/Curation.types';
+import { EAnalysisType } from 'hooks/projects/Project.types';
 
 export const handleDragEndHelper = (
     state: ICurationColumn[],
@@ -422,25 +416,32 @@ export const setGivenStudyStatusesAsCompleteHelper = (studyIds: string[]): IStud
         }));
 };
 
-const UNTITLED_REGEX = /^Untitled( (\d+))?$/;
+const getUntitledRegexForAnalysisType = (analysisType: EAnalysisType) =>
+    new RegExp(`^Untitled ${analysisType}( (\\d+))?$`);
 
-export const getNextUntitledProjectName = (existingProjectNames: string[]): string => {
+export const getNextUntitledProjectName = (analysisType: EAnalysisType, existingProjectNames: string[]): string => {
+    const regex = getUntitledRegexForAnalysisType(analysisType);
     const numbers = existingProjectNames
         .map((projectName) => {
-            const m = (projectName ?? '').trim().match(UNTITLED_REGEX);
+            const m = (projectName ?? '').trim().match(regex);
             if (!m) return null;
-            return m[2] ? parseInt(m[2], 10) : 1;
+            return m[1] ? parseInt(m[1], 10) : 1;
         })
-        .filter((x) => x !== null);
+        .filter((x): x is number => x !== null);
     const max = numbers.length === 0 ? 0 : Math.max(...numbers);
-    return max === 0 ? 'Untitled' : `Untitled ${max + 1}`;
+    return max === 0 ? `Untitled ${analysisType}` : `Untitled ${analysisType} ${max + 1}`;
 };
 
-export const generateNewProjectData = (name?: string, description?: string): INeurosynthProjectReturn => {
+export const generateNewProjectData = (
+    analysisType: EAnalysisType,
+    name?: string,
+    description?: string
+): INeurosynthProjectReturn => {
     return {
         name: name || '',
         description: description || '',
         provenance: {
+            type: analysisType,
             curationMetadata: {
                 columns: [],
                 prismaConfig: {

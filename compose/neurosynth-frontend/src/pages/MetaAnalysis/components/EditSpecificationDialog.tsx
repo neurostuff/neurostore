@@ -6,7 +6,7 @@ import BaseDialog, { IDialog } from 'components/Dialogs/BaseDialog';
 import { IMetaAnalysisParamsSpecification } from 'pages/MetaAnalysis/components/DynamicForm.types';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { useGetMetaAnalysisById } from 'hooks';
-import { EAnalysisType } from 'hooks/metaAnalyses/useCreateAlgorithmSpecification';
+import { EAnalysisType } from 'hooks/projects/Project.types';
 import useGetSpecificationById from 'hooks/metaAnalyses/useGetSpecificationById';
 import useUpdateSpecification from 'hooks/metaAnalyses/useUpdateSpecification';
 import { AnnotationReturn, SpecificationReturn, StudysetReturn } from 'neurosynth-compose-typescript-sdk';

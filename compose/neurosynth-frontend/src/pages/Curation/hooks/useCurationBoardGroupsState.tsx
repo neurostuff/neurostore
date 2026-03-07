@@ -1,4 +1,5 @@
-import { indexToPRISMAMapping, IPRISMAConfig } from 'hooks/projects/useGetProjects';
+import { IPRISMAConfig } from 'pages/Curation/Curation.types';
+import { indexToPRISMAMapping } from 'hooks/projects/useGetProjects';
 import {
     useProjectCurationColumns,
     useProjectCurationDuplicates,

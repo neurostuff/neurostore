@@ -1,7 +1,7 @@
 /// <reference types="cypress" />
 
 import { getAuthorsShortName } from 'helpers/utils';
-import { INeurosynthProjectReturn } from 'hooks/projects/useGetProjects';
+import { INeurosynthProjectReturn } from 'hooks/projects/Project.types';
 import { StudyReturn, StudysetReturn } from 'neurostore-typescript-sdk';
 import { IExtractionTableStudy } from 'pages/Extraction/components/ExtractionTable';
 

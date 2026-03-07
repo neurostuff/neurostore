@@ -1,6 +1,6 @@
 import { Box, Button } from '@mui/material';
 import { Table } from '@tanstack/react-table';
-import { indexToPRISMAMapping, ITag } from 'hooks/projects/useGetProjects';
+import { indexToPRISMAMapping } from 'hooks/projects/useGetProjects';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import {
     useCreateNewExclusion,
@@ -11,11 +11,12 @@ import {
 } from 'pages/Project/store/ProjectStore';
 import { useState } from 'react';
 import { v4 as uuid } from 'uuid';
-import { ICurationTableStudy } from '../hooks/useCuratorTableState.types';
+import { ICurationTableStudy } from 'pages/Curation/hooks/useCuratorTableState.types';
 import CurationPopupExclusionSelector from './CurationPopupExclusionSelector';
 import { ArrowCircleLeftOutlined } from '@mui/icons-material';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useUserCanEdit } from 'hooks';
+import { ITag } from 'pages/Curation/Curation.types';
 
 const CurationBoardAIInterfaceCuratorTableSelectedRowsActions: React.FC<{
     table: Table<ICurationTableStudy>;

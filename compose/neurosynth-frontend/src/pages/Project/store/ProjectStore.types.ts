@@ -1,19 +1,19 @@
 import { LogoutOptions } from '@auth0/auth0-react';
 import { DropResult, ResponderProvided } from '@hello-pangea/dnd';
 import { AxiosResponse, AxiosError } from 'axios';
+import { INeurosynthProject, INeurosynthProjectReturn } from 'hooks/projects/Project.types';
 import {
-    INeurosynthProject,
-    INeurosynthProjectReturn,
     ITag,
     IPRISMAConfig,
-    ISource,
-    IExtractionMetadata,
     IImport,
-} from 'hooks/projects/useGetProjects';
+    ISource,
+    ICurationColumn,
+    ICurationStubStudy,
+} from 'pages/Curation/Curation.types';
+import { IExtractionMetadata } from 'pages/Extraction/Extraction.types';
 import { ProjectReturn } from 'neurosynth-compose-typescript-sdk';
 import { SnackbarMessage, OptionsObject, SnackbarKey } from 'notistack';
-import { ICurationColumn, ICurationStubStudy } from 'pages/Curation/Curation.types';
-import { EExtractionStatus } from 'pages/Extraction/ExtractionPage';
+import { EExtractionStatus } from 'pages/Extraction/Extraction.types';
 import { QueryClient, UseMutateFunction } from 'react-query';
 
 export type ProjectStoreMetadata = {

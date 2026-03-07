@@ -1,7 +1,7 @@
 import { Box, Step, StepLabel, Stepper } from '@mui/material';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons';
 import { ICurationStubStudy } from 'pages/Curation/Curation.types';
-import { EImportMode } from 'pages/CurationImport/CurationImport.types';
+import { EImportMode } from 'pages/Curation/Curation.types';
 import CurationImportDoImport from 'pages/CurationImport/components/CurationImportDoImport';
 import { SearchCriteria } from 'pages/Study/Study.types';
 import { useEffect, useState } from 'react';

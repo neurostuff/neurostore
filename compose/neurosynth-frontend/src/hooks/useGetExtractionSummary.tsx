@@ -1,7 +1,6 @@
-import { EExtractionStatus } from 'pages/Extraction/ExtractionPage';
+import { EExtractionStatus, IStudyExtractionStatus } from 'pages/Extraction/Extraction.types';
 import { useProjectExtractionStudysetId, useProjectExtractionStudyStatusList } from 'pages/Project/store/ProjectStore';
 import { useEffect, useState } from 'react';
-import { IStudyExtractionStatus } from './projects/useGetProjects';
 import useGetStudysetById from './studysets/useGetStudysetById';
 
 export interface IExtractionSummary {

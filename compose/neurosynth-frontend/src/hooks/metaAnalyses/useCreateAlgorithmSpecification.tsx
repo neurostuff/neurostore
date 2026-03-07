@@ -13,11 +13,7 @@ import {
 } from 'neurosynth-compose-typescript-sdk';
 import { useMutation, useQueryClient } from 'react-query';
 import API, { NeurostoreAnnotation } from 'api/api.config';
-
-export enum EAnalysisType {
-    CBMA = 'CBMA',
-    IBMA = 'IBMA',
-}
+import { EAnalysisType } from 'hooks/projects/Project.types';
 
 const useCreateAlgorithmSpecification = () => {
     const queryClient = useQueryClient();

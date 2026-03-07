@@ -1,4 +1,4 @@
-import { INeurosynthProject, INeurosynthProjectReturn } from 'hooks/projects/useGetProjects';
+import { INeurosynthProjectReturn, INeurosynthProject } from 'hooks/projects/Project.types';
 import { ICurationStubStudy } from 'pages/Curation/Curation.types';
 import { defaultExclusionTags } from 'pages/Project/store/ProjectStore.consts';
 

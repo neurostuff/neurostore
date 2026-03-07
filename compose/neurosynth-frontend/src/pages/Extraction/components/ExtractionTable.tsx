@@ -27,7 +27,7 @@ import {
 } from '@tanstack/react-table';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import { useGetStudysetById, useUserCanEdit } from 'hooks';
-import { IStudyExtractionStatus } from 'hooks/projects/useGetProjects';
+
 import { StudyReturn } from 'neurostore-typescript-sdk';
 import {
     useProjectExtractionSetGivenStudyStatusesAsComplete,
@@ -38,7 +38,7 @@ import {
 } from 'pages/Project/store/ProjectStore';
 import { ChangeEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { EExtractionStatus } from '../ExtractionPage';
+import { EExtractionStatus, IStudyExtractionStatus } from 'pages/Extraction/Extraction.types';
 import { retrieveExtractionTableState, updateExtractionTableState } from './ExtractionTable.helpers';
 import styles from './ExtractionTable.module.css';
 import { ExtractionTableAuthorCell, ExtractionTableAuthorHeader } from './ExtractionTableAuthor';
