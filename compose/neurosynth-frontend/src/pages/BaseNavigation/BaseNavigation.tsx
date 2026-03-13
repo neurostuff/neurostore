@@ -4,6 +4,7 @@ import ProgressLoader from 'components/ProgressLoader';
 import AnnotationsPage from 'pages/Annotations/AnnotationsPage';
 import ProtectedProjectRoute from 'pages/BaseNavigation/components/ProtectedProjectRoute';
 import CurationImportPage from 'pages/CurationImport/CurationImportPage';
+import CurationSearchPage from 'pages/CurationSearch/CurationSearchPage';
 import ExtractionPage from 'pages/Extraction/ExtractionPage';
 import ForbiddenPage from 'pages/Forbidden/Forbidden';
 import HelpPage from 'pages/HelpPage/HelpPage';
@@ -104,6 +105,19 @@ const BaseNavigation: React.FC = () => {
                         }
                     />
                     <Route
+                        path="/projects/:projectId/curation/search"
+                        element={
+                            <ProtectedProjectRoute
+                                onlyOwnerCanAccess
+                                errorMessage="You do not own this project, so you cannot search for studies in it."
+                            >
+                                <Box sx={BaseNavigationStyles.pagesContainer}>
+                                    <CurationSearchPage />
+                                </Box>
+                            </ProtectedProjectRoute>
+                        }
+                    />
+                    <Route
                         path="/projects/:projectId/curation/import"
                         element={
                             <ProtectedProjectRoute
@@ -111,6 +125,7 @@ const BaseNavigation: React.FC = () => {
                                 errorMessage="You do not own this project, so you cannot import studies into it."
                             >
                                 <Box sx={BaseNavigationStyles.pagesContainer}>
+                                    {/* TODO: implement import for just the import methods minus search */}
                                     <CurationImportPage />
                                 </Box>
                             </ProtectedProjectRoute>

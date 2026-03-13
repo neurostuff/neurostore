@@ -8,6 +8,8 @@ describe('ImportPubmedDialog', () => {
             fixture: 'projects/projectExtractionStep',
         }).as('projectFixture');
         cy.intercept('GET', `**/api/studysets/*`, { fixture: 'studyset' }).as('studysetFixture');
+
+        cy.addToLocalStorage('auth0|62e0e6c9dd47048572613b4d-hide-info-popup', 'true');
     });
 
     describe('Import via Pubmed IDs', () => {
@@ -20,9 +22,8 @@ describe('ImportPubmedDialog', () => {
 
             cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture').wait('@studysetFixture');
 
-            cy.contains('button', 'import studies').click();
+            cy.contains('button', 'Search').parent().find('button').last().click();
             cy.contains(/PMID/).click();
-            cy.contains('button', 'next').click();
         });
 
         it('should show the pmid input page', () => {

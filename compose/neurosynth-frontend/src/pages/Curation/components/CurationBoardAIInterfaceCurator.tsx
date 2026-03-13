@@ -22,6 +22,7 @@ import CurationBoardAIInterfaceCuratorTable from './CurationBoardAIInterfaceCura
 import CurationBoardAIInterfaceIdentificationUI from './CurationBoardAIInterfaceIdentificationUI';
 import CurationDownloadSummaryButton from './CurationDownloadSummaryButton';
 import PrismaDialog from './PrismaDialog';
+import ImportStudiesButton from './ImportStudiesButton';
 
 export interface ICurationBoardAIInterfaceCurator {
     selectedStub: ICurationTableStudy | undefined;
@@ -166,16 +167,9 @@ const CurationBoardAIInterfaceCurator: React.FC<{
                         )}
                     </Box>
                     <Box>
-                        <Button
-                            variant="contained"
-                            disableElevation
-                            sx={{ marginRight: '0.5rem', fontSize: '12px' }}
-                            onClick={() => navigate(`/projects/${projectId}/curation/import`)}
-                            disabled={!canEdit}
-                            size="small"
-                        >
-                            import studies
-                        </Button>
+                        <Box sx={{ marginRight: '0.5rem', display: 'inline-block' }}>
+                            <ImportStudiesButton />
+                        </Box>
                         {isPrisma && (
                             <>
                                 <PrismaDialog onCloseDialog={() => setPrismaIsOpen(false)} isOpen={prismaIsOpen} />

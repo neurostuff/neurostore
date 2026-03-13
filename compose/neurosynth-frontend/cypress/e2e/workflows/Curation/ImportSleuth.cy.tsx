@@ -16,10 +16,10 @@ describe('ImportSleuthDialog', () => {
         cy.intercept('GET', `**/api/studysets/*`, { fixture: 'studyset' }).as('studysetFixture');
         cy.intercept('PUT', '**/api/projects/abc123').as('updateProjectFixture');
 
+        cy.addToLocalStorage('auth0|62e0e6c9dd47048572613b4d-hide-info-popup', 'true');
         cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture').wait('@studysetFixture');
-        cy.contains('button', 'import studies').click();
+        cy.contains('button', 'Search').parent().find('button').last().click();
         cy.contains('Sleuth').click();
-        cy.contains('button', 'next').click();
     });
 
     describe('upload page', () => {
