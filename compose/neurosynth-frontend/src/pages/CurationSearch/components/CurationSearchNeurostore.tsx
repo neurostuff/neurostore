@@ -13,12 +13,12 @@ import { SearchCriteria } from 'pages/Study/Study.types';
 import { addKVPToSearch, getSearchCriteriaFromURL, getURLFromSearchCriteria } from 'components/Search/search.helpers';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { IImportArgs } from './CurationImportDoImport';
-import CurationImportBaseStyles from './CurationImport.styles';
+import { IImportArgs } from '../../CurationImport/components/CurationImportDoImport';
+import CurationImportBaseStyles from '../../CurationImport/components/CurationImport.styles';
 import { AxiosError } from 'axios';
 import { studiesToStubs } from 'helpers/Curation.helpers';
 
-const CurationImportNeurostore: React.FC<
+const CurationSearchNeurostore: React.FC<
     IImportArgs & { onSetSearchCriteria: (searchCriteria: SearchCriteria) => void }
 > = (props) => {
     const [importIsLoading, setImportIsLoading] = useState(false);
@@ -81,7 +81,7 @@ const CurationImportNeurostore: React.FC<
         // when we search, we want to reset the search criteria as we dont know the
         // page number of number of results in advance
         const searchURL = getURLFromSearchCriteria(searchArgs);
-        navigate(`/projects/${projectId}/curation/import?${searchURL}`);
+        navigate(`/projects/${projectId}/curation/search?${searchURL}`);
     };
 
     const handleRowsPerPageChange = (newRowsPerPage: number) => {
@@ -90,19 +90,19 @@ const CurationImportNeurostore: React.FC<
             'pageOfResults',
             '1'
         );
-        navigate(`/projects/${projectId}/curation/import?${searchURL}`);
+        navigate(`/projects/${projectId}/curation/search?${searchURL}`);
     };
 
     const handlePageChange = (page: number) => {
         const searchURL = addKVPToSearch(location.search, 'pageOfResults', `${page}`);
-        navigate(`/projects/${projectId}/curation/import?${searchURL}`);
+        navigate(`/projects/${projectId}/curation/search?${searchURL}`);
     };
 
     const handleButtonClick = async (button: ENavigationButton) => {
         if (isLoading) return;
 
         if (button === ENavigationButton.PREV) {
-            navigate(`/projects/${projectId}/curation/import`);
+            navigate(`/projects/${projectId}/curation`);
             props.onNavigate(button);
             return;
         }
@@ -227,4 +227,4 @@ const CurationImportNeurostore: React.FC<
     );
 };
 
-export default CurationImportNeurostore;
+export default CurationSearchNeurostore;
