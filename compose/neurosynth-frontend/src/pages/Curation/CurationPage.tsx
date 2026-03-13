@@ -24,6 +24,7 @@ import PrismaDialog from './components/PrismaDialog';
 import LoadingStateIndicatorProject from 'components/LoadingStateIndicator/LoadingStateIndicatorProject';
 import { SnackbarKey, useSnackbar } from 'notistack';
 import useCurationBoardGroupsState from './hooks/useCurationBoardGroupsState';
+import ImportStudiesButton from './components/ImportStudiesButton';
 
 const localStorageNewUIKey = 'show-new-ui-may-30-2025';
 
@@ -188,18 +189,7 @@ const CurationPage: React.FC = () => {
                                 }}
                             />
                         </Tooltip>
-                        {!useNewUI && (
-                            <Button
-                                variant="contained"
-                                disableElevation
-                                sx={{ marginLeft: '0.5rem', fontSize: '12px' }}
-                                onClick={() => navigate(`/projects/${projectId}/curation/import`)}
-                                disabled={!canEdit}
-                                size="small"
-                            >
-                                import studies
-                            </Button>
-                        )}
+                        {!useNewUI && <ImportStudiesButton />}
                         {isPrisma && !useNewUI && (
                             <>
                                 <PrismaDialog onCloseDialog={() => setPrismaIsOpen(false)} isOpen={prismaIsOpen} />

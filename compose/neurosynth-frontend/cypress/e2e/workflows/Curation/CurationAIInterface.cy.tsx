@@ -467,7 +467,13 @@ describe('CurationAIInterface', () => {
         });
 
         it('should show the import studies button', () => {
-            cy.contains('button', 'import studies').should('exist');
+            cy.contains('button', 'Search').should('exist');
+            // Import options dropdown (arrow next to Search)
+            cy.contains('button', 'Search').parent().find('button').last().click();
+            cy.contains('li', 'Import via Pubmed ID').should('exist');
+            cy.contains('li', 'Import via Sleuth File').should('exist');
+            cy.contains('li', 'Import via Bibliography').should('exist');
+            cy.contains('li', 'Manually create a new study').should('exist');
         });
 
         it('should show the skip curation button', () => {

@@ -12,7 +12,9 @@ declare global {
 }
 
 export const routeMapping = (path: string) => {
-    if (/^\/projects\/.*\/curation\/import.*$/g.test(path)) {
+    if (/^\/projects\/.*\/curation\/search.*$/g.test(path)) {
+        return 'curation search page';
+    } else if (/^\/projects\/.*\/curation\/import.*$/g.test(path)) {
         return 'curation import page';
     } else if (/^\/projects\/.*\/curation$/g.test(path)) {
         return 'curation page';

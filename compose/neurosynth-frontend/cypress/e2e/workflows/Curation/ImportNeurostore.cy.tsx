@@ -8,6 +8,8 @@ describe('ImportStudiesDialog', () => {
             fixture: 'projects/projectExtractionStep',
         }).as('projectFixture');
         cy.intercept('GET', `**/api/studysets/*`, { fixture: 'studyset' }).as('studysetFixture');
+
+        cy.addToLocalStorage('auth0|62e0e6c9dd47048572613b4d-hide-info-popup', 'true');
     });
 
     describe('Search Neurostore', () => {
@@ -18,8 +20,7 @@ describe('ImportStudiesDialog', () => {
             }).as('baseStudiesFixture');
             cy.intercept('PUT', '**/api/projects/abc123').as('updateProjectFixture');
             cy.visit('/projects/abc123/curation').wait('@projectFixture').wait('@studysetFixture');
-            cy.contains('button', 'import studies').click();
-            cy.contains('button', 'next').click();
+            cy.contains('button', 'Search').parent().click();
         });
 
         it('should show the neurostore search page', () => {
