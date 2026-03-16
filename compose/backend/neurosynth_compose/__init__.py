@@ -41,6 +41,12 @@ def create_app():
     openapi_path = Path(app.root_path) / "openapi" / "neurosynth-compose-openapi.yml"
     swagger_options = {"swagger_ui": True}
 
+    # Connexion resolves security handlers from environment variables or
+    # x-... entries in the OpenAPI spec, not Flask config. Push the config
+    # values into the environment so app config remains the single source of truth.
+    os.environ["BEARERINFO_FUNC"] = app.config["BEARERINFO_FUNC"]
+    os.environ["APIKEYINFO_FUNC"] = app.config["APIKEYINFO_FUNC"]
+
     with app.app_context():
         connexion_app.add_api(
             openapi_path,

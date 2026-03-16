@@ -266,20 +266,29 @@ def _truncate_public_tables(db):
         )
 
 
+class _ScopedSessionProxy:
+    def __init__(self, scoped_session, bind):
+        self._scoped_session = scoped_session
+        self.bind = bind
+
+    def __getattr__(self, name):
+        return getattr(self._scoped_session, name)
+
+
 @pytest.fixture(scope="function")
 def session(db):
     """Reset the migrated test database between tests."""
     from ..core import cache
 
-    session = db.session
-    session.remove()
+    scoped_session = db.session
+    scoped_session.remove()
     cache.clear()
     _truncate_public_tables(db)
 
-    yield session
+    yield _ScopedSessionProxy(scoped_session, db.engine)
 
     cache.clear()
-    session.remove()
+    scoped_session.remove()
 
 
 @pytest.fixture(scope="session")
