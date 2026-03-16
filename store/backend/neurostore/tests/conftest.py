@@ -249,33 +249,37 @@ def db(app):
     # _db.drop_all()
 
 
+def _truncate_public_tables(db):
+    inspector = sa.inspect(db.engine)
+    table_names = sorted(
+        table_name
+        for table_name in inspector.get_table_names(schema="public")
+        if table_name != "alembic_version"
+    )
+    if not table_names:
+        return
+
+    quoted_tables = ", ".join(f'"public"."{table_name}"' for table_name in table_names)
+    with db.engine.begin() as conn:
+        conn.execute(
+            sa.text(f"TRUNCATE TABLE {quoted_tables} RESTART IDENTITY CASCADE")
+        )
+
+
 @pytest.fixture(scope="function")
 def session(db):
-    """https://docs.sqlalchemy.org/en/20/orm/session_transaction.html#joining-a-session-into-an-external-transaction-such-as-for-test-suites"""  # noqa
+    """Reset the migrated test database between tests."""
     from ..core import cache
 
-    connection = db.engine.connect()
-    transaction = connection.begin()
     session = db.session
     session.remove()
-    session.configure(bind=connection, binds={})
-    session.begin_nested()
-
-    @sa.event.listens_for(session(), "after_transaction_end")
-    def restart_savepoint(sess, trans):
-        if trans.nested and not getattr(getattr(trans, "_parent", None), "nested", False):
-            session.expire_all()
-            session.begin_nested()
-
-    db.session = session
     cache.clear()
+    _truncate_public_tables(db)
+
     yield session
 
     cache.clear()
     session.remove()
-    transaction.rollback()
-    connection.close()
-    session.configure(bind=db.engine, binds={})
 
 
 @pytest.fixture(scope="session")
