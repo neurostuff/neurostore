@@ -4,9 +4,8 @@ import json
 import os
 from os import environ
 
-# Some test modules import schemas during collection, and those schemas import
-# neurostore.core at module scope. Seed the bearer handler override early so
-# Connexion resolves the test decoder even if the app is built before fixtures run.
+# Seed the bearer handler override early so Connexion resolves the test decoder
+# even if an import path builds the application before fixtures run.
 os.environ.setdefault("BEARERINFO_FUNC", "neurostore.tests.conftest.mock_decode_token")
 
 from neurostore.models import Analysis, Condition
