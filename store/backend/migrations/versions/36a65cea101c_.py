@@ -123,6 +123,39 @@ def upgrade():
         if col_name not in studies_columns and inspector.has_table("studies"):
             op.add_column("studies", sa.Column(col_name, col_type, nullable=True))
 
+    if inspector.has_table("studies"):
+        study_user_fk = None
+        for fk in inspector.get_foreign_keys("studies"):
+            if fk.get("constrained_columns") == ["user_id"]:
+                study_user_fk = fk
+                break
+
+        # Historical rows can store users.id even though the application uses
+        # users.external_id for Study.user_id.
+        op.execute(
+            """
+            UPDATE studies AS s
+            SET user_id = u.external_id
+            FROM users AS u
+            WHERE s.user_id IS NOT NULL
+              AND s.user_id = u.id
+              AND (u.external_id IS NOT NULL AND s.user_id <> u.external_id)
+            """
+        )
+
+        if study_user_fk and study_user_fk.get("referred_columns") != ["external_id"]:
+            op.drop_constraint(study_user_fk["name"], "studies", type_="foreignkey")
+            study_user_fk = None
+
+        if study_user_fk is None:
+            op.create_foreign_key(
+                "studies_user_id_fkey",
+                "studies",
+                "users",
+                ["user_id"],
+                ["external_id"],
+            )
+
     studyset_columns = (
         {col["name"] for col in inspector.get_columns("studysets")}
         if inspector.has_table("studysets")

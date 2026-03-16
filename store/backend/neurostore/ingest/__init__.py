@@ -166,12 +166,14 @@ def ingest_neurovault(verbose=False, limit=20, overwrite=False, max_images=None)
             )
             images.append(image)
 
+        study_source_id = str(s.source_id) if s.source_id is not None else None
         db.session.add_all(
             [base_study] + [s] + list(analyses.values()) + images + list(conditions)
         )
         db.session.commit()
         _recompute_base_study_flags([base_study])
-        all_studies[str(s.source_id)] = s
+        if study_source_id is not None:
+            all_studies[study_source_id] = s
         return s
 
     url = "https://neurovault.org/api/collections.json"

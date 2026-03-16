@@ -4,7 +4,7 @@ import json
 import os
 from os import environ
 from neurostore.models import Analysis, Condition
-from sqlalchemy.orm import scoped_session, sessionmaker
+from sqlalchemy import select
 import sqlalchemy as sa
 from .. import ingest
 from ..models import (
@@ -30,6 +30,7 @@ import shortuuid
 import vcr
 
 import logging
+from flask_migrate import upgrade as migrate_upgrade
 from .utils import ordered_note_keys
 
 LOGGER = logging.getLogger(__name__)
@@ -229,20 +230,17 @@ def app(mock_auth):
 @pytest.fixture(scope="session")
 def db(app):
     """Session-wide test database."""
+    import manage  # noqa: F401  Ensures Flask-Migrate is initialized for Alembic.
+
     _db = app.extensions["sqlalchemy"]
-    _db.drop_all()
-    # Ensure pgvector extension exists before creating tables so the VECTOR type is available.
-    try:
-        # Use a direct engine connection to run CREATE EXTENSION, which is safer than using
-        # the session before tables/metadata exist.
-        with _db.engine.connect() as conn:
-            conn.execute(sa.text("CREATE EXTENSION IF NOT EXISTS vector;"))
-            conn.commit()
-    except Exception as e:
-        LOGGER.warning("Could not create pgvector extension: %s", e)
-        # If the extension cannot be created (permissions or non-Postgres DB), continue;
-        # table creation will fail later if VECTOR is required by the dialect.
-    _db.create_all()
+    # Rebuild the schema from migrations instead of create_all so named types,
+    # extensions, and other Postgres objects match production setup.
+    with _db.engine.connect() as conn:
+        conn.execute(sa.text("DROP SCHEMA IF EXISTS public CASCADE"))
+        conn.execute(sa.text("CREATE SCHEMA public"))
+        conn.execute(sa.text("CREATE EXTENSION IF NOT EXISTS vector"))
+        conn.commit()
+    migrate_upgrade(directory=app.config["MIGRATIONS_DIR"], revision="heads")
 
     yield _db
 
@@ -258,35 +256,26 @@ def session(db):
 
     connection = db.engine.connect()
     transaction = connection.begin()
-    original_session = db.session
-    scopefunc = None
-    if hasattr(original_session, "registry"):
-        scopefunc = getattr(original_session.registry, "scopefunc", None)
+    session = db.session
+    session.remove()
+    session.configure(bind=connection, binds={})
+    session.begin_nested()
 
-    session_factory = sessionmaker(
-        bind=connection,
-        join_transaction_mode="create_savepoint",
-    )
-    if scopefunc is not None:
-        session = scoped_session(session_factory=session_factory, scopefunc=scopefunc)
-    else:
-        session = scoped_session(session_factory=session_factory)
+    @sa.event.listens_for(session(), "after_transaction_end")
+    def restart_savepoint(sess, trans):
+        if trans.nested and not getattr(getattr(trans, "_parent", None), "nested", False):
+            session.expire_all()
+            session.begin_nested()
+
     db.session = session
     cache.clear()
     yield session
 
     cache.clear()
-    # The outer transaction rollback is sufficient to isolate tests; avoid
-    # issuing an extra session.rollback() after commits that have already
-    # de-associated nested savepoints.
-    try:
-        session.remove()
-    except Exception:  # noqa: BLE001
-        pass
-    if transaction.is_active:
-        transaction.rollback()
+    session.remove()
+    transaction.rollback()
     connection.close()
-    db.session = original_session
+    session.configure(bind=db.engine, binds={})
 
 
 @pytest.fixture(scope="session")
@@ -369,17 +358,19 @@ def mock_add_users(app, db, session, mock_auth):
         }
 
         if u["name"] != "newuser":
-            user = User(
-                name=u["name"],
-                external_id=token_info["sub"],
-            )
-            if User.query.filter_by(external_id=token_info["sub"]).first() is None:
-                db.session.add(user)
-                db.session.commit()
+            existing_user = session.execute(
+                select(User).where(User.external_id == token_info["sub"])
+            ).scalar_one_or_none()
+            if existing_user is None:
+                user = User(
+                    name=u["name"],
+                    external_id=token_info["sub"],
+                )
+                session.add(user)
+                session.flush()
+                existing_user = user
 
-            tokens[u["name"]]["id"] = (
-                User.query.filter_by(external_id=token_info["sub"]).first().id
-            )
+            tokens[u["name"]]["id"] = existing_user.id
 
     yield tokens
 
