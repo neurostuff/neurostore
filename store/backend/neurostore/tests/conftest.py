@@ -22,6 +22,7 @@ from ..models import (
 )
 from ..ingest.extracted_features import ingest_feature
 from auth0.authentication import GetToken
+from auth0.authentication.exceptions import Auth0Error
 from auth0.authentication.users import Users
 from unittest.mock import patch
 
@@ -119,9 +120,13 @@ def mock_decode_token(token):
 
 @pytest.fixture(scope="session")
 def mock_auth(monkeysession):
-    """mock decode token to get around rate limits"""
-    monkeysession.setenv(
-        "BEARERINFO_FUNC", "neurostore.tests.conftest.mock_decode_token"
+    """Override auth handler config so Connexion resolves the test decoder."""
+    from neurostore import config as config_module
+
+    monkeysession.setattr(
+        config_module.Config,
+        "BEARERINFO_FUNC",
+        "neurostore.tests.conftest.mock_decode_token",
     )
 
 
@@ -160,11 +165,12 @@ Session / db management tools
 @pytest.fixture(scope="session")
 def real_app():
     """Session-wide test `Flask` application."""
+    environ.setdefault("APP_ENV", "testing")
+
     from ..core import app as _app
     from ..core import cache
     from ..config import resolve_config_object
 
-    environ.setdefault("APP_ENV", "testing")
     config = resolve_config_object()
     if not getattr(_app, "config", None):
         _app = _app._app
@@ -182,28 +188,37 @@ def real_app():
     ctx.pop()
 
 
+def _reset_migrated_schema(db, migrations_dir):
+    with db.engine.connect() as conn:
+        conn.execute(sa.text("DROP SCHEMA IF EXISTS public CASCADE"))
+        conn.execute(sa.text("CREATE SCHEMA public"))
+        conn.execute(sa.text("CREATE EXTENSION IF NOT EXISTS vector"))
+        conn.commit()
+    migrate_upgrade(directory=migrations_dir, revision="heads")
+
+
 @pytest.fixture(scope="session")
 def real_db(real_app):
     """Session-wide test database."""
+    import manage  # noqa: F401  Ensures Flask-Migrate is initialized for Alembic.
+
     _db = real_app.extensions["sqlalchemy"]
-    _db.drop_all()
-    _db.create_all()
+    _reset_migrated_schema(_db, real_app.config["MIGRATIONS_DIR"])
 
     yield _db
 
-    # _db.session.remove()
     sa.orm.close_all_sessions()
-    _db.drop_all()
 
 
 @pytest.fixture(scope="session")
 def app(mock_auth):
     """Session-wide test `Flask` application."""
+    environ.setdefault("APP_ENV", "testing")
+
     from ..core import app as _app
     from ..core import cache
     from ..config import resolve_config_object
 
-    environ.setdefault("APP_ENV", "testing")
     config = resolve_config_object()
     if not getattr(_app, "config", None):
         _app = _app._app
@@ -233,14 +248,7 @@ def db(app):
     import manage  # noqa: F401  Ensures Flask-Migrate is initialized for Alembic.
 
     _db = app.extensions["sqlalchemy"]
-    # Rebuild the schema from migrations instead of create_all so named types,
-    # extensions, and other Postgres objects match production setup.
-    with _db.engine.connect() as conn:
-        conn.execute(sa.text("DROP SCHEMA IF EXISTS public CASCADE"))
-        conn.execute(sa.text("CREATE SCHEMA public"))
-        conn.execute(sa.text("CREATE EXTENSION IF NOT EXISTS vector"))
-        conn.commit()
-    migrate_upgrade(directory=app.config["MIGRATIONS_DIR"], revision="heads")
+    _reset_migrated_schema(_db, app.config["MIGRATIONS_DIR"])
 
     yield _db
 
@@ -393,11 +401,18 @@ def add_users(real_app, real_db):
     """Adds a test user to db"""
     from neurostore.resources.auth import decode_token
 
+    client_id = real_app.config["AUTH0_CLIENT_ID"]
+    client_secret = real_app.config["AUTH0_CLIENT_SECRET"]
+    if not client_id or client_id == "YOUR_CLIENT_ID":
+        pytest.skip("Auth integration tests require a real AUTH0_CLIENT_ID.")
+    if not client_secret or client_secret == "YOUR_CLIENT_SECRET":
+        pytest.skip("Auth integration tests require a real AUTH0_CLIENT_SECRET.")
+
     domain = real_app.config["AUTH0_BASE_URL"].split("://")[1]
     token = GetToken(
         domain,
-        real_app.config["AUTH0_CLIENT_ID"],
-        real_app.config["AUTH0_CLIENT_SECRET"],
+        client_id,
+        client_secret,
     )
 
     users = [
@@ -412,31 +427,34 @@ def add_users(real_app, real_db):
     ]
 
     tokens = {}
-    for u in users:
-        name = u["name"]
-        passw = u["password"]
-        payload = token.login(
-            username=name + "@email.com",
-            password=passw,
-            realm="Username-Password-Authentication",
-            audience=real_app.config["AUTH0_API_AUDIENCE"],
-            scope="openid profile email",
-        )
-        token_info = decode_token(payload["access_token"])
-        # do not add user1 into database
-        if name != "user1":
-            user = User(
-                name=name,
-                external_id=token_info["sub"],
+    try:
+        for u in users:
+            name = u["name"]
+            passw = u["password"]
+            payload = token.login(
+                username=name + "@email.com",
+                password=passw,
+                realm="Username-Password-Authentication",
+                audience=real_app.config["AUTH0_API_AUDIENCE"],
+                scope="openid profile email",
             )
-            if User.query.filter_by(external_id=token_info["sub"]).first() is None:
-                real_db.session.add(user)
-                real_db.session.commit()
+            token_info = decode_token(payload["access_token"])
+            # do not add user1 into database
+            if name != "user1":
+                user = User(
+                    name=name,
+                    external_id=token_info["sub"],
+                )
+                if User.query.filter_by(external_id=token_info["sub"]).first() is None:
+                    real_db.session.add(user)
+                    real_db.session.commit()
 
-        tokens[name] = {
-            "token": payload["access_token"],
-            "external_id": token_info["sub"],
-        }
+            tokens[name] = {
+                "token": payload["access_token"],
+                "external_id": token_info["sub"],
+            }
+    except Auth0Error as exc:
+        pytest.skip(f"Auth integration tests require working Auth0 credentials: {exc}")
 
     yield tokens
 

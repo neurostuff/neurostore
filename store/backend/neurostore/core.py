@@ -197,6 +197,11 @@ def _flask_general_handler(exc):
 app.register_error_handler(NeuroStoreException, _flask_neurostore_handler)
 app.register_error_handler(Exception, _flask_general_handler)
 
+# Connexion resolves security handlers from environment variables rather than
+# Flask config. Keep config authoritative, then project the configured handler
+# into the environment before API registration.
+os.environ["BEARERINFO_FUNC"] = app.config["BEARERINFO_FUNC"]
+
 connexion_app.add_api(
     openapi_file,
     base_path="/api",
