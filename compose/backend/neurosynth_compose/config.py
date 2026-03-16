@@ -118,7 +118,10 @@ class Config:
 class ProductionConfig(Config):
     ENV = "production"
     DB_NAME = resolve_database_name("compose", "production")
-    SQLALCHEMY_DATABASE_URI = f"postgresql://postgres:{Config.POSTGRES_PASSWORD}@{Config.POSTGRES_HOST}:5432/{DB_NAME}"
+    SQLALCHEMY_DATABASE_URI = (
+        f"postgresql://postgres:{Config.POSTGRES_PASSWORD}"
+        f"@{Config.POSTGRES_HOST}:5432/{DB_NAME}"
+    )
 
     AUTH0_CLIENT_ID = get_env_var("AUTH0_CLIENT_ID", required=True)
     AUTH0_CLIENT_SECRET = get_env_var("AUTH0_CLIENT_SECRET", required=True)
@@ -132,7 +135,10 @@ class ProductionConfig(Config):
 class StagingConfig(Config):
     ENV = "staging"
     DB_NAME = resolve_database_name("compose", "staging")
-    SQLALCHEMY_DATABASE_URI = f"postgresql://postgres:{Config.POSTGRES_PASSWORD}@{Config.POSTGRES_HOST}:5432/{DB_NAME}"
+    SQLALCHEMY_DATABASE_URI = (
+        f"postgresql://postgres:{Config.POSTGRES_PASSWORD}"
+        f"@{Config.POSTGRES_HOST}:5432/{DB_NAME}"
+    )
 
     AUTH0_CLIENT_ID = get_env_var("AUTH0_CLIENT_ID", required=True)
     AUTH0_CLIENT_SECRET = get_env_var("AUTH0_CLIENT_SECRET", required=True)

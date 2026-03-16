@@ -688,8 +688,8 @@ class ListView(BaseView):
             # Admins can see all records, others see public or their own
             if not is_admin:
                 q = q.filter(
-                    sae.or_(m.public == True, m.user == current_user)
-                )  # noqa E712
+                    sae.or_(m.public.is_(True), m.user == current_user)
+                )
 
         # query items that are drafts
         if hasattr(m, "draft"):
@@ -698,8 +698,8 @@ class ListView(BaseView):
             # Admins can see all drafts, others only see non-drafts or their own drafts
             if not is_admin:
                 q = q.filter(
-                    sae.or_(m.draft == False, m.user == current_user)
-                )  # noqa E712
+                    sae.or_(m.draft.is_(False), m.user == current_user)
+                )
 
         # query annotations for a specific dataset
         if args.get("dataset_id"):
