@@ -106,18 +106,6 @@ def decode_token(token):
                 401,
             )
 
-        if app.config.get("TESTING") and "kid" not in unverified_header:
-            try:
-                return jwt.get_unverified_claims(token)
-            except jwt.JWTError:
-                raise AuthError(
-                    {
-                        "code": "invalid_header",
-                        "description": "Unable to parse authentication" " token.",
-                    },
-                    401,
-                )
-
         jsonurl = urlopen(app.config["AUTH0_BASE_URL"] + "/.well-known/jwks.json")
         jwks = json.loads(jsonurl.read())
 

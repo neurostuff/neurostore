@@ -69,8 +69,6 @@ def create_user():
     from auth0.authentication.users import Users
 
     external_id = context.get("user")
-    if current_app.config.get("TESTING"):
-        return User(external_id=external_id, name=external_id or "Unknown")
 
     auth = request.headers.get("Authorization", None)
     token = auth.split()[1]

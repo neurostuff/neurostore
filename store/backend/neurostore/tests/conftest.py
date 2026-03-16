@@ -3,7 +3,6 @@ import random
 import json
 import os
 from os import environ
-from . import bootstrap  # noqa: F401
 
 from neurostore.models import Analysis, Condition
 from sqlalchemy import select
@@ -128,11 +127,17 @@ def mock_auth(monkeysession):
     monkeysession.setenv(
         "BEARERINFO_FUNC", "neurostore.tests.conftest.mock_decode_token"
     )
-    monkeysession.setattr(
-        config_module.Config,
-        "BEARERINFO_FUNC",
-        "neurostore.tests.conftest.mock_decode_token",
-    )
+    for config_cls_name in (
+        "Config",
+        "DevelopmentConfig",
+        "TestingConfig",
+        "DockerTestConfig",
+    ):
+        monkeysession.setattr(
+            getattr(config_module, config_cls_name),
+            "BEARERINFO_FUNC",
+            "neurostore.tests.conftest.mock_decode_token",
+        )
 
 
 @pytest.fixture(scope="function")
