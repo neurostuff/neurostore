@@ -554,7 +554,9 @@ class StudysetsView(ObjectView, ListView):
             if stale_assocs:
                 record.studyset_studies = [existing[sid] for sid in sorted(existing)]
 
-            missing_ids = [study_id for study_id in current_ids if study_id not in existing]
+            missing_ids = [
+                study_id for study_id in current_ids if study_id not in existing
+            ]
             # If a stub UUID is being re-mapped from a removed association to a new
             # association in this same request, flush deletes first to satisfy the
             # per-studyset uniqueness constraint on curation_stub_uuid.

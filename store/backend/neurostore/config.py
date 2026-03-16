@@ -42,7 +42,14 @@ def resolve_config_object():
 
 def resolve_database_name(default_db_name, config_env):
     app_env = _normalize_app_env(os.environ.get("APP_ENV", config_env))
-    if app_env in {"dev", "development", "test", "testing", "docker_test", "docker-test"}:
+    if app_env in {
+        "dev",
+        "development",
+        "test",
+        "testing",
+        "docker_test",
+        "docker-test",
+    }:
         return resolve_test_database_name()
     if app_env in PRODLIKE_ENVS:
         return default_db_name
@@ -115,7 +122,8 @@ class ProductionConfig(Config):
     ENV = "production"
     DB_NAME = resolve_database_name("neurostore", "production")
     SQLALCHEMY_DATABASE_URI = (
-        f"postgresql://postgres:" f"{Config.POSTGRES_PASSWORD}@{Config.POSTGRES_HOST}:5432/{DB_NAME}"
+        f"postgresql://postgres:"
+        f"{Config.POSTGRES_PASSWORD}@{Config.POSTGRES_HOST}:5432/{DB_NAME}"
     )
 
     AUTH0_CLIENT_ID = os.environ.get("AUTH0_CLIENT_ID")
@@ -131,7 +139,8 @@ class StagingConfig(Config):
     ENV = "staging"
     DB_NAME = resolve_database_name("neurostore", "staging")
     SQLALCHEMY_DATABASE_URI = (
-        f"postgresql://postgres:" f"{Config.POSTGRES_PASSWORD}@{Config.POSTGRES_HOST}:5432/{DB_NAME}"
+        f"postgresql://postgres:"
+        f"{Config.POSTGRES_PASSWORD}@{Config.POSTGRES_HOST}:5432/{DB_NAME}"
     )
 
     AUTH0_CLIENT_ID = os.environ.get("AUTH0_CLIENT_ID")

@@ -35,7 +35,7 @@ class PGSQLString(fields.String):
     def _deserialize(self, value, attr, data, **kwargs):
         result = super()._deserialize(value, attr, data, **kwargs)
         if result is not None:
-            return result.replace("\x00", "\uFFFD")
+            return result.replace("\x00", "\ufffd")
 
 
 class ResultInitSchema(ContextSchema):
@@ -132,7 +132,7 @@ class StringOrNested(fields.Nested):
         elif many:
             try:
                 return [
-                    utils.ensure_text_type(v).replace("\x00", "\uFFFD") for v in value
+                    utils.ensure_text_type(v).replace("\x00", "\ufffd") for v in value
                 ]
             except UnicodeDecodeError as error:
                 raise self.make_error("invalid_utf8") from error
@@ -142,13 +142,13 @@ class StringOrNested(fields.Nested):
             if isinstance(value, list):
                 try:
                     return [
-                        utils.ensure_text_type(v).replace("\x00", "\uFFFD")
+                        utils.ensure_text_type(v).replace("\x00", "\ufffd")
                         for v in value
                     ]
                 except UnicodeDecodeError as error:
                     raise self.make_error("invalid_utf8") from error
             try:
-                return utils.ensure_text_type(value).replace("\x00", "\uFFFD")
+                return utils.ensure_text_type(value).replace("\x00", "\ufffd")
             except UnicodeDecodeError as error:
                 raise self.make_error("invalid_utf8") from error
 

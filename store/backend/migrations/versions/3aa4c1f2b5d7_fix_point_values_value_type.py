@@ -24,7 +24,11 @@ def upgrade():
         return
 
     value_column = next(
-        (column for column in inspector.get_columns("point_values") if column["name"] == "value"),
+        (
+            column
+            for column in inspector.get_columns("point_values")
+            if column["name"] == "value"
+        ),
         None,
     )
     if value_column is None or isinstance(value_column["type"], sa.Float):
@@ -47,7 +51,11 @@ def downgrade():
         return
 
     value_column = next(
-        (column for column in inspector.get_columns("point_values") if column["name"] == "value"),
+        (
+            column
+            for column in inspector.get_columns("point_values")
+            if column["name"] == "value"
+        ),
         None,
     )
     if value_column is None or isinstance(value_column["type"], sa.VARCHAR):

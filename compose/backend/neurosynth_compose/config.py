@@ -51,7 +51,14 @@ def resolve_config_object():
 
 def resolve_database_name(default_db_name, config_env):
     app_env = _normalize_app_env(get_env_var("APP_ENV", config_env))
-    if app_env in {"dev", "development", "test", "testing", "docker_test", "docker-test"}:
+    if app_env in {
+        "dev",
+        "development",
+        "test",
+        "testing",
+        "docker_test",
+        "docker-test",
+    }:
         return resolve_test_database_name()
     if app_env in PRODLIKE_ENVS:
         return default_db_name
@@ -111,9 +118,7 @@ class Config:
 class ProductionConfig(Config):
     ENV = "production"
     DB_NAME = resolve_database_name("compose", "production")
-    SQLALCHEMY_DATABASE_URI = (
-        f"postgresql://postgres:{Config.POSTGRES_PASSWORD}@{Config.POSTGRES_HOST}:5432/{DB_NAME}"
-    )
+    SQLALCHEMY_DATABASE_URI = f"postgresql://postgres:{Config.POSTGRES_PASSWORD}@{Config.POSTGRES_HOST}:5432/{DB_NAME}"
 
     AUTH0_CLIENT_ID = get_env_var("AUTH0_CLIENT_ID", required=True)
     AUTH0_CLIENT_SECRET = get_env_var("AUTH0_CLIENT_SECRET", required=True)
@@ -127,9 +132,7 @@ class ProductionConfig(Config):
 class StagingConfig(Config):
     ENV = "staging"
     DB_NAME = resolve_database_name("compose", "staging")
-    SQLALCHEMY_DATABASE_URI = (
-        f"postgresql://postgres:{Config.POSTGRES_PASSWORD}@{Config.POSTGRES_HOST}:5432/{DB_NAME}"
-    )
+    SQLALCHEMY_DATABASE_URI = f"postgresql://postgres:{Config.POSTGRES_PASSWORD}@{Config.POSTGRES_HOST}:5432/{DB_NAME}"
 
     AUTH0_CLIENT_ID = get_env_var("AUTH0_CLIENT_ID", required=True)
     AUTH0_CLIENT_SECRET = get_env_var("AUTH0_CLIENT_SECRET", required=True)

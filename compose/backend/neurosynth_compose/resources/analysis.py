@@ -242,9 +242,10 @@ def _expected_cluster_table_targets(specification):
 
     if corr_type == "FWE" and corr_method == "montecarlo":
         if is_pairwise:
-            return (
-                list(NIMARE_CLUSTER_TABLE_TARGET_NAME["fwe_montecarlo"]["pairwise_mass"])
-                + list(NIMARE_CLUSTER_TABLE_TARGET_NAME["fwe_montecarlo"]["pairwise_voxel"])
+            return list(
+                NIMARE_CLUSTER_TABLE_TARGET_NAME["fwe_montecarlo"]["pairwise_mass"]
+            ) + list(
+                NIMARE_CLUSTER_TABLE_TARGET_NAME["fwe_montecarlo"]["pairwise_voxel"]
             )
         # NiMARE workflow prioritizes desc-mass for montecarlo diagnostics.
         return (
@@ -258,7 +259,9 @@ def _expected_cluster_table_targets(specification):
     if is_pairwise:
         return [
             f"{prefix}{suffix}"
-            for prefix in NIMARE_CLUSTER_TABLE_TARGET_NAME["pairwise_corrected_prefixes"]
+            for prefix in NIMARE_CLUSTER_TABLE_TARGET_NAME[
+                "pairwise_corrected_prefixes"
+            ]
         ]
     return [
         f"{prefix}{suffix}"
@@ -365,9 +368,7 @@ def is_user_admin(user=_UNSET):
         return False
 
     user_with_roles = (
-        User.query.options(selectinload(User.roles))
-        .filter_by(id=user.id)
-        .first()
+        User.query.options(selectinload(User.roles)).filter_by(id=user.id).first()
     )
 
     if user_with_roles is None:
@@ -460,13 +461,15 @@ class BaseView(MethodView):
                 to_commit.append(record)
             elif record is None:
                 abort(422)
-            elif (not only_ids and
-                  record.user_id != current_user.external_id and
-                  not is_user_admin(current_user)):
+            elif (
+                not only_ids
+                and record.user_id != current_user.external_id
+                and not is_user_admin(current_user)
+            ):
                 abort(
                     403,
                     description="You do not have permission to modify this "
-                    "record. You must be the owner or an admin."
+                    "record. You must be the owner or an admin.",
                 )
             elif only_ids:
                 to_commit.append(record)
@@ -547,7 +550,7 @@ class BaseView(MethodView):
 
 class ObjectView(BaseView):
     def get(self, id):
-        id = id.replace("\x00", "\uFFFD")
+        id = id.replace("\x00", "\ufffd")
         record = db.session.execute(
             select(self._model).where(self._model.id == id)
         ).scalar_one_or_none()
@@ -559,7 +562,7 @@ class ObjectView(BaseView):
         return _make_json_response(payload)
 
     def put(self, id):
-        id = id.replace("\x00", "\uFFFD")
+        id = id.replace("\x00", "\ufffd")
         request_data = self.insert_data(id, request.json)
         try:
             data = self.__class__._schema().load(request_data)
@@ -573,7 +576,7 @@ class ObjectView(BaseView):
         return _make_json_response(payload)
 
     def delete(self, id):
-        id = id.replace("\x00", "\uFFFD")
+        id = id.replace("\x00", "\ufffd")
         record = db.session.execute(
             select(self.__class__._model).where(self.__class__._model.id == id)
         ).scalar_one_or_none()
@@ -684,7 +687,9 @@ class ListView(BaseView):
             is_admin = is_user_admin(current_user)
             # Admins can see all records, others see public or their own
             if not is_admin:
-                q = q.filter(sae.or_(m.public == True, m.user == current_user))  # noqa E712
+                q = q.filter(
+                    sae.or_(m.public == True, m.user == current_user)
+                )  # noqa E712
 
         # query items that are drafts
         if hasattr(m, "draft"):
@@ -692,7 +697,9 @@ class ListView(BaseView):
             is_admin = is_user_admin(current_user)
             # Admins can see all drafts, others only see non-drafts or their own drafts
             if not is_admin:
-                q = q.filter(sae.or_(m.draft == False, m.user == current_user))  # noqa E712
+                q = q.filter(
+                    sae.or_(m.draft == False, m.user == current_user)
+                )  # noqa E712
 
         # query annotations for a specific dataset
         if args.get("dataset_id"):
@@ -790,9 +797,11 @@ class MetaAnalysesView(ObjectView, ListView):
 
             tag_record = None
             if tag_id:
-                tag_record = db.session.execute(
-                    select(Tag).where(Tag.id == tag_id)
-                ).scalars().first()
+                tag_record = (
+                    db.session.execute(select(Tag).where(Tag.id == tag_id))
+                    .scalars()
+                    .first()
+                )
                 if tag_record and not _tag_accessible(tag_record, current_user):
                     abort(403, description="tag is not accessible to this user")
                 if tag_record is None and not tag_name:
@@ -892,7 +901,7 @@ class TagsView(ObjectView, ListView):
         }
 
     def get(self, id):
-        id = id.replace("\x00", "\uFFFD")
+        id = id.replace("\x00", "\ufffd")
         record = db.session.execute(
             select(self._model).where(self._model.id == id)
         ).scalar_one_or_none()
@@ -1211,7 +1220,7 @@ class ProjectsView(ObjectView, ListView):
         return _make_json_response(payload)
 
     def put(self, id):
-        id = id.replace("\x00", "\uFFFD")
+        id = id.replace("\x00", "\ufffd")
         query_args = parser.parse(self._project_put_args, request, location="query")
         request_data = self.insert_data(id, request.json)
         try:

@@ -52,7 +52,9 @@ def _coerce_optional_int(value):
 
 def _recompute_base_study_flags(base_studies):
     base_study_ids = [getattr(base_study, "id", None) for base_study in base_studies]
-    base_study_ids = [base_study_id for base_study_id in base_study_ids if base_study_id]
+    base_study_ids = [
+        base_study_id for base_study_id in base_study_ids if base_study_id
+    ]
     if not base_study_ids:
         return
     db.session.remove()
