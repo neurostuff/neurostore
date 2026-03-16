@@ -254,13 +254,12 @@ Session / db management tools
 def app(mock_auth):
     """Session-wide test `Flask` application."""
     from .. import create_app
+    from ..config import resolve_config_object
 
     _app = create_app()
 
-    if "APP_SETTINGS" not in environ:
-        config = "neurosynth_compose.config.TestingConfig"
-    else:
-        config = environ["APP_SETTINGS"]
+    environ.setdefault("APP_ENV", "testing")
+    config = resolve_config_object()
     _app.config.from_object(config)
     # _app.config["SQLALCHEMY_ECHO"] = True
 

@@ -161,11 +161,10 @@ def real_app():
     """Session-wide test `Flask` application."""
     from ..core import app as _app
     from ..core import cache
+    from ..config import resolve_config_object
 
-    if "APP_SETTINGS" not in environ:
-        config = "neurostore.config.TestingConfig"
-    else:
-        config = environ["APP_SETTINGS"]
+    environ.setdefault("APP_ENV", "testing")
+    config = resolve_config_object()
     if not getattr(_app, "config", None):
         _app = _app._app
     _app.config.from_object(config)
@@ -201,11 +200,10 @@ def app(mock_auth):
     """Session-wide test `Flask` application."""
     from ..core import app as _app
     from ..core import cache
+    from ..config import resolve_config_object
 
-    if "APP_SETTINGS" not in environ:
-        config = "neurostore.config.TestingConfig"
-    else:
-        config = environ["APP_SETTINGS"]
+    environ.setdefault("APP_ENV", "testing")
+    config = resolve_config_object()
     if not getattr(_app, "config", None):
         _app = _app._app
     _app.config.from_object(config)

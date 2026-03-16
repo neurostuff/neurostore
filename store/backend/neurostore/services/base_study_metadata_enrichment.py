@@ -771,7 +771,7 @@ def enrich_base_study_metadata(base_study_id):
     semantic_scholar_api_key = config.get("SEMANTIC_SCHOLAR_API_KEY")
     contact_email = config.get("EMAIL")
     pubmed_api_key = config.get("PUBMED_TOOL_API_KEY")
-    pubmed_tool = config.get("PUBMED_TOOL", "neurostore")
+    pubmed_tool = config["PUBMED_TOOL"]
 
     external_identifiers = _extract_identifiers(base_study_snapshot)
     missing_ids = _missing_id_fields(external_identifiers)

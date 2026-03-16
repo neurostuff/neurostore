@@ -56,16 +56,30 @@ def load_env_file(path: Path) -> dict:
 def load_db_config(env: dict, label: str) -> DbConfig:
     """
     Build DbConfig from a single, canonical set of keys in the provided env mapping.
-    Required keys: POSTGRES_HOST, POSTGRES_DB, POSTGRES_USER, POSTGRES_PASSWORD.
+    Required keys: POSTGRES_HOST, POSTGRES_USER, POSTGRES_PASSWORD.
+    Database name is resolved from APP_ENV.
     Optional: POSTGRES_PORT (defaults to 5432, matching the app config).
     """
+    default_db_name = {"compose": "compose", "neurostore": "neurostore"}.get(label)
+    if not default_db_name:
+        raise RuntimeError(f"Unsupported database label: {label}")
+
+    app_env = env.get("APP_ENV", "development").strip().lower()
+    if app_env in {"dev", "development", "test", "testing", "docker_test", "docker-test"}:
+        dbname = "test_db"
+    elif app_env in {"stage", "staging", "prod", "production"}:
+        dbname = default_db_name
+    else:
+        dbname = None
+
     required_present = {
         "host": "POSTGRES_HOST",
-        "dbname": "POSTGRES_DB",
         "user": "POSTGRES_USER",
         "password": "POSTGRES_PASSWORD",
     }
     missing_required = [env_key for env_key in required_present.values() if not env.get(env_key)]
+    if not dbname:
+        missing_required.append("APP_ENV")
     if missing_required:
         raise RuntimeError(
             f"Missing required environment variables for {label} database: {', '.join(missing_required)}"
@@ -79,7 +93,7 @@ def load_db_config(env: dict, label: str) -> DbConfig:
 
     return DbConfig(
         host=env[required_present["host"]],
-        dbname=env[required_present["dbname"]],
+        dbname=dbname,
         user=env[required_present["user"]],
         password=env[required_present["password"]],
         port=port,

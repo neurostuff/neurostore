@@ -158,8 +158,12 @@ services:
     env_file:
       - .env
     environment:
-      DATABASE_URL: "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:5432/${POSTGRES_DB}"
       RAILS_RELATIVE_URL_ROOT: "/pghero"
+    volumes:
+      - ./postgres/resolve-app-db.sh:/usr/local/bin/resolve-app-db.sh:ro
+    entrypoint: ["/bin/sh", "-lc"]
+    command:
+      - 'db_name="$(/usr/local/bin/resolve-app-db.sh neurostore)"; export DATABASE_URL="postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:5432/$${db_name}"; exec puma -C /app/config/puma.rb'
     depends_on:
       store-pgsql17:
         condition: service_healthy
@@ -180,6 +184,10 @@ services:
     volumes:
       - grafana_data:/var/lib/grafana
       - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+      - ./postgres/resolve-app-db.sh:/usr/local/bin/resolve-app-db.sh:ro
+    entrypoint: ["/bin/sh", "-lc"]
+    command:
+      - 'export POSTGRES_DB="$(/usr/local/bin/resolve-app-db.sh neurostore)"; exec /run.sh'
     depends_on:
       store-pgsql17:
         condition: service_healthy

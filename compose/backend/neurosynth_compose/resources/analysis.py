@@ -1524,8 +1524,8 @@ def create_neurovault_collection(nv_collection):
 
     created_at = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
     base_name = getattr(meta_analysis, "name", None) or "Untitled"
-    max_length = int(app.config.get("NEUROVAULT_COLLECTION_NAME_MAX_LEN", 200))
-    max_suffix = int(app.config.get("NEUROVAULT_COLLECTION_CREATE_MAX_SUFFIX", 25))
+    max_length = int(app.config["NEUROVAULT_COLLECTION_NAME_MAX_LEN"])
+    max_suffix = int(app.config["NEUROVAULT_COLLECTION_CREATE_MAX_SUFFIX"])
     name_length_candidates = [max_length]
     for fallback in (200, 150, 120, 100, 80):
         if fallback < max_length:

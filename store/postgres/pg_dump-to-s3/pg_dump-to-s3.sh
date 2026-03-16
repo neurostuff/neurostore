@@ -16,14 +16,14 @@ fi
 S3_PATH="${S3_PATH:-neurostore-backup}"
 
 # get databases list
-if [ "$#" -eq 0 ] && [ -n "${POSTGRES_DB:-}" ]; then
-    dbs=("${POSTGRES_DB}")
+if [ "$#" -eq 0 ]; then
+    dbs=("$("/usr/local/bin/resolve-app-db.sh" neurostore)")
 else
     dbs=("$@")
 fi
 
 if [ "${#dbs[@]}" -eq 0 ]; then
-    echo "No databases provided; pass at least one name or set POSTGRES_DB." >&2
+    echo "No databases provided and no app database could be resolved." >&2
     exit 1
 fi
 

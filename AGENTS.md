@@ -12,10 +12,10 @@
 ## Canonical backend test commands
 - Store:
   - `cd store`
-  - `docker compose run -e "APP_SETTINGS=neurostore.config.DockerTestConfig" --rm neurostore bash -c "python -m pytest neurostore/tests"`
+  - `docker compose run -e "APP_ENV=docker_test" --rm neurostore bash -c "python -m pytest neurostore/tests"`
 - Compose:
   - `cd compose`
-  - `docker compose run -e "APP_SETTINGS=neurosynth_compose.config.DockerTestConfig" --rm compose bash -c "python -m pytest neurosynth_compose/tests"`
+  - `docker compose run -e "APP_ENV=docker_test" --rm compose bash -c "python -m pytest neurosynth_compose/tests"`
 
 ## Quick path check
 - If you are not sure where the file is, run:

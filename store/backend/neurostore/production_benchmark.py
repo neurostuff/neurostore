@@ -25,11 +25,11 @@ TOKEN = encode({"sub": "user1-id"}, "abc", algorithm="HS256")
 
 def _load_app():
     from neurostore.core import app as raw_app
+    from neurostore.config import resolve_config_object
 
     app = raw_app if getattr(raw_app, "config", None) else raw_app._app
-    app.config.from_object(
-        os.environ.get("APP_SETTINGS", "neurostore.config.TestingConfig")
-    )
+    os.environ.setdefault("APP_ENV", "testing")
+    app.config.from_object(resolve_config_object())
     return app
 
 

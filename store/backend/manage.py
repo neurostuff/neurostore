@@ -11,6 +11,7 @@ from flask_migrate import Migrate
 from neurostore.core import app, db
 from neurostore import ingest
 from neurostore import models
+from neurostore.config import resolve_config_object
 from neurostore.services.has_media_flags import process_base_study_flag_outbox_batch
 from neurostore.services.base_study_metadata_enrichment import (
     process_base_study_metadata_outbox_batch,
@@ -20,7 +21,7 @@ from neurostore.services.utils import outbox_health_snapshot
 if not getattr(app, "config", None):
     app = app._app
 
-app.config.from_object(os.environ["APP_SETTINGS"])
+app.config.from_object(resolve_config_object())
 
 
 def include_object(obj, name, type_, reflected, compare_to):

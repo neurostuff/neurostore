@@ -6,6 +6,48 @@ import os
 from pathlib import Path
 
 
+ENV_TO_CONFIG = {
+    "dev": "DevelopmentConfig",
+    "development": "DevelopmentConfig",
+    "stage": "StagingConfig",
+    "staging": "StagingConfig",
+    "prod": "ProductionConfig",
+    "production": "ProductionConfig",
+    "test": "TestingConfig",
+    "testing": "TestingConfig",
+    "docker_test": "DockerTestConfig",
+    "docker-test": "DockerTestConfig",
+}
+DEVLIKE_ENVS = {"dev", "development", "test", "testing", "docker_test", "docker-test"}
+PRODLIKE_ENVS = {"stage", "staging", "prod", "production"}
+
+
+def _normalize_app_env(value):
+    return (value or "").strip().lower()
+
+
+def resolve_config_object():
+    app_env = _normalize_app_env(os.environ.get("APP_ENV", "development"))
+    config_name = ENV_TO_CONFIG.get(app_env)
+    if not config_name:
+        raise RuntimeError(
+            f"Unsupported APP_ENV={app_env!r}. Expected one of: {', '.join(sorted(ENV_TO_CONFIG))}"
+        )
+    return f"{__name__}.{config_name}"
+
+
+def resolve_database_name(default_db_name, config_env):
+    app_env = _normalize_app_env(os.environ.get("APP_ENV", config_env))
+    if app_env in DEVLIKE_ENVS:
+        return "test_db"
+    if app_env in PRODLIKE_ENVS:
+        return default_db_name
+
+    raise RuntimeError(
+        f"Unsupported APP_ENV={app_env!r}. Expected one of: {', '.join(sorted(ENV_TO_CONFIG))}"
+    )
+
+
 class Config(object):
     # SERVER_NAME = 'localhost'  # Set to external server name in production
 
@@ -19,7 +61,7 @@ class Config(object):
     CACHE_KEY_PREFIX = None
     POSTGRES_HOST = os.environ.get("POSTGRES_HOST")
     POSTGRES_PASSWORD = os.environ.get("POSTGRES_PASSWORD", "")
-    DB_NAME = "neurostore"
+    DB_NAME = resolve_database_name("neurostore", "production")
     SQLALCHEMY_DATABASE_URI = (
         f"postgresql://postgres:" f"{POSTGRES_PASSWORD}@{POSTGRES_HOST}:5432/{DB_NAME}"
     )
@@ -48,7 +90,12 @@ class Config(object):
     EMAIL = os.environ.get("EMAIL")
     SEMANTIC_SCHOLAR_API_KEY = os.environ.get("SEMANTIC_SCHOLAR_API_KEY")
     PUBMED_TOOL_API_KEY = os.environ.get("PUBMED_TOOL_API_KEY")
-    PUBMED_TOOL = os.environ.get("PUBMED_TOOL", "neurostore")
+    PUBMED_TOOL = "neurostore"
+    FLASK_ADMIN_USERNAME = os.environ.get("FLASK_ADMIN_USERNAME")
+    FLASK_ADMIN_PASSWORD = os.environ.get("FLASK_ADMIN_PASSWORD")
+    BEARERINFO_FUNC = os.environ.get(
+        "BEARERINFO_FUNC", "neurostore.resources.auth.decode_token"
+    )
     PROPAGATE_EXCEPTIONS = True
 
     GITHUB_CLIENT_ID = "github-id"
@@ -62,6 +109,10 @@ class Config(object):
 
 class ProductionConfig(Config):
     ENV = "production"
+    DB_NAME = resolve_database_name("neurostore", "production")
+    SQLALCHEMY_DATABASE_URI = (
+        f"postgresql://postgres:" f"{Config.POSTGRES_PASSWORD}@{Config.POSTGRES_HOST}:5432/{DB_NAME}"
+    )
 
     AUTH0_CLIENT_ID = os.environ.get("AUTH0_CLIENT_ID")
     AUTH0_CLIENT_SECRET = os.environ.get("AUTH0_CLIENT_SECRET")
@@ -74,7 +125,10 @@ class ProductionConfig(Config):
 
 class StagingConfig(Config):
     ENV = "staging"
-    DEBUG = True
+    DB_NAME = resolve_database_name("neurostore", "staging")
+    SQLALCHEMY_DATABASE_URI = (
+        f"postgresql://postgres:" f"{Config.POSTGRES_PASSWORD}@{Config.POSTGRES_HOST}:5432/{DB_NAME}"
+    )
 
     AUTH0_CLIENT_ID = os.environ.get("AUTH0_CLIENT_ID")
     AUTH0_CLIENT_SECRET = os.environ.get("AUTH0_CLIENT_SECRET")
@@ -87,7 +141,6 @@ class StagingConfig(Config):
 
 class DevelopmentConfig(Config):
     ENV = "development"
-    DEBUG = True
 
     AUTH0_CLIENT_ID = os.environ.get("AUTH0_CLIENT_ID")
     AUTH0_CLIENT_SECRET = os.environ.get("AUTH0_CLIENT_SECRET")
@@ -96,7 +149,7 @@ class DevelopmentConfig(Config):
     AUTH0_AUTH_URL = "https://dev-mui7zm42.us.auth0.com/authorize"
     AUTH0_API_AUDIENCE = "localhost"
     COMPOSE_AUTH0_CLIENT_ID = os.environ.get("COMPOSE_AUTH0_CLIENT_ID")
-    DB_NAME = "test_db"
+    DB_NAME = resolve_database_name("neurostore", "development")
     POSTGRES_HOST = os.environ.get("POSTGRES_HOST")
     POSTGRES_PASSWORD = os.environ.get("POSTGRES_PASSWORD", "")
     SQLALCHEMY_DATABASE_URI = (
@@ -115,7 +168,7 @@ class TestingConfig(Config):
     AUTH0_AUTH_URL = "https://dev-mui7zm42.us.auth0.com/authorize"
     AUTH0_API_AUDIENCE = "localhost"
     COMPOSE_AUTH0_CLIENT_ID = os.environ.get("COMPOSE_AUTH0_CLIENT_ID")
-    DB_NAME = "test_db"
+    DB_NAME = resolve_database_name("neurostore", "testing")
     POSTGRES_HOST = os.environ.get("POSTGRES_HOST")
     POSTGRES_PASSWORD = os.environ.get("POSTGRES_PASSWORD", "")
     SQLALCHEMY_DATABASE_URI = (
@@ -126,7 +179,7 @@ class TestingConfig(Config):
 
 
 class DockerTestConfig(TestingConfig):
-    DB_NAME = "test_db"
+    DB_NAME = resolve_database_name("neurostore", "docker_test")
     POSTGRES_HOST = os.environ.get("POSTGRES_HOST")
     POSTGRES_PASSWORD = os.environ.get("POSTGRES_PASSWORD", "")
     SQLALCHEMY_DATABASE_URI = (

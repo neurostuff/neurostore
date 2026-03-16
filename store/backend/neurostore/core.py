@@ -28,6 +28,7 @@ from neurostore.exceptions.handlers import (
 from neurostore.exceptions.base import NeuroStoreException
 
 from .database import init_db
+from .config import resolve_config_object
 from neurostore.models import (
     User,
     Role,
@@ -52,7 +53,17 @@ from neurostore.models import (
 connexion_app = connexion.FlaskApp(__name__, specification_dir="openapi/")
 app = connexion_app.app
 
-app.config.from_object(os.environ["APP_SETTINGS"])
+app.config.from_object(resolve_config_object())
+
+
+def _env_flag(name, default=False):
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+app.config["DEBUG"] = _env_flag("DEBUG")
 
 oauth = OAuth(app)
 
@@ -65,12 +76,8 @@ app.secret_key = app.config["JWT_SECRET_KEY"]
 
 
 def _get_admin_credentials():
-    username = app.config.get("FLASK_ADMIN_USERNAME") or os.getenv(
-        "FLASK_ADMIN_USERNAME"
-    )
-    password = app.config.get("FLASK_ADMIN_PASSWORD") or os.getenv(
-        "FLASK_ADMIN_PASSWORD"
-    )
+    username = app.config.get("FLASK_ADMIN_USERNAME")
+    password = app.config.get("FLASK_ADMIN_PASSWORD")
     return username, password
 
 
@@ -196,14 +203,14 @@ connexion_app.add_api(
     options=options,
     arguments={"title": "NeuroStore API"},
     resolver=MethodResolver("neurostore.resources"),
-    strict_validation=os.getenv("DEBUG", False) == "True",
-    validate_responses=os.getenv("DEBUG", False) == "True",
+    strict_validation=app.config["DEBUG"],
+    validate_responses=app.config["DEBUG"],
 )
 
 auth0 = oauth.register(
     "auth0",
-    client_id=os.environ["AUTH0_CLIENT_ID"],
-    client_secret=os.environ["AUTH0_CLIENT_SECRET"],
+    client_id=app.config["AUTH0_CLIENT_ID"],
+    client_secret=app.config["AUTH0_CLIENT_SECRET"],
     api_base_url=app.config["AUTH0_BASE_URL"],
     access_token_url=app.config["AUTH0_ACCESS_TOKEN_URL"],
     authorize_url=app.config["AUTH0_AUTH_URL"],

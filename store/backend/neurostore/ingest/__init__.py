@@ -30,6 +30,7 @@ from neurostore.models import (
 from neurostore.models.data import StudysetStudy, _check_type
 from neurostore.map_types import canonicalize_map_type
 from neurostore.note_keys import resolve_note_key_default
+from neurostore.services.has_media_flags import recompute_media_flags
 
 META_ANALYSIS_WORDS = ["meta analysis", "meta-analysis", "systematic review"]
 
@@ -47,6 +48,17 @@ def _coerce_optional_int(value):
     if value is None:
         return None
     return int(float(value))
+
+
+def _recompute_base_study_flags(base_studies):
+    base_study_ids = [getattr(base_study, "id", None) for base_study in base_studies]
+    base_study_ids = [base_study_id for base_study_id in base_study_ids if base_study_id]
+    if not base_study_ids:
+        return
+    db.session.remove()
+    recompute_media_flags(base_study_ids)
+    db.session.commit()
+    db.session.remove()
 
 
 def ingest_neurovault(verbose=False, limit=20, overwrite=False, max_images=None):
@@ -154,11 +166,11 @@ def ingest_neurovault(verbose=False, limit=20, overwrite=False, max_images=None)
             )
             images.append(image)
 
-        base_study.update_has_images_and_points()
         db.session.add_all(
             [base_study] + [s] + list(analyses.values()) + images + list(conditions)
         )
         db.session.commit()
+        _recompute_base_study_flags([base_study])
         all_studies[str(s.source_id)] = s
         return s
 
@@ -238,7 +250,7 @@ def ingest_neurosynth(max_rows=None):
     studies = []
     to_commit = []
     all_studies = {s.pmid: s for s in Study.query.filter_by(source="neurosynth").all()}
-    base_studies = []
+    base_study_records = []
     with db.session.no_autoflush:
         for metadata_row, annotation_row in zip(
             metadata.itertuples(), annotations.itertuples(index=False)
@@ -249,14 +261,14 @@ def ingest_neurosynth(max_rows=None):
 
             # find an base_study based on available information
             if doi is not None:
-                base_studies = BaseStudy.query.filter(
+                existing_base_studies = BaseStudy.query.filter(
                     or_(BaseStudy.doi == doi, BaseStudy.pmid == pmid)
                 ).all()
 
-                if len(base_studies) == 1:
-                    base_study = base_studies[0]
-                elif len(base_studies) > 1:
-                    source_base_study = base_studies[0]
+                if len(existing_base_studies) == 1:
+                    base_study = existing_base_studies[0]
+                elif len(existing_base_studies) > 1:
+                    source_base_study = existing_base_studies[0]
                     # do not overwrite the versions column
                     # we want to append to this column
                     columns = [
@@ -264,7 +276,7 @@ def ingest_neurosynth(max_rows=None):
                         for c in source_base_study.__table__.columns
                         if c not in ("versions", "__ts_vector__")
                     ]
-                    for ab in base_studies[1:]:
+                    for ab in existing_base_studies[1:]:
                         for col in columns:
                             source_attr = getattr(source_base_study, col)
                             new_attr = getattr(ab, col)
@@ -301,7 +313,7 @@ def ingest_neurosynth(max_rows=None):
                     source_attr = getattr(base_study, col)
                     setattr(base_study, col, source_attr or value)
             to_commit.append(base_study)
-            base_studies.append(base_study)
+            base_study_records.append(base_study)
             study_coord_data = coord_data.loc[[id_]]
             md = {
                 "year": int(metadata_row.year),
@@ -402,10 +414,7 @@ def ingest_neurosynth(max_rows=None):
             to_commit.append(note.analysis)
         db.session.add_all([annot] + notes + to_commit + [d])
         db.session.commit()
-        for bs in base_studies:
-            bs.update_has_images_and_points()
-            db.session.add_all(base_studies)
-        db.session.commit()
+        _recompute_base_study_flags(base_study_records)
 
 
 def ingest_neuroquery(max_rows=None):
@@ -492,10 +501,7 @@ def ingest_neuroquery(max_rows=None):
     )
     db.session.add(d)
     db.session.commit()
-    for bs in base_studies:
-        bs.update_has_images_and_points()
-        db.session.add_all(base_studies)
-    db.session.commit()
+    _recompute_base_study_flags(base_studies)
 
 
 def load_ace_files(coordinates_file, metadata_file, text_file):
@@ -698,6 +704,7 @@ def ace_ingestion_logic(coordinates_df, metadata_df, text_df, skip_existing=Fals
                 )
 
             to_commit.append(base_study)
+            all_base_studies.append(base_study)
 
             s = all_studies.get(pmid, Study())
             update_study_info(s, metadata_row, text_row, doi, pmcid, year, level)
@@ -710,10 +717,7 @@ def ace_ingestion_logic(coordinates_df, metadata_df, text_df, skip_existing=Fals
 
     db.session.add_all(to_commit)
     db.session.commit()
-    for bs in all_base_studies:
-        bs.update_has_images_and_points()
-        db.session.add_all(all_base_studies)
-    db.session.commit()
+    _recompute_base_study_flags(all_base_studies)
 
 
 def ingest_ace(max_rows=None):

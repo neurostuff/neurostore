@@ -52,6 +52,7 @@ install_pgpass "/root" "root"
 install_pgpass "/var/lib/postgresql" "postgres"
 install_aws_config "/root" "root"
 install_aws_config "/var/lib/postgresql" "postgres"
+export POSTGRES_DB="$("/usr/local/bin/resolve-app-db.sh" compose)"
 
 crontab /home/backup.txt
 if command -v service >/dev/null 2>&1; then
