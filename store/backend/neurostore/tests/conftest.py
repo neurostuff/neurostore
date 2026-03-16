@@ -3,6 +3,12 @@ import random
 import json
 import os
 from os import environ
+
+# Some test modules import schemas during collection, and those schemas import
+# neurostore.core at module scope. Seed the bearer handler override early so
+# Connexion resolves the test decoder even if the app is built before fixtures run.
+os.environ.setdefault("BEARERINFO_FUNC", "neurostore.tests.conftest.mock_decode_token")
+
 from neurostore.models import Analysis, Condition
 from sqlalchemy import select
 import sqlalchemy as sa
@@ -123,6 +129,9 @@ def mock_auth(monkeysession):
     """Override auth handler config so Connexion resolves the test decoder."""
     from neurostore import config as config_module
 
+    monkeysession.setenv(
+        "BEARERINFO_FUNC", "neurostore.tests.conftest.mock_decode_token"
+    )
     monkeysession.setattr(
         config_module.Config,
         "BEARERINFO_FUNC",
@@ -165,17 +174,11 @@ Session / db management tools
 @pytest.fixture(scope="session")
 def real_app():
     """Session-wide test `Flask` application."""
+    from .. import create_app
+    from ..extensions import cache
+
     environ.setdefault("APP_ENV", "testing")
-
-    from ..core import app as _app
-    from ..core import cache
-    from ..config import resolve_config_object
-
-    config = resolve_config_object()
-    if not getattr(_app, "config", None):
-        _app = _app._app
-    _app.config.from_object(config)
-    # _app.config["SQLALCHEMY_ECHO"] = True
+    _app = create_app()
 
     cache.clear()
     # Establish an application context before running the tests.
@@ -200,9 +203,10 @@ def _reset_migrated_schema(db, migrations_dir):
 @pytest.fixture(scope="session")
 def real_db(real_app):
     """Session-wide test database."""
-    import manage  # noqa: F401  Ensures Flask-Migrate is initialized for Alembic.
+    from manage import init_migrate
 
     _db = real_app.extensions["sqlalchemy"]
+    init_migrate(real_app, _db)
     _reset_migrated_schema(_db, real_app.config["MIGRATIONS_DIR"])
 
     yield _db
@@ -213,17 +217,11 @@ def real_db(real_app):
 @pytest.fixture(scope="session")
 def app(mock_auth):
     """Session-wide test `Flask` application."""
+    from .. import create_app
+    from ..extensions import cache
+
     environ.setdefault("APP_ENV", "testing")
-
-    from ..core import app as _app
-    from ..core import cache
-    from ..config import resolve_config_object
-
-    config = resolve_config_object()
-    if not getattr(_app, "config", None):
-        _app = _app._app
-    _app.config.from_object(config)
-    # _app.config["SQLALCHEMY_ECHO"] = True
+    _app = create_app()
     # https://docs.sqlalchemy.org/en/14/errors.html#error-3o7r
     _app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
         "max_overflow": -1,
@@ -245,9 +243,10 @@ def app(mock_auth):
 @pytest.fixture(scope="session")
 def db(app):
     """Session-wide test database."""
-    import manage  # noqa: F401  Ensures Flask-Migrate is initialized for Alembic.
+    from manage import init_migrate
 
     _db = app.extensions["sqlalchemy"]
+    init_migrate(app, _db)
     _reset_migrated_schema(_db, app.config["MIGRATIONS_DIR"])
 
     yield _db
@@ -286,7 +285,7 @@ class _ScopedSessionProxy:
 @pytest.fixture(scope="function")
 def session(db):
     """Reset the migrated test database between tests."""
-    from ..core import cache
+    from ..extensions import cache
 
     scoped_session = db.session
     scoped_session.remove()

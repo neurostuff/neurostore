@@ -14,7 +14,7 @@ from marshmallow import (
 from sqlalchemy import func
 import orjson
 
-from neurostore.core import db
+from neurostore.database import db
 from neurostore.map_types import canonicalize_map_type, map_type_label
 from neurostore.models import Analysis, Point
 from neurostore.note_keys import (

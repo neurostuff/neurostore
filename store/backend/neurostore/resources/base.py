@@ -28,9 +28,9 @@ from sqlalchemy import func
 from webargs.flaskparser import parser
 from webargs import fields
 
-from ..core import cache
 from ..cache_versioning import bump_cache_versions, get_cache_version_for_path
 from ..database import db
+from ..extensions import cache
 from .utils import (
     get_current_user,
     is_user_admin,
@@ -68,6 +68,10 @@ def handle_parser_error(err, req, schema, *, error_status_code, error_headers):
 def create_user():
     from auth0.authentication.users import Users
 
+    external_id = context.get("user")
+    if current_app.config.get("TESTING"):
+        return User(external_id=external_id, name=external_id or "Unknown")
+
     auth = request.headers.get("Authorization", None)
     token = auth.split()[1]
     profile_info = Users(
@@ -80,7 +84,7 @@ def create_user():
     if "@" in name:
         name = profile_info.get("nickname", "Unknown")
 
-    current_user = User(external_id=context["user"], name=name)
+    current_user = User(external_id=external_id, name=name)
 
     return current_user
 

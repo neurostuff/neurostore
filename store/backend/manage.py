@@ -8,18 +8,16 @@ import time
 import click
 from flask_migrate import Migrate
 
-from neurostore.core import app, db
-from neurostore import ingest
-from neurostore import models
+from neurostore import create_app, ingest, models
 from neurostore.config import resolve_config_object
+from neurostore.database import db
 from neurostore.services.has_media_flags import process_base_study_flag_outbox_batch
 from neurostore.services.base_study_metadata_enrichment import (
     process_base_study_metadata_outbox_batch,
 )
 from neurostore.services.utils import outbox_health_snapshot
 
-if not getattr(app, "config", None):
-    app = app._app
+app = create_app()
 
 app.config.from_object(resolve_config_object())
 
@@ -37,13 +35,18 @@ def include_object(obj, name, type_, reflected, compare_to):
     return True
 
 
-migrate = Migrate(
-    app,
-    db,
-    directory=app.config["MIGRATIONS_DIR"],
-    include_object=include_object,
-)
-migrate.init_app(app, db)
+def init_migrate(target_app, target_db):
+    migrate = Migrate(
+        target_app,
+        target_db,
+        directory=target_app.config["MIGRATIONS_DIR"],
+        include_object=include_object,
+    )
+    migrate.init_app(target_app, target_db)
+    return migrate
+
+
+migrate = init_migrate(app, db)
 
 
 @app.shell_context_processor
