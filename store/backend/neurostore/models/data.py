@@ -568,6 +568,7 @@ class Study(BaseMixin, db.Model):
         backref=backref("study"),
         passive_deletes=True,
         cascade="all, delete-orphan",
+        order_by="(Analysis.order, Analysis.id)",
     )
     tables = relationship(
         "Table",
@@ -694,6 +695,7 @@ class Analysis(BaseMixin, db.Model):
         passive_deletes=True,
         cascade="all, delete-orphan",
         cascade_backrefs=False,
+        order_by="(Point.order, Point.id)",
     )
     images = relationship(
         "Image",
@@ -701,6 +703,7 @@ class Analysis(BaseMixin, db.Model):
         passive_deletes=True,
         cascade="all, delete-orphan",
         cascade_backrefs=False,
+        order_by="Image.id",
     )
     weights = association_proxy("analysis_conditions", "weight")
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"), index=True)
@@ -715,6 +718,7 @@ class Analysis(BaseMixin, db.Model):
         passive_deletes=True,
         cascade="all, delete-orphan",
         cascade_backrefs=False,
+        order_by="AnalysisConditions.condition_id",
     )
     annotation_analyses = relationship(
         "AnnotationAnalysis",
