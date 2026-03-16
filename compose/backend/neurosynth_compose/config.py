@@ -23,6 +23,10 @@ DEVLIKE_ENVS = {"dev", "development", "test", "testing", "docker_test", "docker-
 PRODLIKE_ENVS = {"stage", "staging", "prod", "production"}
 
 
+def resolve_test_database_name():
+    return "compose_test_db"
+
+
 def get_env_var(name, default=None, required=False):
     """Helper to fetch environment variables with optional default and required flag."""
     value = os.environ.get(name, default)
@@ -47,8 +51,8 @@ def resolve_config_object():
 
 def resolve_database_name(default_db_name, config_env):
     app_env = _normalize_app_env(get_env_var("APP_ENV", config_env))
-    if app_env in DEVLIKE_ENVS:
-        return "test_db"
+    if app_env in {"dev", "development", "test", "testing", "docker_test", "docker-test"}:
+        return resolve_test_database_name()
     if app_env in PRODLIKE_ENVS:
         return default_db_name
 

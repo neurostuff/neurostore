@@ -10,7 +10,7 @@ fi
 app_env="$(printf '%s' "${APP_ENV:-development}" | tr '[:upper:]' '[:lower:]')"
 case "${app_env}" in
     dev|development|test|testing|docker_test|docker-test)
-        printf '%s\n' "test_db"
+        printf '%s\n' "compose_test_db"
         ;;
     stage|staging|prod|production)
         printf '%s\n' "${default_db}"

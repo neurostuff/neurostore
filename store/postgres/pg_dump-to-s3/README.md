@@ -45,7 +45,7 @@ docker compose exec -T store-pgsql17 /bin/bash /home/pg_dump-to-s3.sh neurostore
 
 Examples:
 
-- `APP_ENV=development` resolves to `test_db`
+- `APP_ENV=development` resolves to `store_test_db`
 - `APP_ENV=staging` or `APP_ENV=production` resolves to `neurostore`
 
 ## How it works

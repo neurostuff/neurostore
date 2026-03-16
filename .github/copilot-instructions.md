@@ -29,13 +29,13 @@ Build times vary significantly. Set appropriate timeouts and **DO NOT CANCEL** b
 Create and migrate databases for both services:
 
 #### Store Database
-- `.env` selects the environment with `APP_ENV`; on a fresh volume, the matching default database is created automatically (`test_db` for development, `neurostore` for staging/production)
+- `.env` selects the environment with `APP_ENV`; on a fresh volume, the matching default database is created automatically (`store_test_db` for development/testing/docker_test, `neurostore` for staging/production)
 - `docker compose exec -T neurostore bash -c "flask db upgrade"` -- takes 5-10 seconds
 - `docker compose exec -T neurostore bash -c "flask ingest-neurosynth --max-rows 100"` -- takes 5-10 seconds
-- The tracked store migrations create `pgvector` automatically. If you are recovering a partially migrated database, `docker compose exec -T store-pgsql17 psql -U postgres -d test_db -c "CREATE EXTENSION IF NOT EXISTS vector;"` is still a safe fallback.
+- The tracked store migrations create `pgvector` automatically. If you are recovering a partially migrated database, `docker compose exec -T store-pgsql17 psql -U postgres -d store_test_db -c "CREATE EXTENSION IF NOT EXISTS vector;"` is still a safe fallback.
 
 #### Compose Database
-- `.env` selects the environment with `APP_ENV`; on a fresh volume, the matching default database is created automatically (`test_db` for development, `compose` for staging/production)
+- `.env` selects the environment with `APP_ENV`; on a fresh volume, the matching default database is created automatically (`compose_test_db` for development/testing/docker_test, `compose` for staging/production)
 - `docker compose exec -T compose bash -c "flask db upgrade"` -- takes 5-10 seconds
 
 ### Frontend Development
@@ -58,11 +58,15 @@ Navigate to `compose/neurosynth-frontend/`:
 
 #### Store Backend Tests
 - `docker compose run -e "APP_ENV=docker_test" --rm neurostore bash -c "python -m pytest neurostore/tests"`
+- Ensure `store_test_db` exists first if you are reusing an existing Postgres volume:
+  `docker compose exec -T store-pgsql17 bash -lc "psql -U postgres -tAc \"SELECT 1 FROM pg_database WHERE datname = 'store_test_db'\" | grep -q 1 || psql -U postgres -c \"create database store_test_db\""`
 - Takes 2-3 minutes. **NEVER CANCEL. Set timeout to 300+ seconds.**
-- Expected: ~229 passed, 12 skipped
+- Expected: the suite should run against `store_test_db`
 
 #### Compose Backend Tests  
 - `docker compose run -e "APP_ENV=docker_test" --rm compose bash -c "python -m pytest neurosynth_compose/tests"`
+- Ensure `compose_test_db` exists first if you are reusing an existing Postgres volume:
+  `docker compose exec -T compose-pgsql17 bash -lc "psql -U postgres -tAc \"SELECT 1 FROM pg_database WHERE datname = 'compose_test_db'\" | grep -q 1 || psql -U postgres -c \"create database compose_test_db\""`
 - Takes 2-4 minutes. **NEVER CANCEL. Set timeout to 360+ seconds.**
 
 #### Frontend Tests
@@ -148,8 +152,8 @@ Use `APP_ENV` as the only environment selector. For Docker-based tests, use `APP
 - **Solution**: Check OpenAPI submodules are initialized and container logs with `docker compose logs [service]`
 
 ### Database Connection Errors
-- **Problem**: `database "test_db" does not exist` 
-- **Solution**: Create test databases as shown in setup steps
+- **Problem**: `database "store_test_db" does not exist` or `database "compose_test_db" does not exist`
+- **Solution**: Create the service-specific test database as shown in the test steps
 
 ### Frontend Build Sentry Warnings
 - **Problem**: Sentry API token errors during build

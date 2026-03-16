@@ -69,6 +69,7 @@ case "$SERVICE" in
     DB_CONTAINER="store-pgsql17"
     BUCKET="neurostore-backup"
     APP_ENV_VALUE="docker_test"
+    TEST_DATABASE="store_test_db"
     BENCH_SCRIPT_PATH="/production-benchmark-tooling/store/backend/neurostore/production_benchmark.py"
     BENCH_SERVICE="neurostore"
     BEARERINFO_FUNC_VALUE="neurostore.tests.conftest.mock_decode_token"
@@ -81,6 +82,7 @@ case "$SERVICE" in
     DB_CONTAINER="compose-pgsql17"
     BUCKET="neurosynth-backup"
     APP_ENV_VALUE="docker_test"
+    TEST_DATABASE="compose_test_db"
     BENCH_SCRIPT_PATH="/production-benchmark-tooling/compose/backend/neurosynth_compose/production_benchmark.py"
     BENCH_SERVICE="compose"
     BEARERINFO_FUNC_VALUE="neurosynth_compose.tests.conftest.mock_decode_token"
@@ -189,7 +191,7 @@ RESTORE_CMD=(
   --compose-dir "${SERVICE_DIR}"
   --bucket "${BUCKET}"
   --container "${DB_CONTAINER}"
-  --database test_db
+  --database "${TEST_DATABASE}"
 )
 
 if [ -n "${PRODUCTION_BENCHMARK_DUMP_CACHE_DIR:-}" ]; then

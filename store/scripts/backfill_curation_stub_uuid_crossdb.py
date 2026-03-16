@@ -66,7 +66,7 @@ def load_db_config(env: dict, label: str) -> DbConfig:
 
     app_env = env.get("APP_ENV", "development").strip().lower()
     if app_env in {"dev", "development", "test", "testing", "docker_test", "docker-test"}:
-        dbname = "test_db"
+        dbname = "store_test_db" if label == "neurostore" else "compose_test_db"
     elif app_env in {"stage", "staging", "prod", "production"}:
         dbname = default_db_name
     else:

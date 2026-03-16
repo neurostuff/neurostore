@@ -29,16 +29,17 @@ Create the network, build the containers, and start services using the developme
 
 The server should now be running at http://localhost:81
 
-With `APP_ENV=development`, a fresh Postgres volume initializes `test_db`
+With `APP_ENV=development`, a fresh Postgres volume initializes `compose_test_db`
 automatically. If you are reusing an older volume created under a different
-environment, recreate the volume or create `test_db` manually before migrating.
+environment, recreate the volume or create `compose_test_db` manually before migrating.
 
 Next, apply the existing migrations (they are the canonical schema definition):
 
     docker-compose exec compose flask db upgrade
 
 Note: the stack now resolves the database from `APP_ENV` automatically.
-Development uses `test_db`; staging and production use `compose` by default.
+Development, testing, and `docker_test` use `compose_test_db`; staging and
+production use `compose` by default.
 
 Note: `compose-pghero` now follows the same environment-based database
 resolution as the rest of the stack.
@@ -74,26 +75,23 @@ docker-compose exec compose flask db upgrade
 Because each branch might change the schema independently, recreate the database before starting work on a different branch so that Alembic can replay only the migrations that exist on that branch.
 
 ```sh
-docker-compose stop compose compose_worker compose_nginx compose-pghero compose-grafana
-docker-compose exec compose-pgsql17 psql -U postgres -c "DROP DATABASE IF EXISTS test_db;"
-docker-compose exec compose-pgsql17 psql -U postgres -c "CREATE DATABASE test_db;"
-docker-compose up -d
-docker-compose exec compose flask db upgrade
+docker compose stop compose compose_worker compose_nginx compose-pghero compose-grafana
+docker compose exec compose-pgsql17 psql -U postgres -c "DROP DATABASE IF EXISTS compose_test_db;"
+docker compose exec compose-pgsql17 psql -U postgres -c "CREATE DATABASE compose_test_db;"
+docker compose up -d
+docker compose exec compose flask db upgrade
 ```
 
 If you're using the legacy Postgres container, replace `compose-pgsql17` with `compose_pgsql` in the commands above.
 
 
 ## Running tests
-To run tests after starting services, ensure `test_db` exists. A fresh
-development stack creates it automatically.
-
-**NOTE**: This command will ask you for the postgres password which is defined
-in the `.env` file.
+To run tests after starting services, ensure `compose_test_db` exists.
 
 and execute:
 
-    docker-compose run -e "APP_ENV=docker_test" --rm compose bash -c "python -m pytest neurosynth_compose/tests"
+    docker compose exec compose-pgsql17 psql -U postgres -tAc "SELECT 1 FROM pg_database WHERE datname = 'compose_test_db'" | grep -q 1 || docker compose exec compose-pgsql17 psql -U postgres -c "CREATE DATABASE compose_test_db;"
+    docker compose run -e "APP_ENV=docker_test" --rm compose bash -c "python -m pytest neurosynth_compose/tests"
 
 ## Admin interface
 The Flask-Admin UI is served at `/admin` once the stack is running.
@@ -109,10 +107,10 @@ Auth:
 Grant admin access (recommended for any admin UI access):
 ```sh
 # Find the user ID
-docker-compose exec compose-pgsql17 psql -U postgres -d test_db \
+docker compose exec compose-pgsql17 psql -U postgres -d compose_test_db \
   -c "SELECT id, external_id FROM users WHERE external_id = 'user-external-id';"
 
 # Assign admin role
-docker-compose exec compose-pgsql17 psql -U postgres -d test_db \
+docker compose exec compose-pgsql17 psql -U postgres -d compose_test_db \
   -c "INSERT INTO roles_users (user_id, role_id) VALUES ('user-id', 'admin');"
 ```

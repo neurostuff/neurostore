@@ -29,9 +29,9 @@ Create the network, build the containers, and start services using the developme
 
 The server should now be running at http://localhost/
 
-With `APP_ENV=development`, a fresh Postgres volume initializes `test_db`
+With `APP_ENV=development`, a fresh Postgres volume initializes `store_test_db`
 automatically. If you are reusing an older volume created under a different
-environment, recreate the volume or create `test_db` manually before migrating.
+environment, recreate the volume or create `store_test_db` manually before migrating.
 
 Next, apply the existing migrations (they are the canonical definition of the schema).
 
@@ -39,7 +39,7 @@ Next, apply the existing migrations (they are the canonical definition of the sc
 
 The tracked migrations create the `pgvector` extension automatically. If you are recovering from a partially migrated database, it is also safe to run:
 
-    docker-compose exec store-pgsql17 psql -U postgres -d test_db -c "CREATE EXTENSION IF NOT EXISTS vector;"
+    docker-compose exec store-pgsql17 psql -U postgres -d store_test_db -c "CREATE EXTENSION IF NOT EXISTS vector;"
 
 Finally ingest data
 
@@ -47,7 +47,8 @@ Finally ingest data
         bash -c "flask ingest-neurosynth --max-rows 100"
 
 Note: the stack now resolves the database from `APP_ENV` automatically.
-Development uses `test_db`; staging and production use `neurostore` by default.
+Development, testing, and `docker_test` use `store_test_db`; staging and
+production use `neurostore` by default.
 
 
 ## Maintaining docker image and db
@@ -80,26 +81,23 @@ docker-compose exec neurostore flask db upgrade
 Because each branch might change the schema independently, recreate the database before starting work on a different branch so that Alembic can replay only the migrations that exist on that branch.
 
 ```sh
-docker-compose stop neurostore store_outbox_worker store_metadata_outbox_worker store_nginx store-pghero store-grafana
-docker-compose exec store-pgsql17 psql -U postgres -c "DROP DATABASE IF EXISTS test_db;"
-docker-compose exec store-pgsql17 psql -U postgres -c "CREATE DATABASE test_db;"
-docker-compose up -d
-docker-compose exec neurostore flask db upgrade
+    docker compose stop neurostore store_outbox_worker store_metadata_outbox_worker store_nginx store-pghero store-grafana
+    docker compose exec store-pgsql17 psql -U postgres -c "DROP DATABASE IF EXISTS store_test_db;"
+    docker compose exec store-pgsql17 psql -U postgres -c "CREATE DATABASE store_test_db;"
+    docker compose up -d
+    docker compose exec neurostore flask db upgrade
 ```
 
 If you're using the legacy Postgres container, replace `store-pgsql17` with `store-pgsql` in the commands above. Re-run any ingestion or seed scripts your branch requires once the upgrade completes.
 
 
 ## Running tests
-To run tests after starting services, ensure `test_db` exists. A fresh
-development stack creates it automatically.
-
-**NOTE**: This command will ask you for the postgres password which is defined
-in the `.env` file.
+To run tests after starting services, ensure `store_test_db` exists.
 
 and execute:
 
-    docker-compose run -e "APP_ENV=docker_test" --rm neurostore bash -c "python -m pytest neurostore/tests"
+    docker compose exec store-pgsql17 psql -U postgres -tAc "SELECT 1 FROM pg_database WHERE datname = 'store_test_db'" | grep -q 1 || docker compose exec store-pgsql17 psql -U postgres -c "CREATE DATABASE store_test_db;"
+    docker compose run -e "APP_ENV=docker_test" --rm neurostore bash -c "python -m pytest neurostore/tests"
 
 ## Admin interface
 The Flask-Admin UI is served at `/admin` once the stack is running.
@@ -115,11 +113,11 @@ Auth:
 Grant admin access (recommended for any admin UI access):
 ```sh
 # Find the user ID
-docker-compose exec store-pgsql17 psql -U postgres -d test_db \
+docker compose exec store-pgsql17 psql -U postgres -d store_test_db \
   -c "SELECT id, external_id FROM users WHERE external_id = 'user-external-id';"
 
 # Assign admin role
-docker-compose exec store-pgsql17 psql -U postgres -d test_db \
+docker compose exec store-pgsql17 psql -U postgres -d store_test_db \
   -c "INSERT INTO roles_users (user_id, role_id) VALUES ('user-id', 'admin');"
 ```
 
@@ -132,7 +130,7 @@ docker-compose exec store-pgsql17 psql -U postgres -d test_db \
 To start the pgHero service, ensure Docker Compose is set up and run:
 
 ```sh
-docker-compose up -d store-pghero
+docker compose up -d store-pghero
 ```
 
 ### Accessing the pgHero Web UI

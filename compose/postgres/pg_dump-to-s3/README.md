@@ -45,7 +45,7 @@ docker compose exec -T compose-pgsql17 /bin/bash /home/pg_dump-to-s3.sh compose
 
 Examples:
 
-- `APP_ENV=development` resolves to `test_db`
+- `APP_ENV=development` resolves to `compose_test_db`
 - `APP_ENV=staging` or `APP_ENV=production` resolves to `compose`
 
 ## How it works

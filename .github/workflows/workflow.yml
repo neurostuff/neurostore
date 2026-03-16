@@ -196,7 +196,7 @@ jobs:
         run: |
           docker compose exec -T \
           store-pgsql17 \
-          bash -lc "psql -U postgres -tAc \"SELECT 1 FROM pg_database WHERE datname = 'test_db'\" | grep -q 1 || psql -U postgres -c \"create database test_db\""
+          bash -lc "psql -U postgres -tAc \"SELECT 1 FROM pg_database WHERE datname = 'store_test_db'\" | grep -q 1 || psql -U postgres -c \"create database store_test_db\""
       -
         name: Backend Tests
         env:
@@ -266,7 +266,7 @@ jobs:
       run: |
         docker compose exec -T \
         compose-pgsql17 \
-        bash -lc "psql -U postgres -tAc \"SELECT 1 FROM pg_database WHERE datname = 'test_db'\" | grep -q 1 || psql -U postgres -c \"create database test_db\""
+        bash -lc "psql -U postgres -tAc \"SELECT 1 FROM pg_database WHERE datname = 'compose_test_db'\" | grep -q 1 || psql -U postgres -c \"create database compose_test_db\""
     -
       name: Backend Tests
       env:
@@ -357,7 +357,7 @@ jobs:
       run: | 
         docker compose exec -T \
         compose-pgsql17 \
-        bash -lc "psql -U postgres -tAc \"SELECT 1 FROM pg_database WHERE datname = 'test_db'\" | grep -q 1 || psql -U postgres -c \"create database test_db\""
+        bash -lc "psql -U postgres -tAc \"SELECT 1 FROM pg_database WHERE datname = 'compose_test_db'\" | grep -q 1 || psql -U postgres -c \"create database compose_test_db\""
     -
       name: Frontend Jest Unit Tests
       env:
@@ -474,7 +474,7 @@ jobs:
 
         docker compose exec -T \
         compose-pgsql17 \
-        bash -lc "psql -U postgres -tAc \"SELECT 1 FROM pg_database WHERE datname = 'test_db'\" | grep -q 1 || psql -U postgres -c \"CREATE DATABASE test_db\""
+        bash -lc "psql -U postgres -tAc \"SELECT 1 FROM pg_database WHERE datname = 'compose_test_db'\" | grep -q 1 || psql -U postgres -c \"CREATE DATABASE compose_test_db\""
     -
       name: Create Store Database
       run: |
@@ -482,11 +482,11 @@ jobs:
 
         docker compose exec -T \
         store-pgsql17 \
-        bash -lc "psql -U postgres -tAc \"SELECT 1 FROM pg_database WHERE datname = 'test_db'\" | grep -q 1 || psql -U postgres -c \"CREATE DATABASE test_db\""
+        bash -lc "psql -U postgres -tAc \"SELECT 1 FROM pg_database WHERE datname = 'store_test_db'\" | grep -q 1 || psql -U postgres -c \"CREATE DATABASE store_test_db\""
 
         docker compose exec -T \
         store-pgsql17 \
-        psql -U postgres -d test_db -c "CREATE EXTENSION IF NOT EXISTS vector;"
+        psql -U postgres -d store_test_db -c "CREATE EXTENSION IF NOT EXISTS vector;"
     -
       name: Apply Compose migrations
       run: |
