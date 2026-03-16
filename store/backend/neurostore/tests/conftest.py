@@ -3,10 +3,7 @@ import random
 import json
 import os
 from os import environ
-
-# Seed the bearer handler override early so Connexion resolves the test decoder
-# even if an import path builds the application before fixtures run.
-os.environ.setdefault("BEARERINFO_FUNC", "neurostore.tests.conftest.mock_decode_token")
+from . import bootstrap  # noqa: F401
 
 from neurostore.models import Analysis, Condition
 from sqlalchemy import select
