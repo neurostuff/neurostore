@@ -450,6 +450,15 @@ class AnalysisSchema(BaseDataSchema):
 
     @pre_load
     def load_values(self, data, **kwargs):
+        if not isinstance(data, dict):
+            return data
+
+        # Dump/load normalization during clone flows can materialize missing
+        # nested collections as explicit nulls. Treat those as absent inputs.
+        for field_name in ("images", "points", "analysis_conditions"):
+            if data.get(field_name) is None:
+                data.pop(field_name, None)
+
         partial = bool(kwargs.get("partial"))
         # conditions/weights need special processing
         if data.get("conditions") is not None and data.get("weights") is not None:
