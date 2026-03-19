@@ -17,7 +17,7 @@ const spaceTypeOptions: MapOrSpaceType[] = Object.keys(DefaultSpaceTypes).map((k
     };
 });
 
-const EditStudyAnalysisPointSpaceAndStatistic: React.FC<{
+const EditStudyAnalysisCBMAPointSpaceAndStatistic: React.FC<{
     analysisId?: string;
 }> = (props) => {
     const analysisPointStatistic = useStudyAnalysisPointStatistic(props.analysisId);
@@ -76,4 +76,4 @@ const EditStudyAnalysisPointSpaceAndStatistic: React.FC<{
     );
 };
 
-export default EditStudyAnalysisPointSpaceAndStatistic;
+export default EditStudyAnalysisCBMAPointSpaceAndStatistic;

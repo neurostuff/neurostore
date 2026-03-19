@@ -1,9 +1,9 @@
 import { vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import SearchContainer from './SearchContainer';
+import StudiesSearchContainer from './StudiesSearchContainer';
 
-vi.mock('components/Search/SearchBar.tsx');
+vi.mock('components/Search/StudiesSearchHeader');
 
 vi.mock('@mui/material', async (props: any) => ({
     ...(await vi.importActual('@mui/material')),
@@ -27,14 +27,14 @@ vi.mock('@mui/material', async (props: any) => ({
     ),
 }));
 
-describe('SearchContainer Component', () => {
+describe('StudiesSearchContainer Component', () => {
     const mockOnPageChange = vi.fn();
     const mockOnRowsPerPageChange = vi.fn();
     const mockOnSearch = vi.fn();
 
     it('should render', () => {
         render(
-            <SearchContainer
+            <StudiesSearchContainer
                 totalCount={0}
                 pageOfResults={1}
                 pageSize={10}
@@ -43,7 +43,7 @@ describe('SearchContainer Component', () => {
                 onSearch={mockOnSearch}
             >
                 <div>hello hello hello</div>
-            </SearchContainer>
+            </StudiesSearchContainer>
         );
 
         expect(screen.getByText('hello hello hello')).toBeInTheDocument();
@@ -51,7 +51,7 @@ describe('SearchContainer Component', () => {
 
     it('should call the search function', () => {
         render(
-            <SearchContainer
+            <StudiesSearchContainer
                 totalCount={0}
                 pageOfResults={1}
                 pageSize={10}
@@ -60,7 +60,7 @@ describe('SearchContainer Component', () => {
                 onSearch={mockOnSearch}
             >
                 <div>hello hello hello</div>
-            </SearchContainer>
+            </StudiesSearchContainer>
         );
         const search = screen.getByTestId('trigger-search');
         userEvent.click(search);
@@ -70,7 +70,7 @@ describe('SearchContainer Component', () => {
 
     it('should call the on page change function', () => {
         render(
-            <SearchContainer
+            <StudiesSearchContainer
                 totalCount={100}
                 pageOfResults={1}
                 pageSize={10}
@@ -79,7 +79,7 @@ describe('SearchContainer Component', () => {
                 onSearch={mockOnSearch}
             >
                 <div>hello hello hello</div>
-            </SearchContainer>
+            </StudiesSearchContainer>
         );
 
         const muiNavigateRightButton = screen.getByTestId('trigger-right-paginate');
@@ -90,7 +90,7 @@ describe('SearchContainer Component', () => {
 
     it('should call the on rows per page change function', async () => {
         render(
-            <SearchContainer
+            <StudiesSearchContainer
                 totalCount={100}
                 pageOfResults={1}
                 pageSize={10}
@@ -99,7 +99,7 @@ describe('SearchContainer Component', () => {
                 onSearch={mockOnSearch}
             >
                 <div>hello hello hello</div>
-            </SearchContainer>
+            </StudiesSearchContainer>
         );
         userEvent.click(screen.getByTestId('trigger-rows-per-page-change'));
         expect(mockOnRowsPerPageChange).toHaveBeenCalledWith(25);
@@ -107,7 +107,7 @@ describe('SearchContainer Component', () => {
 
     it('should set the total count', () => {
         render(
-            <SearchContainer
+            <StudiesSearchContainer
                 totalCount={101}
                 pageOfResults={1}
                 pageSize={10}
@@ -116,7 +116,7 @@ describe('SearchContainer Component', () => {
                 onSearch={mockOnSearch}
             >
                 <div>hello hello hello</div>
-            </SearchContainer>
+            </StudiesSearchContainer>
         );
 
         expect(screen.getByText('count: 11'));
@@ -124,7 +124,7 @@ describe('SearchContainer Component', () => {
 
     it('should set the rows per page', () => {
         render(
-            <SearchContainer
+            <StudiesSearchContainer
                 totalCount={101}
                 pageOfResults={1}
                 pageSize={10}
@@ -133,7 +133,7 @@ describe('SearchContainer Component', () => {
                 onSearch={mockOnSearch}
             >
                 <div>hello hello hello</div>
-            </SearchContainer>
+            </StudiesSearchContainer>
         );
 
         expect(screen.getByText('rows per page: 10'));
@@ -141,7 +141,7 @@ describe('SearchContainer Component', () => {
 
     it('should set the page of results', () => {
         render(
-            <SearchContainer
+            <StudiesSearchContainer
                 totalCount={101}
                 pageOfResults={4}
                 pageSize={10}
@@ -150,7 +150,7 @@ describe('SearchContainer Component', () => {
                 onSearch={mockOnSearch}
             >
                 <div>hello hello hello</div>
-            </SearchContainer>
+            </StudiesSearchContainer>
         );
 
         expect('page: 4');
@@ -158,7 +158,7 @@ describe('SearchContainer Component', () => {
 
     it('should set the search button color', () => {
         render(
-            <SearchContainer
+            <StudiesSearchContainer
                 totalCount={101}
                 pageOfResults={4}
                 pageSize={10}
@@ -168,7 +168,7 @@ describe('SearchContainer Component', () => {
                 searchButtonColor="yellow"
             >
                 <div>hello hello hello</div>
-            </SearchContainer>
+            </StudiesSearchContainer>
         );
 
         const searchButton = screen.getByTestId('trigger-search');
@@ -177,7 +177,7 @@ describe('SearchContainer Component', () => {
 
     it('should set the pagination selector styles', () => {
         render(
-            <SearchContainer
+            <StudiesSearchContainer
                 totalCount={101}
                 pageOfResults={4}
                 pageSize={10}
@@ -191,7 +191,7 @@ describe('SearchContainer Component', () => {
                 }}
             >
                 <div>hello hello hello</div>
-            </SearchContainer>
+            </StudiesSearchContainer>
         );
 
         expect(screen.getByTestId('mock-pagination-styles')).toHaveTextContent(

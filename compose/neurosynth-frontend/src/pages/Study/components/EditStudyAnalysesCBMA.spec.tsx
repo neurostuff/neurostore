@@ -1,7 +1,7 @@
 import { RenderResult } from '@testing-library/react';
 import { AnalysisReturn } from 'neurostore-typescript-sdk';
 
-describe('EditStudyAnalyses Component', () => {
+describe('EditStudyAnalysesCBMA Component', () => {
     let analyses: AnalysisReturn[] = [];
     let renderResult: RenderResult;
 

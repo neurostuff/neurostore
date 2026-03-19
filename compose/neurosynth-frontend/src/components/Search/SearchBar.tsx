@@ -2,18 +2,20 @@ import SearchIcon from '@mui/icons-material/Search';
 import { Alert, Box, Button, InputBase, Paper } from '@mui/material';
 import SearchBarStyles from 'components/Search/SearchBar.styles';
 import {
+    PROJECT_SORT_OPTIONS,
     SearchCriteria,
     SearchDataType,
     SearchDataTypeEnumToString,
     SortBy,
     SortByEnumToString,
     Source,
+    STUDY_SORT_OPTIONS,
 } from 'pages/Study/Study.types';
 import { getSearchCriteriaFromURL } from 'components/Search/search.helpers';
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import SearchBarFilters from './SearchBarFilters';
-import SearchSelectChip from './SearchSelectChip';
+import SearchFilterChip from './SearchFilterChip';
 import SearchSelectSortChip from './SearchSelectSortChip';
 import { ProjectSearchCriteria } from 'hooks/projects/useGetProjects';
 import { SearchBy, SearchByMapping } from 'components/Search/search.types';
@@ -203,7 +205,7 @@ const SearchBar: React.FC<ISearchBar> = (props) => {
                 </Box>
                 {searchMode === 'study-search' ? (
                     <Box sx={{ marginTop: '10px' }}>
-                        <SearchSelectChip
+                        <SearchFilterChip
                             chipLabel={`Study Data Type: ${
                                 SearchDataTypeEnumToString[(searchState as SearchCriteria).dataType as SearchDataType]
                             }`}
@@ -220,7 +222,7 @@ const SearchBar: React.FC<ISearchBar> = (props) => {
                             ]}
                         />
                         <SearchSelectSortChip
-                            searchMode="study-search"
+                            options={STUDY_SORT_OPTIONS}
                             chipLabel={`Sort By: ${
                                 SortByEnumToString[(searchState as SearchCriteria).sortBy as SortBy]
                             }`}
@@ -243,7 +245,7 @@ const SearchBar: React.FC<ISearchBar> = (props) => {
                 ) : (
                     <Box sx={{ marginTop: '10px' }}>
                         <SearchSelectSortChip
-                            searchMode="project-search"
+                            options={PROJECT_SORT_OPTIONS}
                             chipLabel={`Sort By: ${
                                 SortByEnumToString[(searchState as ProjectSearchCriteria).sortBy as SortBy]
                             }`}

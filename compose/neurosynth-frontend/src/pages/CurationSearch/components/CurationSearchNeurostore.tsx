@@ -1,15 +1,15 @@
 import { Box, Button, TableCell, TableRow } from '@mui/material';
 import LoadingButton from 'components/Buttons/LoadingButton';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons';
-import SearchContainer from 'components/Search/SearchContainer';
+import StudiesSearchContainer from 'components/Search/StudiesSearchContainer';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import NeurosynthTable from 'components/NeurosynthTable/NeurosynthTable';
 import NeurosynthTableStyles from 'components/NeurosynthTable/NeurosynthTable.styles';
 import { baseStudiesSearchHelper } from 'hooks/studies/useGetBaseStudies';
 import { BaseStudyList } from 'neurostore-typescript-sdk';
 import { useSnackbar } from 'notistack';
-import { useProjectId } from 'pages/Project/store/ProjectStore';
-import { SearchCriteria } from 'pages/Study/Study.types';
+import { useProjectAnalysisType, useProjectId } from 'pages/Project/store/ProjectStore';
+import { SearchCriteria, SearchDataType } from 'pages/Study/Study.types';
 import { addKVPToSearch, getSearchCriteriaFromURL, getURLFromSearchCriteria } from 'components/Search/search.helpers';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -17,6 +17,7 @@ import { IImportArgs } from '../../CurationImport/components/CurationImportDoImp
 import CurationImportBaseStyles from '../../CurationImport/components/CurationImport.styles';
 import { AxiosError } from 'axios';
 import { studiesToStubs } from 'helpers/Curation.helpers';
+import { EAnalysisType } from 'hooks/projects/Project.types';
 
 const CurationSearchNeurostore: React.FC<
     IImportArgs & { onSetSearchCriteria: (searchCriteria: SearchCriteria) => void }
@@ -30,6 +31,7 @@ const CurationSearchNeurostore: React.FC<
     const navigate = useNavigate();
     const location = useLocation();
     const projectId = useProjectId();
+    const projectAnalysisType = useProjectAnalysisType();
 
     // cached data returned from the api
     const [studyData, setStudyData] = useState<BaseStudyList>();
@@ -38,6 +40,7 @@ const CurationSearchNeurostore: React.FC<
         return {
             ...new SearchCriteria(),
             ...getSearchCriteriaFromURL(location?.search),
+            ...(projectAnalysisType === EAnalysisType.IBMA ? { dataType: SearchDataType.IMAGE } : {}),
         };
     }, [location?.search]);
 
@@ -138,7 +141,7 @@ const CurationSearchNeurostore: React.FC<
 
     return (
         <StateHandlerComponent isLoading={false} isError={false}>
-            <SearchContainer
+            <StudiesSearchContainer
                 error={error}
                 onPageChange={handlePageChange}
                 onRowsPerPageChange={handleRowsPerPageChange}
@@ -204,7 +207,7 @@ const CurationSearchNeurostore: React.FC<
                         ))}
                     />
                 </Box>
-            </SearchContainer>
+            </StudiesSearchContainer>
 
             <Box sx={CurationImportBaseStyles.fixedContainer}>
                 <Box sx={CurationImportBaseStyles.fixedButtonsContainer}>

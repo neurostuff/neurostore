@@ -3,7 +3,7 @@ import { Box } from '@mui/material';
 import { CellRange } from 'handsontable';
 import { CellChange, ChangeSource, RangeType } from 'handsontable/common';
 import { registerAllModules } from 'handsontable/registry';
-import InputNumberDialog from 'pages/Study/components/EditStudyAnalysisInputNumberDialog';
+import InputNumberDialog from 'pages/Study/components/EditStudyAnalysisCBMAInputNumberDialog';
 import {
     useCreateAnalysisPoints,
     useDeleteAnalysisPoints,
@@ -15,16 +15,16 @@ import React, { useMemo, useRef } from 'react';
 import { sanitizePaste } from '../../../components/HotTables/HotTables.utils';
 import useEditAnalysisPointsHotTable from '../hooks/useEditAnalysisPointsHotTable';
 import {
-    EditStudyAnalysisPointsDefaultConfig,
+    EditStudyAnalysisCBMAPointsDefaultConfig,
     getHotTableColumnSettings,
     getHotTableInsertionIndices,
     hotTableColHeaders,
-} from './EditStudyAnalysisPointsHotTable.helpers';
-import EditStudyAnalysisPointsHotTableToolbar from './EditStudyAnalysisPointsHotTableToolbar';
+} from './EditStudyAnalysisCBMAPointsHotTable.helpers';
+import EditStudyAnalysisCBMAPointsHotTableToolbar from './EditStudyAnalysisCBMAPointsHotTableToolbar';
 
 registerAllModules();
 
-const EditStudyAnalysisPointsHotTable: React.FC<{ analysisId?: string; readOnly?: boolean }> = React.memo(
+const EditStudyAnalysisCBMAPointsHotTable: React.FC<{ analysisId?: string; readOnly?: boolean }> = React.memo(
     ({ analysisId, readOnly = false }) => {
         const points = useStudyAnalysisPoints(analysisId) as IStorePoint[] | null;
         const updatePoints = useUpdateAnalysisPoints();
@@ -231,7 +231,7 @@ const EditStudyAnalysisPointsHotTable: React.FC<{ analysisId?: string; readOnly?
                             marginRight: '0.5rem',
                         }}
                     >
-                        <EditStudyAnalysisPointsHotTableToolbar
+                        <EditStudyAnalysisCBMAPointsHotTableToolbar
                             onAddRow={handleAddRow}
                             onAddRows={handleAddRows}
                             onDeleteRows={handleDeleteRows}
@@ -244,7 +244,7 @@ const EditStudyAnalysisPointsHotTable: React.FC<{ analysisId?: string; readOnly?
                         }}
                     >
                         <HotTable
-                            {...EditStudyAnalysisPointsDefaultConfig}
+                            {...EditStudyAnalysisCBMAPointsDefaultConfig}
                             ref={hotTableRef}
                             afterChange={handleAfterChange} // beforeChange results in weird update issues so we use afterChange
                             beforePaste={handleBeforePaste}
@@ -264,4 +264,4 @@ const EditStudyAnalysisPointsHotTable: React.FC<{ analysisId?: string; readOnly?
     }
 );
 
-export default EditStudyAnalysisPointsHotTable;
+export default EditStudyAnalysisCBMAPointsHotTable;

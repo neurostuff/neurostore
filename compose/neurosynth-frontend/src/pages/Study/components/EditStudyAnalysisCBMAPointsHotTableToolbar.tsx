@@ -2,7 +2,7 @@ import { Add, Delete, TableRows } from '@mui/icons-material';
 import { Box, Button, ButtonGroup, Tooltip } from '@mui/material';
 import React from 'react';
 
-const EditStudyAnalysisPointsHotTableToolbar: React.FC<{
+const EditStudyAnalysisCBMAPointsHotTableToolbar: React.FC<{
     onAddRow: () => void;
     onAddRows: () => void;
     onDeleteRows: () => void;
@@ -31,4 +31,4 @@ const EditStudyAnalysisPointsHotTableToolbar: React.FC<{
     );
 });
 
-export default EditStudyAnalysisPointsHotTableToolbar;
+export default EditStudyAnalysisCBMAPointsHotTableToolbar;

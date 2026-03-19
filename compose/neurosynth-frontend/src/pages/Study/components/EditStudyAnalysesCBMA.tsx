@@ -5,10 +5,10 @@ import EditStudyComponentsStyles from 'pages/Study/components/EditStudyComponent
 import { useAddOrUpdateAnalysis, useStudyAnalyses, useStudyId } from 'pages/Study/store/StudyStore';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useCreateAnnotationNote } from 'stores/AnnotationStore.actions';
-import EditStudyAnalysesList from './EditStudyAnalysesList';
-import EditStudyAnalysis from './EditStudyAnalysis';
+import EditStudyAnalysesCBMAList from './EditStudyAnalysesCBMAList';
+import EditStudyAnalysisCBMA from './EditStudyAnalysisCBMA';
 
-const EditStudyAnalyses: React.FC = React.memo(() => {
+const EditStudyAnalysesCBMA: React.FC = React.memo(() => {
     const analyses = useStudyAnalyses();
     const studyId = useStudyId();
     const addOrUpdateAnalysis = useAddOrUpdateAnalysis();
@@ -90,7 +90,7 @@ const EditStudyAnalyses: React.FC = React.memo(() => {
                         <Divider />
                         <Box sx={{ display: 'flex' }}>
                             <Box>
-                                <EditStudyAnalysesList
+                                <EditStudyAnalysesCBMAList
                                     analyses={analyses}
                                     selectedAnalysisId={selectedAnalysisId}
                                     onSelectAnalysis={handleSelectAnalysis}
@@ -106,7 +106,7 @@ const EditStudyAnalyses: React.FC = React.memo(() => {
                                     },
                                 }}
                             >
-                                <EditStudyAnalysis
+                                <EditStudyAnalysisCBMA
                                     onDeleteAnalysis={handleAfterAnalysisDeleted}
                                     analysisId={selectedAnalysisId}
                                 />
@@ -119,4 +119,4 @@ const EditStudyAnalyses: React.FC = React.memo(() => {
     );
 });
 
-export default EditStudyAnalyses;
+export default EditStudyAnalysesCBMA;

@@ -69,7 +69,7 @@ export const getHotTableColumnSettings = (disabled: boolean) => [
     },
 ];
 
-export const EditStudyAnalysisPointsDefaultConfig: HotTableProps = {
+export const EditStudyAnalysisCBMAPointsDefaultConfig: HotTableProps = {
     outsideClickDeselects: false,
     licenseKey: 'non-commercial-and-evaluation',
     selectionMode: 'range',

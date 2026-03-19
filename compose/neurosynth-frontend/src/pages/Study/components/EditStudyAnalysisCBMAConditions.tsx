@@ -8,7 +8,7 @@ import {
     MuiEvent,
 } from '@mui/x-data-grid';
 import React from 'react';
-import EditStudyAnalysisConditionsStyles from 'pages/Study/components/EditStudyAnalysisConditions.styles';
+import EditStudyAnalysisCBMAConditionsStyles from 'pages/Study/components/EditStudyAnalysisCBMAConditions.styles';
 import {
     useAddOrUpdateConditionWeightPairForAnalysis,
     useDeleteConditionFromAnalysis,
@@ -19,7 +19,7 @@ import { useSnackbar } from 'notistack';
 import { IStoreCondition } from 'pages/Study/store/StudyStore.helpers';
 import ConditionSelector from 'pages/Study/components/StudyConditionSelector';
 
-const EditStudyAnalysisConditions: React.FC<{ analysisId: string }> = React.memo((props) => {
+const EditStudyAnalysisCBMAConditions: React.FC<{ analysisId: string }> = React.memo((props) => {
     const conditions = useStudyAnalysisConditions(props.analysisId);
     const weights = useStudyAnalysisWeights(props.analysisId);
 
@@ -72,7 +72,7 @@ const EditStudyAnalysisConditions: React.FC<{ analysisId: string }> = React.memo
 
             <DataGrid
                 sx={[
-                    EditStudyAnalysisConditionsStyles.datagrid,
+                    EditStudyAnalysisCBMAConditionsStyles.datagrid,
                     {
                         height: conditionWeightsList.length === 0 ? '112px !important' : 'auto',
                         marginTop: '1rem',
@@ -119,4 +119,4 @@ const EditStudyAnalysisConditions: React.FC<{ analysisId: string }> = React.memo
     );
 });
 
-export default EditStudyAnalysisConditions;
+export default EditStudyAnalysisCBMAConditions;

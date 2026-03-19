@@ -3,7 +3,7 @@ import { Box, Chip, MenuItem, MenuList } from '@mui/material';
 import NeurosynthPopper from 'components/NeurosynthPopper/NeurosynthPopper';
 import { useRef, useState } from 'react';
 
-interface ISearchSelectChip<T> {
+interface ISearchFilterChip<T> {
     chipLabel: string;
     onSelectSearch: (searchParams: T) => void;
     options: {
@@ -12,7 +12,7 @@ interface ISearchSelectChip<T> {
     }[];
 }
 
-const SearchSelectChip = <T extends string>(props: ISearchSelectChip<T>) => {
+const SearchFilterChip = <T extends string>(props: ISearchFilterChip<T>) => {
     const { chipLabel, onSelectSearch, options } = props;
 
     const dataTypeSelectRef = useRef(null);
@@ -33,7 +33,12 @@ const SearchSelectChip = <T extends string>(props: ISearchSelectChip<T>) => {
                 <Box sx={{ width: '220px' }}>
                     <MenuList>
                         {options.map((option) => (
-                            <MenuItem onClick={() => onSelect(option.value)} key={option.label} value={option.value}>
+                            <MenuItem
+                                sx={{ textTransform: 'capitalize' }}
+                                onClick={() => onSelect(option.value)}
+                                key={option.label}
+                                value={option.value}
+                            >
                                 {option.label}
                             </MenuItem>
                         ))}
@@ -47,11 +52,11 @@ const SearchSelectChip = <T extends string>(props: ISearchSelectChip<T>) => {
                 clickable
                 onClick={() => setIsOpen(true)}
                 icon={<ArrowDropDown />}
-                sx={{ marginLeft: '5px', width: '220px' }}
+                sx={{ marginLeft: '5px', width: '220px', textTransform: 'capitalize' }}
                 label={chipLabel}
             />
         </>
     );
 };
 
-export default SearchSelectChip;
+export default SearchFilterChip;

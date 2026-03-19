@@ -1,8 +1,9 @@
 import { ArrowDropDown } from '@mui/icons-material';
 import { Box, Button, ButtonGroup, ListItem, ListItemText, MenuItem, MenuList } from '@mui/material';
 import NeurosynthPopper from 'components/NeurosynthPopper/NeurosynthPopper';
-import { EImportMode } from 'pages/CurationImport/CurationImport.types';
-import { useProjectId } from 'pages/Project/store/ProjectStore';
+import { EAnalysisType } from 'hooks/projects/Project.types';
+import { EImportMode } from 'pages/Curation/Curation.types';
+import { useProjectAnalysisType, useProjectId } from 'pages/Project/store/ProjectStore';
 import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -38,9 +39,12 @@ const ImportStudiesButton: React.FC = () => {
     const [optionsIsOpen, setOptionsIsOpen] = useState(false);
     const projectId = useProjectId();
     const navigate = useNavigate();
+    const analysisType = useProjectAnalysisType();
 
     const handleSearch = () => {
-        navigate(`/projects/${projectId}/curation/search`);
+        navigate(
+            `/projects/${projectId}/curation/search?dataType=${analysisType === EAnalysisType.IBMA ? 'image' : 'coordinates'}`
+        );
     };
 
     return (

@@ -4,7 +4,7 @@ import { useDeleteAnalysis } from 'pages/Study/store/StudyStore';
 import { useState } from 'react';
 import { useDeleteAnnotationNote } from 'stores/AnnotationStore.actions';
 
-const EditStudyAnalysisDeleteButton: React.FC<
+const EditStudyAnalysisCBMADeleteButton: React.FC<
     ButtonOwnProps & {
         analysisId?: string;
         onDeleteAnalysis: () => void;
@@ -40,4 +40,4 @@ const EditStudyAnalysisDeleteButton: React.FC<
     );
 };
 
-export default EditStudyAnalysisDeleteButton;
+export default EditStudyAnalysisCBMADeleteButton;

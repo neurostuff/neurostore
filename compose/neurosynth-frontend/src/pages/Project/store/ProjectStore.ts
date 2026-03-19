@@ -1,7 +1,7 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import { setUnloadHandler, unsetUnloadHandler } from 'helpers/BeforeUnload.helpers';
 import useGetProjectById from 'hooks/projects/useGetProjectById';
-import { INeurosynthProject, INeurosynthProjectReturn } from 'hooks/projects/Project.types';
+import { EAnalysisType, INeurosynthProject, INeurosynthProjectReturn } from 'hooks/projects/Project.types';
 import { ISource, ITag } from 'pages/Curation/Curation.types';
 import useUpdateProject from 'hooks/projects/useUpdateProject';
 import { useSnackbar } from 'notistack';
@@ -41,6 +41,7 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
         updated_at: undefined,
         user: undefined,
         provenance: {
+            type: EAnalysisType.CBMA,
             curationMetadata: {
                 columns: [],
                 prismaConfig: {
@@ -87,6 +88,7 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
         // just for testing purposes
         clearProvenance: async () => {
             const emptyProvenance = {
+                type: EAnalysisType.CBMA,
                 curationMetadata: {
                     columns: [],
                     prismaConfig: {
@@ -289,6 +291,7 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
                 updated_at: undefined,
                 created_at: undefined,
                 provenance: {
+                    type: EAnalysisType.CBMA,
                     curationMetadata: {
                         columns: [],
                         prismaConfig: {
@@ -721,6 +724,7 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
 export const useProjectMetadataHasUnsavedchanges = () => useProjectStore((state) => state.metadata.hasUnsavedChanges);
 
 // higher level project retrieval hooks
+export const useProjectAnalysisType = () => useProjectStore((state) => state.provenance.type);
 export const useProjectIsPublic = () => useProjectStore((state) => state.public);
 export const useProjectCreatedAt = () =>
     useProjectStore((state) => (state.created_at ? new Date(state.created_at || '') : undefined));

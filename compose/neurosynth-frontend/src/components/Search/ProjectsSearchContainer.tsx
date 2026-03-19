@@ -1,34 +1,25 @@
 import { Box, Pagination, TablePagination, Typography } from '@mui/material';
 import { SystemStyleObject } from '@mui/system';
-import SearchBar from 'components/Search/SearchBar';
-import { SearchCriteria } from 'pages/Study/Study.types';
-import { ChangeEvent } from 'react';
+import ProjectSearchHeader from 'components/Search/ProjectSearchHeader';
+import { getNumTotalPages } from 'components/Search/search.helpers';
 import SearchContainerStyles from './SearchContainer.styles';
+import { ChangeEvent } from 'react';
+import { ProjectSearchCriteria } from 'hooks/projects/useGetProjects';
 
-export interface ISearchContainer {
+export interface IProjectsSearchContainer {
     onPageChange: (newPage: number) => void;
     onRowsPerPageChange: (newRowsPerPage: number) => void;
-    onSearch: (searchArgs: Partial<SearchCriteria>) => void;
+    onSearch: (searchArgs: Partial<ProjectSearchCriteria>) => void;
     totalCount: number | undefined;
     pageSize: number;
     pageOfResults: number;
     searchButtonColor?: string;
     paginationSelectorStyles?: SystemStyleObject;
     tablePaginationSelectorStyles?: SystemStyleObject;
-    searchMode?: 'study-search' | 'project-search';
-    error?: string;
+    children?: React.ReactNode;
 }
 
-export const getNumTotalPages = (totalCount: number | undefined, pageSize: number | undefined) => {
-    if (!totalCount || !pageSize) {
-        return 0;
-    }
-    const numTotalPages = Math.trunc(totalCount / pageSize);
-    const remainder = totalCount % pageSize;
-    return remainder > 0 ? numTotalPages + 1 : numTotalPages;
-};
-
-const SearchContainer: React.FC<ISearchContainer> = (props) => {
+const ProjectsSearchContainer: React.FC<IProjectsSearchContainer> = (props) => {
     const {
         onPageChange,
         onRowsPerPageChange,
@@ -40,8 +31,6 @@ const SearchContainer: React.FC<ISearchContainer> = (props) => {
         searchButtonColor = 'primary',
         paginationSelectorStyles = {},
         tablePaginationSelectorStyles = {},
-        searchMode = 'study-search',
-        error = undefined,
     } = props;
 
     const handleRowsPerPageChange = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -56,12 +45,7 @@ const SearchContainer: React.FC<ISearchContainer> = (props) => {
 
     return (
         <>
-            <SearchBar
-                error={error}
-                searchMode={searchMode}
-                searchButtonColor={searchButtonColor}
-                onSearch={onSearch}
-            />
+            <ProjectSearchHeader searchButtonColor={searchButtonColor} onSearch={onSearch} />
 
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                 <Pagination
@@ -85,8 +69,6 @@ const SearchContainer: React.FC<ISearchContainer> = (props) => {
                 onPageChange={(_event, page) => handlePaginationChange(page + 1)}
                 component="div"
                 rowsPerPageOptions={[10, 25, 50, 99]}
-                // we have to do this because MUI's pagination component starts at 0,
-                // whereas 0 and 1 are the same in the backend
                 page={totalCount === undefined ? 0 : pageOfResults - 1}
                 count={totalCount || 0}
                 sx={[SearchContainerStyles.paginator, tablePaginationSelectorStyles]}
@@ -95,4 +77,4 @@ const SearchContainer: React.FC<ISearchContainer> = (props) => {
     );
 };
 
-export default SearchContainer;
+export default ProjectsSearchContainer;

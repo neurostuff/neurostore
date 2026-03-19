@@ -22,6 +22,22 @@ export const SortByEnumToString = {
     [SortBy.LASTUPDATED]: 'Last Updated',
 };
 
+export const STUDY_SORT_OPTIONS: SortBy[] = [
+    SortBy.RELEVANCE,
+    SortBy.TITLE,
+    SortBy.AUTHORS,
+    SortBy.DESCRIPTION,
+    SortBy.CREATEDAT,
+    SortBy.JOURNAL,
+];
+
+export const PROJECT_SORT_OPTIONS: SortBy[] = [
+    SortBy.LASTUPDATED,
+    SortBy.TITLE,
+    SortBy.CREATEDAT,
+    SortBy.DESCRIPTION,
+];
+
 export enum Source {
     NEUROSTORE = 'neurostore',
     NEUROVAULT = 'neurovault',
@@ -35,6 +51,13 @@ export enum SearchDataType {
     COORDINATE = 'coordinate',
     IMAGE = 'image',
     ALL = 'all',
+}
+
+export enum EMapType {
+    Z = 'z',
+    T = 't',
+    BETA_VARIANCE = 'beta_variance',
+    ANY = 'any',
 }
 
 export const SearchDataTypeEnumToString = {
@@ -64,7 +87,8 @@ export class SearchCriteria {
         public pmid: string | undefined = undefined,
         public doi: string | undefined = undefined,
         public flat: boolean | undefined = true,
-        public info: boolean | undefined = true
+        public info: boolean | undefined = true,
+        public IBMAMapType: EMapType | undefined = EMapType.ANY
     ) {}
 }
 

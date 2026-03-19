@@ -1,9 +1,9 @@
 import { Box, Typography } from '@mui/material';
-import EditStudyAnalysisDetails from 'pages/Study/components/EditStudyAnalysisDetails';
-import EditStudyAnalysisPoints from 'pages/Study/components/EditStudyAnalysisPoints';
+import EditStudyAnalysisCBMADetails from 'pages/Study/components/EditStudyAnalysisCBMADetails';
+import EditStudyAnalysisCBMAPoints from 'pages/Study/components/EditStudyAnalysisCBMAPoints';
 import StudyAnalysisWarnings from 'pages/Study/components/StudyAnalysisWarnings';
 
-const EditStudyAnalysis: React.FC<{
+const EditStudyAnalysisCBMA: React.FC<{
     analysisId?: string;
     onDeleteAnalysis: () => void;
 }> = (props) => {
@@ -14,8 +14,8 @@ const EditStudyAnalysis: React.FC<{
     return (
         <Box sx={{ marginBottom: '2rem' }}>
             <StudyAnalysisWarnings analysisId={props.analysisId} />
-            <EditStudyAnalysisDetails analysisId={props.analysisId} onDeleteAnalysis={props.onDeleteAnalysis} />
-            <EditStudyAnalysisPoints analysisId={props.analysisId} />
+            <EditStudyAnalysisCBMADetails analysisId={props.analysisId} onDeleteAnalysis={props.onDeleteAnalysis} />
+            <EditStudyAnalysisCBMAPoints analysisId={props.analysisId} />
             {/* TODO: This can be added back later when we have a better understanding of where it fits in as currently, all meta-analysis algorithms do not use this */}
             {/* <Box sx={{ marginTop: '2rem' }}>
                 <Typography sx={{ marginBottom: '1rem', fontWeight: 'bold' }}>
@@ -27,4 +27,4 @@ const EditStudyAnalysis: React.FC<{
     );
 };
 
-export default EditStudyAnalysis;
+export default EditStudyAnalysisCBMA;

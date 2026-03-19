@@ -3,7 +3,7 @@ import { IStoreAnalysis } from 'pages/Study/store/StudyStore.helpers';
 import { useCallback } from 'react';
 import StudyAnalysesListItem from './StudyAnalysesListItem';
 
-const EditStudyAnalysesList: React.FC<{
+const EditStudyAnalysesCBMAList: React.FC<{
     onSelectAnalysis: (analysisId: string) => void;
     selectedAnalysisId?: string;
     analyses: IStoreAnalysis[];
@@ -43,4 +43,4 @@ const EditStudyAnalysesList: React.FC<{
     );
 };
 
-export default EditStudyAnalysesList;
+export default EditStudyAnalysesCBMAList;

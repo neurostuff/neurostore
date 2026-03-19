@@ -1,7 +1,7 @@
-import EditStudyAnalysisPointsHotTable from 'pages/Study/components/EditStudyAnalysisPointsHotTable';
+import EditStudyAnalysisCBMAPointsHotTable from 'pages/Study/components/EditStudyAnalysisCBMAPointsHotTable';
 import { Box, Link, Tooltip, Typography } from '@mui/material';
 import HelpIcon from '@mui/icons-material/Help';
-import EditStudyAnalysisPointSpaceAndStatistic from 'pages/Study/components/EditStudyAnalysisPointSpaceAndStatistic';
+import EditStudyAnalysisCBMAPointSpaceAndStatistic from 'pages/Study/components/EditStudyAnalysisCBMAPointSpaceAndStatistic';
 import RelegateExtractionStudyDialog from './RelegateExtractionStudyDialog';
 import { clearExtractionTableState } from 'pages/Extraction/components/ExtractionTable.helpers';
 import { useNavigate } from 'react-router-dom';
@@ -10,7 +10,7 @@ import { useState } from 'react';
 import { useSnackbar } from 'notistack';
 import { Warning } from '@mui/icons-material';
 
-const EditStudyAnalysisPoints: React.FC<{ analysisId?: string }> = (props) => {
+const EditStudyAnalysisCBMAPoints: React.FC<{ analysisId?: string }> = (props) => {
     const navigate = useNavigate();
     const projectId = useProjectId();
     const { enqueueSnackbar } = useSnackbar();
@@ -65,10 +65,10 @@ const EditStudyAnalysisPoints: React.FC<{ analysisId?: string }> = (props) => {
                     </Link>
                 </Box>
             </Box>
-            <EditStudyAnalysisPointSpaceAndStatistic analysisId={props.analysisId} />
-            <EditStudyAnalysisPointsHotTable analysisId={props.analysisId} />
+            <EditStudyAnalysisCBMAPointSpaceAndStatistic analysisId={props.analysisId} />
+            <EditStudyAnalysisCBMAPointsHotTable analysisId={props.analysisId} />
         </Box>
     );
 };
 
-export default EditStudyAnalysisPoints;
+export default EditStudyAnalysisCBMAPoints;

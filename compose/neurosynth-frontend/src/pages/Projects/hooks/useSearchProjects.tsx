@@ -3,7 +3,7 @@ import useGetDebouncedProjects from 'hooks/projects/useGetDebouncedProjects';
 import { ProjectSearchCriteria } from 'hooks/projects/useGetProjects';
 import { ProjectList } from 'neurosynth-compose-typescript-sdk';
 import { addKVPToSearch, getSearchCriteriaFromURL, getURLFromSearchCriteria } from 'components/Search/search.helpers';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 const useSearchProjects = (userId?: string) => {
@@ -11,10 +11,12 @@ const useSearchProjects = (userId?: string) => {
     const navigate = useNavigate();
     const location = useLocation();
 
-    const [searchCriteria, setSearchCriteria] = useState<ProjectSearchCriteria>({
-        ...new ProjectSearchCriteria(),
-        ...getSearchCriteriaFromURL(location?.search),
-    });
+    const searchCriteria = useMemo(() => {
+        return {
+            ...new ProjectSearchCriteria(),
+            ...getSearchCriteriaFromURL(location?.search),
+        };
+    }, [location?.search]);
 
     const [projectsResponse, setProjectsResponse] = useState<ProjectList>();
 
@@ -23,7 +25,7 @@ const useSearchProjects = (userId?: string) => {
         isLoading: debouncedProjectIsLoading,
         isRefetching,
         isError,
-    } = useGetDebouncedProjects({ ...searchCriteria }, userId, !isLoading && isAuthenticated);
+    } = useGetDebouncedProjects(searchCriteria, userId, !isLoading && isAuthenticated);
 
     /**
      * the data variable itself is undefined when refetching, so we need to save it
@@ -33,16 +35,6 @@ const useSearchProjects = (userId?: string) => {
     useEffect(() => {
         if (data) setProjectsResponse(data);
     }, [data]);
-
-    // runs every time the URL changes, to create a URL driven search.
-    // this is separated from the debounce because otherwise the URL would
-    // not update until the setTimeout is complete
-    useEffect(() => {
-        const urlSearchCriteria = getSearchCriteriaFromURL(location?.search);
-        setSearchCriteria((prev) => {
-            return { ...prev, ...urlSearchCriteria };
-        });
-    }, [location.search]);
 
     const handleSearch = (searchArgs: Partial<ProjectSearchCriteria>) => {
         // when we search, we want to reset the search criteria as we dont know the

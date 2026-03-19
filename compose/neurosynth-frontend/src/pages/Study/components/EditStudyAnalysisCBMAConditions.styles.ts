@@ -1,6 +1,6 @@
 import { Style } from 'index';
 
-const EditStudyAnalysisConditionsStyles: Style = {
+const EditStudyAnalysisCBMAConditionsStyles: Style = {
     datagrid: {
         '& .readonly': {
             color: 'gray',
@@ -11,4 +11,4 @@ const EditStudyAnalysisConditionsStyles: Style = {
     },
 };
 
-export default EditStudyAnalysisConditionsStyles;
+export default EditStudyAnalysisCBMAConditionsStyles;

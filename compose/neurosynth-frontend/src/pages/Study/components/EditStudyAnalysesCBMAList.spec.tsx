@@ -1,14 +1,14 @@
 import { vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import EditStudyAnalysesList from './EditStudyAnalysesList';
+import EditStudyAnalysesCBMAList from './EditStudyAnalysesCBMAList';
 import { IStoreAnalysis } from 'pages/Study/store/StudyStore.helpers';
 import userEvent from '@testing-library/user-event';
 
 vi.mock('pages/Study/components/StudyAnalysesListItem.tsx');
 
-describe('EditStudyAnalysesList Component', () => {
+describe('EditStudyAnalysesCBMAList Component', () => {
     it('should render', () => {
-        render(<EditStudyAnalysesList onSelectAnalysis={() => {}} selectedAnalysisId="" analyses={[]} />);
+        render(<EditStudyAnalysesCBMAList onSelectAnalysis={() => {}} selectedAnalysisId="" analyses={[]} />);
     });
 
     it('should show two analyses in the list', () => {
@@ -46,7 +46,7 @@ describe('EditStudyAnalysesList Component', () => {
                 },
             },
         ];
-        render(<EditStudyAnalysesList onSelectAnalysis={() => {}} selectedAnalysisId="" analyses={mockAnalyses} />);
+        render(<EditStudyAnalysesCBMAList onSelectAnalysis={() => {}} selectedAnalysisId="" analyses={mockAnalyses} />);
 
         mockAnalyses.forEach((mockAnalysis) => {
             expect(screen.getByText(mockAnalysis.name as string)).toBeInTheDocument();
@@ -75,7 +75,7 @@ describe('EditStudyAnalysesList Component', () => {
             },
         ];
         render(
-            <EditStudyAnalysesList
+            <EditStudyAnalysesCBMAList
                 onSelectAnalysis={handleOnSelectAnalysisMock}
                 selectedAnalysisId=""
                 analyses={mockAnalyses}

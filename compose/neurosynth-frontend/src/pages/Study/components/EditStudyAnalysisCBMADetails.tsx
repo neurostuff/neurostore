@@ -5,9 +5,9 @@ import {
     useStudyAnalysisName,
 } from 'pages/Study/store/StudyStore';
 import { IStoreAnalysis } from 'pages/Study/store/StudyStore.helpers';
-import EditStudyAnalysisDeleteButton from './EditStudyAnalysisDeleteButton';
+import EditStudyAnalysisCBMADeleteButton from './EditStudyAnalysisCBMADeleteButton';
 
-const EditStudyAnalysisDetails: React.FC<{ analysisId?: string; onDeleteAnalysis: () => void }> = (props) => {
+const EditStudyAnalysisCBMADetails: React.FC<{ analysisId?: string; onDeleteAnalysis: () => void }> = (props) => {
     const addOrUpdateAnalysis = useAddOrUpdateAnalysis();
     const name = useStudyAnalysisName(props.analysisId);
     const description = useStudyAnalysisDescription(props.analysisId);
@@ -24,7 +24,7 @@ const EditStudyAnalysisDetails: React.FC<{ analysisId?: string; onDeleteAnalysis
         <Box sx={{ width: '100%' }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <Typography sx={{ marginBottom: '1rem', fontWeight: 'bold' }}>Analysis Details</Typography>
-                <EditStudyAnalysisDeleteButton
+                <EditStudyAnalysisCBMADeleteButton
                     variant="contained"
                     disableElevation
                     color="error"
@@ -33,7 +33,7 @@ const EditStudyAnalysisDetails: React.FC<{ analysisId?: string; onDeleteAnalysis
                     analysisId={props.analysisId}
                 >
                     Delete Analysis
-                </EditStudyAnalysisDeleteButton>
+                </EditStudyAnalysisCBMADeleteButton>
             </Box>
             <TextField
                 label="name"
@@ -57,4 +57,4 @@ const EditStudyAnalysisDetails: React.FC<{ analysisId?: string; onDeleteAnalysis
     );
 };
 
-export default EditStudyAnalysisDetails;
+export default EditStudyAnalysisCBMADetails;

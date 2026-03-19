@@ -1,29 +1,25 @@
 import { Box, TableCell, TableRow, Typography } from '@mui/material';
 import NeurosynthTable from 'components/NeurosynthTable/NeurosynthTable';
 import NeurosynthTableStyles from 'components/NeurosynthTable/NeurosynthTable.styles';
-import { addKVPToSearch, getSearchCriteriaFromURL, getURLFromSearchCriteria } from 'components/Search/search.helpers';
-import SearchContainer from 'components/Search/SearchContainer';
+import StudiesSearchContainer from 'components/Search/StudiesSearchContainer';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
-import { baseStudiesSearchHelper } from 'hooks/studies/useGetBaseStudies';
+import { useNavigate } from 'react-router-dom';
 import { usePrerenderReady, usePageMetadata } from '../../../seo/hooks';
-import { BaseStudyList } from 'neurostore-typescript-sdk';
-import { useSnackbar } from 'notistack';
-import { useEffect, useMemo, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { SearchCriteria } from '../Study/Study.types';
-import { AxiosError } from 'axios';
+import useSearchStudies from 'pages/Studies/hooks/useSearchStudies';
 
 const StudiesPage = () => {
-    // const { startTour } = useGetTour('StudiesPage');
     const navigate = useNavigate();
-    const { enqueueSnackbar } = useSnackbar();
-    const location = useLocation();
+    const {
+        studyData,
+        isLoading,
+        error,
+        handleSearch,
+        handlePageChange,
+        handleRowsPerPageChange,
+        pageSize,
+        pageOfResults,
+    } = useSearchStudies();
 
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string>();
-
-    // cached data returned from the api
-    const [studyData, setStudyData] = useState<BaseStudyList>();
     const isPrerenderReady = !isLoading && (!!studyData || !!error);
 
     usePageMetadata({
@@ -34,83 +30,20 @@ const StudiesPage = () => {
     });
     usePrerenderReady(isPrerenderReady);
 
-    const searchCriteria = useMemo(() => {
-        return {
-            ...new SearchCriteria(),
-            ...getSearchCriteriaFromURL(location?.search),
-        };
-    }, [location?.search]);
-
-    useEffect(() => {
-        const debounce = setTimeout(() => {
-            setIsLoading(true);
-            baseStudiesSearchHelper({ ...searchCriteria, flat: true, info: false })
-                .then((data) => {
-                    setStudyData(data.data);
-                })
-                .catch(
-                    (
-                        err: AxiosError<{
-                            detail: {
-                                errors: {
-                                    error: string;
-                                }[];
-                                message: string;
-                            };
-                        }>
-                    ) => {
-                        if (err.response?.status && err.response.status === 400 && err.response.data.detail.message) {
-                            setError(err.response?.data.detail.message);
-                        } else {
-                            setError('There was an error searching for studies. (Is the query well formed?)');
-                        }
-                    }
-                )
-                .finally(() => {
-                    setIsLoading(false);
-                });
-        }, 300);
-
-        return () => {
-            clearTimeout(debounce);
-        };
-    }, [enqueueSnackbar, searchCriteria]);
-
-    const handleSearch = (searchArgs: Partial<SearchCriteria>) => {
-        // when we search, we want to reset the search criteria as we dont know the
-        // page number of number of results in advance
-        const searchURL = getURLFromSearchCriteria(searchArgs);
-        navigate(`/base-studies?${searchURL}`);
-    };
-
-    const handleRowsPerPageChange = (newRowsPerPage: number) => {
-        const searchURL = addKVPToSearch(
-            addKVPToSearch(location.search, 'pageSize', `${newRowsPerPage}`),
-            'pageOfResults',
-            '1'
-        );
-        navigate(`/base-studies?${searchURL}`);
-    };
-
-    const handlePageChange = (page: number) => {
-        const searchURL = addKVPToSearch(location.search, 'pageOfResults', `${page}`);
-        navigate(`/base-studies?${searchURL}`);
-    };
-
     return (
         <StateHandlerComponent isLoading={false} isError={false}>
             <Box sx={{ display: 'flex', marginBottom: '1rem' }}>
                 <Typography variant="h4">Studies</Typography>
             </Box>
 
-            <SearchContainer
+            <StudiesSearchContainer
                 error={error}
                 onPageChange={handlePageChange}
                 onRowsPerPageChange={handleRowsPerPageChange}
                 onSearch={handleSearch}
                 totalCount={studyData?.metadata?.total_count}
-                pageSize={searchCriteria.pageSize}
-                pageOfResults={(studyData?.results || []).length === 0 ? 1 : searchCriteria.pageOfResults}
+                pageSize={pageSize}
+                pageOfResults={(studyData?.results || []).length === 0 ? 1 : pageOfResults}
                 paginationSelectorStyles={{
                     '& .MuiPaginationItem-root.Mui-selected': {
                         backgroundColor: 'primary.main',
@@ -168,7 +101,7 @@ const StudiesPage = () => {
                         ))}
                     />
                 </Box>
-            </SearchContainer>
+            </StudiesSearchContainer>
         </StateHandlerComponent>
     );
 };

@@ -2,8 +2,8 @@ import { Box, Button, useMediaQuery, useTheme } from '@mui/material';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { hasUnsavedStudyChanges, unsetUnloadHandler } from 'helpers/BeforeUnload.helpers';
-import { useProjectExtractionAnnotationId } from 'pages/Project/store/ProjectStore';
-import EditStudyAnalyses from 'pages/Study/components/EditStudyAnalyses';
+import { useProjectAnalysisType, useProjectExtractionAnnotationId } from 'pages/Project/store/ProjectStore';
+import EditStudyAnalysesCBMA from 'pages/Study/components/EditStudyAnalysesCBMA';
 import EditStudyAnnotations from 'pages/Study/components/EditStudyAnnotations';
 import EditStudyDetails from 'pages/Study/components/EditStudyDetails';
 import EditStudyMetadata from 'pages/Study/components/EditStudyMetadata';
@@ -18,6 +18,8 @@ import DisplayExtractionTableState from './components/DisplayExtractionTableStat
 import EditStudyCompleteButton from './components/EditStudyCompleteButton';
 import EditStudyToolbar from './components/EditStudyToolbar';
 import { ArrowBack } from '@mui/icons-material';
+import { EAnalysisType } from 'hooks/projects/Project.types';
+import EditStudyAnalysesIBMA from './components/EditStudyAnalysesIBMA';
 
 const EditStudyPage: React.FC = () => {
     const { projectId, studyId } = useParams<{ projectId: string; studyId: string }>();
@@ -29,6 +31,7 @@ const EditStudyPage: React.FC = () => {
     const clearStudyStore = useClearStudyStore();
     const initStudyStore = useInitStudyStore();
     const studyStoreId = useStudyId();
+    const analysisType = useProjectAnalysisType();
     // annotation stuff
     const annotationStoreId = useAnnotationId();
     const clearAnnotationStore = useClearAnnotationStore();
@@ -96,8 +99,14 @@ const EditStudyPage: React.FC = () => {
                         },
                     }}
                 >
-                    <EditStudyAnnotations />
-                    <EditStudyAnalyses />
+                    {analysisType === EAnalysisType.IBMA ? (
+                        <EditStudyAnalysesIBMA />
+                    ) : (
+                        <>
+                            <EditStudyAnnotations />
+                            <EditStudyAnalysesCBMA />
+                        </>
+                    )}
                     <EditStudyDetails />
                     <Box sx={{ marginBottom: '5rem' }}>
                         <EditStudyMetadata />
