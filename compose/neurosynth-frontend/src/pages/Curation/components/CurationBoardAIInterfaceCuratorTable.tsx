@@ -1,15 +1,30 @@
-import { Box, Chip, Table, TableCell, TableContainer, TableHead, TableRow, Typography } from '@mui/material';
+import {
+    Box,
+    Button,
+    Card,
+    CardActions,
+    CardContent,
+    Chip,
+    Table,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+    Typography,
+} from '@mui/material';
 import { flexRender, RowData } from '@tanstack/react-table';
 import { useGetCurationSummary } from 'hooks';
 import { EAIExtractors } from 'hooks/extractions/useGetAllExtractedDataForStudies';
 import { indexToPRISMAMapping } from 'hooks/projects/useGetProjects';
 import { useProjectCurationPrismaConfig } from 'pages/Project/store/ProjectStore';
-import { useRef } from 'react';
+import React, { useRef } from 'react';
 import { getGridTemplateColumns } from '../hooks/useCuratorTableState.helpers';
 import { ICurationBoardAIInterfaceCurator } from './CurationBoardAIInterfaceCurator';
 import CurationBoardAIInterfaceCuratorTableBody from './CurationBoardAIInterfaceCuratorTableBody';
 import CurationBoardAIInterfaceCuratorTableManageColumns from './CurationBoardAIInterfaceCuratorTableManageColumns';
 import CurationBoardAIInterfaceCuratorTableSelectedRowsActions from './CurationBoardAIInterfaceCuratorTableSelectedRowsActions';
+import ImportStudiesButton from 'pages/CurationImport/components/ImportStudiesButton';
+import CurationBoardAIInterfaceCuratorTableEmptyState from './CurationBoardAIInterfaceCuratorTableEmptyState';
 
 //allows us to define custom properties for our columns
 declare module '@tanstack/react-table' {
@@ -26,70 +41,14 @@ declare module '@tanstack/react-table' {
     }
 }
 
-export const getStatusText = (
-    numIncluded: number,
-    numUncategorized: number,
-    numExcluded: number,
-    columnIndex: number,
-    isPrisma: boolean
-): { statusColor: string | undefined; statusText: string } => {
-    const noStudiesInCuration = numIncluded === 0 && numUncategorized === 0 && numExcluded === 0;
-    if (noStudiesInCuration) {
-        return {
-            statusColor: 'warning.dark',
-            statusText: 'No studies. To import studies, click the import button above.',
-        };
-    }
-
-    const returnObject: {
-        statusColor: string | undefined;
-        statusText: string;
-    } = {
-        statusColor: undefined,
-        statusText: '',
-    };
-    const curationIsComplete = numIncluded > 0 && numUncategorized === 0;
-    if (isPrisma) {
-        const prismaPhase = indexToPRISMAMapping(columnIndex);
-        if (curationIsComplete) {
-            returnObject.statusColor = 'success.main';
-            returnObject.statusText = `You've reviewed all uncategorized studies in ${prismaPhase}! Go to extraction to continue your meta-analysis or import more studies to continue`;
-        } else if (prismaPhase === 'identification') {
-            returnObject.statusColor = undefined;
-            returnObject.statusText = `No studies to review for identification. Import more studies, or continue onto the screening step`;
-        } else if (prismaPhase === 'screening') {
-            returnObject.statusColor = undefined;
-            returnObject.statusText = `No studies to review for screening. Promote duplicated studies from identification, or continue onto the eligibility step`;
-        } else if (prismaPhase === 'eligibility') {
-            returnObject.statusColor = undefined;
-            returnObject.statusText = `No studies to review for eligibility. Promote non excluded studies from screening to continue`;
-        } else if (prismaPhase === undefined) {
-            returnObject.statusColor = undefined;
-            returnObject.statusText = 'No included studies. Promote non excluded studies from eligibility to continue';
-        }
-    } else {
-        if (curationIsComplete) {
-            returnObject.statusColor = 'success.main';
-            returnObject.statusText =
-                "You've reviewed all the uncategorized studies! Go to extraction to continue your meta-analysis or import more studies to continue";
-        } else if (columnIndex === 0) {
-            returnObject.statusColor = undefined;
-            returnObject.statusText = 'No studies to review. Import more studies to continue';
-        } else {
-            // included
-            returnObject.statusColor = undefined;
-            returnObject.statusText = 'No included studies. Promote non excluded studies from "Unreviewed" to continue';
-        }
-    }
-
-    return returnObject;
-};
-
 const CurationBoardAIInterfaceCuratorTable: React.FC<ICurationBoardAIInterfaceCurator> = ({
     table,
     onSetSelectedStub,
     selectedStub,
     columnIndex,
+    selectedGroup,
+    groups,
+    onSetSelectedGroup,
 }) => {
     const { included, uncategorized, excluded } = useGetCurationSummary();
     const prismaConfig = useProjectCurationPrismaConfig();
@@ -100,14 +59,6 @@ const CurationBoardAIInterfaceCuratorTable: React.FC<ICurationBoardAIInterfaceCu
     const numRowsSelected = table.getSelectedRowModel().rows.length;
     const columnFilters = table.getState().columnFilters;
     const sorting = table.getState().sorting;
-
-    const { statusColor, statusText } = getStatusText(
-        included,
-        uncategorized,
-        excluded,
-        columnIndex,
-        prismaConfig.isPrisma
-    );
 
     return (
         <Box sx={{ padding: '0 1rem 2rem 1rem', height: '100%' }}>
@@ -160,6 +111,7 @@ const CurationBoardAIInterfaceCuratorTable: React.FC<ICurationBoardAIInterfaceCu
                 sx={{
                     maxHeight: 'calc(100% - 48px - 32px - 2.5rem)',
                     minHeight: 'calc(100% - 48px - 32px - 2.5rem)',
+                    height: 'calc(100% - 48px - 32px - 2.5rem)',
                     overflow: 'auto',
                     position: 'relative',
                     width: '100%',
@@ -208,9 +160,28 @@ const CurationBoardAIInterfaceCuratorTable: React.FC<ICurationBoardAIInterfaceCu
                     />
                 </Table>
                 {table.getRowModel().rows.length === 0 && (
-                    <Typography padding="0.5rem 0" color={statusColor}>
-                        {statusText}
-                    </Typography>
+                    <Box
+                        sx={{
+                            display: 'flex',
+                            height: 'calc(100% - 53px)',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: 2,
+                            boxSizing: 'border-box',
+                            width: '100%',
+                        }}
+                    >
+                        <CurationBoardAIInterfaceCuratorTableEmptyState
+                            numIncluded={included}
+                            numUncategorized={uncategorized}
+                            numExcluded={excluded}
+                            columnIndex={columnIndex}
+                            isPrisma={prismaConfig.isPrisma}
+                            selectedGroup={selectedGroup}
+                            groups={groups}
+                            onSetSelectedGroup={onSetSelectedGroup}
+                        />
+                    </Box>
                 )}
             </TableContainer>
         </Box>

@@ -6,12 +6,12 @@ import {
     useProjectCurationImports,
     useProjectCurationPrismaConfig,
 } from 'pages/Project/store/ProjectStore';
-import { useEffect, useMemo, useState } from 'react';
+import { defaultExclusionTags } from 'pages/Project/store/ProjectStore.consts';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { useParams } from 'react-router-dom';
+import { SxProps } from '@mui/system';
 import { IGroupListItem } from '../components/CurationBoardAIGroupsList';
 import { ECurationBoardAIInterface } from '../components/CurationBoardAi';
-import { SxProps } from '@mui/system';
-import { defaultExclusionTags } from 'pages/Project/store/ProjectStore.consts';
-import { useParams } from 'react-router-dom';
 
 const excludedListItemStyles: SxProps = {
     '& .MuiListItemButton-root': {
@@ -28,7 +28,17 @@ const excludedListItemStylesChildren: SxProps = {
 
 export const SELECTED_CURATION_STEP_LOCAL_STORAGE_KEY_SUFFIX = '_CURATION_STEP_ID';
 
-function useCurationBoardGroupsState() {
+interface ICurationBoardGroupsContext {
+    groups: IGroupListItem[];
+    selectedGroup: IGroupListItem | undefined;
+    handleSetSelectedGroup: (group: IGroupListItem) => void;
+    handleSelectPreviousGroup: () => void;
+    handleSelectNextGroup: () => void;
+}
+
+const CurationBoardGroupsContext = createContext<ICurationBoardGroupsContext | undefined>(undefined);
+
+export const CurationBoardGroupsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const curationColumns = useProjectCurationColumns();
     const curationDuplicates = useProjectCurationDuplicates();
     const { projectId } = useParams<{ projectId: string }>();
@@ -37,11 +47,6 @@ function useCurationBoardGroupsState() {
     const [selectedGroup, setSelectedGroup] = useState<IGroupListItem>();
     const excludedGroups = useProjectCurationExclusionTags();
     const curationImports = useProjectCurationImports();
-
-    const handleSetSelectedGroup = (group: IGroupListItem) => {
-        localStorage.setItem(selectedCurationStepLocalStorageKey, group.id);
-        setSelectedGroup(group);
-    };
 
     const groups: IGroupListItem[] = useMemo(() => {
         if (curationColumns.length === 0) return [];
@@ -75,7 +80,6 @@ function useCurationBoardGroupsState() {
                 } else if (prismaPhase === 'eligibility') {
                     thisGroupListItem.secondaryLabel = 'Assess full full-texts against inclusion criteria';
                 } else {
-                    // inclusion phase
                     thisGroupListItem.secondaryLabel = 'Studies to be included in the final meta-analysis';
                     return;
                 }
@@ -127,10 +131,11 @@ function useCurationBoardGroupsState() {
                 UI: null,
             });
         } else {
-            if (curationColumns.length !== 2)
+            if (curationColumns.length !== 2) {
                 throw new Error(
                     'Expected 2 curation columns for a non prisma project, but got ' + curationColumns.length
                 );
+            }
             const [unreviewedColumn, includedColumn] = curationColumns;
 
             groupListItems = [
@@ -217,7 +222,39 @@ function useCurationBoardGroupsState() {
         }
 
         return groupListItems;
-    }, [curationColumns, curationImports, prismaConfig, excludedGroups]);
+    }, [curationColumns, curationImports, prismaConfig, excludedGroups, curationDuplicates.length]);
+
+    const handleSetSelectedGroup = useCallback((group: IGroupListItem) => {
+        localStorage.setItem(selectedCurationStepLocalStorageKey, group.id);
+        setSelectedGroup(group);
+    }, []);
+
+    const handleSelectPreviousGroup = useCallback(() => {
+        if (!selectedGroup) return;
+        const currentColIndex = curationColumns.findIndex((x) => x.id === selectedGroup.id);
+        if (currentColIndex === -1) return;
+        const previousColIndex = currentColIndex - 1;
+        if (previousColIndex < 0) return;
+        const previousCol = curationColumns[previousColIndex];
+        if (!previousCol) return;
+        const previousGroup = groups.find((x) => x.id === previousCol.id);
+        if (!previousGroup) return;
+
+        handleSetSelectedGroup(previousGroup);
+    }, [selectedGroup, curationColumns]);
+
+    const handleSelectNextGroup = useCallback(() => {
+        if (!selectedGroup) return;
+        const currentColIndex = curationColumns.findIndex((x) => x.id === selectedGroup.id);
+        if (currentColIndex === -1) return;
+        const nextColIndex = currentColIndex + 1;
+        if (nextColIndex >= curationColumns.length) return;
+        const nextCol = curationColumns[nextColIndex];
+        if (!nextCol) return;
+        const nextGroup = groups.find((x) => x.id === nextCol.id);
+        if (!nextGroup) return;
+        handleSetSelectedGroup(nextGroup);
+    }, [selectedGroup, curationColumns, groups]);
 
     useEffect(() => {
         if (selectedGroup === undefined && curationColumns.length > 0) {
@@ -236,11 +273,24 @@ function useCurationBoardGroupsState() {
         }
     }, [groups, curationColumns.length, selectedGroup, selectedCurationStepLocalStorageKey, projectId]);
 
-    return {
-        groups,
-        selectedGroup,
-        handleSetSelectedGroup,
-    };
-}
+    const contextValue = useMemo(
+        () => ({
+            groups,
+            selectedGroup,
+            handleSetSelectedGroup,
+            handleSelectPreviousGroup,
+            handleSelectNextGroup,
+        }),
+        [groups, selectedGroup]
+    );
 
-export default useCurationBoardGroupsState;
+    return <CurationBoardGroupsContext.Provider value={contextValue}>{children}</CurationBoardGroupsContext.Provider>;
+};
+
+export const useCurationBoardGroups = () => {
+    const context = useContext(CurationBoardGroupsContext);
+    if (!context) {
+        throw new Error('useCurationBoardGroups must be used within CurationBoardGroupsProvider');
+    }
+    return context;
+};

@@ -7,10 +7,10 @@ import { ICurationStubStudy } from 'pages/Curation/Curation.types';
 import { defaultIdentificationSources } from 'pages/Project/store/ProjectStore.consts';
 import React from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { IImportArgs } from './CurationImportDoImport';
-import CurationImportPMIDsUpload from './CurationImportPMIDsUpload';
+import { IImportArgs } from './ImportDoImport';
+import ImportPMIDsUpload from './ImportPMIDsUpload';
 
-const CurationImportPMIDs: React.FC<IImportArgs & { onFileUpload: (fileName: string) => void }> = ({
+const ImportPMIDs: React.FC<IImportArgs & { onFileUpload: (fileName: string) => void }> = ({
     onNavigate,
     onImportStubs,
     onFileUpload,
@@ -86,7 +86,7 @@ const CurationImportPMIDs: React.FC<IImportArgs & { onFileUpload: (fileName: str
                 isLoading={isLoading}
                 isError={isError}
             >
-                <CurationImportPMIDsUpload
+                <ImportPMIDsUpload
                     onNavigate={onNavigate}
                     onFileUpload={onFileUpload}
                     onPubmedIdsUploaded={handlePubmedIdsUploaded}
@@ -96,4 +96,4 @@ const CurationImportPMIDs: React.FC<IImportArgs & { onFileUpload: (fileName: str
     );
 };
 
-export default CurationImportPMIDs;
+export default ImportPMIDs;

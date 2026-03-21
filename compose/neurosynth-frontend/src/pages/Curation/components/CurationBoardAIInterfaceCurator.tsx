@@ -16,13 +16,13 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import useCuratorTableState from '../hooks/useCuratorTableState';
 import { ICurationTableStudy } from '../hooks/useCuratorTableState.types';
-import { IGroupListItem } from './CurationBoardAIGroupsList';
+import { useCurationBoardGroups } from '../context/CurationBoardGroupsContext';
 import CurationBoardAIInterfaceCuratorFocus from './CurationBoardAIInterfaceCuratorFocus';
 import CurationBoardAIInterfaceCuratorTable from './CurationBoardAIInterfaceCuratorTable';
 import CurationBoardAIInterfaceIdentificationUI from './CurationBoardAIInterfaceIdentificationUI';
 import CurationDownloadSummaryButton from './CurationDownloadSummaryButton';
 import PrismaDialog from './PrismaDialog';
-import ImportStudiesButton from './ImportStudiesButton';
+import ImportStudiesButton from 'pages/CurationImport/components/ImportStudiesButton';
 
 export interface ICurationBoardAIInterfaceCurator {
     selectedStub: ICurationTableStudy | undefined;
@@ -31,16 +31,19 @@ export interface ICurationBoardAIInterfaceCurator {
     onSetSelectedStub: (stubId: string | undefined) => void;
 }
 
-const CurationBoardAIInterfaceCurator: React.FC<{
-    selectedGroup: IGroupListItem;
-    groups: IGroupListItem[];
-    onSetSelectedGroup: (group: IGroupListItem) => void;
-}> = ({ selectedGroup, groups, onSetSelectedGroup }) => {
+const CurationBoardAIInterfaceCurator: React.FC = () => {
     const navigate = useNavigate();
     const { projectId } = useParams<{ projectId: string | undefined }>();
+    const { groups, selectedGroup, handleSetSelectedGroup } = useCurationBoardGroups();
     const curationColumns = useProjectCurationColumns();
 
     const { column, columnIndex } = useMemo(() => {
+        if (!selectedGroup) {
+            return {
+                column: undefined,
+                columnIndex: -1,
+            };
+        }
         const columnIndex = curationColumns.findIndex((col) => col.id === selectedGroup.id);
         if (columnIndex < 0)
             return {
@@ -51,7 +54,7 @@ const CurationBoardAIInterfaceCurator: React.FC<{
             column: curationColumns[columnIndex],
             columnIndex: columnIndex,
         };
-    }, [curationColumns, selectedGroup.id]);
+    }, [curationColumns, selectedGroup]);
     const prismaConfig = useProjectCurationPrismaConfig();
     const isPrisma = prismaConfig.isPrisma;
     const prismaPhase = prismaConfig.isPrisma ? indexToPRISMAMapping(columnIndex) : undefined;
@@ -115,19 +118,19 @@ const CurationBoardAIInterfaceCurator: React.FC<{
             setSelectedStubId(rows[0].original.id);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectedGroup.id]);
+    }, [selectedGroup?.id]);
 
     const handleCompletePromoteAllUncategorized = () => {
         const nextCurationColumn = curationColumns[columnIndex + 1];
         const newGroup = groups.find((group) => group.id === nextCurationColumn.id);
         if (!newGroup) return;
-        onSetSelectedGroup(newGroup);
+        handleSetSelectedGroup(newGroup);
     };
 
     const columnFilters = table.getState().columnFilters;
     const numTotalRows = table.getCoreRowModel().rows.length;
 
-    if (!column || columnIndex < 0) {
+    if (!selectedGroup || !column || columnIndex < 0) {
         return <Typography color="error.dark">There was an error loading studies</Typography>;
     }
 
@@ -168,6 +171,20 @@ const CurationBoardAIInterfaceCurator: React.FC<{
                     </Box>
                     <Box>
                         <Box sx={{ marginRight: '0.5rem', display: 'inline-block' }}>
+                            <Button
+                                variant="contained"
+                                disableElevation
+                                size="small"
+                                onClick={() => navigate(`/projects/${projectId}/curation/search`)}
+                                sx={{
+                                    fontSize: '12px',
+                                    borderColor: 'white !important',
+                                    minWidth: '145px !important',
+                                    marginRight: '0.5rem',
+                                }}
+                            >
+                                Search
+                            </Button>
                             <ImportStudiesButton />
                         </Box>
                         {isPrisma && (

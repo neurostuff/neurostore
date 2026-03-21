@@ -3,7 +3,7 @@ import { Alert, Box, Button, Chip, IconButton, Typography } from '@mui/material'
 import DebouncedTextField from 'components/DebouncedTextField';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import { useGetWindowHeight, useUserCanEdit } from 'hooks';
-import CurationImportFinalizeReviewVirtualizedListItem from 'pages/CurationImport/components/CurationImportFinalizeReviewVirtualizedListItem';
+import ImportFinalizeReviewVirtualizedListItem from 'pages/CurationImport/components/ImportFinalizeReviewVirtualizedListItem';
 import { EImportMode } from 'pages/CurationImport/CurationImport.types';
 import { useProjectCurationColumns, useProjectCurationImport } from 'pages/Project/store/ProjectStore';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -204,7 +204,7 @@ const CurationBoardAIInterfaceImportSummary: React.FC<{
                 >
                     {({ index, data, style }) => {
                         const stub = data.stubs[index];
-                        return <CurationImportFinalizeReviewVirtualizedListItem {...stub} style={style} />;
+                        return <ImportFinalizeReviewVirtualizedListItem {...stub} style={style} />;
                     }}
                 </FixedSizeList>
             </Box>

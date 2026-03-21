@@ -1,7 +1,7 @@
 import { Box } from '@mui/material';
 import LoadingStateIndicatorProject from 'components/LoadingStateIndicator/LoadingStateIndicatorProject';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs';
-import CurationSearch from 'pages/CurationSearch/components/CurationSearch';
+import Search from 'pages/CurationImport/components/Search';
 import { useProjectId, useProjectName } from 'pages/Project/store/ProjectStore';
 
 const CurationSearchPage: React.FC = () => {
@@ -38,7 +38,7 @@ const CurationSearchPage: React.FC = () => {
                 <LoadingStateIndicatorProject />
             </Box>
             <Box sx={{ marginTop: '1rem' }}>
-                <CurationSearch />
+                <Search />
             </Box>
         </Box>
     );

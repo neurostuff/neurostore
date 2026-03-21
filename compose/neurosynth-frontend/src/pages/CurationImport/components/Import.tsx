@@ -2,50 +2,41 @@ import { Box, Step, StepLabel, Stepper } from '@mui/material';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons';
 import { ICurationStubStudy } from 'pages/Curation/Curation.types';
 import { EImportMode } from 'pages/CurationImport/CurationImport.types';
-import CurationImportDoImport from 'pages/CurationImport/components/CurationImportDoImport';
+import ImportDoImport from 'pages/CurationImport/components/ImportDoImport';
+import { useProjectId } from 'pages/Project/store/ProjectStore';
 import { SearchCriteria } from 'pages/Study/Study.types';
 import { useEffect, useState } from 'react';
-import { useLocation, Navigate, useNavigate } from 'react-router-dom';
-import { useProjectId } from 'pages/Project/store/ProjectStore';
-import CurationImportFinalize from './CurationImportFinalize';
+import ImportFinalize from './ImportFinalize';
 
-const ALLOWED_IMPORT_MODES = Object.values(EImportMode) as EImportMode[];
-
-const CurationImport: React.FC = () => {
+const Import: React.FC<{ method: EImportMode; onClose: () => void }> = ({ method, onClose: onClose }) => {
     const [activeStep, setActiveStep] = useState(0);
     const [stubs, setStubs] = useState<ICurationStubStudy[]>([]);
     const [unimportedStubs, setUnimportedStubs] = useState<string[]>([]);
     const [searchCriteria, setSearchCriteria] = useState<SearchCriteria>();
     const [fileName, setFileName] = useState<string>();
-    const location = useLocation();
     const projectId = useProjectId();
-    const navigate = useNavigate();
-
-    const methodParam = new URLSearchParams(location.search).get('method') as EImportMode | null;
-    const importModeIsAllowed = methodParam && ALLOWED_IMPORT_MODES.includes(methodParam);
-    const isNeurostoreMode = methodParam === EImportMode.NEUROSTORE_IMPORT;
 
     if (!projectId) return null;
 
-    if (isNeurostoreMode) {
-        return <Navigate to={`/projects/${projectId}/curation/search`} replace />;
-    }
-    if (!importModeIsAllowed) {
-        return <Navigate to={`/projects/${projectId}/curation`} replace />;
-    }
-
-    const importMode = methodParam as EImportMode;
+    const handleClose = () => {
+        setActiveStep(0);
+        setStubs([]);
+        setUnimportedStubs([]);
+        setSearchCriteria(undefined);
+        setFileName(undefined);
+        onClose();
+    };
 
     const handleNavigate = (button: ENavigationButton) => {
         setActiveStep((prev) => {
             if (button === ENavigationButton.NEXT) {
-                if (prev < 1) return prev + 1;
-                return prev;
+                if (prev >= 1) handleClose();
+                else return prev + 1;
             } else {
-                if (prev === 0) navigate(`/projects/${projectId}/curation`);
-                else if (prev > 0) return prev - 1;
-                return prev;
+                if (prev <= 0) handleClose();
+                else return prev - 1;
             }
+            return prev;
         });
     };
 
@@ -75,16 +66,16 @@ const CurationImport: React.FC = () => {
             </Stepper>
             <Box>
                 {activeStep === 0 && (
-                    <CurationImportDoImport
+                    <ImportDoImport
                         onImportStubs={handleImportStubs}
                         onFileUpload={setFileName}
-                        mode={importMode}
+                        mode={method}
                         onNavigate={handleNavigate}
                     />
                 )}
                 {activeStep === 1 && (
-                    <CurationImportFinalize
-                        importMode={importMode}
+                    <ImportFinalize
+                        importMode={method}
                         searchCriteria={searchCriteria}
                         stubs={stubs}
                         unimportedStubs={unimportedStubs}
@@ -97,4 +88,4 @@ const CurationImport: React.FC = () => {
     );
 };
 
-export default CurationImport;
+export default Import;

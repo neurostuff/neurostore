@@ -1,10 +1,9 @@
 import { ArrowDropDown } from '@mui/icons-material';
-import { Box, Button, ButtonGroup, ListItem, ListItemText, MenuItem, MenuList } from '@mui/material';
+import { Box, Button, ButtonProps, ListItem, ListItemText, MenuItem, MenuList } from '@mui/material';
 import NeurosynthPopper from 'components/NeurosynthPopper/NeurosynthPopper';
 import { EImportMode } from 'pages/CurationImport/CurationImport.types';
-import { useProjectId } from 'pages/Project/store/ProjectStore';
 import { useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import ImportStudiesDialog from './ImportStudiesDialog';
 
 const importMethods = [
     {
@@ -33,56 +32,64 @@ const importMethods = [
     },
 ];
 
-const ImportStudiesButton: React.FC = () => {
+const ImportStudiesButton: React.FC<ButtonProps> = (buttonProps) => {
     const anchorRef = useRef<HTMLButtonElement>(null);
     const [optionsIsOpen, setOptionsIsOpen] = useState(false);
-    const projectId = useProjectId();
-    const navigate = useNavigate();
-
-    const handleSearch = () => {
-        navigate(`/projects/${projectId}/curation/search`);
-    };
+    const [dialogIsOpen, setDialogIsOpen] = useState(false);
+    const [method, setMethod] = useState<EImportMode | undefined>(undefined);
 
     return (
         <>
+            <ImportStudiesDialog
+                isOpen={dialogIsOpen}
+                onCloseDialog={() => {
+                    setMethod(undefined); // this is impportant: it resets the method and also hides the reset dialog content
+                    setDialogIsOpen(false);
+                }}
+                method={method}
+            />
             <NeurosynthPopper
                 placement="bottom-start"
                 onClickAway={() => setOptionsIsOpen(false)}
                 anchorElement={anchorRef.current}
                 open={optionsIsOpen}
             >
-                <Box>
+                <Box sx={{ width: '100%' }}>
                     <MenuList disablePadding>
                         {importMethods.map((method) => (
                             <MenuItem
                                 key={method.value}
-                                onClick={() => navigate(`/projects/${projectId}/curation/${method.href}`)}
+                                onClick={() => {
+                                    if (!method) return;
+                                    setOptionsIsOpen(false);
+                                    setDialogIsOpen(true);
+                                    setMethod(method.value);
+                                }}
                             >
-                                <ListItem>
-                                    <ListItemText
-                                        primaryTypographyProps={{ variant: 'body2' }}
-                                        secondaryTypographyProps={{ variant: 'caption' }}
-                                        primary={method.label}
-                                        secondary={method.description}
-                                    />
-                                </ListItem>
+                                <ListItemText
+                                    primaryTypographyProps={{ variant: 'body2' }}
+                                    secondaryTypographyProps={{ variant: 'caption' }}
+                                    primary={method.label}
+                                    secondary={method.description}
+                                />
                             </MenuItem>
                         ))}
                     </MenuList>
                 </Box>
             </NeurosynthPopper>
-            <ButtonGroup disableElevation size="small" color="primary" variant="contained">
-                <Button
-                    ref={anchorRef}
-                    onClick={handleSearch}
-                    sx={{ fontSize: '12px', borderColor: 'white !important', minWidth: '100px !important' }}
-                >
-                    Search
-                </Button>
-                <Button sx={{ width: '44px' }} onClick={() => setOptionsIsOpen(true)}>
-                    <ArrowDropDown sx={{ fontSize: '20px' }} />
-                </Button>
-            </ButtonGroup>
+            <Button
+                ref={anchorRef}
+                disableElevation
+                onClick={() => setOptionsIsOpen(true)}
+                variant="outlined"
+                size="small"
+                color="primary"
+                sx={{ fontSize: '12px', minWidth: '140px !important' }}
+                {...buttonProps}
+            >
+                Import Studies
+                <ArrowDropDown sx={{ fontSize: '20px', marginLeft: '4px' }} />
+            </Button>
         </>
     );
 };

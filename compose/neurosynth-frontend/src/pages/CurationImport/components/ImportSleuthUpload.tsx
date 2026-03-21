@@ -3,7 +3,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import FileUploadIcon from '@mui/icons-material/FileUpload';
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import { Box, Button, IconButton, List, ListItem, ListItemIcon, ListItemText, Typography } from '@mui/material';
-import CurationImportBaseStyles from 'pages/CurationImport/components/CurationImport.styles';
+import CurationImportStyles from 'pages/CurationImport/CurationImport.styles';
 import React, { useMemo, useState } from 'react';
 import {
     ISleuthFileUploadStubs,
@@ -11,9 +11,9 @@ import {
     sleuthUploadToStubs,
     validateFileContents,
 } from '../../CurationImport/helpers';
-import CurationImportSleuthHint from './CurationImportSleuthHint';
+import ImportSleuthHint from './ImportSleuthHint';
 
-const CurationImportSleuthUpload: React.FC<{
+const ImportSleuthUpload: React.FC<{
     onNext: (sleuthUploads: ISleuthFileUploadStubs[]) => void;
     onPrevious: () => void;
 }> = (props) => {
@@ -116,12 +116,12 @@ const CurationImportSleuthUpload: React.FC<{
     }, [sleuthFileUploads]);
 
     return (
-        <Box mt={1}>
+        <Box mt={4}>
             <Box mb="1rem" sx={{ display: 'flex', alignItems: 'center' }}>
                 <Typography mr={1}>
                     Please ensure that your sleuth files are in the correct format before uploading
                 </Typography>
-                <CurationImportSleuthHint />
+                <ImportSleuthHint />
             </Box>
             <Box sx={{ display: 'flex', height: '350px', marginBottom: '6rem' }}>
                 <Box
@@ -197,24 +197,27 @@ const CurationImportSleuthUpload: React.FC<{
                     </List>
                 </Box>
             </Box>
-            <Box sx={CurationImportBaseStyles.fixedContainer}>
-                <Box sx={[CurationImportBaseStyles.fixedButtonsContainer, { justifyContent: 'space-between' }]}>
-                    <Button variant="outlined" disableElevation onClick={() => onPrevious()}>
-                        back
-                    </Button>
-                    <Button
-                        variant="contained"
-                        sx={CurationImportBaseStyles.nextButton}
-                        disableElevation
-                        disabled={nextButtonDisabled}
-                        onClick={handleClickNext}
-                    >
-                        next
-                    </Button>
-                </Box>
+            <Box sx={CurationImportStyles.actionsContainer}>
+                <Button
+                    variant="outlined"
+                    color="error"
+                    sx={CurationImportStyles.actionsButton}
+                    onClick={() => onPrevious()}
+                >
+                    cancel
+                </Button>
+                <Button
+                    variant="contained"
+                    sx={CurationImportStyles.actionsButton}
+                    disableElevation
+                    disabled={nextButtonDisabled}
+                    onClick={handleClickNext}
+                >
+                    next
+                </Button>
             </Box>
         </Box>
     );
 };
 
-export default CurationImportSleuthUpload;
+export default ImportSleuthUpload;

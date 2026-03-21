@@ -2,22 +2,29 @@ import { Box, Step, StepLabel, Stepper } from '@mui/material';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons';
 import { ICurationStubStudy } from 'pages/Curation/Curation.types';
 import { EImportMode } from 'pages/CurationImport/CurationImport.types';
-import CurationImportFinalize from 'pages/CurationImport/components/CurationImportFinalize';
-import CurationSearchNeurostore from 'pages/CurationSearch/components/CurationSearchNeurostore';
+import ImportFinalize from 'pages/CurationImport/components/ImportFinalize';
+import SearchNeurostore from 'pages/CurationImport/components/SearchNeurostore';
+import { useProjectId } from 'pages/Project/store/ProjectStore';
 import { SearchCriteria } from 'pages/Study/Study.types';
 import { useEffect, useState } from 'react';
-const CurationSearch: React.FC = () => {
+import { useNavigate } from 'react-router-dom';
+
+const Search: React.FC = () => {
     const [activeStep, setActiveStep] = useState(0);
     const [stubs, setStubs] = useState<ICurationStubStudy[]>([]);
     const [searchCriteria, setSearchCriteria] = useState<SearchCriteria>();
     const unimportedStubs: string[] = [];
     const fileName: string | undefined = undefined;
+    const navigate = useNavigate();
+    const projectId = useProjectId();
 
     const handleNavigate = (button: ENavigationButton) => {
         if (button === ENavigationButton.NEXT) {
-            if (activeStep < 1) setActiveStep(1);
+            if (activeStep >= 1) navigate(`/projects/${projectId}/curation`);
+            else setActiveStep(1);
         } else {
-            if (activeStep > 0) setActiveStep(0);
+            if (activeStep <= 0) navigate(`/projects/${projectId}/curation`);
+            else setActiveStep(0);
         }
     };
 
@@ -47,14 +54,14 @@ const CurationSearch: React.FC = () => {
             </Stepper>
             <Box>
                 {activeStep === 0 && (
-                    <CurationSearchNeurostore
+                    <SearchNeurostore
                         onImportStubs={handleImportStubs}
                         onSetSearchCriteria={setSearchCriteria}
                         onNavigate={handleNavigate}
                     />
                 )}
                 {activeStep === 1 && (
-                    <CurationImportFinalize
+                    <ImportFinalize
                         importMode={EImportMode.NEUROSTORE_IMPORT}
                         searchCriteria={searchCriteria}
                         stubs={stubs}
@@ -68,4 +75,4 @@ const CurationSearch: React.FC = () => {
     );
 };
 
-export default CurationSearch;
+export default Search;

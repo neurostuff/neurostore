@@ -7,7 +7,7 @@ import { PUBMED_ARTICLE_URL_PREFIX, PUBMED_CENTRAL_ARTICLE_URL_PREFIX } from 'ho
  * Study summary for studies that are being imported and tagged. We cannot reuse the ReadOnlyStubSummary easily here because
  * all data needs to be a one liner with fixed height for virtualization purposes
  */
-const CurationImportFinalizeReviewVirtualizedListItem: React.FC<ICurationStubStudy & { style: React.CSSProperties }> = (
+const ImportFinalizeReviewVirtualizedListItem: React.FC<ICurationStubStudy & { style: React.CSSProperties }> = (
     props
 ) => {
     const { articleLink, articleYear, title, authors, pmid, doi, journal, neurostoreId, style, pmcid } = props;
@@ -120,4 +120,4 @@ const CurationImportFinalizeReviewVirtualizedListItem: React.FC<ICurationStubStu
     );
 };
 
-export default CurationImportFinalizeReviewVirtualizedListItem;
+export default ImportFinalizeReviewVirtualizedListItem;
