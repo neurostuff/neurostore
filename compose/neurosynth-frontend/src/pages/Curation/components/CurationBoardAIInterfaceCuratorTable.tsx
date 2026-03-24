@@ -1,30 +1,15 @@
-import {
-    Box,
-    Button,
-    Card,
-    CardActions,
-    CardContent,
-    Chip,
-    Table,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TableRow,
-    Typography,
-} from '@mui/material';
+import { Box, Chip, Table, TableCell, TableContainer, TableHead, TableRow } from '@mui/material';
 import { flexRender, RowData } from '@tanstack/react-table';
-import { useGetCurationSummary } from 'hooks';
 import { EAIExtractors } from 'hooks/extractions/useGetAllExtractedDataForStudies';
 import { indexToPRISMAMapping } from 'hooks/projects/useGetProjects';
 import { useProjectCurationPrismaConfig } from 'pages/Project/store/ProjectStore';
-import React, { useRef } from 'react';
+import React, { useState } from 'react';
 import { getGridTemplateColumns } from '../hooks/useCuratorTableState.helpers';
 import { ICurationBoardAIInterfaceCurator } from './CurationBoardAIInterfaceCurator';
 import CurationBoardAIInterfaceCuratorTableBody from './CurationBoardAIInterfaceCuratorTableBody';
+import CurationBoardAIInterfaceCuratorTableHints from './CurationBoardAIInterfaceCuratorTableHints';
 import CurationBoardAIInterfaceCuratorTableManageColumns from './CurationBoardAIInterfaceCuratorTableManageColumns';
 import CurationBoardAIInterfaceCuratorTableSelectedRowsActions from './CurationBoardAIInterfaceCuratorTableSelectedRowsActions';
-import ImportStudiesButton from 'pages/CurationImport/components/ImportStudiesButton';
-import CurationBoardAIInterfaceCuratorTableEmptyState from './CurationBoardAIInterfaceCuratorTableEmptyState';
 
 //allows us to define custom properties for our columns
 declare module '@tanstack/react-table' {
@@ -46,19 +31,20 @@ const CurationBoardAIInterfaceCuratorTable: React.FC<ICurationBoardAIInterfaceCu
     onSetSelectedStub,
     selectedStub,
     columnIndex,
-    selectedGroup,
-    groups,
-    onSetSelectedGroup,
 }) => {
-    const { included, uncategorized, excluded } = useGetCurationSummary();
     const prismaConfig = useProjectCurationPrismaConfig();
     const prismaPhase = prismaConfig.isPrisma ? indexToPRISMAMapping(columnIndex) : undefined;
 
-    const tableContainerRef = useRef<HTMLDivElement>(null);
+    const [tableContainerElement, setTableContainerElement] = useState<HTMLDivElement | null>(null);
 
     const numRowsSelected = table.getSelectedRowModel().rows.length;
     const columnFilters = table.getState().columnFilters;
     const sorting = table.getState().sorting;
+
+    const handleClearAllFilters = () => {
+        table.setColumnFilters([]);
+        table.setSorting([]);
+    };
 
     return (
         <Box sx={{ padding: '0 1rem 2rem 1rem', height: '100%' }}>
@@ -73,7 +59,17 @@ const CurationBoardAIInterfaceCuratorTable: React.FC<ICurationBoardAIInterfaceCu
                     allowAIColumns={prismaPhase !== 'identification'}
                 />
             </Box>
-            <Box sx={{ maxWidth: '100%', width: '100%', overflow: 'hidden' }}>
+            <Box sx={{ maxWidth: '100%', width: '100%', overflow: 'hidden', display: 'flex' }}>
+                {(columnFilters.length > 0 || sorting.length > 0) && (
+                    <Chip
+                        size="small"
+                        onClick={handleClearAllFilters}
+                        sx={{ margin: '0px 2px', fontSize: '10px', maxWidth: '200px', height: '18px' }}
+                        label="Clear"
+                        color="info"
+                        variant="outlined"
+                    />
+                )}
                 <Box sx={{ display: 'flex', overflowX: 'auto', scrollbarColor: '#c1c1c1 white' }}>
                     {columnFilters
                         .filter((filter) => !!filter.value)
@@ -106,7 +102,7 @@ const CurationBoardAIInterfaceCuratorTable: React.FC<ICurationBoardAIInterfaceCu
                 </Box>
             </Box>
             <TableContainer
-                ref={tableContainerRef}
+                ref={setTableContainerElement}
                 id="scroller"
                 sx={{
                     maxHeight: 'calc(100% - 48px - 32px - 2.5rem)',
@@ -155,33 +151,16 @@ const CurationBoardAIInterfaceCuratorTable: React.FC<ICurationBoardAIInterfaceCu
                     <CurationBoardAIInterfaceCuratorTableBody
                         onSelect={onSetSelectedStub}
                         table={table}
-                        tableContainerRef={tableContainerRef}
+                        tableContainerElement={tableContainerElement}
                         selectedStub={selectedStub}
                     />
                 </Table>
                 {table.getRowModel().rows.length === 0 && (
-                    <Box
-                        sx={{
-                            display: 'flex',
-                            height: 'calc(100% - 53px)',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: 2,
-                            boxSizing: 'border-box',
-                            width: '100%',
-                        }}
-                    >
-                        <CurationBoardAIInterfaceCuratorTableEmptyState
-                            numIncluded={included}
-                            numUncategorized={uncategorized}
-                            numExcluded={excluded}
-                            columnIndex={columnIndex}
-                            isPrisma={prismaConfig.isPrisma}
-                            selectedGroup={selectedGroup}
-                            groups={groups}
-                            onSetSelectedGroup={onSetSelectedGroup}
-                        />
-                    </Box>
+                    <CurationBoardAIInterfaceCuratorTableHints
+                        table={table}
+                        numVisibleStudies={table.getRowModel().rows.length}
+                        columnIndex={columnIndex}
+                    />
                 )}
             </TableContainer>
         </Box>

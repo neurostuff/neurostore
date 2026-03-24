@@ -2,6 +2,7 @@ import { Typography, Box, Button, ButtonProps } from '@mui/material';
 import { useGetCurationSummary, useGetStudysetById, useUserCanEdit } from 'hooks';
 import {
     useProjectCurationColumns,
+    useProjectCurationIsPrisma,
     useProjectExtractionAnnotationId,
     useProjectExtractionStudysetId,
     useProjectId,
@@ -28,6 +29,7 @@ const StartExtractionButton: React.FC<ButtonProps> = (props) => {
     const extractionStepInitialized = !!studysetId && annotationId && (studyset?.studies?.length || 0) > 0;
     const indicateGoToExtraction = !extractionStepInitialized && canMoveToExtractionPhase;
     const projectId = useProjectId();
+    const isPRISMA = useProjectCurationIsPrisma();
 
     const handleNavigateToStep = (groupId: string, snackbarId: SnackbarKey) => {
         const foundGroup = groups.find((g) => g.id === groupId);
@@ -52,7 +54,7 @@ const StartExtractionButton: React.FC<ButtonProps> = (props) => {
             const snackbarId = enqueueSnackbar(
                 <Box>
                     <Typography variant="body1" sx={{ fontWeight: 'bold' }} gutterBottom>
-                        You must complete curation before moving to extraction
+                        You must complete {isPRISMA ? '' : 'or skip'} curation before moving to extraction
                     </Typography>
                     {existingIssues.map((issue) => (
                         <Typography key={issue.phase} variant="body2">
@@ -95,7 +97,7 @@ const StartExtractionButton: React.FC<ButtonProps> = (props) => {
 
     return (
         <Button
-            variant={canMoveToExtractionPhase ? 'contained' : 'outlined'}
+            variant={canMoveToExtractionPhase ? 'contained' : 'text'}
             disabled={!canEdit}
             color="success"
             size="small"

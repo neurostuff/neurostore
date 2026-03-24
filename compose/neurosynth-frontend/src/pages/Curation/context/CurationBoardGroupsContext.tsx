@@ -34,6 +34,7 @@ interface ICurationBoardGroupsContext {
     handleSetSelectedGroup: (group: IGroupListItem) => void;
     handleSelectPreviousGroup: () => void;
     handleSelectNextGroup: () => void;
+    handleSetFirstCurationGroup: () => void;
 }
 
 const CurationBoardGroupsContext = createContext<ICurationBoardGroupsContext | undefined>(undefined);
@@ -58,20 +59,25 @@ export const CurationBoardGroupsProvider: React.FC<{ children: React.ReactNode }
                 type: 'SUBHEADER',
                 label: 'PRISMA Curation',
                 count: null,
+                excludedCount: null,
                 UI: null,
             });
 
             curationColumns.forEach((column, index) => {
+                const prismaPhase: keyof Omit<IPRISMAConfig, 'isPrisma'> | undefined = indexToPRISMAMapping(index);
                 groupListItems.push({
                     id: column.id,
                     type: 'LISTITEM',
                     label: `${index + 1}. ${column.name}`,
                     count: column.stubStudies.filter((x) => x.exclusionTag === null).length,
+                    excludedCount:
+                        prismaPhase === 'identification'
+                            ? column.stubStudies.filter((x) => x.exclusionTag !== null).length
+                            : null,
                     UI: ECurationBoardAIInterface.CURATOR,
                     children: [],
                 });
 
-                const prismaPhase: keyof Omit<IPRISMAConfig, 'isPrisma'> | undefined = indexToPRISMAMapping(index);
                 const thisGroupListItem = groupListItems[groupListItems.length - 1];
                 if (prismaPhase === 'identification') {
                     thisGroupListItem.secondaryLabel = 'Search for studies and identify duplicates';
@@ -84,37 +90,21 @@ export const CurationBoardGroupsProvider: React.FC<{ children: React.ReactNode }
                     return;
                 }
 
-                if (prismaPhase === 'identification') {
-                    groupListItems.push({
-                        id: defaultExclusionTags.duplicate.id,
-                        type: 'LISTITEM',
-                        label: `${defaultExclusionTags.duplicate.label}`,
-                        count: curationDuplicates.length,
-                        UI: ECurationBoardAIInterface.EXCLUDE,
-                        listItemStyles: {
-                            '& .MuiListItemButton-root': {
-                                padding: '2px 16px',
-                            },
-                            '& .MuiListItemText-root': {
-                                padding: '2px 40px',
-                                color: 'error.dark',
-                            },
-                        },
-                        children: [],
-                    });
-                } else {
+                if (prismaPhase !== 'identification') {
                     groupListItems.push({
                         id: `excluded_${column.id}`,
                         type: 'LISTITEM',
                         label: 'Excluded',
-                        count: column.stubStudies.filter((x) => x.exclusionTag !== null).length,
+                        count: null,
+                        excludedCount: column.stubStudies.filter((x) => x.exclusionTag !== null).length,
                         UI: ECurationBoardAIInterface.EXCLUDE,
                         listItemStyles: excludedListItemStyles,
                         children: prismaConfig[prismaPhase].exclusionTags.map((exclusionTag) => ({
                             id: exclusionTag.id,
                             type: 'LISTITEM',
                             label: exclusionTag.label,
-                            count: column.stubStudies.filter((x) => x.exclusionTag === exclusionTag.id).length,
+                            count: null,
+                            excludedCount: column.stubStudies.filter((x) => x.exclusionTag === exclusionTag.id).length,
                             UI: ECurationBoardAIInterface.EXCLUDE,
                             listItemStyles: excludedListItemStylesChildren,
                             children: [],
@@ -128,6 +118,7 @@ export const CurationBoardGroupsProvider: React.FC<{ children: React.ReactNode }
                 type: 'DIVIDER',
                 label: '',
                 count: null,
+                excludedCount: null,
                 UI: null,
             });
         } else {
@@ -144,6 +135,7 @@ export const CurationBoardGroupsProvider: React.FC<{ children: React.ReactNode }
                     type: 'SUBHEADER',
                     label: 'Curation',
                     count: null,
+                    excludedCount: null,
                     UI: null,
                 },
                 {
@@ -151,6 +143,7 @@ export const CurationBoardGroupsProvider: React.FC<{ children: React.ReactNode }
                     type: 'LISTITEM',
                     label: `1. ${unreviewedColumn.name}`,
                     count: unreviewedColumn.stubStudies.filter((x) => x.exclusionTag === null).length,
+                    excludedCount: null,
                     UI: ECurationBoardAIInterface.CURATOR,
                     children: [],
                 },
@@ -158,7 +151,8 @@ export const CurationBoardGroupsProvider: React.FC<{ children: React.ReactNode }
                     id: 'excluded_studies_column',
                     type: 'LISTITEM',
                     label: 'Excluded',
-                    count: unreviewedColumn.stubStudies.filter((x) => x.exclusionTag !== null).length,
+                    excludedCount: unreviewedColumn.stubStudies.filter((x) => x.exclusionTag !== null).length,
+                    count: null,
                     UI: ECurationBoardAIInterface.EXCLUDE,
                     listItemStyles: excludedListItemStyles,
                     children: excludedGroups.map((excludedGroup) => {
@@ -172,7 +166,8 @@ export const CurationBoardGroupsProvider: React.FC<{ children: React.ReactNode }
                             id: excludedGroup.id,
                             type: 'LISTITEM',
                             label: excludedGroup.label,
-                            count: numExcludedInGroup,
+                            count: null,
+                            excludedCount: numExcludedInGroup,
                             UI: ECurationBoardAIInterface.EXCLUDE,
                             listItemStyles: excludedListItemStylesChildren,
                         } as IGroupListItem;
@@ -183,6 +178,7 @@ export const CurationBoardGroupsProvider: React.FC<{ children: React.ReactNode }
                     type: 'LISTITEM',
                     label: `2. ${includedColumn.name}`,
                     count: includedColumn.stubStudies.filter((x) => x.exclusionTag === null).length,
+                    excludedCount: null,
                     UI: ECurationBoardAIInterface.CURATOR,
                     children: [],
                 },
@@ -191,6 +187,7 @@ export const CurationBoardGroupsProvider: React.FC<{ children: React.ReactNode }
                     type: 'DIVIDER',
                     label: '',
                     count: null,
+                    excludedCount: null,
                     UI: null,
                 },
             ];
@@ -203,6 +200,7 @@ export const CurationBoardGroupsProvider: React.FC<{ children: React.ReactNode }
                     type: 'SUBHEADER',
                     label: 'Imports',
                     count: null,
+                    excludedCount: null,
                     UI: null,
                 },
                 ...curationImports
@@ -214,6 +212,7 @@ export const CurationBoardGroupsProvider: React.FC<{ children: React.ReactNode }
                             label: curationImport.name,
                             secondaryLabel: `${curationImport.importModeUsed}\n${date.toLocaleDateString()} ${date.toLocaleTimeString()}`,
                             count: curationImport.numImported,
+                            excludedCount: null,
                             UI: ECurationBoardAIInterface.IMPORT_SUMMARY,
                         } as IGroupListItem;
                     })
@@ -256,6 +255,13 @@ export const CurationBoardGroupsProvider: React.FC<{ children: React.ReactNode }
         handleSetSelectedGroup(nextGroup);
     }, [selectedGroup, curationColumns, groups]);
 
+    const handleSetFirstCurationGroup = useCallback(() => {
+        const firstCurateGroup = groups.find((group) => group.id === curationColumns[0].id);
+        if (firstCurateGroup) {
+            handleSetSelectedGroup(firstCurateGroup);
+        }
+    }, [groups, curationColumns]);
+
     useEffect(() => {
         if (selectedGroup === undefined && curationColumns.length > 0) {
             const localStorageSelectedGroupId = localStorage.getItem(selectedCurationStepLocalStorageKey);
@@ -277,6 +283,7 @@ export const CurationBoardGroupsProvider: React.FC<{ children: React.ReactNode }
         () => ({
             groups,
             selectedGroup,
+            handleSetFirstCurationGroup,
             handleSetSelectedGroup,
             handleSelectPreviousGroup,
             handleSelectNextGroup,

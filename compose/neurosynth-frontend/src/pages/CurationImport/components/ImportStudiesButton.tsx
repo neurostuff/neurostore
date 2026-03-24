@@ -4,6 +4,8 @@ import NeurosynthPopper from 'components/NeurosynthPopper/NeurosynthPopper';
 import { EImportMode } from 'pages/CurationImport/CurationImport.types';
 import { useRef, useState } from 'react';
 import ImportStudiesDialog from './ImportStudiesDialog';
+import { useCurationBoardGroups } from 'pages/Curation/context/CurationBoardGroupsContext';
+import { useProjectCurationColumns } from 'pages/Project/store/ProjectStore';
 
 const importMethods = [
     {
@@ -37,6 +39,8 @@ const ImportStudiesButton: React.FC<ButtonProps> = (buttonProps) => {
     const [optionsIsOpen, setOptionsIsOpen] = useState(false);
     const [dialogIsOpen, setDialogIsOpen] = useState(false);
     const [method, setMethod] = useState<EImportMode | undefined>(undefined);
+    const { handleSetFirstCurationGroup } = useCurationBoardGroups();
+    const columns = useProjectCurationColumns();
 
     return (
         <>
@@ -45,6 +49,8 @@ const ImportStudiesButton: React.FC<ButtonProps> = (buttonProps) => {
                 onCloseDialog={() => {
                     setMethod(undefined); // this is impportant: it resets the method and also hides the reset dialog content
                     setDialogIsOpen(false);
+
+                    handleSetFirstCurationGroup();
                 }}
                 method={method}
             />

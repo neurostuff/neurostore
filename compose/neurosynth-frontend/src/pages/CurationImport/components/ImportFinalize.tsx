@@ -3,6 +3,7 @@ import { ENavigationButton } from 'components/Buttons/NavigationButtons';
 import { getURLFromSearchCriteria } from 'components/Search/search.helpers';
 import { IImport } from 'hooks/projects/useGetProjects';
 import { useSnackbar } from 'notistack';
+import { SELECTED_CURATION_STEP_LOCAL_STORAGE_KEY_SUFFIX } from 'pages/Curation/context/CurationBoardGroupsContext';
 import { ICurationStubStudy } from 'pages/Curation/Curation.types';
 import {
     automaticallyResolveDuplicates,
@@ -22,7 +23,6 @@ import { useState } from 'react';
 import { v4 as uuid } from 'uuid';
 import CurationImportStyles from '../CurationImport.styles';
 import ImportFinalizeReview from './ImportFinalizeReview';
-import { SELECTED_CURATION_STEP_LOCAL_STORAGE_KEY_SUFFIX } from 'pages/Curation/context/CurationBoardGroupsContext';
 
 const generateDefaultImportName = (
     importMode: EImportMode,
@@ -163,6 +163,9 @@ const ImportFinalize: React.FC<{
 
         updateCurationColumns(updatedColumns);
         enqueueSnackbar(`Added new import: ${importName}`, { variant: 'success' });
+
+        // unfortunately we cannot use useCurationBoardGroups here because we are not in the context of the CurationBoardGroupsProvider...
+        // in the future we should consider creating a base curation route and putting the curation search and curation page as children
         localStorage.removeItem(`${projectId}${SELECTED_CURATION_STEP_LOCAL_STORAGE_KEY_SUFFIX}`);
 
         onNavigate(ENavigationButton.NEXT);

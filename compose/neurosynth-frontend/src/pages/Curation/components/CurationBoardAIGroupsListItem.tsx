@@ -3,6 +3,7 @@ import { Box, Chip, Collapse, ListItem, ListItemButton, ListItemIcon, ListItemTe
 import React, { useState } from 'react';
 import CurationBoardAIGroupsStyles from './CurationBoardAIGroups.styles';
 import { IGroupListItem } from './CurationBoardAIGroupsList';
+import { ECurationBoardAIInterface } from './CurationBoardAi';
 
 const CurationBoardAIGroupsListItem: React.FC<{
     selectedGroupId: string | undefined;
@@ -62,6 +63,20 @@ const CurationBoardAIGroupsListItem: React.FC<{
                         {!expanded && group.count !== null && (
                             <Chip label={group.count} sx={{ fontSize: '12px', height: '20px' }} />
                         )}
+                        {!expanded && group.excludedCount !== null && (
+                            <Tooltip title={`${group.excludedCount} studies were excluded`} placement="right">
+                                <Chip
+                                    label={group.excludedCount}
+                                    sx={{
+                                        fontSize: '12px',
+                                        height: '20px',
+                                        backgroundColor: 'error.light',
+                                        color: 'white',
+                                        marginLeft: '4px',
+                                    }}
+                                />
+                            </Tooltip>
+                        )}
                     </ListItemButton>
                 </ListItem>
             </Tooltip>
@@ -95,7 +110,26 @@ const CurationBoardAIGroupsListItem: React.FC<{
                                             primary={child.label}
                                             secondary={child.secondaryLabel}
                                         />
-                                        <Chip label={child.count} sx={{ fontSize: '12px', height: '20px' }} />
+                                        {child.count !== null && (
+                                            <Chip label={child.count} sx={{ fontSize: '12px', height: '20px' }} />
+                                        )}
+                                        {child.excludedCount !== null && (
+                                            <Tooltip
+                                                title={`${child.excludedCount} studies were excluded due to: ${child.label}`}
+                                                placement="right"
+                                            >
+                                                <Chip
+                                                    label={child.excludedCount}
+                                                    sx={{
+                                                        fontSize: '12px',
+                                                        height: '20px',
+                                                        backgroundColor: 'error.light',
+                                                        color: 'white',
+                                                        marginLeft: '4px',
+                                                    }}
+                                                />
+                                            </Tooltip>
+                                        )}
                                     </ListItemButton>
                                 </ListItem>
                             </Tooltip>

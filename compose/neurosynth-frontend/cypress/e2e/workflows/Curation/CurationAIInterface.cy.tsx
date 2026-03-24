@@ -300,7 +300,7 @@ describe('CurationAIInterface', () => {
             cy.wait('@participantDemographicsExtraction');
 
             cy.contains('li', '1. Identification').click();
-            cy.contains('We automatically identified 1 duplicate study across your 3 imports').should('exist');
+            cy.contains('We identified 1 duplicate study across your 3 imports').should('exist');
         });
 
         it('should show the correct number of duplicates identified message when multiple duplicates exist project-wide', () => {
@@ -322,7 +322,7 @@ describe('CurationAIInterface', () => {
             cy.wait('@participantDemographicsExtraction');
 
             cy.contains('li', '1. Identification').click();
-            cy.contains('We automatically identified 3 duplicate studies across your 3 imports').should('exist');
+            cy.contains('We identified 3 duplicate studies across your 3 imports').should('exist');
         });
 
         it('should show the message when no more studies can be promoted to screening', () => {

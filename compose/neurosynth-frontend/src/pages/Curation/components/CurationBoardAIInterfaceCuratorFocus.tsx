@@ -1,10 +1,9 @@
 import { Box } from '@mui/material';
-import { useGetCurationSummary, useGetWindowHeight } from 'hooks';
-import { useProjectCurationIsPrisma } from 'pages/Project/store/ProjectStore';
+import { useGetWindowHeight } from 'hooks';
 import React, { useCallback, useEffect, useRef } from 'react';
 import { FixedSizeList } from 'react-window';
 import { ICurationBoardAIInterfaceCurator } from './CurationBoardAIInterfaceCurator';
-import CurationBoardAIInterfaceCuratorTableEmptyState from './CurationBoardAIInterfaceCuratorTableEmptyState';
+import CurationBoardAIInterfaceCuratorTableHints from './CurationBoardAIInterfaceCuratorTableHints';
 import CurationEditableStubSummary from './CurationEditableStubSummary';
 import CurationStubAITableSummary from './CurationStubAITableSummary';
 import CurationStubListItemVirtualizedContainer from './CurationStubListItemVirtualizedContainer';
@@ -19,8 +18,6 @@ const CurationBoardAIInterfaceCuratorFocus: React.FC<ICurationBoardAIInterfaceCu
     const windowHeight = useGetWindowHeight();
     const scrollableBoxRef = useRef<HTMLDivElement>(null);
     const listRef = useRef<FixedSizeList>(null);
-    const { uncategorized, included, excluded } = useGetCurationSummary();
-    const isPrisma = useProjectCurationIsPrisma();
 
     const handleMoveToNextStub = useCallback(() => {
         if (!selectedStub?.id) return;
@@ -50,25 +47,11 @@ const CurationBoardAIInterfaceCuratorFocus: React.FC<ICurationBoardAIInterfaceCu
     return (
         <Box sx={{ display: 'flex', padding: '0 1rem 1rem 1rem', height: 'calc(100% - 48px - 8px - 20px)' }}>
             {rows.length === 0 && (
-                <Box
-                    sx={{
-                        display: 'flex',
-                        height: 'calc(100% - 53px)',
-                        width: '100%',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: 2,
-                        boxSizing: 'border-box',
-                    }}
-                >
-                    <CurationBoardAIInterfaceCuratorTableEmptyState
-                        numIncluded={included}
-                        numUncategorized={uncategorized}
-                        numExcluded={excluded}
-                        columnIndex={columnIndex}
-                        isPrisma={isPrisma}
-                    />
-                </Box>
+                <CurationBoardAIInterfaceCuratorTableHints
+                    table={table}
+                    numVisibleStudies={rows.length}
+                    columnIndex={columnIndex}
+                />
             )}
             {rows.length > 0 && (
                 <>
