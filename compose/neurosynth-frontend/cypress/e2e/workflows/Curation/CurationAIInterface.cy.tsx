@@ -121,7 +121,7 @@ describe('CurationAIInterface', () => {
         it('should have the identification phase UI initially', () => {
             cy.contains('We did not identify any duplicate studies').should('exist');
             cy.contains('Manually review').should('exist');
-            cy.contains('Promote all uncategorized studies').should('exist');
+            cy.contains('Promote all studies and screen').should('exist');
         });
 
         it('should show the table after clicking manually review', () => {
@@ -140,7 +140,7 @@ describe('CurationAIInterface', () => {
             // Should be back to the identification phase UI
             cy.contains('We did not identify any duplicate studies').should('exist');
             cy.contains('Manually review').should('exist');
-            cy.contains('Promote all uncategorized studies').should('exist');
+            cy.contains('Promote all studies and screen').should('exist');
         });
 
         it('should handle focus mode transition when going back to overview', () => {
@@ -158,7 +158,7 @@ describe('CurationAIInterface', () => {
             cy.contains('We did not identify any duplicate studies').should('exist');
             cy.contains('back to table view').should('not.exist');
             cy.contains('Back to identification overview').should('not.exist');
-            cy.contains('Promote all uncategorized studies').should('exist');
+            cy.contains('Promote all studies and screen').should('exist');
         });
 
         it('should have a button to show the PRISMA diagram', () => {
@@ -342,7 +342,7 @@ describe('CurationAIInterface', () => {
             cy.wait('@participantDemographicsExtraction');
 
             cy.contains('li', '1. Identification').click();
-            cy.contains('There are no uncategorized studies left to review.').should('exist');
+            cy.contains('There are no more studies left to review').should('exist');
         });
 
         it('should set the duplicate tag in the table row', () => {
@@ -398,7 +398,7 @@ describe('CurationAIInterface', () => {
             }).as('projectFixture');
 
             cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
-            cy.contains('No studies in this project yet. Import studies to get started').should('exist');
+            cy.contains('To get started,').should('exist');
         });
 
         it('should show "No studies to review for..."', () => {
@@ -413,7 +413,7 @@ describe('CurationAIInterface', () => {
             });
 
             cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
-            cy.contains('There are no uncategorized studies left to review.').should('exist');
+            cy.contains('No studies to review for identification').should('exist');
         });
 
         it('should show "No included studies..."', () => {
@@ -440,11 +440,11 @@ describe('CurationAIInterface', () => {
             cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
 
             cy.contains('li', '1. Identification').click();
-            cy.contains('There are no uncategorized studies left to review.').should('exist');
+            cy.contains("You've reviewed all the uncategorized studies in identification").should('exist');
             cy.contains('li', '2. Screening').click();
-            cy.contains("You've reviewed all uncategorized studies in screening!").should('exist');
+            cy.contains("You've reviewed all the uncategorized studies in screening").should('exist');
             cy.contains('li', '3. Eligibility').click();
-            cy.contains("You've reviewed all uncategorized studies in eligibility!").should('exist');
+            cy.contains("You've reviewed all the uncategorized studies in eligibility").should('exist');
         });
     });
 
@@ -488,7 +488,7 @@ describe('CurationAIInterface', () => {
             }).as('projectFixture');
 
             cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
-            cy.contains('No studies. To import studies, click the import button above').should('exist');
+            cy.contains('To get started,').should('exist');
         });
 
         it('should show "no included studies"', () => {
@@ -715,10 +715,10 @@ describe('CurationAIInterface', () => {
                 }).as('projectFixture');
 
                 cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
-                cy.contains('There are no uncategorized studies left to review.').should('not.exist');
-                cy.contains('button', 'Promote all uncategorized studies').click();
+                cy.contains('There are no more studies left to review').should('not.exist');
+                cy.contains('button', 'Promote all studies and screen').click();
                 cy.contains('button', 'Continue').click();
-                cy.contains('There are no uncategorized studies left to review.').should('exist');
+                cy.contains('There are no more studies left to review').should('exist');
             });
 
             it('should exclude the study', () => {

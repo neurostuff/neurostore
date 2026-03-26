@@ -14,13 +14,12 @@ describe('ImportStudiesDialog', () => {
 
     describe('Search Neurostore', () => {
         beforeEach(() => {
-            cy.login('mocked').visit('/projects/abc123/curation');
             cy.intercept('GET', '**/api/base-studies/**', {
                 fixture: 'baseStudies/baseStudiesWithResults',
             }).as('baseStudiesFixture');
             cy.intercept('PUT', '**/api/projects/abc123').as('updateProjectFixture');
-            cy.visit('/projects/abc123/curation').wait('@projectFixture').wait('@studysetFixture');
-            cy.contains('button', 'Search').parent().click();
+            cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture').wait('@studysetFixture');
+            cy.contains('button', 'Search').click();
         });
 
         it('should show the neurostore search page', () => {
@@ -46,8 +45,9 @@ describe('ImportStudiesDialog', () => {
                     `Import ${baseStudiesResponse.response?.body?.results?.length} studies from neurostore`
                 ).click();
             });
-            cy.get('input').type('my new import{enter}');
-            cy.contains('button', 'next').click().url().should('include', '/projects/abc123/curation');
+            cy.get('input[type="text"]').first().clear().type('my new import');
+            cy.contains('button', 'Import').click();
+            cy.url().should('include', '/projects/abc123/curation');
         });
     });
 });

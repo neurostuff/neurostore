@@ -53,8 +53,8 @@ describe('ImportManualCreateDialog', () => {
             cy.get('input[placeholder="10.1016/S0896-6273(00)80715-1"]').click().type('10.1000/test');
             cy.get('input[placeholder="21706013"]').click().type('12345678');
             cy.contains('button', 'next').click();
-            cy.get('input').type('my new import{enter}');
-            cy.contains('button', 'next').click().url().should('include', '/projects/abc123/curation');
+            cy.contains('button', 'Import').should('not.be.disabled');
+            cy.contains('button', 'Import').click();
         });
 
         it('should disable DOI input when No DOI checkbox is checked', () => {
@@ -78,8 +78,8 @@ describe('ImportManualCreateDialog', () => {
             cy.contains('button', 'next').click();
             cy.contains('No identifiers provided').should('be.visible');
             cy.contains('button', 'Continue').click();
-            cy.get('input').type('my new import{enter}');
-            cy.contains('button', 'next').click().url().should('include', '/projects/abc123/curation');
+            cy.contains('button', 'Import').should('not.be.disabled');
+            cy.contains('button', 'Import').click();
         });
     });
 });
