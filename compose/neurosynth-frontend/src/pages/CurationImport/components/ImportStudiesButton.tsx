@@ -1,11 +1,10 @@
 import { ArrowDropDown } from '@mui/icons-material';
-import { Box, Button, ButtonProps, ListItem, ListItemText, MenuItem, MenuList } from '@mui/material';
+import { Box, Button, ButtonProps, ListItemText, MenuItem, MenuList } from '@mui/material';
 import NeurosynthPopper from 'components/NeurosynthPopper/NeurosynthPopper';
+import { useCurationBoardGroups } from 'pages/Curation/context/CurationBoardGroupsContext';
 import { EImportMode } from 'pages/CurationImport/CurationImport.types';
 import { useRef, useState } from 'react';
 import ImportStudiesDialog from './ImportStudiesDialog';
-import { useCurationBoardGroups } from 'pages/Curation/context/CurationBoardGroupsContext';
-import { useProjectCurationColumns } from 'pages/Project/store/ProjectStore';
 
 const importMethods = [
     {
@@ -40,7 +39,6 @@ const ImportStudiesButton: React.FC<ButtonProps> = (buttonProps) => {
     const [dialogIsOpen, setDialogIsOpen] = useState(false);
     const [method, setMethod] = useState<EImportMode | undefined>(undefined);
     const { handleSetFirstCurationGroup } = useCurationBoardGroups();
-    const columns = useProjectCurationColumns();
 
     return (
         <>

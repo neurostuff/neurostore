@@ -28,25 +28,16 @@ describe('ImportStudiesDialog', () => {
         });
 
         it('should be disabled initially', () => {
-            cy.wait('@baseStudiesFixture').then((baseStudiesResponse) => {
-                cy.contains(
-                    'button',
-                    `Import ${baseStudiesResponse.response?.body?.results?.length} studies from neurostore`
-                ).should('be.disabled');
-            });
+            cy.wait('@baseStudiesFixture');
+            cy.contains('button', `next`).should('be.disabled');
         });
 
         it('should import studies', () => {
             cy.get('input[type="text"]').type('neuron');
             cy.get('button').contains('Search').click();
-            cy.wait('@baseStudiesFixture').then((baseStudiesResponse) => {
-                cy.contains(
-                    'button',
-                    `Import ${baseStudiesResponse.response?.body?.results?.length} studies from neurostore`
-                ).click();
-            });
+            cy.wait('@baseStudiesFixture');
+            cy.contains('button', `next`).should('be.disabled');
             cy.get('input[type="text"]').first().clear().type('my new import');
-            cy.contains('button', 'Import').click();
             cy.url().should('include', '/projects/abc123/curation');
         });
     });

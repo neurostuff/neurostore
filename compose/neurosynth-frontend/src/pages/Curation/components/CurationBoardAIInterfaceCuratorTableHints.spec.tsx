@@ -88,14 +88,14 @@ describe('CurationBoardAIInterfaceCuratorTableHints', () => {
         it('should show completion message when curation is complete', () => {
             (useGetCurationSummary as Mock).mockReturnValue({ included: 5, uncategorized: 0, excluded: 0 });
             (useProjectCurationColumn as Mock).mockReturnValue(mockEmptyColumn);
-            render(<CurationBoardAIInterfaceCuratorTableHints numVisibleStudies={0} columnIndex={1} />);
+            render(<CurationBoardAIInterfaceCuratorTableHints numVisibleStudies={0} columnIndex={0} />);
             expect(screen.getByText(/You've reviewed all the uncategorized studies!/i)).toBeInTheDocument();
         });
 
         it('should show the Start Extraction button when curation is complete', () => {
             (useGetCurationSummary as Mock).mockReturnValue({ included: 5, uncategorized: 0, excluded: 0 });
             (useProjectCurationColumn as Mock).mockReturnValue(mockEmptyColumn);
-            render(<CurationBoardAIInterfaceCuratorTableHints numVisibleStudies={0} columnIndex={1} />);
+            render(<CurationBoardAIInterfaceCuratorTableHints numVisibleStudies={0} columnIndex={0} />);
             expect(screen.getByText('Start Extraction')).toBeInTheDocument();
         });
     });

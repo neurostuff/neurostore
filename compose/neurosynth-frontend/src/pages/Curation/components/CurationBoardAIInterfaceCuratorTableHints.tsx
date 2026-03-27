@@ -1,19 +1,15 @@
 import { ChevronLeft, ChevronRight } from '@mui/icons-material';
 import { Box, Button, Card, CardActions, CardContent, Link, Typography } from '@mui/material';
+import { Table } from '@tanstack/react-table';
 import { useGetCurationSummary } from 'hooks';
 import { indexToPRISMAMapping } from 'hooks/projects/useGetProjects';
 import ImportStudiesButton from 'pages/CurationImport/components/ImportStudiesButton';
-import {
-    useProjectCurationColumn,
-    useProjectCurationColumns,
-    useProjectCurationIsPrisma,
-} from 'pages/Project/store/ProjectStore';
+import { useProjectCurationColumn, useProjectCurationIsPrisma } from 'pages/Project/store/ProjectStore';
+import { useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useCurationBoardGroups } from '../context/CurationBoardGroupsContext';
-import StartExtractionButton from './StartExtractionButton';
-import { useMemo } from 'react';
 import { ICurationTableStudy } from '../hooks/useCuratorTableState.types';
-import { Table } from '@tanstack/react-table';
+import StartExtractionButton from './StartExtractionButton';
 
 const CurationBoardAIInterfaceCuratorTableHints: React.FC<{
     table?: Table<ICurationTableStudy> | undefined;
@@ -24,12 +20,10 @@ const CurationBoardAIInterfaceCuratorTableHints: React.FC<{
     const { included, uncategorized, excluded } = useGetCurationSummary();
     const noStudiesInCuration = included === 0 && uncategorized === 0 && excluded === 0;
     const curationIsComplete = included > 0 && uncategorized === 0;
-    const { handleSelectPreviousGroup, handleSelectNextGroup, selectedGroup } = useCurationBoardGroups();
-    const columns = useProjectCurationColumns();
+    const { handleSelectPreviousGroup, handleSelectNextGroup } = useCurationBoardGroups();
     const { projectId } = useParams<{ projectId: string }>();
     const navigate = useNavigate();
     const curationColumn = useProjectCurationColumn(columnIndex);
-    const hasStudiesInSelectedPhase = curationColumn.stubStudies.length > 0;
     const hasVisibleStudies = numVisibleStudies > 0;
 
     const hasUncategorizedStudiesInSelectedPhase = useMemo(() => {

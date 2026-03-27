@@ -3,7 +3,6 @@ import { Box, Chip, Collapse, ListItem, ListItemButton, ListItemIcon, ListItemTe
 import React, { useState } from 'react';
 import CurationBoardAIGroupsStyles from './CurationBoardAIGroups.styles';
 import { IGroupListItem } from './CurationBoardAIGroupsList';
-import { ECurationBoardAIInterface } from './CurationBoardAi';
 
 const CurationBoardAIGroupsListItem: React.FC<{
     selectedGroupId: string | undefined;

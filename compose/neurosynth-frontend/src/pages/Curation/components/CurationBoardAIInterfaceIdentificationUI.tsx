@@ -67,13 +67,11 @@ const CurationBoardAIInterfaceIdentificationUI: React.FC<{
                         )}
                     </CardContent>
                     <CardActions sx={{ display: 'flex' }}>
-                        {hasIdentificationStudies && (
-                            <Button variant="text" color="primary" onClick={handleReviewDuplicates}>
-                                {hasUncategorizedStudies
-                                    ? 'Manually review'
-                                    : `Review all duplicates (${curationDuplicates.length})`}
-                            </Button>
-                        )}
+                        <Button variant="text" color="primary" onClick={handleReviewDuplicates}>
+                            {hasUncategorizedStudies
+                                ? 'Manually review'
+                                : `Review all duplicates (${curationDuplicates.length})`}
+                        </Button>
                         {!hasUncategorizedStudies && (
                             <Button onClick={() => handleSelectNextGroup()} disableElevation>
                                 Go to Screening <ChevronRight />

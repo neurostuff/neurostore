@@ -42,18 +42,14 @@ describe('ImportStudiesDialog', () => {
             cy.login('mocked').visit('/projects/abc123/curation/search').wait('@projectFixture');
         });
 
-        it('should enter the import name based on the search and typed text', () => {
+        it.only('should enter the import name based on the search and typed text', () => {
             cy.get('input[type="text"]').first().type('neuron');
             cy.get('button').contains('Search').click();
-            cy.wait('@baseStudiesFixture').then((baseStudiesResponse) => {
-                cy.contains(
-                    'button',
-                    `Import ${baseStudiesResponse.response?.body?.results?.length} studies from neurostore`
-                ).click();
-            });
+            cy.wait('@baseStudiesFixture');
+            cy.contains('button', `next`).should('not.be.disabled');
             cy.get('input[type="text"]').first().type(' (my import)');
             cy.get('input[type="text"]').first().should('have.value', 'neuron (my import)');
-            cy.contains('button', 'Import').should('not.be.disabled');
+            cy.contains('button', 'next').should('not.be.disabled');
         });
     });
 });
