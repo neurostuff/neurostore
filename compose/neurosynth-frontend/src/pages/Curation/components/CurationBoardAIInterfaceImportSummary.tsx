@@ -3,12 +3,11 @@ import { Alert, Box, Button, Chip, IconButton, Typography } from '@mui/material'
 import DebouncedTextField from 'components/DebouncedTextField';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import { useGetWindowHeight, useUserCanEdit } from 'hooks';
-import CurationImportFinalizeReviewVirtualizedListItem from 'pages/CurationImport/components/CurationImportFinalizeReviewVirtualizedListItem';
-import { EImportMode } from 'pages/Curation/Curation.types';
+import ImportFinalizeReviewVirtualizedListItem from 'pages/CurationImport/components/ImportFinalizeReviewVirtualizedListItem';
 import { useProjectCurationColumns, useProjectCurationImport } from 'pages/Project/store/ProjectStore';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { FixedSizeList } from 'react-window';
-import { ICurationStubStudy } from '../Curation.types';
+import { EImportMode, ICurationStubStudy } from '../Curation.types';
 import { IGroupListItem } from './CurationBoardAIGroupsList';
 import { useAuth0 } from '@auth0/auth0-react';
 
@@ -204,7 +203,7 @@ const CurationBoardAIInterfaceImportSummary: React.FC<{
                 >
                     {({ index, data, style }) => {
                         const stub = data.stubs[index];
-                        return <CurationImportFinalizeReviewVirtualizedListItem {...stub} style={style} />;
+                        return <ImportFinalizeReviewVirtualizedListItem {...stub} style={style} />;
                     }}
                 </FixedSizeList>
             </Box>

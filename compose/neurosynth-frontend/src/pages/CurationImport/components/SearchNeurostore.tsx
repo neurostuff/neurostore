@@ -1,27 +1,27 @@
 import { Box, Button, TableCell, TableRow } from '@mui/material';
-import LoadingButton from 'components/Buttons/LoadingButton';
+import { AxiosError } from 'axios';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons';
-import StudiesSearchContainer from 'components/Search/StudiesSearchContainer';
-import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import NeurosynthTable from 'components/NeurosynthTable/NeurosynthTable';
 import NeurosynthTableStyles from 'components/NeurosynthTable/NeurosynthTable.styles';
+import { addKVPToSearch, getSearchCriteriaFromURL, getURLFromSearchCriteria } from 'components/Search/search.helpers';
+import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
+import { studiesToStubs } from 'helpers/Curation.helpers';
 import { baseStudiesSearchHelper } from 'hooks/studies/useGetBaseStudies';
 import { BaseStudyList } from 'neurostore-typescript-sdk';
 import { useSnackbar } from 'notistack';
 import { useProjectAnalysisType, useProjectId } from 'pages/Project/store/ProjectStore';
 import { SearchCriteria, SearchDataType } from 'pages/Study/Study.types';
-import { addKVPToSearch, getSearchCriteriaFromURL, getURLFromSearchCriteria } from 'components/Search/search.helpers';
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { IImportArgs } from '../../CurationImport/components/CurationImportDoImport';
-import CurationImportBaseStyles from '../../CurationImport/components/CurationImport.styles';
-import { AxiosError } from 'axios';
-import { studiesToStubs } from 'helpers/Curation.helpers';
+import { useLocation, useNavigate } from 'react-router-dom';
+import CurationImportStyles from '../CurationImport.styles';
+import { IImportArgs } from './ImportDoImport';
+import LoadingButton from 'components/Buttons/LoadingButton';
 import { EAnalysisType } from 'hooks/projects/Project.types';
+import StudiesSearchContainer from 'components/Search/StudiesSearchContainer';
 
-const CurationSearchNeurostore: React.FC<
-    IImportArgs & { onSetSearchCriteria: (searchCriteria: SearchCriteria) => void }
-> = (props) => {
+const SearchNeurostore: React.FC<IImportArgs & { onSetSearchCriteria: (searchCriteria: SearchCriteria) => void }> = (
+    props
+) => {
     const [importIsLoading, setImportIsLoading] = useState(false);
     const { enqueueSnackbar } = useSnackbar();
 
@@ -105,10 +105,10 @@ const CurationSearchNeurostore: React.FC<
         if (isLoading) return;
 
         if (button === ENavigationButton.PREV) {
-            navigate(`/projects/${projectId}/curation`);
             props.onNavigate(button);
             return;
         }
+
         setImportIsLoading(true);
         try {
             const allDataForSearch = await baseStudiesSearchHelper({
@@ -196,7 +196,14 @@ const CurationSearchNeurostore: React.FC<
                                 <TableCell>
                                     {studyrow?.name || <Box sx={{ color: 'warning.dark' }}>No name</Box>}
                                 </TableCell>
-                                <TableCell>
+                                <TableCell
+                                    sx={{
+                                        maxWidth: '300px !important',
+                                        overflow: 'hidden !important',
+                                        textOverflow: 'ellipsis !important',
+                                        whiteSpace: 'nowrap !important',
+                                    }}
+                                >
                                     {studyrow?.authors || <Box sx={{ color: 'warning.dark' }}>No author(s)</Box>}
                                 </TableCell>
                                 <TableCell>
@@ -209,25 +216,29 @@ const CurationSearchNeurostore: React.FC<
                 </Box>
             </StudiesSearchContainer>
 
-            <Box sx={CurationImportBaseStyles.fixedContainer}>
-                <Box sx={CurationImportBaseStyles.fixedButtonsContainer}>
-                    <Button variant="outlined" onClick={() => handleButtonClick(ENavigationButton.PREV)}>
-                        back
-                    </Button>
-                    <LoadingButton
-                        variant="contained"
-                        text={`Import ${studyData?.metadata?.total_count || 0} studies from neurostore`}
-                        onClick={() => handleButtonClick(ENavigationButton.NEXT)}
-                        disableElevation
-                        sx={{ width: '400px' }}
-                        disabled={(studyData?.metadata?.total_count || 0) === 0 || !hasSearch || isLoading || !!error}
-                        loaderColor="secondary"
-                        isLoading={importIsLoading}
-                    ></LoadingButton>
-                </Box>
+            <Box sx={CurationImportStyles.actionsContainer}>
+                <Button
+                    variant="outlined"
+                    color="error"
+                    sx={CurationImportStyles.actionsButton}
+                    onClick={() => handleButtonClick(ENavigationButton.PREV)}
+                >
+                    cancel
+                </Button>
+                <LoadingButton
+                    variant="contained"
+                    color="primary"
+                    sx={CurationImportStyles.actionsButton}
+                    onClick={() => handleButtonClick(ENavigationButton.NEXT)}
+                    text="next"
+                    loaderColor="secondary"
+                    disableElevation
+                    disabled={(studyData?.metadata?.total_count || 0) === 0 || !hasSearch || isLoading || !!error}
+                    isLoading={importIsLoading}
+                />
             </Box>
         </StateHandlerComponent>
     );
 };
 
-export default CurationSearchNeurostore;
+export default SearchNeurostore;

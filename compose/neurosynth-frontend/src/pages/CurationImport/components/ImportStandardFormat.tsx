@@ -1,17 +1,17 @@
 import FileUploadIcon from '@mui/icons-material/FileUpload';
 import { Box, Button, TextField, Typography } from '@mui/material';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons';
+import { ICurationStubStudy, ISource } from 'pages/Curation/Curation.types';
+import CurationPopupIdentificationSourceSelector from 'pages/Curation/components/CurationPopupIdentificationSourceSelector';
 import { ENeurosynthSourceIds } from 'pages/Project/store/ProjectStore.consts';
 import { ChangeEvent, useEffect, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import CurationImportBaseStyles from 'pages/CurationImport/components/CurationImport.styles';
-import { ICurationStubStudy, ISource } from 'pages/Curation/Curation.types';
-import CurationPopupIdentificationSourceSelector from 'pages/Curation/components/CurationPopupIdentificationSourceSelector';
 // @ts-ignore
 import { Cite } from '@citation-js/core';
-import '@citation-js/plugin-enw';
 import '@citation-js/plugin-bibtex';
+import '@citation-js/plugin-enw';
 import '@citation-js/plugin-ris';
+import CurationImportStyles from 'pages/CurationImport/CurationImport.styles';
 
 const normalize = (t: unknown): string => {
     if (typeof t === 'string') return t;
@@ -68,7 +68,7 @@ interface CSLJSON {
     volume?: string;
 }
 
-const CurationImportStandardFormat: React.FC<{
+const ImportStandardFormat: React.FC<{
     onNavigate: (button: ENavigationButton) => void;
     onImportStubs: (stubs: ICurationStubStudy[]) => void;
     onFileUpload: (fileName: string) => void;
@@ -198,16 +198,15 @@ const CurationImportStandardFormat: React.FC<{
     };
 
     return (
-        <Box sx={{ width: '100%', marginBottom: '6rem' }}>
+        <Box sx={{ width: '100%' }} mt={6}>
             <Box
                 sx={{
-                    margin: '2rem 0 1rem 0',
                     display: 'flex',
                     alignItems: 'center',
                     flexDirection: 'column',
                 }}
             >
-                <Typography sx={{ maxWidth: '600px' }} gutterBottom>
+                <Typography sx={{ maxWidth: '600px' }} mb={4} gutterBottom>
                     Enter the database that you exported your bibliography from. If you don't see your database listed,
                     you can type the name of the database you used. If you are using an export from a reference manager
                     that does not specify the source, you can select "Reference Manager" as the source.
@@ -258,24 +257,27 @@ const CurationImportStandardFormat: React.FC<{
                     </Box>
                 </>
             )}
-            <Box sx={CurationImportBaseStyles.fixedContainer}>
-                <Box sx={CurationImportBaseStyles.fixedButtonsContainer}>
-                    <Button variant="outlined" onClick={() => handleButtonClick(ENavigationButton.PREV)}>
-                        back
-                    </Button>
-                    <Button
-                        variant="contained"
-                        sx={CurationImportBaseStyles.nextButton}
-                        disableElevation
-                        disabled={!source || uploadState.stubs.length === 0 || !uploadState.isValid}
-                        onClick={() => handleButtonClick(ENavigationButton.NEXT)}
-                    >
-                        next
-                    </Button>
-                </Box>
+            <Box sx={CurationImportStyles.actionsContainer}>
+                <Button
+                    variant="outlined"
+                    color="error"
+                    sx={CurationImportStyles.actionsButton}
+                    onClick={() => handleButtonClick(ENavigationButton.PREV)}
+                >
+                    cancel
+                </Button>
+                <Button
+                    variant="contained"
+                    sx={CurationImportStyles.actionsButton}
+                    disableElevation
+                    disabled={!source || uploadState.stubs.length === 0 || !uploadState.isValid}
+                    onClick={() => handleButtonClick(ENavigationButton.NEXT)}
+                >
+                    next
+                </Button>
             </Box>
         </Box>
     );
 };
 
-export default CurationImportStandardFormat;
+export default ImportStandardFormat;

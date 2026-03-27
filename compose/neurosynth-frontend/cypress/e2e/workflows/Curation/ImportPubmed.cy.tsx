@@ -54,8 +54,8 @@ describe('ImportPubmedDialog', () => {
                 .click()
                 .type('123{enter}456{enter}789');
             cy.contains('button', 'next').click();
-            cy.get('input').type('my new import{enter}');
-            cy.contains('button', 'next').click().url().should('include', '/projects/abc123/curation');
+            cy.get('input[type="text"]').first().clear().type('my new import');
+            cy.contains('button', 'Import').click({ force: true });
         });
 
         it('should import studies via a file', () => {

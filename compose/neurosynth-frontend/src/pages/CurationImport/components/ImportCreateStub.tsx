@@ -2,13 +2,13 @@ import { Box, Button, Checkbox, FormControlLabel, TextField } from '@mui/materia
 import { ENavigationButton } from 'components/Buttons/NavigationButtons';
 import { ChangeEvent, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import CurationImportBaseStyles from './CurationImport.styles';
-import CreateStubStudyStyles from './CurationImportCreateStub.styles';
 import { ICurationStubStudy, ISource } from 'pages/Curation/Curation.types';
+import CreateStubStudyStyles from './ImportCreateStub.styles';
 import CurationPopupIdentificationSourceSelector from 'pages/Curation/components/CurationPopupIdentificationSourceSelector';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
+import CurationImportStyles from '../CurationImport.styles';
 
-const CurationImportCreateStub: React.FC<{
+const ImportCreateStub: React.FC<{
     onNavigate: (button: ENavigationButton) => void;
     onImportStubs: (stubs: ICurationStubStudy[], unimportedStubs?: string[]) => void;
 }> = (props) => {
@@ -115,7 +115,7 @@ const CurationImportCreateStub: React.FC<{
     const disableCreateButton = form.name.length === 0 || !form.identificationSource || doiMissing || pmidMissing;
 
     return (
-        <Box sx={{ padding: '10px 0', margin: '2rem 0 6rem 0' }}>
+        <Box mt={4} p={4}>
             <Box
                 sx={{
                     display: 'grid',
@@ -288,24 +288,27 @@ const CurationImportCreateStub: React.FC<{
                 name="abstract"
                 placeholder="Lorem Ipsum..."
             />
-            <Box sx={CurationImportBaseStyles.fixedContainer}>
-                <Box sx={CurationImportBaseStyles.fixedButtonsContainer}>
-                    <Button variant="outlined" onClick={() => handleButtonClick(ENavigationButton.PREV)}>
-                        back
-                    </Button>
-                    <Button
-                        variant="contained"
-                        sx={CurationImportBaseStyles.nextButton}
-                        disableElevation
-                        disabled={disableCreateButton}
-                        onClick={() => handleButtonClick(ENavigationButton.NEXT)}
-                    >
-                        next
-                    </Button>
-                </Box>
+            <Box sx={CurationImportStyles.actionsContainer}>
+                <Button
+                    variant="outlined"
+                    color="error"
+                    sx={CurationImportStyles.actionsButton}
+                    onClick={() => handleButtonClick(ENavigationButton.PREV)}
+                >
+                    cancel
+                </Button>
+                <Button
+                    variant="contained"
+                    sx={CurationImportStyles.actionsButton}
+                    disableElevation
+                    disabled={disableCreateButton}
+                    onClick={() => handleButtonClick(ENavigationButton.NEXT)}
+                >
+                    next
+                </Button>
             </Box>
         </Box>
     );
 };
 
-export default CurationImportCreateStub;
+export default ImportCreateStub;

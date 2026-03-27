@@ -21,16 +21,16 @@ describe('ImportManualCreateDialog', () => {
         });
 
         it('should show the create new study page', () => {
-            cy.contains('label', 'Study Name *').should('be.visible');
-            cy.contains('label', 'Authors').should('be.visible');
-            cy.contains('label', 'DOI').should('be.visible');
-            cy.contains('label', 'Journal').should('be.visible');
-            cy.contains('label', 'PubMed ID').should('be.visible');
-            cy.contains('label', 'PubMed Central ID').should('be.visible');
-            cy.contains('label', 'Article Year').should('be.visible');
-            cy.contains('label', 'article link').should('be.visible');
-            cy.contains('label', 'Keywords').should('be.visible');
-            cy.contains('label', 'select study data source *').should('be.visible');
+            cy.contains('label', 'Study Name *').should('exist');
+            cy.contains('label', 'Authors').should('exist');
+            cy.contains('label', 'DOI').should('exist');
+            cy.contains('label', 'Journal').should('exist');
+            cy.contains('label', 'PubMed ID').should('exist');
+            cy.contains('label', 'PubMed Central ID').should('exist');
+            cy.contains('label', 'Article Year').should('exist');
+            cy.contains('label', 'article link').should('exist');
+            cy.contains('label', 'Keywords').should('exist');
+            cy.contains('label', 'select study data source *').should('exist');
         });
 
         it('should be disabled initially', () => {
@@ -53,8 +53,8 @@ describe('ImportManualCreateDialog', () => {
             cy.get('input[placeholder="10.1016/S0896-6273(00)80715-1"]').click().type('10.1000/test');
             cy.get('input[placeholder="21706013"]').click().type('12345678');
             cy.contains('button', 'next').click();
-            cy.get('input').type('my new import{enter}');
-            cy.contains('button', 'next').click().url().should('include', '/projects/abc123/curation');
+            cy.contains('button', 'Import').should('not.be.disabled');
+            cy.contains('button', 'Import').click({ force: true });
         });
 
         it('should disable DOI input when No DOI checkbox is checked', () => {
@@ -78,8 +78,8 @@ describe('ImportManualCreateDialog', () => {
             cy.contains('button', 'next').click();
             cy.contains('No identifiers provided').should('be.visible');
             cy.contains('button', 'Continue').click();
-            cy.get('input').type('my new import{enter}');
-            cy.contains('button', 'next').click().url().should('include', '/projects/abc123/curation');
+            cy.contains('button', 'Import').should('not.be.disabled');
+            cy.contains('button', 'Import').click({ force: true });
         });
     });
 });

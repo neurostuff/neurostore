@@ -3,7 +3,7 @@ import { ENavigationButton } from 'components/Buttons/NavigationButtons';
 import { getURLFromSearchCriteria } from 'components/Search/search.helpers';
 import { useSnackbar } from 'notistack';
 import { ICurationStubStudy, IImport, EImportMode } from 'pages/Curation/Curation.types';
-import { SELECTED_CURATION_STEP_LOCAL_STORAGE_KEY_SUFFIX } from 'pages/Curation/hooks/useCurationBoardGroupsState';
+import { SELECTED_CURATION_STEP_LOCAL_STORAGE_KEY_SUFFIX } from 'pages/Curation/context/CurationBoardGroupsContext';
 import {
     automaticallyResolveDuplicates,
     createDuplicateMap,
@@ -18,10 +18,9 @@ import {
 import { defaultExclusionTags } from 'pages/Project/store/ProjectStore.consts';
 import { SearchCriteria } from 'pages/Study/Study.types';
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { v4 as uuid } from 'uuid';
-import CurationImportFinalizeReview from './CurationImportFinalizeReview';
-import CurationImportBaseStyles from './CurationImport.styles';
+import CurationImportStyles from '../CurationImport.styles';
+import ImportFinalizeReview from './ImportFinalizeReview';
 
 const generateDefaultImportName = (
     importMode: EImportMode,
@@ -95,7 +94,7 @@ const generateDefaultImportName = (
     }
 };
 
-const CurationImportFinalize: React.FC<{
+const ImportFinalize: React.FC<{
     importMode: EImportMode;
     onNavigate: (button: ENavigationButton) => void;
     stubs: ICurationStubStudy[];
@@ -107,7 +106,6 @@ const CurationImportFinalize: React.FC<{
     const updateCurationColumns = useUpdateCurationColumns();
     const columns = useProjectCurationColumns();
     const createNewImport = useCreateNewCurationImport();
-    const navigate = useNavigate();
     const projectId = useProjectId();
 
     const [importName, setImportName] = useState(
@@ -163,8 +161,12 @@ const CurationImportFinalize: React.FC<{
 
         updateCurationColumns(updatedColumns);
         enqueueSnackbar(`Added new import: ${importName}`, { variant: 'success' });
+
+        // unfortunately we cannot use useCurationBoardGroups here because we are not in the context of the CurationBoardGroupsProvider...
+        // in the future we should consider creating a base curation route and putting the curation search and curation page as children
         localStorage.removeItem(`${projectId}${SELECTED_CURATION_STEP_LOCAL_STORAGE_KEY_SUFFIX}`);
-        navigate(`/projects/${projectId}/curation`);
+
+        onNavigate(ENavigationButton.NEXT);
     };
 
     const handleClickNext = () => {
@@ -190,26 +192,31 @@ const CurationImportFinalize: React.FC<{
                     onChange={(val) => setImportName(val.target.value)}
                 />
 
-                <CurationImportFinalizeReview stubs={stubs} unimportedStubs={unimportedStubs} />
+                <ImportFinalizeReview stubs={stubs} unimportedStubs={unimportedStubs} />
             </Box>
-            <Box sx={CurationImportBaseStyles.fixedContainer}>
-                <Box sx={CurationImportBaseStyles.fixedButtonsContainer}>
-                    <Button variant="outlined" onClick={() => onNavigate(ENavigationButton.PREV)}>
+            <Box sx={CurationImportStyles.actionsContainer}>
+                {importMode !== EImportMode.SLEUTH_IMPORT && (
+                    <Button
+                        variant="outlined"
+                        color="error"
+                        sx={CurationImportStyles.actionsButton}
+                        onClick={() => onNavigate(ENavigationButton.PREV)}
+                    >
                         back
                     </Button>
-                    <Button
-                        variant="contained"
-                        sx={CurationImportBaseStyles.nextButton}
-                        disableElevation
-                        disabled={!importName || stubs.length === 0}
-                        onClick={handleClickNext}
-                    >
-                        next
-                    </Button>
-                </Box>
+                )}
+                <Button
+                    variant="contained"
+                    sx={CurationImportStyles.actionsButton}
+                    disableElevation
+                    disabled={!importName || stubs.length === 0}
+                    onClick={handleClickNext}
+                >
+                    Import
+                </Button>
             </Box>
         </Box>
     );
 };
 
-export default CurationImportFinalize;
+export default ImportFinalize;

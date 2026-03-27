@@ -2,8 +2,8 @@ import { ArrowDropDown } from '@mui/icons-material';
 import { Box, Button, ButtonGroup, ListItem, ListItemText, MenuItem, MenuList } from '@mui/material';
 import NeurosynthPopper from 'components/NeurosynthPopper/NeurosynthPopper';
 import { EAnalysisType } from 'hooks/projects/Project.types';
-import { EImportMode } from 'pages/Curation/Curation.types';
 import { useProjectAnalysisType, useProjectId } from 'pages/Project/store/ProjectStore';
+import { EImportMode } from 'pages/Curation/Curation.types';
 import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 

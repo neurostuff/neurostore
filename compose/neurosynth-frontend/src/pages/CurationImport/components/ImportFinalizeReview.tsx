@@ -3,23 +3,23 @@ import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccord
 import useGetWindowHeight from 'hooks/useGetWindowHeight';
 import { useMemo } from 'react';
 import { FixedSizeList, ListChildComponentProps } from 'react-window';
-import CurationImportFinalizeReviewVirtualizedListItem from './CurationImportFinalizeReviewVirtualizedListItem';
+import ImportFinalizeReviewVirtualizedListItem from './ImportFinalizeReviewVirtualizedListItem';
 import { ICurationStubStudy } from 'pages/Curation/Curation.types';
 import React from 'react';
 
-const CurationImportFinalizeReviewFixedSizeListRow: React.FC<
+const ImportFinalizeReviewFixedSizeListRow: React.FC<
     ListChildComponentProps<{
         stubs: ICurationStubStudy[];
     }>
 > = (props) => {
     const stub = props.data.stubs[props.index];
 
-    return <CurationImportFinalizeReviewVirtualizedListItem {...stub} style={props.style} />;
+    return <ImportFinalizeReviewVirtualizedListItem {...stub} style={props.style} />;
 };
 
 const LIST_HEIGHT = 95;
 
-const CurationImportFinalizeReview: React.FC<{
+const ImportFinalizeReview: React.FC<{
     stubs: ICurationStubStudy[];
     unimportedStubs: string[];
 }> = React.memo((props) => {
@@ -35,7 +35,7 @@ const CurationImportFinalizeReview: React.FC<{
 
     const includedStudiesListHeight = useMemo(() => {
         const estimatedListHeight = LIST_HEIGHT * nonExcludedStubs.length;
-        const defaultListHeight = windowHeight - 200;
+        const defaultListHeight = windowHeight - 600;
         const fixedListHeight = defaultListHeight > estimatedListHeight ? estimatedListHeight : defaultListHeight;
 
         return fixedListHeight;
@@ -43,7 +43,7 @@ const CurationImportFinalizeReview: React.FC<{
 
     const excludedStudiesListHeight = useMemo(() => {
         const estimatedListHeight = LIST_HEIGHT * excludedStubs.length;
-        const defaultListHeight = windowHeight - 200;
+        const defaultListHeight = windowHeight - 600;
         const fixedListHeight = defaultListHeight > estimatedListHeight ? estimatedListHeight : defaultListHeight;
 
         return fixedListHeight;
@@ -102,7 +102,7 @@ const CurationImportFinalizeReview: React.FC<{
                             }}
                             overscanCount={3}
                         >
-                            {CurationImportFinalizeReviewFixedSizeListRow}
+                            {ImportFinalizeReviewFixedSizeListRow}
                         </FixedSizeList>
                     </NeurosynthAccordion>
                 </Box>
@@ -139,7 +139,7 @@ const CurationImportFinalizeReview: React.FC<{
                             }}
                             overscanCount={3}
                         >
-                            {CurationImportFinalizeReviewFixedSizeListRow}
+                            {ImportFinalizeReviewFixedSizeListRow}
                         </FixedSizeList>
                     </NeurosynthAccordion>
                 </Box>
@@ -148,4 +148,4 @@ const CurationImportFinalizeReview: React.FC<{
     );
 });
 
-export default CurationImportFinalizeReview;
+export default ImportFinalizeReview;

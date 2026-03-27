@@ -16,6 +16,7 @@ export interface IGroupListItem {
     label: string;
     secondaryLabel?: string;
     count: number | null;
+    excludedCount: number | null;
     UI: ECurationBoardAIInterface | null;
     children?: IGroupListItem[];
     listItemStyles?: SxProps;

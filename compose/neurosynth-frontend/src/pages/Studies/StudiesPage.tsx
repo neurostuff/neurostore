@@ -90,7 +90,14 @@ const StudiesPage = () => {
                                 <TableCell>
                                     {studyrow?.name || <Box sx={{ color: 'warning.dark' }}>No name</Box>}
                                 </TableCell>
-                                <TableCell>
+                                <TableCell
+                                    sx={{
+                                        maxWidth: '300px !important',
+                                        overflow: 'hidden !important',
+                                        textOverflow: 'ellipsis !important',
+                                        whiteSpace: 'nowrap !important',
+                                    }}
+                                >
                                     {studyrow?.authors || <Box sx={{ color: 'warning.dark' }}>No author(s)</Box>}
                                 </TableCell>
                                 <TableCell>
