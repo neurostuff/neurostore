@@ -1,7 +1,7 @@
 import BaseDialog, { IDialog } from 'components/Dialogs/BaseDialog';
 import Import from './Import';
-import { EImportMode } from '../CurationImport.types';
 import { Box } from '@mui/material';
+import { EImportMode } from 'pages/Curation/Curation.types';
 
 const ImportStudiesDialog: React.FC<IDialog & { method: EImportMode | undefined }> = ({
     isOpen,
