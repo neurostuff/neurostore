@@ -539,7 +539,9 @@ def test_studyset_put_studies_only_avoids_point_value_loading(
 
     event.listen(session.bind, "before_cursor_execute", _capture_sql)
     try:
-        resp = auth_client.put(f"/api/studysets/{studyset.id}", data={"studies": swapped})
+        resp = auth_client.put(
+            f"/api/studysets/{studyset.id}", data={"studies": swapped}
+        )
     finally:
         event.remove(session.bind, "before_cursor_execute", _capture_sql)
 
@@ -565,7 +567,9 @@ def test_studyset_put_studies_only_uses_deterministic_insert_order(
     insert_orders = []
     study_id_key = re.compile(r"study_id__(\d+)$")
 
-    def _capture_insert_order(conn, cursor, statement, parameters, context, executemany):
+    def _capture_insert_order(
+        conn, cursor, statement, parameters, context, executemany
+    ):
         normalized_statement = " ".join(statement.lower().split())
         if "insert into studyset_studies" not in normalized_statement:
             return

@@ -281,9 +281,7 @@ def test_update_project_public_without_meta_cascade(
 
     session.expire_all()
     updated_project = (
-        session.execute(select(Project).where(Project.id == project.id))
-        .scalars()
-        .one()
+        session.execute(select(Project).where(Project.id == project.id)).scalars().one()
     )
     assert updated_project.public is True
     assert all(meta.public is False for meta in updated_project.meta_analyses)
@@ -319,9 +317,7 @@ def test_update_project_public_with_meta_cascade(
 
     session.expire_all()
     updated_project = (
-        session.execute(select(Project).where(Project.id == project.id))
-        .scalars()
-        .one()
+        session.execute(select(Project).where(Project.id == project.id)).scalars().one()
     )
     assert updated_project.public is True
     assert all(meta.public is True for meta in updated_project.meta_analyses)
@@ -335,9 +331,7 @@ def test_update_project_public_with_meta_cascade(
 
     session.expire_all()
     private_project = (
-        session.execute(select(Project).where(Project.id == project.id))
-        .scalars()
-        .one()
+        session.execute(select(Project).where(Project.id == project.id)).scalars().one()
     )
     assert private_project.public is False
     assert all(meta.public is False for meta in private_project.meta_analyses)

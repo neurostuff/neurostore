@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Restore the newest PostgreSQL custom-format backup from S3 into test_db."""
+"""Restore the newest PostgreSQL custom-format backup from S3 into a target database."""
 
 from __future__ import annotations
 
@@ -154,7 +154,7 @@ def main() -> int:
     parser.add_argument("--compose-dir", required=True)
     parser.add_argument("--bucket", required=True)
     parser.add_argument("--container", required=True)
-    parser.add_argument("--database", default="test_db")
+    parser.add_argument("--database", default="store_test_db")
     parser.add_argument("--cache-dir")
     parser.add_argument("--with-vector-extension", action="store_true")
     args = parser.parse_args()

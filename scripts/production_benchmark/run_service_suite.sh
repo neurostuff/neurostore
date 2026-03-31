@@ -68,7 +68,8 @@ case "$SERVICE" in
     SERVICE_DIR="${TARGET_REPO_ROOT}/store"
     DB_CONTAINER="store-pgsql17"
     BUCKET="neurostore-backup"
-    APP_SETTINGS_VALUE="neurostore.config.DockerTestConfig"
+    APP_ENV_VALUE="docker_test"
+    TEST_DATABASE="store_test_db"
     BENCH_SCRIPT_PATH="/production-benchmark-tooling/store/backend/neurostore/production_benchmark.py"
     BENCH_SERVICE="neurostore"
     BEARERINFO_FUNC_VALUE="neurostore.tests.conftest.mock_decode_token"
@@ -80,7 +81,8 @@ case "$SERVICE" in
     SERVICE_DIR="${TARGET_REPO_ROOT}/compose"
     DB_CONTAINER="compose-pgsql17"
     BUCKET="neurosynth-backup"
-    APP_SETTINGS_VALUE="neurosynth_compose.config.DockerTestConfig"
+    APP_ENV_VALUE="docker_test"
+    TEST_DATABASE="compose_test_db"
     BENCH_SCRIPT_PATH="/production-benchmark-tooling/compose/backend/neurosynth_compose/production_benchmark.py"
     BENCH_SERVICE="compose"
     BEARERINFO_FUNC_VALUE="neurosynth_compose.tests.conftest.mock_decode_token"
@@ -189,7 +191,7 @@ RESTORE_CMD=(
   --compose-dir "${SERVICE_DIR}"
   --bucket "${BUCKET}"
   --container "${DB_CONTAINER}"
-  --database test_db
+  --database "${TEST_DATABASE}"
 )
 
 if [ -n "${PRODUCTION_BENCHMARK_DUMP_CACHE_DIR:-}" ]; then
@@ -202,14 +204,14 @@ run_step "Restore latest backup" "${RESTORE_CMD[@]}"
 
 run_step "Apply database migrations" \
   docker compose run --rm -T \
-  -e "APP_SETTINGS=${APP_SETTINGS_VALUE}" \
+  -e "APP_ENV=${APP_ENV_VALUE}" \
   "${BENCH_SERVICE}" \
   bash -lc "flask db upgrade heads"
 
 run_step "Run benchmark module" \
   docker compose run --rm -T \
   -v "${TOOLING_REPO_ROOT}:/production-benchmark-tooling:ro" \
-  -e "APP_SETTINGS=${APP_SETTINGS_VALUE}" \
+  -e "APP_ENV=${APP_ENV_VALUE}" \
   -e "BEARERINFO_FUNC=${BEARERINFO_FUNC_VALUE}" \
   "${BENCH_SERVICE}" \
   bash -lc "python ${BENCH_SCRIPT_PATH} --iterations ${ITERATIONS} --output /${SERVICE}/.benchmark-artifacts/${LABEL}.json"

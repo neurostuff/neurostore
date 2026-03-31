@@ -29,14 +29,14 @@ Build times vary significantly. Set appropriate timeouts and **DO NOT CANCEL** b
 Create and migrate databases for both services:
 
 #### Store Database
-- `docker compose exec -T store-pgsql17 psql -U postgres -c "create database test_db"`
-- `docker compose exec -T store-pgsql17 psql -U postgres -d test_db -c "CREATE EXTENSION IF NOT EXISTS vector;"`
-- `docker compose exec -T neurostore bash -c "flask db merge heads && flask db stamp head && flask db migrate && flask db upgrade"` -- takes 5-10 seconds
+- `.env` selects the environment with `APP_ENV`; on a fresh volume, the matching default database is created automatically (`store_test_db` for development/testing/docker_test, `neurostore` for staging/production)
+- `docker compose exec -T neurostore bash -c "flask db upgrade"` -- takes 5-10 seconds
 - `docker compose exec -T neurostore bash -c "flask ingest-neurosynth --max-rows 100"` -- takes 5-10 seconds
+- The tracked store migrations create `pgvector` automatically. If you are recovering a partially migrated database, `docker compose exec -T store-pgsql17 psql -U postgres -d store_test_db -c "CREATE EXTENSION IF NOT EXISTS vector;"` is still a safe fallback.
 
 #### Compose Database
-- `docker compose exec -T compose_pgsql17 psql -U postgres -c "create database test_db"`
-- `docker compose exec -T compose bash -c "flask db merge heads && flask db stamp head && flask db migrate && flask db upgrade"` -- takes 5-10 seconds
+- `.env` selects the environment with `APP_ENV`; on a fresh volume, the matching default database is created automatically (`compose_test_db` for development/testing/docker_test, `compose` for staging/production)
+- `docker compose exec -T compose bash -c "flask db upgrade"` -- takes 5-10 seconds
 
 ### Frontend Development
 Navigate to `compose/neurosynth-frontend/`:
@@ -57,12 +57,16 @@ Navigate to `compose/neurosynth-frontend/`:
 **CRITICAL**: Backend tests take significant time. Set appropriate timeouts.
 
 #### Store Backend Tests
-- `docker compose run -e "APP_SETTINGS=neurostore.config.DockerTestConfig" --rm neurostore bash -c "python -m pytest neurostore/tests"`
+- `docker compose run -e "APP_ENV=docker_test" --rm neurostore bash -c "python -m pytest neurostore/tests"`
+- Ensure `store_test_db` exists first if you are reusing an existing Postgres volume:
+  `docker compose exec -T store-pgsql17 bash -lc "psql -U postgres -tAc \"SELECT 1 FROM pg_database WHERE datname = 'store_test_db'\" | grep -q 1 || psql -U postgres -c \"create database store_test_db\""`
 - Takes 2-3 minutes. **NEVER CANCEL. Set timeout to 300+ seconds.**
-- Expected: ~229 passed, 12 skipped
+- Expected: the suite should run against `store_test_db`
 
 #### Compose Backend Tests  
-- `docker compose run -e "APP_SETTINGS=neurosynth_compose.config.DockerTestConfig" --rm compose bash -c "python -m pytest neurosynth_compose/tests"`
+- `docker compose run -e "APP_ENV=docker_test" --rm compose bash -c "python -m pytest neurosynth_compose/tests"`
+- Ensure `compose_test_db` exists first if you are reusing an existing Postgres volume:
+  `docker compose exec -T compose-pgsql17 bash -lc "psql -U postgres -tAc \"SELECT 1 FROM pg_database WHERE datname = 'compose_test_db'\" | grep -q 1 || psql -U postgres -c \"create database compose_test_db\""`
 - Takes 2-4 minutes. **NEVER CANCEL. Set timeout to 360+ seconds.**
 
 #### Frontend Tests
@@ -73,10 +77,11 @@ Navigate to `compose/neurosynth-frontend/`:
 ## Validation Scenarios
 
 ### Always Test These Workflows After Changes
-1. **API Functionality**: `curl http://localhost/api/studies?limit=5` -- Store API should return JSON
-2. **Frontend Build**: Ensure `npm run build:dev` completes without errors
-3. **Backend Migration**: Test database migration commands work
-4. **Docker Services**: All containers should start and stay healthy
+1. **API Functionality**: `curl http://localhost/api/studies` -- Store API should return JSON
+2. **Base Study Datatype Filtering**: `curl "http://localhost/api/base-studies?data_type=coordinate"` -- should return ingested coordinate studies after `flask ingest-neurosynth --max-rows 100`
+3. **Frontend Build**: Ensure `npm run build:dev` completes without errors
+4. **Backend Migration**: Test database migration commands work
+5. **Docker Services**: All containers should start and stay healthy
 
 ### Service URLs
 - **Store API**: http://localhost/api (port 80)
@@ -101,13 +106,14 @@ Navigate to `compose/neurosynth-frontend/`:
 
 ### Environment Variables
 Both services use similar `.env` configurations:
-- `POSTGRES_HOST` -- Database host (store-pgsql17 or compose_pgsql17)
+- `APP_ENV` -- Primary environment selector (`development`, `staging`, `production`). This drives the Flask config class and the default database name used by app/runtime services.
+- `POSTGRES_HOST` -- Database host (store-pgsql17 or compose-pgsql17)
 - `POSTGRES_PASSWORD` -- Database password (usually "example")
 - `AUTH0_CLIENT_ID` -- Auth0 integration (can be placeholder for dev)
 - `DEBUG=True` -- Enable debug mode
 
 ### Docker Configuration Issues
-Development config uses `test_db` database by default, not the service-named databases. This is intentional for the `DevelopmentConfig` class.
+Use `APP_ENV` as the only environment selector. For Docker-based tests, use `APP_ENV=docker_test`.
 
 ## Directory Structure Reference
 ```
@@ -146,8 +152,8 @@ Development config uses `test_db` database by default, not the service-named dat
 - **Solution**: Check OpenAPI submodules are initialized and container logs with `docker compose logs [service]`
 
 ### Database Connection Errors
-- **Problem**: `database "test_db" does not exist` 
-- **Solution**: Create test databases as shown in setup steps
+- **Problem**: `database "store_test_db" does not exist` or `database "compose_test_db" does not exist`
+- **Solution**: Create the service-specific test database as shown in the test steps
 
 ### Frontend Build Sentry Warnings
 - **Problem**: Sentry API token errors during build

@@ -24,13 +24,10 @@ TOKEN = encode({"sub": "user1-id"}, "abc", algorithm="HS256")
 
 
 def _load_app():
-    from neurostore.core import app as raw_app
+    os.environ.setdefault("APP_ENV", "testing")
+    from neurostore import create_app
 
-    app = raw_app if getattr(raw_app, "config", None) else raw_app._app
-    app.config.from_object(
-        os.environ.get("APP_SETTINGS", "neurostore.config.TestingConfig")
-    )
-    return app
+    return create_app()
 
 
 def _response_json(response):

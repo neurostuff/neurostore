@@ -22,6 +22,8 @@ RUN chmod +x /home/pg_dump-to-s3.sh /home/s3-autodelete.sh
 RUN crontab /home/backup.txt
 RUN dos2unix /home/pg_dump-to-s3.sh
 RUN dos2unix /home/s3-autodelete.sh
+COPY resolve-app-db.sh /usr/local/bin/resolve-app-db.sh
+RUN chmod +x /usr/local/bin/resolve-app-db.sh
 COPY docker-entrypoint-cron.sh /usr/local/bin/docker-entrypoint-cron.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint-cron.sh
 
