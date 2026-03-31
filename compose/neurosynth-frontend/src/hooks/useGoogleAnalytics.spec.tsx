@@ -4,8 +4,8 @@ describe('useGoogleAnalytics', () => {
     test.each`
         path                                                             | expected
         ${'/projects/g7VRaCLw3iZJ/curation'}                             | ${'curation page'}
-        ${'/projects/g7VRaCLw3iZJ/curation/import'}                      | ${'curation import page'}
-        ${'/projects/g7VRaCLw3iZJ/curation/import?pageOfResults=2'}      | ${'curation import page'}
+        ${'/projects/g7VRaCLw3iZJ/curation/search'}                      | ${'curation search page'}
+        ${'/projects/g7VRaCLw3iZJ/curation/search?pageOfResults=2'}      | ${'curation search page'}
         ${'/projects/g7VRaCLw3iZJ/extraction'}                           | ${'extraction page'}
         ${'/projects/g7VRaCLw3iZJ/extraction/annotations'}               | ${'annotations page'}
         ${'/projects'}                                                   | ${'projects page'}

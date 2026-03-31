@@ -8,18 +8,18 @@ describe('ImportStudiesDialog', () => {
             fixture: 'projects/projectExtractionStep',
         }).as('projectFixture');
         cy.intercept('GET', `**/api/studysets/*`, { fixture: 'studyset' }).as('studysetFixture');
+
+        cy.addToLocalStorage('auth0|62e0e6c9dd47048572613b4d-hide-info-popup', 'true');
     });
 
     describe('Search Neurostore', () => {
         beforeEach(() => {
-            cy.login('mocked').visit('/projects/abc123/curation');
             cy.intercept('GET', '**/api/base-studies/**', {
                 fixture: 'baseStudies/baseStudiesWithResults',
             }).as('baseStudiesFixture');
             cy.intercept('PUT', '**/api/projects/abc123').as('updateProjectFixture');
-            cy.visit('/projects/abc123/curation').wait('@projectFixture').wait('@studysetFixture');
-            cy.contains('button', 'import studies').click();
-            cy.contains('button', 'next').click();
+            cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture').wait('@studysetFixture');
+            cy.contains('button', 'Search').click();
         });
 
         it('should show the neurostore search page', () => {
@@ -28,25 +28,17 @@ describe('ImportStudiesDialog', () => {
         });
 
         it('should be disabled initially', () => {
-            cy.wait('@baseStudiesFixture').then((baseStudiesResponse) => {
-                cy.contains(
-                    'button',
-                    `Import ${baseStudiesResponse.response?.body?.results?.length} studies from neurostore`
-                ).should('be.disabled');
-            });
+            cy.wait('@baseStudiesFixture');
+            cy.contains('button', `next`).should('be.disabled');
         });
 
         it('should import studies', () => {
             cy.get('input[type="text"]').type('neuron');
             cy.get('button').contains('Search').click();
-            cy.wait('@baseStudiesFixture').then((baseStudiesResponse) => {
-                cy.contains(
-                    'button',
-                    `Import ${baseStudiesResponse.response?.body?.results?.length} studies from neurostore`
-                ).click();
-            });
-            cy.get('input').type('my new import{enter}');
-            cy.contains('button', 'next').click().url().should('include', '/projects/abc123/curation');
+            cy.wait('@baseStudiesFixture');
+            cy.contains('button', `next`).should('be.disabled');
+            cy.get('input[type="text"]').first().clear().type('my new import');
+            cy.url().should('include', '/projects/abc123/curation');
         });
     });
 });

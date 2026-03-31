@@ -6,17 +6,18 @@ import { Row, Table } from '@tanstack/react-table';
 import CurationPromoteUncategorizedButton from 'components/Buttons/CurationPromoteUncategorizedButton';
 import { useUserCanEdit } from 'hooks';
 import { indexToPRISMAMapping } from 'hooks/projects/useGetProjects';
+import ImportStudiesButton from 'pages/CurationImport/components/ImportStudiesButton';
 import {
     useProjectCurationColumns,
     useProjectCurationIsLastColumn,
-    useProjectCurationPrismaConfig,
+    useProjectCurationIsPrisma,
     useProjectUser,
 } from 'pages/Project/store/ProjectStore';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useCurationBoardGroups } from '../context/CurationBoardGroupsContext';
 import useCuratorTableState from '../hooks/useCuratorTableState';
 import { ICurationTableStudy } from '../hooks/useCuratorTableState.types';
-import { IGroupListItem } from './CurationBoardAIGroupsList';
 import CurationBoardAIInterfaceCuratorFocus from './CurationBoardAIInterfaceCuratorFocus';
 import CurationBoardAIInterfaceCuratorTable from './CurationBoardAIInterfaceCuratorTable';
 import CurationBoardAIInterfaceIdentificationUI from './CurationBoardAIInterfaceIdentificationUI';
@@ -30,16 +31,19 @@ export interface ICurationBoardAIInterfaceCurator {
     onSetSelectedStub: (stubId: string | undefined) => void;
 }
 
-const CurationBoardAIInterfaceCurator: React.FC<{
-    selectedGroup: IGroupListItem;
-    groups: IGroupListItem[];
-    onSetSelectedGroup: (group: IGroupListItem) => void;
-}> = ({ selectedGroup, groups, onSetSelectedGroup }) => {
+const CurationBoardAIInterfaceCurator: React.FC = () => {
     const navigate = useNavigate();
     const { projectId } = useParams<{ projectId: string | undefined }>();
+    const { handleSelectNextGroup, selectedGroup } = useCurationBoardGroups();
     const curationColumns = useProjectCurationColumns();
 
     const { column, columnIndex } = useMemo(() => {
+        if (!selectedGroup) {
+            return {
+                column: undefined,
+                columnIndex: -1,
+            };
+        }
         const columnIndex = curationColumns.findIndex((col) => col.id === selectedGroup.id);
         if (columnIndex < 0)
             return {
@@ -50,10 +54,9 @@ const CurationBoardAIInterfaceCurator: React.FC<{
             column: curationColumns[columnIndex],
             columnIndex: columnIndex,
         };
-    }, [curationColumns, selectedGroup.id]);
-    const prismaConfig = useProjectCurationPrismaConfig();
-    const isPrisma = prismaConfig.isPrisma;
-    const prismaPhase = prismaConfig.isPrisma ? indexToPRISMAMapping(columnIndex) : undefined;
+    }, [curationColumns, selectedGroup]);
+    const isPrisma = useProjectCurationIsPrisma();
+    const prismaPhase = isPrisma ? indexToPRISMAMapping(columnIndex) : undefined;
     const isLastColumn = useProjectCurationIsLastColumn(columnIndex);
     const isIdentificationPhase = isPrisma && columnIndex === 0;
     const stubsInColumn = useMemo(() => {
@@ -114,19 +117,16 @@ const CurationBoardAIInterfaceCurator: React.FC<{
             setSelectedStubId(rows[0].original.id);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectedGroup.id]);
+    }, [selectedGroup?.id]);
 
     const handleCompletePromoteAllUncategorized = () => {
-        const nextCurationColumn = curationColumns[columnIndex + 1];
-        const newGroup = groups.find((group) => group.id === nextCurationColumn.id);
-        if (!newGroup) return;
-        onSetSelectedGroup(newGroup);
+        handleSelectNextGroup();
     };
 
     const columnFilters = table.getState().columnFilters;
     const numTotalRows = table.getCoreRowModel().rows.length;
 
-    if (!column || columnIndex < 0) {
+    if (!selectedGroup || !column || columnIndex < 0) {
         return <Typography color="error.dark">There was an error loading studies</Typography>;
     }
 
@@ -166,16 +166,23 @@ const CurationBoardAIInterfaceCurator: React.FC<{
                         )}
                     </Box>
                     <Box>
-                        <Button
-                            variant="contained"
-                            disableElevation
-                            sx={{ marginRight: '0.5rem', fontSize: '12px' }}
-                            onClick={() => navigate(`/projects/${projectId}/curation/import`)}
-                            disabled={!canEdit}
-                            size="small"
-                        >
-                            import studies
-                        </Button>
+                        <Box sx={{ marginRight: '0.5rem', display: 'inline-block' }}>
+                            <Button
+                                variant="contained"
+                                disableElevation
+                                size="small"
+                                onClick={() => navigate(`/projects/${projectId}/curation/search`)}
+                                sx={{
+                                    fontSize: '12px',
+                                    borderColor: 'white !important',
+                                    minWidth: '145px !important',
+                                    marginRight: '0.5rem',
+                                }}
+                            >
+                                Search
+                            </Button>
+                            <ImportStudiesButton />
+                        </Box>
                         {isPrisma && (
                             <>
                                 <PrismaDialog onCloseDialog={() => setPrismaIsOpen(false)} isOpen={prismaIsOpen} />
@@ -236,9 +243,9 @@ const CurationBoardAIInterfaceCurator: React.FC<{
                     />
                 ) : UIMode === 'IDENTIFICATION_OVERVIEW' ? (
                     <CurationBoardAIInterfaceIdentificationUI
+                        hasIdentificationStudies={stubsInColumn.length > 0}
                         hasUncategorizedStudies={stubsInColumn.filter((x) => x.exclusionTag === null).length > 0}
                         onManuallyReview={handleManuallyReview}
-                        onPromoteAllUncategorized={handleCompletePromoteAllUncategorized}
                     />
                 ) : null}
             </Box>

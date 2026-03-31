@@ -5,7 +5,7 @@ import StateHandlerComponent from 'components/StateHandlerComponent/StateHandler
 import { useFetchPubMedIds, useGetPubMedIdFromDOI } from 'hooks';
 import useIngest from 'hooks/studies/useIngest';
 import { BaseStudy } from 'neurostore-typescript-sdk';
-import CurationImportStyles from 'pages/CurationImport/components/CurationImport.styles';
+import CurationImportStyles from 'pages/CurationImport/CurationImport.styles';
 import { useEffect, useRef, useState } from 'react';
 import {
     applyPubmedStudyDetailsToBaseStudiesAndRemoveDuplicates,
@@ -28,7 +28,7 @@ const updateUploadSummary = (sleuthUpload: ISleuthFileUploadStubs) => {
     };
 };
 
-const CurationImportSleuthIngest: React.FC<{
+const ImportSleuthIngest: React.FC<{
     sleuthUploads: ISleuthFileUploadStubs[];
     onStubsUploaded: (stubs: ICurationStubStudy[]) => void;
 }> = ({ sleuthUploads, onStubsUploaded }) => {
@@ -143,7 +143,7 @@ const CurationImportSleuthIngest: React.FC<{
 
     return (
         <StateHandlerComponent isLoading={false} isError={isError}>
-            <Box my={2}>
+            <Box mt={4}>
                 {isLoadingState ? (
                     <Box
                         sx={{
@@ -204,17 +204,15 @@ const CurationImportSleuthIngest: React.FC<{
                                 );
                             })}
                         </Box>
-                        <Box sx={CurationImportStyles.fixedContainer}>
-                            <Box sx={[CurationImportStyles.fixedButtonsContainer, { justifyContent: 'flex-end' }]}>
-                                <Button
-                                    variant="contained"
-                                    sx={CurationImportStyles.nextButton}
-                                    disableElevation
-                                    onClick={handleNext}
-                                >
-                                    next
-                                </Button>
-                            </Box>
+                        <Box sx={CurationImportStyles.actionsContainer}>
+                            <Button
+                                variant="contained"
+                                sx={CurationImportStyles.actionsButton}
+                                disableElevation
+                                onClick={handleNext}
+                            >
+                                next
+                            </Button>
                         </Box>
                     </Box>
                 )}
@@ -223,4 +221,4 @@ const CurationImportSleuthIngest: React.FC<{
     );
 };
 
-export default CurationImportSleuthIngest;
+export default ImportSleuthIngest;

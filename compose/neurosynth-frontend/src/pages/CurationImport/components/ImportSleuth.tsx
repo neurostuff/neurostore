@@ -1,12 +1,12 @@
 import { ENavigationButton } from 'components/Buttons/NavigationButtons';
 import { useState } from 'react';
 import { ISleuthFileUploadStubs } from '../helpers';
-import { IImportArgs } from './CurationImportDoImport';
-import CurationImportSleuthIngest from './CurationImportSleuthIngest';
-import CurationImportSleuthUpload from './CurationImportSleuthUpload';
+import { IImportArgs } from './ImportDoImport';
+import ImportSleuthIngest from './ImportSleuthIngest';
+import ImportSleuthUpload from './ImportSleuthUpload';
 import { ICurationStubStudy } from 'pages/Curation/Curation.types';
 
-const CurationImportSleuth: React.FC<
+const ImportSleuth: React.FC<
     IImportArgs & {
         onFileUpload: (fileName: string) => void;
     }
@@ -31,7 +31,7 @@ const CurationImportSleuth: React.FC<
 
     if (uploadFilePhase) {
         return (
-            <CurationImportSleuthUpload
+            <ImportSleuthUpload
                 onNext={handleUploadFiles}
                 onPrevious={() => {
                     onNavigate(ENavigationButton.PREV);
@@ -40,7 +40,7 @@ const CurationImportSleuth: React.FC<
         );
     }
 
-    return <CurationImportSleuthIngest onStubsUploaded={handleOnStubSuploaded} sleuthUploads={sleuthUploads} />;
+    return <ImportSleuthIngest onStubsUploaded={handleOnStubSuploaded} sleuthUploads={sleuthUploads} />;
 };
 
-export default CurationImportSleuth;
+export default ImportSleuth;

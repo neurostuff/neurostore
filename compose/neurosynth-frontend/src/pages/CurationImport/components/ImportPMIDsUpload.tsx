@@ -2,8 +2,8 @@ import FileUploadIcon from '@mui/icons-material/FileUpload';
 import { Box, Button, TextField } from '@mui/material';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons';
 import { ChangeEvent, useEffect, useState } from 'react';
-import CurationImportBaseStyles from './CurationImport.styles';
 import { PUBMED_MAX_IDS_PER_REQUEST } from 'hooks/external/useFetchPubMedIds.types';
+import CurationImportStyles from '../CurationImport.styles';
 
 enum EValidationReason {
     EMPTY = 'PubMed ID input is empty',
@@ -19,7 +19,7 @@ const isValidNumberList = (rawIdText: string | undefined) => {
         .every((pmid) => /^\d+$/.test(pmid));
 };
 
-const CurationImportPMIDsUpload: React.FC<{
+const ImportPMIDsUpload: React.FC<{
     onPubmedIdsUploaded: (parsedIds: string[]) => void;
     onNavigate: (button: ENavigationButton) => void;
     onFileUpload: (fileName: string) => void;
@@ -119,7 +119,7 @@ const CurationImportPMIDsUpload: React.FC<{
     };
 
     return (
-        <Box sx={{ width: '100%', marginBottom: '6rem' }}>
+        <Box sx={CurationImportStyles.importContainer}>
             <Box sx={{ display: 'flex', justifyContent: 'center', marginTop: '1rem' }}>
                 <Button component="label" endIcon={<FileUploadIcon />}>
                     {uploadState.file?.name || 'Upload File'}
@@ -154,24 +154,27 @@ const CurationImportPMIDsUpload: React.FC<{
                     />
                 </Box>
             </Box>
-            <Box sx={CurationImportBaseStyles.fixedContainer}>
-                <Box sx={CurationImportBaseStyles.fixedButtonsContainer}>
-                    <Button variant="outlined" onClick={() => handleButtonClick(ENavigationButton.PREV)}>
-                        back
-                    </Button>
-                    <Button
-                        variant="contained"
-                        sx={CurationImportBaseStyles.nextButton}
-                        disableElevation
-                        disabled={uploadState.parsedIdList.length === 0 || uploadState.isValid === false}
-                        onClick={() => handleButtonClick(ENavigationButton.NEXT)}
-                    >
-                        next
-                    </Button>
-                </Box>
+            <Box sx={CurationImportStyles.actionsContainer}>
+                <Button
+                    variant="outlined"
+                    color="error"
+                    sx={CurationImportStyles.actionsButton}
+                    onClick={() => handleButtonClick(ENavigationButton.PREV)}
+                >
+                    cancel
+                </Button>
+                <Button
+                    variant="contained"
+                    sx={CurationImportStyles.actionsButton}
+                    disableElevation
+                    disabled={uploadState.parsedIdList.length === 0 || uploadState.isValid === false}
+                    onClick={() => handleButtonClick(ENavigationButton.NEXT)}
+                >
+                    next
+                </Button>
             </Box>
         </Box>
     );
 };
 
-export default CurationImportPMIDsUpload;
+export default ImportPMIDsUpload;
