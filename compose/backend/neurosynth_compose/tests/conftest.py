@@ -185,23 +185,24 @@ def reset_ns_session():
 
 
 class MockPYNVClient:
+    _next_collection_id = 1
+    _next_image_id = 1
+
     def __init__(self, access_token):
         self.access_token = access_token
         self.collections = []
         self.files = []
 
     def create_collection(self, *args, **kwargs):
-        import random
-
-        collection_id = random.randint(1, 10000)
+        collection_id = MockPYNVClient._next_collection_id
+        MockPYNVClient._next_collection_id += 1
         self.collections.append(collection_id)
 
         return {"id": collection_id}
 
     def add_image(self, collection_id, file, **kwargs):
-        import random
-
-        image_id = random.randint(1, 10000)
+        image_id = MockPYNVClient._next_image_id
+        MockPYNVClient._next_image_id += 1
         self.files.append(image_id)
 
         response_data = {
