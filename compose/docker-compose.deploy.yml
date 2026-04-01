@@ -1,12 +1,42 @@
 services:
   compose:
     image: ghcr.io/${GHCR_OWNER}/neurosynth_compose:${IMAGE_TAG}
+    networks:
+      default:
+        aliases:
+          - ${COMPOSE_APP_HOST_ALIAS}
 
   compose_worker:
     image: ghcr.io/${GHCR_OWNER}/compose_worker:${IMAGE_TAG}
 
+  compose_redis:
+    networks:
+      default:
+        aliases:
+          - ${COMPOSE_REDIS_HOST_ALIAS}
+
   compose_nginx:
     image: ghcr.io/${GHCR_OWNER}/compose_nginx:${IMAGE_TAG}
+    networks:
+      default:
+        aliases:
+          - ${COMPOSE_NGINX_HOST_ALIAS}
 
   compose-pgsql17:
     image: ghcr.io/${GHCR_OWNER}/compose_pgsql17:${IMAGE_TAG}
+    networks:
+      default:
+        aliases:
+          - ${COMPOSE_POSTGRES_HOST_ALIAS}
+
+  compose-pghero:
+    networks:
+      default:
+        aliases:
+          - ${COMPOSE_PGHERO_HOST_ALIAS}
+
+  compose-grafana:
+    networks:
+      default:
+        aliases:
+          - ${COMPOSE_GRAFANA_HOST_ALIAS}

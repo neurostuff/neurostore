@@ -59,6 +59,13 @@ def resolve_database_name(default_db_name, config_env):
     )
 
 
+def require_env_var(name):
+    value = os.environ.get(name)
+    if value in (None, ""):
+        raise RuntimeError(f"Environment variable '{name}' is required but not set.")
+    return value
+
+
 class Config(object):
     # SERVER_NAME = 'localhost'  # Set to external server name in production
 
@@ -68,7 +75,7 @@ class Config(object):
 
     FILE_DIR = Path("/file-data")
     CACHE_TYPE = "RedisCache"
-    CACHE_REDIS_URL = "redis://store_redis:6379/0"
+    CACHE_REDIS_URL = require_env_var("CACHE_REDIS_URL")
     CACHE_KEY_PREFIX = None
     POSTGRES_HOST = os.environ.get("POSTGRES_HOST")
     POSTGRES_PASSWORD = os.environ.get("POSTGRES_PASSWORD", "")

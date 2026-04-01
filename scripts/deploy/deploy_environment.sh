@@ -126,11 +126,120 @@ copy_repo_env_file() {
   cp "${source_path}" "${target_path}"
 }
 
+read_env_value() {
+  local env_path="$1"
+  local key="$2"
+
+  grep -E "^${key}=" "${env_path}" | tail -n 1 | cut -d= -f2-
+}
+
+upsert_env_value() {
+  local env_path="$1"
+  local key="$2"
+  local value="$3"
+  local tmp_path="${env_path}.tmp"
+
+  awk -v key="${key}" -v value="${value}" '
+    BEGIN { updated = 0 }
+    $0 ~ ("^" key "=") {
+      print key "=" value
+      updated = 1
+      next
+    }
+    { print }
+    END {
+      if (!updated) {
+        print key "=" value
+      }
+    }
+  ' "${env_path}" > "${tmp_path}"
+  mv "${tmp_path}" "${env_path}"
+}
+
+require_distinct_vhost() {
+  local service_name="$1"
+  local env_prefix="$2"
+  local dev_env="${REPO_ROOT}/${service_name}/.env.dev"
+  local staging_env="${REPO_ROOT}/${service_name}/.env.staging"
+  local dev_vhost
+  local staging_vhost
+
+  dev_vhost="$(read_env_value "${dev_env}" "V_HOST")"
+  staging_vhost="$(read_env_value "${staging_env}" "V_HOST")"
+
+  if [ -z "${dev_vhost}" ] || [ -z "${staging_vhost}" ]; then
+    echo "Both ${dev_env} and ${staging_env} must define V_HOST." >&2
+    exit 1
+  fi
+
+  if [ "${dev_vhost}" = "${staging_vhost}" ]; then
+    echo "${env_prefix} dev and staging cannot share the same V_HOST (${dev_vhost})." >&2
+    exit 1
+  fi
+}
+
+render_nginx_conf() {
+  local conf_path="$1"
+  local app_host="$2"
+  local pghero_host="$3"
+  local grafana_host="$4"
+  local tmp_path="${conf_path}.tmp"
+
+  sed \
+    -e "s|http://[A-Za-z0-9_-]*:8000|http://${app_host}:8000|g" \
+    -e "s|http://[A-Za-z0-9_-]*pghero:8080/pghero/|http://${pghero_host}:8080/pghero/|g" \
+    -e "s|http://[A-Za-z0-9_-]*grafana:3030/|http://${grafana_host}:3030/|g" \
+    "${conf_path}" > "${tmp_path}"
+  mv "${tmp_path}" "${conf_path}"
+}
+
+configure_track_network_aliases() {
+  local store_env="${WORKTREE_DIR}/store/.env"
+  local compose_env="${WORKTREE_DIR}/compose/.env"
+
+  export STORE_APP_HOST_ALIAS="neurostore-${TRACK}"
+  export STORE_REDIS_HOST_ALIAS="store-redis-${TRACK}"
+  export STORE_NGINX_HOST_ALIAS="store-nginx-${TRACK}"
+  export STORE_POSTGRES_HOST_ALIAS="store-pgsql17-${TRACK}"
+  export STORE_PGHERO_HOST_ALIAS="store-pghero-${TRACK}"
+  export STORE_GRAFANA_HOST_ALIAS="store-grafana-${TRACK}"
+
+  export COMPOSE_APP_HOST_ALIAS="compose-app-${TRACK}"
+  export COMPOSE_REDIS_HOST_ALIAS="compose-redis-${TRACK}"
+  export COMPOSE_NGINX_HOST_ALIAS="compose-nginx-${TRACK}"
+  export COMPOSE_POSTGRES_HOST_ALIAS="compose-pgsql17-${TRACK}"
+  export COMPOSE_PGHERO_HOST_ALIAS="compose-pghero-${TRACK}"
+  export COMPOSE_GRAFANA_HOST_ALIAS="compose-grafana-${TRACK}"
+
+  upsert_env_value "${store_env}" "POSTGRES_HOST" "${STORE_POSTGRES_HOST_ALIAS}"
+  upsert_env_value "${store_env}" "CACHE_REDIS_URL" "redis://${STORE_REDIS_HOST_ALIAS}:6379/0"
+
+  upsert_env_value "${compose_env}" "POSTGRES_HOST" "${COMPOSE_POSTGRES_HOST_ALIAS}"
+  upsert_env_value "${compose_env}" "CELERY_BROKER_URL" "redis://${COMPOSE_REDIS_HOST_ALIAS}:6379/0"
+  upsert_env_value "${compose_env}" "CELERY_RESULT_BACKEND" "redis://${COMPOSE_REDIS_HOST_ALIAS}:6379/0"
+  upsert_env_value "${compose_env}" "NEUROSTORE_API_URL" "http://${STORE_NGINX_HOST_ALIAS}/api"
+
+  render_nginx_conf \
+    "${WORKTREE_DIR}/store/nginx/nginx.conf" \
+    "${STORE_APP_HOST_ALIAS}" \
+    "${STORE_PGHERO_HOST_ALIAS}" \
+    "${STORE_GRAFANA_HOST_ALIAS}"
+
+  render_nginx_conf \
+    "${WORKTREE_DIR}/compose/nginx/nginx.conf" \
+    "${COMPOSE_APP_HOST_ALIAS}" \
+    "${COMPOSE_PGHERO_HOST_ALIAS}" \
+    "${COMPOSE_GRAFANA_HOST_ALIAS}"
+}
+
 sync_repo_env_files() {
+  require_distinct_vhost "store" "Store"
+  require_distinct_vhost "compose" "Compose"
   copy_repo_env_file "${REPO_ROOT}/store/.env.${TRACK}" "${WORKTREE_DIR}/store/.env"
   copy_repo_env_file "${REPO_ROOT}/compose/.env.${TRACK}" "${WORKTREE_DIR}/compose/.env"
   copy_repo_env_file "${REPO_ROOT}/compose/neurosynth-frontend/.env.${FRONTEND_MODE}" \
     "${WORKTREE_DIR}/compose/neurosynth-frontend/.env.${FRONTEND_MODE}"
+  configure_track_network_aliases
 }
 
 prepare_worktree() {
@@ -254,7 +363,7 @@ smoke_check_store() {
   compose_for "${service_root}" "${project}" exec -T neurostore python - <<'PY'
 import requests
 
-resp = requests.get("http://store_nginx/api/studies")
+resp = requests.get("http://127.0.0.1:8000/api/studies")
 resp.raise_for_status()
 payload = resp.json()
 assert "results" in payload or isinstance(payload, list)
@@ -269,7 +378,7 @@ smoke_check_compose() {
 import os
 import requests
 
-resp = requests.get("http://compose_nginx/api/meta-analyses/")
+resp = requests.get("http://127.0.0.1:8000/api/meta-analyses/")
 resp.raise_for_status()
 payload = resp.json()
 assert "results" in payload or isinstance(payload, list)
