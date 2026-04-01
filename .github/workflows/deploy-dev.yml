@@ -1,0 +1,53 @@
+name: Deploy Dev
+
+on:
+  push:
+    branches:
+      - dev
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+
+      - name: Set up SSH agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Add remote SSH server to known hosts
+        run: |
+          ssh-keyscan -H "${{ secrets.DEV_SSH_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Update administrative repo checkout
+        run: |
+          ssh "${{ secrets.DEV_SSH_USER }}@${{ secrets.DEV_SSH_HOST }}" '
+            set -e
+            cd "${{ secrets.DEV_REPO_ROOT }}"
+            git fetch --all --prune
+            git reset --hard origin/dev
+            git submodule sync --recursive
+            git submodule update --init --recursive
+          '
+
+      - name: Deploy dev
+        run: |
+          ssh "${{ secrets.DEV_SSH_USER }}@${{ secrets.DEV_SSH_HOST }}" '
+            set -e
+            export GHCR_USERNAME="${{ secrets.GHCR_USERNAME }}"
+            export GHCR_TOKEN="${{ secrets.GHCR_READ_TOKEN }}"
+            /bin/bash "${{ secrets.DEV_REPO_ROOT }}/scripts/deploy/deploy_environment.sh" \
+              --track dev \
+              --repo-root "${{ secrets.DEV_REPO_ROOT }}" \
+              --git-ref origin/dev \
+              --ghcr-owner "${{ github.repository_owner }}" \
+              --image-tag dev \
+              --env-root "${{ secrets.DEV_ENV_ROOT }}"
+          '
