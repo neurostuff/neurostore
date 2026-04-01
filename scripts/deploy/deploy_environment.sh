@@ -12,9 +12,10 @@ Options:
   --git-ref <ref>              Git ref to deploy (for example origin/master).
   --ghcr-owner <owner>         GitHub Container Registry owner/namespace.
   --image-tag <tag>            Image tag to pull (default: same as track).
-  --env-root <path>            Directory containing server-managed env files (default: /etc/neurostore).
 
 Notes:
+  Existing repo env files on the deployment host are copied into the deploy worktree.
+  Backend env files are expected at store/.env.<track> and compose/.env.<track>.
   Compose frontend assets remain host-built during deploy via npm install + npm run build:<mode>.
 EOF
 }
@@ -24,7 +25,6 @@ REPO_ROOT=""
 GIT_REF=""
 GHCR_OWNER=""
 IMAGE_TAG=""
-ENV_ROOT="/etc/neurostore"
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
@@ -46,10 +46,6 @@ while [ "$#" -gt 0 ]; do
       ;;
     --image-tag)
       IMAGE_TAG="$2"
-      shift 2
-      ;;
-    --env-root)
-      ENV_ROOT="$2"
       shift 2
       ;;
     *)
@@ -78,7 +74,6 @@ case "${TRACK}" in
 esac
 
 REPO_ROOT="$(cd "${REPO_ROOT}" && pwd)"
-ENV_ROOT="$(cd "${ENV_ROOT}" && pwd)"
 WORKTREE_DIR="${REPO_ROOT}/.deploy-worktrees/${TRACK}"
 STATE_ROOT="${REPO_ROOT}/../neurostore-deploy-state/${TRACK}"
 FRONTEND_MODE="staging"
@@ -119,10 +114,23 @@ wait_for_pg() {
   done
 }
 
-sync_env_links() {
-  ln -sfn "${ENV_ROOT}/store.${TRACK}.env" "${WORKTREE_DIR}/store/.env"
-  ln -sfn "${ENV_ROOT}/compose.${TRACK}.env" "${WORKTREE_DIR}/compose/.env"
-  ln -sfn "${ENV_ROOT}/frontend.${TRACK}.env" "${WORKTREE_DIR}/compose/neurosynth-frontend/.env.${FRONTEND_MODE}"
+copy_repo_env_file() {
+  local source_path="$1"
+  local target_path="$2"
+
+  if [ ! -f "${source_path}" ]; then
+    echo "Missing required env file: ${source_path}" >&2
+    exit 1
+  fi
+
+  cp "${source_path}" "${target_path}"
+}
+
+sync_repo_env_files() {
+  copy_repo_env_file "${REPO_ROOT}/store/.env.${TRACK}" "${WORKTREE_DIR}/store/.env"
+  copy_repo_env_file "${REPO_ROOT}/compose/.env.${TRACK}" "${WORKTREE_DIR}/compose/.env"
+  copy_repo_env_file "${REPO_ROOT}/compose/neurosynth-frontend/.env.${FRONTEND_MODE}" \
+    "${WORKTREE_DIR}/compose/neurosynth-frontend/.env.${FRONTEND_MODE}"
 }
 
 prepare_worktree() {
@@ -141,7 +149,7 @@ prepare_worktree() {
 
   git -C "${WORKTREE_DIR}" submodule sync --recursive
   git -C "${WORKTREE_DIR}" submodule update --init --recursive
-  sync_env_links
+  sync_repo_env_files
 }
 
 docker_login_if_configured() {
@@ -192,7 +200,7 @@ deploy_compose_staging() {
   compose_for "${service_root}" "${project}" up -d --no-build compose compose_worker compose-pghero compose-grafana
   compose_for "${service_root}" "${project}" up -d --no-build compose_nginx
   compose_for "${service_root}" "${project}" exec -T compose flask db upgrade heads
-  # Frontend assets remain host-built on the deployment host because env files are server-managed.
+  # Frontend assets remain host-built on the deployment host because env files are host-managed.
   compose_for "${service_root}" "${project}" exec -T compose \
     bash -lc "cd /compose/neurosynth-frontend && npm install && npm run build:${FRONTEND_MODE}"
 }
@@ -234,7 +242,7 @@ deploy_compose_dev() {
   compose_for "${service_root}" "${project}" up -d --no-build compose compose_redis compose_worker compose-pghero compose-grafana
   compose_for "${service_root}" "${project}" up -d --no-build compose_nginx
   compose_for "${service_root}" "${project}" exec -T compose flask db upgrade heads
-  # Frontend assets remain host-built on the deployment host because env files are server-managed.
+  # Frontend assets remain host-built on the deployment host because env files are host-managed.
   compose_for "${service_root}" "${project}" exec -T compose \
     bash -lc "cd /compose/neurosynth-frontend && npm install && npm run build:${FRONTEND_MODE}"
 }
