@@ -1,0 +1,15 @@
+services:
+  neurostore:
+    image: ghcr.io/${GHCR_OWNER}/neurostore:${IMAGE_TAG}
+
+  store_outbox_worker:
+    image: ghcr.io/${GHCR_OWNER}/neurostore:${IMAGE_TAG}
+
+  store_metadata_outbox_worker:
+    image: ghcr.io/${GHCR_OWNER}/neurostore:${IMAGE_TAG}
+
+  store_nginx:
+    image: ghcr.io/${GHCR_OWNER}/store_nginx:${IMAGE_TAG}
+
+  store-pgsql17:
+    image: ghcr.io/${GHCR_OWNER}/store-pgsql17:${IMAGE_TAG}
