@@ -79,23 +79,33 @@ jobs:
           workdir: compose
           source: "{{defaultContext}}:compose"
           set: |
-              compose.tags=["ghcr.io/${{ github.repository_owner }}/neurosynth_compose:${{ hashFiles('compose/backend/neurosynth_compose/**', 'compose/backend/migrations/**', 'compose/backend/pyproject.toml', 'compose/backend/Dockerfile') }}","ghcr.io/${{ github.repository_owner }}/neurosynth_compose:sha-${{ github.sha }}"${{ steps.image_channel.outputs.channel != '' && format(',"ghcr.io/{0}/neurosynth_compose:{1}"', github.repository_owner, steps.image_channel.outputs.channel) || '' }}]
+              compose.tags=ghcr.io/${{ github.repository_owner }}/neurosynth_compose:${{ hashFiles('compose/backend/neurosynth_compose/**', 'compose/backend/migrations/**', 'compose/backend/pyproject.toml', 'compose/backend/Dockerfile') }}
+              compose.tags+=ghcr.io/${{ github.repository_owner }}/neurosynth_compose:sha-${{ github.sha }}
+              ${{ steps.image_channel.outputs.channel != '' && format('compose.tags+=ghcr.io/{0}/neurosynth_compose:{1}', github.repository_owner, steps.image_channel.outputs.channel) || '' }}
               compose.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/neurosynth_compose:${{ hashFiles('compose/backend/neurosynth_compose/**', 'compose/backend/migrations/**', 'compose/backend/pyproject.toml', 'compose/backend/Dockerfile') }}
               compose.cache-from=type=gha,scope=cached-compose
               compose.cache-to=type=gha,scope=cached-compose,mode=max,ignore-error=true
-              compose_nginx.tags=["ghcr.io/${{ github.repository_owner }}/compose_nginx:${{ hashFiles('**/compose/nginx/**') }}","ghcr.io/${{ github.repository_owner }}/compose_nginx:sha-${{ github.sha }}"${{ steps.image_channel.outputs.channel != '' && format(',"ghcr.io/{0}/compose_nginx:{1}"', github.repository_owner, steps.image_channel.outputs.channel) || '' }}]
+              compose_nginx.tags=ghcr.io/${{ github.repository_owner }}/compose_nginx:${{ hashFiles('**/compose/nginx/**') }}
+              compose_nginx.tags+=ghcr.io/${{ github.repository_owner }}/compose_nginx:sha-${{ github.sha }}
+              ${{ steps.image_channel.outputs.channel != '' && format('compose_nginx.tags+=ghcr.io/{0}/compose_nginx:{1}', github.repository_owner, steps.image_channel.outputs.channel) || '' }}
               compose_nginx.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/compose_nginx:${{ hashFiles('**/compose/nginx/**') }}
               compose_nginx.cache-from=type=gha,scope=cached-compose-nginx
               compose_nginx.cache-to=type=gha,scope=cached-compose-nginx,mode=max,ignore-error=true
-              compose_pgsql.tags=["ghcr.io/${{ github.repository_owner }}/compose_pgsql:${{ hashFiles('**/compose/postgres/**') }}","ghcr.io/${{ github.repository_owner }}/compose_pgsql:sha-${{ github.sha }}"${{ steps.image_channel.outputs.channel != '' && format(',"ghcr.io/{0}/compose_pgsql:{1}"', github.repository_owner, steps.image_channel.outputs.channel) || '' }}]
+              compose_pgsql.tags=ghcr.io/${{ github.repository_owner }}/compose_pgsql:${{ hashFiles('**/compose/postgres/**') }}
+              compose_pgsql.tags+=ghcr.io/${{ github.repository_owner }}/compose_pgsql:sha-${{ github.sha }}
+              ${{ steps.image_channel.outputs.channel != '' && format('compose_pgsql.tags+=ghcr.io/{0}/compose_pgsql:{1}', github.repository_owner, steps.image_channel.outputs.channel) || '' }}
               compose_pgsql.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/compose_pgsql:${{ hashFiles('**/compose/postgres/**') }}
               compose_pgsql.cache-from=type=gha,scope=cached-compose-pgsql
               compose_pgsql.cache-to=type=gha,scope=cached-compose-pgsql,mode=max,ignore-error=true
-              compose-pgsql17.tags=["ghcr.io/${{ github.repository_owner }}/compose_pgsql17:${{ hashFiles('**/compose/postgres/**') }}","ghcr.io/${{ github.repository_owner }}/compose_pgsql17:sha-${{ github.sha }}"${{ steps.image_channel.outputs.channel != '' && format(',"ghcr.io/{0}/compose_pgsql17:{1}"', github.repository_owner, steps.image_channel.outputs.channel) || '' }}]
+              compose-pgsql17.tags=ghcr.io/${{ github.repository_owner }}/compose_pgsql17:${{ hashFiles('**/compose/postgres/**') }}
+              compose-pgsql17.tags+=ghcr.io/${{ github.repository_owner }}/compose_pgsql17:sha-${{ github.sha }}
+              ${{ steps.image_channel.outputs.channel != '' && format('compose-pgsql17.tags+=ghcr.io/{0}/compose_pgsql17:{1}', github.repository_owner, steps.image_channel.outputs.channel) || '' }}
               compose-pgsql17.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/compose_pgsql17:${{ hashFiles('**/compose/postgres/**') }}
               compose-pgsql17.cache-from=type=gha,scope=cached-compose-pgsql17
               compose-pgsql17.cache-to=type=gha,scope=cached-compose-pgsql17,mode=max,ignore-error=true
-              compose_worker.tags=["ghcr.io/${{ github.repository_owner }}/compose_worker:${{ hashFiles('compose/backend/neurosynth_compose/**', 'compose/backend/migrations/**', 'compose/backend/pyproject.toml', 'compose/backend/Dockerfile') }}","ghcr.io/${{ github.repository_owner }}/compose_worker:sha-${{ github.sha }}"${{ steps.image_channel.outputs.channel != '' && format(',"ghcr.io/{0}/compose_worker:{1}"', github.repository_owner, steps.image_channel.outputs.channel) || '' }}]
+              compose_worker.tags=ghcr.io/${{ github.repository_owner }}/compose_worker:${{ hashFiles('compose/backend/neurosynth_compose/**', 'compose/backend/migrations/**', 'compose/backend/pyproject.toml', 'compose/backend/Dockerfile') }}
+              compose_worker.tags+=ghcr.io/${{ github.repository_owner }}/compose_worker:sha-${{ github.sha }}
+              ${{ steps.image_channel.outputs.channel != '' && format('compose_worker.tags+=ghcr.io/{0}/compose_worker:{1}', github.repository_owner, steps.image_channel.outputs.channel) || '' }}
               compose_worker.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/compose_worker:${{ hashFiles('compose/backend/neurosynth_compose/**', 'compose/backend/migrations/**', 'compose/backend/pyproject.toml', 'compose/backend/Dockerfile') }}
               compose_worker.cache-from=type=gha,scope=cached-compose-worker
               compose_worker.cache-to=type=gha,scope=cached-compose-worker,mode=max,ignore-error=true
@@ -149,19 +159,27 @@ jobs:
           workdir: store
           source: "{{defaultContext}}:store"
           set: |
-              neurostore.tags=["ghcr.io/${{ github.repository_owner }}/neurostore:${{ hashFiles('store/backend/neurostore/**', 'store/backend/migrations/**', 'store/backend/manage.py', 'store/backend/pyproject.toml', 'store/backend/Dockerfile') }}","ghcr.io/${{ github.repository_owner }}/neurostore:sha-${{ github.sha }}"${{ steps.image_channel.outputs.channel != '' && format(',"ghcr.io/{0}/neurostore:{1}"', github.repository_owner, steps.image_channel.outputs.channel) || '' }}]
+              neurostore.tags=ghcr.io/${{ github.repository_owner }}/neurostore:${{ hashFiles('store/backend/neurostore/**', 'store/backend/migrations/**', 'store/backend/manage.py', 'store/backend/pyproject.toml', 'store/backend/Dockerfile') }}
+              neurostore.tags+=ghcr.io/${{ github.repository_owner }}/neurostore:sha-${{ github.sha }}
+              ${{ steps.image_channel.outputs.channel != '' && format('neurostore.tags+=ghcr.io/{0}/neurostore:{1}', github.repository_owner, steps.image_channel.outputs.channel) || '' }}
               neurostore.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/neurostore:${{ hashFiles('store/backend/neurostore/**', 'store/backend/migrations/**', 'store/backend/manage.py', 'store/backend/pyproject.toml', 'store/backend/Dockerfile') }}
               neurostore.cache-from=type=gha,scope=cached-neurostore
               neurostore.cache-to=type=gha,scope=cached-neurostore,mode=max,ignore-error=true
-              store_nginx.tags=["ghcr.io/${{ github.repository_owner }}/store_nginx:${{ hashFiles('**/store/nginx/**') }}","ghcr.io/${{ github.repository_owner }}/store_nginx:sha-${{ github.sha }}"${{ steps.image_channel.outputs.channel != '' && format(',"ghcr.io/{0}/store_nginx:{1}"', github.repository_owner, steps.image_channel.outputs.channel) || '' }}]
+              store_nginx.tags=ghcr.io/${{ github.repository_owner }}/store_nginx:${{ hashFiles('**/store/nginx/**') }}
+              store_nginx.tags+=ghcr.io/${{ github.repository_owner }}/store_nginx:sha-${{ github.sha }}
+              ${{ steps.image_channel.outputs.channel != '' && format('store_nginx.tags+=ghcr.io/{0}/store_nginx:{1}', github.repository_owner, steps.image_channel.outputs.channel) || '' }}
               store_nginx.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/store_nginx:${{ hashFiles('**/store/nginx/**') }}
               store_nginx.cache-from=type=gha,scope=cached-store-nginx
               store_nginx.cache-to=type=gha,scope=cached-store-nginx,mode=max,ignore-error=true
-              store-pgsql.tags=["ghcr.io/${{ github.repository_owner }}/store-pgsql:${{ hashFiles('**/store/postgres/**') }}","ghcr.io/${{ github.repository_owner }}/store-pgsql:sha-${{ github.sha }}"${{ steps.image_channel.outputs.channel != '' && format(',"ghcr.io/{0}/store-pgsql:{1}"', github.repository_owner, steps.image_channel.outputs.channel) || '' }}]
+              store-pgsql.tags=ghcr.io/${{ github.repository_owner }}/store-pgsql:${{ hashFiles('**/store/postgres/**') }}
+              store-pgsql.tags+=ghcr.io/${{ github.repository_owner }}/store-pgsql:sha-${{ github.sha }}
+              ${{ steps.image_channel.outputs.channel != '' && format('store-pgsql.tags+=ghcr.io/{0}/store-pgsql:{1}', github.repository_owner, steps.image_channel.outputs.channel) || '' }}
               store-pgsql.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/store-pgsql:${{ hashFiles('**/store/postgres/**') }}
               store-pgsql.cache-from=type=gha,scope=cached-store-pgsql
               store-pgsql.cache-to=type=gha,scope=cached-store-pgsql,mode=max,ignore-error=true
-              store-pgsql17.tags=["ghcr.io/${{ github.repository_owner }}/store-pgsql17:${{ hashFiles('**/store/postgres/**') }}","ghcr.io/${{ github.repository_owner }}/store-pgsql17:sha-${{ github.sha }}"${{ steps.image_channel.outputs.channel != '' && format(',"ghcr.io/{0}/store-pgsql17:{1}"', github.repository_owner, steps.image_channel.outputs.channel) || '' }}]
+              store-pgsql17.tags=ghcr.io/${{ github.repository_owner }}/store-pgsql17:${{ hashFiles('**/store/postgres/**') }}
+              store-pgsql17.tags+=ghcr.io/${{ github.repository_owner }}/store-pgsql17:sha-${{ github.sha }}
+              ${{ steps.image_channel.outputs.channel != '' && format('store-pgsql17.tags+=ghcr.io/{0}/store-pgsql17:{1}', github.repository_owner, steps.image_channel.outputs.channel) || '' }}
               store-pgsql17.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/store-pgsql17:${{ hashFiles('**/store/postgres/**') }}
               store-pgsql17.cache-from=type=gha,scope=cached-store-pgsql17
               store-pgsql17.cache-to=type=gha,scope=cached-store-pgsql17,mode=max,ignore-error=true
