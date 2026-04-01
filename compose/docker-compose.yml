@@ -109,7 +109,7 @@ services:
       - ./postgres/resolve-app-db.sh:/usr/local/bin/resolve-app-db.sh:ro
     entrypoint: ["/bin/sh", "-lc"]
     command:
-      - 'db_name="$(/usr/local/bin/resolve-app-db.sh compose)"; export DATABASE_URL="postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:5432/$${db_name}"; exec puma -C /app/config/puma.rb'
+      - 'export PATH="/usr/local/bundle/bin:${PATH}"; db_name="$(/usr/local/bin/resolve-app-db.sh compose)"; export DATABASE_URL="postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:5432/$${db_name}"; exec puma -C /app/config/puma.rb'
     depends_on:
       compose-pgsql17:
         condition: service_healthy
@@ -133,7 +133,7 @@ services:
       - ./postgres/resolve-app-db.sh:/usr/local/bin/resolve-app-db.sh:ro
     entrypoint: ["/bin/sh", "-lc"]
     command:
-      - 'export POSTGRES_DB="$(/usr/local/bin/resolve-app-db.sh compose)"; exec /run.sh'
+      - 'export PATH="/usr/share/grafana/bin:${PATH}"; export POSTGRES_DB="$(/usr/local/bin/resolve-app-db.sh compose)"; exec /run.sh'
     depends_on:
       compose-pgsql17:
         condition: service_healthy

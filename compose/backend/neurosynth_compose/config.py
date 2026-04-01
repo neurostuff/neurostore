@@ -129,7 +129,9 @@ class ProductionConfig(Config):
     AUTH0_ACCESS_TOKEN_URL = f"{AUTH0_BASE_URL}/oauth/token"
     AUTH0_AUTH_URL = f"{AUTH0_BASE_URL}/authorize"
     AUTH0_API_AUDIENCE = "https://neurostore.org/api/"
-    NEUROSTORE_API_URL = "https://neurostore.org/api"
+    NEUROSTORE_API_URL = get_env_var(
+        "NEUROSTORE_API_URL", "https://neurostore.org/api"
+    )
 
 
 class StagingConfig(Config):
@@ -146,7 +148,9 @@ class StagingConfig(Config):
     AUTH0_ACCESS_TOKEN_URL = f"{AUTH0_BASE_URL}/oauth/token"
     AUTH0_AUTH_URL = f"{AUTH0_BASE_URL}/authorize"
     AUTH0_API_AUDIENCE = "https://neurostore.xyz/api/"
-    NEUROSTORE_API_URL = "https://neurostore.xyz/api"
+    NEUROSTORE_API_URL = get_env_var(
+        "NEUROSTORE_API_URL", "https://neurostore.xyz/api"
+    )
 
 
 class DevelopmentConfig(Config):
@@ -165,7 +169,7 @@ class DevelopmentConfig(Config):
     AUTH0_ACCESS_TOKEN_URL = f"{AUTH0_BASE_URL}/oauth/token"
     AUTH0_AUTH_URL = f"{AUTH0_BASE_URL}/authorize"
     AUTH0_API_AUDIENCE = "localhost"
-    NEUROSTORE_API_URL = "http://172.17.0.1/api"
+    NEUROSTORE_API_URL = get_env_var("NEUROSTORE_API_URL", "http://172.17.0.1/api")
 
 
 class TestingConfig(Config):
@@ -185,7 +189,7 @@ class TestingConfig(Config):
     AUTH0_ACCESS_TOKEN_URL = f"{AUTH0_BASE_URL}/oauth/token"
     AUTH0_AUTH_URL = f"{AUTH0_BASE_URL}/authorize"
     AUTH0_API_AUDIENCE = "localhost"
-    NEUROSTORE_API_URL = "http://172.17.0.1/api"
+    NEUROSTORE_API_URL = get_env_var("NEUROSTORE_API_URL", "http://172.17.0.1/api")
 
 
 class DockerTestConfig(TestingConfig):

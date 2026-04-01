@@ -1,5 +1,7 @@
 services:
   store_nginx:
+    volumes:
+      - ./nginx/nginx.dev.conf:/etc/nginx/nginx.conf:ro
     ports:
       - "80:80"
 
