@@ -41,8 +41,6 @@ jobs:
         run: |
           ssh "${{ secrets.STAGING_SSH_USER }}@${{ secrets.STAGING_SSH_HOST }}" '
             set -e
-            export GHCR_USERNAME="${{ secrets.GHCR_USERNAME }}"
-            export GHCR_TOKEN="${{ secrets.GHCR_READ_TOKEN }}"
             /bin/bash "${{ secrets.STAGING_REPO_ROOT }}/scripts/deploy/deploy_environment.sh" \
               --track staging \
               --repo-root "${{ secrets.STAGING_REPO_ROOT }}" \

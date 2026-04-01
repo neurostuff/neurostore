@@ -41,8 +41,6 @@ jobs:
         run: |
           ssh "${{ secrets.DEV_SSH_USER }}@${{ secrets.DEV_SSH_HOST }}" '
             set -e
-            export GHCR_USERNAME="${{ secrets.GHCR_USERNAME }}"
-            export GHCR_TOKEN="${{ secrets.GHCR_READ_TOKEN }}"
             /bin/bash "${{ secrets.DEV_REPO_ROOT }}/scripts/deploy/deploy_environment.sh" \
               --track dev \
               --repo-root "${{ secrets.DEV_REPO_ROOT }}" \
