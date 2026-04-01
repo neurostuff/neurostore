@@ -1,6 +1,10 @@
 services:
   neurostore:
     image: ghcr.io/${GHCR_OWNER}/neurostore:${IMAGE_TAG}
+    networks:
+      default:
+        aliases:
+          - ${STORE_APP_HOST_ALIAS}
 
   store_outbox_worker:
     image: ghcr.io/${GHCR_OWNER}/neurostore:${IMAGE_TAG}
@@ -8,8 +12,35 @@ services:
   store_metadata_outbox_worker:
     image: ghcr.io/${GHCR_OWNER}/neurostore:${IMAGE_TAG}
 
+  store_redis:
+    networks:
+      default:
+        aliases:
+          - ${STORE_REDIS_HOST_ALIAS}
+
   store_nginx:
     image: ghcr.io/${GHCR_OWNER}/store_nginx:${IMAGE_TAG}
+    networks:
+      default:
+        aliases:
+          - ${STORE_NGINX_HOST_ALIAS}
 
   store-pgsql17:
     image: ghcr.io/${GHCR_OWNER}/store-pgsql17:${IMAGE_TAG}
+
+    networks:
+      default:
+        aliases:
+          - ${STORE_POSTGRES_HOST_ALIAS}
+
+  store-pghero:
+    networks:
+      default:
+        aliases:
+          - ${STORE_PGHERO_HOST_ALIAS}
+
+  store-grafana:
+    networks:
+      default:
+        aliases:
+          - ${STORE_GRAFANA_HOST_ALIAS}
