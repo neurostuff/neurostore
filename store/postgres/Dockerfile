@@ -18,10 +18,11 @@ RUN curl -L https://github.com/pgvector/pgvector/archive/refs/tags/v0.8.0.tar.gz
     && rm -rf pgvector.tar.gz pgvector-0.8.0
 
 COPY pg_dump-to-s3 /home
-RUN chmod +x /home/pg_dump-to-s3.sh /home/s3-autodelete.sh
+RUN chmod +x /home/pg_dump-to-s3.sh /home/s3-autodelete.sh /home/build-reduced-dev-backup.sh
 RUN crontab /home/backup.txt
 RUN dos2unix /home/pg_dump-to-s3.sh
 RUN dos2unix /home/s3-autodelete.sh
+RUN dos2unix /home/build-reduced-dev-backup.sh
 COPY resolve-app-db.sh /usr/local/bin/resolve-app-db.sh
 RUN chmod +x /usr/local/bin/resolve-app-db.sh
 COPY docker-entrypoint-cron.sh /usr/local/bin/docker-entrypoint-cron.sh
