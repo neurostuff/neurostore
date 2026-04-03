@@ -1,6 +1,6 @@
 import { Box, Chip, Link as MuiLink, Stepper, Typography } from '@mui/material';
 import { useGetMetaAnalysesByIds, useGetStudysetById } from 'hooks';
-import { INeurosynthProjectReturn } from 'hooks/projects/Project.types';
+import { EAnalysisType, INeurosynthProjectReturn } from 'hooks/projects/Project.types';
 import { getCurationSummary } from 'hooks/useGetCurationSummary';
 import { getExtractionSummary } from 'hooks/useGetExtractionSummary';
 import { useMemo } from 'react';
@@ -13,6 +13,7 @@ import { MetaAnalysis } from 'neurosynth-compose-typescript-sdk';
 import LockIcon from '@mui/icons-material/Lock';
 import PublicIcon from '@mui/icons-material/Public';
 import ChangeHistoryIcon from '@mui/icons-material/ChangeHistory';
+import { useProjectAnalysisType } from 'pages/Project/store/ProjectStore';
 
 const isToday = (date: Date) => {
     const today = new Date();
@@ -94,6 +95,8 @@ const ProjectsPageCard: React.FC<INeurosynthProjectReturn> = (props) => {
         }
     }, [metaAnalyses]);
 
+    const projectType = useProjectAnalysisType();
+
     return (
         <Box sx={{ display: 'flex', padding: '1rem', marginBottom: '0.5rem' }}>
             <Box
@@ -135,36 +138,31 @@ const ProjectsPageCard: React.FC<INeurosynthProjectReturn> = (props) => {
                 </Stepper>
             </Box>
             <Box sx={{ flexGrow: 1 }}>
-                <Box mb="0.5rem" sx={{ width: '100%' }}>
+                <Box mb="0.5rem" sx={{ width: '100%', display: 'flex' }}>
                     <Chip
-                        label={isPublic ? 'Public' : 'Private'}
-                        icon={isPublic ? <PublicIcon /> : <LockIcon />}
-                        variant="outlined"
+                        label={projectType === EAnalysisType.CBMA ? 'CBMA' : 'IBMA'}
                         size="small"
                         sx={{ mr: '6px' }}
                     />
-                    {updated_at && (
-                        <Chip
-                            label={`Last updated: ${lastUpdateDate}`}
-                            variant="outlined"
-                            size="small"
-                            sx={{ mr: '6px' }}
-                        />
-                    )}
-                    {created_at && (
-                        <Chip label={`Created: ${createdDate}`} variant="outlined" size="small" sx={{ mr: '6px' }} />
-                    )}
+                    <Chip
+                        label={isPublic ? 'Public' : 'Private'}
+                        icon={isPublic ? <PublicIcon /> : <LockIcon />}
+                        size="small"
+                        sx={{ mr: '6px' }}
+                    />
                     {provenance?.curationMetadata?.prismaConfig?.isPrisma && (
-                        <Chip
-                            label="PRISMA"
-                            icon={<ChangeHistoryIcon />}
-                            variant="outlined"
-                            size="small"
-                            sx={{ mr: '6px', pl: '2px' }}
-                        />
+                        <Chip label="PRISMA" icon={<ChangeHistoryIcon />} size="small" sx={{ mr: '6px', pl: '2px' }} />
                     )}
                     {studyset && (
-                        <Chip variant="outlined" size="small" label={`${(studyset.studies || []).length} studies`} />
+                        <Chip size="small" label={`${(studyset.studies || []).length} studies`} sx={{ mr: '6px' }} />
+                    )}
+                    {created_at && <Chip label={`Created: ${createdDate}`} size="small" sx={{ mr: '6px' }} />}
+                    {updated_at && (
+                        <Box sx={{ marginLeft: 'auto' }}>
+                            <Typography variant="body2" color="muted.main" sx={{ marginRight: '6px' }}>
+                                Last updated: {lastUpdateDate}
+                            </Typography>
+                        </Box>
                     )}
                 </Box>
                 <MuiLink

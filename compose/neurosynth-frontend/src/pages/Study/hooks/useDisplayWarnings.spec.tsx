@@ -1,12 +1,8 @@
 import { vi, Mock } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import {
-    useStudyAnalyses,
-    useStudyAnalysisName,
-    useStudyAnalysisPoints,
-} from 'pages/Study/store/StudyStore';
+import { useStudyAnalyses, useStudyAnalysisName, useStudyAnalysisPoints } from 'stores/study/StudyStore';
 import { mockAnalyses, mockStorePoints } from 'testing/mockData';
-import useDisplayWarnings, { isCoordinateMNI } from './useDisplayWarnings';
+import useDisplayWarnings, { isCoordinateMNI } from 'pages/Study/hooks/useDisplayWarnings';
 
 vi.mock('pages/Study/store/StudyStore', () => ({
     useStudyAnalysisPoints: vi.fn(),
@@ -127,10 +123,7 @@ describe('useDisplayWarnings', () => {
     });
 
     it('returns hasNonMNICoordinates true when a point is outside MNI bounds', () => {
-        const pointsOutsideMNI = [
-            { ...mockStorePoints()[0], x: 100, y: 0, z: 0 },
-            mockStorePoints()[1],
-        ];
+        const pointsOutsideMNI = [{ ...mockStorePoints()[0], x: 100, y: 0, z: 0 }, mockStorePoints()[1]];
         (useStudyAnalysisPoints as Mock).mockReturnValue(pointsOutsideMNI);
 
         render(<DummyComponent analysisId="3MXg8tfRq2sh" />);

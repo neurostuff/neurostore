@@ -1,7 +1,7 @@
 import { Box, Typography } from '@mui/material';
-import StudyAnalysisWarnings from './StudyAnalysisWarnings';
-import StudyPoints from './StudyPoints';
-import { IStoreAnalysis } from 'pages/Study/store/StudyStore.helpers';
+import StudyAnalysisWarnings from 'pages/Study/components/StudyAnalysisWarnings';
+import StudyPoints from 'pages/Study/components/StudyPoints';
+import { IStoreAnalysis } from 'stores/study/StudyStore.helpers';
 
 const StudyAnalysis: React.FC<IStoreAnalysis | undefined> = (props) => {
     return (

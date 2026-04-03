@@ -6,10 +6,10 @@ import { useGetStudyById } from 'hooks';
 import { AnalysisReturn } from 'neurostore-typescript-sdk';
 import { useGetProjectIsLoading, useProjectName } from 'pages/Project/store/ProjectStore';
 import Study from 'pages/Study/components/Study';
-import { useInitStudyStore } from 'pages/Study/store/StudyStore';
 import React, { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { studyAnalysesToStoreAnalyses } from './store/StudyStore.helpers';
+import { studyAnalysesToStoreAnalyses } from 'stores/study/StudyStore.helpers';
+import { useInitStudyStore } from 'stores/study/StudyStore';
 
 const ProjectStudyPage: React.FC = () => {
     const initStudyStore = useInitStudyStore();

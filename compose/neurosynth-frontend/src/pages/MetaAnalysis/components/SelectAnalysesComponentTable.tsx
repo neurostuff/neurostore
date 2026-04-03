@@ -1,6 +1,6 @@
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from '@mui/material';
 import { Box } from '@mui/system';
-import EditStudyComponentsStyles from 'pages/Study/components/EditStudyComponents.styles';
+import EditStudyComponentsStyles from 'pages/StudyCBMA/components/EditStudyComponents.styles';
 import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
 import { NoteCollectionReturn } from 'neurostore-typescript-sdk';
 import { Fragment, useMemo } from 'react';

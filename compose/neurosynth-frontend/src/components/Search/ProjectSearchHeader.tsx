@@ -120,9 +120,7 @@ const ProjectSearchHeader: React.FC<IProjectSearchHeader> = (props) => {
                         options={PROJECT_SORT_OPTIONS}
                         chipLabel={`Sort By: ${SortByEnumToString[searchState.sortBy as SortBy]}`}
                         descOrderChipLabel={searchState.descOrder ? 'DESC' : 'ASC'}
-                        onSelectDescOrder={(descOrder) =>
-                            onSearch({ ...searchState, descOrder })
-                        }
+                        onSelectDescOrder={(descOrder) => onSearch({ ...searchState, descOrder })}
                         onSelectSort={(sortBy) => onSearch({ ...searchState, sortBy })}
                     />
                     <SearchBarFilters

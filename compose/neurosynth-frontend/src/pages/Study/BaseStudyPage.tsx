@@ -4,10 +4,10 @@ import StateHandlerComponent from 'components/StateHandlerComponent/StateHandler
 import { useGetStudyById } from 'hooks';
 import useGetBaseStudyById from 'hooks/studies/useGetBaseStudyById';
 import { AnalysisReturn, StudyReturn } from 'neurostore-typescript-sdk';
-import { useInitStudyStore } from 'pages/Study/store/StudyStore';
 import React, { useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { studyAnalysesToStoreAnalyses } from './store/StudyStore.helpers';
+import { studyAnalysesToStoreAnalyses } from 'stores/study/StudyStore.helpers';
+import { useInitStudyStore } from 'stores/study/StudyStore';
 
 const BaseStudyPage: React.FC = (props) => {
     const navigate = useNavigate();

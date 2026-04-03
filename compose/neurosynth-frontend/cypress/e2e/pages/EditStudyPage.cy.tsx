@@ -8,7 +8,7 @@ import { defaultIdentificationSources } from 'pages/Project/store/ProjectStore.c
 export {};
 
 const PATH = '/projects/abc123/extraction/studies/b-mock-study-id/edit';
-const PAGE_NAME = 'EditStudyPage';
+const PAGE_NAME = 'EditStudyCBMAPage';
 
 const visitAndWaitForPage = () =>
     cy.visit(PATH).wait('@studyFixture').wait('@projectFixture').wait('@annotationFixture').wait('@studysetFixture');

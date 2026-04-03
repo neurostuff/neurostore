@@ -1,17 +1,17 @@
 import { Box, Chip, Divider, TableCell, TableRow, Tooltip, Typography } from '@mui/material';
 import { getType } from 'components/EditMetadata/EditMetadata.types';
-import { sortMetadataArrayFn } from 'pages/Study/components/EditStudyMetadata';
+import { sortMetadataArrayFn } from 'pages/StudyCBMA/components/EditStudyMetadata';
 import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
 import NeurosynthTable, { getValue } from 'components/NeurosynthTable/NeurosynthTable';
 import NeurosynthTableStyles from 'components/NeurosynthTable/NeurosynthTable.styles';
 import TextExpansion from 'components/TextExpansion/TextExpansion';
-import { IStoreStudy } from 'pages/Study/store/StudyStore.helpers';
 import { Optional } from 'utils/utilitytypes';
-import StudyAnalyses from './StudyAnalyses';
+import StudyAnalyses from 'pages/Study/components/StudyAnalyses';
 import StudyStyles from './Study.styles';
 import DisplayLink from 'components/DisplayStudyLink/DisplayLink';
 import { PUBMED_ARTICLE_URL_PREFIX, PUBMED_CENTRAL_ARTICLE_URL_PREFIX } from 'hooks/external/useFetchPubMedIds.types';
 import DisplayStudyLinkFullText from 'components/DisplayStudyLink/DisplayStudyLinkFullText';
+import { IStoreStudy } from 'stores/study/StudyStore.helpers';
 
 const Study: React.FC<Optional<IStoreStudy, 'metadata'>> = (props) => {
     const { id, name, description, doi, pmid, authors, publication: journal, metadata, pmcid, analyses = [] } = props;
