@@ -1,5 +1,7 @@
 import datetime as dt
 import re
+import threading
+import time
 from xml.etree import ElementTree
 
 import requests
@@ -27,6 +29,10 @@ METADATA_FIELDS = ("name", "description", "publication", "authors", "year", "is_
 STUDY_METADATA_FIELDS = ("name", "description", "publication", "authors", "year")
 CONTENT_FIELDS = METADATA_FIELDS + ("ace_fulltext", "pubget_fulltext")
 TRANSIENT_HTTP_STATUS = {408, 409, 425, 429, 500, 502, 503, 504}
+SEMANTIC_SCHOLAR_DEFAULT_RPS = 1.0
+PUBMED_DEFAULT_RPS_WITH_KEY = 10.0
+PUBMED_DEFAULT_RPS_WITHOUT_KEY = 3.0
+RATE_LIMIT_SAFETY_MARGIN_SECONDS = 0.01
 
 
 def _has_value(value):
@@ -165,6 +171,7 @@ def _is_retryable_request_exception(exc):
     retry=retry_if_exception(_is_retryable_request_exception),
 )
 def _request_with_retry(method, url, **kwargs):
+    _apply_provider_rate_limit(url, kwargs)
     response = requests.request(method, url, **kwargs)
     if response.status_code >= 400:
         error = requests.HTTPError(
@@ -196,6 +203,88 @@ def _provider_error(provider_name, exc):
     current_app.logger.warning(
         "base-study metadata provider failed (%s): %s", provider_name, exc
     )
+
+
+def _coerce_positive_float(value, default):
+    try:
+        value = float(value)
+    except (TypeError, ValueError):
+        return default
+    return value if value > 0 else default
+
+
+def _provider_rps_for_request(url, kwargs):
+    headers = kwargs.get("headers") or {}
+    params = kwargs.get("params") or {}
+
+    if "api.semanticscholar.org" in url:
+        if headers.get("x-api-key"):
+            rps = _coerce_positive_float(
+                current_app.config.get(
+                    "SEMANTIC_SCHOLAR_API_RPS", SEMANTIC_SCHOLAR_DEFAULT_RPS
+                ),
+                SEMANTIC_SCHOLAR_DEFAULT_RPS,
+            )
+            return "semantic_scholar", rps
+        return None, None
+
+    if "ncbi.nlm.nih.gov" in url and (
+        "/pmc/utils/idconv/" in url or "/entrez/eutils/" in url
+    ):
+        has_api_key = bool(params.get("api_key"))
+        config_key = (
+            "PUBMED_API_RPS_WITH_KEY" if has_api_key else "PUBMED_API_RPS_WITHOUT_KEY"
+        )
+        default_rps = (
+            PUBMED_DEFAULT_RPS_WITH_KEY
+            if has_api_key
+            else PUBMED_DEFAULT_RPS_WITHOUT_KEY
+        )
+        rps = _coerce_positive_float(
+            current_app.config.get(config_key, default_rps), default_rps
+        )
+        provider_name = "pubmed_with_key" if has_api_key else "pubmed_without_key"
+        return provider_name, rps
+
+    return None, None
+
+
+class _ProviderRateLimiter:
+    def __init__(self):
+        self._lock = threading.Lock()
+        self._next_allowed_at = {}
+
+    def reset(self):
+        with self._lock:
+            self._next_allowed_at.clear()
+
+    def wait(self, provider_name, requests_per_second):
+        if not provider_name or not requests_per_second:
+            return
+
+        min_interval = (1.0 / requests_per_second) + RATE_LIMIT_SAFETY_MARGIN_SECONDS
+
+        while True:
+            with self._lock:
+                now = time.monotonic()
+                next_allowed_at = self._next_allowed_at.get(provider_name, 0.0)
+                if now >= next_allowed_at:
+                    self._next_allowed_at[provider_name] = now + min_interval
+                    return
+                sleep_for = next_allowed_at - now
+            time.sleep(sleep_for)
+
+
+_provider_rate_limiter = _ProviderRateLimiter()
+
+
+def _reset_provider_rate_limits():
+    _provider_rate_limiter.reset()
+
+
+def _apply_provider_rate_limit(url, kwargs):
+    provider_name, requests_per_second = _provider_rps_for_request(url, kwargs)
+    _provider_rate_limiter.wait(provider_name, requests_per_second)
 
 
 def lookup_ids_semantic_scholar(identifiers, api_key=None):
