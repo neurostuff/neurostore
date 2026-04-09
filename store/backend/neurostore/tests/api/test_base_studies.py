@@ -1770,6 +1770,144 @@ def test_metadata_and_flag_workers_do_not_deadlock_on_same_base_study(
     assert len(outbox_rows) == 1
 
 
+def test_metadata_worker_propagation_does_not_deadlock_with_study_then_base_write(
+    session, app, monkeypatch
+):
+    from neurostore.services import base_study_metadata_enrichment as metadata_service
+
+    base_study = BaseStudy(
+        name=None,
+        pmid="999002",
+        level="group",
+    )
+    version = Study(
+        name=None,
+        publication=None,
+        authors=None,
+        year=None,
+        doi=None,
+        pmid=None,
+        pmcid=None,
+        level="group",
+        base_study=base_study,
+    )
+    session.add_all([base_study, version])
+    session.commit()
+
+    session.add(
+        BaseStudyMetadataOutbox(
+            base_study_id=base_study.id,
+            reason="test-study-base-deadlock",
+        )
+    )
+    session.commit()
+
+    monkeypatch.setattr(
+        metadata_service, "lookup_ids_semantic_scholar", lambda *_args, **_kwargs: {}
+    )
+    monkeypatch.setattr(
+        metadata_service, "lookup_ids_pubmed", lambda *_args, **_kwargs: {}
+    )
+    monkeypatch.setattr(
+        metadata_service, "lookup_ids_openalex", lambda *_args, **_kwargs: {}
+    )
+    monkeypatch.setattr(
+        metadata_service,
+        "fetch_metadata_semantic_scholar",
+        lambda *_args, **_kwargs: {
+            "name": "Metadata Title",
+            "publication": "Metadata Journal",
+            "authors": "Metadata Author",
+            "year": 2024,
+        },
+    )
+    monkeypatch.setattr(
+        metadata_service, "fetch_metadata_pubmed", lambda *_args, **_kwargs: {}
+    )
+
+    propagation_started = threading.Event()
+    request_has_study_lock = threading.Event()
+    results = {}
+    original_propagate = metadata_service._propagate_base_study_metadata_to_versions
+
+    def _patched_propagate(base_study_record):
+        propagation_started.set()
+        assert request_has_study_lock.wait(timeout=5), (
+            "request transaction never locked study row"
+        )
+        return original_propagate(base_study_record)
+
+    monkeypatch.setattr(
+        metadata_service,
+        "_propagate_base_study_metadata_to_versions",
+        _patched_propagate,
+    )
+
+    def _run_metadata():
+        with app.app_context():
+            scoped_session = app.extensions["sqlalchemy"].session
+            scoped_session.remove()
+            try:
+                results["metadata"] = (
+                    metadata_service.process_base_study_metadata_outbox_batch(
+                        batch_size=10
+                    )
+                )
+            except Exception as exc:  # noqa: BLE001
+                results["metadata_exc"] = exc
+            finally:
+                scoped_session.remove()
+
+    def _run_request_like_writer():
+        with app.app_context():
+            scoped_session = app.extensions["sqlalchemy"].session
+            scoped_session.remove()
+            try:
+                scoped_session.execute(
+                    sa.select(Study)
+                    .where(Study.id == version.id)
+                    .with_for_update(of=Study)
+                ).scalar_one()
+                request_has_study_lock.set()
+                assert propagation_started.wait(timeout=5), (
+                    "metadata worker never reached propagation"
+                )
+                scoped_session.execute(
+                    sa.update(BaseStudy)
+                    .where(BaseStudy.id == base_study.id)
+                    .values(metadata_={"request": "touch"})
+                )
+                scoped_session.commit()
+                results["request"] = "committed"
+            except Exception as exc:  # noqa: BLE001
+                scoped_session.rollback()
+                results["request_exc"] = exc
+            finally:
+                scoped_session.remove()
+
+    request_thread = threading.Thread(target=_run_request_like_writer)
+    metadata_thread = threading.Thread(target=_run_metadata)
+
+    request_thread.start()
+    metadata_thread.start()
+    request_thread.join(timeout=10)
+    metadata_thread.join(timeout=10)
+
+    assert not request_thread.is_alive()
+    assert not metadata_thread.is_alive()
+    assert "request_exc" not in results
+    assert "metadata_exc" not in results
+    assert results["request"] == "committed"
+    assert results["metadata"] == 1
+
+    session.expire_all()
+    session.refresh(base_study)
+    session.refresh(version)
+    assert base_study.name == "Metadata Title"
+    assert version.name == "Metadata Title"
+    assert version.publication == "Metadata Journal"
+
+
 def test_enqueue_metadata_updates_treats_blank_values_as_missing(session):
     base_study = BaseStudy(
         name="Metadata Missing",

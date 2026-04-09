@@ -797,29 +797,84 @@ def _propagate_base_study_metadata_to_versions(base_study):
         field: getattr(base_study, field, None)
         for field in ID_FIELDS + STUDY_METADATA_FIELDS
     }
-    changed_study_ids = set()
-    versions = list(
+    update_values = {}
+    missing_conditions = []
+
+    for field, source_value in source_values.items():
+        if field == "year":
+            source_value = _normalize_year(source_value)
+            if source_value is None:
+                continue
+            missing_condition = sa.or_(Study.year.is_(None), Study.year <= 0)
+        else:
+            if not _has_metadata_value(field, source_value):
+                continue
+            missing_condition = _missing_text_sql(getattr(Study, field))
+
+        column = getattr(Study, field)
+        update_values[field] = sa.case(
+            (missing_condition, source_value),
+            else_=column,
+        )
+        missing_conditions.append(missing_condition)
+
+    if not update_values:
+        return set()
+
+    changed_study_ids = set(
         db.session.scalars(
-            sa.select(Study)
+            sa.update(Study)
             .where(Study.base_study_id == base_study.id)
-            .with_for_update(of=Study)
+            .where(sa.or_(*missing_conditions))
+            .values(**update_values)
+            .returning(Study.id)
         ).all()
     )
-    for version in versions:
-        changed = False
-        for field, source_value in source_values.items():
-            target_value = getattr(version, field, None)
-            if field == "year":
-                source_value = _normalize_year(source_value)
-                target_value = _normalize_year(target_value)
-            if _has_metadata_value(field, source_value) and not _has_metadata_value(
-                field, target_value
-            ):
-                setattr(version, field, source_value)
-                changed = True
-        if changed:
-            changed_study_ids.add(version.id)
     return changed_study_ids
+
+
+def _propagate_base_study_metadata_to_versions_post_commit(
+    base_study_ids,
+    *,
+    max_attempts=5,
+    retry_sleep_seconds=0.1,
+):
+    if not base_study_ids:
+        return set()
+
+    attempts = 0
+    while True:
+        try:
+            changed_study_ids = set()
+            active_base_studies = list(
+                db.session.scalars(
+                    sa.select(BaseStudy)
+                    .where(BaseStudy.id.in_(base_study_ids))
+                    .where(BaseStudy.is_active.is_(True))
+                    .order_by(BaseStudy.id.asc())
+                ).all()
+            )
+            for base_study in active_base_studies:
+                changed_study_ids.update(
+                    _propagate_base_study_metadata_to_versions(base_study)
+                )
+            db.session.commit()
+            return changed_study_ids
+        except OperationalError as exc:
+            db.session.rollback()
+            attempts += 1
+            if getattr(getattr(exc, "orig", None), "pgcode", None) != "40P01":
+                raise
+            if attempts >= max_attempts:
+                raise
+            current_app.logger.warning(
+                "retrying study metadata propagation after deadlock "
+                "(attempt %s/%s) for %s base studies",
+                attempts + 1,
+                max_attempts,
+                len(base_study_ids),
+            )
+            time.sleep(retry_sleep_seconds)
 
 
 def _merge_duplicates(primary):
@@ -922,10 +977,9 @@ def enrich_base_study_metadata(base_study_id):
     if base_study is None or base_study.is_active is False:
         return {"base-studies": set(), "studies": set()}
     if not _needs_enrichment(base_study):
-        changed_study_ids = _propagate_base_study_metadata_to_versions(base_study)
         return {
             "base-studies": {base_study.id},
-            "studies": changed_study_ids,
+            "studies": set(),
         }
 
     cache_ids = {"base-studies": {base_study.id}, "studies": set()}
@@ -936,9 +990,6 @@ def enrich_base_study_metadata(base_study_id):
     cache_ids = merge_unique_ids(cache_ids, merged_cache_ids)
 
     _apply_missing_metadata(base_study, metadata_candidates)
-    cache_ids.setdefault("studies", set()).update(
-        _propagate_base_study_metadata_to_versions(base_study)
-    )
     cache_ids.setdefault("base-studies", set()).add(base_study.id)
     return cache_ids
 
@@ -1036,6 +1087,7 @@ def process_base_study_metadata_outbox_batch(batch_size=50):
     cache_ids = {"base-studies": set(), "studies": set()}
     flag_update_ids = set()
     queued_flag_ids = []
+    propagation_base_study_ids = []
 
     claim_query = (
         sa.select(BaseStudyMetadataOutbox.base_study_id)
@@ -1085,6 +1137,14 @@ def process_base_study_metadata_outbox_batch(batch_size=50):
             queued_flag_ids = []
 
     db.session.commit()
+    if cache_ids.get("base-studies"):
+        propagation_base_study_ids = normalize_ids(cache_ids["base-studies"])
+    if propagation_base_study_ids:
+        cache_ids.setdefault("studies", set()).update(
+            _propagate_base_study_metadata_to_versions_post_commit(
+                propagation_base_study_ids
+            )
+        )
     if queued_flag_ids:
         _enqueue_base_study_flag_updates_post_commit(
             queued_flag_ids,
