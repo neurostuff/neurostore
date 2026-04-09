@@ -114,6 +114,41 @@ def _pick_seed_studies_from_base_studies(
     return base_study_ids, study_ids, search_term
 
 
+def _pick_bulk_post_payload(limit: int = 1200) -> list[dict[str, str]]:
+    rows = []
+    seen_base_studies = set()
+    query = (
+        select(BaseStudy.id, BaseStudy.doi, BaseStudy.pmid)
+        .join(Study, Study.base_study_id == BaseStudy.id)
+        .where(BaseStudy.is_active.is_(True))
+        .order_by(BaseStudy.id, Study.id)
+    )
+
+    for base_study_id, doi, pmid in db.session.execute(query):
+        if base_study_id in seen_base_studies:
+            continue
+        if not doi and not pmid:
+            continue
+
+        seen_base_studies.add(base_study_id)
+        payload = {}
+        if doi:
+            payload["doi"] = doi
+        if pmid:
+            payload["pmid"] = pmid
+        rows.append(payload)
+
+        if len(rows) == limit:
+            break
+
+    if len(rows) < limit:
+        raise RuntimeError(
+            f"Need at least {limit} active base-studies with DOI/PMID identifiers, found {len(rows)}"
+        )
+
+    return rows
+
+
 def _create_large_studyset(client: Client, study_ids: list[str], *, suffix: str) -> str:
     payload = {
         "name": f"production-benchmark-studyset-{suffix}",
@@ -168,6 +203,7 @@ def run(iterations: int) -> dict:
     try:
         _ensure_user()
         base_study_ids, study_ids, search_term = _pick_seed_studies_from_base_studies()
+        bulk_post_payload = _pick_bulk_post_payload()
         source_study_id = study_ids[0]
 
         shared_studyset_id = _create_large_studyset(client, study_ids, suffix="seed")
@@ -262,6 +298,22 @@ def run(iterations: int) -> dict:
                             },
                         )
                     )["metadata"]["total_count"],
+                },
+            ),
+            _benchmark_case(
+                "post_base_studies_bulk_1200_full_objects",
+                iterations,
+                lambda _index: {
+                    "count": len(
+                        _response_json(
+                            _request(
+                                client,
+                                "post",
+                                "/api/base-studies/",
+                                data=bulk_post_payload,
+                            )
+                        )
+                    )
                 },
             ),
             _benchmark_case(

@@ -162,6 +162,19 @@ def test_post_list_of_studies(auth_client, ingest_neuroquery):
     assert result.status_code == 200
 
 
+def test_post_list_of_studies_returns_full_objects(auth_client, ingest_neuroquery):
+    base_study = BaseStudy.query.filter(BaseStudy.pmid.isnot(None)).first()
+
+    result = auth_client.post("/api/base-studies/", data=[{"pmid": base_study.pmid}])
+
+    assert result.status_code == 200
+    assert len(result.json()) == 1
+    assert result.json()[0]["id"] == base_study.id
+    assert result.json()[0]["name"] == base_study.name
+    assert "versions" in result.json()[0]
+    assert isinstance(result.json()[0]["versions"], list)
+
+
 def test_field_sanitization(auth_client):
     """Test sanitization of input fields in base studies"""
     test_input = [

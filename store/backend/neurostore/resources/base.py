@@ -762,7 +762,7 @@ class ListView(BaseView):
         }
         return response, 200
 
-    def post(self):
+    def post(self, body):
         # TODO: check to make sure current user hasn't already created a
         # record with most/all of the same details (e.g., DOI for studies)
 
@@ -772,9 +772,8 @@ class ListView(BaseView):
         source = args.get("source") or "neurostore"
 
         unknown = self.__class__._schema.opts.unknown
-        data = parser.parse(
-            self.__class__._schema(exclude=("id",)), request, unknown=unknown
-        )
+        schema = self.__class__._schema(exclude=("id",))
+        data = schema.load(body, unknown=unknown)
 
         if source_id:
             data = self._load_from_source(source, source_id, data)
