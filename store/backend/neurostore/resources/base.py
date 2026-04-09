@@ -491,20 +491,33 @@ class ObjectView(BaseView):
         if args.get("summary") is None:
             args["summary"] = request.args.get("summary", False) == "true"
 
+        if self._model is Studyset and args.get("nested") and args.get("summary"):
+            abort_validation("query parameters 'nested' and 'summary' are incompatible")
+
+        if self._model is Studyset and args.get("summary"):
+            q = self._model.query
+            q = self.eager_load(q, args)
+            record = q.filter_by(id=id).first()
+            if record is None:
+                abort_not_found(self._model.__name__, id)
+            serializer = getattr(self, "serialize_studyset_summary", None)
+            if serializer is None:
+                abort_validation("summary view is not available for this resource")
+            return serializer(record), 200, {"Content-Type": "application/json"}
+
+        if self._model is Studyset and args["nested"]:
+            serializer = getattr(self, "serialize_nested_studyset", None)
+            if serializer is not None:
+                payload = serializer(id)
+                if payload is None:
+                    abort_not_found(self._model.__name__, id)
+                return payload, 200, {"Content-Type": "application/json"}
+
         q = self._model.query
         q = self.eager_load(q, args)
         record = q.filter_by(id=id).first()
         if record is None:
             abort_not_found(self._model.__name__, id)
-
-        if self._model is Studyset and args.get("nested") and args.get("summary"):
-            abort_validation("query parameters 'nested' and 'summary' are incompatible")
-
-        if self._model is Studyset and args.get("summary"):
-            serializer = getattr(self, "serialize_studyset_summary", None)
-            if serializer is None:
-                abort_validation("summary view is not available for this resource")
-            return serializer(record), 200, {"Content-Type": "application/json"}
 
         if self._model is Studyset and args["nested"]:
             snapshot = StudysetSnapshot()

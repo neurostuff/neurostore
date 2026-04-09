@@ -1,5 +1,5 @@
 import string
-from collections import Counter, OrderedDict
+from collections import Counter, OrderedDict, defaultdict
 from copy import deepcopy
 from datetime import datetime
 from sqlalchemy import func, text
@@ -52,6 +52,7 @@ from ..models import (
     Pipeline,
 )
 from ..models.data import StudysetStudy, BaseStudy, _check_type
+from ..map_types import map_type_label
 from ..note_keys import canonicalize_note_keys, ordered_note_key_names
 from ..utils import parse_json_filter, build_jsonpath
 
@@ -306,6 +307,293 @@ class StudysetsView(ObjectView, ListView):
     @staticmethod
     def _serialize_dt(dt):
         return dt.isoformat() if dt else dt
+
+    def serialize_nested_studyset(self, studyset_id):
+        studyset_row = db.session.execute(
+            sa.select(
+                Studyset.id,
+                Studyset.name,
+                Studyset.user_id,
+                Studyset.description,
+                Studyset.publication,
+                Studyset.doi,
+                Studyset.pmid,
+                Studyset.created_at,
+                Studyset.updated_at,
+            ).where(Studyset.id == studyset_id)
+        ).one_or_none()
+        if studyset_row is None:
+            return None
+
+        study_rows = db.session.execute(
+            sa.select(
+                StudysetStudy.study_id,
+                StudysetStudy.curation_stub_uuid,
+                Study.id.label("id"),
+                Study.created_at,
+                Study.updated_at,
+                Study.user_id,
+                Study.name,
+                Study.description,
+                Study.publication,
+                Study.doi,
+                Study.pmid,
+                Study.authors,
+                Study.year,
+                Study.metadata_,
+                Study.source,
+                Study.source_id,
+                Study.source_updated_at,
+            )
+            .select_from(StudysetStudy)
+            .join(Study, Study.id == StudysetStudy.study_id)
+            .where(StudysetStudy.studyset_id == studyset_id)
+            .order_by(StudysetStudy.study_id)
+        ).all()
+
+        analyses_by_study = defaultdict(list)
+        points_by_analysis = defaultdict(list)
+        images_by_analysis = defaultdict(list)
+        conditions_by_analysis = defaultdict(list)
+        weights_by_analysis = defaultdict(list)
+        values_by_point = defaultdict(list)
+
+        if study_rows:
+            analysis_rows = db.session.execute(
+                sa.select(
+                    Analysis.id,
+                    Analysis.study_id,
+                    Analysis.user_id,
+                    Analysis.name,
+                    Analysis.metadata_,
+                    Analysis.description,
+                    Analysis.order,
+                )
+                .select_from(Analysis)
+                .join(StudysetStudy, StudysetStudy.study_id == Analysis.study_id)
+                .where(StudysetStudy.studyset_id == studyset_id)
+                .order_by(Analysis.study_id, Analysis.order.is_(None), Analysis.order, Analysis.id)
+            ).all()
+        else:
+            analysis_rows = []
+
+        if analysis_rows:
+            point_rows = db.session.execute(
+                sa.select(
+                    Point.id,
+                    Point.analysis_id,
+                    Point.x,
+                    Point.y,
+                    Point.z,
+                    Point.kind,
+                    Point.space,
+                    Point.image,
+                    Point.label_id,
+                    Point.order,
+                )
+                .select_from(Point)
+                .join(Analysis, Analysis.id == Point.analysis_id)
+                .join(StudysetStudy, StudysetStudy.study_id == Analysis.study_id)
+                .where(StudysetStudy.studyset_id == studyset_id)
+                .order_by(Point.analysis_id, Point.order.is_(None), Point.order, Point.id)
+            ).all()
+
+            point_value_rows = db.session.execute(
+                sa.select(
+                    PointValue.point_id,
+                    PointValue.kind,
+                    PointValue.value,
+                )
+                .select_from(PointValue)
+                .join(Point, Point.id == PointValue.point_id)
+                .join(Analysis, Analysis.id == Point.analysis_id)
+                .join(StudysetStudy, StudysetStudy.study_id == Analysis.study_id)
+                .where(StudysetStudy.studyset_id == studyset_id)
+                .order_by(PointValue.point_id, PointValue.id)
+            ).all()
+
+            for point_id, kind, value in point_value_rows:
+                values_by_point[point_id].append(
+                    {
+                        "kind": kind,
+                        "value": value,
+                    }
+                )
+
+            for (
+                point_id,
+                analysis_id,
+                x,
+                y,
+                z,
+                kind,
+                space,
+                image,
+                label_id,
+                _order,
+            ) in point_rows:
+                points_by_analysis[analysis_id].append(
+                    {
+                        "id": point_id,
+                        "coordinates": [x, y, z],
+                        "kind": kind,
+                        "space": space,
+                        "image": image,
+                        "label_id": label_id,
+                        "values": values_by_point.get(point_id, []),
+                    }
+                )
+
+            image_rows = db.session.execute(
+                sa.select(
+                    Image.analysis_id,
+                    Image.id,
+                    Image.user_id,
+                    Image.url,
+                    Image.space,
+                    Image.value_type,
+                    Image.filename,
+                    Image.add_date,
+                )
+                .select_from(Image)
+                .join(Analysis, Analysis.id == Image.analysis_id)
+                .join(StudysetStudy, StudysetStudy.study_id == Analysis.study_id)
+                .where(StudysetStudy.studyset_id == studyset_id)
+                .order_by(Image.analysis_id, Image.id)
+            ).all()
+            for (
+                analysis_id,
+                image_id,
+                user_id,
+                url,
+                space,
+                value_type,
+                filename,
+                add_date,
+            ) in image_rows:
+                images_by_analysis[analysis_id].append(
+                    {
+                        "id": image_id,
+                        "user": user_id,
+                        "url": url,
+                        "space": space,
+                        "value_type": map_type_label(value_type),
+                        "filename": filename,
+                        "add_date": add_date,
+                    }
+                )
+
+            condition_rows = db.session.execute(
+                sa.select(
+                    AnalysisConditions.analysis_id,
+                    AnalysisConditions.weight,
+                    Condition.id,
+                    Condition.user_id,
+                    Condition.name,
+                    Condition.description,
+                )
+                .select_from(AnalysisConditions)
+                .join(Condition, Condition.id == AnalysisConditions.condition_id)
+                .join(Analysis, Analysis.id == AnalysisConditions.analysis_id)
+                .join(StudysetStudy, StudysetStudy.study_id == Analysis.study_id)
+                .where(StudysetStudy.studyset_id == studyset_id)
+                .order_by(AnalysisConditions.analysis_id, Condition.id)
+            ).all()
+            for analysis_id, weight, condition_id, user_id, name, description in condition_rows:
+                conditions_by_analysis[analysis_id].append(
+                    {
+                        "id": condition_id,
+                        "user": user_id,
+                        "name": name,
+                        "description": description,
+                    }
+                )
+                weights_by_analysis[analysis_id].append(weight)
+
+        for (
+            analysis_id,
+            study_id,
+            user_id,
+            name,
+            metadata,
+            description,
+            _order,
+        ) in analysis_rows:
+            analyses_by_study[study_id].append(
+                {
+                    "id": analysis_id,
+                    "user": user_id,
+                    "name": name,
+                    "metadata": metadata,
+                    "description": description,
+                    "conditions": conditions_by_analysis.get(analysis_id, []),
+                    "weights": weights_by_analysis.get(analysis_id, []),
+                    "points": points_by_analysis.get(analysis_id, []),
+                    "images": images_by_analysis.get(analysis_id, []),
+                }
+            )
+
+        studyset_studies = []
+        studies_payload = []
+        for (
+            study_id,
+            curation_stub_uuid,
+            record_id,
+            created_at,
+            updated_at,
+            user_id,
+            name,
+            description,
+            publication,
+            doi,
+            pmid,
+            authors,
+            year,
+            metadata,
+            source,
+            source_id,
+            source_updated_at,
+        ) in study_rows:
+            studyset_studies.append(
+                {
+                    "id": study_id,
+                    "curation_stub_uuid": curation_stub_uuid,
+                }
+            )
+            studies_payload.append(
+                {
+                    "id": record_id,
+                    "created_at": self._serialize_dt(created_at),
+                    "updated_at": self._serialize_dt(updated_at),
+                    "user": user_id,
+                    "name": name,
+                    "description": description,
+                    "publication": publication,
+                    "doi": doi,
+                    "pmid": pmid,
+                    "authors": authors,
+                    "year": year,
+                    "metadata": metadata,
+                    "source": source,
+                    "source_id": source_id,
+                    "source_updated_at": self._serialize_dt(source_updated_at),
+                    "analyses": analyses_by_study.get(study_id, []),
+                }
+            )
+
+        return {
+            "id": studyset_row.id,
+            "name": studyset_row.name,
+            "user": studyset_row.user_id,
+            "description": studyset_row.description,
+            "publication": studyset_row.publication,
+            "doi": studyset_row.doi,
+            "pmid": studyset_row.pmid,
+            "created_at": self._serialize_dt(studyset_row.created_at),
+            "updated_at": self._serialize_dt(studyset_row.updated_at),
+            "studies": studies_payload,
+            "studyset_studies": studyset_studies,
+        }
 
     def serialize_studyset_summary(self, record):
         study_rows = db.session.execute(
