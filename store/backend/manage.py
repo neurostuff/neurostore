@@ -7,6 +7,7 @@ import time
 
 import click
 from flask_migrate import Migrate
+from sqlalchemy.exc import OperationalError
 
 from neurostore import create_app, ingest, models
 from neurostore.config import resolve_config_object
@@ -86,7 +87,24 @@ def ingest_neuroquery(max_rows):
 def _run_outbox_processor(process_fn, batch_size, loop, sleep_seconds):
     processed_total = 0
     while True:
-        processed = process_fn(batch_size=batch_size)
+        try:
+            processed = process_fn(batch_size=batch_size)
+        except OperationalError as exc:
+            # Concurrent outbox writers can deadlock on Postgres row/index locks.
+            # Roll back the aborted transaction and retry in loop mode instead of
+            # crashing the worker process.
+            if getattr(getattr(exc, "orig", None), "pgcode", None) == "40P01":
+                db.session.rollback()
+                if not loop:
+                    raise
+                app.logger.warning(
+                    "outbox processor deadlock detected in %s; retrying in %.1fs",
+                    process_fn.__name__,
+                    sleep_seconds,
+                )
+                time.sleep(sleep_seconds)
+                continue
+            raise
         processed_total += processed
         if not loop:
             break
