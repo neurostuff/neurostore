@@ -8,6 +8,7 @@ import requests
 import sqlalchemy as sa
 from flask import current_app
 from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.exc import OperationalError
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
 
 from ..cache_versioning import bump_cache_versions
@@ -998,12 +999,43 @@ def enqueue_base_study_metadata_updates(base_study_ids, reason="api-write"):
     return len(eligible_ids)
 
 
+def _enqueue_base_study_flag_updates_post_commit(
+    base_study_ids,
+    reason,
+    *,
+    max_attempts=5,
+    retry_sleep_seconds=0.1,
+):
+    attempts = 0
+    while True:
+        try:
+            enqueue_base_study_flag_updates(base_study_ids, reason=reason)
+            db.session.commit()
+            return
+        except OperationalError as exc:
+            db.session.rollback()
+            attempts += 1
+            if getattr(getattr(exc, "orig", None), "pgcode", None) != "40P01":
+                raise
+            if attempts >= max_attempts:
+                raise
+            current_app.logger.warning(
+                "retrying base-study flag enqueue after deadlock "
+                "(attempt %s/%s) for %s base studies",
+                attempts + 1,
+                max_attempts,
+                len(base_study_ids),
+            )
+            time.sleep(retry_sleep_seconds)
+
+
 def process_base_study_metadata_outbox_batch(batch_size=50):
     batch_size = max(1, int(batch_size))
 
     successful_ids = []
     cache_ids = {"base-studies": set(), "studies": set()}
     flag_update_ids = set()
+    queued_flag_ids = []
 
     claim_query = (
         sa.select(BaseStudyMetadataOutbox.base_study_id)
@@ -1048,11 +1080,16 @@ def process_base_study_metadata_outbox_batch(batch_size=50):
             )
         )
         if flag_update_ids:
-            enqueue_base_study_flag_updates(
-                flag_update_ids, reason="base-study-metadata-enrichment"
-            )
+            queued_flag_ids = normalize_ids(flag_update_ids)
+        else:
+            queued_flag_ids = []
 
     db.session.commit()
+    if queued_flag_ids:
+        _enqueue_base_study_flag_updates_post_commit(
+            queued_flag_ids,
+            reason="base-study-metadata-enrichment",
+        )
     if cache_ids:
         bump_cache_versions(cache_ids)
     return len(successful_ids)

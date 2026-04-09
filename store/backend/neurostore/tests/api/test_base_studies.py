@@ -1,8 +1,10 @@
 """Test Base Study Endpoint"""
 
 import datetime as dt
+import threading
 
 import pytest
+import sqlalchemy as sa
 from sqlalchemy import text
 from sqlalchemy.orm import aliased
 from sqlalchemy.sql import func
@@ -1661,6 +1663,111 @@ def test_metadata_worker_uses_new_provider_config_keys(session, app, monkeypatch
         "tool": "neurostore-test-tool",
     }
     assert captured_kwargs["openalex_lookup_email"] == "new@example.org"
+
+
+def test_metadata_and_flag_workers_do_not_deadlock_on_same_base_study(
+    session, app, monkeypatch
+):
+    from neurostore.services import base_study_metadata_enrichment as metadata_service
+    from neurostore.services import has_media_flags as flag_service
+
+    base_study = BaseStudy(
+        name="deadlock-repro",
+        pmid="999001",
+        level="group",
+    )
+    session.add(base_study)
+    session.commit()
+
+    session.add(
+        BaseStudyMetadataOutbox(
+            base_study_id=base_study.id,
+            reason="test-deadlock-metadata",
+        )
+    )
+    session.add(
+        BaseStudyFlagOutbox(
+            base_study_id=base_study.id,
+            reason="test-deadlock-flag",
+        )
+    )
+    session.commit()
+
+    metadata_has_base_lock = threading.Event()
+    flag_has_outbox_lock = threading.Event()
+    results = {}
+
+    def _patched_enrich(target_id):
+        metadata_service.db.session.execute(sa.text("SET deadlock_timeout = '100ms'"))
+        locked_base_study = metadata_service.db.session.scalar(
+            sa.select(BaseStudy)
+            .where(BaseStudy.id == target_id)
+            .with_for_update(of=BaseStudy)
+        )
+        metadata_has_base_lock.set()
+        assert flag_has_outbox_lock.wait(timeout=5), "flag worker never claimed outbox"
+        return {
+            "base-studies": {locked_base_study.id},
+            "studies": set(),
+        }
+
+    def _patched_recompute(base_study_ids):
+        flag_service.db.session.execute(sa.text("SET deadlock_timeout = '100ms'"))
+        flag_has_outbox_lock.set()
+        assert metadata_has_base_lock.wait(timeout=5), (
+            "metadata worker never locked base study"
+        )
+        flag_service.db.session.execute(
+            sa.update(BaseStudy)
+            .where(BaseStudy.id.in_(base_study_ids))
+            .values(name="flag-worker-touch")
+        )
+        return {
+            "base-studies": set(base_study_ids),
+            "studies": set(),
+            "analyses": set(),
+        }
+
+    monkeypatch.setattr(
+        metadata_service, "enrich_base_study_metadata", _patched_enrich
+    )
+    monkeypatch.setattr(flag_service, "recompute_media_flags", _patched_recompute)
+
+    def _run(name, fn):
+        with app.app_context():
+            scoped_session = app.extensions["sqlalchemy"].session
+            scoped_session.remove()
+            try:
+                results[name] = fn(batch_size=10)
+            except Exception as exc:  # noqa: BLE001
+                results[f"{name}_exc"] = exc
+            finally:
+                scoped_session.remove()
+
+    metadata_thread = threading.Thread(
+        target=_run,
+        args=("metadata", metadata_service.process_base_study_metadata_outbox_batch),
+    )
+    flag_thread = threading.Thread(
+        target=_run,
+        args=("flag", flag_service.process_base_study_flag_outbox_batch),
+    )
+
+    metadata_thread.start()
+    flag_thread.start()
+    metadata_thread.join(timeout=10)
+    flag_thread.join(timeout=10)
+
+    assert not metadata_thread.is_alive()
+    assert not flag_thread.is_alive()
+    assert "metadata_exc" not in results
+    assert "flag_exc" not in results
+    assert results["metadata"] == 1
+    assert results["flag"] == 1
+
+    session.expire_all()
+    outbox_rows = BaseStudyFlagOutbox.query.filter_by(base_study_id=base_study.id).all()
+    assert len(outbox_rows) == 1
 
 
 def test_enqueue_metadata_updates_treats_blank_values_as_missing(session):
