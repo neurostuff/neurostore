@@ -38,7 +38,7 @@ services:
     depends_on:
       compose_redis:
         condition: service_healthy
-    entrypoint: celery -A neurosynth_compose.resources.tasks.celery_app worker --loglevel=debug
+    entrypoint: celery -A neurosynth_compose.resources.tasks.celery_app worker --loglevel=debug --autoscale=4,1 --max-tasks-per-child=5
     volumes:
       - ${CELERY_LOG_DIR}:/logs:rw
       - ${FILE_DIR}:/file-data
