@@ -8,6 +8,7 @@ import re
 from connexion.context import context
 from flask import request, current_app  # jsonify
 from flask.views import MethodView
+from marshmallow import ValidationError
 from ..exceptions.utils.error_helpers import (
     abort_permission,
     abort_validation,
@@ -773,7 +774,12 @@ class ListView(BaseView):
 
         unknown = self.__class__._schema.opts.unknown
         schema = self.__class__._schema(exclude=("id",))
-        data = schema.load(body, unknown=unknown)
+        try:
+            data = schema.load(body, unknown=unknown)
+        except ValidationError as err:
+            abort_unprocessable(
+                f"input does not conform to specification: {json.dumps(err.messages)}"
+            )
 
         if source_id:
             data = self._load_from_source(source, source_id, data)
