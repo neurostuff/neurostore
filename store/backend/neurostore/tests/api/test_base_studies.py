@@ -3,7 +3,6 @@
 import datetime as dt
 
 import pytest
-import requests
 from sqlalchemy import text
 from sqlalchemy.orm import aliased
 from sqlalchemy.sql import func
