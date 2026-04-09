@@ -1,7 +1,6 @@
 """Pipeline related resources"""
 
 from sqlalchemy import text, and_, or_
-from flask import request
 from neurostore.exceptions.utils.error_helpers import abort_validation
 from neurostore.exceptions.factories import make_field_error
 

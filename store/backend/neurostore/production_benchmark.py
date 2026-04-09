@@ -143,7 +143,8 @@ def _pick_bulk_post_payload(limit: int = 1200) -> list[dict[str, str]]:
 
     if len(rows) < limit:
         raise RuntimeError(
-            f"Need at least {limit} active base-studies with DOI/PMID identifiers, found {len(rows)}"
+            f"Need at least {limit} active base-studies "
+            f"with DOI/PMID identifiers, found {len(rows)}"
         )
 
     return rows
