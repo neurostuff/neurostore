@@ -114,6 +114,132 @@ def apply_map_type_filter(query, model, map_type):
     return query.filter(getattr(model, mapped_field).is_(True))
 
 
+def _base_study_response_load_options():
+    return (
+        raiseload("*", sql_only=True),
+        selectinload(BaseStudy.user)
+        .load_only(User.external_id, User.name)
+        .options(raiseload("*", sql_only=True)),
+        selectinload(BaseStudy.versions)
+        .load_only(
+            Study.id,
+            Study.user_id,
+            Study.created_at,
+            Study.updated_at,
+            Study.source,
+        )
+        .options(
+            raiseload("*", sql_only=True),
+            selectinload(Study.user)
+            .load_only(User.external_id, User.name)
+            .options(raiseload("*", sql_only=True)),
+        ),
+    )
+
+
+def _normalize_base_study_identifier(value) -> str:
+    if value is None:
+        return ""
+    return str(value)
+
+
+def _base_study_lookup_key(doi: str, pmid: str) -> str:
+    return f"{doi}{pmid}"
+
+
+def _collect_base_study_lookup_identifiers(payload):
+    dois = set()
+    pmids = set()
+
+    for study_data in payload:
+        doi = _normalize_base_study_identifier(study_data.get("doi"))
+        pmid = _normalize_base_study_identifier(study_data.get("pmid"))
+        if doi:
+            dois.add(doi)
+        if pmid:
+            pmids.add(pmid)
+
+    return dois, pmids
+
+
+def _build_base_study_lookup(records):
+    lookup = {
+        "combined": {},
+        "doi": {},
+        "pmid": {},
+    }
+
+    for record in records:
+        doi = _normalize_base_study_identifier(record.doi)
+        pmid = _normalize_base_study_identifier(record.pmid)
+
+        if doi:
+            lookup["doi"][doi] = record
+        if pmid:
+            lookup["pmid"][pmid] = record
+        if doi or pmid:
+            lookup["combined"][_base_study_lookup_key(doi, pmid)] = record
+
+    return lookup
+
+
+def _match_base_study_lookup_record(lookup, study_data):
+    doi = _normalize_base_study_identifier(study_data.get("doi"))
+    pmid = _normalize_base_study_identifier(study_data.get("pmid"))
+    key = _base_study_lookup_key(doi, pmid)
+
+    if not key or key.isspace():
+        return None
+
+    if doi and pmid:
+        return lookup["combined"].get(key)
+    if doi:
+        return lookup["doi"].get(doi)
+    return lookup["pmid"].get(pmid)
+
+
+def _register_base_study_lookup_record(lookup, record):
+    doi = _normalize_base_study_identifier(record.doi)
+    pmid = _normalize_base_study_identifier(record.pmid)
+
+    if doi:
+        lookup["doi"][doi] = record
+    if pmid:
+        lookup["pmid"][pmid] = record
+    if doi or pmid:
+        lookup["combined"][_base_study_lookup_key(doi, pmid)] = record
+
+
+def _prefetch_base_study_lookup_records(dois, pmids):
+    filters = []
+    if dois:
+        filters.append(BaseStudy.doi.in_(sorted(dois)))
+    if pmids:
+        filters.append(BaseStudy.pmid.in_(sorted(pmids)))
+    if not filters:
+        return []
+
+    return (
+        BaseStudy.query.filter(sa.or_(*filters))
+        .options(*_base_study_response_load_options())
+        .all()
+    )
+
+
+def _load_base_study_response_records(base_study_ids):
+    if not base_study_ids:
+        return []
+
+    records = (
+        BaseStudy.query.filter(BaseStudy.id.in_(list(base_study_ids)))
+        .options(*_base_study_response_load_options())
+        .all()
+    )
+
+    records_by_id = {record.id: record for record in records}
+    return [records_by_id[base_study_id] for base_study_id in base_study_ids]
+
+
 # Individual resource views
 
 
@@ -683,13 +809,13 @@ class StudysetsView(ObjectView, ListView):
             "studyset_studies": studyset_studies,
         }
 
-    def post(self):
+    def post(self, body):
         args = parser.parse(self._user_args, request, location="query")
         copy_annotations = args.pop("copy_annotations", True)
         source_id = args.get("source_id")
 
         if not source_id:
-            return super().post()
+            return super().post(body)
 
         source = args.get("source") or "neurostore"
         if source != "neurostore":
@@ -699,9 +825,8 @@ class StudysetsView(ObjectView, ListView):
             )
 
         unknown = self.__class__._schema.opts.unknown
-        data = parser.parse(
-            self.__class__._schema(exclude=("id",)), request, unknown=unknown
-        )
+        schema = self.__class__._schema(exclude=("id",))
+        data = schema.load(body, unknown=unknown)
 
         clone_payload, source_record = self._build_clone_payload(source_id, data)
 
@@ -2353,75 +2478,64 @@ class BaseStudiesView(ObjectView, ListView):
             q = q.options(selectinload(self._model.versions))
         return super().join_tables(q, args)
 
-    def post(self):
+    @staticmethod
+    def _ensure_bulk_post_user():
+        current_user = get_current_user()
+        if current_user is not None:
+            return current_user
+
+        current_user = create_user()
+        db.session.add(current_user)
+        return current_user
+
+    @staticmethod
+    def _create_initial_version(record, study_data, current_user):
+        version = StudiesView._model()
+        version.base_study = record
+        version.user = current_user
+        version = StudiesView.update_or_create(
+            study_data, record=version, user=current_user, flush=False
+        )
+        record.versions.append(version)
+        return version
+
+    def post(self, body):
         # the request is either a list or a dict
-        if isinstance(request.json, dict):
-            return super().post()
+        if isinstance(body, dict):
+            return super().post(body)
         # in the list scenario, try to find an existing record
         # then return the best version and return that study id
-        data = parser.parse(self.__class__._schema(many=True), request)
+        schema = self.__class__._schema(many=True)
+        data = schema.load(body)
         base_studies = []
         to_commit = []
-        pmids = [sd["pmid"] for sd in data if sd.get("pmid")]
-        dois = [sd["doi"] for sd in data if sd.get("doi")]
-        names = [sd["name"] for sd in data if sd.get("name")]
-        results = (
-            BaseStudy.query.filter(
-                (BaseStudy.doi.in_(dois))
-                | (BaseStudy.pmid.in_(pmids))
-                | (BaseStudy.name.in_(names))
-            )
-            .options(
-                selectinload(BaseStudy.versions).options(
-                    selectinload(Study.studyset_studies).selectinload(
-                        StudysetStudy.studyset
-                    ),
-                    selectinload(Study.user),
-                ),
-                selectinload(BaseStudy.user),
-            )
-            .all()
-        )
-        hashed_results = {}
-        for bs in results:
-            doi = bs.doi or ""
-            pmid = bs.pmid or ""
-            lookup_hash = doi + pmid
-            if doi:
-                hashed_results[doi] = bs
-            if pmid:
-                hashed_results[pmid] = bs
-            hashed_results[lookup_hash] = bs
+        changed_base_study_records = []
+        dois, pmids = _collect_base_study_lookup_identifiers(data)
+        results = _prefetch_base_study_lookup_records(dois, pmids)
+        lookup = _build_base_study_lookup(results)
+        current_user = None
         for study_data in data:
-            doi = study_data.get("doi", "") or ""
-            pmid = study_data.get("pmid", "") or ""
-            lookup_hash = doi + pmid
-            if lookup_hash == "" or lookup_hash.isspace():
-                record = None
-            else:
-                record = hashed_results.get(lookup_hash)
+            record = _match_base_study_lookup_record(lookup, study_data)
             if record is None:
+                if current_user is None:
+                    current_user = self._ensure_bulk_post_user()
                 with db.session.no_autoflush:
-                    record = self.__class__.update_or_create(study_data, flush=False)
+                    record = self.__class__.update_or_create(
+                        study_data, user=current_user, flush=False
+                    )
                 # track new base studies
                 to_commit.append(record)
+                _register_base_study_lookup_record(lookup, record)
+                changed_base_study_records.append(record)
             base_studies.append(record)
-            versions = record.versions
-            if len(versions) == 0:
-                current_user = get_current_user()
-                if not current_user:
-                    current_user = create_user()
-
-                    db.session.add(current_user)
-                    db.session.commit()
-                version = StudiesView._model()
-                version.base_study = record
-                version.user = current_user
-                version = StudiesView.update_or_create(
-                    study_data, record=version, user=current_user, flush=False
+            record_has_versions = bool(record.versions)
+            if not record_has_versions:
+                if current_user is None:
+                    current_user = self._ensure_bulk_post_user()
+                to_commit.append(
+                    self._create_initial_version(record, study_data, current_user)
                 )
-                record.versions.append(version)
-                to_commit.append(version)
+                changed_base_study_records.append(record)
             # elif len(versions) == 1:
             #     version = record.versions[0]
             # else:
@@ -2438,14 +2552,20 @@ class BaseStudiesView(ObjectView, ListView):
             db.session.add_all(to_commit)
             db.session.flush()
 
-        # clear the cache for this record
-        unique_ids = self.get_affected_ids([bs.id for bs in base_studies])
-        clear_cache(unique_ids)
-        self.update_base_studies(unique_ids.get("base-studies"))
-
-        db.session.commit()
-
-        return self._schema(context={"info": True}, many=True).dump(base_studies)
+        changed_base_study_ids = sorted(
+            {record.id for record in changed_base_study_records if record.id}
+        )
+        if changed_base_study_ids:
+            unique_ids = self.get_affected_ids(changed_base_study_ids)
+            clear_cache(unique_ids)
+            self.update_base_studies(unique_ids.get("base-studies"))
+            db.session.commit()
+            response_records = _load_base_study_response_records(
+                [bs.id for bs in base_studies]
+            )
+        else:
+            response_records = base_studies
+        return self._schema(context={"info": True}, many=True).dump(response_records)
 
 
 @view_maker

@@ -1,7 +1,6 @@
 """Pipeline related resources"""
 
 from sqlalchemy import text, and_, or_
-from flask import request
 from neurostore.exceptions.utils.error_helpers import abort_validation
 from neurostore.exceptions.factories import make_field_error
 
@@ -283,24 +282,22 @@ class PipelineStudyResultsView(ObjectView, ListView):
         )
         return q
 
-    def post(self):
+    def post(self, body):
         """
         If 'study_ids' is present in the request body, treat as a search (bypass authorization).
         Only study_ids are in the body; all other filters are in the query string.
         Otherwise, treat as a creation (require authorization).
         """
-        data = request.get_json() or {}
-
-        if "study_ids" in data:
+        if "study_ids" in body:
             # Bypass authorization for search requests
             # Convert study_ids to study_id for consistent filtering
-            study_ids = data.get("study_ids", [])
+            study_ids = body.get("study_ids", [])
             extra_args = {"study_id": study_ids}
             # Call cached search (enables cache for study_ids POST)
             return self.search(extra_args=extra_args)
         else:
             # Standard POST: require authorization (enforced by OpenAPI and Flask)
-            return super().post(self)
+            return super().post(body)
 
 
 @view_maker

@@ -8,6 +8,7 @@ import re
 from connexion.context import context
 from flask import request, current_app  # jsonify
 from flask.views import MethodView
+from marshmallow import ValidationError
 from ..exceptions.utils.error_helpers import (
     abort_permission,
     abort_validation,
@@ -775,7 +776,7 @@ class ListView(BaseView):
         }
         return response, 200
 
-    def post(self):
+    def post(self, body):
         # TODO: check to make sure current user hasn't already created a
         # record with most/all of the same details (e.g., DOI for studies)
 
@@ -785,9 +786,13 @@ class ListView(BaseView):
         source = args.get("source") or "neurostore"
 
         unknown = self.__class__._schema.opts.unknown
-        data = parser.parse(
-            self.__class__._schema(exclude=("id",)), request, unknown=unknown
-        )
+        schema = self.__class__._schema(exclude=("id",))
+        try:
+            data = schema.load(body, unknown=unknown)
+        except ValidationError as err:
+            abort_unprocessable(
+                f"input does not conform to specification: {json.dumps(err.messages)}"
+            )
 
         if source_id:
             data = self._load_from_source(source, source_id, data)
