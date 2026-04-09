@@ -498,7 +498,12 @@ class StudysetsView(ObjectView, ListView):
                 .select_from(Analysis)
                 .join(StudysetStudy, StudysetStudy.study_id == Analysis.study_id)
                 .where(StudysetStudy.studyset_id == studyset_id)
-                .order_by(Analysis.study_id, Analysis.order.is_(None), Analysis.order, Analysis.id)
+                .order_by(
+                    Analysis.study_id,
+                    Analysis.order.is_(None),
+                    Analysis.order,
+                    Analysis.id,
+                )
             ).all()
         else:
             analysis_rows = []
@@ -521,7 +526,9 @@ class StudysetsView(ObjectView, ListView):
                 .join(Analysis, Analysis.id == Point.analysis_id)
                 .join(StudysetStudy, StudysetStudy.study_id == Analysis.study_id)
                 .where(StudysetStudy.studyset_id == studyset_id)
-                .order_by(Point.analysis_id, Point.order.is_(None), Point.order, Point.id)
+                .order_by(
+                    Point.analysis_id, Point.order.is_(None), Point.order, Point.id
+                )
             ).all()
 
             point_value_rows = db.session.execute(
@@ -625,7 +632,14 @@ class StudysetsView(ObjectView, ListView):
                 .where(StudysetStudy.studyset_id == studyset_id)
                 .order_by(AnalysisConditions.analysis_id, Condition.id)
             ).all()
-            for analysis_id, weight, condition_id, user_id, name, description in condition_rows:
+            for (
+                analysis_id,
+                weight,
+                condition_id,
+                user_id,
+                name,
+                description,
+            ) in condition_rows:
                 conditions_by_analysis[analysis_id].append(
                     {
                         "id": condition_id,

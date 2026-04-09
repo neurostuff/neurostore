@@ -1714,9 +1714,9 @@ def test_metadata_and_flag_workers_do_not_deadlock_on_same_base_study(
     def _patched_recompute(base_study_ids):
         flag_service.db.session.execute(sa.text("SET deadlock_timeout = '100ms'"))
         flag_has_outbox_lock.set()
-        assert metadata_has_base_lock.wait(timeout=5), (
-            "metadata worker never locked base study"
-        )
+        assert metadata_has_base_lock.wait(
+            timeout=5
+        ), "metadata worker never locked base study"
         flag_service.db.session.execute(
             sa.update(BaseStudy)
             .where(BaseStudy.id.in_(base_study_ids))
@@ -1728,9 +1728,7 @@ def test_metadata_and_flag_workers_do_not_deadlock_on_same_base_study(
             "analyses": set(),
         }
 
-    monkeypatch.setattr(
-        metadata_service, "enrich_base_study_metadata", _patched_enrich
-    )
+    monkeypatch.setattr(metadata_service, "enrich_base_study_metadata", _patched_enrich)
     monkeypatch.setattr(flag_service, "recompute_media_flags", _patched_recompute)
 
     def _run(name, fn):
@@ -1832,9 +1830,9 @@ def test_metadata_worker_propagation_does_not_deadlock_with_study_then_base_writ
 
     def _patched_propagate(base_study_record):
         propagation_started.set()
-        assert request_has_study_lock.wait(timeout=5), (
-            "request transaction never locked study row"
-        )
+        assert request_has_study_lock.wait(
+            timeout=5
+        ), "request transaction never locked study row"
         return original_propagate(base_study_record)
 
     monkeypatch.setattr(
@@ -1869,9 +1867,9 @@ def test_metadata_worker_propagation_does_not_deadlock_with_study_then_base_writ
                     .with_for_update(of=Study)
                 ).scalar_one()
                 request_has_study_lock.set()
-                assert propagation_started.wait(timeout=5), (
-                    "metadata worker never reached propagation"
-                )
+                assert propagation_started.wait(
+                    timeout=5
+                ), "metadata worker never reached propagation"
                 scoped_session.execute(
                     sa.update(BaseStudy)
                     .where(BaseStudy.id == base_study.id)
