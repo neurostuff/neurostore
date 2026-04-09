@@ -2,6 +2,7 @@
 
 import datetime as dt
 
+import pytest
 from sqlalchemy import text
 from sqlalchemy.orm import aliased
 from sqlalchemy.sql import func
@@ -2171,3 +2172,109 @@ def test_is_active_not_exposed_in_api(auth_client, ingest_neurosynth):
         # Verify internal fields are not exposed
         assert "is_active" not in result
         assert "superseded_by" not in result
+
+
+def test_metadata_requests_throttle_semantic_scholar_by_configured_rps(
+    app, monkeypatch
+):
+    from neurostore.services import base_study_metadata_enrichment as metadata_service
+
+    class FakeResponse:
+        status_code = 200
+
+    class FakeClock:
+        def __init__(self):
+            self.now = 100.0
+            self.sleeps = []
+
+        def monotonic(self):
+            return self.now
+
+        def sleep(self, seconds):
+            self.sleeps.append(seconds)
+            self.now += seconds
+
+    fake_clock = FakeClock()
+    calls = []
+    metadata_service._reset_provider_rate_limits()
+    app.config["SEMANTIC_SCHOLAR_API_RPS"] = 1
+
+    monkeypatch.setattr(metadata_service.time, "monotonic", fake_clock.monotonic)
+    monkeypatch.setattr(metadata_service.time, "sleep", fake_clock.sleep)
+    monkeypatch.setattr(
+        metadata_service.requests,
+        "request",
+        lambda method, url, **kwargs: calls.append((method, url, kwargs))
+        or FakeResponse(),
+    )
+
+    metadata_service._request_with_retry(
+        "POST",
+        "https://api.semanticscholar.org/graph/v1/paper/batch",
+        headers={"x-api-key": "semantic-key"},
+    )
+    metadata_service._request_with_retry(
+        "POST",
+        "https://api.semanticscholar.org/graph/v1/paper/batch",
+        headers={"x-api-key": "semantic-key"},
+    )
+
+    assert len(calls) == 2
+    assert fake_clock.sleeps == pytest.approx([1.01])
+
+
+def test_metadata_requests_throttle_pubmed_by_key_presence(app, monkeypatch):
+    from neurostore.services import base_study_metadata_enrichment as metadata_service
+
+    class FakeResponse:
+        status_code = 200
+
+    class FakeClock:
+        def __init__(self):
+            self.now = 200.0
+            self.sleeps = []
+
+        def monotonic(self):
+            return self.now
+
+        def sleep(self, seconds):
+            self.sleeps.append(seconds)
+            self.now += seconds
+
+    fake_clock = FakeClock()
+    metadata_service._reset_provider_rate_limits()
+    app.config["PUBMED_API_RPS_WITH_KEY"] = 10
+    app.config["PUBMED_API_RPS_WITHOUT_KEY"] = 3
+
+    monkeypatch.setattr(metadata_service.time, "monotonic", fake_clock.monotonic)
+    monkeypatch.setattr(metadata_service.time, "sleep", fake_clock.sleep)
+    monkeypatch.setattr(
+        metadata_service.requests,
+        "request",
+        lambda *_args, **_kwargs: FakeResponse(),
+    )
+
+    metadata_service._request_with_retry(
+        "GET",
+        "https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/",
+        params={"api_key": "pubmed-key"},
+    )
+    metadata_service._request_with_retry(
+        "GET",
+        "https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/",
+        params={"api_key": "pubmed-key"},
+    )
+    metadata_service._reset_provider_rate_limits()
+    fake_clock.now = 300.0
+    metadata_service._request_with_retry(
+        "GET",
+        "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi",
+        params={},
+    )
+    metadata_service._request_with_retry(
+        "GET",
+        "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi",
+        params={},
+    )
+
+    assert fake_clock.sleeps == pytest.approx([0.11, (1.0 / 3.0) + 0.01])
