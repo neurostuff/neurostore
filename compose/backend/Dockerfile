@@ -1,18 +1,18 @@
 FROM python:3.11-bullseye
 ARG DEBIAN_FRONTEND=noninteractive
+ARG NODE_MAJOR=18
 
 RUN mkdir -p /compose/backend
 WORKDIR /compose/backend
 
 RUN apt-get -qq update
-RUN apt-get install -y --no-install-recommends ca-certificates gnupg dirmngr
+RUN apt-get install -y --no-install-recommends ca-certificates curl gnupg dirmngr
 
 RUN wget -O- http://neuro.debian.net/lists/stretch.us-nh.full | tee /etc/apt/sources.list.d/neurodebian.sources.list && apt-key adv --recv-keys --keyserver hkps://keyserver.ubuntu.com 0xA5D32F012649A5A9
-RUN mkdir -p /tmp/gnupg && chmod 700 /tmp/gnupg && \
-    GNUPGHOME=/tmp/gnupg gpg --keyserver hkps://keyserver.ubuntu.com --recv-keys 1655A0AB68576280 && \
-    GNUPGHOME=/tmp/gnupg gpg --export 1655A0AB68576280 | gpg --dearmor -o /usr/share/keyrings/nodesource.gpg && \
-    rm -rf /tmp/gnupg
-RUN echo "deb [signed-by=/usr/share/keyrings/nodesource.gpg] https://deb.nodesource.com/node_18.x bullseye main" | tee /etc/apt/sources.list.d/nodesource.list
+RUN mkdir -p /etc/apt/keyrings && \
+    curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | \
+    gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg
+RUN echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_${NODE_MAJOR}.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list
 RUN apt-get update --allow-releaseinfo-change
 RUN apt-get install -y nodejs
 
