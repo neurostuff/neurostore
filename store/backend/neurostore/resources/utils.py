@@ -4,11 +4,13 @@ Resource-specific utilities for View construction and function
 
 import re
 
+import sqlalchemy as sa
 from connexion.context import context
 from psycopg2 import errors
 
 from .. import models
 from .. import schemas
+from ..database import db
 from .singular import singularize
 
 
@@ -65,14 +67,16 @@ def is_user_admin(user=_UNSET):
     # Load roles eagerly to avoid lazy loading when raise_on_sql is enabled.
     from sqlalchemy.orm import selectinload
 
-    if user.id is None:
+    user_identity = sa.inspect(user).identity
+    if not user_identity:
         return False
 
-    user_with_roles = (
-        models.User.query.options(selectinload(models.User.roles))
-        .filter_by(id=user.id)
-        .first()
-    )
+    with db.session.no_autoflush:
+        user_with_roles = db.session.scalar(
+            sa.select(models.User)
+            .options(selectinload(models.User.roles))
+            .where(models.User.id == user_identity[0])
+        )
 
     if user_with_roles is None:
         is_admin = False
