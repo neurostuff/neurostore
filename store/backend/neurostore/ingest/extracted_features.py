@@ -1,13 +1,13 @@
 """Ingest extracted features into the database."""
 
+import hashlib
 import json
+import logging
 import os.path as op
 from pathlib import Path
-from dateutil.parser import parse as parse_date
 
-import hashlib
-import logging
 import sqlalchemy as sa
+from dateutil.parser import parse as parse_date
 from sqlalchemy.sql import quoted_name
 
 # numpy is optional for type compatibility; runtime checks handle absence
@@ -18,11 +18,11 @@ except Exception:  # pragma: no cover - numpy may not be installed in test env
 
 from neurostore.database import db
 from neurostore.models import (
+    BaseStudy,
     Pipeline,
     PipelineConfig,
-    PipelineStudyResult,
-    BaseStudy,
     PipelineEmbedding,
+    PipelineStudyResult,
 )
 from neurostore.models.data import generate_id
 

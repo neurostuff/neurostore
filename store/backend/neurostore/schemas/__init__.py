@@ -1,29 +1,27 @@
-from .data import (
-    StudySchema,
+from neurostore.schemas.auth import UserSchema
+from neurostore.schemas.data import (
+    AnalysisConditionSchema,
     AnalysisSchema,
+    AnnotationAnalysisSchema,
+    AnnotationSchema,
     BaseStudySchema,
+    BooleanOrString,
     ConditionSchema,
+    EntitySchema,
     ImageSchema,
     PointSchema,
-    StudysetSchema,
     PointValueSchema,
-    AnalysisConditionSchema,
-    AnnotationSchema,
-    AnnotationAnalysisSchema,
-    StudysetStudySchema,
+    StudySchema,
+    StudysetSchema,
     StudysetSnapshot,
-    EntitySchema,
-    BooleanOrString,
+    StudysetStudySchema,
     TableSchema,
 )
-
-from .auth import UserSchema
-
-from .pipeline import (
-    PipelineSchema,
+from neurostore.schemas.pipeline import (
     PipelineConfigSchema,
-    PipelineStudyResultSchema,
     PipelineEmbeddingSchema,
+    PipelineSchema,
+    PipelineStudyResultSchema,
 )
 
 __all__ = [

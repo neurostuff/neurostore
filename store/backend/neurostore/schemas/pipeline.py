@@ -3,12 +3,12 @@
 from marshmallow import fields, post_dump
 
 from neurostore.models import (
-    PipelineStudyResult,
     Pipeline,
     PipelineConfig,
     PipelineEmbedding,
+    PipelineStudyResult,
 )
-from neurostore.schemas.data import BaseStudySchema, BaseSchema
+from neurostore.schemas.data import BaseSchema, BaseStudySchema
 
 
 class PipelineSchema(BaseSchema):

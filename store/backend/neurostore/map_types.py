@@ -2,7 +2,6 @@
 
 import re
 
-
 MAP_TYPE_CHOICES = (
     ("T", "T map"),
     ("Z", "Z map"),

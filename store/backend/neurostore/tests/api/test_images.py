@@ -1,4 +1,4 @@
-from ...models import Study, Analysis, User, Image
+from neurostore.models import Analysis, Image, Study, User
 
 
 def test_get_images(auth_client, ingest_neurovault, session):

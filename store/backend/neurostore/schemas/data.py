@@ -1,18 +1,17 @@
+import orjson
 from marshmallow import (
-    fields,
+    EXCLUDE,
     Schema,
     SchemaOpts,
+    ValidationError,
+    fields,
     post_dump,
+    post_load,
     pre_dump,
     pre_load,
-    post_load,
     validates_schema,
-    EXCLUDE,
-    ValidationError,
 )
-
 from sqlalchemy import func
-import orjson
 
 from neurostore.database import db
 from neurostore.map_types import canonicalize_map_type, map_type_label
@@ -561,7 +560,7 @@ class BaseStudySchema(BaseDataSchema):
     pubget_fulltext = fields.String(load_only=True, allow_none=True)
 
     def get_features(self, obj):
-        from .pipeline import PipelineStudyResultSchema
+        from neurostore.schemas.pipeline import PipelineStudyResultSchema
 
         pipelines = self.context.get("feature_display", None)
         pipeline_configs = self.context.get("pipeline_config", None)
