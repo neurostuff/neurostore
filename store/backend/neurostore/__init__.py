@@ -19,10 +19,12 @@ from flask_orjson import OrjsonProvider
 from neurostore.config import resolve_config_object
 from neurostore.database import init_db
 from neurostore.exceptions.base import NeuroStoreException
-from neurostore.exceptions.handlers import (flask_general_body_and_status,
-                                            flask_neurostore_body_and_status,
-                                            general_exception_handler,
-                                            neurostore_exception_handler)
+from neurostore.exceptions.handlers import (
+    flask_general_body_and_status,
+    flask_neurostore_body_and_status,
+    general_exception_handler,
+    neurostore_exception_handler,
+)
 from neurostore.extensions import cache
 from neurostore.resources import iter_request_body_validation_skip_rules
 from neurostore.resources.auth import AuthError, handle_auth_error
@@ -53,7 +55,9 @@ def _normalize_request_path(path):
     return normalized
 
 
-_NON_DEBUG_BODY_VALIDATION_SKIP_ROUTES = tuple(iter_request_body_validation_skip_rules())
+_NON_DEBUG_BODY_VALIDATION_SKIP_ROUTES = tuple(
+    iter_request_body_validation_skip_rules()
+)
 
 
 def _path_matches_template(path, template):
@@ -82,7 +86,9 @@ def _should_skip_request_body_validation(scope):
     path = _normalize_request_path(scope.get("path"))
 
     for rule_method, rule_path in _NON_DEBUG_BODY_VALIDATION_SKIP_ROUTES:
-        if method == str(rule_method).upper() and _path_matches_template(path, rule_path):
+        if method == str(rule_method).upper() and _path_matches_template(
+            path, rule_path
+        ):
             return True
     return False
 
@@ -114,9 +120,7 @@ def create_app():
     connexion_app = connexion.FlaskApp(__name__, specification_dir="openapi/")
     app = connexion_app.app
     disable_connexion_validation = _env_flag("CONNEXION_DISABLE_VALIDATION")
-    disable_connexion_body_validation = _env_flag(
-        "CONNEXION_DISABLE_BODY_VALIDATION"
-    )
+    disable_connexion_body_validation = _env_flag("CONNEXION_DISABLE_BODY_VALIDATION")
 
     app.config.from_object(resolve_config_object())
     app.config["DEBUG"] = _env_flag("DEBUG")
@@ -138,12 +142,26 @@ def create_app():
         client_kwargs={"scope": "openid profile email"},
     )
 
-    from neurostore.models import (Analysis, AnalysisConditions, Annotation,
-                                   AnnotationAnalysis, BaseStudy,
-                                   BaseStudyFlagOutbox,
-                                   BaseStudyMetadataOutbox, Condition, Entity,
-                                   Image, Point, PointValue, Role, Study,
-                                   Studyset, StudysetStudy, Table, User)
+    from neurostore.models import (
+        Analysis,
+        AnalysisConditions,
+        Annotation,
+        AnnotationAnalysis,
+        BaseStudy,
+        BaseStudyFlagOutbox,
+        BaseStudyMetadataOutbox,
+        Condition,
+        Entity,
+        Image,
+        Point,
+        PointValue,
+        Role,
+        Study,
+        Studyset,
+        StudysetStudy,
+        Table,
+        User,
+    )
 
     def _get_admin_credentials():
         username = app.config.get("FLASK_ADMIN_USERNAME")

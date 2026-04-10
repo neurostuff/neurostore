@@ -5,16 +5,25 @@ import threading
 
 import pytest
 import sqlalchemy as sa
-from neurostore.models import (Analysis, BaseStudy, BaseStudyFlagOutbox,
-                               BaseStudyMetadataOutbox, Image, Pipeline,
-                               PipelineConfig, PipelineEmbedding,
-                               PipelineStudyResult, Study, User)
+from neurostore.models import (
+    Analysis,
+    BaseStudy,
+    BaseStudyFlagOutbox,
+    BaseStudyMetadataOutbox,
+    Image,
+    Pipeline,
+    PipelineConfig,
+    PipelineEmbedding,
+    PipelineStudyResult,
+    Study,
+    User,
+)
 from neurostore.schemas import StudySchema
 from neurostore.services.base_study_metadata_enrichment import (
     enqueue_base_study_metadata_updates,
-    process_base_study_metadata_outbox_batch)
-from neurostore.services.has_media_flags import \
-    process_base_study_flag_outbox_batch
+    process_base_study_metadata_outbox_batch,
+)
+from neurostore.services.has_media_flags import process_base_study_flag_outbox_batch
 from sqlalchemy import event, text
 from sqlalchemy.orm import aliased
 from sqlalchemy.sql import func
@@ -338,7 +347,7 @@ def test_flat_base_study_search_avoids_version_hydration_queries(
 
     assert response.status_code == 200
     assert all(
-        ' join studies ' not in statement and ' from studies ' not in statement
+        " join studies " not in statement and " from studies " not in statement
         for statement in statements
     )
 
@@ -955,8 +964,7 @@ def test_base_study_bulk_create_enqueues_metadata_outbox(auth_client, app):
 def test_metadata_worker_merges_duplicates_and_keeps_existing_metadata(
     session, app, monkeypatch
 ):
-    from neurostore.services import \
-        base_study_metadata_enrichment as metadata_service
+    from neurostore.services import base_study_metadata_enrichment as metadata_service
 
     primary = BaseStudy(
         name="Curated Title",
@@ -1079,8 +1087,7 @@ def test_metadata_worker_merges_duplicates_and_keeps_existing_metadata(
 
 
 def test_metadata_worker_merge_avoids_doi_pmid_unique_conflict(session, monkeypatch):
-    from neurostore.services import \
-        base_study_metadata_enrichment as metadata_service
+    from neurostore.services import base_study_metadata_enrichment as metadata_service
 
     primary = BaseStudy(
         name="Primary Record",
@@ -1144,8 +1151,7 @@ def test_metadata_worker_merge_avoids_doi_pmid_unique_conflict(session, monkeypa
 def test_metadata_worker_merge_reassigns_pipeline_rows(
     session, ingest_demographic_features, monkeypatch
 ):
-    from neurostore.services import \
-        base_study_metadata_enrichment as metadata_service
+    from neurostore.services import base_study_metadata_enrichment as metadata_service
 
     primary = (
         session.query(BaseStudy)
@@ -1275,8 +1281,7 @@ def test_metadata_worker_merge_reassigns_pipeline_rows(
 
 
 def test_metadata_worker_defers_failed_rows(session, app, monkeypatch):
-    from neurostore.services import \
-        base_study_metadata_enrichment as metadata_service
+    from neurostore.services import base_study_metadata_enrichment as metadata_service
 
     delay_original = app.config.get("BASE_STUDY_METADATA_RETRY_DELAY_SECONDS", "30")
     app.config["BASE_STUDY_METADATA_RETRY_DELAY_SECONDS"] = "120"
@@ -1317,8 +1322,7 @@ def test_metadata_worker_defers_failed_rows(session, app, monkeypatch):
 
 
 def test_metadata_worker_stops_after_first_satisfied_provider(session, monkeypatch):
-    from neurostore.services import \
-        base_study_metadata_enrichment as metadata_service
+    from neurostore.services import base_study_metadata_enrichment as metadata_service
 
     base_study = BaseStudy(
         name=None,
@@ -1407,8 +1411,7 @@ def test_metadata_worker_stops_after_first_satisfied_provider(session, monkeypat
 
 
 def test_metadata_worker_propagates_metadata_to_study_versions(session, monkeypatch):
-    from neurostore.services import \
-        base_study_metadata_enrichment as metadata_service
+    from neurostore.services import base_study_metadata_enrichment as metadata_service
 
     base_study = BaseStudy(
         name=None,
@@ -1531,8 +1534,7 @@ def test_metadata_worker_propagates_metadata_to_study_versions(session, monkeypa
 
 
 def test_metadata_worker_treats_year_zero_as_missing(session, monkeypatch):
-    from neurostore.services import \
-        base_study_metadata_enrichment as metadata_service
+    from neurostore.services import base_study_metadata_enrichment as metadata_service
 
     base_study = BaseStudy(
         name="Existing Name",
@@ -1600,8 +1602,7 @@ def test_metadata_worker_treats_year_zero_as_missing(session, monkeypatch):
 
 
 def test_metadata_worker_uses_new_provider_config_keys(session, app, monkeypatch):
-    from neurostore.services import \
-        base_study_metadata_enrichment as metadata_service
+    from neurostore.services import base_study_metadata_enrichment as metadata_service
 
     base_study = BaseStudy(
         name=None,
@@ -1691,8 +1692,7 @@ def test_metadata_worker_uses_new_provider_config_keys(session, app, monkeypatch
 def test_metadata_and_flag_workers_do_not_deadlock_on_same_base_study(
     session, app, monkeypatch
 ):
-    from neurostore.services import \
-        base_study_metadata_enrichment as metadata_service
+    from neurostore.services import base_study_metadata_enrichment as metadata_service
     from neurostore.services import has_media_flags as flag_service
 
     base_study = BaseStudy(
@@ -1795,8 +1795,7 @@ def test_metadata_and_flag_workers_do_not_deadlock_on_same_base_study(
 def test_metadata_worker_propagation_does_not_deadlock_with_study_then_base_write(
     session, app, monkeypatch
 ):
-    from neurostore.services import \
-        base_study_metadata_enrichment as metadata_service
+    from neurostore.services import base_study_metadata_enrichment as metadata_service
 
     base_study = BaseStudy(
         name=None,
@@ -2089,9 +2088,9 @@ def test_config_and_feature_filters(auth_client, ingest_demographic_features, se
 def test_feature_filter_with_version_uses_latest_result_within_that_version(
     auth_client, ingest_demographic_features, session
 ):
-    pipeline = session.query(Pipeline).filter_by(
-        name="ParticipantDemographicsExtractor"
-    ).one()
+    pipeline = (
+        session.query(Pipeline).filter_by(name="ParticipantDemographicsExtractor").one()
+    )
     base_study = session.query(BaseStudy).order_by(BaseStudy.id).first()
     original_result = (
         session.query(PipelineStudyResult)
@@ -2532,8 +2531,7 @@ def test_is_active_not_exposed_in_api(auth_client, ingest_neurosynth):
 def test_metadata_requests_throttle_semantic_scholar_by_configured_rps(
     app, monkeypatch
 ):
-    from neurostore.services import \
-        base_study_metadata_enrichment as metadata_service
+    from neurostore.services import base_study_metadata_enrichment as metadata_service
 
     class FakeResponse:
         status_code = 200
@@ -2580,8 +2578,7 @@ def test_metadata_requests_throttle_semantic_scholar_by_configured_rps(
 
 
 def test_metadata_requests_throttle_pubmed_by_key_presence(app, monkeypatch):
-    from neurostore.services import \
-        base_study_metadata_enrichment as metadata_service
+    from neurostore.services import base_study_metadata_enrichment as metadata_service
 
     class FakeResponse:
         status_code = 200

@@ -138,9 +138,7 @@ def _extract_search_term(base_study_name: str, fallback_id: str) -> str:
 
 def _resolve_scale(desired: int, available: int, *, minimum: int, label: str) -> int:
     if available < minimum:
-        raise RuntimeError(
-            f"Need at least {minimum} {label}, found {available}"
-        )
+        raise RuntimeError(f"Need at least {minimum} {label}, found {available}")
     return min(desired, available)
 
 
@@ -208,7 +206,9 @@ def _case_workload_info(
     if metadata.get("requested_count") is not None or case["name"].startswith(
         "post_base_studies_bulk_full_objects"
     ):
-        current_size = int(metadata.get("requested_count") or results["bulk_post_count"])
+        current_size = int(
+            metadata.get("requested_count") or results["bulk_post_count"]
+        )
         target_size = min(
             target_scale,
             int(results.get("available_bulk_post_count") or target_scale),
@@ -298,7 +298,9 @@ class _ThreadAwareProfiler:
         return (code.co_filename, code.co_firstlineno, code.co_name)
 
     @staticmethod
-    def _ensure_stat(stats_by_function: dict, function_key: tuple[str, int, str]) -> dict:
+    def _ensure_stat(
+        stats_by_function: dict, function_key: tuple[str, int, str]
+    ) -> dict:
         return stats_by_function.setdefault(
             function_key,
             {
@@ -324,7 +326,9 @@ class _ThreadAwareProfiler:
             )
         )
 
-    def _finalize_frame(self, state: dict, frame_state: _ThreadProfileFrame, now: float) -> None:
+    def _finalize_frame(
+        self, state: dict, frame_state: _ThreadProfileFrame, now: float
+    ) -> None:
         elapsed_seconds = max(0.0, now - frame_state.started_at)
         self_seconds = max(0.0, elapsed_seconds - frame_state.child_seconds)
         stat = self._ensure_stat(state["stats"], frame_state.function_key)
@@ -485,7 +489,9 @@ def _build_scaling_case_analysis(case_runs: list[dict], *, service: str) -> dict
         "raw_case_samples": case_runs_summary,
         "case_slope_seconds_per_unit": case_fit["slope"],
         "case_intercept_seconds": case_fit["intercept"],
-        "projected_case_seconds_at_target": _project_line(case_fit, target_workload_size),
+        "projected_case_seconds_at_target": _project_line(
+            case_fit, target_workload_size
+        ),
         "functions": function_analyses,
     }
 
@@ -573,8 +579,7 @@ def _pick_seed_studies_from_base_studies(
                 Study.public.is_(True),
             )
             .order_by(BaseStudy.id, Study.id),
-            select(func.count())
-            .select_from(
+            select(func.count()).select_from(
                 select(BaseStudy.id)
                 .join(Study, Study.base_study_id == BaseStudy.id)
                 .where(
@@ -594,8 +599,7 @@ def _pick_seed_studies_from_base_studies(
                 Study.public.is_(True),
             )
             .order_by(BaseStudy.id, Study.id),
-            select(func.count())
-            .select_from(
+            select(func.count()).select_from(
                 select(BaseStudy.id)
                 .join(Study, Study.base_study_id == BaseStudy.id)
                 .where(
@@ -638,7 +642,9 @@ def _pick_seed_studies_from_base_studies(
     return base_study_ids, study_ids, search_term, available_count
 
 
-def _pick_bulk_post_payload(limit: int | None = None) -> tuple[list[dict[str, str]], int]:
+def _pick_bulk_post_payload(
+    limit: int | None = None,
+) -> tuple[list[dict[str, str]], int]:
     rows = []
     seen_base_studies = set()
     query = (
@@ -753,24 +759,18 @@ class _SqlTimingCollector:
         self.total_seconds += perf_counter() - started
 
     def __enter__(self):
-        event.listen(
-            self._engine, "before_cursor_execute", self._before_cursor_execute
-        )
-        event.listen(
-            self._engine, "after_cursor_execute", self._after_cursor_execute
-        )
+        event.listen(self._engine, "before_cursor_execute", self._before_cursor_execute)
+        event.listen(self._engine, "after_cursor_execute", self._after_cursor_execute)
         return self
 
     def __exit__(self, exc_type, exc, tb):
-        event.remove(
-            self._engine, "before_cursor_execute", self._before_cursor_execute
-        )
-        event.remove(
-            self._engine, "after_cursor_execute", self._after_cursor_execute
-        )
+        event.remove(self._engine, "before_cursor_execute", self._before_cursor_execute)
+        event.remove(self._engine, "after_cursor_execute", self._after_cursor_execute)
 
 
-def _write_profile_artifacts(profile_dir: Path, name: str, profiler, sql_collector) -> dict:
+def _write_profile_artifacts(
+    profile_dir: Path, name: str, profiler, sql_collector
+) -> dict:
     profile_dir.mkdir(parents=True, exist_ok=True)
     stats_path = profile_dir / f"{name}.profile.json"
     summary_path = profile_dir / f"{name}.summary.txt"
@@ -831,7 +831,9 @@ def _benchmark_case(
         sql_collector = _SqlTimingCollector(db.engine)
         profiler = _ThreadAwareProfiler() if index == 0 else None
         original_client = client_ref.current if client_ref is not None else None
-        profiled_client = Client(token=TOKEN) if client_ref is not None and profiler else None
+        profiled_client = (
+            Client(token=TOKEN) if client_ref is not None and profiler else None
+        )
 
         with _benchmark_case_rollback(enabled=rollback_after):
             with sql_collector:
@@ -840,7 +842,9 @@ def _benchmark_case(
                     if client_ref is not None and profiled_client is not None:
                         client_ref.current = profiled_client
                     if profiler is not None:
-                        last_metadata = profiler.profile_callable(lambda: fn(index) or {})
+                        last_metadata = profiler.profile_callable(
+                            lambda: fn(index) or {}
+                        )
                     else:
                         last_metadata = fn(index) or {}
                 finally:
@@ -851,7 +855,9 @@ def _benchmark_case(
                 durations.append(perf_counter() - started)
 
         if profiler is not None:
-            profiling = _write_profile_artifacts(profile_dir, name, profiler, sql_collector)
+            profiling = _write_profile_artifacts(
+                profile_dir, name, profiler, sql_collector
+            )
 
     case = {
         "name": name,
@@ -865,9 +871,15 @@ def _benchmark_case(
 
 
 def _pick_seed_analysis_id(study_id: str) -> str:
-    analysis_id = db.session.execute(
-        select(Analysis.id).where(Analysis.study_id == study_id).order_by(Analysis.id)
-    ).scalars().first()
+    analysis_id = (
+        db.session.execute(
+            select(Analysis.id)
+            .where(Analysis.study_id == study_id)
+            .order_by(Analysis.id)
+        )
+        .scalars()
+        .first()
+    )
     if analysis_id is None:
         raise RuntimeError(f"Study {study_id} does not have an analysis to benchmark")
     return analysis_id
@@ -913,7 +925,9 @@ def _list_annotations_for_studyset(client: Client, studyset_id: str) -> dict:
     return _response_json(response)
 
 
-def _list_frontend_base_studies(client: Client, *, search_term: str | None = None) -> dict:
+def _list_frontend_base_studies(
+    client: Client, *, search_term: str | None = None
+) -> dict:
     params = {
         "page": "1",
         "page_size": "10",
@@ -966,7 +980,9 @@ def run(
             study_scale = len(study_ids)
             bulk_post_scale = len(bulk_post_payload)
 
-            shared_studyset_id = _create_large_studyset(client, study_ids, suffix="seed")
+            shared_studyset_id = _create_large_studyset(
+                client, study_ids, suffix="seed"
+            )
             shared_annotation_id = _create_large_annotation(
                 client, shared_studyset_id, suffix="seed"
             )
@@ -981,7 +997,7 @@ def run(
                         "studyset_id": _create_large_studyset(
                             client_ref.current,
                             study_ids,
-                            suffix=f"{index}-{uuid4().hex[:8]}"
+                            suffix=f"{index}-{uuid4().hex[:8]}",
                         ),
                         "study_count": study_scale,
                     },
@@ -996,7 +1012,7 @@ def run(
                         "annotation_id": _create_large_annotation(
                             client_ref.current,
                             shared_studyset_id,
-                            suffix=f"{index}-{uuid4().hex[:8]}"
+                            suffix=f"{index}-{uuid4().hex[:8]}",
                         ),
                         "study_count": study_scale,
                     },
@@ -1023,9 +1039,7 @@ def run(
                         "note_count": len(
                             _load_annotation_payload(
                                 client_ref.current, shared_annotation_id
-                            ).get(
-                                "notes", []
-                            )
+                            ).get("notes", [])
                         )
                     },
                     profile_dir=profile_dir,
@@ -1269,7 +1283,11 @@ def main() -> int:
     output_path = Path(args.output)
     profile_dir = args.profile_dir or os.environ.get("PRODUCTION_BENCHMARK_PROFILE_DIR")
     scales = _parse_scales(
-        args.scales if args.scales is not None else os.environ.get("PRODUCTION_BENCHMARK_SCALES"),
+        (
+            args.scales
+            if args.scales is not None
+            else os.environ.get("PRODUCTION_BENCHMARK_SCALES")
+        ),
         label="scales",
     )
 

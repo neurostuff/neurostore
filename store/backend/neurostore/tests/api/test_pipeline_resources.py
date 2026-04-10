@@ -1,7 +1,11 @@
 import pytest
 from neurostore.database import db
-from neurostore.models.data import (BaseStudy, Pipeline, PipelineConfig,
-                                    PipelineStudyResult)
+from neurostore.models.data import (
+    BaseStudy,
+    Pipeline,
+    PipelineConfig,
+    PipelineStudyResult,
+)
 
 
 @pytest.fixture

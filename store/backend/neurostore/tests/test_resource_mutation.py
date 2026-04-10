@@ -2,13 +2,25 @@ from types import SimpleNamespace
 
 import pytest
 from neurostore.exceptions.base import PermissionError
-from neurostore.models import (Analysis, Annotation, AnnotationAnalysis,
-                               BaseStudy, Point, Study, Studyset,
-                               StudysetStudy, User)
-from neurostore.resources.data import (AnalysesView, AnnotationsView,
-                                       StudiesView, StudysetsView, TablesView)
-from neurostore.resources.data_views.annotations_view import \
-    AnnotationMutationPolicy
+from neurostore.models import (
+    Analysis,
+    Annotation,
+    AnnotationAnalysis,
+    BaseStudy,
+    Point,
+    Study,
+    Studyset,
+    StudysetStudy,
+    User,
+)
+from neurostore.resources.data import (
+    AnalysesView,
+    AnnotationsView,
+    StudiesView,
+    StudysetsView,
+    TablesView,
+)
+from neurostore.resources.data_views.annotations_view import AnnotationMutationPolicy
 from neurostore.tests.utils import ordered_note_keys
 
 
@@ -138,16 +150,15 @@ def test_studyset_membership_only_mutation_reconciles_sorted_associations(
     )
     session.flush()
 
-    persisted = (
-        session.query(StudysetStudy)
-        .filter_by(studyset_id=studyset.id)
-        .all()
-    )
+    persisted = session.query(StudysetStudy).filter_by(studyset_id=studyset.id).all()
 
     assert {assoc.study_id for assoc in persisted} == set(study_ids)
-    assert {assoc.study_id: assoc.curation_stub_uuid for assoc in persisted}[study_ids[1]] == "stub-2"
+    assert {assoc.study_id: assoc.curation_stub_uuid for assoc in persisted}[
+        study_ids[1]
+    ] == "stub-2"
     assert [
-        assoc["id"] for assoc in StudysetsView._schema().dump(result)["studyset_studies"]
+        assoc["id"]
+        for assoc in StudysetsView._schema().dump(result)["studyset_studies"]
     ] == sorted(study_ids)
 
 
@@ -213,7 +224,10 @@ def test_annotation_mutation_policy_attaches_preloaded_nested_records_for_fallba
     assert (
         note_payload["studyset_study"]["preloaded_data"].study_id == first_note.study_id
     )
-    assert payload["_preloaded_nested_records"]["annotation_analyses"][first_note.id].id == first_note.id
+    assert (
+        payload["_preloaded_nested_records"]["annotation_analyses"][first_note.id].id
+        == first_note.id
+    )
 
 
 def test_annotation_mutation_policy_bulk_note_update_updates_rows(
@@ -304,7 +318,9 @@ def test_study_mutation_policy_allows_foreign_base_study_link_and_clears_broken_
 ):
     owner = _user(session, "user1-id")
     foreign_user = _user(session, "user2-id")
-    foreign_base_study = BaseStudy(name="Foreign Base Study", level="group", user=foreign_user)
+    foreign_base_study = BaseStudy(
+        name="Foreign Base Study", level="group", user=foreign_user
+    )
     session.add(foreign_base_study)
     session.flush()
 

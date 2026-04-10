@@ -1,8 +1,10 @@
 import connexion
 from flask import request
 from neurostore.database import db
-from neurostore.exceptions.utils.error_helpers import (abort_not_found,
-                                                       abort_unprocessable)
+from neurostore.exceptions.utils.error_helpers import (
+    abort_not_found,
+    abort_unprocessable,
+)
 from neurostore.models.auth import User
 from neurostore.resources.base import ListView, ObjectView
 from neurostore.schemas import UserSchema  # noqa E401

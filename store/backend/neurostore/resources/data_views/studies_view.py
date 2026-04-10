@@ -3,18 +3,34 @@ import string
 import sqlalchemy.sql.expression as sae
 from neurostore.database import db
 from neurostore.exceptions.factories import make_field_error
-from neurostore.exceptions.utils.error_helpers import (abort_not_found,
-                                                       abort_unprocessable)
-from neurostore.models import (Analysis, AnalysisConditions, Annotation,
-                               BaseStudy, Condition, Image, Point, Study,
-                               Studyset, Table, User)
+from neurostore.exceptions.utils.error_helpers import (
+    abort_not_found,
+    abort_unprocessable,
+)
+from neurostore.models import (
+    Analysis,
+    AnalysisConditions,
+    Annotation,
+    BaseStudy,
+    Condition,
+    Image,
+    Point,
+    Study,
+    Studyset,
+    Table,
+    User,
+)
 from neurostore.models.data import StudysetStudy
 from neurostore.resources.base import ListView, ObjectView
-from neurostore.resources.data_views.cloning import (build_study_clone_payload,
-                                                     load_study_clone_source)
-from neurostore.resources.data_views.common import (LIST_CLONE_ARGS,
-                                                    LIST_NESTED_ARGS,
-                                                    apply_map_type_filter)
+from neurostore.resources.data_views.cloning import (
+    build_study_clone_payload,
+    load_study_clone_source,
+)
+from neurostore.resources.data_views.common import (
+    LIST_CLONE_ARGS,
+    LIST_NESTED_ARGS,
+    apply_map_type_filter,
+)
 from neurostore.resources.mutation_core import DefaultMutationPolicy
 from neurostore.resources.utils import view_maker
 from sqlalchemy import func, select
@@ -87,8 +103,7 @@ class StudyObjectViewPolicy:
     def get_payload(self, id, args):
         if not args.get("nested"):
             return None
-        from neurostore.resources.data_views.serialization import \
-            serialize_study_detail
+        from neurostore.resources.data_views.serialization import serialize_study_detail
 
         return serialize_study_detail(self.get_record(id, args))
 
@@ -209,7 +224,9 @@ class StudiesView(ObjectView, ListView):
                         selectinload(Point.user)
                         .load_only(User.name, User.external_id)
                         .options(raiseload("*", sql_only=True)),
-                        selectinload(Point.values).options(raiseload("*", sql_only=True)),
+                        selectinload(Point.values).options(
+                            raiseload("*", sql_only=True)
+                        ),
                     ),
                     selectinload(Analysis.analysis_conditions).options(
                         raiseload("*", sql_only=True),
@@ -251,7 +268,9 @@ class StudiesView(ObjectView, ListView):
         q = apply_map_type_filter(q, self._model, args.get("map_type"))
         q = q.filter(self._model.level == args.get("level"))
         unique_col = args.get("unique")
-        unique_col = "doi" if isinstance(unique_col, bool) and unique_col else unique_col
+        unique_col = (
+            "doi" if isinstance(unique_col, bool) and unique_col else unique_col
+        )
         if unique_col:
             subquery = q.distinct(getattr(self._model, unique_col)).subquery()
             q = q.join(

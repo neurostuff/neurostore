@@ -5,20 +5,38 @@ from types import SimpleNamespace
 from flask import request
 from neurostore.database import db
 from neurostore.exceptions.factories import make_field_error
-from neurostore.exceptions.utils.error_helpers import (abort_unprocessable,
-                                                       abort_validation)
-from neurostore.models import (Analysis, Annotation, AnnotationAnalysis,
-                               Pipeline, PipelineConfig, PipelineStudyResult,
-                               Study, Studyset, User)
+from neurostore.exceptions.utils.error_helpers import (
+    abort_unprocessable,
+    abort_validation,
+)
+from neurostore.models import (
+    Analysis,
+    Annotation,
+    AnnotationAnalysis,
+    Pipeline,
+    PipelineConfig,
+    PipelineStudyResult,
+    Study,
+    Studyset,
+    User,
+)
 from neurostore.models.data import StudysetStudy, _check_type
 from neurostore.note_keys import canonicalize_note_keys, ordered_note_key_names
-from neurostore.resources.base import (ListView, ObjectView, clear_cache,
-                                       load_schema_or_abort)
+from neurostore.resources.base import (
+    ListView,
+    ObjectView,
+    clear_cache,
+    load_schema_or_abort,
+)
 from neurostore.resources.data_views.cloning import (
-    build_annotation_clone_payload, load_annotation_clone_source)
+    build_annotation_clone_payload,
+    load_annotation_clone_source,
+)
 from neurostore.resources.data_views.common import LIST_CLONE_ARGS
-from neurostore.resources.mutation_core import (DefaultMutationPolicy,
-                                                resolve_current_user)
+from neurostore.resources.mutation_core import (
+    DefaultMutationPolicy,
+    resolve_current_user,
+)
 from neurostore.resources.utils import get_current_user, view_maker
 from neurostore.schemas import PipelineStudyResultSchema
 from sqlalchemy.exc import SQLAlchemyError
@@ -77,7 +95,9 @@ class AnnotationMutationPolicy(DefaultMutationPolicy):
                     for analysis in assoc.study.analyses
                 }
                 for annotation_analysis in data.get("annotation_analyses", []):
-                    analysis = analyses.get(annotation_analysis.get("analysis", {}).get("id"))
+                    analysis = analyses.get(
+                        annotation_analysis.get("analysis", {}).get("id")
+                    )
                     if analysis is not None:
                         annotation_analysis["analysis"]["preloaded_data"] = analysis
                     studyset_study = studyset_studies.get(
@@ -95,7 +115,9 @@ class AnnotationMutationPolicy(DefaultMutationPolicy):
 
         self.context.data = data
         self.context.id = self.context.id or data.get("id")
-        self.context.preloaded_nested_records = data.pop("_preloaded_nested_records", None)
+        self.context.preloaded_nested_records = data.pop(
+            "_preloaded_nested_records", None
+        )
         self.context.preloaded_studies = data.pop("preloaded_studies", None)
 
     def attach_existing_nested_records(self, input_record, data):
@@ -109,8 +131,10 @@ class AnnotationMutationPolicy(DefaultMutationPolicy):
             if annotation_analysis.analysis is not None
         }
         by_studyset_study = {
-            (annotation_analysis.study_id, annotation_analysis.studyset_id):
-            annotation_analysis.studyset_study
+            (
+                annotation_analysis.study_id,
+                annotation_analysis.studyset_id,
+            ): annotation_analysis.studyset_study
             for annotation_analysis in input_record.annotation_analyses
             if annotation_analysis.studyset_study is not None
         }
@@ -149,9 +173,13 @@ class AnnotationMutationPolicy(DefaultMutationPolicy):
 
             study_payload = studyset_study_payload.get("study")
             studyset_payload = studyset_study_payload.get("studyset")
-            study_id = study_payload.get("id") if isinstance(study_payload, dict) else None
+            study_id = (
+                study_payload.get("id") if isinstance(study_payload, dict) else None
+            )
             studyset_id = (
-                studyset_payload.get("id") if isinstance(studyset_payload, dict) else None
+                studyset_payload.get("id")
+                if isinstance(studyset_payload, dict)
+                else None
             )
 
             preloaded_ss = None
@@ -522,7 +550,9 @@ class AnnotationsView(ObjectView, ListView):
                             aa.id: aa for aa in input_record.annotation_analyses
                         }
                     }
-                    record = self.__class__.update_or_create(data, id, record=input_record)
+                    record = self.__class__.update_or_create(
+                        data, id, record=input_record
+                    )
             elif bulk_note_update_candidate:
                 bulk_path_succeeded = mutation_policy.try_bulk_note_update(
                     input_record, data
@@ -535,7 +565,9 @@ class AnnotationsView(ObjectView, ListView):
                     record = q.one()
                 else:
                     mutation_policy.attach_existing_nested_records(input_record, data)
-                    record = self.__class__.update_or_create(data, id, record=input_record)
+                    record = self.__class__.update_or_create(
+                        data, id, record=input_record
+                    )
             else:
                 record = self.__class__.update_or_create(data, id, record=input_record)
 
@@ -604,7 +636,9 @@ class AnnotationsView(ObjectView, ListView):
                 field_err = make_field_error(
                     f"pipelines[{idx}]", payload, code="INVALID_VALUE"
                 )
-                abort_validation("Each pipeline descriptor must be an object.", [field_err])
+                abort_validation(
+                    "Each pipeline descriptor must be an object.", [field_err]
+                )
 
             name = payload.get("name")
             if not isinstance(name, str) or not name.strip():
@@ -645,7 +679,9 @@ class AnnotationsView(ObjectView, ListView):
                 field_err = make_field_error(
                     f"pipelines[{idx}].version", version, code="INVALID_VALUE"
                 )
-                abort_validation("`version` must be a string when provided.", [field_err])
+                abort_validation(
+                    "`version` must be a string when provided.", [field_err]
+                )
             config_id = payload.get("config_id")
             if config_id is not None and not isinstance(config_id, str):
                 field_err = make_field_error(
@@ -660,7 +696,9 @@ class AnnotationsView(ObjectView, ListView):
                     "name": name,
                     "columns": normalized_columns,
                     "version": version.strip() if isinstance(version, str) else None,
-                    "config_id": config_id.strip() if isinstance(config_id, str) else None,
+                    "config_id": (
+                        config_id.strip() if isinstance(config_id, str) else None
+                    ),
                 }
             )
             for column in normalized_columns:
@@ -776,7 +814,9 @@ class AnnotationsView(ObjectView, ListView):
             timestamp = row.date_executed or row.created_at or datetime.min
             existing = per_base.get(row.base_study_id)
             if existing is None or timestamp > existing["timestamp"]:
-                result_data = row.result_data if isinstance(row.result_data, dict) else {}
+                result_data = (
+                    row.result_data if isinstance(row.result_data, dict) else {}
+                )
                 flattened = (
                     PipelineStudyResultSchema.flatten_dict(result_data)
                     if isinstance(result_data, dict)
@@ -801,7 +841,9 @@ class AnnotationsView(ObjectView, ListView):
 
         resolved_version = spec["version"]
         if not resolved_version:
-            versions = {entry["version"] for entry in per_base.values() if entry["version"]}
+            versions = {
+                entry["version"] for entry in per_base.values() if entry["version"]
+            }
             if len(versions) == 1:
                 resolved_version = versions.pop()
             elif len(versions) > 1:
@@ -815,7 +857,9 @@ class AnnotationsView(ObjectView, ListView):
                 resolved_config_id = resolved_config.id
             else:
                 config_ids = {
-                    entry["config_id"] for entry in per_base.values() if entry["config_id"]
+                    entry["config_id"]
+                    for entry in per_base.values()
+                    if entry["config_id"]
                 }
                 if len(config_ids) == 1:
                     resolved_config_id = config_ids.pop()
@@ -839,8 +883,8 @@ class AnnotationsView(ObjectView, ListView):
         for spec in specs:
             if not base_study_ids:
                 continue
-            pipeline_data, resolved_version, resolved_config_id = self._fetch_pipeline_data(
-                spec, base_study_ids
+            pipeline_data, resolved_version, resolved_config_id = (
+                self._fetch_pipeline_data(spec, base_study_ids)
             )
             version_label = str(resolved_version or "latest").replace(" ", "_")
             config_label = str(resolved_config_id or "latest").replace(" ", "_")
@@ -865,12 +909,16 @@ class AnnotationsView(ObjectView, ListView):
                     if value is None and entry:
                         raw_values = [
                             v
-                            for v in self._collect_column_values(entry.get("raw", {}), column)
+                            for v in self._collect_column_values(
+                                entry.get("raw", {}), column
+                            )
                             if v is not None
                         ]
                         if raw_values:
-                            value = str(raw_values[0]) if len(raw_values) == 1 else ",".join(
-                                str(v) for v in raw_values
+                            value = (
+                                str(raw_values[0])
+                                if len(raw_values) == 1
+                                else ",".join(str(v) for v in raw_values)
                             )
 
                     payload.setdefault("note", {})

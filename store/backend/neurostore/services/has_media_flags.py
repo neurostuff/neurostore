@@ -1,10 +1,20 @@
 import sqlalchemy as sa
 from neurostore.cache_versioning import bump_cache_versions
 from neurostore.database import db
-from neurostore.map_types import (BETA_MAP_CODES, T_MAP_CODES,
-                                  VARIANCE_MAP_CODES, Z_MAP_CODES)
-from neurostore.models import (Analysis, BaseStudy, BaseStudyFlagOutbox, Image,
-                               Point, Study)
+from neurostore.map_types import (
+    BETA_MAP_CODES,
+    T_MAP_CODES,
+    VARIANCE_MAP_CODES,
+    Z_MAP_CODES,
+)
+from neurostore.models import (
+    Analysis,
+    BaseStudy,
+    BaseStudyFlagOutbox,
+    Image,
+    Point,
+    Study,
+)
 from neurostore.resources.common import normalize_ids
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 

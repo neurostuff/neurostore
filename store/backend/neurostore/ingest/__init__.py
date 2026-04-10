@@ -11,9 +11,20 @@ import requests
 from dateutil.parser import parse as parse_date
 from neurostore.database import db
 from neurostore.map_types import canonicalize_map_type
-from neurostore.models import (Analysis, AnalysisConditions, Annotation,
-                               AnnotationAnalysis, BaseStudy, Condition,
-                               Entity, Image, Point, Study, Studyset, Table)
+from neurostore.models import (
+    Analysis,
+    AnalysisConditions,
+    Annotation,
+    AnnotationAnalysis,
+    BaseStudy,
+    Condition,
+    Entity,
+    Image,
+    Point,
+    Study,
+    Studyset,
+    Table,
+)
 from neurostore.models.data import StudysetStudy, _check_type
 from neurostore.note_keys import resolve_note_key_default
 from neurostore.services.has_media_flags import recompute_media_flags

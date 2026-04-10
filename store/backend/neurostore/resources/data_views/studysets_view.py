@@ -2,22 +2,42 @@ import sqlalchemy as sa
 from flask import request
 from neurostore.database import db
 from neurostore.exceptions.factories import make_field_error
-from neurostore.exceptions.utils.error_helpers import (abort_not_found,
-                                                       abort_unprocessable,
-                                                       abort_validation)
-from neurostore.models import (Analysis, AnalysisConditions, Annotation, Point,
-                               Study, Studyset, User)
+from neurostore.exceptions.utils.error_helpers import (
+    abort_not_found,
+    abort_unprocessable,
+    abort_validation,
+)
+from neurostore.models import (
+    Analysis,
+    AnalysisConditions,
+    Annotation,
+    Point,
+    Study,
+    Studyset,
+    User,
+)
 from neurostore.models.data import StudysetStudy
-from neurostore.resources.base import (ListView, ObjectView, clear_cache,
-                                       load_schema_or_abort)
+from neurostore.resources.base import (
+    ListView,
+    ObjectView,
+    clear_cache,
+    load_schema_or_abort,
+)
 from neurostore.resources.data_views.cloning import (
-    build_studyset_clone_payload, clone_annotations_to_studyset,
-    load_studyset_clone_source, resolve_neurostore_origin)
-from neurostore.resources.data_views.common import (LIST_CLONE_ARGS,
-                                                    LIST_NESTED_ARGS,
-                                                    LIST_SUMMARY_ARGS)
+    build_studyset_clone_payload,
+    clone_annotations_to_studyset,
+    load_studyset_clone_source,
+    resolve_neurostore_origin,
+)
+from neurostore.resources.data_views.common import (
+    LIST_CLONE_ARGS,
+    LIST_NESTED_ARGS,
+    LIST_SUMMARY_ARGS,
+)
 from neurostore.resources.data_views.serialization import (
-    serialize_nested_studyset, serialize_studyset_summary)
+    serialize_nested_studyset,
+    serialize_studyset_summary,
+)
 from neurostore.resources.mutation_core import DefaultMutationPolicy
 from neurostore.resources.utils import view_maker
 from neurostore.schemas.data import StudysetSnapshot
@@ -102,7 +122,9 @@ class StudysetMutationPolicy(DefaultMutationPolicy):
                 sa.select(Study.id).where(Study.id.in_(current_ids))
             ).all()
         }
-        missing_ids = [study_id for study_id in current_ids if study_id not in found_ids]
+        missing_ids = [
+            study_id for study_id in current_ids if study_id not in found_ids
+        ]
         if missing_ids:
             abort_not_found(Study.__name__, missing_ids[0])
 
@@ -144,9 +166,9 @@ class StudysetMutationPolicy(DefaultMutationPolicy):
             self.membership_only_payload or self.study_link_only_payload,
         )
 
-        if (self.membership_only_payload or self.study_link_only_payload) and isinstance(
-            data.get("studies"), list
-        ):
+        if (
+            self.membership_only_payload or self.study_link_only_payload
+        ) and isinstance(data.get("studies"), list):
             self.current_ids = self.resolve_current_ids(data["studies"])
             data = {key: value for key, value in data.items() if key != "studies"}
 
@@ -160,7 +182,8 @@ class StudysetMutationPolicy(DefaultMutationPolicy):
 
         studies = getattr(record, "studies", []) or []
         if self.context.flush and (
-            record.id is None or any(getattr(study, "id", None) is None for study in studies)
+            record.id is None
+            or any(getattr(study, "id", None) is None for study in studies)
         ):
             db.session.add_all(self.context.to_commit)
             try:
@@ -191,7 +214,9 @@ class StudysetMutationPolicy(DefaultMutationPolicy):
                 stale_assocs.append(assoc)
 
         if stale_assocs:
-            record.studyset_studies = [existing[study_id] for study_id in sorted(existing)]
+            record.studyset_studies = [
+                existing[study_id] for study_id in sorted(existing)
+            ]
 
         missing_ids = [
             study_id for study_id in self.current_ids if study_id not in existing
@@ -223,14 +248,18 @@ class StudysetMutationPolicy(DefaultMutationPolicy):
                     .all()
                 )
                 existing = {assoc.study_id: assoc for assoc in refreshed}
-                record.studyset_studies = [existing[study_id] for study_id in self.current_ids]
+                record.studyset_studies = [
+                    existing[study_id] for study_id in self.current_ids
+                ]
             else:
                 record.studyset_studies = []
             return record
 
         if missing_ids and stale_assocs:
             stale_stub_uuids = {
-                assoc.curation_stub_uuid for assoc in stale_assocs if assoc.curation_stub_uuid
+                assoc.curation_stub_uuid
+                for assoc in stale_assocs
+                if assoc.curation_stub_uuid
             }
             incoming_stub_uuids = {
                 self.stub_map.get(study_id)

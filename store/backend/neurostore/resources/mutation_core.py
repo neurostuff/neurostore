@@ -8,9 +8,11 @@ from auth0.authentication.users import Users
 from connexion.context import context
 from flask import current_app, request
 from neurostore.database import db
-from neurostore.exceptions.utils.error_helpers import (abort_not_found,
-                                                       abort_permission,
-                                                       abort_validation)
+from neurostore.exceptions.utils.error_helpers import (
+    abort_not_found,
+    abort_permission,
+    abort_validation,
+)
 from neurostore.models import BaseStudy, User
 from neurostore.resources.utils import get_current_user, is_user_admin
 from psycopg2 import errors
@@ -67,9 +69,9 @@ class MutationContext:
     submitted_only_ids: bool = field(init=False, default=False)
 
     def __post_init__(self):
-        self.submitted_only_ids = isinstance(self.data, dict) and set(self.data.keys()) <= {
-            "id"
-        }
+        self.submitted_only_ids = isinstance(self.data, dict) and set(
+            self.data.keys()
+        ) <= {"id"}
 
     @property
     def model(self):
@@ -115,7 +117,9 @@ class DefaultMutationPolicy:
     def load_existing_record(self):
         record = self.get_lookup_query().filter_by(id=self.context.id).first()
         if record is None:
-            abort_not_found(f"Record {self.context.id} not found in {self.context.model}")
+            abort_not_found(
+                f"Record {self.context.id} not found in {self.context.model}"
+            )
         return record
 
     def ensure_mutation_allowed(self):
@@ -158,9 +162,9 @@ class DefaultMutationPolicy:
             self.resource_cls._parent[field]
         )
         with db.session.no_autoflush:
-            parent_record = (
-                parent_resource_cls._model.query.filter_by(id=parent_id).first()
-            )
+            parent_record = parent_resource_cls._model.query.filter_by(
+                id=parent_id
+            ).first()
         if parent_record is None:
             abort_validation(f"Parent record not found with id={parent_id}")
         if not self.can_link_parent(field, parent_resource_cls, parent_record):
@@ -197,9 +201,9 @@ class DefaultMutationPolicy:
                     return None
                 query_args = {"id": linked_id}
             with db.session.no_autoflush:
-                linked_record = (
-                    linked_resource_cls._model.query.filter_by(**query_args).first()
-                )
+                linked_record = linked_resource_cls._model.query.filter_by(
+                    **query_args
+                ).first()
             if linked_record is None:
                 abort_validation(f"Linked record not found with {query_args}")
 
@@ -244,7 +248,9 @@ class DefaultMutationPolicy:
             if self.context.data.get(_field) is None:
                 continue
 
-            nested_resource_cls = self.resource_cls.resolve_related_resource(resource_name)
+            nested_resource_cls = self.resource_cls.resolve_related_resource(
+                resource_name
+            )
             field_preloaded_records = self.get_preloaded_records_for_field(_field)
 
             if isinstance(self.context.data[_field], list):

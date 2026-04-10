@@ -1,9 +1,17 @@
 import pytest
 from neurostore.models import Study, Studyset
-from neurostore.schemas import (AnalysisSchema, PointSchema, StudySchema,
-                                StudysetSchema, StudysetSnapshot)
-from neurostore.schemas.pipeline import (PipelineConfigSchema, PipelineSchema,
-                                         PipelineStudyResultSchema)
+from neurostore.schemas import (
+    AnalysisSchema,
+    PointSchema,
+    StudySchema,
+    StudysetSchema,
+    StudysetSnapshot,
+)
+from neurostore.schemas.pipeline import (
+    PipelineConfigSchema,
+    PipelineSchema,
+    PipelineStudyResultSchema,
+)
 
 # Things I the schemas to do:
 # 1. Cloning: I need a deep copy of the object, with new versions of all the sub-objects

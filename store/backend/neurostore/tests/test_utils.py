@@ -1,7 +1,6 @@
 import pytest
 from neurostore.resources.utils import pubmed_to_tsquery, validate_search_query
-from neurostore.tests.conftest import (valid_queries, validate_queries,
-                                       weird_queries)
+from neurostore.tests.conftest import valid_queries, validate_queries, weird_queries
 
 
 @pytest.mark.parametrize("query, expected", valid_queries)

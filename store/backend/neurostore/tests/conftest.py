@@ -14,10 +14,21 @@ from auth0.authentication.exceptions import Auth0Error
 from auth0.authentication.users import Users
 from flask_migrate import upgrade as migrate_upgrade
 from neurostore.ingest.extracted_features import ingest_feature
-from neurostore.models import (Analysis, AnalysisConditions, Annotation,
-                               AnnotationAnalysis, BaseStudy, Condition,
-                               Entity, Image, Point, Study, Studyset,
-                               StudysetStudy, User)
+from neurostore.models import (
+    Analysis,
+    AnalysisConditions,
+    Annotation,
+    AnnotationAnalysis,
+    BaseStudy,
+    Condition,
+    Entity,
+    Image,
+    Point,
+    Study,
+    Studyset,
+    StudysetStudy,
+    User,
+)
 from neurostore.tests.utils import ordered_note_keys
 from sqlalchemy import select
 

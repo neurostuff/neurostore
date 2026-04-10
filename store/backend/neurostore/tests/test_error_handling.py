@@ -5,20 +5,32 @@ import pytest
 from marshmallow import Schema
 from marshmallow import ValidationError as MarshmallowValidationError
 from marshmallow import fields
-from neurostore.exceptions.base import (AuthenticationError,
-                                        InternalServerError, NotFoundError,
-                                        PermissionError,
-                                        UnprocessableEntityError,
-                                        ValidationError)
-from neurostore.exceptions.factories import (create_field_validation_error,
-                                             create_not_found_error,
-                                             create_validation_error,
-                                             make_field_error)
-from neurostore.exceptions.handlers import (general_exception_handler,
-                                            neurostore_exception_handler)
+from neurostore.exceptions.base import (
+    AuthenticationError,
+    InternalServerError,
+    NotFoundError,
+    PermissionError,
+    UnprocessableEntityError,
+    ValidationError,
+)
+from neurostore.exceptions.factories import (
+    create_field_validation_error,
+    create_not_found_error,
+    create_validation_error,
+    make_field_error,
+)
+from neurostore.exceptions.handlers import (
+    general_exception_handler,
+    neurostore_exception_handler,
+)
 from neurostore.exceptions.utils.error_helpers import (
-    abort_auth, abort_internal_server_error, abort_not_found, abort_permission,
-    abort_unprocessable, abort_validation)
+    abort_auth,
+    abort_internal_server_error,
+    abort_not_found,
+    abort_permission,
+    abort_unprocessable,
+    abort_validation,
+)
 from neurostore.exceptions.utils.errors import ErrorDetail, ErrorResponse
 from neurostore.resources.base import handle_parser_error, load_schema_or_abort
 from starlette.requests import Request
@@ -166,8 +178,10 @@ def test_all_exception_types(abort_func, expected_exception, func_input):
 
 def test_create_validation_error_with_provided_context():
     """Test the special field error handling in create_validation_error with 'provided' context"""
-    from neurostore.exceptions.factories import (create_field_validation_error,
-                                                 create_validation_error)
+    from neurostore.exceptions.factories import (
+        create_field_validation_error,
+        create_validation_error,
+    )
 
     # Test with single field error containing 'provided' context
     field_error = create_field_validation_error("test_field", ["invalid1", "invalid2"])

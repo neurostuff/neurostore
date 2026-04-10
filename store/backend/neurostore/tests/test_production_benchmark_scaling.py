@@ -3,15 +3,18 @@ import threading
 
 from neurostore.database import db
 from neurostore.models import Study, Studyset
-from neurostore.production_benchmark import (_benchmark_case_rollback,
-                                             _benchmark_write_isolation,
-                                             _canonical_case_name,
-                                             _case_workload_info,
-                                             _create_large_studyset,
-                                             _extract_profile_functions,
-                                             _fit_line, _parse_scales,
-                                             _project_line,
-                                             _ThreadAwareProfiler)
+from neurostore.production_benchmark import (
+    _benchmark_case_rollback,
+    _benchmark_write_isolation,
+    _canonical_case_name,
+    _case_workload_info,
+    _create_large_studyset,
+    _extract_profile_functions,
+    _fit_line,
+    _parse_scales,
+    _project_line,
+    _ThreadAwareProfiler,
+)
 
 
 def test_fit_line_returns_expected_slope_and_projection():
@@ -41,7 +44,11 @@ def test_case_workload_info_uses_bulk_count_for_bulk_case():
         "name": "post_base_studies_bulk_full_objects_32",
         "metadata": {"requested_count": 32},
     }
-    results = {"bulk_post_count": 32, "available_bulk_post_count": 41107, "study_count": 32}
+    results = {
+        "bulk_post_count": 32,
+        "available_bulk_post_count": 41107,
+        "study_count": 32,
+    }
 
     assert _case_workload_info(case, results, target_scale=200) == (
         32,
@@ -126,10 +133,13 @@ def test_extract_profile_functions_reads_thread_aware_json(tmp_path):
     ]
 
 
-def test_benchmark_write_isolation_rolls_back_case_writes(mock_add_users, ingest_neurosynth):
+def test_benchmark_write_isolation_rolls_back_case_writes(
+    mock_add_users, ingest_neurosynth
+):
     token = mock_add_users["user1"]["token"]
     study_ids = [
-        study_id for (study_id,) in db.session.query(Study.id).order_by(Study.id).limit(2)
+        study_id
+        for (study_id,) in db.session.query(Study.id).order_by(Study.id).limit(2)
     ]
     initial_count = db.session.query(Studyset).count()
 

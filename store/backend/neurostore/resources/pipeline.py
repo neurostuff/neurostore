@@ -2,17 +2,24 @@
 
 from neurostore.exceptions.factories import make_field_error
 from neurostore.exceptions.utils.error_helpers import abort_validation
-from neurostore.models import (Pipeline, PipelineConfig, PipelineEmbedding,
-                               PipelineStudyResult)
+from neurostore.models import (
+    Pipeline,
+    PipelineConfig,
+    PipelineEmbedding,
+    PipelineStudyResult,
+)
 from neurostore.resources.base import ListView, ObjectView
 from neurostore.resources.utils import view_maker
-from neurostore.schemas.pipeline import (pipeline_config_schema,
-                                         pipeline_config_schemas,
-                                         pipeline_embedding_schema,
-                                         pipeline_embedding_schemas,
-                                         pipeline_schema, pipeline_schemas,
-                                         pipeline_study_result_schema,
-                                         pipeline_study_result_schemas)
+from neurostore.schemas.pipeline import (
+    pipeline_config_schema,
+    pipeline_config_schemas,
+    pipeline_embedding_schema,
+    pipeline_embedding_schemas,
+    pipeline_schema,
+    pipeline_schemas,
+    pipeline_study_result_schema,
+    pipeline_study_result_schemas,
+)
 from neurostore.utils import build_jsonpath, parse_json_filter
 from sqlalchemy import and_, or_, text
 from sqlalchemy.orm import aliased, selectinload

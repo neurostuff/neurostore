@@ -1,10 +1,19 @@
 from datetime import datetime, timezone
 
 from neurostore.database import db
-from neurostore.models import (Analysis, Annotation, AnnotationAnalysis,
-                               BaseStudy, Pipeline, PipelineConfig,
-                               PipelineStudyResult, Study, Studyset,
-                               StudysetStudy, User)
+from neurostore.models import (
+    Analysis,
+    Annotation,
+    AnnotationAnalysis,
+    BaseStudy,
+    Pipeline,
+    PipelineConfig,
+    PipelineStudyResult,
+    Study,
+    Studyset,
+    StudysetStudy,
+    User,
+)
 from neurostore.tests.utils import ordered_note_keys
 from sqlalchemy import event
 

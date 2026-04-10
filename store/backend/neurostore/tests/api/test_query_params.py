@@ -2,8 +2,12 @@ from urllib.parse import urlencode
 
 import pytest
 from neurostore.models import BaseStudy, Study
-from neurostore.schemas.data import (AnalysisSchema, StringOrNested,
-                                     StudySchema, StudysetSchema)
+from neurostore.schemas.data import (
+    AnalysisSchema,
+    StringOrNested,
+    StudySchema,
+    StudysetSchema,
+)
 from neurostore.services.has_media_flags import recompute_media_flags
 from neurostore.tests.conftest import invalid_queries, valid_queries
 

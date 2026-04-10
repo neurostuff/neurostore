@@ -1,10 +1,21 @@
 from neurostore.database import db
 from neurostore.exceptions.factories import make_field_error
-from neurostore.exceptions.utils.error_helpers import (abort_not_found,
-                                                       abort_unprocessable)
-from neurostore.models import (Analysis, AnalysisConditions, Annotation,
-                               Condition, Image, Point, Study, Studyset, Table,
-                               User)
+from neurostore.exceptions.utils.error_helpers import (
+    abort_not_found,
+    abort_unprocessable,
+)
+from neurostore.models import (
+    Analysis,
+    AnalysisConditions,
+    Annotation,
+    Condition,
+    Image,
+    Point,
+    Study,
+    Studyset,
+    Table,
+    User,
+)
 from neurostore.models.data import StudysetStudy
 from neurostore.resources.base import ListView, ObjectView
 from neurostore.resources.data_views.common import LIST_NESTED_ARGS
@@ -20,8 +31,9 @@ class AnalysisObjectViewPolicy:
     def get_payload(self, id, args):
         if not args.get("nested"):
             return None
-        from neurostore.resources.data_views.serialization import \
-            serialize_analysis_detail
+        from neurostore.resources.data_views.serialization import (
+            serialize_analysis_detail,
+        )
 
         return serialize_analysis_detail(self.get_record(id, args))
 

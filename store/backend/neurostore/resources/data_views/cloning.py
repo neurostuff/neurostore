@@ -4,8 +4,15 @@ from copy import deepcopy
 
 from neurostore.database import db
 from neurostore.exceptions.utils.error_helpers import abort_not_found
-from neurostore.models import (Analysis, AnalysisConditions, Annotation,
-                               AnnotationAnalysis, Point, Study, Studyset)
+from neurostore.models import (
+    Analysis,
+    AnalysisConditions,
+    Annotation,
+    AnnotationAnalysis,
+    Point,
+    Study,
+    Studyset,
+)
 from sqlalchemy.orm import raiseload, selectinload
 
 
@@ -232,7 +239,9 @@ def _clone_analysis_payload(analysis):
             for analysis_condition in analysis.analysis_conditions
         ],
         "images": [_clone_image_payload(image) for image in analysis.images],
-        "points": [_clone_point_payload(point) for point in _sorted_points(analysis.points)],
+        "points": [
+            _clone_point_payload(point) for point in _sorted_points(analysis.points)
+        ],
         "name": analysis.name,
         "description": analysis.description,
     }
@@ -302,7 +311,8 @@ def build_study_clone_payload(study, override_data=None):
         "year": study.year,
         "level": study.level,
         "analyses": [
-            _clone_analysis_payload(analysis) for analysis in _sorted_analyses(study.analyses)
+            _clone_analysis_payload(analysis)
+            for analysis in _sorted_analyses(study.analyses)
         ],
         "source": "neurostore",
         "source_id": resolve_neurostore_origin(study),

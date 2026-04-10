@@ -1,6 +1,16 @@
-from neurostore.models import (Analysis, Condition, Entity, Image, Pipeline,
-                               PipelineConfig, PipelineStudyResult, Point,
-                               PointValue, Study, Studyset)
+from neurostore.models import (
+    Analysis,
+    Condition,
+    Entity,
+    Image,
+    Pipeline,
+    PipelineConfig,
+    PipelineStudyResult,
+    Point,
+    PointValue,
+    Study,
+    Studyset,
+)
 
 
 def test_Study(app):

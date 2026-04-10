@@ -1,6 +1,5 @@
 from neurostore.database import db
-from neurostore.models import (Analysis, BaseStudy, Point, PointValue, Study,
-                               User)
+from neurostore.models import Analysis, BaseStudy, Point, PointValue, Study, User
 from neurostore.models.data import StudysetStudy
 from neurostore.resources.base import ListView, ObjectView
 from neurostore.resources.utils import view_maker

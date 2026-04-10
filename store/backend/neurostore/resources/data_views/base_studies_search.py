@@ -8,9 +8,16 @@ import sqlalchemy.sql.expression as sae
 from neurostore.database import db
 from neurostore.exceptions.factories import make_field_error
 from neurostore.exceptions.utils.error_helpers import abort_validation
-from neurostore.models import (Analysis, BaseStudy, Pipeline, PipelineConfig,
-                               PipelineEmbedding, PipelineStudyResult, Point,
-                               Study)
+from neurostore.models import (
+    Analysis,
+    BaseStudy,
+    Pipeline,
+    PipelineConfig,
+    PipelineEmbedding,
+    PipelineStudyResult,
+    Point,
+    Study,
+)
 from neurostore.utils import build_jsonpath, parse_json_filter
 from pgvector.sqlalchemy import Vector
 from sqlalchemy import func, select, text
@@ -50,9 +57,7 @@ class BaseStudySearchService:
         pipeline_config_id, dimensions = self._resolve_embedding_config(
             args.get("pipeline_config_id")
         )
-        user_vector = embeddings.get_embedding(
-            semantic_search, dimensions=dimensions
-        )
+        user_vector = embeddings.get_embedding(semantic_search, dimensions=dimensions)
         return self._apply_ann_query(
             query,
             user_vector,
@@ -64,7 +69,9 @@ class BaseStudySearchService:
 
     def _resolve_embedding_config(self, pipeline_config_id):
         if pipeline_config_id is None:
-            query = select(PipelineConfig.id, PipelineConfig.embedding_dimensions).where(
+            query = select(
+                PipelineConfig.id, PipelineConfig.embedding_dimensions
+            ).where(
                 PipelineConfig.has_embeddings.is_(True),
                 PipelineConfig.config_args["extractor_kwargs"][
                     "extraction_model"
@@ -74,9 +81,9 @@ class BaseStudySearchService:
                 == "abstract",
             )
         else:
-            query = select(PipelineConfig.id, PipelineConfig.embedding_dimensions).where(
-                PipelineConfig.id == pipeline_config_id
-            )
+            query = select(
+                PipelineConfig.id, PipelineConfig.embedding_dimensions
+            ).where(PipelineConfig.id == pipeline_config_id)
 
         row = db.session.execute(query).first()
         if row is None:
@@ -284,7 +291,9 @@ class BaseStudySearchService:
             values = [values]
         return [value for value in values if value.strip()]
 
-    def _append_pipeline_filters(self, pipeline_filters, invalid_filters, filters, *, target):
+    def _append_pipeline_filters(
+        self, pipeline_filters, invalid_filters, filters, *, target
+    ):
         for filter_value in filters:
             try:
                 pipeline_name, version, field_path, operator, value = parse_json_filter(
@@ -346,8 +355,7 @@ class BaseStudySearchService:
                     latest_results,
                     (result_alias.base_study_id == latest_results.c.base_study_id)
                     & (
-                        result_alias.date_executed
-                        >= latest_results.c.max_date_executed
+                        result_alias.date_executed >= latest_results.c.max_date_executed
                     ),
                 )
 
@@ -425,9 +433,7 @@ class BaseStudySearchService:
                     )
                     modality_clauses = []
                     for value_index, modality_value in enumerate(modality_values):
-                        param_name = (
-                            f"modality_filter_{pipeline_name}_{filter_index}_{value_index}"
-                        )
+                        param_name = f"modality_filter_{pipeline_name}_{filter_index}_{value_index}"
                         modality_clauses.append(
                             modality_field.op("@>")(
                                 sa.func.jsonb_build_array(
