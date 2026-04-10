@@ -16,6 +16,8 @@ from flask_admin import Admin, AdminIndexView
 from flask_admin.contrib.sqla import ModelView
 from flask_admin.theme import Bootstrap4Theme
 from flask_orjson import OrjsonProvider
+from starlette.middleware.cors import CORSMiddleware
+
 from neurostore.config import resolve_config_object
 from neurostore.database import init_db
 from neurostore.exceptions.base import NeuroStoreException
@@ -29,7 +31,6 @@ from neurostore.extensions import cache
 from neurostore.resources import iter_request_body_validation_skip_rules
 from neurostore.resources.auth import AuthError, handle_auth_error
 from neurostore.resources.auth import init_app as init_auth
-from starlette.middleware.cors import CORSMiddleware
 
 
 def _env_flag(name, default=False):

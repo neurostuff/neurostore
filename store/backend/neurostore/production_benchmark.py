@@ -20,10 +20,11 @@ from urllib.parse import urlencode
 from uuid import uuid4
 
 from jose.jwt import encode
+from sqlalchemy import event, func, select
+
 from neurostore.database import db
 from neurostore.models import Analysis, BaseStudy, Study, User
 from neurostore.tests.request_utils import Client
-from sqlalchemy import event, func, select
 
 TOKEN = encode({"sub": "user1-id"}, "abc", algorithm="HS256")
 DEFAULT_SCALES = [10, 50, 100, 200]
@@ -780,7 +781,8 @@ def _write_profile_artifacts(
 
     summary_buffer = StringIO()
     summary_buffer.write(
-        f"Captured {len(profile_data['functions'])} functions across {profile_data['thread_count']} threads\n\n"
+        f"Captured {len(profile_data['functions'])} functions "
+        f"across {profile_data['thread_count']} threads\n\n"
     )
     summary_buffer.write("Ordered by: cumulative time\n")
     summary_buffer.write(
@@ -793,7 +795,8 @@ def _write_profile_artifacts(
             f"{function_row['total_calls']:10d} "
             f"{function_row['self_seconds']:10.4f} "
             f"{function_row['cumulative_seconds']:12.4f} "
-            f"{function_row['filename']}:{function_row['line_number']}({function_row['function_name']})\n"
+            f"{function_row['filename']}:{function_row['line_number']}"
+            f"({function_row['function_name']})\n"
         )
     summary_path.write_text(summary_buffer.getvalue())
 

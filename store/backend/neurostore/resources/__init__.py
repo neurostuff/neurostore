@@ -1,16 +1,5 @@
-from neurostore.resources.data import (
-    AnalysesView,
-    AnnotationAnalysesView,
-    AnnotationsView,
-    BaseStudiesView,
-    ConditionsView,
-    ImagesView,
-    PointsView,
-    PointValuesView,
-    StudiesView,
-    StudysetsView,
-    TablesView,
-)
+from neurostore.resources import data_views
+from neurostore.resources.data import *  # noqa: F401,F403
 from neurostore.resources.pipeline import (
     PipelineConfigsView,
     PipelineEmbeddingsView,
@@ -20,17 +9,7 @@ from neurostore.resources.pipeline import (
 from neurostore.resources.users import UsersView
 
 __all__ = [
-    "StudysetsView",
-    "AnnotationsView",
-    "AnnotationAnalysesView",
-    "BaseStudiesView",
-    "StudiesView",
-    "AnalysesView",
-    "TablesView",
-    "ConditionsView",
-    "ImagesView",
-    "PointsView",
-    "PointValuesView",
+    *data_views.__all__,
     "UsersView",
     "PipelinesView",
     "PipelineConfigsView",

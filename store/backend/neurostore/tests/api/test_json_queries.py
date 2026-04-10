@@ -3,8 +3,9 @@
 from urllib.parse import urlencode
 
 import pytest
-from neurostore.models import Pipeline, PipelineConfig, PipelineStudyResult
 from sqlalchemy import or_
+
+from neurostore.models import Pipeline, PipelineConfig, PipelineStudyResult
 
 
 @pytest.fixture

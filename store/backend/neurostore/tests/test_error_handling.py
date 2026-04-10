@@ -5,6 +5,8 @@ import pytest
 from marshmallow import Schema
 from marshmallow import ValidationError as MarshmallowValidationError
 from marshmallow import fields
+from starlette.requests import Request
+
 from neurostore.exceptions.base import (
     AuthenticationError,
     InternalServerError,
@@ -33,7 +35,6 @@ from neurostore.exceptions.utils.error_helpers import (
 )
 from neurostore.exceptions.utils.errors import ErrorDetail, ErrorResponse
 from neurostore.resources.base import handle_parser_error, load_schema_or_abort
-from starlette.requests import Request
 
 
 class _ValidationSchema(Schema):

@@ -1,3 +1,6 @@
+from sqlalchemy.orm import joinedload, raiseload, selectinload
+from webargs import fields
+
 from neurostore.database import db
 from neurostore.models import (
     Analysis,
@@ -30,8 +33,6 @@ from neurostore.resources.data_views.common import (
     apply_map_type_filter,
 )
 from neurostore.resources.utils import view_maker
-from sqlalchemy.orm import joinedload, raiseload, selectinload
-from webargs import fields
 
 
 @view_maker

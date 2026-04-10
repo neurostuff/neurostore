@@ -11,6 +11,8 @@ from marshmallow import (
     pre_load,
     validates_schema,
 )
+from sqlalchemy import func
+
 from neurostore.database import db
 from neurostore.map_types import canonicalize_map_type, map_type_label
 from neurostore.models import Analysis, Point
@@ -19,7 +21,6 @@ from neurostore.note_keys import (
     canonicalize_note_keys,
     resolve_note_key_default,
 )
-from sqlalchemy import func
 
 # context parameters
 # clone: create a new object with new ids (true or false)

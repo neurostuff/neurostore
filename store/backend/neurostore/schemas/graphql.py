@@ -3,6 +3,7 @@
 import graphene
 from graphene import relay
 from graphene_sqlalchemy import SQLAlchemyConnectionField, SQLAlchemyObjectType
+
 from neurostore.models import Analysis as AnalysisModel
 from neurostore.models import Entity as EntityModel
 from neurostore.models import Image as ImageModel

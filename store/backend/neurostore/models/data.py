@@ -2,10 +2,6 @@ import re
 
 import shortuuid
 import sqlalchemy as sa
-from neurostore.database import db
-from neurostore.map_types import MAP_TYPE_CODES, canonicalize_map_type
-from neurostore.models.migration_types import TSVector, VectorType
-from neurostore.utils import build_jsonpath, parse_json_filter
 from sqlalchemy import ForeignKeyConstraint, exists, func, text
 from sqlalchemy.dialects.postgresql import ENUM as PGEnum
 from sqlalchemy.dialects.postgresql import JSONB
@@ -13,6 +9,11 @@ from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.orm import aliased, backref, relationship, validates
+
+from neurostore.database import db
+from neurostore.map_types import MAP_TYPE_CODES, canonicalize_map_type
+from neurostore.models.migration_types import TSVector, VectorType
+from neurostore.utils import build_jsonpath, parse_json_filter
 
 # status of pipeline run
 STATUS_ENUM = PGEnum(

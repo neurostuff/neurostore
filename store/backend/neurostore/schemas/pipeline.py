@@ -1,6 +1,7 @@
 """Pipeline schemas"""
 
 from marshmallow import fields, post_dump
+
 from neurostore.models import (
     Pipeline,
     PipelineConfig,

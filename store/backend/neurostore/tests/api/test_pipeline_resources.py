@@ -1,4 +1,5 @@
 import pytest
+
 from neurostore.database import db
 from neurostore.models.data import (
     BaseStudy,

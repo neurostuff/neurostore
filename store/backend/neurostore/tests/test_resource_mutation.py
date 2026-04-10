@@ -1,6 +1,7 @@
 from types import SimpleNamespace
 
 import pytest
+
 from neurostore.exceptions.base import PermissionError
 from neurostore.models import (
     Analysis,

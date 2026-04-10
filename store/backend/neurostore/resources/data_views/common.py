@@ -1,6 +1,7 @@
+from webargs import fields
+
 from neurostore.exceptions.utils.error_helpers import abort_validation
 from neurostore.schemas import BooleanOrString
-from webargs import fields
 
 LIST_CLONE_ARGS = {
     "source_id": fields.String(load_default=None),

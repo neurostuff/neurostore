@@ -1,4 +1,5 @@
 import pytest
+
 from neurostore.map_types import canonicalize_map_type, map_type_label
 
 

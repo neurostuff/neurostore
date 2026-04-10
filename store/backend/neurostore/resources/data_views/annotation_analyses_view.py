@@ -1,26 +1,20 @@
 from flask import request
-from neurostore.database import db
-from neurostore.models import Analysis, AnnotationAnalysis, Study
-from neurostore.models.data import StudysetStudy
-from neurostore.resources.base import ListView, ObjectView, clear_cache
-from neurostore.resources.utils import view_maker
 from sqlalchemy.orm import joinedload, raiseload
 from webargs.flaskparser import parser
 
+from neurostore.database import db
+from neurostore.models import Analysis, AnnotationAnalysis, Study
+from neurostore.models.data import StudysetStudy
+from neurostore.resources.base import (
+    DefaultObjectViewPolicy,
+    ListView,
+    ObjectView,
+    clear_cache,
+)
+from neurostore.resources.utils import view_maker
 
-class AnnotationAnalysisObjectViewPolicy:
-    def __init__(self, view):
-        self.view = view
 
-    def get_payload(self, id, args):
-        return None
-
-    def build_put_eager_load_args(self, data):
-        args = {}
-        if set(self.view._o2m.keys()).intersection(set(data.keys())):
-            args["nested"] = True
-        return args
-
+class AnnotationAnalysisObjectViewPolicy(DefaultObjectViewPolicy):
     def should_refresh_annotations(self):
         return False
 

@@ -3,6 +3,10 @@ from datetime import datetime
 from types import SimpleNamespace
 
 from flask import request
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import defaultload, joinedload, raiseload, selectinload
+from webargs import fields
+
 from neurostore.database import db
 from neurostore.exceptions.factories import make_field_error
 from neurostore.exceptions.utils.error_helpers import (
@@ -23,6 +27,7 @@ from neurostore.models import (
 from neurostore.models.data import StudysetStudy, _check_type
 from neurostore.note_keys import canonicalize_note_keys, ordered_note_key_names
 from neurostore.resources.base import (
+    DefaultObjectViewPolicy,
     ListView,
     ObjectView,
     clear_cache,
@@ -39,9 +44,6 @@ from neurostore.resources.mutation_core import (
 )
 from neurostore.resources.utils import get_current_user, view_maker
 from neurostore.schemas import PipelineStudyResultSchema
-from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import defaultload, joinedload, raiseload, selectinload
-from webargs import fields
 
 
 class AnnotationMutationPolicy(DefaultMutationPolicy):
@@ -219,6 +221,22 @@ class AnnotationMutationPolicy(DefaultMutationPolicy):
                     synced_note[key] = default_note.get(key)
             annotation_analysis.note = synced_note
 
+    @staticmethod
+    def resolve_note_id(annotation_id, note):
+        note_id = note.get("id")
+        if note_id:
+            return note_id
+
+        analysis = note.get("analysis")
+        analysis_id = (
+            analysis.get("id")
+            if isinstance(analysis, dict)
+            else analysis if isinstance(analysis, str) else None
+        )
+        if not analysis_id:
+            return None
+        return f"{annotation_id}_{analysis_id}"
+
     def try_fast_note_update(self, annotation, data):
         self.resource_cls.update_or_create(
             {"id": annotation.id},
@@ -242,18 +260,9 @@ class AnnotationMutationPolicy(DefaultMutationPolicy):
             if not isinstance(note, dict):
                 return False
 
-            note_id = note.get("id")
+            note_id = self.resolve_note_id(annotation.id, note)
             if not note_id:
-                analysis = note.get("analysis")
-                analysis_id = (
-                    analysis.get("id")
-                    if isinstance(analysis, dict)
-                    else analysis if isinstance(analysis, str) else None
-                )
-                if not analysis_id:
-                    return False
-                note_id = f"{annotation.id}_{analysis_id}"
-
+                return False
             annotation_analysis_record = notes_by_id.get(note_id)
             if annotation_analysis_record is None:
                 return False
@@ -290,18 +299,9 @@ class AnnotationMutationPolicy(DefaultMutationPolicy):
             if not isinstance(note, dict):
                 return False
 
-            note_id = note.get("id")
+            note_id = self.resolve_note_id(annotation.id, note)
             if not note_id:
-                analysis = note.get("analysis")
-                analysis_id = (
-                    analysis.get("id")
-                    if isinstance(analysis, dict)
-                    else analysis if isinstance(analysis, str) else None
-                )
-                if not analysis_id:
-                    return False
-                note_id = f"{annotation.id}_{analysis_id}"
-
+                return False
             annotation_analysis_record = notes_by_id.get(note_id)
             if annotation_analysis_record is None:
                 return False
@@ -322,19 +322,7 @@ class AnnotationMutationPolicy(DefaultMutationPolicy):
         return True
 
 
-class AnnotationObjectViewPolicy:
-    def __init__(self, view):
-        self.view = view
-
-    def get_payload(self, id, args):
-        return None
-
-    def build_put_eager_load_args(self, data):
-        args = {}
-        if set(self.view._o2m.keys()).intersection(set(data.keys())):
-            args["nested"] = True
-        return args
-
+class AnnotationObjectViewPolicy(DefaultObjectViewPolicy):
     def should_refresh_annotations(self):
         return False
 

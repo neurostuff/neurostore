@@ -5,6 +5,10 @@ import threading
 
 import pytest
 import sqlalchemy as sa
+from sqlalchemy import event, text
+from sqlalchemy.orm import aliased
+from sqlalchemy.sql import func
+
 from neurostore.models import (
     Analysis,
     BaseStudy,
@@ -24,9 +28,6 @@ from neurostore.services.base_study_metadata_enrichment import (
     process_base_study_metadata_outbox_batch,
 )
 from neurostore.services.has_media_flags import process_base_study_flag_outbox_batch
-from sqlalchemy import event, text
-from sqlalchemy.orm import aliased
-from sqlalchemy.sql import func
 
 
 def test_features_query(auth_client, ingest_demographic_features):

@@ -1,10 +1,11 @@
+from sqlalchemy import select
+from sqlalchemy.orm import raiseload, selectinload
+
 from neurostore.database import db
 from neurostore.models import Analysis, AnalysisConditions, BaseStudy, Condition, Study
 from neurostore.models.data import StudysetStudy
 from neurostore.resources.base import ListView, ObjectView
 from neurostore.resources.utils import view_maker
-from sqlalchemy import select
-from sqlalchemy.orm import raiseload, selectinload
 
 
 @view_maker

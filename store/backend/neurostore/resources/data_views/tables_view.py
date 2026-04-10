@@ -1,3 +1,7 @@
+from sqlalchemy import select
+from sqlalchemy.orm import raiseload, selectinload
+from webargs import fields
+
 from neurostore.database import db
 from neurostore.exceptions.factories import make_field_error
 from neurostore.exceptions.utils.error_helpers import abort_unprocessable
@@ -6,9 +10,6 @@ from neurostore.models.data import StudysetStudy
 from neurostore.resources.base import ListView, ObjectView
 from neurostore.resources.data_views.common import LIST_NESTED_ARGS
 from neurostore.resources.utils import view_maker
-from sqlalchemy import select
-from sqlalchemy.orm import raiseload, selectinload
-from webargs import fields
 
 
 @view_maker

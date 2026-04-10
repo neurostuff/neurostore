@@ -3,10 +3,11 @@ import traceback
 from typing import Any, Dict, Tuple
 
 import anyio
-from neurostore.exceptions.base import InternalServerError, NeuroStoreException
-from neurostore.exceptions.utils.errors import ErrorDetail, ErrorResponse
 from starlette.requests import Request
 from starlette.responses import JSONResponse
+
+from neurostore.exceptions.base import InternalServerError, NeuroStoreException
+from neurostore.exceptions.utils.errors import ErrorDetail, ErrorResponse
 
 logger = logging.getLogger(__name__)
 

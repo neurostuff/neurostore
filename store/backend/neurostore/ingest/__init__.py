@@ -9,6 +9,9 @@ import numpy as np
 import pandas as pd
 import requests
 from dateutil.parser import parse as parse_date
+from scipy import sparse
+from sqlalchemy import or_
+
 from neurostore.database import db
 from neurostore.map_types import canonicalize_map_type
 from neurostore.models import (
@@ -28,8 +31,6 @@ from neurostore.models import (
 from neurostore.models.data import StudysetStudy, _check_type
 from neurostore.note_keys import resolve_note_key_default
 from neurostore.services.has_media_flags import recompute_media_flags
-from scipy import sparse
-from sqlalchemy import or_
 
 META_ANALYSIS_WORDS = ["meta analysis", "meta-analysis", "systematic review"]
 

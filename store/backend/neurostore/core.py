@@ -1,7 +1,6 @@
+from neurostore import create_app
 from neurostore.database import db
 from neurostore.extensions import cache
-
-from neurostore import create_app
 
 app = create_app()
 connexion_app = app.extensions["connexion_app"]

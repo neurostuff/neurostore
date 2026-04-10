@@ -5,10 +5,11 @@ Tests for admin role functionality
 import warnings
 
 import sqlalchemy as sa
+from sqlalchemy.exc import SAWarning
+
 from neurostore.models import Role, Study, Studyset, User
 from neurostore.models.data import BaseStudy
 from neurostore.resources.utils import is_user_admin
-from sqlalchemy.exc import SAWarning
 
 
 def test_is_user_admin_returns_false_for_non_admin(session):
@@ -65,6 +66,7 @@ def test_is_user_admin_does_not_autoflush_transient_study_relationships(session)
 def test_admin_can_modify_others_records(auth_clients, user_data, session):
     """Test that admin users can modify records they don't own"""
     from jose.jwt import encode
+
     from neurostore.tests.request_utils import Client
 
     # Get a regular user's study
@@ -99,6 +101,7 @@ def test_admin_can_modify_others_records(auth_clients, user_data, session):
 def test_admin_can_delete_others_records(auth_clients, user_data, session):
     """Test that admin users can delete records they don't own"""
     from jose.jwt import encode
+
     from neurostore.tests.request_utils import Client
 
     # Get a regular user's study
@@ -134,6 +137,7 @@ def test_admin_can_delete_others_records(auth_clients, user_data, session):
 def test_admin_can_see_private_records(auth_clients, user_data, session):
     """Test that admin users can see all records including private ones"""
     from jose.jwt import encode
+
     from neurostore.tests.request_utils import Client
 
     # Create a private studyset owned by user1

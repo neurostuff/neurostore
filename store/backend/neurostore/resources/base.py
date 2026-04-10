@@ -10,6 +10,13 @@ import sqlalchemy.sql.expression as sae
 from flask import current_app, request  # jsonify
 from flask.views import MethodView
 from marshmallow import ValidationError
+from psycopg2 import errors
+from sqlalchemy import func
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import raiseload, selectinload
+from webargs import fields
+from webargs.flaskparser import parser
+
 from neurostore.cache_versioning import bump_cache_versions, get_cache_version_for_path
 from neurostore.database import db
 from neurostore.exceptions.utils.error_helpers import (
@@ -47,12 +54,6 @@ from neurostore.services.has_media_flags import (
     enqueue_base_study_flag_updates,
     recompute_media_flags,
 )
-from psycopg2 import errors
-from sqlalchemy import func
-from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import raiseload, selectinload
-from webargs import fields
-from webargs.flaskparser import parser
 
 
 @parser.error_handler

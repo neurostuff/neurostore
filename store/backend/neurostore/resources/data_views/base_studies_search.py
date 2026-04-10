@@ -5,6 +5,11 @@ from dataclasses import dataclass, field
 import numpy as np
 import sqlalchemy as sa
 import sqlalchemy.sql.expression as sae
+from pgvector.sqlalchemy import Vector
+from sqlalchemy import func, select, text
+from sqlalchemy.orm import aliased
+
+from neurostore import embeddings
 from neurostore.database import db
 from neurostore.exceptions.factories import make_field_error
 from neurostore.exceptions.utils.error_helpers import abort_validation
@@ -19,11 +24,6 @@ from neurostore.models import (
     Study,
 )
 from neurostore.utils import build_jsonpath, parse_json_filter
-from pgvector.sqlalchemy import Vector
-from sqlalchemy import func, select, text
-from sqlalchemy.orm import aliased
-
-from neurostore import embeddings
 
 
 @dataclass
@@ -314,7 +314,8 @@ class BaseStudySearchService:
             filter_group.version = version
             return
         raise ValueError(
-            f"Conflicting versions for pipeline {pipeline_name}: {version} vs {filter_group.version}"
+            f"Conflicting versions for pipeline {pipeline_name}: "
+            f"{version} vs {filter_group.version}"
         )
 
     def _abort_on_invalid_filters(self, invalid_filters):
@@ -433,7 +434,7 @@ class BaseStudySearchService:
                     )
                     modality_clauses = []
                     for value_index, modality_value in enumerate(modality_values):
-                        param_name = f"modality_filter_{pipeline_name}_{filter_index}_{value_index}"
+                        param_name = f"modality_filter_{pipeline_name}_{filter_index}_{value_index}"  # noqa: E501
                         modality_clauses.append(
                             modality_field.op("@>")(
                                 sa.func.jsonb_build_array(

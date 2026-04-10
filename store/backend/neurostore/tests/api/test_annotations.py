@@ -1,5 +1,7 @@
 from datetime import datetime, timezone
 
+from sqlalchemy import event
+
 from neurostore.database import db
 from neurostore.models import (
     Analysis,
@@ -15,7 +17,6 @@ from neurostore.models import (
     User,
 )
 from neurostore.tests.utils import ordered_note_keys
-from sqlalchemy import event
 
 
 def _is_annotation_analysis_concat_id_lookup(statement):

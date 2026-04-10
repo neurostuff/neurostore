@@ -1,5 +1,11 @@
 import sqlalchemy as sa
 from flask import request
+from sqlalchemy import select
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import load_only, raiseload, selectinload
+from webargs import fields
+from webargs.flaskparser import parser
+
 from neurostore.database import db
 from neurostore.exceptions.factories import make_field_error
 from neurostore.exceptions.utils.error_helpers import (
@@ -18,6 +24,7 @@ from neurostore.models import (
 )
 from neurostore.models.data import StudysetStudy
 from neurostore.resources.base import (
+    DefaultObjectViewPolicy,
     ListView,
     ObjectView,
     clear_cache,
@@ -41,11 +48,6 @@ from neurostore.resources.data_views.serialization import (
 from neurostore.resources.mutation_core import DefaultMutationPolicy
 from neurostore.resources.utils import view_maker
 from neurostore.schemas.data import StudysetSnapshot
-from sqlalchemy import select
-from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import load_only, raiseload, selectinload
-from webargs import fields
-from webargs.flaskparser import parser
 
 
 class StudysetMutationPolicy(DefaultMutationPolicy):
@@ -65,32 +67,43 @@ class StudysetMutationPolicy(DefaultMutationPolicy):
         if set(data.keys()) - allowed_top_level:
             return False
 
-        studies = data.get("studies")
-        if not isinstance(studies, list):
-            return False
-
-        for item in studies:
-            if isinstance(item, str):
-                continue
-            if isinstance(item, dict) and set(item.keys()) <= {"id"} and item.get("id"):
-                continue
-            return False
-
-        return True
+        return StudysetMutationPolicy._is_id_only_study_list(data.get("studies"))
 
     @staticmethod
     def is_study_link_only_payload(data):
         if not isinstance(data, dict):
             return False
 
-        studies = data.get("studies")
+        return StudysetMutationPolicy._is_id_only_study_list(data.get("studies"))
+
+    @staticmethod
+    def _study_payload_id(item):
+        if isinstance(item, dict):
+            return item.get("id")
+        if isinstance(item, str):
+            return item
+        return None
+
+    @classmethod
+    def _iter_submitted_study_ids(cls, studies):
+        for item in studies or []:
+            study_id = cls._study_payload_id(item)
+            if study_id:
+                yield study_id
+
+    @classmethod
+    def _is_id_only_study_list(cls, studies):
         if not isinstance(studies, list):
             return False
 
         for item in studies:
             if isinstance(item, str):
                 continue
-            if isinstance(item, dict) and set(item.keys()) <= {"id"} and item.get("id"):
+            if (
+                isinstance(item, dict)
+                and set(item.keys()) <= {"id"}
+                and cls._study_payload_id(item)
+            ):
                 continue
             return False
 
@@ -102,17 +115,7 @@ class StudysetMutationPolicy(DefaultMutationPolicy):
 
     @classmethod
     def resolve_current_ids(cls, studies):
-        current_ids = []
-        for item in studies or []:
-            if isinstance(item, dict):
-                study_id = item.get("id")
-            elif isinstance(item, str):
-                study_id = item
-            else:
-                study_id = None
-            if study_id:
-                current_ids.append(study_id)
-
+        current_ids = list(cls._iter_submitted_study_ids(studies))
         if not current_ids:
             return []
 
@@ -136,13 +139,9 @@ class StudysetMutationPolicy(DefaultMutationPolicy):
         if not studies or membership_only_payload:
             return None
 
-        existing_studies = []
-        for study_payload in studies:
-            if isinstance(study_payload, dict) and study_payload.get("id"):
-                existing_studies.append(study_payload.get("id"))
-            elif isinstance(study_payload, str):
-                existing_studies.append(study_payload)
-
+        existing_studies = list(
+            StudysetMutationPolicy._iter_submitted_study_ids(studies)
+        )
         query = Study.query.filter(Study.id.in_(existing_studies))
         if membership_only_payload:
             query = query.options(load_only(Study.id))
@@ -286,10 +285,7 @@ class StudysetMutationPolicy(DefaultMutationPolicy):
         return record
 
 
-class StudysetObjectViewPolicy:
-    def __init__(self, view):
-        self.view = view
-
+class StudysetObjectViewPolicy(DefaultObjectViewPolicy):
     def get_payload(self, id, args):
         if args.get("nested") and args.get("summary"):
             abort_validation("query parameters 'nested' and 'summary' are incompatible")

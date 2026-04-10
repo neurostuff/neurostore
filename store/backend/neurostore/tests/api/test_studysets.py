@@ -2,8 +2,9 @@ import random
 import re
 import string
 
-from neurostore.models import Analysis, Point, Study, Studyset, StudysetStudy, User
 from sqlalchemy import event
+
+from neurostore.models import Analysis, Point, Study, Studyset, StudysetStudy, User
 
 
 def test_post_and_get_studysets(auth_client, ingest_neurosynth, session):

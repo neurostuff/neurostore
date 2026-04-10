@@ -98,7 +98,7 @@ def test_extract_profile_functions_reads_thread_aware_json(tmp_path):
                 "thread_count": 2,
                 "functions": [
                     {
-                        "filename": "/usr/local/lib/python3.11/site-packages/neurostore/resources/data_views/base_studies_search.py",
+                        "filename": "/usr/local/lib/python3.11/site-packages/neurostore/resources/data_views/base_studies_search.py",  # noqa: E501
                         "line_number": 42,
                         "function_name": "apply",
                         "primitive_calls": 1,
@@ -107,7 +107,7 @@ def test_extract_profile_functions_reads_thread_aware_json(tmp_path):
                         "cumulative_seconds": 0.3,
                     },
                     {
-                        "filename": "/usr/local/lib/python3.11/site-packages/neurostore/tests/request_utils.py",
+                        "filename": "/usr/local/lib/python3.11/site-packages/neurostore/tests/request_utils.py",  # noqa: E501
                         "line_number": 12,
                         "function_name": "_make_request",
                         "primitive_calls": 1,
@@ -124,7 +124,7 @@ def test_extract_profile_functions_reads_thread_aware_json(tmp_path):
 
     assert rows == [
         {
-            "function": "/usr/local/lib/python3.11/site-packages/neurostore/resources/data_views/base_studies_search.py:42(apply)",
+            "function": "/usr/local/lib/python3.11/site-packages/neurostore/resources/data_views/base_studies_search.py:42(apply)",  # noqa: E501
             "primitive_calls": 1,
             "total_calls": 1,
             "self_seconds": 0.1,

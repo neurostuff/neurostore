@@ -13,6 +13,9 @@ from auth0.authentication import GetToken
 from auth0.authentication.exceptions import Auth0Error
 from auth0.authentication.users import Users
 from flask_migrate import upgrade as migrate_upgrade
+from sqlalchemy import select
+
+from neurostore import ingest
 from neurostore.ingest.extracted_features import ingest_feature
 from neurostore.models import (
     Analysis,
@@ -30,9 +33,6 @@ from neurostore.models import (
     User,
 )
 from neurostore.tests.utils import ordered_note_keys
-from sqlalchemy import select
-
-from neurostore import ingest
 
 LOGGER = logging.getLogger(__name__)
 
@@ -175,9 +175,8 @@ Session / db management tools
 @pytest.fixture(scope="session")
 def real_app():
     """Session-wide test `Flask` application."""
-    from neurostore.extensions import cache
-
     from neurostore import create_app
+    from neurostore.extensions import cache
 
     environ.setdefault("APP_ENV", "testing")
     _app = create_app()
@@ -219,9 +218,8 @@ def real_db(real_app):
 @pytest.fixture(scope="session")
 def app(mock_auth):
     """Session-wide test `Flask` application."""
-    from neurostore.extensions import cache
-
     from neurostore import create_app
+    from neurostore.extensions import cache
 
     environ.setdefault("APP_ENV", "testing")
     _app = create_app()

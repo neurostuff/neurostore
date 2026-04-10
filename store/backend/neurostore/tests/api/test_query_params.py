@@ -1,6 +1,7 @@
 from urllib.parse import urlencode
 
 import pytest
+
 from neurostore.models import BaseStudy, Study
 from neurostore.schemas.data import (
     AnalysisSchema,

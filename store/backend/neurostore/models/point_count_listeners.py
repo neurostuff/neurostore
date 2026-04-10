@@ -1,6 +1,7 @@
 import sqlalchemy as sa
-from neurostore.models.data import Point
 from sqlalchemy import event, inspect
+
+from neurostore.models.data import Point
 
 
 def _sync_analysis_point_count(connection, analysis_id):

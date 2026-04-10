@@ -1,9 +1,9 @@
+from sqlalchemy import select
+from sqlalchemy.orm import raiseload, selectinload
+
 from neurostore.database import db
 from neurostore.exceptions.factories import make_field_error
-from neurostore.exceptions.utils.error_helpers import (
-    abort_not_found,
-    abort_unprocessable,
-)
+from neurostore.exceptions.utils.error_helpers import abort_unprocessable
 from neurostore.models import (
     Analysis,
     AnalysisConditions,
@@ -17,17 +17,12 @@ from neurostore.models import (
     User,
 )
 from neurostore.models.data import StudysetStudy
-from neurostore.resources.base import ListView, ObjectView
+from neurostore.resources.base import DefaultObjectViewPolicy, ListView, ObjectView
 from neurostore.resources.data_views.common import LIST_NESTED_ARGS
 from neurostore.resources.utils import view_maker
-from sqlalchemy import select
-from sqlalchemy.orm import raiseload, selectinload
 
 
-class AnalysisObjectViewPolicy:
-    def __init__(self, view):
-        self.view = view
-
+class AnalysisObjectViewPolicy(DefaultObjectViewPolicy):
     def get_payload(self, id, args):
         if not args.get("nested"):
             return None
@@ -36,23 +31,6 @@ class AnalysisObjectViewPolicy:
         )
 
         return serialize_analysis_detail(self.get_record(id, args))
-
-    def build_put_eager_load_args(self, data):
-        args = {}
-        if set(self.view._o2m.keys()).intersection(set(data.keys())):
-            args["nested"] = True
-        return args
-
-    def should_refresh_annotations(self):
-        return True
-
-    def get_record(self, id, args):
-        query = self.view._model.query
-        query = self.view.eager_load(query, args)
-        record = query.filter_by(id=id).first()
-        if record is None:
-            abort_not_found(self.view._model.__name__, id)
-        return record
 
 
 @view_maker
