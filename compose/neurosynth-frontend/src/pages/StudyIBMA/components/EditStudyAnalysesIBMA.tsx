@@ -1,15 +1,12 @@
 import { Box, Typography } from '@mui/material';
 import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
-import { useStudyAnalyses } from 'stores/study/StudyStore';
-import EditStudyAnalysisIBMA1 from './EditStudyAnalysisIBMA1';
 import EditStudyComponentsStyles from 'pages/StudyCBMA/components/EditStudyComponents.styles';
+import { useStudyAnalyses } from 'stores/study/StudyStore';
+import React from 'react';
+import EditStudyAnalysisIBMA from './EditStudyAnalysisIBMA';
 
-const EditStudyIBMA: React.FC = () => {
+const EditStudyAnalysesIBMA: React.FC = () => {
     const analyses = useStudyAnalyses();
-
-    const handleCreateNewAnalysis = () => {
-        console.log('create new analysis');
-    };
 
     return (
         <NeurosynthAccordion
@@ -34,12 +31,10 @@ const EditStudyIBMA: React.FC = () => {
                         There are no analyses for this study.
                     </Typography>
                 )}
-                <Box>
-                    <EditStudyAnalysisIBMA1 />
-                </Box>
+                <EditStudyAnalysisIBMA />
             </Box>
         </NeurosynthAccordion>
     );
 };
 
-export default EditStudyIBMA;
+export default EditStudyAnalysesIBMA;

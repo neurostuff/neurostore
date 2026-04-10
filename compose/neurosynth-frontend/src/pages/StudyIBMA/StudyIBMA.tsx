@@ -4,10 +4,6 @@ import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { hasUnsavedStudyChanges, unsetUnloadHandler } from 'helpers/BeforeUnload.helpers';
 import { useProjectExtractionAnnotationId } from 'pages/Project/store/ProjectStore';
-import EditStudyAnalysesCBMA from 'pages/StudyCBMA/components/EditStudyAnalysesCBMA';
-import EditStudyAnnotations from 'pages/StudyCBMA/components/EditStudyAnnotations';
-import EditStudyDetails from 'pages/StudyCBMA/components/EditStudyDetails';
-import EditStudyMetadata from 'pages/StudyCBMA/components/EditStudyMetadata';
 import EditStudyPageHeader from 'pages/StudyCBMA/components/EditStudyPageHeader';
 import StudyCBMAPageStyles from 'pages/StudyCBMA/StudyCBMA.styles';
 import { useEffect, useState } from 'react';
@@ -17,8 +13,7 @@ import { useAnnotationId, useGetAnnotationIsLoading } from 'stores/annotation/An
 import { useClearStudyStore, useGetStudyIsLoading, useInitStudyStore, useStudyId } from 'stores/study/StudyStore';
 import DisplayExtractionTableState from '../StudyCBMA/components/DisplayExtractionTableState';
 import EditStudyCompleteButton from '../StudyCBMA/components/EditStudyCompleteButton';
-import EditStudyToolbar from '../StudyCBMA/components/EditStudyToolbar';
-import EditStudyAnalysisIBMA3 from './components/EditStudyAnalysisIBMA3';
+import EditStudyAnalysesIBMA from './components/EditStudyAnalysesIBMA';
 
 const StudyIBMAPage: React.FC = () => {
     const { projectId, studyId } = useParams<{ projectId: string; studyId: string }>();
@@ -99,7 +94,7 @@ const StudyIBMAPage: React.FC = () => {
                         },
                     }}
                 >
-                    <EditStudyAnalysisIBMA3 />
+                    <EditStudyAnalysesIBMA />
                     <Box sx={[StudyCBMAPageStyles.loadingButtonContainer]}>
                         <Box sx={{ width: '20%', justifyContent: 'flex-start' }}>
                             <ConfirmationDialog
