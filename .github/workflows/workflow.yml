@@ -232,7 +232,7 @@ jobs:
         continue-on-error: true
         run: |
           set -o pipefail
-          docker network create nginx-proxy
+          docker network inspect nginx-proxy >/dev/null 2>&1 || docker network create nginx-proxy
           docker compose pull store_redis store-pghero store-grafana
           docker compose \
             -f docker-compose.yml \
@@ -306,7 +306,7 @@ jobs:
     -
       name: Spin up backend
       run: |
-        docker network create nginx-proxy
+        docker network inspect nginx-proxy >/dev/null 2>&1 || docker network create nginx-proxy
         docker compose pull --ignore-buildable 
         docker compose \
           -f docker-compose.yml \
@@ -397,7 +397,7 @@ jobs:
     -
       name: Spin up backend
       run: |
-        docker network create nginx-proxy
+        docker network inspect nginx-proxy >/dev/null 2>&1 || docker network create nginx-proxy
         docker compose pull --ignore-buildable 
         docker compose \
           -f docker-compose.yml \
@@ -463,6 +463,7 @@ jobs:
       run: |
         cp compose/.env.example compose/.env
         cp store/.env.example store/.env
+        echo "NEUROSTORE_API_URL=http://store_nginx/api" >> compose/.env
     -
       name: load compose images
       uses: docker/bake-action@v6.0.0
@@ -496,7 +497,7 @@ jobs:
       name: Spin up compose backend
       run: |
         cd compose
-        docker network create nginx-proxy
+        docker network inspect nginx-proxy >/dev/null 2>&1 || docker network create nginx-proxy
         docker compose pull --ignore-buildable 
         docker compose \
           -f docker-compose.yml \
@@ -557,9 +558,7 @@ jobs:
       name: Ingest data into Compose
       run: |
         cd compose
-        container_id=$(cd ../store && docker compose ps -q neurostore)
-        ipaddr=$(docker inspect "${container_id}" | python3 -c "import sys, json; print(json.load(sys.stdin)[0]['NetworkSettings']['Networks']['nginx-proxy']['IPAddress'])")
-        docker compose exec -T compose bash -c "flask create-meta-analyses --n-studysets 1 --neurostore-url http://${ipaddr}:8000"
+        docker compose exec -T compose bash -c "flask create-meta-analyses --n-studysets 1 --neurostore-url http://store_nginx"
     -
       name: Frontend Cypress E2E Tests
       uses: cypress-io/github-action@v6

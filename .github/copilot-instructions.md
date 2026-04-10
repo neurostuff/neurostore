@@ -20,7 +20,7 @@ Build times vary significantly. Set appropriate timeouts and **DO NOT CANCEL** b
 #### Store Service (Neurostore Backend)
 
 - `cd store && cp .env.example .env`
-- `docker network create nginx-proxy` -- creates shared network
+- `docker network create ${SHARED_PROXY_NETWORK:-nginx-proxy}` -- creates the shared proxy network used by the stack
 - `docker compose build` -- takes 1-2 minutes. **NEVER CANCEL. Set timeout to 180+ seconds.**
 - `docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d` -- takes 10-15 seconds
 
@@ -136,6 +136,7 @@ Both services use similar `.env` configurations:
 ### Docker Configuration Issues
 
 Use `APP_ENV` as the only environment selector. For Docker-based tests, use `APP_ENV=docker_test`.
+- `SHARED_PROXY_NETWORK` controls the external cross-stack network name. Leave it as `nginx-proxy` for ordinary local/CI runs, or give dev and staging different values when both tracks must coexist on the same host.
 
 ## Directory Structure Reference
 

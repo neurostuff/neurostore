@@ -107,6 +107,9 @@ services:
     environment:
       - VIRTUAL_HOST=${V_HOST}
       - LETSENCRYPT_HOST=${V_HOST}
+    networks:
+      - default
+      - proxy_shared
 
   store-pgsql:
     image: store-pgsql
@@ -198,6 +201,6 @@ volumes:
   postgres17_data:
 
 networks:
-  default:
-    name: nginx-proxy
+  proxy_shared:
+    name: ${SHARED_PROXY_NETWORK:-nginx-proxy}
     external: true
