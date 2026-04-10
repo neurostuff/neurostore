@@ -33,7 +33,7 @@ class AnnotationAnalysesView(ObjectView, ListView):
         "studyset_study": "StudysetStudiesResource",
     }
 
-    def post(self):
+    def post(self, arg=None):
         data = parser.parse(self.__class__._schema(many=True), request)
         args = parser.parse(self._user_args, request, location="query")
         schema = self._schema(many=True, context=args)
