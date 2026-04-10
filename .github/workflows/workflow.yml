@@ -196,7 +196,7 @@ jobs:
         run: |
           docker compose exec -T \
           store-pgsql17 \
-          psql -U postgres -c "create database test_db"
+          bash -lc "psql -U postgres -tAc \"SELECT 1 FROM pg_database WHERE datname = 'store_test_db'\" | grep -q 1 || psql -U postgres -c \"create database store_test_db\""
       -
         name: Backend Tests
         env:
@@ -207,7 +207,7 @@ jobs:
           AUTH0_AUTH_URL: ${{ secrets.AUTH0_AUTH_URL }}
         run: |
           docker compose run \
-            -e "APP_SETTINGS=neurostore.config.DockerTestConfig" \
+            -e "APP_ENV=docker_test" \
             -e "AUTH0_CLIENT_ID=${AUTH0_CLIENT_ID}" \
             -e "AUTH0_CLIENT_SECRET=${AUTH0_CLIENT_SECRET}" \
             -e "AUTH0_BASE_URL=${AUTH0_BASE_URL}" \
@@ -266,7 +266,7 @@ jobs:
       run: |
         docker compose exec -T \
         compose-pgsql17 \
-        psql -U postgres -c "create database test_db"
+        bash -lc "psql -U postgres -tAc \"SELECT 1 FROM pg_database WHERE datname = 'compose_test_db'\" | grep -q 1 || psql -U postgres -c \"create database compose_test_db\""
     -
       name: Backend Tests
       env:
@@ -278,7 +278,7 @@ jobs:
         NEUROVAULT_ACCESS_TOKEN: ${{ secrets.NEUROVAULT_ACCESS_TOKEN }}
       run: |
         docker compose run \
-          -e "APP_SETTINGS=neurosynth_compose.config.DockerTestConfig" \
+          -e "APP_ENV=docker_test" \
           -e "AUTH0_CLIENT_ID=${AUTH0_CLIENT_ID}" \
           -e "AUTH0_CLIENT_SECRET=${AUTH0_CLIENT_SECRET}" \
           -e "AUTH0_BASE_URL=${AUTH0_BASE_URL}" \
@@ -357,7 +357,7 @@ jobs:
       run: | 
         docker compose exec -T \
         compose-pgsql17 \
-        psql -U postgres -c "create database test_db"
+        bash -lc "psql -U postgres -tAc \"SELECT 1 FROM pg_database WHERE datname = 'compose_test_db'\" | grep -q 1 || psql -U postgres -c \"create database compose_test_db\""
     -
       name: Frontend Jest Unit Tests
       env:
@@ -372,7 +372,7 @@ jobs:
       run: |
         cp neurosynth-frontend/.env.example neurosynth-frontend/.env.dev && \
         docker compose run \
-          -e "APP_SETTINGS=neurosynth_compose.config.DockerTestConfig" \
+          -e "APP_ENV=docker_test" \
           -e "AUTH0_CLIENT_ID=${AUTH0_CLIENT_ID}" \
           -e "AUTH0_CLIENT_SECRET=${AUTH0_CLIENT_SECRET}" \
           -e "AUTH0_BASE_URL=${AUTH0_BASE_URL}" \
@@ -474,7 +474,7 @@ jobs:
 
         docker compose exec -T \
         compose-pgsql17 \
-        psql -U postgres -c "CREATE DATABASE test_db"
+        bash -lc "psql -U postgres -tAc \"SELECT 1 FROM pg_database WHERE datname = 'compose_test_db'\" | grep -q 1 || psql -U postgres -c \"CREATE DATABASE compose_test_db\""
     -
       name: Create Store Database
       run: |
@@ -482,11 +482,11 @@ jobs:
 
         docker compose exec -T \
         store-pgsql17 \
-        psql -U postgres -c "CREATE DATABASE test_db"
+        bash -lc "psql -U postgres -tAc \"SELECT 1 FROM pg_database WHERE datname = 'store_test_db'\" | grep -q 1 || psql -U postgres -c \"CREATE DATABASE store_test_db\""
 
         docker compose exec -T \
         store-pgsql17 \
-        psql -U postgres -d test_db -c "CREATE EXTENSION IF NOT EXISTS vector;"
+        psql -U postgres -d store_test_db -c "CREATE EXTENSION IF NOT EXISTS vector;"
     -
       name: Apply Compose migrations
       run: |
@@ -512,7 +512,7 @@ jobs:
       name: Frontend Cypress E2E Tests
       uses: cypress-io/github-action@v6
       env:
-        APP_SETTINGS: neurosynth_compose.config.DockerTestConfig
+        APP_ENV: docker_test
         CYPRESS_auth0ClientId: ${{ secrets.VITE_APP_AUTH0_CLIENT_ID }}
         CYPRESS_auth0ClientSecret: ${{ secrets.VITE_APP_AUTH0_CLIENT_SECRET }}
         CYPRESS_: ${{ secrets.VITE_APP_AUTH0_DOMAIN }}

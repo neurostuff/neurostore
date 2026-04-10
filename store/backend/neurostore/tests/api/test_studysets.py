@@ -1,8 +1,10 @@
 import random
 import re
 import string
+
 from sqlalchemy import event
-from neurostore.models import Studyset, Study, StudysetStudy, User
+
+from neurostore.models import Analysis, Point, Study, Studyset, StudysetStudy, User
 
 
 def test_post_and_get_studysets(auth_client, ingest_neurosynth, session):
@@ -99,6 +101,53 @@ def test_get_nested_nonnested_studysets(auth_client, ingest_neurosynth, session)
 
     assert isinstance(non_nested.json()["studies"][0], str)
     assert isinstance(nested.json()["studies"][0], dict)
+
+
+def test_get_nested_studyset_includes_analysis_points(auth_client, session):
+    user = User.query.first()
+    study = Study(name="nested study", level="group", public=True, user=user)
+    studyset = Studyset(name="nested studyset", public=True, user=user)
+    session.add_all([study, studyset])
+    session.flush()
+
+    session.add(
+        StudysetStudy(
+            study_id=study.id,
+            studyset_id=studyset.id,
+            curation_stub_uuid="nested-stub",
+        )
+    )
+
+    analysis = Analysis(study_id=study.id, name="analysis-1", user=user, weights=[])
+    session.add(analysis)
+    session.flush()
+
+    point = Point(
+        analysis_id=analysis.id,
+        x=1.0,
+        y=2.0,
+        z=3.0,
+        space="MNI",
+        kind="peak",
+        user=user,
+    )
+    session.add(point)
+    session.commit()
+
+    nested = auth_client.get(f"/api/studysets/{studyset.id}?nested=true")
+
+    assert nested.status_code == 200
+    payload = nested.json()
+    assert payload["studyset_studies"] == [
+        {"id": study.id, "curation_stub_uuid": "nested-stub"}
+    ]
+    assert payload["studies"][0]["id"] == study.id
+    assert payload["studies"][0]["analyses"][0]["id"] == analysis.id
+    assert payload["studies"][0]["analyses"][0]["points"][0]["coordinates"] == [
+        1.0,
+        2.0,
+        3.0,
+    ]
 
 
 def test_get_summary_studyset(auth_client, ingest_neurosynth, session):
@@ -539,7 +588,9 @@ def test_studyset_put_studies_only_avoids_point_value_loading(
 
     event.listen(session.bind, "before_cursor_execute", _capture_sql)
     try:
-        resp = auth_client.put(f"/api/studysets/{studyset.id}", data={"studies": swapped})
+        resp = auth_client.put(
+            f"/api/studysets/{studyset.id}", data={"studies": swapped}
+        )
     finally:
         event.remove(session.bind, "before_cursor_execute", _capture_sql)
 
@@ -565,7 +616,9 @@ def test_studyset_put_studies_only_uses_deterministic_insert_order(
     insert_orders = []
     study_id_key = re.compile(r"study_id__(\d+)$")
 
-    def _capture_insert_order(conn, cursor, statement, parameters, context, executemany):
+    def _capture_insert_order(
+        conn, cursor, statement, parameters, context, executemany
+    ):
         normalized_statement = " ".join(statement.lower().split())
         if "insert into studyset_studies" not in normalized_statement:
             return

@@ -16,6 +16,10 @@ First, set up the main environment variables in `.env` (see: `.env.example`).
 
 Edit the `.env` template to set the correct variables
 
+`APP_ENV` is the environment selector. Supported values are `development`,
+`staging`, `production`, `testing`, and `docker_test`. The stack resolves the
+matching Flask config and database name automatically.
+
 ## Initializing backend
 Create the network, build the containers, and start services using the development configuration:
 
@@ -25,18 +29,26 @@ Create the network, build the containers, and start services using the developme
 
 The server should now be running at http://localhost/
 
-Create the database for neurostore:
-
-    docker-compose exec store-pgsql17 psql -U postgres -c "create database neurostore"
+With `APP_ENV=development`, a fresh Postgres volume initializes `store_test_db`
+automatically. If you are reusing an older volume created under a different
+environment, recreate the volume or create `store_test_db` manually before migrating.
 
 Next, apply the existing migrations (they are the canonical definition of the schema).
 
     docker-compose exec neurostore flask db upgrade
 
+The tracked migrations create the `pgvector` extension automatically. If you are recovering from a partially migrated database, it is also safe to run:
+
+    docker-compose exec store-pgsql17 psql -U postgres -d store_test_db -c "CREATE EXTENSION IF NOT EXISTS vector;"
+
 Finally ingest data
 
     docker-compose exec neurostore \
         bash -c "flask ingest-neurosynth --max-rows 100"
+
+Note: the stack now resolves the database from `APP_ENV` automatically.
+Development, testing, and `docker_test` use `store_test_db`; staging and
+production use `neurostore` by default.
 
 
 ## Maintaining docker image and db
@@ -69,27 +81,23 @@ docker-compose exec neurostore flask db upgrade
 Because each branch might change the schema independently, recreate the database before starting work on a different branch so that Alembic can replay only the migrations that exist on that branch.
 
 ```sh
-docker-compose stop neurostore
-docker-compose exec store-pgsql17 psql -U postgres -c "DROP DATABASE IF EXISTS neurostore;"
-docker-compose exec store-pgsql17 psql -U postgres -c "CREATE DATABASE neurostore;"
-docker-compose start neurostore
-docker-compose exec neurostore flask db upgrade
+    docker compose stop neurostore store_outbox_worker store_metadata_outbox_worker store_nginx store-pghero store-grafana
+    docker compose exec store-pgsql17 psql -U postgres -c "DROP DATABASE IF EXISTS store_test_db;"
+    docker compose exec store-pgsql17 psql -U postgres -c "CREATE DATABASE store_test_db;"
+    docker compose up -d
+    docker compose exec neurostore flask db upgrade
 ```
 
 If you're using the legacy Postgres container, replace `store-pgsql17` with `store-pgsql` in the commands above. Re-run any ingestion or seed scripts your branch requires once the upgrade completes.
 
 
 ## Running tests
-To run tests, after starting services, create a test database:
-
-    docker-compose exec store-pgsql psql -U postgres -c "create database test_db"
-
-**NOTE**: This command will ask you for the postgres password which is defined
-in the `.env` file.
+To run tests after starting services, ensure `store_test_db` exists.
 
 and execute:
 
-    docker-compose run -e "APP_SETTINGS=neurostore.config.DockerTestConfig" --rm -w /neurostore neurostore python -m pytest neurostore/tests
+    docker compose exec store-pgsql17 psql -U postgres -tAc "SELECT 1 FROM pg_database WHERE datname = 'store_test_db'" | grep -q 1 || docker compose exec store-pgsql17 psql -U postgres -c "CREATE DATABASE store_test_db;"
+    docker compose run -e "APP_ENV=docker_test" --rm neurostore bash -c "python -m pytest neurostore/tests"
 
 ## Admin interface
 The Flask-Admin UI is served at `/admin` once the stack is running.
@@ -105,11 +113,11 @@ Auth:
 Grant admin access (recommended for any admin UI access):
 ```sh
 # Find the user ID
-docker-compose exec store-pgsql17 psql -U postgres -d neurostore \
+docker compose exec store-pgsql17 psql -U postgres -d store_test_db \
   -c "SELECT id, external_id FROM users WHERE external_id = 'user-external-id';"
 
 # Assign admin role
-docker-compose exec store-pgsql17 psql -U postgres -d neurostore \
+docker compose exec store-pgsql17 psql -U postgres -d store_test_db \
   -c "INSERT INTO roles_users (user_id, role_id) VALUES ('user-id', 'admin');"
 ```
 
@@ -122,7 +130,7 @@ docker-compose exec store-pgsql17 psql -U postgres -d neurostore \
 To start the pgHero service, ensure Docker Compose is set up and run:
 
 ```sh
-docker-compose up -d store-pghero
+docker compose up -d store-pghero
 ```
 
 ### Accessing the pgHero Web UI
@@ -131,10 +139,17 @@ Once running, access the pgHero dashboard at: [http://localhost/pghero](http://l
 
 The `/pghero` route is proxied by nginx to the pgHero service, so you do not need to specify a port.
 
-### Required Environment Variables
+pgHero follows the same environment-based database resolution as the rest of the
+store stack. It resolves the target database from `APP_ENV`.
 
-Set the following environment variables (typically in your `.env` file):
+Typical local choices:
 
-- `PGHERO_DATABASE_URL` — The connection string for your PostgreSQL database (e.g., `postgres://postgres:password@store-pgsql:5432/neurostore`).
+- Inspect the local development app database: set `APP_ENV=development`
+- Inspect the staging/production-style database name locally: set `APP_ENV=staging` or `APP_ENV=production`
+
+### Derived Connection Settings
+
+`DATABASE_URL` is derived at container startup from `POSTGRES_USER`,
+`POSTGRES_PASSWORD`, `POSTGRES_HOST`, and the database resolved from `APP_ENV`.
 
 Refer to the `docker-compose.yml` for additional configuration options.

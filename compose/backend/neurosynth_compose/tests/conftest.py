@@ -227,9 +227,18 @@ def mock_pynv(monkeysession):
 
 @pytest.fixture(scope="session")
 def mock_auth(monkeysession):
-    """mock decode token to get around rate limits"""
-    monkeysession.setenv(
-        "BEARERINFO_FUNC", "neurosynth_compose.tests.conftest.mock_decode_token"
+    """Override auth handler config so Connexion resolves the test decoder."""
+    from neurosynth_compose import config as config_module
+
+    monkeysession.setattr(
+        config_module.Config,
+        "BEARERINFO_FUNC",
+        "neurosynth_compose.tests.conftest.mock_decode_token",
+    )
+    monkeysession.setattr(
+        config_module.Config,
+        "APIKEYINFO_FUNC",
+        "neurosynth_compose.resources.auth.verify_key",
     )
 
 
@@ -253,15 +262,11 @@ Session / db management tools
 @pytest.fixture(scope="session")
 def app(mock_auth):
     """Session-wide test `Flask` application."""
+    environ.setdefault("APP_ENV", "testing")
+
     from .. import create_app
 
     _app = create_app()
-
-    if "APP_SETTINGS" not in environ:
-        config = "neurosynth_compose.config.TestingConfig"
-    else:
-        config = environ["APP_SETTINGS"]
-    _app.config.from_object(config)
     # _app.config["SQLALCHEMY_ECHO"] = True
 
     # Establish an application context before running the tests.

@@ -1,20 +1,19 @@
+import orjson
 from marshmallow import (
-    fields,
+    EXCLUDE,
     Schema,
     SchemaOpts,
+    ValidationError,
+    fields,
     post_dump,
+    post_load,
     pre_dump,
     pre_load,
-    post_load,
     validates_schema,
-    EXCLUDE,
-    ValidationError,
 )
-
 from sqlalchemy import func
-import orjson
 
-from neurostore.core import db
+from neurostore.database import db
 from neurostore.map_types import canonicalize_map_type, map_type_label
 from neurostore.models import Analysis, Point
 from neurostore.note_keys import (
@@ -450,6 +449,15 @@ class AnalysisSchema(BaseDataSchema):
 
     @pre_load
     def load_values(self, data, **kwargs):
+        if not isinstance(data, dict):
+            return data
+
+        # Dump/load normalization during clone flows can materialize missing
+        # nested collections as explicit nulls. Treat those as absent inputs.
+        for field_name in ("images", "points", "analysis_conditions"):
+            if data.get(field_name) is None:
+                data.pop(field_name, None)
+
         partial = bool(kwargs.get("partial"))
         # conditions/weights need special processing
         if data.get("conditions") is not None and data.get("weights") is not None:
@@ -480,10 +488,34 @@ class AnalysisSchema(BaseDataSchema):
 
     @post_dump
     def dump_values(self, data, **kwargs):
+        def _sort_payload_list(values, *, order_key=None, id_key="id"):
+            if not isinstance(values, list):
+                return values
+
+            def _sort_key(item):
+                if isinstance(item, dict):
+                    if order_key is not None:
+                        order_val = item.get(order_key)
+                    else:
+                        order_val = None
+                    return (
+                        order_val is None,
+                        order_val if order_val is not None else 0,
+                        item.get(id_key) or "",
+                    )
+                return (True, 0, item or "")
+
+            return sorted(values, key=_sort_key)
+
         if data.get("analysis_conditions") is not None:
+            data["analysis_conditions"] = _sort_payload_list(
+                data["analysis_conditions"], id_key="condition"
+            )
             data["conditions"] = [ac["condition"] for ac in data["analysis_conditions"]]
             data["weights"] = [ac["weight"] for ac in data["analysis_conditions"]]
         data.pop("analysis_conditions", None)
+        data["points"] = _sort_payload_list(data.get("points"), order_key="order")
+        data["images"] = _sort_payload_list(data.get("images"))
 
         return data
 
@@ -528,7 +560,7 @@ class BaseStudySchema(BaseDataSchema):
     pubget_fulltext = fields.String(load_only=True, allow_none=True)
 
     def get_features(self, obj):
-        from .pipeline import PipelineStudyResultSchema
+        from neurostore.schemas.pipeline import PipelineStudyResultSchema
 
         pipelines = self.context.get("feature_display", None)
         pipeline_configs = self.context.get("pipeline_config", None)
@@ -640,6 +672,25 @@ class StudySchema(BaseDataSchema):
         if not getattr(obj, "tables", None):
             return []
         return [getattr(table, "id", table) for table in obj.tables]
+
+    @post_dump
+    def sort_nested_analyses(self, data, **kwargs):
+        analyses = data.get("analyses")
+        if not isinstance(analyses, list):
+            return data
+
+        def _sort_key(item):
+            if isinstance(item, dict):
+                order_val = item.get("order")
+                return (
+                    order_val is None,
+                    order_val if order_val is not None else 0,
+                    item.get("id") or "",
+                )
+            return (True, 0, item or "")
+
+        data["analyses"] = sorted(analyses, key=_sort_key)
+        return data
 
 
 class StudysetSchema(BaseDataSchema):

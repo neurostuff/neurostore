@@ -5,7 +5,7 @@ This avoids expensive Redis key scans by embedding version tokens in cache keys.
 
 import re
 
-from .core import cache
+from neurostore.extensions import cache
 
 _API_PATH_RE = re.compile(r"^/api/(?P<resource>[^/]+)(?:/(?P<object_id>[^/]+))?/?$")
 

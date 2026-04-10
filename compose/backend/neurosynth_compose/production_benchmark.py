@@ -48,12 +48,12 @@ def _ensure_user() -> None:
 
 def _load_app():
     from neurosynth_compose import create_app
+    from neurosynth_compose.config import resolve_config_object
     from neurosynth_compose.resources import analysis as analysis_resources
 
     app = create_app()
-    app.config.from_object(
-        os.environ.get("APP_SETTINGS", "neurosynth_compose.config.TestingConfig")
-    )
+    os.environ.setdefault("APP_ENV", "testing")
+    app.config.from_object(resolve_config_object())
     _install_local_neurostore_stub(analysis_resources)
     return app
 

@@ -35,6 +35,7 @@ dependencies = [
     "shortuuid~=1.0",
     "sqlalchemy~=2.0",
     "sqlalchemy-utils~=0.36",
+    "starlette>=1.0.0,<2",
     "webargs~=8.7",
     "wrapt~=2.0",
     "NiMARE==0.9.0",

@@ -6,8 +6,7 @@ TOKEN = "INSERT TOKEN"
 
 
 management_client = ManagementClient(
-    domain=current_app.config["AUTH0_BASE_URL"].removeprefix("https://"),
-    token=TOKEN
+    domain=current_app.config["AUTH0_BASE_URL"].removeprefix("https://"), token=TOKEN
 )
 
 result_pager = management_client.users.list(per_page=100)

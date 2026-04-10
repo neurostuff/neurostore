@@ -7,20 +7,20 @@ import time
 
 import click
 from flask_migrate import Migrate
+from sqlalchemy.exc import OperationalError
 
-from neurostore.core import app, db
-from neurostore import ingest
-from neurostore import models
+from neurostore import create_app, ingest, models
+from neurostore.config import resolve_config_object
+from neurostore.database import db
 from neurostore.services.has_media_flags import process_base_study_flag_outbox_batch
 from neurostore.services.base_study_metadata_enrichment import (
     process_base_study_metadata_outbox_batch,
 )
 from neurostore.services.utils import outbox_health_snapshot
 
-if not getattr(app, "config", None):
-    app = app._app
+app = create_app()
 
-app.config.from_object(os.environ["APP_SETTINGS"])
+app.config.from_object(resolve_config_object())
 
 
 def include_object(obj, name, type_, reflected, compare_to):
@@ -36,13 +36,18 @@ def include_object(obj, name, type_, reflected, compare_to):
     return True
 
 
-migrate = Migrate(
-    app,
-    db,
-    directory=app.config["MIGRATIONS_DIR"],
-    include_object=include_object,
-)
-migrate.init_app(app, db)
+def init_migrate(target_app, target_db):
+    migrate = Migrate(
+        target_app,
+        target_db,
+        directory=target_app.config["MIGRATIONS_DIR"],
+        include_object=include_object,
+    )
+    migrate.init_app(target_app, target_db)
+    return migrate
+
+
+migrate = init_migrate(app, db)
 
 
 @app.shell_context_processor
@@ -82,7 +87,24 @@ def ingest_neuroquery(max_rows):
 def _run_outbox_processor(process_fn, batch_size, loop, sleep_seconds):
     processed_total = 0
     while True:
-        processed = process_fn(batch_size=batch_size)
+        try:
+            processed = process_fn(batch_size=batch_size)
+        except OperationalError as exc:
+            # Concurrent outbox writers can deadlock on Postgres row/index locks.
+            # Roll back the aborted transaction and retry in loop mode instead of
+            # crashing the worker process.
+            if getattr(getattr(exc, "orig", None), "pgcode", None) == "40P01":
+                db.session.rollback()
+                if not loop:
+                    raise
+                app.logger.warning(
+                    "outbox processor deadlock detected in %s; retrying in %.1fs",
+                    process_fn.__name__,
+                    sleep_seconds,
+                )
+                time.sleep(sleep_seconds)
+                continue
+            raise
         processed_total += processed
         if not loop:
             break

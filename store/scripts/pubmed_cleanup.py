@@ -11,6 +11,7 @@ Entrez.email = "jamesdkent21@gmail.com"
 # Chunk size for batching PubMed requests
 CHUNK_SIZE = 900
 
+
 def get_publication_year(pmid):
     """
     Retrieves the publication year for a given PMID using BioPython.
@@ -41,6 +42,7 @@ def get_publication_year(pmid):
         print(f"Error retrieving publication year: {str(e)}")
         return None
 
+
 def get_journal_names(bss):
     """
     Retrieves and updates journal names for a list of studies using BioPython.
@@ -56,7 +58,9 @@ def get_journal_names(bss):
         pmid_dict = {bs.pmid: bs for bs in bss}
         pmids_str = ",".join(list(pmid_dict.keys()))
 
-        handle = Entrez.efetch(db="pubmed", id=pmids_str, rettype="medline", retmode="text")
+        handle = Entrez.efetch(
+            db="pubmed", id=pmids_str, rettype="medline", retmode="text"
+        )
         records = handle.read()
         handle.close()
 
@@ -77,12 +81,13 @@ def get_journal_names(bss):
                 for v in bs.versions:
                     v.publication = journal_name
                     to_commit.append(v)
-        
+
         return to_commit
-    
+
     except Exception as e:
         print(f"Error retrieving journal names: {str(e)}")
         return []
+
 
 def get_abstracts(bss):
     """
@@ -99,7 +104,9 @@ def get_abstracts(bss):
         pmid_dict = {bs.pmid: bs for bs in bss}
         pmids_str = ",".join(list(pmid_dict.keys()))
 
-        handle = Entrez.efetch(db="pubmed", id=pmids_str, rettype="medline", retmode="text")
+        handle = Entrez.efetch(
+            db="pubmed", id=pmids_str, rettype="medline", retmode="text"
+        )
         records = handle.read()
         handle.close()
 
@@ -109,7 +116,7 @@ def get_abstracts(bss):
             pmid = None
             abstract_lines = []
             in_abstract = False
-            
+
             for line in lines:
                 if line.startswith("PMID- "):
                     pmid = line[6:]
@@ -120,7 +127,7 @@ def get_abstracts(bss):
                     abstract_lines.append(line[6:])
                 elif in_abstract:
                     in_abstract = False
-            
+
             if pmid and abstract_lines:
                 abstract = " ".join(abstract_lines)
                 bs = pmid_dict[pmid]
@@ -129,12 +136,13 @@ def get_abstracts(bss):
                 for v in bs.versions:
                     v.description = abstract
                     to_commit.append(v)
-                    
+
         return to_commit
 
     except Exception as e:
         print(f"Error retrieving abstracts: {str(e)}")
         return []
+
 
 def get_author_names(bss):
     """
@@ -151,7 +159,9 @@ def get_author_names(bss):
         pmid_dict = {bs.pmid: bs for bs in bss}
         pmids_str = ",".join(list(pmid_dict.keys()))
 
-        handle = Entrez.efetch(db="pubmed", id=pmids_str, rettype="medline", retmode="text")
+        handle = Entrez.efetch(
+            db="pubmed", id=pmids_str, rettype="medline", retmode="text"
+        )
         records = handle.read()
         handle.close()
 
@@ -173,26 +183,29 @@ def get_author_names(bss):
                 for v in bs.versions:
                     v.authors = authors
                     to_commit.append(v)
-                    
+
         return to_commit
 
     except Exception as e:
         print(f"Error retrieving author names: {str(e)}")
         return []
 
+
 def cleanup_publications():
     """Main function to clean up publication data"""
-    
+
     print("Starting publication cleanup...")
-    
+
     # Fix publication years
     values_to_check = [None, 0, 1, 3, 9, 13, 16, 19]
-    bad_year = BaseStudy.query.filter(
-        or_(BaseStudy.year==None, BaseStudy.year<=1900)
-    ).filter(BaseStudy.pmid != None).all()
-    
+    bad_year = (
+        BaseStudy.query.filter(or_(BaseStudy.year == None, BaseStudy.year <= 1900))
+        .filter(BaseStudy.pmid != None)
+        .all()
+    )
+
     print(f"Found {len(bad_year)} studies with invalid years")
-    
+
     # Update years
     to_commit = []
     for bs in bad_year:
@@ -205,73 +218,102 @@ def cleanup_publications():
         for v in bs.versions:
             v.year = year
             to_commit.append(v)
-    
+
     if to_commit:
         db.session.add_all(to_commit)
         db.session.commit()
         print(f"Updated {len(to_commit)} records with correct years")
 
     # Fix missing journals
-    bad_journal = BaseStudy.query.filter(
-        or_(BaseStudy.publication==None, 
-            BaseStudy.publication=='', 
-            func.trim(BaseStudy.publication)=='')
-    ).filter(BaseStudy.pmid != None).options(joinedload(BaseStudy.versions)).all()
-    
+    bad_journal = (
+        BaseStudy.query.filter(
+            or_(
+                BaseStudy.publication == None,
+                BaseStudy.publication == "",
+                func.trim(BaseStudy.publication) == "",
+            )
+        )
+        .filter(BaseStudy.pmid != None)
+        .options(joinedload(BaseStudy.versions))
+        .all()
+    )
+
     print(f"Found {len(bad_journal)} studies with missing journals")
-    
+
     # Process journals in chunks
     to_commit = []
-    chunks = [bad_journal[i:i+CHUNK_SIZE] for i in range(0, len(bad_journal), CHUNK_SIZE)]
+    chunks = [
+        bad_journal[i : i + CHUNK_SIZE] for i in range(0, len(bad_journal), CHUNK_SIZE)
+    ]
     for chunk in chunks:
         to_commit.extend(get_journal_names(chunk))
-    
+
     if to_commit:
         db.session.add_all(to_commit)
         db.session.commit()
         print(f"Updated {len(to_commit)} records with journal information")
 
     # Fix missing authors
-    bad_authors = BaseStudy.query.filter(
-        or_(BaseStudy.authors==None,
-            BaseStudy.authors=='',
-            func.trim(BaseStudy.authors)=='')
-    ).filter(BaseStudy.pmid != None).options(joinedload(BaseStudy.versions)).all()
-    
+    bad_authors = (
+        BaseStudy.query.filter(
+            or_(
+                BaseStudy.authors == None,
+                BaseStudy.authors == "",
+                func.trim(BaseStudy.authors) == "",
+            )
+        )
+        .filter(BaseStudy.pmid != None)
+        .options(joinedload(BaseStudy.versions))
+        .all()
+    )
+
     print(f"Found {len(bad_authors)} studies with missing authors")
-    
+
     # Process authors in chunks
     to_commit = []
-    chunks = [bad_authors[i:i+CHUNK_SIZE] for i in range(0, len(bad_authors), CHUNK_SIZE)]
+    chunks = [
+        bad_authors[i : i + CHUNK_SIZE] for i in range(0, len(bad_authors), CHUNK_SIZE)
+    ]
     for chunk in chunks:
         to_commit.extend(get_author_names(chunk))
-    
+
     if to_commit:
         db.session.add_all(to_commit)
         db.session.commit()
         print(f"Updated {len(to_commit)} records with author information")
 
     # Fix missing abstracts
-    bad_abstracts = BaseStudy.query.filter(
-        or_(BaseStudy.description==None,
-            BaseStudy.description=='',
-            func.trim(BaseStudy.description)=='')
-    ).filter(BaseStudy.pmid != None).options(joinedload(BaseStudy.versions)).all()
-    
+    bad_abstracts = (
+        BaseStudy.query.filter(
+            or_(
+                BaseStudy.description == None,
+                BaseStudy.description == "",
+                func.trim(BaseStudy.description) == "",
+            )
+        )
+        .filter(BaseStudy.pmid != None)
+        .options(joinedload(BaseStudy.versions))
+        .all()
+    )
+
     print(f"Found {len(bad_abstracts)} studies with missing abstracts")
-    
+
     # Process abstracts in chunks
     to_commit = []
-    chunks = [bad_abstracts[i:i+CHUNK_SIZE] for i in range(0, len(bad_abstracts), CHUNK_SIZE)]
+    chunks = [
+        bad_abstracts[i : i + CHUNK_SIZE]
+        for i in range(0, len(bad_abstracts), CHUNK_SIZE)
+    ]
     for chunk in chunks:
         to_commit.extend(get_abstracts(chunk))
-    
+
     if to_commit:
         db.session.add_all(to_commit)
         db.session.commit()
         print(f"Updated {len(to_commit)} records with abstract information")
 
     print("Publication cleanup complete!")
+
 
 if __name__ == "__main__":
     cleanup_publications()

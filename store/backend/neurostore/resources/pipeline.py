@@ -1,27 +1,30 @@
 """Pipeline related resources"""
 
-from sqlalchemy import text, and_, or_
-from flask import request
-from neurostore.exceptions.utils.error_helpers import abort_validation
-from neurostore.exceptions.factories import make_field_error
-
-from sqlalchemy.orm import selectinload, aliased
+from sqlalchemy import and_, or_, text
+from sqlalchemy.orm import aliased, selectinload
 from webargs import fields
 
-from .utils import view_maker
-from ..utils import parse_json_filter, build_jsonpath
-from .base import ObjectView, ListView
-from ..models import Pipeline, PipelineConfig, PipelineStudyResult, PipelineEmbedding
-from ..schemas.pipeline import (
-    pipeline_schema,
-    pipeline_schemas,
+from neurostore.exceptions.factories import make_field_error
+from neurostore.exceptions.utils.error_helpers import abort_validation
+from neurostore.models import (
+    Pipeline,
+    PipelineConfig,
+    PipelineEmbedding,
+    PipelineStudyResult,
+)
+from neurostore.resources.base import ListView, ObjectView
+from neurostore.resources.utils import view_maker
+from neurostore.schemas.pipeline import (
     pipeline_config_schema,
     pipeline_config_schemas,
-    pipeline_study_result_schema,
-    pipeline_study_result_schemas,
     pipeline_embedding_schema,
     pipeline_embedding_schemas,
+    pipeline_schema,
+    pipeline_schemas,
+    pipeline_study_result_schema,
+    pipeline_study_result_schemas,
 )
+from neurostore.utils import build_jsonpath, parse_json_filter
 
 
 @view_maker
@@ -283,24 +286,22 @@ class PipelineStudyResultsView(ObjectView, ListView):
         )
         return q
 
-    def post(self):
+    def post(self, body):
         """
         If 'study_ids' is present in the request body, treat as a search (bypass authorization).
         Only study_ids are in the body; all other filters are in the query string.
         Otherwise, treat as a creation (require authorization).
         """
-        data = request.get_json() or {}
-
-        if "study_ids" in data:
+        if "study_ids" in body:
             # Bypass authorization for search requests
             # Convert study_ids to study_id for consistent filtering
-            study_ids = data.get("study_ids", [])
+            study_ids = body.get("study_ids", [])
             extra_args = {"study_id": study_ids}
             # Call cached search (enables cache for study_ids POST)
             return self.search(extra_args=extra_args)
         else:
             # Standard POST: require authorization (enforced by OpenAPI and Flask)
-            return super().post(self)
+            return super().post(body)
 
 
 @view_maker

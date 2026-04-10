@@ -5,14 +5,15 @@ Revises: be1425a6d9fd
 Create Date: 2022-04-05 21:23:36.723683
 
 """
+
 from alembic import op
 import sqlalchemy as sa
 import sqlalchemy_utils
 
 
 # revision identifiers, used by Alembic.
-revision = '99078464479b'
-down_revision = 'be1425a6d9fd'
+revision = "99078464479b"
+down_revision = "be1425a6d9fd"
 branch_labels = None
 depends_on = None
 
@@ -22,119 +23,188 @@ def upgrade():
     bind = op.get_bind()
     inspector = sa.inspect(bind)
 
-    if not inspector.has_table('roles'):
-        op.create_table('roles',
-        sa.Column('id', sa.Text(), nullable=False),
-        sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
-        sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),
-        sa.Column('name', sa.Text(), nullable=True),
-        sa.Column('description', sa.Text(), nullable=True),
-        sa.PrimaryKeyConstraint('id'),
-        sa.UniqueConstraint('name')
+    if not inspector.has_table("roles"):
+        op.create_table(
+            "roles",
+            sa.Column("id", sa.Text(), nullable=False),
+            sa.Column(
+                "created_at",
+                sa.DateTime(timezone=True),
+                server_default=sa.text("now()"),
+                nullable=True,
+            ),
+            sa.Column("updated_at", sa.DateTime(timezone=True), nullable=True),
+            sa.Column("name", sa.Text(), nullable=True),
+            sa.Column("description", sa.Text(), nullable=True),
+            sa.PrimaryKeyConstraint("id"),
+            sa.UniqueConstraint("name"),
         )
-    if not inspector.has_table('users'):
-        op.create_table('users',
-        sa.Column('id', sa.Text(), nullable=False),
-        sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
-        sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),
-        sa.Column('active', sa.Boolean(), nullable=True),
-        sa.Column('name', sa.Text(), nullable=True),
-        sa.Column('external_id', sa.Text(), nullable=True),
-        sa.PrimaryKeyConstraint('id'),
-        sa.UniqueConstraint('external_id')
+    if not inspector.has_table("users"):
+        op.create_table(
+            "users",
+            sa.Column("id", sa.Text(), nullable=False),
+            sa.Column(
+                "created_at",
+                sa.DateTime(timezone=True),
+                server_default=sa.text("now()"),
+                nullable=True,
+            ),
+            sa.Column("updated_at", sa.DateTime(timezone=True), nullable=True),
+            sa.Column("active", sa.Boolean(), nullable=True),
+            sa.Column("name", sa.Text(), nullable=True),
+            sa.Column("external_id", sa.Text(), nullable=True),
+            sa.PrimaryKeyConstraint("id"),
+            sa.UniqueConstraint("external_id"),
         )
     else:
-        user_columns = {col["name"] for col in inspector.get_columns('users')}
-        if 'external_id' not in user_columns:
-            op.add_column('users', sa.Column('external_id', sa.Text(), nullable=True))
+        user_columns = {col["name"] for col in inspector.get_columns("users")}
+        if "external_id" not in user_columns:
+            op.add_column("users", sa.Column("external_id", sa.Text(), nullable=True))
             existing_uniques = {
                 tuple(constraint.get("column_names", []))
-                for constraint in inspector.get_unique_constraints('users')
+                for constraint in inspector.get_unique_constraints("users")
             }
-            if ('external_id',) not in existing_uniques:
-                op.create_unique_constraint('uq_users_external_id', 'users', ['external_id'])
-    if not inspector.has_table('roles_users'):
-        op.create_table('roles_users',
-        sa.Column('user_id', sa.Text(), nullable=True),
-        sa.Column('role_id', sa.Text(), nullable=True),
-        sa.ForeignKeyConstraint(['role_id'], ['roles.id'], ),
-        sa.ForeignKeyConstraint(['user_id'], ['users.id'], )
+            if ("external_id",) not in existing_uniques:
+                op.create_unique_constraint(
+                    "uq_users_external_id", "users", ["external_id"]
+                )
+    if not inspector.has_table("roles_users"):
+        op.create_table(
+            "roles_users",
+            sa.Column("user_id", sa.Text(), nullable=True),
+            sa.Column("role_id", sa.Text(), nullable=True),
+            sa.ForeignKeyConstraint(
+                ["role_id"],
+                ["roles.id"],
+            ),
+            sa.ForeignKeyConstraint(
+                ["user_id"],
+                ["users.id"],
+            ),
         )
-    if not inspector.has_table('specifications'):
-        op.create_table('specifications',
-        sa.Column('id', sa.Text(), nullable=False),
-        sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
-        sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),
-        sa.Column('type', sa.Text(), nullable=True),
-        sa.Column('estimator', sa.JSON(), nullable=True),
-        sa.Column('filter', sa.JSON(), nullable=True),
-        sa.Column('contrast', sa.JSON(), nullable=True),
-        sa.Column('corrector', sa.JSON(), nullable=True),
-        sa.Column('public', sa.Boolean(), nullable=True),
-        sa.Column('user_id', sa.Text(), nullable=True),
-        sa.ForeignKeyConstraint(['user_id'], ['users.external_id'], ),
-        sa.PrimaryKeyConstraint('id')
+    if not inspector.has_table("specifications"):
+        op.create_table(
+            "specifications",
+            sa.Column("id", sa.Text(), nullable=False),
+            sa.Column(
+                "created_at",
+                sa.DateTime(timezone=True),
+                server_default=sa.text("now()"),
+                nullable=True,
+            ),
+            sa.Column("updated_at", sa.DateTime(timezone=True), nullable=True),
+            sa.Column("type", sa.Text(), nullable=True),
+            sa.Column("estimator", sa.JSON(), nullable=True),
+            sa.Column("filter", sa.JSON(), nullable=True),
+            sa.Column("contrast", sa.JSON(), nullable=True),
+            sa.Column("corrector", sa.JSON(), nullable=True),
+            sa.Column("public", sa.Boolean(), nullable=True),
+            sa.Column("user_id", sa.Text(), nullable=True),
+            sa.ForeignKeyConstraint(
+                ["user_id"],
+                ["users.external_id"],
+            ),
+            sa.PrimaryKeyConstraint("id"),
         )
-    if not inspector.has_table('studysets'):
-        op.create_table('studysets',
-        sa.Column('id', sa.Text(), nullable=False),
-        sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
-        sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),
-        sa.Column('studyset', sa.JSON(), nullable=True),
-        sa.Column('public', sa.Boolean(), nullable=True),
-        sa.Column('user_id', sa.Text(), nullable=True),
-        sa.Column('neurostore_id', sa.Text(), nullable=True),
-        sa.ForeignKeyConstraint(['user_id'], ['users.external_id'], ),
-        sa.PrimaryKeyConstraint('id')
+    if not inspector.has_table("studysets"):
+        op.create_table(
+            "studysets",
+            sa.Column("id", sa.Text(), nullable=False),
+            sa.Column(
+                "created_at",
+                sa.DateTime(timezone=True),
+                server_default=sa.text("now()"),
+                nullable=True,
+            ),
+            sa.Column("updated_at", sa.DateTime(timezone=True), nullable=True),
+            sa.Column("studyset", sa.JSON(), nullable=True),
+            sa.Column("public", sa.Boolean(), nullable=True),
+            sa.Column("user_id", sa.Text(), nullable=True),
+            sa.Column("neurostore_id", sa.Text(), nullable=True),
+            sa.ForeignKeyConstraint(
+                ["user_id"],
+                ["users.external_id"],
+            ),
+            sa.PrimaryKeyConstraint("id"),
         )
-    if not inspector.has_table('annotations'):
-        op.create_table('annotations',
-        sa.Column('id', sa.Text(), nullable=False),
-        sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
-        sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),
-        sa.Column('annotation', sa.JSON(), nullable=True),
-        sa.Column('public', sa.Boolean(), nullable=True),
-        sa.Column('user_id', sa.Text(), nullable=True),
-        sa.Column('neurostore_id', sa.Text(), nullable=True),
-        sa.Column('studyset_id', sa.Text(), nullable=True),
-        sa.ForeignKeyConstraint(['studyset_id'], ['studysets.id'], ),
-        sa.ForeignKeyConstraint(['user_id'], ['users.external_id'], ),
-        sa.PrimaryKeyConstraint('id')
+    if not inspector.has_table("annotations"):
+        op.create_table(
+            "annotations",
+            sa.Column("id", sa.Text(), nullable=False),
+            sa.Column(
+                "created_at",
+                sa.DateTime(timezone=True),
+                server_default=sa.text("now()"),
+                nullable=True,
+            ),
+            sa.Column("updated_at", sa.DateTime(timezone=True), nullable=True),
+            sa.Column("annotation", sa.JSON(), nullable=True),
+            sa.Column("public", sa.Boolean(), nullable=True),
+            sa.Column("user_id", sa.Text(), nullable=True),
+            sa.Column("neurostore_id", sa.Text(), nullable=True),
+            sa.Column("studyset_id", sa.Text(), nullable=True),
+            sa.ForeignKeyConstraint(
+                ["studyset_id"],
+                ["studysets.id"],
+            ),
+            sa.ForeignKeyConstraint(
+                ["user_id"],
+                ["users.external_id"],
+            ),
+            sa.PrimaryKeyConstraint("id"),
         )
-    if not inspector.has_table('meta_analyses'):
-        op.create_table('meta_analyses',
-        sa.Column('id', sa.Text(), nullable=False),
-        sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
-        sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),
-        sa.Column('name', sa.Text(), nullable=True),
-        sa.Column('description', sa.Text(), nullable=True),
-        sa.Column('specification_id', sa.Text(), nullable=True),
-        sa.Column('studyset_id', sa.Text(), nullable=True),
-        sa.Column('annotation_id', sa.Text(), nullable=True),
-        sa.Column('user_id', sa.Text(), nullable=True),
-        sa.ForeignKeyConstraint(['annotation_id'], ['annotations.id'], ),
-        sa.ForeignKeyConstraint(['specification_id'], ['specifications.id'], ),
-        sa.ForeignKeyConstraint(['studyset_id'], ['studysets.id'], ),
-        sa.ForeignKeyConstraint(['user_id'], ['users.external_id'], ),
-        sa.PrimaryKeyConstraint('id')
+    if not inspector.has_table("meta_analyses"):
+        op.create_table(
+            "meta_analyses",
+            sa.Column("id", sa.Text(), nullable=False),
+            sa.Column(
+                "created_at",
+                sa.DateTime(timezone=True),
+                server_default=sa.text("now()"),
+                nullable=True,
+            ),
+            sa.Column("updated_at", sa.DateTime(timezone=True), nullable=True),
+            sa.Column("name", sa.Text(), nullable=True),
+            sa.Column("description", sa.Text(), nullable=True),
+            sa.Column("specification_id", sa.Text(), nullable=True),
+            sa.Column("studyset_id", sa.Text(), nullable=True),
+            sa.Column("annotation_id", sa.Text(), nullable=True),
+            sa.Column("user_id", sa.Text(), nullable=True),
+            sa.ForeignKeyConstraint(
+                ["annotation_id"],
+                ["annotations.id"],
+            ),
+            sa.ForeignKeyConstraint(
+                ["specification_id"],
+                ["specifications.id"],
+            ),
+            sa.ForeignKeyConstraint(
+                ["studyset_id"],
+                ["studysets.id"],
+            ),
+            sa.ForeignKeyConstraint(
+                ["user_id"],
+                ["users.external_id"],
+            ),
+            sa.PrimaryKeyConstraint("id"),
         )
     else:
         existing_uniques = {
             tuple(constraint.get("column_names", []))
-            for constraint in inspector.get_unique_constraints('meta_analyses')
+            for constraint in inspector.get_unique_constraints("meta_analyses")
         }
-        if ('id',) not in existing_uniques:
-            op.create_unique_constraint('uq_meta_analyses_id', 'meta_analyses', ['id'])
+        if ("id",) not in existing_uniques:
+            op.create_unique_constraint("uq_meta_analyses_id", "meta_analyses", ["id"])
     # ### end Alembic commands ###
 
 
 def downgrade():
     # ### commands auto generated by Alembic - please adjust! ###
-    op.drop_table('meta_analyses')
-    op.drop_table('annotations')
-    op.drop_table('studysets')
-    op.drop_table('specifications')
-    op.drop_table('roles_users')
-    op.drop_table('users')
-    op.drop_table('roles')
+    op.drop_table("meta_analyses")
+    op.drop_table("annotations")
+    op.drop_table("studysets")
+    op.drop_table("specifications")
+    op.drop_table("roles_users")
+    op.drop_table("users")
+    op.drop_table("roles")
     # ### end Alembic commands ###

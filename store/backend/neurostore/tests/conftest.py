@@ -1,36 +1,38 @@
-import pytest
-import random
 import json
+import logging
 import os
+import random
 from os import environ
-from neurostore.models import Analysis, Condition
-from sqlalchemy.orm import scoped_session, sessionmaker
-import sqlalchemy as sa
-from .. import ingest
-from ..models import (
-    User,
-    BaseStudy,
-    Study,
-    Studyset,
-    Annotation,
-    AnnotationAnalysis,
-    AnalysisConditions,
-    StudysetStudy,
-    Point,
-    Image,
-    Entity,
-)
-from ..ingest.extracted_features import ingest_feature
-from auth0.authentication import GetToken
-from auth0.authentication.users import Users
 from unittest.mock import patch
 
-
+import pytest
 import shortuuid
+import sqlalchemy as sa
 import vcr
+from auth0.authentication import GetToken
+from auth0.authentication.exceptions import Auth0Error
+from auth0.authentication.users import Users
+from flask_migrate import upgrade as migrate_upgrade
+from sqlalchemy import select
 
-import logging
-from .utils import ordered_note_keys
+from neurostore import ingest
+from neurostore.ingest.extracted_features import ingest_feature
+from neurostore.models import (
+    Analysis,
+    AnalysisConditions,
+    Annotation,
+    AnnotationAnalysis,
+    BaseStudy,
+    Condition,
+    Entity,
+    Image,
+    Point,
+    Study,
+    Studyset,
+    StudysetStudy,
+    User,
+)
+from neurostore.tests.utils import ordered_note_keys
 
 LOGGER = logging.getLogger(__name__)
 
@@ -95,8 +97,9 @@ def monkeysession(request):
 
 
 def mock_decode_token(token):
-    from jose.jwt import encode
     import os
+
+    from jose.jwt import encode
 
     if token == encode({"sub": "user1-id"}, "abc", algorithm="HS256"):
         return {"sub": "user1-id"}
@@ -118,10 +121,23 @@ def mock_decode_token(token):
 
 @pytest.fixture(scope="session")
 def mock_auth(monkeysession):
-    """mock decode token to get around rate limits"""
+    """Override auth handler config so Connexion resolves the test decoder."""
+    from neurostore import config as config_module
+
     monkeysession.setenv(
         "BEARERINFO_FUNC", "neurostore.tests.conftest.mock_decode_token"
     )
+    for config_cls_name in (
+        "Config",
+        "DevelopmentConfig",
+        "TestingConfig",
+        "DockerTestConfig",
+    ):
+        monkeysession.setattr(
+            getattr(config_module, config_cls_name),
+            "BEARERINFO_FUNC",
+            "neurostore.tests.conftest.mock_decode_token",
+        )
 
 
 @pytest.fixture(scope="function")
@@ -159,17 +175,11 @@ Session / db management tools
 @pytest.fixture(scope="session")
 def real_app():
     """Session-wide test `Flask` application."""
-    from ..core import app as _app
-    from ..core import cache
+    from neurostore import create_app
+    from neurostore.extensions import cache
 
-    if "APP_SETTINGS" not in environ:
-        config = "neurostore.config.TestingConfig"
-    else:
-        config = environ["APP_SETTINGS"]
-    if not getattr(_app, "config", None):
-        _app = _app._app
-    _app.config.from_object(config)
-    # _app.config["SQLALCHEMY_ECHO"] = True
+    environ.setdefault("APP_ENV", "testing")
+    _app = create_app()
 
     cache.clear()
     # Establish an application context before running the tests.
@@ -182,34 +192,37 @@ def real_app():
     ctx.pop()
 
 
+def _reset_migrated_schema(db, migrations_dir):
+    with db.engine.connect() as conn:
+        conn.execute(sa.text("DROP SCHEMA IF EXISTS public CASCADE"))
+        conn.execute(sa.text("CREATE SCHEMA public"))
+        conn.execute(sa.text("CREATE EXTENSION IF NOT EXISTS vector"))
+        conn.commit()
+    migrate_upgrade(directory=migrations_dir, revision="heads")
+
+
 @pytest.fixture(scope="session")
 def real_db(real_app):
     """Session-wide test database."""
+    from manage import init_migrate
+
     _db = real_app.extensions["sqlalchemy"]
-    _db.drop_all()
-    _db.create_all()
+    init_migrate(real_app, _db)
+    _reset_migrated_schema(_db, real_app.config["MIGRATIONS_DIR"])
 
     yield _db
 
-    # _db.session.remove()
     sa.orm.close_all_sessions()
-    _db.drop_all()
 
 
 @pytest.fixture(scope="session")
 def app(mock_auth):
     """Session-wide test `Flask` application."""
-    from ..core import app as _app
-    from ..core import cache
+    from neurostore import create_app
+    from neurostore.extensions import cache
 
-    if "APP_SETTINGS" not in environ:
-        config = "neurostore.config.TestingConfig"
-    else:
-        config = environ["APP_SETTINGS"]
-    if not getattr(_app, "config", None):
-        _app = _app._app
-    _app.config.from_object(config)
-    # _app.config["SQLALCHEMY_ECHO"] = True
+    environ.setdefault("APP_ENV", "testing")
+    _app = create_app()
     # https://docs.sqlalchemy.org/en/14/errors.html#error-3o7r
     _app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
         "max_overflow": -1,
@@ -231,20 +244,11 @@ def app(mock_auth):
 @pytest.fixture(scope="session")
 def db(app):
     """Session-wide test database."""
+    from manage import init_migrate
+
     _db = app.extensions["sqlalchemy"]
-    _db.drop_all()
-    # Ensure pgvector extension exists before creating tables so the VECTOR type is available.
-    try:
-        # Use a direct engine connection to run CREATE EXTENSION, which is safer than using
-        # the session before tables/metadata exist.
-        with _db.engine.connect() as conn:
-            conn.execute(sa.text("CREATE EXTENSION IF NOT EXISTS vector;"))
-            conn.commit()
-    except Exception as e:
-        LOGGER.warning("Could not create pgvector extension: %s", e)
-        # If the extension cannot be created (permissions or non-Postgres DB), continue;
-        # table creation will fail later if VECTOR is required by the dialect.
-    _db.create_all()
+    init_migrate(app, _db)
+    _reset_migrated_schema(_db, app.config["MIGRATIONS_DIR"])
 
     yield _db
 
@@ -253,42 +257,46 @@ def db(app):
     # _db.drop_all()
 
 
+def _truncate_public_tables(db):
+    inspector = sa.inspect(db.engine)
+    table_names = sorted(
+        table_name
+        for table_name in inspector.get_table_names(schema="public")
+        if table_name != "alembic_version"
+    )
+    if not table_names:
+        return
+
+    quoted_tables = ", ".join(f'"public"."{table_name}"' for table_name in table_names)
+    with db.engine.begin() as conn:
+        conn.execute(
+            sa.text(f"TRUNCATE TABLE {quoted_tables} RESTART IDENTITY CASCADE")
+        )
+
+
+class _ScopedSessionProxy:
+    def __init__(self, scoped_session, bind):
+        self._scoped_session = scoped_session
+        self.bind = bind
+
+    def __getattr__(self, name):
+        return getattr(self._scoped_session, name)
+
+
 @pytest.fixture(scope="function")
 def session(db):
-    """https://docs.sqlalchemy.org/en/20/orm/session_transaction.html#joining-a-session-into-an-external-transaction-such-as-for-test-suites"""  # noqa
-    from ..core import cache
+    """Reset the migrated test database between tests."""
+    from neurostore.extensions import cache
 
-    connection = db.engine.connect()
-    transaction = connection.begin()
-    original_session = db.session
-    scopefunc = None
-    if hasattr(original_session, "registry"):
-        scopefunc = getattr(original_session.registry, "scopefunc", None)
-
-    session_factory = sessionmaker(
-        bind=connection,
-        join_transaction_mode="create_savepoint",
-    )
-    if scopefunc is not None:
-        session = scoped_session(session_factory=session_factory, scopefunc=scopefunc)
-    else:
-        session = scoped_session(session_factory=session_factory)
-    db.session = session
+    scoped_session = db.session
+    scoped_session.remove()
     cache.clear()
-    yield session
+    _truncate_public_tables(db)
+
+    yield _ScopedSessionProxy(scoped_session, db.engine)
 
     cache.clear()
-    # The outer transaction rollback is sufficient to isolate tests; avoid
-    # issuing an extra session.rollback() after commits that have already
-    # de-associated nested savepoints.
-    try:
-        session.remove()
-    except Exception:  # noqa: BLE001
-        pass
-    if transaction.is_active:
-        transaction.rollback()
-    connection.close()
-    db.session = original_session
+    scoped_session.remove()
 
 
 @pytest.fixture(scope="session")
@@ -319,7 +327,7 @@ def new_user_client(auth_clients):
 @pytest.fixture(scope="function")
 def auth_clients(mock_add_users, app):
     """Return authorized client wrapper"""
-    from .request_utils import Client
+    from neurostore.tests.request_utils import Client
 
     tokens = mock_add_users
     clients = []
@@ -371,17 +379,19 @@ def mock_add_users(app, db, session, mock_auth):
         }
 
         if u["name"] != "newuser":
-            user = User(
-                name=u["name"],
-                external_id=token_info["sub"],
-            )
-            if User.query.filter_by(external_id=token_info["sub"]).first() is None:
-                db.session.add(user)
-                db.session.commit()
+            existing_user = session.execute(
+                select(User).where(User.external_id == token_info["sub"])
+            ).scalar_one_or_none()
+            if existing_user is None:
+                user = User(
+                    name=u["name"],
+                    external_id=token_info["sub"],
+                )
+                session.add(user)
+                session.flush()
+                existing_user = user
 
-            tokens[u["name"]]["id"] = (
-                User.query.filter_by(external_id=token_info["sub"]).first().id
-            )
+            tokens[u["name"]]["id"] = existing_user.id
 
     yield tokens
 
@@ -391,11 +401,18 @@ def add_users(real_app, real_db):
     """Adds a test user to db"""
     from neurostore.resources.auth import decode_token
 
+    client_id = real_app.config["AUTH0_CLIENT_ID"]
+    client_secret = real_app.config["AUTH0_CLIENT_SECRET"]
+    if not client_id or client_id == "YOUR_CLIENT_ID":
+        pytest.skip("Auth integration tests require a real AUTH0_CLIENT_ID.")
+    if not client_secret or client_secret == "YOUR_CLIENT_SECRET":
+        pytest.skip("Auth integration tests require a real AUTH0_CLIENT_SECRET.")
+
     domain = real_app.config["AUTH0_BASE_URL"].split("://")[1]
     token = GetToken(
         domain,
-        real_app.config["AUTH0_CLIENT_ID"],
-        real_app.config["AUTH0_CLIENT_SECRET"],
+        client_id,
+        client_secret,
     )
 
     users = [
@@ -410,31 +427,34 @@ def add_users(real_app, real_db):
     ]
 
     tokens = {}
-    for u in users:
-        name = u["name"]
-        passw = u["password"]
-        payload = token.login(
-            username=name + "@email.com",
-            password=passw,
-            realm="Username-Password-Authentication",
-            audience=real_app.config["AUTH0_API_AUDIENCE"],
-            scope="openid profile email",
-        )
-        token_info = decode_token(payload["access_token"])
-        # do not add user1 into database
-        if name != "user1":
-            user = User(
-                name=name,
-                external_id=token_info["sub"],
+    try:
+        for u in users:
+            name = u["name"]
+            passw = u["password"]
+            payload = token.login(
+                username=name + "@email.com",
+                password=passw,
+                realm="Username-Password-Authentication",
+                audience=real_app.config["AUTH0_API_AUDIENCE"],
+                scope="openid profile email",
             )
-            if User.query.filter_by(external_id=token_info["sub"]).first() is None:
-                real_db.session.add(user)
-                real_db.session.commit()
+            token_info = decode_token(payload["access_token"])
+            # do not add user1 into database
+            if name != "user1":
+                user = User(
+                    name=name,
+                    external_id=token_info["sub"],
+                )
+                if User.query.filter_by(external_id=token_info["sub"]).first() is None:
+                    real_db.session.add(user)
+                    real_db.session.commit()
 
-        tokens[name] = {
-            "token": payload["access_token"],
-            "external_id": token_info["sub"],
-        }
+            tokens[name] = {
+                "token": payload["access_token"],
+                "external_id": token_info["sub"],
+            }
+    except Auth0Error as exc:
+        pytest.skip(f"Auth integration tests require working Auth0 credentials: {exc}")
 
     yield tokens
 

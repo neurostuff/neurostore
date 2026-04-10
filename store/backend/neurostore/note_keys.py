@@ -1,6 +1,5 @@
 from collections import OrderedDict
 
-
 ALLOWED_NOTE_KEY_TYPES = {"string", "number", "boolean"}
 
 
@@ -71,10 +70,9 @@ def canonicalize_note_keys(
             if note_type == "boolean":
                 invalid_default = not isinstance(default_value, bool)
             elif note_type == "number":
-                invalid_default = (
-                    not isinstance(default_value, (int, float))
-                    or isinstance(default_value, bool)
-                )
+                invalid_default = not isinstance(
+                    default_value, (int, float)
+                ) or isinstance(default_value, bool)
             elif note_type == "string":
                 invalid_default = not isinstance(default_value, str)
             if invalid_default:

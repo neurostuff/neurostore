@@ -22,17 +22,31 @@ The target bucket must already exist.
 ## Usage
 
 ```
-./pg_to_s3.sh database1 database2 database3 [...]
+./pg_dump-to-s3.sh database1 database2 database3 [...]
 ```
 
 ## Manual backup from docker-compose
 
 From the repo root:
 
+Default database for the selected environment:
+
+```
+cd compose
+docker compose exec -T compose-pgsql17 /bin/bash /home/pg_dump-to-s3.sh
+```
+
+Explicitly back up the production-style database name:
+
 ```
 cd compose
 docker compose exec -T compose-pgsql17 /bin/bash /home/pg_dump-to-s3.sh compose
 ```
+
+Examples:
+
+- `APP_ENV=development` resolves to `compose_test_db`
+- `APP_ENV=staging` or `APP_ENV=production` resolves to `compose`
 
 ## How it works
 

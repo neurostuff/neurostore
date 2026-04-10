@@ -53,8 +53,12 @@ def test_cors_headers_present(
     client_fixture, method, path, expected_status, request, user_data
 ):
     client = request.getfixturevalue(client_fixture)
-    headers = {"Origin": "https://client.example"}
+    origin = "https://client.example"
+    headers = {"Origin": origin}
     response = getattr(client, method)(path, headers=headers)
 
     assert response.status_code == expected_status
-    assert response.headers.get("Access-Control-Allow-Origin") == "*"
+    # Starlette echoes the request origin when credentials are allowed.
+    assert response.headers.get("Access-Control-Allow-Origin") == origin
+    assert response.headers.get("Access-Control-Allow-Credentials") == "true"
+    assert response.headers.get("Vary") == "Origin"
