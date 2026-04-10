@@ -453,6 +453,7 @@ class AnnotationsView(ObjectView, ListView):
 
         field_err = make_field_error("source", source, valid_options=["neurostore"])
         abort_unprocessable("invalid source, choose from: 'neurostore'", [field_err])
+        raise ValueError("invalid source")
 
     def load_from_neurostore(self, source_id, data=None):
         annotation = load_annotation_clone_source(source_id, self.join_tables)
