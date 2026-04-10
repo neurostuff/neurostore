@@ -40,14 +40,15 @@ def format_seconds(value: float) -> str:
 
 def build_rows(
     baseline_cases: dict, candidate_cases: dict, threshold: float
-) -> tuple[list[dict], list[dict]]:
+) -> tuple[list[dict], list[dict], list[dict]]:
     rows = []
     slowdowns = []
+    mismatches = []
 
     for name, candidate in candidate_cases.items():
         baseline = baseline_cases.get(name)
         if baseline is None:
-            slowdowns.append(
+            mismatches.append(
                 {
                     "name": name,
                     "reason": "missing in baseline",
@@ -74,7 +75,7 @@ def build_rows(
 
     for name in baseline_cases:
         if name not in candidate_cases:
-            slowdowns.append(
+            mismatches.append(
                 {
                     "name": name,
                     "reason": "missing in candidate",
@@ -82,11 +83,16 @@ def build_rows(
             )
 
     rows.sort(key=lambda row: row["name"])
-    return rows, slowdowns
+    mismatches.sort(key=lambda row: row["name"])
+    return rows, slowdowns, mismatches
 
 
 def render_report(
-    service: str, rows: list[dict], slowdowns: list[dict], threshold: float
+    service: str,
+    rows: list[dict],
+    slowdowns: list[dict],
+    mismatches: list[dict],
+    threshold: float,
 ) -> str:
     lines = [
         f"**Service:** `{service}`",
@@ -129,6 +135,11 @@ def render_report(
     else:
         lines.extend(["", "No slowdowns over the configured threshold."])
 
+    if mismatches:
+        lines.extend(["", "Case mismatches (reported only):"])
+        for mismatch in mismatches:
+            lines.append(f"- {mismatch['name']}: {mismatch['reason']}")
+
     return "\n".join(lines)
 
 
@@ -155,8 +166,10 @@ def main() -> int:
 
     baseline_cases = {case["name"]: case for case in extract_cases(baseline)}
     candidate_cases = {case["name"]: case for case in extract_cases(candidate)}
-    rows, slowdowns = build_rows(baseline_cases, candidate_cases, args.threshold)
-    report = render_report(service, rows, slowdowns, args.threshold)
+    rows, slowdowns, mismatches = build_rows(
+        baseline_cases, candidate_cases, args.threshold
+    )
+    report = render_report(service, rows, slowdowns, mismatches, args.threshold)
 
     print(report)
     maybe_append_summary(args.summary_file, report)
