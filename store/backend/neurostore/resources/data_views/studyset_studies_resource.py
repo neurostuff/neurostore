@@ -1,6 +1,6 @@
-from neurostore.resources.base import BaseView
 from neurostore.models import Study, Studyset
 from neurostore.models.data import StudysetStudy
+from neurostore.resources.base import BaseView
 from neurostore.schemas import StudysetStudySchema
 
 

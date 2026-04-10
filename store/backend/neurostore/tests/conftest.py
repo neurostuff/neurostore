@@ -1,39 +1,27 @@
-import pytest
-import random
 import json
+import logging
 import os
+import random
 from os import environ
+from unittest.mock import patch
 
-from neurostore.models import Analysis, Condition
-from sqlalchemy import select
+import pytest
+import shortuuid
 import sqlalchemy as sa
-from neurostore import ingest
-from neurostore.models import (
-    User,
-    BaseStudy,
-    Study,
-    Studyset,
-    Annotation,
-    AnnotationAnalysis,
-    AnalysisConditions,
-    StudysetStudy,
-    Point,
-    Image,
-    Entity,
-)
-from neurostore.ingest.extracted_features import ingest_feature
+import vcr
 from auth0.authentication import GetToken
 from auth0.authentication.exceptions import Auth0Error
 from auth0.authentication.users import Users
-from unittest.mock import patch
-
-
-import shortuuid
-import vcr
-
-import logging
 from flask_migrate import upgrade as migrate_upgrade
+from neurostore.ingest.extracted_features import ingest_feature
+from neurostore.models import (Analysis, AnalysisConditions, Annotation,
+                               AnnotationAnalysis, BaseStudy, Condition,
+                               Entity, Image, Point, Study, Studyset,
+                               StudysetStudy, User)
 from neurostore.tests.utils import ordered_note_keys
+from sqlalchemy import select
+
+from neurostore import ingest
 
 LOGGER = logging.getLogger(__name__)
 
@@ -98,8 +86,9 @@ def monkeysession(request):
 
 
 def mock_decode_token(token):
-    from jose.jwt import encode
     import os
+
+    from jose.jwt import encode
 
     if token == encode({"sub": "user1-id"}, "abc", algorithm="HS256"):
         return {"sub": "user1-id"}
@@ -175,8 +164,9 @@ Session / db management tools
 @pytest.fixture(scope="session")
 def real_app():
     """Session-wide test `Flask` application."""
-    from neurostore import create_app
     from neurostore.extensions import cache
+
+    from neurostore import create_app
 
     environ.setdefault("APP_ENV", "testing")
     _app = create_app()
@@ -218,8 +208,9 @@ def real_db(real_app):
 @pytest.fixture(scope="session")
 def app(mock_auth):
     """Session-wide test `Flask` application."""
-    from neurostore import create_app
     from neurostore.extensions import cache
+
+    from neurostore import create_app
 
     environ.setdefault("APP_ENV", "testing")
     _app = create_app()

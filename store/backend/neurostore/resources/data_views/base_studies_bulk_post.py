@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import sqlalchemy as sa
-
 from neurostore.database import db
 from neurostore.models import BaseStudy, Study
 from neurostore.resources.mutation_core import create_user

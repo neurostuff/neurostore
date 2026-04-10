@@ -1,26 +1,12 @@
-from neurostore.models.data import (
-    Studyset,
-    StudysetStudy,
-    Annotation,
-    BaseStudy,
-    BaseStudyFlagOutbox,
-    BaseStudyMetadataOutbox,
-    Study,
-    Analysis,
-    Table,
-    Condition,
-    Point,
-    Image,
-    Entity,
-    AnnotationAnalysis,
-    PointValue,
-    AnalysisConditions,
-    Pipeline,
-    PipelineConfig,
-    PipelineStudyResult,
-    PipelineEmbedding,
-)
-from neurostore.models.auth import User, Role
+from neurostore.models.auth import Role, User
+from neurostore.models.data import (Analysis, AnalysisConditions, Annotation,
+                                    AnnotationAnalysis, BaseStudy,
+                                    BaseStudyFlagOutbox,
+                                    BaseStudyMetadataOutbox, Condition, Entity,
+                                    Image, Pipeline, PipelineConfig,
+                                    PipelineEmbedding, PipelineStudyResult,
+                                    Point, PointValue, Study, Studyset,
+                                    StudysetStudy, Table)
 
 __all__ = [
     "Studyset",

@@ -5,60 +5,40 @@ Base Classes/functions for constructing views
 import json
 import re
 
-from flask import request, current_app  # jsonify
-from flask.views import MethodView
-from marshmallow import ValidationError
-from neurostore.exceptions.utils.error_helpers import (
-    abort_permission,
-    abort_validation,
-    abort_not_found,
-    abort_unprocessable,
-)
-
-from psycopg2 import errors
-
 import sqlalchemy as sa
 import sqlalchemy.sql.expression as sae
-from sqlalchemy.orm import (
-    raiseload,
-    selectinload,
-)
-from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy import func
-from webargs.flaskparser import parser
-from webargs import fields
-
-from neurostore.cache_versioning import bump_cache_versions, get_cache_version_for_path
+from flask import current_app, request  # jsonify
+from flask.views import MethodView
+from marshmallow import ValidationError
+from neurostore.cache_versioning import (bump_cache_versions,
+                                         get_cache_version_for_path)
 from neurostore.database import db
+from neurostore.exceptions.utils.error_helpers import (abort_not_found,
+                                                       abort_permission,
+                                                       abort_unprocessable,
+                                                       abort_validation)
 from neurostore.extensions import cache
-from neurostore.resources.utils import (
-    get_current_user,
-    is_user_admin,
-    validate_search_query,
-    pubmed_to_tsquery,
-)
-from neurostore.models import (
-    StudysetStudy,
-    AnnotationAnalysis,
-    Analysis,
-    Annotation,
-    User,
-)
+from neurostore.models import (Analysis, Annotation, AnnotationAnalysis,
+                               StudysetStudy, User)
+from neurostore.note_keys import resolve_note_key_default
 from neurostore.resources import data as viewdata
 from neurostore.resources.common import merge_unique_ids
-from neurostore.resources.mutation_core import (
-    DefaultMutationPolicy,
-    MutationContext,
-    MutationExecutor,
-)
+from neurostore.resources.mutation_core import (DefaultMutationPolicy,
+                                                MutationContext,
+                                                MutationExecutor)
+from neurostore.resources.utils import (get_current_user, is_user_admin,
+                                        pubmed_to_tsquery,
+                                        validate_search_query)
+from neurostore.services.base_study_metadata_enrichment import \
+    enqueue_base_study_metadata_updates
 from neurostore.services.has_media_flags import (
-    enqueue_base_study_flag_updates,
-    recompute_media_flags,
-)
-from neurostore.services.base_study_metadata_enrichment import (
-    enqueue_base_study_metadata_updates,
-)
-from neurostore.note_keys import resolve_note_key_default
+    enqueue_base_study_flag_updates, recompute_media_flags)
+from psycopg2 import errors
+from sqlalchemy import func
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import raiseload, selectinload
+from webargs import fields
+from webargs.flaskparser import parser
 
 
 @parser.error_handler

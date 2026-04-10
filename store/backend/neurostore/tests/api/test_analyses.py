@@ -1,4 +1,4 @@
-from neurostore.models import Analysis, User, Point, Image, Study
+from neurostore.models import Analysis, Image, Point, Study, User
 from neurostore.schemas import AnalysisSchema
 
 

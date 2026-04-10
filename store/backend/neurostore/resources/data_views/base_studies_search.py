@@ -5,25 +5,18 @@ from dataclasses import dataclass, field
 import numpy as np
 import sqlalchemy as sa
 import sqlalchemy.sql.expression as sae
+from neurostore.database import db
+from neurostore.exceptions.factories import make_field_error
+from neurostore.exceptions.utils.error_helpers import abort_validation
+from neurostore.models import (Analysis, BaseStudy, Pipeline, PipelineConfig,
+                               PipelineEmbedding, PipelineStudyResult, Point,
+                               Study)
+from neurostore.utils import build_jsonpath, parse_json_filter
 from pgvector.sqlalchemy import Vector
 from sqlalchemy import func, select, text
 from sqlalchemy.orm import aliased
 
-from neurostore.database import db
 from neurostore import embeddings
-from neurostore.exceptions.factories import make_field_error
-from neurostore.exceptions.utils.error_helpers import abort_validation
-from neurostore.models import (
-    Analysis,
-    BaseStudy,
-    Pipeline,
-    PipelineConfig,
-    PipelineEmbedding,
-    PipelineStudyResult,
-    Point,
-    Study,
-)
-from neurostore.utils import build_jsonpath, parse_json_filter
 
 
 @dataclass

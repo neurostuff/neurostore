@@ -1,12 +1,11 @@
-from sqlalchemy.orm import joinedload, raiseload
-from webargs.flaskparser import parser
 from flask import request
-
-from neurostore.resources.base import ListView, ObjectView, clear_cache
-from neurostore.resources.utils import view_maker
 from neurostore.database import db
 from neurostore.models import Analysis, AnnotationAnalysis, Study
 from neurostore.models.data import StudysetStudy
+from neurostore.resources.base import ListView, ObjectView, clear_cache
+from neurostore.resources.utils import view_maker
+from sqlalchemy.orm import joinedload, raiseload
+from webargs.flaskparser import parser
 
 
 class AnnotationAnalysisObjectViewPolicy:

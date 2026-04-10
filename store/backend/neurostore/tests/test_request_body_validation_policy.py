@@ -1,14 +1,11 @@
 import asyncio
 
 from connexion.validators.json import JSONRequestBodyValidator
-
-from neurostore.__init__ import (
-    _NON_DEBUG_BODY_VALIDATION_SKIP_ROUTES,
-    _SelectiveRequestBodyValidator,
-    _normalize_request_path,
-    _path_matches_template,
-    _should_skip_request_body_validation,
-)
+from neurostore.__init__ import (_NON_DEBUG_BODY_VALIDATION_SKIP_ROUTES,
+                                 _normalize_request_path,
+                                 _path_matches_template,
+                                 _SelectiveRequestBodyValidator,
+                                 _should_skip_request_body_validation)
 from neurostore.resources import iter_request_body_validation_skip_rules
 
 

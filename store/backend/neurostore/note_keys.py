@@ -1,6 +1,5 @@
 from collections import OrderedDict
 
-
 ALLOWED_NOTE_KEY_TYPES = {"string", "number", "boolean"}
 
 

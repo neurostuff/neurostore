@@ -6,12 +6,11 @@ import re
 
 import sqlalchemy as sa
 from connexion.context import context
-from psycopg2 import errors
-
-from neurostore import models
-from neurostore import schemas
 from neurostore.database import db
 from neurostore.resources.singular import singularize
+from psycopg2 import errors
+
+from neurostore import models, schemas
 
 
 def camel_case_split(str):

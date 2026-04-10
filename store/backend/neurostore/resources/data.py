@@ -1,19 +1,12 @@
-from neurostore.resources.data_views import (
-    AnalysisConditionsResource,
-    AnalysesView,
-    AnnotationAnalysesView,
-    AnnotationsView,
-    BaseStudiesView,
-    ConditionsView,
-    EntitiesResource,
-    ImagesView,
-    PointsView,
-    PointValuesView,
-    StudiesView,
-    StudysetsView,
-    StudysetStudiesResource,
-    TablesView,
-)
+from neurostore.resources.data_views import (AnalysesView,
+                                             AnalysisConditionsResource,
+                                             AnnotationAnalysesView,
+                                             AnnotationsView, BaseStudiesView,
+                                             ConditionsView, EntitiesResource,
+                                             ImagesView, PointsView,
+                                             PointValuesView, StudiesView,
+                                             StudysetStudiesResource,
+                                             StudysetsView, TablesView)
 
 __all__ = [
     "StudysetsView",

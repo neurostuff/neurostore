@@ -1,4 +1,5 @@
 import os
+
 import pytest
 from neurostore.embeddings import get_embedding
 

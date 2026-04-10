@@ -3,20 +3,11 @@ from __future__ import annotations
 from collections import defaultdict
 
 import sqlalchemy as sa
-
 from neurostore.database import db
 from neurostore.map_types import map_type_label
-from neurostore.models import (
-    Analysis,
-    AnalysisConditions,
-    Condition,
-    Image,
-    Point,
-    PointValue,
-    Study,
-    Studyset,
-    StudysetStudy,
-)
+from neurostore.models import (Analysis, AnalysisConditions, Condition, Image,
+                               Point, PointValue, Study, Studyset,
+                               StudysetStudy)
 
 
 def _serialize_dt(value):

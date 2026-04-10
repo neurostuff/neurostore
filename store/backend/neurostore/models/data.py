@@ -1,20 +1,18 @@
 import re
 
-import sqlalchemy as sa
-from sqlalchemy import exists
-from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.dialects.postgresql import JSONB, ENUM as PGEnum
-from sqlalchemy import ForeignKeyConstraint, func, text
-from sqlalchemy.ext.associationproxy import association_proxy
-from sqlalchemy.ext.mutable import MutableDict
-from sqlalchemy.orm import relationship, backref, validates, aliased
 import shortuuid
-
-
-from neurostore.models.migration_types import TSVector, VectorType
+import sqlalchemy as sa
 from neurostore.database import db
 from neurostore.map_types import MAP_TYPE_CODES, canonicalize_map_type
-from neurostore.utils import parse_json_filter, build_jsonpath
+from neurostore.models.migration_types import TSVector, VectorType
+from neurostore.utils import build_jsonpath, parse_json_filter
+from sqlalchemy import ForeignKeyConstraint, exists, func, text
+from sqlalchemy.dialects.postgresql import ENUM as PGEnum
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.ext.associationproxy import association_proxy
+from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.ext.mutable import MutableDict
+from sqlalchemy.orm import aliased, backref, relationship, validates
 
 # status of pipeline run
 STATUS_ENUM = PGEnum(

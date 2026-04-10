@@ -3,40 +3,27 @@ from datetime import datetime
 from types import SimpleNamespace
 
 from flask import request
+from neurostore.database import db
+from neurostore.exceptions.factories import make_field_error
+from neurostore.exceptions.utils.error_helpers import (abort_unprocessable,
+                                                       abort_validation)
+from neurostore.models import (Analysis, Annotation, AnnotationAnalysis,
+                               Pipeline, PipelineConfig, PipelineStudyResult,
+                               Study, Studyset, User)
+from neurostore.models.data import StudysetStudy, _check_type
+from neurostore.note_keys import canonicalize_note_keys, ordered_note_key_names
+from neurostore.resources.base import (ListView, ObjectView, clear_cache,
+                                       load_schema_or_abort)
+from neurostore.resources.data_views.cloning import (
+    build_annotation_clone_payload, load_annotation_clone_source)
+from neurostore.resources.data_views.common import LIST_CLONE_ARGS
+from neurostore.resources.mutation_core import (DefaultMutationPolicy,
+                                                resolve_current_user)
+from neurostore.resources.utils import get_current_user, view_maker
+from neurostore.schemas import PipelineStudyResultSchema
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import defaultload, joinedload, raiseload, selectinload
 from webargs import fields
-
-from neurostore.resources.base import (
-    ListView,
-    ObjectView,
-    clear_cache,
-    load_schema_or_abort,
-)
-from neurostore.resources.utils import get_current_user, view_maker
-from neurostore.resources.data_views.common import LIST_CLONE_ARGS
-from neurostore.database import db
-from neurostore.exceptions.factories import make_field_error
-from neurostore.exceptions.utils.error_helpers import abort_unprocessable, abort_validation
-from neurostore.models import (
-    Analysis,
-    Annotation,
-    AnnotationAnalysis,
-    Pipeline,
-    PipelineConfig,
-    PipelineStudyResult,
-    Study,
-    Studyset,
-    User,
-)
-from neurostore.models.data import StudysetStudy, _check_type
-from neurostore.note_keys import canonicalize_note_keys, ordered_note_key_names
-from neurostore.resources.mutation_core import DefaultMutationPolicy, resolve_current_user
-from neurostore.schemas import PipelineStudyResultSchema
-from neurostore.resources.data_views.cloning import (
-    build_annotation_clone_payload,
-    load_annotation_clone_source,
-)
 
 
 class AnnotationMutationPolicy(DefaultMutationPolicy):

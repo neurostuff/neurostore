@@ -1,5 +1,5 @@
-from neurostore.resources.base import BaseView
 from neurostore.models import Entity
+from neurostore.resources.base import BaseView
 from neurostore.schemas import EntitySchema
 
 

@@ -3,28 +3,27 @@
 from __future__ import annotations
 
 import argparse
-from contextlib import contextmanager
 import json
 import os
 import re
 import statistics
 import threading
+from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from io import StringIO
 from pathlib import Path
 from time import perf_counter
 from types import SimpleNamespace
-from urllib.parse import urlencode
 from unittest.mock import patch
+from urllib.parse import urlencode
 from uuid import uuid4
 
 from jose.jwt import encode
-from sqlalchemy import event, func, select
-
 from neurostore.database import db
 from neurostore.models import Analysis, BaseStudy, Study, User
 from neurostore.tests.request_utils import Client
+from sqlalchemy import event, func, select
 
 TOKEN = encode({"sub": "user1-id"}, "abc", algorithm="HS256")
 DEFAULT_SCALES = [10, 50, 100, 200]

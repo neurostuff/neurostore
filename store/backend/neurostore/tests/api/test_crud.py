@@ -1,28 +1,12 @@
 import pytest
 from marshmallow import fields
-from neurostore.models import (
-    User,
-    Studyset,
-    BaseStudy,
-    Study,
-    Annotation,
-    AnnotationAnalysis,
-    Analysis,
-    Condition,
-    Image,
-    Point,
-)
-from neurostore.schemas import (
-    StudysetSchema,
-    BaseStudySchema,
-    StudySchema,
-    AnnotationSchema,
-    AnnotationAnalysisSchema,
-    AnalysisSchema,
-    ConditionSchema,
-    ImageSchema,
-    PointSchema,
-)
+from neurostore.models import (Analysis, Annotation, AnnotationAnalysis,
+                               BaseStudy, Condition, Image, Point, Study,
+                               Studyset, User)
+from neurostore.schemas import (AnalysisSchema, AnnotationAnalysisSchema,
+                                AnnotationSchema, BaseStudySchema,
+                                ConditionSchema, ImageSchema, PointSchema,
+                                StudySchema, StudysetSchema)
 from neurostore.schemas.data import StringOrNested
 
 

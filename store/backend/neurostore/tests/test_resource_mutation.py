@@ -1,27 +1,14 @@
 from types import SimpleNamespace
 
 import pytest
-
 from neurostore.exceptions.base import PermissionError
-from neurostore.models import (
-    Analysis,
-    Annotation,
-    AnnotationAnalysis,
-    BaseStudy,
-    Point,
-    Study,
-    Studyset,
-    StudysetStudy,
-    User,
-)
-from neurostore.resources.data import (
-    AnalysesView,
-    AnnotationsView,
-    StudiesView,
-    StudysetsView,
-    TablesView,
-)
-from neurostore.resources.data_views.annotations_view import AnnotationMutationPolicy
+from neurostore.models import (Analysis, Annotation, AnnotationAnalysis,
+                               BaseStudy, Point, Study, Studyset,
+                               StudysetStudy, User)
+from neurostore.resources.data import (AnalysesView, AnnotationsView,
+                                       StudiesView, StudysetsView, TablesView)
+from neurostore.resources.data_views.annotations_view import \
+    AnnotationMutationPolicy
 from neurostore.tests.utils import ordered_note_keys
 
 

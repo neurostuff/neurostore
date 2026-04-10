@@ -1,14 +1,11 @@
 from typing import Any, List, Optional
 
+from neurostore.exceptions.base import (AuthenticationError,
+                                        InternalServerError, NotFoundError,
+                                        PermissionError,
+                                        UnprocessableEntityError,
+                                        ValidationError)
 from neurostore.exceptions.utils.errors import ErrorDetail
-from neurostore.exceptions.base import (
-    ValidationError,
-    NotFoundError,
-    PermissionError,
-    AuthenticationError,
-    UnprocessableEntityError,
-    InternalServerError,
-)
 
 
 def create_field_validation_error(

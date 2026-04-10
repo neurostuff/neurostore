@@ -1,6 +1,6 @@
 import sqlalchemy as sa
-from sqlalchemy.dialects.postgresql import TSVECTOR
 from pgvector.sqlalchemy import Vector
+from sqlalchemy.dialects.postgresql import TSVECTOR
 
 
 class TSVector(sa.types.TypeDecorator):

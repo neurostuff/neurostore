@@ -1,10 +1,10 @@
-from neurostore.tests.conftest import auth_test
 import pytest
+from neurostore.tests.conftest import auth_test
 
 
 @auth_test
 def test_decode_token(add_users):
-    from neurostore.resources.auth import decode_token, AuthError
+    from neurostore.resources.auth import AuthError, decode_token
 
     with pytest.raises(AuthError):
         decode_token("improper_token")

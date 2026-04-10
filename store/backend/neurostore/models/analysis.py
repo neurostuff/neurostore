@@ -1,10 +1,9 @@
 """TODO: PLACE INTO THE NEUROSYNTH APP"""
 
-from sqlalchemy.ext.associationproxy import association_proxy
-from sqlalchemy.orm import relationship, backref
-
-from neurostore.models.data import BaseMixin
 from neurostore.database import db
+from neurostore.models.data import BaseMixin
+from sqlalchemy.ext.associationproxy import association_proxy
+from sqlalchemy.orm import backref, relationship
 
 
 class MetaAnalysis(BaseMixin, db.Model):

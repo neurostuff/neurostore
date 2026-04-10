@@ -1,44 +1,31 @@
 import sqlalchemy as sa
 from flask import request
+from neurostore.database import db
+from neurostore.exceptions.factories import make_field_error
+from neurostore.exceptions.utils.error_helpers import (abort_not_found,
+                                                       abort_unprocessable,
+                                                       abort_validation)
+from neurostore.models import (Analysis, AnalysisConditions, Annotation, Point,
+                               Study, Studyset, User)
+from neurostore.models.data import StudysetStudy
+from neurostore.resources.base import (ListView, ObjectView, clear_cache,
+                                       load_schema_or_abort)
+from neurostore.resources.data_views.cloning import (
+    build_studyset_clone_payload, clone_annotations_to_studyset,
+    load_studyset_clone_source, resolve_neurostore_origin)
+from neurostore.resources.data_views.common import (LIST_CLONE_ARGS,
+                                                    LIST_NESTED_ARGS,
+                                                    LIST_SUMMARY_ARGS)
+from neurostore.resources.data_views.serialization import (
+    serialize_nested_studyset, serialize_studyset_summary)
+from neurostore.resources.mutation_core import DefaultMutationPolicy
+from neurostore.resources.utils import view_maker
+from neurostore.schemas.data import StudysetSnapshot
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import load_only, raiseload, selectinload
 from webargs import fields
 from webargs.flaskparser import parser
-
-from neurostore.resources.base import (
-    ListView,
-    ObjectView,
-    clear_cache,
-    load_schema_or_abort,
-)
-from neurostore.resources.utils import view_maker
-from neurostore.resources.data_views.common import (
-    LIST_CLONE_ARGS,
-    LIST_NESTED_ARGS,
-    LIST_SUMMARY_ARGS,
-)
-from neurostore.database import db
-from neurostore.exceptions.factories import make_field_error
-from neurostore.exceptions.utils.error_helpers import (
-    abort_not_found,
-    abort_unprocessable,
-    abort_validation,
-)
-from neurostore.models import Analysis, AnalysisConditions, Annotation, Point, Study, Studyset, User
-from neurostore.models.data import StudysetStudy
-from neurostore.schemas.data import StudysetSnapshot
-from neurostore.resources.data_views.cloning import (
-    build_studyset_clone_payload,
-    clone_annotations_to_studyset,
-    load_studyset_clone_source,
-    resolve_neurostore_origin,
-)
-from neurostore.resources.data_views.serialization import (
-    serialize_nested_studyset,
-    serialize_studyset_summary,
-)
-from neurostore.resources.mutation_core import DefaultMutationPolicy
 
 
 class StudysetMutationPolicy(DefaultMutationPolicy):

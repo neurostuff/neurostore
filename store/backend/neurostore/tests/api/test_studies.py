@@ -1,7 +1,7 @@
 import uuid
-import pytest
 
-from neurostore.models import Studyset, Study, User, Analysis
+import pytest
+from neurostore.models import Analysis, Study, Studyset, User
 from neurostore.schemas import StudySchema
 
 

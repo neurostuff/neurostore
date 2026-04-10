@@ -2,19 +2,11 @@ from __future__ import annotations
 
 from copy import deepcopy
 
-from sqlalchemy.orm import raiseload, selectinload
-
 from neurostore.database import db
 from neurostore.exceptions.utils.error_helpers import abort_not_found
-from neurostore.models import (
-    Analysis,
-    AnalysisConditions,
-    Annotation,
-    AnnotationAnalysis,
-    Point,
-    Study,
-    Studyset,
-)
+from neurostore.models import (Analysis, AnalysisConditions, Annotation,
+                               AnnotationAnalysis, Point, Study, Studyset)
+from sqlalchemy.orm import raiseload, selectinload
 
 
 def resolve_neurostore_origin(record):

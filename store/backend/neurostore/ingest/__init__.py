@@ -8,29 +8,17 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import requests
-from scipy import sparse
 from dateutil.parser import parse as parse_date
-from sqlalchemy import or_
-
 from neurostore.database import db
-from neurostore.models import (
-    Analysis,
-    Table,
-    AnalysisConditions,
-    AnnotationAnalysis,
-    Annotation,
-    Condition,
-    Image,
-    Point,
-    Study,
-    BaseStudy,
-    Studyset,
-    Entity,
-)
-from neurostore.models.data import StudysetStudy, _check_type
 from neurostore.map_types import canonicalize_map_type
+from neurostore.models import (Analysis, AnalysisConditions, Annotation,
+                               AnnotationAnalysis, BaseStudy, Condition,
+                               Entity, Image, Point, Study, Studyset, Table)
+from neurostore.models.data import StudysetStudy, _check_type
 from neurostore.note_keys import resolve_note_key_default
 from neurostore.services.has_media_flags import recompute_media_flags
+from scipy import sparse
+from sqlalchemy import or_
 
 META_ANALYSIS_WORDS = ["meta analysis", "meta-analysis", "systematic review"]
 

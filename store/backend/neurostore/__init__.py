@@ -16,20 +16,18 @@ from flask_admin import Admin, AdminIndexView
 from flask_admin.contrib.sqla import ModelView
 from flask_admin.theme import Bootstrap4Theme
 from flask_orjson import OrjsonProvider
-from starlette.middleware.cors import CORSMiddleware
-
 from neurostore.config import resolve_config_object
 from neurostore.database import init_db
 from neurostore.exceptions.base import NeuroStoreException
-from neurostore.exceptions.handlers import (
-    flask_general_body_and_status,
-    flask_neurostore_body_and_status,
-    general_exception_handler,
-    neurostore_exception_handler,
-)
+from neurostore.exceptions.handlers import (flask_general_body_and_status,
+                                            flask_neurostore_body_and_status,
+                                            general_exception_handler,
+                                            neurostore_exception_handler)
 from neurostore.extensions import cache
 from neurostore.resources import iter_request_body_validation_skip_rules
-from neurostore.resources.auth import AuthError, handle_auth_error, init_app as init_auth
+from neurostore.resources.auth import AuthError, handle_auth_error
+from neurostore.resources.auth import init_app as init_auth
+from starlette.middleware.cors import CORSMiddleware
 
 
 def _env_flag(name, default=False):
@@ -140,26 +138,12 @@ def create_app():
         client_kwargs={"scope": "openid profile email"},
     )
 
-    from neurostore.models import (
-        Analysis,
-        AnalysisConditions,
-        Annotation,
-        AnnotationAnalysis,
-        BaseStudy,
-        BaseStudyFlagOutbox,
-        BaseStudyMetadataOutbox,
-        Condition,
-        Entity,
-        Image,
-        Point,
-        PointValue,
-        Role,
-        Study,
-        Studyset,
-        StudysetStudy,
-        Table,
-        User,
-    )
+    from neurostore.models import (Analysis, AnalysisConditions, Annotation,
+                                   AnnotationAnalysis, BaseStudy,
+                                   BaseStudyFlagOutbox,
+                                   BaseStudyMetadataOutbox, Condition, Entity,
+                                   Image, Point, PointValue, Role, Study,
+                                   Studyset, StudysetStudy, Table, User)
 
     def _get_admin_credentials():
         username = app.config.get("FLASK_ADMIN_USERNAME")

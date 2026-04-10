@@ -3,18 +3,15 @@ import threading
 
 from neurostore.database import db
 from neurostore.models import Study, Studyset
-from neurostore.production_benchmark import (
-    _ThreadAwareProfiler,
-    _benchmark_case_rollback,
-    _benchmark_write_isolation,
-    _create_large_studyset,
-    _canonical_case_name,
-    _case_workload_info,
-    _extract_profile_functions,
-    _fit_line,
-    _parse_scales,
-    _project_line,
-)
+from neurostore.production_benchmark import (_benchmark_case_rollback,
+                                             _benchmark_write_isolation,
+                                             _canonical_case_name,
+                                             _case_workload_info,
+                                             _create_large_studyset,
+                                             _extract_profile_functions,
+                                             _fit_line, _parse_scales,
+                                             _project_line,
+                                             _ThreadAwareProfiler)
 
 
 def test_fit_line_returns_expected_slope_and_projection():

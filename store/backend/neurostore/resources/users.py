@@ -1,15 +1,12 @@
 import connexion
 from flask import request
-from webargs.flaskparser import parser
-from neurostore.exceptions.utils.error_helpers import (
-    abort_unprocessable,
-    abort_not_found,
-)
-
-from neurostore.resources.base import ListView, ObjectView
-from neurostore.models.auth import User
-from neurostore.schemas import UserSchema  # noqa E401
 from neurostore.database import db
+from neurostore.exceptions.utils.error_helpers import (abort_not_found,
+                                                       abort_unprocessable)
+from neurostore.models.auth import User
+from neurostore.resources.base import ListView, ObjectView
+from neurostore.schemas import UserSchema  # noqa E401
+from webargs.flaskparser import parser
 
 
 class UsersView(ObjectView, ListView):

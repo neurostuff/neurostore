@@ -1,39 +1,27 @@
-import json
-import pytest
-from starlette.requests import Request
 import asyncio
-from marshmallow import Schema, ValidationError as MarshmallowValidationError, fields
+import json
 
-from neurostore.exceptions.base import (
-    PermissionError,
-    AuthenticationError,
-    UnprocessableEntityError,
-    NotFoundError,
-    ValidationError,
-    InternalServerError,
-)
-
-from neurostore.exceptions.utils.errors import ErrorDetail, ErrorResponse
-from neurostore.exceptions.factories import (
-    create_field_validation_error,
-    create_validation_error,
-    create_not_found_error,
-    make_field_error,
-)
-
+import pytest
+from marshmallow import Schema
+from marshmallow import ValidationError as MarshmallowValidationError
+from marshmallow import fields
+from neurostore.exceptions.base import (AuthenticationError,
+                                        InternalServerError, NotFoundError,
+                                        PermissionError,
+                                        UnprocessableEntityError,
+                                        ValidationError)
+from neurostore.exceptions.factories import (create_field_validation_error,
+                                             create_not_found_error,
+                                             create_validation_error,
+                                             make_field_error)
+from neurostore.exceptions.handlers import (general_exception_handler,
+                                            neurostore_exception_handler)
 from neurostore.exceptions.utils.error_helpers import (
-    abort_validation,
-    abort_not_found,
-    abort_permission,
-    abort_auth,
-    abort_unprocessable,
-    abort_internal_server_error,
-)
-from neurostore.exceptions.handlers import (
-    neurostore_exception_handler,
-    general_exception_handler,
-)
+    abort_auth, abort_internal_server_error, abort_not_found, abort_permission,
+    abort_unprocessable, abort_validation)
+from neurostore.exceptions.utils.errors import ErrorDetail, ErrorResponse
 from neurostore.resources.base import handle_parser_error, load_schema_or_abort
+from starlette.requests import Request
 
 
 class _ValidationSchema(Schema):
@@ -78,7 +66,7 @@ def test_neurostore_exception_payload_and_factories():
 
 def test_neurostore_exception_properties():
     """Test that NeuroStoreException properties work correctly after refactoring"""
-    from neurostore.exceptions.base import NeuroStoreException, ErrorDetail
+    from neurostore.exceptions.base import ErrorDetail, NeuroStoreException
 
     errors = [ErrorDetail(field="test", code="TEST_ERROR", message="Test error")]
     exc = NeuroStoreException(
@@ -178,10 +166,8 @@ def test_all_exception_types(abort_func, expected_exception, func_input):
 
 def test_create_validation_error_with_provided_context():
     """Test the special field error handling in create_validation_error with 'provided' context"""
-    from neurostore.exceptions.factories import (
-        create_field_validation_error,
-        create_validation_error,
-    )
+    from neurostore.exceptions.factories import (create_field_validation_error,
+                                                 create_validation_error)
 
     # Test with single field error containing 'provided' context
     field_error = create_field_validation_error("test_field", ["invalid1", "invalid2"])

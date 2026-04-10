@@ -7,23 +7,17 @@ from xml.etree import ElementTree
 import requests
 import sqlalchemy as sa
 from flask import current_app
-from sqlalchemy.dialects.postgresql import insert as pg_insert
-from sqlalchemy.exc import OperationalError
-from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
-
 from neurostore.cache_versioning import bump_cache_versions
 from neurostore.database import db
-from neurostore.models import (
-    BaseStudy,
-    BaseStudyFlagOutbox,
-    BaseStudyMetadataOutbox,
-    PipelineEmbedding,
-    PipelineStudyResult,
-    Study,
-    StudysetStudy,
-)
-from neurostore.services.has_media_flags import enqueue_base_study_flag_updates
+from neurostore.models import (BaseStudy, BaseStudyFlagOutbox,
+                               BaseStudyMetadataOutbox, PipelineEmbedding,
+                               PipelineStudyResult, Study, StudysetStudy)
 from neurostore.resources.common import merge_unique_ids, normalize_ids
+from neurostore.services.has_media_flags import enqueue_base_study_flag_updates
+from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.exc import OperationalError
+from tenacity import (retry, retry_if_exception, stop_after_attempt,
+                      wait_exponential)
 
 ID_FIELDS = ("pmid", "doi", "pmcid")
 METADATA_FIELDS = ("name", "description", "publication", "authors", "year", "is_oa")
