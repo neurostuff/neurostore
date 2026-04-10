@@ -54,6 +54,7 @@ const ImportStudiesButton: React.FC<ButtonProps> = (buttonProps) => {
             />
             <NeurosynthPopper
                 placement="bottom-start"
+                disablePortal={false}
                 onClickAway={() => setOptionsIsOpen(false)}
                 anchorElement={anchorRef.current}
                 open={optionsIsOpen}
