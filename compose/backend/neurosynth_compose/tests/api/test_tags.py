@@ -54,9 +54,11 @@ def test_meta_analysis_tags_accept_id_and_name(session, auth_client, user_data):
 
     assert meta_analysis is not None
 
-    tag = session.execute(
-        select(Tag).where(Tag.user_id.is_(None)).limit(1)
-    ).scalars().first()
+    tag = (
+        session.execute(select(Tag).where(Tag.user_id.is_(None)).limit(1))
+        .scalars()
+        .first()
+    )
     if tag is None:
         tag_resp = auth_client.post(
             "/api/tags", data={"name": "hide", "official": True}

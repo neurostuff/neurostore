@@ -21,9 +21,7 @@ def test_expected_cluster_targets_fdr_from_spec():
         "corrector": {"type": "FDRCorrector", "args": {"method": "indep"}},
     }
 
-    assert _expected_cluster_table_targets(specification) == [
-        "z_corr-FDR_method-indep"
-    ]
+    assert _expected_cluster_table_targets(specification) == ["z_corr-FDR_method-indep"]
 
 
 def test_expected_cluster_targets_fwe_montecarlo_prioritizes_mass():
@@ -152,10 +150,7 @@ def test_select_cluster_table_prefers_fwe_mass_over_size_for_ale_subtraction():
         specification,
     )
 
-    assert (
-        selected
-        == Path(
-            "/tmp/z_desc-group1MinusGroup2Mass_level-cluster_corr-FWE_"
-            "method-montecarlo_tab-clust.tsv"
-        )
+    assert selected == Path(
+        "/tmp/z_desc-group1MinusGroup2Mass_level-cluster_corr-FWE_"
+        "method-montecarlo_tab-clust.tsv"
     )

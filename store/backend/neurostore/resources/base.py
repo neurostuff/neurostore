@@ -8,6 +8,7 @@ import re
 from connexion.context import context
 from flask import request, current_app  # jsonify
 from flask.views import MethodView
+from marshmallow import ValidationError
 from ..exceptions.utils.error_helpers import (
     abort_permission,
     abort_validation,
@@ -28,9 +29,9 @@ from sqlalchemy import func
 from webargs.flaskparser import parser
 from webargs import fields
 
-from ..core import cache
 from ..cache_versioning import bump_cache_versions, get_cache_version_for_path
 from ..database import db
+from ..extensions import cache
 from .utils import (
     get_current_user,
     is_user_admin,
@@ -68,6 +69,8 @@ def handle_parser_error(err, req, schema, *, error_status_code, error_headers):
 def create_user():
     from auth0.authentication.users import Users
 
+    external_id = context.get("user")
+
     auth = request.headers.get("Authorization", None)
     token = auth.split()[1]
     profile_info = Users(
@@ -80,7 +83,7 @@ def create_user():
     if "@" in name:
         name = profile_info.get("nickname", "Unknown")
 
-    current_user = User(external_id=context["user"], name=name)
+    current_user = User(external_id=external_id, name=name)
 
     return current_user
 
@@ -489,20 +492,33 @@ class ObjectView(BaseView):
         if args.get("summary") is None:
             args["summary"] = request.args.get("summary", False) == "true"
 
+        if self._model is Studyset and args.get("nested") and args.get("summary"):
+            abort_validation("query parameters 'nested' and 'summary' are incompatible")
+
+        if self._model is Studyset and args.get("summary"):
+            q = self._model.query
+            q = self.eager_load(q, args)
+            record = q.filter_by(id=id).first()
+            if record is None:
+                abort_not_found(self._model.__name__, id)
+            serializer = getattr(self, "serialize_studyset_summary", None)
+            if serializer is None:
+                abort_validation("summary view is not available for this resource")
+            return serializer(record), 200, {"Content-Type": "application/json"}
+
+        if self._model is Studyset and args["nested"]:
+            serializer = getattr(self, "serialize_nested_studyset", None)
+            if serializer is not None:
+                payload = serializer(id)
+                if payload is None:
+                    abort_not_found(self._model.__name__, id)
+                return payload, 200, {"Content-Type": "application/json"}
+
         q = self._model.query
         q = self.eager_load(q, args)
         record = q.filter_by(id=id).first()
         if record is None:
             abort_not_found(self._model.__name__, id)
-
-        if self._model is Studyset and args.get("nested") and args.get("summary"):
-            abort_validation("query parameters 'nested' and 'summary' are incompatible")
-
-        if self._model is Studyset and args.get("summary"):
-            serializer = getattr(self, "serialize_studyset_summary", None)
-            if serializer is None:
-                abort_validation("summary view is not available for this resource")
-            return serializer(record), 200, {"Content-Type": "application/json"}
 
         if self._model is Studyset and args["nested"]:
             snapshot = StudysetSnapshot()
@@ -760,7 +776,7 @@ class ListView(BaseView):
         }
         return response, 200
 
-    def post(self):
+    def post(self, body):
         # TODO: check to make sure current user hasn't already created a
         # record with most/all of the same details (e.g., DOI for studies)
 
@@ -770,9 +786,13 @@ class ListView(BaseView):
         source = args.get("source") or "neurostore"
 
         unknown = self.__class__._schema.opts.unknown
-        data = parser.parse(
-            self.__class__._schema(exclude=("id",)), request, unknown=unknown
-        )
+        schema = self.__class__._schema(exclude=("id",))
+        try:
+            data = schema.load(body, unknown=unknown)
+        except ValidationError as err:
+            abort_unprocessable(
+                f"input does not conform to specification: {json.dumps(err.messages)}"
+            )
 
         if source_id:
             data = self._load_from_source(source, source_id, data)

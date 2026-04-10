@@ -1,11 +1,14 @@
 import datetime as dt
 import re
+import threading
+import time
 from xml.etree import ElementTree
 
 import requests
 import sqlalchemy as sa
 from flask import current_app
 from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.exc import OperationalError
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
 
 from ..cache_versioning import bump_cache_versions
@@ -27,6 +30,10 @@ METADATA_FIELDS = ("name", "description", "publication", "authors", "year", "is_
 STUDY_METADATA_FIELDS = ("name", "description", "publication", "authors", "year")
 CONTENT_FIELDS = METADATA_FIELDS + ("ace_fulltext", "pubget_fulltext")
 TRANSIENT_HTTP_STATUS = {408, 409, 425, 429, 500, 502, 503, 504}
+SEMANTIC_SCHOLAR_DEFAULT_RPS = 1.0
+PUBMED_DEFAULT_RPS_WITH_KEY = 10.0
+PUBMED_DEFAULT_RPS_WITHOUT_KEY = 3.0
+RATE_LIMIT_SAFETY_MARGIN_SECONDS = 0.01
 
 
 def _has_value(value):
@@ -165,6 +172,7 @@ def _is_retryable_request_exception(exc):
     retry=retry_if_exception(_is_retryable_request_exception),
 )
 def _request_with_retry(method, url, **kwargs):
+    _apply_provider_rate_limit(url, kwargs)
     response = requests.request(method, url, **kwargs)
     if response.status_code >= 400:
         error = requests.HTTPError(
@@ -196,6 +204,88 @@ def _provider_error(provider_name, exc):
     current_app.logger.warning(
         "base-study metadata provider failed (%s): %s", provider_name, exc
     )
+
+
+def _coerce_positive_float(value, default):
+    try:
+        value = float(value)
+    except (TypeError, ValueError):
+        return default
+    return value if value > 0 else default
+
+
+def _provider_rps_for_request(url, kwargs):
+    headers = kwargs.get("headers") or {}
+    params = kwargs.get("params") or {}
+
+    if "api.semanticscholar.org" in url:
+        if headers.get("x-api-key"):
+            rps = _coerce_positive_float(
+                current_app.config.get(
+                    "SEMANTIC_SCHOLAR_API_RPS", SEMANTIC_SCHOLAR_DEFAULT_RPS
+                ),
+                SEMANTIC_SCHOLAR_DEFAULT_RPS,
+            )
+            return "semantic_scholar", rps
+        return None, None
+
+    if "ncbi.nlm.nih.gov" in url and (
+        "/pmc/utils/idconv/" in url or "/entrez/eutils/" in url
+    ):
+        has_api_key = bool(params.get("api_key"))
+        config_key = (
+            "PUBMED_API_RPS_WITH_KEY" if has_api_key else "PUBMED_API_RPS_WITHOUT_KEY"
+        )
+        default_rps = (
+            PUBMED_DEFAULT_RPS_WITH_KEY
+            if has_api_key
+            else PUBMED_DEFAULT_RPS_WITHOUT_KEY
+        )
+        rps = _coerce_positive_float(
+            current_app.config.get(config_key, default_rps), default_rps
+        )
+        provider_name = "pubmed_with_key" if has_api_key else "pubmed_without_key"
+        return provider_name, rps
+
+    return None, None
+
+
+class _ProviderRateLimiter:
+    def __init__(self):
+        self._lock = threading.Lock()
+        self._next_allowed_at = {}
+
+    def reset(self):
+        with self._lock:
+            self._next_allowed_at.clear()
+
+    def wait(self, provider_name, requests_per_second):
+        if not provider_name or not requests_per_second:
+            return
+
+        min_interval = (1.0 / requests_per_second) + RATE_LIMIT_SAFETY_MARGIN_SECONDS
+
+        while True:
+            with self._lock:
+                now = time.monotonic()
+                next_allowed_at = self._next_allowed_at.get(provider_name, 0.0)
+                if now >= next_allowed_at:
+                    self._next_allowed_at[provider_name] = now + min_interval
+                    return
+                sleep_for = next_allowed_at - now
+            time.sleep(sleep_for)
+
+
+_provider_rate_limiter = _ProviderRateLimiter()
+
+
+def _reset_provider_rate_limits():
+    _provider_rate_limiter.reset()
+
+
+def _apply_provider_rate_limit(url, kwargs):
+    provider_name, requests_per_second = _provider_rps_for_request(url, kwargs)
+    _provider_rate_limiter.wait(provider_name, requests_per_second)
 
 
 def lookup_ids_semantic_scholar(identifiers, api_key=None):
@@ -707,29 +797,84 @@ def _propagate_base_study_metadata_to_versions(base_study):
         field: getattr(base_study, field, None)
         for field in ID_FIELDS + STUDY_METADATA_FIELDS
     }
-    changed_study_ids = set()
-    versions = list(
+    update_values = {}
+    missing_conditions = []
+
+    for field, source_value in source_values.items():
+        if field == "year":
+            source_value = _normalize_year(source_value)
+            if source_value is None:
+                continue
+            missing_condition = sa.or_(Study.year.is_(None), Study.year <= 0)
+        else:
+            if not _has_metadata_value(field, source_value):
+                continue
+            missing_condition = _missing_text_sql(getattr(Study, field))
+
+        column = getattr(Study, field)
+        update_values[field] = sa.case(
+            (missing_condition, source_value),
+            else_=column,
+        )
+        missing_conditions.append(missing_condition)
+
+    if not update_values:
+        return set()
+
+    changed_study_ids = set(
         db.session.scalars(
-            sa.select(Study)
+            sa.update(Study)
             .where(Study.base_study_id == base_study.id)
-            .with_for_update(of=Study)
+            .where(sa.or_(*missing_conditions))
+            .values(**update_values)
+            .returning(Study.id)
         ).all()
     )
-    for version in versions:
-        changed = False
-        for field, source_value in source_values.items():
-            target_value = getattr(version, field, None)
-            if field == "year":
-                source_value = _normalize_year(source_value)
-                target_value = _normalize_year(target_value)
-            if _has_metadata_value(field, source_value) and not _has_metadata_value(
-                field, target_value
-            ):
-                setattr(version, field, source_value)
-                changed = True
-        if changed:
-            changed_study_ids.add(version.id)
     return changed_study_ids
+
+
+def _propagate_base_study_metadata_to_versions_post_commit(
+    base_study_ids,
+    *,
+    max_attempts=5,
+    retry_sleep_seconds=0.1,
+):
+    if not base_study_ids:
+        return set()
+
+    attempts = 0
+    while True:
+        try:
+            changed_study_ids = set()
+            active_base_studies = list(
+                db.session.scalars(
+                    sa.select(BaseStudy)
+                    .where(BaseStudy.id.in_(base_study_ids))
+                    .where(BaseStudy.is_active.is_(True))
+                    .order_by(BaseStudy.id.asc())
+                ).all()
+            )
+            for base_study in active_base_studies:
+                changed_study_ids.update(
+                    _propagate_base_study_metadata_to_versions(base_study)
+                )
+            db.session.commit()
+            return changed_study_ids
+        except OperationalError as exc:
+            db.session.rollback()
+            attempts += 1
+            if getattr(getattr(exc, "orig", None), "pgcode", None) != "40P01":
+                raise
+            if attempts >= max_attempts:
+                raise
+            current_app.logger.warning(
+                "retrying study metadata propagation after deadlock "
+                "(attempt %s/%s) for %s base studies",
+                attempts + 1,
+                max_attempts,
+                len(base_study_ids),
+            )
+            time.sleep(retry_sleep_seconds)
 
 
 def _merge_duplicates(primary):
@@ -771,7 +916,7 @@ def enrich_base_study_metadata(base_study_id):
     semantic_scholar_api_key = config.get("SEMANTIC_SCHOLAR_API_KEY")
     contact_email = config.get("EMAIL")
     pubmed_api_key = config.get("PUBMED_TOOL_API_KEY")
-    pubmed_tool = config.get("PUBMED_TOOL", "neurostore")
+    pubmed_tool = config["PUBMED_TOOL"]
 
     external_identifiers = _extract_identifiers(base_study_snapshot)
     missing_ids = _missing_id_fields(external_identifiers)
@@ -832,10 +977,9 @@ def enrich_base_study_metadata(base_study_id):
     if base_study is None or base_study.is_active is False:
         return {"base-studies": set(), "studies": set()}
     if not _needs_enrichment(base_study):
-        changed_study_ids = _propagate_base_study_metadata_to_versions(base_study)
         return {
             "base-studies": {base_study.id},
-            "studies": changed_study_ids,
+            "studies": set(),
         }
 
     cache_ids = {"base-studies": {base_study.id}, "studies": set()}
@@ -846,9 +990,6 @@ def enrich_base_study_metadata(base_study_id):
     cache_ids = merge_unique_ids(cache_ids, merged_cache_ids)
 
     _apply_missing_metadata(base_study, metadata_candidates)
-    cache_ids.setdefault("studies", set()).update(
-        _propagate_base_study_metadata_to_versions(base_study)
-    )
     cache_ids.setdefault("base-studies", set()).add(base_study.id)
     return cache_ids
 
@@ -909,12 +1050,44 @@ def enqueue_base_study_metadata_updates(base_study_ids, reason="api-write"):
     return len(eligible_ids)
 
 
+def _enqueue_base_study_flag_updates_post_commit(
+    base_study_ids,
+    reason,
+    *,
+    max_attempts=5,
+    retry_sleep_seconds=0.1,
+):
+    attempts = 0
+    while True:
+        try:
+            enqueue_base_study_flag_updates(base_study_ids, reason=reason)
+            db.session.commit()
+            return
+        except OperationalError as exc:
+            db.session.rollback()
+            attempts += 1
+            if getattr(getattr(exc, "orig", None), "pgcode", None) != "40P01":
+                raise
+            if attempts >= max_attempts:
+                raise
+            current_app.logger.warning(
+                "retrying base-study flag enqueue after deadlock "
+                "(attempt %s/%s) for %s base studies",
+                attempts + 1,
+                max_attempts,
+                len(base_study_ids),
+            )
+            time.sleep(retry_sleep_seconds)
+
+
 def process_base_study_metadata_outbox_batch(batch_size=50):
     batch_size = max(1, int(batch_size))
 
     successful_ids = []
     cache_ids = {"base-studies": set(), "studies": set()}
     flag_update_ids = set()
+    queued_flag_ids = []
+    propagation_base_study_ids = []
 
     claim_query = (
         sa.select(BaseStudyMetadataOutbox.base_study_id)
@@ -959,11 +1132,24 @@ def process_base_study_metadata_outbox_batch(batch_size=50):
             )
         )
         if flag_update_ids:
-            enqueue_base_study_flag_updates(
-                flag_update_ids, reason="base-study-metadata-enrichment"
-            )
+            queued_flag_ids = normalize_ids(flag_update_ids)
+        else:
+            queued_flag_ids = []
 
     db.session.commit()
+    if cache_ids.get("base-studies"):
+        propagation_base_study_ids = normalize_ids(cache_ids["base-studies"])
+    if propagation_base_study_ids:
+        cache_ids.setdefault("studies", set()).update(
+            _propagate_base_study_metadata_to_versions_post_commit(
+                propagation_base_study_ids
+            )
+        )
+    if queued_flag_ids:
+        _enqueue_base_study_flag_updates_post_commit(
+            queued_flag_ids,
+            reason="base-study-metadata-enrichment",
+        )
     if cache_ids:
         bump_cache_versions(cache_ids)
     return len(successful_ids)

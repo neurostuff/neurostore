@@ -96,10 +96,12 @@ def test_create(session, auth_client, user_data, db, endpoint, model, schema):
 )
 def test_read(session, auth_client, user_data, db, endpoint, model, schema):
     if hasattr(model, "public"):
-        query = (model.user_id == auth_client.username) | (model.public == True)  # noqa E712
+        query = (model.user_id == auth_client.username) | (
+            model.public.is_(True)
+        )
         if hasattr(model, "draft"):
             query = (model.user_id == auth_client.username) | (
-                (model.public == True) & (model.draft == False)  # noqa E712
+                model.public.is_(True) & model.draft.is_(False)
             )
     else:
         query = True

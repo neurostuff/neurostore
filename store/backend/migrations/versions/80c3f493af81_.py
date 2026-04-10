@@ -48,7 +48,9 @@ def upgrade():
             batch_op.f("ix_base_studies_has_z_maps_true_created_at_id"),
             postgresql_where="((has_z_maps IS TRUE) AND (is_active IS TRUE))",
         )
-        batch_op.drop_constraint(batch_op.f("fk_base_studies_superseded_by"), type_="foreignkey")
+        batch_op.drop_constraint(
+            batch_op.f("fk_base_studies_superseded_by"), type_="foreignkey"
+        )
         batch_op.create_foreign_key(None, "base_studies", ["superseded_by"], ["id"])
 
     with op.batch_alter_table("base_study_flag_outbox", schema=None) as batch_op:
@@ -69,9 +71,13 @@ def upgrade():
         )
 
     with op.batch_alter_table("tables", schema=None) as batch_op:
-        batch_op.create_index(batch_op.f("ix_tables_created_at"), ["created_at"], unique=False)
+        batch_op.create_index(
+            batch_op.f("ix_tables_created_at"), ["created_at"], unique=False
+        )
         batch_op.create_index(batch_op.f("ix_tables_id"), ["id"], unique=False)
-        batch_op.create_index(batch_op.f("ix_tables_updated_at"), ["updated_at"], unique=False)
+        batch_op.create_index(
+            batch_op.f("ix_tables_updated_at"), ["updated_at"], unique=False
+        )
 
     # ### end Alembic commands ###
 

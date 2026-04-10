@@ -1,5 +1,5 @@
 import string
-from collections import Counter, OrderedDict
+from collections import Counter, OrderedDict, defaultdict
 from copy import deepcopy
 from datetime import datetime
 from sqlalchemy import func, text
@@ -52,6 +52,7 @@ from ..models import (
     Pipeline,
 )
 from ..models.data import StudysetStudy, BaseStudy, _check_type
+from ..map_types import map_type_label
 from ..note_keys import canonicalize_note_keys, ordered_note_key_names
 from ..utils import parse_json_filter, build_jsonpath
 
@@ -111,6 +112,132 @@ def apply_map_type_filter(query, model, map_type):
     if mapped_field is None:
         abort_validation("map_type must be one of: z, t, beta_variance, any")
     return query.filter(getattr(model, mapped_field).is_(True))
+
+
+def _base_study_response_load_options():
+    return (
+        raiseload("*", sql_only=True),
+        selectinload(BaseStudy.user)
+        .load_only(User.external_id, User.name)
+        .options(raiseload("*", sql_only=True)),
+        selectinload(BaseStudy.versions)
+        .load_only(
+            Study.id,
+            Study.user_id,
+            Study.created_at,
+            Study.updated_at,
+            Study.source,
+        )
+        .options(
+            raiseload("*", sql_only=True),
+            selectinload(Study.user)
+            .load_only(User.external_id, User.name)
+            .options(raiseload("*", sql_only=True)),
+        ),
+    )
+
+
+def _normalize_base_study_identifier(value) -> str:
+    if value is None:
+        return ""
+    return str(value)
+
+
+def _base_study_lookup_key(doi: str, pmid: str) -> str:
+    return f"{doi}{pmid}"
+
+
+def _collect_base_study_lookup_identifiers(payload):
+    dois = set()
+    pmids = set()
+
+    for study_data in payload:
+        doi = _normalize_base_study_identifier(study_data.get("doi"))
+        pmid = _normalize_base_study_identifier(study_data.get("pmid"))
+        if doi:
+            dois.add(doi)
+        if pmid:
+            pmids.add(pmid)
+
+    return dois, pmids
+
+
+def _build_base_study_lookup(records):
+    lookup = {
+        "combined": {},
+        "doi": {},
+        "pmid": {},
+    }
+
+    for record in records:
+        doi = _normalize_base_study_identifier(record.doi)
+        pmid = _normalize_base_study_identifier(record.pmid)
+
+        if doi:
+            lookup["doi"][doi] = record
+        if pmid:
+            lookup["pmid"][pmid] = record
+        if doi or pmid:
+            lookup["combined"][_base_study_lookup_key(doi, pmid)] = record
+
+    return lookup
+
+
+def _match_base_study_lookup_record(lookup, study_data):
+    doi = _normalize_base_study_identifier(study_data.get("doi"))
+    pmid = _normalize_base_study_identifier(study_data.get("pmid"))
+    key = _base_study_lookup_key(doi, pmid)
+
+    if not key or key.isspace():
+        return None
+
+    if doi and pmid:
+        return lookup["combined"].get(key)
+    if doi:
+        return lookup["doi"].get(doi)
+    return lookup["pmid"].get(pmid)
+
+
+def _register_base_study_lookup_record(lookup, record):
+    doi = _normalize_base_study_identifier(record.doi)
+    pmid = _normalize_base_study_identifier(record.pmid)
+
+    if doi:
+        lookup["doi"][doi] = record
+    if pmid:
+        lookup["pmid"][pmid] = record
+    if doi or pmid:
+        lookup["combined"][_base_study_lookup_key(doi, pmid)] = record
+
+
+def _prefetch_base_study_lookup_records(dois, pmids):
+    filters = []
+    if dois:
+        filters.append(BaseStudy.doi.in_(sorted(dois)))
+    if pmids:
+        filters.append(BaseStudy.pmid.in_(sorted(pmids)))
+    if not filters:
+        return []
+
+    return (
+        BaseStudy.query.filter(sa.or_(*filters))
+        .options(*_base_study_response_load_options())
+        .all()
+    )
+
+
+def _load_base_study_response_records(base_study_ids):
+    if not base_study_ids:
+        return []
+
+    records = (
+        BaseStudy.query.filter(BaseStudy.id.in_(list(base_study_ids)))
+        .options(*_base_study_response_load_options())
+        .all()
+    )
+
+    records_by_id = {record.id: record for record in records}
+    return [records_by_id[base_study_id] for base_study_id in base_study_ids]
 
 
 # Individual resource views
@@ -307,6 +434,307 @@ class StudysetsView(ObjectView, ListView):
     def _serialize_dt(dt):
         return dt.isoformat() if dt else dt
 
+    def serialize_nested_studyset(self, studyset_id):
+        studyset_row = db.session.execute(
+            sa.select(
+                Studyset.id,
+                Studyset.name,
+                Studyset.user_id,
+                Studyset.description,
+                Studyset.publication,
+                Studyset.doi,
+                Studyset.pmid,
+                Studyset.created_at,
+                Studyset.updated_at,
+            ).where(Studyset.id == studyset_id)
+        ).one_or_none()
+        if studyset_row is None:
+            return None
+
+        study_rows = db.session.execute(
+            sa.select(
+                StudysetStudy.study_id,
+                StudysetStudy.curation_stub_uuid,
+                Study.id.label("id"),
+                Study.created_at,
+                Study.updated_at,
+                Study.user_id,
+                Study.name,
+                Study.description,
+                Study.publication,
+                Study.doi,
+                Study.pmid,
+                Study.authors,
+                Study.year,
+                Study.metadata_,
+                Study.source,
+                Study.source_id,
+                Study.source_updated_at,
+            )
+            .select_from(StudysetStudy)
+            .join(Study, Study.id == StudysetStudy.study_id)
+            .where(StudysetStudy.studyset_id == studyset_id)
+            .order_by(StudysetStudy.study_id)
+        ).all()
+
+        analyses_by_study = defaultdict(list)
+        points_by_analysis = defaultdict(list)
+        images_by_analysis = defaultdict(list)
+        conditions_by_analysis = defaultdict(list)
+        weights_by_analysis = defaultdict(list)
+        values_by_point = defaultdict(list)
+
+        if study_rows:
+            analysis_rows = db.session.execute(
+                sa.select(
+                    Analysis.id,
+                    Analysis.study_id,
+                    Analysis.user_id,
+                    Analysis.name,
+                    Analysis.metadata_,
+                    Analysis.description,
+                    Analysis.order,
+                )
+                .select_from(Analysis)
+                .join(StudysetStudy, StudysetStudy.study_id == Analysis.study_id)
+                .where(StudysetStudy.studyset_id == studyset_id)
+                .order_by(
+                    Analysis.study_id,
+                    Analysis.order.is_(None),
+                    Analysis.order,
+                    Analysis.id,
+                )
+            ).all()
+        else:
+            analysis_rows = []
+
+        if analysis_rows:
+            point_rows = db.session.execute(
+                sa.select(
+                    Point.id,
+                    Point.analysis_id,
+                    Point.x,
+                    Point.y,
+                    Point.z,
+                    Point.kind,
+                    Point.space,
+                    Point.image,
+                    Point.label_id,
+                    Point.order,
+                )
+                .select_from(Point)
+                .join(Analysis, Analysis.id == Point.analysis_id)
+                .join(StudysetStudy, StudysetStudy.study_id == Analysis.study_id)
+                .where(StudysetStudy.studyset_id == studyset_id)
+                .order_by(
+                    Point.analysis_id, Point.order.is_(None), Point.order, Point.id
+                )
+            ).all()
+
+            point_value_rows = db.session.execute(
+                sa.select(
+                    PointValue.point_id,
+                    PointValue.kind,
+                    PointValue.value,
+                )
+                .select_from(PointValue)
+                .join(Point, Point.id == PointValue.point_id)
+                .join(Analysis, Analysis.id == Point.analysis_id)
+                .join(StudysetStudy, StudysetStudy.study_id == Analysis.study_id)
+                .where(StudysetStudy.studyset_id == studyset_id)
+                .order_by(PointValue.point_id, PointValue.id)
+            ).all()
+
+            for point_id, kind, value in point_value_rows:
+                values_by_point[point_id].append(
+                    {
+                        "kind": kind,
+                        "value": value,
+                    }
+                )
+
+            for (
+                point_id,
+                analysis_id,
+                x,
+                y,
+                z,
+                kind,
+                space,
+                image,
+                label_id,
+                _order,
+            ) in point_rows:
+                points_by_analysis[analysis_id].append(
+                    {
+                        "id": point_id,
+                        "coordinates": [x, y, z],
+                        "kind": kind,
+                        "space": space,
+                        "image": image,
+                        "label_id": label_id,
+                        "values": values_by_point.get(point_id, []),
+                    }
+                )
+
+            image_rows = db.session.execute(
+                sa.select(
+                    Image.analysis_id,
+                    Image.id,
+                    Image.user_id,
+                    Image.url,
+                    Image.space,
+                    Image.value_type,
+                    Image.filename,
+                    Image.add_date,
+                )
+                .select_from(Image)
+                .join(Analysis, Analysis.id == Image.analysis_id)
+                .join(StudysetStudy, StudysetStudy.study_id == Analysis.study_id)
+                .where(StudysetStudy.studyset_id == studyset_id)
+                .order_by(Image.analysis_id, Image.id)
+            ).all()
+            for (
+                analysis_id,
+                image_id,
+                user_id,
+                url,
+                space,
+                value_type,
+                filename,
+                add_date,
+            ) in image_rows:
+                images_by_analysis[analysis_id].append(
+                    {
+                        "id": image_id,
+                        "user": user_id,
+                        "url": url,
+                        "space": space,
+                        "value_type": map_type_label(value_type),
+                        "filename": filename,
+                        "add_date": add_date,
+                    }
+                )
+
+            condition_rows = db.session.execute(
+                sa.select(
+                    AnalysisConditions.analysis_id,
+                    AnalysisConditions.weight,
+                    Condition.id,
+                    Condition.user_id,
+                    Condition.name,
+                    Condition.description,
+                )
+                .select_from(AnalysisConditions)
+                .join(Condition, Condition.id == AnalysisConditions.condition_id)
+                .join(Analysis, Analysis.id == AnalysisConditions.analysis_id)
+                .join(StudysetStudy, StudysetStudy.study_id == Analysis.study_id)
+                .where(StudysetStudy.studyset_id == studyset_id)
+                .order_by(AnalysisConditions.analysis_id, Condition.id)
+            ).all()
+            for (
+                analysis_id,
+                weight,
+                condition_id,
+                user_id,
+                name,
+                description,
+            ) in condition_rows:
+                conditions_by_analysis[analysis_id].append(
+                    {
+                        "id": condition_id,
+                        "user": user_id,
+                        "name": name,
+                        "description": description,
+                    }
+                )
+                weights_by_analysis[analysis_id].append(weight)
+
+        for (
+            analysis_id,
+            study_id,
+            user_id,
+            name,
+            metadata,
+            description,
+            _order,
+        ) in analysis_rows:
+            analyses_by_study[study_id].append(
+                {
+                    "id": analysis_id,
+                    "user": user_id,
+                    "name": name,
+                    "metadata": metadata,
+                    "description": description,
+                    "conditions": conditions_by_analysis.get(analysis_id, []),
+                    "weights": weights_by_analysis.get(analysis_id, []),
+                    "points": points_by_analysis.get(analysis_id, []),
+                    "images": images_by_analysis.get(analysis_id, []),
+                }
+            )
+
+        studyset_studies = []
+        studies_payload = []
+        for (
+            study_id,
+            curation_stub_uuid,
+            record_id,
+            created_at,
+            updated_at,
+            user_id,
+            name,
+            description,
+            publication,
+            doi,
+            pmid,
+            authors,
+            year,
+            metadata,
+            source,
+            source_id,
+            source_updated_at,
+        ) in study_rows:
+            studyset_studies.append(
+                {
+                    "id": study_id,
+                    "curation_stub_uuid": curation_stub_uuid,
+                }
+            )
+            studies_payload.append(
+                {
+                    "id": record_id,
+                    "created_at": self._serialize_dt(created_at),
+                    "updated_at": self._serialize_dt(updated_at),
+                    "user": user_id,
+                    "name": name,
+                    "description": description,
+                    "publication": publication,
+                    "doi": doi,
+                    "pmid": pmid,
+                    "authors": authors,
+                    "year": year,
+                    "metadata": metadata,
+                    "source": source,
+                    "source_id": source_id,
+                    "source_updated_at": self._serialize_dt(source_updated_at),
+                    "analyses": analyses_by_study.get(study_id, []),
+                }
+            )
+
+        return {
+            "id": studyset_row.id,
+            "name": studyset_row.name,
+            "user": studyset_row.user_id,
+            "description": studyset_row.description,
+            "publication": studyset_row.publication,
+            "doi": studyset_row.doi,
+            "pmid": studyset_row.pmid,
+            "created_at": self._serialize_dt(studyset_row.created_at),
+            "updated_at": self._serialize_dt(studyset_row.updated_at),
+            "studies": studies_payload,
+            "studyset_studies": studyset_studies,
+        }
+
     def serialize_studyset_summary(self, record):
         study_rows = db.session.execute(
             sa.select(
@@ -395,13 +823,13 @@ class StudysetsView(ObjectView, ListView):
             "studyset_studies": studyset_studies,
         }
 
-    def post(self):
+    def post(self, body):
         args = parser.parse(self._user_args, request, location="query")
         copy_annotations = args.pop("copy_annotations", True)
         source_id = args.get("source_id")
 
         if not source_id:
-            return super().post()
+            return super().post(body)
 
         source = args.get("source") or "neurostore"
         if source != "neurostore":
@@ -411,9 +839,8 @@ class StudysetsView(ObjectView, ListView):
             )
 
         unknown = self.__class__._schema.opts.unknown
-        data = parser.parse(
-            self.__class__._schema(exclude=("id",)), request, unknown=unknown
-        )
+        schema = self.__class__._schema(exclude=("id",))
+        data = schema.load(body, unknown=unknown)
 
         clone_payload, source_record = self._build_clone_payload(source_id, data)
 
@@ -554,7 +981,9 @@ class StudysetsView(ObjectView, ListView):
             if stale_assocs:
                 record.studyset_studies = [existing[sid] for sid in sorted(existing)]
 
-            missing_ids = [study_id for study_id in current_ids if study_id not in existing]
+            missing_ids = [
+                study_id for study_id in current_ids if study_id not in existing
+            ]
             # If a stub UUID is being re-mapped from a removed association to a new
             # association in this same request, flush deletes first to satisfy the
             # per-studyset uniqueness constraint on curation_stub_uuid.
@@ -2063,75 +2492,64 @@ class BaseStudiesView(ObjectView, ListView):
             q = q.options(selectinload(self._model.versions))
         return super().join_tables(q, args)
 
-    def post(self):
+    @staticmethod
+    def _ensure_bulk_post_user():
+        current_user = get_current_user()
+        if current_user is not None:
+            return current_user
+
+        current_user = create_user()
+        db.session.add(current_user)
+        return current_user
+
+    @staticmethod
+    def _create_initial_version(record, study_data, current_user):
+        version = StudiesView._model()
+        version.base_study = record
+        version.user = current_user
+        version = StudiesView.update_or_create(
+            study_data, record=version, user=current_user, flush=False
+        )
+        record.versions.append(version)
+        return version
+
+    def post(self, body):
         # the request is either a list or a dict
-        if isinstance(request.json, dict):
-            return super().post()
+        if isinstance(body, dict):
+            return super().post(body)
         # in the list scenario, try to find an existing record
         # then return the best version and return that study id
-        data = parser.parse(self.__class__._schema(many=True), request)
+        schema = self.__class__._schema(many=True)
+        data = schema.load(body)
         base_studies = []
         to_commit = []
-        pmids = [sd["pmid"] for sd in data if sd.get("pmid")]
-        dois = [sd["doi"] for sd in data if sd.get("doi")]
-        names = [sd["name"] for sd in data if sd.get("name")]
-        results = (
-            BaseStudy.query.filter(
-                (BaseStudy.doi.in_(dois))
-                | (BaseStudy.pmid.in_(pmids))
-                | (BaseStudy.name.in_(names))
-            )
-            .options(
-                selectinload(BaseStudy.versions).options(
-                    selectinload(Study.studyset_studies).selectinload(
-                        StudysetStudy.studyset
-                    ),
-                    selectinload(Study.user),
-                ),
-                selectinload(BaseStudy.user),
-            )
-            .all()
-        )
-        hashed_results = {}
-        for bs in results:
-            doi = bs.doi or ""
-            pmid = bs.pmid or ""
-            lookup_hash = doi + pmid
-            if doi:
-                hashed_results[doi] = bs
-            if pmid:
-                hashed_results[pmid] = bs
-            hashed_results[lookup_hash] = bs
+        changed_base_study_records = []
+        dois, pmids = _collect_base_study_lookup_identifiers(data)
+        results = _prefetch_base_study_lookup_records(dois, pmids)
+        lookup = _build_base_study_lookup(results)
+        current_user = None
         for study_data in data:
-            doi = study_data.get("doi", "") or ""
-            pmid = study_data.get("pmid", "") or ""
-            lookup_hash = doi + pmid
-            if lookup_hash == "" or lookup_hash.isspace():
-                record = None
-            else:
-                record = hashed_results.get(lookup_hash)
+            record = _match_base_study_lookup_record(lookup, study_data)
             if record is None:
+                if current_user is None:
+                    current_user = self._ensure_bulk_post_user()
                 with db.session.no_autoflush:
-                    record = self.__class__.update_or_create(study_data, flush=False)
+                    record = self.__class__.update_or_create(
+                        study_data, user=current_user, flush=False
+                    )
                 # track new base studies
                 to_commit.append(record)
+                _register_base_study_lookup_record(lookup, record)
+                changed_base_study_records.append(record)
             base_studies.append(record)
-            versions = record.versions
-            if len(versions) == 0:
-                current_user = get_current_user()
-                if not current_user:
-                    current_user = create_user()
-
-                    db.session.add(current_user)
-                    db.session.commit()
-                version = StudiesView._model()
-                version.base_study = record
-                version.user = current_user
-                version = StudiesView.update_or_create(
-                    study_data, record=version, user=current_user, flush=False
+            record_has_versions = bool(record.versions)
+            if not record_has_versions:
+                if current_user is None:
+                    current_user = self._ensure_bulk_post_user()
+                to_commit.append(
+                    self._create_initial_version(record, study_data, current_user)
                 )
-                record.versions.append(version)
-                to_commit.append(version)
+                changed_base_study_records.append(record)
             # elif len(versions) == 1:
             #     version = record.versions[0]
             # else:
@@ -2148,14 +2566,20 @@ class BaseStudiesView(ObjectView, ListView):
             db.session.add_all(to_commit)
             db.session.flush()
 
-        # clear the cache for this record
-        unique_ids = self.get_affected_ids([bs.id for bs in base_studies])
-        clear_cache(unique_ids)
-        self.update_base_studies(unique_ids.get("base-studies"))
-
-        db.session.commit()
-
-        return self._schema(context={"info": True}, many=True).dump(base_studies)
+        changed_base_study_ids = sorted(
+            {record.id for record in changed_base_study_records if record.id}
+        )
+        if changed_base_study_ids:
+            unique_ids = self.get_affected_ids(changed_base_study_ids)
+            clear_cache(unique_ids)
+            self.update_base_studies(unique_ids.get("base-studies"))
+            db.session.commit()
+            response_records = _load_base_study_response_records(
+                [bs.id for bs in base_studies]
+            )
+        else:
+            response_records = base_studies
+        return self._schema(context={"info": True}, many=True).dump(response_records)
 
 
 @view_maker

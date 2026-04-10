@@ -1,5 +1,5 @@
 """
-    Command line management tools.
+Command line management tools.
 """
 
 import os
@@ -8,6 +8,7 @@ import click
 from flask_migrate import Migrate
 
 from neurosynth_compose import create_app
+from neurosynth_compose.config import resolve_config_object
 
 app = create_app()
 
@@ -19,7 +20,7 @@ from neurosynth_compose.scripts.backfill_extraction_metadata import (
 )
 
 
-app.config.from_object(os.environ["APP_SETTINGS"])
+app.config.from_object(resolve_config_object())
 
 
 migrate = Migrate(app, db, directory=app.config["MIGRATIONS_DIR"])

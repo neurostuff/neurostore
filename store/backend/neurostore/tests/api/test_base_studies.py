@@ -1,7 +1,10 @@
 """Test Base Study Endpoint"""
 
 import datetime as dt
+import threading
 
+import pytest
+import sqlalchemy as sa
 from sqlalchemy import text
 from sqlalchemy.orm import aliased
 from sqlalchemy.sql import func
@@ -160,6 +163,19 @@ def test_post_list_of_studies(auth_client, ingest_neuroquery):
     result = auth_client.post("/api/base-studies/", data=test_input)
 
     assert result.status_code == 200
+
+
+def test_post_list_of_studies_returns_full_objects(auth_client, ingest_neuroquery):
+    base_study = BaseStudy.query.filter(BaseStudy.pmid.isnot(None)).first()
+
+    result = auth_client.post("/api/base-studies/", data=[{"pmid": base_study.pmid}])
+
+    assert result.status_code == 200
+    assert len(result.json()) == 1
+    assert result.json()[0]["id"] == base_study.id
+    assert result.json()[0]["name"] == base_study.name
+    assert "versions" in result.json()[0]
+    assert isinstance(result.json()[0]["versions"], list)
 
 
 def test_field_sanitization(auth_client):
@@ -1649,6 +1665,247 @@ def test_metadata_worker_uses_new_provider_config_keys(session, app, monkeypatch
     assert captured_kwargs["openalex_lookup_email"] == "new@example.org"
 
 
+def test_metadata_and_flag_workers_do_not_deadlock_on_same_base_study(
+    session, app, monkeypatch
+):
+    from neurostore.services import base_study_metadata_enrichment as metadata_service
+    from neurostore.services import has_media_flags as flag_service
+
+    base_study = BaseStudy(
+        name="deadlock-repro",
+        pmid="999001",
+        level="group",
+    )
+    session.add(base_study)
+    session.commit()
+
+    session.add(
+        BaseStudyMetadataOutbox(
+            base_study_id=base_study.id,
+            reason="test-deadlock-metadata",
+        )
+    )
+    session.add(
+        BaseStudyFlagOutbox(
+            base_study_id=base_study.id,
+            reason="test-deadlock-flag",
+        )
+    )
+    session.commit()
+
+    metadata_has_base_lock = threading.Event()
+    flag_has_outbox_lock = threading.Event()
+    results = {}
+
+    def _patched_enrich(target_id):
+        metadata_service.db.session.execute(sa.text("SET deadlock_timeout = '100ms'"))
+        locked_base_study = metadata_service.db.session.scalar(
+            sa.select(BaseStudy)
+            .where(BaseStudy.id == target_id)
+            .with_for_update(of=BaseStudy)
+        )
+        metadata_has_base_lock.set()
+        assert flag_has_outbox_lock.wait(timeout=5), "flag worker never claimed outbox"
+        return {
+            "base-studies": {locked_base_study.id},
+            "studies": set(),
+        }
+
+    def _patched_recompute(base_study_ids):
+        flag_service.db.session.execute(sa.text("SET deadlock_timeout = '100ms'"))
+        flag_has_outbox_lock.set()
+        assert metadata_has_base_lock.wait(
+            timeout=5
+        ), "metadata worker never locked base study"
+        flag_service.db.session.execute(
+            sa.update(BaseStudy)
+            .where(BaseStudy.id.in_(base_study_ids))
+            .values(name="flag-worker-touch")
+        )
+        return {
+            "base-studies": set(base_study_ids),
+            "studies": set(),
+            "analyses": set(),
+        }
+
+    monkeypatch.setattr(metadata_service, "enrich_base_study_metadata", _patched_enrich)
+    monkeypatch.setattr(flag_service, "recompute_media_flags", _patched_recompute)
+
+    def _run(name, fn):
+        with app.app_context():
+            scoped_session = app.extensions["sqlalchemy"].session
+            scoped_session.remove()
+            try:
+                results[name] = fn(batch_size=10)
+            except Exception as exc:  # noqa: BLE001
+                results[f"{name}_exc"] = exc
+            finally:
+                scoped_session.remove()
+
+    metadata_thread = threading.Thread(
+        target=_run,
+        args=("metadata", metadata_service.process_base_study_metadata_outbox_batch),
+    )
+    flag_thread = threading.Thread(
+        target=_run,
+        args=("flag", flag_service.process_base_study_flag_outbox_batch),
+    )
+
+    metadata_thread.start()
+    flag_thread.start()
+    metadata_thread.join(timeout=10)
+    flag_thread.join(timeout=10)
+
+    assert not metadata_thread.is_alive()
+    assert not flag_thread.is_alive()
+    assert "metadata_exc" not in results
+    assert "flag_exc" not in results
+    assert results["metadata"] == 1
+    assert results["flag"] == 1
+
+    session.expire_all()
+    outbox_rows = BaseStudyFlagOutbox.query.filter_by(base_study_id=base_study.id).all()
+    assert len(outbox_rows) == 1
+
+
+def test_metadata_worker_propagation_does_not_deadlock_with_study_then_base_write(
+    session, app, monkeypatch
+):
+    from neurostore.services import base_study_metadata_enrichment as metadata_service
+
+    base_study = BaseStudy(
+        name=None,
+        pmid="999002",
+        level="group",
+    )
+    version = Study(
+        name=None,
+        publication=None,
+        authors=None,
+        year=None,
+        doi=None,
+        pmid=None,
+        pmcid=None,
+        level="group",
+        base_study=base_study,
+    )
+    session.add_all([base_study, version])
+    session.commit()
+
+    session.add(
+        BaseStudyMetadataOutbox(
+            base_study_id=base_study.id,
+            reason="test-study-base-deadlock",
+        )
+    )
+    session.commit()
+
+    monkeypatch.setattr(
+        metadata_service, "lookup_ids_semantic_scholar", lambda *_args, **_kwargs: {}
+    )
+    monkeypatch.setattr(
+        metadata_service, "lookup_ids_pubmed", lambda *_args, **_kwargs: {}
+    )
+    monkeypatch.setattr(
+        metadata_service, "lookup_ids_openalex", lambda *_args, **_kwargs: {}
+    )
+    monkeypatch.setattr(
+        metadata_service,
+        "fetch_metadata_semantic_scholar",
+        lambda *_args, **_kwargs: {
+            "name": "Metadata Title",
+            "publication": "Metadata Journal",
+            "authors": "Metadata Author",
+            "year": 2024,
+        },
+    )
+    monkeypatch.setattr(
+        metadata_service, "fetch_metadata_pubmed", lambda *_args, **_kwargs: {}
+    )
+
+    propagation_started = threading.Event()
+    request_has_study_lock = threading.Event()
+    results = {}
+    original_propagate = metadata_service._propagate_base_study_metadata_to_versions
+
+    def _patched_propagate(base_study_record):
+        propagation_started.set()
+        assert request_has_study_lock.wait(
+            timeout=5
+        ), "request transaction never locked study row"
+        return original_propagate(base_study_record)
+
+    monkeypatch.setattr(
+        metadata_service,
+        "_propagate_base_study_metadata_to_versions",
+        _patched_propagate,
+    )
+
+    def _run_metadata():
+        with app.app_context():
+            scoped_session = app.extensions["sqlalchemy"].session
+            scoped_session.remove()
+            try:
+                results["metadata"] = (
+                    metadata_service.process_base_study_metadata_outbox_batch(
+                        batch_size=10
+                    )
+                )
+            except Exception as exc:  # noqa: BLE001
+                results["metadata_exc"] = exc
+            finally:
+                scoped_session.remove()
+
+    def _run_request_like_writer():
+        with app.app_context():
+            scoped_session = app.extensions["sqlalchemy"].session
+            scoped_session.remove()
+            try:
+                scoped_session.execute(
+                    sa.select(Study)
+                    .where(Study.id == version.id)
+                    .with_for_update(of=Study)
+                ).scalar_one()
+                request_has_study_lock.set()
+                assert propagation_started.wait(
+                    timeout=5
+                ), "metadata worker never reached propagation"
+                scoped_session.execute(
+                    sa.update(BaseStudy)
+                    .where(BaseStudy.id == base_study.id)
+                    .values(metadata_={"request": "touch"})
+                )
+                scoped_session.commit()
+                results["request"] = "committed"
+            except Exception as exc:  # noqa: BLE001
+                scoped_session.rollback()
+                results["request_exc"] = exc
+            finally:
+                scoped_session.remove()
+
+    request_thread = threading.Thread(target=_run_request_like_writer)
+    metadata_thread = threading.Thread(target=_run_metadata)
+
+    request_thread.start()
+    metadata_thread.start()
+    request_thread.join(timeout=10)
+    metadata_thread.join(timeout=10)
+
+    assert not request_thread.is_alive()
+    assert not metadata_thread.is_alive()
+    assert "request_exc" not in results
+    assert "metadata_exc" not in results
+    assert results["request"] == "committed"
+    assert results["metadata"] == 1
+
+    session.expire_all()
+    session.refresh(base_study)
+    session.refresh(version)
+    assert base_study.name == "Metadata Title"
+    assert version.name == "Metadata Title"
+    assert version.publication == "Metadata Journal"
+
+
 def test_enqueue_metadata_updates_treats_blank_values_as_missing(session):
     base_study = BaseStudy(
         name="Metadata Missing",
@@ -2013,7 +2270,7 @@ def test_base_studies_semantic_search(
 
 def test_is_active_filter_list(auth_client, session, ingest_neurosynth):
     """Test that inactive base studies are filtered out from list view"""
-    from neurostore.core import cache
+    from neurostore.extensions import cache
 
     # First get the list of all base studies
     resp = auth_client.get("/api/base-studies/")
@@ -2171,3 +2428,109 @@ def test_is_active_not_exposed_in_api(auth_client, ingest_neurosynth):
         # Verify internal fields are not exposed
         assert "is_active" not in result
         assert "superseded_by" not in result
+
+
+def test_metadata_requests_throttle_semantic_scholar_by_configured_rps(
+    app, monkeypatch
+):
+    from neurostore.services import base_study_metadata_enrichment as metadata_service
+
+    class FakeResponse:
+        status_code = 200
+
+    class FakeClock:
+        def __init__(self):
+            self.now = 100.0
+            self.sleeps = []
+
+        def monotonic(self):
+            return self.now
+
+        def sleep(self, seconds):
+            self.sleeps.append(seconds)
+            self.now += seconds
+
+    fake_clock = FakeClock()
+    calls = []
+    metadata_service._reset_provider_rate_limits()
+    app.config["SEMANTIC_SCHOLAR_API_RPS"] = 1
+
+    monkeypatch.setattr(metadata_service.time, "monotonic", fake_clock.monotonic)
+    monkeypatch.setattr(metadata_service.time, "sleep", fake_clock.sleep)
+    monkeypatch.setattr(
+        metadata_service.requests,
+        "request",
+        lambda method, url, **kwargs: calls.append((method, url, kwargs))
+        or FakeResponse(),
+    )
+
+    metadata_service._request_with_retry(
+        "POST",
+        "https://api.semanticscholar.org/graph/v1/paper/batch",
+        headers={"x-api-key": "semantic-key"},
+    )
+    metadata_service._request_with_retry(
+        "POST",
+        "https://api.semanticscholar.org/graph/v1/paper/batch",
+        headers={"x-api-key": "semantic-key"},
+    )
+
+    assert len(calls) == 2
+    assert fake_clock.sleeps == pytest.approx([1.01])
+
+
+def test_metadata_requests_throttle_pubmed_by_key_presence(app, monkeypatch):
+    from neurostore.services import base_study_metadata_enrichment as metadata_service
+
+    class FakeResponse:
+        status_code = 200
+
+    class FakeClock:
+        def __init__(self):
+            self.now = 200.0
+            self.sleeps = []
+
+        def monotonic(self):
+            return self.now
+
+        def sleep(self, seconds):
+            self.sleeps.append(seconds)
+            self.now += seconds
+
+    fake_clock = FakeClock()
+    metadata_service._reset_provider_rate_limits()
+    app.config["PUBMED_API_RPS_WITH_KEY"] = 10
+    app.config["PUBMED_API_RPS_WITHOUT_KEY"] = 3
+
+    monkeypatch.setattr(metadata_service.time, "monotonic", fake_clock.monotonic)
+    monkeypatch.setattr(metadata_service.time, "sleep", fake_clock.sleep)
+    monkeypatch.setattr(
+        metadata_service.requests,
+        "request",
+        lambda *_args, **_kwargs: FakeResponse(),
+    )
+
+    metadata_service._request_with_retry(
+        "GET",
+        "https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/",
+        params={"api_key": "pubmed-key"},
+    )
+    metadata_service._request_with_retry(
+        "GET",
+        "https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/",
+        params={"api_key": "pubmed-key"},
+    )
+    metadata_service._reset_provider_rate_limits()
+    fake_clock.now = 300.0
+    metadata_service._request_with_retry(
+        "GET",
+        "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi",
+        params={},
+    )
+    metadata_service._request_with_retry(
+        "GET",
+        "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi",
+        params={},
+    )
+
+    assert fake_clock.sleeps == pytest.approx([0.11, (1.0 / 3.0) + 0.01])
