@@ -117,9 +117,7 @@ class DefaultMutationPolicy:
     def load_existing_record(self):
         record = self.get_lookup_query().filter_by(id=self.context.id).first()
         if record is None:
-            abort_not_found(
-                f"Record {self.context.id} not found in {self.context.model}"
-            )
+            abort_not_found(self.context.model.__name__, self.context.id)
         return record
 
     def ensure_mutation_allowed(self):

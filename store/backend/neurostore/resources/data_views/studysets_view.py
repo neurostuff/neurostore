@@ -142,14 +142,10 @@ class StudysetMutationPolicy(DefaultMutationPolicy):
         existing_studies = list(
             StudysetMutationPolicy._iter_submitted_study_ids(studies)
         )
-        query = Study.query.filter(Study.id.in_(existing_studies))
-        if membership_only_payload:
-            query = query.options(load_only(Study.id))
-        else:
-            query = query.options(
-                selectinload(Study.analyses),
-                selectinload(Study.user),
-            )
+        query = Study.query.filter(Study.id.in_(existing_studies)).options(
+            selectinload(Study.analyses),
+            selectinload(Study.user),
+        )
         return {study.id: study for study in query.all()}
 
     def prepare(self):
