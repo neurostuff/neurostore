@@ -287,6 +287,7 @@ class StudiesView(ObjectView, ListView):
             "invalid source, choose from: 'neurostore', 'neurovault', 'pubmed'",
             [field_err],
         )
+        raise RuntimeError("abort_unprocessable returned unexpectedly")
 
     def load_from_neurostore(self, source_id, data=None):
         study = load_study_clone_source(source_id, self.eager_load)
