@@ -56,6 +56,7 @@ const createMockRequest = async (
     return {
         body: {
             access_token: access_token,
+            refresh_token: 'mock-refresh-token',
             expires_in: 86400,
             id_token: id_token,
             scope: scope,
@@ -101,7 +102,7 @@ Cypress.Commands.add('login', (loginMode = 'mocked', extraClaims = {}) => {
             client_secret,
         },
     }).then(({ body }) => {
-        const { access_token, expires_in, id_token } = body;
+        const { access_token, expires_in, id_token, refresh_token } = body;
         console.log({ access_token, id_token });
         const jwtObject = jose.decodeJwt(id_token);
         const [header, payload, signature] = id_token.split('.');
@@ -136,6 +137,7 @@ Cypress.Commands.add('login', (loginMode = 'mocked', extraClaims = {}) => {
                 },
                 expires_in,
                 id_token,
+                refresh_token: refresh_token || 'mock-refresh-token',
                 scope,
                 token_type: 'Bearer',
             },

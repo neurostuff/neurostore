@@ -515,7 +515,7 @@ jobs:
         APP_ENV: docker_test
         CYPRESS_auth0ClientId: ${{ secrets.VITE_APP_AUTH0_CLIENT_ID }}
         CYPRESS_auth0ClientSecret: ${{ secrets.VITE_APP_AUTH0_CLIENT_SECRET }}
-        CYPRESS_: ${{ secrets.VITE_APP_AUTH0_DOMAIN }}
+        CYPRESS_auth0Domain: ${{ secrets.VITE_APP_AUTH0_DOMAIN }}
         CYPRESS_auth0Audience: https://neurostore.xyz/api/
         CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
         VITE_APP_AUTH0_AUDIENCE: https://neurostore.xyz/api/
