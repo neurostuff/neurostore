@@ -5,6 +5,7 @@ import threading
 
 import pytest
 import sqlalchemy as sa
+from sqlalchemy import event
 from sqlalchemy import text
 from sqlalchemy.orm import aliased
 from sqlalchemy.sql import func
@@ -326,6 +327,31 @@ def test_flat_base_study(auth_client, ingest_neurosynth, session):
 
     assert "versions" not in flat_resp.json()["results"][0]
     assert "versions" in reg_resp.json()["results"][0]
+
+
+def test_flat_base_study_search_avoids_version_hydration_queries(
+    auth_client, ingest_neurosynth, session
+):
+    statements = []
+
+    def before_cursor_execute(
+        conn, cursor, statement, parameters, context, executemany
+    ):
+        statements.append(" ".join(statement.lower().split()))
+
+    event.listen(session.bind, "before_cursor_execute", before_cursor_execute)
+    try:
+        response = auth_client.get(
+            "/api/base-studies/?flat=true&data_type=coordinate&level=group&page_size=10"
+        )
+    finally:
+        event.remove(session.bind, "before_cursor_execute", before_cursor_execute)
+
+    assert response.status_code == 200
+    assert all(
+        ' join studies ' not in statement and ' from studies ' not in statement
+        for statement in statements
+    )
 
 
 def test_info_base_study(auth_client, ingest_neurosynth, session):
@@ -2059,6 +2085,80 @@ def test_config_and_feature_filters(auth_client, ingest_demographic_features, se
     )
 
     assert response.status_code == 400
+
+
+def test_feature_filter_with_version_uses_latest_result_within_that_version(
+    auth_client, ingest_demographic_features, session
+):
+    pipeline = session.query(Pipeline).filter_by(
+        name="ParticipantDemographicsExtractor"
+    ).one()
+    base_study = session.query(BaseStudy).order_by(BaseStudy.id).first()
+    original_result = (
+        session.query(PipelineStudyResult)
+        .join(PipelineConfig, PipelineStudyResult.config_id == PipelineConfig.id)
+        .filter(
+            PipelineStudyResult.base_study_id == base_study.id,
+            PipelineConfig.pipeline_id == pipeline.id,
+            PipelineConfig.version == "1.0.0",
+        )
+        .order_by(PipelineStudyResult.date_executed.desc())
+        .first()
+    )
+    assert original_result is not None
+
+    v2_config = PipelineConfig(
+        pipeline_id=pipeline.id,
+        version="2.0.0",
+        config_args={
+            "extractor_kwargs": {"extraction_model": "gpt-4-turbo"},
+            "model_version": 2,
+        },
+        has_embeddings=False,
+    )
+    session.add(v2_config)
+    session.flush()
+
+    session.add(
+        PipelineStudyResult(
+            base_study_id=base_study.id,
+            config_id=v2_config.id,
+            result_data={
+                "predictions": {
+                    "groups": [
+                        {
+                            "group_name": "patient",
+                            "age_mean": 5.0,
+                        }
+                    ]
+                }
+            },
+            date_executed=original_result.date_executed + dt.timedelta(days=365),
+        )
+    )
+    session.commit()
+
+    response = auth_client.get(
+        "/api/base-studies/?"
+        "feature_filter=ParticipantDemographicsExtractor:1.0.0:predictions.groups[].age_mean>25"
+    )
+
+    assert response.status_code == 200
+    assert base_study.id in {result["id"] for result in response.json()["results"]}
+
+
+def test_invalid_pipeline_name_returns_validation_error(
+    auth_client, ingest_demographic_features
+):
+    response = auth_client.get(
+        "/api/base-studies/?feature_filter=NoSuchPipeline:predictions.groups[].age_mean>25"
+    )
+
+    assert response.status_code == 400
+    payload = response.json()
+    assert "Unknown pipeline" in payload["detail"]["message"]
+    assert payload["errors"][0]["field"] == "feature_filters"
+    assert payload["errors"][0]["code"] == "NOT_FOUND"
 
 
 def test_feature_display_and_pipeline_config(auth_client, ingest_demographic_features):

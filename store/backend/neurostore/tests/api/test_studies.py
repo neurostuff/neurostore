@@ -1,8 +1,8 @@
 import uuid
 import pytest
 
-from ...models import Studyset, Study, User, Analysis
-from ...schemas import StudySchema
+from neurostore.models import Studyset, Study, User, Analysis
+from neurostore.schemas import StudySchema
 
 
 def test_create_study_as_user_and_analysis_as_bot(auth_clients, session):
@@ -219,7 +219,7 @@ def test_clone_studies_with_data(auth_client, ingest_neurosynth, session):
 
 
 def test_private_studies(user_data, auth_clients, session):
-    from ...resources.users import User
+    from neurostore.resources.users import User
 
     client1, client2 = auth_clients[0:2]
     id1 = client1.username

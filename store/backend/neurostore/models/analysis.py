@@ -3,8 +3,8 @@
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.orm import relationship, backref
 
-from .data import BaseMixin
-from ..database import db
+from neurostore.models.data import BaseMixin
+from neurostore.database import db
 
 
 class MetaAnalysis(BaseMixin, db.Model):

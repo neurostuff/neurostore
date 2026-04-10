@@ -2,6 +2,7 @@ import json
 import pytest
 from starlette.requests import Request
 import asyncio
+from marshmallow import Schema, ValidationError as MarshmallowValidationError, fields
 
 from neurostore.exceptions.base import (
     PermissionError,
@@ -32,6 +33,11 @@ from neurostore.exceptions.handlers import (
     neurostore_exception_handler,
     general_exception_handler,
 )
+from neurostore.resources.base import handle_parser_error, load_schema_or_abort
+
+
+class _ValidationSchema(Schema):
+    name = fields.String(required=True)
 
 
 async def _dummy_receive():
@@ -222,3 +228,23 @@ def test_make_field_error_helper():
         "test_field", "invalid_value", code="CUSTOM_CODE"
     )
     assert error_detail_custom_code.code == "CUSTOM_CODE"
+
+
+def test_manual_and_parser_validation_share_error_shape():
+    schema = _ValidationSchema()
+
+    with pytest.raises(UnprocessableEntityError) as manual_exc:
+        load_schema_or_abort(schema, {})
+
+    with pytest.raises(UnprocessableEntityError) as parser_exc:
+        handle_parser_error(
+            MarshmallowValidationError({"name": ["Missing data for required field."]}),
+            None,
+            schema,
+            error_status_code=422,
+            error_headers={},
+        )
+
+    assert manual_exc.value.detail == parser_exc.value.detail
+    assert manual_exc.value.status_code == parser_exc.value.status_code == 422
+    assert "input does not conform to specification" in manual_exc.value.detail

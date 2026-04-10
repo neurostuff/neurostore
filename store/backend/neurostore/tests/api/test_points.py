@@ -1,6 +1,6 @@
-from ...models import Point
-from ...schemas import PointSchema
-from ...models import User, Analysis, Study
+from neurostore.models import Point
+from neurostore.schemas import PointSchema
+from neurostore.models import User, Analysis, Study
 
 
 def test_get_points(auth_client, ingest_neurosynth, session):
@@ -257,7 +257,7 @@ def test_put_points_with_null_coordinates(auth_client, session):
 
 
 def test_point_deactivation_column(auth_client, session):
-    from ...models import User, Point, Analysis, Study
+    from neurostore.models import User, Point, Analysis, Study
 
     id_ = auth_client.username
     user = User.query.filter_by(external_id=id_).first()
@@ -301,7 +301,7 @@ def test_point_deactivation_column(auth_client, session):
 
 
 def test_point_cluster_measurement_unit(auth_client, session):
-    from ...models import User, Point, Analysis, Study
+    from neurostore.models import User, Point, Analysis, Study
 
     id_ = auth_client.username
     user = User.query.filter_by(external_id=id_).first()
@@ -366,7 +366,7 @@ def test_point_cluster_measurement_unit(auth_client, session):
 
 
 def test_point_is_seed_column(auth_client, session):
-    from ...models import User, Point, Analysis, Study
+    from neurostore.models import User, Point, Analysis, Study
 
     id_ = auth_client.username
     user = User.query.filter_by(external_id=id_).first()

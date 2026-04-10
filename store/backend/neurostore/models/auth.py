@@ -1,8 +1,8 @@
 # from flask_security import UserMixin, RoleMixin, SQLAlchemyUserDatastore
 
 
-from ..database import db
-from .data import BaseMixin
+from neurostore.database import db
+from neurostore.models.data import BaseMixin
 
 
 roles_users = db.Table(

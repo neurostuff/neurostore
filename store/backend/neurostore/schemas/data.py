@@ -561,7 +561,7 @@ class BaseStudySchema(BaseDataSchema):
     pubget_fulltext = fields.String(load_only=True, allow_none=True)
 
     def get_features(self, obj):
-        from .pipeline import PipelineStudyResultSchema
+        from neurostore.schemas.pipeline import PipelineStudyResultSchema
 
         pipelines = self.context.get("feature_display", None)
         pipeline_configs = self.context.get("pipeline_config", None)

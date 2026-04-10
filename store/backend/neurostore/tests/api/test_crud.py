@@ -1,6 +1,6 @@
 import pytest
 from marshmallow import fields
-from ...models import (
+from neurostore.models import (
     User,
     Studyset,
     BaseStudy,
@@ -12,7 +12,7 @@ from ...models import (
     Image,
     Point,
 )
-from ...schemas import (
+from neurostore.schemas import (
     StudysetSchema,
     BaseStudySchema,
     StudySchema,
@@ -23,7 +23,7 @@ from ...schemas import (
     ImageSchema,
     PointSchema,
 )
-from ...schemas.data import StringOrNested
+from neurostore.schemas.data import StringOrNested
 
 
 @pytest.mark.parametrize(

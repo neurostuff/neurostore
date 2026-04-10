@@ -1,7 +1,7 @@
 from typing import Any, List, Optional
 
-from .utils.errors import ErrorDetail
-from .base import (
+from neurostore.exceptions.utils.errors import ErrorDetail
+from neurostore.exceptions.base import (
     ValidationError,
     NotFoundError,
     PermissionError,

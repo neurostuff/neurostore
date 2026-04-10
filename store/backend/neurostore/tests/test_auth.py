@@ -4,7 +4,7 @@ import pytest
 
 @auth_test
 def test_decode_token(add_users):
-    from ..resources.auth import decode_token, AuthError
+    from neurostore.resources.auth import decode_token, AuthError
 
     with pytest.raises(AuthError):
         decode_token("improper_token")
@@ -15,7 +15,7 @@ def test_decode_token(add_users):
 
 @auth_test
 def test_creating_new_user_on_db(add_users):
-    from .request_utils import Client
+    from neurostore.tests.request_utils import Client
 
     token_info = add_users
     user_name = "user1"  # user1 was not entered into database

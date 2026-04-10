@@ -1,4 +1,4 @@
-from ...models import Study, Analysis, Condition, AnalysisConditions
+from neurostore.models import Study, Analysis, Condition, AnalysisConditions
 from neurostore.models import User
 
 

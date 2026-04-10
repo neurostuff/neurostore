@@ -3,7 +3,7 @@ from marshmallow import (
     EXCLUDE,
 )
 
-from .data import BaseSchema
+from neurostore.schemas.data import BaseSchema
 
 
 class UserSchema(BaseSchema):

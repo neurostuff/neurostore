@@ -2,8 +2,8 @@ from datetime import datetime, timezone
 
 from sqlalchemy import event
 
-from ...database import db
-from ...models import (
+from neurostore.database import db
+from neurostore.models import (
     Studyset,
     Annotation,
     User,
@@ -16,7 +16,7 @@ from ...models import (
     PipelineConfig,
     PipelineStudyResult,
 )
-from ..utils import ordered_note_keys
+from neurostore.tests.utils import ordered_note_keys
 
 
 def _is_annotation_analysis_concat_id_lookup(statement):

@@ -1,4 +1,4 @@
-from .data import (
+from neurostore.resources.data import (
     StudysetsView,
     AnnotationsView,
     AnnotationAnalysesView,
@@ -12,11 +12,11 @@ from .data import (
     PointValuesView,
 )
 
-from .users import (
+from neurostore.resources.users import (
     UsersView,
 )
 
-from .pipeline import (
+from neurostore.resources.pipeline import (
     PipelinesView,
     PipelineConfigsView,
     PipelineStudyResultsView,
@@ -41,3 +41,12 @@ __all__ = [
     "PipelineStudyResultsView",
     "PipelineEmbeddingsView",
 ]
+
+
+def iter_request_body_validation_skip_rules():
+    for name in __all__:
+        resource = globals().get(name)
+        if resource is None:
+            continue
+        for rule in getattr(resource, "request_body_validation_skip", ()):
+            yield rule

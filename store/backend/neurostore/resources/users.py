@@ -6,10 +6,10 @@ from neurostore.exceptions.utils.error_helpers import (
     abort_not_found,
 )
 
-from .data import ListView, ObjectView
-from ..models.auth import User
-from ..schemas import UserSchema  # noqa E401
-from ..database import db
+from neurostore.resources.base import ListView, ObjectView
+from neurostore.models.auth import User
+from neurostore.schemas import UserSchema  # noqa E401
+from neurostore.database import db
 
 
 class UsersView(ObjectView, ListView):

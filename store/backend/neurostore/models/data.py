@@ -11,10 +11,10 @@ from sqlalchemy.orm import relationship, backref, validates, aliased
 import shortuuid
 
 
-from .migration_types import TSVector, VectorType
-from ..database import db
-from ..map_types import MAP_TYPE_CODES, canonicalize_map_type
-from ..utils import parse_json_filter, build_jsonpath
+from neurostore.models.migration_types import TSVector, VectorType
+from neurostore.database import db
+from neurostore.map_types import MAP_TYPE_CODES, canonicalize_map_type
+from neurostore.utils import parse_json_filter, build_jsonpath
 
 # status of pipeline run
 STATUS_ENUM = PGEnum(
@@ -325,7 +325,7 @@ class BaseStudy(BaseMixin, db.Model):
 
     def update_has_images_and_points(self):
         # Keep analysis/study/base flags consistent for this base study.
-        from ..services.has_media_flags import recompute_media_flags
+        from neurostore.services.has_media_flags import recompute_media_flags
 
         recompute_media_flags([self.id])
 
@@ -992,6 +992,6 @@ class PipelineEmbedding(db.Model):
     embedding = db.Column(VectorType(), nullable=False)
 
 
-from . import point_count_listeners  # noqa E402
+from neurostore.models import point_count_listeners  # noqa E402
 
 del point_count_listeners

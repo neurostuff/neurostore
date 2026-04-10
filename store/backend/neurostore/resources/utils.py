@@ -8,10 +8,10 @@ import sqlalchemy as sa
 from connexion.context import context
 from psycopg2 import errors
 
-from .. import models
-from .. import schemas
-from ..database import db
-from .singular import singularize
+from neurostore import models
+from neurostore import schemas
+from neurostore.database import db
+from neurostore.resources.singular import singularize
 
 
 def camel_case_split(str):

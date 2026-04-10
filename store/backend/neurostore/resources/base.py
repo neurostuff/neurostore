@@ -5,11 +5,10 @@ Base Classes/functions for constructing views
 import json
 import re
 
-from connexion.context import context
 from flask import request, current_app  # jsonify
 from flask.views import MethodView
 from marshmallow import ValidationError
-from ..exceptions.utils.error_helpers import (
+from neurostore.exceptions.utils.error_helpers import (
     abort_permission,
     abort_validation,
     abort_not_found,
@@ -24,68 +23,84 @@ from sqlalchemy.orm import (
     raiseload,
     selectinload,
 )
-from sqlalchemy.exc import SQLAlchemyError, IntegrityError
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import func
 from webargs.flaskparser import parser
 from webargs import fields
 
-from ..cache_versioning import bump_cache_versions, get_cache_version_for_path
-from ..database import db
-from ..extensions import cache
-from .utils import (
+from neurostore.cache_versioning import bump_cache_versions, get_cache_version_for_path
+from neurostore.database import db
+from neurostore.extensions import cache
+from neurostore.resources.utils import (
     get_current_user,
     is_user_admin,
     validate_search_query,
     pubmed_to_tsquery,
 )
-from ..models import (
+from neurostore.models import (
     StudysetStudy,
     AnnotationAnalysis,
-    Studyset,
-    BaseStudy,
     Analysis,
-    User,
     Annotation,
+    User,
 )
-from ..schemas.data import StudysetSnapshot
-from . import data as viewdata
-from ..services.has_media_flags import (
+from neurostore.resources import data as viewdata
+from neurostore.resources.common import merge_unique_ids
+from neurostore.resources.mutation_core import (
+    DefaultMutationPolicy,
+    MutationContext,
+    MutationExecutor,
+)
+from neurostore.services.has_media_flags import (
     enqueue_base_study_flag_updates,
     recompute_media_flags,
 )
-from ..services.base_study_metadata_enrichment import (
+from neurostore.services.base_study_metadata_enrichment import (
     enqueue_base_study_metadata_updates,
 )
-from ..services.utils import merge_unique_ids
-from ..note_keys import resolve_note_key_default
+from neurostore.note_keys import resolve_note_key_default
 
 
 @parser.error_handler
 def handle_parser_error(err, req, schema, *, error_status_code, error_headers):
-    detail = json.dumps(err.messages)
+    abort_schema_validation(err.messages)
+
+
+def abort_schema_validation(messages):
+    detail = json.dumps(messages)
     abort_unprocessable(f"input does not conform to specification: {detail}")
 
 
-def create_user():
-    from auth0.authentication.users import Users
+def load_schema_or_abort(schema, payload, *args, **kwargs):
+    try:
+        return schema.load(payload, *args, **kwargs)
+    except ValidationError as err:
+        abort_schema_validation(err.messages)
 
-    external_id = context.get("user")
 
-    auth = request.headers.get("Authorization", None)
-    token = auth.split()[1]
-    profile_info = Users(
-        current_app.config["AUTH0_BASE_URL"].removeprefix("https://")
-    ).userinfo(access_token=token)
+class DefaultObjectViewPolicy:
+    def __init__(self, view):
+        self.view = view
 
-    # user signed up with auth0, but has not made any queries yet...
-    # should have endpoint to "create user" after sign on with auth0
-    name = profile_info.get("name", "Unknown")
-    if "@" in name:
-        name = profile_info.get("nickname", "Unknown")
+    def get_payload(self, id, args):
+        return None
 
-    current_user = User(external_id=external_id, name=name)
+    def build_put_eager_load_args(self, data):
+        args = {}
+        if set(self.view._o2m.keys()).intersection(set(data.keys())):
+            args["nested"] = True
+        return args
 
-    return current_user
+    def should_refresh_annotations(self):
+        return True
+
+    def get_record(self, id, args):
+        query = self.view._model.query
+        query = self.view.eager_load(query, args)
+        record = query.filter_by(id=id).first()
+        if record is None:
+            abort_not_found(self.view._model.__name__, id)
+        return record
 
 
 class BaseView(MethodView):
@@ -97,6 +112,9 @@ class BaseView(MethodView):
     _linked = {}
     _composite_key = {}
     _view_fields = {}
+    mutation_policy_cls = DefaultMutationPolicy
+    object_view_policy_cls = DefaultObjectViewPolicy
+    request_body_validation_skip = ()
     # _default_exclude = None
 
     @classmethod
@@ -222,6 +240,7 @@ class BaseView(MethodView):
         """
         pass
 
+    @staticmethod
     def pre_nested_record_update(record):
         """
         Processing of a record before updating nested components (defined in specific classes).
@@ -233,213 +252,28 @@ class BaseView(MethodView):
         return data
 
     @classmethod
+    def resolve_related_resource(cls, resource_name):
+        return getattr(viewdata, resource_name)
+
+    @classmethod
+    def build_mutation_policy(cls, context):
+        return cls.mutation_policy_cls(context)
+
+    def build_object_view_policy(self):
+        return self.object_view_policy_cls(self)
+
+    @classmethod
     def update_or_create(cls, data, id=None, user=None, record=None, flush=True):
-        """
-        Scenarios:
-        1. Cloning a study
-          a. Clone everything, a study is an object
-        2. Cloning a studyset
-          a. Studies are linked to a studyset, so create a new studyset with same links
-        3. Cloning an annotation
-          a. Annotations are linked to studysets, update when studyset updates
-        4. Creating an analysis
-          a. I should have to own all (relevant) parent objects
-        5. Creating an annotation
-            a. I should not have to own the studyset to create an annotation
-        """
-
-        # Store all models so we can atomically update in one commit
-        to_commit = []
-
-        current_user = user or get_current_user()
-        if not current_user:
-            current_user = create_user()
-            try:
-                db.session.add(current_user)
-                db.session.commit()
-            except (SQLAlchemyError, IntegrityError):
-                db.session.rollback()
-                current_user = User.query.filter_by(external_id=context["user"]).first()
-
-        id = id or data.get("id", None)  # want to handle case of {"id": "asdfasf"}
-
-        # Internal preload hints can be passed by parent resources to avoid
-        # repeated lookups for nested records.
-        preloaded_studies = None
-        preloaded_nested_records = None
-
-        # allow compose bot to make changes
-        compose_bot = current_app.config["COMPOSE_AUTH0_CLIENT_ID"] + "@clients"
-        q = cls._model.query
-        q = q.options(raiseload("*", sql_only=True))
-        if id is None and record is None:
-            record = cls._model()
-            record.user = current_user
-        elif record is None:
-            if cls._model is User:
-                q = q.filter_by(id=id)
-            else:
-                q = q.options(selectinload(cls._model.user)).filter_by(id=id)
-            record = q.first()
-            if record is None:
-                abort_not_found(f"Record {id} not found in {str(cls._model)}")
-
-        data = cls.load_nested_records(data, record)
-        preloaded_studies = data.pop("preloaded_studies", None)
-        preloaded_nested_records = data.pop("_preloaded_nested_records", None)
-
-        only_ids = set(data.keys()) - set(["id"]) == set()
-
-        is_admin = is_user_admin(current_user)
-        if (
-            not sa.inspect(record).pending
-            and not only_ids
-            and record.user != current_user
-            and current_user.external_id != compose_bot
-            and not is_admin
-        ):
-            abort_permission(
-                "You do not have permission to modify this record."
-                " You must be the owner, the compose bot, or an admin."
-            )
-        elif only_ids:
-            to_commit.append(record)
-
-            if flush:
-                db.session.add_all(to_commit)
-                try:
-                    db.session.flush()
-                except SQLAlchemyError as e:
-                    db.session.rollback()
-                    abort_validation(
-                        "Database operation failed during record creation/update: "
-                        + str(e)
-                    )
-
-            return record
-
-        data["user_id"] = current_user.external_id
-        if hasattr(record, "id"):
-            data["id"] = record.id
-        # check to see if duplicate
-        duplicate = cls.check_duplicate(data, record)
-        if duplicate:
-            if sa.inspect(record).transient:
-                # Duplicate short-circuit: discard the transient placeholder so
-                # its user backref does not leak into a later flush.
-                record.user = None
-            return duplicate
-
-        # Update all non-nested attributes
-        for k, v in data.items():
-            if k in cls._parent and v is not None:
-                PrtCls = getattr(viewdata, cls._parent[k])
-                # DO NOT WANT PEOPLE TO BE ABLE TO ADD ANALYSES
-                # TO STUDIES UNLESS THEY OWN THE STUDY
-                v = PrtCls._model.query.filter_by(id=v["id"]).first()
-                if PrtCls._model is BaseStudy:
-                    pass
-                elif (
-                    current_user != v.user
-                    and current_user.external_id != compose_bot
-                    and not is_admin
-                ):
-                    abort_permission(
-                        "You do not have permission to link to this parent "
-                        "record. You must own the parent record, be the "
-                        "compose bot, or be an admin."
-                    )
-            if k in cls._linked and v is not None:
-                LnCls = getattr(viewdata, cls._linked[k])
-                # this can be owned by someone else
-                if LnCls._composite_key:
-                    # composite key is defined in linked class, so need to lookup
-                    query_args = {
-                        k: v[k.rstrip("_id")]["id"] for k in LnCls._composite_key
-                    }
-                else:
-                    query_args = {"id": v["id"]}
-
-                if v.get("preloaded_data"):
-                    v = v["preloaded_data"]
-                else:
-                    q = LnCls._model.query.filter_by(**query_args)
-                    v = q.first()
-
-                if v is None:
-                    abort_validation(f"Linked record not found with {query_args}")
-
-            if k not in cls._nested and k not in ["id", "user"]:
-                try:
-                    setattr(record, k, v)
-                except AttributeError:
-                    print(k)
-                    raise AttributeError
-
-        record = cls.pre_nested_record_update(record)
-
-        to_commit.append(record)
-
-        # Update nested attributes recursively
-        for field, res_name in cls._nested.items():
-            ResCls = getattr(viewdata, res_name)
-            if data.get(field) is not None:
-                field_preloaded_records = None
-                if isinstance(preloaded_nested_records, dict):
-                    field_preloaded_records = preloaded_nested_records.get(field)
-                if field_preloaded_records is None:
-                    field_preloaded_records = preloaded_studies
-
-                if isinstance(data.get(field), list):
-                    nested = []
-                    for rec in data.get(field):
-                        id = None
-                        if isinstance(rec, dict) and rec.get("id"):
-                            id = rec.get("id")
-                        elif isinstance(rec, str):
-                            id = rec
-                        if isinstance(field_preloaded_records, dict) and id:
-                            nested_record = field_preloaded_records.get(id)
-                        else:
-                            nested_record = None
-                        nested.append(
-                            ResCls.update_or_create(
-                                rec,
-                                user=current_user,
-                                record=nested_record,
-                                flush=False,
-                            )
-                        )
-                    to_commit.extend(nested)
-                else:
-                    id = None
-                    rec = data.get(field)
-                    if isinstance(rec, dict) and rec.get("id"):
-                        id = rec.get("id")
-                    elif isinstance(rec, str):
-                        id = rec
-                    if isinstance(field_preloaded_records, dict) and id:
-                        nested_record = field_preloaded_records.get(id)
-                    else:
-                        nested_record = None
-                    nested = ResCls.update_or_create(
-                        rec, user=current_user, record=nested_record, flush=False
-                    )
-                    to_commit.append(nested)
-
-                setattr(record, field, nested)
-
-        if flush:
-            db.session.add_all(to_commit)
-            try:
-                db.session.flush()
-            except SQLAlchemyError as e:
-                db.session.rollback()
-                abort_validation(
-                    f"Database error occurred during nested record update: {str(e)}"
-                )
-
-        return record
+        mutation_context = MutationContext(
+            resource_cls=cls,
+            data=data,
+            id=id,
+            user=user,
+            record=record,
+            flush=flush,
+        )
+        mutation_policy = cls.build_mutation_policy(mutation_context)
+        return MutationExecutor(mutation_context, mutation_policy).execute()
 
 
 CAMEL_CASE_MATCH = re.compile(r"(?<!^)(?=[A-Z])")
@@ -486,33 +320,16 @@ class ObjectView(BaseView):
         60 * 60, query_string=True, make_cache_key=cache_key_creator, key_prefix=None
     )
     def get(self, id):
+        object_view_policy = self.build_object_view_policy()
         args = parser.parse(self._view_fields, request, location="query")
         if args.get("nested") is None:
             args["nested"] = request.args.get("nested", False) == "true"
         if args.get("summary") is None:
             args["summary"] = request.args.get("summary", False) == "true"
 
-        if self._model is Studyset and args.get("nested") and args.get("summary"):
-            abort_validation("query parameters 'nested' and 'summary' are incompatible")
-
-        if self._model is Studyset and args.get("summary"):
-            q = self._model.query
-            q = self.eager_load(q, args)
-            record = q.filter_by(id=id).first()
-            if record is None:
-                abort_not_found(self._model.__name__, id)
-            serializer = getattr(self, "serialize_studyset_summary", None)
-            if serializer is None:
-                abort_validation("summary view is not available for this resource")
-            return serializer(record), 200, {"Content-Type": "application/json"}
-
-        if self._model is Studyset and args["nested"]:
-            serializer = getattr(self, "serialize_nested_studyset", None)
-            if serializer is not None:
-                payload = serializer(id)
-                if payload is None:
-                    abort_not_found(self._model.__name__, id)
-                return payload, 200, {"Content-Type": "application/json"}
+        payload = object_view_policy.get_payload(id, args)
+        if payload is not None:
+            return payload, 200, {"Content-Type": "application/json"}
 
         q = self._model.query
         q = self.eager_load(q, args)
@@ -520,30 +337,21 @@ class ObjectView(BaseView):
         if record is None:
             abort_not_found(self._model.__name__, id)
 
-        if self._model is Studyset and args["nested"]:
-            snapshot = StudysetSnapshot()
-            return snapshot.dump(record), 200, {"Content-Type": "application/json"}
-        else:
-            return (
-                self._schema(
-                    context=dict(args),
-                ).dump(record),
-                200,
-                {"Content-Type": "application/json"},
-            )
+        return (
+            self._schema(
+                context=dict(args),
+            ).dump(record),
+            200,
+            {"Content-Type": "application/json"},
+        )
 
     def put(self, id):
+        object_view_policy = self.build_object_view_policy()
         request_data = self.insert_data(id, request.json)
         schema = self.__class__._schema()
-        data = schema.load(request_data, partial=True)
+        data = load_schema_or_abort(schema, request_data, partial=True)
 
-        args = {}
-        if set(self._o2m.keys()).intersection(set(data.keys())):
-            args["nested"] = True
-
-        if self._model is Studyset:
-            args["load_annotations"] = True
-
+        args = object_view_policy.build_put_eager_load_args(data)
         q = self._model.query.filter_by(id=id)
         q = self.eager_load(q, args)
         input_record = q.one()
@@ -562,7 +370,7 @@ class ObjectView(BaseView):
 
         try:
             self.update_base_studies(unique_ids.get("base-studies"))
-            if self._model is not Annotation and self._model is not AnnotationAnalysis:
+            if object_view_policy.should_refresh_annotations():
                 self.update_annotations(unique_ids.get("annotations"))
         except SQLAlchemyError as e:
             db.session.rollback()
@@ -655,6 +463,9 @@ class ListView(BaseView):
             return q
         return q.options(selectinload(self._model.user))
 
+    def should_hydrate_records(self, args):
+        return True
+
     def serialize_records(self, records, args, exclude=None):
         schema_many = self._schema(exclude=exclude, many=True, context=args)
 
@@ -715,9 +526,7 @@ class ListView(BaseView):
             except errors.SyntaxError as e:
                 abort_validation(e.args[0])
             tsquery = func.to_tsquery("english", pubmed_to_tsquery(s))
-            # Add ts_rank calculation if searching
             rank_col = func.ts_rank(m._ts_vector, tsquery).label("rank")
-            q = q.add_columns(rank_col)
             q = q.filter(m._ts_vector.op("@@")(tsquery))
 
         # Alternatively (or in addition), search on individual fields.
@@ -736,8 +545,8 @@ class ListView(BaseView):
         sort_col = args["sort"]
         if sort_col is None:
             if rank_col is not None:
-                # Using ts_rank for search results
-                q = q.order_by(sa.text(f"rank {desc}"), m.id.desc())
+                rank_sort = rank_col.desc() if desc == "desc" else rank_col.asc()
+                q = q.order_by(rank_sort, m.id.desc())
             else:
                 # Default to created_at when no search
                 q = q.order_by(m.created_at.desc(), m.id.desc())
@@ -748,9 +557,6 @@ class ListView(BaseView):
             if sort_col not in ("created_at", "updated_at"):
                 attr = func.lower(attr)
             q = q.order_by(getattr(attr, desc)(), m.id.desc())
-
-        # join the relevant tables for output
-        q = self.eager_load(q, args)
 
         if args["paginate"]:
             pagination_query = q.paginate(
@@ -764,9 +570,17 @@ class ListView(BaseView):
             records = q.all()
             total = len(records)
 
-        if rank_col is not None:
-            # Extract actual records when using rank
-            records = [r[0] for r in records]
+        if records and self.should_hydrate_records(args):
+            record_ids = [record.id for record in records]
+            hydrated_query = self._model.query.filter(self._model.id.in_(record_ids))
+            hydrated_query = self.eager_load(hydrated_query, args)
+            hydrated_records = hydrated_query.all()
+            records_by_id = {record.id: record for record in hydrated_records}
+            records = [
+                records_by_id[record_id]
+                for record_id in record_ids
+                if record_id in records_by_id
+            ]
 
         content = self.serialize_records(records, args)
         metadata = self.create_metadata(q, total)
@@ -787,12 +601,7 @@ class ListView(BaseView):
 
         unknown = self.__class__._schema.opts.unknown
         schema = self.__class__._schema(exclude=("id",))
-        try:
-            data = schema.load(body, unknown=unknown)
-        except ValidationError as err:
-            abort_unprocessable(
-                f"input does not conform to specification: {json.dumps(err.messages)}"
-            )
+        data = load_schema_or_abort(schema, body, unknown=unknown)
 
         if source_id:
             data = self._load_from_source(source, source_id, data)

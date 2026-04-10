@@ -7,11 +7,11 @@ from neurostore.exceptions.factories import make_field_error
 from sqlalchemy.orm import selectinload, aliased
 from webargs import fields
 
-from .utils import view_maker
-from ..utils import parse_json_filter, build_jsonpath
-from .base import ObjectView, ListView
-from ..models import Pipeline, PipelineConfig, PipelineStudyResult, PipelineEmbedding
-from ..schemas.pipeline import (
+from neurostore.resources.utils import view_maker
+from neurostore.utils import parse_json_filter, build_jsonpath
+from neurostore.resources.base import ObjectView, ListView
+from neurostore.models import Pipeline, PipelineConfig, PipelineStudyResult, PipelineEmbedding
+from neurostore.schemas.pipeline import (
     pipeline_schema,
     pipeline_schemas,
     pipeline_config_schema,

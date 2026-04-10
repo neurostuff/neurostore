@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from ...exceptions.factories import (
+from neurostore.exceptions.factories import (
     create_validation_error,
     create_not_found_error,
     create_permission_error,
@@ -8,7 +8,7 @@ from ...exceptions.factories import (
     create_unprocessable_error,
     create_internal_server_error,
 )
-from .errors import ErrorDetail
+from neurostore.exceptions.utils.errors import ErrorDetail
 
 
 def abort_validation(

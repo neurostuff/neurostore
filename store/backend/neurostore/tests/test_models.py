@@ -1,4 +1,4 @@
-from ..models import (
+from neurostore.models import (
     Study,
     Analysis,
     Condition,

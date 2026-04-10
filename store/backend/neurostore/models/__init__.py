@@ -1,4 +1,4 @@
-from .data import (
+from neurostore.models.data import (
     Studyset,
     StudysetStudy,
     Annotation,
@@ -20,7 +20,7 @@ from .data import (
     PipelineStudyResult,
     PipelineEmbedding,
 )
-from .auth import User, Role
+from neurostore.models.auth import User, Role
 
 __all__ = [
     "Studyset",

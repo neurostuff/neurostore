@@ -1,5 +1,5 @@
-from ...models import Analysis, User, Point, Image, Study
-from ...schemas import AnalysisSchema
+from neurostore.models import Analysis, User, Point, Image, Study
+from neurostore.schemas import AnalysisSchema
 
 
 def test_get_nested_and_not_nested_analyses(auth_client, ingest_neurosynth, session):

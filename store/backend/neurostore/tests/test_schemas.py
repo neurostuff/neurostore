@@ -1,13 +1,13 @@
 import pytest
 
-from ..schemas import (
+from neurostore.schemas import (
     StudySchema,
     StudysetSchema,
     StudysetSnapshot,
     PointSchema,
     AnalysisSchema,
 )
-from ..models import Study, Studyset
+from neurostore.models import Study, Studyset
 from neurostore.schemas.pipeline import (
     PipelineSchema,
     PipelineConfigSchema,
@@ -230,7 +230,7 @@ def test_condition_preserve_on_clone_metadata():
     """
     Test that the ConditionSchema has preserve_on_clone metadata set correctly.
     """
-    from ..schemas import ConditionSchema
+    from neurostore.schemas import ConditionSchema
 
     schema = ConditionSchema()
     id_field = schema.fields["id"]

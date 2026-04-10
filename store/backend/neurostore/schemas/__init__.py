@@ -1,4 +1,4 @@
-from .data import (
+from neurostore.schemas.data import (
     StudySchema,
     AnalysisSchema,
     BaseStudySchema,
@@ -17,9 +17,9 @@ from .data import (
     TableSchema,
 )
 
-from .auth import UserSchema
+from neurostore.schemas.auth import UserSchema
 
-from .pipeline import (
+from neurostore.schemas.pipeline import (
     PipelineSchema,
     PipelineConfigSchema,
     PipelineStudyResultSchema,

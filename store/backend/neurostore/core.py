@@ -1,6 +1,6 @@
-from . import create_app
-from .database import db
-from .extensions import cache
+from neurostore import create_app
+from neurostore.database import db
+from neurostore.extensions import cache
 
 
 app = create_app()

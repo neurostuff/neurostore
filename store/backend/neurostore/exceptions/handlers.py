@@ -6,8 +6,8 @@ from typing import Tuple, Dict, Any
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
-from .base import NeuroStoreException, InternalServerError
-from .utils.errors import ErrorResponse, ErrorDetail
+from neurostore.exceptions.base import NeuroStoreException, InternalServerError
+from neurostore.exceptions.utils.errors import ErrorResponse, ErrorDetail
 
 logger = logging.getLogger(__name__)
 

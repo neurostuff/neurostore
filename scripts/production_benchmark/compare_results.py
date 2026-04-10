@@ -13,6 +13,23 @@ def load_results(path: Path) -> dict:
         return json.load(handle)
 
 
+def extract_cases(results: dict) -> list[dict]:
+    cases = results.get("cases") or []
+    if cases:
+        return cases
+
+    extracted_cases = []
+    for case_analysis in results.get("case_analyses", []):
+        for sample in case_analysis.get("raw_case_samples", []):
+            extracted_cases.append(
+                {
+                    "name": sample.get("case_name") or case_analysis.get("case"),
+                    "median_seconds": sample["median_seconds"],
+                }
+            )
+    return extracted_cases
+
+
 def format_pct(value: float) -> str:
     return f"{value * 100:.1f}%"
 
@@ -136,8 +153,8 @@ def main() -> int:
     candidate = load_results(Path(args.candidate))
     service = candidate.get("service") or baseline.get("service") or "unknown"
 
-    baseline_cases = {case["name"]: case for case in baseline.get("cases", [])}
-    candidate_cases = {case["name"]: case for case in candidate.get("cases", [])}
+    baseline_cases = {case["name"]: case for case in extract_cases(baseline)}
+    candidate_cases = {case["name"]: case for case in extract_cases(candidate)}
     rows, slowdowns = build_rows(baseline_cases, candidate_cases, args.threshold)
     report = render_report(service, rows, slowdowns, args.threshold)
 
