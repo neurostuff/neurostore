@@ -212,6 +212,7 @@ describe('ImportSleuthDialog', () => {
                 'cypress/fixtures/ImportSleuth/sleuthFiles/validSleuthFileWithDOI.txt',
                 { force: true }
             );
+            cy.contains('button', 'next').should('be.enabled');
             cy.contains('button', 'next').click({ force: true });
         });
 
@@ -283,6 +284,7 @@ describe('ImportSleuthDialog', () => {
                 'cypress/fixtures/ImportSleuth/sleuthFiles/validSleuthFileWithDOI.txt',
                 { force: true }
             );
+            cy.contains('button', 'next').should('be.enabled');
             cy.contains('button', 'next').click({ force: true });
 
             cy.wait('@baseStudiesIngestFixture').then((baseStudiesResponse) => {
@@ -340,6 +342,7 @@ describe('ImportSleuthDialog', () => {
                 'cypress/fixtures/ImportSleuth/sleuthFiles/validSleuthFileWithDOI.txt',
                 { force: true }
             );
+            cy.contains('button', 'next').should('be.enabled');
             cy.contains('button', 'next').click({ force: true });
 
             cy.get('@studyPostFixture').should('exist');
@@ -370,6 +373,7 @@ describe('ImportSleuthDialog', () => {
                 'cypress/fixtures/ImportSleuth/sleuthFiles/validSleuthFileWithDOI.txt',
                 { force: true }
             );
+            cy.contains('button', 'next').should('be.enabled');
             cy.contains('button', 'next').click({ force: true });
 
             cy.get('@studyPostFixture.all').should('have.length', 0);
@@ -411,6 +415,7 @@ describe('ImportSleuthDialog', () => {
                 'cypress/fixtures/ImportSleuth/sleuthFiles/validSleuthFileMultipleExperimentsSameDOI.txt',
                 { force: true }
             );
+            cy.contains('button', 'next').should('be.enabled');
             cy.contains('button', 'next').click({ force: true });
 
             cy.wait('@studyPostFixture').then((interception) => {
@@ -439,6 +444,7 @@ describe('ImportSleuthDialog', () => {
                 'cypress/fixtures/ImportSleuth/sleuthFiles/validSleuthFileWithDOI.txt',
                 { force: true }
             );
+            cy.contains('button', 'next').should('be.enabled');
             cy.contains('button', 'next').click({ force: true });
 
             cy.get('@analysesPostFixture').should('exist');
@@ -465,6 +471,7 @@ describe('ImportSleuthDialog', () => {
                 'cypress/fixtures/ImportSleuth/sleuthFiles/validSleuthFileMultipleExperimentsSameDOI.txt',
                 { force: true }
             );
+            cy.contains('button', 'next').should('be.enabled');
             cy.contains('button', 'next').click({ force: true });
 
             cy.wait('@baseStudiesIngestFixture').then((baseStudiesResponse) => {
@@ -495,6 +502,7 @@ describe('ImportSleuthDialog', () => {
                 ],
                 { force: true }
             );
+            cy.contains('button', 'next').should('be.enabled');
             cy.contains('button', 'next').click({ force: true });
 
             // Should process both files
