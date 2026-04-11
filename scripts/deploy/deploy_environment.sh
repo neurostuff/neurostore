@@ -413,11 +413,29 @@ recreate_services_cleanly() {
   compose_for "${service_root}" "${project}" up -d --no-build "$@"
 }
 
+stop_services_quietly() {
+  local service_root="$1"
+  local project="$2"
+  shift 2
+
+  compose_for "${service_root}" "${project}" stop "$@" >/dev/null 2>&1 || true
+  compose_for "${service_root}" "${project}" rm -f -s "$@" >/dev/null 2>&1 || true
+}
+
 deploy_store_staging() {
   local service_root="${WORKTREE_DIR}/store"
   local project="neurostore-${TRACK}-store"
 
   build_store_images "${service_root}" "${project}"
+  stop_services_quietly \
+    "${service_root}" \
+    "${project}" \
+    neurostore \
+    store_outbox_worker \
+    store_metadata_outbox_worker \
+    store-pghero \
+    store-grafana \
+    store_nginx
   compose_for "${service_root}" "${project}" up -d --no-build store-pgsql17 store_redis
   wait_for_pg "${service_root}" "${project}" "store-pgsql17"
 
@@ -449,7 +467,15 @@ deploy_compose_staging() {
   local project="neurostore-${TRACK}-compose"
 
   build_compose_images "${service_root}" "${project}"
-  compose_for "${service_root}" "${project}" up -d --no-build compose-pgsql17 compose_redis compose_worker
+  stop_services_quietly \
+    "${service_root}" \
+    "${project}" \
+    compose \
+    compose_worker \
+    compose-pghero \
+    compose-grafana \
+    compose_nginx
+  compose_for "${service_root}" "${project}" up -d --no-build compose-pgsql17 compose_redis
   wait_for_pg "${service_root}" "${project}" "compose-pgsql17"
 
   python3 "${REPO_ROOT}/scripts/deploy/restore_latest_backup.py" \

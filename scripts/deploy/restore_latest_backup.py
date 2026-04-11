@@ -206,7 +206,7 @@ def restore_dump(
         (
             "cat >/tmp/restore.dump && "
             f"pg_restore -U postgres -d {database} "
-            "--no-owner --no-privileges /tmp/restore.dump && "
+            "--no-owner --no-privileges --exit-on-error /tmp/restore.dump && "
             "rm -f /tmp/restore.dump"
         ),
     )
