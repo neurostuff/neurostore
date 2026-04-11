@@ -31,6 +31,7 @@ dependencies = [
     "python-jose~=3.3",
     "redis",
     "shortuuid~=1.0",
+    "starlette>=1.0.0,<2",
     "sqlalchemy~=2.0",
     "sqlalchemy-utils",
     "sqltap",
