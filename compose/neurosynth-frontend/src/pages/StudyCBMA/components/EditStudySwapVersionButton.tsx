@@ -4,11 +4,13 @@ import {
     Box,
     Button,
     ButtonGroup,
+    ButtonProps,
     ListItem,
     ListItemButton,
     Menu,
     Tooltip,
     Typography,
+    TypographyProps,
     useMediaQuery,
     useTheme,
 } from '@mui/material';
@@ -30,7 +32,11 @@ import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAnnotationId } from 'stores/annotation/AnnotationStore.getters';
 
-const EditStudySwapVersionButton: React.FC = () => {
+const EditStudySwapVersionButton: React.FC<{
+    buttonProps?: ButtonProps;
+    buttonLabelProps?: TypographyProps;
+    buttonLabel?: string;
+}> = ({ buttonProps = {}, buttonLabelProps = {}, buttonLabel }) => {
     const [anchorEl, setAnchorEl] = useState<null | HTMLButtonElement>(null);
     const open = Boolean(anchorEl);
     const baseStudyId = useStudyBaseStudyId();
@@ -198,8 +204,10 @@ const EditStudySwapVersionButton: React.FC = () => {
                             height: '40px',
                             padding: 0,
                         }}
+                        {...buttonProps}
                     >
                         {isSwapping ? <ProgressLoader color="secondary" size={20} /> : <SwapHorizIcon />}
+                        {buttonLabel && <Typography {...buttonLabelProps}>{buttonLabel}</Typography>}
                     </Button>
                 </Tooltip>
             </Box>

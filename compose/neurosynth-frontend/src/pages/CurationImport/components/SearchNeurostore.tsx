@@ -9,14 +9,13 @@ import { studiesToStubs } from 'helpers/Curation.helpers';
 import { baseStudiesSearchHelper } from 'hooks/studies/useGetBaseStudies';
 import { BaseStudyList } from 'neurostore-typescript-sdk';
 import { useSnackbar } from 'notistack';
-import { useProjectAnalysisType, useProjectId } from 'pages/Project/store/ProjectStore';
-import { SearchCriteria, SearchDataType } from 'pages/Study/Study.types';
+import { useProjectId } from 'pages/Project/store/ProjectStore';
+import { SearchCriteria } from 'pages/Study/Study.types';
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import CurationImportStyles from '../CurationImport.styles';
 import { IImportArgs } from './ImportDoImport';
 import LoadingButton from 'components/Buttons/LoadingButton';
-import { EAnalysisType } from 'hooks/projects/Project.types';
 import StudiesSearchContainer from 'components/Search/StudiesSearchContainer';
 
 const SearchNeurostore: React.FC<IImportArgs & { onSetSearchCriteria: (searchCriteria: SearchCriteria) => void }> = (
@@ -31,7 +30,6 @@ const SearchNeurostore: React.FC<IImportArgs & { onSetSearchCriteria: (searchCri
     const navigate = useNavigate();
     const location = useLocation();
     const projectId = useProjectId();
-    const projectAnalysisType = useProjectAnalysisType();
 
     // cached data returned from the api
     const [studyData, setStudyData] = useState<BaseStudyList>();
@@ -40,7 +38,6 @@ const SearchNeurostore: React.FC<IImportArgs & { onSetSearchCriteria: (searchCri
         return {
             ...new SearchCriteria(),
             ...getSearchCriteriaFromURL(location?.search),
-            ...(projectAnalysisType === EAnalysisType.IBMA ? { dataType: SearchDataType.IMAGE } : {}),
         };
     }, [location?.search]);
 

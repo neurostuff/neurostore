@@ -18,11 +18,9 @@ import {
 import { useMemo } from 'react';
 
 const EditStudyPageHeader: React.FC = () => {
-    const projectId = useProjectId();
     const studyName = useStudyName();
     const studyYear = useStudyYear();
     const studyAuthors = useStudyAuthors();
-    const projectName = useProjectName();
     const studyOwnerUsername = useStudyUsername();
     const lastUpdatedAt = useStudyLastUpdated();
     const doi = useStudyDOI();
@@ -36,33 +34,6 @@ const EditStudyPageHeader: React.FC = () => {
 
     return (
         <Box>
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <NeurosynthBreadcrumbs
-                    breadcrumbItems={[
-                        {
-                            text: 'Projects',
-                            link: '/projects',
-                            isCurrentPage: false,
-                        },
-                        {
-                            text: projectName || '',
-                            link: `/projects/${projectId}`,
-                            isCurrentPage: false,
-                        },
-                        {
-                            text: 'Extraction',
-                            link: `/projects/${projectId}/extraction`,
-                            isCurrentPage: false,
-                        },
-                        {
-                            text: studyName || '',
-                            link: '',
-                            isCurrentPage: true,
-                        },
-                    ]}
-                />
-                <LoadingStateIndicatorProject />
-            </Box>
             <Box sx={{ display: 'flex', flexDirection: 'column', margin: '0.3rem 0' }}>
                 <Typography variant="h5">
                     {studyYear && `(${studyYear}).`} {studyName}

@@ -7,7 +7,6 @@ import { useProjectId, useProjectName } from 'pages/Project/store/ProjectStore';
 const CurationSearchPage: React.FC = () => {
     const projectId = useProjectId();
     const projectName = useProjectName();
-
     return (
         <Box>
             <Box sx={{ display: 'flex', alignItems: 'center' }}>

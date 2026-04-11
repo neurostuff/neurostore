@@ -27,9 +27,9 @@ export const baseStudiesSearchHelper = (searchCriteria: Partial<SearchCriteria>)
         searchCriteria.nameSearch || undefined,
         searchCriteria.descriptionSearch || undefined,
         searchCriteria.authorSearch || undefined,
-        'group',
+        searchCriteria.level,
         searchCriteria.dataType === SearchDataType.ALL ? 'both' : searchCriteria.dataType,
-        searchCriteria.IBMAMapType || undefined,
+        searchCriteria.dataType === SearchDataType.IMAGE ? searchCriteria.IBMAMapType : undefined,
         undefined, // is_oa
         searchCriteria.journalSearch || undefined,
         searchCriteria.pmid,

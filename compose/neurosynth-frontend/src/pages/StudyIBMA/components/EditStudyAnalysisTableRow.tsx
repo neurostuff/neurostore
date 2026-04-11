@@ -51,7 +51,6 @@ export const EditStudyAnalysisTableRow = memo(function EditStudyAnalysisTableRow
 }: EditStudyAnalysisTableRowProps) {
     const theme = useTheme();
     const isDetailRow = row.original.rowKind === 'detail';
-    const detailRowBg = theme.palette.mode === 'light' ? theme.palette.grey[100] : alpha(theme.palette.grey[900], 0.35);
 
     return (
         <TableRow
@@ -78,17 +77,12 @@ export const EditStudyAnalysisTableRow = memo(function EditStudyAnalysisTableRow
                                       width: STUDY_ANALYSES_COLUMN_WIDTH,
                                       minWidth: STUDY_ANALYSES_COLUMN_WIDTH,
                                       maxWidth: STUDY_ANALYSES_COLUMN_WIDTH,
-                                      ...(isDetailRow && {
-                                          bgcolor: detailRowBg,
-                                          borderRightColor: 'divider',
-                                      }),
                                   }
                                 : isDetailRow
                                   ? {
                                         borderLeft: 'none',
                                         borderBottom: 1,
                                         borderColor: 'divider',
-                                        bgcolor: detailRowBg,
                                         fontSize: '0.8125rem',
                                         minWidth: 112,
                                         width: 120,

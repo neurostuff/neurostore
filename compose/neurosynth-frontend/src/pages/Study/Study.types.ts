@@ -83,7 +83,7 @@ export class SearchCriteria {
         public userId: string | undefined = undefined,
         public dataType: SearchDataType | undefined = SearchDataType.ALL,
         public studysetOwner: string | undefined = undefined,
-        public level: 'group' | 'meta' | undefined = 'group',
+        public level: 'group' | 'meta' | undefined = undefined,
         public pmid: string | undefined = undefined,
         public doi: string | undefined = undefined,
         public flat: boolean | undefined = true,

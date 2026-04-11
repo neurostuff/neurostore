@@ -48,14 +48,16 @@ export function EditStudyAnalysisTable({
                 borderColor: 'divider',
                 borderRadius: 1,
                 overflow: 'hidden',
+                backgroundColor: 'grey.100',
             }}
         >
             <TableContainer
                 sx={{
-                    maxHeight: STUDY_ANALYSIS_TABLE_MAX_HEIGHT,
+                    maxHeight: `${STUDY_ANALYSIS_TABLE_MAX_HEIGHT}`,
                     overflow: 'auto',
                     bgcolor: 'background.paper',
                 }}
+                className="sleek-scrollbar"
             >
                 <Table
                     stickyHeader

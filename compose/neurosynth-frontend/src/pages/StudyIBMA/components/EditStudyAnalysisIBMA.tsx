@@ -5,13 +5,14 @@ import React from 'react';
 import { BrainMapDetailPanel } from './BrainMapDetailPanel';
 import { EditStudyAnalysisTable } from './EditStudyAnalysisTable';
 import { UncategorizedMapsColumn } from './UncategorizedMapsColumn';
-import { useEditStudyAnalysisBoardState } from './useEditStudyAnalysisBoardState';
+import { useEditStudyAnalysisBoardState } from 'pages/StudyIBMA/hooks/useEditStudyAnalysisBoardState';
+import EditStudyToolbar2 from './EditStudyToolbar2';
 
 const EditStudyAnalysisIBMA: React.FC = () => {
     const s = useEditStudyAnalysisBoardState();
 
     return (
-        <Box data-testid="edit-study-analysis-board" sx={{ display: 'flex', gap: 2, width: '100%' }}>
+        <Box data-testid="edit-study-analysis-board" sx={{ display: 'flex', gap: 4, width: '100%' }}>
             <UncategorizedMapsColumn
                 collapsed={s.uncategorizedCollapsed}
                 onCollapsedChange={s.setUncategorizedCollapsed}
@@ -105,6 +106,8 @@ const EditStudyAnalysisIBMA: React.FC = () => {
                 rejectText="Cancel"
                 confirmButtonProps={{ color: 'error' }}
             />
+
+            <EditStudyToolbar2 />
         </Box>
     );
 };

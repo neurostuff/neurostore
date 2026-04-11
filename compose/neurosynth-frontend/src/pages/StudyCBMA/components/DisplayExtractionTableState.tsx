@@ -113,6 +113,8 @@ const DisplayExtractionTableState: React.FC = () => {
         return `${acc}, ${curr.id}: ${curr.desc ? 'desc' : 'asc'}`;
     }, '');
 
+    const numHidden = (data?.studies?.length ?? 0) - (extractionTableState?.studies.length ?? 0);
+
     return (
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
             <ConfirmationDialog
@@ -140,8 +142,8 @@ const DisplayExtractionTableState: React.FC = () => {
                             <Typography
                                 sx={{
                                     textOverflow: 'ellipsis',
-                                    maxWidth: '100px',
-                                    width: '100px',
+                                    maxWidth: '80px',
+                                    width: '80px',
                                     fontSize: '8px',
                                     whiteSpace: 'nowrap',
                                     overflow: 'hidden',
@@ -155,7 +157,7 @@ const DisplayExtractionTableState: React.FC = () => {
                     </Button>
                 </Tooltip>
             ) : (
-                <Box sx={{ width: '100px' }}></Box>
+                <Box sx={{ width: '80px' }}></Box>
             )}
             <Tooltip
                 title={
@@ -185,7 +187,9 @@ const DisplayExtractionTableState: React.FC = () => {
                 >
                     <Typography sx={{ display: 'block', fontSize: '10px' }}>
                         {thisStudyIndex + 1} of {(extractionTableState?.studies || []).length}
-                        <span style={{ color: 'gray', marginLeft: '4px' }}>({data?.studies?.length || 0} total)</span>
+                        {numHidden > 0 && (
+                            <span style={{ color: 'gray', marginLeft: '4px' }}>({numHidden} hidden)</span>
+                        )}
                     </Typography>
                     <Typography sx={{ display: 'block', fontSize: '10px' }}>
                         {(extractionTableState?.columnFilters || []).length > 0 && (
@@ -217,8 +221,8 @@ const DisplayExtractionTableState: React.FC = () => {
                             <Typography
                                 sx={{
                                     textOverflow: 'ellipsis',
-                                    maxWidth: '100px',
-                                    width: '100px',
+                                    maxWidth: '80px',
+                                    width: '80px',
                                     fontSize: '8px',
                                     whiteSpace: 'nowrap',
                                     overflow: 'hidden',
@@ -232,7 +236,7 @@ const DisplayExtractionTableState: React.FC = () => {
                     </Button>
                 </Tooltip>
             ) : (
-                <Box sx={{ width: '100px' }}></Box>
+                <Box sx={{ width: '80px' }}></Box>
             )}
         </Box>
     );

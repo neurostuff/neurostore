@@ -1,8 +1,8 @@
 import type { Theme } from '@mui/material/styles';
 
 export const STUDY_ANALYSES_COLUMN_WIDTH = 260;
-export const STUDY_ANALYSIS_TABLE_MAX_HEIGHT = 'min(560px, calc(100vh - 240px))';
-export const STUDY_ANALYSIS_TABLE_ROW_MIN_HEIGHT_PX = 72;
+export const STUDY_ANALYSIS_TABLE_MAX_HEIGHT = 'calc(100vh - 360px)';
+export const STUDY_ANALYSIS_TABLE_ROW_MIN_HEIGHT_PX = 60;
 export const STUDY_BRAIN_MAPS_DETAIL_ROW_SUFFIX = '__brainMaps';
 
 export const STUDY_UNCATEGORIZED_MAPS_COLUMN_WIDTH = { xs: '160px', md: '300px' };

@@ -1,19 +1,31 @@
-import { ArrowBack } from '@mui/icons-material';
-import { Box, Button, useMediaQuery, useTheme } from '@mui/material';
-import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
+import { Box, Button, Paper, useMediaQuery, useTheme } from '@mui/material';
+import LoadingStateIndicatorProject from 'components/LoadingStateIndicator/LoadingStateIndicatorProject';
+import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { hasUnsavedStudyChanges, unsetUnloadHandler } from 'helpers/BeforeUnload.helpers';
-import { useProjectExtractionAnnotationId } from 'pages/Project/store/ProjectStore';
+import {
+    useProjectExtractionAnnotationId,
+    useProjectMetaAnalysisCanEdit,
+    useProjectName,
+} from 'pages/Project/store/ProjectStore';
 import EditStudyPageHeader from 'pages/StudyCBMA/components/EditStudyPageHeader';
-import StudyCBMAPageStyles from 'pages/StudyCBMA/StudyCBMA.styles';
-import { useEffect, useState } from 'react';
+import EditStudyStatusCard from 'pages/StudyIBMA/components/EditStudyStatusCard';
+import EditStudyToolbar2 from 'pages/StudyIBMA/components/EditStudyToolbar2';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useClearAnnotationStore, useInitAnnotationStore } from 'stores/annotation/AnnotationStore.actions';
 import { useAnnotationId, useGetAnnotationIsLoading } from 'stores/annotation/AnnotationStore.getters';
-import { useClearStudyStore, useGetStudyIsLoading, useInitStudyStore, useStudyId } from 'stores/study/StudyStore';
-import DisplayExtractionTableState from '../StudyCBMA/components/DisplayExtractionTableState';
-import EditStudyCompleteButton from '../StudyCBMA/components/EditStudyCompleteButton';
-import EditStudyAnalysesIBMA from './components/EditStudyAnalysesIBMA';
+import {
+    useClearStudyStore,
+    useGetStudyIsLoading,
+    useInitStudyStore,
+    useStudyId,
+    useStudyName,
+} from 'stores/study/StudyStore';
+import EditStudyAnalysisIBMA from './components/EditStudyAnalysisIBMA';
+import StartMetaAnalysisButton from './components/StartMetaAnalysisButton';
+import { useGetExtractionSummary } from 'hooks';
+import GlobalStyles from 'global.styles';
 
 const StudyIBMAPage: React.FC = () => {
     const { projectId, studyId } = useParams<{ projectId: string; studyId: string }>();
@@ -30,6 +42,10 @@ const StudyIBMAPage: React.FC = () => {
     const clearAnnotationStore = useClearAnnotationStore();
     const initAnnotationStore = useInitAnnotationStore();
     const getAnnotationIsLoading = useGetAnnotationIsLoading();
+    const projectName = useProjectName();
+    const studyName = useStudyName();
+    const extractionSummary = useGetExtractionSummary(projectId || '');
+    const metaAnalysisStepInitialized = useProjectMetaAnalysisCanEdit();
 
     const theme = useTheme();
     const mdDown = useMediaQuery(theme.breakpoints.down('md'));
@@ -64,82 +80,73 @@ const StudyIBMAPage: React.FC = () => {
         handleBackToExtraction();
     };
 
+    const isExtractionComplete = useMemo(() => {
+        return extractionSummary.completed === extractionSummary.total && extractionSummary.total > 0;
+    }, [extractionSummary.completed, extractionSummary.total]);
+
+    const indicateGoToMetaAnalysis = isExtractionComplete && !metaAnalysisStepInitialized;
+
     return (
         <StateHandlerComponent
             disableShrink={false}
             isError={false}
             isLoading={!studyStoreId || !annotationStoreId || getStudyIsLoading || getAnnotationIsLoading}
         >
-            <Box sx={{ mb: 4 }}>
-                <EditStudyPageHeader />
+            <Box sx={{ display: 'flex', alignItems: 'center', mx: 4, my: 2 }}>
+                <NeurosynthBreadcrumbs
+                    breadcrumbItems={[
+                        {
+                            text: 'Projects',
+                            link: '/projects',
+                            isCurrentPage: false,
+                        },
+                        {
+                            text: projectName || '',
+                            link: `/projects/${projectId}`,
+                            isCurrentPage: false,
+                        },
+                        {
+                            text: 'Extraction',
+                            link: `/projects/${projectId}/extraction`,
+                            isCurrentPage: false,
+                        },
+                        {
+                            text: studyName || '',
+                            link: '',
+                            isCurrentPage: true,
+                        },
+                    ]}
+                />
+                <LoadingStateIndicatorProject />
+                <StartMetaAnalysisButton
+                    sx={{
+                        marginLeft: 'auto',
+                        ...(indicateGoToMetaAnalysis
+                            ? { ...GlobalStyles.colorPulseAnimation, color: 'success.dark' }
+                            : {}),
+                    }}
+                />
             </Box>
             <Box
                 sx={{
                     display: 'flex',
-                    flexDirection: {
-                        xs: 'column-reverse',
-                        md: 'row',
-                    },
+                    flexDirection: 'row',
+                    alignItems: 'stretch',
+                    justifyContent: 'space-between',
+                    gap: 4,
+                    flexWrap: 'wrap',
+                    mb: 2,
+                    mx: 4,
+                    my: 2,
                 }}
             >
-                <Box
-                    sx={{
-                        width: {
-                            xs: '100%',
-                            md: 'calc(100% - 62px - 1rem)',
-                        },
-                        mr: {
-                            xs: 0,
-                            md: 2,
-                        },
-                    }}
-                >
-                    <EditStudyAnalysesIBMA />
-                    <Box sx={[StudyCBMAPageStyles.loadingButtonContainer]}>
-                        <Box sx={{ width: '20%', justifyContent: 'flex-start' }}>
-                            <ConfirmationDialog
-                                isOpen={confirmationDialogIsOpen}
-                                dialogTitle="You have unsaved changes"
-                                dialogMessage="Are you sure you want to continue? You'll lose your unsaved changes"
-                                onCloseDialog={handleCloseConfirmationDialog}
-                                rejectText="Cancel"
-                                confirmText="Continue"
-                            />
-                            <Button
-                                color="secondary"
-                                disableElevation
-                                size="small"
-                                sx={{ width: mdDown ? '40px' : '160px' }}
-                                variant="contained"
-                                onClick={handleBackToExtraction}
-                            >
-                                {mdDown ? <ArrowBack /> : 'Back to extraction'}
-                            </Button>
-                        </Box>
-                        <Box
-                            sx={{
-                                width: '60%',
-                                display: 'flex',
-                                justifyContent: 'center',
-                            }}
-                        >
-                            <DisplayExtractionTableState />
-                        </Box>
-                        <Box sx={{ width: '20%', display: 'flex', justifyContent: 'flex-end' }}>
-                            <EditStudyCompleteButton />
-                        </Box>
-                    </Box>
-                </Box>
-                <Box
-                    sx={{
-                        position: 'sticky', // this is needed when the toolbar is on top of the edit study content
-                        top: '0',
-                        zIndex: 999,
-                        mb: 1,
-                    }}
-                >
-                    {/* <EditStudyToolbar /> */}
-                </Box>
+                <Paper sx={{ flex: 1, minWidth: 'min(100%, 18rem)', p: 2 }}>
+                    <EditStudyPageHeader />
+                </Paper>
+                <EditStudyStatusCard />
+            </Box>
+            <Box sx={{ mx: 4, my: 2 }}>
+                <EditStudyAnalysisIBMA />
             </Box>
         </StateHandlerComponent>
     );

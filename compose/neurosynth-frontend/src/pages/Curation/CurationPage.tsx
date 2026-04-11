@@ -6,8 +6,10 @@ import StateHandlerComponent from 'components/StateHandlerComponent/StateHandler
 import GlobalStyles from 'global.styles';
 import { useGetCurationSummary, useGetStudysetById } from 'hooks';
 import CurationBoardBasic from 'pages/Curation/components/CurationBoardBasic';
+import { getCurationSearchPath } from 'pages/CurationImport/CurationSearchPage.helpers';
 import {
     useGetProjectIsLoading,
+    useProjectAnalysisType,
     useProjectCreatedAt,
     useProjectCurationIsPrisma,
     useProjectExtractionAnnotationId,
@@ -51,6 +53,7 @@ const CurationPage: React.FC = () => {
 
     const isPrisma = useProjectCurationIsPrisma();
     const projectName = useProjectName();
+    const projectAnalysisType = useProjectAnalysisType();
 
     const extractionStepInitialized = studysetId && annotationId && (studyset?.studies?.length || 0) > 0;
     const canMoveToExtractionPhase = included > 0 && uncategorized === 0;
@@ -120,7 +123,13 @@ const CurationPage: React.FC = () => {
                                     variant="contained"
                                     disableElevation
                                     size="small"
-                                    onClick={() => navigate(`/projects/${projectId}/curation/search`)}
+                                    onClick={() =>
+                                        navigate(
+                                            projectId
+                                                ? getCurationSearchPath(projectId, projectAnalysisType)
+                                                : '/projects'
+                                        )
+                                    }
                                     sx={{
                                         fontSize: '12px',
                                         borderColor: 'white !important',

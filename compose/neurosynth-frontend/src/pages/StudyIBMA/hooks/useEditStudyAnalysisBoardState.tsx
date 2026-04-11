@@ -21,20 +21,20 @@ import {
     useStudyId,
 } from 'stores/study/StudyStore';
 import type { IStoreAnalysis } from 'stores/study/StudyStore.helpers';
-import { AnnotationColumnCell, useStableAnnotationColumnCommit } from './AnnotationColumnCells';
-import { AnnotationColumnHeader } from './AnnotationColumnHeader';
+import { AnnotationColumnCell, useStableAnnotationColumnCommit } from 'pages/StudyIBMA/components/AnnotationColumnCells';
+import { AnnotationColumnHeader } from 'pages/StudyIBMA/components/AnnotationColumnHeader';
 import {
     STUDY_ANALYSES_COLUMN_WIDTH,
     STUDY_BRAIN_MAPS_DETAIL_ROW_SUFFIX,
-} from './editStudyAnalysisBoard.constants';
+} from 'pages/StudyIBMA/components/editStudyAnalysisBoard.constants';
 import {
     findBrainMapImageById,
     moveBrainMapImageToAnalysis,
     normalizeAnalysisImages,
     partitionAnalysisImages,
     unassignBrainMapImageFromAnalysis,
-} from './editStudyAnalysisBoard.helpers';
-import type { AnalysisBoardRow } from './editStudyAnalysisBoard.types';
+} from 'pages/StudyIBMA/components/editStudyAnalysisBoard.helpers';
+import type { AnalysisBoardRow } from 'pages/StudyIBMA/components/editStudyAnalysisBoard.types';
 
 const columnHelper = createColumnHelper<AnalysisBoardRow>();
 

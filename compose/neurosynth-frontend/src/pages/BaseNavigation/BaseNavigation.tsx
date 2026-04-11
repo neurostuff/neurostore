@@ -136,9 +136,7 @@ const BaseNavigation: React.FC = () => {
                                 onlyOwnerCanAccess
                                 errorMessage="You do not have access to this page"
                             >
-                                <Box sx={BaseNavigationStyles.pagesContainer}>
-                                    <EditStudyPage />
-                                </Box>
+                                <EditStudyPage />
                             </ProtectedProjectRoute>
                         }
                     />

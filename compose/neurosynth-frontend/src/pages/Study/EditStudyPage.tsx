@@ -1,4 +1,6 @@
+import { Box } from '@mui/material';
 import { EAnalysisType } from 'hooks/projects/Project.types';
+import BaseNavigationStyles from 'pages/BaseNavigation/BaseNavigation.styles';
 import { useProjectAnalysisType } from 'pages/Project/store/ProjectStore';
 import StudyCBMAPage from 'pages/StudyCBMA/StudyCBMA';
 import StudyIBMAPage from 'pages/StudyIBMA/StudyIBMA';
@@ -10,7 +12,11 @@ const EditStudyPage: React.FC = () => {
         return <StudyIBMAPage />;
     }
 
-    return <StudyCBMAPage />;
+    return (
+        <Box sx={BaseNavigationStyles.pagesContainer}>
+            <StudyCBMAPage />
+        </Box>
+    );
 };
 
 export default EditStudyPage;

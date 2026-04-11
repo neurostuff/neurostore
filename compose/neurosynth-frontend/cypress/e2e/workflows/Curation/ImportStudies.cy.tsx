@@ -1,5 +1,10 @@
 /// <reference types="cypress" />
 
+/** Modern curation UI: fixtures keep columns empty, so the empty-state Search control is always shown. */
+const visitCuration = () => {
+    cy.visit('/projects/abc123/curation').wait('@projectFixture');
+};
+
 describe('ImportStudiesDialog', () => {
     beforeEach(() => {
         cy.clearLocalStorage();
@@ -13,22 +18,36 @@ describe('ImportStudiesDialog', () => {
     });
 
     it('should load the page', () => {
-        cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture').wait('@studysetFixture');
+        cy.login('mocked');
+        visitCuration();
+        cy.url().should('include', '/projects/abc123/curation');
     });
 
     it('should open the curation search page when clicking Search button', () => {
-        cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture').wait('@studysetFixture');
+        cy.login('mocked');
+        visitCuration();
         cy.contains('button', 'Search').click();
         cy.url().should('include', '/projects/abc123/curation/search');
+        cy.url().should('include', 'dataType=coordinate');
         cy.contains('Search Neurostore').should('be.visible');
     });
 
+    it('should use image datatype when opening search from an IBMA project', () => {
+        cy.intercept('GET', `**/api/projects/*`, {
+            fixture: 'projects/projectExtractionStepIBMA',
+        }).as('projectIBMAFixture');
+        cy.login('mocked');
+        cy.visit('/projects/abc123/curation').wait('@projectIBMAFixture');
+        cy.contains('button', 'Search').click();
+        cy.url().should('include', '/projects/abc123/curation/search');
+        cy.url().should('include', 'dataType=image');
+    });
+
     it('should open the import dialog when selecting an option from the dropdown', () => {
-        cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture').wait('@studysetFixture');
-        // Open dropdown (the Import Studies button next to Search)
-        cy.contains('button', 'Search').parent().find('button').last().click();
+        cy.login('mocked');
+        visitCuration();
+        cy.contains('button', 'Import Studies').click();
         cy.contains('li', 'Import via Pubmed ID').click();
-        // Import now opens in a dialog instead of navigating to a new page
         cy.contains('Import Studies').should('be.visible');
         cy.get('textarea[placeholder="Enter list of pubmed IDs separated by a newline"]').should('be.visible');
     });
@@ -39,10 +58,13 @@ describe('ImportStudiesDialog', () => {
                 fixture: 'baseStudies/baseStudiesWithResults',
             }).as('baseStudiesFixture');
             cy.intercept('PUT', '**/api/projects/abc123').as('updateProjectFixture');
-            cy.login('mocked').visit('/projects/abc123/curation/search').wait('@projectFixture');
+            cy.login('mocked');
+            visitCuration();
+            cy.contains('button', 'Search').click();
+            cy.url().should('include', '/projects/abc123/curation/search');
         });
 
-        it.only('should enter the import name based on the search and typed text', () => {
+        it('should enter the import name based on the search and typed text', () => {
             cy.get('input[type="text"]').first().type('neuron');
             cy.get('button').contains('Search').click();
             cy.wait('@baseStudiesFixture');

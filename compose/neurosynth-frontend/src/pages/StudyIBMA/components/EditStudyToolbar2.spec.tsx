@@ -10,25 +10,25 @@ import {
 } from 'pages/Project/store/ProjectStore';
 import { useStudyId } from 'stores/study/StudyStore';
 import { useNavigate } from 'react-router-dom';
-import EditStudyToolbar from './EditStudyToolbar';
+import EditStudyToolbar2 from 'pages/StudyIBMA/components/EditStudyToolbar2';
 import { setUnloadHandler } from 'helpers/BeforeUnload.helpers';
 
 vi.mock('hooks');
 vi.mock('pages/StudyCBMA/hooks/useSaveStudy');
 vi.mock('react-router-dom');
-vi.mock('pages/Project/store/ProjectStore');
 vi.mock('stores/study/StudyStore');
+vi.mock('pages/Project/store/ProjectStore');
 vi.mock('pages/StudyCBMA/components/EditStudySwapVersionButton');
 vi.mock('components/Dialogs/ConfirmationDialog');
 
-describe('EditStudyToolbar Component', () => {
+describe('EditStudyToolbar2 Component', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         window.sessionStorage.clear();
     });
 
     it('should render', () => {
-        render(<EditStudyToolbar />);
+        render(<EditStudyToolbar2 />);
     });
 
     it.each([
@@ -42,7 +42,7 @@ describe('EditStudyToolbar Component', () => {
             const extractionSummary = useGetExtractionSummary('');
             extractionSummary.completed = completed;
             extractionSummary.total = total;
-            render(<EditStudyToolbar />);
+            render(<EditStudyToolbar2 />);
             expect(screen.getByText(`${expectedPercentage}%`)).toBeInTheDocument();
 
             userEvent.hover(screen.getByText(`${expectedPercentage}%`));
@@ -55,14 +55,14 @@ describe('EditStudyToolbar Component', () => {
     it('should show the done all icon', () => {
         useGetExtractionSummary('').completed = 21;
         useGetExtractionSummary('').total = 21;
-        render(<EditStudyToolbar />);
+        render(<EditStudyToolbar2 />);
         expect(screen.getByTestId('DoneAllIcon')).toBeInTheDocument();
     });
 
     it('should move on to the specification phase', () => {
         useGetExtractionSummary('').completed = 21;
         useGetExtractionSummary('').total = 21;
-        render(<EditStudyToolbar />);
+        render(<EditStudyToolbar2 />);
         userEvent.click(screen.getByTestId('DoneAllIcon'));
         expect(useNavigate()).toHaveBeenCalledWith('/projects/project-id/project', {
             state: {
@@ -75,7 +75,7 @@ describe('EditStudyToolbar Component', () => {
 
     describe('status buttons', () => {
         it('should set to completed', () => {
-            render(<EditStudyToolbar />);
+            render(<EditStudyToolbar2 />);
             const checkIcon = screen.getByTestId('CheckIcon');
             userEvent.click(checkIcon);
             expect(useProjectExtractionAddOrUpdateStudyListStatus()).toHaveBeenCalledWith(
@@ -85,7 +85,7 @@ describe('EditStudyToolbar Component', () => {
         });
 
         it('should set to saved for later', () => {
-            render(<EditStudyToolbar />);
+            render(<EditStudyToolbar2 />);
             const bookmarkIcon = screen.getByTestId('BookmarkIcon');
             userEvent.click(bookmarkIcon);
             expect(useProjectExtractionAddOrUpdateStudyListStatus()).toHaveBeenCalledWith(
@@ -95,7 +95,7 @@ describe('EditStudyToolbar Component', () => {
         });
 
         it('should set to uncategorized', () => {
-            render(<EditStudyToolbar />);
+            render(<EditStudyToolbar2 />);
             const questionIcon = screen.getByTestId('QuestionMarkIcon');
             userEvent.click(questionIcon);
             expect(useProjectExtractionAddOrUpdateStudyListStatus()).toHaveBeenCalledWith(
@@ -107,7 +107,6 @@ describe('EditStudyToolbar Component', () => {
 
     describe('previous button', () => {
         it('should move to previous study when receiving state from the table', () => {
-            // ARRANGE
             window.sessionStorage.setItem(
                 `projectid-extraction-table`,
                 JSON.stringify({
@@ -122,15 +121,12 @@ describe('EditStudyToolbar Component', () => {
             (useProjectId as Mock).mockReturnValue('projectid');
             (useUserCanEdit as Mock).mockReturnValue(true);
 
-            render(<EditStudyToolbar />);
-            // ACT
+            render(<EditStudyToolbar2 />);
             userEvent.click(screen.getByTestId('KeyboardArrowLeftIcon'));
-            // ASSERT
             expect(useNavigate()).toHaveBeenCalledWith('/projects/projectid/extraction/studies/study-1/edit');
         });
 
         it('should show a popup if there are unsaved changes when going to previous', () => {
-            // ARRANGE
             window.sessionStorage.setItem(
                 `projectid-extraction-table`,
                 JSON.stringify({
@@ -140,22 +136,19 @@ describe('EditStudyToolbar Component', () => {
                     pagination: { pageIndex: 0, pageSize: 25 },
                 })
             );
-            setUnloadHandler('study'); // simulate an unsaved change
+            setUnloadHandler('study');
             (useStudyId as Mock).mockReturnValue('study-2');
             (useProjectExtractionStudysetId as Mock).mockReturnValue('studysetid');
             (useProjectId as Mock).mockReturnValue('projectid');
             (useUserCanEdit as Mock).mockReturnValue(true);
 
-            render(<EditStudyToolbar />);
-            // ACT
+            render(<EditStudyToolbar2 />);
             userEvent.click(screen.getByTestId('KeyboardArrowLeftIcon'));
-            // ASSERT
             expect(useNavigate()).not.toHaveBeenCalledWith('/projects/projectid/extraction/studies/study-1/edit');
             expect(screen.getByTestId('mock-confirmation-dialog')).toBeInTheDocument();
         });
 
         it('should move to previous study if there is no state received from the table', () => {
-            // ARRANGE
             (useStudyId as Mock).mockReturnValue('study-3');
             (useProjectExtractionStudysetId as Mock).mockReturnValue('studysetid');
             (useProjectId as Mock).mockReturnValue('projectid');
@@ -165,15 +158,12 @@ describe('EditStudyToolbar Component', () => {
                 data: { studies: ['study-2', 'study-3', 'study-4'] },
             });
 
-            render(<EditStudyToolbar />);
-            // ACT
+            render(<EditStudyToolbar2 />);
             userEvent.click(screen.getByTestId('KeyboardArrowLeftIcon'));
-            // ASSERT
             expect(useNavigate()).toHaveBeenCalledWith('/projects/projectid/extraction/studies/study-2/edit');
         });
 
         it('should disable the back button if on the first study', () => {
-            // ARRANGE
             (useStudyId as Mock).mockReturnValue('study-2');
             (useProjectExtractionStudysetId as Mock).mockReturnValue('studysetid');
             (useProjectId as Mock).mockReturnValue('projectid');
@@ -183,17 +173,14 @@ describe('EditStudyToolbar Component', () => {
                 data: { studies: [{ id: 'study-2' }, { id: 'study-3' }, { id: 'study-4' }] },
             });
 
-            render(<EditStudyToolbar />);
-            // ACT
+            render(<EditStudyToolbar2 />);
             const arrowBackIcon = screen.getByTestId('KeyboardArrowLeftIcon').parentElement;
-            // ASSERT
             expect(arrowBackIcon).toBeDisabled();
         });
     });
 
     describe('next button', () => {
         it('should move to the next study when receiving state from the table', () => {
-            // ARRANGE
             window.sessionStorage.setItem(
                 `projectid-extraction-table`,
                 JSON.stringify({
@@ -208,15 +195,12 @@ describe('EditStudyToolbar Component', () => {
             (useProjectId as Mock).mockReturnValue('projectid');
             (useUserCanEdit as Mock).mockReturnValue(true);
 
-            render(<EditStudyToolbar />);
-            // ACT
+            render(<EditStudyToolbar2 />);
             userEvent.click(screen.getByTestId('KeyboardArrowRightIcon'));
-            // ASSERT
             expect(useNavigate()).toHaveBeenCalledWith('/projects/projectid/extraction/studies/study-3/edit');
         });
 
         it('should show a popup if there are unsaved changes when going to next', () => {
-            // ARRANGE
             window.sessionStorage.setItem(
                 `projectid-extraction-table`,
                 JSON.stringify({
@@ -226,22 +210,19 @@ describe('EditStudyToolbar Component', () => {
                     pagination: { pageIndex: 0, pageSize: 25 },
                 })
             );
-            setUnloadHandler('study'); // simulate an unsaved change
+            setUnloadHandler('study');
             (useStudyId as Mock).mockReturnValue('study-2');
             (useProjectExtractionStudysetId as Mock).mockReturnValue('studysetid');
             (useProjectId as Mock).mockReturnValue('projectid');
             (useUserCanEdit as Mock).mockReturnValue(true);
 
-            render(<EditStudyToolbar />);
-            // ACT
+            render(<EditStudyToolbar2 />);
             userEvent.click(screen.getByTestId('KeyboardArrowRightIcon'));
-            // ASSERT
             expect(useNavigate()).not.toHaveBeenCalledWith('/projects/projectid/extraction/studies/study-3/edit');
             expect(screen.getByTestId('mock-confirmation-dialog')).toBeInTheDocument();
         });
 
         it('should move to the next study if there is no state received from the table', () => {
-            // ARRANGE
             (useStudyId as Mock).mockReturnValue('study-3');
             (useProjectExtractionStudysetId as Mock).mockReturnValue('studysetid');
             (useProjectId as Mock).mockReturnValue('projectid');
@@ -251,15 +232,12 @@ describe('EditStudyToolbar Component', () => {
                 data: { studies: ['study-2', 'study-3', 'study-4'] },
             });
 
-            render(<EditStudyToolbar />);
-            // ACT
+            render(<EditStudyToolbar2 />);
             userEvent.click(screen.getByTestId('KeyboardArrowRightIcon'));
-            // ASSERT
             expect(useNavigate()).toHaveBeenCalledWith('/projects/projectid/extraction/studies/study-4/edit');
         });
 
         it('should disable the next button if on the last study', () => {
-            // ARRANGE
             window.sessionStorage.setItem(
                 `projectid-extraction-table`,
                 JSON.stringify({
@@ -274,10 +252,8 @@ describe('EditStudyToolbar Component', () => {
             (useProjectId as Mock).mockReturnValue('projectid');
             (useUserCanEdit as Mock).mockReturnValue(true);
 
-            render(<EditStudyToolbar />);
-            // ACT
+            render(<EditStudyToolbar2 />);
             const arrowForwardIcon = screen.getByTestId('KeyboardArrowRightIcon').parentElement;
-            // ASSERT
             expect(arrowForwardIcon).toBeDisabled();
         });
     });

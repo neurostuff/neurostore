@@ -1,19 +1,18 @@
+import ChangeHistoryIcon from '@mui/icons-material/ChangeHistory';
+import LockIcon from '@mui/icons-material/Lock';
+import PublicIcon from '@mui/icons-material/Public';
 import { Box, Chip, Link as MuiLink, Stepper, Typography } from '@mui/material';
 import { useGetMetaAnalysesByIds, useGetStudysetById } from 'hooks';
 import { EAnalysisType, INeurosynthProjectReturn } from 'hooks/projects/Project.types';
 import { getCurationSummary } from 'hooks/useGetCurationSummary';
 import { getExtractionSummary } from 'hooks/useGetExtractionSummary';
+import { MetaAnalysis } from 'neurosynth-compose-typescript-sdk';
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import ProjectsPageCardStep from './ProjectsPageCardStep';
 import ProjectsPageCardSummaryCuration from './ProjectsPageCardSummaryCuration';
 import ProjectsPageCardExtractionSummary from './ProjectsPageCardSummaryExtraction';
 import ProjectsPageCardSummaryMetaAnalyses from './ProjectsPageCardSummaryMetaAnalyses';
-import { MetaAnalysis } from 'neurosynth-compose-typescript-sdk';
-import LockIcon from '@mui/icons-material/Lock';
-import PublicIcon from '@mui/icons-material/Public';
-import ChangeHistoryIcon from '@mui/icons-material/ChangeHistory';
-import { useProjectAnalysisType } from 'pages/Project/store/ProjectStore';
 
 const isToday = (date: Date) => {
     const today = new Date();
@@ -95,8 +94,6 @@ const ProjectsPageCard: React.FC<INeurosynthProjectReturn> = (props) => {
         }
     }, [metaAnalyses]);
 
-    const projectType = useProjectAnalysisType();
-
     return (
         <Box sx={{ display: 'flex', padding: '1rem', marginBottom: '0.5rem' }}>
             <Box
@@ -140,9 +137,10 @@ const ProjectsPageCard: React.FC<INeurosynthProjectReturn> = (props) => {
             <Box sx={{ flexGrow: 1 }}>
                 <Box mb="0.5rem" sx={{ width: '100%', display: 'flex' }}>
                     <Chip
-                        label={projectType === EAnalysisType.CBMA ? 'CBMA' : 'IBMA'}
+                        label={provenance.type === EAnalysisType.CBMA ? 'CBMA' : 'IBMA'}
                         size="small"
-                        sx={{ mr: '6px' }}
+                        variant="outlined"
+                        sx={{ mr: '6px', fontWeight: 'bold' }}
                     />
                     <Chip
                         label={isPublic ? 'Public' : 'Private'}

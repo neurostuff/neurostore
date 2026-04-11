@@ -1,5 +1,16 @@
 import CloseIcon from '@mui/icons-material/Close';
-import { Box, IconButton, Paper, Table, TableBody, TableCell, TableHead, TableRow, Tooltip, Typography } from '@mui/material';
+import {
+    Box,
+    IconButton,
+    Paper,
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableRow,
+    Tooltip,
+    Typography,
+} from '@mui/material';
 import useGetNeurovaultImages, { type INeurovault } from 'hooks/metaAnalyses/useGetNeurovaultImages';
 import type { ImageReturn } from 'neurostore-typescript-sdk';
 import React, { useMemo } from 'react';
@@ -60,11 +71,10 @@ export function BrainMapDetailPanel({ image, onClose }: { image: ImageReturn; on
 
     return (
         <Paper
-            elevation={0}
+            elevation={1}
             data-testid="brain-map-detail-panel"
             sx={{
-                width: { xs: 'min(100%, 360px)', md: 360 },
-                minWidth: { md: 300 },
+                width: { xs: 'min(100%, 500px)', md: 500 },
                 flexShrink: 0,
                 display: 'flex',
                 flexDirection: 'column',
