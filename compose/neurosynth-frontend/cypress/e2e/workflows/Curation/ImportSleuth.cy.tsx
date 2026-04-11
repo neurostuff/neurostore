@@ -19,7 +19,7 @@ describe('ImportSleuthDialog', () => {
         cy.addToLocalStorage('auth0|62e0e6c9dd47048572613b4d-hide-info-popup', 'true');
         cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture').wait('@studysetFixture');
         cy.contains('button', 'Search').parent().find('button').last().click({ force: true });
-        cy.contains('Sleuth').click({ force: true });
+        cy.contains('Import via Sleuth File').click({ force: true });
     });
 
     describe('upload page', () => {
