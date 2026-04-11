@@ -5,6 +5,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -31,6 +33,28 @@ def compose_exec_cmd(project_name: str | None, *args: str) -> list[str]:
     return cmd
 
 
+def resolve_aws_cli() -> str:
+    configured = os.environ.get("AWS_CLI")
+    if configured:
+        return configured
+
+    discovered = shutil.which("aws")
+    if discovered:
+        return discovered
+
+    repo_aws = Path(__file__).resolve().parents[2] / ".venv" / "bin" / "aws"
+    if repo_aws.exists():
+        return str(repo_aws)
+
+    user_aws = Path.home() / ".local" / "bin" / "aws"
+    if user_aws.exists():
+        return str(user_aws)
+
+    raise FileNotFoundError(
+        "Unable to find the aws CLI. Set AWS_CLI or install aws in PATH or at REPO_ROOT/.venv/bin/aws."
+    )
+
+
 def cache_record_name(prefix: str | None) -> str:
     if not prefix:
         return "selected-key.txt"
@@ -45,8 +69,9 @@ def cache_record_name(prefix: str | None) -> str:
 
 
 def latest_s3_key(bucket: str, prefix: str | None = None) -> str:
+    aws_cli = resolve_aws_cli()
     cmd = [
-        "aws",
+        aws_cli,
         "s3api",
         "list-objects-v2",
         "--bucket",
@@ -71,9 +96,10 @@ def latest_s3_key(bucket: str, prefix: str | None = None) -> str:
 
 
 def download_dump(bucket: str, key: str, destination: Path) -> None:
+    aws_cli = resolve_aws_cli()
     destination.parent.mkdir(parents=True, exist_ok=True)
     subprocess.run(
-        ["aws", "s3", "cp", f"s3://{bucket}/{key}", str(destination)],
+        [aws_cli, "s3", "cp", f"s3://{bucket}/{key}", str(destination)],
         check=True,
     )
 
