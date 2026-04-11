@@ -9,6 +9,8 @@ Dump and archive PostgreSQL backups to Amazon S3 from the postgres container.
 
 Set environment variables:
   - `S3_PATH` with your Amazon S3 bucket and optional path
+  - optional `DEV_S3_PATH` for reduced dev dumps (defaults to `${S3_PATH}/dev-reduced`)
+  - optional `ENABLE_DEV_REDUCED_BACKUP=0` to skip reduced dev dump generation
   - optional `PG_HOST` / `PG_USER` overrides (defaults come from postgres env vars)
 
 The postgres image installs the scripts to `/home`, applies the cron schedule
@@ -53,6 +55,11 @@ Examples:
 - The postgres image installs `awscli`, `pg_dump-to-s3.sh`, and `s3-autodelete.sh`.
 - `backup.txt` schedules a daily dump at 00:00.
 - Each run dumps the database to `/tmp`, uploads to S3, then removes the local file.
+- The same run also builds a reduced dev dump and uploads it under `dev-reduced/`
+  by default so shared dev can restore that smaller artifact directly.
+- The reduced dev dump is built from the live source database by copying the
+  selected rows into a temporary reduced database, not by restoring the full dump
+  first.
 - The autodelete script removes backups older than the retention window but keeps
   the newest backup so at least one remains.
 - The entrypoint writes `.pgpass` and AWS config files for both `root` and

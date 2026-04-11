@@ -23,11 +23,15 @@ matching Flask config and database name automatically.
 ## Initializing backend
 Create the network, build the containers, and start services using the development configuration:
 
-    docker network create nginx-proxy  # if this does not already exist
+  docker network create ${SHARED_PROXY_NETWORK:-nginx-proxy}  # if this does not already exist
     docker-compose build
     docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d
 
 The server should now be running at http://localhost:81
+
+The shared cross-stack network name is controlled by `SHARED_PROXY_NETWORK` in `.env`.
+Keep the default `nginx-proxy` for normal local development, or use a track-specific
+value when running multiple environments on the same host.
 
 With `APP_ENV=development`, a fresh Postgres volume initializes `compose_test_db`
 automatically. If you are reusing an older volume created under a different

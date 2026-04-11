@@ -37,6 +37,11 @@ def anonymous_client():
     return Client(token=None)
 
 
+@pytest.fixture
+def invalid_token_client():
+    return Client(token="not-a-real-token")
+
+
 @pytest.mark.parametrize(
     "client_fixture, method, path, expected_status",
     [
@@ -44,6 +49,7 @@ def anonymous_client():
         ("cors_test_client", "get", "/__test/cors/204", 204),
         ("cors_test_client", "get", "/__test/cors/400", 400),
         ("anonymous_client", "post", "/api/annotations", 401),
+        ("invalid_token_client", "post", "/api/annotations", 401),
         ("cors_test_client", "get", "/__test/cors/404", 404),
         ("cors_test_client", "get", "/__test/cors/420", 420),
         ("cors_test_client", "get", "/__test/cors/500", 500),

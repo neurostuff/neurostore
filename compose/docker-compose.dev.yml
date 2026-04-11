@@ -1,9 +1,9 @@
 services:
   compose_nginx:
     expose:
-      - "81"
+      - "80"
     ports:
-      - 81:81
+      - 81:80
     volumes:
       - ./nginx/nginx.dev.conf:/etc/nginx/nginx.conf:ro
 

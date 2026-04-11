@@ -176,6 +176,7 @@ def test_post_list_of_studies_returns_full_objects(auth_client, ingest_neuroquer
     assert result.json()[0]["name"] == base_study.name
     assert "versions" in result.json()[0]
     assert isinstance(result.json()[0]["versions"], list)
+    assert "metadata" not in result.json()[0]
 
 
 def test_field_sanitization(auth_client):
