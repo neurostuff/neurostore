@@ -7,6 +7,8 @@ from flask import current_app, has_app_context
 from jose import jwt
 from starlette.responses import JSONResponse
 from werkzeug.local import LocalProxy
+
+
 def _oauth_problem(detail):
     return OAuthProblem(detail=detail)
 
@@ -19,6 +21,8 @@ def _apply_cors_headers(response, origin=None):
     if origin:
         response.headers["Vary"] = "Origin"
     return response
+
+
 async def asgi_oauth_problem_handler(request, exc):
     status_code = getattr(exc, "status_code", 401)
     response = JSONResponse(

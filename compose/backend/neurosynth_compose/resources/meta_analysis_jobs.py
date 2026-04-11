@@ -293,7 +293,7 @@ def list_jobs():
     for key in keys:
         if isinstance(key, bytes):
             key = key.decode("utf-8")
-        job_id = key[len(JOB_CACHE_PREFIX) + 1:]
+        job_id = key[len(JOB_CACHE_PREFIX) + 1 :]  # noqa E203
         try:
             job = _load_job(job_id)
         except JobStoreError as exc:

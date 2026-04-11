@@ -10,6 +10,8 @@ from werkzeug.local import LocalProxy
 from connexion.security import NO_VALUE
 from ..database import db
 from sqlalchemy import select
+
+
 def _oauth_problem(detail):
     return OAuthProblem(detail=detail)
 
@@ -22,6 +24,8 @@ def _apply_cors_headers(response, origin=None):
     if origin:
         response.headers["Vary"] = "Origin"
     return response
+
+
 async def asgi_oauth_problem_handler(request, exc):
     status_code = getattr(exc, "status_code", 401)
     response = JSONResponse(
@@ -35,6 +39,8 @@ async def asgi_oauth_problem_handler(request, exc):
         media_type="application/problem+json",
     )
     return _apply_cors_headers(response, request.headers.get("origin"))
+
+
 _flask_app = None
 
 

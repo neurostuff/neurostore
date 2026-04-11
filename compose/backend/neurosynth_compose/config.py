@@ -129,9 +129,7 @@ class ProductionConfig(Config):
     AUTH0_ACCESS_TOKEN_URL = f"{AUTH0_BASE_URL}/oauth/token"
     AUTH0_AUTH_URL = f"{AUTH0_BASE_URL}/authorize"
     AUTH0_API_AUDIENCE = "https://neurostore.org/api/"
-    NEUROSTORE_API_URL = get_env_var(
-        "NEUROSTORE_API_URL", "https://neurostore.org/api"
-    )
+    NEUROSTORE_API_URL = get_env_var("NEUROSTORE_API_URL", "https://neurostore.org/api")
 
 
 class StagingConfig(Config):
@@ -173,7 +171,9 @@ class DevelopmentConfig(Config):
     AUTH0_API_AUDIENCE = get_env_var(
         "AUTH0_API_AUDIENCE", "https://dev.synth.neurostore.xyz/api/"
     )
-    NEUROSTORE_API_URL = get_env_var("NEUROSTORE_API_URL", "https://dev.neurostore.xyz/api")
+    NEUROSTORE_API_URL = get_env_var(
+        "NEUROSTORE_API_URL", "https://dev.neurostore.xyz/api"
+    )
 
 
 class TestingConfig(Config):

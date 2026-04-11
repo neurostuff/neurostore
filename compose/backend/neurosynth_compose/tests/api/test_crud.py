@@ -96,9 +96,7 @@ def test_create(session, auth_client, user_data, db, endpoint, model, schema):
 )
 def test_read(session, auth_client, user_data, db, endpoint, model, schema):
     if hasattr(model, "public"):
-        query = (model.user_id == auth_client.username) | (
-            model.public.is_(True)
-        )
+        query = (model.user_id == auth_client.username) | (model.public.is_(True))
         if hasattr(model, "draft"):
             query = (model.user_id == auth_client.username) | (
                 model.public.is_(True) & model.draft.is_(False)
