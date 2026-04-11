@@ -6,8 +6,8 @@ from pathlib import Path
 import connexion
 import flask
 from authlib.integrations.flask_client import OAuth
+from connexion.exceptions import OAuthProblem
 from connexion.jsonifier import Jsonifier
-from connexion.middleware import MiddlewarePosition
 from connexion.resolver import MethodResolver
 from connexion.validators import VALIDATOR_MAP
 from connexion.validators.json import JSONRequestBodyValidator
@@ -29,7 +29,9 @@ from neurostore.exceptions.handlers import (
 )
 from neurostore.extensions import cache
 from neurostore.resources import iter_request_body_validation_skip_rules
-from neurostore.resources.auth import AuthError, handle_auth_error
+from neurostore.resources.auth import (
+    asgi_oauth_problem_handler,
+)
 from neurostore.resources.auth import init_app as init_auth
 
 
@@ -227,9 +229,7 @@ def create_app():
     admin.add_view(SecureModelView(PointValue, db.session, category="Analysis"))
     admin.add_view(SecureModelView(AnalysisConditions, db.session, category="Analysis"))
 
-    connexion_app.add_middleware(
-        CORSMiddleware,
-        position=MiddlewarePosition.BEFORE_ROUTING,
+    cors_kwargs = dict(
         allow_origins=["*"],
         allow_credentials=True,
         allow_methods=["*"],
@@ -237,6 +237,7 @@ def create_app():
     )
     connexion_app.exception_handlers = {
         NeuroStoreException: neurostore_exception_handler,
+        OAuthProblem: asgi_oauth_problem_handler,
         Exception: general_exception_handler,
     }
 
@@ -264,7 +265,6 @@ def create_app():
 
     app.register_error_handler(NeuroStoreException, _flask_neurostore_handler)
     app.register_error_handler(Exception, _flask_general_handler)
-    app.register_error_handler(AuthError, handle_auth_error)
 
     os.environ["BEARERINFO_FUNC"] = app.config["BEARERINFO_FUNC"]
 
@@ -296,6 +296,8 @@ def create_app():
         validator_map=validator_map,
     )
 
+    cors_asgi_app = CORSMiddleware(connexion_app, **cors_kwargs)
+
     app.extensions["connexion_app"] = connexion_app
-    app.extensions["connexion_asgi"] = connexion_app
+    app.extensions["connexion_asgi"] = cors_asgi_app
     return app

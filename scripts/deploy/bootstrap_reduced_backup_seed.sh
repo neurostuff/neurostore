@@ -2,6 +2,7 @@
 set -euo pipefail
 
 REDUCED_PREFIX="dev-reduced"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 usage() {
   cat <<'EOF'
@@ -13,6 +14,7 @@ Options:
   --bucket <bucket>             S3 bucket containing PostgreSQL dumps.
   --container <container>       Postgres service/container name.
   --target-database <name>      Database name to restore the reduced seed into.
+  --project-name <name>         Docker Compose project name for the target stack.
   --cache-dir <path>            Cache directory for reduced dumps.
   --refresh-latest              Ignore the cached selected key and re-resolve the newest S3 object.
   --with-vector-extension       Create pgvector in recreated databases.
@@ -23,6 +25,7 @@ COMPOSE_DIR=""
 BUCKET=""
 CONTAINER=""
 TARGET_DATABASE=""
+PROJECT_NAME=""
 CACHE_DIR=""
 REFRESH_LATEST="0"
 WITH_VECTOR_EXTENSION="0"
@@ -43,6 +46,10 @@ while [ "$#" -gt 0 ]; do
       ;;
     --target-database)
       TARGET_DATABASE="$2"
+      shift 2
+      ;;
+    --project-name)
+      PROJECT_NAME="$2"
       shift 2
       ;;
     --cache-dir)
@@ -76,7 +83,7 @@ pushd "${COMPOSE_DIR}" >/dev/null
 
 prefetch_args=(
   python3
-  "${COMPOSE_DIR}/../scripts/deploy/restore_latest_backup.py"
+  "${SCRIPT_DIR}/restore_latest_backup.py"
   --compose-dir "${COMPOSE_DIR}"
   --bucket "${BUCKET}"
   --prefix "${REDUCED_PREFIX}"
@@ -84,6 +91,9 @@ prefetch_args=(
   --database "${TARGET_DATABASE}"
   --cache-dir "${CACHE_DIR}/prefetched"
 )
+if [ -n "${PROJECT_NAME}" ]; then
+  prefetch_args+=(--project-name "${PROJECT_NAME}")
+fi
 if [ "${REFRESH_LATEST}" = "1" ]; then
   prefetch_args+=(--refresh-latest)
 fi

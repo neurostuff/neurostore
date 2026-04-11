@@ -3,6 +3,7 @@ from pathlib import Path
 
 import connexion
 from authlib.integrations.flask_client import OAuth
+from connexion.exceptions import OAuthProblem
 from connexion.resolver import MethodResolver
 from starlette.middleware.cors import CORSMiddleware
 from flask_admin import Admin, AdminIndexView
@@ -12,7 +13,10 @@ from flask import Response, request
 
 from .database import init_db
 from .config import resolve_config_object
-from .resources.auth import AuthError, handle_auth_error, init_app as init_auth
+from .resources.auth import (
+    asgi_oauth_problem_handler,
+    init_app as init_auth,
+)
 
 
 def _env_flag(name, default=False):
@@ -164,7 +168,10 @@ def create_app():
 
     app.secret_key = app.config["JWT_SECRET_KEY"]
 
-    app.register_error_handler(AuthError, handle_auth_error)
+    connexion_app.exception_handlers = {
+        **getattr(connexion_app, "exception_handlers", {}),
+        OAuthProblem: asgi_oauth_problem_handler,
+    }
 
     cors_asgi_app = CORSMiddleware(connexion_app, **cors_kwargs)
 

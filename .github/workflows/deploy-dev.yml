@@ -45,6 +45,5 @@ jobs:
               --track dev \
               --repo-root "${{ secrets.REPO_ROOT }}" \
               --git-ref origin/dev \
-              --ghcr-owner "${{ github.repository_owner }}" \
-              --image-tag dev
+              --build-source local
           '

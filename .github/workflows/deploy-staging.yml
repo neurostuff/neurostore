@@ -45,6 +45,5 @@ jobs:
               --track staging \
               --repo-root "${{ secrets.REPO_ROOT }}" \
               --git-ref origin/master \
-              --ghcr-owner "${{ github.repository_owner }}" \
-              --image-tag staging
+              --build-source local
           '

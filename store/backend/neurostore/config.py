@@ -154,7 +154,9 @@ class StagingConfig(Config):
     AUTH0_BASE_URL = "https://neurosynth-staging.us.auth0.com"
     AUTH0_ACCESS_TOKEN_URL = "https://neurosynth-staging.us.auth0.com/oauth/token"
     AUTH0_AUTH_URL = "https://neurosynth-staging.us.auth0.com/authorize"
-    AUTH0_API_AUDIENCE = "https://neurostore.xyz/api/"
+    AUTH0_API_AUDIENCE = os.environ.get(
+        "AUTH0_API_AUDIENCE", "https://staging.neurostore.xyz/api/"
+    )
     COMPOSE_AUTH0_CLIENT_ID = os.environ.get("COMPOSE_AUTH0_CLIENT_ID")
 
 
@@ -166,7 +168,9 @@ class DevelopmentConfig(Config):
     AUTH0_BASE_URL = "https://dev-mui7zm42.us.auth0.com"
     AUTH0_ACCESS_TOKEN_URL = "https://dev-mui7zm42.us.auth0.com/oauth/token"
     AUTH0_AUTH_URL = "https://dev-mui7zm42.us.auth0.com/authorize"
-    AUTH0_API_AUDIENCE = "localhost"
+    AUTH0_API_AUDIENCE = os.environ.get(
+        "AUTH0_API_AUDIENCE", "https://dev.neurostore.xyz/api/"
+    )
     COMPOSE_AUTH0_CLIENT_ID = os.environ.get("COMPOSE_AUTH0_CLIENT_ID")
     DB_NAME = resolve_database_name("neurostore", "development")
     POSTGRES_HOST = os.environ.get("POSTGRES_HOST")

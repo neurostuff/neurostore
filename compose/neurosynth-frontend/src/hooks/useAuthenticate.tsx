@@ -5,6 +5,10 @@ import { useNavigate } from 'react-router-dom';
 
 const AUTH0_AUDIENCE = import.meta.env.VITE_APP_AUTH0_AUDIENCE;
 
+type TokenOptions = {
+    audience?: string;
+};
+
 function useAuthenticate() {
     const { enqueueSnackbar } = useSnackbar();
     const navigate = useNavigate();
@@ -17,7 +21,11 @@ function useAuthenticate() {
                 scope: 'openid profile email offline_access',
             });
 
-            initAPISetAccessTokenFunc(getAccessTokenSilently);
+            initAPISetAccessTokenFunc((audience?: string) => {
+                const options: TokenOptions = {};
+                if (audience) options.audience = audience;
+                return getAccessTokenSilently(options);
+            });
 
             if (window.gtag) {
                 window.gtag('event', 'login');

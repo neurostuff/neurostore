@@ -1,3 +1,4 @@
+from marshmallow import fields as marshmallow_fields
 from sqlalchemy.orm import joinedload, raiseload, selectinload
 from webargs import fields
 
@@ -33,6 +34,20 @@ from neurostore.resources.data_views.common import (
     apply_map_type_filter,
 )
 from neurostore.resources.utils import view_maker
+from neurostore.schemas.data import BaseDataSchema, StringOrNested, StudySchema
+
+
+class BaseStudyBulkPostResponseSchema(BaseDataSchema):
+    name = marshmallow_fields.String(allow_none=True)
+    description = marshmallow_fields.String(allow_none=True)
+    publication = marshmallow_fields.String(allow_none=True)
+    doi = marshmallow_fields.String(allow_none=True)
+    pmid = marshmallow_fields.String(allow_none=True)
+    pmcid = marshmallow_fields.String(allow_none=True)
+    authors = marshmallow_fields.String(allow_none=True)
+    year = marshmallow_fields.Integer(allow_none=True)
+    level = marshmallow_fields.String(allow_none=True)
+    versions = StringOrNested(StudySchema, many=True)
 
 
 @view_maker
@@ -208,4 +223,6 @@ class BaseStudiesView(ObjectView, ListView):
         else:
             response_records = base_studies
 
-        return self._schema(context={"info": True}, many=True).dump(response_records)
+        return BaseStudyBulkPostResponseSchema(context={"info": True}, many=True).dump(
+            response_records
+        )

@@ -23,6 +23,14 @@ def run(
     )
 
 
+def compose_exec_cmd(project_name: str | None, *args: str) -> list[str]:
+    cmd = ["docker", "compose"]
+    if project_name:
+        cmd.extend(["-p", project_name])
+    cmd.extend(args)
+    return cmd
+
+
 def cache_record_name(prefix: str | None) -> str:
     if not prefix:
         return "selected-key.txt"
@@ -95,14 +103,18 @@ def resolve_cached_dump(
 
 
 def recreate_database(
-    compose_dir: Path, container: str, database: str, *, with_vector: bool
+    compose_dir: Path,
+    project_name: str | None,
+    container: str,
+    database: str,
+    *,
+    with_vector: bool,
 ) -> None:
     drop_sql = f"DROP DATABASE IF EXISTS {database} WITH (FORCE);"
     create_sql = f"CREATE DATABASE {database};"
     run(
-        [
-            "docker",
-            "compose",
+        compose_exec_cmd(
+            project_name,
             "exec",
             "-T",
             container,
@@ -113,13 +125,12 @@ def recreate_database(
             "postgres",
             "-c",
             drop_sql,
-        ],
+        ),
         compose_dir,
     )
     run(
-        [
-            "docker",
-            "compose",
+        compose_exec_cmd(
+            project_name,
             "exec",
             "-T",
             container,
@@ -130,14 +141,13 @@ def recreate_database(
             "postgres",
             "-c",
             create_sql,
-        ],
+        ),
         compose_dir,
     )
     if with_vector:
         run(
-            [
-                "docker",
-                "compose",
+            compose_exec_cmd(
+                project_name,
                 "exec",
                 "-T",
                 container,
@@ -148,17 +158,20 @@ def recreate_database(
                 database,
                 "-c",
                 "CREATE EXTENSION IF NOT EXISTS vector;",
-            ],
+            ),
             compose_dir,
         )
 
 
 def restore_dump(
-    compose_dir: Path, container: str, database: str, dump_path: Path
+    compose_dir: Path,
+    project_name: str | None,
+    container: str,
+    database: str,
+    dump_path: Path,
 ) -> None:
-    cmd = [
-        "docker",
-        "compose",
+    cmd = compose_exec_cmd(
+        project_name,
         "exec",
         "-T",
         container,
@@ -170,7 +183,7 @@ def restore_dump(
             "--no-owner --no-privileges /tmp/restore.dump && "
             "rm -f /tmp/restore.dump"
         ),
-    ]
+    )
     with dump_path.open("rb") as handle:
         subprocess.run(cmd, cwd=compose_dir, stdin=handle, check=True)
 
@@ -182,6 +195,7 @@ def main() -> int:
     parser.add_argument("--prefix")
     parser.add_argument("--container", required=True)
     parser.add_argument("--database", required=True)
+    parser.add_argument("--project-name")
     parser.add_argument("--cache-dir")
     parser.add_argument("--refresh-latest", action="store_true")
     parser.add_argument("--with-vector-extension", action="store_true")
@@ -198,11 +212,18 @@ def main() -> int:
         )
         recreate_database(
             compose_dir,
+            args.project_name,
             args.container,
             args.database,
             with_vector=args.with_vector_extension,
         )
-        restore_dump(compose_dir, args.container, args.database, dump_path)
+        restore_dump(
+            compose_dir,
+            args.project_name,
+            args.container,
+            args.database,
+            dump_path,
+        )
     else:
         key = latest_s3_key(args.bucket, args.prefix)
         with tempfile.TemporaryDirectory(prefix="deploy-backup-") as temp_dir:
@@ -210,11 +231,18 @@ def main() -> int:
             download_dump(args.bucket, key, dump_path)
             recreate_database(
                 compose_dir,
+                args.project_name,
                 args.container,
                 args.database,
                 with_vector=args.with_vector_extension,
             )
-            restore_dump(compose_dir, args.container, args.database, dump_path)
+            restore_dump(
+                compose_dir,
+                args.project_name,
+                args.container,
+                args.database,
+                dump_path,
+            )
 
     json.dump(
         {
@@ -223,6 +251,7 @@ def main() -> int:
             "key": key,
             "database": args.database,
             "container": args.container,
+            "project_name": args.project_name,
             "refresh_latest": args.refresh_latest,
             "with_vector_extension": args.with_vector_extension,
         },
