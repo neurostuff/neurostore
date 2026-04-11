@@ -22,6 +22,33 @@ describe('AddMetadataRow Component', () => {
         expect(addButton).toBeInTheDocument();
     });
 
+    it('defaults to boolean for study annotations add column (hidden value input)', () => {
+        onAddMetadataRowMock.mockReturnValue(true);
+        render(
+            <MockThemeProvider>
+                <AddMetadataRow
+                    onAddMetadataRow={onAddMetadataRowMock}
+                    keyPlaceholderText="New Column"
+                    defaultType={EPropertyType.BOOLEAN}
+                    showMetadataValueInput={false}
+                    allowNone={false}
+                    errorMessage="can't add column (key already exists)"
+                />
+            </MockThemeProvider>
+        );
+
+        expect(screen.getByRole('combobox')).toHaveTextContent('BOOLEAN');
+
+        const newColumnKey = 'new_bool_col';
+        userEvent.type(screen.getByPlaceholderText('New Column'), newColumnKey);
+        userEvent.click(screen.getByText('ADD').closest('button') as HTMLElement);
+
+        expect(onAddMetadataRowMock).toHaveBeenCalledWith({
+            metadataKey: newColumnKey,
+            metadataValue: false,
+        });
+    });
+
     it('should get the correct starting value from the getStartValFromType function', () => {
         render(
             <MockThemeProvider>

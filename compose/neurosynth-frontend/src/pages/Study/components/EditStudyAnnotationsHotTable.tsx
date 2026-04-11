@@ -2,7 +2,7 @@ import { HotTable } from '@handsontable/react';
 import { Box } from '@mui/material';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import AddMetadataRow from 'components/EditMetadata/AddMetadataRow';
-import { getType, IMetadataRowModel } from 'components/EditMetadata/EditMetadata.types';
+import { EPropertyType, getType, IMetadataRowModel } from 'components/EditMetadata/EditMetadata.types';
 import { getDefaultForNoteKey, sanitizePaste } from 'components/HotTables/HotTables.utils';
 import CellCoords from 'handsontable/3rdparty/walkontable/src/cell/coords';
 import { CellChange } from 'handsontable/common';
@@ -122,6 +122,7 @@ const EditStudyAnnotationsHotTable: React.FC<{ readonly?: boolean }> = ({ readon
                     <AddMetadataRow
                         keyPlaceholderText="New Column"
                         onAddMetadataRow={handleAddHotColumn}
+                        defaultType={EPropertyType.BOOLEAN}
                         showMetadataValueInput={false}
                         allowNone={false}
                         errorMessage="can't add column (key already exists)"

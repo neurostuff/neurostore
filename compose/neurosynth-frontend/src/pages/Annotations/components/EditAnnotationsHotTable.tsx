@@ -1,7 +1,7 @@
 import HotTable from '@handsontable/react';
 import { Box, Typography } from '@mui/material';
 import LoadingButton from 'components/Buttons/LoadingButton';
-import { IMetadataRowModel, getType } from 'components/EditMetadata/EditMetadata.types';
+import { EPropertyType, IMetadataRowModel, getType } from 'components/EditMetadata/EditMetadata.types';
 import AddMetadataRow from 'components/EditMetadata/AddMetadataRow';
 import useEditAnnotationsHotTable from 'pages/Annotations/hooks/useEditAnnotationsHotTable';
 import { getDefaultForNoteKey, noteKeyArrToObj } from 'components/HotTables/HotTables.utils';
@@ -367,6 +367,7 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
                     <AddMetadataRow
                         keyPlaceholderText="New Annotation Key"
                         onAddMetadataRow={handleAddHotColumn}
+                        defaultType={EPropertyType.BOOLEAN}
                         showMetadataValueInput={false}
                         allowNone={false}
                         errorMessage="can't add column (key already exists)"
