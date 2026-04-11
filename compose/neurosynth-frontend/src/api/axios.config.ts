@@ -1,5 +1,5 @@
 import { enqueueSnackbar } from 'notistack';
-import { _getAccessTokenSilentlyFunc, axiosInstance, getAudienceForRequest } from './api.state';
+import { _getAccessTokenSilentlyFunc, axiosInstance } from './api.state';
 
 const env = import.meta.env.VITE_APP_ENV as 'DEV' | 'STAGING' | 'PROD';
 
@@ -9,7 +9,7 @@ axiosInstance.interceptors.request.use(
             if (!_getAccessTokenSilentlyFunc) {
                 console.warn('Auth not initialized');
             } else {
-                const token = await _getAccessTokenSilentlyFunc(getAudienceForRequest(config.url));
+                const token = await _getAccessTokenSilentlyFunc();
                 if (env === 'DEV' || env === 'STAGING') console.log(token);
                 config.headers['Authorization'] = `Bearer ${token}`;
             }

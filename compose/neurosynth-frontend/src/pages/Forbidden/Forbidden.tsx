@@ -1,18 +1,9 @@
 import { Box, Typography } from '@mui/material';
-import { useAuth0 } from '@auth0/auth0-react';
 import BackButton from 'components/Buttons/BackButton';
-import { useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 
 const ForbiddenPage: React.FC = (props) => {
     const { state } = useLocation();
-    const navigate = useNavigate();
-    const { isAuthenticated, isLoading } = useAuth0();
-
-    useEffect(() => {
-        if (isLoading || !isAuthenticated || !state?.redirectOnAuth) return;
-        navigate(state.redirectOnAuth, { replace: true });
-    }, [isAuthenticated, isLoading, navigate, state]);
 
     return (
         <Box
