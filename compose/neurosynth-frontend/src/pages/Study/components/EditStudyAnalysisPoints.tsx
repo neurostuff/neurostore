@@ -3,18 +3,37 @@ import { Box, Link, Tooltip, Typography } from '@mui/material';
 import HelpIcon from '@mui/icons-material/Help';
 import EditStudyAnalysisPointSpaceAndStatistic from 'pages/Study/components/EditStudyAnalysisPointSpaceAndStatistic';
 import RelegateExtractionStudyDialog from './RelegateExtractionStudyDialog';
-import { clearExtractionTableState } from 'pages/Extraction/components/ExtractionTable.helpers';
 import { useNavigate } from 'react-router-dom';
 import { useProjectId } from 'pages/Project/store/ProjectStore';
+import { useStudyAnalysisPoints } from 'pages/Study/store/StudyStore';
+import { IStorePoint } from 'pages/Study/store/StudyStore.helpers';
 import { useState } from 'react';
 import { useSnackbar } from 'notistack';
 import { Warning } from '@mui/icons-material';
+
+/** True if this row is a coordinate triple the user (or API) has actually set. */
+const pointHasCompleteCoordinates = (p: IStorePoint) =>
+    [p.x, p.y, p.z].every((v) => {
+        if (v === undefined || v === null) return false;
+        const s = String(v).trim();
+        if (s === '') return false;
+        return !Number.isNaN(Number(s));
+    });
+
+/**
+ * The store adds a blank placeholder row when the API returns no points (initPointIfEmpty),
+ * so we cannot use points.length === 0. Treat "has coordinates" as persisted rows or any full x,y,z triple.
+ */
+const analysisHasUsableCoordinates = (points: IStorePoint[] | null) =>
+    !!points?.some((p) => p.isNew === false || pointHasCompleteCoordinates(p));
 
 const EditStudyAnalysisPoints: React.FC<{ analysisId?: string }> = (props) => {
     const navigate = useNavigate();
     const projectId = useProjectId();
     const { enqueueSnackbar } = useSnackbar();
     const [relegateExtractionStudyDialogState, setRelegateExtractionStudyDialogState] = useState(false);
+    const points = useStudyAnalysisPoints(props.analysisId) as IStorePoint[] | null;
+    const showRelegateCoordinatesLink = !analysisHasUsableCoordinates(points);
 
     const handleRelegateExtractionStudy = (confirm: boolean) => {
         if (confirm) {
@@ -44,26 +63,28 @@ const EditStudyAnalysisPoints: React.FC<{ analysisId?: string }> = (props) => {
                         <HelpIcon color="primary" />
                     </Tooltip>
                 </Box>
-                <Box sx={{ marginLeft: { xs: 0, md: 'auto' } }}>
-                    <RelegateExtractionStudyDialog
-                        isOpen={relegateExtractionStudyDialogState}
-                        onCloseDialog={handleRelegateExtractionStudy}
-                    />
-                    <Link
-                        variant="body2"
-                        underline="hover"
-                        sx={{
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            color: 'secondary.dark',
-                        }}
-                        onClick={() => setRelegateExtractionStudyDialogState(true)}
-                    >
-                        <Warning sx={{ fontSize: '16px', marginRight: '4px' }} />I couldn't find coordinates for this
-                        study
-                    </Link>
-                </Box>
+                {showRelegateCoordinatesLink && (
+                    <Box sx={{ marginLeft: { xs: 0, md: 'auto' } }}>
+                        <RelegateExtractionStudyDialog
+                            isOpen={relegateExtractionStudyDialogState}
+                            onCloseDialog={handleRelegateExtractionStudy}
+                        />
+                        <Link
+                            variant="body2"
+                            underline="hover"
+                            sx={{
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                color: 'secondary.dark',
+                            }}
+                            onClick={() => setRelegateExtractionStudyDialogState(true)}
+                        >
+                            <Warning sx={{ fontSize: '16px', marginRight: '4px' }} />I couldn't find coordinates for
+                            this study
+                        </Link>
+                    </Box>
+                )}
             </Box>
             <EditStudyAnalysisPointSpaceAndStatistic analysisId={props.analysisId} />
             <EditStudyAnalysisPointsHotTable analysisId={props.analysisId} />
