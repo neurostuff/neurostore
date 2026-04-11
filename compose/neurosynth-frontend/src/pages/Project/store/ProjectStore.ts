@@ -502,6 +502,22 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
 
             get().updateProjectInDBDebounced();
         },
+        updateCurationImportName(curationImportId, name) {
+            set((state) => ({
+                ...state,
+                provenance: {
+                    ...state.provenance,
+                    curationMetadata: {
+                        ...state.provenance.curationMetadata,
+                        imports: (state.provenance.curationMetadata.imports || []).map((imp) =>
+                            imp.id === curationImportId ? { ...imp, name } : imp
+                        ),
+                    },
+                },
+            }));
+
+            get().updateProjectInDBDebounced();
+        },
         updateExclusionTag: (exclusionIdToUpdate, newName) => {
             set((state) => {
                 return {
@@ -805,6 +821,7 @@ export const useHandleCurationDrag = () => useProjectStore((state) => state.hand
 export const useCreateNewCurationInfoTag = () => useProjectStore((state) => state.createNewInfoTag);
 export const useUpdateCurationColumns = () => useProjectStore((state) => state.updateCurationColumns);
 export const useCreateNewCurationImport = () => useProjectStore((state) => state.createNewCurationImport);
+export const useUpdateCurationImportName = () => useProjectStore((state) => state.updateCurationImportName);
 export const useDeleteCurationImport = () => useProjectStore((state) => state.deleteCurationImport);
 export const useAddNewCurationStubs = () => useProjectStore((state) => state.addNewStubs);
 export const useUpdateStubField = () => useProjectStore((state) => state.updateStubField);
