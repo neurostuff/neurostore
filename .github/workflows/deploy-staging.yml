@@ -28,7 +28,11 @@ jobs:
 
       - name: Update administrative repo checkout
         run: |
-          ssh "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" '
+          ssh \
+            -o ServerAliveInterval=30 \
+            -o ServerAliveCountMax=10 \
+            -o TCPKeepAlive=yes \
+            "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" '
             set -e
             cd "${{ secrets.REPO_ROOT }}"
             git fetch --all --prune
@@ -39,7 +43,11 @@ jobs:
 
       - name: Deploy staging
         run: |
-          ssh "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" '
+          ssh \
+            -o ServerAliveInterval=30 \
+            -o ServerAliveCountMax=10 \
+            -o TCPKeepAlive=yes \
+            "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" '
             set -e
             /bin/bash "${{ secrets.REPO_ROOT }}/scripts/deploy/deploy_environment.sh" \
               --track staging \
