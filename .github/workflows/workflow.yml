@@ -232,11 +232,20 @@ jobs:
         run: |
           set -o pipefail
           docker compose pull store_redis
-          docker compose up -d --no-build store-pgsql17 store_redis
+          docker compose up -d --wait --no-build store-pgsql17 store_redis
       - 
         name: Abort if compose failed
         if: ${{ steps.spin_up_backend.outcome == 'failure' }}
         run: exit 1
+      -
+        name: Show container status
+        run: docker compose ps
+      -
+        name: Assert Postgres Healthy
+        run: |
+          container_id="$(docker compose ps -q store-pgsql17)"
+          test -n "${container_id}"
+          test "$(docker inspect -f '{{.State.Health.Status}}' "${container_id}")" = "healthy"
       - 
         name: Create Test Database
         run: |
@@ -301,11 +310,20 @@ jobs:
         run: |
           set -o pipefail
           docker compose pull store_redis
-          docker compose up -d --no-build store-pgsql17 store_redis
+          docker compose up -d --wait --no-build store-pgsql17 store_redis
       -
         name: Abort if compose failed
         if: ${{ steps.spin_up_worker_test_deps.outcome == 'failure' }}
         run: exit 1
+      -
+        name: Show container status
+        run: docker compose ps
+      -
+        name: Assert Postgres Healthy
+        run: |
+          container_id="$(docker compose ps -q store-pgsql17)"
+          test -n "${container_id}"
+          test "$(docker inspect -f '{{.State.Health.Status}}' "${container_id}")" = "healthy"
       -
         name: Create Test Database
         run: |
@@ -362,7 +380,16 @@ jobs:
         docker compose \
           -f docker-compose.yml \
           -f docker-compose.dev.yml \
-          up -d --no-build
+          up -d --wait --no-build
+    -
+      name: Show container status
+      run: docker compose ps
+    -
+      name: Assert Postgres Healthy
+      run: |
+        container_id="$(docker compose ps -q compose-pgsql17)"
+        test -n "${container_id}"
+        test "$(docker inspect -f '{{.State.Health.Status}}' "${container_id}")" = "healthy"
     -
       name: Create Test Database
       run: |
