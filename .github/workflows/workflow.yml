@@ -216,6 +216,7 @@ jobs:
         name: load images
         uses: docker/bake-action@v6.0.0
         with:
+          targets: neurostore,store-pgsql17
           files: docker-compose.yml,docker-compose.dev.yml
           push: false
           load: true
@@ -223,8 +224,6 @@ jobs:
           source: "{{defaultContext}}:store"
           set: |
               neurostore.cache-from=type=gha,scope=cached-neurostore
-              store_nginx.cache-from=type=gha,scope=cached-store-nginx
-              store-pgsql.cache-from=type=gha,scope=cached-store-pgsql
               store-pgsql17.cache-from=type=gha,scope=cached-store-pgsql17
       - 
         name: spin up backend
@@ -232,12 +231,8 @@ jobs:
         continue-on-error: true
         run: |
           set -o pipefail
-          docker network inspect nginx-proxy >/dev/null 2>&1 || docker network create nginx-proxy
-          docker compose pull store_redis store-pghero store-grafana
-          docker compose \
-            -f docker-compose.yml \
-            -f docker-compose.dev.yml \
-            up -d --no-build
+          docker compose pull store_redis
+          docker compose up -d --no-build store-pgsql17 store_redis
       - 
         name: Abort if compose failed
         if: ${{ steps.spin_up_backend.outcome == 'failure' }}
@@ -267,6 +262,66 @@ jobs:
             --rm \
             neurostore \
             bash -c "python -m pytest neurostore/tests && python -m pytest --auth neurostore/tests/test_auth.py"
+
+  neurostore_worker_integration_tests:
+    runs-on: ubuntu-latest
+    needs: build_neurostore
+    defaults:
+      run:
+        working-directory: store
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          ref: ${{ inputs.pr_number && format('refs/pull/{0}/head', inputs.pr_number) || github.ref }}
+      -
+        name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      -
+        name: Configuration
+        run: |
+          cp .env.example .env
+      -
+        name: load images
+        uses: docker/bake-action@v6.0.0
+        with:
+          targets: neurostore,store-pgsql17
+          files: docker-compose.yml,docker-compose.dev.yml
+          push: false
+          load: true
+          workdir: store
+          source: "{{defaultContext}}:store"
+          set: |
+              neurostore.cache-from=type=gha,scope=cached-neurostore
+              store-pgsql17.cache-from=type=gha,scope=cached-store-pgsql17
+      -
+        name: spin up worker integration dependencies
+        id: spin_up_worker_test_deps
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          docker compose pull store_redis
+          docker compose up -d --no-build store-pgsql17 store_redis
+      -
+        name: Abort if compose failed
+        if: ${{ steps.spin_up_worker_test_deps.outcome == 'failure' }}
+        run: exit 1
+      -
+        name: Create Test Database
+        run: |
+          docker compose exec -T \
+          store-pgsql17 \
+          bash -lc "psql -U postgres -tAc \"SELECT 1 FROM pg_database WHERE datname = 'store_test_db'\" | grep -q 1 || psql -U postgres -c \"create database store_test_db\""
+      -
+        name: Worker CLI Integration Tests
+        run: |
+          docker compose run \
+            -e "APP_ENV=docker_test" \
+            --rm \
+            neurostore \
+            bash -c "python -m pytest neurostore/tests/test_worker_cli.py"
 
   neurosynth_compose_backend_tests:
     runs-on: ubuntu-latest
