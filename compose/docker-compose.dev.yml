@@ -15,4 +15,4 @@ services:
   
   compose_worker:
     volumes:
-      - ./neurosynth_compose:/usr/local/lib/python3.10/site-packages/neurosynth_compose
+      - ./neurosynth_compose:/usr/local/lib/python3.14/site-packages/neurosynth_compose
