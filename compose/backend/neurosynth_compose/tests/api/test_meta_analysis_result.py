@@ -8,8 +8,7 @@ from neurosynth_compose.models import (
 )
 
 
-def test_create_meta_analysis_result(session, db, app, auth_client, user_data):
-    meta_analysis = db.session.execute(select(MetaAnalysis)).scalars().first()
+def _create_meta_analysis_result(auth_client, meta_analysis):
     headers = {"Compose-Upload-Key": meta_analysis.run_key}
     data = {
         "studyset_snapshot": {"name": "my studyset"},
@@ -17,9 +16,14 @@ def test_create_meta_analysis_result(session, db, app, auth_client, user_data):
         "meta_analysis_id": meta_analysis.id,
     }
     auth_client.token = None
+    return auth_client.post("/api/meta-analysis-results", data=data, headers=headers)
+
+
+def test_create_meta_analysis_result(session, db, app, auth_client, user_data):
+    meta_analysis = db.session.execute(select(MetaAnalysis)).scalars().first()
     # project should be a draft before running
     assert meta_analysis.project.draft is True
-    resp = auth_client.post("/api/meta-analysis-results", data=data, headers=headers)
+    resp = _create_meta_analysis_result(auth_client, meta_analysis)
     # project should be not be a draft after running
     assert meta_analysis.project.draft is False
     assert resp.status_code == 200
@@ -63,6 +67,30 @@ def test_create_meta_analysis_result_no_snapshots(session, db, auth_client, user
         )
 
         assert resp.status_code == 200
+
+
+def test_get_meta_analysis_result_detail(session, db, auth_client, user_data):
+    meta_analysis = db.session.execute(select(MetaAnalysis)).scalars().first()
+    create_resp = _create_meta_analysis_result(auth_client, meta_analysis)
+    assert create_resp.status_code == 200
+    result_id = create_resp.json["id"]
+
+    get_resp = auth_client.get(f"/api/meta-analysis-results/{result_id}")
+    assert get_resp.status_code == 200
+    assert get_resp.json["id"] == result_id
+    assert get_resp.json["meta_analysis_id"] == meta_analysis.id
+
+
+def test_get_meta_analysis_results_list(session, db, auth_client, user_data):
+    meta_analysis = db.session.execute(select(MetaAnalysis)).scalars().first()
+    create_resp = _create_meta_analysis_result(auth_client, meta_analysis)
+    assert create_resp.status_code == 200
+    result_id = create_resp.json["id"]
+
+    list_resp = auth_client.get("/api/meta-analysis-results")
+    assert list_resp.status_code == 200
+    assert list_resp.json["metadata"]["total_count"] >= 1
+    assert any(row["id"] == result_id for row in list_resp.json["results"])
 
 
 def test_put_meta_analysis_result_with_celery(

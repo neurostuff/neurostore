@@ -257,35 +257,6 @@ def _meta_analysis_result_query_options():
                 NeurostoreAnalysis.status,
             )
         ),
-        joinedload(MetaAnalysisResult.studyset_snapshot).load_only(
-            Studyset.id,
-            Studyset.created_at,
-            Studyset.updated_at,
-            Studyset.user_id,
-            Studyset.snapshot,
-            Studyset.neurostore_id,
-            Studyset.version,
-        ),
-        joinedload(MetaAnalysisResult.annotation_snapshot).load_only(
-            Annotation.id,
-            Annotation.created_at,
-            Annotation.updated_at,
-            Annotation.user_id,
-            Annotation.snapshot,
-            Annotation.neurostore_id,
-            Annotation.cached_studyset_id,
-        ),
-        joinedload(MetaAnalysisResult.specification_snapshot).load_only(
-            Specification.id,
-            Specification.created_at,
-            Specification.updated_at,
-            Specification.user_id,
-            Specification.type,
-            Specification.estimator,
-            Specification.filter,
-            Specification.database_studyset,
-            Specification.corrector,
-        ),
     )
 
 
