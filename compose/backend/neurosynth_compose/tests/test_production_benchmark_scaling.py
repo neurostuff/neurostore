@@ -117,10 +117,8 @@ def test_extract_profile_functions_reads_thread_aware_json(tmp_path):
 
     assert rows == [
         {
-            "function": (
-                "/usr/local/lib/python3.14/site-packages/neurosynth_compose"
-                "/resources/data_views/meta_analyses_view.py:42(search)",
-            ),
+            "function": "/usr/local/lib/python3.14/site-packages/neurosynth_compose"
+            "/resources/data_views/meta_analyses_view.py:42(search)",
             "primitive_calls": 1,
             "total_calls": 1,
             "self_seconds": 0.1,
