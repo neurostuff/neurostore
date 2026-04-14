@@ -1,5 +1,6 @@
-from neurosynth_compose.models import MetaAnalysis, MetaAnalysisResult, User
 from sqlalchemy import select
+
+from neurosynth_compose.models import MetaAnalysis, MetaAnalysisResult, User
 
 
 def test_get_meta_analyses(session, app, auth_client, user_data, db):

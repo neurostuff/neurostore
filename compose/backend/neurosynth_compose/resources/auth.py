@@ -3,13 +3,14 @@ from contextlib import contextmanager
 from urllib.request import urlopen
 
 from connexion.exceptions import OAuthProblem
+from connexion.security import NO_VALUE
 from flask import current_app, has_app_context
 from jose import jwt
+from sqlalchemy import select
 from starlette.responses import JSONResponse
 from werkzeug.local import LocalProxy
-from connexion.security import NO_VALUE
-from ..database import db
-from sqlalchemy import select
+
+from neurosynth_compose.database import db
 
 
 def _oauth_problem(detail):
@@ -125,7 +126,7 @@ def verify_key(run_key):
         return NO_VALUE
 
     with _ensure_app_context():
-        from ..models import MetaAnalysis
+        from neurosynth_compose.models import MetaAnalysis
 
         meta_analysis = db.session.execute(
             select(MetaAnalysis).where(MetaAnalysis.run_key == run_key)

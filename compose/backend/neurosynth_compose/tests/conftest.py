@@ -1,35 +1,33 @@
-from unittest.mock import patch
-
 import copy
 import itertools
+import json
+import pathlib
+from os import environ
+from os.path import isfile
+from unittest.mock import patch
 
 import flask_sqlalchemy
-import json
-from os.path import isfile
-from os import environ
-import pathlib
-
-from auth0.authentication import GetToken
 import pytest
-from nimare.results import MetaResult
 import sqlalchemy as sa
+from auth0.authentication import GetToken
+from nimare.results import MetaResult
 from requests.exceptions import HTTPError
 from sqlalchemy import select
 
-from neurosynth_compose.ingest.neurostore import create_meta_analyses
-from neurosynth_compose.models.analysis import generate_id
 from neurosynth_compose.database import db as _db
+from neurosynth_compose.ingest.neurostore import create_meta_analyses
 from neurosynth_compose.models import (
-    User,
-    Specification,
-    Studyset,
     Annotation,
-    MetaAnalysis,
-    StudysetReference,
     AnnotationReference,
+    MetaAnalysis,
     NeurostoreStudy,
     Project,
+    Specification,
+    Studyset,
+    StudysetReference,
+    User,
 )
+from neurosynth_compose.models.analysis import generate_id
 
 # Patch Flask-SQLAlchemy teardown to ignore AttributeError on session.remove()
 orig_teardown_session = flask_sqlalchemy.SQLAlchemy._teardown_session
@@ -62,10 +60,13 @@ def mock_create_neurovault_collection():
     if not hasattr(set_collection_id, "counter"):
         set_collection_id.counter = itertools.count(10000)
     with patch(
-        "neurosynth_compose.resources.analysis.create_neurovault_collection"
-    ) as mock_func:
-        mock_func.side_effect = set_collection_id
-        yield mock_func
+        "neurosynth_compose.resources.data_views.meta_analyses_view.create_neurovault_collection"
+    ) as mock_meta_view, patch(
+        "neurosynth_compose.resources.resource_services.create_neurovault_collection"
+    ) as mock_resource_service:
+        mock_meta_view.side_effect = set_collection_id
+        mock_resource_service.side_effect = set_collection_id
+        yield mock_meta_view
 
 
 # https://github.com/pytest-dev/pytest/issues/363#issuecomment-406536200
@@ -250,9 +251,9 @@ def mock_ns(monkeysession):
         "neurosynth_compose.resources.neurostore.neurostore_session", mock_ns_session
     )
     monkeysession.setattr(
-        "neurosynth_compose.resources.analysis.neurostore_session", mock_ns_session
+        "neurosynth_compose.resources.project_cloning.neurostore_session",
+        mock_ns_session,
     )
-    # Remove patch for tasks, only patch neurostore.neurostore_session
 
 
 """
@@ -265,7 +266,7 @@ def app(mock_auth):
     """Session-wide test `Flask` application."""
     environ.setdefault("APP_ENV", "testing")
 
-    from .. import create_app
+    from neurosynth_compose import create_app
 
     _app = create_app()
     # _app.config["SQLALCHEMY_ECHO"] = True
@@ -297,7 +298,7 @@ def db(app):
 
 @pytest.fixture(scope="session")
 def celery_app(app):
-    from ..core import celery_app as prod_celery_app
+    from neurosynth_compose.core import celery_app as prod_celery_app
 
     # Clone the production Celery app for testing
     test_celery = prod_celery_app
@@ -353,7 +354,7 @@ def auth_client(auth_clients):
 @pytest.fixture(scope="function")
 def auth_clients(mock_add_users, app):
     """Return authorized client wrapper"""
-    from .request_utils import Client
+    from neurosynth_compose.tests.request_utils import Client
 
     tokens = mock_add_users
     clients = []
@@ -667,10 +668,11 @@ def user_data(app, db, mock_add_users, session):
 
 @pytest.fixture(scope="function")
 def meta_analysis_results(app, db, user_data, mock_add_users):
-    from nimare.workflows.cbma import CBMAWorkflow
     from nimare.diagnostics import FocusCounter
-    from ..resources.executor import process_bundle
-    from ..schemas import MetaAnalysisSchema
+    from nimare.workflows.cbma import CBMAWorkflow
+
+    from neurosynth_compose.resources.executor import process_bundle
+    from neurosynth_compose.schemas import MetaAnalysisSchema
 
     results = {}
     for user_info in mock_add_users.values():

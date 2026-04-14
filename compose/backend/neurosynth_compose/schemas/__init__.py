@@ -1,26 +1,25 @@
-from .analysis import (
+from neurosynth_compose.schemas.analysis import (
+    AnnotationReferenceSchema,
+    AnnotationSchema,
     ConditionSchema,
-    TagSchema,
-    SpecificationConditionSchema,
-    MetaAnalysisSchema,
+    MetaAnalysisJobLogSchema,
+    MetaAnalysisJobRequestSchema,
+    MetaAnalysisJobResponseSchema,
     MetaAnalysisResultSchema,
+    MetaAnalysisSchema,
+    NeurostoreStudySchema,
     NeurovaultCollectionSchema,
     NeurovaultFileSchema,
-    StudysetSchema,
-    StudysetReferenceSchema,
-    AnnotationSchema,
-    AnnotationReferenceSchema,
-    SpecificationSchema,
-    NeurostoreStudySchema,
     ProjectSchema,
     ResultInitSchema,
     ResultUploadSchema,
-    MetaAnalysisJobRequestSchema,
-    MetaAnalysisJobResponseSchema,
-    MetaAnalysisJobLogSchema,
+    SpecificationConditionSchema,
+    SpecificationSchema,
+    StudysetReferenceSchema,
+    StudysetSchema,
+    TagSchema,
 )
-from .users import UserSchema
-
+from neurosynth_compose.schemas.users import UserSchema
 
 __all__ = [
     "ConditionSchema",

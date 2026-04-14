@@ -5,18 +5,17 @@ import connexion
 from authlib.integrations.flask_client import OAuth
 from connexion.exceptions import OAuthProblem
 from connexion.resolver import MethodResolver
-from starlette.middleware.cors import CORSMiddleware
+from flask import Response, request
 from flask_admin import Admin, AdminIndexView
 from flask_admin.contrib.sqla import ModelView
 from flask_admin.theme import Bootstrap4Theme
-from flask import Response, request
+from flask_orjson import OrjsonProvider
+from starlette.middleware.cors import CORSMiddleware
 
-from .database import init_db
-from .config import resolve_config_object
-from .resources.auth import (
-    asgi_oauth_problem_handler,
-    init_app as init_auth,
-)
+from neurosynth_compose.config import resolve_config_object
+from neurosynth_compose.database import init_db
+from neurosynth_compose.resources.auth import asgi_oauth_problem_handler
+from neurosynth_compose.resources.auth import init_app as init_auth
 
 
 def _env_flag(name, default=False):
@@ -34,6 +33,7 @@ def create_app():
 
     app.config.from_object(resolve_config_object())
     app.config["DEBUG"] = _env_flag("DEBUG")
+    app.json = OrjsonProvider(app)
 
     cors_kwargs = dict(
         allow_origins=["*"],
@@ -52,6 +52,7 @@ def create_app():
     os.environ["APIKEYINFO_FUNC"] = app.config["APIKEYINFO_FUNC"]
 
     with app.app_context():
+        disable_response_validation = _env_flag("CONNEXION_DISABLE_RESPONSE_VALIDATION")
         connexion_app.add_api(
             openapi_path,
             base_path="/api",
@@ -59,7 +60,9 @@ def create_app():
             arguments={"title": "NeuroSynth API"},
             resolver=MethodResolver("neurosynth_compose.resources"),
             strict_validation=app.config["DEBUG"],
-            validate_responses=app.config["DEBUG"],
+            validate_responses=(
+                False if disable_response_validation else app.config["DEBUG"]
+            ),
         )
 
     oauth = OAuth(app)
@@ -78,22 +81,22 @@ def create_app():
 
     # Initialize Flask-Admin
     from neurosynth_compose.models import (
-        User,
-        Specification,
-        Studyset,
-        StudysetReference,
         Annotation,
         AnnotationReference,
         MetaAnalysis,
         MetaAnalysisResult,
+        NeurostoreAnalysis,
+        NeurostoreStudy,
         NeurovaultCollection,
         NeurovaultFile,
-        NeurostoreStudy,
-        NeurostoreAnalysis,
         Project,
+        Specification,
+        Studyset,
+        StudysetReference,
+        User,
     )
-    from neurosynth_compose.models.auth import Role
     from neurosynth_compose.models.analysis import Condition, SpecificationCondition
+    from neurosynth_compose.models.auth import Role
 
     def _get_admin_credentials():
         username = app.config.get("FLASK_ADMIN_USERNAME")

@@ -1,25 +1,26 @@
 """TODO: PLACE INTO THE NEUROSYNTH APP"""
 
-from sqlalchemy.orm import relationship, backref
-from sqlalchemy.sql import func
-from sqlalchemy.ext.associationproxy import association_proxy
-import shortuuid
 import secrets
 
-from neurosynth_compose.database import db
+import shortuuid
 from sqlalchemy import (
-    Column,
-    Text,
-    DateTime,
-    Table,
     JSON,
-    Float,
-    Integer,
     Boolean,
     CheckConstraint,
+    Column,
+    DateTime,
+    Float,
     ForeignKey,
     Index,
+    Integer,
+    Table,
+    Text,
 )
+from sqlalchemy.ext.associationproxy import association_proxy
+from sqlalchemy.orm import backref, relationship
+from sqlalchemy.sql import func
+
+from neurosynth_compose.database import db
 
 
 def generate_id():

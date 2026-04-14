@@ -6,6 +6,9 @@ import pytest
 from sqlalchemy import select
 
 from neurosynth_compose.models import MetaAnalysis, User
+from neurosynth_compose.resources import (
+    meta_analysis_jobs as meta_analysis_jobs_resource,
+)
 
 
 class FakeRedis:
@@ -14,6 +17,7 @@ class FakeRedis:
     def __init__(self):
         self._store = {}
         self._ttl = {}
+        self._sets = {}
 
     def setex(self, key, ttl, value):
         if isinstance(value, str):
@@ -31,6 +35,24 @@ class FakeRedis:
     def flushall(self):
         self._store.clear()
         self._ttl.clear()
+        self._sets.clear()
+
+    def sadd(self, key, *values):
+        bucket = self._sets.setdefault(key, set())
+        bucket.update(values)
+
+    def smembers(self, key):
+        return set(self._sets.get(key, set()))
+
+    def srem(self, key, *values):
+        bucket = self._sets.get(key)
+        if bucket is None:
+            return
+        for value in values:
+            bucket.discard(value)
+
+    def expire(self, key, ttl):
+        self._ttl[key] = ttl
 
     def scan_iter(self, match=None):
         match = match or "*"
@@ -86,6 +108,10 @@ def _get_user_meta_analysis(db, auth_client):
         .scalars()
         .first()
     )
+
+
+def _store_job(payload):
+    meta_analysis_jobs_resource._store_job(payload["job_id"], payload)
 
 
 def test_submit_job_success(
@@ -199,20 +225,17 @@ def test_get_job_status_and_logs(
             "COMPOSE_RUNNER_LOGS_URL": "https://logs.example",
         }
     )
-    fake_job_store.setex(
-        f"compose:jobs:{job_id}",
-        60,
-        json.dumps(
-            {
-                "job_id": job_id,
-                "meta_analysis_id": "meta123",
-                "artifact_prefix": "job-prefix",
-                "status": "SUBMITTED",
-                "environment": "production",
-                "no_upload": False,
-                "created_at": datetime.now(timezone.utc).isoformat(),
-            }
-        ),
+    _store_job(
+        {
+            "job_id": job_id,
+            "meta_analysis_id": "meta123",
+            "artifact_prefix": "job-prefix",
+            "status": "SUBMITTED",
+            "environment": "production",
+            "no_upload": False,
+            "user_id": auth_client.username,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }
     )
 
     lambda_responses["set_response"](
@@ -278,17 +301,14 @@ def test_get_job_lambda_error(
     job_id = "arn:aws:states:us-east-1:123456789012:execution:StateMachine:job"
     app.config["COMPOSE_RUNNER_STATUS_URL"] = "https://status.example"
     app.config["COMPOSE_RUNNER_LOGS_URL"] = "https://logs.example"
-    fake_job_store.setex(
-        f"compose:jobs:{job_id}",
-        60,
-        json.dumps(
-            {
-                "job_id": job_id,
-                "meta_analysis_id": "meta123",
-                "artifact_prefix": "job-prefix",
-                "status": "SUBMITTED",
-            }
-        ),
+    _store_job(
+        {
+            "job_id": job_id,
+            "meta_analysis_id": "meta123",
+            "artifact_prefix": "job-prefix",
+            "status": "SUBMITTED",
+            "user_id": auth_client.username,
+        }
     )
 
     lambda_responses["set_response"]("https://status.example", RuntimeError("boom"))
@@ -338,11 +358,7 @@ def test_list_jobs_returns_only_current_user_jobs(
         ),
     ]
     for job_id, payload in job_entries:
-        fake_job_store.setex(
-            f"compose:jobs:{job_id}",
-            60,
-            json.dumps(payload),
-        )
+        _store_job(payload)
 
     response = user_client.get("/api/meta-analysis-jobs")
     assert response.status_code == 200

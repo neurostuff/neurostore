@@ -1,15 +1,23 @@
 import pytest
 from marshmallow import fields
-from ...models import User, Studyset, Annotation, Specification, MetaAnalysis, Project
-from ...schemas import (
-    StudysetSchema,
+from sqlalchemy import select
+
+from neurosynth_compose.models import (
+    Annotation,
+    MetaAnalysis,
+    Project,
+    Specification,
+    Studyset,
+    User,
+)
+from neurosynth_compose.schemas import (
     AnnotationSchema,
-    SpecificationSchema,
     MetaAnalysisSchema,
     ProjectSchema,
+    SpecificationSchema,
+    StudysetSchema,
 )
-from ...schemas.analysis import StringOrNested
-from sqlalchemy import select
+from neurosynth_compose.schemas.analysis import StringOrNested
 
 
 @pytest.mark.parametrize(
