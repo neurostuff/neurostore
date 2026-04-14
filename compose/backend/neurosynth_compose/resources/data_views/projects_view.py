@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from functools import lru_cache
 
+import orjson
 from flask import request
 from marshmallow.exceptions import ValidationError
-from sqlalchemy import select, update
+from sqlalchemy import Text, cast, func, select, update
 from sqlalchemy.orm import joinedload, load_only, selectinload
 from webargs import fields
 from webargs.flaskparser import parser
@@ -32,6 +33,8 @@ from neurosynth_compose.schemas import (  # noqa: F401
 )
 from neurosynth_compose.schemas.analysis import NS_BASE
 
+_RAW_PROVENANCE_UNSET = object()
+
 
 @lru_cache(maxsize=None)
 def _project_list_query_options(info: bool):
@@ -54,7 +57,6 @@ def _project_list_query_options(info: bool):
             Project.user_id,
             Project.name,
             Project.description,
-            Project.provenance,
             Project.public,
             Project.draft,
         ),
@@ -96,7 +98,6 @@ def _project_detail_query_options(info: bool):
             Project.user_id,
             Project.name,
             Project.description,
-            Project.provenance,
             Project.public,
             Project.draft,
         ),
@@ -182,7 +183,31 @@ def _serialize_project_meta_analysis_info(record):
     }
 
 
-def serialize_project(record, *, info: bool):
+def _serialize_raw_provenance(raw_provenance_json):
+    if raw_provenance_json is None:
+        return None
+
+    if isinstance(raw_provenance_json, (dict, list)):
+        return raw_provenance_json
+
+    if isinstance(raw_provenance_json, memoryview):
+        raw_provenance_json = raw_provenance_json.tobytes()
+    elif isinstance(raw_provenance_json, str):
+        raw_provenance_json = raw_provenance_json.encode("utf-8")
+
+    if isinstance(raw_provenance_json, bytes):
+        return orjson.Fragment(raw_provenance_json)
+
+    return raw_provenance_json
+
+
+def serialize_project(record, *, info: bool, raw_provenance_json=_RAW_PROVENANCE_UNSET):
+    provenance = (
+        getattr(record, "provenance", None)
+        if raw_provenance_json is _RAW_PROVENANCE_UNSET
+        else _serialize_raw_provenance(raw_provenance_json)
+    )
+
     neurostore_study = _serialize_neurostore_study(
         getattr(record, "neurostore_study", None)
     )
@@ -199,7 +224,7 @@ def serialize_project(record, *, info: bool):
         "username": getattr(getattr(record, "user", None), "name", None),
         "name": getattr(record, "name", None),
         "description": getattr(record, "description", None),
-        "provenance": getattr(record, "provenance", None),
+        "provenance": provenance,
         "public": getattr(record, "public", None),
         "draft": getattr(record, "draft", None),
         "studyset": (
@@ -229,8 +254,16 @@ def serialize_project(record, *, info: bool):
     }
 
 
-def serialize_projects(records, *, info: bool):
-    return [serialize_project(record, info=info) for record in records]
+def serialize_projects(records, *, info: bool, provenance_map=None):
+    provenance_map = provenance_map or {}
+    return [
+        serialize_project(
+            record,
+            info=info,
+            raw_provenance_json=provenance_map.get(record.id, _RAW_PROVENANCE_UNSET),
+        )
+        for record in records
+    ]
 
 
 @view_maker
@@ -247,14 +280,18 @@ class ProjectsView(ObjectView, ListView):
 
     def load_query(self, args=None):
         args = args or {}
-        return select(Project).options(
-            *_project_list_query_options(bool(args.get("info")))
-        )
+        return select(
+            Project,
+            cast(Project.provenance, Text).label("_raw_provenance_json"),
+        ).options(*_project_list_query_options(bool(args.get("info"))))
 
     def load_object_query(self, id, args=None):
         args = args or {}
         return (
-            select(Project)
+            select(
+                Project,
+                cast(Project.provenance, Text).label("_raw_provenance_json"),
+            )
             .options(*_project_detail_query_options(bool(args.get("info"))))
             .where(Project.id == id)
         )
@@ -264,6 +301,50 @@ class ProjectsView(ObjectView, ListView):
 
     def serialize_records(self, records, args):
         return serialize_projects(records, info=bool(args.get("info")))
+
+    def finalize_search(self, query, args, *, count_query=None):
+        if count_query is None:
+            count_query = query
+        total = db.session.execute(
+            count_query.order_by(None).with_only_columns(
+                func.count(),
+                maintain_column_froms=True,
+            )
+        ).scalar_one()
+        page = args["page"]
+        page_size = args["page_size"]
+        rows = db.session.execute(query.offset((page - 1) * page_size).limit(page_size))
+        records = rows.all()
+        return make_json_response(
+            {
+                "metadata": {"total_count": total},
+                "results": [
+                    serialize_project(
+                        record,
+                        info=bool(args.get("info")),
+                        raw_provenance_json=raw_provenance_json,
+                    )
+                    for record, raw_provenance_json in records
+                ],
+            }
+        )
+
+    def get(self, id):
+        id = id.replace("\x00", "\ufffd")
+        args = parser.parse(getattr(self, "_user_args", {}), request, location="query")
+        row = db.session.execute(self.load_object_query(id, args=args)).first()
+        if row is None:
+            from flask import abort
+
+            abort(404)
+        record, raw_provenance_json = row
+        return make_json_response(
+            serialize_project(
+                record,
+                info=bool(args.get("info")),
+                raw_provenance_json=raw_provenance_json,
+            )
+        )
 
     def db_validation(self, data):
         project = db.session.execute(
