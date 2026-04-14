@@ -101,7 +101,8 @@ def is_user_admin(user=_UNSET):
     try:
         connexion.context.context["is_admin"] = is_admin
     except Exception:
-        pass
+        # Best-effort request-context cache write; authorization result is already computed.
+        ...
     try:
         setattr(user, "_is_admin", is_admin)
     except Exception:
