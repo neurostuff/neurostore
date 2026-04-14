@@ -20,9 +20,11 @@ def mock_add_users_pure():
 
 
 def test_decode_token(monkeypatch, mock_add_users_pure):
-    import types
     import json
+    import types
+
     from connexion.exceptions import OAuthProblem
+
     from neurosynth_compose.resources import auth
 
     # Patch urlopen to return a fake JWKS
@@ -78,7 +80,7 @@ def test_decode_token(monkeypatch, mock_add_users_pure):
 
 
 def test_creating_new_user_on_db(session, mock_add_users):
-    from ..request_utils import Client
+    from neurosynth_compose.tests.request_utils import Client
 
     token_info = mock_add_users
     user_name = "user1"  # user1 was not entered into database

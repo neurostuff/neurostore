@@ -6,7 +6,6 @@ Rename this file to config.py and set variables as needed.
 import os
 from pathlib import Path
 
-
 ENV_TO_CONFIG = {
     "dev": "DevelopmentConfig",
     "development": "DevelopmentConfig",

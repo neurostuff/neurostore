@@ -1,10 +1,11 @@
+from sqlalchemy import select
+
 from neurosynth_compose.models import (
     MetaAnalysis,
     MetaAnalysisResult,
-    NeurovaultCollection,
     NeurostoreAnalysis,
+    NeurovaultCollection,
 )
-from sqlalchemy import select
 
 
 def test_create_meta_analysis_result(session, db, app, auth_client, user_data):

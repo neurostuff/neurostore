@@ -1,10 +1,9 @@
-from flask_security import UserMixin, RoleMixin, SQLAlchemyUserDatastore
-from sqlalchemy import Table, Column, Text, ForeignKey, String, Boolean
-from sqlalchemy.orm import relationship, backref
+from flask_security import RoleMixin, SQLAlchemyUserDatastore, UserMixin
+from sqlalchemy import Boolean, Column, ForeignKey, String, Table, Text
+from sqlalchemy.orm import backref, relationship
 
 from neurosynth_compose.database import db
-from .analysis import BaseMixin
-
+from neurosynth_compose.models.analysis import BaseMixin
 
 roles_users = Table(
     "roles_users",

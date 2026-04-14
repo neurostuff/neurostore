@@ -2,7 +2,7 @@ import pytest
 from starlette.testclient import TestClient
 from werkzeug.routing import Rule
 
-from .request_utils import Client
+from neurosynth_compose.tests.request_utils import Client
 
 
 @pytest.fixture(scope="module")

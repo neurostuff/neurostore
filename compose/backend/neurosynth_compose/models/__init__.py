@@ -1,20 +1,19 @@
-from .analysis import (
-    Tag,
-    Specification,
-    Studyset,
-    StudysetReference,
+from neurosynth_compose.models.analysis import (
     Annotation,
     AnnotationReference,
     MetaAnalysis,
     MetaAnalysisResult,
+    NeurostoreAnalysis,
+    NeurostoreStudy,
     NeurovaultCollection,
     NeurovaultFile,
-    NeurostoreStudy,
-    NeurostoreAnalysis,
     Project,
+    Specification,
+    Studyset,
+    StudysetReference,
+    Tag,
 )
-
-from .auth import User, Role
+from neurosynth_compose.models.auth import Role, User
 
 __all__ = [
     "Condition",

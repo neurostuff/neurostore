@@ -1,8 +1,8 @@
-from neurosynth_compose.models import Project, MetaAnalysisResult, User
-from neurosynth_compose.schemas import MetaAnalysisSchema
 from sqlalchemy import select
 
-from ..conftest import MockNeurostoreSession
+from neurosynth_compose.models import MetaAnalysisResult, Project, User
+from neurosynth_compose.schemas import MetaAnalysisSchema
+from neurosynth_compose.tests.conftest import MockNeurostoreSession
 
 
 def test_get_all_projects(session, app, auth_client, user_data):

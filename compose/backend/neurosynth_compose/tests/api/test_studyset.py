@@ -1,6 +1,7 @@
-from ...models import User, Studyset
-from ...schemas import StudysetSchema
 from sqlalchemy import select
+
+from neurosynth_compose.models import Studyset, User
+from neurosynth_compose.schemas import StudysetSchema
 
 
 def test_get_studysets(session, auth_client, user_data):

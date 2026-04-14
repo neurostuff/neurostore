@@ -1,25 +1,26 @@
-from .analysis import (
-    ConditionsResource,
-    TagsView,
-    SpecificationConditionsResource,
-    MetaAnalysesView,
-    MetaAnalysisResultsView,
-    NeurovaultCollectionsView,
-    NeurovaultFilesView,
+from neurosynth_compose.resources.analysis import (
+    AnnotationReferencesResource,
     AnnotationsView,
-    StudysetsView,
+    ConditionsResource,
+    SpecificationConditionsResource,
     SpecificationsView,
     StudysetReferencesView,
-    AnnotationReferencesResource,
+    StudysetsView,
+    TagsView,
+)
+from neurosynth_compose.resources.data_views import (
+    MetaAnalysesView,
+    MetaAnalysisResultsView,
     NeurostoreStudiesView,
+    NeurovaultCollectionsView,
+    NeurovaultFilesView,
     ProjectsView,
 )
-
-from .users import UsersView
-from .meta_analysis_jobs import (
-    MetaAnalysisJobsResource,
+from neurosynth_compose.resources.meta_analysis_jobs import (
     MetaAnalysisJobResource,
+    MetaAnalysisJobsResource,
 )
+from neurosynth_compose.resources.users import UsersView
 
 __all__ = [
     "ConditionsResource",

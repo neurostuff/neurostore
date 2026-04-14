@@ -3,17 +3,17 @@ Ingest studies from Neurostore
 """
 
 import requests
-
-from ..models import (
-    Studyset,
-    Annotation,
-    Specification,
-    MetaAnalysis,
-    StudysetReference,
-    AnnotationReference,
-)
-from ..database import db, commit_session
 from sqlalchemy import select
+
+from neurosynth_compose.database import commit_session, db
+from neurosynth_compose.models import (
+    Annotation,
+    AnnotationReference,
+    MetaAnalysis,
+    Specification,
+    Studyset,
+    StudysetReference,
+)
 
 
 def ingest_neurostore(

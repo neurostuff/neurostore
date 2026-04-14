@@ -1,7 +1,6 @@
-from marshmallow import fields, Schema, utils, post_load, post_dump, pre_load
+from marshmallow import Schema, fields, post_dump, post_load, pre_load, utils
 
-from ..map_types import canonicalize_map_type, map_type_label
-
+from neurosynth_compose.map_types import canonicalize_map_type, map_type_label
 
 # neurovault api base URL
 NV_BASE = "https://neurovault.org/api"
