@@ -36,7 +36,7 @@ class ProjectCloneService:
             db.session.add(current_user)
             commit_session()
             return current_user
-        abort(401, description="user authentication required")
+        raise abort(401, description="user authentication required")
 
     def clone(self, source_id, *, copy_annotations):
         current_user = self.ensure_current_user()
