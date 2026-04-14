@@ -725,8 +725,11 @@ def _benchmark_case(
     profiling = None
     peak_memory_bytes = None
 
+    use_isolated_clients = client_ref is not None and not getattr(
+        client_ref.current, "client_flask", False
+    )
     original_client = client_ref.current if client_ref is not None else None
-    warmup_client = Client(token=TOKEN) if client_ref is not None else None
+    warmup_client = Client(token=TOKEN) if use_isolated_clients else None
     try:
         with _benchmark_case_rollback(enabled=rollback_after):
             if client_ref is not None and warmup_client is not None:
@@ -749,27 +752,33 @@ def _benchmark_case(
         sql_collector = _SqlTimingCollector(db.engine)
         profiler = _ThreadAwareProfiler() if index == 0 else None
         original_client = client_ref.current if client_ref is not None else None
-        profiled_client = (
-            Client(token=TOKEN) if client_ref is not None and profiler else None
-        )
 
         with _benchmark_case_rollback(enabled=rollback_after):
             with sql_collector:
                 started = perf_counter()
+
+                def _invoke_profiled_case():
+                    if client_ref is None:
+                        return fn(index) or {}
+                    if not use_isolated_clients:
+                        return fn(index) or {}
+                    profile_client = Client(token=TOKEN)
+                    previous_client = client_ref.current
+                    client_ref.current = profile_client
+                    try:
+                        return fn(index) or {}
+                    finally:
+                        client_ref.current = previous_client
+                        profile_client.close()
+
                 try:
-                    if client_ref is not None and profiled_client is not None:
-                        client_ref.current = profiled_client
                     if profiler is not None:
-                        last_metadata = profiler.profile_callable(
-                            lambda: fn(index) or {}
-                        )
+                        last_metadata = profiler.profile_callable(_invoke_profiled_case)
                     else:
                         last_metadata = fn(index) or {}
                 finally:
                     if client_ref is not None:
                         client_ref.current = original_client
-                    if profiled_client is not None:
-                        profiled_client.close()
                 durations.append(perf_counter() - started)
 
         if profiler is not None:
@@ -778,7 +787,7 @@ def _benchmark_case(
             )
 
     original_client = client_ref.current if client_ref is not None else None
-    memory_client = Client(token=TOKEN) if client_ref is not None else None
+    memory_client = Client(token=TOKEN) if use_isolated_clients else None
     try:
         with _benchmark_case_rollback(enabled=rollback_after):
             if client_ref is not None and memory_client is not None:
