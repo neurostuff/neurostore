@@ -1585,7 +1585,7 @@ def run(
                                         "project_provenance_stub_count": scaled_provenance_project[
                                             "project_provenance_stub_count"
                                         ],
-                                        "project_provenance_status_count": scaled_provenance_project[
+                                        "project_provenance_status_count": scaled_provenance_project[  # noqa: E501
                                             "project_provenance_status_count"
                                         ],
                                     }

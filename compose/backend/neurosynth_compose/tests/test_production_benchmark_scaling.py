@@ -85,7 +85,10 @@ def test_extract_profile_functions_reads_thread_aware_json(tmp_path):
                 "thread_count": 2,
                 "functions": [
                     {
-                        "filename": "/usr/local/lib/python3.11/site-packages/neurosynth_compose/resources/data_views/meta_analyses_view.py",
+                        "filename": (
+                            "/usr/local/lib/python3.14/site-packages/"
+                            "neurosynth_compose/resources/data_views/meta_analyses_view.py"
+                        ),
                         "line_number": 42,
                         "function_name": "search",
                         "primitive_calls": 1,
@@ -94,7 +97,10 @@ def test_extract_profile_functions_reads_thread_aware_json(tmp_path):
                         "cumulative_seconds": 0.3,
                     },
                     {
-                        "filename": "/usr/local/lib/python3.11/site-packages/neurosynth_compose/tests/request_utils.py",
+                        "filename": (
+                            "/usr/local/lib/python3.14/site-packages/"
+                            "neurosynth_compose/tests/request_utils.py"
+                        ),
                         "line_number": 12,
                         "function_name": "_make_request",
                         "primitive_calls": 1,
@@ -111,7 +117,10 @@ def test_extract_profile_functions_reads_thread_aware_json(tmp_path):
 
     assert rows == [
         {
-            "function": "/usr/local/lib/python3.11/site-packages/neurosynth_compose/resources/data_views/meta_analyses_view.py:42(search)",
+            "function": (
+                "/usr/local/lib/python3.14/site-packages/neurosynth_compose"
+                "/resources/data_views/meta_analyses_view.py:42(search)",
+            ),
             "primitive_calls": 1,
             "total_calls": 1,
             "self_seconds": 0.1,
