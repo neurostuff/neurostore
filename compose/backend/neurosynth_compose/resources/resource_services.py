@@ -9,11 +9,12 @@ from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from neurosynth_compose.database import db
+from neurosynth_compose.models import Annotation, Studyset
 from neurosynth_compose.models.analysis import (
-    Annotation,
+    SnapshotAnnotation,
     NeurovaultCollection,
     NeurovaultFile,
-    Studyset,
+    SnapshotStudyset,
     generate_id,
 )
 from neurosynth_compose.utils.snapshots import md5_of_snapshot
@@ -384,13 +385,13 @@ def ensure_canonical_studyset(
     ss_md5 = md5_of_snapshot(snapshot)
 
     canonical = session.execute(
-        select(Studyset).where(Studyset.md5 == ss_md5)
+        select(SnapshotStudyset).where(SnapshotStudyset.md5 == ss_md5)
     ).scalar_one_or_none()
 
     if canonical is None:
         new_id = generate_id()
         stmt = (
-            pg_insert(Studyset.__table__)
+            pg_insert(SnapshotStudyset.__table__)
             .values(
                 id=new_id,
                 snapshot=snapshot,
@@ -415,7 +416,7 @@ def ensure_canonical_studyset(
 
 
 def ensure_canonical_annotation(
-    session, snapshot, user_id=None, neurostore_id=None, cached_studyset_id=None
+    session, snapshot, user_id=None, neurostore_id=None, snapshot_studyset_id=None
 ):
     """Return the canonical Annotation for *snapshot*, inserting one if needed.
 
@@ -428,20 +429,20 @@ def ensure_canonical_annotation(
     ann_md5 = md5_of_snapshot(snapshot)
 
     canonical = session.execute(
-        select(Annotation).where(Annotation.md5 == ann_md5)
+        select(SnapshotAnnotation).where(SnapshotAnnotation.md5 == ann_md5)
     ).scalar_one_or_none()
 
     if canonical is None:
         new_id = generate_id()
         stmt = (
-            pg_insert(Annotation.__table__)
+            pg_insert(SnapshotAnnotation.__table__)
             .values(
                 id=new_id,
                 snapshot=snapshot,
                 md5=ann_md5,
                 user_id=user_id,
                 neurostore_id=neurostore_id,
-                cached_studyset_id=cached_studyset_id,
+                snapshot_studyset_id=snapshot_studyset_id,
             )
             .on_conflict_do_nothing(index_elements=["md5"])
         )

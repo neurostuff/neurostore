@@ -15,16 +15,18 @@ from neurosynth_compose.database import commit_session, db
 from neurosynth_compose.models.analysis import NeurostoreStudy  # noqa: F401
 from neurosynth_compose.models.analysis import NeurovaultFile  # noqa: F401
 from neurosynth_compose.models.analysis import (
-    Annotation,  # noqa: F401
+    SnapshotAnnotation,  # noqa: F401
     Condition,
     MetaAnalysis,
     MetaAnalysisResult,
     NeurostoreAnalysis,
+    NeurostoreAnnotation,
     NeurovaultCollection,
+    NeurostoreStudyset,
     Project,
     Specification,
     SpecificationCondition,
-    Studyset,
+    SnapshotStudyset,
     Tag,
 )
 from neurosynth_compose.models.auth import User
@@ -52,7 +54,9 @@ from neurosynth_compose.resources.view_core import ListView, ObjectView, view_ma
 from neurosynth_compose.schemas import (  # noqa: F401
     MetaAnalysisResultSchema,
     MetaAnalysisSchema,
+    NeurostoreAnnotationSchema,
     NeurostoreStudySchema,
+    NeurostoreStudysetSchema,
     NeurovaultCollectionSchema,
     NeurovaultFileSchema,
 )
@@ -62,33 +66,6 @@ from neurosynth_compose.schemas.analysis import NS_BASE
 @lru_cache(maxsize=None)
 def _meta_analysis_detail_nested_options():
     return (
-        joinedload(MetaAnalysis.studyset)
-        .load_only(
-            Studyset.id,
-            Studyset.created_at,
-            Studyset.updated_at,
-            Studyset.user_id,
-            Studyset.snapshot,
-            Studyset.neurostore_id,
-            Studyset.version,
-        )
-        .joinedload(Studyset.user)
-        .load_only(User.name),
-        joinedload(MetaAnalysis.annotation)
-        .load_only(
-            Annotation.id,
-            Annotation.created_at,
-            Annotation.updated_at,
-            Annotation.user_id,
-            Annotation.snapshot,
-            Annotation.neurostore_id,
-            Annotation.cached_studyset_id,
-        )
-        .joinedload(Annotation.user)
-        .load_only(User.name),
-        joinedload(MetaAnalysis.annotation)
-        .joinedload(Annotation.studyset)
-        .load_only(Studyset.id, Studyset.neurostore_id),
         joinedload(MetaAnalysis.specification)
         .load_only(
             Specification.id,
@@ -134,8 +111,6 @@ def _meta_analysis_list_query_options(nested: bool):
             MetaAnalysis.provenance,
             MetaAnalysis.specification_id,
             MetaAnalysis.project_id,
-            MetaAnalysis.cached_studyset_id,
-            MetaAnalysis.cached_annotation_id,
             MetaAnalysis.run_key,
         ),
         joinedload(MetaAnalysis.user).load_only(User.name),
@@ -163,15 +138,6 @@ def _meta_analysis_list_query_options(nested: bool):
             NeurostoreAnalysis.exception,
             NeurostoreAnalysis.traceback,
             NeurostoreAnalysis.status,
-        ),
-        joinedload(MetaAnalysis.studyset).load_only(
-            Studyset.id,
-            Studyset.neurostore_id,
-        ),
-        joinedload(MetaAnalysis.annotation).load_only(
-            Annotation.id,
-            Annotation.neurostore_id,
-            Annotation.cached_studyset_id,
         ),
     ]
     if nested:
@@ -193,8 +159,6 @@ def _meta_analysis_detail_query_options(nested: bool):
             MetaAnalysis.provenance,
             MetaAnalysis.specification_id,
             MetaAnalysis.project_id,
-            MetaAnalysis.cached_studyset_id,
-            MetaAnalysis.cached_annotation_id,
             MetaAnalysis.run_key,
         ),
         joinedload(MetaAnalysis.user).load_only(User.name),
@@ -222,24 +186,6 @@ def _meta_analysis_detail_query_options(nested: bool):
             NeurostoreAnalysis.exception,
             NeurostoreAnalysis.traceback,
             NeurostoreAnalysis.status,
-        ),
-        joinedload(MetaAnalysis.studyset).load_only(
-            Studyset.id,
-            Studyset.neurostore_id,
-            Studyset.created_at,
-            Studyset.updated_at,
-            Studyset.user_id,
-            Studyset.snapshot,
-            Studyset.version,
-        ),
-        joinedload(MetaAnalysis.annotation).load_only(
-            Annotation.id,
-            Annotation.neurostore_id,
-            Annotation.cached_studyset_id,
-            Annotation.created_at,
-            Annotation.updated_at,
-            Annotation.user_id,
-            Annotation.snapshot,
         ),
     ]
     if nested:
@@ -343,7 +289,9 @@ def _serialize_annotation(record):
     payload = {
         **_serialize_base_record(record),
         "snapshot": getattr(record, "snapshot", None),
-        "studyset": getattr(getattr(record, "studyset", None), "neurostore_id", None),
+        "studyset": getattr(
+            getattr(record, "snapshot_studyset", None), "neurostore_id", None
+        ),
     }
     if neurostore_id:
         payload["neurostore_id"] = neurostore_id
@@ -367,8 +315,8 @@ def _serialize_snapshots_from_results(results):
         entries.append(
             {
                 "result_id": getattr(result, "id", None),
-                "cached_studyset_id": ss_id,
-                "cached_annotation_id": ann_id,
+                "snapshot_studyset_id": ss_id,
+                "snapshot_annotation_id": ann_id,
             }
         )
     return entries
@@ -378,12 +326,12 @@ def serialize_meta_analysis(record, *, nested: bool):
     tags = getattr(record, "tags", None)
     results = getattr(record, "results", None)
     specification = getattr(record, "specification", None) if nested else None
-    studyset = getattr(record, "studyset", None)
-    annotation = getattr(record, "annotation", None)
+    neurostore_studyset_id = getattr(record, "neurostore_studyset_id", None)
+    neurostore_annotation_id = getattr(record, "neurostore_annotation_id", None)
     neurostore_analysis = getattr(record, "neurostore_analysis", None)
     neurostore_id = getattr(neurostore_analysis, "neurostore_id", None)
 
-    return {
+    output = {
         **_serialize_base_record(record),
         "name": getattr(record, "name", None),
         "description": getattr(record, "description", None),
@@ -407,19 +355,7 @@ def serialize_meta_analysis(record, *, nested: bool):
             if neurostore_analysis is None
             else _serialize_neurostore_analysis(neurostore_analysis)
         ),
-        "studyset": (
-            _serialize_studyset(studyset)
-            if nested
-            else getattr(studyset, "neurostore_id", None)
-        ),
-        "annotation": (
-            _serialize_annotation(annotation)
-            if nested
-            else getattr(annotation, "neurostore_id", None)
-        ),
         "project": getattr(record, "project_id", None),
-        "cached_studyset": getattr(getattr(record, "studyset", None), "id", None),
-        "cached_annotation": getattr(getattr(record, "annotation", None), "id", None),
         "run_key": getattr(record, "run_key", None),
         "snapshots": _serialize_snapshots_from_results(results),
         "results": [
@@ -432,6 +368,26 @@ def serialize_meta_analysis(record, *, nested: bool):
             else "/".join([NS_BASE, "analyses", neurostore_id])
         ),
     }
+
+    if hasattr(record, "neurostore_studyset_id"):
+        output["neurostore_studyset"] = (
+            NeurostoreStudysetSchema().dump(
+                db.session.get(NeurostoreStudyset, neurostore_studyset_id)
+            )
+            if nested and neurostore_studyset_id
+            else neurostore_studyset_id
+        )
+
+    if hasattr(record, "neurostore_annotation_id"):
+        output["neurostore_annotation"] = (
+            NeurostoreAnnotationSchema().dump(
+                db.session.get(NeurostoreAnnotation, neurostore_annotation_id)
+            )
+            if nested and neurostore_annotation_id
+            else neurostore_annotation_id
+        )
+
+    return output
 
 
 def serialize_meta_analyses(records, *, nested: bool):
@@ -446,8 +402,8 @@ def serialize_meta_analysis_result(record):
 class MetaAnalysesView(ObjectView, ListView):
     _search_fields = ("name", "description")
     _nested = {
-        "studyset": "StudysetsView",
-        "annotation": "AnnotationsView",
+        "neurostore_studyset": "NeurostoreStudysetsView",
+        "neurostore_annotation": "NeurostoreAnnotationsView",
         "tags": "TagsView",
         "results": "MetaAnalysisResultsView",
     }
@@ -572,8 +528,8 @@ class MetaAnalysisResultsView(ObjectView, ListView):
     _nested = {
         "neurovault_collection": "NeurovaultCollectionsView",
         "specification_snapshot": "SpecificationsView",
-        "cached_studyset_id": "StudysetsView",
-        "cached_annotation_id": "AnnotationsView",
+        "studyset_snapshot_id": "SnapshotStudysetsView",
+        "annotation_snapshot_id": "SnapshotAnnotationsView",
     }
 
     def load_query(self, args=None):
@@ -625,9 +581,7 @@ class MetaAnalysisResultsView(ObjectView, ListView):
                 # If a snapshot ID was provided directly, look up the existing
                 # canonical row rather than creating a new one.
                 if ss_id_input is not None:
-                    canonical_ss = db.session.get(Studyset, ss_id_input)
-                    if canonical_ss is not None:
-                        meta.studyset = canonical_ss
+                    canonical_ss = db.session.get(SnapshotStudyset, ss_id_input)
 
                 # Unwrap possible Pluck-wrapped payloads produced by
                 # Marshmallow `Pluck` fields which may nest the payload
@@ -643,13 +597,9 @@ class MetaAnalysisResultsView(ObjectView, ListView):
                     canonical_ss = ensure_canonical_studyset(
                         db.session, ss_payload, user_id=meta.user_id
                     )
-                    if canonical_ss is not None:
-                        meta.studyset = canonical_ss
 
                 if ann_id_input is not None:
-                    canonical_ann = db.session.get(Annotation, ann_id_input)
-                    if canonical_ann is not None:
-                        meta.annotation = canonical_ann
+                    canonical_ann = db.session.get(SnapshotAnnotation, ann_id_input)
 
                 if ann_payload is not None and canonical_ann is None:
                     if (
@@ -663,12 +613,10 @@ class MetaAnalysisResultsView(ObjectView, ListView):
                         db.session,
                         ann_payload,
                         user_id=meta.user_id,
-                        cached_studyset_id=getattr(meta.studyset, "id", None),
+                        snapshot_studyset_id=(
+                            canonical_ss.id if canonical_ss is not None else None
+                        ),
                     )
-                    if canonical_ann is not None:
-                        meta.annotation = canonical_ann
-
-                db.session.add(meta)
 
             # Resolve a current_user for mutation context. Prefer the
             # Connexion-provided token_info (upload-key flow), falling back
@@ -789,7 +737,7 @@ class MetaAnalysisResultsView(ObjectView, ListView):
 
         # Also allow updating meta-analysis snapshots via PUT body or form fields.
         # Accept JSON body or form-encoded JSON strings under
-        # `cached_studyset` and `cached_annotation` keys.
+        # `studyset_snapshot` and `annotation_snapshot` keys.
         try:
             json_body = request.get_json(silent=True) or {}
         except Exception:
@@ -800,10 +748,10 @@ class MetaAnalysisResultsView(ObjectView, ListView):
         ss_id_input = None
         ann_id_input = None
         if isinstance(json_body, dict):
-            ss_payload = json_body.get("cached_studyset")
-            ann_payload = json_body.get("cached_annotation")
-            ss_id_input = json_body.get("cached_studyset_id")
-            ann_id_input = json_body.get("cached_annotation_id")
+            ss_payload = json_body.get("studyset_snapshot")
+            ann_payload = json_body.get("annotation_snapshot")
+            ss_id_input = json_body.get("studyset_snapshot_id")
+            ann_id_input = json_body.get("annotation_snapshot_id")
 
         def _parse_form_field(key):
             val = request.form.get(key)
@@ -815,13 +763,13 @@ class MetaAnalysisResultsView(ObjectView, ListView):
                 return None
 
         if ss_payload is None:
-            ss_payload = _parse_form_field("cached_studyset")
+            ss_payload = _parse_form_field("studyset_snapshot")
         if ann_payload is None:
-            ann_payload = _parse_form_field("cached_annotation")
+            ann_payload = _parse_form_field("annotation_snapshot")
         if ss_id_input is None:
-            ss_id_input = request.form.get("cached_studyset_id")
+            ss_id_input = request.form.get("studyset_snapshot_id")
         if ann_id_input is None:
-            ann_id_input = request.form.get("cached_annotation_id")
+            ann_id_input = request.form.get("annotation_snapshot_id")
 
         meta = getattr(result, "meta_analysis", None)
         if meta:
@@ -830,9 +778,8 @@ class MetaAnalysisResultsView(ObjectView, ListView):
 
             # ID-reference path: link to an existing snapshot by ID.
             if ss_id_input is not None:
-                canonical_ss = db.session.get(Studyset, ss_id_input)
+                canonical_ss = db.session.get(SnapshotStudyset, ss_id_input)
                 if canonical_ss is not None:
-                    meta.studyset = canonical_ss
                     result.studyset_snapshot_id = canonical_ss.id
 
             # JSON-payload path: create/deduplicate a new snapshot.
@@ -847,13 +794,11 @@ class MetaAnalysisResultsView(ObjectView, ListView):
                     db.session, ss_payload, user_id=meta.user_id
                 )
                 if canonical_ss is not None:
-                    meta.studyset = canonical_ss
                     result.studyset_snapshot_id = canonical_ss.id
 
             if ann_id_input is not None:
-                canonical_ann = db.session.get(Annotation, ann_id_input)
+                canonical_ann = db.session.get(SnapshotAnnotation, ann_id_input)
                 if canonical_ann is not None:
-                    meta.annotation = canonical_ann
                     result.annotation_snapshot_id = canonical_ann.id
 
             if ann_payload is not None and canonical_ann is None:
@@ -867,13 +812,14 @@ class MetaAnalysisResultsView(ObjectView, ListView):
                     db.session,
                     ann_payload,
                     user_id=meta.user_id,
-                    cached_studyset_id=getattr(meta.studyset, "id", None),
+                    snapshot_studyset_id=(
+                        canonical_ss.id if canonical_ss is not None else None
+                    ),
                 )
                 if canonical_ann is not None:
-                    meta.annotation = canonical_ann
                     result.annotation_snapshot_id = canonical_ann.id
 
-            db.session.add(meta)
+            db.session.add(result)
             commit_session()
 
         return make_json_response(serialize_meta_analysis_result(result))

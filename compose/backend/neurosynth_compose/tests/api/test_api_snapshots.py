@@ -18,15 +18,15 @@ def _post_result(auth_client, meta_analysis, ss_payload, ann_payload):
     auth_client.token = None
     headers = {"Compose-Upload-Key": meta_analysis.run_key}
     data = {
-        "cached_studyset": ss_payload,
-        "cached_annotation": ann_payload,
+        "snapshot_studyset": ss_payload,
+        "snapshot_annotation": ann_payload,
         "meta_analysis_id": meta_analysis.id,
     }
     return auth_client.post("/api/meta-analysis-results", data=data, headers=headers)
 
 
 def test_dedup_same_snapshot_one_studyset_row(session, db, auth_client, user_data):
-    """POSTing identical cached_studyset payloads must converge on a single Studyset row."""
+    """POSTing identical snapshot_studyset payloads must converge on a single Studyset row."""
     meta = db.session.execute(select(MetaAnalysis)).scalars().first()
     payload = {"study": "alpha", "n": 42}
 
@@ -59,8 +59,8 @@ def test_snapshot_history_appended_on_result_creation(
     assert len(meta.snapshots) >= 1
 
     entry = meta.snapshots[-1]
-    assert "cached_studyset_id" in entry
-    assert "cached_annotation_id" in entry
+    assert "snapshot_studyset_id" in entry
+    assert "snapshot_annotation_id" in entry
     assert "result_id" in entry
     assert entry["result_id"] == resp.json["id"]
 
@@ -95,7 +95,7 @@ def test_snapshot_history_entry_per_result_even_for_same_md5(
     assert len(rows) == 1, "Canonical Studyset row should be deduplicated"
     canonical_id = rows[0].id
     assert all(
-        entry.get("cached_studyset_id") == canonical_id for entry in entries[-2:]
+        entry.get("snapshot_studyset_id") == canonical_id for entry in entries[-2:]
     )
 
 

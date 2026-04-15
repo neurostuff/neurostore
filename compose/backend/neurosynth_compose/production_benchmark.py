@@ -23,21 +23,19 @@ from sqlalchemy import event, func, inspect, select, text
 
 from neurosynth_compose.database import db
 from neurosynth_compose.models.analysis import (
-    Annotation,
-    AnnotationReference,
+    SnapshotAnnotation,
+    NeurostoreAnnotation,
     MetaAnalysis,
     MetaAnalysisResult,
     NeurovaultCollection,
     Project,
     Specification,
-    Studyset,
-    StudysetReference,
+    SnapshotStudyset,
+    NeurostoreStudyset as NeurostoreStudyset,
 )
 from neurosynth_compose.models.auth import User
 from flask import current_app
-from neurosynth_compose.resources.data_views import (
-    meta_analysis_jobs as meta_analysis_jobs_resource,
-)
+from neurosynth_compose.resources.data_views import meta_analysis_jobs_view
 from neurosynth_compose.tests.request_utils import Client
 
 TOKEN = encode({"sub": "user1-id"}, "abc", algorithm="HS256")
@@ -183,10 +181,12 @@ def _install_local_neurostore_stub():
     )
 
 
-def _pick_seed_cached_ids():
+def _pick_seed_neurostore_ids():
     cached_ids = db.session.execute(
-        select(MetaAnalysis.cached_studyset_id, MetaAnalysis.cached_annotation_id)
-        .where(MetaAnalysis.cached_annotation_id.is_not(None))
+        select(
+            MetaAnalysis.neurostore_studyset_id, MetaAnalysis.neurostore_annotation_id
+        )
+        .where(MetaAnalysis.neurostore_annotation_id.is_not(None))
         .order_by(MetaAnalysis.public.desc(), MetaAnalysis.id)
         .limit(1)
     ).one_or_none()
@@ -196,30 +196,30 @@ def _pick_seed_cached_ids():
     user = db.session.execute(
         select(User).where(User.external_id == "user1-id")
     ).scalar_one()
-    studyset_reference = StudysetReference(
+    neurostore_studyset = NeurostoreStudyset(
         id=f"benchmark-studyset-ref-{uuid4().hex[:8]}"
     )
-    annotation_reference = AnnotationReference(
+    neurostore_annotation = NeurostoreAnnotation(
         id=f"benchmark-annotation-ref-{uuid4().hex[:8]}"
     )
-    studyset = Studyset(
+    studyset = SnapshotStudyset(
         user=user,
         snapshot={"name": "synthetic benchmark studyset"},
         version="benchmark-seed",
-        studyset_reference=studyset_reference,
+        neurostore_studyset=neurostore_studyset,
     )
-    annotation = Annotation(
+    annotation = SnapshotAnnotation(
         user=user,
-        studyset=studyset,
         snapshot={"name": "synthetic benchmark annotation"},
-        annotation_reference=annotation_reference,
+        snapshot_studyset=studyset,
+        neurostore_annotation=neurostore_annotation,
     )
-    db.session.add(studyset_reference)
-    db.session.add(annotation_reference)
+    db.session.add(neurostore_studyset)
+    db.session.add(neurostore_annotation)
     db.session.add(studyset)
     db.session.add(annotation)
     db.session.commit()
-    return studyset.id, annotation.id
+    return neurostore_studyset.id, neurostore_annotation.id
 
 
 def _pick_existing_result_id():
@@ -948,8 +948,8 @@ def _create_project(
     client: Client,
     *,
     suffix: str,
-    cached_studyset_id=None,
-    cached_annotation_id=None,
+    neurostore_studyset_id=None,
+    neurostore_annotation_id=None,
     provenance=None,
 ):
     payload = {
@@ -958,10 +958,10 @@ def _create_project(
         "public": False,
         "draft": True,
     }
-    if cached_studyset_id is not None:
-        payload["cached_studyset_id"] = cached_studyset_id
-    if cached_annotation_id is not None:
-        payload["cached_annotation_id"] = cached_annotation_id
+    if neurostore_studyset_id is not None:
+        payload["neurostore_studyset_id"] = neurostore_studyset_id
+    if neurostore_annotation_id is not None:
+        payload["neurostore_annotation_id"] = neurostore_annotation_id
     if provenance is not None:
         payload["provenance"] = provenance
     return _response_json(_request(client, "post", "/api/projects", data=payload))
@@ -985,8 +985,8 @@ def _create_meta_analysis(
     *,
     suffix: str,
     specification_id: str,
-    cached_studyset_id=None,
-    cached_annotation_id=None,
+    neurostore_studyset_id=None,
+    neurostore_annotation_id=None,
 ):
     payload = {
         "name": f"production-benchmark-meta-{suffix}",
@@ -995,10 +995,10 @@ def _create_meta_analysis(
         "specification": specification_id,
         "public": False,
     }
-    if cached_studyset_id is not None:
-        payload["cached_studyset_id"] = cached_studyset_id
-    if cached_annotation_id is not None:
-        payload["cached_annotation_id"] = cached_annotation_id
+    if neurostore_studyset_id is not None:
+        payload["neurostore_studyset_id"] = neurostore_studyset_id
+    if neurostore_annotation_id is not None:
+        payload["neurostore_annotation_id"] = neurostore_annotation_id
     return _response_json(_request(client, "post", "/api/meta-analyses", data=payload))
 
 
@@ -1098,13 +1098,13 @@ def _seed_jobs(job_store, *, meta_analysis_id: str, count: int, user_id="user1-i
             "updated_at": f"2026-01-01T00:00:{index:02d}+00:00",
             "logs": [],
         }
-        meta_analysis_jobs_resource._store_job(job_id, payload)
+        meta_analysis_jobs_view._store_job(job_id, payload)
         job_ids.append(job_id)
     return job_ids
 
 
 def _seed_scaling_bundle(
-    *, scale: int, cached_studyset_id, cached_annotation_id, user_id="user1-id"
+    *, scale: int, neurostore_studyset_id, neurostore_annotation_id, user_id="user1-id"
 ):
     user = db.session.execute(
         select(User).where(User.external_id == user_id)
@@ -1115,16 +1115,10 @@ def _seed_scaling_bundle(
         public=False,
         draft=True,
         user=user,
+        neurostore_studyset_id=neurostore_studyset_id,
+        neurostore_annotation_id=neurostore_annotation_id,
     )
     db.session.add(project)
-    if cached_studyset_id:
-        project.studyset = db.session.execute(
-            select(Studyset).where(Studyset.id == cached_studyset_id)
-        ).scalar_one()
-    if cached_annotation_id:
-        project.annotation = db.session.execute(
-            select(Annotation).where(Annotation.id == cached_annotation_id)
-        ).scalar_one()
     meta_ids = []
     for index in range(scale):
         specification = Specification(
@@ -1141,8 +1135,8 @@ def _seed_scaling_bundle(
             user=user,
             project=project,
             specification=specification,
-            studyset=project.studyset,
-            annotation=project.annotation,
+            neurostore_studyset_id=neurostore_studyset_id,
+            neurostore_annotation_id=neurostore_annotation_id,
         )
         db.session.add(specification)
         db.session.add(meta_analysis)
@@ -1155,8 +1149,8 @@ def _seed_scaling_bundle(
 def _seed_provenance_project_bundle(
     *,
     scale: int,
-    cached_studyset_id,
-    cached_annotation_id,
+    neurostore_studyset_id,
+    neurostore_annotation_id,
     user_id="user1-id",
 ):
     user = db.session.execute(
@@ -1170,16 +1164,10 @@ def _seed_provenance_project_bundle(
         draft=True,
         user=user,
         provenance=provenance,
+        neurostore_studyset_id=neurostore_studyset_id,
+        neurostore_annotation_id=neurostore_annotation_id,
     )
     db.session.add(project)
-    if cached_studyset_id:
-        project.studyset = db.session.execute(
-            select(Studyset).where(Studyset.id == cached_studyset_id)
-        ).scalar_one()
-    if cached_annotation_id:
-        project.annotation = db.session.execute(
-            select(Annotation).where(Annotation.id == cached_annotation_id)
-        ).scalar_one()
     db.session.commit()
     return {
         "project_id": project.id,
@@ -1211,7 +1199,7 @@ def run(
                 return {"events": []}
             if url and "status" in url:
                 cached_payload = (
-                    meta_analysis_jobs_resource._load_job(payload["job_id"]) or {}
+                    meta_analysis_jobs_view._load_job(payload["job_id"]) or {}
                 )
                 return {
                     "job_id": payload["job_id"],
@@ -1224,9 +1212,9 @@ def run(
             return {"status": "SUBMITTED"}
 
         with patch.object(
-            meta_analysis_jobs_resource, "get_job_store", return_value=job_store
+            meta_analysis_jobs_view, "get_job_store", return_value=job_store
         ), patch.object(
-            meta_analysis_jobs_resource,
+            meta_analysis_jobs_view,
             "call_lambda",
             side_effect=_stub_call_lambda,
         ):
@@ -1244,12 +1232,14 @@ def run(
                     or discovered_project_provenance_target
                     or baseline_project_provenance_metrics["project_provenance_bytes"]
                 )
-                cached_studyset_id, cached_annotation_id = _pick_seed_cached_ids()
+                neurostore_studyset_id, neurostore_annotation_id = (
+                    _pick_seed_neurostore_ids()
+                )
                 seeded_project = _create_project(
                     client,
                     suffix="seed",
-                    cached_studyset_id=cached_studyset_id,
-                    cached_annotation_id=cached_annotation_id,
+                    neurostore_studyset_id=neurostore_studyset_id,
+                    neurostore_annotation_id=neurostore_annotation_id,
                     provenance=baseline_project_provenance,
                 )
                 seeded_project_id = seeded_project["id"]
@@ -1261,8 +1251,8 @@ def run(
                     seeded_project_id,
                     suffix="seed",
                     specification_id=seeded_specification_id,
-                    cached_studyset_id=cached_studyset_id,
-                    cached_annotation_id=cached_annotation_id,
+                    neurostore_studyset_id=neurostore_studyset_id,
+                    neurostore_annotation_id=neurostore_annotation_id,
                 )
                 seeded_meta_analysis_id = seeded_meta_analysis["id"]
                 seeded_result_id = (
@@ -1283,8 +1273,8 @@ def run(
                             "project_id": _create_project(
                                 client_ref.current,
                                 suffix=f"{index}-{uuid4().hex[:8]}",
-                                cached_studyset_id=cached_studyset_id,
-                                cached_annotation_id=cached_annotation_id,
+                                neurostore_studyset_id=neurostore_studyset_id,
+                                neurostore_annotation_id=neurostore_annotation_id,
                             )["id"]
                         },
                         profile_dir=profile_dir,
@@ -1403,8 +1393,8 @@ def run(
                                 seeded_project_id,
                                 suffix=f"{index}-{uuid4().hex[:8]}",
                                 specification_id=seeded_specification_id,
-                                cached_studyset_id=cached_studyset_id,
-                                cached_annotation_id=cached_annotation_id,
+                                neurostore_studyset_id=neurostore_studyset_id,
+                                neurostore_annotation_id=neurostore_annotation_id,
                             )["id"]
                         },
                         profile_dir=profile_dir,
@@ -1504,13 +1494,13 @@ def run(
                 if scale_limit is not None:
                     scaled_project_id, scaled_meta_ids = _seed_scaling_bundle(
                         scale=scale_limit,
-                        cached_studyset_id=cached_studyset_id,
-                        cached_annotation_id=cached_annotation_id,
+                        neurostore_studyset_id=neurostore_studyset_id,
+                        neurostore_annotation_id=neurostore_annotation_id,
                     )
                     scaled_provenance_project = _seed_provenance_project_bundle(
                         scale=scale_limit,
-                        cached_studyset_id=cached_studyset_id,
-                        cached_annotation_id=cached_annotation_id,
+                        neurostore_studyset_id=neurostore_studyset_id,
+                        neurostore_annotation_id=neurostore_annotation_id,
                     )
                     _seed_jobs(
                         job_store,
@@ -1699,8 +1689,8 @@ def run(
                     "seeded_meta_analysis_id": seeded_meta_analysis_id,
                     "seeded_result_id": seeded_result_id,
                     "seeded_job_id": seeded_job_ids[-1],
-                    "seeded_cached_studyset_id": cached_studyset_id,
-                    "seeded_cached_annotation_id": cached_annotation_id,
+                    "seeded_neurostore_studyset_id": neurostore_studyset_id,
+                    "seeded_neurostore_annotation_id": neurostore_annotation_id,
                     "seeded_project_provenance_bytes": baseline_project_provenance_metrics[
                         "project_provenance_bytes"
                     ],

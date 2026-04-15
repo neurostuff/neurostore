@@ -12,11 +12,9 @@ from webargs.flaskparser import parser
 
 from neurosynth_compose.database import commit_session, db
 from neurosynth_compose.models.analysis import (
-    Annotation,
     MetaAnalysis,
     NeurostoreStudy,
     Project,
-    Studyset,
 )
 from neurosynth_compose.models.auth import User
 from neurosynth_compose.resources.common import make_json_response
@@ -57,12 +55,10 @@ def _project_list_query_options(info: bool):
             Project.description,
             Project.public,
             Project.draft,
+            Project.neurostore_studyset_id,
+            Project.neurostore_annotation_id,
         ),
         joinedload(Project.user).load_only(User.name),
-        selectinload(Project.studyset).load_only(Studyset.id, Studyset.neurostore_id),
-        selectinload(Project.annotation).load_only(
-            Annotation.id, Annotation.neurostore_id
-        ),
         meta_analysis_loader,
         selectinload(Project.neurostore_study).load_only(
             NeurostoreStudy.created_at,
@@ -98,12 +94,10 @@ def _project_detail_query_options(info: bool):
             Project.description,
             Project.public,
             Project.draft,
+            Project.neurostore_studyset_id,
+            Project.neurostore_annotation_id,
         ),
         joinedload(Project.user).load_only(User.name),
-        joinedload(Project.studyset).load_only(Studyset.id, Studyset.neurostore_id),
-        joinedload(Project.annotation).load_only(
-            Annotation.id, Annotation.neurostore_id
-        ),
         joinedload(Project.neurostore_study).load_only(
             NeurostoreStudy.created_at,
             NeurostoreStudy.updated_at,
@@ -116,16 +110,10 @@ def _project_detail_query_options(info: bool):
     )
 
 
-def _serialize_studyset_reference(record):
-    if record is None:
+def _serialize_info_reference(value):
+    if value is None:
         return None
-    return getattr(record, "neurostore_id", None)
-
-
-def _serialize_annotation_reference(record):
-    if record is None:
-        return None
-    return getattr(record, "neurostore_id", None)
+    return {"id": value, "url": None}
 
 
 def _serialize_neurostore_analysis(record):
@@ -157,18 +145,6 @@ def _serialize_neurostore_study(record):
             _serialize_neurostore_analysis(analysis) for analysis in analyses
         ]
     return payload
-
-
-def _serialize_info_studyset(record):
-    if record is None:
-        return None
-    return {"id": getattr(record, "id", None), "url": None}
-
-
-def _serialize_info_annotation(record):
-    if record is None:
-        return None
-    return {"id": getattr(record, "id", None), "url": None}
 
 
 def _serialize_project_meta_analysis_info(record):
@@ -214,7 +190,7 @@ def serialize_project(record, *, info: bool, raw_provenance_json=_RAW_PROVENANCE
     )
     meta_analyses = getattr(record, "meta_analyses", None) or ()
 
-    return {
+    output = {
         "id": record.id,
         "created_at": _serialize_datetime(getattr(record, "created_at", None)),
         "updated_at": _serialize_datetime(getattr(record, "updated_at", None)),
@@ -225,18 +201,6 @@ def serialize_project(record, *, info: bool, raw_provenance_json=_RAW_PROVENANCE
         "provenance": provenance,
         "public": getattr(record, "public", None),
         "draft": getattr(record, "draft", None),
-        "studyset": (
-            _serialize_info_studyset(getattr(record, "studyset", None))
-            if info
-            else _serialize_studyset_reference(getattr(record, "studyset", None))
-        ),
-        "annotation": (
-            _serialize_info_annotation(getattr(record, "annotation", None))
-            if info
-            else _serialize_annotation_reference(getattr(record, "annotation", None))
-        ),
-        "cached_studyset": getattr(getattr(record, "studyset", None), "id", None),
-        "cached_annotation": getattr(getattr(record, "annotation", None), "id", None),
         "meta_analyses": [
             (
                 _serialize_project_meta_analysis_info(meta_analysis)
@@ -250,6 +214,24 @@ def serialize_project(record, *, info: bool, raw_provenance_json=_RAW_PROVENANCE
             None if not neurostore_id else "/".join([NS_BASE, "studies", neurostore_id])
         ),
     }
+
+    if hasattr(record, "neurostore_studyset_id"):
+        output["studyset"] = (
+            _serialize_info_reference(getattr(record, "neurostore_studyset_id"))
+            if info
+            else getattr(record, "neurostore_studyset_id")
+        )
+        output["neurostore_studyset_id"] = getattr(record, "neurostore_studyset_id")
+
+    if hasattr(record, "neurostore_annotation_id"):
+        output["annotation"] = (
+            _serialize_info_reference(getattr(record, "neurostore_annotation_id"))
+            if info
+            else getattr(record, "neurostore_annotation_id")
+        )
+        output["neurostore_annotation_id"] = getattr(record, "neurostore_annotation_id")
+
+    return output
 
 
 def serialize_projects(records, *, info: bool, provenance_map=None):
@@ -268,8 +250,8 @@ def serialize_projects(records, *, info: bool, provenance_map=None):
 class ProjectsView(ObjectView, ListView):
     _search_fields = ("name", "description")
     _nested = {
-        "studyset": "StudysetsView",
-        "annotation": "AnnotationsView",
+        "neurostore_studysets": "NeurostoreStudysetsView",
+        "neurostore_annotations": "NeurostoreAnnotationsView",
         "meta_analyses": "MetaAnalysesView",
     }
     _project_put_args = {

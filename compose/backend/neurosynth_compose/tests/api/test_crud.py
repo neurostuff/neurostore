@@ -11,11 +11,11 @@ from neurosynth_compose.models import (
     User,
 )
 from neurosynth_compose.schemas import (
-    AnnotationSchema,
+    SnapshotAnnotationSchema,
     MetaAnalysisSchema,
     ProjectSchema,
     SpecificationSchema,
-    StudysetSchema,
+    SnapshotStudysetSchema,
 )
 from neurosynth_compose.schemas.analysis import StringOrNested
 
@@ -23,8 +23,8 @@ from neurosynth_compose.schemas.analysis import StringOrNested
 @pytest.mark.parametrize(
     "endpoint,model,schema",
     [
-        ("studysets", Studyset, StudysetSchema),
-        ("annotations", Annotation, AnnotationSchema),
+        ("snapshot-studysets", Studyset, SnapshotStudysetSchema),
+        ("snapshot-annotations", Annotation, SnapshotAnnotationSchema),
         ("specifications", Specification, SpecificationSchema),
         ("meta-analyses", MetaAnalysis, MetaAnalysisSchema),
         ("projects", Project, ProjectSchema),
@@ -59,21 +59,17 @@ def test_create(session, auth_client, user_data, db, endpoint, model, schema):
             del payload["draft"]
 
         if isinstance(example, MetaAnalysis):
-            del payload["neurostore_analysis"]
-            del payload["cached_annotation"]
-            del payload["cached_studyset"]
+            payload.pop("neurostore_analysis", None)
+            payload.pop("snapshot_annotation", None)
+            payload.pop("snapshot_studyset", None)
             payload.pop("snapshots", None)
 
         if isinstance(example, Project):
-            del payload["meta_analyses"]
-            if "studyset" in payload:
-                del payload["studyset"]
-            if "annotation" in payload:
-                del payload["annotation"]
-            if "cached_studyset" in payload:
-                del payload["cached_studyset"]
-            if "cached_annotation" in payload:
-                del payload["cached_annotation"]
+            payload.pop("meta_analyses", None)
+            payload.pop("studyset", None)
+            payload.pop("annotation", None)
+            payload.pop("snapshot_studyset", None)
+            payload.pop("snapshot_annotation", None)
 
         resp = auth_client.post(f"/api/{endpoint}", data=payload)
 
@@ -92,8 +88,8 @@ def test_create(session, auth_client, user_data, db, endpoint, model, schema):
 @pytest.mark.parametrize(
     "endpoint,model,schema",
     [
-        ("studysets", Studyset, StudysetSchema),
-        ("annotations", Annotation, AnnotationSchema),
+        ("snapshot-studysets", Studyset, SnapshotStudysetSchema),
+        ("snapshot-annotations", Annotation, SnapshotAnnotationSchema),
         ("specifications", Specification, SpecificationSchema),
         ("meta-analyses", MetaAnalysis, MetaAnalysisSchema),
         ("projects", Project, ProjectSchema),
@@ -129,8 +125,18 @@ def test_read(session, auth_client, user_data, db, endpoint, model, schema):
 @pytest.mark.parametrize(
     "endpoint,model,schema,update",
     [
-        ("studysets", Studyset, StudysetSchema, {"snapshot": {"fake": "stuff"}}),
-        ("annotations", Annotation, AnnotationSchema, {"snapshot": {"fake": "stuff"}}),
+        (
+            "snapshot-studysets",
+            Studyset,
+            SnapshotStudysetSchema,
+            {"snapshot": {"fake": "stuff"}},
+        ),
+        (
+            "snapshot-annotations",
+            Annotation,
+            SnapshotAnnotationSchema,
+            {"snapshot": {"fake": "stuff"}},
+        ),
         ("specifications", Specification, SpecificationSchema, {"type": "NEW"}),
         ("meta-analyses", MetaAnalysis, MetaAnalysisSchema, {"name": "my meta"}),
         ("projects", Project, ProjectSchema, {"name": "my project"}),
@@ -155,8 +161,8 @@ def test_update(session, auth_client, db, user_data, endpoint, model, schema, up
 # @pytest.mark.parametrize(
 #     "endpoint,model,schema",
 #     [
-#         ("studysets", Studyset, StudysetSchema),
-#         ("annotations", Annotation, AnnotationSchema),
+#         ("studysets", Studyset, SnapshotStudysetSchema),
+#         ("annotations", Annotation, SnapshotAnnotationSchema),
 #         ("studies", Study, StudySchema),
 #         ("analyses", Analysis, AnalysisSchema),
 #         ("conditions", Condition, ConditionSchema),

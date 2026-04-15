@@ -1,13 +1,21 @@
 import pytest
 from sqlalchemy import select
 
-from neurosynth_compose.models import Annotation, MetaAnalysis, Studyset
+from neurosynth_compose.models import (
+    NeurostoreAnnotation,
+    SnapshotAnnotation,
+    SnapshotStudyset,
+    MetaAnalysis,
+    Studyset,
+    NeurostoreStudyset,
+)
+from neurosynth_compose.models.analysis import generate_id
 from neurosynth_compose.utils.snapshots import md5_of_snapshot
 
 
 def test_studyset_md5_saved_on_insert(session):
     payload = {"foo": "bar", "num": 1}
-    ss = Studyset(snapshot=payload)
+    ss = SnapshotStudyset(snapshot=payload)
     session.add(ss)
     session.flush()
 
@@ -32,11 +40,24 @@ def test_duplicate_studyset_reused_via_api(session, db, auth_client):
         if user is None:
             pytest.skip("No user available to create MetaAnalysis for test")
 
-        ss = Studyset(snapshot={"seed": True}, user=user)
-        ann = Annotation(snapshot={"seed": True}, user=user, studyset=ss)
+        ss_ref = NeurostoreStudyset(id=generate_id())
+        ann_ref = NeurostoreAnnotation(id=generate_id())
+        ss = Studyset(snapshot={"seed": True}, user=user, neurostore_id=ss_ref.id)
+        ann = SnapshotAnnotation(
+            snapshot={"seed": True},
+            user=user,
+            snapshot_studyset=ss,
+            neurostore_annotation=ann_ref,
+            neurostore_id=ann_ref.id,
+        )
+        session.add_all([ss_ref, ann_ref])
         spec = Specification(user=user, type="cbma")
         project = Project(
-            name="seed-project", user=user, public=True, studyset=ss, annotation=ann
+            name="seed-project",
+            user=user,
+            public=True,
+            neurostore_studyset_id=ss.neurostore_id,
+            neurostore_annotation_id=ann.neurostore_id,
         )
         meta_analysis = MetaAnalysis(
             name="seed-meta",
@@ -44,8 +65,8 @@ def test_duplicate_studyset_reused_via_api(session, db, auth_client):
             user=user,
             public=True,
             specification=spec,
-            studyset=ss,
-            annotation=ann,
+            neurostore_studyset_id=ss.neurostore_id,
+            neurostore_annotation_id=ann.neurostore_id,
             project=project,
         )
         db.session.add_all([ss, ann, spec, project, meta_analysis])
@@ -53,8 +74,8 @@ def test_duplicate_studyset_reused_via_api(session, db, auth_client):
     payload = {"a": 1, "b": 2}
     headers = {"Compose-Upload-Key": meta_analysis.run_key}
     data = {
-        "cached_studyset": payload,
-        "cached_annotation": {"name": "ann"},
+        "snapshot_studyset": payload,
+        "snapshot_annotation": {"name": "ann"},
         "meta_analysis_id": meta_analysis.id,
     }
 

@@ -7,7 +7,7 @@ from sqlalchemy import select
 
 from neurosynth_compose.models import MetaAnalysis, User
 from neurosynth_compose.resources.data_views import (
-    meta_analysis_jobs as meta_analysis_jobs_resource,
+    meta_analysis_jobs_view as meta_analysis_jobs_resource,
 )
 
 
@@ -70,7 +70,7 @@ class FakeRedis:
 def fake_job_store(monkeypatch):
     store = FakeRedis()
     monkeypatch.setattr(
-        "neurosynth_compose.resources.meta_analysis_jobs.get_job_store",
+        "neurosynth_compose.resources.meta_analysis_jobs_view.get_job_store",
         lambda: store,
     )
     return store
@@ -92,7 +92,7 @@ def lambda_responses(monkeypatch):
         return deepcopy(result)
 
     monkeypatch.setattr(
-        "neurosynth_compose.resources.meta_analysis_jobs.call_lambda", call_lambda
+        "neurosynth_compose.resources.meta_analysis_jobs_view.call_lambda", call_lambda
     )
     return {"calls": calls, "set_response": set_response}
 

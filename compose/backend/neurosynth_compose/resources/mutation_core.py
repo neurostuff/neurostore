@@ -11,9 +11,9 @@ from sqlalchemy import select
 
 from neurosynth_compose.database import db
 from neurosynth_compose.models.analysis import (
-    AnnotationReference,
+    NeurostoreAnnotation,
     Condition,
-    StudysetReference,
+    NeurostoreStudyset,
 )
 from neurosynth_compose.resources.common import (
     create_user,
@@ -119,8 +119,8 @@ class ComposeMutationPolicy:
             select(self.context.model).where(self.context.model.id == self.context.id)
         ).scalar_one_or_none()
         if record is None and self.context.model in (
-            StudysetReference,
-            AnnotationReference,
+            NeurostoreStudyset,
+            NeurostoreAnnotation,
         ):
             return self.context.model(id=self.context.id)
         if record is None:

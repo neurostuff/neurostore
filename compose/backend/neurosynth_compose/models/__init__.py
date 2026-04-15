@@ -1,6 +1,6 @@
 from neurosynth_compose.models.analysis import (
-    Annotation,
-    AnnotationReference,
+    SnapshotAnnotation,
+    NeurostoreAnnotation,
     MetaAnalysis,
     MetaAnalysisResult,
     NeurostoreAnalysis,
@@ -9,11 +9,16 @@ from neurosynth_compose.models.analysis import (
     NeurovaultFile,
     Project,
     Specification,
-    Studyset,
-    StudysetReference,
+    SnapshotStudyset,
+    NeurostoreStudyset,
     Tag,
 )
 from neurosynth_compose.models.auth import Role, User
+
+Studyset = SnapshotStudyset
+StudysetReference = NeurostoreStudyset
+Annotation = SnapshotAnnotation
+AnnotationReference = NeurostoreAnnotation
 
 __all__ = [
     "Condition",
@@ -24,6 +29,10 @@ __all__ = [
     "StudysetReference",
     "Annotation",
     "AnnotationReference",
+    "SnapshotStudyset",
+    "NeurostoreStudyset",
+    "SnapshotAnnotation",
+    "NeurostoreAnnotation",
     "MetaAnalysis",
     "MetaAnalysisResult",
     "NeurovaultCollection",

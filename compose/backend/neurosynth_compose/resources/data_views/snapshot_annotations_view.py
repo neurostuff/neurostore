@@ -1,20 +1,19 @@
 from __future__ import annotations
 
 from neurosynth_compose.database import commit_session, db
-from neurosynth_compose.models.analysis import Annotation  # noqa: F401
-from neurosynth_compose.models.analysis import AnnotationReference  # noqa: F401
+from neurosynth_compose.models import SnapshotAnnotation  # noqa: F401
 from neurosynth_compose.resources.common import get_current_user
 from neurosynth_compose.resources.resource_services import ensure_canonical_annotation
 from neurosynth_compose.resources.view_core import ListView, ObjectView, view_maker
-from neurosynth_compose.schemas import AnnotationReferenceSchema  # noqa: F401
-from neurosynth_compose.schemas import AnnotationSchema  # noqa: F401
+from neurosynth_compose.schemas import NeurostoreAnnotationSchema  # noqa: F401
+from neurosynth_compose.schemas import SnapshotAnnotationSchema  # noqa: F401
 
 
 @view_maker
-class AnnotationsView(ObjectView, ListView):
+class SnapshotAnnotationsView(ObjectView, ListView):
     _nested = {
-        "annotation_reference": "AnnotationReferencesResource",
-        "studyset": "StudysetsView",
+        "neurostore_annotation": "NeurostoreAnnotationsView",
+        "snapshot_studyset": "SnapshotStudysetsView",
     }
 
     def serialize_record(self, record, args):
@@ -38,7 +37,7 @@ class AnnotationsView(ObjectView, ListView):
                 data.get("snapshot"),
                 user_id=user_id,
                 neurostore_id=data.get("neurostore_id"),
-                cached_studyset_id=data.get("cached_studyset_id"),
+                snapshot_studyset_id=data.get("snapshot_studyset_id"),
             )
             if commit and canonical is not None:
                 db.session.add(canonical)

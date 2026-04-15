@@ -1,7 +1,9 @@
-from neurosynth_compose.resources.data_views.annotation_references_view import (
-    AnnotationReferencesResource,
+from neurosynth_compose.resources.data_views.neurostore_annotation_view import (
+    NeurostoreAnnotationsView,
 )
-from neurosynth_compose.resources.data_views.annotations_view import AnnotationsView
+from neurosynth_compose.resources.data_views.snapshot_annotations_view import (
+    SnapshotAnnotationsView,
+)
 from neurosynth_compose.resources.data_views.conditions_view import ConditionsResource
 from neurosynth_compose.resources.data_views.meta_analyses_view import (
     MetaAnalysesView,
@@ -17,15 +19,18 @@ from neurosynth_compose.resources.data_views.specification_conditions_view impor
 from neurosynth_compose.resources.data_views.specification_view import (
     SpecificationsView,
 )
-from neurosynth_compose.resources.data_views.studyset_references_view import (
-    StudysetReferencesView,
+from neurosynth_compose.resources.data_views.neurostore_studyset_view import (
+    NeurostoreStudysetsView,
 )
-from neurosynth_compose.resources.data_views.studysets_view import StudysetsView
+from neurosynth_compose.resources.data_views.snapshot_studysets_view import (
+    SnapshotStudysetsView,
+)
 from neurosynth_compose.resources.data_views.tags_view import TagsView
+from neurosynth_compose.resources.data_views import meta_analysis_jobs_view
 
 __all__ = [
-    "AnnotationReferencesResource",
-    "AnnotationsView",
+    "NeurostoreAnnotationsView",
+    "SnapshotAnnotationsView",
     "ConditionsResource",
     "MetaAnalysesView",
     "MetaAnalysisResultsView",
@@ -35,7 +40,8 @@ __all__ = [
     "ProjectsView",
     "SpecificationConditionsResource",
     "SpecificationsView",
-    "StudysetReferencesView",
-    "StudysetsView",
+    "NeurostoreStudysetsView",
+    "SnapshotStudysetsView",
     "TagsView",
+    "meta_analysis_jobs_view",
 ]
