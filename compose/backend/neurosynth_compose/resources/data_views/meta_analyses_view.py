@@ -49,12 +49,12 @@ from neurosynth_compose.resources.data_views.tags_view import (
 from neurosynth_compose.resources.view_core import ListView, ObjectView, view_maker
 
 # Imported for dynamic resolution by `view_maker` on *View classes.
-from neurosynth_compose.schemas import (
-    MetaAnalysisResultSchema,  # noqa: F401
-    MetaAnalysisSchema,  # noqa: F401
-    NeurostoreStudySchema,  # noqa: F401
-    NeurovaultCollectionSchema,  # noqa: F401
-    NeurovaultFileSchema,  # noqa: F401
+from neurosynth_compose.schemas import (  # noqa: F401
+    MetaAnalysisResultSchema,
+    MetaAnalysisSchema,
+    NeurostoreStudySchema,
+    NeurovaultCollectionSchema,
+    NeurovaultFileSchema,
 )
 from neurosynth_compose.schemas.analysis import NS_BASE
 

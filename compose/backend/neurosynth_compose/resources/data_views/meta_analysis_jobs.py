@@ -347,3 +347,7 @@ class MetaAnalysisJobsView(MethodView):
         if job_id is None:
             return list_jobs()
         return get_job_status(job_id)
+
+    @classmethod
+    def search(cls):
+        return cls.get()
