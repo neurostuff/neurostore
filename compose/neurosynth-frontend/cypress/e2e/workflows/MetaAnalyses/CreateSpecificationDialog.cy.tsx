@@ -37,10 +37,10 @@ describe('CreateSpecificationDialog', () => {
         cy.intercept('POST', '**/api/specifications', {
             id: 'mockedSpecificationId',
         }).as('createSpecificationFixture');
-        cy.intercept('POST', '**/api/studysets', {
+        cy.intercept('POST', '**/api/snapshot-studysets', {
             id: 'mockedStudySetId',
         });
-        cy.intercept('POST', '**/api/annotations', {
+        cy.intercept('POST', '**/api/snapshot-annotations', {
             id: 'mockedAnnotationId',
         });
         cy.intercept('POST', '**/api/meta-analyses', {

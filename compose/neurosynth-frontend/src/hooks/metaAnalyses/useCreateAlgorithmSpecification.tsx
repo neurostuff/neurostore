@@ -32,13 +32,13 @@ const useCreateAlgorithmSpecification = () => {
         AxiosError,
         StudysetPostBody,
         unknown
-    >((studyset) => API.NeurosynthServices.StudysetsService.studysetsPost(studyset));
+    >((studyset) => API.NeurosynthServices.StudysetsService.snapshotStudysetsPost(studyset));
     const createSynthAnnotationMutation = useMutation<
         AxiosResponse<NeurostoreAnnotation>,
         AxiosError,
         AnnotationPostBody,
         unknown
-    >((annotation) => API.NeurosynthServices.AnnotationsService.annotationsPost(annotation));
+    >((annotation) => API.NeurosynthServices.AnnotationsService.snapshotAnnotationsPost(annotation));
     const createMetaAnalysisMutation = useMutation<
         AxiosResponse<MetaAnalysisReturn>,
         AxiosError,
@@ -97,7 +97,7 @@ const useCreateAlgorithmSpecification = () => {
 
             const createdSynthAnnotation = await createSynthAnnotationMutation.mutateAsync({
                 neurostore_id: annotationId,
-                cached_studyset_id: createdSynthStudyset.data.id,
+                snapshot_studyset_id: createdSynthStudyset.data.id,
             });
             if (!createdSynthAnnotation.data.id) throw new Error('no id from created synth annotation');
 
