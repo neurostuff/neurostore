@@ -104,8 +104,6 @@ const useCreateAlgorithmSpecification = () => {
             const createdMetaAnalysis = await createMetaAnalysisMutation.mutateAsync({
                 name: metaAnalysisName,
                 description: metaAnalysisDescription,
-                cached_studyset_id: createdSynthStudyset.data.id,
-                cached_annotation_id: createdSynthAnnotation.data.id,
                 specification: createdSpec.data.id,
                 project: projectId,
             });
