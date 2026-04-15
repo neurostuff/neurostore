@@ -5,7 +5,8 @@ from dataclasses import dataclass
 from operator import itemgetter
 from typing import Any
 
-from flask import abort
+import connexion
+from flask import abort, current_app
 from sqlalchemy import select
 
 from neurosynth_compose.database import db
@@ -43,6 +44,31 @@ class MutationContext:
 
 
 def resolve_current_user(user=None):
+    # Diagnostic logging to help trace context-based auth resolution
+    try:
+        req_ctx = None
+        mod_ctx = None
+        try:
+            req_ctx = connexion.context.request.context
+        except Exception:
+            req_ctx = None
+        try:
+            mod_ctx = connexion.context.context
+        except Exception:
+            mod_ctx = None
+        current_app.logger.debug(
+            (
+                "resolve_current_user: user_arg=%r, "
+                "connexion.request.context=%r, "
+                "connexion.context=%r",
+            ),
+            user,
+            req_ctx,
+            mod_ctx,
+        )
+    except Exception:
+        pass
+
     current_user = user or get_current_user()
     if current_user:
         return current_user

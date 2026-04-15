@@ -7,71 +7,10 @@ from webargs import fields
 from webargs.flaskparser import parser
 
 from neurosynth_compose.database import commit_session, db
-
-# Imported for dynamic resolution by `view_maker` on *View/*Resource classes.
-from neurosynth_compose.models.analysis import (  # noqa: F401
-    Annotation,
-    AnnotationReference,
-    Condition,
-    Specification,
-    SpecificationCondition,
-    Studyset,
-    StudysetReference,
-    Tag,
-)
+from neurosynth_compose.models.analysis import Tag  # noqa: F401
 from neurosynth_compose.resources.common import get_current_user, make_json_response
 from neurosynth_compose.resources.view_core import ListView, ObjectView, view_maker
-
-# Imported for dynamic resolution by `view_maker` on *View/*Resource classes.
-from neurosynth_compose.schemas import (  # noqa: F401
-    AnnotationReferenceSchema,
-    AnnotationSchema,
-    ConditionSchema,
-    SpecificationConditionSchema,
-    SpecificationSchema,
-    StudysetReferenceSchema,
-    StudysetSchema,
-    TagSchema,
-)
-
-
-@view_maker
-class AnnotationsView(ObjectView, ListView):
-    _nested = {
-        "annotation_reference": "AnnotationReferencesResource",
-        "studyset": "StudysetsView",
-    }
-
-
-@view_maker
-class StudysetsView(ObjectView, ListView):
-    _nested = {"studyset_reference": "StudysetReferencesView"}
-
-
-@view_maker
-class SpecificationsView(ObjectView, ListView):
-    _nested = {("conditions", "weights"): "SpecificationConditionsResource"}
-    _attribute_name = "specification_conditions"
-
-
-@view_maker
-class StudysetReferencesView(ObjectView, ListView):
-    pass
-
-
-@view_maker
-class AnnotationReferencesResource(ObjectView):
-    pass
-
-
-@view_maker
-class ConditionsResource(ObjectView):
-    pass
-
-
-@view_maker
-class SpecificationConditionsResource(ObjectView):
-    _nested = {"condition": "ConditionsResource"}
+from neurosynth_compose.schemas import TagSchema  # noqa: F401
 
 
 def _scoped_tags_query(current_user):

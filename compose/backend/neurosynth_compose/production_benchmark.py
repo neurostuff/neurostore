@@ -34,7 +34,8 @@ from neurosynth_compose.models.analysis import (
     StudysetReference,
 )
 from neurosynth_compose.models.auth import User
-from neurosynth_compose.resources import (
+from flask import current_app
+from neurosynth_compose.resources.data_views import (
     meta_analysis_jobs as meta_analysis_jobs_resource,
 )
 from neurosynth_compose.tests.request_utils import Client
@@ -366,13 +367,14 @@ def _profile_function_path(function_key):
 
 
 def _extract_profile_functions(stats_path: str, *, service: str) -> list[dict]:
-    service_root = _service_profile_root(service)
+    service_root = _service_profile_root(service).strip("/")
+    service_subroot = service_root.split("/")[-1]
     profile_data = json.loads(Path(stats_path).read_text())
     rows = []
     for function_row in profile_data.get("functions", []):
         filename = function_row["filename"]
         function_name = function_row["function_name"]
-        if service_root not in filename:
+        if service_root not in filename and service_subroot not in filename:
             continue
         if function_name == "<module>":
             continue
@@ -396,6 +398,27 @@ def _extract_profile_functions(stats_path: str, *, service: str) -> list[dict]:
             }
         )
     return rows
+
+
+def _filter_profile_data(profile_data: dict, *, service: str) -> dict:
+    service_root = _service_profile_root(service).strip("/")
+    service_subroot = service_root.split("/")[-1]
+    filtered_functions = []
+    for function_row in profile_data.get("functions", []):
+        filename = function_row.get("filename", "")
+        function_name = function_row.get("function_name", "")
+        if service_root not in filename and service_subroot not in filename:
+            continue
+        if function_name == "<module>":
+            continue
+        if "/tests/" in filename:
+            continue
+        if filename.endswith("/production_benchmark.py"):
+            continue
+        filtered_functions.append(function_row)
+    filtered_data = dict(profile_data)
+    filtered_data["functions"] = filtered_functions
+    return filtered_data
 
 
 def _bounded_page_size(size: int) -> int:
@@ -673,11 +696,18 @@ class _SqlTimingCollector:
         event.remove(self._engine, "after_cursor_execute", self._after_cursor_execute)
 
 
-def _write_profile_artifacts(profile_dir: Path, name: str, profiler, sql_collector):
+def _write_profile_artifacts(
+    profile_dir: Path, name: str, profiler, sql_collector, *, service: str | None = None
+):
     profile_dir.mkdir(parents=True, exist_ok=True)
+    raw_stats_path = profile_dir / f"{name}.raw.profile.json"
     stats_path = profile_dir / f"{name}.profile.json"
     summary_path = profile_dir / f"{name}.summary.txt"
-    profile_data = profiler.export()
+    raw_profile_data = profiler.export()
+    raw_stats_path.write_text(json.dumps(raw_profile_data, indent=2))
+    profile_data = raw_profile_data
+    if service is not None:
+        profile_data = _filter_profile_data(raw_profile_data, service=service)
     stats_path.write_text(json.dumps(profile_data, indent=2))
 
     summary_buffer = StringIO()
@@ -762,7 +792,16 @@ def _benchmark_case(
                         return fn(index) or {}
                     if not use_isolated_clients:
                         return fn(index) or {}
-                    profile_client = Client(token=TOKEN)
+                    connexion_app = current_app.extensions.get("connexion_app")
+                    if connexion_app is not None and hasattr(
+                        connexion_app, "test_client"
+                    ):
+                        profile_test_client = connexion_app.test_client()
+                    else:
+                        profile_test_client = current_app.test_client()
+                    profile_client = Client(
+                        token=TOKEN, test_client=profile_test_client
+                    )
                     previous_client = client_ref.current
                     client_ref.current = profile_client
                     try:
@@ -783,7 +822,7 @@ def _benchmark_case(
 
         if profiler is not None:
             profiling = _write_profile_artifacts(
-                profile_dir, name, profiler, sql_collector
+                profile_dir, name, profiler, sql_collector, service="compose"
             )
 
     original_client = client_ref.current if client_ref is not None else None

@@ -16,11 +16,14 @@ from sqlalchemy import (
     Table,
     Text,
 )
+from sqlalchemy import event
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.orm import backref, relationship
 from sqlalchemy.sql import func
 
 from neurosynth_compose.database import db
+from neurosynth_compose.utils.snapshots import md5_of_snapshot
 
 
 def generate_id():
@@ -144,7 +147,8 @@ class StudysetReference(db.Model):
 class Studyset(BaseMixin, db.Model):
     __tablename__ = "studysets"
 
-    snapshot = Column(JSON)
+    snapshot = Column(JSONB)
+    md5 = Column(Text, unique=True, index=True)
     user_id = Column(Text, ForeignKey("users.external_id"))
     neurostore_id = Column(Text, ForeignKey("studyset_references.id"))
     version = Column(Text)
@@ -161,7 +165,8 @@ class AnnotationReference(db.Model):
 class Annotation(BaseMixin, db.Model):
     __tablename__ = "annotations"
 
-    snapshot = Column(JSON)
+    snapshot = Column(JSONB)
+    md5 = Column(Text, unique=True, index=True)
     user_id = Column(Text, ForeignKey("users.external_id"))
     neurostore_id = Column(Text, ForeignKey("annotation_references.id"))
     cached_studyset_id = Column(Text, ForeignKey("studysets.id"))
@@ -171,6 +176,17 @@ class Annotation(BaseMixin, db.Model):
     annotation_reference = relationship(
         "AnnotationReference", back_populates="annotations"
     )
+
+
+def _set_md5_before_insert(mapper, connection, target):
+    if getattr(target, "snapshot", None) is not None and not getattr(
+        target, "md5", None
+    ):
+        target.md5 = md5_of_snapshot(target.snapshot)
+
+
+event.listen(Studyset, "before_insert", _set_md5_before_insert)
+event.listen(Annotation, "before_insert", _set_md5_before_insert)
 
 
 class MetaAnalysis(BaseMixin, db.Model):
@@ -209,6 +225,24 @@ class MetaAnalysis(BaseMixin, db.Model):
         "NeurostoreAnalysis", back_populates="meta_analysis", uselist=False
     )
 
+    @property
+    def snapshots(self):
+        """Ordered history of snapshot FK IDs recorded on results."""
+        entries = []
+        for result in self.results or []:
+            ss_id = getattr(result, "studyset_snapshot_id", None)
+            ann_id = getattr(result, "annotation_snapshot_id", None)
+            if ss_id is None and ann_id is None:
+                continue
+            entries.append(
+                {
+                    "result_id": result.id,
+                    "studyset_snapshot_id": ss_id,
+                    "annotation_snapshot_id": ann_id,
+                }
+            )
+        return entries
+
 
 class MetaAnalysisResult(BaseMixin, db.Model):
     __tablename__ = "meta_analysis_results"
@@ -217,7 +251,15 @@ class MetaAnalysisResult(BaseMixin, db.Model):
     cli_args = Column(JSON)  # Dictionary of cli arguments
     method_description = Column(Text)  # description of the method applied
     diagnostic_table = Column(Text)
+    studyset_snapshot_id = Column(Text, ForeignKey("studysets.id"), nullable=True)
+    annotation_snapshot_id = Column(Text, ForeignKey("annotations.id"), nullable=True)
     meta_analysis = relationship("MetaAnalysis", back_populates="results")
+    studyset_snapshot = relationship(
+        "Studyset", foreign_keys=[studyset_snapshot_id], lazy="joined"
+    )
+    annotation_snapshot = relationship(
+        "Annotation", foreign_keys=[annotation_snapshot_id], lazy="joined"
+    )
     # neurovault_collection is one-to-one with MetaAnalysisResult
     neurovault_collection = relationship(
         "NeurovaultCollection", back_populates="result", uselist=False

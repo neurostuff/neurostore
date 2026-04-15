@@ -66,6 +66,7 @@ def test_create(session, auth_client, user_data, db, endpoint, model, schema):
             del payload["neurostore_analysis"]
             del payload["cached_annotation"]
             del payload["cached_studyset"]
+            payload.pop("snapshots", None)
 
         if isinstance(example, Project):
             del payload["meta_analyses"]

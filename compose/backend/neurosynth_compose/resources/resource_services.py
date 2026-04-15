@@ -6,9 +6,17 @@ from operator import itemgetter
 
 from flask import abort, current_app, request
 from sqlalchemy import select
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from neurosynth_compose.database import db
-from neurosynth_compose.models.analysis import NeurovaultCollection, NeurovaultFile
+from neurosynth_compose.models.analysis import (
+    Annotation,
+    NeurovaultCollection,
+    NeurovaultFile,
+    Studyset,
+    generate_id,
+)
+from neurosynth_compose.utils.snapshots import md5_of_snapshot
 
 # NiMARE 0.9.0 emits table files from MetaResult.save_tables using:
 # <table_key>.tsv where table_key comes from Diagnostics.transform.
@@ -360,3 +368,91 @@ def parse_upload_files(result, stat_maps, cluster_tables, diagnostic_tables):
         records.append(record)
 
     return records, stat_map_fnames, cluster_table_fnames, diagnostic_table_fnames
+
+
+def ensure_canonical_studyset(
+    session, snapshot, user_id=None, neurostore_id=None, version=None
+):
+    """Return the canonical Studyset for *snapshot*, inserting one if needed.
+
+    Uses INSERT … ON CONFLICT DO NOTHING so concurrent callers with identical
+    snapshots always converge on the same row.  Returns None when snapshot is falsy.
+    """
+    if not snapshot:
+        return None
+
+    ss_md5 = md5_of_snapshot(snapshot)
+
+    canonical = session.execute(
+        select(Studyset).where(Studyset.md5 == ss_md5)
+    ).scalar_one_or_none()
+
+    if canonical is None:
+        new_id = generate_id()
+        stmt = (
+            pg_insert(Studyset.__table__)
+            .values(
+                id=new_id,
+                snapshot=snapshot,
+                md5=ss_md5,
+                user_id=user_id,
+                neurostore_id=neurostore_id,
+                version=version,
+            )
+            .on_conflict_do_nothing(index_elements=["md5"])
+        )
+        session.execute(stmt)
+        session.flush()
+        canonical = session.execute(
+            select(Studyset).where(Studyset.md5 == ss_md5)
+        ).scalar_one_or_none()
+        if canonical is None:
+            canonical = session.execute(
+                select(Studyset).where(Studyset.id == new_id)
+            ).scalar_one_or_none()
+
+    return canonical
+
+
+def ensure_canonical_annotation(
+    session, snapshot, user_id=None, neurostore_id=None, cached_studyset_id=None
+):
+    """Return the canonical Annotation for *snapshot*, inserting one if needed.
+
+    Works identically to ensure_canonical_studyset but for Annotation rows.
+    Returns None when snapshot is falsy.
+    """
+    if not snapshot:
+        return None
+
+    ann_md5 = md5_of_snapshot(snapshot)
+
+    canonical = session.execute(
+        select(Annotation).where(Annotation.md5 == ann_md5)
+    ).scalar_one_or_none()
+
+    if canonical is None:
+        new_id = generate_id()
+        stmt = (
+            pg_insert(Annotation.__table__)
+            .values(
+                id=new_id,
+                snapshot=snapshot,
+                md5=ann_md5,
+                user_id=user_id,
+                neurostore_id=neurostore_id,
+                cached_studyset_id=cached_studyset_id,
+            )
+            .on_conflict_do_nothing(index_elements=["md5"])
+        )
+        session.execute(stmt)
+        session.flush()
+        canonical = session.execute(
+            select(Annotation).where(Annotation.md5 == ann_md5)
+        ).scalar_one_or_none()
+        if canonical is None:
+            canonical = session.execute(
+                select(Annotation).where(Annotation.id == new_id)
+            ).scalar_one_or_none()
+
+    return canonical

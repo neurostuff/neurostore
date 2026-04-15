@@ -372,10 +372,26 @@ class MetaAnalysisSchema(BaseSchema):
         attribute="annotation",
     )
     run_key = fields.String(dump_only=True)
-    results = fields.Nested(
-        MetaAnalysisResultSchema, only=("id", "created_at", "updated_at"), many=True
-    )
+    snapshots = fields.Method("_dump_snapshots", dump_only=True)
+    results = fields.Pluck(MetaAnalysisResultSchema, "id", many=True)
     neurostore_url = fields.String(dump_only=True)
+
+    def _dump_snapshots(self, obj):
+        results = getattr(obj, "results", None) or []
+        entries = []
+        for result in results:
+            ss_id = getattr(result, "studyset_snapshot_id", None)
+            ann_id = getattr(result, "annotation_snapshot_id", None)
+            if ss_id is None and ann_id is None:
+                continue
+            entries.append(
+                {
+                    "result_id": getattr(result, "id", None),
+                    "studyset_snapshot_id": ss_id,
+                    "annotation_snapshot_id": ann_id,
+                }
+            )
+        return entries
 
     @post_dump
     def create_neurostore_url(self, data, **kwargs):

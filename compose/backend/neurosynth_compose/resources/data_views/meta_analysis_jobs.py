@@ -337,17 +337,17 @@ def list_jobs():
     return make_json_response(payload)
 
 
-class MetaAnalysisJobsResource(MethodView):
+class MetaAnalysisJobsView(MethodView):
     @classmethod
     def post(cls):
         return submit_job()
 
     @classmethod
-    def get(cls):
-        return list_jobs()
-
-
-class MetaAnalysisJobResource(MethodView):
-    @classmethod
-    def get(cls, job_id: str):
+    def get(cls, job_id: str | None = None):
+        if job_id is None:
+            return list_jobs()
         return get_job_status(job_id)
+
+    @classmethod
+    def search(cls):
+        return cls.get()
