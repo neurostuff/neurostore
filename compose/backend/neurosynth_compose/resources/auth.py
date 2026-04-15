@@ -121,7 +121,9 @@ def decode_token(token):
     raise _oauth_problem("Unable to find appropriate key")
 
 
-def verify_key(run_key):
+def verify_key(run_key, request=None, required_scopes=None):
+    # Accept optional `request` and `required_scopes` kwargs so Connexion's
+    # ApiKeySecurityHandler can invoke this function with different signatures.
     if not run_key:
         return NO_VALUE
 
@@ -135,4 +137,10 @@ def verify_key(run_key):
         if meta_analysis is None:
             raise _oauth_problem("Unable to find appropriate key")
 
-        return {"sub": "neurosynth_compose", "meta_analysis_id": meta_analysis.id}
+        # Map the token `sub` to the meta-analysis owner's external_id so that
+        # upload-key requests are attributed to the correct user.
+        sub = getattr(meta_analysis, "user_id", None)
+        if not sub:
+            raise _oauth_problem("meta-analysis owner missing external id")
+
+        return {"sub": sub, "meta_analysis_id": meta_analysis.id}

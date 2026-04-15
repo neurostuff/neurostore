@@ -6,7 +6,7 @@ import pytest
 from sqlalchemy import select
 
 from neurosynth_compose.models import MetaAnalysis, User
-from neurosynth_compose.resources import (
+from neurosynth_compose.resources.data_views import (
     meta_analysis_jobs as meta_analysis_jobs_resource,
 )
 

@@ -142,8 +142,8 @@ def _build_meta_analysis_namespace():
         results=[
             SimpleNamespace(
                 id="result-1",
-                created_at=None,
-                updated_at=None,
+                studyset_snapshot_id="studyset-1",
+                annotation_snapshot_id="annotation-1",
             )
         ],
     )

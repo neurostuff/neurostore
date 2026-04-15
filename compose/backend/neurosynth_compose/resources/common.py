@@ -3,7 +3,7 @@ from __future__ import annotations
 import connexion
 import orjson
 from connexion.lifecycle import ConnexionResponse
-from flask import current_app, request
+from flask import current_app, g, request
 from sqlalchemy.orm import selectinload
 from webargs import fields
 
@@ -61,15 +61,50 @@ def create_user():
     if "@" in name:
         name = profile_info.get("nickname", "Unknown")
 
-    return User(external_id=connexion.context.context["user"], name=name)
+    # Prefer Flask `g` if present (set by security handlers), then
+    # request-specific Connexion context, then module-level Connexion context.
+    try:
+        user_id = getattr(g, "user", None)
+    except Exception:
+        user_id = None
+
+    if user_id is None:
+        try:
+            user_id = connexion.context.request.context.get("user")
+        except Exception:
+            user_id = None
+
+    if user_id is None:
+        try:
+            user_id = connexion.context.context.get("user")
+        except Exception:
+            user_id = None
+
+    return User(external_id=user_id, name=name)
 
 
 def get_current_user():
-    user = connexion.context.context.get("user")
-    if user:
-        return User.query.filter_by(
-            external_id=connexion.context.context["user"]
-        ).first()
+    # Prefer Flask `g` first, then request-scoped Connexion context,
+    # then module-level Connexion context.
+    try:
+        user_id = getattr(g, "user", None)
+    except Exception:
+        user_id = None
+
+    if user_id is None:
+        try:
+            user_id = connexion.context.request.context.get("user")
+        except Exception:
+            user_id = None
+
+    if user_id is None:
+        try:
+            user_id = connexion.context.context.get("user")
+        except Exception:
+            user_id = None
+
+    if user_id:
+        return User.query.filter_by(external_id=user_id).first()
     return None
 
 

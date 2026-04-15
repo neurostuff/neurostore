@@ -28,9 +28,7 @@ from neurosynth_compose.resources.resource_services import (
 from neurosynth_compose.resources.view_core import ListView, ObjectView, view_maker
 
 # Imported for dynamic resolution by `view_maker` on `ProjectsView`.
-from neurosynth_compose.schemas import (  # noqa: F401
-    ProjectSchema,
-)
+from neurosynth_compose.schemas import ProjectSchema  # noqa: F401
 from neurosynth_compose.schemas.analysis import NS_BASE
 
 _RAW_PROVENANCE_UNSET = object()

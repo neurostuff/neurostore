@@ -16,10 +16,15 @@ from neurosynth_compose.resources.data_views import (
     NeurovaultFilesView,
     ProjectsView,
 )
-from neurosynth_compose.resources.meta_analysis_jobs import (
-    MetaAnalysisJobResource,
-    MetaAnalysisJobsResource,
+from neurosynth_compose.resources.data_views.meta_analysis_jobs import (
+    MetaAnalysisJobsView,
 )
+
+# Expose module for tests and external monkeypatching that import
+# neurosynth_compose.resources.meta_analysis_jobs
+from neurosynth_compose.resources.data_views import (
+    meta_analysis_jobs as meta_analysis_jobs,
+)  # noqa: F401
 from neurosynth_compose.resources.users import UsersView
 
 __all__ = [
@@ -38,6 +43,5 @@ __all__ = [
     "UsersView",
     "NeurostoreStudiesView",
     "ProjectsView",
-    "MetaAnalysisJobsResource",
-    "MetaAnalysisJobResource",
+    "MetaAnalysisJobsView",
 ]

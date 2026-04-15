@@ -17,17 +17,19 @@ from sqlalchemy import select
 from neurosynth_compose.database import db as _db
 from neurosynth_compose.ingest.neurostore import create_meta_analyses
 from neurosynth_compose.models import (
-    Annotation,
     AnnotationReference,
     MetaAnalysis,
     NeurostoreStudy,
     Project,
     Specification,
-    Studyset,
     StudysetReference,
     User,
 )
 from neurosynth_compose.models.analysis import generate_id
+from neurosynth_compose.resources.resource_services import (
+    ensure_canonical_annotation,
+    ensure_canonical_studyset,
+)
 
 # Patch Flask-SQLAlchemy teardown to ignore AttributeError on session.remove()
 orig_teardown_session = flask_sqlalchemy.SQLAlchemy._teardown_session
@@ -514,22 +516,35 @@ def user_data(app, db, mock_add_users, session):
         else:
             annot_ref = existing_annot_ref
 
+        # Persist the reference rows so they exist for FK constraints before
+        # creating Studyset/Annotation canonical rows.
+        session.add_all([ss_ref, annot_ref])
+        session.flush()
+
         for user_info in mock_add_users.values():
             user = session.execute(
                 select(User).where(User.external_id == user_info["external_id"])
             ).scalar_one_or_none()
-            studyset = Studyset(
-                user=user,
-                snapshot=serialized_studyset,
-                studyset_reference=ss_ref,
+
+            # Create canonical studyset/annotation rows using the strict
+            # DB-level dedupe path (INSERT ... ON CONFLICT DO NOTHING).
+            canonical_ss = ensure_canonical_studyset(
+                session,
+                serialized_studyset,
+                user_id=user.external_id,
+                neurostore_id=serialized_studyset["id"],
             )
 
-            annotation = Annotation(
-                user=user,
-                snapshot=serialized_annotation,
-                annotation_reference=annot_ref,
-                studyset=studyset,
+            canonical_ann = ensure_canonical_annotation(
+                session,
+                serialized_annotation,
+                user_id=user.external_id,
+                neurostore_id=serialized_annotation["id"],
+                cached_studyset_id=getattr(canonical_ss, "id", None),
             )
+
+            studyset = canonical_ss
+            annotation = canonical_ann
 
             specification = Specification(
                 user=user,
