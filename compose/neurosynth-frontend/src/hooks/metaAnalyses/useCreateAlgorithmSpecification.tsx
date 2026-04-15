@@ -101,6 +101,8 @@ const useCreateAlgorithmSpecification = () => {
             });
             if (!createdSynthAnnotation.data.id) throw new Error('no id from created synth annotation');
 
+            // Meta-analysis creation should not include cached snapshot IDs.
+            // The backend handles snapshot linkage later when results are uploaded.
             const createdMetaAnalysis = await createMetaAnalysisMutation.mutateAsync({
                 name: metaAnalysisName,
                 description: metaAnalysisDescription,
