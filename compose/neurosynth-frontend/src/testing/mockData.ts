@@ -1014,8 +1014,6 @@ const mockNeurovault: () => INeurovault[] = () => [
 ];
 
 const mockMetaAnalysisReturn: () => MetaAnalysisReturn = () => ({
-    cached_annotation: 'Q7PGxaTr6Ke4',
-    cached_studyset: 'Ue5rb87H4nMi',
     created_at: '2024-12-06T01:07:18.120143+00:00',
     description: 'MKDAChi2 meta analysis with FDRCorrector',
     id: 'WfCnGvpZxXi4',

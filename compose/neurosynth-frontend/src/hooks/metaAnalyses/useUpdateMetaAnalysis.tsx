@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from 'react-query';
 import { MetaAnalysis, MetaAnalysisReturn } from 'neurosynth-compose-typescript-sdk';
 import API from 'api/api.config';
 
-const sanitizeMetaAnalysisPayload = (
+export const sanitizeMetaAnalysisPayload = (
     payload: Partial<MetaAnalysis>
 ): Partial<MetaAnalysis> => {
     const {
@@ -14,6 +14,7 @@ const sanitizeMetaAnalysisPayload = (
         run_key,
         neurostore_analysis,
         neurostore_url,
+        results,
         ...sanitized
     } = payload as Partial<Record<string, unknown>>;
 
