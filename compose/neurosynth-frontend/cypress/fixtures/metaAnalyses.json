@@ -3,8 +3,6 @@
     "results": [
         {
             "annotation": "5LSBDTGqA6RF",
-            "cached_annotation": "32bQZ6goG54D",
-            "cached_studyset": "4GKTowsnkpqo",
             "created_at": "2023-11-27T21:45:53.258233+00:00",
             "description": "ALE meta analysis",
             "id": "3P8DpYp2Jhn6",
@@ -31,8 +29,6 @@
         },
         {
             "annotation": "5SPpPvY3x9Fp",
-            "cached_annotation": "6FjJw3DtGtUu",
-            "cached_studyset": "4Pqw2L3wj8WL",
             "created_at": "2023-11-23T00:37:12.318626+00:00",
             "description": "MKDADensity meta analysis",
             "id": "4szeUjo5eYd5",
@@ -65,8 +61,6 @@
         },
         {
             "annotation": "5SPpPvY3x9Fp",
-            "cached_annotation": "8JgWr72f5NsC",
-            "cached_studyset": "8E2xAKSKhUzn",
             "created_at": "2023-11-23T00:35:21.366722+00:00",
             "description": "MKDAChi2 meta analysis",
             "id": "4qMomKkbpawB",
@@ -99,8 +93,6 @@
         },
         {
             "annotation": "5SPpPvY3x9Fp",
-            "cached_annotation": "6x7FkZ9Up4QM",
-            "cached_studyset": "8xWA4R388YCh",
             "created_at": "2023-11-22T23:50:43.395652+00:00",
             "description": "MKDAChi2 meta analysis with FDRCorrector",
             "id": "7joU2Siajs5X",

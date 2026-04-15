@@ -43,12 +43,8 @@ def test_create(session, auth_client, user_data, db, endpoint, model, schema):
             del payload["id"]
         if "studyset" in payload:
             del payload["studyset"]
-            if hasattr(example, "studyset") and example.studyset:
-                payload["cached_studyset_id"] = example.studyset.id
         if "annotation" in payload:
             del payload["annotation"]
-            if hasattr(example, "annotation") and example.annotation:
-                payload["cached_annotation_id"] = example.annotation.id
         if "run_key" in payload:
             del payload["run_key"]
         if "url" in payload:

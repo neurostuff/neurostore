@@ -42,8 +42,8 @@ class ResultInitSchema(ContextSchema):
     meta_analysis = fields.Pluck(
         "MetaAnalysisSchema", "id", attribute="meta_analysis", dump_only=True
     )
-    studyset_snapshot = fields.Dict()
-    annotation_snapshot = fields.Dict()
+    cached_studyset = fields.Dict()
+    cached_annotation = fields.Dict()
     specification_snapshot = fields.Dict()
 
 
@@ -317,8 +317,28 @@ class MetaAnalysisResultSchema(BaseSchema):
     cli_args = fields.Dict()
     estimator = fields.Nested(EstimatorSchema)
     neurovault_collection = fields.Nested("NeurovaultCollectionSchema", exclude=("id",))
-    studyset_snapshot = fields.Pluck("StudysetSchema", "snapshot", load_only=True)
-    annotation_snapshot = fields.Pluck("AnnotationSchema", "snapshot", load_only=True)
+    studyset_snapshot = fields.Pluck(
+        "StudysetSchema", "snapshot", load_only=True, data_key="cached_studyset"
+    )
+    annotation_snapshot = fields.Pluck(
+        "AnnotationSchema", "snapshot", load_only=True, data_key="cached_annotation"
+    )
+    # load_only: accept an existing snapshot ID as input (data_key = JSON key)
+    studyset_snapshot_id_input = fields.String(
+        load_only=True, data_key="cached_studyset_id", allow_none=True
+    )
+    annotation_snapshot_id_input = fields.String(
+        load_only=True, data_key="cached_annotation_id", allow_none=True
+    )
+    # dump_only: return the linked snapshot IDs in responses
+    cached_studyset_id = fields.String(
+        dump_only=True,
+        attribute="studyset_snapshot_id",
+    )
+    cached_annotation_id = fields.String(
+        dump_only=True,
+        attribute="annotation_snapshot_id",
+    )
     diagnostic_table = fields.String(dump_only=True)
     status = fields.String()
 
@@ -353,12 +373,6 @@ class MetaAnalysisSchema(BaseSchema):
     project_id = StringOrNested(
         "ProjectSchema", metadata={"nested": False}, data_key="project"
     )
-    cached_studyset_id = fields.Pluck(
-        StudysetSchema, "id", load_only=True, attribute="studyset"
-    )
-    cached_annotation_id = fields.Pluck(
-        AnnotationSchema, "id", load_only=True, attribute="annotation"
-    )
     cached_studyset = fields.Pluck(
         StudysetSchema,
         "id",
@@ -387,8 +401,8 @@ class MetaAnalysisSchema(BaseSchema):
             entries.append(
                 {
                     "result_id": getattr(result, "id", None),
-                    "studyset_snapshot_id": ss_id,
-                    "annotation_snapshot_id": ann_id,
+                    "cached_studyset_id": ss_id,
+                    "cached_annotation_id": ann_id,
                 }
             )
         return entries

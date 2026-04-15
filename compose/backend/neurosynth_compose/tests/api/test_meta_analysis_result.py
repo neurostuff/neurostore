@@ -11,8 +11,8 @@ from neurosynth_compose.models import (
 def _create_meta_analysis_result(auth_client, meta_analysis):
     headers = {"Compose-Upload-Key": meta_analysis.run_key}
     data = {
-        "studyset_snapshot": {"name": "my studyset"},
-        "annotation_snapshot": {"name": "my_annotation"},
+        "cached_studyset": {"name": "my studyset"},
+        "cached_annotation": {"name": "my_annotation"},
         "meta_analysis_id": meta_analysis.id,
     }
     auth_client.token = None
@@ -39,8 +39,8 @@ def test_create_meta_analysis_result_requires_upload_key(
 ):
     meta_analysis = db.session.execute(select(MetaAnalysis)).scalars().first()
     data = {
-        "studyset_snapshot": {"name": "my studyset"},
-        "annotation_snapshot": {"name": "my_annotation"},
+        "cached_studyset": {"name": "my studyset"},
+        "cached_annotation": {"name": "my_annotation"},
         "meta_analysis_id": meta_analysis.id,
     }
 
@@ -57,8 +57,8 @@ def test_create_meta_analysis_result_no_snapshots(session, db, auth_client, user
         meta_analysis.annotation.snapshot = None
         headers = {"Compose-Upload-Key": meta_analysis.run_key}
         data = {
-            "studyset_snapshot": {"name": "my studyset"},
-            "annotation_snapshot": {"name": "my annotation"},
+            "cached_studyset": {"name": "my studyset"},
+            "cached_annotation": {"name": "my annotation"},
             "meta_analysis_id": meta_analysis.id,
         }
         auth_client.token = None
@@ -79,6 +79,8 @@ def test_get_meta_analysis_result_detail(session, db, auth_client, user_data):
     assert get_resp.status_code == 200
     assert get_resp.json["id"] == result_id
     assert get_resp.json["meta_analysis_id"] == meta_analysis.id
+    assert get_resp.json["cached_studyset_id"] is not None
+    assert get_resp.json["cached_annotation_id"] is not None
 
 
 def test_get_meta_analysis_results_list(session, db, auth_client, user_data):
@@ -123,8 +125,8 @@ def test_put_meta_analysis_result_with_celery(
     ).scalar_one_or_none()
     headers = {"Compose-Upload-Key": meta_analysis.run_key}
     post_data = {
-        "studyset_snapshot": {"name": "my studyset"},
-        "annotation_snapshot": {"name": "my_annotation"},
+        "cached_studyset": {"name": "my studyset"},
+        "cached_annotation": {"name": "my_annotation"},
         "meta_analysis_id": meta_analysis_id,
     }
     resp_post = auth_client.post(
@@ -237,8 +239,8 @@ def test_put_meta_analysis_result_requires_upload_key(
     meta_analysis = db.session.execute(select(MetaAnalysis)).scalars().first()
     headers = {"Compose-Upload-Key": meta_analysis.run_key}
     post_data = {
-        "studyset_snapshot": {"name": "my studyset"},
-        "annotation_snapshot": {"name": "my_annotation"},
+        "cached_studyset": {"name": "my studyset"},
+        "cached_annotation": {"name": "my_annotation"},
         "meta_analysis_id": meta_analysis.id,
     }
 
