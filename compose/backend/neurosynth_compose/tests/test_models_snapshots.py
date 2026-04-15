@@ -53,8 +53,8 @@ def test_duplicate_studyset_reused_via_api(session, db, auth_client):
     payload = {"a": 1, "b": 2}
     headers = {"Compose-Upload-Key": meta_analysis.run_key}
     data = {
-        "studyset_snapshot": payload,
-        "annotation_snapshot": {"name": "ann"},
+        "cached_studyset": payload,
+        "cached_annotation": {"name": "ann"},
         "meta_analysis_id": meta_analysis.id,
     }
 

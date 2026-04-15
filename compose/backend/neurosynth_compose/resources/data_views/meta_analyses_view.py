@@ -367,8 +367,8 @@ def _serialize_snapshots_from_results(results):
         entries.append(
             {
                 "result_id": getattr(result, "id", None),
-                "studyset_snapshot_id": ss_id,
-                "annotation_snapshot_id": ann_id,
+                "cached_studyset_id": ss_id,
+                "cached_annotation_id": ann_id,
             }
         )
     return entries
@@ -418,8 +418,8 @@ def serialize_meta_analysis(record, *, nested: bool):
             else getattr(annotation, "neurostore_id", None)
         ),
         "project": getattr(record, "project_id", None),
-        "cached_studyset": getattr(studyset, "id", None),
-        "cached_annotation": getattr(annotation, "id", None),
+        "cached_studyset": getattr(getattr(record, "studyset", None), "id", None),
+        "cached_annotation": getattr(getattr(record, "annotation", None), "id", None),
         "run_key": getattr(record, "run_key", None),
         "snapshots": _serialize_snapshots_from_results(results),
         "results": [
@@ -572,8 +572,8 @@ class MetaAnalysisResultsView(ObjectView, ListView):
     _nested = {
         "neurovault_collection": "NeurovaultCollectionsView",
         "specification_snapshot": "SpecificationsView",
-        "studyset_snapshot": "StudysetsView",
-        "annotation_snapshot": "AnnotationsView",
+        "cached_studyset_id": "StudysetsView",
+        "cached_annotation_id": "AnnotationsView",
     }
 
     def load_query(self, args=None):
@@ -609,42 +609,56 @@ class MetaAnalysisResultsView(ObjectView, ListView):
                     401,
                     description="Upload key does not match the target meta-analysis.",
                 )
-            # Extract snapshot payloads before mutation logic so that
+            # Extract snapshot payloads/IDs before mutation logic so that
             # downstream `update_or_create` does not create transient
             # Studyset/Annotation objects which would be flushed by the ORM
             # and could violate the unique md5 constraint.
             ss_payload = data.pop("studyset_snapshot", None)
             ann_payload = data.pop("annotation_snapshot", None)
+            ss_id_input = data.pop("studyset_snapshot_id_input", None)
+            ann_id_input = data.pop("annotation_snapshot_id_input", None)
 
             canonical_ss = None
             canonical_ann = None
 
             if meta:
+                # If a snapshot ID was provided directly, look up the existing
+                # canonical row rather than creating a new one.
+                if ss_id_input is not None:
+                    canonical_ss = db.session.get(Studyset, ss_id_input)
+                    if canonical_ss is not None:
+                        meta.studyset = canonical_ss
+
                 # Unwrap possible Pluck-wrapped payloads produced by
                 # Marshmallow `Pluck` fields which may nest the payload
                 # under a `snapshot` key.
-                if (
-                    isinstance(ss_payload, dict)
-                    and "snapshot" in ss_payload
-                    and isinstance(ss_payload.get("snapshot"), dict)
-                ):
-                    ss_payload = ss_payload.get("snapshot")
+                if ss_payload is not None and canonical_ss is None:
+                    if (
+                        isinstance(ss_payload, dict)
+                        and "snapshot" in ss_payload
+                        and isinstance(ss_payload.get("snapshot"), dict)
+                    ):
+                        ss_payload = ss_payload.get("snapshot")
 
-                if ss_payload is not None:
                     canonical_ss = ensure_canonical_studyset(
                         db.session, ss_payload, user_id=meta.user_id
                     )
                     if canonical_ss is not None:
                         meta.studyset = canonical_ss
 
-                if (
-                    isinstance(ann_payload, dict)
-                    and "snapshot" in ann_payload
-                    and isinstance(ann_payload.get("snapshot"), dict)
-                ):
-                    ann_payload = ann_payload.get("snapshot")
+                if ann_id_input is not None:
+                    canonical_ann = db.session.get(Annotation, ann_id_input)
+                    if canonical_ann is not None:
+                        meta.annotation = canonical_ann
 
-                if ann_payload is not None:
+                if ann_payload is not None and canonical_ann is None:
+                    if (
+                        isinstance(ann_payload, dict)
+                        and "snapshot" in ann_payload
+                        and isinstance(ann_payload.get("snapshot"), dict)
+                    ):
+                        ann_payload = ann_payload.get("snapshot")
+
                     canonical_ann = ensure_canonical_annotation(
                         db.session,
                         ann_payload,
@@ -775,7 +789,7 @@ class MetaAnalysisResultsView(ObjectView, ListView):
 
         # Also allow updating meta-analysis snapshots via PUT body or form fields.
         # Accept JSON body or form-encoded JSON strings under
-        # `studyset_snapshot` and `annotation_snapshot` keys.
+        # `cached_studyset` and `cached_annotation` keys.
         try:
             json_body = request.get_json(silent=True) or {}
         except Exception:
@@ -783,9 +797,13 @@ class MetaAnalysisResultsView(ObjectView, ListView):
 
         ss_payload = None
         ann_payload = None
+        ss_id_input = None
+        ann_id_input = None
         if isinstance(json_body, dict):
-            ss_payload = json_body.get("studyset_snapshot")
-            ann_payload = json_body.get("annotation_snapshot")
+            ss_payload = json_body.get("cached_studyset")
+            ann_payload = json_body.get("cached_annotation")
+            ss_id_input = json_body.get("cached_studyset_id")
+            ann_id_input = json_body.get("cached_annotation_id")
 
         def _parse_form_field(key):
             val = request.form.get(key)
@@ -797,35 +815,54 @@ class MetaAnalysisResultsView(ObjectView, ListView):
                 return None
 
         if ss_payload is None:
-            ss_payload = _parse_form_field("studyset_snapshot")
+            ss_payload = _parse_form_field("cached_studyset")
         if ann_payload is None:
-            ann_payload = _parse_form_field("annotation_snapshot")
+            ann_payload = _parse_form_field("cached_annotation")
+        if ss_id_input is None:
+            ss_id_input = request.form.get("cached_studyset_id")
+        if ann_id_input is None:
+            ann_id_input = request.form.get("cached_annotation_id")
 
         meta = getattr(result, "meta_analysis", None)
         if meta:
-            # Unwrap Pluck-wrapped payloads here as well
-            if (
-                isinstance(ss_payload, dict)
-                and "snapshot" in ss_payload
-                and isinstance(ss_payload.get("snapshot"), dict)
-            ):
-                ss_payload = ss_payload.get("snapshot")
+            canonical_ss = None
+            canonical_ann = None
 
-            if ss_payload is not None:
+            # ID-reference path: link to an existing snapshot by ID.
+            if ss_id_input is not None:
+                canonical_ss = db.session.get(Studyset, ss_id_input)
+                if canonical_ss is not None:
+                    meta.studyset = canonical_ss
+                    result.studyset_snapshot_id = canonical_ss.id
+
+            # JSON-payload path: create/deduplicate a new snapshot.
+            if ss_payload is not None and canonical_ss is None:
+                if (
+                    isinstance(ss_payload, dict)
+                    and "snapshot" in ss_payload
+                    and isinstance(ss_payload.get("snapshot"), dict)
+                ):
+                    ss_payload = ss_payload.get("snapshot")
                 canonical_ss = ensure_canonical_studyset(
                     db.session, ss_payload, user_id=meta.user_id
                 )
                 if canonical_ss is not None:
                     meta.studyset = canonical_ss
+                    result.studyset_snapshot_id = canonical_ss.id
 
-            if (
-                isinstance(ann_payload, dict)
-                and "snapshot" in ann_payload
-                and isinstance(ann_payload.get("snapshot"), dict)
-            ):
-                ann_payload = ann_payload.get("snapshot")
+            if ann_id_input is not None:
+                canonical_ann = db.session.get(Annotation, ann_id_input)
+                if canonical_ann is not None:
+                    meta.annotation = canonical_ann
+                    result.annotation_snapshot_id = canonical_ann.id
 
-            if ann_payload is not None:
+            if ann_payload is not None and canonical_ann is None:
+                if (
+                    isinstance(ann_payload, dict)
+                    and "snapshot" in ann_payload
+                    and isinstance(ann_payload.get("snapshot"), dict)
+                ):
+                    ann_payload = ann_payload.get("snapshot")
                 canonical_ann = ensure_canonical_annotation(
                     db.session,
                     ann_payload,
@@ -834,6 +871,7 @@ class MetaAnalysisResultsView(ObjectView, ListView):
                 )
                 if canonical_ann is not None:
                     meta.annotation = canonical_ann
+                    result.annotation_snapshot_id = canonical_ann.id
 
             db.session.add(meta)
             commit_session()

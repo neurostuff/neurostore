@@ -237,8 +237,8 @@ class MetaAnalysis(BaseMixin, db.Model):
             entries.append(
                 {
                     "result_id": result.id,
-                    "studyset_snapshot_id": ss_id,
-                    "annotation_snapshot_id": ann_id,
+                    "cached_studyset_id": ss_id,
+                    "cached_annotation_id": ann_id,
                 }
             )
         return entries

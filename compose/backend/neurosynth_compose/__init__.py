@@ -53,15 +53,19 @@ def create_app():
 
     with app.app_context():
         disable_response_validation = _env_flag("CONNEXION_DISABLE_RESPONSE_VALIDATION")
+        # Enable strict request/response validation in both DEBUG and TESTING modes
+        # so that schema drift between the OpenAPI spec and the actual API is caught
+        # during the test suite, not just in local development.
+        validate_mode = app.config.get("DEBUG") or app.config.get("TESTING", False)
         connexion_app.add_api(
             openapi_path,
             base_path="/api",
             options=swagger_options,
             arguments={"title": "NeuroSynth API"},
             resolver=MethodResolver("neurosynth_compose.resources"),
-            strict_validation=app.config["DEBUG"],
+            strict_validation=validate_mode,
             validate_responses=(
-                False if disable_response_validation else app.config["DEBUG"]
+                False if disable_response_validation else validate_mode
             ),
         )
 
