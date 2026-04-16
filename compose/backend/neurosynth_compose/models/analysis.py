@@ -15,8 +15,8 @@ from sqlalchemy import (
     Integer,
     Table,
     Text,
+    event,
 )
-from sqlalchemy import event
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.orm import backref, relationship
@@ -186,15 +186,17 @@ class SnapshotAnnotation(BaseMixin, db.Model):
     )
 
 
-def _set_md5_before_insert(mapper, connection, target):
-    if getattr(target, "snapshot", None) is not None and not getattr(
-        target, "md5", None
-    ):
-        target.md5 = md5_of_snapshot(target.snapshot)
+def _sync_snapshot_md5(mapper, connection, target):
+    if getattr(target, "snapshot", None) is None:
+        target.md5 = None
+        return
+    target.md5 = md5_of_snapshot(target.snapshot)
 
 
-event.listen(SnapshotStudyset, "before_insert", _set_md5_before_insert)
-event.listen(SnapshotAnnotation, "before_insert", _set_md5_before_insert)
+event.listen(SnapshotStudyset, "before_insert", _sync_snapshot_md5)
+event.listen(SnapshotStudyset, "before_update", _sync_snapshot_md5)
+event.listen(SnapshotAnnotation, "before_insert", _sync_snapshot_md5)
+event.listen(SnapshotAnnotation, "before_update", _sync_snapshot_md5)
 
 
 class MetaAnalysis(BaseMixin, db.Model):
@@ -350,6 +352,12 @@ class Project(BaseMixin, db.Model):
     neurostore_studyset_id = Column(Text, ForeignKey("studyset_references.id"))
     neurostore_annotation_id = Column(Text, ForeignKey("annotation_references.id"))
     user = relationship("User", backref=backref("projects"))
+    neurostore_studyset = relationship(
+        "NeurostoreStudyset", foreign_keys=[neurostore_studyset_id]
+    )
+    neurostore_annotation = relationship(
+        "NeurostoreAnnotation", foreign_keys=[neurostore_annotation_id]
+    )
     neurostore_study = relationship(
         "NeurostoreStudy", back_populates="project", uselist=False
     )
