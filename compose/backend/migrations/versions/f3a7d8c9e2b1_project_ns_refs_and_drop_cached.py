@@ -1,4 +1,4 @@
-"""migrate projects to neurostore reference FKs and drop cached_* on meta_analyses
+"""migrate projects to neurostore reference FKs, drop cached_* on meta_analyses, and rename annotations column
 
 Adds projects.neurostore_studyset_id / projects.neurostore_annotation_id
 (referencing studyset_references / annotation_references). Backfills them from
@@ -9,6 +9,9 @@ columns.
 Also backfills meta_analyses.neurostore_studyset_id /
 meta_analyses.neurostore_annotation_id from the legacy cached_studyset_id /
 cached_annotation_id, then drops the cached_* columns.
+
+Also renames annotations.cached_studyset_id → annotations.snapshot_studyset_id
+to match the current SnapshotAnnotation model.
 
 Revision ID: f3a7d8c9e2b1
 Revises: a9d8f7c6b5e4
@@ -152,6 +155,22 @@ def upgrade():
             op.drop_constraint(fk_name, "meta_analyses", type_="foreignkey")
         op.drop_column("meta_analyses", "cached_annotation_id")
 
+    # ── annotations: rename cached_studyset_id → snapshot_studyset_id ────────
+    # Re-read column list after all drops above.
+    ann_cols = {c["name"] for c in inspector.get_columns("annotations")}
+
+    if "cached_studyset_id" in ann_cols and "snapshot_studyset_id" not in ann_cols:
+        for fk_name in _fk_names_for(inspector, "annotations", "cached_studyset_id"):
+            op.drop_constraint(fk_name, "annotations", type_="foreignkey")
+        op.alter_column("annotations", "cached_studyset_id", new_column_name="snapshot_studyset_id")
+        op.create_foreign_key(
+            "fk_annotations_snapshot_studyset_id",
+            "annotations",
+            "studysets",
+            ["snapshot_studyset_id"],
+            ["id"],
+        )
+
 
 def downgrade():
     bind = op.get_bind()
@@ -288,3 +307,18 @@ def downgrade():
         for fk_name in _fk_names_for(inspector, "projects", "neurostore_annotation_id"):
             op.drop_constraint(fk_name, "projects", type_="foreignkey")
         op.drop_column("projects", "neurostore_annotation_id")
+
+    # ── annotations: rename snapshot_studyset_id → cached_studyset_id ────────
+    ann_cols = {c["name"] for c in inspector.get_columns("annotations")}
+
+    if "snapshot_studyset_id" in ann_cols and "cached_studyset_id" not in ann_cols:
+        for fk_name in _fk_names_for(inspector, "annotations", "snapshot_studyset_id"):
+            op.drop_constraint(fk_name, "annotations", type_="foreignkey")
+        op.alter_column("annotations", "snapshot_studyset_id", new_column_name="cached_studyset_id")
+        op.create_foreign_key(
+            None,
+            "annotations",
+            "studysets",
+            ["cached_studyset_id"],
+            ["id"],
+        )
