@@ -27,6 +27,20 @@ def test_studyset_md5_saved_on_insert(session):
     assert row.md5 == md5_of_snapshot(payload)
 
 
+def test_annotation_md5_saved_on_insert(session):
+    payload = {"foo": "bar", "num": 1}
+    ann = SnapshotAnnotation(snapshot=payload)
+    session.add(ann)
+    session.flush()
+
+    row = session.execute(
+        select(SnapshotAnnotation).where(SnapshotAnnotation.id == ann.id)
+    ).scalar_one()
+
+    assert hasattr(row, "md5"), "Annotation.md5 column not found"
+    assert row.md5 == md5_of_snapshot(payload)
+
+
 def test_duplicate_studyset_reused_via_api(session, db, auth_client):
     # Ensure deduplication is enforced via the MetaAnalysisResult business logic
     meta_analysis = db.session.execute(select(MetaAnalysis)).scalars().first()

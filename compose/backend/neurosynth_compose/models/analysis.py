@@ -15,6 +15,7 @@ from sqlalchemy import (
     Integer,
     Table,
     Text,
+    event,
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.associationproxy import association_proxy
@@ -22,6 +23,7 @@ from sqlalchemy.orm import backref, relationship
 from sqlalchemy.sql import func
 
 from neurosynth_compose.database import db
+from neurosynth_compose.utils.snapshots import md5_of_snapshot
 
 
 def generate_id():
@@ -182,6 +184,19 @@ class SnapshotAnnotation(BaseMixin, db.Model):
     neurostore_annotation = relationship(
         "NeurostoreAnnotation", back_populates="snapshot_annotations"
     )
+
+
+def _sync_snapshot_md5(mapper, connection, target):
+    if getattr(target, "snapshot", None) is None:
+        target.md5 = None
+        return
+    target.md5 = md5_of_snapshot(target.snapshot)
+
+
+event.listen(SnapshotStudyset, "before_insert", _sync_snapshot_md5)
+event.listen(SnapshotStudyset, "before_update", _sync_snapshot_md5)
+event.listen(SnapshotAnnotation, "before_insert", _sync_snapshot_md5)
+event.listen(SnapshotAnnotation, "before_update", _sync_snapshot_md5)
 
 
 class MetaAnalysis(BaseMixin, db.Model):
