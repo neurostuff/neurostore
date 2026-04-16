@@ -19,9 +19,6 @@ services:
     command: /usr/local/bin/gunicorn -k uvicorn.workers.UvicornWorker -w 2 -b :8000 neurosynth_compose.core:asgi_app --log-level debug --timeout 120
     env_file:
       - .env
-    networks:
-      - default
-      - proxy_shared
 
   compose_redis:
     image: redis
@@ -47,9 +44,6 @@ services:
       - ${FILE_DIR}:/file-data
     env_file:
       - .env
-    networks:
-      - default
-      - proxy_shared
 
   compose_nginx:
     image: compose_nginx

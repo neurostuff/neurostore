@@ -79,11 +79,9 @@ def create_meta_analyses(url="https://neurostore.org", n_studysets=None):
             to_commit.append(
                 MetaAnalysis(
                     specification=spec,
-                    neurostore_studyset_id=getattr(ss, "neurostore_id", None),
+                    neurostore_studyset_id=ss.neurostore_id,
                     neurostore_annotation_id=(
-                        getattr(ss.annotations[0], "neurostore_id", None)
-                        if ss.annotations
-                        else None
+                        ss.annotations[0].neurostore_id if ss.annotations else None
                     ),
                 )
             )

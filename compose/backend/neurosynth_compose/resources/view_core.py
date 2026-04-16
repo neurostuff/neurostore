@@ -20,8 +20,6 @@ from neurosynth_compose.resources.common import (
 from neurosynth_compose.resources.mutation_core import execute_mutation
 from neurosynth_compose.resources.singular import singularize
 
-_UNSET = object()
-
 
 def view_maker(cls):
     proc_name = cls.__name__.removesuffix("View").removesuffix("Resource")
@@ -164,7 +162,7 @@ class ListView(BaseView):
             **{field: fields.Str() for field in self._fulltext_fields},
         }
 
-    def apply_filters(self, query, args, *, current_user=_UNSET, user_is_admin=_UNSET):
+    def apply_filters(self, query, args):
         model = self._model
 
         if args.get("ids"):
@@ -172,22 +170,16 @@ class ListView(BaseView):
         if args.get("user_id"):
             query = query.where(model.user_id == args.get("user_id"))
 
-        if hasattr(model, "public"):
-            if current_user is _UNSET:
-                current_user = get_current_user()
-            if user_is_admin is _UNSET:
-                user_is_admin = is_user_admin(current_user)
-            if not user_is_admin:
+        if hasattr(model, "public") or hasattr(model, "draft"):
+            current_user = get_current_user()
+            user_is_admin = is_user_admin(current_user)
+
+            if hasattr(model, "public") and not user_is_admin:
                 query = query.where(
                     sae.or_(model.public.is_(True), model.user == current_user)
                 )
 
-        if hasattr(model, "draft"):
-            if current_user is _UNSET:
-                current_user = get_current_user()
-            if user_is_admin is _UNSET:
-                user_is_admin = is_user_admin(current_user)
-            if not user_is_admin:
+            if hasattr(model, "draft") and not user_is_admin:
                 query = query.where(
                     sae.or_(model.draft.is_(False), model.user == current_user)
                 )
@@ -248,20 +240,8 @@ class ListView(BaseView):
 
     def search(self):
         args = parser.parse(self._user_args, request, location="query")
-        current_user = get_current_user()
-        user_is_admin = is_user_admin(current_user)
-        count_query = self.apply_filters(
-            self.load_count_query(args=args),
-            args,
-            current_user=current_user,
-            user_is_admin=user_is_admin,
-        )
-        query = self.apply_filters(
-            self.load_query(args=args),
-            args,
-            current_user=current_user,
-            user_is_admin=user_is_admin,
-        )
+        count_query = self.apply_filters(self.load_count_query(args=args), args)
+        query = self.apply_filters(self.load_query(args=args), args)
         query = self.sort_query(query, args)
         return self.finalize_search(query, args, count_query=count_query)
 
