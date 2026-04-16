@@ -24,6 +24,8 @@ services:
     image: neurostore
     restart: always
     depends_on:
+      neurostore:
+        condition: service_started
       store-pgsql17:
         condition: service_healthy
       store_redis:
@@ -31,14 +33,7 @@ services:
     volumes:
       - ./backend/migrations:/migrations
       - ./:/store
-    command: >
-      bash -c '
-        until flask db upgrade; do
-          echo "store_outbox_worker: waiting for successful db upgrade..."
-          sleep 3
-        done
-        exec flask process-base-study-flag-outbox --loop
-      '
+    command: flask process-base-study-flag-outbox --loop
     healthcheck:
       test:
         [
@@ -56,6 +51,8 @@ services:
     image: neurostore
     restart: always
     depends_on:
+      neurostore:
+        condition: service_started
       store-pgsql17:
         condition: service_healthy
       store_redis:
@@ -63,14 +60,7 @@ services:
     volumes:
       - ./backend/migrations:/migrations
       - ./:/store
-    command: >
-      bash -c '
-        until flask db upgrade; do
-          echo "store_metadata_outbox_worker: waiting for successful db upgrade..."
-          sleep 3
-        done
-        exec flask process-base-study-metadata-outbox --loop
-      '
+    command: flask process-base-study-metadata-outbox --loop
     healthcheck:
       test:
         [
