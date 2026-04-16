@@ -12,8 +12,7 @@ const useGetMetaAnalysisJobsByMetaAnalysisId = (metaAnalysisId: string | undefin
     return useQuery(
         ['meta-analysis-jobs', metaAnalysisId],
         async () => {
-            const res =
-                await API.NeurosynthServices.MetaAnalysisService.neurosynthComposeResourcesMetaAnalysisJobsMetaAnalysisJobsResourceGet();
+            const res = await API.NeurosynthServices.MetaAnalysisService.metaAnalysisJobsGet();
             return res.data.results
                 ?.filter((job) => job.meta_analysis_id === metaAnalysisId)
                 .sort((a, b) => new Date(a.created_at ?? '').getTime() - new Date(b.created_at ?? '').getTime());

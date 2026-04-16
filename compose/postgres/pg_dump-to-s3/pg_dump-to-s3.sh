@@ -14,6 +14,8 @@ fi
 
 # S3
 S3_PATH="${S3_PATH:-neurosynth-backup}"
+DEV_S3_PATH="${DEV_S3_PATH:-${S3_PATH}/dev-reduced}"
+ENABLE_DEV_REDUCED_BACKUP="${ENABLE_DEV_REDUCED_BACKUP:-1}"
 
 # get databases list
 if [ "$#" -eq 0 ]; then
@@ -32,14 +34,20 @@ NOW=$(date +"%m-%d-%Y-at-%H-%M-%S")
 DIR=/home
 
 for db in "${dbs[@]}"; do
+    full_dump_path="/tmp/${NOW}_${db}.dump"
+
     # Dump database
-    pg_dump -Fc -h "${PG_HOST}" -U "${PG_USER}" "${db}" > /tmp/"${NOW}"_"${db}".dump
+    pg_dump -Fc -h "${PG_HOST}" -U "${PG_USER}" "${db}" > "${full_dump_path}"
 
     # Copy to S3
-    aws s3 cp /tmp/"${NOW}"_"${db}".dump "s3://${S3_PATH}/${NOW}_${db}.dump" --storage-class STANDARD_IA
+    aws s3 cp "${full_dump_path}" "s3://${S3_PATH}/${NOW}_${db}.dump" --storage-class STANDARD_IA
+
+    if [ "${ENABLE_DEV_REDUCED_BACKUP}" = "1" ]; then
+        DEV_S3_PATH="${DEV_S3_PATH}" /home/build-reduced-dev-backup.sh "${db}" "${NOW}"
+    fi
 
     # Delete local file
-    rm /tmp/"${NOW}"_"${db}".dump
+    rm "${full_dump_path}"
 
     # Log
     echo "* Database ${db} is archived"
@@ -48,3 +56,6 @@ done
 # Delete old files
 echo "* Delete old backups";
 "${DIR}/s3-autodelete.sh" "${S3_PATH}" "7 days"
+if [ "${ENABLE_DEV_REDUCED_BACKUP}" = "1" ]; then
+    "${DIR}/s3-autodelete.sh" "${DEV_S3_PATH}" "7 days"
+fi

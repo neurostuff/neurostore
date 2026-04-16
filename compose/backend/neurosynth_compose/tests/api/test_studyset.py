@@ -1,10 +1,11 @@
-from ...models import User, Studyset
-from ...schemas import StudysetSchema
 from sqlalchemy import select
+
+from neurosynth_compose.models import Studyset, User
+from neurosynth_compose.schemas import SnapshotStudysetSchema
 
 
 def test_get_studysets(session, auth_client, user_data):
-    get = auth_client.get("/api/studysets")
+    get = auth_client.get("/api/snapshot-studysets")
     assert get.status_code == 200
 
 
@@ -15,12 +16,12 @@ def test_post_studyset_with_new_neurostore_id(session, auth_client, user_data, d
     example = db.session.execute(
         select(Studyset).where(Studyset.user == user)
     ).scalar_one_or_none()
-    schema = StudysetSchema()
+    schema = SnapshotStudysetSchema()
     payload = schema.dump(example)
     payload.pop("url")
     payload.pop("username")
     # payload["neurostore_id"] = ""
 
-    resp = auth_client.post("/api/studysets", data=payload)
+    resp = auth_client.post("/api/snapshot-studysets", data=payload)
 
     assert resp.status_code == 200

@@ -10,14 +10,20 @@ from marshmallow import ValidationError
 from redis import Redis
 from sqlalchemy import select
 
-from ..database import db
-from ..models import MetaAnalysis
-from ..schemas import MetaAnalysisJobRequestSchema
-from .analysis import _make_json_response, get_current_user, is_user_admin
+from neurosynth_compose.database import db
+from neurosynth_compose.models import MetaAnalysis
+from neurosynth_compose.resources.common import (
+    get_current_user,
+    is_user_admin,
+    make_json_response,
+)
+from neurosynth_compose.schemas import MetaAnalysisJobRequestSchema
 
 logger = logging.getLogger(__name__)
 
 JOB_CACHE_PREFIX = "compose:jobs"
+USER_JOB_INDEX_PREFIX = "compose:user-jobs"
+META_ANALYSIS_JOB_INDEX_PREFIX = "compose:meta-analysis-jobs"
 JOB_CACHE_TTL_SECONDS = 60 * 60 * 24 * 3  # 3 days
 LOG_TIME_PADDING_MS = 5 * 60 * 1000  # pad log queries by 5 minutes on each side
 
@@ -56,6 +62,14 @@ def _job_cache_key(job_id: str) -> str:
     return f"{JOB_CACHE_PREFIX}:{job_id}"
 
 
+def _user_job_index_key(user_id: str) -> str:
+    return f"{USER_JOB_INDEX_PREFIX}:{user_id}"
+
+
+def _meta_analysis_job_index_key(meta_analysis_id: str) -> str:
+    return f"{META_ANALYSIS_JOB_INDEX_PREFIX}:{meta_analysis_id}"
+
+
 def _iso_to_epoch_millis(value: Optional[str]) -> Optional[int]:
     """Convert an ISO 8601 timestamp to epoch milliseconds."""
     if not value:
@@ -74,6 +88,16 @@ def _store_job(job_id: str, payload: dict) -> None:
     try:
         client = get_job_store()
         client.setex(_job_cache_key(job_id), JOB_CACHE_TTL_SECONDS, json.dumps(payload))
+        user_id = payload.get("user_id")
+        if user_id:
+            client.sadd(_user_job_index_key(user_id), job_id)
+            client.expire(_user_job_index_key(user_id), JOB_CACHE_TTL_SECONDS)
+        meta_analysis_id = payload.get("meta_analysis_id")
+        if meta_analysis_id:
+            client.sadd(_meta_analysis_job_index_key(meta_analysis_id), job_id)
+            client.expire(
+                _meta_analysis_job_index_key(meta_analysis_id), JOB_CACHE_TTL_SECONDS
+            )
     except JobStoreError:
         raise
     except Exception as exc:  # noqa: BLE001
@@ -213,7 +237,7 @@ def submit_job():
     response_payload = cached_payload.copy()
     response_payload["status"] = status
 
-    return _make_json_response(response_payload, status=202)
+    return make_json_response(response_payload, status=202)
 
 
 def get_job_status(job_id: str):
@@ -274,33 +298,34 @@ def get_job_status(job_id: str):
     except JobStoreError as exc:
         _abort_with_job_store_error(exc)
 
-    return _make_json_response(cached_job)
+    return make_json_response(cached_job)
 
 
 def list_jobs():
     current_user = _ensure_authenticated_user()
     try:
         client = get_job_store()
-        keys = list(client.scan_iter(f"{JOB_CACHE_PREFIX}:*"))
+        job_ids = client.smembers(_user_job_index_key(current_user.external_id))
     except JobStoreError as exc:
         _abort_with_job_store_error(exc)
     except Exception as exc:  # noqa: BLE001
-        error = JobStoreError("failed to list jobs")
+        error = JobStoreError("failed to list indexed jobs")
         error.__cause__ = exc
         _abort_with_job_store_error(error)
 
     jobs = []
-    for key in keys:
-        if isinstance(key, bytes):
-            key = key.decode("utf-8")
-        job_id = key[len(JOB_CACHE_PREFIX) + 1:]
+    for job_id in job_ids:
+        if isinstance(job_id, bytes):
+            job_id = job_id.decode("utf-8")
         try:
             job = _load_job(job_id)
         except JobStoreError as exc:
             _abort_with_job_store_error(exc)
         if not job:
-            continue
-        if job.get("user_id") != current_user.external_id:
+            try:
+                client.srem(_user_job_index_key(current_user.external_id), job_id)
+            except Exception:
+                pass
             continue
         jobs.append(job)
 
@@ -309,20 +334,20 @@ def list_jobs():
         reverse=True,
     )
     payload = {"results": jobs, "metadata": {"count": len(jobs)}}
-    return _make_json_response(payload)
+    return make_json_response(payload)
 
 
-class MetaAnalysisJobsResource(MethodView):
+class MetaAnalysisJobsView(MethodView):
     @classmethod
     def post(cls):
         return submit_job()
 
     @classmethod
-    def get(cls):
-        return list_jobs()
-
-
-class MetaAnalysisJobResource(MethodView):
-    @classmethod
-    def get(cls, job_id: str):
+    def get(cls, job_id: str | None = None):
+        if job_id is None:
+            return list_jobs()
         return get_job_status(job_id)
+
+    @classmethod
+    def search(cls):
+        return cls.get()

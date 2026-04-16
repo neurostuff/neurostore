@@ -7,76 +7,92 @@ Neurostore is a containerized neuroimaging meta-analysis platform consisting of 
 ## Working Effectively
 
 ### Initial Setup - CRITICAL: Git Submodules Required
+
 Initialize Git submodules before any build or development work:
+
 - `git submodule update --init --recursive` -- takes 1-2 seconds. **NEVER CANCEL**.
 - This downloads OpenAPI specifications and TypeScript SDKs required for builds.
 
 ### Build Services - NEVER CANCEL These Commands
+
 Build times vary significantly. Set appropriate timeouts and **DO NOT CANCEL** builds:
 
 #### Store Service (Neurostore Backend)
+
 - `cd store && cp .env.example .env`
-- `docker network create nginx-proxy` -- creates shared network
+- `docker network create ${SHARED_PROXY_NETWORK:-nginx-proxy}` -- creates the shared proxy network used by the stack
 - `docker compose build` -- takes 1-2 minutes. **NEVER CANCEL. Set timeout to 180+ seconds.**
 - `docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d` -- takes 10-15 seconds
 
-#### Compose Service (Neurosynth-Compose Backend + Frontend)  
+#### Compose Service (Neurosynth-Compose Backend + Frontend)
+
 - `cd compose && cp .env.example .env`
 - `docker compose build` -- takes 2-3 minutes. **NEVER CANCEL. Set timeout to 240+ seconds.**
 - `docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d` -- takes 5-10 seconds
 
 ### Database Setup
+
 Create and migrate databases for both services:
 
 #### Store Database
+
 - `.env` selects the environment with `APP_ENV`; on a fresh volume, the matching default database is created automatically (`store_test_db` for development/testing/docker_test, `neurostore` for staging/production)
 - `docker compose exec -T neurostore bash -c "flask db upgrade"` -- takes 5-10 seconds
 - `docker compose exec -T neurostore bash -c "flask ingest-neurosynth --max-rows 100"` -- takes 5-10 seconds
 - The tracked store migrations create `pgvector` automatically. If you are recovering a partially migrated database, `docker compose exec -T store-pgsql17 psql -U postgres -d store_test_db -c "CREATE EXTENSION IF NOT EXISTS vector;"` is still a safe fallback.
 
 #### Compose Database
+
 - `.env` selects the environment with `APP_ENV`; on a fresh volume, the matching default database is created automatically (`compose_test_db` for development/testing/docker_test, `compose` for staging/production)
 - `docker compose exec -T compose bash -c "flask db upgrade"` -- takes 5-10 seconds
 
 ### Frontend Development
+
 Navigate to `compose/neurosynth-frontend/`:
 
 #### Build & Development
+
 - `cp .env.example .env.dev`
 - `npm install` -- takes 25-30 seconds
 - `npm run build:dev` -- takes 25-35 seconds
 - `npm run start:dev` -- starts development server on http://localhost:3000
 
 #### Configuration Files Needed
+
 - `.env.dev` -- development environment configuration
 - `.env.staging` -- staging environment configuration
 
 ## Testing - Set Long Timeouts
 
 ### Backend Tests - NEVER CANCEL
+
 **CRITICAL**: Backend tests take significant time. Set appropriate timeouts.
 
 #### Store Backend Tests
+
 - `docker compose run -e "APP_ENV=docker_test" --rm neurostore bash -c "python -m pytest neurostore/tests"`
 - Ensure `store_test_db` exists first if you are reusing an existing Postgres volume:
   `docker compose exec -T store-pgsql17 bash -lc "psql -U postgres -tAc \"SELECT 1 FROM pg_database WHERE datname = 'store_test_db'\" | grep -q 1 || psql -U postgres -c \"create database store_test_db\""`
 - Takes 2-3 minutes. **NEVER CANCEL. Set timeout to 300+ seconds.**
 - Expected: the suite should run against `store_test_db`
 
-#### Compose Backend Tests  
+#### Compose Backend Tests
+
 - `docker compose run -e "APP_ENV=docker_test" --rm compose bash -c "python -m pytest neurosynth_compose/tests"`
 - Ensure `compose_test_db` exists first if you are reusing an existing Postgres volume:
   `docker compose exec -T compose-pgsql17 bash -lc "psql -U postgres -tAc \"SELECT 1 FROM pg_database WHERE datname = 'compose_test_db'\" | grep -q 1 || psql -U postgres -c \"create database compose_test_db\""`
 - Takes 2-4 minutes. **NEVER CANCEL. Set timeout to 360+ seconds.**
 
 #### Frontend Tests
+
 - `npm run test` -- takes 50-70 seconds
 - Expected: ~345 tests passing
-- `npm run cy:e2e-headless` -- Cypress E2E tests (requires both backend services running)
+- `npm run cy:e2e-headless-dev` -- Cypress E2E (loads `.env.dev` via `env-cmd`; create it from `.env.example` if missing). Requires backends running and the app served per repo docs.
 
 ## Validation Scenarios
 
 ### Always Test These Workflows After Changes
+
 1. **API Functionality**: `curl http://localhost/api/studies` -- Store API should return JSON
 2. **Base Study Datatype Filtering**: `curl "http://localhost/api/base-studies?data_type=coordinate"` -- should return ingested coordinate studies after `flask ingest-neurosynth --max-rows 100`
 3. **Frontend Build**: Ensure `npm run build:dev` completes without errors
@@ -84,8 +100,9 @@ Navigate to `compose/neurosynth-frontend/`:
 5. **Docker Services**: All containers should start and stay healthy
 
 ### Service URLs
+
 - **Store API**: http://localhost/api (port 80)
-- **Compose API**: http://localhost:81/api (port 81)  
+- **Compose API**: http://localhost:81/api (port 81)
 - **Frontend Dev**: http://localhost:3000 (when running `npm run start:dev`)
 - **pgHero**: http://localhost/pghero (database monitoring)
 - **Grafana**: Available via docker compose (database metrics)
@@ -93,11 +110,13 @@ Navigate to `compose/neurosynth-frontend/`:
 ## Linting & Code Quality
 
 ### Backend Linting
+
 - `pip install flake8` (if not installed)
 - `cd store/backend && flake8 ./neurostore` -- takes <1 second
 - `cd compose/backend && flake8 ./neurosynth_compose` -- takes <1 second
 
-### Frontend Linting  
+### Frontend Linting
+
 - `npm run lint` -- takes 30-40 seconds
 - **Expected**: ~899 linting issues exist (mostly formatting). This is normal.
 - `npm run lint --fix` -- auto-fixes many issues
@@ -105,7 +124,9 @@ Navigate to `compose/neurosynth-frontend/`:
 ## Configuration Notes
 
 ### Environment Variables
+
 Both services use similar `.env` configurations:
+
 - `APP_ENV` -- Primary environment selector (`development`, `staging`, `production`). This drives the Flask config class and the default database name used by app/runtime services.
 - `POSTGRES_HOST` -- Database host (store-pgsql17 or compose-pgsql17)
 - `POSTGRES_PASSWORD` -- Database password (usually "example")
@@ -113,9 +134,12 @@ Both services use similar `.env` configurations:
 - `DEBUG=True` -- Enable debug mode
 
 ### Docker Configuration Issues
+
 Use `APP_ENV` as the only environment selector. For Docker-based tests, use `APP_ENV=docker_test`.
+- `SHARED_PROXY_NETWORK` controls the external cross-stack network name. Leave it as `nginx-proxy` for ordinary local/CI runs, or give dev and staging different values when both tracks must coexist on the same host.
 
 ## Directory Structure Reference
+
 ```
 /
 ├── store/                    # Neurostore backend service
@@ -126,7 +150,7 @@ Use `APP_ENV` as the only environment selector. For Docker-based tests, use `APP
 │   ├── docker-compose.yml   # Production config
 │   └── docker-compose.dev.yml # Development overrides
 ├── compose/                 # Neurosynth-Compose service
-│   ├── backend/             # Python Flask application  
+│   ├── backend/             # Python Flask application
 │   │   ├── neurosynth_compose/ # Main package
 │   │   └── pyproject.toml   # Python dependencies
 │   ├── neurosynth-frontend/ # React/TypeScript app
@@ -140,38 +164,43 @@ Use `APP_ENV` as the only environment selector. For Docker-based tests, use `APP
 ## Common Issues & Solutions
 
 ### Missing OpenAPI Specs Error
+
 - **Problem**: `FileNotFoundError: neurostore-openapi.yml` or `neurosynth-compose-openapi.yml`
 - **Solution**: Run `git submodule update --init --recursive`
 
-### Missing TypeScript SDK Error  
+### Missing TypeScript SDK Error
+
 - **Problem**: `Could not resolve "../neurostore-typescript-sdk"`
 - **Solution**: Initialize git submodules first
 
 ### Container Won't Start
+
 - **Problem**: `Worker failed to boot` or similar gunicorn errors
 - **Solution**: Check OpenAPI submodules are initialized and container logs with `docker compose logs [service]`
 
 ### Database Connection Errors
+
 - **Problem**: `database "store_test_db" does not exist` or `database "compose_test_db" does not exist`
 - **Solution**: Create the service-specific test database as shown in the test steps
 
 ### Frontend Build Sentry Warnings
+
 - **Problem**: Sentry API token errors during build
 - **Solution**: Expected in development. Build still succeeds - ignore Sentry warnings.
 
 ## Performance Expectations
 
-| Operation | Time | Timeout |
-|-----------|------|---------|
-| Git submodules | 1-2s | 30s |
-| Store build | 1m36s | 180s |
-| Compose build | 1m56s | 240s |
-| Frontend npm install | 26s | 60s |
-| Frontend build | 29s | 90s |
-| Backend tests | 2m30s | 300s |
-| Frontend tests | 59s | 120s |
-| Database migrations | 5s | 30s |
-| Backend linting | <1s | 10s |
-| Frontend linting | 37s | 60s |
+| Operation            | Time  | Timeout |
+| -------------------- | ----- | ------- |
+| Git submodules       | 1-2s  | 30s     |
+| Store build          | 1m36s | 180s    |
+| Compose build        | 1m56s | 240s    |
+| Frontend npm install | 26s   | 60s     |
+| Frontend build       | 29s   | 90s     |
+| Backend tests        | 2m30s | 300s    |
+| Frontend tests       | 59s   | 120s    |
+| Database migrations  | 5s    | 30s     |
+| Backend linting      | <1s   | 10s     |
+| Frontend linting     | 37s   | 60s     |
 
 **Remember**: Always use `--timeout` parameters longer than these estimates. Builds may take longer on slower systems.

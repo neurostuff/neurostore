@@ -1,25 +1,29 @@
 """TODO: PLACE INTO THE NEUROSYNTH APP"""
 
-from sqlalchemy.orm import relationship, backref
-from sqlalchemy.sql import func
-from sqlalchemy.ext.associationproxy import association_proxy
-import shortuuid
 import secrets
 
-from neurosynth_compose.database import db
+import shortuuid
 from sqlalchemy import (
-    Column,
-    Text,
-    DateTime,
-    Table,
     JSON,
-    Float,
-    Integer,
     Boolean,
     CheckConstraint,
+    Column,
+    DateTime,
+    Float,
     ForeignKey,
     Index,
+    Integer,
+    Table,
+    Text,
 )
+from sqlalchemy import event
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.ext.associationproxy import association_proxy
+from sqlalchemy.orm import backref, relationship
+from sqlalchemy.sql import func
+
+from neurosynth_compose.database import db
+from neurosynth_compose.utils.snapshots import md5_of_snapshot
 
 
 def generate_id():
@@ -132,44 +136,65 @@ class Specification(BaseMixin, db.Model):
     )
 
 
-class StudysetReference(db.Model):
+class NeurostoreStudyset(db.Model):
     __tablename__ = "studyset_references"
     id = Column(Text, primary_key=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-    studysets = relationship("Studyset", back_populates="studyset_reference")
+    snapshot_studysets = relationship(
+        "SnapshotStudyset", back_populates="neurostore_studyset"
+    )
 
 
-class Studyset(BaseMixin, db.Model):
+class SnapshotStudyset(BaseMixin, db.Model):
     __tablename__ = "studysets"
 
-    snapshot = Column(JSON)
+    snapshot = Column(JSONB)
+    md5 = Column(Text, unique=True, index=True)
     user_id = Column(Text, ForeignKey("users.external_id"))
     neurostore_id = Column(Text, ForeignKey("studyset_references.id"))
     version = Column(Text)
-    studyset_reference = relationship("StudysetReference", back_populates="studysets")
+    neurostore_studyset = relationship(
+        "NeurostoreStudyset", back_populates="snapshot_studysets"
+    )
     user = relationship("User", backref=backref("studysets"))
 
 
-class AnnotationReference(db.Model):
+class NeurostoreAnnotation(db.Model):
     __tablename__ = "annotation_references"
     id = Column(Text, primary_key=True)
-    annotations = relationship("Annotation", back_populates="annotation_reference")
+    snapshot_annotations = relationship(
+        "SnapshotAnnotation", back_populates="neurostore_annotation"
+    )
 
 
-class Annotation(BaseMixin, db.Model):
+class SnapshotAnnotation(BaseMixin, db.Model):
     __tablename__ = "annotations"
 
-    snapshot = Column(JSON)
+    snapshot = Column(JSONB)
+    md5 = Column(Text, unique=True, index=True)
     user_id = Column(Text, ForeignKey("users.external_id"))
     neurostore_id = Column(Text, ForeignKey("annotation_references.id"))
-    cached_studyset_id = Column(Text, ForeignKey("studysets.id"))
+    snapshot_studyset_id = Column(Text, ForeignKey("studysets.id"))
 
     user = relationship("User", backref=backref("annotations"))
-    studyset = relationship("Studyset", backref=backref("annotations"), lazy="joined")
-    annotation_reference = relationship(
-        "AnnotationReference", back_populates="annotations"
+    snapshot_studyset = relationship(
+        "SnapshotStudyset", backref=backref("annotations"), lazy="joined"
     )
+    neurostore_annotation = relationship(
+        "NeurostoreAnnotation", back_populates="snapshot_annotations"
+    )
+
+
+def _set_md5_before_insert(mapper, connection, target):
+    if getattr(target, "snapshot", None) is not None and not getattr(
+        target, "md5", None
+    ):
+        target.md5 = md5_of_snapshot(target.snapshot)
+
+
+event.listen(SnapshotStudyset, "before_insert", _set_md5_before_insert)
+event.listen(SnapshotAnnotation, "before_insert", _set_md5_before_insert)
 
 
 class MetaAnalysis(BaseMixin, db.Model):
@@ -180,8 +205,6 @@ class MetaAnalysis(BaseMixin, db.Model):
     specification_id = Column(Text, ForeignKey("specifications.id"))
     neurostore_studyset_id = Column(Text, ForeignKey("studyset_references.id"))
     neurostore_annotation_id = Column(Text, ForeignKey("annotation_references.id"))
-    cached_studyset_id = Column(Text, ForeignKey("studysets.id"))
-    cached_annotation_id = Column(Text, ForeignKey("annotations.id"))
     project_id = Column(Text, ForeignKey("projects.id"))
     user_id = Column(Text, ForeignKey("users.external_id"))
     public = Column(Boolean, default=True, index=True)
@@ -191,10 +214,6 @@ class MetaAnalysis(BaseMixin, db.Model):
     )  # the API key to use for upload to not have to login
 
     specification = relationship("Specification", backref=backref("meta_analyses"))
-    studyset = relationship("Studyset", backref=backref("meta_analyses"), lazy="joined")
-    annotation = relationship(
-        "Annotation", backref=backref("meta_analyses"), lazy="joined"
-    )
     project = relationship("Project", backref=backref("meta_analyses"))
     user = relationship("User", backref=backref("meta_analyses"))
     tags = relationship(
@@ -208,6 +227,24 @@ class MetaAnalysis(BaseMixin, db.Model):
         "NeurostoreAnalysis", back_populates="meta_analysis", uselist=False
     )
 
+    @property
+    def snapshots(self):
+        """Ordered history of snapshot FK IDs recorded on results."""
+        entries = []
+        for result in self.results or []:
+            ss_id = getattr(result, "studyset_snapshot_id", None)
+            ann_id = getattr(result, "annotation_snapshot_id", None)
+            if ss_id is None and ann_id is None:
+                continue
+            entries.append(
+                {
+                    "result_id": result.id,
+                    "snapshot_studyset_id": ss_id,
+                    "snapshot_annotation_id": ann_id,
+                }
+            )
+        return entries
+
 
 class MetaAnalysisResult(BaseMixin, db.Model):
     __tablename__ = "meta_analysis_results"
@@ -216,7 +253,15 @@ class MetaAnalysisResult(BaseMixin, db.Model):
     cli_args = Column(JSON)  # Dictionary of cli arguments
     method_description = Column(Text)  # description of the method applied
     diagnostic_table = Column(Text)
+    studyset_snapshot_id = Column(Text, ForeignKey("studysets.id"), nullable=True)
+    annotation_snapshot_id = Column(Text, ForeignKey("annotations.id"), nullable=True)
     meta_analysis = relationship("MetaAnalysis", back_populates="results")
+    studyset_snapshot = relationship(
+        "SnapshotStudyset", foreign_keys=[studyset_snapshot_id], lazy="joined"
+    )
+    annotation_snapshot = relationship(
+        "SnapshotAnnotation", foreign_keys=[annotation_snapshot_id], lazy="joined"
+    )
     # neurovault_collection is one-to-one with MetaAnalysisResult
     neurovault_collection = relationship(
         "NeurovaultCollection", back_populates="result", uselist=False
@@ -302,39 +347,9 @@ class Project(BaseMixin, db.Model):
     user_id = Column(Text, ForeignKey("users.external_id"), index=True)
     public = Column(Boolean, default=True, index=True)
     draft = Column(Boolean, default=True, index=True)
-    studyset_id = Column(Text, ForeignKey("studysets.id"), nullable=True)
-    annotation_id = Column(Text, ForeignKey("annotations.id"), nullable=True)
-
+    neurostore_studyset_id = Column(Text, ForeignKey("studyset_references.id"))
+    neurostore_annotation_id = Column(Text, ForeignKey("annotation_references.id"))
     user = relationship("User", backref=backref("projects"))
-    studyset = relationship("Studyset", backref=backref("projects"))
-    annotation = relationship("Annotation", backref=backref("projects"))
-
     neurostore_study = relationship(
         "NeurostoreStudy", back_populates="project", uselist=False
     )
-
-
-# class MetaAnalysisImage(Base):
-#     __tablename__ = "metaanalysis_images"
-#
-#     weight = Column(Float)
-#     metaanalysis_id = Column(
-#         Text, ForeignKey("metaanalyses.id"), primary_key=True
-#     )
-#     image_id = Column(Text, ForeignKey("images.id"), primary_key=True)
-#
-#     metaanalysis = relationship("MetaAnalysis", backref=backref("metanalysis_images"))
-#     image = relationship("Image", backref=backref("metaanalysis_images"))
-#
-#
-# class MetaAnalysisPoint(Base):
-#     __tablename__ = "metaanalysis_points"
-#
-#     weight = Column(Float)
-#     metaanalysis_id = Column(
-#         Text, ForeignKey("metaanalyses.id"), primary_key=True
-#     )
-#     point_id = Column(Text, ForeignKey("points.id"), primary_key=True)
-#
-#     metaanalysis = relationship("MetaAnalysis", backref=backref("metaanalysis_points"))
-#     point = relationship("Point", backref=backref("metaanalysis_points"))

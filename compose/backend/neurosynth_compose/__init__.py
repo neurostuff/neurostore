@@ -3,16 +3,19 @@ from pathlib import Path
 
 import connexion
 from authlib.integrations.flask_client import OAuth
+from connexion.exceptions import OAuthProblem
 from connexion.resolver import MethodResolver
-from starlette.middleware.cors import CORSMiddleware
+from flask import Response, request
 from flask_admin import Admin, AdminIndexView
 from flask_admin.contrib.sqla import ModelView
 from flask_admin.theme import Bootstrap4Theme
-from flask import Response, request
+from flask_orjson import OrjsonProvider
+from starlette.middleware.cors import CORSMiddleware
 
-from .database import init_db
-from .config import resolve_config_object
-from .resources.auth import AuthError, handle_auth_error, init_app as init_auth
+from neurosynth_compose.config import resolve_config_object
+from neurosynth_compose.database import init_db
+from neurosynth_compose.resources.auth import asgi_oauth_problem_handler
+from neurosynth_compose.resources.auth import init_app as init_auth
 
 
 def _env_flag(name, default=False):
@@ -30,6 +33,7 @@ def create_app():
 
     app.config.from_object(resolve_config_object())
     app.config["DEBUG"] = _env_flag("DEBUG")
+    app.json = OrjsonProvider(app)
 
     cors_kwargs = dict(
         allow_origins=["*"],
@@ -48,14 +52,21 @@ def create_app():
     os.environ["APIKEYINFO_FUNC"] = app.config["APIKEYINFO_FUNC"]
 
     with app.app_context():
+        disable_response_validation = _env_flag("CONNEXION_DISABLE_RESPONSE_VALIDATION")
+        # Enable strict request/response validation in both DEBUG and TESTING modes
+        # so that schema drift between the OpenAPI spec and the actual API is caught
+        # during the test suite, not just in local development.
+        validate_mode = app.config.get("DEBUG") or app.config.get("TESTING", False)
         connexion_app.add_api(
             openapi_path,
             base_path="/api",
             options=swagger_options,
             arguments={"title": "NeuroSynth API"},
             resolver=MethodResolver("neurosynth_compose.resources"),
-            strict_validation=app.config["DEBUG"],
-            validate_responses=app.config["DEBUG"],
+            strict_validation=validate_mode,
+            validate_responses=(
+                False if disable_response_validation else validate_mode
+            ),
         )
 
     oauth = OAuth(app)
@@ -74,22 +85,22 @@ def create_app():
 
     # Initialize Flask-Admin
     from neurosynth_compose.models import (
-        User,
-        Specification,
-        Studyset,
-        StudysetReference,
         Annotation,
-        AnnotationReference,
+        NeurostoreAnnotation,
         MetaAnalysis,
         MetaAnalysisResult,
+        NeurostoreAnalysis,
+        NeurostoreStudy,
         NeurovaultCollection,
         NeurovaultFile,
-        NeurostoreStudy,
-        NeurostoreAnalysis,
         Project,
+        Specification,
+        Studyset,
+        NeurostoreStudyset,
+        User,
     )
-    from neurosynth_compose.models.auth import Role
     from neurosynth_compose.models.analysis import Condition, SpecificationCondition
+    from neurosynth_compose.models.auth import Role
 
     def _get_admin_credentials():
         username = app.config.get("FLASK_ADMIN_USERNAME")
@@ -150,9 +161,9 @@ def create_app():
     )
     admin.add_view(SecureModelView(Condition, db.session, category="Specifications"))
     admin.add_view(SecureModelView(Studyset, db.session, category="Data"))
-    admin.add_view(SecureModelView(StudysetReference, db.session, category="Data"))
+    admin.add_view(SecureModelView(NeurostoreStudyset, db.session, category="Data"))
     admin.add_view(SecureModelView(Annotation, db.session, category="Data"))
-    admin.add_view(SecureModelView(AnnotationReference, db.session, category="Data"))
+    admin.add_view(SecureModelView(NeurostoreAnnotation, db.session, category="Data"))
     admin.add_view(
         SecureModelView(NeurovaultCollection, db.session, category="Neurovault")
     )
@@ -164,7 +175,10 @@ def create_app():
 
     app.secret_key = app.config["JWT_SECRET_KEY"]
 
-    app.register_error_handler(AuthError, handle_auth_error)
+    connexion_app.exception_handlers = {
+        **getattr(connexion_app, "exception_handlers", {}),
+        OAuthProblem: asgi_oauth_problem_handler,
+    }
 
     cors_asgi_app = CORSMiddleware(connexion_app, **cors_kwargs)
 

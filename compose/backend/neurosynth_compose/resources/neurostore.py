@@ -1,6 +1,7 @@
+from urllib.parse import urljoin
+
 from flask import current_app
 from requests import Session
-from urllib.parse import urljoin
 
 
 class LiveServerSession(Session):

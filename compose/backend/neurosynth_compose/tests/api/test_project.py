@@ -1,8 +1,8 @@
-from neurosynth_compose.models import Project, MetaAnalysisResult, User
-from neurosynth_compose.schemas import MetaAnalysisSchema
 from sqlalchemy import select
 
-from ..conftest import MockNeurostoreSession
+from neurosynth_compose.models import MetaAnalysisResult, Project, User
+from neurosynth_compose.schemas import MetaAnalysisSchema
+from neurosynth_compose.tests.conftest import MockNeurostoreSession
 
 
 def test_get_all_projects(session, app, auth_client, user_data):
@@ -177,13 +177,17 @@ def test_clone_public_project_creates_new_project(
     )
     assert cloned_project.user.external_id == auth_client.username
     assert (
-        cloned_project.studyset_id
-        and cloned_project.studyset_id != source_project.studyset_id
+        cloned_project.neurostore_studyset_id
+        and cloned_project.neurostore_studyset_id
+        != source_project.neurostore_studyset_id
     )
-    assert (
-        cloned_project.annotation_id
-        and cloned_project.annotation_id != source_project.annotation_id
-    )
+    if source_project.neurostore_annotation_id is not None:
+        assert (
+            cloned_project.neurostore_annotation_id
+            != source_project.neurostore_annotation_id
+        )
+    else:
+        assert cloned_project.neurostore_annotation_id is None
 
     expected_auth = f"Bearer {auth_client.token}"
     auth_headers = {
@@ -228,7 +232,7 @@ def test_clone_public_project_without_annotations(
         .first()
     )
     assert source_project is not None
-    assert source_project.annotation is not None
+    assert source_project.neurostore_annotation_id is not None
 
     response = auth_client.post(
         f"/api/projects?source_id={source_project.id}&copy_annotations=false",
@@ -244,7 +248,7 @@ def test_clone_public_project_without_annotations(
         .scalars()
         .one()
     )
-    assert cloned_project.annotation_id is None
+    assert cloned_project.neurostore_annotation_id is None
 
     # ensure query parameter propagated
     assert any(

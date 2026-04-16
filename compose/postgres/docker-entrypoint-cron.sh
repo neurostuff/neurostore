@@ -48,11 +48,39 @@ EOF
   chown -R "${owner}:${owner}" "${home_dir}/.aws"
 }
 
+write_cron_env() {
+  local env_file="/home/backup-cron-env.sh"
+  local vars=(
+    APP_ENV
+    POSTGRES_HOST
+    POSTGRES_USER
+    POSTGRES_PASSWORD
+    POSTGRES_DB
+    PG_HOST
+    PG_USER
+    PG_PASSWORD
+    S3_PATH
+    AWS_ACCESS_KEY_ID
+    AWS_SECRET_ACCESS_KEY
+    AWS_DEFAULT_REGION
+  )
+
+  : > "${env_file}"
+  chmod 600 "${env_file}"
+
+  for var_name in "${vars[@]}"; do
+    if [ -n "${!var_name:-}" ]; then
+      printf 'export %s=%q\n' "${var_name}" "${!var_name}" >> "${env_file}"
+    fi
+  done
+}
+
 install_pgpass "/root" "root"
 install_pgpass "/var/lib/postgresql" "postgres"
 install_aws_config "/root" "root"
 install_aws_config "/var/lib/postgresql" "postgres"
 export POSTGRES_DB="$("/usr/local/bin/resolve-app-db.sh" compose)"
+write_cron_env
 
 crontab /home/backup.txt
 if command -v service >/dev/null 2>&1; then

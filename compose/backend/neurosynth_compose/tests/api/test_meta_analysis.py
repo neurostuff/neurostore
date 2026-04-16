@@ -1,5 +1,6 @@
-from neurosynth_compose.models import MetaAnalysis, MetaAnalysisResult, User
 from sqlalchemy import select
+
+from neurosynth_compose.models import MetaAnalysis, MetaAnalysisResult, User
 
 
 def test_get_meta_analyses(session, app, auth_client, user_data, db):
@@ -15,7 +16,7 @@ def test_get_meta_analyses(session, app, auth_client, user_data, db):
     assert get_one_nested.status_code == 200
 
     data = get_one_nested.json
-    for key in ["specification", "studyset", "annotation"]:
+    for key in ["specification", "neurostore_studyset", "neurostore_annotation"]:
         assert data[key] is None or isinstance(data[key], dict)
 
 

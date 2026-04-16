@@ -379,35 +379,35 @@ const mockStoreStudy: (studyPropOverride?: Partial<IStoreStudy>) => IStoreStudy 
 
 const mockMetaAnalyses: () => MetaAnalysisReturn[] = () => [
     {
-        annotation: '6M3PvaWEmcWf',
+        neurostore_annotation: '6M3PvaWEmcWf',
         created_at: '2022-08-12T00:47:12.259280+00:00',
         description: 'description 1',
         id: 'iBcMmTBvr7Zh',
         name: 'name 1',
         specification: '6ovxxkKiy7Sw',
-        studyset: '5ATjENA3VVyE',
+        neurostore_studyset: '5ATjENA3VVyE',
         updated_at: '2022-08-12T00:48:08.734923+00:00',
         user: 'auth0|62e0e6c9dd47048572613b4d',
     },
     {
-        annotation: '6M3PvaWEmcWf',
+        neurostore_annotation: '6M3PvaWEmcWf',
         created_at: '2022-08-11T22:32:50.176873+00:00',
         description: 'description 2',
         id: '3VQe7vJUADSH',
         name: 'name 2',
         specification: '3BXYLbPGgrfw',
-        studyset: '5ATjENA3VVyE',
+        neurostore_studyset: '5ATjENA3VVyE',
         updated_at: '2022-08-11T22:33:14.152328+00:00',
         user: 'github|26612023',
     },
     {
-        annotation: '6M3PvaWEmcWf',
+        neurostore_annotation: '6M3PvaWEmcWf',
         created_at: '2022-07-25T11:10:16.112671+00:00',
         description: 'description 3',
         id: '3Mr2VPLJhptt',
         name: 'name 3',
         specification: '7zSZM9FiVGke',
-        studyset: '5ATjENA3VVyE',
+        neurostore_studyset: '5ATjENA3VVyE',
         updated_at: null,
         user: 'auth0|62de78bc11222b208cd022c8',
     },
@@ -1014,8 +1014,6 @@ const mockNeurovault: () => INeurovault[] = () => [
 ];
 
 const mockMetaAnalysisReturn: () => MetaAnalysisReturn = () => ({
-    cached_annotation: 'Q7PGxaTr6Ke4',
-    cached_studyset: 'Ue5rb87H4nMi',
     created_at: '2024-12-06T01:07:18.120143+00:00',
     description: 'MKDAChi2 meta analysis with FDRCorrector',
     id: 'WfCnGvpZxXi4',
@@ -1068,7 +1066,7 @@ const mockMetaAnalysisReturn: () => MetaAnalysisReturn = () => ({
         username: 'Nicholas Lee',
         weights: [1.0],
     },
-    studyset: {
+    neurostore_studyset: {
         created_at: '2024-12-06T01:07:17.670624+00:00',
         id: 'Ue5rb87H4nMi',
         neurostore_id: '7WRDwR5YfnBg',
@@ -1699,7 +1697,7 @@ const mockMetaAnalysisReturn: () => MetaAnalysisReturn = () => ({
             },
         },
         updated_at: '2024-12-06T01:14:37.069129+00:00',
-        url: 'https://neurostore.org/api/studysets/7WRDwR5YfnBg',
+        url: 'https://neurostore.org/api/snapshot-studysets/7WRDwR5YfnBg',
         user: 'github|26612023',
         username: 'Nicholas Lee',
         version: null,

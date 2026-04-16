@@ -19,7 +19,6 @@ from neurosynth_compose.scripts.backfill_extraction_metadata import (
     add_missing_extraction_ids,
 )
 
-
 app.config.from_object(resolve_config_object())
 
 

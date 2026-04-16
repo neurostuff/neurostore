@@ -3,12 +3,16 @@ import traceback
 from pathlib import Path
 
 from flask import current_app as app
-
-from ..core import celery_app
-from ..database import db
-from ..map_types import canonicalize_map_type
 from sqlalchemy import select
-from ..models import NeurovaultFile, NeurovaultCollection, NeurostoreAnalysis
+
+from neurosynth_compose.core import celery_app
+from neurosynth_compose.database import db
+from neurosynth_compose.map_types import canonicalize_map_type
+from neurosynth_compose.models import (
+    NeurostoreAnalysis,
+    NeurovaultCollection,
+    NeurovaultFile,
+)
 
 
 @celery_app.task(name="neurovault.upload", bind=True)
@@ -94,9 +98,10 @@ def file_upload_neurovault(self, fpath, id):
 def create_or_update_neurostore_analysis(
     self, ns_analysis_id, cluster_table, nv_collection_id, access_token
 ):
-    from auth0.authentication.get_token import GetToken
     import pandas as pd
-    from .neurostore import neurostore_session
+    from auth0.authentication.get_token import GetToken
+
+    from neurosynth_compose.resources.neurostore import neurostore_session
 
     try:
         ns_analysis = db.session.execute(

@@ -3,17 +3,17 @@ Ingest studies from Neurostore
 """
 
 import requests
-
-from ..models import (
-    Studyset,
-    Annotation,
-    Specification,
-    MetaAnalysis,
-    StudysetReference,
-    AnnotationReference,
-)
-from ..database import db, commit_session
 from sqlalchemy import select
+
+from neurosynth_compose.database import commit_session, db
+from neurosynth_compose.models import (
+    SnapshotAnnotation,
+    SnapshotStudyset,
+    NeurostoreAnnotation,
+    NeurostoreStudyset,
+    MetaAnalysis,
+    Specification,
+)
 
 
 def ingest_neurostore(
@@ -30,9 +30,11 @@ def ingest_neurostore(
     with db.session.no_autoflush:
         for studyset in studysets:
             ss_ref = db.session.execute(
-                select(StudysetReference).where(StudysetReference.id == studyset["id"])
-            ).scalar_one_or_none() or StudysetReference(id=studyset["id"])
-            ss = Studyset(studyset_reference=ss_ref)
+                select(NeurostoreStudyset).where(
+                    NeurostoreStudyset.id == studyset["id"]
+                )
+            ).scalar_one_or_none() or NeurostoreStudyset(id=studyset["id"])
+            ss = SnapshotStudyset(neurostore_studyset=ss_ref)
             to_commit.append(ss)
             # only ingest annotations for smaller studysets now.
             if len(studyset["studies"]) < study_size_limit:
@@ -41,14 +43,14 @@ def ingest_neurostore(
                 ).json()["results"]
                 for annot in annotations:
                     annot_ref = db.session.execute(
-                        select(AnnotationReference).where(
-                            AnnotationReference.id == annot["id"]
+                        select(NeurostoreAnnotation).where(
+                            NeurostoreAnnotation.id == annot["id"]
                         )
-                    ).scalar_one_or_none() or AnnotationReference(id=annot["id"])
+                    ).scalar_one_or_none() or NeurostoreAnnotation(id=annot["id"])
                     to_commit.append(
-                        Annotation(
-                            studyset=ss,
-                            annotation_reference=annot_ref,
+                        SnapshotAnnotation(
+                            snapshot_studyset=ss,
+                            neurostore_annotation=annot_ref,
                         )
                     )
 
@@ -58,7 +60,7 @@ def ingest_neurostore(
 
 def create_meta_analyses(url="https://neurostore.org", n_studysets=None):
     ingest_neurostore(url, n_studysets)
-    stdsts = db.session.execute(select(Studyset)).scalars().all()
+    stdsts = db.session.execute(select(SnapshotStudyset)).scalars().all()
     to_commit = []
     with db.session.no_autoflush:
         for ss in stdsts:
@@ -77,8 +79,12 @@ def create_meta_analyses(url="https://neurostore.org", n_studysets=None):
             to_commit.append(
                 MetaAnalysis(
                     specification=spec,
-                    studyset=ss,
-                    annotation=ss.annotations[0] if ss.annotations else None,
+                    neurostore_studyset_id=getattr(ss, "neurostore_id", None),
+                    neurostore_annotation_id=(
+                        getattr(ss.annotations[0], "neurostore_id", None)
+                        if ss.annotations
+                        else None
+                    ),
                 )
             )
 
