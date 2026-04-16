@@ -9,15 +9,13 @@ from sqlalchemy.orm import selectinload
 
 from neurosynth_compose.database import commit_session, db
 from neurosynth_compose.models.analysis import (
-    Annotation,
-    AnnotationReference,
+    NeurostoreAnnotation,
     MetaAnalysis,
     NeurostoreStudy,
     Project,
     Specification,
     SpecificationCondition,
-    Studyset,
-    StudysetReference,
+    NeurostoreStudyset,
 )
 from neurosynth_compose.resources.common import create_user, get_current_user
 from neurosynth_compose.resources.neurostore import neurostore_session
@@ -43,12 +41,6 @@ class ProjectCloneService:
         source_project = db.session.execute(
             select(Project)
             .options(
-                selectinload(Project.studyset).options(
-                    selectinload(Studyset.studyset_reference)
-                ),
-                selectinload(Project.annotation).options(
-                    selectinload(Annotation.annotation_reference)
-                ),
                 selectinload(Project.meta_analyses).options(
                     selectinload(MetaAnalysis.specification).options(
                         selectinload(Specification.specification_conditions)
@@ -86,10 +78,9 @@ class ProjectCloneService:
 
         ns_session = neurostore_session(access_token)
         with db.session.no_autoflush:
-            new_studyset, new_annotation = self._clone_studyset_and_annotation(
+            new_ss_ref_id, new_ann_ref_id = self._clone_references(
                 ns_session,
                 source_project,
-                current_user,
                 copy_annotations,
             )
             cloned_project = Project(
@@ -97,14 +88,14 @@ class ProjectCloneService:
                 description=source_project.description,
                 provenance=self._clone_provenance(
                     source_project.provenance,
-                    new_studyset.studyset_reference.id if new_studyset else None,
-                    new_annotation.annotation_reference.id if new_annotation else None,
+                    new_ss_ref_id,
+                    new_ann_ref_id,
                 ),
                 user=current_user,
                 public=False,
                 draft=True,
-                studyset=new_studyset,
-                annotation=new_annotation,
+                neurostore_studyset_id=new_ss_ref_id,
+                neurostore_annotation_id=new_ann_ref_id,
             )
 
             cloned_metas = [
@@ -112,8 +103,8 @@ class ProjectCloneService:
                     meta,
                     current_user,
                     cloned_project,
-                    new_studyset,
-                    new_annotation,
+                    new_ss_ref_id,
+                    new_ann_ref_id,
                 )
                 for meta in source_project.meta_analyses
             ]
@@ -132,84 +123,70 @@ class ProjectCloneService:
 
         return cloned_project
 
-    def _clone_studyset_and_annotation(
+    def _clone_references(
         self,
         ns_session,
         source_project,
-        current_user,
         copy_annotations,
     ):
-        source_studyset = getattr(source_project, "studyset", None)
-        new_studyset = None
-        new_annotation = None
+        """Clone studyset (and optionally annotation) via neurostore API.
 
-        if source_studyset and source_studyset.studyset_reference:
-            query_params = {"source_id": source_studyset.studyset_reference.id}
-            if copy_annotations is not None:
-                query_params["copy_annotations"] = str(bool(copy_annotations)).lower()
+        Returns (new_ss_ref_id, new_ann_ref_id) — both may be None.
+        """
+        source_ss_ref_id = getattr(source_project, "neurostore_studyset_id", None)
+        if not source_ss_ref_id:
+            return None, None
 
-            path = "/api/studysets/"
-            if query_params:
-                path = f"{path}?{urlencode(query_params)}"
+        query_params = {"source_id": source_ss_ref_id}
+        if copy_annotations is None and source_project.neurostore_annotation_id:
+            query_params["copy_annotations"] = "true"
+        elif copy_annotations is not None:
+            query_params["copy_annotations"] = str(bool(copy_annotations)).lower()
 
-            ns_response = ns_session.post(path, json={})
-            ns_payload = ns_response.json()
+        path = "/api/studysets/"
+        if query_params:
+            path = f"{path}?{urlencode(query_params)}"
 
-            ss_ref = self._get_or_create_reference(
-                StudysetReference, ns_payload.get("id")
-            )
-            new_studyset = Studyset(
-                user=current_user,
-                snapshot=None,
-                version=source_studyset.version,
-                studyset_reference=ss_ref,
-            )
-            db.session.add(new_studyset)
+        ns_response = ns_session.post(path, json={})
+        ns_payload = ns_response.json()
 
-            source_annotation = getattr(source_project, "annotation", None)
-            annotations_payload = ns_payload.get("annotations") or []
-            annotation_id = (
-                annotations_payload[0].get("id") if annotations_payload else None
-            )
-            if source_annotation and copy_annotations and annotation_id:
-                annot_ref = self._get_or_create_reference(
-                    AnnotationReference, annotation_id
-                )
-                new_annotation = Annotation(
-                    user=current_user,
-                    snapshot=None,
-                    annotation_reference=annot_ref,
-                    studyset=new_studyset,
-                )
-                db.session.add(new_annotation)
+        new_ss_ref_id = ns_payload.get("id")
+        if new_ss_ref_id:
+            self._get_or_create_reference(NeurostoreStudyset, new_ss_ref_id)
 
-        return new_studyset, new_annotation
+        new_ann_ref_id = None
+        source_ann_ref_id = getattr(source_project, "neurostore_annotation_id", None)
+        annotations_payload = ns_payload.get("annotations") or []
+        annotation_id = (
+            annotations_payload[0].get("id") if annotations_payload else None
+        )
+        if (
+            source_ann_ref_id
+            and annotation_id
+            and (copy_annotations is None or copy_annotations)
+        ):
+            new_ann_ref_id = annotation_id
+            self._get_or_create_reference(NeurostoreAnnotation, new_ann_ref_id)
 
-    def _clone_meta_analysis(self, meta, user, project, new_studyset, new_annotation):
+        return new_ss_ref_id, new_ann_ref_id
+
+    def _clone_meta_analysis(self, meta, user, project, new_ss_ref_id, new_ann_ref_id):
         cloned_spec = self._clone_specification(meta.specification, user)
         cloned_meta = MetaAnalysis(
             name=meta.name,
             description=meta.description,
             public=project.public,
             specification=cloned_spec,
-            studyset=new_studyset,
-            annotation=new_annotation,
+            neurostore_studyset_id=new_ss_ref_id,
+            neurostore_annotation_id=new_ann_ref_id,
             user=user,
             project=project,
             provenance=self._clone_meta_provenance(
                 meta.provenance,
-                new_studyset.studyset_reference.id if new_studyset else None,
-                new_annotation.annotation_reference.id if new_annotation else None,
+                new_ss_ref_id,
+                new_ann_ref_id,
             ),
         )
-        if new_studyset and new_studyset.studyset_reference:
-            cloned_meta.neurostore_studyset_id = new_studyset.studyset_reference.id
-            cloned_meta.cached_studyset = new_studyset
-        if new_annotation and new_annotation.annotation_reference:
-            cloned_meta.neurostore_annotation_id = (
-                new_annotation.annotation_reference.id
-            )
-            cloned_meta.cached_annotation = new_annotation
         return cloned_meta
 
     @staticmethod

@@ -17,12 +17,12 @@ from sqlalchemy import select
 from neurosynth_compose.database import db as _db
 from neurosynth_compose.ingest.neurostore import create_meta_analyses
 from neurosynth_compose.models import (
-    AnnotationReference,
+    NeurostoreAnnotation,
     MetaAnalysis,
     NeurostoreStudy,
     Project,
     Specification,
-    StudysetReference,
+    NeurostoreStudyset,
     User,
 )
 from neurosynth_compose.models.analysis import generate_id
@@ -137,7 +137,7 @@ class MockNeurostoreSession:
 
     def _response_payload(self, path, payload):
         data = copy.deepcopy(payload) if payload is not None else {}
-        if path.startswith("/api/studysets"):
+        if path.startswith("/api/snapshot-studysets"):
             data.setdefault("id", self._next_id("studyset"))
             data.setdefault(
                 "annotations",
@@ -149,7 +149,7 @@ class MockNeurostoreSession:
                 ],
             )
             return data
-        if path.startswith("/api/annotations"):
+        if path.startswith("/api/snapshot-annotations"):
             data.setdefault("id", self._next_id("annotation"))
             return data
         if path.startswith("/api/studies"):
@@ -493,25 +493,25 @@ def user_data(app, db, mock_add_users, session):
 
     # Use the autouse session fixture explicitly to avoid mixing scoped sessions.
     with session.no_autoflush:
-        # Ensure StudysetReference / AnnotationReference are persisted when newly created.
+        # Ensure NeurostoreStudyset / NeurostoreAnnotation are persisted when newly created.
         existing_ss_ref = session.execute(
-            select(StudysetReference).where(
-                StudysetReference.id == serialized_studyset["id"]
+            select(NeurostoreStudyset).where(
+                NeurostoreStudyset.id == serialized_studyset["id"]
             )
         ).scalar_one_or_none()
         if existing_ss_ref is None:
-            ss_ref = StudysetReference(id=serialized_studyset["id"])
+            ss_ref = NeurostoreStudyset(id=serialized_studyset["id"])
             to_commit.append(ss_ref)
         else:
             ss_ref = existing_ss_ref
 
         existing_annot_ref = session.execute(
-            select(AnnotationReference).where(
-                AnnotationReference.id == serialized_annotation["id"]
+            select(NeurostoreAnnotation).where(
+                NeurostoreAnnotation.id == serialized_annotation["id"]
             )
         ).scalar_one_or_none()
         if existing_annot_ref is None:
-            annot_ref = AnnotationReference(id=serialized_annotation["id"])
+            annot_ref = NeurostoreAnnotation(id=serialized_annotation["id"])
             to_commit.append(annot_ref)
         else:
             annot_ref = existing_annot_ref
@@ -540,7 +540,7 @@ def user_data(app, db, mock_add_users, session):
                 serialized_annotation,
                 user_id=user.external_id,
                 neurostore_id=serialized_annotation["id"],
-                cached_studyset_id=getattr(canonical_ss, "id", None),
+                snapshot_studyset_id=getattr(canonical_ss, "id", None),
             )
 
             studyset = canonical_ss
@@ -576,8 +576,8 @@ def user_data(app, db, mock_add_users, session):
                     user=user,
                     public=public,
                     specification=specification,
-                    studyset=studyset,
-                    annotation=annotation,
+                    neurostore_studyset_id=getattr(studyset, "neurostore_id", None),
+                    neurostore_annotation_id=getattr(annotation, "neurostore_id", None),
                 )
 
                 # Create Project with explicit id and link deterministically to MetaAnalysis
@@ -589,8 +589,8 @@ def user_data(app, db, mock_add_users, session):
                     neurostore_study=ns_study,
                     user=user,
                     public=public,
-                    studyset=studyset,
-                    annotation=annotation,
+                    neurostore_studyset_id=getattr(studyset, "neurostore_id", None),
+                    neurostore_annotation_id=getattr(annotation, "neurostore_id", None),
                 )
                 # Ensure MetaAnalysis.project and project_id are explicitly set so
                 # the relationship is visible across sessions/savepoints immediately
@@ -603,8 +603,6 @@ def user_data(app, db, mock_add_users, session):
                     description=user.id + "'s empty project",
                     public=public,
                     neurostore_study=ns_empty_study,
-                    studyset=None,
-                    annotation=None,
                 )
                 to_commit.extend(
                     [
@@ -647,11 +645,11 @@ def user_data(app, db, mock_add_users, session):
             for m in metas:
                 # studyset, annotation and project should be present according to
                 # the fixture construction; if any are missing, surface an error.
-                if m.studyset is None:
+                if getattr(m, "neurostore_studyset_id", None) is None:
                     pytest.fail(
                         f"MetaAnalysis {m.id} missing studyset for user {user.external_id}"
                     )
-                if m.annotation is None:
+                if getattr(m, "neurostore_annotation_id", None) is None:
                     pytest.fail(
                         f"MetaAnalysis {m.id} missing annotation for user {user.external_id}"
                     )

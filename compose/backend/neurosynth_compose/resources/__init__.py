@@ -1,11 +1,11 @@
 from neurosynth_compose.resources.analysis import (
-    AnnotationReferencesResource,
-    AnnotationsView,
+    NeurostoreAnnotationsView,
+    SnapshotAnnotationsView,
     ConditionsResource,
     SpecificationConditionsResource,
     SpecificationsView,
-    StudysetReferencesView,
-    StudysetsView,
+    NeurostoreStudysetsView,
+    SnapshotStudysetsView,
     TagsView,
 )
 from neurosynth_compose.resources.data_views import (
@@ -16,14 +16,14 @@ from neurosynth_compose.resources.data_views import (
     NeurovaultFilesView,
     ProjectsView,
 )
-from neurosynth_compose.resources.data_views.meta_analysis_jobs import (
+from neurosynth_compose.resources.data_views.meta_analysis_jobs_view import (
     MetaAnalysisJobsView,
 )
 
 # Expose module for tests and external monkeypatching that import
 # neurosynth_compose.resources.meta_analysis_jobs
 from neurosynth_compose.resources.data_views import (  # noqa: F401
-    meta_analysis_jobs as meta_analysis_jobs,
+    meta_analysis_jobs_view,
 )
 from neurosynth_compose.resources.users import UsersView
 
@@ -35,13 +35,13 @@ __all__ = [
     "MetaAnalysisResultsView",
     "NeurovaultCollectionsView",
     "NeurovaultFilesView",
-    "AnnotationsView",
-    "StudysetsView",
-    "StudysetReferencesView",
-    "AnnotationReferencesResource",
+    "NeurostoreStudysetsView",
+    "NeurostoreAnnotationsView",
     "SpecificationsView",
     "UsersView",
     "NeurostoreStudiesView",
     "ProjectsView",
+    "SnapshotStudysetsView",
+    "SnapshotAnnotationsView",
     "MetaAnalysisJobsView",
 ]

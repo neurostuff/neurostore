@@ -17,7 +17,7 @@ CREATE USER MAPPING FOR CURRENT_USER
 IMPORT FOREIGN SCHEMA public
   LIMIT TO (
     alembic_version,
-    annotation_references,
+    neurostore_annotations,
     annotations,
     conditions,
     devices,
@@ -33,7 +33,7 @@ IMPORT FOREIGN SCHEMA public
     roles_users,
     specification_conditions,
     specifications,
-    studyset_references,
+    neurostore_studysets,
     studysets,
     tags,
     users
@@ -76,8 +76,8 @@ CREATE TEMP TABLE keep_meta_analyses AS
 SELECT
   id,
   specification_id,
-  cached_studyset_id,
-  cached_annotation_id,
+  snapshot_studyset_id,
+  snapshot_annotation_id,
   neurostore_studyset_id,
   neurostore_annotation_id,
   project_id
@@ -91,9 +91,9 @@ FROM (
   FROM keep_projects project
   WHERE project.studyset_id IS NOT NULL
   UNION ALL
-  SELECT meta.cached_studyset_id AS id
+  SELECT meta.snapshot_studyset_id AS id
   FROM keep_meta_analyses meta
-  WHERE meta.cached_studyset_id IS NOT NULL
+  WHERE meta.snapshot_studyset_id IS NOT NULL
 ) refs;
 
 CREATE TEMP TABLE keep_annotations AS
@@ -103,9 +103,9 @@ FROM (
   FROM keep_projects project
   WHERE project.annotation_id IS NOT NULL
   UNION ALL
-  SELECT meta.cached_annotation_id AS id
+  SELECT meta.snapshot_annotation_id AS id
   FROM keep_meta_analyses meta
-  WHERE meta.cached_annotation_id IS NOT NULL
+  WHERE meta.snapshot_annotation_id IS NOT NULL
 ) refs;
 
 CREATE TEMP TABLE keep_specifications AS
@@ -113,7 +113,7 @@ SELECT DISTINCT specification_id AS id
 FROM keep_meta_analyses
 WHERE specification_id IS NOT NULL;
 
-CREATE TEMP TABLE keep_studyset_references AS
+CREATE TEMP TABLE keep_neurostore_studysets AS
 SELECT DISTINCT id
 FROM (
   SELECT meta.neurostore_studyset_id AS id
@@ -126,7 +126,7 @@ FROM (
     AND studyset.neurostore_id IS NOT NULL
 ) refs;
 
-CREATE TEMP TABLE keep_annotation_references AS
+CREATE TEMP TABLE keep_neurostore_annotations AS
 SELECT DISTINCT id
 FROM (
   SELECT meta.neurostore_annotation_id AS id
@@ -193,15 +193,15 @@ SELECT *
 FROM seed_source.roles_users
 WHERE user_id IN (SELECT id FROM keep_users);
 
-INSERT INTO studyset_references
+INSERT INTO neurostore_studysets
 SELECT *
-FROM seed_source.studyset_references
-WHERE id IN (SELECT id FROM keep_studyset_references);
+FROM seed_source.neurostore_studysets
+WHERE id IN (SELECT id FROM keep_neurostore_studysets);
 
-INSERT INTO annotation_references
+INSERT INTO neurostore_annotations
 SELECT *
-FROM seed_source.annotation_references
-WHERE id IN (SELECT id FROM keep_annotation_references);
+FROM seed_source.neurostore_annotations
+WHERE id IN (SELECT id FROM keep_neurostore_annotations);
 
 INSERT INTO studysets
 SELECT *

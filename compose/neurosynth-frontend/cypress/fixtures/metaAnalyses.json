@@ -2,7 +2,7 @@
     "metadata": {},
     "results": [
         {
-            "annotation": "5LSBDTGqA6RF",
+            "neurostore_annotation": "5LSBDTGqA6RF",
             "created_at": "2023-11-27T21:45:53.258233+00:00",
             "description": "ALE meta analysis",
             "id": "3P8DpYp2Jhn6",
@@ -22,13 +22,13 @@
             "results": [],
             "run_key": "ynOyv2LWO-ZMS-f9pYmX2w",
             "specification": "rgiZsKGMdxzT",
-            "studyset": "73HRs8HaJbR8",
+            "neurostore_studyset": "73HRs8HaJbR8",
             "updated_at": null,
             "user": "github|26612023",
             "username": "Nicholas Lee"
         },
         {
-            "annotation": "5SPpPvY3x9Fp",
+            "neurostore_annotation": "5SPpPvY3x9Fp",
             "created_at": "2023-11-23T00:37:12.318626+00:00",
             "description": "MKDADensity meta analysis",
             "id": "4szeUjo5eYd5",
@@ -54,13 +54,13 @@
             ],
             "run_key": "M5_aPrjvMk1RHOekrYgXIA",
             "specification": "Lq4eQPUwH4e5",
-            "studyset": "n5zg69u5T4tM",
+            "neurostore_studyset": "n5zg69u5T4tM",
             "updated_at": null,
             "user": "google-oauth2|100511154128738502835",
             "username": "James Kent"
         },
         {
-            "annotation": "5SPpPvY3x9Fp",
+            "neurostore_annotation": "5SPpPvY3x9Fp",
             "created_at": "2023-11-23T00:35:21.366722+00:00",
             "description": "MKDAChi2 meta analysis",
             "id": "4qMomKkbpawB",
@@ -86,13 +86,13 @@
             ],
             "run_key": "LQAKZihGv0m5-h67I--3Zg",
             "specification": "4HRgzPqtBHLC",
-            "studyset": "n5zg69u5T4tM",
+            "neurostore_studyset": "n5zg69u5T4tM",
             "updated_at": null,
             "user": "google-oauth2|100511154128738502835",
             "username": "James Kent"
         },
         {
-            "annotation": "5SPpPvY3x9Fp",
+            "neurostore_annotation": "5SPpPvY3x9Fp",
             "created_at": "2023-11-22T23:50:43.395652+00:00",
             "description": "MKDAChi2 meta analysis with FDRCorrector",
             "id": "7joU2Siajs5X",
@@ -118,7 +118,7 @@
             ],
             "run_key": "UxdBo_e1DHWvxIka9-tofw",
             "specification": "3NJHLD9Fushc",
-            "studyset": "n5zg69u5T4tM",
+            "neurostore_studyset": "n5zg69u5T4tM",
             "updated_at": null,
             "user": "google-oauth2|100511154128738502835",
             "username": "James Kent"

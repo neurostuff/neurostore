@@ -23,10 +23,12 @@ from neurosynth_compose.resources.resource_services import (
     parse_upload_files,
     select_cluster_table_for_specification,
 )
-from neurosynth_compose.resources.data_views.annotation_references_view import (
-    AnnotationReferencesResource,
+from neurosynth_compose.resources.data_views.neurostore_annotation_view import (
+    NeurostoreAnnotationsView,
 )
-from neurosynth_compose.resources.data_views.annotations_view import AnnotationsView
+from neurosynth_compose.resources.data_views.snapshot_annotations_view import (
+    SnapshotAnnotationsView,
+)
 from neurosynth_compose.resources.data_views.conditions_view import ConditionsResource
 from neurosynth_compose.resources.data_views.specification_conditions_view import (
     SpecificationConditionsResource,
@@ -34,12 +36,15 @@ from neurosynth_compose.resources.data_views.specification_conditions_view impor
 from neurosynth_compose.resources.data_views.specification_view import (
     SpecificationsView,
 )
-from neurosynth_compose.resources.data_views.studyset_references_view import (
-    StudysetReferencesView,
+from neurosynth_compose.resources.data_views.neurostore_studyset_view import (
+    NeurostoreStudysetsView,
 )
-from neurosynth_compose.resources.data_views.studysets_view import StudysetsView
+from neurosynth_compose.resources.data_views.snapshot_studysets_view import (
+    SnapshotStudysetsView,
+)
 from neurosynth_compose.resources.data_views.tags_view import TagsView
 from neurosynth_compose.resources.view_core import BaseView, ListView, ObjectView
+
 
 __all__ = [
     "_make_json_response",
@@ -55,11 +60,11 @@ __all__ = [
     "NeurovaultFilesView",
     "NeurostoreStudiesView",
     "ProjectsView",
-    "AnnotationsView",
-    "StudysetsView",
+    "SnapshotStudysetsView",
+    "SnapshotAnnotationsView",
     "SpecificationsView",
-    "StudysetReferencesView",
-    "AnnotationReferencesResource",
+    "NeurostoreStudysetsView",
+    "NeurostoreAnnotationsView",
     "ConditionsResource",
     "SpecificationConditionsResource",
     "TagsView",

@@ -86,7 +86,7 @@ def create_app():
     # Initialize Flask-Admin
     from neurosynth_compose.models import (
         Annotation,
-        AnnotationReference,
+        NeurostoreAnnotation,
         MetaAnalysis,
         MetaAnalysisResult,
         NeurostoreAnalysis,
@@ -96,7 +96,7 @@ def create_app():
         Project,
         Specification,
         Studyset,
-        StudysetReference,
+        NeurostoreStudyset,
         User,
     )
     from neurosynth_compose.models.analysis import Condition, SpecificationCondition
@@ -161,9 +161,9 @@ def create_app():
     )
     admin.add_view(SecureModelView(Condition, db.session, category="Specifications"))
     admin.add_view(SecureModelView(Studyset, db.session, category="Data"))
-    admin.add_view(SecureModelView(StudysetReference, db.session, category="Data"))
+    admin.add_view(SecureModelView(NeurostoreStudyset, db.session, category="Data"))
     admin.add_view(SecureModelView(Annotation, db.session, category="Data"))
-    admin.add_view(SecureModelView(AnnotationReference, db.session, category="Data"))
+    admin.add_view(SecureModelView(NeurostoreAnnotation, db.session, category="Data"))
     admin.add_view(
         SecureModelView(NeurovaultCollection, db.session, category="Neurovault")
     )

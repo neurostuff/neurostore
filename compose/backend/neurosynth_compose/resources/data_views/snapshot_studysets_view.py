@@ -1,18 +1,17 @@
 from __future__ import annotations
 
 from neurosynth_compose.database import commit_session, db
-from neurosynth_compose.models.analysis import Studyset  # noqa: F401
-from neurosynth_compose.models.analysis import StudysetReference  # noqa: F401
+from neurosynth_compose.models import SnapshotStudyset, NeurostoreStudyset  # noqa: F401
 from neurosynth_compose.resources.common import get_current_user
 from neurosynth_compose.resources.resource_services import ensure_canonical_studyset
 from neurosynth_compose.resources.view_core import ListView, ObjectView, view_maker
-from neurosynth_compose.schemas import StudysetReferenceSchema  # noqa: F401
-from neurosynth_compose.schemas import StudysetSchema  # noqa: F401
+from neurosynth_compose.schemas import NeurostoreStudysetSchema  # noqa: F401
+from neurosynth_compose.schemas import SnapshotStudysetSchema  # noqa: F401
 
 
 @view_maker
-class StudysetsView(ObjectView, ListView):
-    _nested = {"studyset_reference": "StudysetReferencesView"}
+class SnapshotStudysetsView(ObjectView, ListView):
+    _nested = {"neurostore_studyset": "NeurostoreStudysetsView"}
 
     def serialize_record(self, record, args):
         from neurosynth_compose.resources.data_views.meta_analyses_view import (

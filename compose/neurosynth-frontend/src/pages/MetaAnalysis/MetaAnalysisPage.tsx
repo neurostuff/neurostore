@@ -45,8 +45,8 @@ const MetaAnalysisPage: React.FC = () => {
 
     // get request is set to nested: true so below casting is safe
     const specification = metaAnalysis?.specification as SpecificationReturn;
-    const studyset = metaAnalysis?.studyset as StudysetReturn;
-    const annotation = metaAnalysis?.annotation as NeurostoreAnnotation;
+    const studyset = metaAnalysis?.neurostore_studyset as StudysetReturn;
+    const annotation = metaAnalysis?.neurostore_annotation as NeurostoreAnnotation;
 
     const updateName = (updatedName: string) => {
         if (metaAnalysis?.id && specification?.id && studyset?.id && annotation?.id) {

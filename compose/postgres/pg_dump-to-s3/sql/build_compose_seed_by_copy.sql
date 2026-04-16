@@ -60,12 +60,12 @@ FROM seed_source.users
 WHERE external_id IN (SELECT external_id FROM target_external_ids);
 
 CREATE TEMP TABLE keep_projects AS
-SELECT id, studyset_id, annotation_id
+SELECT id, neurostore_studyset_id, neurostore_annotation_id
 FROM (
   SELECT
     project.id,
-    project.studyset_id,
-    project.annotation_id
+    project.neurostore_studyset_id,
+    project.neurostore_annotation_id
   FROM seed_source.projects project
   WHERE project.user_id IN (SELECT external_id FROM target_external_ids)
   ORDER BY project.created_at NULLS LAST, project.id
@@ -76,36 +76,34 @@ CREATE TEMP TABLE keep_meta_analyses AS
 SELECT
   id,
   specification_id,
-  cached_studyset_id,
-  cached_annotation_id,
   neurostore_studyset_id,
   neurostore_annotation_id,
   project_id
 FROM seed_source.meta_analyses
 WHERE project_id IN (SELECT id FROM keep_projects);
 
-CREATE TEMP TABLE keep_studysets AS
-SELECT DISTINCT id
-FROM (
-  SELECT project.studyset_id AS id
-  FROM keep_projects project
-  WHERE project.studyset_id IS NOT NULL
-  UNION ALL
-  SELECT meta.cached_studyset_id AS id
-  FROM keep_meta_analyses meta
-  WHERE meta.cached_studyset_id IS NOT NULL
-) refs;
-
+-- Snapshot tracking moved from meta_analyses to meta_analysis_results in current schema.
 CREATE TEMP TABLE keep_annotations AS
 SELECT DISTINCT id
 FROM (
-  SELECT project.annotation_id AS id
-  FROM keep_projects project
-  WHERE project.annotation_id IS NOT NULL
+  SELECT mar.annotation_snapshot_id AS id
+  FROM seed_source.meta_analysis_results mar
+  WHERE mar.meta_analysis_id IN (SELECT id FROM keep_meta_analyses)
+    AND mar.annotation_snapshot_id IS NOT NULL
+) refs;
+
+CREATE TEMP TABLE keep_studysets AS
+SELECT DISTINCT id
+FROM (
+  SELECT mar.studyset_snapshot_id AS id
+  FROM seed_source.meta_analysis_results mar
+  WHERE mar.meta_analysis_id IN (SELECT id FROM keep_meta_analyses)
+    AND mar.studyset_snapshot_id IS NOT NULL
   UNION ALL
-  SELECT meta.cached_annotation_id AS id
-  FROM keep_meta_analyses meta
-  WHERE meta.cached_annotation_id IS NOT NULL
+  SELECT ann.snapshot_studyset_id AS id
+  FROM seed_source.annotations ann
+  WHERE ann.id IN (SELECT id FROM keep_annotations)
+    AND ann.snapshot_studyset_id IS NOT NULL
 ) refs;
 
 CREATE TEMP TABLE keep_specifications AS
@@ -113,12 +111,16 @@ SELECT DISTINCT specification_id AS id
 FROM keep_meta_analyses
 WHERE specification_id IS NOT NULL;
 
-CREATE TEMP TABLE keep_studyset_references AS
+CREATE TEMP TABLE keep_neurostore_studysets AS
 SELECT DISTINCT id
 FROM (
   SELECT meta.neurostore_studyset_id AS id
   FROM keep_meta_analyses meta
   WHERE meta.neurostore_studyset_id IS NOT NULL
+  UNION ALL
+  SELECT proj.neurostore_studyset_id AS id
+  FROM keep_projects proj
+  WHERE proj.neurostore_studyset_id IS NOT NULL
   UNION ALL
   SELECT studyset.neurostore_id AS id
   FROM seed_source.studysets studyset
@@ -126,12 +128,16 @@ FROM (
     AND studyset.neurostore_id IS NOT NULL
 ) refs;
 
-CREATE TEMP TABLE keep_annotation_references AS
+CREATE TEMP TABLE keep_neurostore_annotations AS
 SELECT DISTINCT id
 FROM (
   SELECT meta.neurostore_annotation_id AS id
   FROM keep_meta_analyses meta
   WHERE meta.neurostore_annotation_id IS NOT NULL
+  UNION ALL
+  SELECT proj.neurostore_annotation_id AS id
+  FROM keep_projects proj
+  WHERE proj.neurostore_annotation_id IS NOT NULL
   UNION ALL
   SELECT annotation.neurostore_id AS id
   FROM seed_source.annotations annotation
@@ -196,12 +202,12 @@ WHERE user_id IN (SELECT id FROM keep_users);
 INSERT INTO studyset_references
 SELECT *
 FROM seed_source.studyset_references
-WHERE id IN (SELECT id FROM keep_studyset_references);
+WHERE id IN (SELECT id FROM keep_neurostore_studysets);
 
 INSERT INTO annotation_references
 SELECT *
 FROM seed_source.annotation_references
-WHERE id IN (SELECT id FROM keep_annotation_references);
+WHERE id IN (SELECT id FROM keep_neurostore_annotations);
 
 INSERT INTO studysets
 SELECT *
@@ -223,8 +229,8 @@ INSERT INTO projects (
   user_id,
   public,
   draft,
-  studyset_id,
-  annotation_id
+  neurostore_studyset_id,
+  neurostore_annotation_id
 )
 SELECT
   id,
@@ -236,8 +242,8 @@ SELECT
   user_id,
   public,
   COALESCE(draft, FALSE) AS draft,
-  studyset_id,
-  annotation_id
+  neurostore_studyset_id,
+  neurostore_annotation_id
 FROM seed_source.projects
 WHERE id IN (SELECT id FROM keep_projects);
 

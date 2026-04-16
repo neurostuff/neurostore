@@ -69,7 +69,7 @@ def _build_meta_analysis_namespace():
         user_id="meta-user-1",
         snapshot={"studies": []},
         neurostore_id="neurostore-studyset-1",
-        studyset_reference=SimpleNamespace(id="neurostore-studyset-1"),
+        neurostore_studyset=SimpleNamespace(id="neurostore-studyset-1"),
         version="v1",
     )
     annotation = SimpleNamespace(
@@ -80,7 +80,7 @@ def _build_meta_analysis_namespace():
         user_id="meta-user-1",
         snapshot={"annotations": []},
         neurostore_id="neurostore-annotation-1",
-        annotation_reference=SimpleNamespace(id="neurostore-annotation-1"),
+        neurostore_annotation=SimpleNamespace(id="neurostore-annotation-1"),
         studyset=studyset,
     )
     specification_conditions = [
