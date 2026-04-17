@@ -4,7 +4,7 @@ import { useStudyAnalyses, useStudyAnalysisName, useStudyAnalysisPoints } from '
 import { mockAnalyses, mockStorePoints } from 'testing/mockData';
 import useDisplayWarnings, { isCoordinateMNI } from 'pages/Study/hooks/useDisplayWarnings';
 
-vi.mock('pages/Study/store/StudyStore', () => ({
+vi.mock('stores/study/StudyStore', () => ({
     useStudyAnalysisPoints: vi.fn(),
     useStudyAnalysisName: vi.fn(),
     useStudyAnalyses: vi.fn(),

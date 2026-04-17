@@ -7,7 +7,7 @@ import useGetAnalysisById from 'hooks/analyses/useGetAnalysisById';
 import { PointReturn } from 'neurostore-typescript-sdk';
 import { MetaAnalysisReturn, ResultReturn } from 'neurosynth-compose-typescript-sdk';
 import StudyPoints from 'pages/Study/components/StudyPoints';
-import { IStorePoint, studyPointsToStorePoints } from 'pages/Study/store/StudyStore.helpers';
+import { IStorePoint, studyPointsToStorePoints } from 'stores/study/StudyStore.helpers';
 
 const pointToCSVRow = (point: IStorePoint) => {
     return {

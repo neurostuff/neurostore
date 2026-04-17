@@ -29,6 +29,8 @@ describe('CurationAIInterface', () => {
         // this is necessary to hide an info popup that appears for the first time in projects for the new curation UI
         // the auth0
         cy.addToLocalStorage('auth0|62e0e6c9dd47048572613b4d-hide-info-popup', 'true');
+        // Before Auth0 provides sub, InfoPopup uses key "-hide-info-popup"
+        cy.addToLocalStorage('-hide-info-popup', 'true');
 
         // cy.intercept('GET', `**/api/studysets/*`, { fixture: 'studyset' }).as('studysetFixture');
     });
@@ -1075,6 +1077,39 @@ describe('CurationAIInterface', () => {
             cy.contains('li', 'brain trauma').click();
             cy.get('input[type="text"]').type('Meta-Analysis');
             cy.get('.virtualized-import-list-item').should('have.length', 1);
+        });
+
+        it.only('should let the user rename an import and send the update to the server', () => {
+            cy.fixture('projects/projectCurationSimpleWithStudies').then((raw) => {
+                const projectFixture = JSON.parse(JSON.stringify(raw)) as INeurosynthProjectReturn;
+                projectFixture.user = 'auth0|62e0e6c9dd47048572613b4d';
+                projectFixture.id = 'abc123';
+
+                cy.intercept('GET', '**/api/projects/*', {
+                    ...projectFixture,
+                } as INeurosynthProjectReturn).as('projectFixture');
+            });
+
+            cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
+
+            cy.contains('li', 'brain trauma').click();
+            cy.get('[data-testid="curation-edit-import-button"]', { timeout: 20000 }).should('not.be.disabled');
+            cy.get('[data-testid="curation-edit-import-button"]').click();
+            cy.get('[data-testid="curation-import-name-input"] input').clear();
+            cy.get('[data-testid="curation-import-name-input"] input').type('Renamed Brain Trauma Import');
+            cy.get('[data-testid="curation-import-name-save"]').click();
+
+            cy.contains('h6', 'Renamed Brain Trauma Import').should('exist');
+            cy.get('li').contains('Renamed Brain Trauma Import').should('exist');
+
+            cy.wait('@updateProject', { timeout: 12000 }).then((interception) => {
+                const body = interception.request.body as Record<string, unknown> | string;
+                const parsed = typeof body === 'string' ? (JSON.parse(body) as Record<string, unknown>) : body;
+                const provenance = parsed.provenance as INeurosynthProject['provenance'];
+                const imports = provenance.curationMetadata.imports;
+                const updated = imports.find((i) => i.id === '53240dca-baa4-4f5f-9fee-36f197de37a7');
+                expect(updated?.name).to.equal('Renamed Brain Trauma Import');
+            });
         });
     });
 

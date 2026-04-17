@@ -1,15 +1,15 @@
-from ..models import (
-    Study,
+from neurostore.models import (
     Analysis,
     Condition,
     Entity,
-    Point,
-    PointValue,
     Image,
-    Studyset,
     Pipeline,
     PipelineConfig,
     PipelineStudyResult,
+    Point,
+    PointValue,
+    Study,
+    Studyset,
 )
 
 

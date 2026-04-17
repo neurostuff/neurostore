@@ -1,6 +1,7 @@
 from auth0.management import ManagementClient
-from neurosynth_compose.resources.users import User
 from flask import current_app
+
+from neurosynth_compose.resources.users import User
 
 TOKEN = "INSERT TOKEN"
 

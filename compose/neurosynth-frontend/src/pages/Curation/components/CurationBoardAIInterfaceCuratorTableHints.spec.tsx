@@ -11,10 +11,7 @@ vi.mock('hooks', () => ({
     useGetCurationSummary: vi.fn().mockReturnValue({ included: 0, uncategorized: 0, excluded: 0 }),
 }));
 vi.mock('pages/Project/store/ProjectStore');
-vi.mock('react-router-dom', () => ({
-    useNavigate: vi.fn().mockReturnValue(vi.fn()),
-    useParams: vi.fn().mockReturnValue({ projectId: 'test-project-id' }),
-}));
+vi.mock('react-router-dom');
 vi.mock('pages/Curation/context/CurationBoardGroupsContext', () => ({
     useCurationBoardGroups: vi.fn().mockReturnValue({
         handleSelectPreviousGroup: vi.fn(),
@@ -30,6 +27,7 @@ vi.mock('pages/Curation/components/StartExtractionButton', () => ({
 }));
 
 import { useGetCurationSummary } from 'hooks';
+import { useParams } from 'react-router-dom';
 
 const mockEmptyColumn = { stubStudies: [] };
 const mockColumnWithStudies = {
@@ -48,6 +46,8 @@ describe('CurationBoardAIInterfaceCuratorTableHints', () => {
         (useProjectCurationIsPrisma as Mock).mockReturnValue(false);
         (useProjectCurationColumn as Mock).mockReturnValue(mockEmptyColumn);
         (useGetCurationSummary as Mock).mockReturnValue({ included: 0, uncategorized: 0, excluded: 0 });
+
+        (useParams as Mock).mockReturnValue({ projectId: 'test-project-id' });
     });
 
     describe('when there are no studies at all (noStudiesInCuration)', () => {

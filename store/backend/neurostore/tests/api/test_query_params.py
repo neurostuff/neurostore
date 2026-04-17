@@ -1,9 +1,16 @@
 from urllib.parse import urlencode
+
 import pytest
-from ...models import Study, BaseStudy
-from ...schemas.data import StudysetSchema, StudySchema, AnalysisSchema, StringOrNested
-from ...services.has_media_flags import recompute_media_flags
-from ..conftest import valid_queries, invalid_queries
+
+from neurostore.models import BaseStudy, Study
+from neurostore.schemas.data import (
+    AnalysisSchema,
+    StringOrNested,
+    StudySchema,
+    StudysetSchema,
+)
+from neurostore.services.has_media_flags import recompute_media_flags
+from neurostore.tests.conftest import invalid_queries, valid_queries
 
 
 @pytest.mark.parametrize("nested", ["true", "false"])
@@ -33,7 +40,7 @@ def test_nested(auth_client, ingest_neurosynth, nested, resource_schema, session
 
 
 def test_user_id(auth_client, user_data, session):
-    from ...resources.users import User
+    from neurostore.resources.users import User
 
     id_ = auth_client.username
     user = User.query.filter_by(external_id=id_).first()

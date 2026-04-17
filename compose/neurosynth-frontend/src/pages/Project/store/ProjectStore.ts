@@ -37,6 +37,8 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
         id: undefined,
         meta_analyses: [],
         description: '',
+        neurostore_studyset_id: undefined,
+        neurostore_annotation_id: undefined,
         created_at: undefined,
         updated_at: undefined,
         user: undefined,
@@ -120,10 +122,14 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
             const id = useProjectStore.getState().id;
 
             const res = await API.NeurosynthServices.ProjectsService.projectsIdPut(id || '', true, {
+                neurostore_studyset_id: undefined,
+                neurostore_annotation_id: undefined,
                 provenance: emptyProvenance,
             });
             set((state) => ({
                 ...state,
+                neurostore_studyset_id: undefined,
+                neurostore_annotation_id: undefined,
                 provenance: {
                     ...emptyProvenance,
                 },
@@ -193,6 +199,8 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
                         name: oldDebouncedStoreData.name,
                         description: oldDebouncedStoreData.description,
                         public: oldDebouncedStoreData.public,
+                        neurostore_studyset_id: oldDebouncedStoreData.neurostore_studyset_id,
+                        neurostore_annotation_id: oldDebouncedStoreData.neurostore_annotation_id,
                         provenance: {
                             ...oldDebouncedStoreData.provenance,
                         },
@@ -287,6 +295,8 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
                 id: undefined,
                 meta_analyses: [],
                 description: '',
+                neurostore_studyset_id: undefined,
+                neurostore_annotation_id: undefined,
                 user: undefined,
                 updated_at: undefined,
                 created_at: undefined,
@@ -506,6 +516,22 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
 
             get().updateProjectInDBDebounced();
         },
+        updateCurationImportName(curationImportId, name) {
+            set((state) => ({
+                ...state,
+                provenance: {
+                    ...state.provenance,
+                    curationMetadata: {
+                        ...state.provenance.curationMetadata,
+                        imports: (state.provenance.curationMetadata.imports || []).map((imp) =>
+                            imp.id === curationImportId ? { ...imp, name } : imp
+                        ),
+                    },
+                },
+            }));
+
+            get().updateProjectInDBDebounced();
+        },
         updateExclusionTag: (exclusionIdToUpdate, newName) => {
             set((state) => {
                 return {
@@ -639,6 +665,12 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
         updateExtractionMetadata: (metadata) => {
             set((state) => ({
                 ...state,
+                ...("studysetId" in metadata
+                    ? { neurostore_studyset_id: metadata.studysetId }
+                    : {}),
+                ...("annotationId" in metadata
+                    ? { neurostore_annotation_id: metadata.annotationId }
+                    : {}),
                 provenance: {
                     ...state.provenance,
                     extractionMetadata: {
@@ -810,6 +842,7 @@ export const useHandleCurationDrag = () => useProjectStore((state) => state.hand
 export const useCreateNewCurationInfoTag = () => useProjectStore((state) => state.createNewInfoTag);
 export const useUpdateCurationColumns = () => useProjectStore((state) => state.updateCurationColumns);
 export const useCreateNewCurationImport = () => useProjectStore((state) => state.createNewCurationImport);
+export const useUpdateCurationImportName = () => useProjectStore((state) => state.updateCurationImportName);
 export const useDeleteCurationImport = () => useProjectStore((state) => state.deleteCurationImport);
 export const useAddNewCurationStubs = () => useProjectStore((state) => state.addNewStubs);
 export const useUpdateStubField = () => useProjectStore((state) => state.updateStubField);

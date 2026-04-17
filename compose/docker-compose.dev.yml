@@ -1,9 +1,9 @@
 services:
   compose_nginx:
     expose:
-      - "81"
+      - "80"
     ports:
-      - 81:81
+      - 81:80
     volumes:
       - ./nginx/nginx.dev.conf:/etc/nginx/nginx.conf:ro
 
@@ -15,4 +15,4 @@ services:
   
   compose_worker:
     volumes:
-      - ./neurosynth_compose:/usr/local/lib/python3.10/site-packages/neurosynth_compose
+      - ./neurosynth_compose:/usr/local/lib/python3.14/site-packages/neurosynth_compose

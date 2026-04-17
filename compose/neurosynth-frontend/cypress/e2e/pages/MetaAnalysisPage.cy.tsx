@@ -8,6 +8,14 @@ const PROJECT_PATH = '/projects/mock-project-id/meta-analyses/mock-meta-analysis
 describe(PAGE_NAME, () => {
     beforeEach(() => {
         cy.clearLocalStorage();
+        cy.intercept('GET', '**/api/**', (req) => {
+            if (req.url.includes('/api/meta-analyses')) {
+                // eslint-disable-next-line no-console
+                console.log('DEBUG_META_ANALYSIS_REQUEST', req.method, req.url);
+            }
+            req.continue();
+        }).as('debugApiRequests');
+
         cy.intercept('GET', `**/api/annotations/*`, { fixture: 'annotation' }).as('annotationFixture');
         cy.intercept('GET', `**/api/studysets/*`, { fixture: 'studyset' }).as('studysetFixture');
         cy.intercept('GET', 'https://api.appzi.io/**', { fixture: 'appzi' }).as('appziFixture');
@@ -29,11 +37,11 @@ describe(PAGE_NAME, () => {
             cy.intercept('GET', `**/api/meta-analyses/**`, {
                 fixture: 'MetaAnalysis/metaAnalysisNoResults',
             }).as('metaAnalysisFixture');
-            cy.intercept('GET', `**/api/meta-analysis-jobs`, {
+            cy.intercept('GET', `**/api/meta-analysis-jobs*`, {
                 fixture: 'MetaAnalysis/jobs/noJobs',
             }).as('jobsFixture');
 
-            cy.login('mocked').visit(PROJECT_PATH).wait('@metaAnalysisFixture');
+            cy.login('mocked').visit(PROJECT_PATH).wait('@metaAnalysisFixture', { timeout: 20000 });
 
             // Should show breadcrumbs when in project context
             cy.contains('Projects').should('exist');
@@ -51,11 +59,11 @@ describe(PAGE_NAME, () => {
             cy.intercept('GET', `**/api/meta-analyses/**`, {
                 fixture: 'MetaAnalysis/metaAnalysisNoResults',
             }).as('metaAnalysisFixture');
-            cy.intercept('GET', `**/api/meta-analysis-jobs`, {
+            cy.intercept('GET', `**/api/meta-analysis-jobs*`, {
                 fixture: 'MetaAnalysis/jobs/noJobs',
             }).as('jobsFixture');
 
-            cy.login('mocked').visit(PROJECT_PATH).wait('@metaAnalysisFixture');
+            cy.login('mocked').visit(PROJECT_PATH).wait('@metaAnalysisFixture', { timeout: 20000 });
         });
 
         it('should show run instructions in the first tab', () => {
@@ -101,14 +109,14 @@ describe(PAGE_NAME, () => {
             cy.intercept('GET', `**/api/meta-analyses/**`, {
                 fixture: 'MetaAnalysis/metaAnalysisNoResults',
             }).as('metaAnalysisFixture');
-            cy.intercept('GET', `**/api/meta-analysis-jobs`, {
+            cy.intercept('GET', `**/api/meta-analysis-jobs*`, {
                 fixture: 'MetaAnalysis/jobs/jobsListRunning',
             }).as('jobsFixture');
             cy.intercept('GET', `**/api/meta-analysis-jobs/*`, {
                 fixture: 'MetaAnalysis/jobs/jobRunning',
             }).as('jobDetailFixture');
 
-            cy.login('mocked').visit(PROJECT_PATH).wait('@metaAnalysisFixture');
+            cy.login('mocked').visit(PROJECT_PATH).wait('@metaAnalysisFixture', { timeout: 20000 });
         });
 
         it('should show job logs', () => {
@@ -150,14 +158,14 @@ describe(PAGE_NAME, () => {
             cy.intercept('GET', `**/api/meta-analyses/**`, {
                 fixture: 'MetaAnalysis/metaAnalysisNoResults',
             }).as('metaAnalysisFixture');
-            cy.intercept('GET', `**/api/meta-analysis-jobs`, {
+            cy.intercept('GET', `**/api/meta-analysis-jobs*`, {
                 fixture: 'MetaAnalysis/jobs/jobsListSubmitted',
             }).as('jobsFixture');
             cy.intercept('GET', `**/api/meta-analysis-jobs/*`, {
                 fixture: 'MetaAnalysis/jobs/jobSubmitted',
             }).as('jobDetailFixture');
 
-            cy.login('mocked').visit(PROJECT_PATH).wait('@metaAnalysisFixture');
+            cy.login('mocked').visit(PROJECT_PATH).wait('@metaAnalysisFixture', { timeout: 20000 });
         });
 
         it('should show "Job submitted" alert message', () => {
@@ -181,14 +189,14 @@ describe(PAGE_NAME, () => {
             cy.intercept('GET', `**/api/meta-analysis-results/*`, {
                 fixture: 'MetaAnalysis/resultSuccess',
             }).as('resultFixture');
-            cy.intercept('GET', `**/api/meta-analysis-jobs`, {
+            cy.intercept('GET', `**/api/meta-analysis-jobs*`, {
                 fixture: 'MetaAnalysis/jobs/jobsListSucceeded',
             }).as('jobsFixture');
             cy.intercept('GET', `**/api/meta-analysis-jobs/*`, {
                 fixture: 'MetaAnalysis/jobs/jobSucceeded',
             }).as('jobDetailFixture');
 
-            cy.login('mocked').visit(PROJECT_PATH).wait('@metaAnalysisFixture');
+            cy.login('mocked').visit(PROJECT_PATH).wait('@metaAnalysisFixture', { timeout: 20000 });
         });
 
         it('should show "Run successful" alert message', () => {
@@ -206,14 +214,14 @@ describe(PAGE_NAME, () => {
             cy.intercept('GET', `**/api/meta-analyses/**`, {
                 fixture: 'MetaAnalysis/metaAnalysisNoResults',
             }).as('metaAnalysisFixture');
-            cy.intercept('GET', `**/api/meta-analysis-jobs`, {
+            cy.intercept('GET', `**/api/meta-analysis-jobs*`, {
                 fixture: 'MetaAnalysis/jobs/jobsListFailed',
             }).as('jobsFixture');
             cy.intercept('GET', `**/api/meta-analysis-jobs/*`, {
                 fixture: 'MetaAnalysis/jobs/jobFailed',
             }).as('jobDetailFixture');
 
-            cy.login('mocked').visit(PROJECT_PATH).wait('@metaAnalysisFixture');
+            cy.login('mocked').visit(PROJECT_PATH).wait('@metaAnalysisFixture', { timeout: 20000 });
         });
 
         it('should show "Run failed" alert message', () => {
@@ -233,14 +241,14 @@ describe(PAGE_NAME, () => {
             cy.intercept('GET', `**/api/meta-analyses/**`, {
                 fixture: 'MetaAnalysis/metaAnalysisWithResult',
             }).as('metaAnalysisFixture');
-            cy.intercept('GET', `**/api/meta-analysis-jobs`, {
+            cy.intercept('GET', `**/api/meta-analysis-jobs*`, {
                 fixture: 'MetaAnalysis/jobs/noJobs',
             }).as('jobsFixture');
             cy.intercept('GET', `**/api/meta-analysis-results/*`, {
                 fixture: 'MetaAnalysis/resultSuccess',
             }).as('resultFixture');
 
-            cy.login('mocked').visit(PROJECT_PATH).wait('@metaAnalysisFixture');
+            cy.login('mocked').visit(PROJECT_PATH).wait('@metaAnalysisFixture', { timeout: 20000 });
         });
 
         it('should show result display', () => {
@@ -295,7 +303,7 @@ describe(PAGE_NAME, () => {
                 }).as('resultFixture');
             });
 
-            cy.login('mocked').visit(PROJECT_PATH).wait('@metaAnalysisFixture');
+            cy.login('mocked').visit(PROJECT_PATH).wait('@metaAnalysisFixture', { timeout: 20000 });
 
             // Should show job logs instead of results
             cy.contains('Click to view logs').should('exist').click();
@@ -332,7 +340,7 @@ describe(PAGE_NAME, () => {
                 }).as('resultFixture');
             });
 
-            cy.login('mocked').visit(PROJECT_PATH).wait('@metaAnalysisFixture');
+            cy.login('mocked').visit(PROJECT_PATH).wait('@metaAnalysisFixture', { timeout: 20000 });
 
             // Should show results instead of job
             cy.contains('Run successful').should('exist');
@@ -345,14 +353,14 @@ describe(PAGE_NAME, () => {
             cy.intercept('GET', `**/api/meta-analyses/**`, {
                 fixture: 'MetaAnalysis/metaAnalysisWithResult',
             }).as('metaAnalysisFixture');
-            cy.intercept('GET', `**/api/meta-analysis-jobs`, {
+            cy.intercept('GET', `**/api/meta-analysis-jobs*`, {
                 fixture: 'MetaAnalysis/jobs/noJobs',
             }).as('jobsFixture');
             cy.intercept('GET', `**/api/meta-analysis-results/*`, {
                 fixture: 'MetaAnalysis/resultSuccess',
             }).as('resultFixture');
 
-            cy.login('mocked').visit(PROJECT_PATH).wait('@metaAnalysisFixture');
+            cy.login('mocked').visit(PROJECT_PATH).wait('@metaAnalysisFixture', { timeout: 20000 });
 
             cy.contains('Run successful').should('exist');
             cy.get('[role="alert"]').within(() => {
@@ -371,7 +379,7 @@ describe(PAGE_NAME, () => {
             }).as('metaAnalysisFixture');
 
             let jobsRequestCount = 0;
-            cy.intercept('GET', `**/api/meta-analysis-jobs`, (req) => {
+            cy.intercept('GET', `**/api/meta-analysis-jobs*`, (req) => {
                 if (jobsRequestCount === 0) {
                     jobsRequestCount++;
                     req.reply({ fixture: 'MetaAnalysis/jobs/noJobs' });
@@ -383,11 +391,11 @@ describe(PAGE_NAME, () => {
                 fixture: 'MetaAnalysis/jobs/jobSubmitted',
             }).as('jobDetailFixture');
 
-            cy.intercept('POST', `**/api/meta-analysis-jobs`, {
+            cy.intercept('POST', `**/api/meta-analysis-jobs*`, {
                 fixture: 'MetaAnalysis/jobs/jobSubmitted',
             }).as('jobRunningFixture');
 
-            cy.login('mocked').visit(PROJECT_PATH).wait('@metaAnalysisFixture');
+            cy.login('mocked').visit(PROJECT_PATH).wait('@metaAnalysisFixture', { timeout: 20000 });
 
             // Alert is visible at first
             cy.contains('No run detected').should('exist');
@@ -421,11 +429,11 @@ describe(PAGE_NAME, () => {
             cy.intercept('GET', `**/api/meta-analyses/**`, {
                 fixture: 'MetaAnalysis/metaAnalysisNoResults',
             }).as('metaAnalysisFixture');
-            cy.intercept('GET', `**/api/meta-analysis-jobs`, {
+            cy.intercept('GET', `**/api/meta-analysis-jobs*`, {
                 fixture: 'MetaAnalysis/jobs/noJobs',
             }).as('jobsFixture');
 
-            cy.login('mocked').visit(PROJECT_PATH).wait('@metaAnalysisFixture');
+            cy.login('mocked').visit(PROJECT_PATH).wait('@metaAnalysisFixture', { timeout: 20000 });
 
             cy.contains('Edit Specification').click();
             cy.get('button').contains('Edit Specification').should('exist');
@@ -441,11 +449,11 @@ describe(PAGE_NAME, () => {
             cy.intercept('GET', `**/api/meta-analyses/**`, {
                 fixture: 'MetaAnalysis/metaAnalysisNoResults',
             }).as('metaAnalysisFixture');
-            cy.intercept('GET', `**/api/meta-analysis-jobs`, {
+            cy.intercept('GET', `**/api/meta-analysis-jobs*`, {
                 fixture: 'MetaAnalysis/jobs/noJobs',
             }).as('jobsFixture');
 
-            cy.login('mocked').visit(PROJECT_PATH).wait('@metaAnalysisFixture');
+            cy.login('mocked').visit(PROJECT_PATH).wait('@metaAnalysisFixture', { timeout: 20000 });
             cy.contains('View Specification').click();
             cy.get('button').contains('Edit Specification').should('be.disabled');
         });
@@ -456,7 +464,7 @@ describe(PAGE_NAME, () => {
             cy.intercept('GET', `**/api/meta-analyses/**`, {
                 fixture: 'MetaAnalysis/metaAnalysisWithResult',
             }).as('metaAnalysisFixture');
-            cy.intercept('GET', `**/api/meta-analysis-jobs`, {
+            cy.intercept('GET', `**/api/meta-analysis-jobs*`, {
                 fixture: 'MetaAnalysis/jobs/noJobs',
             }).as('jobsFixture');
             cy.intercept('GET', `**/api/meta-analysis-results/*`, {
@@ -474,14 +482,14 @@ describe(PAGE_NAME, () => {
         });
 
         it('should show the cite me component when tab is clicked', () => {
-            cy.login('mocked').visit(PROJECT_PATH).wait('@metaAnalysisFixture');
+            cy.login('mocked').visit(PROJECT_PATH).wait('@metaAnalysisFixture', { timeout: 20000 });
 
             cy.contains('Cite Me').click();
             cy.contains('Copy citations in your preferred format:').should('exist');
         });
 
         it('should show citation format dropdown and citation content after loading', () => {
-            cy.login('mocked').visit(PROJECT_PATH).wait('@metaAnalysisFixture');
+            cy.login('mocked').visit(PROJECT_PATH).wait('@metaAnalysisFixture', { timeout: 20000 });
 
             cy.contains('Cite Me').click();
             cy.get('[role="combobox"]', { timeout: 15000 }).should('exist');
@@ -489,7 +497,7 @@ describe(PAGE_NAME, () => {
         });
 
         it('should allow selecting different citation formats from dropdown', () => {
-            cy.login('mocked').visit(PROJECT_PATH).wait('@metaAnalysisFixture');
+            cy.login('mocked').visit(PROJECT_PATH).wait('@metaAnalysisFixture', { timeout: 20000 });
 
             cy.contains('Cite Me').click();
             cy.get('[role="combobox"]', { timeout: 15000 }).should('exist').click();

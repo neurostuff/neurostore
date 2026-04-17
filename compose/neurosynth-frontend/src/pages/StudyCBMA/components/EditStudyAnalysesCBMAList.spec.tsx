@@ -1,10 +1,10 @@
 import { vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import EditStudyAnalysesCBMAList from './EditStudyAnalysesCBMAList';
+import EditStudyAnalysesCBMAList from 'pages/StudyCBMA/components/EditStudyAnalysesCBMAList';
 import { IStoreAnalysis } from 'stores/study/StudyStore.helpers';
 import userEvent from '@testing-library/user-event';
 
-vi.mock('pages/Study/components/StudyAnalysesListItem.tsx');
+vi.mock('pages/Study/components/StudyAnalysesListItem');
 
 describe('EditStudyAnalysesCBMAList Component', () => {
     it('should render', () => {

@@ -1,6 +1,6 @@
-from sqlalchemy.orm import declarative_base
-from flask_sqlalchemy import SQLAlchemy
 import orjson
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.orm import declarative_base
 
 
 def orjson_serializer(obj):

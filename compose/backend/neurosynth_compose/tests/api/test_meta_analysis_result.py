@@ -1,24 +1,31 @@
+from sqlalchemy import select
+
 from neurosynth_compose.models import (
     MetaAnalysis,
     MetaAnalysisResult,
-    NeurovaultCollection,
     NeurostoreAnalysis,
+    NeurovaultCollection,
+    SnapshotAnnotation,
+    SnapshotStudyset,
 )
-from sqlalchemy import select
+
+
+def _create_meta_analysis_result(auth_client, meta_analysis):
+    headers = {"Compose-Upload-Key": meta_analysis.run_key}
+    data = {
+        "snapshot_studyset": {"name": "my studyset"},
+        "snapshot_annotation": {"name": "my_annotation"},
+        "meta_analysis_id": meta_analysis.id,
+    }
+    auth_client.token = None
+    return auth_client.post("/api/meta-analysis-results", data=data, headers=headers)
 
 
 def test_create_meta_analysis_result(session, db, app, auth_client, user_data):
     meta_analysis = db.session.execute(select(MetaAnalysis)).scalars().first()
-    headers = {"Compose-Upload-Key": meta_analysis.run_key}
-    data = {
-        "studyset_snapshot": {"name": "my studyset"},
-        "annotation_snapshot": {"name": "my_annotation"},
-        "meta_analysis_id": meta_analysis.id,
-    }
-    auth_client.token = None
     # project should be a draft before running
     assert meta_analysis.project.draft is True
-    resp = auth_client.post("/api/meta-analysis-results", data=data, headers=headers)
+    resp = _create_meta_analysis_result(auth_client, meta_analysis)
     # project should be not be a draft after running
     assert meta_analysis.project.draft is False
     assert resp.status_code == 200
@@ -34,8 +41,8 @@ def test_create_meta_analysis_result_requires_upload_key(
 ):
     meta_analysis = db.session.execute(select(MetaAnalysis)).scalars().first()
     data = {
-        "studyset_snapshot": {"name": "my studyset"},
-        "annotation_snapshot": {"name": "my_annotation"},
+        "snapshot_studyset": {"name": "my studyset"},
+        "snapshot_annotation": {"name": "my_annotation"},
         "meta_analysis_id": meta_analysis.id,
     }
 
@@ -48,12 +55,12 @@ def test_create_meta_analysis_result_requires_upload_key(
 def test_create_meta_analysis_result_no_snapshots(session, db, auth_client, user_data):
     meta_analyses = db.session.execute(select(MetaAnalysis)).scalars().all()
     for meta_analysis in meta_analyses:
-        meta_analysis.studyset.snapshot = None
-        meta_analysis.annotation.snapshot = None
+        meta_analysis.neurostore_studyset_id = None
+        meta_analysis.neurostore_annotation_id = None
         headers = {"Compose-Upload-Key": meta_analysis.run_key}
         data = {
-            "studyset_snapshot": {"name": "my studyset"},
-            "annotation_snapshot": {"name": "my annotation"},
+            "snapshot_studyset": {"name": "my studyset"},
+            "snapshot_annotation": {"name": "my annotation"},
             "meta_analysis_id": meta_analysis.id,
         }
         auth_client.token = None
@@ -62,6 +69,104 @@ def test_create_meta_analysis_result_no_snapshots(session, db, auth_client, user
         )
 
         assert resp.status_code == 200
+
+
+def test_get_meta_analysis_result_detail(session, db, auth_client, user_data):
+    meta_analysis = db.session.execute(select(MetaAnalysis)).scalars().first()
+    create_resp = _create_meta_analysis_result(auth_client, meta_analysis)
+    assert create_resp.status_code == 200
+    result_id = create_resp.json["id"]
+
+    get_resp = auth_client.get(f"/api/meta-analysis-results/{result_id}")
+    assert get_resp.status_code == 200
+    assert get_resp.json["id"] == result_id
+    assert get_resp.json["meta_analysis_id"] == meta_analysis.id
+    assert get_resp.json["snapshot_studyset_id"] is not None
+    assert get_resp.json["snapshot_annotation_id"] is not None
+
+
+def test_get_meta_analysis_results_list(session, db, auth_client, user_data):
+    meta_analysis = db.session.execute(select(MetaAnalysis)).scalars().first()
+    create_resp = _create_meta_analysis_result(auth_client, meta_analysis)
+    assert create_resp.status_code == 200
+    result_id = create_resp.json["id"]
+
+    list_resp = auth_client.get("/api/meta-analysis-results")
+    assert list_resp.status_code == 200
+    assert list_resp.json["metadata"]["total_count"] >= 1
+    assert any(row["id"] == result_id for row in list_resp.json["results"])
+
+
+def test_create_meta_analysis_result_links_snapshot_rows_to_meta_neurostore_refs(
+    session, db, auth_client, user_data
+):
+    meta_analysis = db.session.execute(select(MetaAnalysis)).scalars().first()
+    create_resp = _create_meta_analysis_result(auth_client, meta_analysis)
+    assert create_resp.status_code == 200
+
+    result = db.session.execute(
+        select(MetaAnalysisResult).where(
+            MetaAnalysisResult.id == create_resp.json["id"]
+        )
+    ).scalar_one()
+
+    assert result.studyset_snapshot is not None
+    assert result.annotation_snapshot is not None
+    assert (
+        result.studyset_snapshot.neurostore_id == meta_analysis.neurostore_studyset_id
+    )
+    assert (
+        result.annotation_snapshot.neurostore_id
+        == meta_analysis.neurostore_annotation_id
+    )
+    assert (
+        result.annotation_snapshot.snapshot_studyset_id == result.studyset_snapshot_id
+    )
+
+
+def test_create_meta_analysis_result_backfills_existing_canonical_snapshot_refs(
+    session, db, auth_client, user_data
+):
+    meta_analysis = db.session.execute(select(MetaAnalysis)).scalars().first()
+    studyset_payload = {"name": "existing canonical studyset"}
+    annotation_payload = {"name": "existing canonical annotation"}
+
+    existing_studyset = SnapshotStudyset(
+        snapshot=studyset_payload, user=meta_analysis.user
+    )
+    session.add(existing_studyset)
+    session.flush()
+
+    existing_annotation = SnapshotAnnotation(
+        snapshot=annotation_payload,
+        user=meta_analysis.user,
+    )
+    session.add(existing_annotation)
+    session.flush()
+
+    assert existing_studyset.neurostore_id is None
+    assert existing_annotation.neurostore_id is None
+    assert existing_annotation.snapshot_studyset_id is None
+
+    headers = {"Compose-Upload-Key": meta_analysis.run_key}
+    auth_client.token = None
+    create_resp = auth_client.post(
+        "/api/meta-analysis-results",
+        data={
+            "snapshot_studyset": studyset_payload,
+            "snapshot_annotation": annotation_payload,
+            "meta_analysis_id": meta_analysis.id,
+        },
+        headers=headers,
+    )
+    assert create_resp.status_code == 200
+
+    session.expire(existing_studyset)
+    session.expire(existing_annotation)
+
+    assert existing_studyset.neurostore_id == meta_analysis.neurostore_studyset_id
+    assert existing_annotation.neurostore_id == meta_analysis.neurostore_annotation_id
+    assert existing_annotation.snapshot_studyset_id == existing_studyset.id
 
 
 def test_put_meta_analysis_result_with_celery(
@@ -94,8 +199,8 @@ def test_put_meta_analysis_result_with_celery(
     ).scalar_one_or_none()
     headers = {"Compose-Upload-Key": meta_analysis.run_key}
     post_data = {
-        "studyset_snapshot": {"name": "my studyset"},
-        "annotation_snapshot": {"name": "my_annotation"},
+        "snapshot_studyset": {"name": "my studyset"},
+        "snapshot_annotation": {"name": "my_annotation"},
         "meta_analysis_id": meta_analysis_id,
     }
     resp_post = auth_client.post(
@@ -208,8 +313,8 @@ def test_put_meta_analysis_result_requires_upload_key(
     meta_analysis = db.session.execute(select(MetaAnalysis)).scalars().first()
     headers = {"Compose-Upload-Key": meta_analysis.run_key}
     post_data = {
-        "studyset_snapshot": {"name": "my studyset"},
-        "annotation_snapshot": {"name": "my_annotation"},
+        "snapshot_studyset": {"name": "my studyset"},
+        "snapshot_annotation": {"name": "my_annotation"},
         "meta_analysis_id": meta_analysis.id,
     }
 

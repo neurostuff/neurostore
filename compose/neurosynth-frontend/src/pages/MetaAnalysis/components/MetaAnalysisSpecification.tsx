@@ -47,8 +47,8 @@ const DisplayMetaAnalysisSpecification: React.FC<{ projectId: string; metaAnalys
     }, [specification?.conditions, specification?.database_studyset, specification?.estimator?.type]);
 
     const metaAnalysisSpecification = metaAnalysis?.specification as Specification | undefined;
-    const metaAnalysisAnnotation = metaAnalysis?.annotation as Annotation | undefined;
-    const metaAnalysisStudyset = metaAnalysis?.studyset as Studyset | undefined;
+    const metaAnalysisAnnotation = metaAnalysis?.neurostore_annotation as Annotation | undefined;
+    const metaAnalysisStudyset = metaAnalysis?.neurostore_studyset as Studyset | undefined;
 
     return (
         <Box>

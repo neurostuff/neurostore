@@ -4,9 +4,7 @@
     },
     "results": [
         {
-            "annotation": "ScF6zqfUb5E9",
-            "cached_annotation": "xSEk9vPXqtrq",
-            "cached_studyset": "tg4mwupccq86",
+            "neurostore_annotation": "ScF6zqfUb5E9",
             "created_at": "2024-06-14T14:35:03.190376+00:00",
             "description": "ALE Meta Analysis",
             "id": "mHQxyne2cYnL",
@@ -26,7 +24,7 @@
             "results": [],
             "run_key": "8_DZnIji8ctcx3e2VujjeA",
             "specification": "AFtwv58xMjL2",
-            "studyset": "LZ4ngCuAhtqb",
+            "neurostore_studyset": "LZ4ngCuAhtqb",
             "updated_at": null,
             "user": "auth0|666c3bb1fcdc91471b06bfb2",
             "username": "test user 6"

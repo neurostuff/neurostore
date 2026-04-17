@@ -1,8 +1,14 @@
-from neurosynth_compose.models import Project, MetaAnalysisResult, User
-from neurosynth_compose.schemas import MetaAnalysisSchema
 from sqlalchemy import select
 
-from ..conftest import MockNeurostoreSession
+from neurosynth_compose.models import (
+    MetaAnalysisResult,
+    NeurostoreAnnotation,
+    NeurostoreStudyset,
+    Project,
+    User,
+)
+from neurosynth_compose.schemas import MetaAnalysisSchema
+from neurosynth_compose.tests.conftest import MockNeurostoreSession
 
 
 def test_get_all_projects(session, app, auth_client, user_data):
@@ -42,8 +48,8 @@ def test_project_info(session, app, auth_client, user_data):
         assert f in meta_analysis
 
 
-def test_project_studyset_annotation_attributes(session, app, auth_client, user_data):
-    """Test that project has studyset and annotation attributes"""
+def test_project_neurostore_reference_attributes(session, app, auth_client, user_data):
+    """Project responses should expose only the explicit neurostore reference IDs."""
     proj = session.execute(select(Project)).scalars().first()
 
     resp = auth_client.get(f"/api/projects/{proj.id}")
@@ -51,13 +57,12 @@ def test_project_studyset_annotation_attributes(session, app, auth_client, user_
 
     project_data = resp.json
 
-    # Check that studyset and annotation attributes are present
-    assert "studyset" in project_data
-    assert "annotation" in project_data
-
-    # These should be string IDs (due to pluck metadata)
-    assert isinstance(project_data["studyset"], str)
-    assert isinstance(project_data["annotation"], str)
+    assert "studyset" not in project_data
+    assert "annotation" not in project_data
+    assert "neurostore_studyset_id" in project_data
+    assert "neurostore_annotation_id" in project_data
+    assert isinstance(project_data["neurostore_studyset_id"], str)
+    assert isinstance(project_data["neurostore_annotation_id"], str)
 
 
 def test_delete_project(session, app, auth_client, user_data):
@@ -144,6 +149,48 @@ def test_search_capabilities(session, app, auth_client, user_data):
     assert response.status_code == 200
 
 
+def test_update_project_creates_missing_neurostore_reference_rows(
+    session, app, auth_client, user_data
+):
+    project = (
+        session.execute(
+            select(Project)
+            .join(Project.user)
+            .where(User.external_id == auth_client.username)
+        )
+        .scalars()
+        .first()
+    )
+    assert project is not None
+
+    studyset_ref_id = "ie8dzf2iSf63"
+    annotation_ref_id = "D6HhzHy73VGN"
+
+    assert session.get(NeurostoreStudyset, studyset_ref_id) is None
+    assert session.get(NeurostoreAnnotation, annotation_ref_id) is None
+
+    response = auth_client.put(
+        f"/api/projects/{project.id}",
+        data={
+            "neurostore_studyset_id": studyset_ref_id,
+            "neurostore_annotation_id": annotation_ref_id,
+            "provenance": {
+                "extractionMetadata": {
+                    "studysetId": studyset_ref_id,
+                    "annotationId": annotation_ref_id,
+                    "studyStatusList": [],
+                }
+            },
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json["neurostore_studyset_id"] == studyset_ref_id
+    assert response.json["neurostore_annotation_id"] == annotation_ref_id
+    assert session.get(NeurostoreStudyset, studyset_ref_id) is not None
+    assert session.get(NeurostoreAnnotation, annotation_ref_id) is not None
+
+
 def test_clone_public_project_creates_new_project(
     session, auth_client, user_data, reset_ns_session, mock_ns
 ):
@@ -177,13 +224,17 @@ def test_clone_public_project_creates_new_project(
     )
     assert cloned_project.user.external_id == auth_client.username
     assert (
-        cloned_project.studyset_id
-        and cloned_project.studyset_id != source_project.studyset_id
+        cloned_project.neurostore_studyset_id
+        and cloned_project.neurostore_studyset_id
+        != source_project.neurostore_studyset_id
     )
-    assert (
-        cloned_project.annotation_id
-        and cloned_project.annotation_id != source_project.annotation_id
-    )
+    if source_project.neurostore_annotation_id is not None:
+        assert (
+            cloned_project.neurostore_annotation_id
+            != source_project.neurostore_annotation_id
+        )
+    else:
+        assert cloned_project.neurostore_annotation_id is None
 
     expected_auth = f"Bearer {auth_client.token}"
     auth_headers = {
@@ -228,7 +279,7 @@ def test_clone_public_project_without_annotations(
         .first()
     )
     assert source_project is not None
-    assert source_project.annotation is not None
+    assert source_project.neurostore_annotation_id is not None
 
     response = auth_client.post(
         f"/api/projects?source_id={source_project.id}&copy_annotations=false",
@@ -237,14 +288,14 @@ def test_clone_public_project_without_annotations(
 
     assert response.status_code == 200
     payload = response.json
-    assert payload["annotation"] is None
+    assert payload["neurostore_annotation_id"] is None
 
     cloned_project = (
         session.execute(select(Project).where(Project.id == payload["id"]))
         .scalars()
         .one()
     )
-    assert cloned_project.annotation_id is None
+    assert cloned_project.neurostore_annotation_id is None
 
     # ensure query parameter propagated
     assert any(

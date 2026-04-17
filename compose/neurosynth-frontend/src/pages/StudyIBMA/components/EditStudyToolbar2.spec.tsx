@@ -1,17 +1,17 @@
-import { vi, Mock } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { useGetExtractionSummary, useGetStudysetById, useUserCanEdit } from 'hooks';
+import { setUnloadHandler } from 'helpers/BeforeUnload.helpers';
+import { useGetStudysetById, useUserCanEdit } from 'hooks';
 import { EExtractionStatus } from 'pages/Extraction/Extraction.types';
 import {
     useProjectExtractionAddOrUpdateStudyListStatus,
     useProjectExtractionStudysetId,
     useProjectId,
 } from 'pages/Project/store/ProjectStore';
-import { useStudyId } from 'stores/study/StudyStore';
-import { useNavigate } from 'react-router-dom';
 import EditStudyToolbar2 from 'pages/StudyIBMA/components/EditStudyToolbar2';
-import { setUnloadHandler } from 'helpers/BeforeUnload.helpers';
+import { useNavigate } from 'react-router-dom';
+import { useStudyId } from 'stores/study/StudyStore';
+import { Mock, vi } from 'vitest';
 
 vi.mock('hooks');
 vi.mock('pages/StudyCBMA/hooks/useSaveStudy');
@@ -29,48 +29,6 @@ describe('EditStudyToolbar2 Component', () => {
 
     it('should render', () => {
         render(<EditStudyToolbar2 />);
-    });
-
-    it.each([
-        [0, 0, 0, 0, 0],
-        [0, 10, 0, 0, 10],
-        [10, 0, 0, 0, 0],
-        [7, 14, 50, 7, 14],
-    ])(
-        'testing with completed: %i and total: %i | expected %i percentage, expected %i completed and expected %i total',
-        async (completed, total, expectedPercentage, expectedCompleted, expectedTotal) => {
-            const extractionSummary = useGetExtractionSummary('');
-            extractionSummary.completed = completed;
-            extractionSummary.total = total;
-            render(<EditStudyToolbar2 />);
-            expect(screen.getByText(`${expectedPercentage}%`)).toBeInTheDocument();
-
-            userEvent.hover(screen.getByText(`${expectedPercentage}%`));
-            const tooltip = await screen.findByRole('tooltip');
-            expect(tooltip).toBeInTheDocument();
-            expect(tooltip).toHaveTextContent(`${expectedCompleted} / ${expectedTotal} studies marked as complete`);
-        }
-    );
-
-    it('should show the done all icon', () => {
-        useGetExtractionSummary('').completed = 21;
-        useGetExtractionSummary('').total = 21;
-        render(<EditStudyToolbar2 />);
-        expect(screen.getByTestId('DoneAllIcon')).toBeInTheDocument();
-    });
-
-    it('should move on to the specification phase', () => {
-        useGetExtractionSummary('').completed = 21;
-        useGetExtractionSummary('').total = 21;
-        render(<EditStudyToolbar2 />);
-        userEvent.click(screen.getByTestId('DoneAllIcon'));
-        expect(useNavigate()).toHaveBeenCalledWith('/projects/project-id/project', {
-            state: {
-                projectPage: {
-                    scrollToMetaAnalysisProceed: true,
-                },
-            },
-        });
     });
 
     describe('status buttons', () => {

@@ -52,6 +52,7 @@ export type ProjectStoreActions = {
     createNewInfoTag: (newTag: ITag) => void;
     createNewIdentificationSource: (newSource: ISource) => void;
     createNewCurationImport: (newImport: IImport) => void;
+    updateCurationImportName: (curationImportId: string, name: string) => void;
     deleteCurationImport: (curationImportId: string) => void;
     addNewStubs: (stubs: ICurationStubStudy[]) => void;
     updateCurationColumns: (columns: ICurationColumn[]) => void;

@@ -1,20 +1,19 @@
 import re
 
-import sqlalchemy as sa
-from sqlalchemy import exists
-from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.dialects.postgresql import JSONB, ENUM as PGEnum
-from sqlalchemy import ForeignKeyConstraint, func, text
-from sqlalchemy.ext.associationproxy import association_proxy
-from sqlalchemy.ext.mutable import MutableDict
-from sqlalchemy.orm import relationship, backref, validates, aliased
 import shortuuid
+import sqlalchemy as sa
+from sqlalchemy import ForeignKeyConstraint, exists, func, text
+from sqlalchemy.dialects.postgresql import ENUM as PGEnum
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.ext.associationproxy import association_proxy
+from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.ext.mutable import MutableDict
+from sqlalchemy.orm import aliased, backref, relationship, validates
 
-
-from .migration_types import TSVector, VectorType
-from ..database import db
-from ..map_types import MAP_TYPE_CODES, canonicalize_map_type
-from ..utils import parse_json_filter, build_jsonpath
+from neurostore.database import db
+from neurostore.map_types import MAP_TYPE_CODES, canonicalize_map_type
+from neurostore.models.migration_types import TSVector, VectorType
+from neurostore.utils import build_jsonpath, parse_json_filter
 
 # status of pipeline run
 STATUS_ENUM = PGEnum(
@@ -325,7 +324,7 @@ class BaseStudy(BaseMixin, db.Model):
 
     def update_has_images_and_points(self):
         # Keep analysis/study/base flags consistent for this base study.
-        from ..services.has_media_flags import recompute_media_flags
+        from neurostore.services.has_media_flags import recompute_media_flags
 
         recompute_media_flags([self.id])
 
@@ -992,6 +991,6 @@ class PipelineEmbedding(db.Model):
     embedding = db.Column(VectorType(), nullable=False)
 
 
-from . import point_count_listeners  # noqa E402
+from neurostore.models import point_count_listeners  # noqa E402
 
 del point_count_listeners

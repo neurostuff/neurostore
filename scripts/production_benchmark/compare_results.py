@@ -13,6 +13,23 @@ def load_results(path: Path) -> dict:
         return json.load(handle)
 
 
+def extract_cases(results: dict) -> list[dict]:
+    cases = results.get("cases") or []
+    if cases:
+        return cases
+
+    extracted_cases = []
+    for case_analysis in results.get("case_analyses", []):
+        for sample in case_analysis.get("raw_case_samples", []):
+            extracted_cases.append(
+                {
+                    "name": sample.get("case_name") or case_analysis.get("case"),
+                    "median_seconds": sample["median_seconds"],
+                }
+            )
+    return extracted_cases
+
+
 def format_pct(value: float) -> str:
     return f"{value * 100:.1f}%"
 
@@ -23,14 +40,15 @@ def format_seconds(value: float) -> str:
 
 def build_rows(
     baseline_cases: dict, candidate_cases: dict, threshold: float
-) -> tuple[list[dict], list[dict]]:
+) -> tuple[list[dict], list[dict], list[dict]]:
     rows = []
     slowdowns = []
+    mismatches = []
 
     for name, candidate in candidate_cases.items():
         baseline = baseline_cases.get(name)
         if baseline is None:
-            slowdowns.append(
+            mismatches.append(
                 {
                     "name": name,
                     "reason": "missing in baseline",
@@ -57,7 +75,7 @@ def build_rows(
 
     for name in baseline_cases:
         if name not in candidate_cases:
-            slowdowns.append(
+            mismatches.append(
                 {
                     "name": name,
                     "reason": "missing in candidate",
@@ -65,11 +83,16 @@ def build_rows(
             )
 
     rows.sort(key=lambda row: row["name"])
-    return rows, slowdowns
+    mismatches.sort(key=lambda row: row["name"])
+    return rows, slowdowns, mismatches
 
 
 def render_report(
-    service: str, rows: list[dict], slowdowns: list[dict], threshold: float
+    service: str,
+    rows: list[dict],
+    slowdowns: list[dict],
+    mismatches: list[dict],
+    threshold: float,
 ) -> str:
     lines = [
         f"**Service:** `{service}`",
@@ -112,6 +135,11 @@ def render_report(
     else:
         lines.extend(["", "No slowdowns over the configured threshold."])
 
+    if mismatches:
+        lines.extend(["", "Case mismatches (reported only):"])
+        for mismatch in mismatches:
+            lines.append(f"- {mismatch['name']}: {mismatch['reason']}")
+
     return "\n".join(lines)
 
 
@@ -136,10 +164,12 @@ def main() -> int:
     candidate = load_results(Path(args.candidate))
     service = candidate.get("service") or baseline.get("service") or "unknown"
 
-    baseline_cases = {case["name"]: case for case in baseline.get("cases", [])}
-    candidate_cases = {case["name"]: case for case in candidate.get("cases", [])}
-    rows, slowdowns = build_rows(baseline_cases, candidate_cases, args.threshold)
-    report = render_report(service, rows, slowdowns, args.threshold)
+    baseline_cases = {case["name"]: case for case in extract_cases(baseline)}
+    candidate_cases = {case["name"]: case for case in extract_cases(candidate)}
+    rows, slowdowns, mismatches = build_rows(
+        baseline_cases, candidate_cases, args.threshold
+    )
+    report = render_report(service, rows, slowdowns, mismatches, args.threshold)
 
     print(report)
     maybe_append_summary(args.summary_file, report)

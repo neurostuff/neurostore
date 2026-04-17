@@ -164,7 +164,7 @@ const EditSpecificationDialog: React.FC<IDialog> = (props) => {
                         Edit Analyses Selection:
                     </Typography>
                     <SelectAnalysesComponent
-                        annotationId={(metaAnalysis?.annotation as AnnotationReturn)?.neurostore_id || ''}
+                        annotationId={(metaAnalysis?.neurostore_annotation as AnnotationReturn)?.neurostore_id || ''}
                         selectedValue={selectedValue}
                         onSelectValue={(update) => {
                             setSelectedValue(update);
@@ -174,7 +174,7 @@ const EditSpecificationDialog: React.FC<IDialog> = (props) => {
                     {isMultiGroup && (
                         <CreateMetaAnalysisSpecificationSelectionStepMultiGroup
                             onSelectValue={(newVal) => setSelectedValue(newVal)}
-                            annotationId={(metaAnalysis?.annotation as AnnotationReturn)?.neurostore_id || ''}
+                            annotationId={(metaAnalysis?.neurostore_annotation as AnnotationReturn)?.neurostore_id || ''}
                             selectedValue={selectedValue}
                             algorithm={algorithmSpec}
                         />
@@ -197,8 +197,8 @@ const EditSpecificationDialog: React.FC<IDialog> = (props) => {
                     {/* empty div used for equally spacing and centering components */}
                     <Box>
                         <SelectAnalysesSummaryComponent
-                            studysetId={(metaAnalysis?.studyset as StudysetReturn)?.neurostore_id || ''}
-                            annotationdId={(metaAnalysis?.annotation as AnnotationReturn)?.neurostore_id || ''}
+                            studysetId={(metaAnalysis?.neurostore_studyset as StudysetReturn)?.neurostore_id || ''}
+                            annotationdId={(metaAnalysis?.neurostore_annotation as AnnotationReturn)?.neurostore_id || ''}
                             selectedValue={selectedValue}
                         />
                     </Box>

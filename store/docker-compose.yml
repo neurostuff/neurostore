@@ -17,15 +17,15 @@ services:
       - ./:/store
       - ${FILE_DIR}:/file-data
       - ${ACE_DIR}:/ace
-    command: /usr/local/bin/gunicorn -w 8 -b :8000 neurostore.core:connexion_app --worker-class uvicorn.workers.UvicornWorker --log-level debug --timeout 120
+    command: /usr/local/bin/gunicorn -w 8 -b :8000 neurostore.core:asgi_app --worker-class uvicorn.workers.UvicornWorker --log-level debug --timeout 120
     env_file:
       - .env
-    container_name: neurostore
-
   store_outbox_worker:
     image: neurostore
     restart: always
     depends_on:
+      neurostore:
+        condition: service_started
       store-pgsql17:
         condition: service_healthy
       store_redis:
@@ -33,14 +33,7 @@ services:
     volumes:
       - ./backend/migrations:/migrations
       - ./:/store
-    command: >
-      bash -c '
-        until flask db upgrade; do
-          echo "store_outbox_worker: waiting for successful db upgrade..."
-          sleep 3
-        done
-        exec flask process-base-study-flag-outbox --loop
-      '
+    command: flask process-base-study-flag-outbox --loop
     healthcheck:
       test:
         [
@@ -58,6 +51,8 @@ services:
     image: neurostore
     restart: always
     depends_on:
+      neurostore:
+        condition: service_started
       store-pgsql17:
         condition: service_healthy
       store_redis:
@@ -65,14 +60,7 @@ services:
     volumes:
       - ./backend/migrations:/migrations
       - ./:/store
-    command: >
-      bash -c '
-        until flask db upgrade; do
-          echo "store_metadata_outbox_worker: waiting for successful db upgrade..."
-          sleep 3
-        done
-        exec flask process-base-study-metadata-outbox --loop
-      '
+    command: flask process-base-study-metadata-outbox --loop
     healthcheck:
       test:
         [
@@ -109,6 +97,9 @@ services:
     environment:
       - VIRTUAL_HOST=${V_HOST}
       - LETSENCRYPT_HOST=${V_HOST}
+    networks:
+      - default
+      - proxy_shared
 
   store-pgsql:
     image: store-pgsql
@@ -163,7 +154,7 @@ services:
       - ./postgres/resolve-app-db.sh:/usr/local/bin/resolve-app-db.sh:ro
     entrypoint: ["/bin/sh", "-c"]
     command:
-      - 'db_name="$(/usr/local/bin/resolve-app-db.sh neurostore)"; export DATABASE_URL="postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:5432/$${db_name}"; exec puma -C /app/config/puma.rb'
+      - 'export PATH="/usr/local/bundle/bin:${PATH}"; db_name="$(/usr/local/bin/resolve-app-db.sh neurostore)"; export DATABASE_URL="postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:5432/$${db_name}"; exec puma -C /app/config/puma.rb'
     depends_on:
       store-pgsql17:
         condition: service_healthy
@@ -187,7 +178,7 @@ services:
       - ./postgres/resolve-app-db.sh:/usr/local/bin/resolve-app-db.sh:ro
     entrypoint: ["/bin/sh", "-c"]
     command:
-      - 'export POSTGRES_DB="$(/usr/local/bin/resolve-app-db.sh neurostore)"; exec /run.sh'
+      - 'export PATH="/usr/share/grafana/bin:${PATH}"; export POSTGRES_DB="$(/usr/local/bin/resolve-app-db.sh neurostore)"; exec /run.sh'
     depends_on:
       store-pgsql17:
         condition: service_healthy
@@ -200,6 +191,6 @@ volumes:
   postgres17_data:
 
 networks:
-  default:
-    name: nginx-proxy
+  proxy_shared:
+    name: ${SHARED_PROXY_NETWORK:-nginx-proxy}
     external: true

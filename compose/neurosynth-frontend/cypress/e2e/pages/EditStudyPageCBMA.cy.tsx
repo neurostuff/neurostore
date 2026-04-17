@@ -592,7 +592,19 @@ describe(PAGE_NAME, () => {
                     typedStudyset.studyset_studies = [{ id: 'b-mock-study-id', curation_stub_uuid: stubId }];
                     cy.intercept('GET', '**/api/studysets/*', studyset).as('studysetFixture');
                     cy.intercept('PUT', '**/api/studysets/*', { statusCode: 200, body: {} }).as('updateStudyset');
-                    return visitAndWaitForPage();
+                    // The relegate link is only shown when the current analysis has no coordinates.
+                    return cy.fixture('study').then((study) => {
+                        const studyForDemotion = study as Record<string, unknown> & {
+                            analyses: Array<Record<string, unknown>>;
+                        };
+                        studyForDemotion.id = 'b-mock-study-id';
+                        studyForDemotion.analyses = studyForDemotion.analyses.map((analysis) => ({
+                            ...analysis,
+                            points: [],
+                        }));
+                        cy.intercept('GET', '**/api/studies/*', studyForDemotion).as('studyFixture');
+                        return visitAndWaitForPage();
+                    });
                 });
             cy.contains("I couldn't find coordinates for this study").click();
             cy.contains('Coordinates could not be found for this study.').should('be.visible');

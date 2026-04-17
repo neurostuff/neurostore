@@ -1,5 +1,4 @@
-from ...models import Study, Analysis, Condition, AnalysisConditions
-from neurostore.models import User
+from neurostore.models import Analysis, AnalysisConditions, Condition, Study, User
 
 
 def test_condition_cloning_neurovault(auth_client, ingest_neurovault, session):

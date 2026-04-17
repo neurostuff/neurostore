@@ -4,7 +4,7 @@ import DisplayStudyLinkFullText from 'components/DisplayStudyLink/DisplayStudyLi
 import { useStudyName } from 'stores/study/StudyStore';
 import { useGetFullText } from 'hooks';
 
-vi.mock('pages/Study/store/StudyStore');
+vi.mock('stores/study/StudyStore');
 vi.mock('hooks');
 describe('DisplayStudyLinkFullText Component', () => {
     it('should render', () => {

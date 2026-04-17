@@ -1,15 +1,31 @@
-import { Close, Delete } from '@mui/icons-material';
-import { Alert, Box, Button, Chip, IconButton, Typography } from '@mui/material';
+import { Close, Delete, Edit } from '@mui/icons-material';
+import {
+    Alert,
+    Box,
+    Button,
+    Chip,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
+    IconButton,
+    TextField,
+    Typography,
+} from '@mui/material';
 import DebouncedTextField from 'components/DebouncedTextField';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import { useGetWindowHeight, useUserCanEdit } from 'hooks';
 import ImportFinalizeReviewVirtualizedListItem from 'pages/CurationImport/components/ImportFinalizeReviewVirtualizedListItem';
-import { useProjectCurationColumns, useProjectCurationImport } from 'pages/Project/store/ProjectStore';
+import {
+    useProjectCurationColumns,
+    useProjectCurationImport,
+    useProjectUser,
+    useUpdateCurationImportName,
+} from 'pages/Project/store/ProjectStore';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { FixedSizeList } from 'react-window';
 import { EImportMode, ICurationStubStudy } from '../Curation.types';
 import { IGroupListItem } from './CurationBoardAIGroupsList';
-import { useAuth0 } from '@auth0/auth0-react';
 
 const LIST_HEIGHT = 95;
 
@@ -17,7 +33,9 @@ const CurationBoardAIInterfaceImportSummary: React.FC<{
     group: IGroupListItem;
     onDeleteCurationImport: (curationImportId: string) => void;
 }> = ({ group, onDeleteCurationImport }) => {
+    const projectUser = useProjectUser();
     const curationImport = useProjectCurationImport(group.id);
+    const updateCurationImportName = useUpdateCurationImportName();
     const columns = useProjectCurationColumns();
     const [errorContainerHeight, setErrorContainerHeight] = useState<number>();
     const [descriptionContainerHeight, setDescriptionContainerHeight] = useState<number>();
@@ -25,9 +43,10 @@ const CurationBoardAIInterfaceImportSummary: React.FC<{
     const descriptionTextContainerRef = useRef<HTMLDivElement>(null);
     const windowHeight = useGetWindowHeight();
     const [confirmationDialogIsOpen, setConfirmationDialogIsOpen] = useState(false);
+    const [editImportNameDialogIsOpen, setEditImportNameDialogIsOpen] = useState(false);
+    const [importNameDraft, setImportNameDraft] = useState('');
     const [searchText, setSearchText] = useState<string>();
-    const { user } = useAuth0();
-    const canEdit = useUserCanEdit(user?.sub || undefined);
+    const canEdit = useUserCanEdit(projectUser || undefined);
 
     useEffect(() => {
         const totalHeight =
@@ -38,6 +57,12 @@ const CurationBoardAIInterfaceImportSummary: React.FC<{
     useEffect(() => {
         setDescriptionContainerHeight(descriptionTextContainerRef.current?.offsetHeight || 0);
     }, [descriptionTextContainerRef.current?.offsetHeight, group.id]);
+
+    useEffect(() => {
+        if (editImportNameDialogIsOpen && curationImport?.name !== undefined) {
+            setImportNameDraft(curationImport.name);
+        }
+    }, [editImportNameDialogIsOpen, curationImport?.name]);
 
     const studiesInImport = useMemo(() => {
         if (!curationImport?.id) return [];
@@ -101,7 +126,48 @@ const CurationBoardAIInterfaceImportSummary: React.FC<{
                     >
                         {curationImport?.name || ''}
                     </Typography>
-                    <Box>
+                    <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
+                        <Dialog
+                            open={editImportNameDialogIsOpen}
+                            onClose={() => setEditImportNameDialogIsOpen(false)}
+                            fullWidth
+                            maxWidth="sm"
+                        >
+                            <DialogTitle>Edit import name</DialogTitle>
+                            <DialogContent>
+                                <TextField
+                                    autoFocus
+                                    margin="dense"
+                                    label="Import name"
+                                    fullWidth
+                                    value={importNameDraft}
+                                    onChange={(e) => setImportNameDraft(e.target.value)}
+                                    data-testid="curation-import-name-input"
+                                />
+                            </DialogContent>
+                            <DialogActions>
+                                <Button
+                                    data-testid="curation-import-name-cancel"
+                                    onClick={() => setEditImportNameDialogIsOpen(false)}
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    data-testid="curation-import-name-save"
+                                    variant="contained"
+                                    disabled={!importNameDraft.trim()}
+                                    disableElevation
+                                    onClick={() => {
+                                        const trimmed = importNameDraft.trim();
+                                        if (!trimmed) return;
+                                        updateCurationImportName(curationImport.id, trimmed);
+                                        setEditImportNameDialogIsOpen(false);
+                                    }}
+                                >
+                                    Save
+                                </Button>
+                            </DialogActions>
+                        </Dialog>
                         <ConfirmationDialog
                             dialogTitle="Are you sure you want to delete this import?"
                             onCloseDialog={(ok) => {
@@ -119,9 +185,21 @@ const CurationBoardAIInterfaceImportSummary: React.FC<{
                             }}
                         />
                         <Button
+                            variant="contained"
+                            sx={{ minWidth: '100px', fontSize: '12px' }}
+                            endIcon={<Edit style={{ fontSize: '16px' }} />}
+                            disabled={!canEdit}
+                            disableElevation
+                            size="small"
+                            data-testid="curation-edit-import-button"
+                            onClick={() => setEditImportNameDialogIsOpen(true)}
+                        >
+                            Edit
+                        </Button>
+                        <Button
                             color="error"
-                            sx={{ minWidth: '150px' }}
-                            endIcon={<Delete />}
+                            sx={{ fontSize: '12px' }}
+                            endIcon={<Delete style={{ fontSize: '16px' }} />}
                             variant="contained"
                             disabled={!canEdit}
                             disableElevation

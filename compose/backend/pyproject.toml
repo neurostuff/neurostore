@@ -11,12 +11,13 @@ authors = [
 ]
 license = { text = "MIT" }
 dependencies = [
-    "auth0-python~=5.0",
+    "auth0-python~=5.3",
     "authlib~=1.6",
     "celery~=5.0",
     "connexion[swagger-ui,uvicorn,flask]==3.3.0",
     "flask~=3.1",
     "flask-admin~=2.0",
+    "flask-orjson~=2.0",
     "Flask-CeleryExt~=0.5",
     "flask-cors~=6.0",
     "flask-migrate~=4.1",
@@ -26,9 +27,10 @@ dependencies = [
     "gunicorn~=25.0",
     "ipython~=9.6",
     "marshmallow~=4.0",
+    "orjson~=3.10",
     "pandas~=3.0",
     "psycopg2-binary~=2.8",
-    "pyld~=2.0",
+    "pyld>=2,<4",
     "python-jose~=3.3",
     "redis~=7.0",
     "scipy~=1.9",
@@ -37,8 +39,8 @@ dependencies = [
     "sqlalchemy-utils~=0.36",
     "starlette>=1.0.0,<2",
     "webargs~=8.7",
-    "wrapt~=2.0",
-    "NiMARE==0.9.0",
+    "wrapt~=2.1",
+    "NiMARE==0.15.0",
     "pynv @ git+https://github.com/NeuroVault/pynv.git#egg=pynv",
     "neurostore-sdk @ git+https://github.com/neurostuff/neurostore-python-sdk.git#egg=neurostore-sdk"
 ]

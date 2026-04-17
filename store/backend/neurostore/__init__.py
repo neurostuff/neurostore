@@ -1,11 +1,16 @@
 import json
 import os
+from copy import deepcopy
 from pathlib import Path
 
 import connexion
+import flask
 from authlib.integrations.flask_client import OAuth
-from connexion.middleware import MiddlewarePosition
+from connexion.exceptions import OAuthProblem
+from connexion.jsonifier import Jsonifier
 from connexion.resolver import MethodResolver
+from connexion.validators import VALIDATOR_MAP
+from connexion.validators.json import JSONRequestBodyValidator
 from flask import Response, request
 from flask_admin import Admin, AdminIndexView
 from flask_admin.contrib.sqla import ModelView
@@ -13,17 +18,21 @@ from flask_admin.theme import Bootstrap4Theme
 from flask_orjson import OrjsonProvider
 from starlette.middleware.cors import CORSMiddleware
 
-from .config import resolve_config_object
-from .database import init_db
-from .exceptions.base import NeuroStoreException
-from .exceptions.handlers import (
+from neurostore.config import resolve_config_object
+from neurostore.database import init_db
+from neurostore.exceptions.base import NeuroStoreException
+from neurostore.exceptions.handlers import (
     flask_general_body_and_status,
     flask_neurostore_body_and_status,
     general_exception_handler,
     neurostore_exception_handler,
 )
-from .extensions import cache
-from .resources.auth import AuthError, handle_auth_error, init_app as init_auth
+from neurostore.extensions import cache
+from neurostore.resources import iter_request_body_validation_skip_rules
+from neurostore.resources.auth import (
+    asgi_oauth_problem_handler,
+)
+from neurostore.resources.auth import init_app as init_auth
 
 
 def _env_flag(name, default=False):
@@ -33,13 +42,93 @@ def _env_flag(name, default=False):
     return value.strip().lower() in {"1", "true", "yes", "on"}
 
 
+def _should_validate_responses(app):
+    return app.config.get("ENV") == "development" and app.config["DEBUG"]
+
+
+def _normalize_request_path(path):
+    if not path:
+        return "/"
+
+    normalized = str(path).strip()
+    if not normalized.startswith("/"):
+        normalized = f"/{normalized}"
+    if normalized != "/":
+        normalized = normalized.rstrip("/")
+    return normalized
+
+
+_NON_DEBUG_BODY_VALIDATION_SKIP_ROUTES = tuple(
+    iter_request_body_validation_skip_rules()
+)
+
+
+def _path_matches_template(path, template):
+    normalized_path = _normalize_request_path(path)
+    normalized_template = _normalize_request_path(template)
+    if "<" not in normalized_template:
+        return normalized_path == normalized_template
+
+    path_segments = normalized_path.strip("/").split("/")
+    template_segments = normalized_template.strip("/").split("/")
+    if len(path_segments) != len(template_segments):
+        return False
+
+    for actual, expected in zip(path_segments, template_segments):
+        if expected.startswith("<") and expected.endswith(">"):
+            if not actual:
+                return False
+            continue
+        if actual != expected:
+            return False
+    return True
+
+
+def _should_skip_request_body_validation(scope):
+    method = str(scope.get("method") or "").upper()
+    path = _normalize_request_path(scope.get("path"))
+
+    for rule_method, rule_path in _NON_DEBUG_BODY_VALIDATION_SKIP_ROUTES:
+        if method == str(rule_method).upper() and _path_matches_template(
+            path, rule_path
+        ):
+            return True
+    return False
+
+
+class _NoOpParameterValidator:
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def validate(self, scope):
+        return None
+
+
+class _NoOpRequestBodyValidator:
+    def __init__(self, *args, **kwargs):
+        pass
+
+    async def wrap_receive(self, receive, *, scope):
+        return receive, scope
+
+
+class _SelectiveRequestBodyValidator(JSONRequestBodyValidator):
+    async def wrap_receive(self, receive, *, scope):
+        if _should_skip_request_body_validation(scope):
+            return receive, scope
+        return await super().wrap_receive(receive, scope=scope)
+
+
 def create_app():
     connexion_app = connexion.FlaskApp(__name__, specification_dir="openapi/")
     app = connexion_app.app
+    disable_connexion_validation = _env_flag("CONNEXION_DISABLE_VALIDATION")
+    disable_connexion_body_validation = _env_flag("CONNEXION_DISABLE_BODY_VALIDATION")
 
     app.config.from_object(resolve_config_object())
     app.config["DEBUG"] = _env_flag("DEBUG")
     app.secret_key = app.config["JWT_SECRET_KEY"]
+    app.json = OrjsonProvider(app)
 
     db = init_db(app)
     cache.init_app(app)
@@ -140,9 +229,7 @@ def create_app():
     admin.add_view(SecureModelView(PointValue, db.session, category="Analysis"))
     admin.add_view(SecureModelView(AnalysisConditions, db.session, category="Analysis"))
 
-    connexion_app.add_middleware(
-        CORSMiddleware,
-        position=MiddlewarePosition.BEFORE_ROUTING,
+    cors_kwargs = dict(
         allow_origins=["*"],
         allow_credentials=True,
         allow_methods=["*"],
@@ -150,6 +237,7 @@ def create_app():
     )
     connexion_app.exception_handlers = {
         NeuroStoreException: neurostore_exception_handler,
+        OAuthProblem: asgi_oauth_problem_handler,
         Exception: general_exception_handler,
     }
 
@@ -177,22 +265,39 @@ def create_app():
 
     app.register_error_handler(NeuroStoreException, _flask_neurostore_handler)
     app.register_error_handler(Exception, _flask_general_handler)
-    app.register_error_handler(AuthError, handle_auth_error)
 
     os.environ["BEARERINFO_FUNC"] = app.config["BEARERINFO_FUNC"]
 
     openapi_file = Path(app.root_path) / "openapi" / "neurostore-openapi.yml"
+    connexion_jsonifier = Jsonifier(flask.json)
+    validator_map = None
+    strict_validation = app.config["DEBUG"]
+    validate_responses = _should_validate_responses(app)
+    if disable_connexion_validation:
+        validator_map = {"parameter": _NoOpParameterValidator, "body": {}}
+        strict_validation = False
+        validate_responses = False
+    elif disable_connexion_body_validation:
+        validator_map = deepcopy(VALIDATOR_MAP)
+        validator_map["body"]["*/*json"] = _NoOpRequestBodyValidator
+    elif not app.config["DEBUG"]:
+        validator_map = deepcopy(VALIDATOR_MAP)
+        validator_map["body"]["*/*json"] = _SelectiveRequestBodyValidator
+
     connexion_app.add_api(
         openapi_file,
         base_path="/api",
         options={"swagger_ui": True},
         arguments={"title": "NeuroStore API"},
         resolver=MethodResolver("neurostore.resources"),
-        strict_validation=app.config["DEBUG"],
-        validate_responses=app.config["DEBUG"],
+        jsonifier=connexion_jsonifier,
+        strict_validation=strict_validation,
+        validate_responses=validate_responses,
+        validator_map=validator_map,
     )
 
-    app.json = OrjsonProvider(app)
+    cors_asgi_app = CORSMiddleware(connexion_app, **cors_kwargs)
+
     app.extensions["connexion_app"] = connexion_app
-    app.extensions["connexion_asgi"] = connexion_app
+    app.extensions["connexion_asgi"] = cors_asgi_app
     return app

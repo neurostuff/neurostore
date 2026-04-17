@@ -1,6 +1,7 @@
-import requests
-import pathlib
 import json
+import pathlib
+
+import requests
 
 API_URL = "https://neurostore.xyz/api"
 

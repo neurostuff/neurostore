@@ -1,3 +1,4 @@
+import { EAnalysisType } from 'hooks/projects/Project.types';
 import { vi } from 'vitest';
 
 const useProjectExtractionAnnotationId = vi.fn().mockReturnValue('annotation-id');
@@ -32,6 +33,8 @@ const useProjectExtractionReplaceStudyListStatusId = vi.fn().mockReturnValue(vi.
 
 const useProjectExclusionTags = vi.fn().mockReturnValue(vi.fn());
 
+const useProjectAnalysisType = vi.fn().mockReturnValue(EAnalysisType.CBMA);
+
 export {
     useProjectExtractionAnnotationId,
     useProjectExtractionStudysetId,
@@ -49,4 +52,5 @@ export {
     useProjectCurationImports,
     useProjectExtractionReplaceStudyListStatusId,
     useProjectExclusionTags,
+    useProjectAnalysisType,
 };

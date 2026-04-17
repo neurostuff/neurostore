@@ -57,32 +57,58 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
       -
+        name: Resolve image channel
+        id: image_channel
+        run: |
+          resolved_branch="$(git branch --show-current || true)"
+
+          if [ "${resolved_branch}" = "master" ]; then
+            echo "channel=staging" >> "$GITHUB_OUTPUT"
+          elif [ "${resolved_branch}" = "dev" ]; then
+            echo "channel=dev" >> "$GITHUB_OUTPUT"
+          else
+            echo "channel=" >> "$GITHUB_OUTPUT"
+          fi
+      -
+        name: Configure bake image refs
+        run: |
+          echo "GHCR_OWNER=${{ github.repository_owner }}" >> "$GITHUB_ENV"
+          echo "GIT_SHA=${{ github.sha }}" >> "$GITHUB_ENV"
+      -
         name: Build and push
         uses: docker/bake-action@v6.0.0
+        env:
+          GHCR_OWNER: ${{ github.repository_owner }}
+          GIT_SHA: ${{ github.sha }}
         with:
-          files: docker-compose.yml,docker-compose.dev.yml
+          files: docker-compose.yml,docker-compose.dev.yml,docker-compose.bake.override.yml
           push: true
           load: false
           workdir: compose
           source: "{{defaultContext}}:compose"
           set: |
-              compose.tags=ghcr.io/${{ github.repository_owner }}/neurosynth_compose:${{ hashFiles('compose/backend/neurosynth_compose/**', 'compose/backend/migrations/**', 'compose/backend/pyproject.toml', 'compose/backend/Dockerfile') }}
+              compose.tags+=ghcr.io/${{ github.repository_owner }}/neurosynth_compose:${{ hashFiles('compose/backend/neurosynth_compose/**', 'compose/backend/migrations/**', 'compose/backend/pyproject.toml', 'compose/backend/Dockerfile') }}
+              ${{ steps.image_channel.outputs.channel != '' && format('compose.tags+=ghcr.io/{0}/neurosynth_compose:{1}', github.repository_owner, steps.image_channel.outputs.channel) || '' }}
               compose.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/neurosynth_compose:${{ hashFiles('compose/backend/neurosynth_compose/**', 'compose/backend/migrations/**', 'compose/backend/pyproject.toml', 'compose/backend/Dockerfile') }}
               compose.cache-from=type=gha,scope=cached-compose
               compose.cache-to=type=gha,scope=cached-compose,mode=max,ignore-error=true
-              compose_nginx.tags=ghcr.io/${{ github.repository_owner }}/compose_nginx:${{ hashFiles('**/compose/nginx/**') }}
+              compose_nginx.tags+=ghcr.io/${{ github.repository_owner }}/compose_nginx:${{ hashFiles('**/compose/nginx/**') }}
+              ${{ steps.image_channel.outputs.channel != '' && format('compose_nginx.tags+=ghcr.io/{0}/compose_nginx:{1}', github.repository_owner, steps.image_channel.outputs.channel) || '' }}
               compose_nginx.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/compose_nginx:${{ hashFiles('**/compose/nginx/**') }}
               compose_nginx.cache-from=type=gha,scope=cached-compose-nginx
               compose_nginx.cache-to=type=gha,scope=cached-compose-nginx,mode=max,ignore-error=true
-              compose_pgsql.tags=ghcr.io/${{ github.repository_owner }}/compose_pgsql:${{ hashFiles('**/compose/postgres/**') }}
+              compose_pgsql.tags+=ghcr.io/${{ github.repository_owner }}/compose_pgsql:${{ hashFiles('**/compose/postgres/**') }}
+              ${{ steps.image_channel.outputs.channel != '' && format('compose_pgsql.tags+=ghcr.io/{0}/compose_pgsql:{1}', github.repository_owner, steps.image_channel.outputs.channel) || '' }}
               compose_pgsql.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/compose_pgsql:${{ hashFiles('**/compose/postgres/**') }}
               compose_pgsql.cache-from=type=gha,scope=cached-compose-pgsql
               compose_pgsql.cache-to=type=gha,scope=cached-compose-pgsql,mode=max,ignore-error=true
-              compose-pgsql17.tags=ghcr.io/${{ github.repository_owner }}/compose_pgsql17:${{ hashFiles('**/compose/postgres/**') }}
+              compose-pgsql17.tags+=ghcr.io/${{ github.repository_owner }}/compose_pgsql17:${{ hashFiles('**/compose/postgres/**') }}
+              ${{ steps.image_channel.outputs.channel != '' && format('compose-pgsql17.tags+=ghcr.io/{0}/compose_pgsql17:{1}', github.repository_owner, steps.image_channel.outputs.channel) || '' }}
               compose-pgsql17.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/compose_pgsql17:${{ hashFiles('**/compose/postgres/**') }}
               compose-pgsql17.cache-from=type=gha,scope=cached-compose-pgsql17
               compose-pgsql17.cache-to=type=gha,scope=cached-compose-pgsql17,mode=max,ignore-error=true
-              compose_worker.tags=ghcr.io/${{ github.repository_owner }}/compose_worker:${{ hashFiles('compose/backend/neurosynth_compose/**', 'compose/backend/migrations/**', 'compose/backend/pyproject.toml', 'compose/backend/Dockerfile') }}
+              compose_worker.tags+=ghcr.io/${{ github.repository_owner }}/compose_worker:${{ hashFiles('compose/backend/neurosynth_compose/**', 'compose/backend/migrations/**', 'compose/backend/pyproject.toml', 'compose/backend/Dockerfile') }}
+              ${{ steps.image_channel.outputs.channel != '' && format('compose_worker.tags+=ghcr.io/{0}/compose_worker:{1}', github.repository_owner, steps.image_channel.outputs.channel) || '' }}
               compose_worker.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/compose_worker:${{ hashFiles('compose/backend/neurosynth_compose/**', 'compose/backend/migrations/**', 'compose/backend/pyproject.toml', 'compose/backend/Dockerfile') }}
               compose_worker.cache-from=type=gha,scope=cached-compose-worker
               compose_worker.cache-to=type=gha,scope=cached-compose-worker,mode=max,ignore-error=true
@@ -114,28 +140,53 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
       -
+        name: Resolve image channel
+        id: image_channel
+        run: |
+          resolved_branch="$(git branch --show-current || true)"
+
+          if [ "${resolved_branch}" = "master" ]; then
+            echo "channel=staging" >> "$GITHUB_OUTPUT"
+          elif [ "${resolved_branch}" = "dev" ]; then
+            echo "channel=dev" >> "$GITHUB_OUTPUT"
+          else
+            echo "channel=" >> "$GITHUB_OUTPUT"
+          fi
+      -
+        name: Configure bake image refs
+        run: |
+          echo "GHCR_OWNER=${{ github.repository_owner }}" >> "$GITHUB_ENV"
+          echo "GIT_SHA=${{ github.sha }}" >> "$GITHUB_ENV"
+      -
         name: Build and push
         uses: docker/bake-action@v6.0.0
+        env:
+          GHCR_OWNER: ${{ github.repository_owner }}
+          GIT_SHA: ${{ github.sha }}
         with:
-          files: docker-compose.yml,docker-compose.dev.yml
+          files: docker-compose.yml,docker-compose.dev.yml,docker-compose.bake.override.yml
           push: true
           load: false
           workdir: store
           source: "{{defaultContext}}:store"
           set: |
-              neurostore.tags=ghcr.io/${{ github.repository_owner }}/neurostore:${{ hashFiles('store/backend/neurostore/**', 'store/backend/migrations/**', 'store/backend/manage.py', 'store/backend/pyproject.toml', 'store/backend/Dockerfile') }}
+              neurostore.tags+=ghcr.io/${{ github.repository_owner }}/neurostore:${{ hashFiles('store/backend/neurostore/**', 'store/backend/migrations/**', 'store/backend/manage.py', 'store/backend/pyproject.toml', 'store/backend/Dockerfile') }}
+              ${{ steps.image_channel.outputs.channel != '' && format('neurostore.tags+=ghcr.io/{0}/neurostore:{1}', github.repository_owner, steps.image_channel.outputs.channel) || '' }}
               neurostore.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/neurostore:${{ hashFiles('store/backend/neurostore/**', 'store/backend/migrations/**', 'store/backend/manage.py', 'store/backend/pyproject.toml', 'store/backend/Dockerfile') }}
               neurostore.cache-from=type=gha,scope=cached-neurostore
               neurostore.cache-to=type=gha,scope=cached-neurostore,mode=max,ignore-error=true
-              store_nginx.tags=ghcr.io/${{ github.repository_owner }}/store_nginx:${{ hashFiles('**/store/nginx/**') }}
+              store_nginx.tags+=ghcr.io/${{ github.repository_owner }}/store_nginx:${{ hashFiles('**/store/nginx/**') }}
+              ${{ steps.image_channel.outputs.channel != '' && format('store_nginx.tags+=ghcr.io/{0}/store_nginx:{1}', github.repository_owner, steps.image_channel.outputs.channel) || '' }}
               store_nginx.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/store_nginx:${{ hashFiles('**/store/nginx/**') }}
               store_nginx.cache-from=type=gha,scope=cached-store-nginx
               store_nginx.cache-to=type=gha,scope=cached-store-nginx,mode=max,ignore-error=true
-              store-pgsql.tags=ghcr.io/${{ github.repository_owner }}/store-pgsql:${{ hashFiles('**/store/postgres/**') }}
+              store-pgsql.tags+=ghcr.io/${{ github.repository_owner }}/store-pgsql:${{ hashFiles('**/store/postgres/**') }}
+              ${{ steps.image_channel.outputs.channel != '' && format('store-pgsql.tags+=ghcr.io/{0}/store-pgsql:{1}', github.repository_owner, steps.image_channel.outputs.channel) || '' }}
               store-pgsql.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/store-pgsql:${{ hashFiles('**/store/postgres/**') }}
               store-pgsql.cache-from=type=gha,scope=cached-store-pgsql
               store-pgsql.cache-to=type=gha,scope=cached-store-pgsql,mode=max,ignore-error=true
-              store-pgsql17.tags=ghcr.io/${{ github.repository_owner }}/store-pgsql17:${{ hashFiles('**/store/postgres/**') }}
+              store-pgsql17.tags+=ghcr.io/${{ github.repository_owner }}/store-pgsql17:${{ hashFiles('**/store/postgres/**') }}
+              ${{ steps.image_channel.outputs.channel != '' && format('store-pgsql17.tags+=ghcr.io/{0}/store-pgsql17:{1}', github.repository_owner, steps.image_channel.outputs.channel) || '' }}
               store-pgsql17.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/store-pgsql17:${{ hashFiles('**/store/postgres/**') }}
               store-pgsql17.cache-from=type=gha,scope=cached-store-pgsql17
               store-pgsql17.cache-to=type=gha,scope=cached-store-pgsql17,mode=max,ignore-error=true
@@ -165,6 +216,7 @@ jobs:
         name: load images
         uses: docker/bake-action@v6.0.0
         with:
+          targets: neurostore,store-pgsql17
           files: docker-compose.yml,docker-compose.dev.yml
           push: false
           load: true
@@ -172,8 +224,6 @@ jobs:
           source: "{{defaultContext}}:store"
           set: |
               neurostore.cache-from=type=gha,scope=cached-neurostore
-              store_nginx.cache-from=type=gha,scope=cached-store-nginx
-              store-pgsql.cache-from=type=gha,scope=cached-store-pgsql
               store-pgsql17.cache-from=type=gha,scope=cached-store-pgsql17
       - 
         name: spin up backend
@@ -181,22 +231,25 @@ jobs:
         continue-on-error: true
         run: |
           set -o pipefail
-          docker network create nginx-proxy
-          docker compose pull store_redis store-pghero store-grafana
-          docker compose \
-            -f docker-compose.yml \
-            -f docker-compose.dev.yml \
-            up -d --no-build
+          docker compose pull store_redis
+          docker compose up -d --wait --no-build store-pgsql17 store_redis
       - 
         name: Abort if compose failed
         if: ${{ steps.spin_up_backend.outcome == 'failure' }}
         run: exit 1
+      -
+        name: Show container status
+        run: docker compose ps
+      -
+        name: Assert Postgres Healthy
+        run: |
+          container_id="$(docker compose ps -q store-pgsql17)"
+          test -n "${container_id}"
+          test "$(docker inspect -f '{{.State.Health.Status}}' "${container_id}")" = "healthy"
       - 
         name: Create Test Database
         run: |
-          docker compose exec -T \
-          store-pgsql17 \
-          bash -lc "psql -U postgres -tAc \"SELECT 1 FROM pg_database WHERE datname = 'store_test_db'\" | grep -q 1 || psql -U postgres -c \"create database store_test_db\""
+          docker compose exec -T store-pgsql17 bash -lc "psql -U postgres -tAc \"SELECT 1 FROM pg_database WHERE datname = 'store_test_db'\" | grep -q 1 || psql -U postgres -c \"create database store_test_db\""
       -
         name: Backend Tests
         env:
@@ -216,6 +269,73 @@ jobs:
             --rm \
             neurostore \
             bash -c "python -m pytest neurostore/tests && python -m pytest --auth neurostore/tests/test_auth.py"
+
+  neurostore_worker_integration_tests:
+    runs-on: ubuntu-latest
+    needs: build_neurostore
+    defaults:
+      run:
+        working-directory: store
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          ref: ${{ inputs.pr_number && format('refs/pull/{0}/head', inputs.pr_number) || github.ref }}
+      -
+        name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      -
+        name: Configuration
+        run: |
+          cp .env.example .env
+      -
+        name: load images
+        uses: docker/bake-action@v6.0.0
+        with:
+          targets: neurostore,store-pgsql17
+          files: docker-compose.yml,docker-compose.dev.yml
+          push: false
+          load: true
+          workdir: store
+          source: "{{defaultContext}}:store"
+          set: |
+              neurostore.cache-from=type=gha,scope=cached-neurostore
+              store-pgsql17.cache-from=type=gha,scope=cached-store-pgsql17
+      -
+        name: spin up worker integration dependencies
+        id: spin_up_worker_test_deps
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          docker compose pull store_redis
+          docker compose up -d --wait --no-build store-pgsql17 store_redis
+      -
+        name: Abort if compose failed
+        if: ${{ steps.spin_up_worker_test_deps.outcome == 'failure' }}
+        run: exit 1
+      -
+        name: Show container status
+        run: docker compose ps
+      -
+        name: Assert Postgres Healthy
+        run: |
+          container_id="$(docker compose ps -q store-pgsql17)"
+          test -n "${container_id}"
+          test "$(docker inspect -f '{{.State.Health.Status}}' "${container_id}")" = "healthy"
+      -
+        name: Create Test Database
+        run: |
+          docker compose exec -T store-pgsql17 bash -lc "psql -U postgres -tAc \"SELECT 1 FROM pg_database WHERE datname = 'store_test_db'\" | grep -q 1 || psql -U postgres -c \"create database store_test_db\""
+      -
+        name: Worker CLI Integration Tests
+        run: |
+          docker compose run \
+            -e "APP_ENV=docker_test" \
+            --rm \
+            neurostore \
+            bash -c "python -m pytest neurostore/tests/test_worker_cli.py"
 
   neurosynth_compose_backend_tests:
     runs-on: ubuntu-latest
@@ -255,18 +375,25 @@ jobs:
     -
       name: Spin up backend
       run: |
-        docker network create nginx-proxy
+        docker network inspect nginx-proxy >/dev/null 2>&1 || docker network create nginx-proxy
         docker compose pull --ignore-buildable 
         docker compose \
           -f docker-compose.yml \
           -f docker-compose.dev.yml \
-          up -d --no-build
+          up -d --wait --no-build
+    -
+      name: Show container status
+      run: docker compose ps
+    -
+      name: Assert Postgres Healthy
+      run: |
+        container_id="$(docker compose ps -q compose-pgsql17)"
+        test -n "${container_id}"
+        test "$(docker inspect -f '{{.State.Health.Status}}' "${container_id}")" = "healthy"
     -
       name: Create Test Database
       run: |
-        docker compose exec -T \
-        compose-pgsql17 \
-        bash -lc "psql -U postgres -tAc \"SELECT 1 FROM pg_database WHERE datname = 'compose_test_db'\" | grep -q 1 || psql -U postgres -c \"create database compose_test_db\""
+        docker compose exec -T compose-pgsql17 bash -lc "psql -U postgres -tAc \"SELECT 1 FROM pg_database WHERE datname = 'compose_test_db'\" | grep -q 1 || psql -U postgres -c \"create database compose_test_db\""
     -
       name: Backend Tests
       env:
@@ -346,7 +473,7 @@ jobs:
     -
       name: Spin up backend
       run: |
-        docker network create nginx-proxy
+        docker network inspect nginx-proxy >/dev/null 2>&1 || docker network create nginx-proxy
         docker compose pull --ignore-buildable 
         docker compose \
           -f docker-compose.yml \
@@ -412,6 +539,7 @@ jobs:
       run: |
         cp compose/.env.example compose/.env
         cp store/.env.example store/.env
+        echo "NEUROSTORE_API_URL=http://store_nginx/api" >> compose/.env
     -
       name: load compose images
       uses: docker/bake-action@v6.0.0
@@ -445,7 +573,7 @@ jobs:
       name: Spin up compose backend
       run: |
         cd compose
-        docker network create nginx-proxy
+        docker network inspect nginx-proxy >/dev/null 2>&1 || docker network create nginx-proxy
         docker compose pull --ignore-buildable 
         docker compose \
           -f docker-compose.yml \
@@ -506,8 +634,7 @@ jobs:
       name: Ingest data into Compose
       run: |
         cd compose
-        ipaddr=$(docker inspect neurostore | python3 -c "import sys, json; print(json.load(sys.stdin)[0]['NetworkSettings']['Networks']['nginx-proxy']['IPAddress'])")
-        docker compose exec -T compose bash -c "flask create-meta-analyses --n-studysets 1 --neurostore-url http://${ipaddr}:8000"
+        docker compose exec -T compose bash -c "flask create-meta-analyses --n-studysets 1 --neurostore-url http://store_nginx"
     -
       name: Frontend Cypress E2E Tests
       uses: cypress-io/github-action@v6
@@ -515,7 +642,7 @@ jobs:
         APP_ENV: docker_test
         CYPRESS_auth0ClientId: ${{ secrets.VITE_APP_AUTH0_CLIENT_ID }}
         CYPRESS_auth0ClientSecret: ${{ secrets.VITE_APP_AUTH0_CLIENT_SECRET }}
-        CYPRESS_: ${{ secrets.VITE_APP_AUTH0_DOMAIN }}
+        CYPRESS_auth0Domain: ${{ secrets.VITE_APP_AUTH0_DOMAIN }}
         CYPRESS_auth0Audience: https://neurostore.xyz/api/
         CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
         VITE_APP_AUTH0_AUDIENCE: https://neurostore.xyz/api/

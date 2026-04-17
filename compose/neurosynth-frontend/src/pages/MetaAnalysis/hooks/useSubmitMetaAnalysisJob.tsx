@@ -8,9 +8,7 @@ const useSubmitMetaAnalysisJob = () => {
     const { enqueueSnackbar } = useSnackbar();
     return useMutation(
         (metaAnalysisJobRequest: MetaAnalysisJobRequest) =>
-            API.NeurosynthServices.MetaAnalysisService.neurosynthComposeResourcesMetaAnalysisJobsMetaAnalysisJobsResourcePost(
-                metaAnalysisJobRequest
-            ),
+            API.NeurosynthServices.MetaAnalysisService.metaAnalysisJobsPost(metaAnalysisJobRequest),
         {
             onSuccess: async () => {
                 await queryClient.invalidateQueries('meta-analysis-jobs');
