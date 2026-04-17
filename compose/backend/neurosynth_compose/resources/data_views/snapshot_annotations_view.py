@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+from sqlalchemy import select
+from sqlalchemy.orm import joinedload, load_only
+
 from neurosynth_compose.database import commit_session, db
-from neurosynth_compose.models import SnapshotAnnotation  # noqa: F401
+from neurosynth_compose.models import SnapshotAnnotation, SnapshotStudyset  # noqa: F401
 from neurosynth_compose.resources.common import get_current_user
 from neurosynth_compose.resources.resource_services import ensure_canonical_annotation
 from neurosynth_compose.resources.view_core import ListView, ObjectView, view_maker
@@ -16,12 +19,39 @@ class SnapshotAnnotationsView(ObjectView, ListView):
         "snapshot_studyset": "SnapshotStudysetsView",
     }
 
+    @staticmethod
+    def _relationship_options():
+        return (
+            joinedload(SnapshotAnnotation.snapshot_studyset).load_only(
+                SnapshotStudyset.id,
+                SnapshotStudyset.md5,
+                SnapshotStudyset.neurostore_id,
+            ),
+        )
+
+    def load_query(self, args=None):
+        return select(self._model).options(*self._relationship_options())
+
+    def load_object_query(self, id, args=None):
+        return (
+            select(self._model)
+            .options(*self._relationship_options())
+            .where(self._model.id == id)
+        )
+
     def serialize_record(self, record, args):
         from neurosynth_compose.resources.data_views.meta_analyses_view import (
             _serialize_annotation,
         )
 
         return _serialize_annotation(record)
+
+    def serialize_records(self, records, args):
+        from neurosynth_compose.resources.data_views.meta_analyses_view import (
+            _serialize_annotation,
+        )
+
+        return [_serialize_annotation(record) for record in records]
 
     @classmethod
     def update_or_create(
