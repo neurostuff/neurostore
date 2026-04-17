@@ -1,5 +1,15 @@
 import { KeyboardArrowRight } from '@mui/icons-material';
-import { Box, Chip, Collapse, ListItem, ListItemButton, ListItemIcon, ListItemText, Tooltip } from '@mui/material';
+import {
+    Box,
+    Chip,
+    Collapse,
+    ListItem,
+    ListItemButton,
+    ListItemIcon,
+    ListItemText,
+    Tooltip,
+    Typography,
+} from '@mui/material';
 import React, { useState } from 'react';
 import CurationBoardAIGroupsStyles from './CurationBoardAIGroups.styles';
 import { IGroupListItem } from './CurationBoardAIGroupsList';
@@ -50,6 +60,7 @@ const CurationBoardAIGroupsListItem: React.FC<{
                         )}
                         <ListItemText
                             sx={{
+                                p: 0.5,
                                 '.MuiListItemText-primary': {
                                     fontSize: '14px',
                                     ...CurationBoardAIGroupsStyles.lineClamp3,
@@ -59,23 +70,19 @@ const CurationBoardAIGroupsListItem: React.FC<{
                             primary={group.label}
                             secondary={group.secondaryLabel}
                         />
-                        {!expanded && group.count !== null && (
-                            <Chip label={group.count} sx={{ fontSize: '12px', height: '20px' }} />
-                        )}
-                        {!expanded && group.excludedCount !== null && (
-                            <Tooltip title={`${group.excludedCount} studies were excluded`} placement="right">
-                                <Chip
-                                    label={group.excludedCount}
-                                    sx={{
-                                        fontSize: '12px',
-                                        height: '20px',
-                                        backgroundColor: 'error.light',
-                                        color: 'white',
-                                        marginLeft: '4px',
-                                    }}
-                                />
-                            </Tooltip>
-                        )}
+                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                            {!expanded && group.count !== null && (
+                                <Chip label={group.count} sx={{ fontSize: '12px', height: '20px' }} />
+                            )}
+                            {!expanded && group.excludedCount !== null && (
+                                <Typography
+                                    variant="body2"
+                                    sx={{ fontSize: '12px', color: 'muted.main', mt: 0.4, whiteSpace: 'nowrap' }}
+                                >
+                                    {group.excludedCount} excluded
+                                </Typography>
+                            )}
+                        </Box>
                     </ListItemButton>
                 </ListItem>
             </Tooltip>
@@ -113,21 +120,17 @@ const CurationBoardAIGroupsListItem: React.FC<{
                                             <Chip label={child.count} sx={{ fontSize: '12px', height: '20px' }} />
                                         )}
                                         {child.excludedCount !== null && (
-                                            <Tooltip
-                                                title={`${child.excludedCount} studies were excluded due to: ${child.label}`}
-                                                placement="right"
+                                            <Typography
+                                                variant="body2"
+                                                sx={{
+                                                    fontSize: '12px',
+                                                    color: 'muted.main',
+                                                    mt: 0.4,
+                                                    whiteSpace: 'nowrap',
+                                                }}
                                             >
-                                                <Chip
-                                                    label={child.excludedCount}
-                                                    sx={{
-                                                        fontSize: '12px',
-                                                        height: '20px',
-                                                        backgroundColor: 'error.light',
-                                                        color: 'white',
-                                                        marginLeft: '4px',
-                                                    }}
-                                                />
-                                            </Tooltip>
+                                                {child.excludedCount} excluded
+                                            </Typography>
                                         )}
                                     </ListItemButton>
                                 </ListItem>

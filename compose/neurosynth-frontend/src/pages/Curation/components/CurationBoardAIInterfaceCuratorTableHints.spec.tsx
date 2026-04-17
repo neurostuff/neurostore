@@ -6,6 +6,8 @@ import {
     useProjectCurationColumns,
     useProjectCurationIsPrisma,
 } from 'pages/Project/store/ProjectStore';
+import { useGetCurationSummary } from 'hooks';
+import { useParams } from 'react-router-dom';
 
 vi.mock('hooks', () => ({
     useGetCurationSummary: vi.fn().mockReturnValue({ included: 0, uncategorized: 0, excluded: 0 }),
@@ -19,15 +21,8 @@ vi.mock('pages/Curation/context/CurationBoardGroupsContext', () => ({
         selectedGroup: undefined,
     }),
 }));
-vi.mock('pages/CurationImport/components/ImportStudiesButton', () => ({
-    default: vi.fn().mockImplementation(() => <button>Import Studies</button>),
-}));
-vi.mock('pages/Curation/components/StartExtractionButton', () => ({
-    default: vi.fn().mockImplementation(() => <button>Start Extraction</button>),
-}));
-
-import { useGetCurationSummary } from 'hooks';
-import { useParams } from 'react-router-dom';
+vi.mock('pages/CurationImport/components/ImportStudiesButton');
+vi.mock('pages/Curation/components/StartExtractionButton');
 
 const mockEmptyColumn = { stubStudies: [] };
 const mockColumnWithStudies = {
@@ -46,7 +41,6 @@ describe('CurationBoardAIInterfaceCuratorTableHints', () => {
         (useProjectCurationIsPrisma as Mock).mockReturnValue(false);
         (useProjectCurationColumn as Mock).mockReturnValue(mockEmptyColumn);
         (useGetCurationSummary as Mock).mockReturnValue({ included: 0, uncategorized: 0, excluded: 0 });
-
         (useParams as Mock).mockReturnValue({ projectId: 'test-project-id' });
     });
 

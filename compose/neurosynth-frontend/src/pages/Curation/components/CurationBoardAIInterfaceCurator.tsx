@@ -174,11 +174,10 @@ const CurationBoardAIInterfaceCurator: React.FC = () => {
                                 variant="contained"
                                 disableElevation
                                 size="small"
-                                onClick={() =>
-                                    navigate(
-                                        projectId ? getCurationSearchPath(projectId, projectAnalysisType) : '/projects'
-                                    )
-                                }
+                                onClick={() => {
+                                    if (!projectId) return;
+                                    navigate(getCurationSearchPath(projectId, projectAnalysisType));
+                                }}
                                 sx={{
                                     fontSize: '12px',
                                     borderColor: 'white !important',

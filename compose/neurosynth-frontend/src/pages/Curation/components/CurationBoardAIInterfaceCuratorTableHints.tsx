@@ -84,9 +84,8 @@ const CurationBoardAIInterfaceCuratorTableHints: React.FC<{
                                 variant="contained"
                                 disableElevation
                                 onClick={() => {
-                                    navigate(
-                                        projectId ? getCurationSearchPath(projectId, projectAnalysisType) : '/projects'
-                                    );
+                                    if (!projectId) return;
+                                    navigate(getCurationSearchPath(projectId, projectAnalysisType));
                                 }}
                             >
                                 Search
