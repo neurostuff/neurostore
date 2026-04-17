@@ -1,6 +1,6 @@
 from sqlalchemy import select
 
-from neurosynth_compose.models import MetaAnalysis, MetaAnalysisResult, User
+from neurosynth_compose.models import MetaAnalysis, MetaAnalysisResult, Project, User
 
 
 def test_get_meta_analyses(session, app, auth_client, user_data, db):
@@ -92,3 +92,39 @@ def test_update_meta_analysis_public(session, auth_client, user_data, db):
     )
     assert update_private.status_code == 200
     assert update_private.json["public"] is False
+
+
+def test_create_meta_analysis_inherits_project_neurostore_refs(
+    session, auth_client, user_data, db
+):
+    project = (
+        db.session.execute(
+            select(Project)
+            .join(Project.user)
+            .join(Project.meta_analyses)
+            .where(User.external_id == auth_client.username)
+            .where(Project.neurostore_studyset_id.is_not(None))
+            .where(Project.neurostore_annotation_id.is_not(None))
+        )
+        .scalars()
+        .first()
+    )
+    assert project is not None
+
+    payload = {
+        "name": "frontend-created meta analysis",
+        "description": "inherits project neurostore refs",
+        "specification": project.meta_analyses[0].specification_id,
+        "project": project.id,
+    }
+
+    response = auth_client.post("/api/meta-analyses", data=payload)
+
+    assert response.status_code == 200
+    assert response.json["neurostore_studyset"] == project.neurostore_studyset_id
+    assert response.json["neurostore_annotation"] == project.neurostore_annotation_id
+
+    created = db.session.get(MetaAnalysis, response.json["id"])
+    assert created is not None
+    assert created.neurostore_studyset_id == project.neurostore_studyset_id
+    assert created.neurostore_annotation_id == project.neurostore_annotation_id

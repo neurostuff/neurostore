@@ -443,14 +443,21 @@ class MetaAnalysesView(ObjectView, ListView):
         if isinstance(tags, list):
             current_user = get_current_user()
             data["tags"] = cls._normalize_tags(tags, current_user)
-        if id is None and "public" not in data:
+        if id is None:
             project_id = data.get("project_id")
             if project_id:
                 project = db.session.execute(
                     select(Project).where(Project.id == project_id)
                 ).scalar_one_or_none()
                 if project is not None:
-                    data["public"] = project.public
+                    if "public" not in data:
+                        data["public"] = project.public
+                    if "neurostore_studyset_id" not in data:
+                        data["neurostore_studyset_id"] = project.neurostore_studyset_id
+                    if "neurostore_annotation_id" not in data:
+                        data["neurostore_annotation_id"] = (
+                            project.neurostore_annotation_id
+                        )
         return super().update_or_create(
             data,
             id=id,

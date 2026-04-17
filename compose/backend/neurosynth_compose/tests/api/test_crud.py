@@ -66,8 +66,6 @@ def test_create(session, auth_client, user_data, db, endpoint, model, schema):
 
         if isinstance(example, Project):
             payload.pop("meta_analyses", None)
-            payload.pop("studyset", None)
-            payload.pop("annotation", None)
             payload.pop("snapshot_studyset", None)
             payload.pop("snapshot_annotation", None)
 

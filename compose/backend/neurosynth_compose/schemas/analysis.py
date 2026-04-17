@@ -526,12 +526,6 @@ class ProjectSchema(BaseSchema):
     provenance = fields.Dict(allow_none=True)
     public = fields.Boolean()
     draft = fields.Boolean()
-    studyset = fields.String(
-        attribute="neurostore_studyset_id", dump_only=True, allow_none=True
-    )
-    annotation = fields.String(
-        attribute="neurostore_annotation_id", dump_only=True, allow_none=True
-    )
     neurostore_studyset_id = fields.String(allow_none=True)
     neurostore_annotation_id = fields.String(allow_none=True)
     meta_analyses = StringOrNested(
