@@ -10,6 +10,8 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from neurosynth_compose.database import db
 from neurosynth_compose.models.analysis import (
+    NeurostoreAnnotation,
+    NeurostoreStudyset,
     SnapshotAnnotation,
     NeurovaultCollection,
     NeurovaultFile,
@@ -387,6 +389,10 @@ def ensure_canonical_studyset(
         select(SnapshotStudyset).where(SnapshotStudyset.md5 == ss_md5)
     ).scalar_one_or_none()
 
+    if neurostore_id and session.get(NeurostoreStudyset, neurostore_id) is None:
+        session.add(NeurostoreStudyset(id=neurostore_id))
+        session.flush()
+
     if canonical is None:
         stmt = (
             pg_insert(SnapshotStudyset.__table__)
@@ -408,6 +414,17 @@ def ensure_canonical_studyset(
             select(SnapshotStudyset).where(SnapshotStudyset.md5 == ss_md5)
         ).scalar_one()
 
+    changed = False
+    if neurostore_id and getattr(canonical, "neurostore_id", None) is None:
+        canonical.neurostore_id = neurostore_id
+        changed = True
+    if version is not None and getattr(canonical, "version", None) is None:
+        canonical.version = version
+        changed = True
+    if changed:
+        session.add(canonical)
+        session.flush()
+
     return canonical
 
 
@@ -427,6 +444,10 @@ def ensure_canonical_annotation(
     canonical = session.execute(
         select(SnapshotAnnotation).where(SnapshotAnnotation.md5 == ann_md5)
     ).scalar_one_or_none()
+
+    if neurostore_id and session.get(NeurostoreAnnotation, neurostore_id) is None:
+        session.add(NeurostoreAnnotation(id=neurostore_id))
+        session.flush()
 
     if canonical is None:
         stmt = (
@@ -448,5 +469,19 @@ def ensure_canonical_annotation(
         canonical = session.execute(
             select(SnapshotAnnotation).where(SnapshotAnnotation.md5 == ann_md5)
         ).scalar_one()
+
+    changed = False
+    if neurostore_id and getattr(canonical, "neurostore_id", None) is None:
+        canonical.neurostore_id = neurostore_id
+        changed = True
+    if (
+        snapshot_studyset_id is not None
+        and getattr(canonical, "snapshot_studyset_id", None) is None
+    ):
+        canonical.snapshot_studyset_id = snapshot_studyset_id
+        changed = True
+    if changed:
+        session.add(canonical)
+        session.flush()
 
     return canonical

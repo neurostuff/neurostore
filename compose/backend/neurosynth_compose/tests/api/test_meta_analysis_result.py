@@ -5,6 +5,8 @@ from neurosynth_compose.models import (
     MetaAnalysisResult,
     NeurostoreAnalysis,
     NeurovaultCollection,
+    SnapshotAnnotation,
+    SnapshotStudyset,
 )
 
 
@@ -93,6 +95,78 @@ def test_get_meta_analysis_results_list(session, db, auth_client, user_data):
     assert list_resp.status_code == 200
     assert list_resp.json["metadata"]["total_count"] >= 1
     assert any(row["id"] == result_id for row in list_resp.json["results"])
+
+
+def test_create_meta_analysis_result_links_snapshot_rows_to_meta_neurostore_refs(
+    session, db, auth_client, user_data
+):
+    meta_analysis = db.session.execute(select(MetaAnalysis)).scalars().first()
+    create_resp = _create_meta_analysis_result(auth_client, meta_analysis)
+    assert create_resp.status_code == 200
+
+    result = db.session.execute(
+        select(MetaAnalysisResult).where(
+            MetaAnalysisResult.id == create_resp.json["id"]
+        )
+    ).scalar_one()
+
+    assert result.studyset_snapshot is not None
+    assert result.annotation_snapshot is not None
+    assert (
+        result.studyset_snapshot.neurostore_id == meta_analysis.neurostore_studyset_id
+    )
+    assert (
+        result.annotation_snapshot.neurostore_id
+        == meta_analysis.neurostore_annotation_id
+    )
+    assert (
+        result.annotation_snapshot.snapshot_studyset_id == result.studyset_snapshot_id
+    )
+
+
+def test_create_meta_analysis_result_backfills_existing_canonical_snapshot_refs(
+    session, db, auth_client, user_data
+):
+    meta_analysis = db.session.execute(select(MetaAnalysis)).scalars().first()
+    studyset_payload = {"name": "existing canonical studyset"}
+    annotation_payload = {"name": "existing canonical annotation"}
+
+    existing_studyset = SnapshotStudyset(
+        snapshot=studyset_payload, user=meta_analysis.user
+    )
+    session.add(existing_studyset)
+    session.flush()
+
+    existing_annotation = SnapshotAnnotation(
+        snapshot=annotation_payload,
+        user=meta_analysis.user,
+    )
+    session.add(existing_annotation)
+    session.flush()
+
+    assert existing_studyset.neurostore_id is None
+    assert existing_annotation.neurostore_id is None
+    assert existing_annotation.snapshot_studyset_id is None
+
+    headers = {"Compose-Upload-Key": meta_analysis.run_key}
+    auth_client.token = None
+    create_resp = auth_client.post(
+        "/api/meta-analysis-results",
+        data={
+            "snapshot_studyset": studyset_payload,
+            "snapshot_annotation": annotation_payload,
+            "meta_analysis_id": meta_analysis.id,
+        },
+        headers=headers,
+    )
+    assert create_resp.status_code == 200
+
+    session.expire(existing_studyset)
+    session.expire(existing_annotation)
+
+    assert existing_studyset.neurostore_id == meta_analysis.neurostore_studyset_id
+    assert existing_annotation.neurostore_id == meta_analysis.neurostore_annotation_id
+    assert existing_annotation.snapshot_studyset_id == existing_studyset.id
 
 
 def test_put_meta_analysis_result_with_celery(
