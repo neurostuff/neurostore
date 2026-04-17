@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from sqlalchemy import select
-from sqlalchemy.orm import joinedload, load_only
+from sqlalchemy.orm import joinedload
 
 from neurosynth_compose.database import commit_session, db
 from neurosynth_compose.models import SnapshotAnnotation, SnapshotStudyset  # noqa: F401
