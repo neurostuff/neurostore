@@ -201,11 +201,9 @@ class NeurostoreStudysetSchema(ContextSchema):
     id = PGSQLString()
     created_at = fields.DateTime()
     updated_at = fields.DateTime(allow_none=True)
-    studysets = StringOrNested(
-        "SnapshotStudysetSchema",
-        exclude=("snapshot",),
+    studysets = fields.Nested(
+        "SnapshotStudysetSummarySchema",
         attribute="snapshot_studysets",
-        metadata={"pluck": "id"},
         many=True,
         dump_only=True,
     )
@@ -213,6 +211,12 @@ class NeurostoreStudysetSchema(ContextSchema):
 
 class NeurostoreAnnotationSchema(ContextSchema):
     id = PGSQLString()
+    annotations = fields.Nested(
+        "SnapshotAnnotationSummarySchema",
+        attribute="snapshot_annotations",
+        many=True,
+        dump_only=True,
+    )
 
 
 class SpecificationSchema(BaseSchema):
@@ -287,6 +291,11 @@ class SnapshotStudysetSchema(BaseSchema):
     neurostore_id = fields.Pluck(
         NeurostoreStudysetSchema, "id", attribute="neurostore_studyset"
     )
+    annotations = fields.Nested(
+        "SnapshotAnnotationSummarySchema",
+        many=True,
+        dump_only=True,
+    )
     version = fields.String(allow_none=True)
     url = fields.String(dump_only=True)
 
@@ -299,12 +308,26 @@ class SnapshotStudysetSchema(BaseSchema):
         return data
 
 
+class SnapshotStudysetSummarySchema(ContextSchema):
+    id = PGSQLString()
+    md5 = fields.String(allow_none=True)
+
+
+class SnapshotAnnotationSummarySchema(ContextSchema):
+    id = PGSQLString()
+    md5 = fields.String(allow_none=True)
+
+
 class SnapshotAnnotationSchema(BaseSchema):
     snapshot = fields.Dict()
     neurostore_id = fields.Pluck(
         NeurostoreAnnotationSchema, "id", attribute="neurostore_annotation"
     )
     studyset = fields.Pluck(SnapshotStudysetSchema, "neurostore_id", dump_only=True)
+    snapshot_studyset = fields.Nested(
+        "SnapshotStudysetSummarySchema",
+        dump_only=True,
+    )
     snapshot_studyset_id = fields.Pluck(
         SnapshotStudysetSchema,
         "id",

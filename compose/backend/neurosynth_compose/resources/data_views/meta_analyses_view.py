@@ -275,11 +275,33 @@ def _serialize_studyset(record):
         **_serialize_base_record(record),
         "snapshot": getattr(record, "snapshot", None),
         "version": getattr(record, "version", None),
+        "annotations": [
+            _serialize_snapshot_annotation_summary(annotation)
+            for annotation in (getattr(record, "annotations", None) or [])
+        ],
     }
     if neurostore_id:
         payload["neurostore_id"] = neurostore_id
         payload["url"] = "/".join([NS_BASE, "studysets", neurostore_id])
     return payload
+
+
+def _serialize_snapshot_studyset_summary(record):
+    if record is None:
+        return None
+    return {
+        "id": getattr(record, "id", None),
+        "md5": getattr(record, "md5", None),
+    }
+
+
+def _serialize_snapshot_annotation_summary(record):
+    if record is None:
+        return None
+    return {
+        "id": getattr(record, "id", None),
+        "md5": getattr(record, "md5", None),
+    }
 
 
 def _serialize_annotation(record):
@@ -291,6 +313,9 @@ def _serialize_annotation(record):
         "snapshot": getattr(record, "snapshot", None),
         "studyset": getattr(
             getattr(record, "snapshot_studyset", None), "neurostore_id", None
+        ),
+        "snapshot_studyset": _serialize_snapshot_studyset_summary(
+            getattr(record, "snapshot_studyset", None)
         ),
     }
     if neurostore_id:
