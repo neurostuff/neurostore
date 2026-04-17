@@ -1,6 +1,12 @@
 from sqlalchemy import select
 
-from neurosynth_compose.models import MetaAnalysisResult, Project, User
+from neurosynth_compose.models import (
+    MetaAnalysisResult,
+    NeurostoreAnnotation,
+    NeurostoreStudyset,
+    Project,
+    User,
+)
 from neurosynth_compose.schemas import MetaAnalysisSchema
 from neurosynth_compose.tests.conftest import MockNeurostoreSession
 
@@ -141,6 +147,48 @@ def test_search_capabilities(session, app, auth_client, user_data):
     search_term = "test"
     response = auth_client.get(f"/api/projects?search={search_term}")
     assert response.status_code == 200
+
+
+def test_update_project_creates_missing_neurostore_reference_rows(
+    session, app, auth_client, user_data
+):
+    project = (
+        session.execute(
+            select(Project)
+            .join(Project.user)
+            .where(User.external_id == auth_client.username)
+        )
+        .scalars()
+        .first()
+    )
+    assert project is not None
+
+    studyset_ref_id = "ie8dzf2iSf63"
+    annotation_ref_id = "D6HhzHy73VGN"
+
+    assert session.get(NeurostoreStudyset, studyset_ref_id) is None
+    assert session.get(NeurostoreAnnotation, annotation_ref_id) is None
+
+    response = auth_client.put(
+        f"/api/projects/{project.id}",
+        data={
+            "neurostore_studyset_id": studyset_ref_id,
+            "neurostore_annotation_id": annotation_ref_id,
+            "provenance": {
+                "extractionMetadata": {
+                    "studysetId": studyset_ref_id,
+                    "annotationId": annotation_ref_id,
+                    "studyStatusList": [],
+                }
+            },
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json["neurostore_studyset_id"] == studyset_ref_id
+    assert response.json["neurostore_annotation_id"] == annotation_ref_id
+    assert session.get(NeurostoreStudyset, studyset_ref_id) is not None
+    assert session.get(NeurostoreAnnotation, annotation_ref_id) is not None
 
 
 def test_clone_public_project_creates_new_project(
