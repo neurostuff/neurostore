@@ -13,7 +13,9 @@ from webargs.flaskparser import parser
 from neurosynth_compose.database import commit_session, db
 from neurosynth_compose.models.analysis import (
     MetaAnalysis,
+    NeurostoreAnnotation,
     NeurostoreStudy,
+    NeurostoreStudyset,
     Project,
 )
 from neurosynth_compose.models.auth import User
@@ -216,19 +218,9 @@ def serialize_project(record, *, info: bool, raw_provenance_json=_RAW_PROVENANCE
     }
 
     if hasattr(record, "neurostore_studyset_id"):
-        output["studyset"] = (
-            _serialize_info_reference(getattr(record, "neurostore_studyset_id"))
-            if info
-            else getattr(record, "neurostore_studyset_id")
-        )
         output["neurostore_studyset_id"] = getattr(record, "neurostore_studyset_id")
 
     if hasattr(record, "neurostore_annotation_id"):
-        output["annotation"] = (
-            _serialize_info_reference(getattr(record, "neurostore_annotation_id"))
-            if info
-            else getattr(record, "neurostore_annotation_id")
-        )
         output["neurostore_annotation_id"] = getattr(record, "neurostore_annotation_id")
 
     return output
@@ -257,6 +249,40 @@ class ProjectsView(ObjectView, ListView):
     _project_put_args = {
         "sync_meta_analyses_public": fields.Boolean(load_default=False),
     }
+
+    @classmethod
+    def update_or_create(
+        cls,
+        data,
+        id=None,
+        *,
+        commit=True,
+        user=None,
+        record=None,
+        flush=True,
+    ):
+        neurostore_studyset_id = data.get("neurostore_studyset_id")
+        if (
+            neurostore_studyset_id
+            and db.session.get(NeurostoreStudyset, neurostore_studyset_id) is None
+        ):
+            db.session.add(NeurostoreStudyset(id=neurostore_studyset_id))
+
+        neurostore_annotation_id = data.get("neurostore_annotation_id")
+        if (
+            neurostore_annotation_id
+            and db.session.get(NeurostoreAnnotation, neurostore_annotation_id) is None
+        ):
+            db.session.add(NeurostoreAnnotation(id=neurostore_annotation_id))
+
+        return super().update_or_create(
+            data,
+            id=id,
+            commit=commit,
+            user=user,
+            record=record,
+            flush=flush,
+        )
 
     def load_query(self, args=None):
         args = args or {}
