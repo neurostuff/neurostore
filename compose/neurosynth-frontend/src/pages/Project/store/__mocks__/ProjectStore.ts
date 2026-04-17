@@ -20,6 +20,14 @@ const useProjectName = vi.fn().mockReturnValue('project-name');
 
 const useProjectCurationColumns = vi.fn();
 
+const useProjectCurationColumn = vi.fn().mockReturnValue({ stubStudies: [] });
+
+const useProjectCurationIsPrisma = vi.fn().mockReturnValue(false);
+
+const useProjectCurationDuplicates = vi.fn().mockReturnValue([]);
+
+const useProjectCurationImports = vi.fn().mockReturnValue([]);
+
 const useProjectExtractionReplaceStudyListStatusId = vi.fn().mockReturnValue(vi.fn());
 
 const useProjectExclusionTags = vi.fn().mockReturnValue(vi.fn());
@@ -35,6 +43,10 @@ export {
     useProjectUser,
     useProjectName,
     useProjectCurationColumns,
+    useProjectCurationColumn,
+    useProjectCurationIsPrisma,
+    useProjectCurationDuplicates,
+    useProjectCurationImports,
     useProjectExtractionReplaceStudyListStatusId,
     useProjectExclusionTags,
 };

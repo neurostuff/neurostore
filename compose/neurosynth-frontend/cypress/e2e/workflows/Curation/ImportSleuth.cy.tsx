@@ -16,10 +16,10 @@ describe('ImportSleuthDialog', () => {
         cy.intercept('GET', `**/api/studysets/*`, { fixture: 'studyset' }).as('studysetFixture');
         cy.intercept('PUT', '**/api/projects/abc123').as('updateProjectFixture');
 
+        cy.addToLocalStorage('auth0|62e0e6c9dd47048572613b4d-hide-info-popup', 'true');
         cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture').wait('@studysetFixture');
-        cy.contains('button', 'import studies').click();
-        cy.contains('Sleuth').click();
-        cy.contains('button', 'next').click();
+        cy.contains('button', 'Search').parent().find('button').last().click({ force: true });
+        cy.contains('Import via Sleuth File').click({ force: true });
     });
 
     describe('upload page', () => {
@@ -212,7 +212,8 @@ describe('ImportSleuthDialog', () => {
                 'cypress/fixtures/ImportSleuth/sleuthFiles/validSleuthFileWithDOI.txt',
                 { force: true }
             );
-            cy.contains('button', 'next').click();
+            cy.contains('button', 'next').should('be.enabled');
+            cy.contains('button', 'next').click({ force: true });
         });
 
         it('should show 0 progress initially', () => {
@@ -283,7 +284,8 @@ describe('ImportSleuthDialog', () => {
                 'cypress/fixtures/ImportSleuth/sleuthFiles/validSleuthFileWithDOI.txt',
                 { force: true }
             );
-            cy.contains('button', 'next').click();
+            cy.contains('button', 'next').should('be.enabled');
+            cy.contains('button', 'next').click({ force: true });
 
             cy.wait('@baseStudiesIngestFixture').then((baseStudiesResponse) => {
                 const baseStudy = baseStudiesResponse.request.body[0];
@@ -340,7 +342,8 @@ describe('ImportSleuthDialog', () => {
                 'cypress/fixtures/ImportSleuth/sleuthFiles/validSleuthFileWithDOI.txt',
                 { force: true }
             );
-            cy.contains('button', 'next').click();
+            cy.contains('button', 'next').should('be.enabled');
+            cy.contains('button', 'next').click({ force: true });
 
             cy.get('@studyPostFixture').should('exist');
         });
@@ -370,7 +373,8 @@ describe('ImportSleuthDialog', () => {
                 'cypress/fixtures/ImportSleuth/sleuthFiles/validSleuthFileWithDOI.txt',
                 { force: true }
             );
-            cy.contains('button', 'next').click();
+            cy.contains('button', 'next').should('be.enabled');
+            cy.contains('button', 'next').click({ force: true });
 
             cy.get('@studyPostFixture.all').should('have.length', 0);
         });
@@ -411,7 +415,8 @@ describe('ImportSleuthDialog', () => {
                 'cypress/fixtures/ImportSleuth/sleuthFiles/validSleuthFileMultipleExperimentsSameDOI.txt',
                 { force: true }
             );
-            cy.contains('button', 'next').click();
+            cy.contains('button', 'next').should('be.enabled');
+            cy.contains('button', 'next').click({ force: true });
 
             cy.wait('@studyPostFixture').then((interception) => {
                 expect(interception.request.body.analyses.length).to.equal(3);
@@ -439,7 +444,8 @@ describe('ImportSleuthDialog', () => {
                 'cypress/fixtures/ImportSleuth/sleuthFiles/validSleuthFileWithDOI.txt',
                 { force: true }
             );
-            cy.contains('button', 'next').click();
+            cy.contains('button', 'next').should('be.enabled');
+            cy.contains('button', 'next').click({ force: true });
 
             cy.get('@analysesPostFixture').should('exist');
         });
@@ -465,7 +471,8 @@ describe('ImportSleuthDialog', () => {
                 'cypress/fixtures/ImportSleuth/sleuthFiles/validSleuthFileMultipleExperimentsSameDOI.txt',
                 { force: true }
             );
-            cy.contains('button', 'next').click();
+            cy.contains('button', 'next').should('be.enabled');
+            cy.contains('button', 'next').click({ force: true });
 
             cy.wait('@baseStudiesIngestFixture').then((baseStudiesResponse) => {
                 expect(baseStudiesResponse.request?.body.length).equals(1);
@@ -495,7 +502,8 @@ describe('ImportSleuthDialog', () => {
                 ],
                 { force: true }
             );
-            cy.contains('button', 'next').click();
+            cy.contains('button', 'next').should('be.enabled');
+            cy.contains('button', 'next').click({ force: true });
 
             // Should process both files
             cy.wait('@doiToPubmedQuery')

@@ -1,34 +1,31 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import { Box, Button, Card, CardActions, CardContent, Link as MuiLink, Typography } from '@mui/material';
+import { Box, Button, Card, CardActions, CardContent, Typography } from '@mui/material';
 import CurationPromoteUncategorizedButton from 'components/Buttons/CurationPromoteUncategorizedButton';
-import { useUserCanEdit } from 'hooks';
-import {
-    useProjectCurationColumns,
-    useProjectCurationDuplicates,
-    useProjectCurationImports,
-} from 'pages/Project/store/ProjectStore';
-import { useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { useGetCurationSummary, useUserCanEdit } from 'hooks';
+import { useProjectCurationDuplicates, useProjectCurationImports } from 'pages/Project/store/ProjectStore';
+import CurationBoardAIInterfaceCuratorTableHints from './CurationBoardAIInterfaceCuratorTableHints';
+import { ChevronRight } from '@mui/icons-material';
+import StartExtractionButton from './StartExtractionButton';
+import { useCurationBoardGroups } from '../context/CurationBoardGroupsContext';
 
 const CurationBoardAIInterfaceIdentificationUI: React.FC<{
     hasUncategorizedStudies: boolean;
+    hasIdentificationStudies: boolean;
     onManuallyReview: () => void;
-    onPromoteAllUncategorized: () => void;
-}> = ({ hasUncategorizedStudies, onManuallyReview, onPromoteAllUncategorized }) => {
-    const cols = useProjectCurationColumns();
+}> = ({ hasUncategorizedStudies, onManuallyReview, hasIdentificationStudies }) => {
     const curationDuplicates = useProjectCurationDuplicates();
-    const noStudies = useMemo(() => {
-        return cols.every((col) => col.stubStudies.length === 0);
-    }, [cols]);
     const imports = useProjectCurationImports();
     const { user } = useAuth0();
     const canEdit = useUserCanEdit(user?.sub || undefined);
+    const { included, uncategorized } = useGetCurationSummary();
+    const curationIsComplete = included > 0 && uncategorized === 0;
+    const { handleSelectNextGroup } = useCurationBoardGroups();
 
     const handleReviewDuplicates = () => {
         onManuallyReview();
     };
 
-    if (noStudies) {
+    if (hasIdentificationStudies) {
         return (
             <Box
                 sx={{
@@ -41,141 +38,69 @@ const CurationBoardAIInterfaceIdentificationUI: React.FC<{
             >
                 <Card sx={{ padding: '1rem', width: { xs: '90%', lg: '70%' } }}>
                     <CardContent>
-                        <Typography variant="h6" sx={{ color: 'text.secondary' }}>
-                            No studies in this project yet.{' '}
-                            <MuiLink underline="hover" component={Link} to="import">
-                                {' '}
-                                Import studies
-                            </MuiLink>{' '}
-                            to get started.
-                        </Typography>
-                    </CardContent>
-                </Card>
-            </Box>
-        );
-    }
-
-    if (hasUncategorizedStudies) {
-        return (
-            <Box
-                sx={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    height: '100%',
-                }}
-            >
-                <Card sx={{ padding: '1rem', width: { xs: '90%', lg: '70%' } }}>
-                    <CardContent>
-                        <Box sx={{ marginBottom: '1rem' }}>
-                            {curationDuplicates.length > 0 ? (
-                                <Typography variant="h6" sx={{ color: 'text.secondary' }}>
-                                    {/* Neurosynth-Compose reviewed your import and automatically excluded any duplicates found. */}
-                                    We automatically identified {curationDuplicates.length} duplicate{' '}
-                                    {curationDuplicates.length > 1 ? 'studies' : 'study'} across your{' '}
-                                    {imports.length > 1 ? `${imports.length} imports` : 'import'}.
+                        {hasUncategorizedStudies ? (
+                            <Box>
+                                {curationDuplicates.length > 0 ? (
+                                    <Typography variant="h6" gutterBottom>
+                                        We identified {curationDuplicates.length} duplicate{' '}
+                                        {curationDuplicates.length > 1 ? 'studies' : 'study'} across your{' '}
+                                        {imports.length > 1 ? `${imports.length} imports` : 'import'}.
+                                    </Typography>
+                                ) : (
+                                    <Typography variant="h6" gutterBottom>
+                                        We did not identify any duplicate studies within your{' '}
+                                        {imports.length > 1 ? `${imports.length} imports` : 'import'}.
+                                    </Typography>
+                                )}
+                                <Typography variant="h6">
+                                    You can manually review for duplicates, add more studies, or promote all unique
+                                    studies and begin Screening
                                 </Typography>
-                            ) : (
-                                <Typography variant="h6" sx={{ color: 'text.secondary' }}>
-                                    We did not identify any duplicate studies within your{' '}
-                                    {imports.length > 1 ? `${imports.length} imports` : 'import'}.
+                            </Box>
+                        ) : (
+                            <Box>
+                                <Typography variant="h6">
+                                    There are no more studies left to review. Add more studies or continue to{' '}
+                                    {curationIsComplete ? 'extraction' : 'screening'}.
                                 </Typography>
-                            )}
-                            <Typography variant="body1" color="gray">
-                                You can review imports manually to check for potential additional duplicates, promote
-                                all unique studies to the Screening step, or import more studies to expand your project.
-                            </Typography>
-                        </Box>
+                            </Box>
+                        )}
                     </CardContent>
-                    <CardActions sx={{ display: 'flex', justifyContent: 'space-around' }}>
-                        <Button
-                            variant="text"
-                            color="primary"
-                            onClick={handleReviewDuplicates}
-                            // sx={{ minWidth: '200px' }}
-                        >
-                            Manually review
+                    <CardActions sx={{ display: 'flex' }}>
+                        <Button variant="text" color="primary" onClick={handleReviewDuplicates}>
+                            {hasUncategorizedStudies
+                                ? 'Manually review'
+                                : `Review all duplicates (${curationDuplicates.length})`}
                         </Button>
-
-                        <CurationPromoteUncategorizedButton
-                            variant="contained"
-                            disableElevation
-                            color="success"
-                            onClick={onPromoteAllUncategorized}
-                            // sx={{ minWidth: '200px' }}
-                            dialogTitle="Are you sure you want to promote all uncategorized studies to screening?"
-                            dialogMessage="All studies that have not been marked as duplicates in this stage will be promoted"
-                            disabled={!canEdit}
-                        >
-                            Promote all uncategorized studies
-                        </CurationPromoteUncategorizedButton>
+                        {!hasUncategorizedStudies && (
+                            <Button onClick={() => handleSelectNextGroup()} disableElevation>
+                                Go to Screening <ChevronRight />
+                            </Button>
+                        )}
+                        <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'flex-end' }}>
+                            {hasUncategorizedStudies ? (
+                                <CurationPromoteUncategorizedButton
+                                    onComplete={() => handleSelectNextGroup()}
+                                    variant="contained"
+                                    disableElevation
+                                    color="success"
+                                    dialogTitle="Are you sure you want to promote all uncategorized studies to screening?"
+                                    dialogMessage="All studies that have not been marked as duplicates in this stage will be promoted"
+                                    disabled={!canEdit}
+                                >
+                                    Promote all studies and screen
+                                </CurationPromoteUncategorizedButton>
+                            ) : curationIsComplete ? (
+                                <StartExtractionButton size="medium" />
+                            ) : null}
+                        </Box>
                     </CardActions>
                 </Card>
             </Box>
-            // <Box
-            //     sx={{
-            //         display: 'flex',
-            //         flexDirection: 'column',
-            //         justifyContent: 'center',
-            //         alignItems: 'center',
-            //         height: '100%',
-            //     }}
-            // >
-            //     <Box sx={{ marginBottom: '2rem' }}>
-            //         <Typography variant="h6" sx={{ color: 'text.secondary' }}>
-            //             Neurosynth-Compose reviewed your import and automatically excluded any duplicates found.
-            //         </Typography>
-            //         <Typography variant="body1" color="gray">
-            //             You can either manually review the import for duplicates or promote all uncategorized studies to
-            //             screening.
-            //         </Typography>
-            //     </Box>
-
-            //     <Box sx={{ display: 'flex', justifyContent: 'center', gap: '1rem' }}>
-            //         <Button variant="text" color="primary" onClick={handleReviewDuplicates} sx={{ minWidth: '200px' }}>
-            //             Manually review
-            //         </Button>
-
-            //         <CurationPromoteUncategorizedButton
-            //             variant="contained"
-            //             disableElevation
-            //             color="success"
-            //             onClick={onPromoteAllUncategorized}
-            //             sx={{ minWidth: '200px' }}
-            //             dialogTitle="Are you sure you want to promote all uncategorized studies to screening?"
-            //             dialogMessage="All studies that have not been marked as duplicates in this stage will be promoted"
-            //         >
-            //             Promote all uncategorized studies
-            //         </CurationPromoteUncategorizedButton>
-            //     </Box>
-            // </Box>
         );
     }
 
-    return (
-        <Box
-            sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-                alignItems: 'center',
-                height: '100%',
-            }}
-        >
-            <Card sx={{ padding: '1rem', width: { xs: '90%', lg: '70%' } }}>
-                <CardContent>
-                    <Typography variant="h6" sx={{ marginBottom: '1rem', color: 'text.secondary' }}>
-                        There are no uncategorized studies left to review.
-                    </Typography>
-
-                    <Button color="primary" onClick={handleReviewDuplicates} sx={{ minWidth: '150px' }}>
-                        Review all duplicates
-                    </Button>
-                </CardContent>
-            </Card>
-        </Box>
-    );
+    return <CurationBoardAIInterfaceCuratorTableHints numVisibleStudies={0} columnIndex={0} />;
 };
 
 export default CurationBoardAIInterfaceIdentificationUI;

@@ -15,7 +15,7 @@ import {
 import DebouncedTextField from 'components/DebouncedTextField';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import { useGetWindowHeight, useUserCanEdit } from 'hooks';
-import CurationImportFinalizeReviewVirtualizedListItem from 'pages/CurationImport/components/CurationImportFinalizeReviewVirtualizedListItem';
+import ImportFinalizeReviewVirtualizedListItem from 'pages/CurationImport/components/ImportFinalizeReviewVirtualizedListItem';
 import { EImportMode } from 'pages/CurationImport/CurationImport.types';
 import {
     useProjectCurationColumns,
@@ -282,7 +282,7 @@ const CurationBoardAIInterfaceImportSummary: React.FC<{
                 >
                     {({ index, data, style }) => {
                         const stub = data.stubs[index];
-                        return <CurationImportFinalizeReviewVirtualizedListItem {...stub} style={style} />;
+                        return <ImportFinalizeReviewVirtualizedListItem {...stub} style={style} />;
                     }}
                 </FixedSizeList>
             </Box>

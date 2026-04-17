@@ -123,7 +123,7 @@ describe('CurationAIInterface', () => {
         it('should have the identification phase UI initially', () => {
             cy.contains('We did not identify any duplicate studies').should('exist');
             cy.contains('Manually review').should('exist');
-            cy.contains('Promote all uncategorized studies').should('exist');
+            cy.contains('Promote all studies and screen').should('exist');
         });
 
         it('should show the table after clicking manually review', () => {
@@ -142,7 +142,7 @@ describe('CurationAIInterface', () => {
             // Should be back to the identification phase UI
             cy.contains('We did not identify any duplicate studies').should('exist');
             cy.contains('Manually review').should('exist');
-            cy.contains('Promote all uncategorized studies').should('exist');
+            cy.contains('Promote all studies and screen').should('exist');
         });
 
         it('should handle focus mode transition when going back to overview', () => {
@@ -160,7 +160,7 @@ describe('CurationAIInterface', () => {
             cy.contains('We did not identify any duplicate studies').should('exist');
             cy.contains('back to table view').should('not.exist');
             cy.contains('Back to identification overview').should('not.exist');
-            cy.contains('Promote all uncategorized studies').should('exist');
+            cy.contains('Promote all studies and screen').should('exist');
         });
 
         it('should have a button to show the PRISMA diagram', () => {
@@ -170,10 +170,6 @@ describe('CurationAIInterface', () => {
         it('should have a button to download the CSVs in the included phase', () => {
             cy.contains('4. Included').click();
             cy.contains('Download as CSV').should('exist');
-        });
-
-        it('should have the duplicate phase as a default phase in identification', () => {
-            cy.contains('li', '1. Identification').next().contains('Duplicate').should('exist');
         });
 
         it('should have nested excluded menu items for eligibility', () => {
@@ -302,7 +298,7 @@ describe('CurationAIInterface', () => {
             cy.wait('@participantDemographicsExtraction');
 
             cy.contains('li', '1. Identification').click();
-            cy.contains('We automatically identified 1 duplicate study across your 3 imports').should('exist');
+            cy.contains('We identified 1 duplicate study across your 3 imports').should('exist');
         });
 
         it('should show the correct number of duplicates identified message when multiple duplicates exist project-wide', () => {
@@ -324,7 +320,7 @@ describe('CurationAIInterface', () => {
             cy.wait('@participantDemographicsExtraction');
 
             cy.contains('li', '1. Identification').click();
-            cy.contains('We automatically identified 3 duplicate studies across your 3 imports').should('exist');
+            cy.contains('We identified 3 duplicate studies across your 3 imports').should('exist');
         });
 
         it('should show the message when no more studies can be promoted to screening', () => {
@@ -344,7 +340,24 @@ describe('CurationAIInterface', () => {
             cy.wait('@participantDemographicsExtraction');
 
             cy.contains('li', '1. Identification').click();
-            cy.contains('There are no uncategorized studies left to review.').should('exist');
+            cy.contains('There are no more studies left to review').should('exist');
+        });
+
+        it('should show excluded count chip (eq(1)) when a study is excluded in identification', () => {
+            cy.fixture('projects/projectCurationPRISMAWithStudies').then((projectFixture: INeurosynthProjectReturn) => {
+                projectFixture.provenance.curationMetadata.columns[0].stubStudies[0].exclusionTag =
+                    defaultExclusionTags.duplicate.id;
+
+                cy.intercept('GET', '**/api/projects/*', {
+                    ...projectFixture,
+                } as INeurosynthProjectReturn).as('projectFixture');
+            });
+
+            cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
+            cy.wait('@taskExtraction');
+            cy.wait('@participantDemographicsExtraction');
+
+            cy.contains('li', '1. Identification').find('.MuiChip-label').eq(1).should('have.text', 1);
         });
 
         it('should set the duplicate tag in the table row', () => {
@@ -400,7 +413,7 @@ describe('CurationAIInterface', () => {
             }).as('projectFixture');
 
             cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
-            cy.contains('No studies in this project yet. Import studies to get started').should('exist');
+            cy.contains('To get started,').should('exist');
         });
 
         it('should show "No studies to review for..."', () => {
@@ -415,7 +428,7 @@ describe('CurationAIInterface', () => {
             });
 
             cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
-            cy.contains('There are no uncategorized studies left to review.').should('exist');
+            cy.contains('No studies to review for identification').should('exist');
         });
 
         it('should show "No included studies..."', () => {
@@ -442,11 +455,11 @@ describe('CurationAIInterface', () => {
             cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
 
             cy.contains('li', '1. Identification').click();
-            cy.contains('There are no uncategorized studies left to review.').should('exist');
+            cy.contains("You've reviewed all the uncategorized studies in identification").should('exist');
             cy.contains('li', '2. Screening').click();
-            cy.contains("You've reviewed all uncategorized studies in screening!").should('exist');
+            cy.contains("You've reviewed all the uncategorized studies in screening").should('exist');
             cy.contains('li', '3. Eligibility').click();
-            cy.contains("You've reviewed all uncategorized studies in eligibility!").should('exist');
+            cy.contains("You've reviewed all the uncategorized studies in eligibility").should('exist');
         });
     });
 
@@ -469,7 +482,13 @@ describe('CurationAIInterface', () => {
         });
 
         it('should show the import studies button', () => {
-            cy.contains('button', 'import studies').should('exist');
+            cy.contains('button', 'Search').should('exist');
+            // Import options dropdown (arrow next to Search)
+            cy.contains('button', 'Search').parent().find('button').last().click();
+            cy.contains('li', 'Import via Pubmed ID').should('exist');
+            cy.contains('li', 'Import via Sleuth File').should('exist');
+            cy.contains('li', 'Import via Bibliography').should('exist');
+            cy.contains('li', 'Manually create a new study').should('exist');
         });
 
         it('should show the skip curation button', () => {
@@ -484,7 +503,7 @@ describe('CurationAIInterface', () => {
             }).as('projectFixture');
 
             cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
-            cy.contains('No studies. To import studies, click the import button above').should('exist');
+            cy.contains('To get started,').should('exist');
         });
 
         it('should show "no included studies"', () => {
@@ -711,10 +730,10 @@ describe('CurationAIInterface', () => {
                 }).as('projectFixture');
 
                 cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
-                cy.contains('There are no uncategorized studies left to review.').should('not.exist');
-                cy.contains('button', 'Promote all uncategorized studies').click();
+                cy.contains('No studies to review').should('not.exist');
+                cy.contains('button', 'Promote all studies and screen').click();
                 cy.contains('button', 'Continue').click();
-                cy.contains('There are no uncategorized studies left to review.').should('exist');
+                cy.contains('No studies to review').should('exist');
             });
 
             it('should exclude the study', () => {
@@ -788,12 +807,12 @@ describe('CurationAIInterface', () => {
                 cy.get('.MuiCheckbox-root').eq(1).click();
                 cy.get('.MuiCheckbox-root').eq(2).click();
 
-                cy.contains('li', '1. Identification').find('.MuiChip-label').should('have.text', 0);
+                cy.contains('li', '1. Identification').find('.MuiChip-label').eq(0).should('have.text', 0);
                 cy.contains('Demote (2)').click();
                 cy.contains('li', '1. Identification').click();
                 cy.contains('button', 'Manually review').click();
                 cy.get('tr').should('have.length', 3);
-                cy.contains('li', '1. Identification').find('.MuiChip-label').should('have.text', 2);
+                cy.contains('li', '1. Identification').find('.MuiChip-label').eq(0).should('have.text', 2);
             });
 
             it('should add a column', () => {
@@ -910,38 +929,38 @@ describe('CurationAIInterface', () => {
                 cy.wait('@taskExtraction');
                 cy.wait('@participantDemographicsExtraction');
 
-                cy.contains('li', '1. Identification').find('.MuiChip-label').should('have.text', 80);
-                cy.contains('li', '2. Screening').find('.MuiChip-label').should('have.text', 0);
-                cy.contains('li', '3. Eligibility').find('.MuiChip-label').should('have.text', 0);
-                cy.contains('li', '4. Included').find('.MuiChip-label').should('have.text', 0);
+                cy.contains('li', '1. Identification').find('.MuiChip-label').eq(0).should('have.text', 80);
+                cy.contains('li', '2. Screening').find('.MuiChip-label').eq(0).should('have.text', 0);
+                cy.contains('li', '3. Eligibility').find('.MuiChip-label').eq(0).should('have.text', 0);
+                cy.contains('li', '4. Included').find('.MuiChip-label').eq(0).should('have.text', 0);
 
                 cy.contains('li', '1. Identification').click();
                 cy.contains('button', 'Manually review').click();
                 cy.get('tr').eq(1).click({ force: true });
                 cy.contains('button', /^Promote$/).click();
 
-                cy.contains('li', '1. Identification').find('.MuiChip-label').should('have.text', 79);
-                cy.contains('li', '2. Screening').find('.MuiChip-label').should('have.text', 1);
-                cy.contains('li', '3. Eligibility').find('.MuiChip-label').should('have.text', 0);
-                cy.contains('li', '4. Included').find('.MuiChip-label').should('have.text', 0);
+                cy.contains('li', '1. Identification').find('.MuiChip-label').eq(0).should('have.text', 79);
+                cy.contains('li', '2. Screening').find('.MuiChip-label').eq(0).should('have.text', 1);
+                cy.contains('li', '3. Eligibility').find('.MuiChip-label').eq(0).should('have.text', 0);
+                cy.contains('li', '4. Included').find('.MuiChip-label').eq(0).should('have.text', 0);
 
                 cy.contains('li', '2. Screening').click();
                 cy.get('tr').eq(1).click({ force: true });
                 cy.contains('button', /^Promote$/).click();
 
-                cy.contains('li', '1. Identification').find('.MuiChip-label').should('have.text', 79);
-                cy.contains('li', '2. Screening').find('.MuiChip-label').should('have.text', 0);
-                cy.contains('li', '3. Eligibility').find('.MuiChip-label').should('have.text', 1);
-                cy.contains('li', '4. Included').find('.MuiChip-label').should('have.text', 0);
+                cy.contains('li', '1. Identification').find('.MuiChip-label').eq(0).should('have.text', 79);
+                cy.contains('li', '2. Screening').find('.MuiChip-label').eq(0).should('have.text', 0);
+                cy.contains('li', '3. Eligibility').find('.MuiChip-label').eq(0).should('have.text', 1);
+                cy.contains('li', '4. Included').find('.MuiChip-label').eq(0).should('have.text', 0);
 
                 cy.contains('li', '3. Eligibility').click();
                 cy.get('tr').eq(1).click({ force: true });
                 cy.contains('button', /^Include$/).click();
 
-                cy.contains('li', '1. Identification').find('.MuiChip-label').should('have.text', 79);
-                cy.contains('li', '2. Screening').find('.MuiChip-label').should('have.text', 0);
-                cy.contains('li', '3. Eligibility').find('.MuiChip-label').should('have.text', 0);
-                cy.contains('li', '4. Included').find('.MuiChip-label').should('have.text', 1);
+                cy.contains('li', '1. Identification').find('.MuiChip-label').eq(0).should('have.text', 79);
+                cy.contains('li', '2. Screening').find('.MuiChip-label').eq(0).should('have.text', 0);
+                cy.contains('li', '3. Eligibility').find('.MuiChip-label').eq(0).should('have.text', 0);
+                cy.contains('li', '4. Included').find('.MuiChip-label').eq(0).should('have.text', 1);
             });
 
             it('should exclude the study', () => {
@@ -990,14 +1009,14 @@ describe('CurationAIInterface', () => {
                 // we dont wait for taskExtraction or participantDemographicsExtraction because we dont have any data in the first column
                 cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture');
 
-                cy.contains('li', '1. Identification').find('.MuiChip-label').should('have.text', 0);
-                cy.contains('li', '2. Screening').find('.MuiChip-label').should('have.text', 80);
+                cy.contains('li', '1. Identification').find('.MuiChip-label').eq(0).should('have.text', 0);
+                cy.contains('li', '2. Screening').find('.MuiChip-label').eq(0).should('have.text', 80);
                 cy.contains('li', '2. Screening').click();
                 cy.get('tr').eq(1).click({ force: true });
                 cy.contains('button', /^Demote$/).click();
 
-                cy.contains('li', '1. Identification').find('.MuiChip-label').should('have.text', 1);
-                cy.contains('li', '2. Screening').find('.MuiChip-label').should('have.text', 79);
+                cy.contains('li', '1. Identification').find('.MuiChip-label').eq(0).should('have.text', 1);
+                cy.contains('li', '2. Screening').find('.MuiChip-label').eq(0).should('have.text', 79);
             });
         });
 

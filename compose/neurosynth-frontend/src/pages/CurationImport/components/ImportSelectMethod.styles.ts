@@ -1,6 +1,6 @@
 import { Style } from 'index';
 
-const CurationImportSelectMethodStyles: Style = {
+const ImportSelectMethodStyles: Style = {
     radioGroup: {
         '.MuiFormControlLabel-root': {
             marginLeft: '0 !important',
@@ -17,4 +17,4 @@ const CurationImportSelectMethodStyles: Style = {
     },
 };
 
-export default CurationImportSelectMethodStyles;
+export default ImportSelectMethodStyles;

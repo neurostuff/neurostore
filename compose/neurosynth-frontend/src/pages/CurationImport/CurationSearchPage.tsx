@@ -1,10 +1,10 @@
 import { Box } from '@mui/material';
 import LoadingStateIndicatorProject from 'components/LoadingStateIndicator/LoadingStateIndicatorProject';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs';
-import CurationImport from 'pages/CurationImport/components/CurationImport';
+import Search from 'pages/CurationImport/components/Search';
 import { useProjectId, useProjectName } from 'pages/Project/store/ProjectStore';
 
-const CurationImportPage: React.FC = (props) => {
+const CurationSearchPage: React.FC = () => {
     const projectId = useProjectId();
     const projectName = useProjectName();
 
@@ -29,7 +29,7 @@ const CurationImportPage: React.FC = (props) => {
                             isCurrentPage: false,
                         },
                         {
-                            text: 'Import',
+                            text: 'Search',
                             link: '',
                             isCurrentPage: true,
                         },
@@ -38,10 +38,10 @@ const CurationImportPage: React.FC = (props) => {
                 <LoadingStateIndicatorProject />
             </Box>
             <Box sx={{ marginTop: '1rem' }}>
-                <CurationImport />
+                <Search />
             </Box>
         </Box>
     );
 };
 
-export default CurationImportPage;
+export default CurationSearchPage;

@@ -6,12 +6,15 @@ const GlobalStyles: Style = {
         '@keyframes pulse': {
             '0%': {
                 backgroundColor: 'success.light',
+                color: 'white',
             },
             '50%': {
-                backgroundColor: 'white',
+                backgroundColor: 'success.dark',
+                color: 'white',
             },
             '100%': {
                 backgroundColor: 'success.light',
+                color: 'white',
             },
         },
     },

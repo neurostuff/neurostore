@@ -37,7 +37,7 @@ const hints = [
     },
 ];
 
-const CurationImportSleuthHint: React.FC = () => {
+const ImportSleuthHint: React.FC = () => {
     return (
         <HelpDialog dialogTitle="Compatible sleuth files">
             <Typography gutterBottom>Neurosynth Compose expects files in a specific format.</Typography>
@@ -97,4 +97,4 @@ const CurationImportSleuthHint: React.FC = () => {
     );
 };
 
-export default CurationImportSleuthHint;
+export default ImportSleuthHint;

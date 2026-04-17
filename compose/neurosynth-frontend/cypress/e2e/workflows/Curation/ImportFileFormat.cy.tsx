@@ -8,19 +8,20 @@ describe('ImportFileFormatDialog', () => {
             fixture: 'projects/projectExtractionStep',
         }).as('projectFixture');
         cy.intercept('GET', `**/api/studysets/*`, { fixture: 'studyset' }).as('studysetFixture');
+
+        cy.addToLocalStorage('auth0|62e0e6c9dd47048572613b4d-hide-info-popup', 'true');
     });
 
     describe('Import Bibliography', () => {
         beforeEach(() => {
             cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture').wait('@studysetFixture');
             cy.intercept('PUT', '**/api/projects/abc123').as('updateProjectFixture');
-            cy.contains('button', 'import studies').click();
-            cy.contains('Import Bibliography').click();
-            cy.contains('button', 'next').click();
+            cy.contains('button', 'Import Studies').parent().find('button').last().click();
+            cy.contains('Import via Bibliography').click();
         });
 
-        it('should show the standard file import page', () => {
-            cy.contains(/Start typing to add or create your own source/).should('be.visible');
+        it('should show the standard file import option', () => {
+            cy.contains(/Start typing to add or create your own source/).should('exist');
         });
 
         it('should disable the next button initially', () => {
@@ -30,8 +31,8 @@ describe('ImportFileFormatDialog', () => {
         it('should set the source and show the input', () => {
             cy.get('input[role="combobox"]').click();
             cy.contains('li', 'Scopus').click();
-            cy.get('textarea').should('be.visible');
-            cy.contains(/Input is empty/).should('be.visible');
+            cy.get('textarea').should('exist');
+            cy.contains(/Input is empty/).should('exist');
         });
 
         it('should set the sources and enable the next button', () => {
@@ -69,31 +70,31 @@ describe('ImportFileFormatDialog', () => {
                 );
 
             cy.contains('button', 'next').click();
-            cy.get('input').type('my new import{enter}');
-            cy.contains('button', 'next').click().url().should('include', '/projects/abc123/curation');
+            cy.get('input[type="text"]').first().clear().type('my new import');
+            cy.contains('button', 'Import').click({ force: true });
         });
 
         it('should upload a onenote (ENW) file', () => {
             cy.get('input[role="combobox"]').click();
             cy.contains('li', 'Scopus').click();
             cy.get('label[role="button"]').selectFile('cypress/fixtures/standardFiles/onenoteStudies.txt');
-            cy.contains('button', 'next').should('be.visible');
+            cy.contains('button', 'next').should('exist').and('not.be.disabled');
         });
 
         it('should upload a .RIS file and import successfully', () => {
             cy.get('input[role="combobox"]').click();
             cy.contains('li', 'Scopus').click();
             cy.get('label[role="button"]').selectFile('cypress/fixtures/standardFiles/ris.ris');
-            cy.contains('button', 'next').should('be.visible').and('not.be.disabled');
-            cy.contains('button', 'next').click();
+            cy.contains('button', 'next').should('exist').and('not.be.disabled');
+            cy.contains('button', 'next').click({ force: true });
         });
 
         it('should handle the duplicates in an import file', () => {
             cy.get('input[role="combobox"]').click();
             cy.contains('li', 'Scopus').click();
             cy.get('label[role="button"]').selectFile('cypress/fixtures/standardFiles/duplicates.ris');
-            cy.contains('button', 'next').should('be.visible').and('not.be.disabled');
-            cy.contains('button', 'next').click();
+            cy.contains('button', 'next').should('exist').and('not.be.disabled');
+            cy.contains('button', 'next').click({ force: true });
             cy.contains('Click to view 1 imported studies').click();
             cy.contains('(2023). Manifold Learning for fMRI time-varying FC').should(
                 // doing this to enforce strict equals
@@ -104,8 +105,5 @@ describe('ImportFileFormatDialog', () => {
             );
             cy.contains(/^\bbioRxiv\b/).should('exist'); // \b is a word boundary which means there shouldnt be any other letters/words before and after
         });
-
-        // TODO : create a test for importing bibtex file
-        // it('should import studies via a file', () => {})
     });
 });

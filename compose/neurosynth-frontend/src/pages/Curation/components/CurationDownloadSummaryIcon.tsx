@@ -20,10 +20,10 @@ const CurationDownloadIncludedStudiesIcon: React.FC = () => {
         const allIncludedStudies = curationColumns[curationColumns.length - 1];
         const date = new Date().toLocaleDateString();
         if (format === 'bibtex') {
-            const bibtexStudies = stubsToBibtex(allIncludedStudies.stubStudies, exclusionTags);
+            const bibtexStudies = stubsToBibtex([allIncludedStudies], exclusionTags);
             downloadFile(`${projectName}:Curation:${date}.bib`, bibtexStudies, 'text/plain');
         } else {
-            const csvStudies = stubsToCSV(allIncludedStudies.stubStudies, exclusionTags);
+            const csvStudies = stubsToCSV([allIncludedStudies], exclusionTags);
             downloadFile(`${projectName}:Curation:${date}.csv`, csvStudies, 'text/csv;charset=utf-8');
         }
         setIsLoading(false);
