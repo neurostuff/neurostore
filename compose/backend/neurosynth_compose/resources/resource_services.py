@@ -9,7 +9,6 @@ from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from neurosynth_compose.database import db
-from neurosynth_compose.models import Annotation, Studyset
 from neurosynth_compose.models.analysis import (
     SnapshotAnnotation,
     NeurovaultCollection,
@@ -389,11 +388,10 @@ def ensure_canonical_studyset(
     ).scalar_one_or_none()
 
     if canonical is None:
-        new_id = generate_id()
         stmt = (
             pg_insert(SnapshotStudyset.__table__)
             .values(
-                id=new_id,
+                id=generate_id(),
                 snapshot=snapshot,
                 md5=ss_md5,
                 user_id=user_id,
@@ -404,13 +402,11 @@ def ensure_canonical_studyset(
         )
         session.execute(stmt)
         session.flush()
+        # After ON CONFLICT DO NOTHING + flush the row is guaranteed to exist,
+        # whether this insert won or a concurrent one did.
         canonical = session.execute(
-            select(Studyset).where(Studyset.md5 == ss_md5)
-        ).scalar_one_or_none()
-        if canonical is None:
-            canonical = session.execute(
-                select(Studyset).where(Studyset.id == new_id)
-            ).scalar_one_or_none()
+            select(SnapshotStudyset).where(SnapshotStudyset.md5 == ss_md5)
+        ).scalar_one()
 
     return canonical
 
@@ -433,11 +429,10 @@ def ensure_canonical_annotation(
     ).scalar_one_or_none()
 
     if canonical is None:
-        new_id = generate_id()
         stmt = (
             pg_insert(SnapshotAnnotation.__table__)
             .values(
-                id=new_id,
+                id=generate_id(),
                 snapshot=snapshot,
                 md5=ann_md5,
                 user_id=user_id,
@@ -448,12 +443,10 @@ def ensure_canonical_annotation(
         )
         session.execute(stmt)
         session.flush()
+        # After ON CONFLICT DO NOTHING + flush the row is guaranteed to exist,
+        # whether this insert won or a concurrent one did.
         canonical = session.execute(
-            select(Annotation).where(Annotation.md5 == ann_md5)
-        ).scalar_one_or_none()
-        if canonical is None:
-            canonical = session.execute(
-                select(Annotation).where(Annotation.id == new_id)
-            ).scalar_one_or_none()
+            select(SnapshotAnnotation).where(SnapshotAnnotation.md5 == ann_md5)
+        ).scalar_one()
 
     return canonical

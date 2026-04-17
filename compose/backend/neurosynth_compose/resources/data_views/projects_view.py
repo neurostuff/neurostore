@@ -216,19 +216,9 @@ def serialize_project(record, *, info: bool, raw_provenance_json=_RAW_PROVENANCE
     }
 
     if hasattr(record, "neurostore_studyset_id"):
-        output["studyset"] = (
-            _serialize_info_reference(getattr(record, "neurostore_studyset_id"))
-            if info
-            else getattr(record, "neurostore_studyset_id")
-        )
         output["neurostore_studyset_id"] = getattr(record, "neurostore_studyset_id")
 
     if hasattr(record, "neurostore_annotation_id"):
-        output["annotation"] = (
-            _serialize_info_reference(getattr(record, "neurostore_annotation_id"))
-            if info
-            else getattr(record, "neurostore_annotation_id")
-        )
         output["neurostore_annotation_id"] = getattr(record, "neurostore_annotation_id")
 
     return output

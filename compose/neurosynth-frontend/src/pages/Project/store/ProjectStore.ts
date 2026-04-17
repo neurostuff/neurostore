@@ -36,6 +36,8 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
         id: undefined,
         meta_analyses: [],
         description: '',
+        neurostore_studyset_id: undefined,
+        neurostore_annotation_id: undefined,
         created_at: undefined,
         updated_at: undefined,
         user: undefined,
@@ -117,10 +119,14 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
             const id = useProjectStore.getState().id;
 
             const res = await API.NeurosynthServices.ProjectsService.projectsIdPut(id || '', true, {
+                neurostore_studyset_id: undefined,
+                neurostore_annotation_id: undefined,
                 provenance: emptyProvenance,
             });
             set((state) => ({
                 ...state,
+                neurostore_studyset_id: undefined,
+                neurostore_annotation_id: undefined,
                 provenance: {
                     ...emptyProvenance,
                 },
@@ -190,6 +196,8 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
                         name: oldDebouncedStoreData.name,
                         description: oldDebouncedStoreData.description,
                         public: oldDebouncedStoreData.public,
+                        neurostore_studyset_id: oldDebouncedStoreData.neurostore_studyset_id,
+                        neurostore_annotation_id: oldDebouncedStoreData.neurostore_annotation_id,
                         provenance: {
                             ...oldDebouncedStoreData.provenance,
                         },
@@ -284,6 +292,8 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
                 id: undefined,
                 meta_analyses: [],
                 description: '',
+                neurostore_studyset_id: undefined,
+                neurostore_annotation_id: undefined,
                 user: undefined,
                 updated_at: undefined,
                 created_at: undefined,
@@ -651,6 +661,12 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
         updateExtractionMetadata: (metadata) => {
             set((state) => ({
                 ...state,
+                ...("studysetId" in metadata
+                    ? { neurostore_studyset_id: metadata.studysetId }
+                    : {}),
+                ...("annotationId" in metadata
+                    ? { neurostore_annotation_id: metadata.annotationId }
+                    : {}),
                 provenance: {
                     ...state.provenance,
                     extractionMetadata: {
