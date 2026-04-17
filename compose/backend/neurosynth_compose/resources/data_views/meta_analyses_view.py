@@ -390,6 +390,22 @@ def serialize_meta_analysis(record, *, nested: bool):
     return output
 
 
+def _resolve_meta_neurostore_studyset_id(meta):
+    if meta is None:
+        return None
+    return getattr(meta, "neurostore_studyset_id", None) or getattr(
+        getattr(meta, "project", None), "neurostore_studyset_id", None
+    )
+
+
+def _resolve_meta_neurostore_annotation_id(meta):
+    if meta is None:
+        return None
+    return getattr(meta, "neurostore_annotation_id", None) or getattr(
+        getattr(meta, "project", None), "neurostore_annotation_id", None
+    )
+
+
 def serialize_meta_analyses(records, *, nested: bool):
     return [serialize_meta_analysis(record, nested=nested) for record in records]
 
@@ -585,10 +601,26 @@ class MetaAnalysisResultsView(ObjectView, ListView):
             canonical_ann = None
 
             if meta:
+                meta_neurostore_studyset_id = _resolve_meta_neurostore_studyset_id(meta)
+                meta_neurostore_annotation_id = _resolve_meta_neurostore_annotation_id(
+                    meta
+                )
                 # If a snapshot ID was provided directly, look up the existing
                 # canonical row rather than creating a new one.
                 if ss_id_input is not None:
                     canonical_ss = db.session.get(SnapshotStudyset, ss_id_input)
+                    if (
+                        canonical_ss is not None
+                        and getattr(canonical_ss, "neurostore_id", None) is None
+                        and meta_neurostore_studyset_id is not None
+                    ):
+                        canonical_ss = ensure_canonical_studyset(
+                            db.session,
+                            canonical_ss.snapshot,
+                            user_id=meta.user_id,
+                            neurostore_id=meta_neurostore_studyset_id,
+                            version=getattr(canonical_ss, "version", None),
+                        )
 
                 # Unwrap possible Pluck-wrapped payloads produced by
                 # Marshmallow `Pluck` fields which may nest the payload
@@ -602,11 +634,33 @@ class MetaAnalysisResultsView(ObjectView, ListView):
                         ss_payload = ss_payload.get("snapshot")
 
                     canonical_ss = ensure_canonical_studyset(
-                        db.session, ss_payload, user_id=meta.user_id
+                        db.session,
+                        ss_payload,
+                        user_id=meta.user_id,
+                        neurostore_id=meta_neurostore_studyset_id,
                     )
 
                 if ann_id_input is not None:
                     canonical_ann = db.session.get(SnapshotAnnotation, ann_id_input)
+                    if canonical_ann is not None and (
+                        (
+                            getattr(canonical_ann, "neurostore_id", None) is None
+                            and meta_neurostore_annotation_id is not None
+                        )
+                        or (
+                            getattr(canonical_ann, "snapshot_studyset_id", None) is None
+                            and canonical_ss is not None
+                        )
+                    ):
+                        canonical_ann = ensure_canonical_annotation(
+                            db.session,
+                            canonical_ann.snapshot,
+                            user_id=meta.user_id,
+                            neurostore_id=meta_neurostore_annotation_id,
+                            snapshot_studyset_id=(
+                                canonical_ss.id if canonical_ss is not None else None
+                            ),
+                        )
 
                 if ann_payload is not None and canonical_ann is None:
                     if (
@@ -620,6 +674,7 @@ class MetaAnalysisResultsView(ObjectView, ListView):
                         db.session,
                         ann_payload,
                         user_id=meta.user_id,
+                        neurostore_id=meta_neurostore_annotation_id,
                         snapshot_studyset_id=(
                             canonical_ss.id if canonical_ss is not None else None
                         ),
@@ -780,6 +835,8 @@ class MetaAnalysisResultsView(ObjectView, ListView):
 
         meta = getattr(result, "meta_analysis", None)
         if meta:
+            meta_neurostore_studyset_id = _resolve_meta_neurostore_studyset_id(meta)
+            meta_neurostore_annotation_id = _resolve_meta_neurostore_annotation_id(meta)
             canonical_ss = None
             canonical_ann = None
 
@@ -787,6 +844,17 @@ class MetaAnalysisResultsView(ObjectView, ListView):
             if ss_id_input is not None:
                 canonical_ss = db.session.get(SnapshotStudyset, ss_id_input)
                 if canonical_ss is not None:
+                    if (
+                        getattr(canonical_ss, "neurostore_id", None) is None
+                        and meta_neurostore_studyset_id is not None
+                    ):
+                        canonical_ss = ensure_canonical_studyset(
+                            db.session,
+                            canonical_ss.snapshot,
+                            user_id=meta.user_id,
+                            neurostore_id=meta_neurostore_studyset_id,
+                            version=getattr(canonical_ss, "version", None),
+                        )
                     result.studyset_snapshot_id = canonical_ss.id
 
             # JSON-payload path: create/deduplicate a new snapshot.
@@ -798,7 +866,10 @@ class MetaAnalysisResultsView(ObjectView, ListView):
                 ):
                     ss_payload = ss_payload.get("snapshot")
                 canonical_ss = ensure_canonical_studyset(
-                    db.session, ss_payload, user_id=meta.user_id
+                    db.session,
+                    ss_payload,
+                    user_id=meta.user_id,
+                    neurostore_id=meta_neurostore_studyset_id,
                 )
                 if canonical_ss is not None:
                     result.studyset_snapshot_id = canonical_ss.id
@@ -806,6 +877,22 @@ class MetaAnalysisResultsView(ObjectView, ListView):
             if ann_id_input is not None:
                 canonical_ann = db.session.get(SnapshotAnnotation, ann_id_input)
                 if canonical_ann is not None:
+                    if (
+                        getattr(canonical_ann, "neurostore_id", None) is None
+                        and meta_neurostore_annotation_id is not None
+                    ) or (
+                        getattr(canonical_ann, "snapshot_studyset_id", None) is None
+                        and canonical_ss is not None
+                    ):
+                        canonical_ann = ensure_canonical_annotation(
+                            db.session,
+                            canonical_ann.snapshot,
+                            user_id=meta.user_id,
+                            neurostore_id=meta_neurostore_annotation_id,
+                            snapshot_studyset_id=(
+                                canonical_ss.id if canonical_ss is not None else None
+                            ),
+                        )
                     result.annotation_snapshot_id = canonical_ann.id
 
             if ann_payload is not None and canonical_ann is None:
@@ -819,6 +906,7 @@ class MetaAnalysisResultsView(ObjectView, ListView):
                     db.session,
                     ann_payload,
                     user_id=meta.user_id,
+                    neurostore_id=meta_neurostore_annotation_id,
                     snapshot_studyset_id=(
                         canonical_ss.id if canonical_ss is not None else None
                     ),
