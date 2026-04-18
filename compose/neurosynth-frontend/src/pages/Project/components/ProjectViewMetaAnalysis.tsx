@@ -6,7 +6,7 @@ import useUserCanEdit from 'hooks/useUserCanEdit';
 import { MetaAnalysisReturn, ResultReturn } from 'neurosynth-compose-typescript-sdk';
 import useGetMetaAnalysisJobById from 'pages/MetaAnalysis/hooks/useGetMetaAnalysisJobById';
 import useGetMetaAnalysisJobsByMetaAnalysisId from 'pages/MetaAnalysis/hooks/useGetMetaAnalysisJobsByMetaAnalysisId';
-import { useProjectUser } from 'pages/Project/store/ProjectStore';
+import { useProjectUser } from 'stores/projects/ProjectStore';
 import { useNavigate } from 'react-router-dom';
 
 const ProjectViewMetaAnalysis: React.FC<MetaAnalysisReturn> = (props) => {

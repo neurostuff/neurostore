@@ -3,7 +3,7 @@ import { Box, Button, useMediaQuery, useTheme } from '@mui/material';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { hasUnsavedStudyChanges, unsetUnloadHandler } from 'helpers/BeforeUnload.helpers';
-import { useProjectExtractionAnnotationId } from 'pages/Project/store/ProjectStore';
+import { useProjectExtractionAnnotationId } from 'stores/projects/ProjectStore';
 import EditStudyAnalysesCBMA from 'pages/StudyCBMA/components/EditStudyAnalysesCBMA';
 import EditStudyAnnotations from 'pages/StudyCBMA/components/EditStudyAnnotations';
 import EditStudyDetails from 'pages/StudyCBMA/components/EditStudyDetails';

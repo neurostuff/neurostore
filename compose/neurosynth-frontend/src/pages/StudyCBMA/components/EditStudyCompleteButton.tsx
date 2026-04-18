@@ -4,7 +4,7 @@ import { EExtractionStatus } from 'pages/Extraction/Extraction.types';
 import {
     useProjectExtractionAddOrUpdateStudyListStatus,
     useProjectExtractionStudyStatus,
-} from 'pages/Project/store/ProjectStore';
+} from 'stores/projects/ProjectStore';
 import React, { useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import useSaveStudy from 'pages/StudyCBMA/hooks/useSaveStudy';

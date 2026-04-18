@@ -3,7 +3,7 @@ import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useUpdateStudyset } from 'hooks';
 import { StudyReturn } from 'neurostore-typescript-sdk';
-import { useProjectExtractionReplaceStudyListStatusId } from 'pages/Project/store/ProjectStore';
+import { useProjectExtractionReplaceStudyListStatusId } from 'stores/projects/ProjectStore';
 import EditStudySwapVersionButton from 'pages/StudyCBMA/components/EditStudySwapVersionButton';
 import { useNavigate } from 'react-router-dom';
 import { mockBaseStudy, mockStudysetNotNested } from 'testing/mockData';
@@ -12,7 +12,7 @@ import { useStudyId } from 'stores/study/StudyStore';
 
 vi.mock('react-router-dom');
 vi.mock('hooks');
-vi.mock('pages/Project/store/ProjectStore');
+vi.mock('stores/projects/ProjectStore');
 vi.mock('stores/study/StudyStore');
 vi.mock('components/Dialogs/ConfirmationDialog');
 vi.mock('notistack');

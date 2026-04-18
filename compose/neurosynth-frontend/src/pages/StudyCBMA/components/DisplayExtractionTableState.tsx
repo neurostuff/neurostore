@@ -2,7 +2,7 @@ import { ArrowLeft, ArrowRight } from '@mui/icons-material';
 import { Box, Button, Tooltip, Typography, useMediaQuery, useTheme } from '@mui/material';
 import { useGetStudyById, useGetStudysetById, useUserCanEdit } from 'hooks';
 import { retrieveExtractionTableState } from 'pages/Extraction/components/ExtractionTable.helpers';
-import { useProjectExtractionStudysetId, useProjectId, useProjectUser } from 'pages/Project/store/ProjectStore';
+import { useProjectExtractionStudysetId, useProjectId, useProjectUser } from 'stores/projects/ProjectStore';
 import { hasUnsavedStudyChanges, unsetUnloadHandler } from 'helpers/BeforeUnload.helpers';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';

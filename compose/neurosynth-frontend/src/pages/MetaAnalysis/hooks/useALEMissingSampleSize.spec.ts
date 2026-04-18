@@ -1,7 +1,7 @@
 import { vi, Mock } from 'vitest';
 import { renderHook } from '@testing-library/react-hooks';
 import { useGetAnnotationById, useGetStudysetById } from 'hooks';
-import { useProjectExtractionAnnotationId, useProjectExtractionStudysetId } from 'pages/Project/store/ProjectStore';
+import { useProjectExtractionAnnotationId, useProjectExtractionStudysetId } from 'stores/projects/ProjectStore';
 import useStudiesWithMissingSampleSizeALE from './useALEMissingSampleSize';
 
 vi.mock('hooks', () => ({
@@ -9,7 +9,7 @@ vi.mock('hooks', () => ({
     useGetAnnotationById: vi.fn(),
 }));
 
-vi.mock('pages/Project/store/ProjectStore', () => ({
+vi.mock('stores/projects/ProjectStore', () => ({
     useProjectExtractionStudysetId: vi.fn(),
     useProjectExtractionAnnotationId: vi.fn(),
 }));

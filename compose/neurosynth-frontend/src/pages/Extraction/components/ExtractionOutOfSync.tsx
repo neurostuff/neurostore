@@ -11,7 +11,7 @@ import {
     useProjectExtractionAnnotationId,
     useProjectExtractionStudysetId,
     useProjectNumCurationColumns,
-} from 'pages/Project/store/ProjectStore';
+} from 'stores/projects/ProjectStore';
 import { useState } from 'react';
 import { useIsFetching, useQueryClient } from 'react-query';
 import ExtractionOutOfSyncStyles from './ExtractionOutOfSync.styles';

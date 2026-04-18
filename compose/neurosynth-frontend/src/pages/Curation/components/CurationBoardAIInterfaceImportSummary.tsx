@@ -21,7 +21,7 @@ import {
     useProjectCurationImport,
     useProjectUser,
     useUpdateCurationImportName,
-} from 'pages/Project/store/ProjectStore';
+} from 'stores/projects/ProjectStore';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { FixedSizeList } from 'react-window';
 import { EImportMode, ICurationStubStudy } from '../Curation.types';

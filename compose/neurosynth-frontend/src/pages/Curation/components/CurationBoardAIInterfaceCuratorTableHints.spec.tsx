@@ -5,14 +5,14 @@ import {
     useProjectCurationColumn,
     useProjectCurationColumns,
     useProjectCurationIsPrisma,
-} from 'pages/Project/store/ProjectStore';
+} from 'stores/projects/ProjectStore';
 import { useGetCurationSummary } from 'hooks';
 import { useParams } from 'react-router-dom';
 
 vi.mock('hooks', () => ({
     useGetCurationSummary: vi.fn().mockReturnValue({ included: 0, uncategorized: 0, excluded: 0 }),
 }));
-vi.mock('pages/Project/store/ProjectStore');
+vi.mock('stores/projects/ProjectStore');
 vi.mock('react-router-dom');
 vi.mock('pages/Curation/context/CurationBoardGroupsContext', () => ({
     useCurationBoardGroups: vi.fn().mockReturnValue({

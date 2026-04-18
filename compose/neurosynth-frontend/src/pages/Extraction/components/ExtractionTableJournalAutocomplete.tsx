@@ -1,7 +1,7 @@
 import { Autocomplete, Box, TextField } from '@mui/material';
 import { useGetStudysetById } from 'hooks';
 import { StudyReturn } from 'neurostore-typescript-sdk';
-import { useProjectExtractionStudysetId } from 'pages/Project/store/ProjectStore';
+import { useProjectExtractionStudysetId } from 'stores/projects/ProjectStore';
 import { useMemo } from 'react';
 
 const ExtractionTableJournalAutocomplete: React.FC<{

@@ -4,7 +4,7 @@ import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { useGetStudyById } from 'hooks';
 import { AnalysisReturn } from 'neurostore-typescript-sdk';
-import { useGetProjectIsLoading, useProjectName } from 'pages/Project/store/ProjectStore';
+import { useGetProjectIsLoading, useProjectName } from 'stores/projects/ProjectStore';
 import Study from 'pages/Study/components/Study';
 import React, { useEffect } from 'react';
 import { useParams } from 'react-router-dom';

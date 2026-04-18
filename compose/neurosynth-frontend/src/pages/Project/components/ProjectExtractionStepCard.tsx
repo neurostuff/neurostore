@@ -12,7 +12,7 @@ import { useGetExtractionSummary, useGetStudysetById } from 'hooks';
 import {
     useProjectExtractionSetGivenStudyStatusesAsComplete,
     useProjectExtractionStudysetId,
-} from 'pages/Project/store/ProjectStore';
+} from 'stores/projects/ProjectStore';
 import { IExtractionSummary } from 'hooks/useGetExtractionSummary';
 
 const getPercentageComplete = (extractionSummary: IExtractionSummary): number => {

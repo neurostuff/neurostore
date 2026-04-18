@@ -8,7 +8,7 @@ import {
     useProjectCurationPrismaConfig,
     usePromoteStub,
     useSetExclusionForStub,
-} from 'pages/Project/store/ProjectStore';
+} from 'stores/projects/ProjectStore';
 import { useState } from 'react';
 import { v4 as uuid } from 'uuid';
 import { ICurationTableStudy } from 'pages/Curation/hooks/useCuratorTableState.types';

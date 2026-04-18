@@ -5,7 +5,7 @@ import CheckIcon from '@mui/icons-material/Check';
 import BookmarkIcon from '@mui/icons-material/Bookmark';
 import { useNavigate, useParams } from 'react-router-dom';
 import { EExtractionStatus } from 'pages/Extraction/Extraction.types';
-import { useProjectExtractionAddOrUpdateStudyListStatus, useProjectUser } from 'pages/Project/store/ProjectStore';
+import { useProjectExtractionAddOrUpdateStudyListStatus, useProjectUser } from 'stores/projects/ProjectStore';
 import useUserCanEdit from 'hooks/useUserCanEdit';
 
 const ReadOnlyStudySummaryVirtualizedItem: React.FC<

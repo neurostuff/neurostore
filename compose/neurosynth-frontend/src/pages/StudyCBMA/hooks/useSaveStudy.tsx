@@ -8,7 +8,7 @@ import {
     useProjectExtractionReplaceStudyListStatusId,
     useProjectExtractionStudysetId,
     useProjectId,
-} from 'pages/Project/store/ProjectStore';
+} from 'stores/projects/ProjectStore';
 import { useState } from 'react';
 import { useQueryClient } from 'react-query';
 import { useNavigate } from 'react-router-dom';

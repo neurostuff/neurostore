@@ -10,7 +10,7 @@ import {
     useProjectExtractionStudysetId,
     useProjectMetaAnalyses,
     useProjectUser,
-} from 'pages/Project/store/ProjectStore';
+} from 'stores/projects/ProjectStore';
 import { useState } from 'react';
 import { useQueryClient } from 'react-query';
 import { useNavigate, useParams } from 'react-router-dom';

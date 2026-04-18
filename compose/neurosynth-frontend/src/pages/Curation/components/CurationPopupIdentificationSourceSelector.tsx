@@ -7,7 +7,7 @@ import { ISource } from 'pages/Curation/Curation.types';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
-import { useCreateCurationSource, useProjectCurationSources } from 'pages/Project/store/ProjectStore';
+import { useCreateCurationSource, useProjectCurationSources } from 'stores/projects/ProjectStore';
 
 interface AutoSelectOption {
     id: string;

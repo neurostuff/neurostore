@@ -22,13 +22,13 @@ import {
     setGivenStudyStatusesAsCompleteHelper,
     updateExclusionTagHelper,
     updateStubFieldHelper,
-} from 'pages/Project/store/ProjectStore.helpers';
+} from 'stores/projects/ProjectStore.helpers';
 import { useEffect } from 'react';
 import { useQueryClient } from 'react-query';
 import { useParams } from 'react-router-dom';
 import API from 'api/api.config';
 import { create } from 'zustand';
-import { TProjectStore } from './ProjectStore.types';
+import { TProjectStore } from 'stores/projects/ProjectStore.types';
 
 const useProjectStore = create<TProjectStore>()((set, get) => {
     return {

@@ -14,7 +14,7 @@ import {
     useProjectCurationIsLastColumn,
     useProjectCurationIsPrisma,
     useProjectUser,
-} from 'pages/Project/store/ProjectStore';
+} from 'stores/projects/ProjectStore';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useCurationBoardGroups } from '../context/CurationBoardGroupsContext';

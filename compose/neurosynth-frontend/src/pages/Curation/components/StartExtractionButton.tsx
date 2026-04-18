@@ -7,7 +7,7 @@ import {
     useProjectExtractionStudysetId,
     useProjectId,
     useProjectUser,
-} from 'pages/Project/store/ProjectStore';
+} from 'stores/projects/ProjectStore';
 import { enqueueSnackbar, SnackbarKey, closeSnackbar } from 'notistack';
 import { useCurationBoardGroups } from '../context/CurationBoardGroupsContext';
 import { IProjectPageLocationState } from 'pages/Project/ProjectPage';

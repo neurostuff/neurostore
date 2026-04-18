@@ -8,7 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { setUnloadHandler } from 'helpers/BeforeUnload.helpers';
 import { useStudyId } from 'stores/study/StudyStore';
 
-vi.mock('pages/Project/store/ProjectStore');
+vi.mock('stores/projects/ProjectStore');
 vi.mock('stores/study/StudyStore');
 vi.mock('components/Dialogs/ConfirmationDialog');
 vi.mock('hooks');

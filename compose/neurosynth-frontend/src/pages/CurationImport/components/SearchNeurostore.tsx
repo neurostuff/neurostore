@@ -9,7 +9,7 @@ import { studiesToStubs } from 'helpers/Curation.helpers';
 import { baseStudiesSearchHelper } from 'hooks/studies/useGetBaseStudies';
 import { BaseStudyList } from 'neurostore-typescript-sdk';
 import { useSnackbar } from 'notistack';
-import { useProjectId } from 'pages/Project/store/ProjectStore';
+import { useProjectId } from 'stores/projects/ProjectStore';
 import { SearchCriteria } from 'pages/Study/Study.types';
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';

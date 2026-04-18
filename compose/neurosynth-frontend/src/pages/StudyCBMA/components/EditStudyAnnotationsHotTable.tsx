@@ -7,7 +7,7 @@ import { getDefaultForNoteKey, sanitizePaste } from 'components/HotTables/HotTab
 import CellCoords from 'handsontable/3rdparty/walkontable/src/cell/coords';
 import { CellChange } from 'handsontable/common';
 import { useUserCanEdit } from 'hooks';
-import { useProjectUser } from 'pages/Project/store/ProjectStore';
+import { useProjectUser } from 'stores/projects/ProjectStore';
 import { HotSettings } from 'pages/StudyCBMA/components/EditStudyAnnotationsHotTable.helpers';
 import useEditStudyAnnotationsHotTable from 'pages/StudyCBMA/hooks/useEditStudyAnnotationsHotTable';
 import { useMemo, useRef, useState } from 'react';

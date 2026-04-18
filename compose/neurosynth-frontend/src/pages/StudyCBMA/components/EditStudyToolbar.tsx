@@ -30,7 +30,7 @@ import {
     useProjectExtractionStudyStatus,
     useProjectId,
     useProjectUser,
-} from 'pages/Project/store/ProjectStore';
+} from 'stores/projects/ProjectStore';
 import { useStudyId } from 'stores/study/StudyStore';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';

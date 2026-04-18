@@ -8,7 +8,7 @@ import {
     useProjectExtractionStudysetId,
     useProjectId,
     useProjectUser,
-} from 'pages/Project/store/ProjectStore';
+} from 'stores/projects/ProjectStore';
 import { enqueueSnackbar, closeSnackbar } from 'notistack';
 
 const mockNavigate = vi.hoisted(() => vi.fn());
@@ -19,7 +19,7 @@ vi.mock('hooks', () => ({
     useUserCanEdit: vi.fn().mockReturnValue(true),
 }));
 
-vi.mock('pages/Project/store/ProjectStore');
+vi.mock('stores/projects/ProjectStore');
 
 vi.mock('notistack', () => ({
     enqueueSnackbar: vi.fn().mockReturnValue('snackbar-key-1'),

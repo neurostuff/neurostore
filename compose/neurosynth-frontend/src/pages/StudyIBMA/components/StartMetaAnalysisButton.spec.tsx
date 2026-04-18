@@ -5,13 +5,13 @@ import {
     useProjectId,
     useProjectMetaAnalysisCanEdit,
     useProjectUser,
-} from 'pages/Project/store/ProjectStore';
+} from 'stores/projects/ProjectStore';
 import { hasUnsavedStudyChanges, unsetUnloadHandler } from 'helpers/BeforeUnload.helpers';
 import { useGetExtractionSummary, useUserCanEdit } from 'hooks';
 
 const mockNavigate = vi.hoisted(() => vi.fn());
 
-vi.mock('pages/Project/store/ProjectStore');
+vi.mock('stores/projects/ProjectStore');
 vi.mock('helpers/BeforeUnload.helpers', () => ({
     hasUnsavedStudyChanges: vi.fn(),
     unsetUnloadHandler: vi.fn(),

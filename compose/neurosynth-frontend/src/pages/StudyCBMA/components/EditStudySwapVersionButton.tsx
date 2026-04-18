@@ -26,7 +26,7 @@ import {
     useProjectExtractionReplaceStudyListStatusId,
     useProjectExtractionStudysetId,
     useProjectId,
-} from 'pages/Project/store/ProjectStore';
+} from 'stores/projects/ProjectStore';
 import { useStudyBaseStudyId, useStudyId, useUpdateStudyDetails } from 'stores/study/StudyStore';
 import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';

@@ -35,7 +35,7 @@ import {
     useProjectExtractionStudyStatusList,
     useProjectId,
     useProjectUser,
-} from 'pages/Project/store/ProjectStore';
+} from 'stores/projects/ProjectStore';
 import { ChangeEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { EExtractionStatus, IStudyExtractionStatus } from 'pages/Extraction/Extraction.types';

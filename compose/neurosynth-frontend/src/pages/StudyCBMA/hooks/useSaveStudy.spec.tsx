@@ -25,7 +25,7 @@ vi.mock('react-query');
 vi.mock('@auth0/auth0-react');
 vi.mock('notistack');
 vi.mock('react-router-dom');
-vi.mock('pages/Project/store/ProjectStore');
+vi.mock('stores/projects/ProjectStore');
 vi.mock('stores/study/StudyStore');
 vi.mock('stores/annotation/AnnotationStore.getters');
 vi.mock('stores/annotation/AnnotationStore.actions');

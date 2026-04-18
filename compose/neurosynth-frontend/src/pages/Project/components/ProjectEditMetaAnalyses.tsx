@@ -6,7 +6,7 @@ import {
     useProjectCurationColumns,
     useProjectExtractionMetadata,
     useProjectUser,
-} from 'pages/Project/store/ProjectStore';
+} from 'stores/projects/ProjectStore';
 import { useParams } from 'react-router-dom';
 import DangerZone from 'pages/Project/components/ProjectDangerZone';
 import useUserCanEdit from 'hooks/useUserCanEdit';

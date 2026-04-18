@@ -17,7 +17,7 @@ import {
     useProjectName,
     useProjectNumCurationColumns,
     useUpdateExtractionMetadata,
-} from 'pages/Project/store/ProjectStore';
+} from 'stores/projects/ProjectStore';
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MoveToExtractionDialogIntroductionPart1 from './MoveToExtractionDialogIntroPart1';

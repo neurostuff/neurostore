@@ -3,7 +3,7 @@ import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import { hasUnsavedStudyChanges, unsetUnloadHandler } from 'helpers/BeforeUnload.helpers';
 import { useUserCanEdit } from 'hooks';
 import { IProjectPageLocationState } from 'pages/Project/ProjectPage';
-import { useProjectId, useProjectMetaAnalysisCanEdit, useProjectUser } from 'pages/Project/store/ProjectStore';
+import { useProjectId, useProjectMetaAnalysisCanEdit, useProjectUser } from 'stores/projects/ProjectStore';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 

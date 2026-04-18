@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useNavigate } from 'react-router-dom';
 import { useSnackbar } from 'notistack';
-import { useProjectId } from 'pages/Project/store/ProjectStore';
+import { useProjectId } from 'stores/projects/ProjectStore';
 import { useStudyAnalysisPoints } from 'stores/study/StudyStore';
 import { IStorePoint } from 'stores/study/StudyStore.helpers';
 import { mockStorePoints } from 'testing/mockData';
@@ -14,7 +14,7 @@ vi.mock('pages/StudyCBMA/components/EditStudyAnalysisCBMAPointsHotTable');
 vi.mock('pages/StudyCBMA/components/EditStudyAnalysisCBMAPointSpaceAndStatistic');
 vi.mock('./RelegateExtractionStudyDialog');
 vi.mock('react-router-dom');
-vi.mock('pages/Project/store/ProjectStore');
+vi.mock('stores/projects/ProjectStore');
 vi.mock('notistack');
 
 const RELEGATE_LINK_TEXT = /I couldn't find coordinates for this study/i;

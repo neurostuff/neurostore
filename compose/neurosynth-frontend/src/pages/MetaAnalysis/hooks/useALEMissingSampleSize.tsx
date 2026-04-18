@@ -1,6 +1,6 @@
 import { useGetAnnotationById, useGetStudysetById } from 'hooks';
 import { NoteCollectionReturn, StudyReturn } from 'neurostore-typescript-sdk';
-import { useProjectExtractionAnnotationId, useProjectExtractionStudysetId } from 'pages/Project/store/ProjectStore';
+import { useProjectExtractionAnnotationId, useProjectExtractionStudysetId } from 'stores/projects/ProjectStore';
 import { useMemo } from 'react';
 import { AnnotationNoteType } from 'stores/annotation/AnnotationStore.types';
 import { isALE } from '../components/MetaAnalysisDynamicForm';

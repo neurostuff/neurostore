@@ -4,7 +4,7 @@ import HelpIcon from '@mui/icons-material/Help';
 import EditStudyAnalysisCBMAPointSpaceAndStatistic from 'pages/StudyCBMA/components/EditStudyAnalysisCBMAPointSpaceAndStatistic';
 import RelegateExtractionStudyDialog from './RelegateExtractionStudyDialog';
 import { useNavigate } from 'react-router-dom';
-import { useProjectId } from 'pages/Project/store/ProjectStore';
+import { useProjectId } from 'stores/projects/ProjectStore';
 import { useState } from 'react';
 import { useSnackbar } from 'notistack';
 import { Warning } from '@mui/icons-material';

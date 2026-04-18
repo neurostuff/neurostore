@@ -10,7 +10,7 @@ import { registerAllModules } from 'handsontable/registry';
 import { useGetWindowHeight, useUpdateAnnotationById } from 'hooks';
 import useUserCanEdit from 'hooks/useUserCanEdit';
 import { useSnackbar } from 'notistack';
-import { useProjectUser } from 'pages/Project/store/ProjectStore';
+import { useProjectUser } from 'stores/projects/ProjectStore';
 import React, { useEffect, useRef } from 'react';
 import { createColumns, hotDataToAnnotationNotes, hotSettings } from './EditAnnotationsHotTable.helpers';
 import useUpdateAnnotationByAnnotationAndAnalysisId from 'hooks/annotations/useUpdateAnnotationByAnnotationAndAnalysisId';

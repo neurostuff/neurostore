@@ -7,7 +7,7 @@ import {
     useProjectExtractionAddOrUpdateStudyListStatus,
     useProjectExtractionStudysetId,
     useProjectId,
-} from 'pages/Project/store/ProjectStore';
+} from 'stores/projects/ProjectStore';
 import { useStudyId } from 'stores/study/StudyStore';
 import { useNavigate } from 'react-router-dom';
 import EditStudyToolbar from './EditStudyToolbar';
@@ -16,7 +16,7 @@ import { setUnloadHandler } from 'helpers/BeforeUnload.helpers';
 vi.mock('hooks');
 vi.mock('pages/StudyCBMA/hooks/useSaveStudy');
 vi.mock('react-router-dom');
-vi.mock('pages/Project/store/ProjectStore');
+vi.mock('stores/projects/ProjectStore');
 vi.mock('stores/study/StudyStore');
 vi.mock('pages/StudyCBMA/components/EditStudySwapVersionButton');
 vi.mock('components/Dialogs/ConfirmationDialog');

@@ -1,6 +1,6 @@
 import { INeurosynthProjectReturn, INeurosynthProject } from 'hooks/projects/Project.types';
 import { ICurationStubStudy } from 'pages/Curation/Curation.types';
-import { defaultExclusionTags } from 'pages/Project/store/ProjectStore.consts';
+import { defaultExclusionTags } from 'stores/projects/ProjectStore.consts';
 
 describe('CurationAIInterface', () => {
     beforeEach(() => {

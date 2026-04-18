@@ -19,7 +19,7 @@ import {
     useProjectExtractionStudyStatus,
     useProjectId,
     useProjectUser,
-} from 'pages/Project/store/ProjectStore';
+} from 'stores/projects/ProjectStore';
 import EditStudySwapVersionButton from 'pages/StudyCBMA/components/EditStudySwapVersionButton';
 import useSaveStudy from 'pages/StudyCBMA/hooks/useSaveStudy';
 import { useEffect, useMemo, useState } from 'react';

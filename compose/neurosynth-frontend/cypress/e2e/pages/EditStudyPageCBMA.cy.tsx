@@ -3,7 +3,7 @@
 import { IProvenance } from 'hooks/projects/Project.types';
 import { AnnotationReturnOneOf, NoteCollectionReturn, StudysetReturn } from 'neurostore-typescript-sdk';
 import { ProjectReturn } from 'neurosynth-compose-typescript-sdk';
-import { defaultIdentificationSources } from 'pages/Project/store/ProjectStore.consts';
+import { defaultIdentificationSources } from 'stores/projects/ProjectStore.consts';
 
 export {};
 

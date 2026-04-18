@@ -14,8 +14,8 @@ import {
     useProjectCurationColumns,
     useProjectId,
     useUpdateCurationColumns,
-} from 'pages/Project/store/ProjectStore';
-import { defaultExclusionTags } from 'pages/Project/store/ProjectStore.consts';
+} from 'stores/projects/ProjectStore';
+import { defaultExclusionTags } from 'stores/projects/ProjectStore.consts';
 import { SearchCriteria } from 'pages/Study/Study.types';
 import { useState } from 'react';
 import { v4 as uuid } from 'uuid';

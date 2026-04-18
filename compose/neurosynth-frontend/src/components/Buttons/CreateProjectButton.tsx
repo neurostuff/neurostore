@@ -8,7 +8,7 @@ import { hasUnsavedChanges, unsetUnloadHandler } from 'helpers/BeforeUnload.help
 import { useCreateProject } from 'hooks';
 import { EAnalysisType } from 'hooks/projects/Project.types';
 import { ProjectSearchCriteria, projectsSearchHelper } from 'hooks/projects/useGetProjects';
-import { generateNewProjectData, getNextUntitledProjectName } from 'pages/Project/store/ProjectStore.helpers';
+import { generateNewProjectData, getNextUntitledProjectName } from 'stores/projects/ProjectStore.helpers';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 

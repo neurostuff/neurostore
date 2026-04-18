@@ -2,7 +2,7 @@ import { Box, Chip, Table, TableCell, TableContainer, TableHead, TableRow } from
 import { flexRender, RowData } from '@tanstack/react-table';
 import { EAIExtractors } from 'hooks/extractions/useGetAllExtractedDataForStudies';
 import { indexToPRISMAMapping } from 'hooks/projects/useGetProjects';
-import { useProjectCurationPrismaConfig } from 'pages/Project/store/ProjectStore';
+import { useProjectCurationPrismaConfig } from 'stores/projects/ProjectStore';
 import React, { useState } from 'react';
 import { getGridTemplateColumns } from '../hooks/useCuratorTableState.helpers';
 import { ICurationBoardAIInterfaceCurator } from './CurationBoardAIInterfaceCurator';

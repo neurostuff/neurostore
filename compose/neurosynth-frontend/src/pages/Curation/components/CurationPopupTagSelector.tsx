@@ -3,8 +3,8 @@ import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete';
 import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
 import { SystemStyleObject } from '@mui/system';
-import { useProjectCurationInfoTags } from 'pages/Project/store/ProjectStore';
-import { ENeurosynthTagIds } from 'pages/Project/store/ProjectStore.consts';
+import { useProjectCurationInfoTags } from 'stores/projects/ProjectStore';
+import { ENeurosynthTagIds } from 'stores/projects/ProjectStore.consts';
 import { useEffect, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 

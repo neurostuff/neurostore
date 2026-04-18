@@ -14,7 +14,7 @@ import {
     useProjectExclusionTag,
     usePromoteStub,
     useSetExclusionForStub,
-} from 'pages/Project/store/ProjectStore';
+} from 'stores/projects/ProjectStore';
 import React, { useState } from 'react';
 import { v4 as uuid } from 'uuid';
 

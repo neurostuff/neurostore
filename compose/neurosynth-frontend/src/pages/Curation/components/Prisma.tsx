@@ -17,7 +17,7 @@ import {
     useProjectCurationColumns,
     useProjectCurationIsPrisma,
     useProjectProvenance,
-} from 'pages/Project/store/ProjectStore';
+} from 'stores/projects/ProjectStore';
 
 const nodeTypes = { NeurosynthNode: NeurosynthNode };
 

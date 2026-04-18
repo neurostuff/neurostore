@@ -7,7 +7,7 @@ import {
     useProjectExtractionAddOrUpdateStudyListStatus,
     useProjectExtractionStudysetId,
     useProjectId,
-} from 'pages/Project/store/ProjectStore';
+} from 'stores/projects/ProjectStore';
 import EditStudyToolbar2 from 'pages/StudyIBMA/components/EditStudyToolbar2';
 import { useNavigate } from 'react-router-dom';
 import { useStudyId } from 'stores/study/StudyStore';
@@ -17,7 +17,7 @@ vi.mock('hooks');
 vi.mock('pages/StudyCBMA/hooks/useSaveStudy');
 vi.mock('react-router-dom');
 vi.mock('stores/study/StudyStore');
-vi.mock('pages/Project/store/ProjectStore');
+vi.mock('stores/projects/ProjectStore');
 vi.mock('pages/StudyCBMA/components/EditStudySwapVersionButton');
 vi.mock('components/Dialogs/ConfirmationDialog');
 

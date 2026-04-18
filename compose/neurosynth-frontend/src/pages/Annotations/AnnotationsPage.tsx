@@ -3,7 +3,7 @@ import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { useGetAnnotationById } from 'hooks';
 import EditAnnotationsHotTable from 'pages/Annotations/components/EditAnnotationsHotTable';
-import { useProjectExtractionAnnotationId, useProjectName } from 'pages/Project/store/ProjectStore';
+import { useProjectExtractionAnnotationId, useProjectName } from 'stores/projects/ProjectStore';
 import { useParams } from 'react-router-dom';
 
 const AnnotationsPage: React.FC = () => {

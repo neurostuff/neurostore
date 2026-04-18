@@ -9,7 +9,7 @@ import {
     useProjectAnalysisType,
     useProjectCurationColumn,
     useProjectCurationIsPrisma,
-} from 'pages/Project/store/ProjectStore';
+} from 'stores/projects/ProjectStore';
 import { useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useCurationBoardGroups } from '../context/CurationBoardGroupsContext';

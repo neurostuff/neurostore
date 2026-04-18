@@ -14,7 +14,7 @@ import {
     useProjectId,
     useProjectMetaAnalyses,
     useUpdateProjectMetaAnalyses,
-} from 'pages/Project/store/ProjectStore';
+} from 'stores/projects/ProjectStore';
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { IAlgorithmSelection, IAnalysesSelection } from './CreateMetaAnalysisSpecificationDialogBase.types';

@@ -1,5 +1,5 @@
 import { EAnalysisType } from 'hooks/projects/Project.types';
-import { getNextUntitledProjectName } from './ProjectStore.helpers';
+import { getNextUntitledProjectName } from 'stores/projects/ProjectStore.helpers';
 
 const CBMA = EAnalysisType.CBMA;
 const IBMA = EAnalysisType.IBMA;

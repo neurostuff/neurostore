@@ -4,7 +4,7 @@ import DisplayStudyLinkFullText from 'components/DisplayStudyLink/DisplayStudyLi
 import LoadingStateIndicatorProject from 'components/LoadingStateIndicator/LoadingStateIndicatorProject';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs';
 import { PUBMED_ARTICLE_URL_PREFIX, PUBMED_CENTRAL_ARTICLE_URL_PREFIX } from 'hooks/external/useFetchPubMedIds.types';
-import { useProjectId, useProjectName } from 'pages/Project/store/ProjectStore';
+import { useProjectId, useProjectName } from 'stores/projects/ProjectStore';
 import {
     useStudyAuthors,
     useStudyDOI,

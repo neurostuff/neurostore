@@ -14,7 +14,7 @@ import {
     useProjectUsername,
     useUpdateProjectDescription,
     useUpdateProjectName,
-} from 'pages/Project/store/ProjectStore';
+} from 'stores/projects/ProjectStore';
 import { useMemo } from 'react';
 import { Outlet, useLocation, useNavigate, useParams } from 'react-router-dom';
 

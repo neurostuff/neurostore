@@ -17,7 +17,7 @@ import { useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import DynamicFormStyles from './DynamicFormStyles';
 import useStudiesWithMissingSampleSizeALE from '../hooks/useALEMissingSampleSize';
-import { useProjectId } from 'pages/Project/store/ProjectStore';
+import { useProjectId } from 'stores/projects/ProjectStore';
 
 const metaAnalysisSpecification: IMetaAnalysisParamsSpecification = metaAnalysisSpec;
 export const isALE = (correctorOrEstimatorLabel: string) => correctorOrEstimatorLabel === 'ALE';

@@ -1,6 +1,6 @@
 import { Box, Card, CardContent, CircularProgress, Tooltip, Typography } from '@mui/material';
 import { useGetExtractionSummary } from 'hooks';
-import { useProjectId } from 'pages/Project/store/ProjectStore';
+import { useProjectId } from 'stores/projects/ProjectStore';
 import DisplayExtractionTableState from 'pages/StudyCBMA/components/DisplayExtractionTableState';
 import { type FC, useMemo } from 'react';
 

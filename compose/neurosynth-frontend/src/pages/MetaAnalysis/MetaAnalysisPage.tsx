@@ -7,7 +7,7 @@ import useUpdateMetaAnalysis from 'hooks/metaAnalyses/useUpdateMetaAnalysis';
 import useUserCanEdit from 'hooks/useUserCanEdit';
 import { ResultReturn, SpecificationReturn, StudysetReturn } from 'neurosynth-compose-typescript-sdk';
 import MetaAnalysisPageStyles from 'pages/MetaAnalysis/MetaAnalysisPage.styles';
-import { useProjectName, useProjectUser } from 'pages/Project/store/ProjectStore';
+import { useProjectName, useProjectUser } from 'stores/projects/ProjectStore';
 import { useParams } from 'react-router-dom';
 import { NeurostoreAnnotation } from 'api/api.config';
 import MetaAnalysisDetails from './components/MetaAnalysisDetails';

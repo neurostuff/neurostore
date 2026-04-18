@@ -14,8 +14,8 @@ import {
     useProjectId,
     useRemoveStudyListStatus,
     useSetExclusionForStub,
-} from 'pages/Project/store/ProjectStore';
-import { ENeurosynthTagIds, PRISMAEligibilityExclusionTags } from 'pages/Project/store/ProjectStore.consts';
+} from 'stores/projects/ProjectStore';
+import { ENeurosynthTagIds, PRISMAEligibilityExclusionTags } from 'stores/projects/ProjectStore.consts';
 import { ICurationColumn, ICurationStubStudy } from 'pages/Curation/Curation.types';
 import { useStudyId } from 'stores/study/StudyStore';
 import { useGetStudysetById, useUpdateStudyset } from 'hooks';

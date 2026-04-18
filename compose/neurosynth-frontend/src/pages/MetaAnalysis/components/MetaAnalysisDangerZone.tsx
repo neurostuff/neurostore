@@ -4,7 +4,7 @@ import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import useDeleteMetaAnalysis from 'hooks/metaAnalyses/useDeleteMetaAnalysis';
 import useUserCanEdit from 'hooks/useUserCanEdit';
 import { useSnackbar } from 'notistack';
-import { useProjectUser } from 'pages/Project/store/ProjectStore';
+import { useProjectUser } from 'stores/projects/ProjectStore';
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 

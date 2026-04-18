@@ -7,7 +7,7 @@ import {
     useProjectExtractionAnnotationId,
     useProjectMetaAnalysisCanEdit,
     useProjectName,
-} from 'pages/Project/store/ProjectStore';
+} from 'stores/projects/ProjectStore';
 import EditStudyPageHeader from 'pages/StudyCBMA/components/EditStudyPageHeader';
 import EditStudyStatusCard from 'pages/StudyIBMA/components/EditStudyStatusCard';
 import EditStudyToolbar2 from 'pages/StudyIBMA/components/EditStudyToolbar2';

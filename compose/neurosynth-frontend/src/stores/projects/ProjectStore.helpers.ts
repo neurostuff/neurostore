@@ -8,7 +8,7 @@ import {
     defaultIdentificationSources,
     defaultInfoTags,
     ENeurosynthTagIds,
-} from 'pages/Project/store/ProjectStore.consts';
+} from 'stores/projects/ProjectStore.consts';
 import { ICurationColumn, ICurationMetadata, ICurationStubStudy } from 'pages/Curation/Curation.types';
 import { EAnalysisType } from 'hooks/projects/Project.types';
 

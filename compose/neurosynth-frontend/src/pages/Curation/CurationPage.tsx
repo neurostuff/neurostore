@@ -15,7 +15,7 @@ import {
     useProjectExtractionAnnotationId,
     useProjectExtractionStudysetId,
     useProjectName,
-} from 'pages/Project/store/ProjectStore';
+} from 'stores/projects/ProjectStore';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import ImportStudiesButton from '../CurationImport/components/ImportStudiesButton';
