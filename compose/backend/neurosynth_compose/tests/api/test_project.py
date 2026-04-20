@@ -74,6 +74,44 @@ def test_get_all_projects_include_provenance_defaults_true(
     assert "provenance" in response.json["results"][0]
 
 
+def test_get_all_projects_filters_provenance_for_project_cards(
+    session, app, auth_client, user_data
+):
+    response = auth_client.get("/api/projects")
+    assert response.status_code == 200
+    assert response.json["results"]
+
+    allowed_top_level = {
+        "curationMetadata",
+        "extractionMetadata",
+        "metaAnalysisMetadata",
+    }
+
+    for project in response.json["results"]:
+        provenance = project["provenance"] or {}
+        assert set(provenance).issubset(allowed_top_level)
+
+        curation_metadata = provenance.get("curationMetadata") or {}
+        assert set(curation_metadata).issubset({"columns", "prismaConfig"})
+        for column in curation_metadata.get("columns", []):
+            assert set(column) == {"stubStudies"}
+            for stub in column["stubStudies"]:
+                assert set(stub) == {"exclusionTag", "tags"}
+                for tag in stub["tags"]:
+                    assert set(tag) == {"id"}
+
+        prisma_config = curation_metadata.get("prismaConfig") or {}
+        assert set(prisma_config).issubset({"isPrisma"})
+
+        extraction_metadata = provenance.get("extractionMetadata") or {}
+        assert set(extraction_metadata).issubset({"studysetId", "studyStatusList"})
+        for status in extraction_metadata.get("studyStatusList", []):
+            assert set(status).issubset({"id", "status"})
+
+        meta_analysis_metadata = provenance.get("metaAnalysisMetadata") or {}
+        assert set(meta_analysis_metadata).issubset({"canEditMetaAnalyses"})
+
+
 def test_get_all_projects_can_exclude_provenance(session, app, auth_client, user_data):
     response = auth_client.get("/api/projects?include_provenance=false")
     assert response.status_code == 200
