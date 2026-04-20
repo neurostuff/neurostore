@@ -5,7 +5,7 @@ from functools import lru_cache
 import orjson
 from flask import request
 from marshmallow.exceptions import ValidationError
-from sqlalchemy import Text, cast, func, select, update
+from sqlalchemy import Text, cast, func, literal, select, update
 from sqlalchemy.orm import joinedload, load_only, selectinload
 from webargs import fields
 from webargs.flaskparser import parser
@@ -32,6 +32,12 @@ from neurosynth_compose.schemas import ProjectSchema  # noqa: F401
 from neurosynth_compose.schemas.analysis import NS_BASE
 
 _RAW_PROVENANCE_UNSET = object()
+
+
+def _include_provenance(args):
+    if args is None:
+        return True
+    return bool(args.get("include_provenance", True))
 
 
 @lru_cache(maxsize=None)
@@ -250,6 +256,10 @@ class ProjectsView(ObjectView, ListView):
         "sync_meta_analyses_public": fields.Boolean(load_default=False),
     }
 
+    def __init__(self):
+        super().__init__()
+        self._user_args["include_provenance"] = fields.Boolean(load_default=True)
+
     @classmethod
     def update_or_create(
         cls,
@@ -286,17 +296,27 @@ class ProjectsView(ObjectView, ListView):
 
     def load_query(self, args=None):
         args = args or {}
+        raw_provenance = (
+            cast(Project.provenance, Text)
+            if _include_provenance(args)
+            else literal(None)
+        ).label("_raw_provenance_json")
         return select(
             Project,
-            cast(Project.provenance, Text).label("_raw_provenance_json"),
+            raw_provenance,
         ).options(*_project_list_query_options(bool(args.get("info"))))
 
     def load_object_query(self, id, args=None):
         args = args or {}
+        raw_provenance = (
+            cast(Project.provenance, Text)
+            if _include_provenance(args)
+            else literal(None)
+        ).label("_raw_provenance_json")
         return (
             select(
                 Project,
-                cast(Project.provenance, Text).label("_raw_provenance_json"),
+                raw_provenance,
             )
             .options(*_project_detail_query_options(bool(args.get("info"))))
             .where(Project.id == id)
