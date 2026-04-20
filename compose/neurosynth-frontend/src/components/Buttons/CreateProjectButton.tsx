@@ -23,7 +23,7 @@ const CreateProjectButton: React.FC = () => {
     const handleCreateProject = async () => {
         try {
             setGetProjectsIsLoading(true);
-            const userProjects = await projectsSearchHelper(projectSearchCriteria, user?.sub);
+            const userProjects = await projectsSearchHelper(projectSearchCriteria, user?.sub, false);
             const newProjectName = getNextUntitledProjectName(
                 userProjects?.data?.results?.map((p) => p.name ?? '') ?? []
             );
