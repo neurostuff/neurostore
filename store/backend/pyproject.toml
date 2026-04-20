@@ -37,7 +37,7 @@ dependencies = [
     "sqltap",
     "webargs~=8.7",
     "wrapt~=2.1",
-    "openapi-spec-validator~=0.3",
+    "openapi-spec-validator~=0.8",
     "scipy~=1.9",
     "orjson~=3.8",
     "flask_orjson~=2.0.0",
