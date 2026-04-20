@@ -258,11 +258,15 @@ class MetaAnalysisResult(BaseMixin, db.Model):
     studyset_snapshot_id = Column(Text, ForeignKey("studysets.id"), nullable=True)
     annotation_snapshot_id = Column(Text, ForeignKey("annotations.id"), nullable=True)
     meta_analysis = relationship("MetaAnalysis", back_populates="results")
+    # Snapshot payloads can be very large; eager-load them only on routes that
+    # actually serialize snapshot contents rather than on every result fetch.
     studyset_snapshot = relationship(
-        "SnapshotStudyset", foreign_keys=[studyset_snapshot_id], lazy="joined"
+        "SnapshotStudyset",
+        foreign_keys=[studyset_snapshot_id],
     )
     annotation_snapshot = relationship(
-        "SnapshotAnnotation", foreign_keys=[annotation_snapshot_id], lazy="joined"
+        "SnapshotAnnotation",
+        foreign_keys=[annotation_snapshot_id],
     )
     # neurovault_collection is one-to-one with MetaAnalysisResult
     neurovault_collection = relationship(
