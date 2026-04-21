@@ -5,11 +5,18 @@ import BaseDialog, { IDialog } from 'components/Dialogs/BaseDialog';
 
 import { IMetaAnalysisParamsSpecification } from 'pages/MetaAnalysis/components/DynamicForm.types';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
+import {
+    getMetaAnalysisAnnotationId,
+    getMetaAnalysisSpecificationId,
+    getMetaAnalysisStudysetId,
+} from 'helpers/MetaAnalysis.helpers';
 import { useGetMetaAnalysisById } from 'hooks';
+import useGetSnapshotAnnotationById from 'hooks/annotations/useGetSnapshotAnnotationById';
 import { EAnalysisType } from 'hooks/metaAnalyses/useCreateAlgorithmSpecification';
 import useGetSpecificationById from 'hooks/metaAnalyses/useGetSpecificationById';
 import useUpdateSpecification from 'hooks/metaAnalyses/useUpdateSpecification';
-import { AnnotationReturn, SpecificationReturn, StudysetReturn } from 'neurosynth-compose-typescript-sdk';
+import useGetSnapshotStudysetById from 'hooks/studysets/useGetSnapshotStudysetById';
+import { AnnotationReturn, StudysetReturn } from 'neurosynth-compose-typescript-sdk';
 import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { getType } from 'components/EditMetadata/EditMetadata.types';
@@ -29,11 +36,18 @@ const metaAnalysisSpecification: IMetaAnalysisParamsSpecification = metaAnalysis
 const EditSpecificationDialog: React.FC<IDialog> = (props) => {
     const { metaAnalysisId } = useParams<{ metaAnalysisId: string }>();
     const { data: metaAnalysis } = useGetMetaAnalysisById(metaAnalysisId);
+    const specificationId = getMetaAnalysisSpecificationId(metaAnalysis);
+    const annotationId = getMetaAnalysisAnnotationId(metaAnalysis);
+    const studysetId = getMetaAnalysisStudysetId(metaAnalysis);
     const {
         data: specification,
         isLoading: getMetaAnalysisIsLoading,
         isError: getMetaAnalysisIsError,
-    } = useGetSpecificationById((metaAnalysis?.specification as SpecificationReturn)?.id);
+    } = useGetSpecificationById(specificationId);
+    const { data: annotation, isLoading: annotationIsLoading, isError: annotationIsError } =
+        useGetSnapshotAnnotationById(annotationId);
+    const { data: studyset, isLoading: studysetIsLoading, isError: studysetIsError } =
+        useGetSnapshotStudysetById(studysetId);
     const { mutate, isLoading: updateSpecificationIsLoading } = useUpdateSpecification();
     const [selectedValue, setSelectedValue] = useState<IAnalysesSelection>({
         selectionKey: specification?.filter || undefined,
@@ -150,7 +164,10 @@ const EditSpecificationDialog: React.FC<IDialog> = (props) => {
             dialogContentSx={{ paddingBottom: '0' }}
             maxWidth="lg"
         >
-            <StateHandlerComponent isLoading={getMetaAnalysisIsLoading} isError={getMetaAnalysisIsError}>
+            <StateHandlerComponent
+                isLoading={getMetaAnalysisIsLoading || annotationIsLoading || studysetIsLoading}
+                isError={getMetaAnalysisIsError || annotationIsError || studysetIsError}
+            >
                 <Box sx={{ margin: '0rem 2rem' }}>
                     <Typography variant="h6" sx={{ fontWeight: 'bold' }} gutterBottom>
                         Edit Algorithm:
@@ -164,7 +181,7 @@ const EditSpecificationDialog: React.FC<IDialog> = (props) => {
                         Edit Analyses Selection:
                     </Typography>
                     <SelectAnalysesComponent
-                        annotationId={(metaAnalysis?.neurostore_annotation as AnnotationReturn)?.neurostore_id || ''}
+                        annotationId={(annotation as AnnotationReturn | undefined)?.neurostore_id || ''}
                         selectedValue={selectedValue}
                         onSelectValue={(update) => {
                             setSelectedValue(update);
@@ -174,7 +191,7 @@ const EditSpecificationDialog: React.FC<IDialog> = (props) => {
                     {isMultiGroup && (
                         <CreateMetaAnalysisSpecificationSelectionStepMultiGroup
                             onSelectValue={(newVal) => setSelectedValue(newVal)}
-                            annotationId={(metaAnalysis?.neurostore_annotation as AnnotationReturn)?.neurostore_id || ''}
+                            annotationId={(annotation as AnnotationReturn | undefined)?.neurostore_id || ''}
                             selectedValue={selectedValue}
                             algorithm={algorithmSpec}
                         />
@@ -197,8 +214,8 @@ const EditSpecificationDialog: React.FC<IDialog> = (props) => {
                     {/* empty div used for equally spacing and centering components */}
                     <Box>
                         <SelectAnalysesSummaryComponent
-                            studysetId={(metaAnalysis?.neurostore_studyset as StudysetReturn)?.neurostore_id || ''}
-                            annotationdId={(metaAnalysis?.neurostore_annotation as AnnotationReturn)?.neurostore_id || ''}
+                            studysetId={(studyset as StudysetReturn | undefined)?.neurostore_id || ''}
+                            annotationdId={(annotation as AnnotationReturn | undefined)?.neurostore_id || ''}
                             selectedValue={selectedValue}
                         />
                     </Box>

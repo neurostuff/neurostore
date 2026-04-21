@@ -2,14 +2,13 @@ import { Box, Chip, Typography } from '@mui/material';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import TextEdit from 'components/TextEdit/TextEdit';
+import { getLatestMetaAnalysisResultId } from 'helpers/MetaAnalysis.helpers';
 import { useGetMetaAnalysisById, useGetMetaAnalysisResultById } from 'hooks';
 import useUpdateMetaAnalysis from 'hooks/metaAnalyses/useUpdateMetaAnalysis';
 import useUserCanEdit from 'hooks/useUserCanEdit';
-import { ResultReturn, SpecificationReturn, StudysetReturn } from 'neurosynth-compose-typescript-sdk';
 import MetaAnalysisPageStyles from 'pages/MetaAnalysis/MetaAnalysisPage.styles';
 import { useProjectName, useProjectUser } from 'pages/Project/store/ProjectStore';
 import { useParams } from 'react-router-dom';
-import { NeurostoreAnnotation } from 'api/api.config';
 import MetaAnalysisDetails from './components/MetaAnalysisDetails';
 
 const MetaAnalysisPage: React.FC = () => {
@@ -37,19 +36,11 @@ const MetaAnalysisPage: React.FC = () => {
         isError: getMetaAnalysisIsError,
         isLoading: getMetaAnalysisIsLoading,
     } = useGetMetaAnalysisById(metaAnalysisId);
-    const { isLoading: getMetaAnalysisResultIsLoading } = useGetMetaAnalysisResultById(
-        metaAnalysis?.results && metaAnalysis.results.length
-            ? (metaAnalysis.results[metaAnalysis.results.length - 1] as ResultReturn).id
-            : undefined
-    );
-
-    // get request is set to nested: true so below casting is safe
-    const specification = metaAnalysis?.specification as SpecificationReturn;
-    const studyset = metaAnalysis?.neurostore_studyset as StudysetReturn;
-    const annotation = metaAnalysis?.neurostore_annotation as NeurostoreAnnotation;
+    const latestResultId = getLatestMetaAnalysisResultId(metaAnalysis);
+    const { isLoading: getMetaAnalysisResultIsLoading } = useGetMetaAnalysisResultById(latestResultId);
 
     const updateName = (updatedName: string) => {
-        if (metaAnalysis?.id && specification?.id && studyset?.id && annotation?.id) {
+        if (metaAnalysis?.id) {
             updateMetaAnalysisName({
                 metaAnalysisId: metaAnalysis.id,
                 metaAnalysis: {
@@ -60,7 +51,7 @@ const MetaAnalysisPage: React.FC = () => {
     };
 
     const updateDescription = (updatedDescription: string) => {
-        if (metaAnalysis?.id && specification?.id && studyset?.id && annotation?.id) {
+        if (metaAnalysis?.id) {
             updateMetaAnalysisDescription({
                 metaAnalysisId: metaAnalysis.id,
                 metaAnalysis: {
