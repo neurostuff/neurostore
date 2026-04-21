@@ -29,7 +29,7 @@ from neurosynth_compose.resources.view_core import ListView, ObjectView, view_ma
 
 # Imported for dynamic resolution by `view_maker` on `ProjectsView`.
 from neurosynth_compose.schemas import ProjectSchema  # noqa: F401
-from neurosynth_compose.schemas.analysis import NS_BASE
+from neurosynth_compose.schemas.analysis import get_ns_base
 
 _RAW_PROVENANCE_UNSET = object()
 
@@ -347,7 +347,9 @@ def serialize_project(record, *, info: bool, raw_provenance_json=_RAW_PROVENANCE
         ],
         "neurostore_study": neurostore_study,
         "neurostore_url": (
-            None if not neurostore_id else "/".join([NS_BASE, "studies", neurostore_id])
+            None
+            if not neurostore_id
+            else "/".join([get_ns_base(), "studies", neurostore_id])
         ),
     }
 

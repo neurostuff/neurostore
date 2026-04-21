@@ -4,10 +4,11 @@ import { Mock } from 'vitest';
 import { INeurovault } from 'hooks/metaAnalyses/useGetNeurovaultImages';
 import { useGetNeurovaultImages } from 'hooks';
 import { mockMetaAnalysisReturn } from 'testing/mockData';
-import { Specification } from 'neurosynth-compose-typescript-sdk';
+import useGetSpecificationById from 'hooks/metaAnalyses/useGetSpecificationById';
 import QueryClientTestingWrapper from 'testing/QueryClientTestingWrapper';
 
 vi.mock('hooks');
+vi.mock('hooks/metaAnalyses/useGetSpecificationById');
 vi.mock('pages/MetaAnalysis/components/MetaAnalysisResultStatusAlert');
 vi.mock('pages/MetaAnalysis/components/DisplayParsedNiMareFile');
 vi.mock('pages/MetaAnalysis/components/DisplayMetaAnalysisActivations');
@@ -60,7 +61,23 @@ const caseMoreSegments: Partial<INeurovault>[] = [
     { id: 1, name: 'z_desc-association.nii.gz' },
 ];
 
+const currentShapeMetaAnalysis = () => ({
+    ...mockMetaAnalysisReturn(),
+    results: ['PyftC25kGRm5'],
+    specification: 'h57xeSmdQcpj',
+});
+
 describe('DisplayMetaAnalysisResults', () => {
+    beforeEach(() => {
+        (useGetSpecificationById as Mock).mockReturnValue({
+            data: {
+                estimator: {
+                    type: 'ALE',
+                },
+            },
+        });
+    });
+
     it('should render', () => {
         render(<DisplayMetaAnalysisResults metaAnalysis={undefined} />, {
             wrapper: QueryClientTestingWrapper,
@@ -74,7 +91,7 @@ describe('DisplayMetaAnalysisResults', () => {
             isError: false,
         });
 
-        render(<DisplayMetaAnalysisResults metaAnalysis={mockMetaAnalysisReturn()} />, {
+        render(<DisplayMetaAnalysisResults metaAnalysis={currentShapeMetaAnalysis()} />, {
             wrapper: QueryClientTestingWrapper,
         });
         const buttons = screen.getAllByRole('button');
@@ -92,7 +109,7 @@ describe('DisplayMetaAnalysisResults', () => {
         });
 
         // Passing in a meta-analysis as an argument is not necessary as we mock the hook that provides the actual data
-        render(<DisplayMetaAnalysisResults metaAnalysis={mockMetaAnalysisReturn()} />, {
+        render(<DisplayMetaAnalysisResults metaAnalysis={currentShapeMetaAnalysis()} />, {
             wrapper: QueryClientTestingWrapper,
         });
         const buttons = screen.getAllByRole('button');
@@ -119,7 +136,7 @@ describe('DisplayMetaAnalysisResults', () => {
         });
 
         // Passing in a meta-analysis as an argument is not necessary as we mock the hook that provides the actual data
-        render(<DisplayMetaAnalysisResults metaAnalysis={mockMetaAnalysisReturn()} />, {
+        render(<DisplayMetaAnalysisResults metaAnalysis={currentShapeMetaAnalysis()} />, {
             wrapper: QueryClientTestingWrapper,
         });
         const buttons = screen.getAllByRole('button');
@@ -136,7 +153,7 @@ describe('DisplayMetaAnalysisResults', () => {
             isError: false,
         });
 
-        render(<DisplayMetaAnalysisResults metaAnalysis={mockMetaAnalysisReturn()} />, {
+        render(<DisplayMetaAnalysisResults metaAnalysis={currentShapeMetaAnalysis()} />, {
             wrapper: QueryClientTestingWrapper,
         });
         const buttons = screen.getAllByRole('button');
@@ -146,8 +163,13 @@ describe('DisplayMetaAnalysisResults', () => {
     });
 
     it('should show the correctly sorted list for MKDAChi2', () => {
-        const mockMetaAnalysis = mockMetaAnalysisReturn();
-        (mockMetaAnalysis.specification as Specification).estimator = { type: 'MKDAChi2' };
+        (useGetSpecificationById as Mock).mockReturnValue({
+            data: {
+                estimator: {
+                    type: 'MKDAChi2',
+                },
+            },
+        });
 
         (useGetNeurovaultImages as Mock).mockReturnValue({
             data: caseMKDAChi2,
@@ -155,7 +177,7 @@ describe('DisplayMetaAnalysisResults', () => {
             isError: false,
         });
 
-        render(<DisplayMetaAnalysisResults metaAnalysis={mockMetaAnalysis} />, {
+        render(<DisplayMetaAnalysisResults metaAnalysis={currentShapeMetaAnalysis()} />, {
             wrapper: QueryClientTestingWrapper,
         });
         const buttons = screen.getAllByRole('button');
@@ -174,7 +196,7 @@ describe('DisplayMetaAnalysisResults', () => {
             isError: false,
         });
 
-        render(<DisplayMetaAnalysisResults metaAnalysis={mockMetaAnalysisReturn()} />, {
+        render(<DisplayMetaAnalysisResults metaAnalysis={currentShapeMetaAnalysis()} />, {
             wrapper: QueryClientTestingWrapper,
         });
         const buttons = screen.getAllByRole('button');
@@ -190,7 +212,7 @@ describe('DisplayMetaAnalysisResults', () => {
             isError: false,
         });
 
-        render(<DisplayMetaAnalysisResults metaAnalysis={mockMetaAnalysisReturn()} />, {
+        render(<DisplayMetaAnalysisResults metaAnalysis={currentShapeMetaAnalysis()} />, {
             wrapper: QueryClientTestingWrapper,
         });
         const buttons = screen.getAllByRole('button');

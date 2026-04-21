@@ -125,3 +125,17 @@ export const getResultStatus = (
         }
     }
 };
+
+export const getMetaAnalysisSpecificationId = (metaAnalysis: MetaAnalysisReturn | undefined): string | undefined =>
+    metaAnalysis?.specification as string | undefined;
+
+export const getMetaAnalysisStudysetId = (metaAnalysis: MetaAnalysisReturn | undefined): string | undefined =>
+    metaAnalysis?.neurostore_studyset as string | undefined;
+
+export const getMetaAnalysisAnnotationId = (metaAnalysis: MetaAnalysisReturn | undefined): string | undefined =>
+    metaAnalysis?.neurostore_annotation as string | undefined;
+
+export const getLatestMetaAnalysisResultId = (metaAnalysis: MetaAnalysisReturn | undefined): string | undefined => {
+    const results = (metaAnalysis?.results ?? []) as string[];
+    return results.length > 0 ? results[results.length - 1] : undefined;
+};
