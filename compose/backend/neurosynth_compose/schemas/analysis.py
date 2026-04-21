@@ -1,4 +1,5 @@
 from marshmallow import Schema, fields, post_dump, post_load, pre_load, utils
+from flask import current_app
 
 from neurosynth_compose.map_types import canonicalize_map_type, map_type_label
 
@@ -6,7 +7,7 @@ from neurosynth_compose.map_types import canonicalize_map_type, map_type_label
 NV_BASE = "https://neurovault.org/api"
 
 # neurostore api base URL
-NS_BASE = "https://neurostore.org/api"
+NS_BASE = current_app.config["NEUROSTORE_API_URL"]
 
 
 class ContextSchema(Schema):
