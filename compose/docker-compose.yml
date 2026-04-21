@@ -47,6 +47,9 @@ services:
       - ${FILE_DIR}:/file-data
     env_file:
       - .env
+    networks:
+      - default
+      - proxy_shared
 
   compose_nginx:
     image: compose_nginx
