@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 import sqlalchemy as sa
+from auth0.authentication.exceptions import Auth0Error
 from auth0.authentication.users import Users
 from connexion.context import context
 from flask import current_app, request
@@ -20,14 +21,38 @@ from neurostore.models import User
 from neurostore.resources.utils import get_current_user, is_user_admin
 
 
+def _machine_client_name(external_id: str | None) -> str:
+    compose_client_id = current_app.config.get("COMPOSE_AUTH0_CLIENT_ID")
+    compose_subject = (
+        f"{compose_client_id}@clients" if compose_client_id else None
+    )
+
+    if compose_subject and external_id == compose_subject:
+        return "compose_bot"
+
+    if external_id and external_id.endswith("@clients"):
+        return external_id.removesuffix("@clients")
+
+    return "service-account"
+
+
 def create_user():
     external_id = context.get("user")
+    if external_id and external_id.endswith("@clients"):
+        return User(external_id=external_id, name=_machine_client_name(external_id))
 
     auth = request.headers.get("Authorization", None)
     token = auth.split()[1]
-    profile_info = Users(
-        current_app.config["AUTH0_BASE_URL"].removeprefix("https://")
-    ).userinfo(access_token=token)
+    try:
+        profile_info = Users(
+            current_app.config["AUTH0_BASE_URL"].removeprefix("https://")
+        ).userinfo(access_token=token)
+    except Auth0Error:
+        if external_id and external_id.endswith("@clients"):
+            return User(
+                external_id=external_id, name=_machine_client_name(external_id)
+            )
+        raise
 
     name = profile_info.get("name", "Unknown")
     if "@" in name:
