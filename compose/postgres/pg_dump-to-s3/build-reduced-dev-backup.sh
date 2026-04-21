@@ -17,13 +17,17 @@ PG_PASSWORD="${PG_PASSWORD:-${POSTGRES_PASSWORD:-}}"
 DEV_S3_PATH="${DEV_S3_PATH:-${S3_PATH:-neurosynth-backup}/dev-reduced}"
 TMP_DB="${SOURCE_DB}_reduced_dev_seed"
 REDUCED_DUMP_PATH="/tmp/${NOW}_${SOURCE_DB}_dev-reduced.dump"
+UPLOAD_REDUCED_DUMP="${UPLOAD_REDUCED_DUMP:-1}"
+KEEP_REDUCED_DUMP="${KEEP_REDUCED_DUMP:-0}"
 
 if [ -n "${PG_PASSWORD}" ]; then
     export PGPASSWORD="${PG_PASSWORD}"
 fi
 
 cleanup() {
-    rm -f "${REDUCED_DUMP_PATH}"
+    if [ "${KEEP_REDUCED_DUMP}" != "1" ]; then
+        rm -f "${REDUCED_DUMP_PATH}"
+    fi
     psql -h "${PG_HOST}" -U "${PG_USER}" -d postgres \
         -c "DROP DATABASE IF EXISTS ${TMP_DB} WITH (FORCE);" >/dev/null 2>&1 || true
 }
@@ -43,4 +47,6 @@ psql -h "${PG_HOST}" -U "${PG_USER}" -d "${TMP_DB}" \
     -v source_password="${PG_PASSWORD}" \
     -f /home/sql/build_compose_seed_by_copy.sql
 pg_dump -Fc -h "${PG_HOST}" -U "${PG_USER}" "${TMP_DB}" > "${REDUCED_DUMP_PATH}"
-aws s3 cp "${REDUCED_DUMP_PATH}" "s3://${DEV_S3_PATH}/$(basename "${REDUCED_DUMP_PATH}")" --storage-class STANDARD_IA
+if [ "${UPLOAD_REDUCED_DUMP}" = "1" ]; then
+    aws s3 cp "${REDUCED_DUMP_PATH}" "s3://${DEV_S3_PATH}/$(basename "${REDUCED_DUMP_PATH}")" --storage-class STANDARD_IA
+fi
