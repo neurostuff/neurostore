@@ -224,7 +224,11 @@ class MetaAnalysis(BaseMixin, db.Model):
         back_populates="meta_analyses",
         lazy="selectin",
     )
-    results = relationship("MetaAnalysisResult", back_populates="meta_analysis", order_by="MetaAnalysisResult.created_at")
+    results = relationship(
+        "MetaAnalysisResult",
+        back_populates="meta_analysis",
+        order_by="MetaAnalysisResult.created_at",
+    )
     neurostore_analysis = relationship(
         "NeurostoreAnalysis", back_populates="meta_analysis", uselist=False
     )
