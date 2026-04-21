@@ -347,7 +347,9 @@ def serialize_project(record, *, info: bool, raw_provenance_json=_RAW_PROVENANCE
         ],
         "neurostore_study": neurostore_study,
         "neurostore_url": (
-            None if not neurostore_id else "/".join([get_ns_base(), "studies", neurostore_id])
+            None
+            if not neurostore_id
+            else "/".join([get_ns_base(), "studies", neurostore_id])
         ),
     }
 
