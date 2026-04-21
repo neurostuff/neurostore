@@ -6,8 +6,9 @@ from neurosynth_compose.map_types import canonicalize_map_type, map_type_label
 # neurovault api base URL
 NV_BASE = "https://neurovault.org/api"
 
-# neurostore api base URL
-NS_BASE = current_app.config["NEUROSTORE_API_URL"]
+
+def get_ns_base():
+    return current_app.config["NEUROSTORE_API_URL"].rstrip("/")
 
 
 class ContextSchema(Schema):
@@ -303,7 +304,7 @@ class SnapshotStudysetSchema(BaseSchema):
     @post_dump
     def create_neurostore_url(self, data, **kwargs):
         if data.get("neurostore_id", None):
-            data["url"] = "/".join([NS_BASE, "studysets", data["neurostore_id"]])
+            data["url"] = "/".join([get_ns_base(), "studysets", data["neurostore_id"]])
         else:
             data["url"] = None
         return data
@@ -341,7 +342,7 @@ class SnapshotAnnotationSchema(BaseSchema):
     @post_dump
     def create_neurostore_url(self, data, **kwargs):
         if data.get("neurostore_id", None):
-            data["url"] = "/".join([NS_BASE, "annotations", data["neurostore_id"]])
+            data["url"] = "/".join([get_ns_base(), "annotations", data["neurostore_id"]])
         else:
             data["url"] = None
         return data
@@ -445,7 +446,7 @@ class MetaAnalysisSchema(BaseSchema):
             "neurostore_id", None
         ):
             data["neurostore_url"] = "/".join(
-                [NS_BASE, "analyses", data["neurostore_analysis"]["neurostore_id"]]
+                [get_ns_base(), "analyses", data["neurostore_analysis"]["neurostore_id"]]
             )
         else:
             data["neurostore_url"] = None
@@ -574,7 +575,7 @@ class ProjectSchema(BaseSchema):
             "neurostore_id", None
         ):
             data["neurostore_url"] = "/".join(
-                [NS_BASE, "studies", data["neurostore_study"]["neurostore_id"]]
+                [get_ns_base(), "studies", data["neurostore_study"]["neurostore_id"]]
             )
         else:
             data["neurostore_url"] = None
