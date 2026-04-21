@@ -1,9 +1,9 @@
 import { Alert, Box, Button, Card, CardActions, CardContent, Chip, Typography } from '@mui/material';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
-import { getResultStatus } from 'helpers/MetaAnalysis.helpers';
+import { getLatestMetaAnalysisResultId, getResultStatus } from 'helpers/MetaAnalysis.helpers';
 import { useGetMetaAnalysisResultById } from 'hooks';
 import useUserCanEdit from 'hooks/useUserCanEdit';
-import { MetaAnalysisReturn, ResultReturn } from 'neurosynth-compose-typescript-sdk';
+import { MetaAnalysisReturn } from 'neurosynth-compose-typescript-sdk';
 import useGetMetaAnalysisJobById from 'pages/MetaAnalysis/hooks/useGetMetaAnalysisJobById';
 import useGetMetaAnalysisJobsByMetaAnalysisId from 'pages/MetaAnalysis/hooks/useGetMetaAnalysisJobsByMetaAnalysisId';
 import { useProjectUser } from 'pages/Project/store/ProjectStore';
@@ -26,13 +26,12 @@ const ProjectViewMetaAnalysis: React.FC<MetaAnalysisReturn> = (props) => {
         isLoading: latestJobIsLoading,
         isError: latestJobIsError,
     } = useGetMetaAnalysisJobById(latestJob?.job_id, canEdit);
-    const allResults = (props.results ?? []) as ResultReturn[];
-    const latestResult = allResults.length > 0 ? allResults[allResults.length - 1] : undefined;
+    const latestResultId = getLatestMetaAnalysisResultId(props);
     const {
         data: metaAnalysisResult,
         isLoading: getMetaAnalysisResultIsLoading,
         isError: getMetaAnalysisResultIsError,
-    } = useGetMetaAnalysisResultById(latestResult?.id);
+    } = useGetMetaAnalysisResultById(latestResultId);
 
     const navigate = useNavigate();
 

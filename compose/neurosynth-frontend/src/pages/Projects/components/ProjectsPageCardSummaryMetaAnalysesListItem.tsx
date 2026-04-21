@@ -1,7 +1,7 @@
 import { ListItem, ListItemButton, ListItemIcon, ListItemProps, ListItemText, Skeleton } from '@mui/material';
-import { getResultStatus } from 'helpers/MetaAnalysis.helpers';
+import { getLatestMetaAnalysisResultId, getResultStatus } from 'helpers/MetaAnalysis.helpers';
 import { useGetMetaAnalysisResultById } from 'hooks';
-import { MetaAnalysisReturn, ResultReturn } from 'neurosynth-compose-typescript-sdk';
+import { MetaAnalysisReturn } from 'neurosynth-compose-typescript-sdk';
 import useGetMetaAnalysisJobById from 'pages/MetaAnalysis/hooks/useGetMetaAnalysisJobById';
 import useGetMetaAnalysisJobsByMetaAnalysisId from 'pages/MetaAnalysis/hooks/useGetMetaAnalysisJobsByMetaAnalysisId';
 import { useMemo } from 'react';
@@ -11,11 +11,10 @@ const ProjectsPageCardSummaryMetaAnalysesListItem: React.FC<ListItemProps & { me
     props
 ) => {
     const { metaAnalysis, ...listItemProps } = props;
+    const latestResultId = getLatestMetaAnalysisResultId(metaAnalysis);
 
     const { data: metaAnalysisResult, isLoading: getMetaAnalysisResultIsLoading } = useGetMetaAnalysisResultById(
-        metaAnalysis?.results && metaAnalysis.results.length
-            ? (metaAnalysis.results[metaAnalysis.results.length - 1] as ResultReturn).id
-            : undefined
+        latestResultId
     );
 
     const { data: metaAnalysisJobs, isLoading: metaAnalysisJobsIsLoading } = useGetMetaAnalysisJobsByMetaAnalysisId(
