@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "neurosynth_compose"
-version = "0.10.0"
+version = "0.18.2"
 description = "neurosynth compose"
 authors = [
     { name="James Kent", email="jamesdkent21@gmail.com" }

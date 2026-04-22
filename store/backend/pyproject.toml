@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "neurostore"
-version = "0.10.0"
+version = "0.18.2"
 description = "neurostore"
 authors = [
     { name = "James Kent", email = "jamesdkent21@gmail.com" }

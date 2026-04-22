@@ -1,15 +1,16 @@
 {
+  "title": "Neurosynth Compose",
   "creators": [
     {
       "affiliation": "University of Texas at Austin",
       "orcid": "0000-0002-4892-2659",
       "name": "James Kent"
     },
-     {
+    {
       "affiliation": "University of Texas at Austin",
       "name": "Yarkoni, Tal",
       "orcid": "0000-0002-6558-5113"
-     },
+    },
     {
       "affiliation": "University of Texas at Austin",
       "name": "De La Vega, Alejandro",
@@ -19,12 +20,13 @@
       "affiliation": "McGill University",
       "name": "Lee, Nicholas",
       "orcid": "0009-0000-7088-310X"
-    } 
+    }
   ],
   "keywords": [
     "neuroimaging",
     "meta-analysis",
     "fMRI"
   ],
-  "upload_type": "software"
+  "upload_type": "software",
+  "version": "0.18.2"
 }
