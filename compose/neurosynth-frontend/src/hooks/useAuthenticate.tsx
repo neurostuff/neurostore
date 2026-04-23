@@ -1,9 +1,22 @@
-import { useAuth0 } from '@auth0/auth0-react';
+import { OAuthError, useAuth0 } from '@auth0/auth0-react';
 import { initAPISetAccessTokenFunc } from 'api';
 import { useSnackbar } from 'notistack';
 import { useNavigate } from 'react-router-dom';
 
 const AUTH0_AUDIENCE = import.meta.env.VITE_APP_AUTH0_AUDIENCE;
+
+/** When set, the next popup uses prompt=login so Universal Login restarts (e.g. pick another IdP after closing on consent). */
+const AUTH0_FORCE_PROMPT_LOGIN_KEY = 'neurosynth_auth0_force_prompt_login';
+
+function isAuth0AccessDenied(error: unknown): boolean {
+    if (typeof error !== 'object' || error === null) return false;
+    return error instanceof OAuthError && error.error === 'access_denied';
+}
+
+function isAuth0PopupClosed(error: unknown): boolean {
+    if (typeof error !== 'object' || error === null) return false;
+    return error instanceof OAuthError && error.error === 'cancelled';
+}
 
 function useAuthenticate() {
     const { enqueueSnackbar } = useSnackbar();
@@ -11,11 +24,16 @@ function useAuthenticate() {
     const { getAccessTokenWithPopup, getAccessTokenSilently, logout } = useAuth0();
 
     const handleLogin = async () => {
+        const forcePromptLogin = sessionStorage.getItem(AUTH0_FORCE_PROMPT_LOGIN_KEY) === '1';
+
         try {
             await getAccessTokenWithPopup({
                 audience: AUTH0_AUDIENCE,
                 scope: 'openid profile email offline_access',
+                ...(forcePromptLogin ? { prompt: 'login' as const } : {}),
             });
+
+            sessionStorage.removeItem(AUTH0_FORCE_PROMPT_LOGIN_KEY);
 
             initAPISetAccessTokenFunc(getAccessTokenSilently);
 
@@ -25,13 +43,17 @@ function useAuthenticate() {
 
             navigate('/');
         } catch (error) {
-            if (error instanceof Error && error.message === 'Popup closed') {
-                console.error('Error getting token:', error.message);
-                enqueueSnackbar(error.message, { variant: 'warning' });
+            if (isAuth0PopupClosed(error) || isAuth0AccessDenied(error)) {
+                sessionStorage.setItem(AUTH0_FORCE_PROMPT_LOGIN_KEY, '1');
+            }
+
+            if (isAuth0AccessDenied(error)) {
+                enqueueSnackbar('Sign in/Sign up cancelled', { variant: 'warning' });
+                return;
+            } else if (!isAuth0PopupClosed(error)) {
+                enqueueSnackbar('Sign in/Sign up Error', { variant: 'error' });
                 return;
             }
-            console.error('Error getting token:', error);
-            enqueueSnackbar('Error logging in', { variant: 'error' });
         }
     };
 
