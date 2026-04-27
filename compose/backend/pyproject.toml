@@ -40,7 +40,7 @@ dependencies = [
     "starlette>=1.0.0,<2",
     "webargs~=8.7",
     "wrapt~=2.1",
-    "NiMARE==0.15.0",
+    "NiMARE==0.16.0",
     "pynv @ git+https://github.com/NeuroVault/pynv.git#egg=pynv",
     "neurostore-sdk @ git+https://github.com/neurostuff/neurostore-python-sdk.git#egg=neurostore-sdk"
 ]
