@@ -1,8 +1,7 @@
-import API from 'api/api.config';
 import { NoteKeyType } from 'components/HotTables/HotTables.types';
 import { getDefaultForNoteKey, noteKeyArrToObj, noteKeyObjToArr } from 'components/HotTables/HotTables.utils';
 import { setUnloadHandler } from 'helpers/BeforeUnload.helpers';
-import { AnnotationReturnOneOf, NoteCollectionReturn } from 'neurostore-typescript-sdk';
+import { NoteCollectionReturn } from 'neurostore-typescript-sdk';
 import {
     noteKeyArrToDefaultNoteKeyObj,
     storeNotesToDBNotes,
@@ -48,56 +47,44 @@ export const useAnnotationStore = create<
             getAnnotationIsLoading: false,
             updateAnnotationIsLoading: false,
             isError: false,
+            updateAnnotations: undefined,
+            updateAnnotationAnalyses: undefined,
         },
 
-        initAnnotationStore: async (annotationId) => {
-            if (!annotationId) return;
+        initAnnotationStore: (annotation) => {
+            if (!annotation) return;
+
+            const noteKeysArr = noteKeyObjToArr(annotation.note_keys);
+            const notes: IStoreNoteCollectionReturn[] = (annotation.notes as Array<NoteCollectionReturn>)?.map((x) => ({
+                ...x,
+                isNew: false,
+                isEdited: false,
+            }));
+
+            set((state) => ({
+                ...state,
+                annotation: {
+                    ...state.annotation,
+                    ...annotation,
+                    notes,
+                    note_keys: noteKeysArr,
+                },
+                storeMetadata: {
+                    ...state.storeMetadata,
+                    annotationIsEdited: false,
+                    noteKeysHaveChanged: false,
+                    isError: false,
+                },
+            }));
+        },
+        updateAnnotationMetadata: (metadataUpdate) => {
             set((state) => ({
                 ...state,
                 storeMetadata: {
                     ...state.storeMetadata,
-                    getAnnotationIsLoading: true,
-                    updateAnnotationIsLoading: true,
+                    ...metadataUpdate,
                 },
             }));
-
-            try {
-                const annotationRes = (await API.NeurostoreServices.AnnotationsService.annotationsIdGet(annotationId))
-                    .data as AnnotationReturnOneOf;
-
-                const noteKeysArr = noteKeyObjToArr(annotationRes.note_keys);
-                const notes: IStoreNoteCollectionReturn[] = (annotationRes.notes as Array<NoteCollectionReturn>)?.map(
-                    (x) => ({ ...x, isNew: false, isEdited: false })
-                );
-
-                set((state) => ({
-                    ...state,
-                    annotation: {
-                        ...state.annotation,
-                        ...annotationRes,
-                        notes: notes,
-                        note_keys: noteKeysArr,
-                    },
-                    storeMetadata: {
-                        ...state.storeMetadata,
-                        annotationIsEdited: false,
-                        getAnnotationIsLoading: false,
-                        updateAnnotationIsLoading: false,
-                        isError: false,
-                    },
-                }));
-            } catch (e) {
-                console.error(e);
-                set((state) => ({
-                    ...state,
-                    storeMetadata: {
-                        ...state.storeMetadata,
-                        getAnnotationIsLoading: false,
-                        updateAnnotationIsLoading: false,
-                        isError: true,
-                    },
-                }));
-            }
         },
         setAnnotationIsEdited: (isEdited) => {
             set((state) => ({
@@ -134,6 +121,8 @@ export const useAnnotationStore = create<
                     updateAnnotationIsLoading: false,
                     noteKeysHaveChanged: false,
                     isError: false,
+                    updateAnnotations: undefined,
+                    updateAnnotationAnalyses: undefined,
                 },
             }));
         },
@@ -264,27 +253,30 @@ export const useAnnotationStore = create<
             }));
         },
         updateAnnotationInDB: async () => {
-            try {
-                const state = useAnnotationStore.getState();
-                if (!state.annotation.id) throw new Error('no annotation id');
-                if (!state.annotation.notes) return;
-                set((state) => ({
-                    ...state,
-                    storeMetadata: {
-                        ...state.storeMetadata,
-                        updateAnnotationIsLoading: true,
-                    },
-                }));
+            const state = useAnnotationStore.getState();
+            if (!state.annotation.id) throw new Error('no annotation id');
+            if (!state.annotation.notes) return;
 
+            const updateAnnotations = state.storeMetadata.updateAnnotations;
+            const updateAnnotationAnalyses = state.storeMetadata.updateAnnotationAnalyses;
+
+            try {
                 if (state.storeMetadata.noteKeysHaveChanged) {
-                    // if there are new note keys, we need to update the annotation using the generic update endpoint
-                    await API.NeurostoreServices.AnnotationsService.annotationsIdPut(state.annotation.id, {
-                        note_keys: noteKeyArrToObj(state.annotation.note_keys ?? []),
-                        notes: storeNotesToDBNotes(state.annotation.notes),
+                    if (!updateAnnotations) {
+                        throw new Error('updateAnnotations is not configured on the annotation store');
+                    }
+                    await updateAnnotations({
+                        argAnnotationId: state.annotation.id,
+                        annotation: {
+                            note_keys: noteKeyArrToObj(state.annotation.note_keys ?? []),
+                            notes: storeNotesToDBNotes(state.annotation.notes),
+                        },
                     });
                 } else {
-                    // if there are no new note keys, we can use the optimized annotation endpoint
-                    await API.NeurostoreServices.AnalysesService.annotationAnalysesPost(
+                    if (!updateAnnotationAnalyses) {
+                        throw new Error('updateAnnotationAnalyses is not configured on the annotation store');
+                    }
+                    await updateAnnotationAnalyses(
                         state.annotation.notes
                             .filter((note) => note.isEdited)
                             .map((note) => ({
@@ -310,19 +302,10 @@ export const useAnnotationStore = create<
                         ...state.storeMetadata,
                         annotationIsEdited: false,
                         noteKeysHaveChanged: false,
-                        updateAnnotationIsLoading: false,
                         isError: false,
                     },
                 }));
             } catch (e) {
-                set((state) => ({
-                    ...state,
-                    storeMetadata: {
-                        ...state.storeMetadata,
-                        updateAnnotationIsLoading: false,
-                        isError: true,
-                    },
-                }));
                 console.error(e);
                 throw new Error('Could not update annotation in DB');
             }

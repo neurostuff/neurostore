@@ -6,7 +6,11 @@ import { IExtractionTableStudy } from './ExtractionTable';
 
 export const ExtractionTablePMIDCell: React.FC<CellContext<IExtractionTableStudy, string>> = (props) => {
     const value = props.getValue();
-    return <Typography variant="body2">{value}</Typography>;
+    return (
+        <Typography variant="body2" sx={{ wordBreak: 'break-all' }}>
+            {value}
+        </Typography>
+    );
 };
 
 export const ExtractionTablePMIDHeader: React.FC<HeaderContext<IExtractionTableStudy, string>> = ({

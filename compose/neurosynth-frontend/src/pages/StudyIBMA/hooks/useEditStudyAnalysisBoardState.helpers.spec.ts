@@ -5,7 +5,7 @@ import {
     moveBrainMapImageToAnalysis,
     partitionAnalysisImages,
     unassignBrainMapImageFromAnalysis,
-} from './editStudyAnalysisBoard.helpers';
+} from './useEditStudyAnalysisBoardState.helpers';
 
 const img = (partial: Partial<ImageReturn> & { id: string }): ImageReturn => ({
     id: partial.id,
@@ -38,7 +38,7 @@ const analysis = (id: string, images: ImageReturn[]): IStoreAnalysis =>
         pointStatistic: undefined,
     }) as IStoreAnalysis;
 
-describe('editStudyAnalysisBoard.helpers', () => {
+describe('useEditStudyAnalysisBoardState.helpers', () => {
     describe('partitionAnalysisImages', () => {
         it('groups images by analysis when FK matches a study analysis id', () => {
             const a1 = 'analysis-1';
@@ -47,24 +47,19 @@ describe('editStudyAnalysisBoard.helpers', () => {
                 analysis(a1, [img({ id: 'i1', analysis: a1, filename: 'a.nii' })]),
                 analysis(a2, [img({ id: 'i2', analysis: a2, filename: 'b.nii' })]),
             ];
-            const { uncategorized, byAnalysisId } = partitionAnalysisImages(analyses);
+            const { uncategorized, analysisIdToImageMap: byAnalysisId } = partitionAnalysisImages(analyses);
             expect(uncategorized).toHaveLength(0);
             expect(byAnalysisId[a1]).toHaveLength(1);
             expect(byAnalysisId[a2]).toHaveLength(1);
             expect(byAnalysisId[a1][0].id).toBe('i1');
         });
 
-        it('treats missing or unknown analysis FK as uncategorized with holder id', () => {
+        it('treats missing or unknown analysis FK as uncategorized', () => {
             const a1 = 'analysis-1';
             const analyses = [analysis(a1, [img({ id: 'i1', analysis: undefined, filename: 'orphan.nii' })])];
-            const { uncategorized, byAnalysisId } = partitionAnalysisImages(analyses);
+            const { uncategorized, analysisIdToImageMap: byAnalysisId } = partitionAnalysisImages(analyses);
             expect(Object.keys(byAnalysisId)).toHaveLength(0);
-            expect(uncategorized).toEqual([
-                expect.objectContaining({
-                    holderAnalysisId: a1,
-                    image: expect.objectContaining({ id: 'i1' }),
-                }),
-            ]);
+            expect(uncategorized).toEqual([expect.objectContaining({ id: 'i1' })]);
         });
     });
 

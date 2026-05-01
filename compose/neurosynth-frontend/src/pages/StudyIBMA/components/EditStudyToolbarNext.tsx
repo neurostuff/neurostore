@@ -1,10 +1,8 @@
-import { Check, KeyboardArrowLeft, KeyboardArrowRight } from '@mui/icons-material';
+import { Check } from '@mui/icons-material';
 import BookmarkIcon from '@mui/icons-material/Bookmark';
 import QuestionMark from '@mui/icons-material/QuestionMark';
-import SaveIcon from '@mui/icons-material/Save';
-import { Box, Button, ButtonGroup, Divider, Tooltip, Typography } from '@mui/material';
+import { Box, Button, ButtonGroup, Tooltip, Typography } from '@mui/material';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
-import ProgressLoader from 'components/ProgressLoader';
 import { hasUnsavedStudyChanges, unsetUnloadHandler } from 'helpers/BeforeUnload.helpers';
 import { useGetStudysetById, useUserCanEdit } from 'hooks';
 import {
@@ -13,6 +11,8 @@ import {
 } from 'pages/Extraction/components/ExtractionTable.helpers';
 import { EExtractionStatus } from 'pages/Extraction/Extraction.types';
 import { IProjectPageLocationState } from 'pages/Project/ProjectPage';
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
     useProjectExtractionAddOrUpdateStudyListStatus,
     useProjectExtractionStudysetId,
@@ -20,18 +20,11 @@ import {
     useProjectId,
     useProjectUser,
 } from 'stores/projects/ProjectStore';
-import EditStudySwapVersionButton from 'pages/StudyCBMA/components/EditStudySwapVersionButton';
-import useSaveStudy from 'pages/StudyCBMA/hooks/useSaveStudy';
-import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useStudyId } from 'stores/study/StudyStore';
-import { STUDY_ANALYSIS_TABLE_MAX_HEIGHT } from './editStudyAnalysisBoard.constants';
 
-const statusSizeWidth = 80;
-const statusSizeHeight = 70;
+const statusSizeHeight = 60;
 
 const largeToolbarButtonSx = {
-    width: `${statusSizeWidth}px`,
     height: `${statusSizeHeight}px`,
     display: 'flex',
     flexDirection: 'column',
@@ -45,7 +38,7 @@ const toolbarLabelSx = {
     fontWeight: 'bold',
 } as const;
 
-const EditStudyToolbar2: React.FC = () => {
+const EditStudyToolbarNext: React.FC = () => {
     const [confirmationDialogState, setConfirmationDialogState] = useState<{
         isOpen: boolean;
         action: 'PREV' | 'NEXT' | 'COMPLETE' | undefined;
@@ -53,7 +46,6 @@ const EditStudyToolbar2: React.FC = () => {
         isOpen: false,
         action: undefined,
     });
-    const { isLoading: saveStudyIsLoading, hasEdits, handleSave } = useSaveStudy();
     const navigate = useNavigate();
 
     const projectId = useProjectId();
@@ -185,30 +177,12 @@ const EditStudyToolbar2: React.FC = () => {
         }
     };
 
-    const hasPrevStudies = useMemo(() => {
-        const studies = extractionTableState.studies;
-        const index = studies.indexOf(studyId || '');
-        return index - 1 >= 0;
-    }, [extractionTableState.studies, studyId]);
-
-    const hasNextStudies = useMemo(() => {
-        const studies = extractionTableState.studies;
-        const index = studies.indexOf(studyId || '');
-        return index + 1 < studies.length;
-    }, [extractionTableState.studies, studyId]);
+    const isUnreviewed = extractionStatus === undefined || extractionStatus?.status === EExtractionStatus.UNCATEGORIZED;
+    const isSavedForLater = extractionStatus?.status === EExtractionStatus.SAVEDFORLATER;
+    const isCompleted = extractionStatus?.status === EExtractionStatus.COMPLETED;
 
     return (
-        <Box
-            className="sleek-scrollbar"
-            sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 1,
-                maxHeight: `${STUDY_ANALYSIS_TABLE_MAX_HEIGHT}`,
-                overflow: 'auto',
-                padding: '0.5rem',
-            }}
-        >
+        <Box>
             <ConfirmationDialog
                 isOpen={confirmationDialogState.isOpen}
                 dialogTitle="You have unsaved changes"
@@ -218,24 +192,21 @@ const EditStudyToolbar2: React.FC = () => {
                 confirmText="Continue"
             />
 
-            <ButtonGroup color="info" size="large" orientation="vertical">
-                <Tooltip title="Mark as unreviewed" placement="left">
+            <ButtonGroup color="info" size="large" variant="outlined">
+                <Tooltip title="Mark as unreviewed" placement="top">
                     <Button
                         onClick={() => handleUpdateExtractionStatus(EExtractionStatus.UNCATEGORIZED)}
                         sx={largeToolbarButtonSx}
                         disableElevation
                         color="warning"
-                        variant={extractionStatus?.status === EExtractionStatus.UNCATEGORIZED ? 'contained' : 'text'}
+                        variant={isUnreviewed ? 'contained' : 'outlined'}
                     >
                         <QuestionMark style={{ marginBottom: '4px' }} />
                         <Typography
                             sx={[
                                 toolbarLabelSx,
                                 {
-                                    color:
-                                        extractionStatus?.status === EExtractionStatus.UNCATEGORIZED
-                                            ? 'white'
-                                            : 'warning.dark',
+                                    color: isUnreviewed ? 'white' : 'warning.dark',
                                 },
                             ]}
                         >
@@ -243,22 +214,19 @@ const EditStudyToolbar2: React.FC = () => {
                         </Typography>
                     </Button>
                 </Tooltip>
-                <Tooltip title="Save for later" placement="left">
+                <Tooltip title="Save for later" placement="top">
                     <Button
                         onClick={() => handleUpdateExtractionStatus(EExtractionStatus.SAVEDFORLATER)}
                         sx={largeToolbarButtonSx}
                         disableElevation
-                        variant={extractionStatus?.status === EExtractionStatus.SAVEDFORLATER ? 'contained' : 'text'}
+                        variant={isSavedForLater ? 'contained' : 'outlined'}
                     >
                         <BookmarkIcon style={{ marginBottom: '4px' }} />
                         <Typography
                             sx={[
                                 toolbarLabelSx,
                                 {
-                                    color:
-                                        extractionStatus?.status === EExtractionStatus.SAVEDFORLATER
-                                            ? 'white'
-                                            : 'info.dark',
+                                    color: isSavedForLater ? 'white' : 'info.dark',
                                 },
                             ]}
                         >
@@ -266,23 +234,20 @@ const EditStudyToolbar2: React.FC = () => {
                         </Typography>
                     </Button>
                 </Tooltip>
-                <Tooltip title="Complete" placement="left">
+                <Tooltip title="Complete" placement="top">
                     <Button
                         onClick={() => handleUpdateExtractionStatus(EExtractionStatus.COMPLETED)}
                         sx={largeToolbarButtonSx}
                         disableElevation
                         color="success"
-                        variant={extractionStatus?.status === EExtractionStatus.COMPLETED ? 'contained' : 'text'}
+                        variant={isCompleted ? 'contained' : 'outlined'}
                     >
                         <Check style={{ marginBottom: '4px' }} />
                         <Typography
                             sx={[
                                 toolbarLabelSx,
                                 {
-                                    color:
-                                        extractionStatus?.status === EExtractionStatus.COMPLETED
-                                            ? 'white'
-                                            : 'success.dark',
+                                    color: isCompleted ? 'white' : 'success.dark',
                                 },
                             ]}
                         >
@@ -291,84 +256,8 @@ const EditStudyToolbar2: React.FC = () => {
                     </Button>
                 </Tooltip>
             </ButtonGroup>
-
-            <Box sx={{ width: '100%', my: 1 }}>
-                <Divider sx={{ width: '100%' }} />
-            </Box>
-
-            <Box>
-                <EditStudySwapVersionButton
-                    buttonProps={{ sx: largeToolbarButtonSx, variant: 'text' }}
-                    buttonLabel="Switch version"
-                    buttonLabelProps={{ sx: toolbarLabelSx }}
-                />
-                <Tooltip title={!hasEdits ? 'No edits to save' : 'Save'} placement="left">
-                    <Box>
-                        <Button
-                            disabled={!hasEdits}
-                            disableElevation
-                            onClick={handleSave}
-                            variant={hasEdits ? 'contained' : 'text'}
-                            color="primary"
-                            sx={largeToolbarButtonSx}
-                        >
-                            {saveStudyIsLoading ? (
-                                <ProgressLoader color="secondary" size={24} />
-                            ) : (
-                                <>
-                                    <SaveIcon style={{ marginBottom: '4px' }} />
-                                    <Typography sx={[toolbarLabelSx, { color: hasEdits ? 'white' : 'gray' }]}>
-                                        Save
-                                    </Typography>
-                                </>
-                            )}
-                        </Button>
-                    </Box>
-                </Tooltip>
-            </Box>
-
-            <Box sx={{ width: '100%', my: 1 }}>
-                <Divider sx={{ width: '100%' }} />
-            </Box>
-
-            <Box>
-                <ButtonGroup color="info" size="large" orientation="vertical">
-                    <Tooltip title={hasPrevStudies ? `go to previous study` : `no more studies`} placement="left">
-                        <Box>
-                            <Button
-                                variant="text"
-                                onClick={handleMoveToPreviousStudy}
-                                disableElevation
-                                disabled={!hasPrevStudies}
-                                sx={largeToolbarButtonSx}
-                            >
-                                <KeyboardArrowLeft style={{ marginBottom: '4px' }} />
-                                <Typography sx={[toolbarLabelSx, { color: hasPrevStudies ? 'black' : 'gray' }]}>
-                                    Previous
-                                </Typography>
-                            </Button>
-                        </Box>
-                    </Tooltip>
-                    <Tooltip title={hasNextStudies ? `go to next study` : `no more studies`} placement="left">
-                        <Box>
-                            <Button
-                                variant="text"
-                                onClick={handleMoveToNextStudy}
-                                disableElevation
-                                disabled={!hasNextStudies}
-                                sx={largeToolbarButtonSx}
-                            >
-                                <KeyboardArrowRight style={{ marginBottom: '4px' }} />
-                                <Typography sx={[toolbarLabelSx, { color: hasNextStudies ? 'black' : 'gray' }]}>
-                                    Next
-                                </Typography>
-                            </Button>
-                        </Box>
-                    </Tooltip>
-                </ButtonGroup>
-            </Box>
         </Box>
     );
 };
 
-export default EditStudyToolbar2;
+export default EditStudyToolbarNext;

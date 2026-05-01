@@ -32,6 +32,7 @@ import useCreateProject from './projects/useCreateProject';
 import useDeleteStudyset from './studysets/useDeleteStudyset';
 import useGetBaseStudies from './studies/useGetBaseStudies';
 import useGetStudyById from './studies/useGetStudyById';
+import useUpdateAnnotationByAnnotationAndAnalysisId from './annotations/useUpdateAnnotationByAnnotationAndAnalysisId';
 import useUpdateAnnotationById from './annotations/useUpdateAnnotationById';
 import useGetExtractionSummary from './useGetExtractionSummary';
 import useGetCurationSummary from './useGetCurationSummary';
@@ -76,6 +77,7 @@ export {
     useUpdateStudyset,
     // ANNOTATIONS
     useGetAnnotationById,
+    useUpdateAnnotationByAnnotationAndAnalysisId,
     useUpdateAnnotationById,
     useGetAnnotationsByStudysetId,
     useDeleteAnnotation,

@@ -1,11 +1,26 @@
 import { Box, Checkbox, TextField } from '@mui/material';
-import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
+import type { CellContext } from '@tanstack/react-table';
+import { EPropertyType } from 'components/EditMetadata/EditMetadata.types';
+import React, { memo, useCallback, useEffect, useState } from 'react';
+import { useUpdateAnnotationNotes } from 'stores/annotation/AnnotationStore.actions';
+import { useAnnotationStore } from 'stores/annotation/AnnotationStore';
+import type { AnalysisBoardRow } from '../hooks/useEditStudyAnalysisBoardState.types';
+import { analysisRowsShallowEqual } from '../hooks/useEditStudyAnalysisBoardState.helpers';
 import { STUDY_ANALYSIS_TABLE_ROW_MIN_HEIGHT_PX } from './editStudyAnalysisBoard.constants';
-import type { AnalysisBoardRowKind } from './editStudyAnalysisBoard.types';
 
-function annotationValueToInputString(v: string | boolean | number | null | undefined): string {
-    return v === undefined || v === null ? '' : String(v);
-}
+const annotationValueToInputString = (v: string | boolean | number | null | undefined): string =>
+    v === undefined || v === null ? '' : String(v);
+
+const fullCellSx = {
+    width: '100%',
+    minHeight: STUDY_ANALYSIS_TABLE_ROW_MIN_HEIGHT_PX,
+    display: 'flex',
+    flexDirection: 'column' as const,
+    alignItems: 'stretch',
+    justifyContent: 'flex-start',
+    boxSizing: 'border-box' as const,
+    p: 0.5,
+};
 
 const annotationInvisibleTextFieldSx = {
     flex: 1,
@@ -73,19 +88,13 @@ const annotationInvisibleMultilineTextFieldSx = {
 } as const;
 
 const AnnotationNumberInputCell = memo(
-    function AnnotationNumberInputCell({
-        rowId,
-        field,
+    ({
         initialValue,
         onCommit,
-        fullCellSx,
     }: {
-        rowId: string;
-        field: string;
         initialValue: string | boolean | number | null | undefined;
-        onCommit: (rowId: string, field: string, v: string | boolean | number) => void;
-        fullCellSx: Record<string, unknown>;
-    }) {
+        onCommit: (value: string | boolean | number | null) => void;
+    }) => {
         const [local, setLocal] = useState(() => annotationValueToInputString(initialValue));
         useEffect(() => {
             setLocal(annotationValueToInputString(initialValue));
@@ -98,13 +107,13 @@ const AnnotationNumberInputCell = memo(
                     value={local}
                     onChange={(e) => setLocal(e.target.value)}
                     onBlur={() => {
-                        const v = local.trim();
-                        if (v === '') {
-                            onCommit(rowId, field, 0);
+                        const trimmed = local.trim();
+                        if (trimmed === '') {
+                            onCommit(null);
                             return;
                         }
-                        const n = Number(v);
-                        if (!Number.isNaN(n)) onCommit(rowId, field, n);
+                        const parsed = Number(trimmed);
+                        if (!Number.isNaN(parsed)) onCommit(parsed);
                     }}
                     onClick={(e) => e.stopPropagation()}
                     fullWidth
@@ -115,30 +124,24 @@ const AnnotationNumberInputCell = memo(
             </Box>
         );
     },
-    (prev, next) => prev.rowId === next.rowId && prev.field === next.field && prev.initialValue === next.initialValue
+    (prev, next) => prev.initialValue === next.initialValue
 );
 
 const AnnotationStringInputCell = memo(
-    function AnnotationStringInputCell({
-        rowId,
-        field,
+    ({
         initialValue,
         onCommit,
-        fullCellSx,
     }: {
-        rowId: string;
-        field: string;
         initialValue: string | boolean | number | null | undefined;
-        onCommit: (rowId: string, field: string, v: string | boolean | number) => void;
-        fullCellSx: Record<string, unknown>;
-    }) {
+        onCommit: (value: string | boolean | number | null) => void;
+    }) => {
         const [local, setLocal] = useState(() => annotationValueToInputString(initialValue));
         useEffect(() => {
             setLocal(annotationValueToInputString(initialValue));
         }, [initialValue]);
 
         const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-            onCommit(rowId, field, local);
+            onCommit(local === '' ? null : local);
             const el = e.target as HTMLTextAreaElement;
             el.scrollTop = 0;
             el.scrollLeft = 0;
@@ -162,107 +165,64 @@ const AnnotationStringInputCell = memo(
             </Box>
         );
     },
-    (prev, next) => prev.rowId === next.rowId && prev.field === next.field && prev.initialValue === next.initialValue
+    (prev, next) => prev.initialValue === next.initialValue
 );
 
-export const AnnotationColumnCell = memo(
-    function AnnotationColumnCell({
-        rowId,
-        rowKind,
-        field,
-        type,
-        headerLabel,
-        initialValue,
-        onCommit,
-    }: {
-        rowId: string;
-        rowKind: AnalysisBoardRowKind;
-        field: string;
-        type: 'boolean' | 'string' | 'number';
-        headerLabel: string;
-        initialValue: string | boolean | number | null | undefined;
-        onCommit: (rowId: string, field: string, v: string | boolean | number) => void;
-    }) {
-        if (rowKind === 'detail') {
-            return (
-                <Box
-                    aria-hidden
-                    sx={{
-                        width: '100%',
-                        minHeight: STUDY_ANALYSIS_TABLE_ROW_MIN_HEIGHT_PX,
-                        bgcolor: 'transparent',
-                        pointerEvents: 'none',
-                        userSelect: 'none',
-                    }}
-                />
-            );
-        }
+export const AnnotationColumnCell: React.FC<CellContext<AnalysisBoardRow, string | boolean | number | null>> = memo(
+    ({ row, getValue, column }) => {
+        const updateNotes = useUpdateAnnotationNotes();
+        const value = getValue();
+        const columnNoteKey = column.columnDef.meta?.editStudyAnalysisTableNoteKey;
 
-        const fullCellSx = {
-            width: '100%',
-            minHeight: STUDY_ANALYSIS_TABLE_ROW_MIN_HEIGHT_PX,
-            display: 'flex',
-            flexDirection: 'column' as const,
-            alignItems: 'stretch',
-            justifyContent: 'flex-start',
-            boxSizing: 'border-box' as const,
-            p: 0.5,
-        };
+        const handleCommit = useCallback(
+            (committed: string | boolean | number | null) => {
+                if (!columnNoteKey) return;
+                const analysisId = row.original.id;
+                const currentNotes = useAnnotationStore.getState().annotation.notes ?? [];
+                updateNotes(
+                    currentNotes.map((note) =>
+                        note.analysis === analysisId
+                            ? {
+                                  ...note,
+                                  note: {
+                                      ...(note.note as Record<string, string | boolean | number | null>),
+                                      [columnNoteKey.key]: committed,
+                                  },
+                                  isEdited: true,
+                              }
+                            : note
+                    )
+                );
+            },
+            [columnNoteKey, row.original.id, updateNotes]
+        );
 
-        if (type === 'boolean') {
+        if (columnNoteKey?.type === EPropertyType.BOOLEAN) {
             return (
                 <Box sx={{ ...fullCellSx, justifyContent: 'center', alignItems: 'center' }}>
                     <Checkbox
-                        checked={Boolean(initialValue)}
+                        checked={Boolean(value)}
                         size="small"
-                        onChange={(_, c) => onCommit(rowId, field, c)}
                         onClick={(e) => e.stopPropagation()}
                         inputProps={{
-                            'aria-label': headerLabel,
+                            'aria-label': columnNoteKey.key,
+                        }}
+                        onChange={(e) => {
+                            handleCommit(e.target.checked);
                         }}
                     />
                 </Box>
             );
         }
 
-        if (type === 'number') {
-            return (
-                <AnnotationNumberInputCell
-                    rowId={rowId}
-                    field={field}
-                    initialValue={initialValue}
-                    onCommit={onCommit}
-                    fullCellSx={fullCellSx}
-                />
-            );
+        if (columnNoteKey?.type === EPropertyType.NUMBER) {
+            return <AnnotationNumberInputCell initialValue={value} onCommit={handleCommit} />;
         }
 
-        return (
-            <AnnotationStringInputCell
-                rowId={rowId}
-                field={field}
-                initialValue={initialValue}
-                onCommit={onCommit}
-                fullCellSx={fullCellSx}
-            />
-        );
+        return <AnnotationStringInputCell initialValue={value} onCommit={handleCommit} />;
     },
     (prev, next) =>
-        prev.rowId === next.rowId &&
-        prev.rowKind === next.rowKind &&
-        prev.field === next.field &&
-        prev.type === next.type &&
-        prev.headerLabel === next.headerLabel &&
-        prev.initialValue === next.initialValue
+        analysisRowsShallowEqual(prev.row.original, next.row.original) &&
+        prev.column.id === next.column.id &&
+        prev.getValue() === next.getValue()
 );
-
-/** Stable callback wrapper for memoized cells */
-export function useStableAnnotationColumnCommit(
-    onCommit: (rowId: string, field: string, value: string | boolean | number) => void
-) {
-    const ref = useRef(onCommit);
-    ref.current = onCommit;
-    return useCallback((rowId: string, field: string, value: string | boolean | number) => {
-        ref.current(rowId, field, value);
-    }, []);
-}

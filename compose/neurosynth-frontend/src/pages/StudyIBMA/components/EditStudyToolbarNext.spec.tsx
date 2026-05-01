@@ -8,7 +8,7 @@ import {
     useProjectExtractionStudysetId,
     useProjectId,
 } from 'stores/projects/ProjectStore';
-import EditStudyToolbar2 from 'pages/StudyIBMA/components/EditStudyToolbar2';
+import EditStudyToolbarNext from 'pages/StudyIBMA/components/EditStudyToolbarNext';
 import { useNavigate } from 'react-router-dom';
 import { useStudyId } from 'stores/study/StudyStore';
 import { Mock, vi } from 'vitest';
@@ -21,19 +21,19 @@ vi.mock('stores/projects/ProjectStore');
 vi.mock('pages/StudyCBMA/components/EditStudySwapVersionButton');
 vi.mock('components/Dialogs/ConfirmationDialog');
 
-describe('EditStudyToolbar2 Component', () => {
+describe('EditStudyToolbarNext Component', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         window.sessionStorage.clear();
     });
 
     it('should render', () => {
-        render(<EditStudyToolbar2 />);
+        render(<EditStudyToolbarNext />);
     });
 
     describe('status buttons', () => {
         it('should set to completed', () => {
-            render(<EditStudyToolbar2 />);
+            render(<EditStudyToolbarNext />);
             const checkIcon = screen.getByTestId('CheckIcon');
             userEvent.click(checkIcon);
             expect(useProjectExtractionAddOrUpdateStudyListStatus()).toHaveBeenCalledWith(
@@ -43,7 +43,7 @@ describe('EditStudyToolbar2 Component', () => {
         });
 
         it('should set to saved for later', () => {
-            render(<EditStudyToolbar2 />);
+            render(<EditStudyToolbarNext />);
             const bookmarkIcon = screen.getByTestId('BookmarkIcon');
             userEvent.click(bookmarkIcon);
             expect(useProjectExtractionAddOrUpdateStudyListStatus()).toHaveBeenCalledWith(
@@ -53,7 +53,7 @@ describe('EditStudyToolbar2 Component', () => {
         });
 
         it('should set to uncategorized', () => {
-            render(<EditStudyToolbar2 />);
+            render(<EditStudyToolbarNext />);
             const questionIcon = screen.getByTestId('QuestionMarkIcon');
             userEvent.click(questionIcon);
             expect(useProjectExtractionAddOrUpdateStudyListStatus()).toHaveBeenCalledWith(
@@ -79,7 +79,7 @@ describe('EditStudyToolbar2 Component', () => {
             (useProjectId as Mock).mockReturnValue('projectid');
             (useUserCanEdit as Mock).mockReturnValue(true);
 
-            render(<EditStudyToolbar2 />);
+            render(<EditStudyToolbarNext />);
             userEvent.click(screen.getByTestId('KeyboardArrowLeftIcon'));
             expect(useNavigate()).toHaveBeenCalledWith('/projects/projectid/extraction/studies/study-1/edit');
         });
@@ -100,7 +100,7 @@ describe('EditStudyToolbar2 Component', () => {
             (useProjectId as Mock).mockReturnValue('projectid');
             (useUserCanEdit as Mock).mockReturnValue(true);
 
-            render(<EditStudyToolbar2 />);
+            render(<EditStudyToolbarNext />);
             userEvent.click(screen.getByTestId('KeyboardArrowLeftIcon'));
             expect(useNavigate()).not.toHaveBeenCalledWith('/projects/projectid/extraction/studies/study-1/edit');
             expect(screen.getByTestId('mock-confirmation-dialog')).toBeInTheDocument();
@@ -116,7 +116,7 @@ describe('EditStudyToolbar2 Component', () => {
                 data: { studies: ['study-2', 'study-3', 'study-4'] },
             });
 
-            render(<EditStudyToolbar2 />);
+            render(<EditStudyToolbarNext />);
             userEvent.click(screen.getByTestId('KeyboardArrowLeftIcon'));
             expect(useNavigate()).toHaveBeenCalledWith('/projects/projectid/extraction/studies/study-2/edit');
         });
@@ -131,7 +131,7 @@ describe('EditStudyToolbar2 Component', () => {
                 data: { studies: [{ id: 'study-2' }, { id: 'study-3' }, { id: 'study-4' }] },
             });
 
-            render(<EditStudyToolbar2 />);
+            render(<EditStudyToolbarNext />);
             const arrowBackIcon = screen.getByTestId('KeyboardArrowLeftIcon').parentElement;
             expect(arrowBackIcon).toBeDisabled();
         });
@@ -153,7 +153,7 @@ describe('EditStudyToolbar2 Component', () => {
             (useProjectId as Mock).mockReturnValue('projectid');
             (useUserCanEdit as Mock).mockReturnValue(true);
 
-            render(<EditStudyToolbar2 />);
+            render(<EditStudyToolbarNext />);
             userEvent.click(screen.getByTestId('KeyboardArrowRightIcon'));
             expect(useNavigate()).toHaveBeenCalledWith('/projects/projectid/extraction/studies/study-3/edit');
         });
@@ -174,7 +174,7 @@ describe('EditStudyToolbar2 Component', () => {
             (useProjectId as Mock).mockReturnValue('projectid');
             (useUserCanEdit as Mock).mockReturnValue(true);
 
-            render(<EditStudyToolbar2 />);
+            render(<EditStudyToolbarNext />);
             userEvent.click(screen.getByTestId('KeyboardArrowRightIcon'));
             expect(useNavigate()).not.toHaveBeenCalledWith('/projects/projectid/extraction/studies/study-3/edit');
             expect(screen.getByTestId('mock-confirmation-dialog')).toBeInTheDocument();
@@ -190,7 +190,7 @@ describe('EditStudyToolbar2 Component', () => {
                 data: { studies: ['study-2', 'study-3', 'study-4'] },
             });
 
-            render(<EditStudyToolbar2 />);
+            render(<EditStudyToolbarNext />);
             userEvent.click(screen.getByTestId('KeyboardArrowRightIcon'));
             expect(useNavigate()).toHaveBeenCalledWith('/projects/projectid/extraction/studies/study-4/edit');
         });
@@ -210,7 +210,7 @@ describe('EditStudyToolbar2 Component', () => {
             (useProjectId as Mock).mockReturnValue('projectid');
             (useUserCanEdit as Mock).mockReturnValue(true);
 
-            render(<EditStudyToolbar2 />);
+            render(<EditStudyToolbarNext />);
             const arrowForwardIcon = screen.getByTestId('KeyboardArrowRightIcon').parentElement;
             expect(arrowForwardIcon).toBeDisabled();
         });

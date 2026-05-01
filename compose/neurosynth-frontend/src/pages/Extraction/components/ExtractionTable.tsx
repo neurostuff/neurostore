@@ -21,7 +21,6 @@ import {
     getPaginationRowModel,
     getSortedRowModel,
     PaginationState,
-    RowData,
     SortingState,
     useReactTable,
 } from '@tanstack/react-table';
@@ -48,14 +47,7 @@ import { ExtractionTableNameCell, ExtractionTableNameHeader } from './Extraction
 import { ExtractionTablePMIDCell, ExtractionTablePMIDHeader } from './ExtractionTablePMID';
 import { ExtractionTableStatusCell, ExtractionTableStatusHeader } from './ExtractionTableStatus';
 import { ExtractionTableYearCell, ExtractionTableYearHeader } from './ExtractionTableYear';
-
-//allows us to define custom properties for our columns
-declare module '@tanstack/react-table' {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    interface ColumnMeta<TData extends RowData, TValue> {
-        filterVariant?: 'text' | 'numeric' | 'status-select' | 'journal-autocomplete' | 'autocomplete';
-    }
-}
+import 'pages/Curation/hooks/useCuratorTableState.tableMeta';
 
 export type IExtractionTableStudy = StudyReturn & { status: EExtractionStatus | undefined };
 

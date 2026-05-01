@@ -55,4 +55,30 @@ describe(PAGE_NAME, () => {
         cy.contains('Uncategorized maps').should('be.visible');
         cy.contains('Analyses').should('be.visible');
     });
+
+    it('opens Edit Study Details, edits study fields and metadata, and persists on Save', () => {
+        cy.intercept('PUT', '**/api/studies/b-mock-study-id').as('saveStudy');
+        visitAndWaitForPage();
+
+        cy.contains('button', 'Edit Study Details').click();
+        cy.get('[role="dialog"]').should('be.visible');
+        cy.get('[data-testid="edit-study-ibma-details-dialog"]').should('be.visible');
+
+        cy.get('[role="dialog"]').within(() => {
+            cy.contains('label', 'Title').parent().find('input').clear().type('IBMA dialog title');
+            cy.get('input[placeholder="New metadata key"]').type('cypress_meta_key');
+            cy.get('input[placeholder="New metadata value"]').type('cypress_meta_value');
+            cy.contains('button', 'ADD').click();
+            cy.contains('button', 'Close').click();
+        });
+
+        cy.get('[data-testid="SaveIcon"]').click();
+
+        cy.wait('@saveStudy')
+            .its('request.body')
+            .then((body: { name: string; metadata: Record<string, string> }) => {
+                expect(body.name).to.eq('IBMA dialog title');
+                expect(body.metadata).to.have.property('cypress_meta_key', 'cypress_meta_value');
+            });
+    });
 });

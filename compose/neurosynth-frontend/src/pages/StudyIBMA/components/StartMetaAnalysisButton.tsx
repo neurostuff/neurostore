@@ -1,11 +1,12 @@
 import { Button, ButtonProps } from '@mui/material';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import { hasUnsavedStudyChanges, unsetUnloadHandler } from 'helpers/BeforeUnload.helpers';
-import { useUserCanEdit } from 'hooks';
+import { useGetExtractionSummary, useUserCanEdit } from 'hooks';
 import { IProjectPageLocationState } from 'pages/Project/ProjectPage';
 import { useProjectId, useProjectMetaAnalysisCanEdit, useProjectUser } from 'stores/projects/ProjectStore';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useSnackbar } from 'notistack';
 
 const StartMetaAnalysisButton: React.FC<ButtonProps> = ({ sx: sxProp, ...restProps }) => {
     const navigate = useNavigate();
@@ -13,17 +14,28 @@ const StartMetaAnalysisButton: React.FC<ButtonProps> = ({ sx: sxProp, ...restPro
     const projectUser = useProjectUser();
     const canEdit = useUserCanEdit(projectUser ?? undefined);
     const metaAnalysisStepInitialized = useProjectMetaAnalysisCanEdit();
+    const { enqueueSnackbar } = useSnackbar();
 
     const [confirmationDialogIsOpen, setConfirmationDialogIsOpen] = useState(false);
 
-    const navigateToProjectMetaAnalysis = () => {
-        navigate(`/projects/${projectId}/project`, {
-            state: {
-                projectPage: {
-                    scrollToMetaAnalysisProceed: true,
-                },
-            } as IProjectPageLocationState,
-        });
+    const extractionSummary = useGetExtractionSummary(projectId);
+    const extractionIsComplete = extractionSummary.total > 0 && extractionSummary.completed === extractionSummary.total;
+
+    const startMetaAnalysis = () => {
+        if (extractionIsComplete) {
+            navigate(`/projects/${projectId}/project`, {
+                state: {
+                    projectPage: {
+                        scrollToMetaAnalysisProceed: true,
+                    },
+                } as IProjectPageLocationState,
+            });
+        } else {
+            enqueueSnackbar(
+                `Extraction is not complete. You still have ${extractionSummary.total - extractionSummary.completed} studies to complete before you can start a meta-analysis.`,
+                { variant: 'warning' }
+            );
+        }
     };
 
     const handleMoveToComplete = () => {
@@ -33,7 +45,7 @@ const StartMetaAnalysisButton: React.FC<ButtonProps> = ({ sx: sxProp, ...restPro
             return;
         }
 
-        navigateToProjectMetaAnalysis();
+        startMetaAnalysis();
     };
 
     const handleConfirmationDialogClose = (ok: boolean | undefined) => {
@@ -44,7 +56,7 @@ const StartMetaAnalysisButton: React.FC<ButtonProps> = ({ sx: sxProp, ...restPro
 
         unsetUnloadHandler('study');
         unsetUnloadHandler('annotation');
-        navigateToProjectMetaAnalysis();
+        startMetaAnalysis();
         setConfirmationDialogIsOpen(false);
     };
 

@@ -1,10 +1,9 @@
 import { Box, Card, CardContent, CircularProgress, Tooltip, Typography } from '@mui/material';
 import { useGetExtractionSummary } from 'hooks';
 import { useProjectId } from 'stores/projects/ProjectStore';
-import DisplayExtractionTableState from 'pages/StudyCBMA/components/DisplayExtractionTableState';
 import { type FC, useMemo } from 'react';
 
-const statusSize = 80;
+const statusSize = 100;
 
 const EditStudyStatusCard: FC = () => {
     const projectId = useProjectId();
@@ -38,7 +37,7 @@ const EditStudyStatusCard: FC = () => {
                     justifyContent: 'space-around',
                     alignItems: 'center',
                     boxSizing: 'border-box',
-                    padding: '0.5rem !important',
+                    padding: '1rem !important',
                 }}
             >
                 <Typography gutterBottom>Extraction progress</Typography>
@@ -86,18 +85,6 @@ const EditStudyStatusCard: FC = () => {
                             />
                         </Box>
                     </Tooltip>
-                </Box>
-                <Box
-                    sx={{
-                        minWidth: '320px',
-                        boxSizing: 'border-box',
-                        width: '100%',
-                        padding: '1rem',
-                        display: 'flex',
-                        justifyContent: 'flex-end',
-                    }}
-                >
-                    <DisplayExtractionTableState />
                 </Box>
             </CardContent>
         </Card>

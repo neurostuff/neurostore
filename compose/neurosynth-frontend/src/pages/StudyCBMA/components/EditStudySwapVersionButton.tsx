@@ -206,7 +206,11 @@ const EditStudySwapVersionButton: React.FC<{
                         }}
                         {...buttonProps}
                     >
-                        {isSwapping ? <ProgressLoader color="secondary" size={20} /> : <SwapHorizIcon />}
+                        {isSwapping ? (
+                            <ProgressLoader color="secondary" size={20} />
+                        ) : (
+                            <SwapHorizIcon sx={{ fontSize: '1.2rem' }} />
+                        )}
                         {buttonLabel && <Typography {...buttonLabelProps}>{buttonLabel}</Typography>}
                     </Button>
                 </Tooltip>

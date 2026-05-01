@@ -7,6 +7,7 @@ import { PUBMED_ARTICLE_URL_PREFIX, PUBMED_CENTRAL_ARTICLE_URL_PREFIX } from 'ho
 import { useProjectId, useProjectName } from 'stores/projects/ProjectStore';
 import {
     useStudyAuthors,
+    useStudyCreatedAt,
     useStudyDOI,
     useStudyLastUpdated,
     useStudyName,
@@ -26,8 +27,14 @@ const EditStudyPageHeader: React.FC = () => {
     const doi = useStudyDOI();
     const pmid = useStudyPMID();
     const pmcid = useStudyPMCID();
+    const createdAt = useStudyCreatedAt();
 
-    const nicelyFormattedDate = useMemo(() => {
+    const nicelyFormattedCreatedAt = useMemo(() => {
+        const date = new Date(createdAt || '');
+        return date.toDateString() + ' ' + date.toLocaleTimeString();
+    }, [createdAt]);
+
+    const nicelyFormattedLastUpdated = useMemo(() => {
         const date = new Date(lastUpdatedAt || '');
         return date.toDateString() + ' ' + date.toLocaleTimeString();
     }, [lastUpdatedAt]);
@@ -35,22 +42,24 @@ const EditStudyPageHeader: React.FC = () => {
     return (
         <Box>
             <Box sx={{ display: 'flex', flexDirection: 'column', margin: '0.3rem 0' }}>
-                <Typography variant="h5">
+                <Typography variant="h4" gutterBottom>
                     {studyYear && `(${studyYear}).`} {studyName}
                 </Typography>
                 {studyAuthors && (
-                    <Typography variant="body2" sx={{ color: 'muted.main' }}>
+                    <Typography variant="body1" gutterBottom sx={{ color: 'muted.main' }}>
                         {studyAuthors}
                     </Typography>
                 )}
-                <Typography variant="body2" sx={{ color: 'muted.main' }}>
+                <Typography variant="body1" gutterBottom sx={{ color: 'muted.main' }}>
                     Study owner: {studyOwnerUsername ? studyOwnerUsername : 'neurosynth'}
                 </Typography>
-                <Typography variant="body2" sx={{ color: 'muted.main' }}>
-                    Last updated: {nicelyFormattedDate}
+                <Typography variant="body1" gutterBottom sx={{ color: 'muted.main' }}>
+                    Last updated: {nicelyFormattedLastUpdated}
+                    <span style={{ margin: '0 1rem' }}>|</span>
+                    Created: {nicelyFormattedCreatedAt}
                 </Typography>
             </Box>
-            <Box sx={{ marginBottom: '0.7rem', display: 'flex' }}>
+            <Box sx={{ display: 'flex' }}>
                 {doi && <DisplayLink sx={{ marginRight: '1rem' }} label="DOI Link" href={`https://doi.org/${doi}`} />}
                 {pmid && (
                     <DisplayLink

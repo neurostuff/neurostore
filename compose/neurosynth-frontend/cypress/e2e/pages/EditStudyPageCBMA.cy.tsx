@@ -276,8 +276,12 @@ describe(PAGE_NAME, () => {
         });
 
         it('should add an annotation column', () => {
-            cy.get('input[placeholder="New Column"]').type('new_annotation_col');
-            cy.contains('button', 'ADD').click();
+            cy.get('[data-testid="new-annotation-column-open"]').click();
+            cy.get('[data-testid="new-annotation-column-dialog"]').should('be.visible');
+            cy.get('[data-testid="new-annotation-column-key"] input').type('new_annotation_col');
+            cy.get('[data-testid="new-annotation-column-dialog"]').within(() => {
+                cy.contains('button', 'Save').click();
+            });
             cy.contains(/new_annotation_col/).should('exist');
         });
 
@@ -337,8 +341,12 @@ describe(PAGE_NAME, () => {
                 'postAnnotationAnalyses'
             );
 
-            cy.get('input[placeholder="New Column"]').type(newNoteKey);
-            cy.contains('button', 'ADD').click();
+            cy.get('[data-testid="new-annotation-column-open"]').click();
+            cy.get('[data-testid="new-annotation-column-dialog"]').should('be.visible');
+            cy.get('[data-testid="new-annotation-column-key"] input').type(newNoteKey);
+            cy.get('[data-testid="new-annotation-column-dialog"]').within(() => {
+                cy.contains('button', 'Save').click();
+            });
             cy.contains(newNoteKey).should('exist');
             cy.get('button').find('[data-testid="SaveIcon"]').parent().click();
 

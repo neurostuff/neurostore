@@ -1,12 +1,42 @@
+import { AxiosError, AxiosResponse } from 'axios';
 import { NoteKeyType } from 'components/HotTables/HotTables.types';
-import { AnnotationReturnOneOf, NoteCollectionReturn } from 'neurostore-typescript-sdk';
+import {
+    AnnotationRequestOneOf,
+    AnnotationReturn,
+    AnnotationReturnOneOf,
+    NoteCollectionRequest,
+    NoteCollectionReturn,
+} from 'neurostore-typescript-sdk';
+import { UseMutateFunction } from 'react-query';
+
+/** Matches `useUpdateAnnotationById` mutateAsync (annotationsIdPut). */
+export type UpdateAnnotationsMutateAsync = (variables: {
+    argAnnotationId: string;
+    annotation: AnnotationRequestOneOf;
+}) => Promise<AxiosResponse<AnnotationReturn>>;
+
+/** Matches `useUpdateAnnotationByAnnotationAndAnalysisId` mutateAsync (annotationAnalysesPost). */
+export type UpdateAnnotationAnalysesMutateAsync = (
+    variables: NoteCollectionRequest[]
+) => Promise<AxiosResponse<NoteCollectionReturn[]>>;
 
 export type AnnotationStoreMetadata = {
     annotationIsEdited: boolean;
     noteKeysHaveChanged: boolean;
     getAnnotationIsLoading: boolean;
     updateAnnotationIsLoading: boolean;
-    isError: boolean; // for http errors that occur
+    isError: boolean; // fetch + update mutations
+    updateAnnotations:
+        | UseMutateFunction<
+              AxiosResponse<AnnotationReturn>,
+              AxiosError,
+              { argAnnotationId: string; annotation: AnnotationRequestOneOf },
+              unknown
+          >
+        | undefined;
+    updateAnnotationAnalyses:
+        | UseMutateFunction<AxiosResponse<NoteCollectionReturn[]>, AxiosError, NoteCollectionRequest[], unknown>
+        | undefined;
 };
 
 export interface IStoreNoteCollectionReturn extends NoteCollectionReturn {
@@ -20,7 +50,7 @@ export interface IStoreAnnotation extends Omit<AnnotationReturnOneOf, 'notes' | 
 }
 
 export type AnnotationStoreActions = {
-    initAnnotationStore: (annotationId?: string) => void;
+    initAnnotationStore: (annotation: AnnotationReturnOneOf | undefined) => void;
     setAnnotationIsEdited: (isEdited: boolean) => void;
     clearAnnotationStore: () => void;
     updateNotes: (updatedNotes: Array<NoteCollectionReturn>) => void;
@@ -30,6 +60,7 @@ export type AnnotationStoreActions = {
     deleteAnnotationNote: (analysisId: string) => void;
     removeAnnotationColumn: (noteKey: string) => void;
     updateAnnotationNoteDetails: (note: Partial<IStoreNoteCollectionReturn>) => void;
+    updateAnnotationMetadata: (metadata: Partial<AnnotationStoreMetadata>) => void;
 };
 
 export type AnnotationNoteType = {

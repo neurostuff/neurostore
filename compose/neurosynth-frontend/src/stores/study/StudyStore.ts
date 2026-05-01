@@ -1,7 +1,7 @@
 import { AxiosResponse } from 'axios';
 import { IMetadataRowModel } from 'components/EditMetadata/EditMetadata.types';
 import { setUnloadHandler } from 'helpers/BeforeUnload.helpers';
-import { AnalysisReturn, StudyReturn } from 'neurostore-typescript-sdk';
+import { AnalysisReturn, ImageReturn, StudyReturn } from 'neurostore-typescript-sdk';
 import { arrayToMetadata, metadataToArray } from 'pages/StudyCBMA/components/EditStudyMetadata';
 import {
     IStoreAnalysis,
@@ -641,6 +641,20 @@ export const useStudyAnalysisPointStatistic = (analysisId?: string) =>
         if (!foundAnalysis) return null;
         return foundAnalysis.pointStatistic;
     });
+
+// keep stable reference to empty array
+const EMPTY_ANALYSIS_IMAGES: ImageReturn[] = [];
+export const useStudyAnalysisImages = (analysisId?: string) =>
+    useStudyStore((state) => {
+        if (!analysisId) return EMPTY_ANALYSIS_IMAGES;
+
+        const foundAnalysis = state.study.analyses.find((x) => x.id === analysisId);
+        if (!foundAnalysis) return EMPTY_ANALYSIS_IMAGES;
+        const imgs = foundAnalysis.images;
+        if (!imgs || !Array.isArray(imgs)) return EMPTY_ANALYSIS_IMAGES;
+        return imgs as ImageReturn[];
+    });
+
 export const useNumStudyAnalyses = () => useStudyStore((state) => state.study.analyses.length);
 export const useStudyAnalyses = () => useStudyStore((state) => state.study.analyses);
 export const useDebouncedStudyAnalyses = () => {
@@ -663,6 +677,7 @@ export const useStudyUser = () => useStudyStore((state) => state.study.user);
 export const useStudyUsername = () => useStudyStore((state) => state.study.username);
 export const useStudyLastUpdated = () =>
     useStudyStore((state) => (state.study.updated_at ? state.study.updated_at : state.study.created_at));
+export const useStudyCreatedAt = () => useStudyStore((state) => state.study.created_at);
 
 // study action hooks
 export const useInitStudyStore = () => useStudyStore((state) => state.initStudyStore);

@@ -15,40 +15,64 @@ import {
     Tooltip,
     Typography,
 } from '@mui/material';
-import React from 'react';
+import type { ImageReturn } from 'neurostore-typescript-sdk';
+import React, { useCallback, useRef, useState } from 'react';
+import { useAddOrUpdateAnalysis, useStudyAnalyses } from 'stores/study/StudyStore';
 import { DefaultMapTypes, type IStoreAnalysis } from 'stores/study/StudyStore.helpers';
 import {
     STUDY_UNCATEGORIZED_MAPS_COLLAPSED_WIDTH,
     STUDY_UNCATEGORIZED_MAPS_COLUMN_WIDTH,
 } from './editStudyAnalysisBoard.constants';
-import { imageToBrainMapListItem } from './editStudyAnalysisBoard.helpers';
-import type { UncategorizedImageEntry } from './editStudyAnalysisBoard.types';
+import {
+    imageToBrainMapListItem,
+    moveBrainMapImageToAnalysis,
+    syncImageMutationsToStore,
+} from 'pages/StudyIBMA/hooks/useEditStudyAnalysisBoardState.helpers';
+
+type MoveMenuAnchor = { el: HTMLElement; mapId: string } | null;
 
 export type UncategorizedMapsColumnProps = {
     collapsed: boolean;
     onCollapsedChange: (collapsed: boolean) => void;
-    uncategorized: UncategorizedImageEntry[];
-    selectedMapId: string | null;
+    uncategorized: ImageReturn[];
+    selectedImageId: string | null;
     onToggleMapSelection: (mapId: string) => void;
     analyses: IStoreAnalysis[];
-    moveMenuAnchor: { el: HTMLElement; mapId: string } | null;
-    onMoveMenuClose: () => void;
-    onMoveClick: (e: React.MouseEvent<HTMLElement>, mapId: string) => void;
-    onMoveToAnalysis: (mapId: string, targetAnalysisId: string) => void;
 };
 
 export function UncategorizedMapsColumn({
     collapsed,
     onCollapsedChange,
     uncategorized,
-    selectedMapId,
+    selectedImageId,
     onToggleMapSelection,
-    analyses,
-    moveMenuAnchor,
-    onMoveMenuClose,
-    onMoveClick,
-    onMoveToAnalysis,
 }: UncategorizedMapsColumnProps) {
+    const analyses = useStudyAnalyses();
+    const addOrUpdateAnalysis = useAddOrUpdateAnalysis();
+    const [moveAnchorEl, setMoveAnchorEl] = useState<MoveMenuAnchor>(null);
+    const analysesRef = useRef(analyses);
+    analysesRef.current = analyses;
+
+    const handleMoveClick = useCallback((event: React.MouseEvent<HTMLElement>, mapId: string) => {
+        event.stopPropagation();
+        setMoveAnchorEl({ el: event.currentTarget, mapId });
+    }, []);
+
+    const handleMoveMenuClose = useCallback(() => {
+        setMoveAnchorEl(null);
+    }, []);
+
+    const applyMoveImageToAnalysis = useCallback(
+        (mapId: string, analysisId: string) => {
+            setMoveAnchorEl(null);
+            const before = analysesRef.current;
+            const next = moveBrainMapImageToAnalysis(before, mapId, analysisId);
+            if (!next) return;
+            syncImageMutationsToStore(before, next, addOrUpdateAnalysis);
+        },
+        [addOrUpdateAnalysis]
+    );
+
     if (collapsed) {
         return (
             <Paper sx={{ width: STUDY_UNCATEGORIZED_MAPS_COLLAPSED_WIDTH }} data-testid="uncategorized-maps-collapsed">
@@ -100,7 +124,7 @@ export function UncategorizedMapsColumn({
                     <IconButton
                         size="small"
                         onClick={() => {
-                            onMoveMenuClose();
+                            handleMoveMenuClose();
                             onCollapsedChange(true);
                         }}
                         aria-label="Hide uncategorized maps"
@@ -111,13 +135,13 @@ export function UncategorizedMapsColumn({
                 </Tooltip>
             </Box>
             <List>
-                {uncategorized.map(({ image, holderAnalysisId }) => {
+                {uncategorized.map((image) => {
                     const item = imageToBrainMapListItem(image);
                     if (!image.id) return null;
                     return (
-                        <ListItem key={`${image.id}-${holderAnalysisId}`} disablePadding>
+                        <ListItem key={image.id} disablePadding>
                             <ListItemButton
-                                selected={selectedMapId === image.id}
+                                selected={selectedImageId === image.id}
                                 onClick={() => onToggleMapSelection(image.id!)}
                                 sx={{ py: 0.5, minHeight: 36, px: 1 }}
                             >
@@ -134,10 +158,7 @@ export function UncategorizedMapsColumn({
                                 <Tooltip title="Move to analysis">
                                     <IconButton
                                         size="small"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            onMoveClick(e, image.id!);
-                                        }}
+                                        onClick={(e) => handleMoveClick(e, image.id!)}
                                         aria-label="Categorize map"
                                         sx={{ flexShrink: 0, p: 0.25 }}
                                     >
@@ -150,9 +171,9 @@ export function UncategorizedMapsColumn({
                 })}
             </List>
             <Menu
-                open={Boolean(moveMenuAnchor)}
-                anchorEl={moveMenuAnchor?.el ?? null}
-                onClose={onMoveMenuClose}
+                open={Boolean(moveAnchorEl)}
+                anchorEl={moveAnchorEl?.el ?? null}
+                onClose={handleMoveMenuClose}
                 anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                 transformOrigin={{ vertical: 'top', horizontal: 'right' }}
             >
@@ -160,8 +181,8 @@ export function UncategorizedMapsColumn({
                     <MenuItem
                         key={a.id}
                         onClick={() => {
-                            if (!moveMenuAnchor) return;
-                            onMoveToAnalysis(moveMenuAnchor.mapId, a.id!);
+                            if (!moveAnchorEl) return;
+                            applyMoveImageToAnalysis(moveAnchorEl.mapId, a.id!);
                         }}
                     >
                         {a.name || 'Untitled'}

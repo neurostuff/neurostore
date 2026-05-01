@@ -3,7 +3,6 @@ import { Box, Button, useMediaQuery, useTheme } from '@mui/material';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { hasUnsavedStudyChanges, unsetUnloadHandler } from 'helpers/BeforeUnload.helpers';
-import { useProjectExtractionAnnotationId } from 'stores/projects/ProjectStore';
 import EditStudyAnalysesCBMA from 'pages/StudyCBMA/components/EditStudyAnalysesCBMA';
 import EditStudyAnnotations from 'pages/StudyCBMA/components/EditStudyAnnotations';
 import EditStudyDetails from 'pages/StudyCBMA/components/EditStudyDetails';
@@ -12,28 +11,24 @@ import EditStudyPageHeader from 'pages/StudyCBMA/components/EditStudyPageHeader'
 import StudyCBMAPageStyles from 'pages/StudyCBMA/StudyCBMA.styles';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useClearAnnotationStore, useInitAnnotationStore } from 'stores/annotation/AnnotationStore.actions';
-import { useAnnotationId, useGetAnnotationIsLoading } from 'stores/annotation/AnnotationStore.getters';
 import { useClearStudyStore, useGetStudyIsLoading, useInitStudyStore, useStudyId } from 'stores/study/StudyStore';
 import DisplayExtractionTableState from './components/DisplayExtractionTableState';
 import EditStudyCompleteButton from './components/EditStudyCompleteButton';
 import EditStudyToolbar from './components/EditStudyToolbar';
+import { useAnnotationId } from 'stores/annotation/AnnotationStore.getters';
 
 const StudyCBMAPage: React.FC = () => {
     const { projectId, studyId } = useParams<{ projectId: string; studyId: string }>();
 
     const navigate = useNavigate();
-    const annotationId = useProjectExtractionAnnotationId();
     // study stuff
     const getStudyIsLoading = useGetStudyIsLoading();
     const clearStudyStore = useClearStudyStore();
     const initStudyStore = useInitStudyStore();
     const studyStoreId = useStudyId();
-    // annotation stuff
-    const annotationStoreId = useAnnotationId();
-    const clearAnnotationStore = useClearAnnotationStore();
-    const initAnnotationStore = useInitAnnotationStore();
-    const getAnnotationIsLoading = useGetAnnotationIsLoading();
+    const annotaiton = useAnnotationId();
+
+    console.log('annotaiton', annotaiton);
 
     const theme = useTheme();
     const mdDown = useMediaQuery(theme.breakpoints.down('md'));
@@ -42,10 +37,8 @@ const StudyCBMAPage: React.FC = () => {
     // we want to clear and init the study store every time in case the user wants to refresh the page and cancel their edits
     useEffect(() => {
         clearStudyStore();
-        clearAnnotationStore();
         initStudyStore(studyId);
-        initAnnotationStore(annotationId);
-    }, [annotationId, clearAnnotationStore, clearStudyStore, initAnnotationStore, initStudyStore, studyId]);
+    }, [clearStudyStore, initStudyStore, studyId]);
 
     const [confirmationDialogIsOpen, setConfirmationDialogIsOpen] = useState(false);
 
@@ -69,11 +62,7 @@ const StudyCBMAPage: React.FC = () => {
     };
 
     return (
-        <StateHandlerComponent
-            disableShrink={false}
-            isError={false}
-            isLoading={!studyStoreId || !annotationStoreId || getStudyIsLoading || getAnnotationIsLoading}
-        >
+        <StateHandlerComponent disableShrink={false} isError={false} isLoading={!studyStoreId || getStudyIsLoading}>
             <EditStudyPageHeader />
             <Box
                 sx={{
@@ -82,6 +71,7 @@ const StudyCBMAPage: React.FC = () => {
                         xs: 'column-reverse',
                         md: 'row',
                     },
+                    mt: 1,
                 }}
             >
                 <Box

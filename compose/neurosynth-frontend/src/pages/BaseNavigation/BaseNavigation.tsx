@@ -21,6 +21,7 @@ import LandingPage from '../LandingPage/LandingPage';
 import BaseNavigationStyles from './BaseNavigation.styles';
 import ProtectedRoute from './components/ProtectedRoute';
 import { CurationBoardGroupsProvider } from 'pages/Curation/context/CurationBoardGroupsContext';
+import AnnotationGuard from './components/AnnotationGuard';
 
 const EditStudyPage = React.lazy(() => import('pages/Study/EditStudyPage'));
 const ProjectStudyPage = React.lazy(() => import('pages/Study/ProjectStudyPage'));
@@ -123,9 +124,11 @@ const BaseNavigation: React.FC = () => {
                         path="/projects/:projectId/extraction"
                         element={
                             <ProtectedProjectRoute errorMessage="You do not have access to this page">
-                                <Box sx={BaseNavigationStyles.pagesContainer}>
-                                    <ExtractionPage />
-                                </Box>
+                                <AnnotationGuard>
+                                    <Box sx={BaseNavigationStyles.pagesContainer}>
+                                        <ExtractionPage />
+                                    </Box>
+                                </AnnotationGuard>
                             </ProtectedProjectRoute>
                         }
                     />
@@ -136,7 +139,9 @@ const BaseNavigation: React.FC = () => {
                                 onlyOwnerCanAccess
                                 errorMessage="You do not have access to this page"
                             >
-                                <EditStudyPage />
+                                <AnnotationGuard>
+                                    <EditStudyPage />
+                                </AnnotationGuard>
                             </ProtectedProjectRoute>
                         }
                     />

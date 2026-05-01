@@ -1,38 +1,69 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import type { CellContext } from '@tanstack/react-table';
+import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { EPropertyType } from 'components/EditMetadata/EditMetadata.types';
 import { AnnotationColumnCell } from './AnnotationColumnCells';
+import type { AnalysisBoardRow } from '../hooks/useEditStudyAnalysisBoardState.types';
+
+const mockUpdateNotes = vi.fn();
+
+vi.mock('stores/annotation/AnnotationStore.actions', () => ({
+    useUpdateAnnotationNotes: () => mockUpdateNotes,
+}));
+
+vi.mock('stores/annotation/AnnotationStore', () => ({
+    useAnnotationStore: {
+        getState: () => ({
+            annotation: {
+                notes: [
+                    {
+                        analysis: 'analysis-1',
+                        study: 'study-1',
+                        note: { included: false },
+                    },
+                ],
+            },
+        }),
+    },
+}));
 
 describe('AnnotationColumnCell', () => {
-    it('commits boolean annotation changes', () => {
-        const onCommit = vi.fn();
-        render(
-            <AnnotationColumnCell
-                rowId="row-1"
-                rowKind="analysis"
-                field="included"
-                type="boolean"
-                headerLabel="Included"
-                initialValue={false}
-                onCommit={onCommit}
-            />
-        );
-        userEvent.click(screen.getByRole('checkbox', { name: 'Included' }));
-        expect(onCommit).toHaveBeenCalledWith('row-1', 'included', true);
+    beforeEach(() => {
+        mockUpdateNotes.mockClear();
     });
 
-    it('renders a spacer for detail rows', () => {
-        const { container } = render(
-            <AnnotationColumnCell
-                rowId="detail-1"
-                rowKind="detail"
-                field="included"
-                type="boolean"
-                headerLabel="Included"
-                initialValue={false}
-                onCommit={vi.fn()}
-            />
-        );
-        expect(container.querySelector('[aria-hidden="true"]')).toBeInTheDocument();
+    it('commits boolean annotation changes', () => {
+        const columnNoteKey = { key: 'included', type: EPropertyType.BOOLEAN, order: 0 };
+        const cellProps = {
+            row: {
+                id: 'analysis-1',
+                original: {
+                    id: 'analysis-1',
+                    name: '',
+                    description: '',
+                    annotation: { included: false },
+                } satisfies AnalysisBoardRow,
+            },
+            column: {
+                id: 'included',
+                columnDef: {
+                    meta: { editStudyAnalysisTableNoteKey: columnNoteKey },
+                },
+            },
+            getValue: () => false as const,
+        } as unknown as CellContext<AnalysisBoardRow, string | boolean | number | null>;
+
+        render(<AnnotationColumnCell {...cellProps} />);
+        userEvent.click(screen.getByRole('checkbox', { name: 'included' }));
+        expect(mockUpdateNotes).toHaveBeenCalledTimes(1);
+        expect(mockUpdateNotes).toHaveBeenCalledWith([
+            {
+                analysis: 'analysis-1',
+                study: 'study-1',
+                note: { included: true },
+                isEdited: true,
+            },
+        ]);
     });
 });
