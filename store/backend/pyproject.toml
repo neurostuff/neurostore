@@ -57,7 +57,7 @@ dev = [
     "wheel~=0.46",
     "pytest~=9.0",
     "vcrpy~=8.0",
-    "pytest-recording~=0.13.1",
+    "pytest-recording~=0.13.4",
 ]
 
 [tool.setuptools.package-data]
