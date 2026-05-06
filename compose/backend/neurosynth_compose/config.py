@@ -22,14 +22,17 @@ DEVLIKE_ENVS = {"dev", "development"}
 TESTING_ENVS = {"test", "testing", "docker_test", "docker-test"}
 PRODLIKE_ENVS = {"stage", "staging", "prod", "production"}
 
+
 def resolve_dev_database_name():
     return "compose_dev_db"
+
 
 def resolve_test_database_name():
     return "compose_test_db"
 
+
 def get_env_var(name, default=None, required=False):
-    """Helper to fetch environment variables with optional default and required flag."""
+    """Fetch env vars with optional default and required flag."""
     value = os.environ.get(name, default)
     if required and value is None:
         raise RuntimeError(f"Environment variable '{name}' is required but not set.")
@@ -62,6 +65,7 @@ def resolve_database_name(default_db_name, config_env):
     raise RuntimeError(
         f"Unsupported APP_ENV={app_env!r}. Expected one of: {', '.join(sorted(ENV_TO_CONFIG))}"
     )
+
 
 class Config:
     """Base configuration."""
