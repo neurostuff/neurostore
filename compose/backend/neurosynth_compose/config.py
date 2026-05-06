@@ -18,9 +18,12 @@ ENV_TO_CONFIG = {
     "docker_test": "DockerTestConfig",
     "docker-test": "DockerTestConfig",
 }
-DEVLIKE_ENVS = {"dev", "development", "test", "testing", "docker_test", "docker-test"}
+DEVLIKE_ENVS = {"dev", "development"}
+TESTING_ENVS = {"test", "testing", "docker_test", "docker-test"}
 PRODLIKE_ENVS = {"stage", "staging", "prod", "production"}
 
+def resolve_dev_database_name():
+    return "compose_dev_db"
 
 def resolve_test_database_name():
     return "compose_test_db"
@@ -50,14 +53,9 @@ def resolve_config_object():
 
 def resolve_database_name(default_db_name, config_env):
     app_env = _normalize_app_env(get_env_var("APP_ENV", config_env))
-    if app_env in {
-        "dev",
-        "development",
-        "test",
-        "testing",
-        "docker_test",
-        "docker-test",
-    }:
+    if app_env in DEVLIKE_ENVS:
+        return resolve_dev_database_name()
+    if app_env in TESTING_ENVS:
         return resolve_test_database_name()
     if app_env in PRODLIKE_ENVS:
         return default_db_name
@@ -65,7 +63,6 @@ def resolve_database_name(default_db_name, config_env):
     raise RuntimeError(
         f"Unsupported APP_ENV={app_env!r}. Expected one of: {', '.join(sorted(ENV_TO_CONFIG))}"
     )
-
 
 class Config:
     """Base configuration."""
