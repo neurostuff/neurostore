@@ -1,5 +1,7 @@
 import { enqueueSnackbar } from 'notistack';
-import { _getAccessTokenSilentlyFunc, axiosInstance } from './api.state';
+import { _getAccessTokenSilentlyFunc, _logoutFunc, axiosInstance } from './api.state';
+import { OAuthError } from '@auth0/auth0-react';
+import { clearUnloadHandlers } from 'helpers/BeforeUnload.helpers';
 
 const env = import.meta.env.VITE_APP_ENV as 'DEV' | 'STAGING' | 'PROD';
 
@@ -15,24 +17,27 @@ axiosInstance.interceptors.request.use(
             }
             return config;
         } catch (error) {
-            console.error(error);
-            throw new Error('Error getting access token');
+            if (error instanceof OAuthError && error.error === 'login_required') {
+                enqueueSnackbar('Your session has expired. You are now being logged out.', { variant: 'error' });
+                setTimeout(() => {
+                    if (_logoutFunc) {
+                        clearUnloadHandlers();
+                        _logoutFunc({ returnTo: window.location.origin });
+                    }
+                }, 2500);
+            }
+            throw new Error('Error getting access token', { cause: error });
         }
     },
     (err) => {
-        if (err?.response?.status === 403) {
-            enqueueSnackbar('Your session has expired. Please log in again.', { variant: 'error' });
-        }
         return Promise.reject(err);
     }
 );
 axiosInstance.interceptors.response.use(
-    (res) => {
-        return res;
-    },
+    (res) => res,
     (error) => {
-        if (error?.response?.status === 403 || error?.error === 'login_required') {
-            enqueueSnackbar('Your session has expired. Please log in again.', { variant: 'error' });
+        if (error?.response?.status === 403) {
+            enqueueSnackbar('You do not have permission to perform this action.', { variant: 'error' });
         }
         return Promise.reject(error);
     }

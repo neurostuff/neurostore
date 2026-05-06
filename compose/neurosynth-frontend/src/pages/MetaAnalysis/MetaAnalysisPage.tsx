@@ -9,8 +9,8 @@ import { ResultReturn, SpecificationReturn, StudysetReturn } from 'neurosynth-co
 import MetaAnalysisPageStyles from 'pages/MetaAnalysis/MetaAnalysisPage.styles';
 import { useProjectName, useProjectUser } from 'stores/projects/ProjectStore';
 import { useParams } from 'react-router-dom';
-import { NeurostoreAnnotation } from 'api/api.config';
 import MetaAnalysisDetails from './components/MetaAnalysisDetails';
+import { AnnotationReturnOneOfWithNoteCollection } from 'hooks/annotations/annotationQueries.types';
 
 const MetaAnalysisPage: React.FC = () => {
     // const { startTour } = useGetTour('MetaAnalysisPage');
@@ -46,7 +46,7 @@ const MetaAnalysisPage: React.FC = () => {
     // get request is set to nested: true so below casting is safe
     const specification = metaAnalysis?.specification as SpecificationReturn;
     const studyset = metaAnalysis?.neurostore_studyset as StudysetReturn;
-    const annotation = metaAnalysis?.neurostore_annotation as NeurostoreAnnotation;
+    const annotation = metaAnalysis?.neurostore_annotation as AnnotationReturnOneOfWithNoteCollection;
 
     const updateName = (updatedName: string) => {
         if (metaAnalysis?.id && specification?.id && studyset?.id && annotation?.id) {

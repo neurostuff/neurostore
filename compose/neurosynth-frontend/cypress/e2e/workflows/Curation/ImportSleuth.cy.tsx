@@ -394,8 +394,8 @@ describe('ImportSleuthDialog', () => {
                         ...baseStudiesResponse.map((baseStudy) => ({
                             ...baseStudy,
                             user: 'other-user-sub',
-                            versions: baseStudy.versions?.map((v: StudyReturn) => ({
-                                ...v,
+                            versions: baseStudy.versions?.map((v) => ({
+                                ...(v as StudyReturn),
                                 user: 'other-user-sub',
                             })),
                         })),

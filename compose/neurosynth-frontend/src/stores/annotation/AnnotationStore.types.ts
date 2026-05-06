@@ -1,5 +1,6 @@
 import { AxiosError, AxiosResponse } from 'axios';
 import { NoteKeyType } from 'components/HotTables/HotTables.types';
+import { AnnotationReturnOneOfWithNoteCollection } from 'hooks/annotations/annotationQueries.types';
 import {
     AnnotationRequestOneOf,
     AnnotationReturn,
@@ -28,9 +29,12 @@ export type AnnotationStoreMetadata = {
     isError: boolean; // fetch + update mutations
     updateAnnotations:
         | UseMutateFunction<
-              AxiosResponse<AnnotationReturn>,
-              AxiosError,
-              { argAnnotationId: string; annotation: AnnotationRequestOneOf },
+              AnnotationReturnOneOfWithNoteCollection,
+              AxiosError<unknown, any>,
+              {
+                  argAnnotationId: string;
+                  annotation: AnnotationRequestOneOf;
+              },
               unknown
           >
         | undefined;

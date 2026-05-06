@@ -1,14 +1,17 @@
 import { useSnackbar } from 'notistack';
 import { useMutation, useQueryClient } from 'react-query';
 import API from 'api/api.config';
+import studyQueries from 'hooks/studies/studyQueries';
 
 const useDeleteStudy = () => {
     const queryClient = useQueryClient();
     const { enqueueSnackbar } = useSnackbar();
-    return useMutation((id: string) => API.NeurostoreServices.StudiesService.studiesIdDelete(id), {
+    return useMutation({
+        mutationFn: (id: string) => API.NeurostoreServices.StudiesService.studiesIdDelete(id),
         onSuccess: () => {
             // we need to send a request to retrieve studies again with its associated analyses and points
-            queryClient.invalidateQueries('studies');
+            queryClient.invalidateQueries(studyQueries.studies.all());
+            queryClient.invalidateQueries(studyQueries.baseStudies.all());
             enqueueSnackbar('study deleted successfully', { variant: 'success' });
         },
         onError: () => {

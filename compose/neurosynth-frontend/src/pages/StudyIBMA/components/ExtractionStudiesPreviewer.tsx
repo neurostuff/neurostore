@@ -3,19 +3,17 @@ import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import { alpha, Box, Button, Chip, Paper, Typography, useTheme } from '@mui/material';
-import { useGetStudysetById, useUserCanEdit } from 'hooks';
+import { useGetStudysetSummaryById, useUserCanEdit } from 'hooks';
 import { StudyReturn } from 'neurostore-typescript-sdk';
 import { EExtractionStatus } from 'pages/Extraction/Extraction.types';
 import { retrieveExtractionTableState } from 'pages/Extraction/components/ExtractionTable.helpers';
 import React, { useCallback, useLayoutEffect, useMemo, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import {
     useProjectExtractionStudysetId,
     useProjectExtractionStudyStatusList,
-    useProjectId,
     useProjectUser,
 } from 'stores/projects/ProjectStore';
-import { useStudyId } from 'stores/study/StudyStore';
 
 /** Column `id`s from `ExtractionTable` — keep in sync with extraction column definitions. */
 const EXTRACTION_COLUMN_FILTER_LABELS: Record<string, string> = {
@@ -28,10 +26,10 @@ const EXTRACTION_COLUMN_FILTER_LABELS: Record<string, string> = {
 };
 
 const ExtractionStudiesPreviewer: React.FC = () => {
+    const { projectId, studyId } = useParams<{ projectId: string; studyId: string }>();
+
     const theme = useTheme();
     const navigate = useNavigate();
-    const projectId = useProjectId();
-    const studyId = useStudyId();
     const studysetId = useProjectExtractionStudysetId();
     const studyStatusList = useProjectExtractionStudyStatusList();
     const user = useProjectUser();
@@ -39,14 +37,12 @@ const ExtractionStudiesPreviewer: React.FC = () => {
     const selectedCardRef = useRef<HTMLButtonElement | null>(null);
     const extractionTableState = retrieveExtractionTableState(projectId);
 
-    const { data, isLoading } = useGetStudysetById(studysetId || '', false, true);
+    const { data, isLoading } = useGetStudysetSummaryById(studysetId);
 
     const studyMap = useMemo(() => {
         const map = new Map<string, StudyReturn>();
         if (!data?.studies) return map;
-        for (const aStudy of data.studies) {
-            if (typeof aStudy === 'string') continue;
-            const study = aStudy as StudyReturn;
+        for (const study of data.studies) {
             if (study.id) map.set(study.id, study);
         }
         return map;
@@ -61,7 +57,7 @@ const ExtractionStudiesPreviewer: React.FC = () => {
     }, [studyStatusList]);
 
     const studyRows = useMemo(() => {
-        if (!extractionTableState?.studies) return [];
+        if (!extractionTableState?.studies || studyMap.size === 0) return [];
         return extractionTableState.studies.map((id) => {
             const study = studyMap.get(id);
             const status = studyToStatusMap.get(id) ?? EExtractionStatus.UNCATEGORIZED;
@@ -72,7 +68,7 @@ const ExtractionStudiesPreviewer: React.FC = () => {
                 status,
             };
         });
-    }, [extractionTableState?.studies, studyMap, studyToStatusMap]);
+    }, [extractionTableState?.studies, studyMap, studyToStatusMap, isLoading]);
 
     const navigateToStudy = useCallback(
         (targetStudyId: string) => {
@@ -118,6 +114,7 @@ const ExtractionStudiesPreviewer: React.FC = () => {
     const isSorted = activeSorting.length > 0;
     const hasPrev = currentIndex > 0;
     const hasNext = currentIndex >= 0 && currentIndex < studyRows.length - 1;
+    const numHidden = (data?.studies?.length ?? 0) - studyRows.length;
 
     const getStatusColors = (status: EExtractionStatus) => {
         switch (status) {
@@ -160,7 +157,6 @@ const ExtractionStudiesPreviewer: React.FC = () => {
         <Paper
             data-testid="extraction-studies-previewer"
             sx={{
-                width: '350px',
                 display: 'flex',
                 minHeight: 0,
                 flexDirection: 'column',
@@ -171,7 +167,7 @@ const ExtractionStudiesPreviewer: React.FC = () => {
                 {isFiltered && (
                     <>
                         <Typography gutterBottom variant="body2">
-                            Active filters
+                            Active filters <span style={{ color: 'gray' }}>({numHidden} hidden)</span>
                         </Typography>
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                             {activeColumnFilters.map((filter) => {

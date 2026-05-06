@@ -1,15 +1,11 @@
 import { useQuery } from 'react-query';
-import API, { NeurostoreAnnotation } from 'api/api.config';
+import annotationQueries from 'hooks/annotations/annotationQueries';
 
-const useGetAnnotationsByStudysetId = (studyId: string | undefined | null) => {
-    return useQuery(
-        ['annotations', studyId],
-        () => API.NeurostoreServices.AnnotationsService.annotationsGet(studyId || ''),
-        {
-            select: (res) => res.data.results as NeurostoreAnnotation[],
-            enabled: !!studyId,
-        }
-    );
+const useGetAnnotationsByStudysetId = (studysetId: string | undefined | null) => {
+    const query = annotationQueries.byStudyset(studysetId);
+    return useQuery(query.queryKey, query.queryFn, {
+        enabled: query.enabled,
+    });
 };
 
 export default useGetAnnotationsByStudysetId;

@@ -25,7 +25,7 @@ import {
     useReactTable,
 } from '@tanstack/react-table';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
-import { useGetStudysetById, useUserCanEdit } from 'hooks';
+import { useGetStudysetSummaryById, useUserCanEdit } from 'hooks';
 
 import { StudyReturn } from 'neurostore-typescript-sdk';
 import {
@@ -58,7 +58,7 @@ const ExtractionTable: React.FC = () => {
     const projectId = useProjectId();
     const navigate = useNavigate();
     const studyStatusList = useProjectExtractionStudyStatusList();
-    const { data: studyset } = useGetStudysetById(studysetId, false, true); // this should already be loaded in the cache from the parent component
+    const { data: studyset } = useGetStudysetSummaryById(studysetId); // this should already be loaded in the cache from the parent component
     const setGivenStudyStatusesAsComplete = useProjectExtractionSetGivenStudyStatusesAsComplete();
     const projectUser = useProjectUser();
     const usercanEdit = useUserCanEdit(projectUser || undefined);
@@ -89,10 +89,10 @@ const ExtractionTable: React.FC = () => {
     }, [studyStatusList]);
 
     const data: Array<StudyReturn & { status: EExtractionStatus | undefined }> = useMemo(() => {
-        const studies = (studyset?.studies || []) as Array<StudyReturn>;
+        const studies = studyset?.studies ?? [];
         return studies.map((study) => ({
             ...study,
-            status: studyStatusMap.get(study?.id || '')?.status,
+            status: studyStatusMap.get(study.id ?? '')?.status,
         }));
     }, [studyStatusMap, studyset?.studies]);
 
@@ -249,8 +249,8 @@ const ExtractionTable: React.FC = () => {
     const handleMarkAllAsComplete = useCallback(
         (ok: boolean | undefined) => {
             if (ok) {
-                const studies = (studyset?.studies || []) as Array<StudyReturn>;
-                setGivenStudyStatusesAsComplete(studies.map((x) => x.id) as string[]);
+                const studies = studyset?.studies ?? [];
+                setGivenStudyStatusesAsComplete(studies.map((x) => x.id ?? ''));
             }
 
             setConfirmationDialogIsOpen(false);

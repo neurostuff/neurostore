@@ -2,10 +2,10 @@ import { Box, Button, TextField } from '@mui/material';
 import BaseDialog from 'components/Dialogs/BaseDialog';
 import React, { useEffect, useState } from 'react';
 import { useAddOrUpdateAnalysis } from 'stores/study/StudyStore';
-import type { IStoreAnalysis } from 'stores/study/StudyStore.helpers';
+import { AnalysisBoardRow } from '../hooks/useEditStudyAnalysisBoardState.types';
 
 const EditStudyAnalysisDialogIBMA: React.FC<{
-    analysis: IStoreAnalysis | null;
+    analysis: AnalysisBoardRow | null;
     onClose: () => void;
 }> = ({ analysis, onClose }) => {
     const addOrUpdateAnalysis = useAddOrUpdateAnalysis();

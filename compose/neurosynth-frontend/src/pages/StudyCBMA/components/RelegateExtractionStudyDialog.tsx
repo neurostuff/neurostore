@@ -18,7 +18,7 @@ import {
 import { ENeurosynthTagIds, PRISMAEligibilityExclusionTags } from 'stores/projects/ProjectStore.consts';
 import { ICurationColumn, ICurationStubStudy } from 'pages/Curation/Curation.types';
 import { useStudyId } from 'stores/study/StudyStore';
-import { useGetStudysetById, useUpdateStudyset } from 'hooks';
+import { useGetStudysetNonNestedById, useUpdateStudyset } from 'hooks';
 
 const defaultInsufficientDetailsExclusion =
     PRISMAEligibilityExclusionTags[ENeurosynthTagIds.INSUFFICIENT_DETAIL_EXCLUSION_ID];
@@ -32,7 +32,7 @@ const RelegateExtractionStudyDialog: React.FC<{ isOpen: boolean; onCloseDialog: 
     const removeStudyListStatus = useRemoveStudyListStatus();
     const studyId = useStudyId();
     const studysetId = useProjectExtractionStudysetId();
-    const { data: studyset } = useGetStudysetById(studysetId || undefined, false);
+    const { data: studyset } = useGetStudysetNonNestedById(studysetId);
     const { mutateAsync: updateStudyset, isLoading } = useUpdateStudyset();
     const demoteStub = useDemoteStub();
     const setExclusionForStub = useSetExclusionForStub();
@@ -42,9 +42,10 @@ const RelegateExtractionStudyDialog: React.FC<{ isOpen: boolean; onCloseDialog: 
 
     const handleCloseDialog = async (confirm: boolean | undefined) => {
         if (confirm && studyId && studysetId && studyset?.studies) {
-            const studysetStudies = [
-                ...((studyset?.studyset_studies ?? []) as { id: string; curation_stub_uuid: string }[]),
-            ];
+            const studysetStudies = (studyset?.studyset_studies ?? []).map(({ id, curation_stub_uuid }) => ({
+                id: id ?? '',
+                curation_stub_uuid: curation_stub_uuid ?? '',
+            }));
             const index = studysetStudies.findIndex((study) => study.id === studyId);
             if (index < 0) throw new Error('study not found in studyset');
 

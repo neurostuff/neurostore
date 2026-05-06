@@ -3,7 +3,7 @@ import LoadingStateIndicatorProject from 'components/LoadingStateIndicator/Loadi
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import TextEdit from 'components/TextEdit/TextEdit';
-import { useGetStudysetById, useUpdateStudyset } from 'hooks';
+import { useGetStudysetSummaryById, useUpdateStudyset } from 'hooks';
 import useGetExtractionSummary from 'hooks/useGetExtractionSummary';
 import useUserCanEdit from 'hooks/useUserCanEdit';
 import { StudyReturn } from 'neurostore-typescript-sdk';
@@ -38,7 +38,7 @@ const ExtractionPage: React.FC = () => {
         isLoading: getStudysetIsLoading,
         isRefetching: getStudysetIsRefetching,
         isError: getStudysetIsError,
-    } = useGetStudysetById(studysetId, false, true);
+    } = useGetStudysetSummaryById(studysetId);
 
     const { mutate } = useUpdateStudyset();
 
@@ -48,10 +48,7 @@ const ExtractionPage: React.FC = () => {
     useEffect(() => {
         if (!loading && !getStudysetIsLoading && columns.length > 0 && studyset?.studies) {
             const includedStudies = columns[columns.length - 1].stubStudies;
-            const isDifferent = hasDifferenceBetweenStudysetAndCuration(
-                includedStudies,
-                studyset.studies as StudyReturn[]
-            );
+            const isDifferent = hasDifferenceBetweenStudysetAndCuration(includedStudies, studyset.studies);
             setShowReconcilePrompt(isDifferent);
         }
     }, [columns, getStudysetIsLoading, studyset?.studies, loading]);

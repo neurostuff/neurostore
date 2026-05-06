@@ -42,7 +42,7 @@ describe('AnnotationColumnCell', () => {
                     id: 'analysis-1',
                     name: '',
                     description: '',
-                    annotation: { included: false },
+                    analysisAnnotation: { included: false },
                 } satisfies AnalysisBoardRow,
             },
             column: {

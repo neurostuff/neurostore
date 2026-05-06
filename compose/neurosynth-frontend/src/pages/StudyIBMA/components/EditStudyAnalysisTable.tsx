@@ -5,16 +5,11 @@ import NewAnnotationColumnDialog, {
 import { flexRender, type Table as TanstackTable } from '@tanstack/react-table';
 import React, { Fragment, useCallback, useState } from 'react';
 import type { AnalysisBoardRow } from '../hooks/useEditStudyAnalysisBoardState.types';
-import { EditStudyAnalysisMapsExpandedRow } from './EditStudyAnalysisMapsExpandedRow';
+import EditStudyAnalysisMapsExpandedRow from './EditStudyAnalysisMapsExpandedRow';
 import { EditStudyAnalysisTableRow } from './EditStudyAnalysisTableRow';
-import { STUDY_ANALYSIS_TABLE_MAX_HEIGHT, studyAnalysisStickyHeaderSx } from './editStudyAnalysisBoard.constants';
+import { useAnnotationNoteKeys, useCreateAnnotationColumn } from 'stores/annotation/AnnotationStore.actions';
+import { useParams } from 'react-router-dom';
 import { Add } from '@mui/icons-material';
-import { useAddOrUpdateAnalysis, useStudyAnalyses, useStudyId } from 'stores/study/StudyStore';
-import {
-    useAnnotationNoteKeys,
-    useCreateAnnotationColumn,
-    useCreateAnnotationNote,
-} from 'stores/annotation/AnnotationStore.actions';
 
 export type EditStudyAnalysisTableProps = {
     table: TanstackTable<AnalysisBoardRow>;
@@ -22,27 +17,24 @@ export type EditStudyAnalysisTableProps = {
 };
 
 export const EditStudyAnalysisTable: React.FC<EditStudyAnalysisTableProps> = ({ table, tableMinWidth }) => {
-    const addOrUpdateAnalysis = useAddOrUpdateAnalysis();
-    const createAnnotationNote = useCreateAnnotationNote();
+    const { studyId } = useParams<{ projectId: string; studyId: string }>();
     const createAnnotationColumn = useCreateAnnotationColumn();
     const noteKeys = useAnnotationNoteKeys();
-    const studyId = useStudyId();
-    const analyses = useStudyAnalyses();
     const [newAnnotationColumnDialogOpen, setNewAnnotationColumnDialogOpen] = useState(false);
 
     const handleCreateNewAnalysis = useCallback(() => {
-        if (!studyId) return;
-        const createdAnalysis = addOrUpdateAnalysis({
-            name: '',
-            description: '',
-            isNew: true,
-            conditions: [],
-            order: analyses.length + 1,
-            images: [],
-        });
-        if (!createdAnalysis.id) return;
-        createAnnotationNote(createdAnalysis.id, studyId, '');
-    }, [studyId, addOrUpdateAnalysis, analyses.length, createAnnotationNote]);
+        // if (!studyId) return;
+        // const createdAnalysis = addOrUpdateAnalysis({
+        //     name: '',
+        //     description: '',
+        //     isNew: true,
+        //     conditions: [],
+        //     order: analyses.length + 1,
+        //     images: [],
+        // });
+        // if (!createdAnalysis.id) return;
+        // createAnnotationNote(createdAnalysis.id, studyId, '');
+    }, []);
 
     const handleAddAnnotationColumn = useCallback(
         (payload: NewAnnotationColumnPayload) => {
@@ -60,18 +52,57 @@ export const EditStudyAnalysisTable: React.FC<EditStudyAnalysisTableProps> = ({ 
             <Paper
                 data-testid="edit-study-analysis-table"
                 sx={{
-                    flex: 1,
+                    flex: '2 1 0',
                     minWidth: 0,
                     border: 1,
                     borderColor: 'divider',
                     borderRadius: 1,
                     overflow: 'hidden',
                     backgroundColor: 'grey.100',
+                    display: 'flex',
+                    flexDirection: 'column',
                 }}
             >
+                <Box
+                    sx={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        flexShrink: 0,
+                        py: 1,
+                        px: 2,
+                        borderBottom: 1,
+                        borderColor: 'divider',
+                        bgcolor: 'background.paper',
+                    }}
+                >
+                    <Button
+                        size="small"
+                        sx={{ fontSize: '10px' }}
+                        variant="contained"
+                        disableElevation
+                        onClick={handleCreateNewAnalysis}
+                    >
+                        <Add sx={{ fontSize: '16px' }} />
+                        Analysis
+                    </Button>
+
+                    <Button
+                        onClick={() => setNewAnnotationColumnDialogOpen(true)}
+                        size="small"
+                        sx={{ fontSize: '10px' }}
+                        variant="contained"
+                        disableElevation
+                        data-testid="new-annotation-column-open"
+                    >
+                        <Add sx={{ fontSize: '16px' }} />
+                        New Annotation Column
+                    </Button>
+                </Box>
                 <TableContainer
                     sx={{
-                        maxHeight: `${STUDY_ANALYSIS_TABLE_MAX_HEIGHT}`,
+                        flex: '1 1 auto',
+                        minHeight: 0,
                         overflow: 'auto',
                         bgcolor: 'background.paper',
                     }}
@@ -85,62 +116,25 @@ export const EditStudyAnalysisTable: React.FC<EditStudyAnalysisTableProps> = ({ 
                             borderCollapse: 'separate',
                             borderSpacing: 0,
                             tableLayout: 'fixed',
+                            width: '100%',
                         }}
                     >
-                        <TableHead>
-                            <TableRow>
-                                <TableCell
-                                    colSpan={table.getAllColumns().length}
-                                    sx={{ py: 1, ...studyAnalysisStickyHeaderSx }}
-                                >
-                                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                                        <Button
-                                            size="small"
-                                            sx={{ fontSize: '10px' }}
-                                            variant="contained"
-                                            disableElevation
-                                            onClick={handleCreateNewAnalysis}
-                                        >
-                                            <Add sx={{ fontSize: '16px' }} />
-                                            Analysis
-                                        </Button>
-
-                                        <Button
-                                            onClick={() => setNewAnnotationColumnDialogOpen(true)}
-                                            size="small"
-                                            sx={{ fontSize: '10px' }}
-                                            variant="contained"
-                                            disableElevation
-                                            data-testid="new-annotation-column-open"
-                                        >
-                                            <Add sx={{ fontSize: '16px' }} />
-                                            New Annotation Column
-                                        </Button>
-                                    </Box>
-                                </TableCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableHead>
+                        <TableHead
+                            sx={{
+                                position: 'sticky',
+                                top: 0,
+                                backgroundColor: 'background.paper',
+                                zIndex: 9,
+                            }}
+                        >
                             {table.getHeaderGroups().map((headerGroup) => (
                                 <TableRow key={headerGroup.id}>
                                     {headerGroup.headers.map((header) => {
-                                        const isAnalysis = header.column.id === 'analysis';
                                         return (
                                             <TableCell
                                                 key={header.id}
-                                                sx={{
-                                                    py: 1,
-                                                    ...(isAnalysis
-                                                        ? { ...studyAnalysisStickyHeaderSx }
-                                                        : {
-                                                              bgcolor: 'background.paper',
-                                                              borderBottom: 1,
-                                                              borderLeft: 1,
-                                                              borderColor: 'divider',
-                                                              minWidth: 112,
-                                                              width: 120,
-                                                          }),
-                                                }}
+                                                sx={{ py: 1 }}
+                                                width={`${header.column.getSize()}px`}
                                             >
                                                 {header.isPlaceholder
                                                     ? null

@@ -17,7 +17,7 @@ import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import ProgressLoader from 'components/ProgressLoader';
 import GlobalStyles from 'global.styles';
 import { hasUnsavedStudyChanges, unsetUnloadHandler } from 'helpers/BeforeUnload.helpers';
-import { useGetExtractionSummary, useGetStudysetById, useUserCanEdit } from 'hooks';
+import { useGetExtractionSummary, useGetStudysetNonNestedById, useUserCanEdit } from 'hooks';
 import {
     IExtractionTableState,
     retrieveExtractionTableState,
@@ -62,7 +62,7 @@ const EditStudyToolbar: React.FC = () => {
     const mdDown = useMediaQuery(theme.breakpoints.down('md'));
 
     const studysetId = useProjectExtractionStudysetId();
-    const { data, isLoading, isError } = useGetStudysetById(studysetId || '', false, false);
+    const { data, isLoading, isError } = useGetStudysetNonNestedById(studysetId);
 
     // derived from the extraction table
     const [extractionTableState, setExtractionTableState] = useState<IExtractionTableState>({
@@ -79,7 +79,7 @@ const EditStudyToolbar: React.FC = () => {
         if (!stateFromSessionStorage || stateFromSessionStorage.studies.length === 0) {
             setExtractionTableState((prev) => ({
                 ...prev,
-                studies: (data?.studies ?? []) as string[],
+                studies: data?.studies ?? [],
             }));
         } else {
             setExtractionTableState(stateFromSessionStorage);

@@ -4,7 +4,7 @@ import LoadingStateIndicatorProject from 'components/LoadingStateIndicator/Loadi
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import GlobalStyles from 'global.styles';
-import { useGetCurationSummary, useGetStudysetById } from 'hooks';
+import { useGetCurationSummary, useGetStudysetNonNestedById } from 'hooks';
 import CurationBoardBasic from 'pages/Curation/components/CurationBoardBasic';
 import { getCurationSearchPath } from 'pages/CurationImport/CurationSearchPage.helpers';
 import {
@@ -31,7 +31,7 @@ const CurationPage: React.FC = () => {
     const studysetId = useProjectExtractionStudysetId();
     const { included, uncategorized } = useGetCurationSummary();
     const annotationId = useProjectExtractionAnnotationId();
-    const { data: studyset } = useGetStudysetById(studysetId || '', false);
+    const { data: studyset } = useGetStudysetNonNestedById(studysetId);
     const { projectId } = useParams<{ projectId: string | undefined }>();
     const projectIsLoading = useGetProjectIsLoading();
     const [prismaIsOpen, setPrismaIsOpen] = useState(false);

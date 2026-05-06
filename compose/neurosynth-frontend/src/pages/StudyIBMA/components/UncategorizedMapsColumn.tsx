@@ -17,7 +17,6 @@ import {
 } from '@mui/material';
 import type { ImageReturn } from 'neurostore-typescript-sdk';
 import React, { useCallback, useRef, useState } from 'react';
-import { useAddOrUpdateAnalysis, useStudyAnalyses } from 'stores/study/StudyStore';
 import { DefaultMapTypes, type IStoreAnalysis } from 'stores/study/StudyStore.helpers';
 import {
     STUDY_UNCATEGORIZED_MAPS_COLLAPSED_WIDTH,
@@ -28,6 +27,7 @@ import {
     moveBrainMapImageToAnalysis,
     syncImageMutationsToStore,
 } from 'pages/StudyIBMA/hooks/useEditStudyAnalysisBoardState.helpers';
+import { AnalysisReturnNested } from 'hooks/analyses/analysisQueries.types';
 
 type MoveMenuAnchor = { el: HTMLElement; mapId: string } | null;
 
@@ -37,7 +37,7 @@ export type UncategorizedMapsColumnProps = {
     uncategorized: ImageReturn[];
     selectedImageId: string | null;
     onToggleMapSelection: (mapId: string) => void;
-    analyses: IStoreAnalysis[];
+    analyses: AnalysisReturnNested[];
 };
 
 export function UncategorizedMapsColumn({
@@ -46,9 +46,8 @@ export function UncategorizedMapsColumn({
     uncategorized,
     selectedImageId,
     onToggleMapSelection,
+    analyses,
 }: UncategorizedMapsColumnProps) {
-    const analyses = useStudyAnalyses();
-    const addOrUpdateAnalysis = useAddOrUpdateAnalysis();
     const [moveAnchorEl, setMoveAnchorEl] = useState<MoveMenuAnchor>(null);
     const analysesRef = useRef(analyses);
     analysesRef.current = analyses;
@@ -62,16 +61,13 @@ export function UncategorizedMapsColumn({
         setMoveAnchorEl(null);
     }, []);
 
-    const applyMoveImageToAnalysis = useCallback(
-        (mapId: string, analysisId: string) => {
-            setMoveAnchorEl(null);
-            const before = analysesRef.current;
-            const next = moveBrainMapImageToAnalysis(before, mapId, analysisId);
-            if (!next) return;
-            syncImageMutationsToStore(before, next, addOrUpdateAnalysis);
-        },
-        [addOrUpdateAnalysis]
-    );
+    const applyMoveImageToAnalysis = useCallback((mapId: string, analysisId: string) => {
+        // setMoveAnchorEl(null);
+        // const before = analysesRef.current;
+        // const next = moveBrainMapImageToAnalysis(before, mapId, analysisId);
+        // if (!next) return;
+        // syncImageMutationsToStore(before, next, addOrUpdateAnalysis);
+    }, []);
 
     if (collapsed) {
         return (

@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useGetAnnotationById, useUpdateAnnotationByAnnotationAndAnalysisId, useUpdateAnnotationById } from 'hooks';
+import { useGetAnnotationById, useUpdateAnnotationByAnnotationAndAnalysisIds, useUpdateAnnotationById } from 'hooks';
 import { useAnnotationStore } from 'stores/annotation/AnnotationStore';
 import { useProjectExtractionAnnotationId } from 'stores/projects/ProjectStore';
 import { useAnnotationId } from './AnnotationStore.getters';
@@ -50,7 +50,7 @@ export const useInitAnnotationStoreIfRequired = () => {
         mutate: updateAnnotationAnalyses,
         isLoading: updateAnnotationAnalysesIsLoading,
         isError: updateAnnotationAnalysesIsError,
-    } = useUpdateAnnotationByAnnotationAndAnalysisId(extractionAnnotationId ?? undefined);
+    } = useUpdateAnnotationByAnnotationAndAnalysisIds(extractionAnnotationId ?? undefined);
 
     useEffect(() => {
         const dataMatchesRequestedId = !!data && (!data.id || data.id === extractionAnnotationId);

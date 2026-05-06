@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { setUnloadHandler } from 'helpers/BeforeUnload.helpers';
-import { useGetStudysetById, useUserCanEdit } from 'hooks';
+import { useGetStudysetSummaryById, useUserCanEdit } from 'hooks';
 import ExtractionStudiesPreviewer from 'pages/StudyIBMA/components/ExtractionStudiesPreviewer';
 import {
     useProjectExtractionStudysetId,
@@ -10,7 +10,7 @@ import {
     useProjectUser,
 } from 'stores/projects/ProjectStore';
 import { useStudyId } from 'stores/study/StudyStore';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Mock, vi } from 'vitest';
 
 vi.mock('hooks');
@@ -24,6 +24,7 @@ describe('ExtractionStudiesPreviewer', () => {
         vi.clearAllMocks();
         window.sessionStorage.clear();
         (useProjectId as Mock).mockReturnValue('projectid');
+        (useParams as Mock).mockReturnValue({ projectId: 'projectid', studyId: 'study-1' });
         (useProjectExtractionStudysetId as Mock).mockReturnValue('studysetid');
         (useProjectUser as Mock).mockReturnValue({});
         (useUserCanEdit as Mock).mockReturnValue(true);
@@ -32,7 +33,7 @@ describe('ExtractionStudiesPreviewer', () => {
             { id: 'study-2', status: 'savedforlater' },
             { id: 'study-3', status: 'uncategorized' },
         ]);
-        (useGetStudysetById as Mock).mockReturnValue({
+        (useGetStudysetSummaryById as Mock).mockReturnValue({
             data: {
                 studies: [
                     { id: 'study-1', name: 'Alpha', analyses: ['a1', 'a2'] },

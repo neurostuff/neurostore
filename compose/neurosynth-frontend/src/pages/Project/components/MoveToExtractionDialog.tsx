@@ -114,7 +114,7 @@ const MoveToExtractionDialog: React.FC<IDialog> = (props) => {
                     },
                 });
 
-                const newAnnotationId = newAnnotation.data.id;
+                const newAnnotationId = newAnnotation.id;
                 if (!newAnnotationId) throw new Error('expected a studyset id but did not receive one');
 
                 tempAnnotationId = newAnnotationId;

@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from 'react-query';
 import API from 'api/api.config';
+import analysisQueries from 'hooks/analyses/analysisQueries';
 
 const useCreatePoint = () => {
     const queryClient = useQueryClient();
@@ -11,7 +12,8 @@ const useCreatePoint = () => {
             }),
         {
             onSuccess: () => {
-                // we need to send a request to retrieve studies again with its associated analyses and points
+                queryClient.invalidateQueries(analysisQueries.points.all().queryKey);
+                // TODO: when we convert CBMA to a save on action based workflow, we should remove this and invalidate the parent analysis instead
                 queryClient.invalidateQueries('studies');
             },
         }

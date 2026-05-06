@@ -1,11 +1,79 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { StudyReturn } from 'neurostore-typescript-sdk';
 import { vi } from 'vitest';
 import EditStudyDetailsDialogIBMA from './EditStudyDetailsDialogIBMA';
 
-const updateStudyDetails = vi.fn();
-const addOrUpdateMetadata = vi.fn();
-const deleteMetadataRow = vi.fn();
+const mockStudyData: StudyReturn = {
+    id: 'study-1',
+    name: 'Study A',
+    description: 'Desc',
+    authors: 'Author One',
+    publication: 'Journal',
+    doi: '10.1/x',
+    pmid: '123',
+    pmcid: 'PMC1',
+    year: 2020,
+    metadata: null,
+    analyses: [],
+};
+
+const { mockMutateAsync, mockEnqueueSnackbar } = vi.hoisted(() => ({
+    mockMutateAsync: vi.fn().mockResolvedValue(undefined),
+    mockEnqueueSnackbar: vi.fn(),
+}));
+
+vi.mock('notistack', () => ({
+    useSnackbar: () => ({ enqueueSnackbar: mockEnqueueSnackbar }),
+}));
+
+vi.mock('react-router-dom', async (importOriginal) => {
+    const mod = await importOriginal<typeof import('react-router-dom')>();
+    return {
+        ...mod,
+        useNavigate: () => vi.fn(),
+        useParams: () => ({ studyId: 'study-1', projectId: 'p1' }),
+    };
+});
+
+vi.mock('hooks', async (importOriginal) => {
+    const mod = await importOriginal<typeof import('hooks')>();
+    return {
+        ...mod,
+        useCreateStudy: vi.fn(() => ({
+            mutateAsync: vi.fn().mockResolvedValue({ data: mockStudyData }),
+            isLoading: false,
+        })),
+        useGetAnnotationById: vi.fn(() => ({
+            data: { notes: [] },
+            isLoading: false,
+            isError: false,
+        })),
+        useGetStudyNonNestedById: vi.fn(() => ({
+            data: mockStudyData,
+            isLoading: false,
+            isError: false,
+        })),
+        useGetStudysetNonNestedById: vi.fn(() => ({
+            data: { studies: ['study-1'], studyset_studies: [] },
+            isLoading: false,
+            isError: false,
+        })),
+        useUpdateAnnotationByAnnotationAndAnalysisIds: vi.fn(() => ({
+            mutateAsync: vi.fn().mockResolvedValue(undefined),
+            isLoading: false,
+        })),
+        useUpdateStudy: vi.fn(() => ({
+            mutateAsync: mockMutateAsync,
+            isLoading: false,
+        })),
+        useUpdateStudyset: vi.fn(() => ({
+            mutateAsync: vi.fn().mockResolvedValue(undefined),
+            isLoading: false,
+        })),
+        useUserCanEdit: vi.fn(() => true),
+    };
+});
 
 vi.mock('components/Dialogs/BaseDialog', () => ({
     default: vi.fn(
@@ -50,21 +118,6 @@ vi.mock('components/EditMetadata/EditMetadata', () => ({
     ),
 }));
 
-vi.mock('stores/study/StudyStore', () => ({
-    useStudyName: vi.fn(() => 'Study A'),
-    useStudyDescription: vi.fn(() => 'Desc'),
-    useStudyAuthors: vi.fn(() => 'Author One'),
-    useStudyPublication: vi.fn(() => 'Journal'),
-    useStudyDOI: vi.fn(() => '10.1/x'),
-    useStudyPMID: vi.fn(() => '123'),
-    useStudyPMCID: vi.fn(() => 'PMC1'),
-    useStudyYear: vi.fn(() => 2020),
-    useUpdateStudyDetails: vi.fn(() => updateStudyDetails),
-    useStudyMetadata: vi.fn(() => [{ metadataKey: 'sample_size', metadataValue: null }]),
-    useAddOrUpdateMetadata: vi.fn(() => addOrUpdateMetadata),
-    useDeleteMetadataRow: vi.fn(() => deleteMetadataRow),
-}));
-
 describe('EditStudyDetailsDialogIBMA', () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -90,24 +143,64 @@ describe('EditStudyDetailsDialogIBMA', () => {
         expect(screen.getByRole('textbox', { name: 'Description or abstract' })).toHaveValue('Desc');
     });
 
-    it('calls updateStudyDetails when title changes', () => {
+    it('persists study when Save is clicked after title change', async () => {
         render(<EditStudyDetailsDialogIBMA isOpen onClose={vi.fn()} />);
         const title = screen.getByRole('textbox', { name: 'Title' });
         fireEvent.change(title, { target: { value: 'New title' } });
-        expect(updateStudyDetails).toHaveBeenCalledWith('name', 'New title');
+        await userEvent.click(screen.getByRole('button', { name: 'Save' }));
+        expect(mockMutateAsync).toHaveBeenCalledTimes(1);
+        expect(mockMutateAsync).toHaveBeenCalledWith({
+            studyId: 'study-1',
+            study: expect.objectContaining({
+                name: 'New title',
+                authors: 'Author One',
+                analyses: [],
+            }),
+        });
+        expect(mockEnqueueSnackbar).toHaveBeenCalledWith('Study saved', { variant: 'success' });
     });
 
-    it('calls onClose when Close is clicked', async () => {
+    it('calls onClose when Close is clicked without persisting', async () => {
         const onClose = vi.fn();
         render(<EditStudyDetailsDialogIBMA isOpen onClose={onClose} />);
         await userEvent.click(screen.getByRole('button', { name: 'Close' }));
         expect(onClose).toHaveBeenCalledTimes(1);
+        expect(mockMutateAsync).not.toHaveBeenCalled();
     });
 
-    it('passes metadata to EditMetadata and wires addOrUpdateMetadata on row edit', async () => {
+    it('does not persist when Close is clicked after edits', async () => {
+        const onClose = vi.fn();
+        render(<EditStudyDetailsDialogIBMA isOpen onClose={onClose} />);
+        fireEvent.change(screen.getByRole('textbox', { name: 'Title' }), { target: { value: 'Draft title' } });
+        await userEvent.click(screen.getByRole('button', { name: 'Close' }));
+        expect(mockMutateAsync).not.toHaveBeenCalled();
+        expect(onClose).toHaveBeenCalledTimes(1);
+    });
+
+    it('persists study when Save is clicked with no edits', async () => {
+        render(<EditStudyDetailsDialogIBMA isOpen onClose={vi.fn()} />);
+        // Save is disabled until the form is touched; nudge description away and back so payload matches the loaded study.
+        const description = screen.getByRole('textbox', { name: 'Description or abstract' });
+        fireEvent.change(description, { target: { value: `${mockStudyData.description} ` } });
+        fireEvent.change(description, { target: { value: mockStudyData.description ?? '' } });
+        await userEvent.click(screen.getByRole('button', { name: 'Save' }));
+        expect(mockMutateAsync).toHaveBeenCalledTimes(1);
+        expect(mockMutateAsync).toHaveBeenCalledWith({
+            studyId: 'study-1',
+            study: expect.objectContaining({
+                name: 'Study A',
+                analyses: [],
+            }),
+        });
+    });
+
+    it('passes metadata to EditMetadata and persists metadata on Save after row edit', async () => {
         render(<EditStudyDetailsDialogIBMA isOpen onClose={vi.fn()} />);
         expect(screen.getByTestId('mock-metadata-count')).toHaveTextContent('1');
         await userEvent.click(screen.getByTestId('mock-metadata-edit'));
-        expect(addOrUpdateMetadata).toHaveBeenCalledWith({ metadataKey: 'sample_size', metadataValue: '42' });
+        await userEvent.click(screen.getByRole('button', { name: 'Save' }));
+        expect(mockMutateAsync).toHaveBeenCalledTimes(1);
+        const payload = mockMutateAsync.mock.calls[0][0].study.metadata as Record<string, unknown>;
+        expect(payload.sample_size).toBe('42');
     });
 });

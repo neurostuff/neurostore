@@ -69,10 +69,8 @@ describe(PAGE_NAME, () => {
             cy.get('input[placeholder="New metadata key"]').type('cypress_meta_key');
             cy.get('input[placeholder="New metadata value"]').type('cypress_meta_value');
             cy.contains('button', 'ADD').click();
-            cy.contains('button', 'Close').click();
+            cy.contains('button', 'Save').click();
         });
-
-        cy.get('[data-testid="SaveIcon"]').click();
 
         cy.wait('@saveStudy')
             .its('request.body')

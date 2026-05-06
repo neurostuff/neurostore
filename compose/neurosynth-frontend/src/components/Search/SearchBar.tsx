@@ -43,14 +43,14 @@ const SearchBar: React.FC<ISearchBar> = (props) => {
     const [searchState, setSearchState] = useState<Partial<ProjectSearchCriteria | SearchCriteria>>(
         searchMode === 'study-search'
             ? {
-                  genericSearchStr: undefined, // this defaults to undefined if empty in useGetBaseStudies
+                  genericSearchStr: undefined,
                   dataType: SearchDataType.ALL,
                   source: Source.ALL,
                   sortBy: SortBy.RELEVANCE,
                   descOrder: true,
-                  nameSearch: undefined, // this defaults to undefined if empty in useGetBaseStudies
-                  descriptionSearch: undefined, // this defaults to undefined if empty in useGetBaseStudies
-                  journalSearch: undefined, // this defaults to undefined if empty in useGetBaseStudies
+                  nameSearch: undefined,
+                  descriptionSearch: undefined,
+                  journalSearch: undefined,
                   authorSearch: undefined,
               }
             : {

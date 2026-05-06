@@ -1,6 +1,6 @@
 import { ArrowLeft, ArrowRight } from '@mui/icons-material';
 import { Box, Button, Tooltip, Typography, useMediaQuery, useTheme } from '@mui/material';
-import { useGetStudyById, useGetStudysetById, useUserCanEdit } from 'hooks';
+import { useGetStudyNonNestedById, useGetStudysetNonNestedById, useUserCanEdit } from 'hooks';
 import { retrieveExtractionTableState } from 'pages/Extraction/components/ExtractionTable.helpers';
 import { useProjectExtractionStudysetId, useProjectId, useProjectUser } from 'stores/projects/ProjectStore';
 import { hasUnsavedStudyChanges, unsetUnloadHandler } from 'helpers/BeforeUnload.helpers';
@@ -14,14 +14,14 @@ const DisplayExtractionTableState: React.FC = () => {
     const projectId = useProjectId();
     const studyId = useStudyId();
     const studysetId = useProjectExtractionStudysetId();
-    const { data } = useGetStudysetById(studysetId, false);
+    const { data } = useGetStudysetNonNestedById(studysetId);
     const extractionTableState = retrieveExtractionTableState(projectId);
     const thisStudyIndex = (extractionTableState?.studies || []).indexOf(studyId || '');
     const prevStudyId = extractionTableState?.studies[thisStudyIndex - 1];
     const nextStudyId = extractionTableState?.studies[thisStudyIndex + 1];
 
-    const { data: prevStudy, isLoading: prevStudyIsLoading } = useGetStudyById(prevStudyId);
-    const { data: nextStudy, isLoading: nextStudyIsLoading } = useGetStudyById(nextStudyId);
+    const { data: prevStudy, isLoading: prevStudyIsLoading } = useGetStudyNonNestedById(prevStudyId);
+    const { data: nextStudy, isLoading: nextStudyIsLoading } = useGetStudyNonNestedById(nextStudyId);
 
     const [confirmationDialogState, setConfirmationDialogState] = useState<{
         isOpen: boolean;

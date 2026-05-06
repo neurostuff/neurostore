@@ -1,14 +1,14 @@
-import API from 'api/api.config';
 import { AxiosError, AxiosResponse } from 'axios';
 import { NoteCollectionRequest, NoteCollectionReturn } from 'neurostore-typescript-sdk';
 import { useSnackbar } from 'notistack';
 import { useMutation, useQueryClient } from 'react-query';
+import API from 'api/api.config';
+import annotationQueries from './annotationQueries';
 
-const useUpdateAnnotationByAnnotationAndAnalysisId = (
+const useUpdateAnnotationByAnnotationAndAnalysisIds = (
     annotationId: string | undefined | null,
     options?: { invalidateOnSuccess?: boolean }
 ) => {
-    const invalidateOnSuccess = options?.invalidateOnSuccess ?? true;
     const queryClient = useQueryClient();
     const { enqueueSnackbar } = useSnackbar();
 
@@ -16,9 +16,10 @@ const useUpdateAnnotationByAnnotationAndAnalysisId = (
         (update) => API.NeurostoreServices.AnalysesService.annotationAnalysesPost(update),
         {
             onSuccess: () => {
-                if (invalidateOnSuccess) {
-                    queryClient.invalidateQueries(['annotations', annotationId]);
-                }
+                const invalidateOnSuccess = options?.invalidateOnSuccess ?? true;
+                if (!invalidateOnSuccess) return;
+
+                queryClient.invalidateQueries(annotationQueries.byId(annotationId).queryKey);
             },
             onError: () => {
                 enqueueSnackbar('there was an error updating the annotation', { variant: 'error' });
@@ -27,4 +28,4 @@ const useUpdateAnnotationByAnnotationAndAnalysisId = (
     );
 };
 
-export default useUpdateAnnotationByAnnotationAndAnalysisId;
+export default useUpdateAnnotationByAnnotationAndAnalysisIds;

@@ -18,8 +18,7 @@ import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import ProgressLoader from 'components/ProgressLoader';
 import { hasUnsavedStudyChanges, unsetUnloadHandler } from 'helpers/BeforeUnload.helpers';
 import { lastUpdatedAtSortFn } from 'helpers/utils';
-import { useGetStudysetById, useUpdateStudyset, useGetBaseStudyById } from 'hooks';
-import { StudyReturn } from 'neurostore-typescript-sdk';
+import { useGetBaseStudyInfoById, useGetStudysetNonNestedById, useUpdateStudyset } from 'hooks';
 import { useSnackbar } from 'notistack';
 import { updateExtractionTableStateStudySwapInStorage } from 'pages/Extraction/components/ExtractionTable.helpers';
 import {
@@ -40,13 +39,13 @@ const EditStudySwapVersionButton: React.FC<{
     const [anchorEl, setAnchorEl] = useState<null | HTMLButtonElement>(null);
     const open = Boolean(anchorEl);
     const baseStudyId = useStudyBaseStudyId();
-    const { data: baseStudy } = useGetBaseStudyById(baseStudyId || '');
+    const { data: baseStudy } = useGetBaseStudyInfoById(baseStudyId ?? undefined);
     const projectId = useProjectId();
     const studyId = useStudyId();
     const { mutateAsync: updateStudyset } = useUpdateStudyset();
     const updateStudyListStatusWithNewStudyId = useProjectExtractionReplaceStudyListStatusId();
     const studysetId = useProjectExtractionStudysetId();
-    const { data: studyset } = useGetStudysetById(studysetId, false);
+    const { data: studyset } = useGetStudysetNonNestedById(studysetId);
     const updateStudyByField = useUpdateStudyDetails();
     const navigate = useNavigate();
     const { enqueueSnackbar } = useSnackbar();
@@ -100,7 +99,7 @@ const EditStudySwapVersionButton: React.FC<{
         setIsSwapping(true);
         try {
             handleCloseNavMenu();
-            const updatedStudyset = [...(studyset.studies as string[])];
+            const updatedStudyset = [...(studyset.studies ?? [])];
 
             const currentStudyBeingEditedIndex = updatedStudyset.findIndex((study) => study === studyId);
             if (currentStudyBeingEditedIndex < 0) throw new Error('study not found in studyset');
@@ -180,7 +179,7 @@ const EditStudySwapVersionButton: React.FC<{
     };
 
     const baseStudyVersions = useMemo(() => {
-        const baseVersions = (baseStudy?.versions || []) as StudyReturn[];
+        const baseVersions = baseStudy?.versions ?? [];
         return baseVersions.sort(lastUpdatedAtSortFn).reverse();
     }, [baseStudy?.versions]);
 

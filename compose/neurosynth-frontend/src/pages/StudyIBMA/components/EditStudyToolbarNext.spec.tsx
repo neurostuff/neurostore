@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { setUnloadHandler } from 'helpers/BeforeUnload.helpers';
-import { useGetStudysetById, useUserCanEdit } from 'hooks';
+import { useGetStudysetNonNestedById, useUserCanEdit } from 'hooks';
 import { EExtractionStatus } from 'pages/Extraction/Extraction.types';
 import {
     useProjectExtractionAddOrUpdateStudyListStatus,
@@ -112,7 +112,7 @@ describe('EditStudyToolbarNext Component', () => {
             (useProjectId as Mock).mockReturnValue('projectid');
             (useUserCanEdit as Mock).mockReturnValue(true);
 
-            (useGetStudysetById as Mock).mockReturnValue({
+            (useGetStudysetNonNestedById as Mock).mockReturnValue({
                 data: { studies: ['study-2', 'study-3', 'study-4'] },
             });
 
@@ -127,7 +127,7 @@ describe('EditStudyToolbarNext Component', () => {
             (useProjectId as Mock).mockReturnValue('projectid');
             (useUserCanEdit as Mock).mockReturnValue(true);
 
-            (useGetStudysetById as Mock).mockReturnValue({
+            (useGetStudysetNonNestedById as Mock).mockReturnValue({
                 data: { studies: [{ id: 'study-2' }, { id: 'study-3' }, { id: 'study-4' }] },
             });
 
@@ -186,7 +186,7 @@ describe('EditStudyToolbarNext Component', () => {
             (useProjectId as Mock).mockReturnValue('projectid');
             (useUserCanEdit as Mock).mockReturnValue(true);
 
-            (useGetStudysetById as Mock).mockReturnValue({
+            (useGetStudysetNonNestedById as Mock).mockReturnValue({
                 data: { studies: ['study-2', 'study-3', 'study-4'] },
             });
 

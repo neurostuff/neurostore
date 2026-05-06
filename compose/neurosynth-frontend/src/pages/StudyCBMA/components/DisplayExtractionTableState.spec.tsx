@@ -2,7 +2,7 @@ import { vi, Mock } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import DisplayExtractionTableState from './DisplayExtractionTableState';
 import { retrieveExtractionTableState } from 'pages/Extraction/components/ExtractionTable.helpers';
-import { useGetStudyById } from 'hooks';
+import { useGetStudyNonNestedById } from 'hooks';
 import userEvent from '@testing-library/user-event';
 import { useNavigate } from 'react-router-dom';
 import { setUnloadHandler } from 'helpers/BeforeUnload.helpers';
@@ -24,7 +24,7 @@ describe('DisplayExtractionTableState Component', () => {
             sorting: [],
         });
 
-        (useGetStudyById as Mock).mockImplementation((studyId: string) => ({
+        (useGetStudyNonNestedById as Mock).mockImplementation((studyId: string) => ({
             isLoading: false,
             data: {
                 name: studyId,

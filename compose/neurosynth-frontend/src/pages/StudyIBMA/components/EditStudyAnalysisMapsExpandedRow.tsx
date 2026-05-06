@@ -3,21 +3,22 @@ import { Box, Chip, IconButton, ListItemButton, ListItemText, TableCell, TableRo
 import type { Row, Table as TanstackTable } from '@tanstack/react-table';
 import React from 'react';
 import { DefaultMapTypes } from 'stores/study/StudyStore.helpers';
-import { useStudyAnalysisImages } from 'stores/study/StudyStore';
 import { imageToBrainMapListItem } from 'pages/StudyIBMA/hooks/useEditStudyAnalysisBoardState.helpers';
 import type { AnalysisBoardRow } from 'pages/StudyIBMA/hooks/useEditStudyAnalysisBoardState.types';
 
-export const EditStudyAnalysisMapsExpandedRow: React.FC<{
+const EditStudyAnalysisMapsExpandedRow: React.FC<{
     row: Row<AnalysisBoardRow>;
     table: TanstackTable<AnalysisBoardRow>;
 }> = ({ row, table }) => {
     const analysisId = row.original.id;
-    const analysisImages = useStudyAnalysisImages(analysisId);
+    const images = row.original.images ?? [];
     const meta = table.options.meta;
     const selectedImageId = meta?.selectedImageId ?? null;
     const onSelectImage = meta?.toggleImageSelection;
     const onRemoveImage = meta?.removeImageFromAnalysis;
     const colSpan = table.getVisibleLeafColumns().length;
+
+    if (!analysisId) return null;
 
     return (
         <TableRow>
@@ -39,17 +40,17 @@ export const EditStudyAnalysisMapsExpandedRow: React.FC<{
                         boxSizing: 'border-box',
                     }}
                 >
-                    {analysisImages.length === 0 ? (
+                    {images.length === 0 ? (
                         <Typography variant="caption" sx={{ color: 'warning.dark' }}>
                             No brain maps assigned to this analysis
                         </Typography>
                     ) : (
-                        analysisImages.map((map) => {
-                            const item = imageToBrainMapListItem(map);
-                            if (!map.id) return null;
+                        images.map((image) => {
+                            const item = imageToBrainMapListItem(image);
+                            if (!image.id) return null;
                             return (
                                 <Box
-                                    key={map.id}
+                                    key={image.id}
                                     sx={{
                                         display: 'flex',
                                         alignItems: 'center',
@@ -58,10 +59,10 @@ export const EditStudyAnalysisMapsExpandedRow: React.FC<{
                                     }}
                                 >
                                     <ListItemButton
-                                        selected={selectedImageId === map.id}
+                                        selected={selectedImageId === image.id}
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            onSelectImage?.(map.id!);
+                                            onSelectImage?.(image.id!);
                                         }}
                                         sx={{
                                             flex: 1,
@@ -94,7 +95,7 @@ export const EditStudyAnalysisMapsExpandedRow: React.FC<{
                                         size="small"
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            onRemoveImage?.(analysisId, map);
+                                            onRemoveImage?.(analysisId, image);
                                         }}
                                         aria-label="Remove map from analysis"
                                         sx={{ flexShrink: 0, p: 0.25 }}
@@ -110,3 +111,5 @@ export const EditStudyAnalysisMapsExpandedRow: React.FC<{
         </TableRow>
     );
 };
+
+export default React.memo(EditStudyAnalysisMapsExpandedRow);

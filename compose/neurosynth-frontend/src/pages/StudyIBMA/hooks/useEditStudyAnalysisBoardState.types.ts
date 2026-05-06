@@ -1,3 +1,4 @@
+import { AnalysisReturnNested } from 'hooks/analyses/analysisQueries.types';
 import type { DefaultMapTypes } from 'stores/study/StudyStore.helpers';
 
 export interface BrainMapListItem {
@@ -6,9 +7,6 @@ export interface BrainMapListItem {
     mapType: keyof typeof DefaultMapTypes;
 }
 
-export interface AnalysisBoardRow {
-    id: string;
-    name: string;
-    description: string;
-    annotation: Record<string, string | boolean | number | null | undefined>;
-}
+export type AnalysisBoardRow = AnalysisReturnNested & {
+    analysisAnnotation: Record<string, string | boolean | number | null | undefined>; // Record<note_key, value>
+};

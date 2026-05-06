@@ -1,19 +1,20 @@
-import { AxiosError, AxiosResponse } from 'axios';
-import { useMutation, useQueryClient } from 'react-query';
-import API, { NeurostoreAnnotation } from 'api/api.config';
-import { useSnackbar } from 'notistack';
+import API from 'api/api.config';
+import { AxiosError } from 'axios';
 import { AnnotationRequestOneOf } from 'neurostore-typescript-sdk';
+import { useSnackbar } from 'notistack';
+import { useMutation, useQueryClient } from 'react-query';
+import annotationQueries from './annotationQueries';
+import { AnnotationReturnOneOfWithNoteCollection } from './annotationQueries.types';
 
 const useUpdateAnnotationById = (
     annotationId: string | undefined | null,
     options?: { invalidateOnSuccess?: boolean }
 ) => {
-    const invalidateOnSuccess = options?.invalidateOnSuccess ?? true;
     const queryClient = useQueryClient();
     const { enqueueSnackbar } = useSnackbar();
 
     return useMutation<
-        AxiosResponse<NeurostoreAnnotation>,
+        AnnotationReturnOneOfWithNoteCollection,
         AxiosError,
         {
             argAnnotationId: string;
@@ -21,13 +22,26 @@ const useUpdateAnnotationById = (
         },
         unknown
     >(
-        (update) =>
-            API.NeurostoreServices.AnnotationsService.annotationsIdPut(update.argAnnotationId, update.annotation),
+        async (update) => {
+            const response = await API.NeurostoreServices.AnnotationsService.annotationsIdPut(
+                update.argAnnotationId,
+                update.annotation
+            );
+            return response.data as AnnotationReturnOneOfWithNoteCollection;
+        },
         {
-            onSuccess: () => {
+            onSuccess: (response) => {
+                const invalidateOnSuccess = options?.invalidateOnSuccess ?? true;
                 if (invalidateOnSuccess) {
-                    queryClient.invalidateQueries(['annotations', annotationId]);
+                    queryClient.invalidateQueries(annotationQueries.byId(annotationId).queryKey);
+                    queryClient.invalidateQueries(annotationQueries.lists());
+                    return;
                 }
+
+                queryClient.setQueryData<AnnotationReturnOneOfWithNoteCollection>(
+                    annotationQueries.byId(annotationId).queryKey,
+                    response
+                );
             },
             onError: () => {
                 enqueueSnackbar('there was an error updating the annotation', { variant: 'error' });

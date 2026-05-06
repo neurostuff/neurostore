@@ -1,8 +1,38 @@
-import { SearchCriteria, SearchDataType, SortBy } from 'pages/Study/Study.types';
-import { useQuery } from 'react-query';
 import API from 'api/api.config';
+import { EMapType, SearchCriteria, SearchDataType, SortBy } from 'pages/Study/Study.types';
+
+export type BaseStudiesSearchShape = 'nested' | 'nonNested' | 'flat' | 'info';
+
+/** Merge URL-driven search criteria with the flag combination for a given list payload shape. */
+export const mergeBaseStudiesSearchShape = (
+    searchCriteria: Partial<SearchCriteria>,
+    shape: BaseStudiesSearchShape
+): Partial<SearchCriteria> => {
+    const base = { ...searchCriteria };
+    switch (shape) {
+        case 'nested':
+            return { ...base, isNested: true, flat: false, info: false };
+        case 'nonNested':
+            return { ...base, isNested: false, flat: false, info: false };
+        case 'flat':
+            return { ...base, isNested: false, flat: true, info: false };
+        case 'info':
+            return { ...base, isNested: false, flat: false, info: true };
+        default:
+            return base;
+    }
+};
 
 export const baseStudiesSearchHelper = (searchCriteria: Partial<SearchCriteria>) => {
+    let mapType = undefined;
+    if (searchCriteria.dataType === SearchDataType.IMAGE) {
+        if (searchCriteria.IBMAMapType === EMapType.ANY) {
+            mapType = undefined;
+        } else {
+            mapType = searchCriteria.IBMAMapType;
+        }
+    }
+
     return API.NeurostoreServices.BaseStudiesService.baseStudiesGet(
         searchCriteria.isNested,
         undefined, // year_min
@@ -29,7 +59,7 @@ export const baseStudiesSearchHelper = (searchCriteria: Partial<SearchCriteria>)
         searchCriteria.authorSearch || undefined,
         searchCriteria.level,
         searchCriteria.dataType === SearchDataType.ALL ? 'both' : searchCriteria.dataType,
-        searchCriteria.dataType === SearchDataType.IMAGE ? searchCriteria.IBMAMapType : undefined,
+        mapType,
         undefined, // is_oa
         searchCriteria.journalSearch || undefined,
         searchCriteria.pmid,
@@ -39,15 +69,3 @@ export const baseStudiesSearchHelper = (searchCriteria: Partial<SearchCriteria>)
         searchCriteria.info
     );
 };
-
-const useGetBaseStudies = (searchCriteria: Partial<SearchCriteria>, enabled?: boolean) => {
-    return useQuery(['studies', { ...searchCriteria }], () => baseStudiesSearchHelper(searchCriteria), {
-        enabled,
-        select: (res) => {
-            const studyList = res.data;
-            return studyList;
-        },
-    });
-};
-
-export default useGetBaseStudies;

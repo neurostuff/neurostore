@@ -6,7 +6,6 @@ import { flexRender } from '@tanstack/react-table';
 import {
     STUDY_ANALYSES_COLUMN_WIDTH,
     STUDY_ANALYSIS_TABLE_ROW_MIN_HEIGHT_PX,
-    studyAnalysisStickyBodySx,
 } from './editStudyAnalysisBoard.constants';
 
 export const EditStudyAnalysisTableRow: React.FC<{
@@ -14,35 +13,32 @@ export const EditStudyAnalysisTableRow: React.FC<{
     table: TanstackTable<AnalysisBoardRow>;
 }> = ({ row, table }) => {
     return (
-        <TableRow
-            hover
-            onClick={() => row.toggleExpanded()}
-            sx={{
-                cursor: 'pointer',
-                '& > td': { minHeight: STUDY_ANALYSIS_TABLE_ROW_MIN_HEIGHT_PX },
-            }}
-        >
+        <TableRow sx={{ cursor: 'pointer' }}>
             {row.getVisibleCells().map((cell) => {
                 const isAnalysis = cell.column.id === 'analysis';
                 return (
                     <TableCell
                         key={cell.id}
+                        onClick={() => {
+                            if (isAnalysis) row.toggleExpanded();
+                        }}
                         sx={{
                             verticalAlign: 'top',
+                            ':hover': {
+                                backgroundColor: isAnalysis ? 'grey.200' : 'transparent',
+                            },
+                            minHeight: STUDY_ANALYSIS_TABLE_ROW_MIN_HEIGHT_PX,
                             p: 0,
                             ...(isAnalysis
                                 ? {
-                                      ...studyAnalysisStickyBodySx,
                                       width: STUDY_ANALYSES_COLUMN_WIDTH,
                                       minWidth: STUDY_ANALYSES_COLUMN_WIDTH,
                                       maxWidth: STUDY_ANALYSES_COLUMN_WIDTH,
+                                      borderColor: row.getIsExpanded() ? 'transparent' : 'divider',
                                   }
                                 : {
                                       borderLeft: 1,
                                       borderColor: 'divider',
-                                      fontSize: '0.8125rem',
-                                      minWidth: 112,
-                                      width: 120,
                                   }),
                         }}
                     >

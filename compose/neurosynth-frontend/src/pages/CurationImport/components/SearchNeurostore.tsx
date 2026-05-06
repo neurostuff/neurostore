@@ -6,7 +6,7 @@ import NeurosynthTableStyles from 'components/NeurosynthTable/NeurosynthTable.st
 import { addKVPToSearch, getSearchCriteriaFromURL, getURLFromSearchCriteria } from 'components/Search/search.helpers';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { studiesToStubs } from 'helpers/Curation.helpers';
-import { baseStudiesSearchHelper } from 'hooks/studies/useGetBaseStudies';
+import { baseStudiesSearchHelper } from 'hooks/studies/useGetBaseStudies.helpers';
 import { BaseStudyList } from 'neurostore-typescript-sdk';
 import { useSnackbar } from 'notistack';
 import { useProjectId } from 'stores/projects/ProjectStore';

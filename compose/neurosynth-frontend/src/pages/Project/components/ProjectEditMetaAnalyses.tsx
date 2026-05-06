@@ -1,12 +1,8 @@
 import { Stepper } from '@mui/material';
-import { useGetStudysetById, useGetCurationSummary } from 'hooks';
+import { useGetCurationSummary, useGetStudysetNonNestedById } from 'hooks';
 import useGetExtractionSummary from 'hooks/useGetExtractionSummary';
 import ProjectPageStyles from 'pages/Project/ProjectPage.styles';
-import {
-    useProjectCurationColumns,
-    useProjectExtractionMetadata,
-    useProjectUser,
-} from 'stores/projects/ProjectStore';
+import { useProjectCurationColumns, useProjectExtractionMetadata, useProjectUser } from 'stores/projects/ProjectStore';
 import { useParams } from 'react-router-dom';
 import DangerZone from 'pages/Project/components/ProjectDangerZone';
 import useUserCanEdit from 'hooks/useUserCanEdit';
@@ -19,7 +15,7 @@ const ProjectEditMetaAnalyses: React.FC = (props) => {
     const canEdit = useUserCanEdit(projectUser || undefined);
     const { projectId } = useParams<{ projectId: string }>();
     const extractionMetadata = useProjectExtractionMetadata();
-    const { data: studyset } = useGetStudysetById(extractionMetadata?.studysetId || '');
+    const { data: studyset } = useGetStudysetNonNestedById(extractionMetadata?.studysetId);
 
     const curationStepHasBeenInitialized = useProjectCurationColumns().length > 0;
 

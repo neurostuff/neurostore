@@ -1,11 +1,9 @@
 import { useQuery } from 'react-query';
-import API from 'api/api.config';
+import analysisQueries from './analysisQueries';
 
 const useGetConditions = () => {
-    return useQuery('conditions', () => API.NeurostoreServices.ConditionsService.conditionsGet(), {
-        select: (res) => res.data.results,
-        staleTime: 5000,
-    });
+    const query = analysisQueries.conditions.all();
+    return useQuery(query.queryKey, query.queryFn, { enabled: query.enabled, staleTime: 5000 });
 };
 
 export default useGetConditions;

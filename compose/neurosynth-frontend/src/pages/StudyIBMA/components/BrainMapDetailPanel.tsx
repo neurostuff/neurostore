@@ -13,7 +13,7 @@ import {
 } from '@mui/material';
 import useGetNeurovaultImages, { type INeurovault } from 'hooks/metaAnalyses/useGetNeurovaultImages';
 import type { ImageReturn } from 'neurostore-typescript-sdk';
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { STUDY_ANALYSIS_TABLE_MAX_HEIGHT } from './editStudyAnalysisBoard.constants';
 
 function flattenMetadata(metadata: object | null | undefined): { key: string; value: string }[] {
@@ -74,8 +74,8 @@ export function BrainMapDetailPanel({ image, onClose }: { image: ImageReturn; on
             elevation={1}
             data-testid="brain-map-detail-panel"
             sx={{
-                width: { xs: 'min(100%, 500px)', md: 500 },
-                flexShrink: 0,
+                flex: '1 1 0',
+                minWidth: 250,
                 display: 'flex',
                 flexDirection: 'column',
                 gap: 2,

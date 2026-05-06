@@ -15,7 +15,7 @@ const mockNavigate = vi.hoisted(() => vi.fn());
 
 vi.mock('hooks', () => ({
     useGetCurationSummary: vi.fn().mockReturnValue({ included: 0, uncategorized: 0, excluded: 0 }),
-    useGetStudysetById: vi.fn().mockReturnValue({ data: null }),
+    useGetStudysetNonNestedById: vi.fn().mockReturnValue({ data: null }),
     useUserCanEdit: vi.fn().mockReturnValue(true),
 }));
 
@@ -40,7 +40,7 @@ vi.mock('react-router-dom', () => ({
     useNavigate: vi.fn().mockReturnValue(mockNavigate),
 }));
 
-import { useGetCurationSummary, useGetStudysetById, useUserCanEdit } from 'hooks';
+import { useGetCurationSummary, useGetStudysetNonNestedById, useUserCanEdit } from 'hooks';
 import { useCurationBoardGroups } from '../context/CurationBoardGroupsContext';
 
 const mockColumn = (name: string, id: string, studies: { exclusionTag: string | null }[]) => ({
@@ -59,7 +59,7 @@ describe('StartExtractionButton', () => {
         (useProjectId as Mock).mockReturnValue('test-project-id');
         (useProjectUser as Mock).mockReturnValue('user-1');
         (useGetCurationSummary as Mock).mockReturnValue({ included: 0, uncategorized: 0, excluded: 0 });
-        (useGetStudysetById as Mock).mockReturnValue({ data: null });
+        (useGetStudysetNonNestedById as Mock).mockReturnValue({ data: null });
         (useUserCanEdit as Mock).mockReturnValue(true);
         (useCurationBoardGroups as Mock).mockReturnValue({
             groups: [],
@@ -77,7 +77,7 @@ describe('StartExtractionButton', () => {
         it('shows "view extraction" when extraction is already initialized', () => {
             (useProjectExtractionStudysetId as Mock).mockReturnValue('studyset-1');
             (useProjectExtractionAnnotationId as Mock).mockReturnValue('annotation-1');
-            (useGetStudysetById as Mock).mockReturnValue({ data: { studies: ['study-1'] } });
+            (useGetStudysetNonNestedById as Mock).mockReturnValue({ data: { studies: ['study-1'] } });
 
             render(<StartExtractionButton />);
             expect(screen.getByRole('button', { name: /view extraction/i })).toBeInTheDocument();
@@ -132,7 +132,7 @@ describe('StartExtractionButton', () => {
             (useGetCurationSummary as Mock).mockReturnValue({ included: 5, uncategorized: 0, excluded: 0 });
             (useProjectExtractionStudysetId as Mock).mockReturnValue('studyset-1');
             (useProjectExtractionAnnotationId as Mock).mockReturnValue('annotation-1');
-            (useGetStudysetById as Mock).mockReturnValue({ data: { studies: ['study-1'] } });
+            (useGetStudysetNonNestedById as Mock).mockReturnValue({ data: { studies: ['study-1'] } });
 
             render(<StartExtractionButton />);
             expect(document.querySelector('.MuiSvgIcon-root')).not.toBeInTheDocument();
@@ -223,7 +223,7 @@ describe('StartExtractionButton', () => {
             (useGetCurationSummary as Mock).mockReturnValue({ included: 5, uncategorized: 0, excluded: 0 });
             (useProjectExtractionStudysetId as Mock).mockReturnValue('studyset-1');
             (useProjectExtractionAnnotationId as Mock).mockReturnValue('annotation-1');
-            (useGetStudysetById as Mock).mockReturnValue({ data: { studies: ['study-1'] } });
+            (useGetStudysetNonNestedById as Mock).mockReturnValue({ data: { studies: ['study-1'] } });
         });
 
         it('navigates to the extraction page', () => {

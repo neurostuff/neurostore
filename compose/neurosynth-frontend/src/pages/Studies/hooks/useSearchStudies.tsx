@@ -1,5 +1,5 @@
 import { addKVPToSearch, getSearchCriteriaFromURL, getURLFromSearchCriteria } from 'components/Search/search.helpers';
-import useGetDebouncedStudies from 'hooks/studies/useGetDebouncedStudies';
+import useGetDebouncedBaseStudiesFlat from 'hooks/studies/useGetDebouncedBaseStudiesFlat';
 import { BaseStudyList } from 'neurostore-typescript-sdk';
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -15,7 +15,6 @@ const getErrorMessage = (err: unknown): string | undefined => {
     if (axiosErr.response?.status === 400 && axiosErr.response?.data?.detail?.message) {
         return axiosErr.response.data.detail.message;
     }
-    return 'There was an error searching for studies. (Is the query well formed?)';
 };
 
 const useSearchStudies = () => {
@@ -37,7 +36,7 @@ const useSearchStudies = () => {
         isRefetching,
         isError,
         error,
-    } = useGetDebouncedStudies(searchCriteria, true);
+    } = useGetDebouncedBaseStudiesFlat(searchCriteria, true);
 
     useEffect(() => {
         if (data) setStudyData(data);

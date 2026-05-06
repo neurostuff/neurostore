@@ -1,17 +1,18 @@
-import { AxiosResponse } from 'axios';
-import { AnnotationReturnOneOf } from 'neurostore-typescript-sdk';
+import { AxiosError } from 'axios';
+import annotationQueries from 'hooks/annotations/annotationQueries';
 import { useQuery } from 'react-query';
-import API from 'api/api.config';
+import { AnnotationReturnOneOfWithNoteCollection } from './annotationQueries.types';
 
 const useGetAnnotationById = (annotationId: string | undefined | null) => {
-    return useQuery(
-        ['annotations', annotationId],
-        () => API.NeurostoreServices.AnnotationsService.annotationsIdGet(annotationId || ''),
-        {
-            select: (res: AxiosResponse<AnnotationReturnOneOf>) => res.data,
-            enabled: !!annotationId,
-        }
-    );
+    const query = annotationQueries.byId(annotationId);
+    return useQuery<
+        Promise<AnnotationReturnOneOfWithNoteCollection>,
+        AxiosError,
+        AnnotationReturnOneOfWithNoteCollection,
+        typeof query.queryKey
+    >(query.queryKey, query.queryFn, {
+        enabled: query.enabled,
+    });
 };
 
 export default useGetAnnotationById;

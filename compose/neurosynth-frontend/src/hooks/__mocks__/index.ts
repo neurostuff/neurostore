@@ -50,10 +50,14 @@ const useDeletePoint = vi.fn().mockReturnValue({
     mutate: vi.fn(),
 });
 
-const useGetStudyById = vi.fn().mockReturnValue({
+const studyByIdMockReturn = {
     isLoading: false,
     data: mockStudy(),
-});
+};
+
+const useGetStudyNestedById = vi.fn().mockReturnValue(studyByIdMockReturn);
+
+const useGetStudyNonNestedById = vi.fn().mockReturnValue(studyByIdMockReturn);
 
 const useCreateAnalysis = vi.fn().mockReturnValue({
     isLoading: false,
@@ -123,12 +127,32 @@ const useGetStudysetById = vi.fn().mockImplementation((studysetId: string, isNes
         data: isNested ? studysetNested : studysetNotNested,
     };
 });
+const useGetStudysetNonNestedById = vi.fn().mockReturnValue({
+    isLoading: false,
+    isError: false,
+    data: studysetNotNested,
+});
+const useGetStudysetNestedById = vi.fn().mockReturnValue({
+    isLoading: false,
+    isError: false,
+    data: studysetNested,
+});
+const useGetStudysetSummaryById = vi.fn().mockReturnValue({
+    isLoading: false,
+    isError: false,
+    data: studysetNested,
+});
 
-const useGetBaseStudyById = vi.fn().mockReturnValue({
+const baseStudyByIdMockReturn = {
     isLoading: false,
     isError: false,
     data: mockBaseStudy(),
-});
+};
+
+const useGetBaseStudyFlatById = vi.fn().mockReturnValue(baseStudyByIdMockReturn);
+const useGetBaseStudyInfoById = vi.fn().mockReturnValue(baseStudyByIdMockReturn);
+const useGetBaseStudyNestedById = vi.fn().mockReturnValue(baseStudyByIdMockReturn);
+const useGetBaseStudyNonNestedById = vi.fn().mockReturnValue(baseStudyByIdMockReturn);
 
 const useGetFullText = vi.fn().mockReturnValue({
     isLoading: false,
@@ -192,12 +216,19 @@ export {
     useDeletePoint,
     useDeleteProject,
     useGetAnnotationsByStudysetId,
-    useGetBaseStudyById,
+    useGetBaseStudyFlatById,
+    useGetBaseStudyInfoById,
+    useGetBaseStudyNestedById,
+    useGetBaseStudyNonNestedById,
     useGetConditions,
     useGetExtractionSummary,
     useGetFullText,
-    useGetStudyById,
+    useGetStudyNestedById,
+    useGetStudyNonNestedById,
     useGetStudysetById,
+    useGetStudysetNonNestedById,
+    useGetStudysetNestedById,
+    useGetStudysetSummaryById,
     useInputValidation,
     useIsMounted,
     useUpdateAnalysis,

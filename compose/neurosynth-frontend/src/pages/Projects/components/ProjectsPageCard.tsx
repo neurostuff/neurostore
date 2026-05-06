@@ -2,7 +2,7 @@ import ChangeHistoryIcon from '@mui/icons-material/ChangeHistory';
 import LockIcon from '@mui/icons-material/Lock';
 import PublicIcon from '@mui/icons-material/Public';
 import { Box, Chip, Link as MuiLink, Stepper, Typography } from '@mui/material';
-import { useGetMetaAnalysesByIds, useGetStudysetById } from 'hooks';
+import { useGetMetaAnalysesByIds, useGetStudysetNonNestedById } from 'hooks';
 import { EAnalysisType, INeurosynthProjectReturn } from 'hooks/projects/Project.types';
 import { getCurationSummary } from 'hooks/useGetCurationSummary';
 import { getExtractionSummary } from 'hooks/useGetExtractionSummary';
@@ -35,7 +35,7 @@ const ProjectsPageCard: React.FC<INeurosynthProjectReturn> = (props) => {
         meta_analyses = [],
     } = props;
 
-    const { data: studyset } = useGetStudysetById(provenance?.extractionMetadata?.studysetId, false);
+    const { data: studyset } = useGetStudysetNonNestedById(provenance?.extractionMetadata?.studysetId);
     const { data: metaAnalyses = [] } = useGetMetaAnalysesByIds(meta_analyses as string[]);
 
     const lastUpdateDate = useMemo(() => {
@@ -63,7 +63,7 @@ const ProjectsPageCard: React.FC<INeurosynthProjectReturn> = (props) => {
     const extractionSummary = useMemo(() => {
         if (!provenance.extractionMetadata.studysetId) return;
 
-        const studysetStudies = (studyset?.studies || []) as string[];
+        const studysetStudies = studyset?.studies ?? [];
         const studyStatusesList = provenance.extractionMetadata?.studyStatusList ?? [];
         return getExtractionSummary(studysetStudies, studyStatusesList);
     }, [provenance.extractionMetadata?.studyStatusList, provenance.extractionMetadata.studysetId, studyset?.studies]);

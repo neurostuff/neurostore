@@ -1,7 +1,7 @@
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import { Box, Typography } from '@mui/material';
 import LoadingButton from 'components/Buttons/LoadingButton';
-import { useGetStudysetById, useUpdateStudyset } from 'hooks';
+import { useGetStudysetNonNestedById, useUpdateStudyset } from 'hooks';
 import useIngest from 'hooks/studies/useIngest';
 import { BaseStudy, BaseStudyReturn } from 'neurostore-typescript-sdk';
 import { useSnackbar } from 'notistack';
@@ -16,18 +16,18 @@ import { useState } from 'react';
 import { useIsFetching, useQueryClient } from 'react-query';
 import ExtractionOutOfSyncStyles from './ExtractionOutOfSync.styles';
 import { mapStubsToStudysetPayload } from 'helpers/Extraction.helpers';
-import { STUDYSET_QUERY_STRING } from 'hooks/studysets/useGetStudysetById';
+import studysetQueries from 'hooks/studysets/studysetQueries';
 
 const ExtractionOutOfSync: React.FC = () => {
     const studysetId = useProjectExtractionStudysetId();
     const annotationId = useProjectExtractionAnnotationId();
-    const { data: studyset } = useGetStudysetById(studysetId, false, false);
+    const { data: studyset } = useGetStudysetNonNestedById(studysetId);
+    const getStudysetIsRefetching = useIsFetching(studysetQueries.all());
     const numColumns = useProjectNumCurationColumns();
     const setAllowEditMetaAnalyses = useAllowEditMetaAnalyses();
     const curationIncludedStudies = useProjectCurationColumn(numColumns - 1);
     const { mutateAsync: ingest } = useIngest();
     const { mutateAsync: updateStudyset } = useUpdateStudyset();
-    const getStudysetIsRefetching = useIsFetching(STUDYSET_QUERY_STRING);
     const { enqueueSnackbar } = useSnackbar();
     const queryClient = useQueryClient();
 
@@ -38,7 +38,7 @@ const ExtractionOutOfSync: React.FC = () => {
         setIsLoading(true);
 
         // studyset_studies is the canonical list (id + curation_stub_uuid); studies is always in sync with it.
-        const studysetStudies = studyset?.studyset_studies || [];
+        const studysetStudies = studyset?.studyset_studies ?? [];
         const stubToStudyId = new Map<string, string>();
         const studiesInStudyset = new Set<string>();
         studysetStudies.forEach((assoc) => {
@@ -99,10 +99,9 @@ const ExtractionOutOfSync: React.FC = () => {
 
             // Invalidate cached studyset data to ensure subsequent queries reflect the newly updated stub mappings,
             // keeping curation and extraction aligned.
-            await queryClient.invalidateQueries(STUDYSET_QUERY_STRING);
+            await queryClient.invalidateQueries(studysetQueries.all());
 
             queryClient.invalidateQueries('annotations');
-
 
             enqueueSnackbar('synced curation and studyset successfully', { variant: 'success' });
 

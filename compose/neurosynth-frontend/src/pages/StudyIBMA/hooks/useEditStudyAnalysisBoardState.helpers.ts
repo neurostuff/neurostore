@@ -1,4 +1,5 @@
 import { EPropertyType } from 'components/EditMetadata/EditMetadata.types';
+import { AnalysisReturnNested } from 'hooks/analyses/analysisQueries.types';
 import type { ImageReturn } from 'neurostore-typescript-sdk';
 import type { AnalysisBoardRow, BrainMapListItem } from 'pages/StudyIBMA/hooks/useEditStudyAnalysisBoardState.types';
 import { DefaultMapTypes, type IStoreAnalysis } from 'stores/study/StudyStore.helpers';
@@ -7,7 +8,7 @@ import { DefaultMapTypes, type IStoreAnalysis } from 'stores/study/StudyStore.he
  * Images whose `analysis` FK matches a known analysis id are grouped under that analysis.
  * Images missing or pointing outside the study are listed as uncategorized.
  */
-export function partitionAnalysisImages(analyses: IStoreAnalysis[]): {
+export function partitionAnalysisImages(analyses: AnalysisReturnNested[]): {
     uncategorized: ImageReturn[];
     analysisIdToImageMap: Record<string, ImageReturn[]>;
 } {
@@ -46,7 +47,7 @@ export function imageToBrainMapListItem(img: ImageReturn): BrainMapListItem {
     };
 }
 
-export function findImageById(imageId: string | undefined, analyses: IStoreAnalysis[]): ImageReturn | undefined {
+export function findImageById(imageId: string | undefined, analyses: AnalysisReturnNested[]): ImageReturn | undefined {
     if (!imageId) return undefined;
 
     const flat = analyses.flatMap((analysis) => (analysis.images ?? []) as ImageReturn[]);
@@ -146,11 +147,11 @@ export function syncImageMutationsToStore(
 export function analysisRowsShallowEqual(a: AnalysisBoardRow, b: AnalysisBoardRow): boolean {
     if (a.id !== b.id) return false;
     if (a.name !== b.name || a.description !== b.description) return false;
-    const ak = Object.keys(a.annotation);
-    const bk = Object.keys(b.annotation);
+    const ak = Object.keys(a.analysisAnnotation);
+    const bk = Object.keys(b.analysisAnnotation);
     if (ak.length !== bk.length) return false;
     for (const k of ak) {
-        if (a.annotation[k] !== b.annotation[k]) return false;
+        if (a.analysisAnnotation[k] !== b.analysisAnnotation[k]) return false;
     }
     return true;
 }

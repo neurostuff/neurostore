@@ -1,6 +1,6 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import { unsetUnloadHandler } from 'helpers/BeforeUnload.helpers';
-import { useCreateStudy, useGetStudysetById, useUpdateStudyset } from 'hooks';
+import { useCreateStudy, useGetStudysetNonNestedById, useUpdateStudyset } from 'hooks';
 import { AnalysisReturn, StudyRequest } from 'neurostore-typescript-sdk';
 import { useSnackbar } from 'notistack';
 import {
@@ -34,7 +34,7 @@ import {
 import { storeAnalysesToStudyAnalyses } from 'stores/study/StudyStore.helpers';
 import { hasDuplicateStudyAnalysisNames, hasEmptyStudyPoints } from './useSaveStudy.helpers';
 import { updateExtractionTableStateStudySwapInStorage } from 'pages/Extraction/components/ExtractionTable.helpers';
-import { STUDYSET_QUERY_STRING } from 'hooks/studysets/useGetStudysetById';
+import studysetQueries from 'hooks/studysets/studysetQueries';
 
 const useSaveStudy = () => {
     const { user } = useAuth0();
@@ -61,7 +61,7 @@ const useSaveStudy = () => {
     const updateAnnotationInDB = useUpdateDBWithAnnotationFromStore();
     const updateNotesInStore = useUpdateAnnotationNotes();
 
-    const { data: studyset } = useGetStudysetById(studysetId || undefined, false);
+    const { data: studyset } = useGetStudysetNonNestedById(studysetId);
     const { mutateAsync: updateStudyset } = useUpdateStudyset();
     const { mutateAsync: createStudy } = useCreateStudy();
 
@@ -199,7 +199,7 @@ const useSaveStudy = () => {
             const updatedClone = (await API.NeurostoreServices.StudiesService.studiesIdGet(clonedStudyId, true)).data;
 
             // 2. update the studyset containing the study with our new clone
-            const updatedStudies = [...(studyset.studies as string[])];
+            const updatedStudies = [...(studyset.studies ?? [])];
             updatedStudies[currentStudyBeingEditedIndex] = clonedStudyId;
 
             // Preserve the stub UUID from the original study on the new version, and keep other stubs intact.
@@ -220,7 +220,7 @@ const useSaveStudy = () => {
                     studies: studiesPayload,
                 },
             });
-            queryClient.invalidateQueries(STUDYSET_QUERY_STRING);
+            queryClient.invalidateQueries(studysetQueries.all());
 
             // 3. update the project as this keeps track of completion status of studies
             replaceStudyWithNewClonedStudy(storeStudy.id, clonedStudyId);

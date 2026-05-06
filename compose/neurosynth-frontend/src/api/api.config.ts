@@ -28,12 +28,6 @@ import {
     ITaskExtractor,
 } from 'hooks/extractions/useGetAllExtractedDataForStudies';
 
-export type NeurostoreAnnotation = AnnotationBase &
-    ResourceAttributes &
-    Clone &
-    AnnotationReturnRelationships &
-    AnnotationCommon;
-
 const storeApi = new StoreApi(neurostoreConfig, undefined, axiosInstance);
 
 const NeurostoreServices = {

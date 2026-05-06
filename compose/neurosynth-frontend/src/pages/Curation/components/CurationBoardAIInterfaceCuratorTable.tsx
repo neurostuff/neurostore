@@ -17,7 +17,6 @@ const CurationBoardAIInterfaceCuratorTable: React.FC<ICurationBoardAIInterfaceCu
     columnIndex,
 }) => {
     const prismaConfig = useProjectCurationPrismaConfig();
-    ``;
     const prismaPhase = prismaConfig.isPrisma ? indexToPRISMAMapping(columnIndex) : undefined;
 
     const [tableContainerElement, setTableContainerElement] = useState<HTMLDivElement | null>(null);

@@ -4,7 +4,7 @@ import QuestionMark from '@mui/icons-material/QuestionMark';
 import { Box, Button, ButtonGroup, Tooltip, Typography } from '@mui/material';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import { hasUnsavedStudyChanges, unsetUnloadHandler } from 'helpers/BeforeUnload.helpers';
-import { useGetStudysetById, useUserCanEdit } from 'hooks';
+import { useGetStudysetNonNestedById, useUserCanEdit } from 'hooks';
 import {
     IExtractionTableState,
     retrieveExtractionTableState,
@@ -56,7 +56,7 @@ const EditStudyToolbarNext: React.FC = () => {
     const canEdit = useUserCanEdit(user ?? undefined);
 
     const studysetId = useProjectExtractionStudysetId();
-    const { data, isLoading, isError } = useGetStudysetById(studysetId || '', false, false);
+    const { data, isLoading, isError } = useGetStudysetNonNestedById(studysetId);
 
     const [extractionTableState, setExtractionTableState] = useState<IExtractionTableState>({
         columnFilters: [],
@@ -72,7 +72,7 @@ const EditStudyToolbarNext: React.FC = () => {
         if (!stateFromSessionStorage || stateFromSessionStorage.studies.length === 0) {
             setExtractionTableState((prev) => ({
                 ...prev,
-                studies: (data?.studies ?? []) as string[],
+                studies: data?.studies ?? [],
             }));
         } else {
             setExtractionTableState(stateFromSessionStorage);
