@@ -1,5 +1,6 @@
 from sqlalchemy import select
 from sqlalchemy.orm import raiseload, selectinload
+from webargs import fields
 
 from neurostore.database import db
 from neurostore.exceptions.factories import make_field_error
@@ -36,7 +37,10 @@ class AnalysisObjectViewPolicy(DefaultObjectViewPolicy):
 @view_maker
 class AnalysesView(ObjectView, ListView):
     object_view_policy_cls = AnalysisObjectViewPolicy
-    _view_fields = {**LIST_NESTED_ARGS}
+    _view_fields = {
+        **LIST_NESTED_ARGS,
+        "study": fields.String(load_default=None),
+    }
     _o2m = {
         "images": "ImagesView",
         "points": "PointsView",
@@ -52,6 +56,12 @@ class AnalysesView(ObjectView, ListView):
     _parent = {"study": "StudiesView"}
     _linked = {"annotation_analyses": "AnnotationAnalysesView"}
     _search_fields = ("name", "description")
+
+    def view_search(self, q, args):
+        study_id = args.get("study")
+        if study_id:
+            q = q.filter(Analysis.study_id == study_id)
+        return q
 
     def get_affected_ids(self, ids):
         query = (
