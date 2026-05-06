@@ -28,7 +28,6 @@ def resolve_dev_database_name():
 def resolve_test_database_name():
     return "compose_test_db"
 
-
 def get_env_var(name, default=None, required=False):
     """Helper to fetch environment variables with optional default and required flag."""
     value = os.environ.get(name, default)
