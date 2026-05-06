@@ -58,6 +58,11 @@ class AnalysesView(ObjectView, ListView):
     _search_fields = ("name", "description")
 
     def view_search(self, q, args):
+        """Apply analysis-specific filters.
+
+        Intentionally does not call ``super().view_search()`` because the
+        parent ``ListView.view_search`` hook is a no-op.
+        """
         study_id = args.get("study")
         if study_id:
             q = q.filter(Analysis.study_id == study_id)

@@ -17,13 +17,16 @@ ENV_TO_CONFIG = {
     "docker_test": "DockerTestConfig",
     "docker-test": "DockerTestConfig",
 }
-DEVLIKE_ENVS = {"dev", "development", "test", "testing", "docker_test", "docker-test"}
+DEVLIKE_ENVS = {"dev", "development"}
+TESTING_ENVS = {"test", "testing", "docker_test", "docker-test"}
 PRODLIKE_ENVS = {"stage", "staging", "prod", "production"}
 
 
+def resolve_dev_database_name():
+    return "store_dev_db"
+
 def resolve_test_database_name():
     return "store_test_db"
-
 
 def _normalize_app_env(value):
     return (value or "").strip().lower()
@@ -41,14 +44,9 @@ def resolve_config_object():
 
 def resolve_database_name(default_db_name, config_env):
     app_env = _normalize_app_env(os.environ.get("APP_ENV", config_env))
-    if app_env in {
-        "dev",
-        "development",
-        "test",
-        "testing",
-        "docker_test",
-        "docker-test",
-    }:
+    if app_env in DEVLIKE_ENVS:
+        return resolve_dev_database_name()
+    if app_env in TESTING_ENVS:
         return resolve_test_database_name()
     if app_env in PRODLIKE_ENVS:
         return default_db_name
@@ -166,7 +164,7 @@ class DevelopmentConfig(Config):
     AUTH0_BASE_URL = "https://dev-mui7zm42.us.auth0.com"
     AUTH0_ACCESS_TOKEN_URL = "https://dev-mui7zm42.us.auth0.com/oauth/token"
     AUTH0_AUTH_URL = "https://dev-mui7zm42.us.auth0.com/authorize"
-    AUTH0_API_AUDIENCE = "https://dev.synth.neurostore.xyz/api/"
+    AUTH0_API_AUDIENCE = os.environ.get("AUTH0_API_AUDIENCE", "https://dev.synth.neurostore.xyz/api/")
     COMPOSE_AUTH0_CLIENT_ID = os.environ.get("COMPOSE_AUTH0_CLIENT_ID")
     DB_NAME = resolve_database_name("neurostore", "development")
     POSTGRES_HOST = os.environ.get("POSTGRES_HOST")
