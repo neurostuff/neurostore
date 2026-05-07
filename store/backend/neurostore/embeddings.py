@@ -23,43 +23,12 @@ def _call_openai_create(
     dimensions: Optional[int] = None,
     api_key: Optional[str] = None,
 ) -> Any:
-    """
-    Internal call wrapped with tenacity to perform the OpenAI embeddings request.
-
-    This prefers the modern SDK client (openai.OpenAI().embeddings.create) when available,
-    and falls back to legacy surfaces (openai.Embedding.create or openai.embeddings.create).
-    The `dimensions` argument is forwarded to the OpenAI API when provided.
-    The optional `api_key` is used to construct the modern OpenAI client if supplied.
-    """
-    # Try modern OpenAI client (openai>=1.x)
-    try:
-        if hasattr(openai, "OpenAI"):
-            client = openai.OpenAI(api_key=api_key) if api_key else openai.OpenAI()
-            if dimensions is None:
-                return client.embeddings.create(model=model, input=input_text)
-            return client.embeddings.create(
-                model=model, input=input_text, dimensions=dimensions
-            )
-    except Exception:
-        # If the modern client fails for any reason, fall through to legacy surfaces.
-        pass
-
-    # Fallback: older SDK surfaces
-    if hasattr(openai, "Embedding") and hasattr(openai.Embedding, "create"):
-        if dimensions is None:
-            return openai.Embedding.create(model=model, input=input_text)
-        return openai.Embedding.create(
-            model=model, input=input_text, dimensions=dimensions
-        )
-
-    if hasattr(openai, "embeddings") and hasattr(openai.embeddings, "create"):
-        if dimensions is None:
-            return openai.embeddings.create(model=model, input=input_text)
-        return openai.embeddings.create(
-            model=model, input=input_text, dimensions=dimensions
-        )
-
-    raise AttributeError("No supported OpenAI embeddings API found on openai package")
+    client = openai.OpenAI(api_key=api_key) if api_key else openai.OpenAI()
+    if dimensions is None:
+        return client.embeddings.create(model=model, input=input_text)
+    return client.embeddings.create(
+        model=model, input=input_text, dimensions=dimensions
+    )
 
 
 def get_embedding(text: str, dimensions: Optional[int] = None) -> List[float]:

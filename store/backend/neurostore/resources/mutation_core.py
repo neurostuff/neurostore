@@ -23,9 +23,7 @@ from neurostore.resources.utils import get_current_user, is_user_admin
 
 def _machine_client_name(external_id: str | None) -> str:
     compose_client_id = current_app.config.get("COMPOSE_AUTH0_CLIENT_ID")
-    compose_subject = (
-        f"{compose_client_id}@clients" if compose_client_id else None
-    )
+    compose_subject = f"{compose_client_id}@clients" if compose_client_id else None
 
     if compose_subject and external_id == compose_subject:
         return "compose_bot"
@@ -49,9 +47,7 @@ def create_user():
         ).userinfo(access_token=token)
     except Auth0Error:
         if external_id and external_id.endswith("@clients"):
-            return User(
-                external_id=external_id, name=_machine_client_name(external_id)
-            )
+            return User(external_id=external_id, name=_machine_client_name(external_id))
         raise
 
     name = profile_info.get("name", "Unknown")
