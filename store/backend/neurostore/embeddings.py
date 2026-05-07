@@ -22,8 +22,15 @@ def _call_openai_create(
     input_text: str,
     dimensions: Optional[int] = None,
     api_key: Optional[str] = None,
+    api_gateway: Optional[str] = None,
 ) -> Any:
-    client = openai.OpenAI(api_key=api_key) if api_key else openai.OpenAI()
+    client_kwargs = {}
+    if api_key:
+        client_kwargs["api_key"] = api_key
+    if api_gateway:
+        client_kwargs["base_url"] = api_gateway
+
+    client = openai.OpenAI(**client_kwargs)
     if dimensions is None:
         return client.embeddings.create(model=model, input=input_text)
     return client.embeddings.create(
@@ -37,6 +44,8 @@ def get_embedding(text: str, dimensions: Optional[int] = None) -> List[float]:
 
     Behavior:
     - Reads OPENAI_API_KEY from environment (raises RuntimeError if missing).
+    - Reads OPENAI_API_GATEWAY from environment as an optional OpenAI-compatible
+      base URL.
     - Uses the openai Python package to request embeddings. If `dimension` is provided
       it will be passed through to the OpenAI API via the `dimensions` parameter.
     - Retries up to 3 attempts with small backoff via tenacity on transient/network errors.
@@ -61,6 +70,7 @@ def get_embedding(text: str, dimensions: Optional[int] = None) -> List[float]:
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
         raise RuntimeError("OPENAI_API_KEY not set")
+    api_gateway = os.getenv("OPENAI_API_GATEWAY")
 
     # configure key for the openai client
     openai.api_key = api_key
@@ -73,7 +83,11 @@ def get_embedding(text: str, dimensions: Optional[int] = None) -> List[float]:
     try:
         # Use unified caller that handles both modern and legacy SDKs.
         resp = _call_openai_create(
-            model=model_name, input_text=text, dimensions=dimensions, api_key=api_key
+            model=model_name,
+            input_text=text,
+            dimensions=dimensions,
+            api_key=api_key,
+            api_gateway=api_gateway,
         )
 
         # Handle both legacy dict responses and modern OpenAI response objects.

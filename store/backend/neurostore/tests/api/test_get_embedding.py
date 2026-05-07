@@ -59,6 +59,7 @@ def test_get_embedding_uses_modern_openai_client(monkeypatch):
     )
 
     monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    monkeypatch.delenv("OPENAI_API_GATEWAY", raising=False)
 
     with patch(
         "neurostore.embeddings.openai.OpenAI", return_value=mock_client
@@ -66,6 +67,31 @@ def test_get_embedding_uses_modern_openai_client(monkeypatch):
         result = get_embedding("hello world")
 
     mock_openai_cls.assert_called_once_with(api_key="test-key")
+    mock_client.embeddings.create.assert_called_once_with(
+        model="text-embedding-3-small", input="hello world"
+    )
+    assert result == [float(x) for x in expected_vector]
+
+
+def test_get_embedding_uses_openai_api_gateway(monkeypatch):
+    expected_vector = [0.1, 0.2, 0.3]
+
+    mock_client = MagicMock()
+    mock_client.embeddings.create.return_value = _make_mock_openai_response(
+        expected_vector
+    )
+
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    monkeypatch.setenv("OPENAI_API_GATEWAY", "https://api.portkey.ai/v1")
+
+    with patch(
+        "neurostore.embeddings.openai.OpenAI", return_value=mock_client
+    ) as mock_openai_cls:
+        result = get_embedding("hello world")
+
+    mock_openai_cls.assert_called_once_with(
+        api_key="test-key", base_url="https://api.portkey.ai/v1"
+    )
     mock_client.embeddings.create.assert_called_once_with(
         model="text-embedding-3-small", input="hello world"
     )
@@ -82,6 +108,7 @@ def test_get_embedding_passes_dimensions(monkeypatch):
     )
 
     monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    monkeypatch.delenv("OPENAI_API_GATEWAY", raising=False)
 
     with patch("neurostore.embeddings.openai.OpenAI", return_value=mock_client):
         result = get_embedding("hello world", dimensions=512)
