@@ -29,6 +29,8 @@ def _call_openai_create(
         client_kwargs["api_key"] = api_key
     if api_gateway:
         client_kwargs["base_url"] = api_gateway
+    if api_gateway and "portkey.ai" in api_gateway:
+        client_kwargs["default_headers"] = {"x-portkey-api-key": api_key}
 
     client = openai.OpenAI(**client_kwargs)
     if dimensions is None:
@@ -46,6 +48,7 @@ def get_embedding(text: str, dimensions: Optional[int] = None) -> List[float]:
     - Reads OPENAI_API_KEY from environment (raises RuntimeError if missing).
     - Reads OPENAI_API_GATEWAY from environment as an optional OpenAI-compatible
       base URL.
+    - Reads OPENAI_EMBEDDING_MODEL from environment as an optional embedding model.
     - Uses the openai Python package to request embeddings. If `dimension` is provided
       it will be passed through to the OpenAI API via the `dimensions` parameter.
     - Retries up to 3 attempts with small backoff via tenacity on transient/network errors.
@@ -75,7 +78,7 @@ def get_embedding(text: str, dimensions: Optional[int] = None) -> List[float]:
     # configure key for the openai client
     openai.api_key = api_key
 
-    model_name = "text-embedding-3-small"
+    model_name = os.getenv("OPENAI_EMBEDDING_MODEL", "text-embedding-3-small")
 
     if dimensions is not None and not isinstance(dimensions, int):
         raise ValueError("dimensions must be an int when provided")
