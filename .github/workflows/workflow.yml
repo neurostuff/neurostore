@@ -732,7 +732,7 @@ jobs:
         VITE_APP_SITE_URL: http://localhost:3000
       with:
         build: npm run build:staging
-        record: true
+        record: false
         start: npm run serve-build
         browser: chrome
         wait-on: http://localhost:3000

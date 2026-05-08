@@ -53,6 +53,51 @@ def test_get_analyses(auth_client, ingest_neurosynth, session):
     assert resp_json["id"] == a_id
 
 
+def test_get_analyses_filter_by_study(auth_client, session):
+    first_study_resp = auth_client.post(
+        "/api/studies/",
+        data={
+            "name": "analysis-study-filter-first",
+            "pmid": "910031",
+            "doi": "10.1000/analysis-study-filter-first",
+            "analyses": [{"name": "analysis-study-filter-first-analysis"}],
+        },
+    )
+    second_study_resp = auth_client.post(
+        "/api/studies/",
+        data={
+            "name": "analysis-study-filter-second",
+            "pmid": "910032",
+            "doi": "10.1000/analysis-study-filter-second",
+            "analyses": [{"name": "analysis-study-filter-second-analysis"}],
+        },
+    )
+
+    assert first_study_resp.status_code == 200
+    assert second_study_resp.status_code == 200
+
+    first_study_id = first_study_resp.json()["id"]
+    second_study_id = second_study_resp.json()["id"]
+    first_analysis_id = first_study_resp.json()["analyses"][0]
+    second_analysis_id = second_study_resp.json()["analyses"][0]
+
+    filtered_resp = auth_client.get(f"/api/analyses/?study={first_study_id}")
+    second_filtered_resp = auth_client.get(f"/api/analyses/?study={second_study_id}")
+
+    assert filtered_resp.status_code == 200
+    assert second_filtered_resp.status_code == 200
+
+    filtered_analysis_ids = {analysis["id"] for analysis in filtered_resp.json()["results"]}
+    second_filtered_analysis_ids = {
+        analysis["id"] for analysis in second_filtered_resp.json()["results"]
+    }
+
+    assert first_analysis_id in filtered_analysis_ids
+    assert second_analysis_id not in filtered_analysis_ids
+    assert second_analysis_id in second_filtered_analysis_ids
+    assert first_analysis_id not in second_filtered_analysis_ids
+
+
 def test_analysis_emits_all_media_flags(auth_client, session):
     create_study = auth_client.post(
         "/api/studies/",
