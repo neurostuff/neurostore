@@ -615,8 +615,6 @@ jobs:
       run: |
         cp compose/.env.example compose/.env
         cp store/.env.example store/.env
-        sed -i 's/^APP_ENV=.*/APP_ENV=docker_test/' compose/.env
-        sed -i 's/^APP_ENV=.*/APP_ENV=docker_test/' store/.env
         echo "NEUROSTORE_API_URL=http://store_nginx/api" >> compose/.env
     -
       name: load compose images
