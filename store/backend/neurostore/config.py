@@ -160,8 +160,7 @@ class DevelopmentConfig(Config):
     AUTH0_ACCESS_TOKEN_URL = "https://dev-mui7zm42.us.auth0.com/oauth/token"
     AUTH0_AUTH_URL = "https://dev-mui7zm42.us.auth0.com/authorize"
     AUTH0_API_AUDIENCE = os.environ.get(
-        "AUTH0_API_AUDIENCE",
-        "https://dev.synth.neurostore.xyz/api/"
+        "AUTH0_API_AUDIENCE", "https://dev.synth.neurostore.xyz/api/"
     )
     COMPOSE_AUTH0_CLIENT_ID = os.environ.get("COMPOSE_AUTH0_CLIENT_ID")
     DB_NAME = resolve_database_name("neurostore", "development")

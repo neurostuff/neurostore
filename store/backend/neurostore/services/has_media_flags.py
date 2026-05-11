@@ -138,7 +138,8 @@ def recompute_media_flags(base_study_ids):
         ).all()
     )
 
-    # Study flags from analyses + child rows
+    # Study coordinate flags derive from analyses; image flags derive from
+    # direct study-owned images so uncategorized images are included.
     study_points_exist = sa.exists(
         sa.select(sa.literal(1))
         .select_from(Analysis)
@@ -148,44 +149,37 @@ def recompute_media_flags(base_study_ids):
         )
     )
     study_images_exist = sa.exists(
-        sa.select(sa.literal(1))
-        .select_from(Analysis)
-        .where(
-            Analysis.study_id == Study.id,
-            Analysis.has_images.is_(True),
-        )
+        sa.select(sa.literal(1)).select_from(Image).where(Image.study_id == Study.id)
     )
     study_z_maps_exist = sa.exists(
         sa.select(sa.literal(1))
-        .select_from(Analysis)
+        .select_from(Image)
         .where(
-            Analysis.study_id == Study.id,
-            Analysis.has_z_maps.is_(True),
+            Image.study_id == Study.id,
+            _matches_values(Image.value_type, Z_MAP_SQL_VALUES),
         )
     )
     study_t_maps_exist = sa.exists(
         sa.select(sa.literal(1))
-        .select_from(Analysis)
+        .select_from(Image)
         .where(
-            Analysis.study_id == Study.id,
-            Analysis.has_t_maps.is_(True),
+            Image.study_id == Study.id,
+            _matches_values(Image.value_type, T_MAP_SQL_VALUES),
         )
     )
     study_beta_maps_exist = sa.exists(
         sa.select(sa.literal(1))
-        .select_from(Analysis)
-        .join(Image, Image.analysis_id == Analysis.id)
+        .select_from(Image)
         .where(
-            Analysis.study_id == Study.id,
+            Image.study_id == Study.id,
             _matches_values(Image.value_type, BETA_MAP_SQL_VALUES),
         )
     )
     study_variance_maps_exist = sa.exists(
         sa.select(sa.literal(1))
-        .select_from(Analysis)
-        .join(Image, Image.analysis_id == Analysis.id)
+        .select_from(Image)
         .where(
-            Analysis.study_id == Study.id,
+            Image.study_id == Study.id,
             _matches_values(Image.value_type, VARIANCE_MAP_SQL_VALUES),
         )
     )
@@ -252,26 +246,12 @@ def recompute_media_flags(base_study_ids):
     base_beta_maps_exist = sa.exists(
         sa.select(sa.literal(1))
         .select_from(Study)
-        .join(Analysis, Analysis.study_id == Study.id)
-        .join(Image, Image.analysis_id == Analysis.id)
         .where(
             Study.base_study_id == BaseStudy.id,
-            _matches_values(Image.value_type, BETA_MAP_SQL_VALUES),
+            Study.has_beta_and_variance_maps.is_(True),
         )
     )
-    base_variance_maps_exist = sa.exists(
-        sa.select(sa.literal(1))
-        .select_from(Study)
-        .join(Analysis, Analysis.study_id == Study.id)
-        .join(Image, Image.analysis_id == Analysis.id)
-        .where(
-            Study.base_study_id == BaseStudy.id,
-            _matches_values(Image.value_type, VARIANCE_MAP_SQL_VALUES),
-        )
-    )
-    base_beta_and_variance_maps = sa.and_(
-        base_beta_maps_exist, base_variance_maps_exist
-    )
+    base_beta_and_variance_maps = base_beta_maps_exist
     changed_base_study_ids = set(
         db.session.scalars(
             sa.update(BaseStudy)

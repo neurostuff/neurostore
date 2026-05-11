@@ -119,8 +119,9 @@ def ingest_neurovault(verbose=False, limit=20, overwrite=False, max_images=None)
         existing_conditions = {cond.name: cond for cond in Condition.query.all()}
         order = 0
         for img in data["results"]:
-            aname = img["name"]
-            if aname not in analyses:
+            aname = img.get("name")
+            analysis = None
+            if aname and aname not in analyses:
                 condition = img.get("cognitive_paradigm_cogatlas")
                 analysis_kwargs = {
                     "name": aname,
@@ -150,21 +151,25 @@ def ingest_neurovault(verbose=False, limit=20, overwrite=False, max_images=None)
                         )
 
                 analyses[aname] = analysis
-            else:
+            elif aname:
                 analysis = analyses[aname]
             space = space or "Unknown" if img.get("not_mni", False) else "MNI"
             type_ = canonicalize_map_type(img.get("map_type"))
+            entities = []
+            if analysis is not None:
+                entities.append(
+                    Entity(level="group", label=analysis.name, analysis=analysis)
+                )
             image = Image(
                 url=img["file"],
                 space=space,
                 value_type=type_,
                 analysis=analysis,
+                study=s,
                 data=img,
                 filename=op.basename(img["file"]),
                 add_date=parse_date(img["add_date"]),
-                entities=[
-                    Entity(level="group", label=analysis.name, analysis=analysis)
-                ],
+                entities=entities,
             )
             images.append(image)
 
