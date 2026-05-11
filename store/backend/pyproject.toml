@@ -15,7 +15,7 @@ dependencies = [
     "authlib~=1.7",
     "connexion[swagger-ui,uvicorn,flask]==3.3.0",
     "flask~=3.1",
-    "flask-admin~=2.1",
+    "flask-admin~=2.2",
     "flask-cors~=6.0",
     "flask-caching~=2.4",
     "flask-shell-ipython~=0.5",
