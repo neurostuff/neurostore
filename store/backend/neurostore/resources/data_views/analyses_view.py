@@ -35,18 +35,10 @@ class AnalysisObjectViewPolicy(DefaultObjectViewPolicy):
         return serialize_analysis_detail(self.get_record(id, args))
 
 
-class AnalysisMutationPolicy(DefaultMutationPolicy):
-    def post_nested_record_update(self):
-        record = self.context.record
-        study_id = record.study_id
-        for image in getattr(record, "images", []) or []:
-            image.study_id = study_id
-        return record
 
 
 @view_maker
 class AnalysesView(ObjectView, ListView):
-    mutation_policy_cls = AnalysisMutationPolicy
     object_view_policy_cls = AnalysisObjectViewPolicy
     _view_fields = {
         **LIST_NESTED_ARGS,
