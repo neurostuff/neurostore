@@ -20,7 +20,6 @@ from neurostore.models import (
 from neurostore.models.data import StudysetStudy
 from neurostore.resources.base import DefaultObjectViewPolicy, ListView, ObjectView
 from neurostore.resources.data_views.common import LIST_NESTED_ARGS
-from neurostore.resources.mutation_core import DefaultMutationPolicy
 from neurostore.resources.utils import view_maker
 
 
@@ -33,8 +32,6 @@ class AnalysisObjectViewPolicy(DefaultObjectViewPolicy):
         )
 
         return serialize_analysis_detail(self.get_record(id, args))
-
-
 
 
 @view_maker
