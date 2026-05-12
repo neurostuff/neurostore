@@ -87,7 +87,9 @@ def test_get_analyses_filter_by_study(auth_client, session):
     assert filtered_resp.status_code == 200
     assert second_filtered_resp.status_code == 200
 
-    filtered_analysis_ids = {analysis["id"] for analysis in filtered_resp.json()["results"]}
+    filtered_analysis_ids = {
+        analysis["id"] for analysis in filtered_resp.json()["results"]
+    }
     second_filtered_analysis_ids = {
         analysis["id"] for analysis in second_filtered_resp.json()["results"]
     }
@@ -174,7 +176,9 @@ def test_delete_image_analyses(auth_client, ingest_neurovault, session):
     auth_client.delete(f"/api/analyses/{analysis_db.id}")
 
     for image in analysis["images"]:
-        assert Image.query.filter_by(id=image).first() is None
+        image_db = Image.query.filter_by(id=image).one()
+        assert image_db.analysis_id is None
+        assert image_db.study_id == analysis["study"]
 
 
 def test_update_points_analyses(auth_client, ingest_neurovault, session):

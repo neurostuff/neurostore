@@ -590,6 +590,12 @@ class Study(BaseMixin, db.Model):
         lazy="dynamic",
         viewonly=True,
     )
+    images = relationship(
+        "Image",
+        backref=backref("study"),
+        passive_deletes=True,
+        cascade_backrefs=False,
+    )
 
     __table_args__ = (
         db.CheckConstraint(level.in_(["group", "meta"])),
@@ -698,7 +704,6 @@ class Analysis(BaseMixin, db.Model):
         "Image",
         backref=backref("analysis"),
         passive_deletes=True,
-        cascade="all, delete-orphan",
         cascade_backrefs=False,
     )
     weights = association_proxy("analysis_conditions", "weight")
@@ -866,7 +871,10 @@ class Image(BaseMixin, db.Model):
     space = db.Column(db.String)
     value_type = db.Column(db.String)
     analysis_id = db.Column(
-        db.Text, db.ForeignKey("analyses.id", ondelete="CASCADE"), index=True
+        db.Text, db.ForeignKey("analyses.id", ondelete="SET NULL"), index=True
+    )
+    study_id = db.Column(
+        db.Text, db.ForeignKey("studies.id", ondelete="CASCADE"), index=True
     )
     data = db.Column(JSONB)
     add_date = db.Column(db.DateTime(timezone=True))
@@ -884,6 +892,15 @@ class Image(BaseMixin, db.Model):
     @validates("value_type")
     def validate_value_type(self, key, value):
         return canonicalize_map_type(value)
+
+    @validates("analysis")
+    def validate_analysis(self, key, value):
+        if value is not None:
+            if getattr(value, "study", None) is not None:
+                self.study = value.study
+            elif getattr(value, "study_id", None) is not None:
+                self.study_id = value.study_id
+        return value
 
 
 class PointValue(BaseMixin, db.Model):

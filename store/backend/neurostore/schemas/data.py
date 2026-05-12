@@ -302,7 +302,12 @@ class EntitySchema(BaseDataSchema):
 
 class ImageSchema(BaseDataSchema):
     # serialization
-    analysis_id = fields.String(data_key="analysis", metadata={"id_field": True})
+    analysis_id = fields.String(
+        data_key="analysis", allow_none=True, metadata={"id_field": True}
+    )
+    study_id = fields.String(
+        data_key="study", allow_none=True, metadata={"id_field": True}
+    )
     # analysis = fields.Pluck("AnalysisSchema", "id", metadata={"id_field": True})
     analysis_name = fields.String(allow_none=True, dump_only=True)
     add_date = fields.DateTime(dump_only=True)
@@ -948,6 +953,7 @@ class ImageSnapshot(BaseSnapshot):
         return {
             "id": i.id,
             "user": i.user_id,
+            "study": i.study_id,
             "url": i.url,
             "space": i.space,
             "value_type": map_type_label(i.value_type),

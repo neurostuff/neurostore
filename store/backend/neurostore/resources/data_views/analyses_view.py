@@ -73,11 +73,13 @@ class AnalysesView(ObjectView, ListView):
             select(
                 Annotation.id.label("annotation_id"),
                 Analysis.study_id,
+                Image.id.label("image_id"),
                 StudysetStudy.studyset_id,
                 Study.base_study_id,
                 Analysis.table_id,
             )
             .outerjoin(Study, Analysis.study_id == Study.id)
+            .outerjoin(Image, Image.analysis_id == Analysis.id)
             .outerjoin(StudysetStudy, Study.id == StudysetStudy.study_id)
             .outerjoin(Studyset, StudysetStudy.studyset_id == Studyset.id)
             .outerjoin(Annotation, Annotation.studyset_id == Studyset.id)
@@ -92,12 +94,22 @@ class AnalysesView(ObjectView, ListView):
             "studysets": set(),
             "base-studies": set(),
             "tables": set(),
+            "images": set(),
         }
-        for annotation_id, study_id, studyset_id, base_study_id, table_id in result:
+        for (
+            annotation_id,
+            study_id,
+            image_id,
+            studyset_id,
+            base_study_id,
+            table_id,
+        ) in result:
             if annotation_id:
                 unique_ids["annotations"].add(annotation_id)
             if study_id:
                 unique_ids["studies"].add(study_id)
+            if image_id:
+                unique_ids["images"].add(image_id)
             if studyset_id:
                 unique_ids["studysets"].add(studyset_id)
             if base_study_id:
