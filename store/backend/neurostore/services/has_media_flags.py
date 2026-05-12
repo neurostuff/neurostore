@@ -243,7 +243,7 @@ def recompute_media_flags(base_study_ids):
             Study.has_t_maps.is_(True),
         )
     )
-    base_beta_maps_exist = sa.exists(
+    base_beta_and_variance_maps = sa.exists(
         sa.select(sa.literal(1))
         .select_from(Study)
         .where(
@@ -251,7 +251,6 @@ def recompute_media_flags(base_study_ids):
             Study.has_beta_and_variance_maps.is_(True),
         )
     )
-    base_beta_and_variance_maps = base_beta_maps_exist
     changed_base_study_ids = set(
         db.session.scalars(
             sa.update(BaseStudy)

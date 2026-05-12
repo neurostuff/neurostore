@@ -38,8 +38,9 @@ class AnalysisObjectViewPolicy(DefaultObjectViewPolicy):
 class AnalysisMutationPolicy(DefaultMutationPolicy):
     def post_nested_record_update(self):
         record = self.context.record
+        study_id = record.study_id
         for image in getattr(record, "images", []) or []:
-            image.study_id = record.study_id
+            image.study_id = study_id
         return record
 
 

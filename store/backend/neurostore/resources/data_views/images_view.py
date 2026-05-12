@@ -1,4 +1,3 @@
-import sqlalchemy as sa
 from sqlalchemy import select
 from sqlalchemy.orm import raiseload, selectinload
 from webargs import fields
@@ -26,7 +25,7 @@ class ImageMutationPolicy(DefaultMutationPolicy):
         existing_study_id = getattr(self.context.record, "study_id", None)
 
         if analysis_id_provided and analysis_id:
-            analysis = Analysis.query.filter_by(id=analysis_id).first()
+            analysis = db.session.get(Analysis, analysis_id)
             if analysis is None:
                 field_err = make_field_error("analysis", analysis_id, code="NOT_FOUND")
                 abort_unprocessable("Invalid analysis reference", [field_err])
@@ -64,15 +63,11 @@ class ImagesView(ObjectView, ListView):
             select(
                 Image.analysis_id,
                 Image.study_id,
-                Analysis.study_id.label("analysis_study_id"),
                 StudysetStudy.studyset_id,
                 Study.base_study_id,
             )
             .outerjoin(Analysis, Image.analysis_id == Analysis.id)
-            .outerjoin(
-                Study,
-                Study.id == sa.func.coalesce(Image.study_id, Analysis.study_id),
-            )
+            .outerjoin(Study, Study.id == Image.study_id)
             .outerjoin(StudysetStudy, Study.id == StudysetStudy.study_id)
             .outerjoin(BaseStudy, Study.base_study_id == BaseStudy.id)
             .where(Image.id.in_(ids))
@@ -86,18 +81,11 @@ class ImagesView(ObjectView, ListView):
             "studysets": set(),
             "base-studies": set(),
         }
-        for (
-            analysis_id,
-            study_id,
-            analysis_study_id,
-            studyset_id,
-            base_study_id,
-        ) in result:
+        for analysis_id, study_id, studyset_id, base_study_id in result:
             if analysis_id:
                 unique_ids["analyses"].add(analysis_id)
-            affected_study_id = study_id or analysis_study_id
-            if affected_study_id:
-                unique_ids["studies"].add(affected_study_id)
+            if study_id:
+                unique_ids["studies"].add(study_id)
             if studyset_id:
                 unique_ids["studysets"].add(studyset_id)
             if base_study_id:
@@ -122,7 +110,7 @@ class ImagesView(ObjectView, ListView):
         )
         study_id = data.get("study_id")
         if analysis_id:
-            analysis = Analysis.query.filter_by(id=analysis_id).first()
+            analysis = db.session.get(Analysis, analysis_id)
             if analysis is None:
                 field_err = make_field_error("analysis", analysis_id, code="NOT_FOUND")
                 abort_unprocessable("Invalid analysis reference", [field_err])
