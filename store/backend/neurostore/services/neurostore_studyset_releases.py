@@ -503,7 +503,6 @@ def serialize_point_for_nimads(point):
                     for value in point.values
                 ],
             ),
-            ("analysis", point.analysis_id),
             ("cluster_size", point.cluster_size),
             ("cluster_measurement_unit", point.cluster_measurement_unit),
             ("subpeak", point.subpeak),
@@ -542,6 +541,7 @@ def serialize_analysis_for_nimads(analysis):
     ]
     return OrderedDict(
         (
+            ("id", analysis.id),
             ("name", analysis.name),
             ("description", analysis.description),
             (
@@ -572,7 +572,6 @@ def serialize_analysis_for_nimads(analysis):
                     )
                 ],
             ),
-            ("study", analysis.study_id),
             ("table_id", analysis.table_id),
             ("metadata", analysis.metadata_),
         )
@@ -582,6 +581,7 @@ def serialize_analysis_for_nimads(analysis):
 def serialize_study_for_nimads(study):
     return OrderedDict(
         (
+            ("id", study.id),
             ("doi", study.doi),
             ("name", study.name),
             ("metadata", study.metadata_),
@@ -693,7 +693,7 @@ def study_shard_loader_options():
 
 def chunked(values, size):
     for index in range(0, len(values), size):
-        yield values[index:index + size]
+        yield values[index : index + size]
 
 
 def serialize_study_shards(study_ids, batch_size=STUDY_SHARD_BATCH_SIZE):
@@ -902,6 +902,7 @@ def refresh_shards(
 def studyset_payload_header(studyset):
     return OrderedDict(
         (
+            ("id", studyset.id),
             ("name", studyset.name),
             ("description", studyset.description),
             ("publication", studyset.publication),
@@ -914,6 +915,7 @@ def studyset_payload_header(studyset):
 def annotation_payload_header(annotation, note_keys):
     return OrderedDict(
         (
+            ("id", annotation.id),
             ("studyset", annotation.studyset_id),
             ("name", annotation.name),
             ("description", annotation.description),

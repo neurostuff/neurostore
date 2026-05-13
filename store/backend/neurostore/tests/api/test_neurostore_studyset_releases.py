@@ -211,6 +211,7 @@ def test_build_release_selects_latest_coordinate_study_and_writes_tarball(
     point_payload = analysis_payload["points"][0]
     note_payload = payloads["neurostore-annotation.json"]["notes"][0]
     assert set(payloads["neurostore-studyset.json"]) == {
+        "id",
         "name",
         "description",
         "publication",
@@ -218,7 +219,9 @@ def test_build_release_selects_latest_coordinate_study_and_writes_tarball(
         "pmid",
         "studies",
     }
+    assert payloads["neurostore-studyset.json"]["id"] == studyset.id
     assert set(study_payload) == {
+        "id",
         "doi",
         "name",
         "metadata",
@@ -230,17 +233,19 @@ def test_build_release_selects_latest_coordinate_study_and_writes_tarball(
         "pmcid",
         "analyses",
     }
+    assert study_payload["id"] == newest_study.id
     assert set(analysis_payload) == {
+        "id",
         "name",
         "description",
         "weights",
         "conditions",
         "images",
         "points",
-        "study",
         "table_id",
         "metadata",
     }
+    assert analysis_payload["id"] == analysis.id
     assert set(point_payload) == {
         "coordinates",
         "space",
@@ -248,14 +253,15 @@ def test_build_release_selects_latest_coordinate_study_and_writes_tarball(
         "label_id",
         "image",
         "values",
-        "analysis",
         "cluster_size",
         "cluster_measurement_unit",
         "subpeak",
         "deactivation",
         "is_seed",
     }
+    assert payloads["neurostore-annotation.json"]["id"] == annotation.id
     assert set(note_payload) == {"id", "analysis", "note"}
+    assert note_payload["analysis"] == analysis.id
 
     assert any(
         note.analysis_id == analysis.id for note in annotation.annotation_analyses
