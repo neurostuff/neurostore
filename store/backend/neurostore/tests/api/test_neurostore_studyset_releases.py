@@ -1,4 +1,4 @@
-import io
+import json
 import tarfile
 from datetime import datetime, timezone
 
@@ -14,6 +14,7 @@ from neurostore.models import (
     Studyset,
     User,
 )
+from neurostore.services import neurostore_studyset_releases as release_service
 from neurostore.services.neurostore_studyset_releases import (
     ANNOTATION_SOURCE_ID,
     STUDYSET_SOURCE_ID,
@@ -61,6 +62,16 @@ def _seed_release_data(session):
         base_study=base,
         user=user,
     )
+    ignored_meta_study = Study(
+        name="Ignored Meta Coordinate Study",
+        level="meta",
+        public=True,
+        has_coordinates=True,
+        created_at=_dt(2024, 3, 1),
+        updated_at=_dt(2024, 3, 2),
+        base_study=base,
+        user=user,
+    )
     ignored_base = BaseStudy(
         name="No Coordinates Base",
         level="group",
@@ -77,7 +88,16 @@ def _seed_release_data(session):
         base_study=ignored_base,
         user=user,
     )
-    session.add_all([base, old_study, newest_study, ignored_base, ignored_study])
+    session.add_all(
+        [
+            base,
+            old_study,
+            newest_study,
+            ignored_meta_study,
+            ignored_base,
+            ignored_study,
+        ]
+    )
     session.flush()
 
     old_analysis = Analysis(name="Old Analysis", study=old_study, user=user, order=1)
@@ -145,15 +165,6 @@ def _seed_release_data(session):
     return base, old_study, newest_study, analysis
 
 
-def _read_release_archive(response):
-    with tarfile.open(fileobj=io.BytesIO(response.data), mode="r:gz") as tar:
-        payloads = {}
-        for member in tar.getmembers():
-            if member.isfile():
-                payloads[member.name.split("/")[-1]] = tar.extractfile(member).read()
-    return payloads
-
-
 def test_build_release_selects_latest_coordinate_study_and_writes_tarball(
     app, session, tmp_path
 ):
@@ -189,6 +200,62 @@ def test_build_release_selects_latest_coordinate_study_and_writes_tarball(
         "neurostore-studyset.json",
         "neurostore-annotation.json",
     }.issubset(names)
+    payloads = {}
+    with tarfile.open(archive_path, mode="r:gz") as tar:
+        for member in tar.getmembers():
+            name = member.name.split("/")[-1]
+            if name in {"neurostore-studyset.json", "neurostore-annotation.json"}:
+                payloads[name] = json.loads(tar.extractfile(member).read())
+    study_payload = payloads["neurostore-studyset.json"]["studies"][0]
+    analysis_payload = study_payload["analyses"][0]
+    point_payload = analysis_payload["points"][0]
+    note_payload = payloads["neurostore-annotation.json"]["notes"][0]
+    assert set(payloads["neurostore-studyset.json"]) == {
+        "name",
+        "description",
+        "publication",
+        "doi",
+        "pmid",
+        "studies",
+    }
+    assert set(study_payload) == {
+        "doi",
+        "name",
+        "metadata",
+        "description",
+        "publication",
+        "pmid",
+        "authors",
+        "year",
+        "pmcid",
+        "analyses",
+    }
+    assert set(analysis_payload) == {
+        "name",
+        "description",
+        "weights",
+        "conditions",
+        "images",
+        "points",
+        "study",
+        "table_id",
+        "metadata",
+    }
+    assert set(point_payload) == {
+        "coordinates",
+        "space",
+        "kind",
+        "label_id",
+        "image",
+        "values",
+        "analysis",
+        "cluster_size",
+        "cluster_measurement_unit",
+        "subpeak",
+        "deactivation",
+        "is_seed",
+    }
+    assert set(note_payload) == {"id", "analysis", "note"}
 
     assert any(
         note.analysis_id == analysis.id for note in annotation.annotation_analyses
@@ -223,6 +290,56 @@ def test_release_build_tracks_partial_update_manifest(app, session, tmp_path):
     )
 
 
+def test_release_build_serializes_changed_studies_in_batches(
+    app, session, tmp_path, monkeypatch
+):
+    app.config["FILE_DIR"] = tmp_path
+    _base, _old_study, newest_study, _analysis = _seed_release_data(session)
+    user = User.query.first()
+    extra_base = BaseStudy(
+        name="Second Coordinate Base",
+        level="group",
+        public=True,
+        has_coordinates=True,
+        is_active=True,
+        user=user,
+    )
+    extra_study = Study(
+        name="Second Coordinate Study",
+        level="group",
+        public=True,
+        has_coordinates=True,
+        created_at=_dt(2024, 2, 4),
+        updated_at=_dt(2024, 2, 5),
+        base_study=extra_base,
+        user=user,
+    )
+    session.add_all([extra_base, extra_study])
+    session.flush()
+    extra_analysis = Analysis(name="Second Analysis", study=extra_study, user=user)
+    session.add(extra_analysis)
+    session.flush()
+    session.add(Point(analysis=extra_analysis, x=4, y=5, z=6, user=user))
+    session.commit()
+
+    calls = []
+    real_serialize = release_service.serialize_study_shards
+
+    def wrapped_serialize(study_ids, batch_size=release_service.STUDY_SHARD_BATCH_SIZE):
+        calls.append(list(study_ids))
+        return real_serialize(study_ids, batch_size=batch_size)
+
+    monkeypatch.setattr(release_service, "serialize_study_shards", wrapped_serialize)
+
+    build_neurostore_studyset_release(nightly=True)
+    assert len(calls) == 1
+    assert set(calls[0]) == {newest_study.id, extra_study.id}
+
+    calls.clear()
+    build_neurostore_studyset_release(nightly=True)
+    assert calls == []
+
+
 def test_release_api_resolves_nightly_latest_and_monthly(
     app, auth_client, session, tmp_path
 ):
@@ -253,10 +370,11 @@ def test_release_api_resolves_nightly_latest_and_monthly(
     )
     assert download.status_code == 200
     assert "attachment" in download.headers["content-disposition"]
-    payloads = _read_release_archive(download)
-    assert "neurostore-studyset.json" in payloads
-    assert "neurostore-annotation.json" in payloads
-    assert "manifest.json" in payloads
+    assert download.headers["x-accel-redirect"] == (
+        "/_protected/neurostore-studyset-releases/monthly/2026-05/"
+        "neurostore-studyset-2026-05.tar.gz"
+    )
+    assert download.headers["content-type"] == "application/gzip"
 
 
 def test_monthly_release_is_immutable_without_force(app, session, tmp_path):
