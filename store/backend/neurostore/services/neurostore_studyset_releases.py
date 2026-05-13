@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import os
 import re
+import shutil
 import tarfile
 import tempfile
 from collections import OrderedDict
@@ -57,6 +58,14 @@ def serialize_dt(value):
     if value.tzinfo is None:
         value = value.replace(tzinfo=timezone.utc)
     return value.isoformat()
+
+
+def clear_shard_cache():
+    root = release_root()
+    for subdir in ("studies", "notes"):
+        shard_dir = root / "_cache" / subdir
+        if shard_dir.exists():
+            shutil.rmtree(shard_dir)
 
 
 def release_root():
