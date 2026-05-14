@@ -817,7 +817,7 @@ def study_shard_loader_options():
 
 def chunked(values, size):
     for index in range(0, len(values), size):
-        yield values[index: index + size]
+        yield values[index : index + size]
 
 
 def serialize_study_shards(study_ids, batch_size=STUDY_SHARD_BATCH_SIZE):
@@ -1023,112 +1023,39 @@ def refresh_shards(
     )
 
 
-def studyset_payload_header(studyset):
-    return OrderedDict(
-        (
-            ("id", studyset.id),
-            ("name", studyset.name),
-            ("description", studyset.description),
-            ("publication", studyset.publication),
-            ("doi", studyset.doi),
-            ("pmid", studyset.pmid),
-        )
-    )
+def build_studyset_dict(root, selected, studyset):
+    studies = []
+    for entry in selected:
+        shard_path = root / "_cache" / "studies" / f"{entry['study_id']}.json"
+        studies.append(orjson.loads(shard_path.read_bytes()))
+    return {
+        "id": studyset.id,
+        "name": studyset.name,
+        "description": studyset.description,
+        "publication": studyset.publication,
+        "doi": studyset.doi,
+        "pmid": studyset.pmid,
+        "studies": studies,
+    }
 
 
-def annotation_payload_header(annotation, note_keys):
-    return OrderedDict(
-        (
-            ("id", annotation.id),
-            ("studyset", annotation.studyset_id),
-            ("name", annotation.name),
-            ("description", annotation.description),
-            ("note_keys", note_keys),
-            ("metadata", annotation.metadata_),
-        )
-    )
-
-
-def write_streamed_json_object(path, scalar_fields, array_writers):
-    path.parent.mkdir(parents=True, exist_ok=True)
-    checksum = hashlib.sha256()
-
-    def write_and_hash(fileobj, data):
-        fileobj.write(data)
-        checksum.update(data)
-
-    with tempfile.NamedTemporaryFile(dir=path.parent, delete=False) as tmp:
-        tmp_path = Path(tmp.name)
-        write_and_hash(tmp, b"{")
-        needs_comma = False
-        for key, value in scalar_fields.items():
-            if needs_comma:
-                write_and_hash(tmp, b",")
-            write_and_hash(tmp, orjson.dumps(str(key)))
-            write_and_hash(tmp, b":")
-            write_and_hash(tmp, orjson.dumps(value, option=orjson.OPT_SORT_KEYS))
-            needs_comma = True
-
-        for key, write_array_items in array_writers:
-            if needs_comma:
-                write_and_hash(tmp, b",")
-            write_and_hash(tmp, orjson.dumps(str(key)))
-            write_and_hash(tmp, b":[")
-            first_item = True
-
-            def write_item(data):
-                nonlocal first_item
-                if not first_item:
-                    write_and_hash(tmp, b",")
-                write_and_hash(tmp, data)
-                first_item = False
-
-            write_array_items(write_item)
-            write_and_hash(tmp, b"]")
-            needs_comma = True
-
-        write_and_hash(tmp, b"}")
-
-    os.replace(tmp_path, path)
-    return checksum.hexdigest()
-
-
-def iter_json_list_items(path):
-    data = path.read_bytes().strip()
-    if data in (b"", b"[]"):
-        return
-    if not data.startswith(b"[") or not data.endswith(b"]"):
-        raise ValueError(f"Expected JSON list shard at {path}")
-    inner = data[1:-1].strip()
-    if inner:
-        yield inner
-
-
-def write_studyset_payload_file(path, root, selected, studyset):
-    def write_studies(write_item):
-        for entry in selected:
-            shard_path = root / "_cache" / "studies" / f"{entry['study_id']}.json"
-            write_item(shard_path.read_bytes().strip())
-
-    return write_streamed_json_object(
-        path,
-        studyset_payload_header(studyset),
-        (("studies", write_studies),),
-    )
-
-
-def write_annotation_payload_file(path, root, selected, annotation, note_keys):
-    def write_notes(write_item):
-        for entry in selected:
-            shard_path = root / "_cache" / "notes" / f"{entry['base_study_id']}.json"
-            for item in iter_json_list_items(shard_path):
-                write_item(item)
-
-    return write_streamed_json_object(
-        path,
-        annotation_payload_header(annotation, note_keys),
-        (("notes", write_notes),),
-    )
+def build_annotation_dict(root, selected, annotation, note_keys):
+    notes = []
+    for entry in selected:
+        shard_path = root / "_cache" / "notes" / f"{entry['base_study_id']}.json"
+        if shard_path.exists():
+            shard = orjson.loads(shard_path.read_bytes())
+            if isinstance(shard, list):
+                notes.extend(shard)
+    return {
+        "id": annotation.id,
+        "studyset": annotation.studyset_id,
+        "name": annotation.name,
+        "description": annotation.description,
+        "note_keys": note_keys,
+        "metadata": annotation.metadata_,
+        "notes": notes,
+    }
 
 
 def write_tarball(
@@ -1141,28 +1068,22 @@ def write_tarball(
     annotation,
     note_keys,
 ):
-    release_dir.mkdir(parents=True, exist_ok=True)
-    with tempfile.TemporaryDirectory(dir=release_dir) as staging:
-        staging_path = Path(staging)
-        folder = staging_path / archive_name.removesuffix(".tar.gz")
-        folder.mkdir()
-        studyset_checksum = write_studyset_payload_file(
-            folder / "neurostore-studyset.json",
-            root,
-            selected,
-            studyset,
-        )
-        annotation_checksum = write_annotation_payload_file(
-            folder / "neurostore-annotation.json",
-            root,
-            selected,
-            annotation,
-            note_keys,
-        )
-        manifest["studyset_checksum"] = studyset_checksum
-        manifest["annotation_checksum"] = annotation_checksum
-        atomic_write_json(folder / "manifest.json", manifest)
+    from nimare.nimads import convert_neurostore_json_to_parquet
 
+    release_dir.mkdir(parents=True, exist_ok=True)
+    studyset_dict = build_studyset_dict(root, selected, studyset)
+    annotation_dict = build_annotation_dict(root, selected, annotation, note_keys)
+
+    with tempfile.TemporaryDirectory(dir=release_dir) as staging:
+        folder = Path(staging) / archive_name.removesuffix(".tar.gz")
+        folder.mkdir()
+        convert_neurostore_json_to_parquet(
+            studyset_dict,
+            folder,
+            annotation_source=annotation_dict,
+            manifest_source=manifest,
+            overwrite=True,
+        )
         tmp_archive = release_dir / f".{archive_name}.tmp"
         final_archive = release_dir / archive_name
         with tarfile.open(tmp_archive, "w:gz") as tar:
