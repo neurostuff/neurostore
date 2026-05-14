@@ -195,73 +195,36 @@ def test_build_release_selects_latest_coordinate_study_and_writes_tarball(
     assert archive_path.exists()
     with tarfile.open(archive_path, mode="r:gz") as tar:
         names = {name.split("/")[-1] for name in tar.getnames()}
+        assert {
+            "studyset.json",
+            "studies.parquet",
+            "analyses.parquet",
+            "coordinates.parquet",
+            "metadata.parquet",
+            "annotations.parquet",
+        }.issubset(names)
+        studyset_member = next(
+            member
+            for member in tar.getmembers()
+            if member.name.endswith("/studyset.json")
+        )
+        parquet_metadata = json.loads(tar.extractfile(studyset_member).read())
+    assert parquet_metadata["id"] == studyset.id
+    assert parquet_metadata["name"] == studyset.name
+    assert parquet_metadata["format"] == "nimare-studyset-parquet"
+    assert parquet_metadata["annotations"] == [{"id": annotation.id}]
     assert {
-        "manifest.json",
-        "neurostore-studyset.json",
-        "neurostore-annotation.json",
-    }.issubset(names)
-    payloads = {}
-    with tarfile.open(archive_path, mode="r:gz") as tar:
-        for member in tar.getmembers():
-            name = member.name.split("/")[-1]
-            if name in {"neurostore-studyset.json", "neurostore-annotation.json"}:
-                payloads[name] = json.loads(tar.extractfile(member).read())
-    study_payload = payloads["neurostore-studyset.json"]["studies"][0]
-    analysis_payload = study_payload["analyses"][0]
-    point_payload = analysis_payload["points"][0]
-    note_payload = payloads["neurostore-annotation.json"]["notes"][0]
-    assert set(payloads["neurostore-studyset.json"]) == {
-        "id",
-        "name",
-        "description",
-        "publication",
-        "doi",
-        "pmid",
         "studies",
-    }
-    assert payloads["neurostore-studyset.json"]["id"] == studyset.id
-    assert set(study_payload) == {
-        "id",
-        "doi",
-        "name",
-        "metadata",
-        "description",
-        "publication",
-        "pmid",
-        "authors",
-        "year",
-        "pmcid",
         "analyses",
-    }
-    assert study_payload["id"] == newest_study.id
-    assert set(analysis_payload) == {
-        "id",
-        "name",
-        "description",
-        "weights",
-        "conditions",
-        "images",
-        "points",
-        "table_id",
-        "metadata",
-    }
-    assert analysis_payload["id"] == analysis.id
-    assert set(point_payload) == {
         "coordinates",
-        "space",
-        "kind",
-        "label_id",
-        "image",
-        "values",
-        "cluster_size",
-        "cluster_measurement_unit",
-        "subpeak",
-        "deactivation",
-        "is_seed",
-    }
-    assert payloads["neurostore-annotation.json"]["id"] == annotation.id
-    assert set(note_payload) == {"id", "analysis", "note"}
-    assert note_payload["analysis"] == analysis.id
+        "metadata",
+        "annotations",
+    }.issubset(parquet_metadata["tables"])
+
+    with tarfile.open(archive_path, mode="r:gz") as tar:
+        assert any(
+            member.name.endswith("/annotations.parquet") for member in tar.getmembers()
+        )
 
     assert any(
         note.analysis_id == analysis.id for note in annotation.annotation_analyses
