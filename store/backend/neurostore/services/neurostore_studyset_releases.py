@@ -817,7 +817,7 @@ def study_shard_loader_options():
 
 def chunked(values, size):
     for index in range(0, len(values), size):
-        yield values[index : index + size]
+        yield values[index : index + size]  # noqa: E203
 
 
 def serialize_study_shards(study_ids, batch_size=STUDY_SHARD_BATCH_SIZE):
