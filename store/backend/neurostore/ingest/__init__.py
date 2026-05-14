@@ -209,6 +209,15 @@ def ingest_neurovault(verbose=False, limit=20, overwrite=False, max_images=None)
 
 
 def ingest_neurosynth(max_rows=None):
+    """Ingest the bundled Neurosynth coordinate dataset.
+
+    Deprecated:
+        This still creates the legacy public ``neurosynth`` Studyset and
+        Annotation for backwards compatibility with tests and older local
+        bootstrap flows. New platform-wide studyset creation should use the
+        canonical platform/release builders instead of adding dataset-specific
+        studysets during ingestion.
+    """
     coords_file = (
         Path(__file__).parent.parent
         / "data"
@@ -245,7 +254,9 @@ def ingest_neurosynth(max_rows=None):
         metadata = metadata.iloc[:max_rows]
         annotations = annotations.iloc[:max_rows]
 
-    # create studyset object
+    # DEPRECATED: retained only for backwards compatibility with tests and older
+    # bootstrap flows. New platform-wide studyset creation happens outside these
+    # source-specific ingest routines.
     d = Studyset(
         name="neurosynth",
         description="TODO",
@@ -427,6 +438,14 @@ def ingest_neurosynth(max_rows=None):
 
 
 def ingest_neuroquery(max_rows=None):
+    """Ingest the bundled NeuroQuery coordinate dataset.
+
+    Deprecated:
+        This still creates the legacy public ``neuroquery`` Studyset for
+        backwards compatibility with tests and older local bootstrap flows. New
+        platform-wide studyset creation should use the canonical platform/release
+        builders instead of adding dataset-specific studysets during ingestion.
+    """
     coords_file = (
         Path(__file__).parent.parent
         / "data"
@@ -498,7 +517,9 @@ def ingest_neuroquery(max_rows=None):
         )
         # db.session.commit()
 
-    # make a neuroquery studyset
+    # DEPRECATED: retained only for backwards compatibility with tests and older
+    # bootstrap flows. New platform-wide studyset creation happens outside these
+    # source-specific ingest routines.
     d = Studyset(
         name="neuroquery",
         description="TODO",

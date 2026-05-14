@@ -376,7 +376,9 @@ build_store_images() {
     neurostore \
     store_outbox_worker \
     store_metadata_outbox_worker \
+    store_release_worker \
     store_nginx \
+    store-pgsql \
     store-pgsql17
 }
 
@@ -433,6 +435,7 @@ deploy_store_staging() {
     neurostore \
     store_outbox_worker \
     store_metadata_outbox_worker \
+    store_release_worker \
     store-pghero \
     store-grafana \
     store_nginx
@@ -455,6 +458,7 @@ deploy_store_staging() {
     neurostore \
     store_outbox_worker \
     store_metadata_outbox_worker \
+    store_release_worker \
     store-pghero \
     store-grafana
   compose_for "${service_root}" "${project}" exec -T neurostore flask db upgrade heads
@@ -518,9 +522,9 @@ deploy_store_dev() {
     --cache-dir "${STATE_ROOT}/store-seed" \
     --refresh-latest \
     --with-vector-extension
-  compose_for "${service_root}" "${project}" up -d --no-build neurostore store_outbox_worker store_metadata_outbox_worker store-pghero store-grafana
-  compose_for "${service_root}" "${project}" up -d --no-build store_nginx
+  compose_for "${service_root}" "${project}" up -d --no-build --scale store_release_worker=0
   compose_for "${service_root}" "${project}" exec -T neurostore flask db upgrade heads
+  compose_for "${service_root}" "${project}" up -d --no-build --scale store_release_worker=1 store_release_worker
 }
 
 deploy_compose_dev() {

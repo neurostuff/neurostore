@@ -73,6 +73,35 @@ services:
       start_period: 30s
     env_file:
       - .env
+
+  store_release_worker:
+    image: neurostore
+    restart: always
+    depends_on:
+      neurostore:
+        condition: service_started
+      store-pgsql17:
+        condition: service_healthy
+      store_redis:
+        condition: service_healthy
+    volumes:
+      - ./backend/migrations:/migrations
+      - ./:/store
+      - ${FILE_DIR}:/file-data
+    command: >
+      bash -lc 'while true; do
+      if
+      flask process-base-study-flag-outbox --no-loop &&
+      flask process-base-study-metadata-outbox --no-loop &&
+      flask build-neurostore-studyset-release --nightly --monthly-if-due;
+      then
+      sleep "$${NEUROSTORE_STUDYSET_RELEASE_INTERVAL_SECONDS:-86400}";
+      else
+      sleep "$${NEUROSTORE_STUDYSET_RELEASE_RETRY_SECONDS:-300}";
+      fi;
+      done'
+    env_file:
+      - .env
   
   store_redis:
     image: redis
