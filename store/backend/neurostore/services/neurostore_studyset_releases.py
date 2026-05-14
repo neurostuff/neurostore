@@ -700,7 +700,9 @@ def serialize_analysis_for_nimads(analysis):
 def serialize_study_for_nimads(study):
     metadata = study.metadata_
     if metadata:
-        metadata = {k: v for k, v in metadata.items() if k not in STUDY_METADATA_EXCLUDED_KEYS}
+        metadata = {
+            k: v for k, v in metadata.items() if k not in STUDY_METADATA_EXCLUDED_KEYS
+        }
     return OrderedDict(
         (
             ("id", study.id),
@@ -815,7 +817,7 @@ def study_shard_loader_options():
 
 def chunked(values, size):
     for index in range(0, len(values), size):
-        yield values[index : index + size]
+        yield values[index: index + size]
 
 
 def serialize_study_shards(study_ids, batch_size=STUDY_SHARD_BATCH_SIZE):
