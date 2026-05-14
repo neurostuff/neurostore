@@ -18,6 +18,3 @@ services:
 
   store_metadata_outbox_worker:
     restart: "no"
-
-  store_release_worker:
-    restart: "no"

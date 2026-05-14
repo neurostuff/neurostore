@@ -13,9 +13,6 @@ from neurostore import create_app, ingest, models
 from neurostore.config import resolve_config_object
 from neurostore.database import db
 from neurostore.services.has_media_flags import process_base_study_flag_outbox_batch
-from neurostore.services.neurostore_studyset_releases import (
-    build_neurostore_studyset_release as build_neurostore_studyset_release_service,
-)
 from neurostore.services.base_study_metadata_enrichment import (
     process_base_study_metadata_outbox_batch,
 )
@@ -227,55 +224,3 @@ def check_base_study_metadata_outbox(max_pending, max_oldest_seconds):
     from neurostore.models import BaseStudyMetadataOutbox
 
     _emit_outbox_health(BaseStudyMetadataOutbox, max_pending, max_oldest_seconds)
-
-
-@app.cli.command()
-@click.option(
-    "--nightly/--no-nightly",
-    default=False,
-    show_default=True,
-    help="Write the overwritten nightly release.",
-)
-@click.option(
-    "--monthly-if-due/--no-monthly-if-due",
-    default=False,
-    show_default=True,
-    help="Write the current monthly release only when it does not already exist.",
-)
-@click.option(
-    "--force-monthly/--no-force-monthly",
-    default=False,
-    show_default=True,
-    help="Overwrite the selected monthly release.",
-)
-@click.option(
-    "--version",
-    "monthly_version",
-    default=None,
-    help="Monthly release version to write, in YYYY-MM format.",
-)
-def build_neurostore_studyset_release(
-    nightly,
-    monthly_if_due,
-    force_monthly,
-    monthly_version,
-):
-    """Build NeuroStore-wide NIMADS studyset release artifacts."""
-    result = build_neurostore_studyset_release_service(
-        nightly=nightly,
-        monthly_if_due=monthly_if_due,
-        force_monthly=force_monthly,
-        version=monthly_version,
-    )
-    written = result["written"]
-    if written:
-        for manifest in written:
-            click.echo(
-                "Wrote {release_type} release {version} to {root}".format(
-                    release_type=manifest["release_type"],
-                    version=manifest["version"],
-                    root=result["root"],
-                )
-            )
-    else:
-        click.echo("No NeuroStore studyset release was written.")
