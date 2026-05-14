@@ -1,6 +1,6 @@
 {
     "name": "neurosynth",
-    "version": "0.18.2",
+    "version": "0.19.1",
     "private": true,
     "dependencies": {
         "@auth0/auth0-react": "^1.6.0",
