@@ -2270,12 +2270,16 @@ def test_feature_flatten(auth_client, ingest_demographic_features):
 
 def test_invalid_search_query_cors(auth_client):
     """Test that invalid search query returns 400 with CORS headers"""
-    result = auth_client.get("/api/base-studies/?search=AND+OR")
+    origin = "https://client.example"
+    result = auth_client.get(
+        "/api/base-studies/?search=AND+OR",
+        headers={"Origin": origin},
+    )
     assert result.status_code == 400
     assert "Access-Control-Allow-Origin" in result.headers
-    assert "Access-Control-Allow-Methods" in result.headers
-    assert "Access-Control-Allow-Headers" in result.headers
-    assert result.headers["Access-Control-Allow-Origin"] == "*"
+    assert result.headers["Access-Control-Allow-Origin"] == origin
+    assert result.headers["Access-Control-Allow-Credentials"] == "true"
+    assert result.headers["Vary"] == "Origin"
 
 
 def test_base_studies_year_range(auth_client, session):
