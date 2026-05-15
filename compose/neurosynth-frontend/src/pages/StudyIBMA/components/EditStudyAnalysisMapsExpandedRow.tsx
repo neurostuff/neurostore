@@ -55,7 +55,6 @@ const EditStudyAnalysisMapsExpandedRow: React.FC<{
                                         display: 'flex',
                                         alignItems: 'center',
                                         gap: 0.75,
-                                        py: 0.5,
                                     }}
                                 >
                                     <ListItemButton
@@ -67,14 +66,12 @@ const EditStudyAnalysisMapsExpandedRow: React.FC<{
                                         sx={{
                                             flex: 1,
                                             minWidth: 0,
-                                            py: 0.5,
                                             minHeight: 36,
-                                            px: 1,
                                             borderRadius: 1,
                                         }}
                                     >
                                         <ListItemText
-                                            primary={item.name}
+                                            primary={item.name + 'aerg '}
                                             primaryTypographyProps={{
                                                 variant: 'body2',
                                                 noWrap: true,
@@ -86,7 +83,6 @@ const EditStudyAnalysisMapsExpandedRow: React.FC<{
                                             label={DefaultMapTypes[item.mapType]?.label ?? item.mapType}
                                             sx={{
                                                 flexShrink: 0,
-                                                height: 18,
                                                 fontSize: '0.65rem',
                                             }}
                                         />
