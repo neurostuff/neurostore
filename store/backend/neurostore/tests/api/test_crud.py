@@ -69,6 +69,14 @@ def test_create(auth_client, user_data, endpoint, model, schema, session):
             and k != "id"
             and not d_key_sf.get(k).dump_only
         ):
+            if (
+                model is Image
+                and k == "study"
+                and v is None
+                and payload.get("analysis")
+            ):
+                assert resp.json()[k] is not None
+                continue
             assert v == resp.json()[k]
 
 

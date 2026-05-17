@@ -15,19 +15,15 @@ import {
     Tooltip,
     Typography,
 } from '@mui/material';
+import { AnalysisReturnNested } from 'hooks/analyses/analysisQueries.types';
 import type { ImageReturn } from 'neurostore-typescript-sdk';
-import React, { useCallback, useRef, useState } from 'react';
-import { DefaultMapTypes, type IStoreAnalysis } from 'stores/study/StudyStore.helpers';
+import { imageToBrainMapListItem } from 'pages/StudyIBMA/hooks/useEditStudyAnalysisBoardState.helpers';
+import React, { useCallback, useState } from 'react';
+import { DefaultMapTypes } from 'stores/study/StudyStore.helpers';
 import {
     STUDY_UNCATEGORIZED_MAPS_COLLAPSED_WIDTH,
     STUDY_UNCATEGORIZED_MAPS_COLUMN_WIDTH,
-} from './editStudyAnalysisBoard.constants';
-import {
-    imageToBrainMapListItem,
-    moveBrainMapImageToAnalysis,
-    syncImageMutationsToStore,
-} from 'pages/StudyIBMA/hooks/useEditStudyAnalysisBoardState.helpers';
-import { AnalysisReturnNested } from 'hooks/analyses/analysisQueries.types';
+} from '../hooks/useEditStudyAnalysisBoardState.consts';
 
 type MoveMenuAnchor = { el: HTMLElement; mapId: string } | null;
 
@@ -38,6 +34,7 @@ export type UncategorizedMapsColumnProps = {
     selectedImageId: string | null;
     onToggleMapSelection: (mapId: string) => void;
     analyses: AnalysisReturnNested[];
+    updateImage?: (mapId: string, analysisId: string) => void | Promise<void>;
 };
 
 export function UncategorizedMapsColumn({
@@ -47,10 +44,9 @@ export function UncategorizedMapsColumn({
     selectedImageId,
     onToggleMapSelection,
     analyses,
+    updateImage,
 }: UncategorizedMapsColumnProps) {
     const [moveAnchorEl, setMoveAnchorEl] = useState<MoveMenuAnchor>(null);
-    const analysesRef = useRef(analyses);
-    analysesRef.current = analyses;
 
     const handleMoveClick = useCallback((event: React.MouseEvent<HTMLElement>, mapId: string) => {
         event.stopPropagation();
@@ -61,30 +57,38 @@ export function UncategorizedMapsColumn({
         setMoveAnchorEl(null);
     }, []);
 
-    const applyMoveImageToAnalysis = useCallback((mapId: string, analysisId: string) => {
-        // setMoveAnchorEl(null);
-        // const before = analysesRef.current;
-        // const next = moveBrainMapImageToAnalysis(before, mapId, analysisId);
-        // if (!next) return;
-        // syncImageMutationsToStore(before, next, addOrUpdateAnalysis);
-    }, []);
+    const handleAssignAnalysisToImage = useCallback(
+        (mapId: string, analysisId: string) => {
+            setMoveAnchorEl(null);
+            void updateImage?.(mapId, analysisId);
+        },
+        [updateImage]
+    );
 
     if (collapsed) {
+        const collapsedLabel = `Uncategorized maps (${uncategorized.length})`;
         return (
             <Paper sx={{ width: STUDY_UNCATEGORIZED_MAPS_COLLAPSED_WIDTH }} data-testid="uncategorized-maps-collapsed">
                 <Tooltip title="Show uncategorized maps" placement="right">
                     <IconButton
                         size="small"
                         onClick={() => onCollapsedChange(false)}
-                        aria-label="Show uncategorized maps"
+                        aria-label={collapsedLabel}
                         sx={{
                             width: '100%',
                             height: '100%',
+                            flexDirection: 'column',
                             borderRadius: 1,
                             border: '1px solid',
                             borderColor: 'divider',
                         }}
                     >
+                        <Typography
+                            variant="caption"
+                            sx={{ mb: 1, writingMode: 'vertical-rl', transform: 'rotate(180deg)', fontWeight: 'bold' }}
+                        >
+                            {collapsedLabel}
+                        </Typography>
                         <Add fontSize="small" />
                     </IconButton>
                 </Tooltip>
@@ -178,7 +182,7 @@ export function UncategorizedMapsColumn({
                         key={a.id}
                         onClick={() => {
                             if (!moveAnchorEl) return;
-                            applyMoveImageToAnalysis(moveAnchorEl.mapId, a.id!);
+                            handleAssignAnalysisToImage(moveAnchorEl.mapId, a.id!);
                         }}
                     >
                         {a.name || 'Untitled'}

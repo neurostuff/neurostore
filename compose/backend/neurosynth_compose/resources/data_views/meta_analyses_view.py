@@ -60,7 +60,7 @@ from neurosynth_compose.schemas import (  # noqa: F401
     NeurovaultCollectionSchema,
     NeurovaultFileSchema,
 )
-from neurosynth_compose.schemas.analysis import NS_BASE
+from neurosynth_compose.schemas.analysis import get_ns_base
 
 
 @lru_cache(maxsize=None)
@@ -282,7 +282,7 @@ def _serialize_studyset(record):
     }
     if neurostore_id:
         payload["neurostore_id"] = neurostore_id
-        payload["url"] = "/".join([NS_BASE, "studysets", neurostore_id])
+        payload["url"] = "/".join([get_ns_base(), "studysets", neurostore_id])
     return payload
 
 
@@ -320,7 +320,7 @@ def _serialize_annotation(record):
     }
     if neurostore_id:
         payload["neurostore_id"] = neurostore_id
-        payload["url"] = "/".join([NS_BASE, "annotations", neurostore_id])
+        payload["url"] = "/".join([get_ns_base(), "annotations", neurostore_id])
     return payload
 
 
@@ -390,7 +390,7 @@ def serialize_meta_analysis(record, *, nested: bool):
         "neurostore_url": (
             None
             if not neurostore_id
-            else "/".join([NS_BASE, "analyses", neurostore_id])
+            else "/".join([get_ns_base(), "analyses", neurostore_id])
         ),
     }
 

@@ -3,14 +3,15 @@ import { createColumnHelper, getCoreRowModel, useReactTable, type ExpandedState 
 import type { NoteKeyType } from 'components/HotTables/HotTables.types';
 import { noteKeyObjToArr } from 'components/HotTables/HotTables.utils';
 import { useGetAnalysesByStudyId, useGetAnnotationById } from 'hooks';
-import type { ImageReturn, NoteCollectionReturn } from 'neurostore-typescript-sdk';
+import type { ImageRequest, NoteCollectionReturn } from 'neurostore-typescript-sdk';
 import AnalysisNameCell from 'pages/StudyIBMA/components/AnalysisNameCell';
-import { AnnotationColumnCell } from 'pages/StudyIBMA/components/AnnotationColumnCells';
-import { AnnotationColumnHeader } from 'pages/StudyIBMA/components/AnnotationColumnHeader';
-import { STUDY_ANALYSES_COLUMN_WIDTH } from 'pages/StudyIBMA/components/editStudyAnalysisBoard.constants';
+import AnnotationBaseInputCell from 'pages/StudyIBMA/components/AnnotationInputCells';
+import AnnotationColumnHeader from 'pages/StudyIBMA/components/AnnotationColumnHeader';
+import { STUDY_ANALYSES_COLUMN_WIDTH } from 'pages/StudyIBMA/hooks/useEditStudyAnalysisBoardState.consts';
 import { partitionAnalysisImages } from 'pages/StudyIBMA/hooks/useEditStudyAnalysisBoardState.helpers';
 import 'pages/StudyIBMA/hooks/useEditStudyAnalysisBoardState.tableMeta';
 import type { AnalysisBoardRow } from 'pages/StudyIBMA/hooks/useEditStudyAnalysisBoardState.types';
+import useIbmaBoardMutations from 'pages/StudyIBMA/hooks/useIbmaBoardMutations';
 import { useCallback, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useProjectExtractionAnnotationId } from 'stores/projects/ProjectStore';
@@ -24,6 +25,20 @@ const useEditStudyAnalysisBoardState = () => {
     const { data: annotation, isLoading: getAnnotationIsLoading } = useGetAnnotationById(annotationId);
 
     const stableAnalyses = useMemo(() => analysesRes ?? [], [analysesRes]);
+
+    const {
+        createAnalysis,
+        updateAnalysis,
+        deleteAnalysis,
+        addAnnotationColumn,
+        removeAnnotationColumn,
+        updateAnnotationCell,
+        updateImage,
+    } = useIbmaBoardMutations({
+        studyId,
+        annotationId,
+        annotation,
+    });
 
     const analysisIdToNoteMap = useMemo(() => {
         const m = new Map<string, NoteCollectionReturn>();
@@ -64,24 +79,26 @@ const useEditStudyAnalysisBoardState = () => {
         });
     }, [stableAnalyses, analysisIdToNoteMap, noteKeys]);
 
-    const handleRemoveImageFromAnalysis = useCallback(
-        (analysisId: string, image: ImageReturn) => {
-            // const before = analysesRef.current;
-            // if (!image.id) return;
-            // const next = unassignBrainMapImageFromAnalysis(before, analysisId, image.id);
-            // syncImageMutationsToStore(before, next, addOrUpdateAnalysis);
-            // if (selectedImageId === image.id) setSelectedImageId(undefined);
+    const handleUpdateImage = useCallback(
+        (image: ImageRequest) => {
+            if (!image.id) return;
+            void updateImage(image.id, image).then(() => {
+                if (selectedImageId === image.id) setSelectedImageId(undefined);
+            });
         },
-        [selectedImageId]
+        [updateImage, selectedImageId]
     );
 
     const tableMeta = useMemo(
         () => ({
             selectedImageId,
             toggleImageSelection,
-            removeImageFromAnalysis: handleRemoveImageFromAnalysis,
+            updateImage: handleUpdateImage,
+            deleteAnalysis,
+            updateAnalysis,
+            updateAnnotationCell,
         }),
-        [selectedImageId, toggleImageSelection, handleRemoveImageFromAnalysis]
+        [selectedImageId, toggleImageSelection, handleUpdateImage, deleteAnalysis, updateAnalysis, updateAnnotationCell]
     );
 
     const columns = useMemo(
@@ -105,8 +122,10 @@ const useEditStudyAnalysisBoardState = () => {
             ...(noteKeys || []).map((noteKey: NoteKeyType) =>
                 columnHelper.accessor((row) => row.analysisAnnotation[noteKey.key] ?? null, {
                     id: noteKey.key,
-                    header: () => <AnnotationColumnHeader headerName={noteKey.key} />,
-                    cell: AnnotationColumnCell,
+                    header: () => (
+                        <AnnotationColumnHeader headerName={noteKey.key} onRemoveColumn={removeAnnotationColumn} />
+                    ),
+                    cell: AnnotationBaseInputCell,
                     size: 80,
                     minSize: 80,
                     meta: {
@@ -115,7 +134,7 @@ const useEditStudyAnalysisBoardState = () => {
                 })
             ),
         ],
-        [noteKeys]
+        [noteKeys, removeAnnotationColumn]
     );
 
     const table = useReactTable({
@@ -138,6 +157,10 @@ const useEditStudyAnalysisBoardState = () => {
         toggleImageSelection,
         selectedImageId,
         analyses: stableAnalyses,
+        noteKeys,
+        createAnalysis,
+        addAnnotationColumn,
+        updateImage,
         isLoading: getAnnotationIsLoading || getAnalysesIsLoading,
     };
 };

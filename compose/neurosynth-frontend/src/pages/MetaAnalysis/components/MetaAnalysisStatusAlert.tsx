@@ -1,7 +1,7 @@
 import { Alert, CircularProgress, Typography } from '@mui/material';
-import { getResultStatus } from 'helpers/MetaAnalysis.helpers';
+import { getLatestMetaAnalysisResultId, getResultStatus } from 'helpers/MetaAnalysis.helpers';
 import { useGetMetaAnalysisResultById } from 'hooks';
-import { MetaAnalysisJobResponse, MetaAnalysisReturn, ResultReturn } from 'neurosynth-compose-typescript-sdk';
+import { MetaAnalysisJobResponse, MetaAnalysisReturn } from 'neurosynth-compose-typescript-sdk';
 import { useEffect, useMemo, useState } from 'react';
 import useGetMetaAnalysisJobById from '../hooks/useGetMetaAnalysisJobById';
 
@@ -11,13 +11,12 @@ const MetaAnalysisStatusAlert: React.FC<{
     metaAnalysis?: MetaAnalysisReturn;
     metaAnalysisJobs?: Array<MetaAnalysisJobResponse>;
 }> = ({ metaAnalysis, metaAnalysisJobs }) => {
-    const results = (metaAnalysis?.results ?? []) as ResultReturn[];
-    const latestResult = results.length > 0 ? results[results.length - 1] : undefined;
+    const latestResultId = getLatestMetaAnalysisResultId(metaAnalysis);
     const {
         data: latestMetaAnalysisResult,
         isLoading: latestResultIsLoading,
         isError: latestResultIsError,
-    } = useGetMetaAnalysisResultById(latestResult?.id);
+    } = useGetMetaAnalysisResultById(latestResultId);
 
     const jobs = metaAnalysisJobs ?? [];
     const latestJob = jobs.length > 0 ? jobs[jobs.length - 1] : undefined;

@@ -54,75 +54,14 @@ export function findImageById(imageId: string | undefined, analyses: AnalysisRet
     return flat.find((image) => image.id === imageId);
 }
 
-export function removeImageFromAnalyses(
-    analyses: IStoreAnalysis[],
-    imageId: string
-): { next: IStoreAnalysis[]; removed?: ImageReturn } {
-    let removed: ImageReturn | undefined;
-    const next = analyses.map((a) => ({
-        ...a,
-        images: ((a.images ?? []) as ImageReturn[]).filter((i) => {
-            if (i.id === imageId) {
-                removed = i;
-                return false;
-            }
-            return true;
-        }),
-    }));
-    return { next, removed };
-}
-
-export function addImageToAnalysis(
-    analyses: IStoreAnalysis[],
-    targetAnalysisId: string,
-    image: ImageReturn
-): IStoreAnalysis[] {
-    return analyses.map((a) => {
-        if (a.id !== targetAnalysisId) return a;
-        const imgs = (a.images ?? []) as ImageReturn[];
-        return {
-            ...a,
-            images: [...imgs, { ...image, analysis: targetAnalysisId }],
-        };
-    });
-}
-
-/** Removes the image wherever it appears, then attaches it to `targetAnalysisId`. */
-export function moveBrainMapImageToAnalysis(
-    analyses: IStoreAnalysis[],
-    imageId: string,
-    targetAnalysisId: string
-): IStoreAnalysis[] | null {
-    const { next: afterRemove, removed } = removeImageFromAnalyses(analyses, imageId);
-    if (!removed) return null;
-    return addImageToAnalysis(afterRemove, targetAnalysisId, { ...removed, analysis: targetAnalysisId });
-}
-
-/** Clears `analysis` on the image so `partitionAnalysisImages` lists it as uncategorized. */
-export function unassignBrainMapImageFromAnalysis(
-    analyses: IStoreAnalysis[],
-    analysisId: string,
-    imageId: string
-): IStoreAnalysis[] {
-    return analyses.map((a) => {
-        if (a.id !== analysisId) return a;
-        return {
-            ...a,
-            images: ((a.images ?? []) as ImageReturn[]).map((i) =>
-                i.id === imageId ? { ...i, analysis: undefined } : i
-            ),
-        };
-    });
-}
-
 export function noteTypeToCellType(t: EPropertyType): 'boolean' | 'string' | 'number' {
     if (t === EPropertyType.BOOLEAN) return 'boolean';
     if (t === EPropertyType.NUMBER) return 'number';
     return 'string';
 }
 
-export function imagesFingerprint(images: IStoreAnalysis['images'] | undefined): string {
-    return ((images ?? []) as ImageReturn[])
+export function imagesFingerprint(images: ImageReturn[] | undefined): string {
+    return (images ?? [])
         .map((i) => `${i.id ?? ''}:${i.analysis ?? ''}`)
         .sort()
         .join('|');

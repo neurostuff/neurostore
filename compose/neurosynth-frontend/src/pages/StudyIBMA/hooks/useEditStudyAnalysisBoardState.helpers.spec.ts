@@ -1,11 +1,6 @@
+import type { AnalysisReturnNested } from 'hooks/analyses/analysisQueries.types';
 import type { ImageReturn } from 'neurostore-typescript-sdk';
-import type { IStoreAnalysis } from 'stores/study/StudyStore.helpers';
-import {
-    imageToBrainMapListItem,
-    moveBrainMapImageToAnalysis,
-    partitionAnalysisImages,
-    unassignBrainMapImageFromAnalysis,
-} from './useEditStudyAnalysisBoardState.helpers';
+import { imageToBrainMapListItem, partitionAnalysisImages } from './useEditStudyAnalysisBoardState.helpers';
 
 const img = (partial: Partial<ImageReturn> & { id: string }): ImageReturn => ({
     id: partial.id,
@@ -25,18 +20,12 @@ const img = (partial: Partial<ImageReturn> & { id: string }): ImageReturn => ({
     analysis_name: null,
 });
 
-const analysis = (id: string, images: ImageReturn[]): IStoreAnalysis =>
-    ({
-        id,
-        name: 'A',
-        description: '',
-        isNew: false,
-        conditions: [],
-        points: [],
-        images,
-        pointSpace: undefined,
-        pointStatistic: undefined,
-    }) as IStoreAnalysis;
+const analysis = (id: string, images: ImageReturn[]): AnalysisReturnNested => ({
+    id,
+    name: 'A',
+    description: '',
+    images,
+});
 
 describe('useEditStudyAnalysisBoardState.helpers', () => {
     describe('partitionAnalysisImages', () => {
@@ -60,33 +49,6 @@ describe('useEditStudyAnalysisBoardState.helpers', () => {
             const { uncategorized, analysisIdToImageMap: byAnalysisId } = partitionAnalysisImages(analyses);
             expect(Object.keys(byAnalysisId)).toHaveLength(0);
             expect(uncategorized).toEqual([expect.objectContaining({ id: 'i1' })]);
-        });
-    });
-
-    describe('moveBrainMapImageToAnalysis', () => {
-        it('moves an image from one analysis to another', () => {
-            const a1 = 'analysis-1';
-            const a2 = 'analysis-2';
-            const i1 = img({ id: 'i1', analysis: a1, filename: 'x.nii' });
-            const analyses = [analysis(a1, [i1]), analysis(a2, [])];
-            const next = moveBrainMapImageToAnalysis(analyses, 'i1', a2);
-            expect(next).not.toBeNull();
-            const a1Next = next!.find((x) => x.id === a1)!;
-            const a2Next = next!.find((x) => x.id === a2)!;
-            expect(a1Next.images).toHaveLength(0);
-            expect(a2Next.images).toHaveLength(1);
-            expect((a2Next.images as ImageReturn[])[0].analysis).toBe(a2);
-        });
-    });
-
-    describe('unassignBrainMapImageFromAnalysis', () => {
-        it('clears analysis FK on the image in place', () => {
-            const a1 = 'analysis-1';
-            const i1 = img({ id: 'i1', analysis: a1, filename: 'x.nii' });
-            const analyses = [analysis(a1, [i1])];
-            const next = unassignBrainMapImageFromAnalysis(analyses, a1, 'i1');
-            const imgs = next[0].images as ImageReturn[];
-            expect(imgs[0].analysis).toBeUndefined();
         });
     });
 

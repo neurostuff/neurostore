@@ -27,7 +27,7 @@ def resolve_test_database_name():
 
 
 def get_env_var(name, default=None, required=False):
-    """Helper to fetch environment variables with optional default and required flag."""
+    """Fetch env vars with optional default and required flag."""
     value = os.environ.get(name, default)
     if required and value is None:
         raise RuntimeError(f"Environment variable '{name}' is required but not set.")
@@ -50,14 +50,7 @@ def resolve_config_object():
 
 def resolve_database_name(default_db_name, config_env):
     app_env = _normalize_app_env(get_env_var("APP_ENV", config_env))
-    if app_env in {
-        "dev",
-        "development",
-        "test",
-        "testing",
-        "docker_test",
-        "docker-test",
-    }:
+    if app_env in DEVLIKE_ENVS:
         return resolve_test_database_name()
     if app_env in PRODLIKE_ENVS:
         return default_db_name

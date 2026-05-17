@@ -15,7 +15,6 @@ import { useClearStudyStore, useGetStudyIsLoading, useInitStudyStore, useStudyId
 import DisplayExtractionTableState from './components/DisplayExtractionTableState';
 import EditStudyCompleteButton from './components/EditStudyCompleteButton';
 import EditStudyToolbar from './components/EditStudyToolbar';
-import { useAnnotationId } from 'stores/annotation/AnnotationStore.getters';
 
 const StudyCBMAPage: React.FC = () => {
     const { projectId, studyId } = useParams<{ projectId: string; studyId: string }>();
@@ -26,10 +25,6 @@ const StudyCBMAPage: React.FC = () => {
     const clearStudyStore = useClearStudyStore();
     const initStudyStore = useInitStudyStore();
     const studyStoreId = useStudyId();
-    const annotaiton = useAnnotationId();
-
-    console.log('annotaiton', annotaiton);
-
     const theme = useTheme();
     const mdDown = useMediaQuery(theme.breakpoints.down('md'));
 

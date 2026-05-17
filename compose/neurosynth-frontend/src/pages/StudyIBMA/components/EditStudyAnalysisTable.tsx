@@ -4,47 +4,38 @@ import NewAnnotationColumnDialog, {
 } from 'pages/StudyIBMA/components/NewAnnotationColumnDialog';
 import { flexRender, type Table as TanstackTable } from '@tanstack/react-table';
 import React, { Fragment, useCallback, useState } from 'react';
-import type { AnalysisBoardRow } from '../hooks/useEditStudyAnalysisBoardState.types';
-import EditStudyAnalysisMapsExpandedRow from './EditStudyAnalysisMapsExpandedRow';
-import { EditStudyAnalysisTableRow } from './EditStudyAnalysisTableRow';
-import { useAnnotationNoteKeys, useCreateAnnotationColumn } from 'stores/annotation/AnnotationStore.actions';
-import { useParams } from 'react-router-dom';
+import type { AnalysisBoardRow } from 'pages/StudyIBMA/hooks/useEditStudyAnalysisBoardState.types';
+import EditStudyAnalysisMapsExpandedRow from 'pages/StudyIBMA/components/EditStudyAnalysisMapsExpandedRow';
+import { EditStudyAnalysisTableRow } from 'pages/StudyIBMA/components/EditStudyAnalysisTableRow';
+import type { NoteKeyType } from 'components/HotTables/HotTables.types';
 import { Add } from '@mui/icons-material';
 
 export type EditStudyAnalysisTableProps = {
     table: TanstackTable<AnalysisBoardRow>;
     tableMinWidth: number;
+    noteKeys?: NoteKeyType[];
+    onCreateAnalysis?: () => void | Promise<void>;
+    onAddAnnotationColumn?: (payload: NewAnnotationColumnPayload) => void | Promise<void>;
 };
 
-export const EditStudyAnalysisTable: React.FC<EditStudyAnalysisTableProps> = ({ table, tableMinWidth }) => {
-    const { studyId } = useParams<{ projectId: string; studyId: string }>();
-    const createAnnotationColumn = useCreateAnnotationColumn();
-    const noteKeys = useAnnotationNoteKeys();
+export const EditStudyAnalysisTable: React.FC<EditStudyAnalysisTableProps> = ({
+    table,
+    tableMinWidth,
+    noteKeys = [],
+    onCreateAnalysis,
+    onAddAnnotationColumn,
+}) => {
     const [newAnnotationColumnDialogOpen, setNewAnnotationColumnDialogOpen] = useState(false);
 
     const handleCreateNewAnalysis = useCallback(() => {
-        // if (!studyId) return;
-        // const createdAnalysis = addOrUpdateAnalysis({
-        //     name: '',
-        //     description: '',
-        //     isNew: true,
-        //     conditions: [],
-        //     order: analyses.length + 1,
-        //     images: [],
-        // });
-        // if (!createdAnalysis.id) return;
-        // createAnnotationNote(createdAnalysis.id, studyId, '');
-    }, []);
+        void onCreateAnalysis?.();
+    }, [onCreateAnalysis]);
 
     const handleAddAnnotationColumn = useCallback(
         (payload: NewAnnotationColumnPayload) => {
-            createAnnotationColumn({
-                key: payload.key,
-                type: payload.type,
-                default: payload.default,
-            });
+            void onAddAnnotationColumn?.(payload);
         },
-        [createAnnotationColumn]
+        [onAddAnnotationColumn]
     );
 
     return (
@@ -93,7 +84,7 @@ export const EditStudyAnalysisTable: React.FC<EditStudyAnalysisTableProps> = ({ 
                         sx={{ fontSize: '10px' }}
                         variant="contained"
                         disableElevation
-                        data-testid="new-annotation-column-open"
+                        data-testid="new-annotation-column-open-button"
                     >
                         <Add sx={{ fontSize: '16px' }} />
                         New Annotation Column

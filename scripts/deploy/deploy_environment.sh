@@ -204,7 +204,63 @@ read_env_value() {
   local env_path="$1"
   local key="$2"
 
-  grep -E "^${key}=" "${env_path}" | tail -n 1 | cut -d= -f2-
+  awk -v key="${key}" '
+    index($0, key "=") == 1 {
+      value = substr($0, length(key) + 2)
+    }
+    END {
+      print value
+    }
+  ' "${env_path}"
+}
+
+strip_env_quotes() {
+  local value="$1"
+
+  case "${value}" in
+    \"*\")
+      value="${value#\"}"
+      value="${value%\"}"
+      ;;
+    \'*\')
+      value="${value#\'}"
+      value="${value%\'}"
+      ;;
+  esac
+
+  printf '%s' "${value}"
+}
+
+ensure_host_bind_dir() {
+  local service_root="$1"
+  local env_path="$2"
+  local key="$3"
+  local value
+  local host_dir
+
+  value="$(strip_env_quotes "$(read_env_value "${env_path}" "${key}")")"
+
+  if [ -z "${value}" ]; then
+    echo "Missing required ${key} in ${env_path}." >&2
+    exit 1
+  fi
+
+  case "${value}" in
+    /*)
+      host_dir="${value}"
+      ;;
+    *)
+      host_dir="${service_root}/${value}"
+      ;;
+  esac
+
+  mkdir -p "${host_dir}"
+}
+
+ensure_host_bind_dirs() {
+  ensure_host_bind_dir "${WORKTREE_DIR}/store" "${WORKTREE_DIR}/store/.env" "FILE_DIR"
+  ensure_host_bind_dir "${WORKTREE_DIR}/store" "${WORKTREE_DIR}/store/.env" "ACE_DIR"
+  ensure_host_bind_dir "${WORKTREE_DIR}/compose" "${WORKTREE_DIR}/compose/.env" "FILE_DIR"
 }
 
 upsert_env_value() {
@@ -356,6 +412,7 @@ prepare_worktree() {
   overlay_repo_working_tree
   sync_repo_env_files
   strip_container_names_for_local_builds
+  ensure_host_bind_dirs
 }
 
 docker_login_if_configured() {
@@ -376,7 +433,9 @@ build_store_images() {
     neurostore \
     store_outbox_worker \
     store_metadata_outbox_worker \
+    store_release_worker \
     store_nginx \
+    store-pgsql \
     store-pgsql17
 }
 
@@ -433,6 +492,7 @@ deploy_store_staging() {
     neurostore \
     store_outbox_worker \
     store_metadata_outbox_worker \
+    store_release_worker \
     store-pghero \
     store-grafana \
     store_nginx
@@ -455,6 +515,7 @@ deploy_store_staging() {
     neurostore \
     store_outbox_worker \
     store_metadata_outbox_worker \
+    store_release_worker \
     store-pghero \
     store-grafana
   compose_for "${service_root}" "${project}" exec -T neurostore flask db upgrade heads
@@ -518,9 +579,9 @@ deploy_store_dev() {
     --cache-dir "${STATE_ROOT}/store-seed" \
     --refresh-latest \
     --with-vector-extension
-  compose_for "${service_root}" "${project}" up -d --no-build neurostore store_outbox_worker store_metadata_outbox_worker store-pghero store-grafana
-  compose_for "${service_root}" "${project}" up -d --no-build store_nginx
+  compose_for "${service_root}" "${project}" up -d --no-build --scale store_release_worker=0
   compose_for "${service_root}" "${project}" exec -T neurostore flask db upgrade heads
+  compose_for "${service_root}" "${project}" up -d --no-build --scale store_release_worker=1 store_release_worker
 }
 
 deploy_compose_dev() {

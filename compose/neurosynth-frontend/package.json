@@ -1,6 +1,6 @@
 {
     "name": "neurosynth",
-    "version": "0.1.0",
+    "version": "0.19.1",
     "private": true,
     "dependencies": {
         "@auth0/auth0-react": "^1.6.0",
@@ -26,7 +26,7 @@
         "@sentry/react": "^7.119.2",
         "@tanstack/react-table": "^8.20.5",
         "@tanstack/react-virtual": "^3.13.8",
-        "axios": "^1.13.5",
+        "axios": "^1.15.2",
         "fast-xml-parser": "^5.5.7",
         "handsontable": "^12.3.3",
         "html-to-image": "^1.11.11",

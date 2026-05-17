@@ -1,14 +1,19 @@
 import { Box, Button, TextField } from '@mui/material';
 import BaseDialog from 'components/Dialogs/BaseDialog';
 import React, { useEffect, useState } from 'react';
-import { useAddOrUpdateAnalysis } from 'stores/study/StudyStore';
-import { AnalysisBoardRow } from '../hooks/useEditStudyAnalysisBoardState.types';
+import { AnalysisBoardRow } from 'pages/StudyIBMA/hooks/useEditStudyAnalysisBoardState.types';
+
+export type EditStudyAnalysisSavePayload = {
+    analysisId: string;
+    name: string;
+    description: string;
+};
 
 const EditStudyAnalysisDialogIBMA: React.FC<{
     analysis: AnalysisBoardRow | null;
     onClose: () => void;
-}> = ({ analysis, onClose }) => {
-    const addOrUpdateAnalysis = useAddOrUpdateAnalysis();
+    onEditAnalysis: (payload: EditStudyAnalysisSavePayload) => void | Promise<void>;
+}> = ({ analysis, onClose, onEditAnalysis }) => {
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
 
@@ -22,10 +27,10 @@ const EditStudyAnalysisDialogIBMA: React.FC<{
         }
     }, [analysis]);
 
-    const handleSave = () => {
+    const handleSave = async () => {
         if (!analysis?.id) return;
-        addOrUpdateAnalysis({
-            id: analysis.id,
+        await onEditAnalysis({
+            analysisId: analysis.id,
             name,
             description,
         });

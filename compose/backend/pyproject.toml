@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "neurosynth_compose"
-version = "0.10.0"
+version = "0.19.1"
 description = "neurosynth compose"
 authors = [
     { name="James Kent", email="jamesdkent21@gmail.com" }
@@ -24,7 +24,7 @@ dependencies = [
     "Flask-Security-Too~=5.5",
     "flask-shell-ipython~=0.4",
     "flask-sqlalchemy~=3.1",
-    "gunicorn~=25.0",
+    "gunicorn>=25,<27",
     "ipython~=9.6",
     "marshmallow~=4.0",
     "orjson~=3.10",
@@ -40,7 +40,7 @@ dependencies = [
     "starlette>=1.0.0,<2",
     "webargs~=8.7",
     "wrapt~=2.1",
-    "NiMARE==0.15.0",
+    "NiMARE==0.17.0",
     "pynv @ git+https://github.com/NeuroVault/pynv.git#egg=pynv",
     "neurostore-sdk @ git+https://github.com/neurostuff/neurostore-python-sdk.git#egg=neurostore-sdk"
 ]

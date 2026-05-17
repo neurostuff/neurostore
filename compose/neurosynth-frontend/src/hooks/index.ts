@@ -22,6 +22,7 @@ import useCreateCondition from './analyses/useCreateCondition';
 import useUpdatePoint from './analyses/useUpdatePoint';
 import useDeleteAnalysis from './analyses/useDeleteAnalysis';
 import useGetAnalysesByStudyId from './analyses/useGetAnalysesByStudyId';
+import useUpdateImage from './images/useUpdateImage';
 import useCreateStudyset from './studysets/useCreateStudyset';
 import useUpdateStudyset from './studysets/useUpdateStudyset';
 import useGetAnnotationById from './annotations/useGetAnnotationById';
@@ -110,6 +111,8 @@ export {
     useCreateAnalysis,
     useUpdateAnalysis,
     useGetAnalysesByStudyId,
+    // IMAGES
+    useUpdateImage,
     // CONDITIONS
     useGetConditions,
     useCreateCondition,

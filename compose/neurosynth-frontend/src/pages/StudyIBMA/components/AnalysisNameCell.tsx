@@ -3,24 +3,32 @@ import MoreVertIcon from '@mui/icons-material/MoreVert';
 import { Box, IconButton, Menu, MenuItem, Tooltip, Typography } from '@mui/material';
 import type { CellContext } from '@tanstack/react-table';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
-import React, { useState } from 'react';
-import { useDeleteAnnotationNote } from 'stores/annotation/AnnotationStore.actions';
-import type { AnalysisBoardRow } from '../hooks/useEditStudyAnalysisBoardState.types';
-import EditStudyAnalysisDialogIBMA from './EditStudyAnalysisDialogIBMA';
-import { STUDY_ANALYSIS_TABLE_ROW_MIN_HEIGHT_PX } from './editStudyAnalysisBoard.constants';
-import { analysisRowsShallowEqual } from '../hooks/useEditStudyAnalysisBoardState.helpers';
+import React, { useCallback, useState } from 'react';
+import type { AnalysisBoardRow } from 'pages/StudyIBMA/hooks/useEditStudyAnalysisBoardState.types';
+import EditStudyAnalysisDialogIBMA, {
+    type EditStudyAnalysisSavePayload,
+} from 'pages/StudyIBMA/components/EditStudyAnalysisDialogIBMA';
+import { STUDY_ANALYSIS_TABLE_ROW_MIN_HEIGHT_PX } from 'pages/StudyIBMA/hooks/useEditStudyAnalysisBoardState.consts';
 
 const AnalysisNameCell: React.FC<CellContext<AnalysisBoardRow, unknown>> = ({ row, table }) => {
     const rowData = row.original;
-    const deleteAnnotationNote = useDeleteAnnotationNote();
+    const onDeleteAnalysis = table.options.meta?.deleteAnalysis;
+    const onUpdateAnalysis = table.options.meta?.updateAnalysis;
     const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
     const [analysisForEdit, setAnalysisForEdit] = useState<AnalysisBoardRow | null>(null);
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
     const isExpanded = row.getIsExpanded();
 
-    const handleDeleteConfirm = (confirm: boolean | undefined) => {
+    const handleEditAnalysis = useCallback(
+        async (payload: EditStudyAnalysisSavePayload) => {
+            await onUpdateAnalysis?.(payload);
+        },
+        [onUpdateAnalysis]
+    );
+
+    const handleDeleteConfirm = async (confirm: boolean | undefined) => {
         if (confirm && rowData.id) {
-            deleteAnnotationNote(rowData.id);
+            await onDeleteAnalysis?.(rowData.id);
             const assigned = rowData.images ?? [];
             const selectedId = table.options.meta?.selectedImageId ?? null;
             if (
@@ -44,6 +52,7 @@ const AnalysisNameCell: React.FC<CellContext<AnalysisBoardRow, unknown>> = ({ ro
                     width: '100%',
                     minWidth: 0,
                     minHeight: STUDY_ANALYSIS_TABLE_ROW_MIN_HEIGHT_PX,
+                    height: STUDY_ANALYSIS_TABLE_ROW_MIN_HEIGHT_PX,
                     boxSizing: 'border-box',
                 }}
             >
@@ -142,7 +151,11 @@ const AnalysisNameCell: React.FC<CellContext<AnalysisBoardRow, unknown>> = ({ ro
                     </MenuItem>
                 </Menu>
             </Box>
-            <EditStudyAnalysisDialogIBMA analysis={analysisForEdit} onClose={() => setAnalysisForEdit(null)} />
+            <EditStudyAnalysisDialogIBMA
+                analysis={analysisForEdit}
+                onClose={() => setAnalysisForEdit(null)}
+                onEditAnalysis={handleEditAnalysis}
+            />
             <ConfirmationDialog
                 isOpen={deleteConfirmOpen}
                 onCloseDialog={handleDeleteConfirm}

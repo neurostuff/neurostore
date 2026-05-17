@@ -29,7 +29,11 @@ export class ProjectSearchCriteria {
     ) {}
 }
 
-export const projectsSearchHelper = (projectSearchCriteria: Partial<ProjectSearchCriteria>, userId?: string) => {
+export const projectsSearchHelper = (
+    projectSearchCriteria: Partial<ProjectSearchCriteria>,
+    userId?: string,
+    includeProvenance?: boolean
+) => {
     return API.NeurosynthServices.ProjectsService.projectsGet(
         projectSearchCriteria.pageOfResults || undefined,
         projectSearchCriteria.pageSize,
@@ -38,7 +42,8 @@ export const projectsSearchHelper = (projectSearchCriteria: Partial<ProjectSearc
         projectSearchCriteria.descriptionSearch,
         projectSearchCriteria.sortBy === SortBy.LASTUPDATED ? 'updated_at' : projectSearchCriteria.sortBy,
         projectSearchCriteria.descOrder,
-        userId
+        userId,
+        includeProvenance
     );
 };
 

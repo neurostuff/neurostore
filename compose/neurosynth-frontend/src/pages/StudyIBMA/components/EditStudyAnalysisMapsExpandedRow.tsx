@@ -15,7 +15,7 @@ const EditStudyAnalysisMapsExpandedRow: React.FC<{
     const meta = table.options.meta;
     const selectedImageId = meta?.selectedImageId ?? null;
     const onSelectImage = meta?.toggleImageSelection;
-    const onRemoveImage = meta?.removeImageFromAnalysis;
+    const onUpdateImage = meta?.updateImage;
     const colSpan = table.getVisibleLeafColumns().length;
 
     if (!analysisId) return null;
@@ -71,7 +71,7 @@ const EditStudyAnalysisMapsExpandedRow: React.FC<{
                                         }}
                                     >
                                         <ListItemText
-                                            primary={item.name + 'aerg '}
+                                            primary={item.name}
                                             primaryTypographyProps={{
                                                 variant: 'body2',
                                                 noWrap: true,
@@ -91,7 +91,7 @@ const EditStudyAnalysisMapsExpandedRow: React.FC<{
                                         size="small"
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            onRemoveImage?.(analysisId, image);
+                                            onUpdateImage?.({ id: image.id, analysis: undefined });
                                         }}
                                         aria-label="Remove map from analysis"
                                         sx={{ flexShrink: 0, p: 0.25 }}

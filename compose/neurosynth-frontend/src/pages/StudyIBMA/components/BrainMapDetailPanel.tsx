@@ -14,7 +14,7 @@ import {
 import useGetNeurovaultImages, { type INeurovault } from 'hooks/metaAnalyses/useGetNeurovaultImages';
 import type { ImageReturn } from 'neurostore-typescript-sdk';
 import { useMemo } from 'react';
-import { STUDY_ANALYSIS_TABLE_MAX_HEIGHT } from './editStudyAnalysisBoard.constants';
+import { STUDY_ANALYSIS_TABLE_MAX_HEIGHT } from '../hooks/useEditStudyAnalysisBoardState.consts';
 
 function flattenMetadata(metadata: object | null | undefined): { key: string; value: string }[] {
     if (!metadata || typeof metadata !== 'object') return [];

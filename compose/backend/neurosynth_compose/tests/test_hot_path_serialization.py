@@ -1,10 +1,13 @@
 from types import SimpleNamespace
 
+import orjson
+
 from neurosynth_compose.resources.data_views.meta_analyses_view import (
     serialize_meta_analyses,
     serialize_meta_analysis,
 )
 from neurosynth_compose.resources.data_views.projects_view import (
+    _filter_project_list_provenance,
     serialize_project,
     serialize_projects,
 )
@@ -174,6 +177,74 @@ def test_serialize_projects_matches_project_schema_many():
     actual = serialize_projects(projects, info=True)
 
     assert actual == expected
+
+
+def test_filter_project_list_provenance_keeps_only_project_card_fields():
+    raw_provenance = {
+        "algorithmMetadata": {"model": "ale"},
+        "selectionMetadata": {"source": "pubmed"},
+        "filtrationMetadata": {"query": "nicotine"},
+        "curationMetadata": {
+            "columns": [
+                {
+                    "id": "column-1",
+                    "name": "Identification",
+                    "stubStudies": [
+                        {
+                            "id": "study-1",
+                            "title": "Study One",
+                            "exclusionTag": "duplicate",
+                            "tags": [
+                                {"id": "needs-review", "label": "Needs Review"},
+                                {"id": "another-tag", "label": "Another"},
+                            ],
+                        }
+                    ],
+                }
+            ],
+            "infoTags": [{"id": "info-1", "label": "Info"}],
+            "exclusionTags": [{"id": "exclude-1", "label": "Exclude"}],
+            "identificationSources": [{"id": "src-1", "label": "Source"}],
+            "prismaConfig": {
+                "isPrisma": True,
+                "identification": {"exclusionTags": [{"id": "exclude-1"}]},
+            },
+        },
+        "extractionMetadata": {
+            "studysetId": "studyset-1",
+            "annotationId": "annotation-1",
+            "studyStatusList": [
+                {"id": "study-1", "status": "COMPLETED", "label": "done"}
+            ],
+        },
+        "metaAnalysisMetadata": {
+            "canEditMetaAnalyses": True,
+            "lastRunAt": "2025-01-01T00:00:00+00:00",
+        },
+    }
+
+    filtered = _filter_project_list_provenance(orjson.dumps(raw_provenance).decode())
+
+    assert filtered == {
+        "curationMetadata": {
+            "columns": [
+                {
+                    "stubStudies": [
+                        {
+                            "exclusionTag": "duplicate",
+                            "tags": [{"id": "needs-review"}, {"id": "another-tag"}],
+                        }
+                    ]
+                }
+            ],
+            "prismaConfig": {"isPrisma": True},
+        },
+        "extractionMetadata": {
+            "studysetId": "studyset-1",
+            "studyStatusList": [{"id": "study-1", "status": "COMPLETED"}],
+        },
+        "metaAnalysisMetadata": {"canEditMetaAnalyses": True},
+    }
 
 
 def test_serialize_meta_analysis_matches_schema_default():

@@ -9,8 +9,19 @@ import { UncategorizedMapsColumn } from './UncategorizedMapsColumn';
 const EditStudyAnalysisIBMA: React.FC = () => {
     const [uncategorizedCollapsed, setUncategorizedCollapsed] = useState(false);
 
-    const { toggleImageSelection, table, tableMinWidth, uncategorized, selectedImageId, analyses, isLoading } =
-        useEditStudyAnalysisBoardState();
+    const {
+        toggleImageSelection,
+        table,
+        tableMinWidth,
+        uncategorized,
+        selectedImageId,
+        analyses,
+        noteKeys,
+        createAnalysis,
+        addAnnotationColumn,
+        updateImage,
+        isLoading,
+    } = useEditStudyAnalysisBoardState();
 
     const selectedImage = useMemo(() => {
         return findImageById(selectedImageId, analyses);
@@ -31,13 +42,20 @@ const EditStudyAnalysisIBMA: React.FC = () => {
                     selectedImageId={table.options.meta?.selectedImageId ?? null}
                     onToggleMapSelection={(id) => table.options.meta?.toggleImageSelection?.(id)}
                     analyses={analyses ?? []}
+                    updateImage={updateImage}
                 />
             )}
 
             {isLoading ? (
                 <Skeleton sx={{ transform: 'none', width: '100%', height: '100%' }} />
             ) : (
-                <EditStudyAnalysisTable table={table} tableMinWidth={tableMinWidth} />
+                <EditStudyAnalysisTable
+                    table={table}
+                    tableMinWidth={tableMinWidth}
+                    noteKeys={noteKeys}
+                    onCreateAnalysis={createAnalysis}
+                    onAddAnnotationColumn={addAnnotationColumn}
+                />
             )}
 
             {selectedImage && <BrainMapDetailPanel image={selectedImage} onClose={() => toggleImageSelection()} />}

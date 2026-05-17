@@ -1,10 +1,17 @@
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import { Box, IconButton, Menu, MenuItem, Tooltip, Typography } from '@mui/material';
-import React, { memo, useState } from 'react';
-import { STUDY_ANNOTATION_COLUMN_HEADER_MENU_ITEMS } from './editStudyAnalysisBoard.constants';
+import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
+import { memo, useState } from 'react';
 
-export const AnnotationColumnHeader = memo(function AnnotationColumnHeader({ headerName }: { headerName: string }) {
+const AnnotationColumnHeader = ({
+    headerName,
+    onRemoveColumn,
+}: {
+    headerName: string;
+    onRemoveColumn?: (columnKey: string) => void | Promise<void>;
+}) => {
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+    const [removeConfirmOpen, setRemoveConfirmOpen] = useState(false);
     const open = Boolean(anchorEl);
     const handleClose = () => setAnchorEl(null);
 
@@ -50,12 +57,33 @@ export const AnnotationColumnHeader = memo(function AnnotationColumnHeader({ hea
                 transformOrigin={{ vertical: 'top', horizontal: 'right' }}
                 onClick={(e) => e.stopPropagation()}
             >
-                {STUDY_ANNOTATION_COLUMN_HEADER_MENU_ITEMS.map((label) => (
-                    <MenuItem key={label} dense onClick={handleClose}>
-                        {label}
-                    </MenuItem>
-                ))}
+                <MenuItem
+                    dense
+                    sx={{ color: 'error.main' }}
+                    onClick={() => {
+                        handleClose();
+                        setRemoveConfirmOpen(true);
+                    }}
+                >
+                    Remove column
+                </MenuItem>
             </Menu>
+            <ConfirmationDialog
+                isOpen={removeConfirmOpen}
+                onCloseDialog={(confirm) => {
+                    if (confirm) {
+                        void onRemoveColumn?.(headerName);
+                    }
+                    setRemoveConfirmOpen(false);
+                }}
+                dialogTitle="Remove annotation column?"
+                dialogMessage={`Remove the "${headerName}" column? This will also remove annotation data for all other studies in this studyset associated with "${headerName}"`}
+                confirmText="Remove"
+                rejectText="Cancel"
+                confirmButtonProps={{ color: 'error' }}
+            />
         </Box>
     );
-});
+};
+
+export default memo(AnnotationColumnHeader);

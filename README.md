@@ -4,6 +4,8 @@
   <img src="compose/neurosynth-frontend/public/static/synth.png" width="180" alt="Neurosynth Compose logo" />
 </p>
 
+[![DOI](https://zenodo.org/badge/170588630.svg)](https://doi.org/10.5281/zenodo.8411579) [![RRID](https://img.shields.io/badge/RRID-SCR_027966-blue)](https://scicrunch.org/resolver/RRID:SCR_027966) [![Docs](https://img.shields.io/badge/docs-stable-brightgreen)](https://neurostuff.github.io/compose-docs/)
+
 This monorepo contains the backend and frontend services that power the Neurosynth ecosystem:
 
 - `store/`: **Neurostore** backend (study, image, and metadata storage APIs)

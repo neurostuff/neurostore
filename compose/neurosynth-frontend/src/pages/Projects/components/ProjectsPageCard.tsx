@@ -35,6 +35,8 @@ const ProjectsPageCard: React.FC<INeurosynthProjectReturn> = (props) => {
         meta_analyses = [],
     } = props;
 
+    if (id === '8SnAZa663NmZ') console.log('provenance', provenance);
+
     const { data: studyset } = useGetStudysetNonNestedById(provenance?.extractionMetadata?.studysetId);
     const { data: metaAnalyses = [] } = useGetMetaAnalysesByIds(meta_analyses as string[]);
 
@@ -136,12 +138,12 @@ const ProjectsPageCard: React.FC<INeurosynthProjectReturn> = (props) => {
             </Box>
             <Box sx={{ flexGrow: 1 }}>
                 <Box mb="0.5rem" sx={{ width: '100%', display: 'flex' }}>
-                    <Chip
-                        label={provenance.type === EAnalysisType.CBMA ? 'CBMA' : 'IBMA'}
+                    {/* <Chip
+                        label={provenance.type === EAnalysisType.IBMA ? 'IBMA' : 'CBMA'}
                         size="small"
                         variant="outlined"
                         sx={{ mr: '6px', fontWeight: 'bold' }}
-                    />
+                    /> */}
                     <Chip
                         label={isPublic ? 'Public' : 'Private'}
                         icon={isPublic ? <PublicIcon /> : <LockIcon />}

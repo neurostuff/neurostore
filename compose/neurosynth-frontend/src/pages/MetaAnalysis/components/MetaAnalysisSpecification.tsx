@@ -1,8 +1,15 @@
 import { Box, Link, Typography } from '@mui/material';
 import { getType } from 'components/EditMetadata/EditMetadata.types';
+import {
+    getMetaAnalysisAnnotationId,
+    getMetaAnalysisSpecificationId,
+    getMetaAnalysisStudysetId,
+} from 'helpers/MetaAnalysis.helpers';
 import { useGetMetaAnalysisById } from 'hooks';
+import useGetSnapshotAnnotationById from 'hooks/annotations/useGetSnapshotAnnotationById';
 import useGetSpecificationById from 'hooks/metaAnalyses/useGetSpecificationById';
-import { Annotation, Specification, SpecificationReturn, Studyset } from 'neurosynth-compose-typescript-sdk';
+import useGetSnapshotStudysetById from 'hooks/studysets/useGetSnapshotStudysetById';
+import { AnnotationReturn, StudysetReturn } from 'neurosynth-compose-typescript-sdk';
 import React, { useMemo } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import { getAnalysisTypeDescription, getEstimatorDescription } from '../MetaAnalysisPage.helpers';
@@ -16,13 +23,16 @@ const DisplayMetaAnalysisSpecification: React.FC<{ projectId: string; metaAnalys
     metaAnalysisId,
 }) => {
     const { data: metaAnalysis } = useGetMetaAnalysisById(metaAnalysisId);
-    const metaAnalysisTypeDescription = useMemo(() => {
-        return getAnalysisTypeDescription((metaAnalysis?.specification as Specification)?.type);
-    }, [metaAnalysis?.specification]);
+    const specificationId = getMetaAnalysisSpecificationId(metaAnalysis);
+    const annotationId = getMetaAnalysisAnnotationId(metaAnalysis);
+    const studysetId = getMetaAnalysisStudysetId(metaAnalysis);
+    const { data: annotation } = useGetSnapshotAnnotationById(annotationId);
+    const { data: studyset } = useGetSnapshotStudysetById(studysetId);
+    const { data: specification } = useGetSpecificationById(specificationId);
 
-    const { data: specification } = useGetSpecificationById(
-        (metaAnalysis?.specification as SpecificationReturn | undefined)?.id
-    );
+    const metaAnalysisTypeDescription = useMemo(() => {
+        return getAnalysisTypeDescription(specification?.type);
+    }, [specification?.type]);
 
     const selectionText = useMemo(() => {
         if (!specification || !specification.filter || !specification.conditions) return '';
@@ -46,10 +56,6 @@ const DisplayMetaAnalysisSpecification: React.FC<{ projectId: string; metaAnalys
         }
     }, [specification?.conditions, specification?.database_studyset, specification?.estimator?.type]);
 
-    const metaAnalysisSpecification = metaAnalysis?.specification as Specification | undefined;
-    const metaAnalysisAnnotation = metaAnalysis?.neurostore_annotation as Annotation | undefined;
-    const metaAnalysisStudyset = metaAnalysis?.neurostore_studyset as Studyset | undefined;
-
     return (
         <Box>
             <Box sx={{ display: 'grid', gridTemplateColumns: 'auto 1fr', rowGap: 2, columnGap: 8 }}>
@@ -60,7 +66,7 @@ const DisplayMetaAnalysisSpecification: React.FC<{ projectId: string; metaAnalys
                     Analysis Type
                 </Typography>
                 <Box>
-                    <Typography variant="body1">{metaAnalysisSpecification?.type || ''}</Typography>
+                    <Typography variant="body1">{specification?.type || ''}</Typography>
                     <Typography variant="body2">{metaAnalysisTypeDescription}</Typography>
                 </Box>
 
@@ -74,7 +80,7 @@ const DisplayMetaAnalysisSpecification: React.FC<{ projectId: string; metaAnalys
                     to={`/projects/${projectId}/extraction`}
                     target="_blank"
                 >
-                    {metaAnalysisStudyset?.neurostore_id || ''}
+                    {(studyset as StudysetReturn | undefined)?.neurostore_id || ''}
                 </Link>
 
                 <Typography color="primary.dark" variant="body1">
@@ -84,15 +90,18 @@ const DisplayMetaAnalysisSpecification: React.FC<{ projectId: string; metaAnalys
                     <Typography variant="body1">{selectionText}</Typography>
                     {referenceDataset && (
                         <>
-                            <SelectAnalysesSummaryComponent
-                                annotationdId={metaAnalysisAnnotation?.neurostore_id || ''}
-                                studysetId={metaAnalysisStudyset?.neurostore_id || ''}
-                                selectedValue={{
-                                    selectionKey: specification?.filter || '',
-                                    type: getType(specification?.filter || ''),
-                                    selectionValue: specification?.conditions?.[0],
-                                }}
-                            />
+                            {!!(annotation as AnnotationReturn | undefined)?.neurostore_id &&
+                                !!(studyset as StudysetReturn | undefined)?.neurostore_id && (
+                                    <SelectAnalysesSummaryComponent
+                                        annotationdId={(annotation as AnnotationReturn).neurostore_id || ''}
+                                        studysetId={(studyset as StudysetReturn).neurostore_id || ''}
+                                        selectedValue={{
+                                            selectionKey: specification?.filter || '',
+                                            type: getType(specification?.filter || ''),
+                                            selectionValue: specification?.conditions?.[0],
+                                        }}
+                                    />
+                                )}
                             <Typography
                                 sx={{
                                     marginTop: '1rem',
@@ -114,7 +123,7 @@ const DisplayMetaAnalysisSpecification: React.FC<{ projectId: string; metaAnalys
                 <Box>
                     <Typography variant="body1">{specification?.estimator?.type || ''}</Typography>
                     <Typography variant="body2">
-                        {getEstimatorDescription(metaAnalysisSpecification?.type, specification?.estimator?.type)}
+                        {getEstimatorDescription(specification?.type, specification?.estimator?.type)}
                     </Typography>
                     <DynamicInputDisplay dynamicArg={(specification?.estimator?.args || {}) as IDynamicValueType} />
                 </Box>

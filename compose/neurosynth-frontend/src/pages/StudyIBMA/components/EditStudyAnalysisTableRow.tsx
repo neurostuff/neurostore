@@ -6,7 +6,7 @@ import { flexRender } from '@tanstack/react-table';
 import {
     STUDY_ANALYSES_COLUMN_WIDTH,
     STUDY_ANALYSIS_TABLE_ROW_MIN_HEIGHT_PX,
-} from './editStudyAnalysisBoard.constants';
+} from '../hooks/useEditStudyAnalysisBoardState.consts';
 
 export const EditStudyAnalysisTableRow: React.FC<{
     row: Row<AnalysisBoardRow>;
@@ -28,6 +28,7 @@ export const EditStudyAnalysisTableRow: React.FC<{
                                 backgroundColor: isAnalysis ? 'grey.200' : 'transparent',
                             },
                             minHeight: STUDY_ANALYSIS_TABLE_ROW_MIN_HEIGHT_PX,
+                            height: STUDY_ANALYSIS_TABLE_ROW_MIN_HEIGHT_PX,
                             p: 0,
                             ...(isAnalysis
                                 ? {

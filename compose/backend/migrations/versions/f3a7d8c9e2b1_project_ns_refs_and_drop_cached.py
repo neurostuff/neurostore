@@ -151,7 +151,9 @@ def upgrade():
         op.drop_column("meta_analyses", "cached_studyset_id")
 
     if "cached_annotation_id" in meta_cols:
-        for fk_name in _fk_names_for(inspector, "meta_analyses", "cached_annotation_id"):
+        for fk_name in _fk_names_for(
+            inspector, "meta_analyses", "cached_annotation_id"
+        ):
             op.drop_constraint(fk_name, "meta_analyses", type_="foreignkey")
         op.drop_column("meta_analyses", "cached_annotation_id")
 
@@ -162,7 +164,9 @@ def upgrade():
     if "cached_studyset_id" in ann_cols and "snapshot_studyset_id" not in ann_cols:
         for fk_name in _fk_names_for(inspector, "annotations", "cached_studyset_id"):
             op.drop_constraint(fk_name, "annotations", type_="foreignkey")
-        op.alter_column("annotations", "cached_studyset_id", new_column_name="snapshot_studyset_id")
+        op.alter_column(
+            "annotations", "cached_studyset_id", new_column_name="snapshot_studyset_id"
+        )
         op.create_foreign_key(
             "fk_annotations_snapshot_studyset_id",
             "annotations",
@@ -314,7 +318,9 @@ def downgrade():
     if "snapshot_studyset_id" in ann_cols and "cached_studyset_id" not in ann_cols:
         for fk_name in _fk_names_for(inspector, "annotations", "snapshot_studyset_id"):
             op.drop_constraint(fk_name, "annotations", type_="foreignkey")
-        op.alter_column("annotations", "snapshot_studyset_id", new_column_name="cached_studyset_id")
+        op.alter_column(
+            "annotations", "snapshot_studyset_id", new_column_name="cached_studyset_id"
+        )
         op.create_foreign_key(
             None,
             "annotations",

@@ -276,7 +276,7 @@ describe(PAGE_NAME, () => {
         });
 
         it('should add an annotation column', () => {
-            cy.get('[data-testid="new-annotation-column-open"]').click();
+            cy.get('[data-testid="new-annotation-column-open-button"]').click();
             cy.get('[data-testid="new-annotation-column-dialog"]').should('be.visible');
             cy.get('[data-testid="new-annotation-column-key"] input').type('new_annotation_col');
             cy.get('[data-testid="new-annotation-column-dialog"]').within(() => {
@@ -341,7 +341,7 @@ describe(PAGE_NAME, () => {
                 'postAnnotationAnalyses'
             );
 
-            cy.get('[data-testid="new-annotation-column-open"]').click();
+            cy.get('[data-testid="new-annotation-column-open-button"]').click();
             cy.get('[data-testid="new-annotation-column-dialog"]').should('be.visible');
             cy.get('[data-testid="new-annotation-column-key"] input').type(newNoteKey);
             cy.get('[data-testid="new-annotation-column-dialog"]').within(() => {

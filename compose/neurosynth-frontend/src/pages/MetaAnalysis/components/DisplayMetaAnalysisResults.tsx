@@ -2,9 +2,11 @@ import { OpenInNew } from '@mui/icons-material';
 import { Box, Button, Link, List, ListItemButton, ListItemText, Typography } from '@mui/material';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import NiiVueVisualizer from 'components/Visualizer/NiiVueVisualizer';
+import { getLatestMetaAnalysisResultId } from 'helpers/MetaAnalysis.helpers';
 import { useGetMetaAnalysisResultById, useGetNeurovaultImages } from 'hooks';
 import { INeurovault } from 'hooks/metaAnalyses/useGetNeurovaultImages';
-import { MetaAnalysisReturn, NeurovaultFile, ResultReturn, Specification } from 'neurosynth-compose-typescript-sdk';
+import useGetSpecificationById from 'hooks/metaAnalyses/useGetSpecificationById';
+import { MetaAnalysisReturn, NeurovaultFile, SpecificationReturn } from 'neurosynth-compose-typescript-sdk';
 import { useEffect, useMemo, useState } from 'react';
 import { NimareOutputs, parseNimareFileName } from '../Nimare.helpers';
 import DisplayParsedNiMareFile from './DisplayParsedNiMareFile';
@@ -13,16 +15,14 @@ import DisplayMetaAnalysisActivations from './DisplayMetaAnalysisActivations';
 const DisplayMetaAnalysisResults: React.FC<{
     metaAnalysis: MetaAnalysisReturn | undefined;
 }> = ({ metaAnalysis }) => {
-    // Each result represents a run. We just need to get the last item to get the latest run
-    const metaAnalysisResults = (metaAnalysis?.results ?? []) as ResultReturn[];
-    const latestResult =
-        metaAnalysisResults.length > 0 ? metaAnalysisResults[metaAnalysisResults.length - 1] : undefined;
-    const { data, isLoading, isError } = useGetMetaAnalysisResultById(latestResult?.id);
+    const latestResultId = getLatestMetaAnalysisResultId(metaAnalysis);
+    const { data, isLoading, isError } = useGetMetaAnalysisResultById(latestResultId);
+    const { data: specification } = useGetSpecificationById((metaAnalysis?.specification as string | undefined) || '');
     const neurovaultCollectionLink = data?.neurovault_collection?.url || '';
 
-    const neurovaultFileURLs = ((data?.neurovault_collection?.files || []) as NeurovaultFile[]).map(
-        (file) => file.url || ''
-    );
+    const neurovaultFileURLs = ((data?.neurovault_collection?.files || []) as NeurovaultFile[])
+        .map((file) => file.url || '')
+        .filter((url) => !!url);
     const {
         data: neurovaultFiles,
         isLoading: neurovaultFilesIsLoading,
@@ -31,8 +31,7 @@ const DisplayMetaAnalysisResults: React.FC<{
     const [selectedNeurovaultImage, setSelectedNeurovaultImage] = useState<INeurovault>();
 
     const sortedNeurovaultFiles = useMemo(() => {
-        if (!neurovaultFiles || !metaAnalysis || !(metaAnalysis?.specification as Specification).estimator?.type)
-            return [];
+        if (!neurovaultFiles) return [];
 
         // In the array, z is first. However, we want it to have more weight so we reverse the array and give it a higher index
         // Note: This array must be cloned as reverse() will mutate the array
@@ -45,7 +44,7 @@ const DisplayMetaAnalysisResults: React.FC<{
         //                                if multiple of the same value type, prioritize level-cluster, then level-voxel
         // note that generally, this is just alphabetical order
 
-        const sorted = (neurovaultFiles || []).sort((a, b) => {
+        const sorted = [...neurovaultFiles].sort((a, b) => {
             const filenameA = parseNimareFileName(a.name);
             const filenameB = parseNimareFileName(b.name);
 
@@ -72,7 +71,7 @@ const DisplayMetaAnalysisResults: React.FC<{
         });
 
         // if MKDAChi2, move both z_desc-associationMass and z_desc-uniformityMass to the top respectively
-        if ((metaAnalysis.specification as Specification).estimator?.type === 'MKDAChi2') {
+        if ((specification as SpecificationReturn | undefined)?.estimator?.type === 'MKDAChi2') {
             const uniformityMassIndex = sorted.findIndex((sortedElement) =>
                 sortedElement.name?.includes('z_desc-uniformityMass')
             );
@@ -90,7 +89,7 @@ const DisplayMetaAnalysisResults: React.FC<{
         }
 
         return sorted;
-    }, [neurovaultFiles, metaAnalysis]);
+    }, [neurovaultFiles, specification]);
 
     useEffect(() => {
         if (!sortedNeurovaultFiles) return;
@@ -164,7 +163,7 @@ const DisplayMetaAnalysisResults: React.FC<{
                     )}
                 </Box>
             </Box>
-            <DisplayMetaAnalysisActivations metaAnalysis={metaAnalysis} metaAnalysisResult={latestResult} />
+            <DisplayMetaAnalysisActivations metaAnalysis={metaAnalysis} metaAnalysisResult={data} />
         </StateHandlerComponent>
     );
 };

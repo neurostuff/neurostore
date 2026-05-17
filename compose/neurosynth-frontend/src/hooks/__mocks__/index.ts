@@ -17,11 +17,13 @@ const useUpdateAnalysis = vi.fn().mockReturnValue({
     isLoading: false,
     isError: false,
     mutate: vi.fn(),
+    mutateAsync: vi.fn().mockResolvedValue({}),
 });
 
 const useDeleteAnalysis = vi.fn().mockReturnValue({
     isLoading: false,
     mutate: vi.fn(),
+    mutateAsync: vi.fn().mockResolvedValue({}),
 });
 
 const useCreateCondition = vi.fn().mockReturnValue({
@@ -62,6 +64,19 @@ const useGetStudyNonNestedById = vi.fn().mockReturnValue(studyByIdMockReturn);
 const useCreateAnalysis = vi.fn().mockReturnValue({
     isLoading: false,
     mutate: vi.fn(),
+    mutateAsync: vi.fn().mockResolvedValue({ data: { id: 'analysis-new' } }),
+});
+
+const useUpdateImage = vi.fn().mockReturnValue({
+    isLoading: false,
+    mutate: vi.fn(),
+    mutateAsync: vi.fn().mockResolvedValue({}),
+});
+
+const useUpdateAnnotationByAnnotationAndAnalysisIds = vi.fn().mockReturnValue({
+    isLoading: false,
+    mutate: vi.fn(),
+    mutateAsync: vi.fn().mockResolvedValue({}),
 });
 
 const useCreateMetaAnalysis = vi.fn().mockReturnValue({
@@ -171,7 +186,7 @@ const useCreateStudy = vi.fn().mockReturnValue({
 const useUpdateAnnotationById = vi.fn().mockReturnValue({
     isLoading: false,
     mutate: vi.fn(),
-    mutateAsync: vi.fn(),
+    mutateAsync: vi.fn().mockResolvedValue({}),
 });
 
 const useGetProjectById = vi.fn().mockReturnValue({
@@ -207,6 +222,8 @@ const useGetNeurovaultImages = vi.fn().mockReturnValue({
 export {
     useCreateAnalysis,
     useCreateCondition,
+    useUpdateImage,
+    useUpdateAnnotationByAnnotationAndAnalysisIds,
     useCreateMetaAnalysis,
     useCreatePoint,
     useCreateProject,

@@ -5,7 +5,7 @@ from functools import lru_cache
 import orjson
 from flask import request
 from marshmallow.exceptions import ValidationError
-from sqlalchemy import Text, cast, func, select, update
+from sqlalchemy import Text, cast, func, literal, select, update
 from sqlalchemy.orm import joinedload, load_only, selectinload
 from webargs import fields
 from webargs.flaskparser import parser
@@ -29,9 +29,15 @@ from neurosynth_compose.resources.view_core import ListView, ObjectView, view_ma
 
 # Imported for dynamic resolution by `view_maker` on `ProjectsView`.
 from neurosynth_compose.schemas import ProjectSchema  # noqa: F401
-from neurosynth_compose.schemas.analysis import NS_BASE
+from neurosynth_compose.schemas.analysis import get_ns_base
 
 _RAW_PROVENANCE_UNSET = object()
+
+
+def _include_provenance(args):
+    if args is None:
+        return True
+    return bool(args.get("include_provenance", True))
 
 
 @lru_cache(maxsize=None)
@@ -177,6 +183,134 @@ def _serialize_raw_provenance(raw_provenance_json):
     return raw_provenance_json
 
 
+def _load_raw_provenance(raw_provenance_json):
+    if raw_provenance_json is None:
+        return None
+
+    if isinstance(raw_provenance_json, str):
+        return orjson.loads(raw_provenance_json)
+
+    return raw_provenance_json
+
+
+def _filter_project_list_tags(tags):
+    if not isinstance(tags, list):
+        return []
+
+    filtered_tags = []
+    for tag in tags:
+        if isinstance(tag, dict) and "id" in tag:
+            filtered_tags.append({"id": tag.get("id")})
+
+    return filtered_tags
+
+
+def _filter_project_list_stub_studies(stub_studies):
+    if not isinstance(stub_studies, list):
+        return []
+
+    filtered_stubs = []
+    for study in stub_studies:
+        if not isinstance(study, dict):
+            continue
+        filtered_stubs.append(
+            {
+                "exclusionTag": study.get("exclusionTag"),
+                "tags": _filter_project_list_tags(study.get("tags")),
+            }
+        )
+
+    return filtered_stubs
+
+
+def _filter_project_list_columns(columns):
+    if not isinstance(columns, list):
+        return []
+
+    return [
+        {
+            "stubStudies": _filter_project_list_stub_studies(
+                column.get("stubStudies") if isinstance(column, dict) else None
+            )
+        }
+        for column in columns
+    ]
+
+
+def _filter_project_list_study_statuses(study_statuses):
+    if not isinstance(study_statuses, list):
+        return []
+
+    filtered_statuses = []
+    for status in study_statuses:
+        if not isinstance(status, dict):
+            continue
+
+        filtered_status = {}
+        if "id" in status:
+            filtered_status["id"] = status.get("id")
+        if "status" in status:
+            filtered_status["status"] = status.get("status")
+        if filtered_status:
+            filtered_statuses.append(filtered_status)
+
+    return filtered_statuses
+
+
+def _filter_project_list_provenance(raw_provenance_json):
+    provenance = _load_raw_provenance(raw_provenance_json)
+    if provenance is None or not isinstance(provenance, dict):
+        return provenance
+
+    filtered = {}
+
+    curation_metadata = provenance.get("curationMetadata")
+    if isinstance(curation_metadata, dict):
+        filtered_curation_metadata = {}
+
+        if "columns" in curation_metadata:
+            filtered_curation_metadata["columns"] = _filter_project_list_columns(
+                curation_metadata.get("columns")
+            )
+
+        prisma_config = curation_metadata.get("prismaConfig")
+        if isinstance(prisma_config, dict) and "isPrisma" in prisma_config:
+            filtered_curation_metadata["prismaConfig"] = {
+                "isPrisma": prisma_config.get("isPrisma")
+            }
+
+        filtered["curationMetadata"] = filtered_curation_metadata
+
+    extraction_metadata = provenance.get("extractionMetadata")
+    if isinstance(extraction_metadata, dict):
+        filtered_extraction_metadata = {}
+
+        if "studysetId" in extraction_metadata:
+            filtered_extraction_metadata["studysetId"] = extraction_metadata.get(
+                "studysetId"
+            )
+
+        if "studyStatusList" in extraction_metadata:
+            filtered_extraction_metadata["studyStatusList"] = (
+                _filter_project_list_study_statuses(
+                    extraction_metadata.get("studyStatusList")
+                )
+            )
+
+        filtered["extractionMetadata"] = filtered_extraction_metadata
+
+    meta_analysis_metadata = provenance.get("metaAnalysisMetadata")
+    if isinstance(meta_analysis_metadata, dict):
+        filtered_meta_analysis_metadata = {}
+        if "canEditMetaAnalyses" in meta_analysis_metadata:
+            filtered_meta_analysis_metadata["canEditMetaAnalyses"] = (
+                meta_analysis_metadata.get("canEditMetaAnalyses")
+            )
+        filtered["metaAnalysisMetadata"] = filtered_meta_analysis_metadata
+
+    return filtered
+
+
 def serialize_project(record, *, info: bool, raw_provenance_json=_RAW_PROVENANCE_UNSET):
     provenance = (
         getattr(record, "provenance", None)
@@ -213,7 +347,9 @@ def serialize_project(record, *, info: bool, raw_provenance_json=_RAW_PROVENANCE
         ],
         "neurostore_study": neurostore_study,
         "neurostore_url": (
-            None if not neurostore_id else "/".join([NS_BASE, "studies", neurostore_id])
+            None
+            if not neurostore_id
+            else "/".join([get_ns_base(), "studies", neurostore_id])
         ),
     }
 
@@ -249,6 +385,10 @@ class ProjectsView(ObjectView, ListView):
     _project_put_args = {
         "sync_meta_analyses_public": fields.Boolean(load_default=False),
     }
+
+    def __init__(self):
+        super().__init__()
+        self._user_args["include_provenance"] = fields.Boolean(load_default=True)
 
     @classmethod
     def update_or_create(
@@ -286,17 +426,27 @@ class ProjectsView(ObjectView, ListView):
 
     def load_query(self, args=None):
         args = args or {}
+        raw_provenance = (
+            cast(Project.provenance, Text)
+            if _include_provenance(args)
+            else literal(None)
+        ).label("_raw_provenance_json")
         return select(
             Project,
-            cast(Project.provenance, Text).label("_raw_provenance_json"),
+            raw_provenance,
         ).options(*_project_list_query_options(bool(args.get("info"))))
 
     def load_object_query(self, id, args=None):
         args = args or {}
+        raw_provenance = (
+            cast(Project.provenance, Text)
+            if _include_provenance(args)
+            else literal(None)
+        ).label("_raw_provenance_json")
         return (
             select(
                 Project,
-                cast(Project.provenance, Text).label("_raw_provenance_json"),
+                raw_provenance,
             )
             .options(*_project_detail_query_options(bool(args.get("info"))))
             .where(Project.id == id)
@@ -321,6 +471,7 @@ class ProjectsView(ObjectView, ListView):
         page_size = args["page_size"]
         rows = db.session.execute(query.offset((page - 1) * page_size).limit(page_size))
         records = rows.all()
+        include_provenance = _include_provenance(args)
         return make_json_response(
             {
                 "metadata": {"total_count": total},
@@ -328,7 +479,11 @@ class ProjectsView(ObjectView, ListView):
                     serialize_project(
                         record,
                         info=bool(args.get("info")),
-                        raw_provenance_json=raw_provenance_json,
+                        raw_provenance_json=(
+                            _filter_project_list_provenance(raw_provenance_json)
+                            if include_provenance
+                            else None
+                        ),
                     )
                     for record, raw_provenance_json in records
                 ],

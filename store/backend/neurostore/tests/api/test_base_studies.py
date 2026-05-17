@@ -554,7 +554,7 @@ def test_has_coordinates_images(auth_client, session):
     assert del_image_analysis.status_code == 200
     session.refresh(base_study_2)
     assert base_study_2.has_coordinates is False
-    assert base_study_2.has_images is False
+    assert base_study_2.has_images is True
 
     # create full study again
     create_full_study_again = auth_client.post(
@@ -589,7 +589,7 @@ def test_has_coordinates_images(auth_client, session):
     assert delete_study.status_code == 200
     session.refresh(base_study_2)
     assert base_study_2.has_coordinates is False
-    assert base_study_2.has_images is False
+    assert base_study_2.has_images is True
 
 
 def test_base_study_emits_all_media_flags(auth_client, session):
