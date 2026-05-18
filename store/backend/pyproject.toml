@@ -57,7 +57,7 @@ dev = [
     "pip-chill~=1.0",
     "wheel~=0.47",
     "pytest~=9.0",
-    "vcrpy~=8.0",
+    "vcrpy~=8.1",
     "pytest-recording~=0.13.4",
 ]
 
