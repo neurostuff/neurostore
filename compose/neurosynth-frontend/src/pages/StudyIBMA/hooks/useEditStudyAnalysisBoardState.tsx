@@ -15,6 +15,7 @@ import useIbmaBoardMutations from 'pages/StudyIBMA/hooks/useIbmaBoardMutations';
 import { useCallback, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useProjectExtractionAnnotationId } from 'stores/projects/ProjectStore';
+import { sortAnalysesByOrder, sortImages } from './useEditStudyAnalysisBoardState.helpers';
 
 const columnHelper = createColumnHelper<AnalysisBoardRow>();
 
@@ -66,7 +67,7 @@ const useEditStudyAnalysisBoardState = () => {
     const [expanded, setExpanded] = useState<ExpandedState>({});
 
     const tableData = useMemo((): AnalysisBoardRow[] => {
-        return analyses.map((analysis) => {
+        const analysisRows = analyses.map((analysis) => {
             const id = analysis.id!;
             const note = analysisIdToNoteMap.get(id);
             const analysisNote = (note?.note || {}) as Record<string, string | boolean | number | null | undefined>;
@@ -76,9 +77,12 @@ const useEditStudyAnalysisBoardState = () => {
 
             return {
                 ...analysis,
+                images: sortImages(analysis.images ?? []),
                 analysisAnnotation,
             };
         });
+
+        return sortAnalysesByOrder(analysisRows);
     }, [analyses, analysisIdToNoteMap, noteKeys]);
 
     const handleUpdateImage = useCallback(

@@ -1,5 +1,6 @@
 import type { AnalysisReturnNested } from 'hooks/analyses/analysisQueries.types';
 import type { ImageReturn } from 'neurostore-typescript-sdk';
+import { sortAnalysesByOrder, sortImages } from 'pages/StudyIBMA/hooks/useEditStudyAnalysisBoardState.helpers';
 
 export type EnsureWriteableStudySnapshot = {
     studyId: string;
@@ -15,25 +16,6 @@ export type EnsureWriteableStudySnapshot = {
 export type ClonedStudyIdMap = {
     oldAnalysisIdsToNewIdsMap: Record<string, string>;
     oldImageIdToNewIdMap: Record<string, string>;
-};
-
-const sortAnalysesByOrder = <T extends { order?: number | null; id?: string | null }>(analyses: T[]): T[] => {
-    return [...analyses].sort((left, right) => {
-        const leftOrder = left.order ?? Number.MAX_SAFE_INTEGER;
-        const rightOrder = right.order ?? Number.MAX_SAFE_INTEGER;
-        if (leftOrder !== rightOrder) return leftOrder - rightOrder;
-        return (left.id ?? '').localeCompare(right.id ?? '');
-    });
-};
-
-const sortImages = (images: ImageReturn[]): ImageReturn[] => {
-    return [...images].sort((left, right) => {
-        const filenameCompare = (left.filename ?? '').localeCompare(right.filename ?? '');
-        if (filenameCompare !== 0) return filenameCompare;
-        const urlCompare = (left.url ?? '').localeCompare(right.url ?? '');
-        if (urlCompare !== 0) return urlCompare;
-        return (left.id ?? '').localeCompare(right.id ?? '');
-    });
 };
 
 const requireId = (id: string | null | undefined, label: string): string => {
@@ -68,14 +50,19 @@ export const buildStudySnapshot = (
     };
 };
 
+// If there is a count mismatch, we dont necessarily want to throw an error as the studyset still replaces
+// the study with the new clone. Instead, we can let the update handler decide how it wants to handle the
+// case where there is no ID mapping
 const mapOldIdToNewId = (oldIds: string[], newIds: string[], label: string): Record<string, string> => {
     if (oldIds.length !== newIds.length) {
-        throw new Error(`${label} count mismatch after clone (old=${oldIds.length}, new=${newIds.length})`);
+        console.error(`${label} count mismatch after clone (old=${oldIds.length}, new=${newIds.length})`);
     }
 
     return oldIds.reduce(
         (acc, oldId, index) => {
-            acc[oldId] = newIds[index]!;
+            if (newIds[index] !== undefined) {
+                acc[oldId] = newIds[index]!;
+            }
             return acc;
         },
         {} as Record<string, string>

@@ -138,12 +138,7 @@ const EditStudyAnalysisTable: React.FC<EditStudyAnalysisTableProps> = ({
                         </TableHead>
                         <TableBody>
                             {table.getRowModel().rows.map((row) => (
-                                <Fragment key={row.id}>
-                                    <EditStudyAnalysisTableRow row={row} table={table} />
-                                    {row.getIsExpanded() ? (
-                                        <EditStudyAnalysisMapsExpandedRow row={row} table={table} />
-                                    ) : null}
-                                </Fragment>
+                                <EditStudyAnalysisTableRow key={row.id} row={row} table={table} />
                             ))}
                         </TableBody>
                     </Table>
