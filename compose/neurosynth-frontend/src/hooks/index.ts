@@ -22,6 +22,7 @@ import useCreateCondition from './analyses/useCreateCondition';
 import useUpdatePoint from './analyses/useUpdatePoint';
 import useDeleteAnalysis from './analyses/useDeleteAnalysis';
 import useGetAnalysesByStudyId from './analyses/useGetAnalysesByStudyId';
+import useGetUncategorizedImagesByStudyId from './analyses/useGetUncategorizedImagesByStudyId';
 import useUpdateImage from './images/useUpdateImage';
 import useCreateStudyset from './studysets/useCreateStudyset';
 import useUpdateStudyset from './studysets/useUpdateStudyset';
@@ -111,6 +112,7 @@ export {
     useCreateAnalysis,
     useUpdateAnalysis,
     useGetAnalysesByStudyId,
+    useGetUncategorizedImagesByStudyId,
     // IMAGES
     useUpdateImage,
     // CONDITIONS

@@ -91,7 +91,7 @@ const EditStudyAnalysisMapsExpandedRow: React.FC<{
                                         size="small"
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            onUpdateImage?.({ id: image.id, analysis: undefined });
+                                            onUpdateImage?.({ id: image.id, analysis: null });
                                         }}
                                         aria-label="Remove map from analysis"
                                         sx={{ flexShrink: 0, p: 0.25 }}

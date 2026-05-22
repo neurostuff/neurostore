@@ -24,6 +24,7 @@ import {
     STUDY_UNCATEGORIZED_MAPS_COLLAPSED_WIDTH,
     STUDY_UNCATEGORIZED_MAPS_COLUMN_WIDTH,
 } from '../hooks/useEditStudyAnalysisBoardState.consts';
+import useIbmaBoardMutations from '../hooks/useIbmaBoardMutations';
 
 type MoveMenuAnchor = { el: HTMLElement; mapId: string } | null;
 
@@ -34,10 +35,10 @@ export type UncategorizedMapsColumnProps = {
     selectedImageId: string | null;
     onToggleMapSelection: (mapId: string) => void;
     analyses: AnalysisReturnNested[];
-    updateImage?: (mapId: string, analysisId: string) => void | Promise<void>;
+    updateImage?: ReturnType<typeof useIbmaBoardMutations>['updateImage'];
 };
 
-export function UncategorizedMapsColumn({
+const UncategorizedMapsColumn: React.FC<UncategorizedMapsColumnProps> = ({
     collapsed,
     onCollapsedChange,
     uncategorized,
@@ -45,7 +46,7 @@ export function UncategorizedMapsColumn({
     onToggleMapSelection,
     analyses,
     updateImage,
-}: UncategorizedMapsColumnProps) {
+}) => {
     const [moveAnchorEl, setMoveAnchorEl] = useState<MoveMenuAnchor>(null);
 
     const handleMoveClick = useCallback((event: React.MouseEvent<HTMLElement>, mapId: string) => {
@@ -60,7 +61,7 @@ export function UncategorizedMapsColumn({
     const handleAssignAnalysisToImage = useCallback(
         (mapId: string, analysisId: string) => {
             setMoveAnchorEl(null);
-            void updateImage?.(mapId, analysisId);
+            void updateImage?.(mapId, { analysis: analysisId });
         },
         [updateImage]
     );
@@ -192,4 +193,6 @@ export function UncategorizedMapsColumn({
             </Menu>
         </Paper>
     );
-}
+};
+
+export default UncategorizedMapsColumn;

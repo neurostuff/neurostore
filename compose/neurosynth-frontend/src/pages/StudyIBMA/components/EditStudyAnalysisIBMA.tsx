@@ -1,14 +1,12 @@
 import { Box, Skeleton } from '@mui/material';
+import type { ImageReturn } from 'neurostore-typescript-sdk';
 import useEditStudyAnalysisBoardState from 'pages/StudyIBMA/hooks/useEditStudyAnalysisBoardState';
-import { findImageById } from 'pages/StudyIBMA/hooks/useEditStudyAnalysisBoardState.helpers';
-import React, { useMemo, useState } from 'react';
-import { BrainMapDetailPanel } from './BrainMapDetailPanel';
-import { EditStudyAnalysisTable } from './EditStudyAnalysisTable';
-import { UncategorizedMapsColumn } from './UncategorizedMapsColumn';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import BrainMapDetailPanel from 'pages/StudyIBMA/components/BrainMapDetailPanel';
+import EditStudyAnalysisTable from 'pages/StudyIBMA/components/EditStudyAnalysisTable';
+import UncategorizedMapsColumn from 'pages/StudyIBMA/components/UncategorizedMapsColumn';
 
 const EditStudyAnalysisIBMA: React.FC = () => {
-    const [uncategorizedCollapsed, setUncategorizedCollapsed] = useState(false);
-
     const {
         toggleImageSelection,
         table,
@@ -23,9 +21,23 @@ const EditStudyAnalysisIBMA: React.FC = () => {
         isLoading,
     } = useEditStudyAnalysisBoardState();
 
+    const [uncategorizedCollapsed, setUncategorizedCollapsed] = useState(true);
+    const initialLoad = useRef(false);
+    useEffect(() => {
+        if (isLoading || initialLoad.current) return;
+        initialLoad.current = true;
+        setUncategorizedCollapsed(uncategorized.length === 0);
+    }, []);
+
     const selectedImage = useMemo(() => {
-        return findImageById(selectedImageId, analyses);
-    }, [selectedImageId, uncategorized]);
+        if (!selectedImageId) return undefined;
+
+        const uncategorizedMatch = uncategorized.find((image) => image.id === selectedImageId);
+        if (uncategorizedMatch) return uncategorizedMatch;
+
+        const nestedImages = analyses.flatMap((analysis) => (analysis.images ?? []) as ImageReturn[]);
+        return nestedImages.find((image) => image.id === selectedImageId);
+    }, [selectedImageId, analyses, uncategorized]);
 
     return (
         <Box

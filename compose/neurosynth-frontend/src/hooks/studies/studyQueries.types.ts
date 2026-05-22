@@ -1,7 +1,8 @@
-import type { AnalysisReturn, BaseStudyList, BaseStudyReturn, StudyReturn } from 'neurostore-typescript-sdk';
+import { AnalysisReturnNested } from 'hooks/analyses/analysisQueries.types';
+import type { BaseStudyList, BaseStudyReturn, StudyReturn } from 'neurostore-typescript-sdk';
 
 export type StudyReturnNested = Omit<StudyReturn, 'analyses'> & {
-    analyses?: AnalysisReturn[];
+    analyses?: AnalysisReturnNested[];
 };
 
 export type StudyReturnNonNested = Omit<StudyReturn, 'analyses'> & {

@@ -13,9 +13,11 @@ import {
 import { useQueryClient } from 'react-query';
 import { vi, Mock } from 'vitest';
 import useIbmaBoardMutations from './useIbmaBoardMutations';
+import useEnsureWritableStudy from './useEnsureWritableStudy';
 
 vi.mock('react-query');
 vi.mock('hooks');
+vi.mock('./useEnsureWritableStudy');
 
 const studyId = 'study-1';
 const annotationId = 'annotation-1';
@@ -40,9 +42,19 @@ const hookArgs = {
 
 const mutateAsync = (hook: Mock) => hook.mock.results[0].value.mutateAsync as Mock;
 
+const mockEnsureWritableStudy = vi.fn().mockResolvedValue({
+    studyId,
+    didClone: false,
+});
+
 describe('useIbmaBoardMutations', () => {
     beforeEach(() => {
-        vi.clearAllMocks();
+        mockEnsureWritableStudy.mockClear();
+        (useEnsureWritableStudy as Mock).mockReturnValue({
+            ensureWritableStudy: mockEnsureWritableStudy,
+            isLoading: false,
+            userOwnsStudy: true,
+        });
     });
 
     const invalidateQueries = () => (useQueryClient as Mock)().invalidateQueries as Mock;
@@ -188,7 +200,7 @@ describe('useIbmaBoardMutations', () => {
 
         expect(mutateAsync(useUpdateImage as Mock)).toHaveBeenCalledWith({
             imageId: 'img-2',
-            image: { analysis: 'analysis-1' },
+            image: { id: 'img-2', analysis: 'analysis-1' },
         });
         expect(invalidateQueries()).toHaveBeenCalled();
     });
@@ -202,7 +214,7 @@ describe('useIbmaBoardMutations', () => {
 
         expect(mutateAsync(useUpdateImage as Mock)).toHaveBeenCalledWith({
             imageId: 'img-1',
-            image: { analysis: null },
+            image: { id: 'img-1', analysis: undefined },
         });
         expect(invalidateQueries()).toHaveBeenCalled();
     });

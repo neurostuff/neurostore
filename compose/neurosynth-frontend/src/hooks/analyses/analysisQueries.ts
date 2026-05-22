@@ -1,6 +1,6 @@
 import API from 'api/api.config';
-import { ConditionReturn, PointList } from 'neurostore-typescript-sdk';
-import { AnalysisReturnNested, AnalysisReturnNonNested } from 'hooks/analyses/analysisQueries.types';
+import { ConditionReturn, ImageReturn, PointList } from 'neurostore-typescript-sdk';
+import { AnalysisReturnNested } from 'hooks/analyses/analysisQueries.types';
 
 const analysisQueries = {
     analyses: {
@@ -47,6 +47,30 @@ const analysisQueries = {
                 return res.data as PointList;
             },
             enabled: true,
+        }),
+    },
+
+    images: {
+        uncategorizedByStudyId: (studyId: string | undefined | null) => ({
+            queryKey: ['images', 'uncategorized', 'study', studyId] as const,
+            queryFn: async () => {
+                const res = await API.NeurostoreServices.ImagesService.imagesGet(
+                    undefined,
+                    undefined,
+                    undefined,
+                    undefined,
+                    undefined,
+                    false,
+                    undefined,
+                    studyId ?? undefined,
+                    undefined,
+                    undefined,
+                    undefined
+                );
+                const studyImages = (res.data.results ?? []) as ImageReturn[];
+                return studyImages.filter((image) => !image.analysis);
+            },
+            enabled: !!studyId,
         }),
     },
 

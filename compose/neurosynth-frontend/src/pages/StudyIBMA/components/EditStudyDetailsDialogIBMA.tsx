@@ -5,10 +5,10 @@ import { IMetadataRowModel } from 'components/EditMetadata/EditMetadata.types';
 import { arrayToMetadata, metadataToArray } from 'pages/StudyCBMA/components/EditStudyMetadata';
 import { useSnackbar } from 'notistack';
 import React, { useCallback, useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { StudyDetails } from 'stores/study/StudyStore.helpers';
-import { useGetStudyNonNestedById, useUpdateStudy, useUserCanEdit } from 'hooks';
-import useCloneStudy from 'pages/StudyIBMA/hooks/useCloneStudy';
+import { useGetStudyNonNestedById, useUpdateStudy } from 'hooks';
+import useEnsureWritableStudy from 'pages/StudyIBMA/hooks/useEnsureWritableStudy';
 import LoadingButton from 'components/Buttons/LoadingButton';
 import { StudyRequest } from 'neurostore-typescript-sdk';
 
@@ -24,16 +24,14 @@ const EditStudyDetailsDialogIBMA: React.FC<{
     isOpen: boolean;
     onClose: () => void;
 }> = ({ isOpen, onClose }) => {
-    const { projectId, studyId } = useParams<{ projectId: string; studyId: string }>();
+    const { studyId } = useParams<{ projectId: string; studyId: string }>();
     const { data: study } = useGetStudyNonNestedById(studyId);
     const { mutateAsync: updateStudy, isLoading: updateStudyIsLoading } = useUpdateStudy();
     const { enqueueSnackbar } = useSnackbar();
     const [touched, setTouched] = useState(false);
-    const userOwnsThisStudy = useUserCanEdit(study?.user ?? undefined);
-    const { cloneStudy, isLoading: cloneStudyIsLoading } = useCloneStudy();
-    const navigate = useNavigate();
+    const { ensureWritableStudy, isLoading: ensureWritableStudyIsLoading } = useEnsureWritableStudy();
 
-    const isLoading = updateStudyIsLoading || cloneStudyIsLoading;
+    const isLoading = updateStudyIsLoading || ensureWritableStudyIsLoading;
 
     const [form, setForm] = useState<{
         name: string;
@@ -93,23 +91,24 @@ const EditStudyDetailsDialogIBMA: React.FC<{
             pmcid: form.pmcid ? form.pmcid : undefined,
             year: form.year,
             metadata: arrayToMetadata(form.metadata),
-            analyses: study.analyses,
         };
 
         try {
-            if (userOwnsThisStudy) {
+            const writableStudy = await ensureWritableStudy({ studyRequest });
+            if (!writableStudy) return;
+
+            if (writableStudy.didClone) {
+                enqueueSnackbar('Study cloned and saved', { variant: 'success' });
+                return;
+            } else {
                 await updateStudy({
-                    studyId: study.id,
+                    studyId: writableStudy.studyId,
                     study: studyRequest,
                 });
                 enqueueSnackbar('Study saved', { variant: 'success' });
-                return;
             }
-
-            const clonedStudyId = await cloneStudy(studyRequest);
-            enqueueSnackbar('Study cloned and saved', { variant: 'success' });
-            navigate(`/projects/${projectId}/extraction/studies/${clonedStudyId}/edit`);
-        } catch {
+        } catch (e) {
+            console.error(e);
             enqueueSnackbar('There was an error saving the study', { variant: 'error' });
         }
     };
@@ -306,7 +305,7 @@ const EditStudyDetailsDialogIBMA: React.FC<{
                         color="primary"
                         disableElevation
                         isLoading={isLoading}
-                        disabled={!touched || updateStudyIsLoading || !study || !form}
+                        disabled={!touched || isLoading || !study || !form}
                         onClick={handleSave}
                     ></LoadingButton>
                 </Box>

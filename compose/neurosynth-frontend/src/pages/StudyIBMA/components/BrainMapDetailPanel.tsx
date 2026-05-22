@@ -60,7 +60,10 @@ function neurovaultRows(nv: INeurovault | undefined): { key: string; value: stri
         .map(([key, value]) => ({ key, value: String(value) }));
 }
 
-export function BrainMapDetailPanel({ image, onClose }: { image: ImageReturn; onClose: () => void }) {
+const BrainMapDetailPanel: React.FC<{
+    image: ImageReturn;
+    onClose: () => void;
+}> = ({ image, onClose }) => {
     const displayName = (image.filename || image.url || 'Image').trim() || 'Image';
     const storeMetaRows = useMemo(() => flattenMetadata(image.metadata ?? undefined), [image.metadata]);
 
@@ -223,4 +226,6 @@ export function BrainMapDetailPanel({ image, onClose }: { image: ImageReturn; on
             )}
         </Paper>
     );
-}
+};
+
+export default BrainMapDetailPanel;

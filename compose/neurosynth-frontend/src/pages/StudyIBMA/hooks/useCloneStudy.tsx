@@ -5,7 +5,8 @@ import {
     useUpdateAnnotationByAnnotationAndAnalysisIds,
     useUpdateStudyset,
 } from 'hooks';
-import { AnalysisReturn, NoteCollectionReturn, StudyRequest, StudyReturn } from 'neurostore-typescript-sdk';
+import { StudyReturnNested } from 'hooks/studies/studyQueries.types';
+import { NoteCollectionReturn, StudyRequest } from 'neurostore-typescript-sdk';
 import { updateExtractionTableStateStudySwapInStorage } from 'pages/Extraction/components/ExtractionTable.helpers';
 import { useParams } from 'react-router-dom';
 import {
@@ -54,7 +55,7 @@ const useCloneStudy = () => {
         });
     };
 
-    const handleApplyAnnotations = async (clone: StudyReturn) => {
+    const handleApplyAnnotations = async (clone: StudyReturnNested) => {
         if (!annotationId) return;
         const annotationNotes = (annotation?.notes || []) as NoteCollectionReturn[];
 
@@ -62,7 +63,7 @@ const useCloneStudy = () => {
          * The old annotations are not persisted for the cloned study, so we need to apply the old
          * annotation values to the new study. As we enforce unique analysis names, we can use the name as an identifier.
          */
-        const notesUpdate = ((clone.analyses ?? []) as AnalysisReturn[])
+        const notesUpdate = (clone.analyses ?? [])
             .map(({ id, name, study }) => {
                 const foundNote = annotationNotes.find((note) => note.study === study && note.analysis_name === name);
                 if (!foundNote) return;
@@ -81,24 +82,23 @@ const useCloneStudy = () => {
     };
 
     const cloneStudy = async (cloneWithStudyDetails: StudyRequest) => {
-        if (!studyId || !studysetId || !studyset?.studies) return;
+        if (!studyId || !studysetId || !studyset?.studies || isLoading) return;
         // 1. Create the clone
-        const clonedStudy = await createStudy({ sourceId: studyId, data: cloneWithStudyDetails });
-        const clonedStudyId = clonedStudy.data.id;
+        const clonedStudy = (await createStudy({ sourceId: studyId, data: cloneWithStudyDetails })).data;
+        const clonedStudyId = clonedStudy.id;
         if (!clonedStudyId) throw new Error('study not cloned correctly');
 
         // 2. Update the studyset containing the study with our new clone
         await handleUpdateStudyset(clonedStudyId);
 
         // 3. apply annotations
-        await handleApplyAnnotations(clonedStudy.data);
+        await handleApplyAnnotations(clonedStudy);
 
         // 4. Update the surrounding state (project provenance and session storage)
         replaceStudyWithNewClonedStudy(studyId, clonedStudyId);
         updateExtractionTableStateStudySwapInStorage(projectId, studyId, clonedStudyId);
 
-        // 5. return the cloned study ID
-        return clonedStudyId;
+        return clonedStudy;
     };
 
     return { cloneStudy, isLoading };

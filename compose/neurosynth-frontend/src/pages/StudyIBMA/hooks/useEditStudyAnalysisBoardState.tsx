@@ -2,13 +2,13 @@ import { Box, Typography } from '@mui/material';
 import { createColumnHelper, getCoreRowModel, useReactTable, type ExpandedState } from '@tanstack/react-table';
 import type { NoteKeyType } from 'components/HotTables/HotTables.types';
 import { noteKeyObjToArr } from 'components/HotTables/HotTables.utils';
-import { useGetAnalysesByStudyId, useGetAnnotationById } from 'hooks';
-import type { ImageRequest, NoteCollectionReturn } from 'neurostore-typescript-sdk';
+import type { AnalysisReturnNested } from 'hooks/analyses/analysisQueries.types';
+import { useGetAnalysesByStudyId, useGetAnnotationById, useGetUncategorizedImagesByStudyId } from 'hooks';
+import type { ImageRequest, ImageReturn, NoteCollectionReturn } from 'neurostore-typescript-sdk';
 import AnalysisNameCell from 'pages/StudyIBMA/components/AnalysisNameCell';
 import AnnotationBaseInputCell from 'pages/StudyIBMA/components/AnnotationInputCells';
 import AnnotationColumnHeader from 'pages/StudyIBMA/components/AnnotationColumnHeader';
 import { STUDY_ANALYSES_COLUMN_WIDTH } from 'pages/StudyIBMA/hooks/useEditStudyAnalysisBoardState.consts';
-import { partitionAnalysisImages } from 'pages/StudyIBMA/hooks/useEditStudyAnalysisBoardState.helpers';
 import 'pages/StudyIBMA/hooks/useEditStudyAnalysisBoardState.tableMeta';
 import type { AnalysisBoardRow } from 'pages/StudyIBMA/hooks/useEditStudyAnalysisBoardState.types';
 import useIbmaBoardMutations from 'pages/StudyIBMA/hooks/useIbmaBoardMutations';
@@ -18,13 +18,20 @@ import { useProjectExtractionAnnotationId } from 'stores/projects/ProjectStore';
 
 const columnHelper = createColumnHelper<AnalysisBoardRow>();
 
+// stable references to empty arrays
+const EMPTY_ANALYSES: AnalysisReturnNested[] = [];
+const EMPTY_UNCATEGORIZED_IMAGES: ImageReturn[] = [];
+
 const useEditStudyAnalysisBoardState = () => {
     const annotationId = useProjectExtractionAnnotationId();
     const { studyId } = useParams<{ projectId: string; studyId: string }>();
     const { data: analysesRes, isLoading: getAnalysesIsLoading } = useGetAnalysesByStudyId(studyId);
+    const { data: uncategorizedRes, isLoading: getUncategorizedImagesIsLoading } =
+        useGetUncategorizedImagesByStudyId(studyId);
     const { data: annotation, isLoading: getAnnotationIsLoading } = useGetAnnotationById(annotationId);
 
-    const stableAnalyses = useMemo(() => analysesRes ?? [], [analysesRes]);
+    const analyses = analysesRes ?? EMPTY_ANALYSES;
+    const uncategorized = uncategorizedRes ?? EMPTY_UNCATEGORIZED_IMAGES;
 
     const {
         createAnalysis,
@@ -48,11 +55,6 @@ const useEditStudyAnalysisBoardState = () => {
         return m;
     }, [annotation?.notes]);
 
-    const { uncategorized, analysisIdToImageMap } = useMemo(
-        () => partitionAnalysisImages(stableAnalyses ?? []),
-        [stableAnalyses]
-    );
-
     const [selectedImageId, setSelectedImageId] = useState<string | undefined>();
 
     const noteKeys = useMemo(() => noteKeyObjToArr(annotation?.note_keys), [annotation?.note_keys]);
@@ -64,7 +66,7 @@ const useEditStudyAnalysisBoardState = () => {
     const [expanded, setExpanded] = useState<ExpandedState>({});
 
     const tableData = useMemo((): AnalysisBoardRow[] => {
-        return (stableAnalyses ?? []).map((analysis) => {
+        return analyses.map((analysis) => {
             const id = analysis.id!;
             const note = analysisIdToNoteMap.get(id);
             const analysisNote = (note?.note || {}) as Record<string, string | boolean | number | null | undefined>;
@@ -77,7 +79,7 @@ const useEditStudyAnalysisBoardState = () => {
                 analysisAnnotation,
             };
         });
-    }, [stableAnalyses, analysisIdToNoteMap, noteKeys]);
+    }, [analyses, analysisIdToNoteMap, noteKeys]);
 
     const handleUpdateImage = useCallback(
         (image: ImageRequest) => {
@@ -154,14 +156,14 @@ const useEditStudyAnalysisBoardState = () => {
         table,
         tableMinWidth,
         uncategorized,
-        toggleImageSelection,
         selectedImageId,
-        analyses: stableAnalyses,
+        analyses,
         noteKeys,
+        toggleImageSelection,
         createAnalysis,
         addAnnotationColumn,
         updateImage,
-        isLoading: getAnnotationIsLoading || getAnalysesIsLoading,
+        isLoading: getAnnotationIsLoading || getAnalysesIsLoading || getUncategorizedImagesIsLoading,
     };
 };
 

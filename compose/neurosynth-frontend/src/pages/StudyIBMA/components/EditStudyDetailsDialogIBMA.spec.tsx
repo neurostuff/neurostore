@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { StudyReturn } from 'neurostore-typescript-sdk';
 import { vi } from 'vitest';
@@ -18,9 +18,13 @@ const mockStudyData: StudyReturn = {
     analyses: [],
 };
 
-const { mockMutateAsync, mockEnqueueSnackbar } = vi.hoisted(() => ({
+const { mockMutateAsync, mockEnqueueSnackbar, mockEnsureWritableStudy } = vi.hoisted(() => ({
     mockMutateAsync: vi.fn().mockResolvedValue(undefined),
     mockEnqueueSnackbar: vi.fn(),
+    mockEnsureWritableStudy: vi.fn().mockResolvedValue({
+        studyId: 'study-1',
+        didClone: false,
+    }),
 }));
 
 vi.mock('notistack', () => ({
@@ -35,6 +39,14 @@ vi.mock('react-router-dom', async (importOriginal) => {
         useParams: () => ({ studyId: 'study-1', projectId: 'p1' }),
     };
 });
+
+vi.mock('pages/StudyIBMA/hooks/useEnsureWritableStudy', () => ({
+    default: vi.fn(() => ({
+        ensureWritableStudy: mockEnsureWritableStudy,
+        isLoading: false,
+        userOwnsStudy: true,
+    })),
+}));
 
 vi.mock('hooks', async (importOriginal) => {
     const mod = await importOriginal<typeof import('hooks')>();
@@ -120,7 +132,14 @@ vi.mock('components/EditMetadata/EditMetadata', () => ({
 
 describe('EditStudyDetailsDialogIBMA', () => {
     beforeEach(() => {
-        vi.clearAllMocks();
+        mockMutateAsync.mockClear();
+        mockMutateAsync.mockResolvedValue(undefined);
+        mockEnqueueSnackbar.mockClear();
+        mockEnsureWritableStudy.mockClear();
+        mockEnsureWritableStudy.mockResolvedValue({
+            studyId: 'study-1',
+            didClone: false,
+        });
     });
 
     it('renders nothing when closed', () => {
@@ -148,16 +167,17 @@ describe('EditStudyDetailsDialogIBMA', () => {
         const title = screen.getByRole('textbox', { name: 'Title' });
         fireEvent.change(title, { target: { value: 'New title' } });
         await userEvent.click(screen.getByRole('button', { name: 'Save' }));
-        expect(mockMutateAsync).toHaveBeenCalledTimes(1);
+        await waitFor(() => expect(mockMutateAsync).toHaveBeenCalledTimes(1));
         expect(mockMutateAsync).toHaveBeenCalledWith({
             studyId: 'study-1',
             study: expect.objectContaining({
                 name: 'New title',
                 authors: 'Author One',
-                analyses: [],
             }),
         });
-        expect(mockEnqueueSnackbar).toHaveBeenCalledWith('Study saved', { variant: 'success' });
+        await waitFor(() =>
+            expect(mockEnqueueSnackbar).toHaveBeenCalledWith('Study saved', { variant: 'success' })
+        );
     });
 
     it('calls onClose when Close is clicked without persisting', async () => {
@@ -189,7 +209,6 @@ describe('EditStudyDetailsDialogIBMA', () => {
             studyId: 'study-1',
             study: expect.objectContaining({
                 name: 'Study A',
-                analyses: [],
             }),
         });
     });

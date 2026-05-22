@@ -6,7 +6,6 @@ import TextEdit from 'components/TextEdit/TextEdit';
 import { useGetStudysetSummaryById, useUpdateStudyset } from 'hooks';
 import useGetExtractionSummary from 'hooks/useGetExtractionSummary';
 import useUserCanEdit from 'hooks/useUserCanEdit';
-import { StudyReturn } from 'neurostore-typescript-sdk';
 import ExtractionOutOfSync from 'pages/Extraction/components/ExtractionOutOfSync';
 import { hasDifferenceBetweenStudysetAndCuration } from 'pages/Extraction/ExtractionPage.helpers';
 import { IProjectPageLocationState } from 'pages/Project/ProjectPage';

@@ -108,7 +108,6 @@ const AnalysisNameCell: React.FC<CellContext<AnalysisBoardRow, unknown>> = ({ ro
                             display: '-webkit-box',
                             WebkitLineClamp: 2,
                             WebkitBoxOrient: 'vertical',
-                            minHeight: '2.4em',
                         }}
                     >
                         {rowData.description || 'No description'}

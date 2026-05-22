@@ -18,7 +18,7 @@ export type EditStudyAnalysisTableProps = {
     onAddAnnotationColumn?: (payload: NewAnnotationColumnPayload) => void | Promise<void>;
 };
 
-export const EditStudyAnalysisTable: React.FC<EditStudyAnalysisTableProps> = ({
+const EditStudyAnalysisTable: React.FC<EditStudyAnalysisTableProps> = ({
     table,
     tableMinWidth,
     noteKeys = [],
@@ -158,3 +158,5 @@ export const EditStudyAnalysisTable: React.FC<EditStudyAnalysisTableProps> = ({
         </>
     );
 };
+
+export default EditStudyAnalysisTable;
