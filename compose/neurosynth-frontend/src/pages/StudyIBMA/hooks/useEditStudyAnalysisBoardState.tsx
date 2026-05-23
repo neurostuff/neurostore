@@ -4,7 +4,7 @@ import type { NoteKeyType } from 'components/HotTables/HotTables.types';
 import { noteKeyObjToArr } from 'components/HotTables/HotTables.utils';
 import type { AnalysisReturnNested } from 'hooks/analyses/analysisQueries.types';
 import { useGetAnalysesByStudyId, useGetAnnotationById, useGetUncategorizedImagesByStudyId } from 'hooks';
-import type { ImageRequest, ImageReturn, NoteCollectionReturn } from 'neurostore-typescript-sdk';
+import type { ImageReturn, NoteCollectionReturn } from 'neurostore-typescript-sdk';
 import AnalysisNameCell from 'pages/StudyIBMA/components/AnalysisNameCell';
 import AnnotationBaseInputCell from 'pages/StudyIBMA/components/AnnotationInputCells';
 import AnnotationColumnHeader from 'pages/StudyIBMA/components/AnnotationColumnHeader';
@@ -85,26 +85,29 @@ const useEditStudyAnalysisBoardState = () => {
         return sortAnalysesByOrder(analysisRows);
     }, [analyses, analysisIdToNoteMap, noteKeys]);
 
-    const handleUpdateImage = useCallback(
-        (image: ImageRequest) => {
-            if (!image.id) return;
-            void updateImage(image.id, image).then(() => {
-                if (selectedImageId === image.id) setSelectedImageId(undefined);
-            });
-        },
-        [updateImage, selectedImageId]
-    );
-
     const tableMeta = useMemo(
         () => ({
-            selectedImageId,
+            selectedImageId: selectedImageId ?? null,
+            analyses,
             toggleImageSelection,
-            updateImage: handleUpdateImage,
+            updateImage,
+            createAnalysis,
+            addAnnotationColumn,
             deleteAnalysis,
             updateAnalysis,
             updateAnnotationCell,
         }),
-        [selectedImageId, toggleImageSelection, handleUpdateImage, deleteAnalysis, updateAnalysis, updateAnnotationCell]
+        [
+            selectedImageId,
+            toggleImageSelection,
+            analyses,
+            updateImage,
+            createAnalysis,
+            addAnnotationColumn,
+            deleteAnalysis,
+            updateAnalysis,
+            updateAnnotationCell,
+        ]
     );
 
     const columns = useMemo(
@@ -119,7 +122,7 @@ const useEditStudyAnalysisBoardState = () => {
                         }}
                     >
                         <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mr: 1 }}>
-                            Analyses
+                            Analyses ({analyses.length})
                         </Typography>
                     </Box>
                 ),
@@ -160,13 +163,7 @@ const useEditStudyAnalysisBoardState = () => {
         table,
         tableMinWidth,
         uncategorized,
-        selectedImageId,
-        analyses,
         noteKeys,
-        toggleImageSelection,
-        createAnalysis,
-        addAnnotationColumn,
-        updateImage,
         isLoading: getAnnotationIsLoading || getAnalysesIsLoading || getUncategorizedImagesIsLoading,
     };
 };

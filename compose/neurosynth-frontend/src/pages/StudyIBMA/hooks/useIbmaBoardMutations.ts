@@ -67,9 +67,7 @@ const useIbmaBoardMutations = ({ studyId, annotationId, annotation }: UseIbmaBoa
             const writableStudy = await ensureWritableStudy();
             if (!writableStudy) return;
 
-            const targetAnalysisId = writableStudy.didClone
-                ? writableStudy.idMap!.oldAnalysisIdsToNewIdsMap[args.analysisId]
-                : args.analysisId;
+            const targetAnalysisId = writableStudy.idMap.oldAnalysisIdsToNewIdsMap[args.analysisId];
 
             await updateAnalysisMutation.mutateAsync({
                 analysisId: targetAnalysisId,
@@ -85,9 +83,7 @@ const useIbmaBoardMutations = ({ studyId, annotationId, annotation }: UseIbmaBoa
             const writableStudy = await ensureWritableStudy();
             if (!writableStudy) return;
 
-            const targetAnalysisId = writableStudy.didClone
-                ? writableStudy.idMap!.oldAnalysisIdsToNewIdsMap[analysisId]
-                : analysisId;
+            const targetAnalysisId = writableStudy.idMap.oldAnalysisIdsToNewIdsMap[analysisId];
 
             await deleteAnalysisMutation.mutateAsync(targetAnalysisId);
             await invalidateBoard(writableStudy.studyId);
@@ -188,13 +184,15 @@ const useIbmaBoardMutations = ({ studyId, annotationId, annotation }: UseIbmaBoa
             const writableStudy = await ensureWritableStudy();
             if (!writableStudy) return;
 
-            const targetImageId = writableStudy.didClone ? writableStudy.idMap!.oldImageIdToNewIdMap[imageId] : imageId;
+            const targetImageId = writableStudy.idMap.oldImageIdToNewIdMap[imageId];
             const targetImage: ImageRequest = {
                 ...image,
                 id: targetImageId,
             };
-            if (writableStudy.didClone && typeof image.analysis === 'string') {
-                targetImage.analysis = writableStudy.idMap!.oldAnalysisIdsToNewIdsMap[image.analysis];
+            if (typeof image.analysis === 'string') {
+                targetImage.analysis = writableStudy.idMap.oldAnalysisIdsToNewIdsMap[image.analysis];
+            } else {
+                targetImage.analysis = null;
             }
 
             await updateImageMutation.mutateAsync({

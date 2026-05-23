@@ -12,7 +12,7 @@ import {
 import { EExtractionStatus } from 'pages/Extraction/Extraction.types';
 import { IProjectPageLocationState } from 'pages/Project/ProjectPage';
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import {
     useProjectExtractionAddOrUpdateStudyListStatus,
     useProjectExtractionStudysetId,
@@ -47,9 +47,7 @@ const EditStudyToolbarNext: React.FC = () => {
         action: undefined,
     });
     const navigate = useNavigate();
-
-    const projectId = useProjectId();
-    const studyId = useStudyId();
+    const { projectId, studyId } = useParams<{ projectId: string; studyId: string }>();
     const extractionStatus = useProjectExtractionStudyStatus(studyId || '');
 
     const user = useProjectUser();

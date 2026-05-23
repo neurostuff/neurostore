@@ -100,7 +100,7 @@ describe(PAGE_NAME, () => {
     it('should load the IBMA study board and analyses UI', () => {
         visitAndWaitForPage();
         waitForAnalysisBoard();
-        cy.contains('Uncategorized maps').should('be.visible');
+        cy.contains('Uncategorized images').should('be.visible');
         cy.contains('Analyses').should('be.visible');
     });
 
@@ -252,10 +252,10 @@ describe(PAGE_NAME, () => {
             });
     });
 
-    it('moves an uncategorized map to an analysis via image PUT', () => {
+    it('moves an uncategorized image to an analysis via image PUT', () => {
         visitAndWaitForPage();
         waitForAnalysisBoard();
-        cy.contains('orphan_map.nii').parent().find('[aria-label="Categorize map"]').click();
+        cy.contains('orphan_map.nii').parent().find('[aria-label="Move image to analysis"]').click();
         cy.contains('[role="menuitem"]', 'Analysis 1').click();
         cy.wait('@putImage')
             .its('request.body')
@@ -264,11 +264,11 @@ describe(PAGE_NAME, () => {
             });
     });
 
-    it('removes a map from an expanded analysis row via image PUT', () => {
+    it('removes an image from an expanded analysis row via image PUT', () => {
         visitAndWaitForPage();
         waitForAnalysisBoard();
-        cy.contains('Analysis 1').parent().find('[aria-label="See brain maps"]').click();
-        cy.contains('assigned_map.nii').parent().find('[aria-label="Remove map from analysis"]').click();
+        cy.contains('Analysis 1').parent().find('[aria-label="See images"]').click();
+        cy.contains('assigned_map.nii').parent().find('[aria-label="Remove from analysis"]').click();
         cy.wait('@putImage')
             .its('request.body')
             .then((body: { analysis?: string | null }) => {
@@ -276,19 +276,19 @@ describe(PAGE_NAME, () => {
             });
     });
 
-    it('moves a map from one analysis to another via image PUT', () => {
+    it('moves an image from one analysis to another via image PUT', () => {
         visitAndWaitForPage();
         waitForAnalysisBoard();
 
-        cy.contains('Analysis 1').parent().find('[aria-label="See brain maps"]').click();
-        cy.contains('assigned_map.nii').parent().find('[aria-label="Remove map from analysis"]').click();
+        cy.contains('Analysis 1').parent().find('[aria-label="See images"]').click();
+        cy.contains('assigned_map.nii').parent().find('[aria-label="Remove from analysis"]').click();
         cy.wait('@putImage')
             .its('request.body')
             .then((body: { analysis?: string | null }) => {
                 expect(body.analysis).to.be.null;
             });
 
-        cy.contains('assigned_map.nii').parent().find('[aria-label="Categorize map"]').click();
+        cy.contains('assigned_map.nii').parent().find('[aria-label="Move image to analysis"]').click();
         cy.contains('[role="menuitem"]', 'Analysis 2').click();
         cy.wait('@putImage')
             .its('request.body')

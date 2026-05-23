@@ -1,6 +1,6 @@
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
-import { Box, IconButton, Menu, MenuItem, Tooltip, Typography } from '@mui/material';
+import { IconButton, Menu, MenuItem, Stack, Tooltip, Typography } from '@mui/material';
 import type { CellContext } from '@tanstack/react-table';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import React, { useCallback, useState } from 'react';
@@ -9,6 +9,15 @@ import EditStudyAnalysisDialogIBMA, {
     type EditStudyAnalysisSavePayload,
 } from 'pages/StudyIBMA/components/EditStudyAnalysisDialogIBMA';
 import { STUDY_ANALYSIS_TABLE_ROW_MIN_HEIGHT_PX } from 'pages/StudyIBMA/hooks/useEditStudyAnalysisBoardState.consts';
+
+const analysisCellIconButtonSx = { p: 0.5, m: 1 } as const;
+
+const descriptionClampSx = {
+    overflow: 'hidden',
+    display: '-webkit-box',
+    WebkitLineClamp: 2,
+    WebkitBoxOrient: 'vertical',
+} as const;
 
 const AnalysisNameCell: React.FC<CellContext<AnalysisBoardRow, unknown>> = ({ row, table }) => {
     const rowData = row.original;
@@ -33,7 +42,9 @@ const AnalysisNameCell: React.FC<CellContext<AnalysisBoardRow, unknown>> = ({ ro
             const selectedId = table.options.meta?.selectedImageId ?? null;
             if (
                 selectedId &&
-                assigned.some((m) => typeof m === 'object' && m !== null && 'id' in m && m.id === selectedId)
+                assigned.some(
+                    (image) => typeof image === 'object' && image !== null && 'id' in image && image.id === selectedId
+                )
             ) {
                 table.options.meta?.toggleImageSelection?.(selectedId);
             }
@@ -43,84 +54,57 @@ const AnalysisNameCell: React.FC<CellContext<AnalysisBoardRow, unknown>> = ({ ro
 
     return (
         <>
-            <Box
-                sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 0.5,
-                    py: 0.5,
-                    width: '100%',
-                    minWidth: 0,
-                    minHeight: STUDY_ANALYSIS_TABLE_ROW_MIN_HEIGHT_PX,
-                    height: STUDY_ANALYSIS_TABLE_ROW_MIN_HEIGHT_PX,
-                    boxSizing: 'border-box',
-                }}
+            <Stack
+                direction="row"
+                alignItems="center"
+                spacing={0.5}
+                sx={{ py: 0.5, width: '100%', minWidth: 0, minHeight: STUDY_ANALYSIS_TABLE_ROW_MIN_HEIGHT_PX }}
             >
-                <Tooltip title={isExpanded ? 'Hide brain maps' : 'Show brain maps'}>
+                <Tooltip title={isExpanded ? 'Hide images' : 'Show images'}>
                     <IconButton
                         size="small"
-                        onClick={(e) => {
-                            e.stopPropagation();
+                        sx={analysisCellIconButtonSx}
+                        onClick={(event) => {
+                            event.stopPropagation();
                             row.toggleExpanded();
                         }}
-                        aria-label={isExpanded ? 'Hide brain maps' : 'See brain maps'}
-                        sx={{ p: 0.5, m: 1 }}
+                        aria-label={isExpanded ? 'Hide images' : 'See images'}
                     >
                         <ChevronRightIcon
                             fontSize="small"
                             sx={{
-                                transform: isExpanded ? 'rotate(90deg)' : 'none',
-                                transition: (t) =>
-                                    t.transitions.create('transform', {
-                                        duration: t.transitions.duration.shorter,
-                                    }),
+                                transform: isExpanded ? 'rotate(90deg)' : undefined,
+                                transition: 'transform 150ms ease',
                             }}
                         />
                     </IconButton>
                 </Tooltip>
-                <Box
-                    sx={{
-                        flex: 1,
-                        minWidth: 0,
-                        alignSelf: 'stretch',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        justifyContent: 'center',
-                    }}
-                >
+                <Stack flex={1} minWidth={0} justifyContent="center">
                     <Typography
                         variant="body2"
                         fontWeight="bold"
                         color={!rowData.name?.trim() ? 'warning.dark' : undefined}
                         noWrap
-                        sx={{ lineHeight: 1.43 }}
                     >
                         {rowData.name || 'Untitled'}
                     </Typography>
                     <Typography
                         variant="caption"
                         component="div"
-                        lineHeight={1.2}
                         color={!rowData.description?.trim() ? 'warning.dark' : 'text.secondary'}
-                        sx={{
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            display: '-webkit-box',
-                            WebkitLineClamp: 2,
-                            WebkitBoxOrient: 'vertical',
-                        }}
+                        sx={descriptionClampSx}
                     >
                         {rowData.description || 'No description'}
                     </Typography>
-                </Box>
+                </Stack>
                 <IconButton
                     size="small"
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        setMenuAnchor(e.currentTarget);
+                    sx={analysisCellIconButtonSx}
+                    onClick={(event) => {
+                        event.stopPropagation();
+                        setMenuAnchor(event.currentTarget);
                     }}
                     aria-label="Analysis options"
-                    sx={{ p: 0.5, m: 1, alignSelf: 'center' }}
                 >
                     <MoreVertIcon fontSize="small" />
                 </IconButton>
@@ -130,6 +114,9 @@ const AnalysisNameCell: React.FC<CellContext<AnalysisBoardRow, unknown>> = ({ ro
                     onClose={() => setMenuAnchor(null)}
                     anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                     transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                    MenuListProps={{
+                        onMouseDown: (event) => event.preventDefault(),
+                    }}
                 >
                     <MenuItem
                         onClick={() => {
@@ -149,7 +136,7 @@ const AnalysisNameCell: React.FC<CellContext<AnalysisBoardRow, unknown>> = ({ ro
                         Delete analysis
                     </MenuItem>
                 </Menu>
-            </Box>
+            </Stack>
             <EditStudyAnalysisDialogIBMA
                 analysis={analysisForEdit}
                 onClose={() => setAnalysisForEdit(null)}

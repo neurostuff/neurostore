@@ -84,6 +84,10 @@ const analysisQueries = {
             enabled: true,
         }),
     },
+
+    mutations: {
+        create: () => [...analysisQueries.analyses.all(), 'create'] as const,
+    },
 };
 
 export default analysisQueries;

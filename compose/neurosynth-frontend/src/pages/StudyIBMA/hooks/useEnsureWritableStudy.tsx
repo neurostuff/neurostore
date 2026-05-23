@@ -29,8 +29,8 @@ type EnsureWritableStudyOptions = {
 type EnsureWritableStudyResult = {
     studyId: string;
     didClone: boolean;
-    /** Set only when `didClone` is true — maps pre-clone ids to ids on the new study. */
-    idMap?: ClonedStudyIdMap;
+    /** Maps board ids to ids on the writable study (identity when owned, remapped after clone). */
+    idMap: ClonedStudyIdMap;
 };
 
 const useEnsureWritableStudy = () => {
@@ -62,7 +62,10 @@ const useEnsureWritableStudy = () => {
         async (override?: EnsureWritableStudyOptions): Promise<EnsureWritableStudyResult | undefined> => {
             if (!studyId || !study?.id) return undefined;
 
-            if (userOwnsStudy) return { studyId, didClone: false, idMap: undefined };
+            if (userOwnsStudy) {
+                const snapshot = buildEnsureWriteableStudySnapshot(studyId, analyses, uncategorizedImages);
+                return { studyId, didClone: false, idMap: buildClonedStudyIdMap(snapshot, snapshot) };
+            }
 
             const oldSnapshot = buildEnsureWriteableStudySnapshot(studyId, analyses, uncategorizedImages);
             // if override is an empty object, the backend will just clone the study as is

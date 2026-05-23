@@ -4,22 +4,16 @@ import useEditStudyAnalysisBoardState from 'pages/StudyIBMA/hooks/useEditStudyAn
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import BrainMapDetailPanel from 'pages/StudyIBMA/components/BrainMapDetailPanel';
 import EditStudyAnalysisTable from 'pages/StudyIBMA/components/EditStudyAnalysisTable';
-import UncategorizedMapsColumn from 'pages/StudyIBMA/components/UncategorizedMapsColumn';
+import UncategorizedImagesColumn from 'pages/StudyIBMA/components/UncategorizedImagesColumn';
 
 const EditStudyAnalysisIBMA: React.FC = () => {
-    const {
-        toggleImageSelection,
-        table,
-        tableMinWidth,
-        uncategorized,
-        selectedImageId,
-        analyses,
-        noteKeys,
-        createAnalysis,
-        addAnnotationColumn,
-        updateImage,
-        isLoading,
-    } = useEditStudyAnalysisBoardState();
+    const { table, tableMinWidth, uncategorized, noteKeys, isLoading } = useEditStudyAnalysisBoardState();
+
+    const tableMeta = table.options.meta;
+    const analyses = tableMeta?.analyses ?? [];
+    const selectedImageId = tableMeta?.selectedImageId ?? null;
+    const toggleImageSelection = tableMeta?.toggleImageSelection;
+    const updateImage = tableMeta?.updateImage;
 
     const [uncategorizedCollapsed, setUncategorizedCollapsed] = useState(true);
     const initialLoad = useRef(false);
@@ -27,7 +21,7 @@ const EditStudyAnalysisIBMA: React.FC = () => {
         if (isLoading || initialLoad.current) return;
         initialLoad.current = true;
         setUncategorizedCollapsed(uncategorized.length === 0);
-    }, []);
+    }, [isLoading, uncategorized]);
 
     const selectedImage = useMemo(() => {
         if (!selectedImageId) return undefined;
@@ -47,13 +41,13 @@ const EditStudyAnalysisIBMA: React.FC = () => {
             {isLoading ? (
                 <Skeleton sx={{ transform: 'none', width: '400px', height: '100%' }} />
             ) : (
-                <UncategorizedMapsColumn
+                <UncategorizedImagesColumn
                     collapsed={uncategorizedCollapsed}
                     onCollapsedChange={setUncategorizedCollapsed}
                     uncategorized={uncategorized}
-                    selectedImageId={table.options.meta?.selectedImageId ?? null}
-                    onToggleMapSelection={(id) => table.options.meta?.toggleImageSelection?.(id)}
-                    analyses={analyses ?? []}
+                    selectedImageId={selectedImageId}
+                    onToggleImageSelection={(imageId) => toggleImageSelection?.(imageId)}
+                    analyses={analyses}
                     updateImage={updateImage}
                 />
             )}
@@ -61,16 +55,10 @@ const EditStudyAnalysisIBMA: React.FC = () => {
             {isLoading ? (
                 <Skeleton sx={{ transform: 'none', width: '100%', height: '100%' }} />
             ) : (
-                <EditStudyAnalysisTable
-                    table={table}
-                    tableMinWidth={tableMinWidth}
-                    noteKeys={noteKeys}
-                    onCreateAnalysis={createAnalysis}
-                    onAddAnnotationColumn={addAnnotationColumn}
-                />
+                <EditStudyAnalysisTable table={table} tableMinWidth={tableMinWidth} noteKeys={noteKeys} />
             )}
 
-            {selectedImage && <BrainMapDetailPanel image={selectedImage} onClose={() => toggleImageSelection()} />}
+            {selectedImage && <BrainMapDetailPanel image={selectedImage} onClose={() => toggleImageSelection?.()} />}
         </Box>
     );
 };

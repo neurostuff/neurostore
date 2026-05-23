@@ -11,6 +11,7 @@ const useCreateAnalysis = () => {
     return useMutation<AxiosResponse<AnalysisReturn>, AxiosError, AnalysisRequest, unknown>(
         (analysis) => API.NeurostoreServices.AnalysesService.analysesPost(analysis),
         {
+            mutationKey: analysisQueries.mutations.create(),
             onSuccess: (res) => {
                 const analysisId = res.data?.id;
                 if (analysisId) {

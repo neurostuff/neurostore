@@ -75,13 +75,13 @@ describe('AnalysisNameCell', () => {
 
     it('calls row.toggleExpanded when the expand control is clicked', async () => {
         render(<AnalysisNameCell {...buildCellProps({ isExpanded: false })} />);
-        await userEvent.click(screen.getByLabelText('See brain maps'));
+        await userEvent.click(screen.getByLabelText('See images'));
         expect(mockToggleExpanded).toHaveBeenCalledTimes(1);
     });
 
     it('calls row.toggleExpanded when the collapse control is clicked', async () => {
         render(<AnalysisNameCell {...buildCellProps({ isExpanded: true })} />);
-        await userEvent.click(screen.getByLabelText('Hide brain maps'));
+        await userEvent.click(screen.getByLabelText('Hide images'));
         expect(mockToggleExpanded).toHaveBeenCalledTimes(1);
     });
 

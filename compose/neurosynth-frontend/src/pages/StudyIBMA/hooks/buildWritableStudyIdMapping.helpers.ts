@@ -12,7 +12,7 @@ export type EnsureWriteableStudySnapshot = {
     uncategorizedImageIds: string[];
 };
 
-/** Old id → new id after a study clone. Only needed when `didClone` is true. */
+/** Old id → new id on the writable study (remapped after clone, or identity when already owned). */
 export type ClonedStudyIdMap = {
     oldAnalysisIdsToNewIdsMap: Record<string, string>;
     oldImageIdToNewIdMap: Record<string, string>;

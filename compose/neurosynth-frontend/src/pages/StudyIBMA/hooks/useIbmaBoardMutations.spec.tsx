@@ -45,6 +45,10 @@ const mutateAsync = (hook: Mock) => hook.mock.results[0].value.mutateAsync as Mo
 const mockEnsureWritableStudy = vi.fn().mockResolvedValue({
     studyId,
     didClone: false,
+    idMap: {
+        oldAnalysisIdsToNewIdsMap: { 'analysis-1': 'analysis-1' },
+        oldImageIdToNewIdMap: { 'img-1': 'img-1', 'img-2': 'img-2' },
+    },
 });
 
 describe('useIbmaBoardMutations', () => {

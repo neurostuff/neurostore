@@ -24,6 +24,7 @@ const { mockMutateAsync, mockEnqueueSnackbar, mockEnsureWritableStudy } = vi.hoi
     mockEnsureWritableStudy: vi.fn().mockResolvedValue({
         studyId: 'study-1',
         didClone: false,
+        idMap: { oldAnalysisIdsToNewIdsMap: {}, oldImageIdToNewIdMap: {} },
     }),
 }));
 
@@ -139,6 +140,7 @@ describe('EditStudyDetailsDialogIBMA', () => {
         mockEnsureWritableStudy.mockResolvedValue({
             studyId: 'study-1',
             didClone: false,
+            idMap: { oldAnalysisIdsToNewIdsMap: {}, oldImageIdToNewIdMap: {} },
         });
     });
 

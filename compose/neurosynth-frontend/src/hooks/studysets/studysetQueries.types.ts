@@ -9,7 +9,7 @@ type AnalysisReturnSummary = {
     point_count: number;
 };
 
-type StudyReturnWithSummaryAnalyses = Omit<StudyReturn, 'analyses'> & {
+export type StudyReturnWithSummaryAnalyses = Omit<StudyReturn, 'analyses'> & {
     analyses?: Array<AnalysisReturnSummary>;
 };
 

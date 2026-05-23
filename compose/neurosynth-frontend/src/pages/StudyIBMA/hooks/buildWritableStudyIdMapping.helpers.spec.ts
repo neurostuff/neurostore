@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { buildClonedStudyIdMap, buildStudySnapshot } from 'pages/StudyIBMA/hooks/buildWritableStudyIdMapping.helpers';
+import {
+    buildClonedStudyIdMap,
+    buildIdentityStudyIdMap,
+    buildStudySnapshot,
+} from 'pages/StudyIBMA/hooks/buildWritableStudyIdMapping.helpers';
 
 describe('buildWritableStudyIdMapping.helpers', () => {
     it('maps analyses and nested images by order', () => {
@@ -54,10 +58,33 @@ describe('buildWritableStudyIdMapping.helpers', () => {
         expect(idMap.oldImageIdToNewIdMap['uncat-old']).toBe('uncat-new');
     });
 
-    it('throws when uncategorized image counts differ after clone', () => {
+    it('maps each id to itself for an owned study snapshot', () => {
+        const snapshot = buildStudySnapshot(
+            'study-1',
+            [
+                {
+                    id: 'analysis-1',
+                    name: 'A',
+                    order: 1,
+                    images: [{ id: 'img-a', filename: 'a.nii' }],
+                },
+            ],
+            [{ id: 'uncat-1', filename: 'free.nii' }]
+        );
+
+        const idMap = buildIdentityStudyIdMap(snapshot);
+
+        expect(idMap.oldAnalysisIdsToNewIdsMap['analysis-1']).toBe('analysis-1');
+        expect(idMap.oldImageIdToNewIdMap['img-a']).toBe('img-a');
+        expect(idMap.oldImageIdToNewIdMap['uncat-1']).toBe('uncat-1');
+    });
+
+    it('omits uncategorized image ids when counts differ after clone', () => {
         const oldSnapshot = buildStudySnapshot('study-old', [], [{ id: 'uncat-old', filename: 'free.nii' }]);
         const newSnapshot = buildStudySnapshot('study-new', [], []);
 
-        expect(() => buildClonedStudyIdMap(oldSnapshot, newSnapshot)).toThrow(/uncategorized images count mismatch/);
+        const idMap = buildClonedStudyIdMap(oldSnapshot, newSnapshot);
+
+        expect(idMap.oldImageIdToNewIdMap['uncat-old']).toBeUndefined();
     });
 });

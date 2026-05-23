@@ -7,7 +7,8 @@ import {
     STUDY_ANALYSES_COLUMN_WIDTH,
     STUDY_ANALYSIS_TABLE_ROW_MIN_HEIGHT_PX,
 } from 'pages/StudyIBMA/hooks/useEditStudyAnalysisBoardState.consts';
-import EditStudyAnalysisMapsExpandedRow from 'pages/StudyIBMA/components/EditStudyAnalysisMapsExpandedRow';
+import EditStudyAnalysisImagesExpandedRow from 'pages/StudyIBMA/components/EditStudyAnalysisImagesExpandedRow';
+import { shouldToggleStudyAnalysisRowExpansion } from 'pages/StudyIBMA/components/editStudyAnalysisTableRow.utils';
 
 export const EditStudyAnalysisTableRow: React.FC<{
     row: Row<AnalysisBoardRow>;
@@ -21,8 +22,10 @@ export const EditStudyAnalysisTableRow: React.FC<{
                     return (
                         <TableCell
                             key={cell.id}
-                            onClick={() => {
-                                if (isAnalysis) row.toggleExpanded();
+                            onClick={(event) => {
+                                if (isAnalysis && shouldToggleStudyAnalysisRowExpansion(event)) {
+                                    row.toggleExpanded();
+                                }
                             }}
                             sx={{
                                 verticalAlign: 'top',
@@ -50,7 +53,13 @@ export const EditStudyAnalysisTableRow: React.FC<{
                     );
                 })}
             </TableRow>
-            {row.getIsExpanded() ? <EditStudyAnalysisMapsExpandedRow row={row} table={table} /> : null}
+            {row.getIsExpanded() ? (
+                <EditStudyAnalysisImagesExpandedRow
+                    row={row}
+                    table={table}
+                    selectedImageId={table.options.meta?.selectedImageId ?? null}
+                />
+            ) : null}
         </>
     );
 };

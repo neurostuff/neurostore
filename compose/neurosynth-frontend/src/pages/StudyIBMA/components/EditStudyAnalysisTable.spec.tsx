@@ -1,22 +1,18 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import {
-    createColumnHelper,
-    getCoreRowModel,
-    useReactTable,
-    type ExpandedState,
-} from '@tanstack/react-table';
+import { createColumnHelper, getCoreRowModel, useReactTable, type ExpandedState } from '@tanstack/react-table';
 import { EPropertyType } from 'components/EditMetadata/EditMetadata.types';
 import type { NoteKeyType } from 'components/HotTables/HotTables.types';
 import type { AnalysisBoardRow } from 'pages/StudyIBMA/hooks/useEditStudyAnalysisBoardState.types';
-import { EditStudyAnalysisTable } from 'pages/StudyIBMA/components/EditStudyAnalysisTable';
 import type { NewAnnotationColumnPayload } from 'pages/StudyIBMA/components/NewAnnotationColumnDialog';
 import { useState } from 'react';
 import { vi } from 'vitest';
+import EditStudyAnalysisTable from 'pages/StudyIBMA/components/EditStudyAnalysisTable';
 
 vi.mock('pages/StudyIBMA/components/NewAnnotationColumnDialog');
 vi.mock('pages/StudyIBMA/components/EditStudyAnalysisTableRow');
-vi.mock('pages/StudyIBMA/components/EditStudyAnalysisMapsExpandedRow');
+vi.mock('pages/StudyIBMA/components/EditStudyAnalysisImagesExpandedRow');
+vi.mock('react-query');
 
 const columnHelper = createColumnHelper<AnalysisBoardRow>();
 
@@ -66,17 +62,13 @@ const TableHarness = ({
         getCoreRowModel: getCoreRowModel(),
         getRowId: (row) => row.id ?? '',
         getRowCanExpand: () => true,
+        meta: {
+            createAnalysis: onCreateAnalysis,
+            addAnnotationColumn: onAddAnnotationColumn,
+        },
     });
 
-    return (
-        <EditStudyAnalysisTable
-            table={table}
-            tableMinWidth={400}
-            noteKeys={noteKeys}
-            onCreateAnalysis={onCreateAnalysis}
-            onAddAnnotationColumn={onAddAnnotationColumn}
-        />
-    );
+    return <EditStudyAnalysisTable table={table} tableMinWidth={400} noteKeys={noteKeys} />;
 };
 
 describe('EditStudyAnalysisTable', () => {
@@ -147,7 +139,7 @@ describe('EditStudyAnalysisTable', () => {
         });
     });
 
-    it('renders the expanded maps row when the analysis row is expanded', async () => {
+    it('renders the expanded images row when the analysis row is expanded', async () => {
         render(<TableHarness />);
 
         expect(screen.queryByTestId('mock-expanded-row-analysis-1')).not.toBeInTheDocument();
@@ -155,10 +147,10 @@ describe('EditStudyAnalysisTable', () => {
         await userEvent.click(screen.getByRole('cell', { name: 'Contrast A' }));
 
         expect(screen.getByTestId('mock-expanded-row-analysis-1')).toBeInTheDocument();
-        expect(screen.getByText('mock-expanded-maps')).toBeInTheDocument();
+        expect(screen.getByText('mock-expanded-images')).toBeInTheDocument();
     });
 
-    it('hides the expanded maps row when the analysis row is collapsed', async () => {
+    it('hides the expanded images row when the analysis row is collapsed', async () => {
         render(<TableHarness />);
 
         const analysisCell = screen.getByRole('cell', { name: 'Contrast A' });
