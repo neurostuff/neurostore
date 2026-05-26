@@ -43,7 +43,7 @@ const ImagesList: React.FC<ImagesListProps> = ({
     }, []);
 
     return (
-        <List dense disablePadding sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
+        <List dense disablePadding sx={{ display: 'flex', flexDirection: 'column', gap: 0.75, width: '100%' }}>
             {images
                 .filter((image) => image.id)
                 .map((image) => {
@@ -56,7 +56,13 @@ const ImagesList: React.FC<ImagesListProps> = ({
                     const updateLoading = updateImageIsLoading && loadingImageId === imageId;
 
                     return (
-                        <ListItem key={imageId} disablePadding>
+                        <ListItem
+                            key={imageId}
+                            disablePadding
+                            sx={{
+                                width: '100%',
+                            }}
+                        >
                             <ListItemButton
                                 dense
                                 selected={isSelected}
@@ -65,6 +71,7 @@ const ImagesList: React.FC<ImagesListProps> = ({
                                     onSelectImage(imageId);
                                 }}
                                 sx={{
+                                    width: '100%',
                                     borderRadius: 1,
                                     bgcolor: 'action.hover',
                                     alignItems: 'flex-start',

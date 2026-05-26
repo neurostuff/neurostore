@@ -55,7 +55,15 @@ const AnalysisNameCell: React.FC<CellContext<AnalysisBoardRow, unknown>> = ({ ro
                 direction="row"
                 alignItems="center"
                 spacing={0.5}
-                sx={{ py: 0.5, width: '100%', minWidth: 0, minHeight: STUDY_ANALYSIS_TABLE_ROW_MIN_HEIGHT_PX }}
+                sx={{
+                    py: 0.5,
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    minWidth: 0,
+                    minHeight: STUDY_ANALYSIS_TABLE_ROW_MIN_HEIGHT_PX,
+                    height: STUDY_ANALYSIS_TABLE_ROW_MIN_HEIGHT_PX,
+                    maxHeight: STUDY_ANALYSIS_TABLE_ROW_MIN_HEIGHT_PX,
+                }}
             >
                 <Tooltip title={isExpanded ? 'Hide images' : 'Show images'}>
                     <IconButton

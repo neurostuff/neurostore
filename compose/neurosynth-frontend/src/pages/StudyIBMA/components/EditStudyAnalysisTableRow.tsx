@@ -22,6 +22,7 @@ export const EditStudyAnalysisTableRow: React.FC<{
                             key={cell.id}
                             sx={{
                                 verticalAlign: 'top',
+                                maxHeight: STUDY_ANALYSIS_TABLE_ROW_MIN_HEIGHT_PX,
                                 minHeight: STUDY_ANALYSIS_TABLE_ROW_MIN_HEIGHT_PX,
                                 height: STUDY_ANALYSIS_TABLE_ROW_MIN_HEIGHT_PX,
                                 p: 0,

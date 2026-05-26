@@ -85,7 +85,10 @@ const EditStudyAnalysisTable: React.FC<EditStudyAnalysisTableProps> = ({ table, 
                         New Annotation Column
                     </Button>
                 </Stack>
-                <TableContainer className="sleek-scrollbar" sx={{ flex: 1, minHeight: 0, bgcolor: 'background.paper' }}>
+                <TableContainer
+                    className="sleek-scrollbar"
+                    sx={{ flex: 1, minHeight: 0, bgcolor: 'background.paper', containerType: 'inline-size' }}
+                >
                     <Table
                         stickyHeader
                         size="small"

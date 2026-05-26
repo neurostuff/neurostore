@@ -73,8 +73,11 @@ const EditStudyAnalysisImagesExpandedRow: React.FC<{
                     sx={{
                         py: 1.5,
                         px: 4,
-                        width: '100%',
                         boxSizing: 'border-box',
+                        position: 'sticky',
+                        left: 0,
+                        width: '100cqw',
+                        maxWidth: '100cqw',
                     }}
                 >
                     {images.length === 0 ? (
