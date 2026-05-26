@@ -132,7 +132,11 @@ const useEditStudyAnalysisBoardState = () => {
                 columnHelper.accessor((row) => row.analysisAnnotation[noteKey.key] ?? null, {
                     id: noteKey.key,
                     header: () => (
-                        <AnnotationColumnHeader headerName={noteKey.key} onRemoveColumn={removeAnnotationColumn} />
+                        <AnnotationColumnHeader
+                            headerName={noteKey.key}
+                            columnType={noteKey.type}
+                            onRemoveColumn={removeAnnotationColumn}
+                        />
                     ),
                     cell: AnnotationBaseInputCell,
                     size: 80,

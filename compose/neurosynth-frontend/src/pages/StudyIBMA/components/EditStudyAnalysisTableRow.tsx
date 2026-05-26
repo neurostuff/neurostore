@@ -1,14 +1,12 @@
 import { TableCell, TableRow } from '@mui/material';
-import { type Row, type Table as TanstackTable } from '@tanstack/react-table';
-import React from 'react';
-import type { AnalysisBoardRow } from 'pages/StudyIBMA/hooks/useEditStudyAnalysisBoardState.types';
-import { flexRender } from '@tanstack/react-table';
+import { flexRender, type Row, type Table as TanstackTable } from '@tanstack/react-table';
+import EditStudyAnalysisImagesExpandedRow from 'pages/StudyIBMA/components/EditStudyAnalysisImagesExpandedRow';
 import {
     STUDY_ANALYSES_COLUMN_WIDTH,
     STUDY_ANALYSIS_TABLE_ROW_MIN_HEIGHT_PX,
 } from 'pages/StudyIBMA/hooks/useEditStudyAnalysisBoardState.consts';
-import EditStudyAnalysisImagesExpandedRow from 'pages/StudyIBMA/components/EditStudyAnalysisImagesExpandedRow';
-import { shouldToggleStudyAnalysisRowExpansion } from 'pages/StudyIBMA/components/editStudyAnalysisTableRow.utils';
+import type { AnalysisBoardRow } from 'pages/StudyIBMA/hooks/useEditStudyAnalysisBoardState.types';
+import React from 'react';
 
 export const EditStudyAnalysisTableRow: React.FC<{
     row: Row<AnalysisBoardRow>;
@@ -22,16 +20,8 @@ export const EditStudyAnalysisTableRow: React.FC<{
                     return (
                         <TableCell
                             key={cell.id}
-                            onClick={(event) => {
-                                if (isAnalysis && shouldToggleStudyAnalysisRowExpansion(event)) {
-                                    row.toggleExpanded();
-                                }
-                            }}
                             sx={{
                                 verticalAlign: 'top',
-                                ':hover': {
-                                    backgroundColor: isAnalysis ? 'grey.200' : 'transparent',
-                                },
                                 minHeight: STUDY_ANALYSIS_TABLE_ROW_MIN_HEIGHT_PX,
                                 height: STUDY_ANALYSIS_TABLE_ROW_MIN_HEIGHT_PX,
                                 p: 0,
@@ -40,7 +30,13 @@ export const EditStudyAnalysisTableRow: React.FC<{
                                           width: STUDY_ANALYSES_COLUMN_WIDTH,
                                           minWidth: STUDY_ANALYSES_COLUMN_WIDTH,
                                           maxWidth: STUDY_ANALYSES_COLUMN_WIDTH,
+                                          position: 'sticky',
+                                          left: 0,
+                                          zIndex: 6,
+                                          backgroundColor: 'white',
+                                          borderRight: 1,
                                           borderColor: row.getIsExpanded() ? 'transparent' : 'divider',
+                                          borderRightColor: 'divider',
                                       }
                                     : {
                                           borderLeft: 1,

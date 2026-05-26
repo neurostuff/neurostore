@@ -30,6 +30,7 @@ const useUpdateAnnotationById = (
             return response.data as AnnotationReturnOneOfWithNoteCollection;
         },
         {
+            mutationKey: annotationQueries.mutations.update(),
             onSuccess: (response) => {
                 const invalidateOnSuccess = options?.invalidateOnSuccess ?? true;
                 if (invalidateOnSuccess) {

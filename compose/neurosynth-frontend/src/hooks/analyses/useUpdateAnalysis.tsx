@@ -18,6 +18,7 @@ const useUpdateAnalysis = () => {
         },
         unknown
     >((args) => API.NeurostoreServices.AnalysesService.analysesIdPut(args.analysisId, args.analysis), {
+        mutationKey: analysisQueries.mutations.update(),
         onSuccess: (_res, variables) => {
             queryClient.invalidateQueries(analysisQueries.analyses.byId(variables.analysisId).queryKey);
             // TODO: when we convert CBMA to a save on action based workflow, we should remove this and invalidate the parent analysis instead

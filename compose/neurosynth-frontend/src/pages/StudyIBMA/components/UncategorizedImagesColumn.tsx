@@ -9,7 +9,7 @@ import {
     STUDY_UNCATEGORIZED_IMAGES_COLUMN_WIDTH,
 } from 'pages/StudyIBMA/hooks/useEditStudyAnalysisBoardState.consts';
 import SearchableAnalysisMenu from 'pages/StudyIBMA/components/SearchableAnalysisMenu';
-import StudyAnalysisImagesList from 'pages/StudyIBMA/components/StudyAnalysisImagesList';
+import ImagesList from 'pages/StudyIBMA/components/ImagesList';
 import useIbmaBoardMutations from '../hooks/useIbmaBoardMutations';
 
 export type UncategorizedImagesColumnProps = {
@@ -124,7 +124,7 @@ const UncategorizedImagesColumn: React.FC<UncategorizedImagesColumnProps> = ({
                     </IconButton>
                 </Tooltip>
             </Box>
-            <StudyAnalysisImagesList
+            <ImagesList
                 images={uncategorized}
                 selectedImageId={selectedImageId}
                 onSelectImage={onToggleImageSelection}

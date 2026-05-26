@@ -1,18 +1,21 @@
 import { Box, Button, FormControl, InputLabel, MenuItem, Select, TextField, Typography } from '@mui/material';
+import LoadingButton from 'components/Buttons/LoadingButton';
 import BaseDialog from 'components/Dialogs/BaseDialog';
 import { EPropertyType } from 'components/EditMetadata/EditMetadata.types';
 import ToggleType from 'components/EditMetadata/ToggleType';
 import { AnnotationNoteValue, NoteKeyType } from 'components/HotTables/HotTables.types';
 import React, { useCallback, useEffect, useState } from 'react';
+import useIbmaBoardMutations from 'pages/StudyIBMA/hooks/useIbmaBoardMutations';
 
 export type NewAnnotationColumnPayload = Omit<NoteKeyType, 'order'>;
 
 const NewAnnotationColumnDialog: React.FC<{
     isOpen: boolean;
+    isLoading: boolean;
     onClose: () => void;
     existingKeys: string[];
-    onAddColumn: (payload: NewAnnotationColumnPayload) => void;
-}> = ({ isOpen, onClose, existingKeys, onAddColumn }) => {
+    onAddColumn?: ReturnType<typeof useIbmaBoardMutations>['addAnnotationColumn'];
+}> = ({ isOpen, isLoading, onClose, existingKeys, onAddColumn }) => {
     const [columnKey, setColumnKey] = useState('');
     const [columnType, setColumnType] = useState<EPropertyType>(EPropertyType.BOOLEAN);
     const [booleanDefault, setBoolean] = useState(false);
@@ -71,7 +74,8 @@ const NewAnnotationColumnDialog: React.FC<{
         }
     };
 
-    const handleSave = () => {
+    const handleSave = async () => {
+        if (!onAddColumn) return;
         const trimmedKey = columnKey.trim();
         setKeyError('');
         setNumberError('');
@@ -95,7 +99,7 @@ const NewAnnotationColumnDialog: React.FC<{
         }
 
         const defaultValue = parseDefaultValue();
-        onAddColumn({
+        await onAddColumn({
             key: trimmedKey,
             type: columnType,
             default: defaultValue,
@@ -188,9 +192,15 @@ const NewAnnotationColumnDialog: React.FC<{
                     <Button variant="text" onClick={handleCancel}>
                         Cancel
                     </Button>
-                    <Button variant="contained" disableElevation onClick={handleSave}>
-                        Save
-                    </Button>
+                    <LoadingButton
+                        isLoading={isLoading}
+                        loaderColor="secondary"
+                        variant="contained"
+                        disableElevation
+                        sx={{ width: '80px' }}
+                        onClick={handleSave}
+                        text="Save"
+                    />
                 </Box>
             </Box>
         </BaseDialog>

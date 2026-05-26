@@ -2,6 +2,7 @@ import { Box, Button, TextField } from '@mui/material';
 import BaseDialog from 'components/Dialogs/BaseDialog';
 import React, { useEffect, useState } from 'react';
 import { AnalysisBoardRow } from 'pages/StudyIBMA/hooks/useEditStudyAnalysisBoardState.types';
+import LoadingButton from 'components/Buttons/LoadingButton';
 
 export type EditStudyAnalysisSavePayload = {
     analysisId: string;
@@ -12,8 +13,9 @@ export type EditStudyAnalysisSavePayload = {
 const EditStudyAnalysisDialogIBMA: React.FC<{
     analysis: AnalysisBoardRow | null;
     onClose: () => void;
-    onEditAnalysis: (payload: EditStudyAnalysisSavePayload) => void | Promise<void>;
-}> = ({ analysis, onClose, onEditAnalysis }) => {
+    isLoading: boolean;
+    onEditAnalysis: ((payload: EditStudyAnalysisSavePayload) => void | Promise<void>) | undefined;
+}> = ({ analysis, onClose, isLoading, onEditAnalysis }) => {
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
 
@@ -28,13 +30,18 @@ const EditStudyAnalysisDialogIBMA: React.FC<{
     }, [analysis]);
 
     const handleSave = async () => {
+        if (!onEditAnalysis) return;
         if (!analysis?.id) return;
-        await onEditAnalysis({
-            analysisId: analysis.id,
-            name,
-            description,
-        });
-        onClose();
+        try {
+            await onEditAnalysis({
+                analysisId: analysis.id,
+                name,
+                description,
+            });
+            onClose();
+        } catch (error) {
+            console.error(error);
+        }
     };
 
     return (
@@ -60,9 +67,16 @@ const EditStudyAnalysisDialogIBMA: React.FC<{
                     <Button onClick={onClose} variant="text">
                         Cancel
                     </Button>
-                    <Button onClick={handleSave} variant="contained" disableElevation>
-                        Save
-                    </Button>
+                    <LoadingButton
+                        isLoading={isLoading}
+                        loaderColor="secondary"
+                        sx={{ width: '80px' }}
+                        onClick={handleSave}
+                        variant="contained"
+                        color="primary"
+                        disableElevation
+                        text="Save"
+                    />
                 </Box>
             </Box>
         </BaseDialog>

@@ -12,7 +12,7 @@ declare module '@tanstack/react-table' {
         toggleImageSelection?: (imageId?: string) => void;
         updateImage?: (imageId: string, image: ImageRequest) => Promise<void>;
         createAnalysis?: () => void | Promise<void>;
-        addAnnotationColumn?: (payload: NewAnnotationColumnPayload) => void | Promise<void>;
+        addAnnotationColumn?: (payload: NewAnnotationColumnPayload) => Promise<void>;
         deleteAnalysis?: (analysisId: string) => void | Promise<void>;
         updateAnalysis?: (payload: { analysisId: string; name: string; description: string }) => void | Promise<void>;
         updateAnnotationCell?: (args: {

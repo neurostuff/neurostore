@@ -25,6 +25,10 @@ const annotationQueries = {
         },
         enabled: !!annotationId,
     }),
+
+    mutations: {
+        update: () => [...annotationQueries.all(), 'update'] as const,
+    },
 };
 
 export default annotationQueries;

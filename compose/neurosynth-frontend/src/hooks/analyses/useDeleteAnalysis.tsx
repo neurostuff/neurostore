@@ -5,6 +5,7 @@ import analysisQueries from 'hooks/analyses/analysisQueries';
 const useDeleteAnalysis = () => {
     const queryClient = useQueryClient();
     return useMutation((id: string) => API.NeurostoreServices.AnalysesService.analysesIdDelete(id), {
+        mutationKey: analysisQueries.mutations.delete(),
         onSuccess: (_res, id) => {
             queryClient.removeQueries(analysisQueries.analyses.byId(id).queryKey);
             queryClient.invalidateQueries(analysisQueries.analyses.lists());

@@ -40,7 +40,10 @@ const analysisQueries = {
     },
 
     points: {
-        all: () => ({
+        all: () => ['points'] as const,
+        list: () => [...analysisQueries.points.all(), 'list'] as const,
+        details: () => [...analysisQueries.points.all(), 'detail'] as const,
+        every: () => ({
             queryKey: ['points'] as const,
             queryFn: async () => {
                 const res = await API.NeurostoreServices.PointsService.pointsGet();
@@ -51,8 +54,11 @@ const analysisQueries = {
     },
 
     images: {
+        all: () => ['images'] as const,
+        list: () => [...analysisQueries.images.all(), 'list'] as const,
+        details: () => [...analysisQueries.images.all(), 'detail'] as const,
         uncategorizedByStudyId: (studyId: string | undefined | null) => ({
-            queryKey: ['images', 'uncategorized', 'study', studyId] as const,
+            queryKey: [...analysisQueries.images.list(), 'uncategorized', 'study', studyId] as const,
             queryFn: async () => {
                 const res = await API.NeurostoreServices.ImagesService.imagesGet(
                     undefined,
@@ -87,6 +93,12 @@ const analysisQueries = {
 
     mutations: {
         create: () => [...analysisQueries.analyses.all(), 'create'] as const,
+        update: () => [...analysisQueries.analyses.all(), 'update'] as const,
+        delete: () => [...analysisQueries.analyses.all(), 'delete'] as const,
+
+        images: {
+            update: () => [...analysisQueries.images.all(), 'update'] as const,
+        },
     },
 };
 

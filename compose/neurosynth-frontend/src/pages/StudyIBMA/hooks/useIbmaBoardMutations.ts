@@ -156,7 +156,14 @@ const useIbmaBoardMutations = ({ studyId, annotationId, annotation }: UseIbmaBoa
             });
             await invalidateBoard(studyId);
         },
-        [annotation?.note_keys, annotation?.notes, annotationId, invalidateBoard, studyId, updateAnnotationMutation]
+        [
+            annotation?.note_keys,
+            annotation?.notes,
+            annotationId,
+            invalidateBoard,
+            studyId,
+            updateAnnotationMutation.mutateAsync,
+        ]
     );
 
     const updateAnnotationCell = useCallback(

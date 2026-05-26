@@ -10,6 +10,9 @@ import 'pages/StudyIBMA/hooks/useEditStudyAnalysisBoardState.tableMeta';
 import React, { useState } from 'react';
 import { useIsMutating } from 'react-query';
 import LoadingButton from 'components/Buttons/LoadingButton';
+import Compress from '@mui/icons-material/Compress';
+import ExpandIcon from '@mui/icons-material/Expand';
+import annotationQueries from 'hooks/annotations/annotationQueries';
 
 export type EditStudyAnalysisTableProps = {
     table: TanstackTable<AnalysisBoardRow>;
@@ -22,6 +25,11 @@ const toolbarButtonSx = { fontSize: '12px' } as const;
 const EditStudyAnalysisTable: React.FC<EditStudyAnalysisTableProps> = ({ table, tableMinWidth, noteKeys = [] }) => {
     const [newAnnotationColumnDialogOpen, setNewAnnotationColumnDialogOpen] = useState(false);
     const tableMeta = table.options.meta;
+
+    const addAnnotationColumn = tableMeta?.addAnnotationColumn;
+    const createAnalysis = tableMeta?.createAnalysis;
+
+    const addAnnotationColumnIsMutating = useIsMutating(annotationQueries.mutations.update()) > 0;
     const isCreateAnalysisLoading = useIsMutating(analysisQueries.mutations.create()) > 0;
 
     return (
@@ -54,13 +62,22 @@ const EditStudyAnalysisTable: React.FC<EditStudyAnalysisTableProps> = ({ table, 
                         sx={{ ...toolbarButtonSx, minWidth: '112px', maxHeight: '33px' }}
                         startIcon={<Add />}
                         text="Analysis"
-                        onClick={() => void tableMeta?.createAnalysis?.()}
+                        onClick={() => void createAnalysis?.()}
                     />
+                    <Button
+                        size="medium"
+                        disableElevation
+                        sx={{ ...toolbarButtonSx, minWidth: '112px', maxHeight: '33px', marginLeft: '1rem' }}
+                        startIcon={table.getIsAllRowsExpanded() ? <Compress /> : <ExpandIcon />}
+                        onClick={() => table.toggleAllRowsExpanded()}
+                    >
+                        {table.getIsAllRowsExpanded() ? 'Collapse All' : 'Expand All'}
+                    </Button>
                     <Button
                         size="medium"
                         variant="contained"
                         disableElevation
-                        sx={{ ...toolbarButtonSx, minWidth: '217px', maxHeight: '33px' }}
+                        sx={{ ...toolbarButtonSx, maxHeight: '33px', marginLeft: 'auto' }}
                         data-testid="new-annotation-column-open-button"
                         onClick={() => setNewAnnotationColumnDialogOpen(true)}
                         startIcon={<Add />}
@@ -78,7 +95,11 @@ const EditStudyAnalysisTable: React.FC<EditStudyAnalysisTableProps> = ({ table, 
                             {table.getHeaderGroups().map((headerGroup) => (
                                 <TableRow key={headerGroup.id}>
                                     {headerGroup.headers.map((header) => (
-                                        <TableCell key={header.id} width={`${header.column.getSize()}px`}>
+                                        <TableCell
+                                            sx={{ zIndex: 10 }}
+                                            key={header.id}
+                                            width={`${header.column.getSize()}px`}
+                                        >
                                             {header.isPlaceholder
                                                 ? null
                                                 : flexRender(header.column.columnDef.header, header.getContext())}
@@ -97,9 +118,10 @@ const EditStudyAnalysisTable: React.FC<EditStudyAnalysisTableProps> = ({ table, 
             </Paper>
             <NewAnnotationColumnDialog
                 isOpen={newAnnotationColumnDialogOpen}
+                isLoading={addAnnotationColumnIsMutating}
                 onClose={() => setNewAnnotationColumnDialogOpen(false)}
                 existingKeys={(noteKeys ?? []).map((noteKey) => noteKey.key)}
-                onAddColumn={(payload) => void tableMeta?.addAnnotationColumn?.(payload)}
+                onAddColumn={addAnnotationColumn}
             />
         </>
     );

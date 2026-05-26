@@ -1,14 +1,14 @@
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
-import { IconButton, Menu, MenuItem, Stack, Tooltip, Typography } from '@mui/material';
+import { IconButton, Link, Menu, MenuItem, Stack, Tooltip, Typography } from '@mui/material';
 import type { CellContext } from '@tanstack/react-table';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
-import React, { useCallback, useState } from 'react';
-import type { AnalysisBoardRow } from 'pages/StudyIBMA/hooks/useEditStudyAnalysisBoardState.types';
-import EditStudyAnalysisDialogIBMA, {
-    type EditStudyAnalysisSavePayload,
-} from 'pages/StudyIBMA/components/EditStudyAnalysisDialogIBMA';
+import analysisQueries from 'hooks/analyses/analysisQueries';
+import EditStudyAnalysisDialogIBMA from 'pages/StudyIBMA/components/EditStudyAnalysisDialogIBMA';
 import { STUDY_ANALYSIS_TABLE_ROW_MIN_HEIGHT_PX } from 'pages/StudyIBMA/hooks/useEditStudyAnalysisBoardState.consts';
+import type { AnalysisBoardRow } from 'pages/StudyIBMA/hooks/useEditStudyAnalysisBoardState.types';
+import React, { useState } from 'react';
+import { useIsMutating } from 'react-query';
 
 const analysisCellIconButtonSx = { p: 0.5, m: 1 } as const;
 
@@ -23,17 +23,14 @@ const AnalysisNameCell: React.FC<CellContext<AnalysisBoardRow, unknown>> = ({ ro
     const rowData = row.original;
     const onDeleteAnalysis = table.options.meta?.deleteAnalysis;
     const onUpdateAnalysis = table.options.meta?.updateAnalysis;
+
+    const updateAnalysisIsMutating = useIsMutating({ mutationKey: analysisQueries.mutations.update() }) > 0;
+    const deleteAnalysisIsMutating = useIsMutating({ mutationKey: analysisQueries.mutations.delete() }) > 0;
+
     const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
     const [analysisForEdit, setAnalysisForEdit] = useState<AnalysisBoardRow | null>(null);
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
     const isExpanded = row.getIsExpanded();
-
-    const handleEditAnalysis = useCallback(
-        async (payload: EditStudyAnalysisSavePayload) => {
-            await onUpdateAnalysis?.(payload);
-        },
-        [onUpdateAnalysis]
-    );
 
     const handleDeleteConfirm = async (confirm: boolean | undefined) => {
         if (confirm && rowData.id) {
@@ -80,22 +77,30 @@ const AnalysisNameCell: React.FC<CellContext<AnalysisBoardRow, unknown>> = ({ ro
                     </IconButton>
                 </Tooltip>
                 <Stack flex={1} minWidth={0} justifyContent="center">
-                    <Typography
-                        variant="body2"
-                        fontWeight="bold"
-                        color={!rowData.name?.trim() ? 'warning.dark' : undefined}
-                        noWrap
+                    <Link
+                        underline="hover"
+                        onClick={(event) => {
+                            event.stopPropagation();
+                            row.toggleExpanded();
+                        }}
                     >
-                        {rowData.name || 'Untitled'}
-                    </Typography>
-                    <Typography
-                        variant="caption"
-                        component="div"
-                        color={!rowData.description?.trim() ? 'warning.dark' : 'text.secondary'}
-                        sx={descriptionClampSx}
-                    >
-                        {rowData.description || 'No description'}
-                    </Typography>
+                        <Typography
+                            variant="body2"
+                            fontWeight="bold"
+                            color={!rowData.name?.trim() ? 'warning.dark' : 'black'}
+                            noWrap
+                        >
+                            {rowData.name || 'Untitled'}
+                        </Typography>
+                        <Typography
+                            variant="caption"
+                            component="div"
+                            color={!rowData.description?.trim() ? 'warning.dark' : 'text.secondary'}
+                            sx={descriptionClampSx}
+                        >
+                            {rowData.description || 'No description'}
+                        </Typography>
+                    </Link>
                 </Stack>
                 <IconButton
                     size="small"
@@ -119,7 +124,8 @@ const AnalysisNameCell: React.FC<CellContext<AnalysisBoardRow, unknown>> = ({ ro
                     }}
                 >
                     <MenuItem
-                        onClick={() => {
+                        onClick={(event) => {
+                            event.stopPropagation();
                             setMenuAnchor(null);
                             setAnalysisForEdit(rowData);
                         }}
@@ -127,7 +133,8 @@ const AnalysisNameCell: React.FC<CellContext<AnalysisBoardRow, unknown>> = ({ ro
                         Edit analysis
                     </MenuItem>
                     <MenuItem
-                        onClick={() => {
+                        onClick={(event) => {
+                            event.stopPropagation();
                             setMenuAnchor(null);
                             setDeleteConfirmOpen(true);
                         }}
@@ -139,8 +146,9 @@ const AnalysisNameCell: React.FC<CellContext<AnalysisBoardRow, unknown>> = ({ ro
             </Stack>
             <EditStudyAnalysisDialogIBMA
                 analysis={analysisForEdit}
+                isLoading={updateAnalysisIsMutating}
                 onClose={() => setAnalysisForEdit(null)}
-                onEditAnalysis={handleEditAnalysis}
+                onEditAnalysis={onUpdateAnalysis}
             />
             <ConfirmationDialog
                 isOpen={deleteConfirmOpen}
@@ -149,7 +157,7 @@ const AnalysisNameCell: React.FC<CellContext<AnalysisBoardRow, unknown>> = ({ ro
                 dialogMessage="This analysis will be removed. This action cannot be undone."
                 confirmText="Delete"
                 rejectText="Cancel"
-                confirmButtonProps={{ color: 'error' }}
+                confirmButtonProps={{ color: 'error', isLoading: deleteAnalysisIsMutating, loaderColor: 'secondary' }}
             />
         </>
     );
