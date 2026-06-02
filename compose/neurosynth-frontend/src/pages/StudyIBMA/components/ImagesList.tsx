@@ -18,8 +18,8 @@ import { DefaultMapTypes } from 'stores/study/StudyStore.helpers';
 export type ImagesListProps = {
     images: ImageReturn[];
     selectedImageId: string | null;
-    updateImageIsLoading: boolean;
-    removeImageIsLoading: boolean;
+    updateImageIsLoading?: boolean;
+    removeImageIsLoading?: boolean;
     loadingImageId: string | undefined;
     onSelectImage: (imageId: string) => void;
     onMoveClick: (event: React.MouseEvent<HTMLElement>, imageId: string) => void;
@@ -29,8 +29,8 @@ export type ImagesListProps = {
 const ImagesList: React.FC<ImagesListProps> = ({
     images,
     selectedImageId,
-    updateImageIsLoading,
-    removeImageIsLoading,
+    updateImageIsLoading = false,
+    removeImageIsLoading = false,
     loadingImageId,
     onSelectImage,
     onMoveClick,

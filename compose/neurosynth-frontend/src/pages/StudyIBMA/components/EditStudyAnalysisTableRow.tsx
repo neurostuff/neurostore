@@ -1,10 +1,7 @@
 import { TableCell, TableRow } from '@mui/material';
 import { flexRender, type Row, type Table as TanstackTable } from '@tanstack/react-table';
 import EditStudyAnalysisImagesExpandedRow from 'pages/StudyIBMA/components/EditStudyAnalysisImagesExpandedRow';
-import {
-    STUDY_ANALYSES_COLUMN_WIDTH,
-    STUDY_ANALYSIS_TABLE_ROW_MIN_HEIGHT_PX,
-} from 'pages/StudyIBMA/hooks/useEditStudyAnalysisBoardState.consts';
+import { STUDY_ANALYSIS_TABLE_ROW_MIN_HEIGHT_PX } from 'pages/StudyIBMA/hooks/useEditStudyAnalysisBoardState.consts';
 import type { AnalysisBoardRow } from 'pages/StudyIBMA/hooks/useEditStudyAnalysisBoardState.types';
 import React from 'react';
 
@@ -14,7 +11,7 @@ export const EditStudyAnalysisTableRow: React.FC<{
 }> = ({ row, table }) => {
     return (
         <>
-            <TableRow sx={{ cursor: 'pointer' }}>
+            <TableRow>
                 {row.getVisibleCells().map((cell) => {
                     const isAnalysis = cell.column.id === 'analysis';
                     return (
@@ -28,9 +25,6 @@ export const EditStudyAnalysisTableRow: React.FC<{
                                 p: 0,
                                 ...(isAnalysis
                                     ? {
-                                          width: STUDY_ANALYSES_COLUMN_WIDTH,
-                                          minWidth: STUDY_ANALYSES_COLUMN_WIDTH,
-                                          maxWidth: STUDY_ANALYSES_COLUMN_WIDTH,
                                           position: 'sticky',
                                           left: 0,
                                           zIndex: 6,

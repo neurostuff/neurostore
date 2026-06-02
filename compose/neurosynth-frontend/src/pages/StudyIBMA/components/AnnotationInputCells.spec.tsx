@@ -3,7 +3,12 @@ import userEvent from '@testing-library/user-event';
 import type { CellContext } from '@tanstack/react-table';
 import { EPropertyType } from 'components/EditMetadata/EditMetadata.types';
 import type { NoteKeyType } from 'components/HotTables/HotTables.types';
-import AnnotationBaseInputCell from 'pages/StudyIBMA/components/AnnotationInputCells';
+import AnnotationBaseInputCell, {
+    annotationNumberToCommitted,
+    annotationStringToCommitted,
+    parseAnnotationNumberLocalCommit,
+    parseAnnotationStringLocalCommit,
+} from 'pages/StudyIBMA/components/AnnotationInputCells';
 import type { AnalysisBoardRow } from 'pages/StudyIBMA/hooks/useEditStudyAnalysisBoardState.types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -38,6 +43,22 @@ const buildCellProps = (
         },
         getValue: () => value,
     }) as unknown as CellContext<AnalysisBoardRow, string | boolean | number | null>;
+
+describe('annotation commit helpers', () => {
+    it('normalizes stored string and number values for comparison', () => {
+        expect(annotationStringToCommitted('notes')).toBe('notes');
+        expect(annotationStringToCommitted(null)).toBeNull();
+        expect(annotationNumberToCommitted(42)).toBe(42);
+        expect(annotationNumberToCommitted('42')).toBe(42);
+    });
+
+    it('parses local string and number input on blur', () => {
+        expect(parseAnnotationStringLocalCommit('')).toBeNull();
+        expect(parseAnnotationStringLocalCommit('notes')).toBe('notes');
+        expect(parseAnnotationNumberLocalCommit('7')).toEqual({ kind: 'commit', value: 7 });
+        expect(parseAnnotationNumberLocalCommit('not-a-number')).toEqual({ kind: 'invalid' });
+    });
+});
 
 describe('AnnotationBaseInputCell', () => {
     beforeEach(() => {
@@ -81,6 +102,19 @@ describe('AnnotationBaseInputCell', () => {
         expect(typeof mockUpdateAnnotationCell.mock.calls[0][0].value).toBe('string');
     });
 
+    it('does not commit when a string annotation is unchanged on blur', async () => {
+        render(
+            <AnnotationBaseInputCell
+                {...buildCellProps({ key: 'notes', type: EPropertyType.STRING, order: 0 }, 'Initial notes')}
+            />
+        );
+
+        await userEvent.click(screen.getByRole('textbox'));
+        await userEvent.tab();
+
+        expect(mockUpdateAnnotationCell).not.toHaveBeenCalled();
+    });
+
     it('commits null when a string annotation is cleared on blur', async () => {
         render(
             <AnnotationBaseInputCell
@@ -99,13 +133,24 @@ describe('AnnotationBaseInputCell', () => {
         });
     });
 
+    it('does not commit when a number annotation is unchanged on blur', async () => {
+        render(
+            <AnnotationBaseInputCell {...buildCellProps({ key: 'weight', type: EPropertyType.NUMBER, order: 0 }, 42)} />
+        );
+
+        await userEvent.click(screen.getByRole('textbox'));
+        await userEvent.tab();
+
+        expect(mockUpdateAnnotationCell).not.toHaveBeenCalled();
+    });
+
     it('commits number annotation on blur with a number value', async () => {
         render(
             <AnnotationBaseInputCell {...buildCellProps({ key: 'weight', type: EPropertyType.NUMBER, order: 0 }, 42)} />
         );
 
-        const input = screen.getByRole('spinbutton');
-        expect(input).toHaveValue(42);
+        const input = screen.getByRole('textbox');
+        expect(input).toHaveValue('42');
 
         await userEvent.clear(input);
         await userEvent.type(input, '7');
@@ -124,7 +169,7 @@ describe('AnnotationBaseInputCell', () => {
             <AnnotationBaseInputCell {...buildCellProps({ key: 'weight', type: EPropertyType.NUMBER, order: 0 }, 42)} />
         );
 
-        const input = screen.getByRole('spinbutton');
+        const input = screen.getByRole('textbox');
         await userEvent.clear(input);
         await userEvent.tab();
 

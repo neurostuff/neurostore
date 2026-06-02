@@ -17,6 +17,7 @@ const descriptionClampSx = {
     display: '-webkit-box',
     WebkitLineClamp: 2,
     WebkitBoxOrient: 'vertical',
+    lineHeight: 'normal',
 } as const;
 
 const AnalysisNameCell: React.FC<CellContext<AnalysisBoardRow, unknown>> = ({ row, table }) => {
@@ -91,13 +92,16 @@ const AnalysisNameCell: React.FC<CellContext<AnalysisBoardRow, unknown>> = ({ ro
                             event.stopPropagation();
                             row.toggleExpanded();
                         }}
+                        sx={{ cursor: 'pointer' }}
                     >
                         <Typography
                             variant="body2"
                             fontWeight="bold"
+                            gutterBottom
                             color={!rowData.name?.trim() ? 'warning.dark' : 'black'}
                             noWrap
                         >
+                            <span style={{ fontWeight: 'normal' }}>({rowData.images?.length ?? 0})</span>{' '}
                             {rowData.name || 'Untitled'}
                         </Typography>
                         <Typography

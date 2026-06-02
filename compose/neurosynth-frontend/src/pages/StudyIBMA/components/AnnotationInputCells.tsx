@@ -1,4 +1,4 @@
-import { Box, Checkbox, TextField } from '@mui/material';
+import { Box, Checkbox, CircularProgress, TextField } from '@mui/material';
 import type { CellContext } from '@tanstack/react-table';
 import { EPropertyType } from 'components/EditMetadata/EditMetadata.types';
 import React, { memo, useCallback, useEffect, useState } from 'react';
@@ -6,33 +6,61 @@ import type { AnalysisBoardRow } from '../hooks/useEditStudyAnalysisBoardState.t
 import { analysisRowsShallowEqual } from '../hooks/useEditStudyAnalysisBoardState.helpers';
 import { STUDY_ANALYSIS_TABLE_ROW_MIN_HEIGHT_PX } from '../hooks/useEditStudyAnalysisBoardState.consts';
 
-const annotationValueToInputString = (v: string | boolean | number | null | undefined): string =>
-    v === undefined || v === null ? '' : String(v);
+type AnnotationStoredValue = string | boolean | number | null | undefined;
+
+const annotationValueToInputString = (value: AnnotationStoredValue): string =>
+    value === undefined || value === null ? '' : String(value);
+
+export const annotationStringToCommitted = (value: AnnotationStoredValue): string | null =>
+    value === undefined || value === null || value === '' ? null : String(value);
+
+export const annotationNumberToCommitted = (value: AnnotationStoredValue): number | null => {
+    if (value === undefined || value === null || value === '') return null;
+    const parsed = typeof value === 'number' ? value : Number(String(value).trim());
+    return Number.isNaN(parsed) ? null : parsed;
+};
+
+export const parseAnnotationStringLocalCommit = (local: string): string | null =>
+    local === '' ? null : local;
+
+export type AnnotationNumberLocalCommitParseResult =
+    | { kind: 'commit'; value: number | null }
+    | { kind: 'invalid' };
+
+export const parseAnnotationNumberLocalCommit = (local: string): AnnotationNumberLocalCommitParseResult => {
+    const trimmed = local.trim();
+    if (trimmed === '') return { kind: 'commit', value: null };
+    const parsed = Number(trimmed);
+    if (Number.isNaN(parsed)) return { kind: 'invalid' };
+    return { kind: 'commit', value: parsed };
+};
 
 const cellSx = {
     minHeight: STUDY_ANALYSIS_TABLE_ROW_MIN_HEIGHT_PX,
     height: STUDY_ANALYSIS_TABLE_ROW_MIN_HEIGHT_PX,
     display: 'flex',
+    overflow: 'hidden',
     flexDirection: 'column',
     p: 0.5,
     boxSizing: 'border-box',
 };
 
-const annotationInputSx = {
-    flex: 1,
-    minWidth: 0,
-    '& .MuiInputBase-input': { typography: 'body2', py: 0.5, px: 0 },
-    '& input[type=number]': {
-        MozAppearance: 'textfield',
-        '&::-webkit-outer-spin-button, &::-webkit-inner-spin-button': { WebkitAppearance: 'none', m: 0 },
-    },
-};
-
 const annotationMultilineInputSx = {
-    ...annotationInputSx,
-    '& textarea.MuiInputBase-input': { p: 0, overflowX: 'hidden' },
-    '& .MuiInput-root:not(.Mui-focused) textarea': { overflowY: 'hidden' },
-    '& .MuiInput-root.Mui-focused textarea': { overflowY: 'auto', scrollbarGutter: 'stable' },
+    height: '100%',
+    width: '100%',
+    '& .MuiTextField-root': {
+        overflow: 'hidden !important',
+    },
+    '& .MuiInputBase-root': {
+        overflow: 'hidden !important',
+        height: '100%',
+        padding: 0,
+    },
+    '& textarea': {
+        overflow: 'auto !important',
+        height: '100% !important',
+        fontSize: '14px !important',
+    },
 };
 
 const AnnotationNumberInputCell = memo(
@@ -40,10 +68,11 @@ const AnnotationNumberInputCell = memo(
         initialValue,
         onCommit,
     }: {
-        initialValue: string | boolean | number | null | undefined;
+        initialValue: AnnotationStoredValue;
         onCommit: (value: string | boolean | number | null) => void;
     }) => {
         const [local, setLocal] = useState(() => annotationValueToInputString(initialValue));
+
         useEffect(() => {
             setLocal(annotationValueToInputString(initialValue));
         }, [initialValue]);
@@ -53,27 +82,32 @@ const AnnotationNumberInputCell = memo(
                 <TextField
                     type="number"
                     value={local}
-                    onChange={(e) => setLocal(e.target.value)}
+                    onChange={(event) => setLocal(event.target.value)}
                     onBlur={() => {
-                        const trimmed = local.trim();
-                        if (trimmed === '') {
-                            onCommit(null);
+                        const parsed = parseAnnotationNumberLocalCommit(local);
+                        if (parsed.kind === 'invalid') {
+                            setLocal(annotationValueToInputString(initialValue));
                             return;
                         }
-                        const parsed = Number(trimmed);
-                        if (!Number.isNaN(parsed)) onCommit(parsed);
+                        if (parsed.value !== annotationNumberToCommitted(initialValue)) {
+                            onCommit(parsed.value);
+                        }
                     }}
-                    onClick={(e) => e.stopPropagation()}
+                    onClick={(event) => event.stopPropagation()}
                     fullWidth
+                    multiline
+                    minRows={2}
+                    maxRows={6}
                     size="small"
                     variant="standard"
-                    InputProps={{ disableUnderline: true }}
-                    sx={annotationInputSx}
+                    sx={annotationMultilineInputSx}
+                    inputProps={{ className: 'sleek-scrollbar' }}
+                    InputProps={{ disableUnderline: true, sx: { height: '100%', fontSize: '14px !important' } }}
                 />
             </Box>
         );
     },
-    (prev, next) => prev.initialValue === next.initialValue
+    (prev, next) => prev.initialValue === next.initialValue,
 );
 
 const AnnotationStringInputCell = memo(
@@ -81,41 +115,46 @@ const AnnotationStringInputCell = memo(
         initialValue,
         onCommit,
     }: {
-        initialValue: string | boolean | number | null | undefined;
-        onCommit: (value: string | boolean | number | null) => void;
+        initialValue: AnnotationStoredValue;
+        onCommit: (value: string | boolean | number | null) => void | Promise<void>;
     }) => {
         const [local, setLocal] = useState(() => annotationValueToInputString(initialValue));
+
         useEffect(() => {
             setLocal(annotationValueToInputString(initialValue));
         }, [initialValue]);
 
-        const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-            onCommit(local === '' ? null : local);
-            const el = e.target as HTMLTextAreaElement;
-            el.scrollTop = 0;
-            el.scrollLeft = 0;
+        const handleBlur = (event: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+            const committed = parseAnnotationStringLocalCommit(local);
+            if (committed !== annotationStringToCommitted(initialValue)) {
+                onCommit(committed);
+            }
+            const element = event.target as HTMLTextAreaElement;
+            element.scrollTop = 0;
+            element.scrollLeft = 0;
         };
 
         return (
             <Box sx={cellSx}>
                 <TextField
                     value={local}
-                    onChange={(e) => setLocal(e.target.value)}
+                    onChange={(event) => setLocal(event.target.value)}
                     onBlur={handleBlur}
-                    onClick={(e) => e.stopPropagation()}
+                    onClick={(event) => event.stopPropagation()}
                     fullWidth
                     multiline
                     minRows={2}
                     maxRows={6}
                     size="small"
                     variant="standard"
+                    inputProps={{ className: 'sleek-scrollbar' }}
                     InputProps={{ disableUnderline: true }}
                     sx={annotationMultilineInputSx}
                 />
             </Box>
         );
     },
-    (prev, next) => prev.initialValue === next.initialValue
+    (prev, next) => prev.initialValue === next.initialValue,
 );
 
 const AnnotationBaseInputCell: React.FC<CellContext<AnalysisBoardRow, string | boolean | number | null>> = ({
@@ -128,30 +167,49 @@ const AnnotationBaseInputCell: React.FC<CellContext<AnalysisBoardRow, string | b
     const columnNoteKey = column.columnDef.meta?.editStudyAnalysisTableNoteKey;
     const onUpdateAnnotation = table.options.meta?.updateAnnotationCell;
 
+    const [isEditing, setIsEditing] = useState(false);
+
     const handleCommit = useCallback(
-        (committed: string | boolean | number | null) => {
+        async (committed: string | boolean | number | null) => {
             if (!columnNoteKey || !row.original.id) return;
-            void onUpdateAnnotation?.({
-                analysisId: row.original.id,
-                columnKey: columnNoteKey.key,
-                value: committed,
-            });
+            try {
+                setIsEditing(true);
+                await onUpdateAnnotation?.({
+                    analysisId: row.original.id,
+                    columnKey: columnNoteKey.key,
+                    value: committed,
+                });
+            } catch (error) {
+                console.error(error);
+            } finally {
+                setIsEditing(false);
+            }
         },
-        [columnNoteKey, onUpdateAnnotation, row.original.id]
+        [columnNoteKey, onUpdateAnnotation, row.original.id],
     );
+
+    if (isEditing) {
+        return (
+            <Box
+                sx={{ width: '100%', height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}
+            >
+                <CircularProgress size={20} />
+            </Box>
+        );
+    }
 
     if (columnNoteKey?.type === EPropertyType.BOOLEAN) {
         return (
             <Box sx={{ ...cellSx, justifyContent: 'center', alignItems: 'center' }}>
                 <Checkbox
                     checked={Boolean(value)}
-                    size="small"
-                    onClick={(e) => e.stopPropagation()}
+                    size="medium"
+                    onClick={(event) => event.stopPropagation()}
                     inputProps={{
                         'aria-label': columnNoteKey.key,
                     }}
-                    onChange={(e) => {
-                        handleCommit(e.target.checked);
+                    onChange={(event) => {
+                        handleCommit(event.target.checked);
                     }}
                 />
             </Box>
@@ -170,5 +228,5 @@ export default memo(
     (prev, next) =>
         analysisRowsShallowEqual(prev.row.original, next.row.original) &&
         prev.column.id === next.column.id &&
-        prev.getValue() === next.getValue()
+        prev.getValue() === next.getValue(),
 );

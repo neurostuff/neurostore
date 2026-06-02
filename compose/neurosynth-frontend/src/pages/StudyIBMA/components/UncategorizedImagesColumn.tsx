@@ -11,6 +11,8 @@ import {
 import SearchableAnalysisMenu from 'pages/StudyIBMA/components/SearchableAnalysisMenu';
 import ImagesList from 'pages/StudyIBMA/components/ImagesList';
 import useIbmaBoardMutations from '../hooks/useIbmaBoardMutations';
+import { useIsMutating } from 'react-query';
+import analysisQueries from 'hooks/analyses/analysisQueries';
 
 export type UncategorizedImagesColumnProps = {
     collapsed: boolean;
@@ -32,6 +34,9 @@ const UncategorizedImagesColumn: React.FC<UncategorizedImagesColumnProps> = ({
     updateImage,
 }) => {
     const [moveAnchorEl, setMoveAnchorEl] = useState<{ el: HTMLElement; imageId: string } | null>(null);
+    const [imageEditingId, setImageEditingId] = useState<string>();
+
+    const updateImageIsMutating = useIsMutating({ mutationKey: analysisQueries.mutations.images.update() }) > 0;
 
     const handleMoveClick = useCallback((event: React.MouseEvent<HTMLElement>, imageId: string) => {
         event.stopPropagation();
@@ -43,12 +48,16 @@ const UncategorizedImagesColumn: React.FC<UncategorizedImagesColumnProps> = ({
     }, []);
 
     const handleAssignAnalysisToImage = useCallback(
-        (imageId: string, analysisId: string) => {
+        async (imageId: string, analysisId: string) => {
             setMoveAnchorEl(null);
-            void updateImage?.(imageId, { analysis: analysisId });
+            setImageEditingId(imageId);
+            await updateImage?.(imageId, { analysis: analysisId });
+            setImageEditingId(undefined);
         },
         [updateImage]
     );
+
+    const updateImageIsLoading = useIsMutating();
 
     if (collapsed) {
         const collapsedLabel = `Uncategorized images (${uncategorized.length})`;
@@ -129,6 +138,8 @@ const UncategorizedImagesColumn: React.FC<UncategorizedImagesColumnProps> = ({
                 selectedImageId={selectedImageId}
                 onSelectImage={onToggleImageSelection}
                 onMoveClick={handleMoveClick}
+                loadingImageId={imageEditingId}
+                updateImageIsLoading={updateImageIsMutating}
             />
             {uncategorized.length === 0 && (
                 <Typography variant="body2" sx={{ color: 'warning.dark' }}>

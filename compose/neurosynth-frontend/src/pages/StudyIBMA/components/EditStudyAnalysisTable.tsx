@@ -35,7 +35,8 @@ const EditStudyAnalysisTable: React.FC<EditStudyAnalysisTableProps> = ({ table, 
     return (
         <>
             <Paper
-                variant="outlined"
+                variant="elevation"
+                elevation={2}
                 data-testid="edit-study-analysis-table"
                 sx={{
                     flex: '2 1 0',
@@ -43,7 +44,7 @@ const EditStudyAnalysisTable: React.FC<EditStudyAnalysisTableProps> = ({ table, 
                     display: 'flex',
                     flexDirection: 'column',
                     overflow: 'hidden',
-                    bgcolor: 'grey.100',
+                    borderColor: 'grey.300',
                 }}
             >
                 <Stack
@@ -51,7 +52,7 @@ const EditStudyAnalysisTable: React.FC<EditStudyAnalysisTableProps> = ({ table, 
                     justifyContent="space-between"
                     alignItems="center"
                     flexShrink={0}
-                    sx={{ py: 1, px: 2, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper' }}
+                    sx={{ py: 1, px: 2, borderBottom: 1, borderColor: 'divider', bgcolor: 'grey.100' }}
                 >
                     <LoadingButton
                         size="medium"
@@ -99,7 +100,15 @@ const EditStudyAnalysisTable: React.FC<EditStudyAnalysisTableProps> = ({ table, 
                                 <TableRow key={headerGroup.id}>
                                     {headerGroup.headers.map((header) => (
                                         <TableCell
-                                            sx={{ zIndex: 10 }}
+                                            sx={{
+                                                zIndex: header.column.id === 'analysis' ? 10 : undefined,
+                                                position: 'sticky',
+                                                borderRight: 1,
+                                                borderLeft: 1,
+                                                borderColor: 'divider',
+                                                left: 0,
+                                                backgroundColor: 'grey.100',
+                                            }}
                                             key={header.id}
                                             width={`${header.column.getSize()}px`}
                                         >

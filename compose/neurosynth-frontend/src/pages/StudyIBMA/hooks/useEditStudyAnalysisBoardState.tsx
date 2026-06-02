@@ -114,6 +114,8 @@ const useEditStudyAnalysisBoardState = () => {
         () => [
             columnHelper.display({
                 id: 'analysis',
+                size: STUDY_ANALYSES_COLUMN_WIDTH,
+                minSize: STUDY_ANALYSES_COLUMN_WIDTH,
                 header: () => (
                     <Box
                         sx={{
@@ -147,7 +149,7 @@ const useEditStudyAnalysisBoardState = () => {
                 })
             ),
         ],
-        [noteKeys, removeAnnotationColumn]
+        [noteKeys, removeAnnotationColumn, analyses.length]
     );
 
     const table = useReactTable({
