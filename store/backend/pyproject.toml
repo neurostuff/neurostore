@@ -11,7 +11,7 @@ authors = [
 ]
 license = { text = "MIT" }
 dependencies = [
-    "auth0-python~=5.5",
+    "auth0-python~=5.6",
     "authlib~=1.7",
     "connexion[swagger-ui,uvicorn,flask]==3.3.0",
     "flask~=3.1",
