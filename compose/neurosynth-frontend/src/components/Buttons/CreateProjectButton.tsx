@@ -1,5 +1,6 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import { ButtonProps } from '@mui/material';
 import LoadingButton from 'components/Buttons/LoadingButton';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import NavToolbarStyles from 'components/Navbar/NavToolbar.styles';
@@ -8,12 +9,11 @@ import { useCreateProject } from 'hooks';
 import { ProjectSearchCriteria, projectsSearchHelper } from 'hooks/projects/useGetProjects';
 import { generateNewProjectData, getNextUntitledProjectName } from 'pages/Project/store/ProjectStore.helpers';
 import { useState } from 'react';
-import { useQueryClient } from 'react-query';
 import { useNavigate } from 'react-router-dom';
 
 const projectSearchCriteria = new ProjectSearchCriteria(1, 1000);
 
-const CreateProjectButton: React.FC = () => {
+const CreateProjectButton: React.FC<{ buttonProps?: ButtonProps }> = ({ buttonProps }) => {
     const { mutate, isLoading: createProjectIsLoading } = useCreateProject();
     const navigate = useNavigate();
     const [confirmationDialogIsOpen, setConfirmationDialogIsOpen] = useState(false);
@@ -59,6 +59,12 @@ const CreateProjectButton: React.FC = () => {
         setConfirmationDialogIsOpen(false);
     };
 
+    const sx = {
+        ...NavToolbarStyles.menuItem,
+        ...NavToolbarStyles.createProjectButton,
+        ...buttonProps?.sx,
+    };
+
     return (
         <>
             <ConfirmationDialog
@@ -76,7 +82,7 @@ const CreateProjectButton: React.FC = () => {
                 loaderColor="primary"
                 onClick={handleButtonClick}
                 isLoading={createProjectIsLoading || getProjectsIsLoading}
-                sx={[NavToolbarStyles.menuItem, NavToolbarStyles.createProjectButton]}
+                sx={sx}
                 startIcon={<AddCircleOutlineIcon />}
                 text="NEW PROJECT"
             />

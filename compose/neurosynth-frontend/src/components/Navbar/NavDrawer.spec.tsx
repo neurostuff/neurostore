@@ -1,12 +1,29 @@
-import { vi } from 'vitest';
+import { Mock, vi } from 'vitest';
 import { useAuth0 } from '@auth0/auth0-react';
-import { render, RenderResult, screen } from '@testing-library/react';
+import { render, RenderResult, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { useCreateProject } from 'hooks';
+import { clearUnloadHandlers } from 'helpers/BeforeUnload.helpers';
+import { useNavigate } from 'react-router-dom';
 import NavDrawer from './NavDrawer';
+
+const { mockMutate, mockProjectsSearchHelper } = vi.hoisted(() => ({
+    mockMutate: vi.fn(),
+    mockProjectsSearchHelper: vi.fn().mockResolvedValue({ data: { results: [] } }),
+}));
 
 vi.mock('@auth0/auth0-react');
 vi.mock('react-router-dom');
+vi.mock('hooks');
+vi.mock('hooks/projects/useGetProjects', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('hooks/projects/useGetProjects')>();
+    return {
+        ...actual,
+        projectsSearchHelper: mockProjectsSearchHelper,
+    };
+});
 vi.mock('components/Dialogs/CreateDetailsDialog');
+vi.mock('components/Dialogs/ConfirmationDialog');
 
 describe('NavDrawer component', () => {
     let renderResult: RenderResult;
@@ -15,7 +32,18 @@ describe('NavDrawer component', () => {
     const mockOnLogout = vi.fn();
 
     beforeEach(() => {
+        vi.clearAllMocks();
+        clearUnloadHandlers();
         useAuth0().isAuthenticated = false;
+        mockProjectsSearchHelper.mockResolvedValue({ data: { results: [] } });
+        mockMutate.mockImplementation((_project, options) => {
+            options?.onSuccess?.({ data: { id: 'new-project-id' } });
+        });
+        (useCreateProject as Mock).mockReturnValue({
+            isLoading: false,
+            isError: false,
+            mutate: mockMutate,
+        });
 
         renderResult = render(<NavDrawer onLogin={mockOnLogin} onLogout={mockOnLogout} />);
 
@@ -50,6 +78,25 @@ describe('NavDrawer component', () => {
         expect(screen.queryByText('LOGOUT')).toBeInTheDocument();
         expect(screen.queryByText('EXPLORE')).toBeInTheDocument();
         expect(screen.queryByText('Help')).toBeInTheDocument();
+    });
+
+    it('creates a new project when NEW PROJECT is clicked', async () => {
+        useAuth0().isAuthenticated = true;
+
+        renderResult.rerender(<NavDrawer onLogin={mockOnLogin} onLogout={mockOnLogout} />);
+
+        const [, createProjectButton] = screen.getAllByRole('button', { name: 'NEW PROJECT' });
+        expect(createProjectButton?.tagName).toBe('BUTTON');
+        await userEvent.click(createProjectButton!);
+
+        await waitFor(() => {
+            expect(mockProjectsSearchHelper).toHaveBeenCalled();
+            expect(mockMutate).toHaveBeenCalledWith(
+                expect.objectContaining({ name: 'Untitled' }),
+                expect.objectContaining({ onSuccess: expect.any(Function) })
+            );
+        });
+        expect(useNavigate()).toHaveBeenCalledWith('/projects/new-project-id');
     });
 
     it('should login', () => {
