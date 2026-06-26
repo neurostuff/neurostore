@@ -11,7 +11,7 @@ authors = [
 ]
 license = { text = "MIT" }
 dependencies = [
-    "auth0-python~=5.4",
+    "auth0-python~=5.5",
     "authlib~=1.7",
     "connexion[swagger-ui,uvicorn,flask]==3.3.0",
     "flask~=3.1",
@@ -26,24 +26,24 @@ dependencies = [
     "marshmallow~=4.3",
     "numpy<3.0.0",
     "pandas~=3.0",
-    "psycopg2-binary~=2.8",
+    "psycopg2-binary~=2.9",
     "pyld~=3.0",
     "python-jose~=3.5",
     "redis",
     "shortuuid~=1.0",
-    "starlette>=1.0.0,<2",
+    "starlette>=1.1.0,<2",
     "sqlalchemy~=2.0",
     "sqlalchemy-utils",
     "sqltap",
     "webargs~=8.7",
-    "wrapt~=2.1",
-    "openapi-spec-validator~=0.8",
+    "wrapt~=2.2",
+    "openapi-spec-validator~=0.9",
     "scipy~=1.17",
     "orjson~=3.11",
     "flask_orjson~=2.0.0",
     "pgvector~=0.4",
-    "NiMARE[parquet]==0.20.0rc1",
-    "openai~=2.36",
+    "NiMARE[parquet]==0.20.0",
+    "openai~=2.38",
     "tenacity~=9.1",
 ]
 
@@ -57,7 +57,7 @@ dev = [
     "pip-chill~=1.0",
     "wheel~=0.47",
     "pytest~=9.0",
-    "vcrpy~=8.0",
+    "vcrpy~=8.1",
     "pytest-recording~=0.13.4",
 ]
 
