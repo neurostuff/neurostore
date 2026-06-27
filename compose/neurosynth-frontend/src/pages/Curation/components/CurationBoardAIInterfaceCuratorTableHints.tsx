@@ -4,7 +4,12 @@ import { Table } from '@tanstack/react-table';
 import { useGetCurationSummary } from 'hooks';
 import { indexToPRISMAMapping } from 'hooks/projects/useGetProjects';
 import ImportStudiesButton from 'pages/CurationImport/components/ImportStudiesButton';
-import { useProjectCurationColumn, useProjectCurationIsPrisma } from 'pages/Project/store/ProjectStore';
+import { getCurationSearchPath } from 'pages/CurationImport/CurationSearchPage.helpers';
+import {
+    useProjectAnalysisType,
+    useProjectCurationColumn,
+    useProjectCurationIsPrisma,
+} from 'stores/projects/ProjectStore';
 import { useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useCurationBoardGroups } from '../context/CurationBoardGroupsContext';
@@ -23,6 +28,7 @@ const CurationBoardAIInterfaceCuratorTableHints: React.FC<{
     const { handleSelectPreviousGroup, handleSelectNextGroup } = useCurationBoardGroups();
     const { projectId } = useParams<{ projectId: string }>();
     const navigate = useNavigate();
+    const projectAnalysisType = useProjectAnalysisType();
     const curationColumn = useProjectCurationColumn(columnIndex);
     const hasVisibleStudies = numVisibleStudies > 0;
 
@@ -78,7 +84,8 @@ const CurationBoardAIInterfaceCuratorTableHints: React.FC<{
                                 variant="contained"
                                 disableElevation
                                 onClick={() => {
-                                    navigate(`/projects/${projectId}/curation/search`);
+                                    if (!projectId) return;
+                                    navigate(getCurationSearchPath(projectId, projectAnalysisType));
                                 }}
                             >
                                 Search

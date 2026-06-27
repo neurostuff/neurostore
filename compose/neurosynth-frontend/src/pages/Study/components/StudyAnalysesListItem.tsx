@@ -2,7 +2,7 @@ import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import { ListItem, ListItemButton, ListItemIcon, ListItemText, Tooltip, useMediaQuery, useTheme } from '@mui/material';
 import { AnalysisReturn } from 'neurostore-typescript-sdk';
 import useDisplayWarnings from 'pages/Study/hooks/useDisplayWarnings';
-import { IStoreAnalysis } from 'pages/Study/store/StudyStore.helpers';
+import { IStoreAnalysis } from 'stores/study/StudyStore.helpers';
 import React, { useMemo } from 'react';
 
 const StudyAnalysesListItem: React.FC<{

@@ -1,10 +1,10 @@
 import { Box, Step, StepLabel, Stepper } from '@mui/material';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons';
 import { ICurationStubStudy } from 'pages/Curation/Curation.types';
-import { EImportMode } from 'pages/CurationImport/CurationImport.types';
+import { EImportMode } from 'pages/Curation/Curation.types';
 import ImportFinalize from 'pages/CurationImport/components/ImportFinalize';
 import SearchNeurostore from 'pages/CurationImport/components/SearchNeurostore';
-import { useProjectId } from 'pages/Project/store/ProjectStore';
+import { useProjectId } from 'stores/projects/ProjectStore';
 import { SearchCriteria } from 'pages/Study/Study.types';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';

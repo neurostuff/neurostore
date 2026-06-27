@@ -2,6 +2,7 @@ import { AxiosError, AxiosResponse } from 'axios';
 import { ConditionRequest, ConditionReturn } from 'neurostore-typescript-sdk';
 import { useMutation, useQueryClient } from 'react-query';
 import API from 'api/api.config';
+import analysisQueries from 'hooks/analyses/analysisQueries';
 
 const useCreateCondition = () => {
     const queryClient = useQueryClient();
@@ -9,7 +10,7 @@ const useCreateCondition = () => {
         (condition) => API.NeurostoreServices.ConditionsService.conditionsPost(condition),
         {
             onSuccess: () => {
-                queryClient.invalidateQueries('conditions');
+                queryClient.invalidateQueries(analysisQueries.conditions.all().queryKey);
             },
         }
     );

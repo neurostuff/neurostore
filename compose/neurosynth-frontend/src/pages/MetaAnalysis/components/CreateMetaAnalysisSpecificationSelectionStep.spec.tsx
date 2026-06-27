@@ -10,7 +10,7 @@ import {
 import CreateMetaAnalysisSpecificationSelectionStep from 'pages/MetaAnalysis/components/CreateMetaAnalysisSpecificationSelectionStep';
 import { MULTIGROUP_ALGORITHMS } from 'pages/MetaAnalysis/components/SelectAnalysesComponent.types';
 
-vi.mock('pages/Project/store/ProjectStore');
+vi.mock('stores/projects/ProjectStore');
 vi.mock('pages/MetaAnalysis/components/SelectAnalysesComponent');
 vi.mock('pages/MetaAnalysis/components/SelectAnalysesSummaryComponent');
 vi.mock('pages/MetaAnalysis/components/CreateMetaAnalysisSpecificationSelectionStepMultiGroup');

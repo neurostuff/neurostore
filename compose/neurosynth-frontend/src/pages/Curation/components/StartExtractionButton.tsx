@@ -1,5 +1,5 @@
 import { Typography, Box, Button, ButtonProps } from '@mui/material';
-import { useGetCurationSummary, useGetStudysetById, useUserCanEdit } from 'hooks';
+import { useGetCurationSummary, useGetStudysetNonNestedById, useUserCanEdit } from 'hooks';
 import {
     useProjectCurationColumns,
     useProjectCurationIsPrisma,
@@ -7,7 +7,7 @@ import {
     useProjectExtractionStudysetId,
     useProjectId,
     useProjectUser,
-} from 'pages/Project/store/ProjectStore';
+} from 'stores/projects/ProjectStore';
 import { enqueueSnackbar, SnackbarKey, closeSnackbar } from 'notistack';
 import { useCurationBoardGroups } from '../context/CurationBoardGroupsContext';
 import { IProjectPageLocationState } from 'pages/Project/ProjectPage';
@@ -21,12 +21,12 @@ const StartExtractionButton: React.FC<ButtonProps> = (props) => {
     const navigate = useNavigate();
     const studysetId = useProjectExtractionStudysetId();
     const annotationId = useProjectExtractionAnnotationId();
-    const { data: studyset } = useGetStudysetById(studysetId || '', false);
+    const { data: studyset } = useGetStudysetNonNestedById(studysetId);
     const projectUser = useProjectUser();
     const canEdit = useUserCanEdit(projectUser || undefined);
 
     const canMoveToExtractionPhase = included > 0 && uncategorized === 0;
-    const extractionStepInitialized = !!studysetId && annotationId && (studyset?.studies?.length || 0) > 0;
+    const extractionStepInitialized = !!studysetId && annotationId && (studyset?.studies?.length ?? 0) > 0;
     const indicateGoToExtraction = !extractionStepInitialized && canMoveToExtractionPhase;
     const projectId = useProjectId();
     const isPRISMA = useProjectCurationIsPrisma();

@@ -1,5 +1,5 @@
 import { AnalysisReturn } from 'neurostore-typescript-sdk';
-import { IStoreAnalysis } from 'pages/Study/store/StudyStore.helpers';
+import { IStoreAnalysis } from 'stores/study/StudyStore.helpers';
 
 const MockEditStudyAnalysesListItem: React.FC<{
     analysis: AnalysisReturn | IStoreAnalysis;

@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from 'react-query';
 import { AnalysisRequest, AnalysisReturn } from 'neurostore-typescript-sdk';
 import API from 'api/api.config';
 import { useSnackbar } from 'notistack';
+import analysisQueries from 'hooks/analyses/analysisQueries';
 
 const useUpdateAnalysis = () => {
     const queryClient = useQueryClient();
@@ -17,7 +18,10 @@ const useUpdateAnalysis = () => {
         },
         unknown
     >((args) => API.NeurostoreServices.AnalysesService.analysesIdPut(args.analysisId, args.analysis), {
-        onSuccess: (res) => {
+        mutationKey: analysisQueries.mutations.update(),
+        onSuccess: (_res, variables) => {
+            queryClient.invalidateQueries(analysisQueries.analyses.byId(variables.analysisId).queryKey);
+            // TODO: when we convert CBMA to a save on action based workflow, we should remove this and invalidate the parent analysis instead
             queryClient.invalidateQueries('studies');
         },
         onError: () => {

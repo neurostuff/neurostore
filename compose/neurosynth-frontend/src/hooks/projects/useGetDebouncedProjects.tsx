@@ -1,30 +1,19 @@
-import { AxiosResponse } from 'axios';
-import { ProjectList } from 'neurosynth-compose-typescript-sdk';
+import useDebounced from 'hooks/useDebounce';
 import { useQuery } from 'react-query';
 import { ProjectSearchCriteria, projectsSearchHelper } from './useGetProjects';
+import { useMemo } from 'react';
 
-let debounce: NodeJS.Timeout;
 const useGetDebouncedProjects = (
     projectsearchCriteria: Partial<ProjectSearchCriteria>,
     userId?: string,
     enabled?: boolean
 ) => {
-    return useQuery(
-        ['projects', { ...projectsearchCriteria }, userId],
-        () => {
-            if (debounce) clearTimeout(debounce);
+    const stableArgs = useMemo(() => ({ projectsearchCriteria, userId }), [projectsearchCriteria, userId]);
+    const debouncedSearchCriteria = useDebounced(stableArgs, 300);
 
-            return new Promise<AxiosResponse<ProjectList>>((resolve, reject) => {
-                debounce = setTimeout(async () => {
-                    try {
-                        const res = await projectsSearchHelper(projectsearchCriteria, userId);
-                        resolve(res);
-                    } catch (e) {
-                        reject(e);
-                    }
-                }, 500);
-            });
-        },
+    return useQuery(
+        ['projects', debouncedSearchCriteria.projectsearchCriteria, debouncedSearchCriteria.userId],
+        () => projectsSearchHelper(debouncedSearchCriteria.projectsearchCriteria, debouncedSearchCriteria.userId),
         {
             enabled,
             select: (res) => {

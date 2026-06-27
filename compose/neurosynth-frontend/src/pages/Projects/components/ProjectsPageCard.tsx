@@ -1,18 +1,18 @@
+import ChangeHistoryIcon from '@mui/icons-material/ChangeHistory';
+import LockIcon from '@mui/icons-material/Lock';
+import PublicIcon from '@mui/icons-material/Public';
 import { Box, Chip, Link as MuiLink, Stepper, Typography } from '@mui/material';
-import { useGetMetaAnalysesByIds, useGetStudysetById } from 'hooks';
-import { INeurosynthProjectReturn } from 'hooks/projects/useGetProjects';
+import { useGetMetaAnalysesByIds, useGetStudysetNonNestedById } from 'hooks';
+import { EAnalysisType, INeurosynthProjectReturn } from 'hooks/projects/Project.types';
 import { getCurationSummary } from 'hooks/useGetCurationSummary';
 import { getExtractionSummary } from 'hooks/useGetExtractionSummary';
+import { MetaAnalysis } from 'neurosynth-compose-typescript-sdk';
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import ProjectsPageCardStep from './ProjectsPageCardStep';
 import ProjectsPageCardSummaryCuration from './ProjectsPageCardSummaryCuration';
 import ProjectsPageCardExtractionSummary from './ProjectsPageCardSummaryExtraction';
 import ProjectsPageCardSummaryMetaAnalyses from './ProjectsPageCardSummaryMetaAnalyses';
-import { MetaAnalysis } from 'neurosynth-compose-typescript-sdk';
-import LockIcon from '@mui/icons-material/Lock';
-import PublicIcon from '@mui/icons-material/Public';
-import ChangeHistoryIcon from '@mui/icons-material/ChangeHistory';
 
 const isToday = (date: Date) => {
     const today = new Date();
@@ -35,7 +35,9 @@ const ProjectsPageCard: React.FC<INeurosynthProjectReturn> = (props) => {
         meta_analyses = [],
     } = props;
 
-    const { data: studyset } = useGetStudysetById(provenance?.extractionMetadata?.studysetId, false);
+    if (id === '8SnAZa663NmZ') console.log('provenance', provenance);
+
+    const { data: studyset } = useGetStudysetNonNestedById(provenance?.extractionMetadata?.studysetId);
     const { data: metaAnalyses = [] } = useGetMetaAnalysesByIds(meta_analyses as string[]);
 
     const lastUpdateDate = useMemo(() => {
@@ -63,7 +65,7 @@ const ProjectsPageCard: React.FC<INeurosynthProjectReturn> = (props) => {
     const extractionSummary = useMemo(() => {
         if (!provenance.extractionMetadata.studysetId) return;
 
-        const studysetStudies = (studyset?.studies || []) as string[];
+        const studysetStudies = studyset?.studies ?? [];
         const studyStatusesList = provenance.extractionMetadata?.studyStatusList ?? [];
         return getExtractionSummary(studysetStudies, studyStatusesList);
     }, [provenance.extractionMetadata?.studyStatusList, provenance.extractionMetadata.studysetId, studyset?.studies]);
@@ -135,36 +137,32 @@ const ProjectsPageCard: React.FC<INeurosynthProjectReturn> = (props) => {
                 </Stepper>
             </Box>
             <Box sx={{ flexGrow: 1 }}>
-                <Box mb="0.5rem" sx={{ width: '100%' }}>
+                <Box mb="0.5rem" sx={{ width: '100%', display: 'flex' }}>
+                    {/* <Chip
+                        label={provenance.type === EAnalysisType.IBMA ? 'IBMA' : 'CBMA'}
+                        size="small"
+                        variant="outlined"
+                        sx={{ mr: '6px', fontWeight: 'bold' }}
+                    /> */}
                     <Chip
                         label={isPublic ? 'Public' : 'Private'}
                         icon={isPublic ? <PublicIcon /> : <LockIcon />}
-                        variant="outlined"
                         size="small"
                         sx={{ mr: '6px' }}
                     />
-                    {updated_at && (
-                        <Chip
-                            label={`Last updated: ${lastUpdateDate}`}
-                            variant="outlined"
-                            size="small"
-                            sx={{ mr: '6px' }}
-                        />
-                    )}
-                    {created_at && (
-                        <Chip label={`Created: ${createdDate}`} variant="outlined" size="small" sx={{ mr: '6px' }} />
-                    )}
                     {provenance?.curationMetadata?.prismaConfig?.isPrisma && (
-                        <Chip
-                            label="PRISMA"
-                            icon={<ChangeHistoryIcon />}
-                            variant="outlined"
-                            size="small"
-                            sx={{ mr: '6px', pl: '2px' }}
-                        />
+                        <Chip label="PRISMA" icon={<ChangeHistoryIcon />} size="small" sx={{ mr: '6px', pl: '2px' }} />
                     )}
                     {studyset && (
-                        <Chip variant="outlined" size="small" label={`${(studyset.studies || []).length} studies`} />
+                        <Chip size="small" label={`${(studyset.studies || []).length} studies`} sx={{ mr: '6px' }} />
+                    )}
+                    {created_at && <Chip label={`Created: ${createdDate}`} size="small" sx={{ mr: '6px' }} />}
+                    {updated_at && (
+                        <Box sx={{ marginLeft: 'auto' }}>
+                            <Typography variant="body2" color="muted.main" sx={{ marginRight: '6px' }}>
+                                Last updated: {lastUpdateDate}
+                            </Typography>
+                        </Box>
                     )}
                 </Box>
                 <MuiLink

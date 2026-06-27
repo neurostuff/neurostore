@@ -2,9 +2,9 @@ import { vi, Mock } from 'vitest';
 import { act, render, screen } from '@testing-library/react';
 import CurationDownloadSummaryButton from 'pages/Curation/components/CurationDownloadSummaryButton';
 import userEvent from '@testing-library/user-event';
-import { useProjectCurationColumns, useProjectExclusionTags } from 'pages/Project/store/ProjectStore';
+import { useProjectCurationColumns, useProjectExclusionTags } from 'stores/projects/ProjectStore';
 import { ICurationColumn } from '../Curation.types';
-import { defaultIdentificationSources } from 'pages/Project/store/ProjectStore.consts';
+import { defaultIdentificationSources } from 'stores/projects/ProjectStore.consts';
 import { downloadFile } from 'helpers/downloadFile.helpers';
 
 vi.mock('react-query');
@@ -16,7 +16,7 @@ vi.mock('helpers/downloadFile.helpers', async () => {
         downloadFile: vi.fn(),
     };
 });
-vi.mock('pages/Project/store/ProjectStore');
+vi.mock('stores/projects/ProjectStore');
 
 const mockCurationColumns: ICurationColumn[] = [
     {

@@ -1,10 +1,9 @@
 import FileUploadIcon from '@mui/icons-material/FileUpload';
 import { Box, Button, TextField, Typography } from '@mui/material';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons';
-import { ISource } from 'hooks/projects/useGetProjects';
-import { ICurationStubStudy } from 'pages/Curation/Curation.types';
+import { ICurationStubStudy, ISource } from 'pages/Curation/Curation.types';
 import CurationPopupIdentificationSourceSelector from 'pages/Curation/components/CurationPopupIdentificationSourceSelector';
-import { ENeurosynthSourceIds } from 'pages/Project/store/ProjectStore.consts';
+import { ENeurosynthSourceIds } from 'stores/projects/ProjectStore.consts';
 import { ChangeEvent, useEffect, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 // @ts-ignore

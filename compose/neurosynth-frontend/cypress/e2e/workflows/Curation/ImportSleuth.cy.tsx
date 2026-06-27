@@ -18,8 +18,8 @@ describe('ImportSleuthDialog', () => {
 
         cy.addToLocalStorage('auth0|62e0e6c9dd47048572613b4d-hide-info-popup', 'true');
         cy.login('mocked').visit('/projects/abc123/curation').wait('@projectFixture').wait('@studysetFixture');
-        cy.contains('button', 'Search').parent().find('button').last().click({ force: true });
-        cy.contains('Import via Sleuth File').click({ force: true });
+        cy.contains('button', 'Search').parent().find('button').last().click();
+        cy.contains('Sleuth').click();
     });
 
     describe('upload page', () => {
@@ -394,8 +394,8 @@ describe('ImportSleuthDialog', () => {
                         ...baseStudiesResponse.map((baseStudy) => ({
                             ...baseStudy,
                             user: 'other-user-sub',
-                            versions: baseStudy.versions?.map((v: StudyReturn) => ({
-                                ...v,
+                            versions: baseStudy.versions?.map((v) => ({
+                                ...(v as StudyReturn),
                                 user: 'other-user-sub',
                             })),
                         })),

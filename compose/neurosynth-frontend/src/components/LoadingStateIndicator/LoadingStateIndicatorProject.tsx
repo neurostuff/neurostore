@@ -2,7 +2,7 @@ import {
     useProjectIsError,
     useProjectMetadataHasUnsavedchanges,
     useUpdateProjectIsLoading,
-} from 'pages/Project/store/ProjectStore';
+} from 'stores/projects/ProjectStore';
 import LoadingStateIndicator from './LoadingStateIndicator';
 
 const LoadingStateIndicatorProject: React.FC<{ isLoading?: boolean }> = ({ isLoading }) => {

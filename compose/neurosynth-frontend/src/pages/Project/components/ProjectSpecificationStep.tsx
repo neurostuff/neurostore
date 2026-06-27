@@ -1,7 +1,7 @@
 import KeyboardDoubleArrowRightIcon from '@mui/icons-material/KeyboardDoubleArrowRight';
 import { Box, Button, Step, StepContent, StepLabel, StepProps, Typography } from '@mui/material';
 import { IProjectPageLocationState } from 'pages/Project/ProjectPage';
-import { useAllowEditMetaAnalyses, useProjectMetaAnalysisCanEdit } from 'pages/Project/store/ProjectStore';
+import { useAllowEditMetaAnalyses, useProjectMetaAnalysisCanEdit } from 'stores/projects/ProjectStore';
 import { useEffect } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import ProjectComponentsStyles from './Project.styles';

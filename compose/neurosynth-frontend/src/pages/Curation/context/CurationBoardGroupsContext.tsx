@@ -1,12 +1,13 @@
-import { indexToPRISMAMapping, IPRISMAConfig } from 'hooks/projects/useGetProjects';
+import { IPRISMAConfig } from 'pages/Curation/Curation.types';
+import { indexToPRISMAMapping } from 'hooks/projects/useGetProjects';
 import {
     useProjectCurationColumns,
     useProjectCurationDuplicates,
     useProjectCurationExclusionTags,
     useProjectCurationImports,
     useProjectCurationPrismaConfig,
-} from 'pages/Project/store/ProjectStore';
-import { defaultExclusionTags } from 'pages/Project/store/ProjectStore.consts';
+} from 'stores/projects/ProjectStore';
+import { defaultExclusionTags } from 'stores/projects/ProjectStore.consts';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { SxProps } from '@mui/system';

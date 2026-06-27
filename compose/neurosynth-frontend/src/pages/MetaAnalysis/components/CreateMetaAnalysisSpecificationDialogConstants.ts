@@ -1,5 +1,5 @@
 import { IMetaAnalysisParamsSpecification, IDynamicValueType } from 'pages/MetaAnalysis/components/DynamicForm.types';
-import { EAnalysisType } from 'hooks/metaAnalyses/useCreateAlgorithmSpecification';
+import { EAnalysisType } from 'hooks/projects/Project.types';
 import { IAutocompleteObject } from 'components/NeurosynthAutocomplete/NeurosynthAutocomplete';
 import metaAnalysisSpec from 'assets/config/meta_analysis_params.json';
 

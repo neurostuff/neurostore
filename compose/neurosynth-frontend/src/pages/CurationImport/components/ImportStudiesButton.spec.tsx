@@ -9,7 +9,7 @@ vi.mock('pages/Curation/context/CurationBoardGroupsContext', () => ({
     }),
 }));
 
-vi.mock('pages/Project/store/ProjectStore', () => ({
+vi.mock('stores/projects/ProjectStore', () => ({
     useProjectCurationColumns: vi.fn().mockReturnValue([]),
 }));
 

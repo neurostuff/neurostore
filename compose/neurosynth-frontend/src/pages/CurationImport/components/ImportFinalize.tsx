@@ -1,23 +1,21 @@
 import { Box, Button, TextField, Typography } from '@mui/material';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons';
 import { getURLFromSearchCriteria } from 'components/Search/search.helpers';
-import { IImport } from 'hooks/projects/useGetProjects';
 import { useSnackbar } from 'notistack';
+import { ICurationStubStudy, IImport, EImportMode } from 'pages/Curation/Curation.types';
 import { SELECTED_CURATION_STEP_LOCAL_STORAGE_KEY_SUFFIX } from 'pages/Curation/context/CurationBoardGroupsContext';
-import { ICurationStubStudy } from 'pages/Curation/Curation.types';
 import {
     automaticallyResolveDuplicates,
     createDuplicateMap,
     hasDuplicates,
 } from 'pages/CurationImport/CurationImport.helpers';
-import { EImportMode } from 'pages/CurationImport/CurationImport.types';
 import {
     useCreateNewCurationImport,
     useProjectCurationColumns,
     useProjectId,
     useUpdateCurationColumns,
-} from 'pages/Project/store/ProjectStore';
-import { defaultExclusionTags } from 'pages/Project/store/ProjectStore.consts';
+} from 'stores/projects/ProjectStore';
+import { defaultExclusionTags } from 'stores/projects/ProjectStore.consts';
 import { SearchCriteria } from 'pages/Study/Study.types';
 import { useState } from 'react';
 import { v4 as uuid } from 'uuid';

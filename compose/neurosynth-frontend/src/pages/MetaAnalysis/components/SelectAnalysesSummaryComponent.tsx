@@ -1,5 +1,5 @@
 import { Box, Typography } from '@mui/material';
-import { useGetAnnotationById, useGetStudysetById } from 'hooks';
+import { useGetAnnotationById, useGetStudysetSummaryById } from 'hooks';
 import { AnalysisReturn, NoteCollectionReturn, StudyReturn } from 'neurostore-typescript-sdk';
 import { useEffect, useState } from 'react';
 import { IAnalysesSelection } from 'pages/MetaAnalysis/components/CreateMetaAnalysisSpecificationDialogBase.types';
@@ -11,7 +11,7 @@ const SelectAnalysesSummaryComponent: React.FC<{
     selectedValue: IAnalysesSelection | undefined;
 }> = (props) => {
     const { data: annotation } = useGetAnnotationById(props.annotationdId);
-    const { data: studyset } = useGetStudysetById(props.studysetId, false, true);
+    const { data: studyset } = useGetStudysetSummaryById(props.studysetId);
 
     const [count, setCount] = useState({
         studies: 0,
@@ -25,10 +25,7 @@ const SelectAnalysesSummaryComponent: React.FC<{
             return;
         }
 
-        const filteredAnnotations = getFilteredAnnotationNotes(
-            (annotation.notes || []) as NoteCollectionReturn[],
-            props.selectedValue
-        );
+        const filteredAnnotations = getFilteredAnnotationNotes(annotation.notes ?? [], props.selectedValue);
 
         // populate map
         const filteredAnnotationsAnalysisIdToNoteMap = new Map<string, NoteCollectionReturn>();

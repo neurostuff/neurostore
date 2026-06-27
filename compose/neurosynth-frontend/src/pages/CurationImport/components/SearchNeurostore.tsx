@@ -4,19 +4,19 @@ import { ENavigationButton } from 'components/Buttons/NavigationButtons';
 import NeurosynthTable from 'components/NeurosynthTable/NeurosynthTable';
 import NeurosynthTableStyles from 'components/NeurosynthTable/NeurosynthTable.styles';
 import { addKVPToSearch, getSearchCriteriaFromURL, getURLFromSearchCriteria } from 'components/Search/search.helpers';
-import SearchContainer from 'components/Search/SearchContainer';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { studiesToStubs } from 'helpers/Curation.helpers';
-import { baseStudiesSearchHelper } from 'hooks/studies/useGetBaseStudies';
+import { baseStudiesSearchHelper } from 'hooks/studies/useGetBaseStudies.helpers';
 import { BaseStudyList } from 'neurostore-typescript-sdk';
 import { useSnackbar } from 'notistack';
-import { useProjectId } from 'pages/Project/store/ProjectStore';
+import { useProjectId } from 'stores/projects/ProjectStore';
 import { SearchCriteria } from 'pages/Study/Study.types';
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import CurationImportStyles from '../CurationImport.styles';
 import { IImportArgs } from './ImportDoImport';
 import LoadingButton from 'components/Buttons/LoadingButton';
+import StudiesSearchContainer from 'components/Search/StudiesSearchContainer';
 
 const SearchNeurostore: React.FC<IImportArgs & { onSetSearchCriteria: (searchCriteria: SearchCriteria) => void }> = (
     props
@@ -138,7 +138,7 @@ const SearchNeurostore: React.FC<IImportArgs & { onSetSearchCriteria: (searchCri
 
     return (
         <StateHandlerComponent isLoading={false} isError={false}>
-            <SearchContainer
+            <StudiesSearchContainer
                 error={error}
                 onPageChange={handlePageChange}
                 onRowsPerPageChange={handleRowsPerPageChange}
@@ -211,7 +211,7 @@ const SearchNeurostore: React.FC<IImportArgs & { onSetSearchCriteria: (searchCri
                         ))}
                     />
                 </Box>
-            </SearchContainer>
+            </StudiesSearchContainer>
 
             <Box sx={CurationImportStyles.actionsContainer}>
                 <Button

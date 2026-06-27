@@ -1,6 +1,6 @@
 import { Button, ButtonProps } from '@mui/material';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
-import { usePromoteAllUncategorized } from 'pages/Project/store/ProjectStore';
+import { usePromoteAllUncategorized } from 'stores/projects/ProjectStore';
 import { useState } from 'react';
 
 const CurationPromoteUncategorizedButton: React.FC<

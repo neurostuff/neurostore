@@ -1,3 +1,4 @@
+import { LogoutOptions } from '@auth0/auth0-react';
 import axios from 'axios';
 import { Configuration as NeurostoreConfiguration } from 'neurostore-typescript-sdk';
 import { Configuration as NeurosynthConfiguration } from 'neurosynth-compose-typescript-sdk';
@@ -30,4 +31,9 @@ export const axiosInstance = axios.create({
 export let _getAccessTokenSilentlyFunc: (() => Promise<string>) | null = null;
 export const _setAccessTokenSilentlyFunc = (getAccessTokenSilently: () => Promise<string>) => {
     _getAccessTokenSilentlyFunc = getAccessTokenSilently;
+};
+
+export let _logoutFunc: ((opts?: LogoutOptions) => void) | null = null;
+export const _setLogoutFunc = (logout: (opts?: LogoutOptions) => void) => {
+    _logoutFunc = logout;
 };

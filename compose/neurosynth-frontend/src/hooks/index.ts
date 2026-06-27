@@ -21,23 +21,36 @@ import useGetConditions from './analyses/useGetConditions';
 import useCreateCondition from './analyses/useCreateCondition';
 import useUpdatePoint from './analyses/useUpdatePoint';
 import useDeleteAnalysis from './analyses/useDeleteAnalysis';
+import useGetAnalysesByStudyId from './analyses/useGetAnalysesByStudyId';
+import useGetUncategorizedImagesByStudyId from './analyses/useGetUncategorizedImagesByStudyId';
+import useUpdateImage from './images/useUpdateImage';
 import useCreateStudyset from './studysets/useCreateStudyset';
 import useUpdateStudyset from './studysets/useUpdateStudyset';
 import useGetAnnotationById from './annotations/useGetAnnotationById';
 import useDeleteAnnotation from './annotations/useDeleteAnnotation';
-import useGetStudysetById from './studysets/useGetStudysetById';
 import useCreateAnnotation from './annotations/useCreateAnnotation';
 import useCreateStudy from './studies/useCreateStudy';
 import useCreateProject from './projects/useCreateProject';
 import useDeleteStudyset from './studysets/useDeleteStudyset';
-import useGetBaseStudies from './studies/useGetBaseStudies';
-import useGetStudyById from './studies/useGetStudyById';
+import useGetStudysetNonNestedById from './studysets/useGetStudysetNonNestedById';
+import useGetStudysetNestedById from './studysets/useGetStudysetNestedById';
+import useGetStudysetSummaryById from './studysets/useGetStudysetSummaryById';
+import useGetStudyNestedById from './studies/useGetStudyNestedById';
+import useGetStudyNonNestedById from './studies/useGetStudyNonNestedById';
+import useUpdateAnnotationByAnnotationAndAnalysisIds from './annotations/useUpdateAnnotationByAnnotationAndAnalysisIds';
 import useUpdateAnnotationById from './annotations/useUpdateAnnotationById';
 import useGetExtractionSummary from './useGetExtractionSummary';
 import useGetCurationSummary from './useGetCurationSummary';
 import useGetFullText from './external/useGetFullText';
 import useUserCanEdit from './useUserCanEdit';
-import useGetBaseStudyById from './studies/useGetBaseStudyById';
+import useGetBaseStudyFlatById from './studies/useGetBaseStudyFlatById';
+import useGetBaseStudyInfoById from './studies/useGetBaseStudyInfoById';
+import useGetBaseStudyNestedById from './studies/useGetBaseStudyNestedById';
+import useGetBaseStudyNonNestedById from './studies/useGetBaseStudyNonNestedById';
+import useGetDebouncedBaseStudiesFlat from './studies/useGetDebouncedBaseStudiesFlat';
+import useGetDebouncedBaseStudiesInfo from './studies/useGetDebouncedBaseStudiesInfo';
+import useGetDebouncedBaseStudiesNested from './studies/useGetDebouncedBaseStudiesNested';
+import useGetDebouncedBaseStudiesNonNested from './studies/useGetDebouncedBaseStudiesNonNested';
 import useGetProjectById from './projects/useGetProjectById';
 import useGetNeurovaultImages from './metaAnalyses/useGetNeurovaultImages';
 import useFetchPubMedIds from './external/useFetchPubMedIds';
@@ -55,11 +68,18 @@ export {
     useMeasure,
     useGetFullText,
     useUserCanEdit,
-    useGetBaseStudyById,
+    useGetBaseStudyFlatById,
+    useGetBaseStudyInfoById,
+    useGetBaseStudyNestedById,
+    useGetBaseStudyNonNestedById,
+    useGetDebouncedBaseStudiesFlat,
+    useGetDebouncedBaseStudiesInfo,
+    useGetDebouncedBaseStudiesNested,
+    useGetDebouncedBaseStudiesNonNested,
     useGetNeurovaultImages,
     // STUDIES
-    useGetBaseStudies,
-    useGetStudyById,
+    useGetStudyNestedById,
+    useGetStudyNonNestedById,
     useUpdateStudy,
     useCreateStudy,
     // META-ANALYSES
@@ -70,12 +90,15 @@ export {
     // META-ANALYSIS RESULTS
     useGetMetaAnalysisResultById,
     // STUDYSETS
-    useGetStudysetById,
+    useGetStudysetNonNestedById,
+    useGetStudysetNestedById,
+    useGetStudysetSummaryById,
     useCreateStudyset,
     useDeleteStudyset,
     useUpdateStudyset,
     // ANNOTATIONS
     useGetAnnotationById,
+    useUpdateAnnotationByAnnotationAndAnalysisIds,
     useUpdateAnnotationById,
     useGetAnnotationsByStudysetId,
     useDeleteAnnotation,
@@ -88,6 +111,10 @@ export {
     useDeleteAnalysis,
     useCreateAnalysis,
     useUpdateAnalysis,
+    useGetAnalysesByStudyId,
+    useGetUncategorizedImagesByStudyId,
+    // IMAGES
+    useUpdateImage,
     // CONDITIONS
     useGetConditions,
     useCreateCondition,

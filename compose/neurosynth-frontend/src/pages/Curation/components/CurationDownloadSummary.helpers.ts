@@ -5,7 +5,7 @@ import '@citation-js/plugin-bibtex';
 import '@citation-js/plugin-doi';
 import { toCSV } from 'helpers/downloadFile.helpers';
 import { generateBibtex } from 'hooks/external/useGetBibtexCitations';
-import { ITag } from 'hooks/projects/useGetProjects';
+import { ITag } from 'pages/Curation/Curation.types';
 
 export const stubsToCSV = (curationColumns: ICurationColumn[], exclusionTags: ITag[]) => {
     const allStudies = curationColumns.reduce(

@@ -3,10 +3,9 @@ import LoadingStateIndicatorProject from 'components/LoadingStateIndicator/Loadi
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import TextEdit from 'components/TextEdit/TextEdit';
-import { useGetStudysetById, useUpdateStudyset } from 'hooks';
+import { useGetStudysetSummaryById, useUpdateStudyset } from 'hooks';
 import useGetExtractionSummary from 'hooks/useGetExtractionSummary';
 import useUserCanEdit from 'hooks/useUserCanEdit';
-import { StudyReturn } from 'neurostore-typescript-sdk';
 import ExtractionOutOfSync from 'pages/Extraction/components/ExtractionOutOfSync';
 import { hasDifferenceBetweenStudysetAndCuration } from 'pages/Extraction/ExtractionPage.helpers';
 import { IProjectPageLocationState } from 'pages/Project/ProjectPage';
@@ -16,16 +15,10 @@ import {
     useProjectExtractionStudysetId,
     useProjectName,
     useProjectUser,
-} from 'pages/Project/store/ProjectStore';
+} from 'stores/projects/ProjectStore';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import ExtractionTable from './components/ExtractionTable';
-
-export enum EExtractionStatus {
-    'COMPLETED' = 'completed',
-    'SAVEDFORLATER' = 'savedforlater',
-    'UNCATEGORIZED' = 'uncategorized',
-}
 
 const ExtractionPage: React.FC = () => {
     const { projectId } = useParams<{ projectId: string | undefined }>();
@@ -44,7 +37,7 @@ const ExtractionPage: React.FC = () => {
         isLoading: getStudysetIsLoading,
         isRefetching: getStudysetIsRefetching,
         isError: getStudysetIsError,
-    } = useGetStudysetById(studysetId, false, true);
+    } = useGetStudysetSummaryById(studysetId);
 
     const { mutate } = useUpdateStudyset();
 
@@ -54,10 +47,7 @@ const ExtractionPage: React.FC = () => {
     useEffect(() => {
         if (!loading && !getStudysetIsLoading && columns.length > 0 && studyset?.studies) {
             const includedStudies = columns[columns.length - 1].stubStudies;
-            const isDifferent = hasDifferenceBetweenStudysetAndCuration(
-                includedStudies,
-                studyset.studies as StudyReturn[]
-            );
+            const isDifferent = hasDifferenceBetweenStudysetAndCuration(includedStudies, studyset.studies);
             setShowReconcilePrompt(isDifferent);
         }
     }, [columns, getStudysetIsLoading, studyset?.studies, loading]);

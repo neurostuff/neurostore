@@ -35,8 +35,8 @@ const NavToolbarPopupSubMenu: React.FC<INavToolbarPopupSubMenu> = (props) => {
                 anchorEl={anchorEl}
                 MenuListProps={props.compactOptions ? { dense: true, sx: { py: 0.25 } } : undefined}
             >
-                {props.options.map((option) => (
-                    <ListItem key={option.label} disablePadding={props.compactOptions}>
+                {props.options.map((option, index) => (
+                    <ListItem key={index} disablePadding={props.compactOptions}>
                         <ListItemButton
                             dense={props.compactOptions}
                             sx={props.compactOptions ? { py: 0.35, px: 1.25 } : undefined}

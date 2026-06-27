@@ -1,5 +1,5 @@
+import { initAPISetAccessTokenFunc, initAPISetLogoutFunc } from 'api';
 import { OAuthError, useAuth0 } from '@auth0/auth0-react';
-import { initAPISetAccessTokenFunc } from 'api';
 import { useSnackbar } from 'notistack';
 import { useNavigate } from 'react-router-dom';
 
@@ -36,6 +36,7 @@ function useAuthenticate() {
             sessionStorage.removeItem(AUTH0_FORCE_PROMPT_LOGIN_KEY);
 
             initAPISetAccessTokenFunc(getAccessTokenSilently);
+            initAPISetLogoutFunc(logout);
 
             if (window.gtag) {
                 window.gtag('event', 'login');

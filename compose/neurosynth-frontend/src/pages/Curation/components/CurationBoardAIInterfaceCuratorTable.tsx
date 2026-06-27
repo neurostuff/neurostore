@@ -1,8 +1,7 @@
 import { Box, Chip, Table, TableCell, TableContainer, TableHead, TableRow } from '@mui/material';
-import { flexRender, RowData } from '@tanstack/react-table';
-import { EAIExtractors } from 'hooks/extractions/useGetAllExtractedDataForStudies';
+import { flexRender } from '@tanstack/react-table';
 import { indexToPRISMAMapping } from 'hooks/projects/useGetProjects';
-import { useProjectCurationPrismaConfig } from 'pages/Project/store/ProjectStore';
+import { useProjectCurationPrismaConfig } from 'stores/projects/ProjectStore';
 import React, { useState } from 'react';
 import { getGridTemplateColumns } from '../hooks/useCuratorTableState.helpers';
 import { ICurationBoardAIInterfaceCurator } from './CurationBoardAIInterfaceCurator';
@@ -10,21 +9,6 @@ import CurationBoardAIInterfaceCuratorTableBody from './CurationBoardAIInterface
 import CurationBoardAIInterfaceCuratorTableHints from './CurationBoardAIInterfaceCuratorTableHints';
 import CurationBoardAIInterfaceCuratorTableManageColumns from './CurationBoardAIInterfaceCuratorTableManageColumns';
 import CurationBoardAIInterfaceCuratorTableSelectedRowsActions from './CurationBoardAIInterfaceCuratorTableSelectedRowsActions';
-
-//allows us to define custom properties for our columns
-declare module '@tanstack/react-table' {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    interface ColumnMeta<TData extends RowData, TValue> {
-        columnLabel: string;
-        AIExtractor?: EAIExtractors;
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    interface TableMeta<TData extends RowData> {
-        curatorTableOnRemoveColumn?: (column: string) => void;
-        curatorTableOnAddColumn?: (column: string) => void;
-    }
-}
 
 const CurationBoardAIInterfaceCuratorTable: React.FC<ICurationBoardAIInterfaceCurator> = ({
     table,

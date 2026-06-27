@@ -6,9 +6,9 @@ import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
 import LoadingButton from 'components/Buttons/LoadingButton';
 import NeurosynthPopper from 'components/NeurosynthPopper/NeurosynthPopper';
-import { ITag } from 'hooks/projects/useGetProjects';
-import { useProjectCurationExclusionTags, useProjectCurationPrismaConfig } from 'pages/Project/store/ProjectStore';
-import { defaultExclusionTags, ENeurosynthTagIds } from 'pages/Project/store/ProjectStore.consts';
+import { ITag } from 'pages/Curation/Curation.types';
+import { useProjectCurationExclusionTags, useProjectCurationPrismaConfig } from 'stores/projects/ProjectStore';
+import { defaultExclusionTags, ENeurosynthTagIds } from 'stores/projects/ProjectStore.consts';
 import { useEffect, useRef, useState } from 'react';
 
 interface IExclusionSelectorPopup {

@@ -1,7 +1,7 @@
 import { Box, Button, Link, Typography } from '@mui/material';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons';
 import { EPropertyType } from 'components/EditMetadata/EditMetadata.types';
-import { useProjectExtractionAnnotationId, useProjectExtractionStudysetId } from 'pages/Project/store/ProjectStore';
+import { useProjectExtractionAnnotationId, useProjectExtractionStudysetId } from 'stores/projects/ProjectStore';
 import { useState } from 'react';
 import {
     IAnalysesSelection,

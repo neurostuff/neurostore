@@ -7,12 +7,14 @@ import CurationPromoteUncategorizedButton from 'components/Buttons/CurationPromo
 import { useUserCanEdit } from 'hooks';
 import { indexToPRISMAMapping } from 'hooks/projects/useGetProjects';
 import ImportStudiesButton from 'pages/CurationImport/components/ImportStudiesButton';
+import { getCurationSearchPath } from 'pages/CurationImport/CurationSearchPage.helpers';
 import {
+    useProjectAnalysisType,
     useProjectCurationColumns,
     useProjectCurationIsLastColumn,
     useProjectCurationIsPrisma,
     useProjectUser,
-} from 'pages/Project/store/ProjectStore';
+} from 'stores/projects/ProjectStore';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useCurationBoardGroups } from '../context/CurationBoardGroupsContext';
@@ -73,6 +75,7 @@ const CurationBoardAIInterfaceCurator: React.FC = () => {
     });
 
     const projectUser = useProjectUser();
+    const projectAnalysisType = useProjectAnalysisType();
     const canEdit = useUserCanEdit(projectUser || undefined);
 
     const [selectedStubId, setSelectedStubId] = useState<string>();
@@ -171,7 +174,10 @@ const CurationBoardAIInterfaceCurator: React.FC = () => {
                                 variant="contained"
                                 disableElevation
                                 size="small"
-                                onClick={() => navigate(`/projects/${projectId}/curation/search`)}
+                                onClick={() => {
+                                    if (!projectId) return;
+                                    navigate(getCurationSearchPath(projectId, projectAnalysisType));
+                                }}
                                 sx={{
                                     fontSize: '12px',
                                     borderColor: 'white !important',

@@ -5,7 +5,7 @@ import {
     useProjectExclusionTag,
     useProjectUser,
     useUpdateExclusionTag,
-} from 'pages/Project/store/ProjectStore';
+} from 'stores/projects/ProjectStore';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FixedSizeList } from 'react-window';
 import { ICurationStubStudy } from '../Curation.types';
@@ -13,7 +13,7 @@ import { IGroupListItem } from './CurationBoardAIGroupsList';
 import CurationEditableStubSummary from './CurationEditableStubSummary';
 import CurationStubListItemVirtualizedContainer from './CurationStubListItemVirtualizedContainer';
 import TextEdit from 'components/TextEdit/TextEdit';
-import { ENeurosynthTagIds } from 'pages/Project/store/ProjectStore.consts';
+import { ENeurosynthTagIds } from 'stores/projects/ProjectStore.consts';
 
 const CurationBoardAIInterfaceExclude: React.FC<{
     group: IGroupListItem;

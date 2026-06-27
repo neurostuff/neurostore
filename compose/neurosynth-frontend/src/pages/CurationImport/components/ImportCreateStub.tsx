@@ -1,10 +1,9 @@
 import { Box, Button, Checkbox, FormControlLabel, TextField } from '@mui/material';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons';
-import { ISource } from 'hooks/projects/useGetProjects';
 import { ChangeEvent, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
+import { ICurationStubStudy, ISource } from 'pages/Curation/Curation.types';
 import CreateStubStudyStyles from './ImportCreateStub.styles';
-import { ICurationStubStudy } from 'pages/Curation/Curation.types';
 import CurationPopupIdentificationSourceSelector from 'pages/Curation/components/CurationPopupIdentificationSourceSelector';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import CurationImportStyles from '../CurationImport.styles';

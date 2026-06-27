@@ -12,12 +12,12 @@ import DynamicFormNumericInput from './DynamicFormNumericInput';
 import DynamicFormSelectInput from './DynamicFormSelectInput';
 import DynamicFormStringInput from './DynamicFormStringInput';
 import metaAnalysisSpec from 'assets/config/meta_analysis_params.json';
-import { EAnalysisType } from 'hooks/metaAnalyses/useCreateAlgorithmSpecification';
+import { EAnalysisType } from 'hooks/projects/Project.types';
 import { useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import DynamicFormStyles from './DynamicFormStyles';
 import useStudiesWithMissingSampleSizeALE from '../hooks/useALEMissingSampleSize';
-import { useProjectId } from 'pages/Project/store/ProjectStore';
+import { useProjectId } from 'stores/projects/ProjectStore';
 
 const metaAnalysisSpecification: IMetaAnalysisParamsSpecification = metaAnalysisSpec;
 export const isALE = (correctorOrEstimatorLabel: string) => correctorOrEstimatorLabel === 'ALE';

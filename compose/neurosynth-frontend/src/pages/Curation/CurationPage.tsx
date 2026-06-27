@@ -4,16 +4,18 @@ import LoadingStateIndicatorProject from 'components/LoadingStateIndicator/Loadi
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import GlobalStyles from 'global.styles';
-import { useGetCurationSummary, useGetStudysetById } from 'hooks';
+import { useGetCurationSummary, useGetStudysetNonNestedById } from 'hooks';
 import CurationBoardBasic from 'pages/Curation/components/CurationBoardBasic';
+import { getCurationSearchPath } from 'pages/CurationImport/CurationSearchPage.helpers';
 import {
     useGetProjectIsLoading,
+    useProjectAnalysisType,
     useProjectCreatedAt,
     useProjectCurationIsPrisma,
     useProjectExtractionAnnotationId,
     useProjectExtractionStudysetId,
     useProjectName,
-} from 'pages/Project/store/ProjectStore';
+} from 'stores/projects/ProjectStore';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import ImportStudiesButton from '../CurationImport/components/ImportStudiesButton';
@@ -29,7 +31,7 @@ const CurationPage: React.FC = () => {
     const studysetId = useProjectExtractionStudysetId();
     const { included, uncategorized } = useGetCurationSummary();
     const annotationId = useProjectExtractionAnnotationId();
-    const { data: studyset } = useGetStudysetById(studysetId || '', false);
+    const { data: studyset } = useGetStudysetNonNestedById(studysetId);
     const { projectId } = useParams<{ projectId: string | undefined }>();
     const projectIsLoading = useGetProjectIsLoading();
     const [prismaIsOpen, setPrismaIsOpen] = useState(false);
@@ -51,6 +53,7 @@ const CurationPage: React.FC = () => {
 
     const isPrisma = useProjectCurationIsPrisma();
     const projectName = useProjectName();
+    const projectAnalysisType = useProjectAnalysisType();
 
     const extractionStepInitialized = studysetId && annotationId && (studyset?.studies?.length || 0) > 0;
     const canMoveToExtractionPhase = included > 0 && uncategorized === 0;
@@ -120,7 +123,10 @@ const CurationPage: React.FC = () => {
                                     variant="contained"
                                     disableElevation
                                     size="small"
-                                    onClick={() => navigate(`/projects/${projectId}/curation/search`)}
+                                    onClick={() => {
+                                        if (!projectId) return;
+                                        navigate(getCurationSearchPath(projectId, projectAnalysisType));
+                                    }}
                                     sx={{
                                         fontSize: '12px',
                                         borderColor: 'white !important',

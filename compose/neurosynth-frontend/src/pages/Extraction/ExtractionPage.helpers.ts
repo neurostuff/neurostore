@@ -1,10 +1,10 @@
-import { StudyReturn } from 'neurostore-typescript-sdk';
+import { StudyReturnWithSummaryAnalyses } from 'hooks/studysets/studysetQueries.types';
 import { ICurationStubStudy } from 'pages/Curation/Curation.types';
 
 // returns bool representing whether or not there is a difference between the curation included studies and what is currently in the studyset
 export const hasDifferenceBetweenStudysetAndCuration = (
     curationStubs: ICurationStubStudy[],
-    studysetStudies: StudyReturn[]
+    studysetStudies: StudyReturnWithSummaryAnalyses[]
 ): boolean => {
     const curationSet = new Set();
     curationStubs.forEach((curationStub) => {

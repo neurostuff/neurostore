@@ -228,7 +228,7 @@ export const createColumn = (
             sortingFn: foundColumn.sortingFn,
             meta: {
                 columnLabel: foundColumn.label,
-                AIExtractor: foundColumn.AIExtractor,
+                curatorTableColumnAIExtractor: foundColumn.AIExtractor,
                 filterVariant: foundColumn.filterVariant,
             },
         }

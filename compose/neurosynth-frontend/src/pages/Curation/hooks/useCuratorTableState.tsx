@@ -9,6 +9,7 @@ import {
     SortingState,
     useReactTable,
 } from '@tanstack/react-table';
+import 'pages/Curation/hooks/useCuratorTableState.tableMeta';
 import useGetAllAIExtractedDataForStudies, {
     EAIExtractors,
     IParticipantDemographicExtractor,
@@ -18,7 +19,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
     retrieveCurationTableState,
     updateCurationTableState,
-} from '../components/CurationBoardAIInterfaceCuratorTable.helpers';
+} from 'pages/Curation/components/CurationBoardAIInterfaceCuratorTable.helpers';
 import { ICurationStubStudy } from '../Curation.types';
 import { COMBINED_CURATOR_TABLE_COLUMNS, createColumn } from './useCuratorTableState.helpers';
 import { ICurationTableColumnType, ICurationTableStudy } from './useCuratorTableState.types';
@@ -206,7 +207,7 @@ const useCuratorTableState = (
                 const indexB = COMBINED_CURATOR_TABLE_COLUMNS.findIndex((col) => col.id === colB.id);
                 return indexA - indexB;
             })
-            .filter((column) => (allowAIColumns ? column : !column.meta?.AIExtractor));
+            .filter((column) => (allowAIColumns ? column : !column.meta?.curatorTableColumnAIExtractor));
     }, [allowAIColumns, columns]);
 
     const table = useReactTable({

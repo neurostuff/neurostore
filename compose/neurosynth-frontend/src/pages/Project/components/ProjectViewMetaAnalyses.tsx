@@ -8,7 +8,7 @@ import {
     useProjectMetaAnalyses,
     useProjectMetaAnalysisCanEdit,
     useProjectUser,
-} from 'pages/Project/store/ProjectStore';
+} from 'stores/projects/ProjectStore';
 import { MetaAnalysisReturn } from 'neurosynth-compose-typescript-sdk';
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';

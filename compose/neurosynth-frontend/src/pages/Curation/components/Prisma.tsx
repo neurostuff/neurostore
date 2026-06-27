@@ -10,14 +10,14 @@ import { Box } from '@mui/material';
 import ReactFlow from 'reactflow';
 import 'reactflow/dist/style.css';
 import NeurosynthNode from './PrismaNeurosynthNode';
-import { INeurosynthProject } from 'hooks/projects/useGetProjects';
+import { INeurosynthProject } from 'hooks/projects/Project.types';
 import { useEffect, useState } from 'react';
 import NeurosynthPRISMAHelper, { IPrismaGroup } from './Prisma.helpers';
 import {
     useProjectCurationColumns,
     useProjectCurationIsPrisma,
     useProjectProvenance,
-} from 'pages/Project/store/ProjectStore';
+} from 'stores/projects/ProjectStore';
 
 const nodeTypes = { NeurosynthNode: NeurosynthNode };
 

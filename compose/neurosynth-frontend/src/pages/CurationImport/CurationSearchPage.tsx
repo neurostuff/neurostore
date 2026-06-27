@@ -2,12 +2,11 @@ import { Box } from '@mui/material';
 import LoadingStateIndicatorProject from 'components/LoadingStateIndicator/LoadingStateIndicatorProject';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs';
 import Search from 'pages/CurationImport/components/Search';
-import { useProjectId, useProjectName } from 'pages/Project/store/ProjectStore';
+import { useProjectId, useProjectName } from 'stores/projects/ProjectStore';
 
 const CurationSearchPage: React.FC = () => {
     const projectId = useProjectId();
     const projectName = useProjectName();
-
     return (
         <Box>
             <Box sx={{ display: 'flex', alignItems: 'center' }}>

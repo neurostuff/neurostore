@@ -1,0 +1,46 @@
+import { List } from '@mui/material';
+import { IStoreAnalysis } from 'stores/study/StudyStore.helpers';
+import { useCallback } from 'react';
+import StudyAnalysesListItem from 'pages/Study/components/StudyAnalysesListItem';
+
+const EditStudyAnalysesCBMAList: React.FC<{
+    onSelectAnalysis: (analysisId: string) => void;
+    selectedAnalysisId?: string;
+    analyses: IStoreAnalysis[];
+}> = (props) => {
+    const { onSelectAnalysis, selectedAnalysisId, analyses } = props;
+
+    const handleSelectAnalysis = useCallback(
+        (analysisId: string) => {
+            onSelectAnalysis(analysisId);
+        },
+        [onSelectAnalysis]
+    );
+
+    return (
+        <List
+            sx={{
+                borderLeft: '1px solid lightgray',
+                borderRight: '1px solid lightgray',
+                width: {
+                    xs: '150px',
+                    md: '250px',
+                },
+                maxHeight: '946px',
+                overflow: 'auto',
+            }}
+            disablePadding
+        >
+            {analyses.map((analysis) => (
+                <StudyAnalysesListItem
+                    key={analysis.id}
+                    analysis={analysis}
+                    onSelectAnalysis={handleSelectAnalysis}
+                    selected={(analysis.id || null) === (selectedAnalysisId || undefined)}
+                />
+            ))}
+        </List>
+    );
+};
+
+export default EditStudyAnalysesCBMAList;

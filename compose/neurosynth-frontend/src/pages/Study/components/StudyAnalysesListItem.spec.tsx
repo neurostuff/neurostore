@@ -1,6 +1,6 @@
 import { vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import StudyAnalysesListItem from './StudyAnalysesListItem';
+import StudyAnalysesListItem from 'pages/Study/components/StudyAnalysesListItem';
 import userEvent from '@testing-library/user-event';
 import useDisplayWarnings from 'pages/Study/hooks/useDisplayWarnings';
 

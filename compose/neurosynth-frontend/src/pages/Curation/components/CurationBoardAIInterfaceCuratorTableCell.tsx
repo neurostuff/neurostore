@@ -13,7 +13,7 @@ const CuratorTableCell: React.FC<Partial<CellContext<ICurationTableStudy, ICurat
     props
 ) => {
     const isFetchingExtractions = useIsFetching({ queryKey: ['extraction'] }) > 0;
-    const isAI = !!props?.column?.columnDef?.meta?.AIExtractor;
+    const isAI = !!props?.column?.columnDef?.meta?.curatorTableColumnAIExtractor;
     const cellValue = props.getValue ? props.getValue() : undefined;
 
     if (isFetchingExtractions && isAI) {

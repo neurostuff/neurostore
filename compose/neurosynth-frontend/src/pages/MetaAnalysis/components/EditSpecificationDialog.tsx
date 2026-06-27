@@ -11,8 +11,8 @@ import {
     getMetaAnalysisStudysetId,
 } from 'helpers/MetaAnalysis.helpers';
 import { useGetMetaAnalysisById } from 'hooks';
+import { EAnalysisType } from 'hooks/projects/Project.types';
 import useGetSnapshotAnnotationById from 'hooks/annotations/useGetSnapshotAnnotationById';
-import { EAnalysisType } from 'hooks/metaAnalyses/useCreateAlgorithmSpecification';
 import useGetSpecificationById from 'hooks/metaAnalyses/useGetSpecificationById';
 import useUpdateSpecification from 'hooks/metaAnalyses/useUpdateSpecification';
 import useGetSnapshotStudysetById from 'hooks/studysets/useGetSnapshotStudysetById';
@@ -44,10 +44,16 @@ const EditSpecificationDialog: React.FC<IDialog> = (props) => {
         isLoading: getMetaAnalysisIsLoading,
         isError: getMetaAnalysisIsError,
     } = useGetSpecificationById(specificationId);
-    const { data: annotation, isLoading: annotationIsLoading, isError: annotationIsError } =
-        useGetSnapshotAnnotationById(annotationId);
-    const { data: studyset, isLoading: studysetIsLoading, isError: studysetIsError } =
-        useGetSnapshotStudysetById(studysetId);
+    const {
+        data: annotation,
+        isLoading: annotationIsLoading,
+        isError: annotationIsError,
+    } = useGetSnapshotAnnotationById(annotationId);
+    const {
+        data: studyset,
+        isLoading: studysetIsLoading,
+        isError: studysetIsError,
+    } = useGetSnapshotStudysetById(studysetId);
     const { mutate, isLoading: updateSpecificationIsLoading } = useUpdateSpecification();
     const [selectedValue, setSelectedValue] = useState<IAnalysesSelection>({
         selectionKey: specification?.filter || undefined,

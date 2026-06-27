@@ -2,7 +2,7 @@ import { Edit } from '@mui/icons-material';
 import { Box, Button, Tab, Tabs } from '@mui/material';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { useGetMetaAnalysisById, useUserCanEdit } from 'hooks';
-import { useProjectUser } from 'pages/Project/store/ProjectStore';
+import { useProjectUser } from 'stores/projects/ProjectStore';
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import useGetMetaAnalysisJobsByMetaAnalysisId from '../hooks/useGetMetaAnalysisJobsByMetaAnalysisId';

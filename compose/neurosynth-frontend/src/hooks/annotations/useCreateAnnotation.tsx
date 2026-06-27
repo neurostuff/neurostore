@@ -1,26 +1,35 @@
-import { AxiosError, AxiosResponse } from 'axios';
+import API from 'api/api.config';
+import { AxiosError } from 'axios';
+import annotationQueries from 'hooks/annotations/annotationQueries';
+import { AnnotationRequestOneOf } from 'neurostore-typescript-sdk';
 import { useSnackbar } from 'notistack';
 import { useMutation, useQueryClient } from 'react-query';
-import API, { NeurostoreAnnotation } from 'api/api.config';
+import { AnnotationReturnOneOfWithNoteCollection } from './annotationQueries.types';
 
 const useCreateAnnotation = () => {
     const queryClient = useQueryClient();
     const { enqueueSnackbar } = useSnackbar();
     return useMutation<
-        AxiosResponse<NeurostoreAnnotation>,
+        AnnotationReturnOneOfWithNoteCollection,
         AxiosError,
         {
             source?: 'neurostore' | 'neurovault' | 'pubmed' | 'neurosynth' | 'neuroquery' | undefined;
             sourceId?: string;
-            annotation: Partial<NeurostoreAnnotation>;
+            annotation: Partial<AnnotationRequestOneOf>;
         },
         unknown
     >(
-        (args) =>
-            API.NeurostoreServices.AnnotationsService.annotationsPost(args.source, args.sourceId, args.annotation),
+        async (args) => {
+            const response = await API.NeurostoreServices.AnnotationsService.annotationsPost(
+                args.source,
+                args.sourceId,
+                args.annotation
+            );
+            return response.data as AnnotationReturnOneOfWithNoteCollection;
+        },
         {
             onSuccess: () => {
-                queryClient.invalidateQueries('annotations');
+                queryClient.invalidateQueries(annotationQueries.all());
             },
             onError: () => {
                 enqueueSnackbar('there was an error creating the annotation', { variant: 'error' });

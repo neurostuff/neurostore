@@ -21,13 +21,12 @@ import {
     getPaginationRowModel,
     getSortedRowModel,
     PaginationState,
-    RowData,
     SortingState,
     useReactTable,
 } from '@tanstack/react-table';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
-import { useGetStudysetById, useUserCanEdit } from 'hooks';
-import { IStudyExtractionStatus } from 'hooks/projects/useGetProjects';
+import { useGetStudysetSummaryById, useUserCanEdit } from 'hooks';
+
 import { StudyReturn } from 'neurostore-typescript-sdk';
 import {
     useProjectExtractionSetGivenStudyStatusesAsComplete,
@@ -35,10 +34,10 @@ import {
     useProjectExtractionStudyStatusList,
     useProjectId,
     useProjectUser,
-} from 'pages/Project/store/ProjectStore';
+} from 'stores/projects/ProjectStore';
 import { ChangeEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { EExtractionStatus } from '../ExtractionPage';
+import { EExtractionStatus, IStudyExtractionStatus } from 'pages/Extraction/Extraction.types';
 import { retrieveExtractionTableState, updateExtractionTableState } from './ExtractionTable.helpers';
 import styles from './ExtractionTable.module.css';
 import { ExtractionTableAuthorCell, ExtractionTableAuthorHeader } from './ExtractionTableAuthor';
@@ -48,14 +47,7 @@ import { ExtractionTableNameCell, ExtractionTableNameHeader } from './Extraction
 import { ExtractionTablePMIDCell, ExtractionTablePMIDHeader } from './ExtractionTablePMID';
 import { ExtractionTableStatusCell, ExtractionTableStatusHeader } from './ExtractionTableStatus';
 import { ExtractionTableYearCell, ExtractionTableYearHeader } from './ExtractionTableYear';
-
-//allows us to define custom properties for our columns
-declare module '@tanstack/react-table' {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    interface ColumnMeta<TData extends RowData, TValue> {
-        filterVariant?: 'text' | 'numeric' | 'status-select' | 'journal-autocomplete' | 'autocomplete';
-    }
-}
+import 'pages/Curation/hooks/useCuratorTableState.tableMeta';
 
 export type IExtractionTableStudy = StudyReturn & { status: EExtractionStatus | undefined };
 
@@ -66,7 +58,7 @@ const ExtractionTable: React.FC = () => {
     const projectId = useProjectId();
     const navigate = useNavigate();
     const studyStatusList = useProjectExtractionStudyStatusList();
-    const { data: studyset } = useGetStudysetById(studysetId, false, true); // this should already be loaded in the cache from the parent component
+    const { data: studyset } = useGetStudysetSummaryById(studysetId); // this should already be loaded in the cache from the parent component
     const setGivenStudyStatusesAsComplete = useProjectExtractionSetGivenStudyStatusesAsComplete();
     const projectUser = useProjectUser();
     const usercanEdit = useUserCanEdit(projectUser || undefined);
@@ -97,10 +89,10 @@ const ExtractionTable: React.FC = () => {
     }, [studyStatusList]);
 
     const data: Array<StudyReturn & { status: EExtractionStatus | undefined }> = useMemo(() => {
-        const studies = (studyset?.studies || []) as Array<StudyReturn>;
+        const studies = studyset?.studies ?? [];
         return studies.map((study) => ({
             ...study,
-            status: studyStatusMap.get(study?.id || '')?.status,
+            status: studyStatusMap.get(study.id ?? '')?.status,
         }));
     }, [studyStatusMap, studyset?.studies]);
 
@@ -257,8 +249,8 @@ const ExtractionTable: React.FC = () => {
     const handleMarkAllAsComplete = useCallback(
         (ok: boolean | undefined) => {
             if (ok) {
-                const studies = (studyset?.studies || []) as Array<StudyReturn>;
-                setGivenStudyStatusesAsComplete(studies.map((x) => x.id) as string[]);
+                const studies = studyset?.studies ?? [];
+                setGivenStudyStatusesAsComplete(studies.map((x) => x.id ?? ''));
             }
 
             setConfirmationDialogIsOpen(false);

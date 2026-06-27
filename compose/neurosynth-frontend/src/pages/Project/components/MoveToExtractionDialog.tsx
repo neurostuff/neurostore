@@ -17,7 +17,7 @@ import {
     useProjectName,
     useProjectNumCurationColumns,
     useUpdateExtractionMetadata,
-} from 'pages/Project/store/ProjectStore';
+} from 'stores/projects/ProjectStore';
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MoveToExtractionDialogIntroductionPart1 from './MoveToExtractionDialogIntroPart1';
@@ -114,7 +114,7 @@ const MoveToExtractionDialog: React.FC<IDialog> = (props) => {
                     },
                 });
 
-                const newAnnotationId = newAnnotation.data.id;
+                const newAnnotationId = newAnnotation.id;
                 if (!newAnnotationId) throw new Error('expected a studyset id but did not receive one');
 
                 tempAnnotationId = newAnnotationId;

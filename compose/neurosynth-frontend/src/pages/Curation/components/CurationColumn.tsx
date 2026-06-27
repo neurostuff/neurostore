@@ -1,12 +1,11 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import { Draggable, Droppable } from '@hello-pangea/dnd';
 import { Autocomplete, Box, Button, Divider, ListItem, ListItemText, Paper, TextField } from '@mui/material';
-
 import CurationPromoteUncategorizedButton from 'components/Buttons/CurationPromoteUncategorizedButton';
-import { ITag, indexToPRISMAMapping } from 'hooks/projects/useGetProjects';
+import { indexToPRISMAMapping } from 'hooks/projects/useGetProjects';
 import useGetWindowHeight from 'hooks/useGetWindowHeight';
 import useUserCanEdit from 'hooks/useUserCanEdit';
-import { ICurationStubStudy } from 'pages/Curation/Curation.types';
+import { ICurationStubStudy, ITag } from 'pages/Curation/Curation.types';
 import CurationColumnStyles from 'pages/Curation/components/CurationColumn.styles';
 import CurationDialog from 'pages/Curation/components/CurationDialog';
 import CurationStubStudyDraggableContainer from 'pages/Curation/components/CurationStubStudyDraggableContainer';
@@ -16,8 +15,8 @@ import {
     useProjectCurationInfoTags,
     useProjectCurationPrismaConfig,
     useProjectUser,
-} from 'pages/Project/store/ProjectStore';
-import { ENeurosynthTagIds } from 'pages/Project/store/ProjectStore.consts';
+} from 'stores/projects/ProjectStore';
+import { ENeurosynthTagIds } from 'stores/projects/ProjectStore.consts';
 import React, { useEffect, useMemo, useState } from 'react';
 import { FixedSizeList, ListChildComponentProps } from 'react-window';
 

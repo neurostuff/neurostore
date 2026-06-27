@@ -3,14 +3,14 @@ import { Chip, MenuItem, MenuList } from '@mui/material';
 import { Box } from '@mui/system';
 import NeurosynthPopper from 'components/NeurosynthPopper/NeurosynthPopper';
 import { SortBy, SortByEnumToString } from 'pages/Study/Study.types';
-import { useMemo, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 
 const SearchSelectSortChip: React.FC<{
     onSelectSort: (searchBy: SortBy) => void;
     onSelectDescOrder: (descOrder: boolean) => void;
     chipLabel: string;
     descOrderChipLabel: string;
-    searchMode: 'study-search' | 'project-search';
+    options: SortBy[];
 }> = (props) => {
     const sortByRef = useRef(null);
     const descOrderRef = useRef(null);
@@ -27,22 +27,6 @@ const SearchSelectSortChip: React.FC<{
         setDescOrderPopperIsOpen(false);
     };
 
-    // get string values of the ENUM instead of the enum keys
-    const sortByList = useMemo(() => {
-        if (props.searchMode === 'study-search') {
-            return [
-                SortBy.RELEVANCE,
-                SortBy.TITLE,
-                SortBy.AUTHORS,
-                SortBy.DESCRIPTION,
-                SortBy.CREATEDAT,
-                SortBy.JOURNAL,
-            ];
-        }
-
-        return [SortBy.LASTUPDATED, SortBy.TITLE, SortBy.CREATEDAT, SortBy.DESCRIPTION];
-    }, [props.searchMode]);
-
     return (
         <>
             <NeurosynthPopper
@@ -52,7 +36,7 @@ const SearchSelectSortChip: React.FC<{
             >
                 <Box>
                     <MenuList sx={{ width: '160px' }}>
-                        {sortByList.map((sortBy) => (
+                        {props.options.map((sortBy) => (
                             <MenuItem onClick={() => handleSelectSortBy(sortBy as SortBy)} key={sortBy} value={sortBy}>
                                 {SortByEnumToString[sortBy]}
                             </MenuItem>

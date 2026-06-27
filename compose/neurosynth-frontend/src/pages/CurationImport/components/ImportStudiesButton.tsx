@@ -2,7 +2,7 @@ import { ArrowDropDown } from '@mui/icons-material';
 import { Box, Button, ButtonProps, ListItemText, MenuItem, MenuList } from '@mui/material';
 import NeurosynthPopper from 'components/NeurosynthPopper/NeurosynthPopper';
 import { useCurationBoardGroups } from 'pages/Curation/context/CurationBoardGroupsContext';
-import { EImportMode } from 'pages/CurationImport/CurationImport.types';
+import { EImportMode } from 'pages/Curation/Curation.types';
 import { useRef, useState } from 'react';
 import ImportStudiesDialog from './ImportStudiesDialog';
 
@@ -54,7 +54,6 @@ const ImportStudiesButton: React.FC<ButtonProps> = (buttonProps) => {
             />
             <NeurosynthPopper
                 placement="bottom-start"
-                disablePortal={false}
                 onClickAway={() => setOptionsIsOpen(false)}
                 anchorElement={anchorRef.current}
                 open={optionsIsOpen}

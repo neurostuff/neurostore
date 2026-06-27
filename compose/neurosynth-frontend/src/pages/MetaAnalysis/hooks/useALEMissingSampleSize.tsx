@@ -1,8 +1,8 @@
-import { useGetAnnotationById, useGetStudysetById } from 'hooks';
-import { NoteCollectionReturn, StudyReturn } from 'neurostore-typescript-sdk';
-import { useProjectExtractionAnnotationId, useProjectExtractionStudysetId } from 'pages/Project/store/ProjectStore';
+import { useGetAnnotationById, useGetStudysetNestedById } from 'hooks';
+import { StudyReturn } from 'neurostore-typescript-sdk';
 import { useMemo } from 'react';
-import { AnnotationNoteType } from 'stores/AnnotationStore.types';
+import { AnnotationNoteType } from 'stores/annotation/AnnotationStore.types';
+import { useProjectExtractionAnnotationId, useProjectExtractionStudysetId } from 'stores/projects/ProjectStore';
 import { isALE } from '../components/MetaAnalysisDynamicForm';
 
 const hasSampleSizeInObj = (note: object | null | undefined): boolean => {
@@ -11,21 +11,27 @@ const hasSampleSizeInObj = (note: object | null | undefined): boolean => {
     return typeof val === 'number' && val !== null;
 };
 
+const getStudyIdAndName = (study: string | StudyReturn): { studyId: string; studyName: string | null } => {
+    if (typeof study === 'string') {
+        return { studyId: study, studyName: null };
+    }
+    return { studyId: study.id ?? '', studyName: study.name ?? null };
+};
+
 const useStudiesWithMissingSampleSizeALE = (algorithm: string | undefined) => {
     const studysetId = useProjectExtractionStudysetId();
-    const { data: studyset } = useGetStudysetById(studysetId, true, false);
+    const { data: studyset } = useGetStudysetNestedById(studysetId);
     const annotationIdFromProject = useProjectExtractionAnnotationId();
     const { data: annotation } = useGetAnnotationById(annotationIdFromProject);
 
     const studiesMissingSampleSize = useMemo(() => {
         if (!studyset?.studies || !annotation?.notes) return [];
-        const studies = studyset.studies as StudyReturn[];
-        const notes = (annotation.notes || []) as NoteCollectionReturn[];
+        const studies = studyset.studies;
+        const notes = annotation.notes ?? [];
         const missing: { studyId: string; studyName: string | null }[] = [];
         for (const study of studies) {
-            const studyId = typeof study === 'string' ? study : study.id;
-            const studyName = typeof study === 'string' ? null : (study.name ?? null);
-            const studyMetadata = typeof study === 'string' ? undefined : study.metadata;
+            const { studyId, studyName } = getStudyIdAndName(study);
+            const studyMetadata = typeof study === 'string' ? null : study.metadata;
             if (!studyId) continue;
             const notesForStudy = notes.filter((n) => n.study === studyId);
             const hasFromAnnotation =

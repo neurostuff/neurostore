@@ -1,8 +1,8 @@
 import { Box } from '@mui/material';
-import StudyAnalysesList from './StudyAnalysesList';
+import StudyAnalysesList from 'pages/Study/components/StudyAnalysesList';
 import { useEffect, useMemo, useState } from 'react';
-import StudyAnalysis from './StudyAnalysis';
-import { IStoreAnalysis } from 'pages/Study/store/StudyStore.helpers';
+import StudyAnalysis from 'pages/Study/components/StudyAnalysis';
+import { IStoreAnalysis } from 'stores/study/StudyStore.helpers';
 
 const StudyAnalyses: React.FC<{
     id: string | undefined;

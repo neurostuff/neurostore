@@ -1,4 +1,4 @@
-import { EAnalysisType } from 'hooks/metaAnalyses/useCreateAlgorithmSpecification';
+import { EAnalysisType } from 'hooks/projects/Project.types';
 import { IMetaAnalysisParamsSpecification } from './components/DynamicForm.types';
 import metaAnalysisSpec from 'assets/config/meta_analysis_params.json';
 
