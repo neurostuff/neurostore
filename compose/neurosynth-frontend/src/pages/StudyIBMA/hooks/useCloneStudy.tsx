@@ -64,13 +64,15 @@ const useCloneStudy = () => {
          * annotation values to the new study. As we enforce unique analysis names, we can use the name as an identifier.
          */
         const notesUpdate = (clone.analyses ?? [])
-            .map(({ id, name, study }) => {
-                const foundNote = annotationNotes.find((note) => note.study === study && note.analysis_name === name);
+            .map(({ id, name }) => {
+                const foundNote = annotationNotes.find(
+                    (note) => note.study === studyId && note.analysis_name === name
+                );
                 if (!foundNote) return;
                 return {
                     ...foundNote,
                     analysis: id,
-                    study: study,
+                    study: clone.id,
                     note: {
                         ...foundNote.note,
                     },

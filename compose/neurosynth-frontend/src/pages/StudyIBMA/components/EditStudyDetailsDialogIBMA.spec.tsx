@@ -1,8 +1,19 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { useGetStudyNonNestedById, useUpdateStudy } from 'hooks';
 import { StudyReturn } from 'neurostore-typescript-sdk';
-import { vi } from 'vitest';
+import useEnsureWritableStudy from 'pages/StudyIBMA/hooks/useEnsureWritableStudy';
+import { useSnackbar } from 'notistack';
+import { useParams } from 'react-router-dom';
+import { Mock, vi } from 'vitest';
 import EditStudyDetailsDialogIBMA from './EditStudyDetailsDialogIBMA';
+
+vi.mock('notistack');
+vi.mock('react-router-dom');
+vi.mock('hooks');
+vi.mock('pages/StudyIBMA/hooks/useEnsureWritableStudy');
+vi.mock('components/Dialogs/BaseDialog');
+vi.mock('components/EditMetadata/EditMetadata');
 
 const mockStudyData: StudyReturn = {
     id: 'study-1',
@@ -18,130 +29,40 @@ const mockStudyData: StudyReturn = {
     analyses: [],
 };
 
-const { mockMutateAsync, mockEnqueueSnackbar, mockEnsureWritableStudy } = vi.hoisted(() => ({
-    mockMutateAsync: vi.fn().mockResolvedValue(undefined),
-    mockEnqueueSnackbar: vi.fn(),
-    mockEnsureWritableStudy: vi.fn().mockResolvedValue({
-        studyId: 'study-1',
-        didClone: false,
-        idMap: { oldAnalysisIdsToNewIdsMap: {}, oldImageIdToNewIdMap: {} },
-    }),
-}));
-
-vi.mock('notistack', () => ({
-    useSnackbar: () => ({ enqueueSnackbar: mockEnqueueSnackbar }),
-}));
-
-vi.mock('react-router-dom', async (importOriginal) => {
-    const mod = await importOriginal<typeof import('react-router-dom')>();
-    return {
-        ...mod,
-        useNavigate: () => vi.fn(),
-        useParams: () => ({ studyId: 'study-1', projectId: 'p1' }),
-    };
+const mockMutateAsync = vi.fn().mockResolvedValue(undefined);
+const mockEnsureWritableStudy = vi.fn().mockResolvedValue({
+    studyId: 'study-1',
+    didClone: false,
+    idMap: { oldAnalysisIdsToNewIdsMap: {}, oldImageIdToNewIdMap: {} },
 });
 
-vi.mock('pages/StudyIBMA/hooks/useEnsureWritableStudy', () => ({
-    default: vi.fn(() => ({
-        ensureWritableStudy: mockEnsureWritableStudy,
-        isLoading: false,
-        userOwnsStudy: true,
-    })),
-}));
-
-vi.mock('hooks', async (importOriginal) => {
-    const mod = await importOriginal<typeof import('hooks')>();
-    return {
-        ...mod,
-        useCreateStudy: vi.fn(() => ({
-            mutateAsync: vi.fn().mockResolvedValue({ data: mockStudyData }),
-            isLoading: false,
-        })),
-        useGetAnnotationById: vi.fn(() => ({
-            data: { notes: [] },
-            isLoading: false,
-            isError: false,
-        })),
-        useGetStudyNonNestedById: vi.fn(() => ({
-            data: mockStudyData,
-            isLoading: false,
-            isError: false,
-        })),
-        useGetStudysetNonNestedById: vi.fn(() => ({
-            data: { studies: ['study-1'], studyset_studies: [] },
-            isLoading: false,
-            isError: false,
-        })),
-        useUpdateAnnotationByAnnotationAndAnalysisIds: vi.fn(() => ({
-            mutateAsync: vi.fn().mockResolvedValue(undefined),
-            isLoading: false,
-        })),
-        useUpdateStudy: vi.fn(() => ({
-            mutateAsync: mockMutateAsync,
-            isLoading: false,
-        })),
-        useUpdateStudyset: vi.fn(() => ({
-            mutateAsync: vi.fn().mockResolvedValue(undefined),
-            isLoading: false,
-        })),
-        useUserCanEdit: vi.fn(() => true),
-    };
-});
-
-vi.mock('components/Dialogs/BaseDialog', () => ({
-    default: vi.fn(
-        ({
-            isOpen,
-            onCloseDialog,
-            children,
-            dialogTitle,
-        }: {
-            isOpen: boolean;
-            onCloseDialog: () => void;
-            children: React.ReactNode;
-            dialogTitle: string;
-        }) =>
-            isOpen ? (
-                <div data-testid="mock-base-dialog">
-                    <span data-testid="mock-dialog-title">{dialogTitle}</span>
-                    <button type="button" data-testid="mock-dialog-x" onClick={onCloseDialog}>
-                        close-header
-                    </button>
-                    {children}
-                </div>
-            ) : null
-    ),
-}));
-
-vi.mock('components/EditMetadata/EditMetadata', () => ({
-    default: (props: {
-        onMetadataRowEdit: (row: { metadataKey: string; metadataValue: string }) => void;
-        metadata: { metadataKey: string }[];
-    }) => (
-        <div data-testid="mock-edit-metadata">
-            <span data-testid="mock-metadata-count">{props.metadata.length}</span>
-            <button
-                type="button"
-                data-testid="mock-metadata-edit"
-                onClick={() => props.onMetadataRowEdit({ metadataKey: 'sample_size', metadataValue: '42' })}
-            >
-                simulate-metadata-edit
-            </button>
-        </div>
-    ),
-}));
+const enqueueSnackbarMock = () => (useSnackbar() as unknown as { enqueueSnackbar: Mock }).enqueueSnackbar;
 
 describe('EditStudyDetailsDialogIBMA', () => {
     beforeEach(() => {
-        mockMutateAsync.mockClear();
+        vi.clearAllMocks();
         mockMutateAsync.mockResolvedValue(undefined);
-        mockEnqueueSnackbar.mockClear();
-        mockEnsureWritableStudy.mockClear();
         mockEnsureWritableStudy.mockResolvedValue({
             studyId: 'study-1',
             didClone: false,
             idMap: { oldAnalysisIdsToNewIdsMap: {}, oldImageIdToNewIdMap: {} },
         });
+        (useParams as Mock).mockReturnValue({ studyId: 'study-1', projectId: 'p1' });
+        (useGetStudyNonNestedById as Mock).mockReturnValue({
+            data: mockStudyData,
+            isLoading: false,
+            isError: false,
+        });
+        (useUpdateStudy as Mock).mockReturnValue({
+            mutateAsync: mockMutateAsync,
+            isLoading: false,
+        });
+        (useEnsureWritableStudy as Mock).mockReturnValue({
+            ensureWritableStudy: mockEnsureWritableStudy,
+            isLoading: false,
+            userOwnsStudy: true,
+        });
+        (useSnackbar as Mock).mockReturnValue({ enqueueSnackbar: vi.fn() });
     });
 
     it('renders nothing when closed', () => {
@@ -178,7 +99,7 @@ describe('EditStudyDetailsDialogIBMA', () => {
             }),
         });
         await waitFor(() =>
-            expect(mockEnqueueSnackbar).toHaveBeenCalledWith('Study saved', { variant: 'success' })
+            expect(enqueueSnackbarMock()).toHaveBeenCalledWith('Study saved', { variant: 'success' })
         );
     });
 
@@ -223,5 +144,24 @@ describe('EditStudyDetailsDialogIBMA', () => {
         expect(mockMutateAsync).toHaveBeenCalledTimes(1);
         const payload = mockMutateAsync.mock.calls[0][0].study.metadata as Record<string, unknown>;
         expect(payload.sample_size).toBe('42');
+    });
+
+    it('shows clone success and skips updateStudy when ensureWritableStudy clones on save', async () => {
+        mockEnsureWritableStudy.mockResolvedValue({
+            studyId: 'cloned-study-1',
+            didClone: true,
+            idMap: { oldAnalysisIdsToNewIdsMap: {}, oldImageIdToNewIdMap: {} },
+        });
+
+        render(<EditStudyDetailsDialogIBMA isOpen onClose={vi.fn()} />);
+        fireEvent.change(screen.getByRole('textbox', { name: 'Title' }), { target: { value: 'Cloned title' } });
+        await userEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+        await waitFor(() => expect(mockEnsureWritableStudy).toHaveBeenCalledTimes(1));
+        expect(mockEnsureWritableStudy).toHaveBeenCalledWith({
+            studyRequest: expect.objectContaining({ name: 'Cloned title' }),
+        });
+        expect(mockMutateAsync).not.toHaveBeenCalled();
+        expect(enqueueSnackbarMock()).toHaveBeenCalledWith('Study cloned and saved', { variant: 'success' });
     });
 });

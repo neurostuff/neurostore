@@ -8,6 +8,7 @@ import { vi } from 'vitest';
 
 vi.mock('pages/StudyIBMA/components/EditStudyAnalysisDialogIBMA');
 vi.mock('components/Dialogs/ConfirmationDialog');
+vi.mock('react-query');
 
 const mockDeleteAnalysis = vi.fn();
 const mockUpdateAnalysis = vi.fn();

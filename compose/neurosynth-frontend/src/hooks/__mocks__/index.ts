@@ -113,6 +113,24 @@ const useGetAnnotationsByStudysetId = vi.fn().mockReturnValue({
     data: mockAnnotations(),
 });
 
+const useGetAnalysesByStudyId = vi.fn().mockReturnValue({
+    isLoading: false,
+    isError: false,
+    data: [],
+});
+
+const useGetUncategorizedImagesByStudyId = vi.fn().mockReturnValue({
+    isLoading: false,
+    isError: false,
+    data: [],
+});
+
+const useGetAnnotationById = vi.fn().mockReturnValue({
+    isLoading: false,
+    isError: false,
+    data: mockAnnotations()[0],
+});
+
 const useCreateProject = vi.fn().mockReturnValue({
     isLoading: false,
     isError: false,
@@ -233,6 +251,9 @@ export {
     useDeletePoint,
     useDeleteProject,
     useGetAnnotationsByStudysetId,
+    useGetAnnotationById,
+    useGetAnalysesByStudyId,
+    useGetUncategorizedImagesByStudyId,
     useGetBaseStudyFlatById,
     useGetBaseStudyInfoById,
     useGetBaseStudyNestedById,

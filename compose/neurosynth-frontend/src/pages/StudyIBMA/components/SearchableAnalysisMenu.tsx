@@ -9,6 +9,8 @@ export type SearchableAnalysisMenuProps = {
     onClose: () => void;
     analyses: AnalysisReturnNested[];
     onSelectAnalysis: (analysisId: string) => void;
+    /** When set, that analysis is labeled "(current analysis)" and selecting it closes the menu without calling onSelectAnalysis. */
+    currentAnalysisId?: string;
 };
 
 export const getAnalysisDisplayName = (analysis: { name?: string | null }): string => {
@@ -31,6 +33,7 @@ const SearchableAnalysisMenu: React.FC<SearchableAnalysisMenuProps> = ({
     onClose,
     analyses,
     onSelectAnalysis,
+    currentAnalysisId,
 }) => {
     const [searchQuery, setSearchQuery] = useState('');
 
@@ -91,26 +94,37 @@ const SearchableAnalysisMenu: React.FC<SearchableAnalysisMenuProps> = ({
                         />
                     </MenuItem>
                 )}
-                {filteredAnalyses.map((analysis) => (
-                    <MenuItem
-                        key={analysis.id}
-                        onClick={() => {
-                            if (!analysis.id) return;
-                            onSelectAnalysis(analysis.id);
-                        }}
-                        sx={{ whiteSpace: 'normal', alignItems: 'flex-start', py: 1, px: 2 }}
-                    >
-                        <ListItemText
-                            primary={getAnalysisDisplayName(analysis)}
-                            primaryTypographyProps={{
-                                variant: 'body2',
-                                color: !analysis.name?.trim() ? 'warning.dark' : undefined,
-                                sx: { whiteSpace: 'normal', wordBreak: 'break-word' },
+                {filteredAnalyses.map((analysis) => {
+                    const isCurrentAnalysis =
+                        currentAnalysisId != null && analysis.id != null && analysis.id === currentAnalysisId;
+                    const displayName = getAnalysisDisplayName(analysis);
+                    const menuItemLabel = isCurrentAnalysis ? `${displayName} (current analysis)` : displayName;
+
+                    return (
+                        <MenuItem
+                            key={analysis.id}
+                            onClick={() => {
+                                if (!analysis.id) return;
+                                if (isCurrentAnalysis) {
+                                    onClose();
+                                    return;
+                                }
+                                onSelectAnalysis(analysis.id);
                             }}
-                            sx={{ minWidth: 0, m: 0 }}
-                        />
-                    </MenuItem>
-                ))}
+                            sx={{ whiteSpace: 'normal', alignItems: 'flex-start', py: 1, px: 2 }}
+                        >
+                            <ListItemText
+                                primary={menuItemLabel}
+                                primaryTypographyProps={{
+                                    variant: 'body2',
+                                    color: !analysis.name?.trim() ? 'warning.dark' : undefined,
+                                    sx: { whiteSpace: 'normal', wordBreak: 'break-word' },
+                                }}
+                                sx={{ minWidth: 0, m: 0 }}
+                            />
+                        </MenuItem>
+                    );
+                })}
             </Box>
         </Menu>
     );

@@ -55,10 +55,9 @@ describe(PAGE_NAME, () => {
             visitAndWaitForPage();
         });
 
-        it('should show breadcrumbs with Projects, project name, Extraction, and study name', () => {
-            cy.contains('Projects').should('be.visible');
-            cy.contains('Extraction').should('be.visible');
+        it('should show page header with study name and back to extraction navigation', () => {
             cy.contains('Aberrant functional connectivity').should('be.visible');
+            cy.contains('button', 'Back to extraction').should('be.visible');
         });
 
         it('should show study title with year and name', () => {
@@ -276,12 +275,8 @@ describe(PAGE_NAME, () => {
         });
 
         it('should add an annotation column', () => {
-            cy.get('[data-testid="new-annotation-column-open-button"]').click();
-            cy.get('[data-testid="new-annotation-column-dialog"]').should('be.visible');
-            cy.get('[data-testid="new-annotation-column-key"] input').type('new_annotation_col');
-            cy.get('[data-testid="new-annotation-column-dialog"]').within(() => {
-                cy.contains('button', 'Save').click();
-            });
+            cy.get('input[placeholder="New Column"]').type('new_annotation_col');
+            cy.contains('button', 'ADD').click();
             cy.contains(/new_annotation_col/).should('exist');
         });
 
@@ -341,12 +336,8 @@ describe(PAGE_NAME, () => {
                 'postAnnotationAnalyses'
             );
 
-            cy.get('[data-testid="new-annotation-column-open-button"]').click();
-            cy.get('[data-testid="new-annotation-column-dialog"]').should('be.visible');
-            cy.get('[data-testid="new-annotation-column-key"] input').type(newNoteKey);
-            cy.get('[data-testid="new-annotation-column-dialog"]').within(() => {
-                cy.contains('button', 'Save').click();
-            });
+            cy.get('input[placeholder="New Column"]').type(newNoteKey);
+            cy.contains('button', 'ADD').click();
             cy.contains(newNoteKey).should('exist');
             cy.get('button').find('[data-testid="SaveIcon"]').parent().click();
 
@@ -726,9 +717,21 @@ describe(PAGE_NAME, () => {
             cy.contains('button', 'Back to extraction').should('be.visible');
         });
 
-        it('should show extraction table state (position and total)', () => {
-            cy.contains('of').should('be.visible');
-            cy.contains('total').should('be.visible');
+        it('should show extraction table state (position in filtered list)', () => {
+            cy.window().then((window) => {
+                window.sessionStorage.setItem(
+                    'abc123-extraction-table',
+                    JSON.stringify({
+                        columnFilters: [],
+                        sorting: [],
+                        studies: ['a-mock-study-id', 'b-mock-study-id', 'c-mock-study-id'],
+                        pagination: { pageIndex: 0, pageSize: 25 },
+                    })
+                );
+            });
+            cy.reload();
+            cy.wait('@studyFixture').wait('@projectFixture').wait('@annotationFixture').wait('@studysetFixture');
+            cy.contains('2 of 3').should('be.visible');
         });
 
         it('should show Mark as Complete button', () => {

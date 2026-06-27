@@ -17,7 +17,7 @@ import useEnsureWritableStudy from './useEnsureWritableStudy';
 
 vi.mock('react-query');
 vi.mock('hooks');
-vi.mock('./useEnsureWritableStudy');
+vi.mock('pages/StudyIBMA/hooks/useEnsureWritableStudy');
 
 const studyId = 'study-1';
 const annotationId = 'annotation-1';
@@ -51,8 +51,18 @@ const mockEnsureWritableStudy = vi.fn().mockResolvedValue({
     },
 });
 
+const clonedWritableStudy = {
+    studyId: 'cloned-study-1',
+    didClone: true,
+    idMap: {
+        oldAnalysisIdsToNewIdsMap: { 'analysis-1': 'analysis-1-cloned' },
+        oldImageIdToNewIdMap: { 'img-1': 'img-1-cloned', 'img-2': 'img-2-cloned' },
+    },
+};
+
 describe('useIbmaBoardMutations', () => {
     beforeEach(() => {
+        vi.clearAllMocks();
         mockEnsureWritableStudy.mockClear();
         (useEnsureWritableStudy as Mock).mockReturnValue({
             ensureWritableStudy: mockEnsureWritableStudy,
@@ -218,8 +228,89 @@ describe('useIbmaBoardMutations', () => {
 
         expect(mutateAsync(useUpdateImage as Mock)).toHaveBeenCalledWith({
             imageId: 'img-1',
-            image: { id: 'img-1', analysis: undefined },
+            image: { id: 'img-1', analysis: null },
         });
         expect(invalidateQueries()).toHaveBeenCalled();
+    });
+
+    it('does not mutate when ensureWritableStudy returns undefined', async () => {
+        mockEnsureWritableStudy.mockResolvedValue(undefined);
+        const { result } = renderHook(() => useIbmaBoardMutations(hookArgs));
+
+        await act(async () => {
+            await result.current.updateAnalysis({
+                analysisId: 'analysis-1',
+                name: 'Updated',
+                description: 'Desc',
+            });
+        });
+
+        expect(mutateAsync(useUpdateAnalysis as Mock)).not.toHaveBeenCalled();
+    });
+
+    describe('after clone (didClone: true)', () => {
+        beforeEach(() => {
+            mockEnsureWritableStudy.mockResolvedValue(clonedWritableStudy);
+        });
+
+        it('createAnalysis posts to the cloned study id', async () => {
+            const { result } = renderHook(() => useIbmaBoardMutations(hookArgs));
+
+            await act(async () => {
+                await result.current.createAnalysis();
+            });
+
+            expect(mutateAsync(useCreateAnalysis as Mock)).toHaveBeenCalledWith({
+                study: 'cloned-study-1',
+                name: '',
+                description: '',
+            });
+            expect(invalidateQueries()).toHaveBeenCalledWith(
+                analysisQueries.analyses.byStudyId('cloned-study-1').queryKey
+            );
+        });
+
+        it('updateAnalysis remaps analysis id through idMap', async () => {
+            const { result } = renderHook(() => useIbmaBoardMutations(hookArgs));
+
+            await act(async () => {
+                await result.current.updateAnalysis({
+                    analysisId: 'analysis-1',
+                    name: 'Updated',
+                    description: 'Desc',
+                });
+            });
+
+            expect(mutateAsync(useUpdateAnalysis as Mock)).toHaveBeenCalledWith({
+                analysisId: 'analysis-1-cloned',
+                analysis: { name: 'Updated', description: 'Desc' },
+            });
+        });
+
+        it('deleteAnalysis remaps analysis id through idMap', async () => {
+            const { result } = renderHook(() => useIbmaBoardMutations(hookArgs));
+
+            await act(async () => {
+                await result.current.deleteAnalysis('analysis-1');
+            });
+
+            expect(mutateAsync(useDeleteAnalysis as Mock)).toHaveBeenCalledWith('analysis-1-cloned');
+        });
+
+        it('updateImage remaps image and analysis ids through idMap', async () => {
+            const { result } = renderHook(() => useIbmaBoardMutations(hookArgs));
+
+            await act(async () => {
+                await result.current.updateImage('img-2', { analysis: 'analysis-1' });
+            });
+
+            expect(mutateAsync(useUpdateImage as Mock)).toHaveBeenCalledWith({
+                imageId: 'img-2-cloned',
+                image: { id: 'img-2-cloned', analysis: 'analysis-1-cloned' },
+            });
+            expect(invalidateQueries()).toHaveBeenCalledWith(
+                analysisQueries.analyses.byStudyId('cloned-study-1').queryKey
+            );
+        });
     });
 });

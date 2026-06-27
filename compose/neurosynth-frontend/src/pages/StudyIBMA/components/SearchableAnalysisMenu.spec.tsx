@@ -101,4 +101,17 @@ describe('SearchableAnalysisMenu', () => {
 
         expect(onSelectAnalysis).toHaveBeenCalledWith('analysis-2');
     });
+
+    it('labels the current analysis and does not call onSelectAnalysis when it is chosen', async () => {
+        const onSelectAnalysis = vi.fn();
+        const onClose = vi.fn();
+        renderMenu({ currentAnalysisId: 'analysis-1', onSelectAnalysis, onClose });
+
+        expect(screen.getByRole('menuitem', { name: 'Motor contrast (current analysis)' })).toBeInTheDocument();
+
+        await userEvent.click(screen.getByRole('menuitem', { name: 'Motor contrast (current analysis)' }));
+
+        expect(onSelectAnalysis).not.toHaveBeenCalled();
+        expect(onClose).toHaveBeenCalled();
+    });
 });

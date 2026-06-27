@@ -10,7 +10,7 @@ import { StudyReturnNested } from 'hooks/studies/studyQueries.types';
 import type { ImageReturn, StudyRequest } from 'neurostore-typescript-sdk';
 import {
     buildClonedStudyIdMap,
-    buildStudySnapshot as buildEnsureWriteableStudySnapshot,
+    buildStudySnapshot,
     type ClonedStudyIdMap,
 } from 'pages/StudyIBMA/hooks/buildWritableStudyIdMapping.helpers';
 import useCloneStudy from 'pages/StudyIBMA/hooks/useCloneStudy';
@@ -53,7 +53,7 @@ const useEnsureWritableStudy = () => {
                 ? await queryClient.fetchQuery(uncategorizedQuery.queryKey, uncategorizedQuery.queryFn)
                 : EMPTY_UNCATEGORIZED_IMAGES;
 
-            return buildEnsureWriteableStudySnapshot(clonedStudyId, clonedStudy.analyses ?? [], clonedUncategorized);
+            return buildStudySnapshot(clonedStudyId, clonedStudy.analyses ?? [], clonedUncategorized);
         },
         [queryClient]
     );
@@ -63,24 +63,24 @@ const useEnsureWritableStudy = () => {
             if (!studyId || !study?.id) return undefined;
 
             if (userOwnsStudy) {
-                const snapshot = buildEnsureWriteableStudySnapshot(studyId, analyses, uncategorizedImages);
+                const snapshot = buildStudySnapshot(studyId, analyses, uncategorizedImages);
+                // user already owns study, so no need to clone. idMap is the identity mapping.
                 return { studyId, didClone: false, idMap: buildClonedStudyIdMap(snapshot, snapshot) };
             }
 
-            const oldSnapshot = buildEnsureWriteableStudySnapshot(studyId, analyses, uncategorizedImages);
+            const oldSnapshot = buildStudySnapshot(studyId, analyses, uncategorizedImages);
             // if override is an empty object, the backend will just clone the study as is
             const clonedStudy = await cloneStudy(override?.studyRequest ?? {});
             if (!clonedStudy?.id) return undefined;
 
             const newSnapshot = await buildCloneSnapshot(clonedStudy);
-            const idMap = buildClonedStudyIdMap(oldSnapshot, newSnapshot);
 
             navigate(`/projects/${projectId}/extraction/studies/${clonedStudy.id}/edit`);
 
             return {
                 studyId: clonedStudy.id,
                 didClone: true,
-                idMap,
+                idMap: buildClonedStudyIdMap(oldSnapshot, newSnapshot),
             };
         },
         [

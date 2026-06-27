@@ -8,6 +8,7 @@ import {
 } from 'stores/projects/ProjectStore';
 import { hasUnsavedStudyChanges, unsetUnloadHandler } from 'helpers/BeforeUnload.helpers';
 import { useGetExtractionSummary, useUserCanEdit } from 'hooks';
+import { useSnackbar } from 'notistack';
 
 const mockNavigate = vi.hoisted(() => vi.fn());
 
@@ -20,9 +21,19 @@ vi.mock('hooks', () => ({
     useUserCanEdit: vi.fn(),
     useGetExtractionSummary: vi.fn(),
 }));
+vi.mock('notistack');
 vi.mock('react-router-dom', () => ({
     useNavigate: () => mockNavigate,
 }));
+
+const mockExtractionComplete = () => {
+    (useGetExtractionSummary as Mock).mockReturnValue({
+        completed: 3,
+        total: 3,
+        savedForLater: 0,
+        unreviewed: 0,
+    });
+};
 
 describe('StartMetaAnalysisButton', () => {
     beforeEach(() => {
@@ -31,12 +42,7 @@ describe('StartMetaAnalysisButton', () => {
         (useProjectMetaAnalysisCanEdit as Mock).mockReturnValue(true);
         (useProjectUser as Mock).mockReturnValue('user-1');
         (useUserCanEdit as Mock).mockReturnValue(true);
-        (useGetExtractionSummary as Mock).mockReturnValue({
-            completed: 0,
-            total: 0,
-            savedForLater: 0,
-            unreviewed: 0,
-        });
+        mockExtractionComplete();
         (hasUnsavedStudyChanges as Mock).mockReturnValue(false);
     });
 
@@ -59,6 +65,24 @@ describe('StartMetaAnalysisButton', () => {
                 },
             },
         });
+    });
+
+    it('shows a warning snackbar when extraction is not complete', () => {
+        (useGetExtractionSummary as Mock).mockReturnValue({
+            completed: 1,
+            total: 3,
+            savedForLater: 0,
+            unreviewed: 2,
+        });
+
+        render(<StartMetaAnalysisButton />);
+        fireEvent.click(screen.getByRole('button', { name: /View Meta Analyses/i }));
+
+        expect(mockNavigate).not.toHaveBeenCalled();
+        expect((useSnackbar() as unknown as { enqueueSnackbar: Mock }).enqueueSnackbar).toHaveBeenCalledWith(
+            'Extraction is not complete. You still have 2 studies to complete before you can start a meta-analysis.',
+            { variant: 'warning' }
+        );
     });
 
     it('opens confirmation dialog when there are unsaved changes, then navigates after confirm', () => {

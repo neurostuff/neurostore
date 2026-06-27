@@ -124,7 +124,8 @@ const NewAnnotationColumnDialog: React.FC<{
         >
             <Box data-testid="new-annotation-column-dialog" sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                 <Typography variant="body2" color="text.secondary">
-                    Choose a key, value type, and default for every study row in this annotation.
+                    Choose a key, value type, and default value to define a new annotation column. <br />
+                    <b>Note: This new column will apply to all studies and analyses in the studyset</b>
                 </Typography>
                 <TextField
                     label="Column key"

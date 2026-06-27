@@ -52,7 +52,7 @@ const EditStudyAnalysisTable: React.FC<EditStudyAnalysisTableProps> = ({ table, 
                     justifyContent="space-between"
                     alignItems="center"
                     flexShrink={0}
-                    sx={{ py: 1, px: 2, borderBottom: 1, borderColor: 'divider', bgcolor: 'grey.100' }}
+                    sx={{ py: 1, px: 2, borderBottom: 1, borderColor: 'divider', bgcolor: 'grey.50' }}
                 >
                     <LoadingButton
                         size="medium"
@@ -107,7 +107,7 @@ const EditStudyAnalysisTable: React.FC<EditStudyAnalysisTableProps> = ({ table, 
                                                 borderLeft: 1,
                                                 borderColor: 'divider',
                                                 left: 0,
-                                                backgroundColor: 'grey.100',
+                                                backgroundColor: 'grey.50',
                                             }}
                                             key={header.id}
                                             width={`${header.column.getSize()}px`}

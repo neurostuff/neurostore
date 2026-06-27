@@ -29,15 +29,15 @@ const defaultRow: AnalysisBoardRow = {
 type TableHarnessProps = {
     data?: AnalysisBoardRow[];
     noteKeys?: NoteKeyType[];
-    onCreateAnalysis?: () => void;
-    onAddAnnotationColumn?: (payload: NewAnnotationColumnPayload) => void;
+    onCreateAnalysis?: () => Promise<void>;
+    onAddAnnotationColumn?: (payload: NewAnnotationColumnPayload) => Promise<void>;
 };
 
 const TableHarness = ({
     data = [defaultRow],
     noteKeys = defaultNoteKeys,
-    onCreateAnalysis = vi.fn(),
-    onAddAnnotationColumn = vi.fn(),
+    onCreateAnalysis = vi.fn().mockResolvedValue(undefined),
+    onAddAnnotationColumn = vi.fn().mockResolvedValue(undefined),
 }: TableHarnessProps) => {
     const [expanded, setExpanded] = useState<ExpandedState>({});
 
@@ -47,7 +47,18 @@ const TableHarness = ({
             columnHelper.display({
                 id: 'analysis',
                 header: () => 'Analyses',
-                cell: ({ row }) => row.original.name,
+                cell: ({ row }) => (
+                    <>
+                        <button
+                            type="button"
+                            aria-label={row.getIsExpanded() ? 'Hide images' : 'See images'}
+                            onClick={() => row.toggleExpanded()}
+                        >
+                            toggle
+                        </button>
+                        {row.original.name}
+                    </>
+                ),
             }),
             ...noteKeys.map((noteKey) =>
                 columnHelper.accessor((row) => row.analysisAnnotation[noteKey.key] ?? null, {
@@ -104,8 +115,8 @@ describe('EditStudyAnalysisTable', () => {
         expect(within(table).getAllByRole('row')).toHaveLength(3); // header + 2 data rows
         expect(screen.getByTestId('mock-table-row-analysis-1')).toBeInTheDocument();
         expect(screen.getByTestId('mock-table-row-analysis-2')).toBeInTheDocument();
-        expect(within(table).getByRole('cell', { name: 'Contrast A' })).toBeInTheDocument();
-        expect(within(table).getByRole('cell', { name: 'Contrast B' })).toBeInTheDocument();
+        expect(within(table).getByText('Contrast A')).toBeInTheDocument();
+        expect(within(table).getByText('Contrast B')).toBeInTheDocument();
         expect(within(table).getByRole('cell', { name: 'false' })).toBeInTheDocument();
         expect(within(table).getByRole('cell', { name: 'true' })).toBeInTheDocument();
     });
@@ -139,25 +150,68 @@ describe('EditStudyAnalysisTable', () => {
         });
     });
 
-    it('renders the expanded images row when the analysis row is expanded', async () => {
+    it('renders the expanded images row when Expand All is clicked', async () => {
         render(<TableHarness />);
 
         expect(screen.queryByTestId('mock-expanded-row-analysis-1')).not.toBeInTheDocument();
 
-        await userEvent.click(screen.getByRole('cell', { name: 'Contrast A' }));
+        await userEvent.click(screen.getByRole('button', { name: /Expand All/i }));
 
         expect(screen.getByTestId('mock-expanded-row-analysis-1')).toBeInTheDocument();
         expect(screen.getByText('mock-expanded-images')).toBeInTheDocument();
     });
 
-    it('hides the expanded images row when the analysis row is collapsed', async () => {
+    it('hides the expanded images row when Collapse All is clicked', async () => {
         render(<TableHarness />);
 
-        const analysisCell = screen.getByRole('cell', { name: 'Contrast A' });
-        await userEvent.click(analysisCell);
+        await userEvent.click(screen.getByRole('button', { name: /Expand All/i }));
         expect(screen.getByTestId('mock-expanded-row-analysis-1')).toBeInTheDocument();
 
-        await userEvent.click(analysisCell);
+        await userEvent.click(screen.getByRole('button', { name: /Collapse All/i }));
         expect(screen.queryByTestId('mock-expanded-row-analysis-1')).not.toBeInTheDocument();
+    });
+
+    it('renders the expanded images row when an individual row expand control is clicked', async () => {
+        render(<TableHarness />);
+
+        expect(screen.queryByTestId('mock-expanded-row-analysis-1')).not.toBeInTheDocument();
+
+        await userEvent.click(screen.getByLabelText('See images'));
+
+        expect(screen.getByTestId('mock-expanded-row-analysis-1')).toBeInTheDocument();
+        expect(screen.getByText('mock-expanded-images')).toBeInTheDocument();
+    });
+
+    it('hides the expanded images row when an individual row collapse control is clicked', async () => {
+        render(<TableHarness />);
+
+        await userEvent.click(screen.getByLabelText('See images'));
+        expect(screen.getByTestId('mock-expanded-row-analysis-1')).toBeInTheDocument();
+
+        await userEvent.click(screen.getByLabelText('Hide images'));
+        expect(screen.queryByTestId('mock-expanded-row-analysis-1')).not.toBeInTheDocument();
+    });
+
+    it('expands only the toggled row when multiple analyses are present', async () => {
+        render(
+            <TableHarness
+                data={[
+                    defaultRow,
+                    {
+                        ...defaultRow,
+                        id: 'analysis-2',
+                        name: 'Contrast B',
+                        description: '',
+                        analysisAnnotation: { included: true },
+                    } as AnalysisBoardRow,
+                ]}
+            />
+        );
+
+        const expandControls = screen.getAllByLabelText('See images');
+        await userEvent.click(expandControls[1]);
+
+        expect(screen.queryByTestId('mock-expanded-row-analysis-1')).not.toBeInTheDocument();
+        expect(screen.getByTestId('mock-expanded-row-analysis-2')).toBeInTheDocument();
     });
 });

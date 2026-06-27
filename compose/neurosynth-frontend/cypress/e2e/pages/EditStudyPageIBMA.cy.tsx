@@ -8,16 +8,84 @@ export {};
 
 const PATH = '/projects/abc123/extraction/studies/b-mock-study-id/edit';
 const PAGE_NAME = 'EditStudyIBMAPage';
+const SOURCE_STUDY_ID = 'b-mock-study-id';
+const LOGGED_IN_USER = 'auth0|62e0e6c9dd47048572613b4d';
 
-const visitAndWaitForPage = () =>
-    cy.visit(PATH).wait('@studyFixture').wait('@projectFixture').wait('@annotationFixture').wait('@studysetFixture');
+const neurostoreApiPattern = (path: string) => `**/api/${path}`;
+const neurosynthApiPattern = (path: string) => `**/api/${path}`;
+
+const uncategorizedImagesResponse = {
+    metadata: {},
+    results: [
+        {
+            id: 'img-orphan-uncat',
+            filename: 'orphan_map.nii',
+            analysis: null,
+            value_type: 'T',
+            public: true,
+            created_at: '2023-01-01T00:00:00Z',
+            updated_at: null,
+            user: null,
+            username: null,
+            metadata: null,
+            space: null,
+            add_date: null,
+            url: null,
+            analysis_name: null,
+        },
+    ],
+};
+
+const visitAndWaitForPage = () => {
+    cy.visit(PATH);
+    cy.wait('@studyFixture');
+    cy.wait('@projectFixture');
+    cy.wait('@annotationFixture');
+    cy.wait('@studysetFixture');
+    cy.wait('@analysesFixture', { timeout: 15000 });
+    cy.wait('@uncategorizedImagesFixture', { timeout: 15000 });
+};
 
 const waitForAnalysisBoard = () => {
     cy.get('[data-testid="edit-study-analysis-board"]', { timeout: 15000 }).should('exist');
     cy.get('[data-testid="edit-study-analysis-table"]').should('exist');
 };
 
-const analysisOneRow = () => cy.contains('[data-testid="edit-study-analysis-table"] tbody tr', 'Analysis 1').first();
+const waitForAnalysisBoardRows = () => {
+    waitForAnalysisBoard();
+    analysisDataRow('Analysis 1').should('be.visible', { timeout: 15000 });
+};
+
+const analysisDataRow = (analysisName: string) =>
+    cy
+        .get('[data-testid="edit-study-analysis-table"] tbody tr')
+        .filter((_, row) => {
+            const $row = Cypress.$(row);
+            return $row.find('td[colspan]').length === 0 && $row.text().includes(analysisName);
+        })
+        .first();
+
+const noteCell = (analysisName: string, columnKey: string) =>
+    cy
+        .get('[data-testid="edit-study-analysis-table"] thead th')
+        .contains(columnKey)
+        .closest('th')
+        .invoke('index')
+        .then((columnIndex) => analysisDataRow(analysisName).find('td').eq(columnIndex));
+
+const ensureUncategorizedExpanded = () => {
+    cy.get('body').then(($body) => {
+        if ($body.find('[data-testid="uncategorized-images-collapsed"]').length) {
+            cy.get('[data-testid="uncategorized-images-collapsed"]').click();
+        }
+    });
+    cy.get('[data-testid="uncategorized-images-column"]').should('be.visible');
+};
+
+const noteTextarea = (analysisName: string, columnKey: string) =>
+    noteCell(analysisName, columnKey).scrollIntoView().find('textarea').first();
+
+const imageListItem = (filename: string) => cy.contains(filename).closest('.MuiListItemButton-root');
 
 type AnnotationAnalysesPayload = Array<{ id?: string; note?: Record<string, unknown> }>;
 
@@ -45,70 +113,86 @@ describe(PAGE_NAME, () => {
         }).as('semanticScholarFixture');
 
         cy.fixture('study').then((study) => {
-            (study as Record<string, unknown>).id = 'b-mock-study-id';
-            cy.intercept('GET', '**/api/studies/*', study).as('studyFixture');
-        });
-        cy.fixture('projects/project').then((raw) => {
-            const project = raw as ProjectReturn;
-            if (project.id) project.id = 'abc123';
-            const provenance = (project.provenance || {}) as IProvenance;
-            project.provenance = { ...provenance, type: EAnalysisType.IBMA } as ProjectReturn['provenance'];
-            cy.intercept('GET', '**/api/projects/*', project).as('projectFixture');
-        });
-        cy.fixture('annotation').then((annotation: AnnotationReturnOneOf) => {
-            annotation.note_keys = {
-                ...(annotation.note_keys as Record<string, { type: string; order: number }>),
-                number_key: { type: 'number', order: Object.keys(annotation.note_keys ?? {}).length },
-            };
-            annotation.notes = annotation.notes?.map((note) => {
-                const noteRow = note as NoteCollectionReturn;
-                return {
-                    ...noteRow,
-                    study: 'b-mock-study-id',
-                    note: {
-                        ...(noteRow.note as Record<string, unknown>),
-                        number_key: 10,
-                    },
-                };
+            (study as Record<string, unknown>).id = SOURCE_STUDY_ID;
+            (study as Record<string, unknown>).user = LOGGED_IN_USER;
+            cy.intercept('GET', neurostoreApiPattern('studies/*'), study).as('studyFixture');
+
+            cy.fixture('projects/project').then((raw) => {
+                const project = raw as ProjectReturn;
+                if (project.id) project.id = 'abc123';
+                const provenance = (project.provenance || {}) as IProvenance;
+                project.provenance = { ...provenance, type: EAnalysisType.IBMA } as ProjectReturn['provenance'];
+                cy.intercept('GET', neurosynthApiPattern('projects/*'), project).as('projectFixture');
+
+                cy.fixture('annotation').then((annotation: AnnotationReturnOneOf) => {
+                    annotation.note_keys = {
+                        ...(annotation.note_keys as Record<string, { type: string; order: number }>),
+                        number_key: { type: 'number', order: Object.keys(annotation.note_keys ?? {}).length },
+                    };
+                    annotation.notes = annotation.notes?.map((note) => {
+                        const noteRow = note as NoteCollectionReturn;
+                        return {
+                            ...noteRow,
+                            study: SOURCE_STUDY_ID,
+                            note: {
+                                ...(noteRow.note as Record<string, unknown>),
+                                number_key: 10,
+                            },
+                        };
+                    });
+                    cy.intercept('GET', neurostoreApiPattern('annotations/*'), annotation).as('annotationFixture');
+                    cy.login('mocked');
+                });
             });
-            cy.intercept('GET', '**/api/annotations/*', annotation).as('annotationFixture');
         });
-        cy.intercept('GET', '**/api/studysets/*', { fixture: 'studysetNonNested' }).as('studysetFixture');
-        cy.intercept('GET', '**/api/analyses*', { fixture: 'ibma/analysesByStudy' }).as('analysesFixture');
-        cy.intercept('POST', '**/api/analyses/**', (req) =>
+
+        cy.intercept('GET', neurostoreApiPattern('studysets/*'), { fixture: 'studysetNonNested' }).as(
+            'studysetFixture'
+        );
+        cy.intercept('GET', neurostoreApiPattern('analyses/**'), { fixture: 'ibma/analysesByStudy' }).as(
+            'analysesFixture'
+        );
+        cy.intercept('GET', neurostoreApiPattern('images/**'), uncategorizedImagesResponse).as(
+            'uncategorizedImagesFixture'
+        );
+        cy.intercept('POST', neurostoreApiPattern('analyses/**'), (req) =>
             req.reply(201, {
                 id: 'analysis-new-cypress',
                 name: '',
                 description: '',
-                study: 'b-mock-study-id',
+                study: req.body.study ?? SOURCE_STUDY_ID,
                 images: [],
             })
         ).as('postAnalysis');
-        cy.intercept('PUT', '**/api/analyses/*', (req) => req.reply(200, req.body)).as('putAnalysis');
-        cy.intercept('PUT', '**/api/images/*', (req) => req.reply(200, req.body)).as('putImage');
-        cy.intercept('DELETE', '**/api/analyses/*', { statusCode: 204 }).as('deleteAnalysis');
-        cy.intercept('PUT', '**/api/annotations/*', (req) => req.reply(200, req.body)).as('putAnnotation');
-        cy.intercept('POST', '**/api/annotation-analyses/**', (req) => req.reply(200, [])).as('postAnnotationAnalyses');
+        cy.intercept('PUT', neurostoreApiPattern('analyses/*'), (req) => req.reply(200, req.body)).as('putAnalysis');
+        cy.intercept('PUT', neurostoreApiPattern('images/*'), (req) => req.reply(200, req.body)).as('putImage');
+        cy.intercept('DELETE', neurostoreApiPattern('analyses/*'), { statusCode: 204 }).as('deleteAnalysis');
+        cy.intercept('PUT', neurostoreApiPattern('annotations/*'), (req) => req.reply(200, req.body)).as(
+            'putAnnotation'
+        );
+        cy.intercept('POST', neurostoreApiPattern('annotation-analyses/**'), (req) => req.reply(200, [])).as(
+            'postAnnotationAnalyses'
+        );
 
         cy.intercept('POST', 'https://www.google-analytics.com/*/**', {}).as('googleAnalyticsFixture');
 
-        cy.intercept('PUT', '**/api/projects/*', { fixture: 'projects/projectPut' }).as('updateProjectFixture');
-
-        cy.login('mocked').visit(PATH);
+        cy.intercept('PUT', neurosynthApiPattern('projects/*'), { fixture: 'projects/projectPut' }).as(
+            'updateProjectFixture'
+        );
     });
 
     it('should load the IBMA study board and analyses UI', () => {
         visitAndWaitForPage();
-        waitForAnalysisBoard();
+        waitForAnalysisBoardRows();
         cy.contains('Uncategorized images').should('be.visible');
         cy.contains('Analyses').should('be.visible');
     });
 
     it('opens Edit Study Details, edits study fields and metadata, and persists on Save', () => {
-        cy.intercept('PUT', '**/api/studies/b-mock-study-id').as('saveStudy');
+        cy.intercept('PUT', neurostoreApiPattern(`studies/${SOURCE_STUDY_ID}*`)).as('saveStudy');
         visitAndWaitForPage();
 
-        cy.contains('button', 'Edit Study Details').click();
+        cy.contains('button', 'Study Details').click();
         cy.get('[role="dialog"]').should('be.visible');
         cy.get('[data-testid="edit-study-ibma-details-dialog"]').should('be.visible');
 
@@ -133,13 +217,12 @@ describe(PAGE_NAME, () => {
         waitForAnalysisBoard();
         cy.contains('button', 'Analysis').click();
         cy.wait('@postAnalysis').its('request.method').should('eq', 'POST');
-        cy.wait('@putAnnotation');
     });
 
     it('edits an analysis name via dialog PUT', () => {
         visitAndWaitForPage();
-        waitForAnalysisBoard();
-        cy.contains('Analysis 1').parent().find('[aria-label="Analysis options"]').click();
+        waitForAnalysisBoardRows();
+        analysisDataRow('Analysis 1').find('[aria-label="Analysis options"]').click();
         cy.contains('[role="menuitem"]', 'Edit analysis').click();
         cy.get('[role="dialog"]').within(() => {
             cy.contains('label', 'Name').parent().find('input').clear().type('Renamed analysis');
@@ -154,8 +237,8 @@ describe(PAGE_NAME, () => {
 
     it('deletes an analysis via DELETE', () => {
         visitAndWaitForPage();
-        waitForAnalysisBoard();
-        cy.contains('Analysis 2').parent().find('[aria-label="Analysis options"]').click();
+        waitForAnalysisBoardRows();
+        analysisDataRow('Analysis 2').find('[aria-label="Analysis options"]').click();
         cy.contains('[role="menuitem"]', 'Delete analysis').click();
         cy.get('[role="dialog"]').contains('button', 'Delete').click();
         cy.wait('@deleteAnalysis').its('request.method').should('eq', 'DELETE');
@@ -163,7 +246,7 @@ describe(PAGE_NAME, () => {
 
     it('adds an annotation column via annotation PUT', () => {
         visitAndWaitForPage();
-        waitForAnalysisBoard();
+        waitForAnalysisBoardRows();
         cy.get('[data-testid="new-annotation-column-open-button"]').click();
         cy.get('[role="dialog"]').within(() => {
             cy.contains('label', /column key/i)
@@ -181,8 +264,11 @@ describe(PAGE_NAME, () => {
 
     it('removes an annotation column via header menu and annotation PUT', () => {
         visitAndWaitForPage();
-        waitForAnalysisBoard();
-        cy.contains('th', 'string_key').find('[aria-label="string_key column options"]').click();
+        waitForAnalysisBoardRows();
+        cy.contains('th', 'string_key')
+            .find('[aria-label="string_key column options"]')
+            .scrollIntoView()
+            .click({ force: true });
         cy.contains('[role="menuitem"]', 'Remove column').click();
         cy.get('[role="dialog"]').contains('button', 'Remove').click();
         cy.wait('@putAnnotation')
@@ -194,8 +280,8 @@ describe(PAGE_NAME, () => {
 
     it('edits a boolean cell via annotation-analyses POST', () => {
         visitAndWaitForPage();
-        waitForAnalysisBoard();
-        cy.get('[data-testid="edit-study-analysis-table"]').find('input[type="checkbox"]').first().click();
+        waitForAnalysisBoardRows();
+        noteCell('Analysis 1', 'included').find('input[type="checkbox"]').check({ force: true });
         cy.wait('@postAnnotationAnalyses')
             .its('request.body')
             .then((body: AnnotationAnalysesPayload) => {
@@ -206,8 +292,12 @@ describe(PAGE_NAME, () => {
 
     it('edits a string cell and POSTs a string value', () => {
         visitAndWaitForPage();
-        waitForAnalysisBoard();
-        analysisOneRow().find('textarea').click().clear().type('updated string').blur();
+        waitForAnalysisBoardRows();
+        noteTextarea('Analysis 1', 'string_key')
+            .click({ force: true })
+            .clear({ force: true })
+            .type('updated string', { force: true })
+            .blur({ force: true });
         cy.wait('@postAnnotationAnalyses')
             .its('request.body')
             .then((body: AnnotationAnalysesPayload) => {
@@ -218,8 +308,8 @@ describe(PAGE_NAME, () => {
 
     it('clears a string cell and POSTs null', () => {
         visitAndWaitForPage();
-        waitForAnalysisBoard();
-        analysisOneRow().find('textarea').click().clear().blur();
+        waitForAnalysisBoardRows();
+        noteTextarea('Analysis 1', 'string_key').click({ force: true }).clear({ force: true }).blur({ force: true });
         cy.wait('@postAnnotationAnalyses')
             .its('request.body')
             .then((body: AnnotationAnalysesPayload) => {
@@ -230,8 +320,12 @@ describe(PAGE_NAME, () => {
 
     it('edits a number cell and POSTs a number value', () => {
         visitAndWaitForPage();
-        waitForAnalysisBoard();
-        analysisOneRow().find('input[type="number"]').click().clear().type('42').blur();
+        waitForAnalysisBoardRows();
+        noteTextarea('Analysis 1', 'number_key')
+            .click({ force: true })
+            .clear({ force: true })
+            .type('42', { force: true })
+            .blur({ force: true });
         cy.wait('@postAnnotationAnalyses')
             .its('request.body')
             .then((body: AnnotationAnalysesPayload) => {
@@ -242,8 +336,8 @@ describe(PAGE_NAME, () => {
 
     it('clears a number cell and POSTs null', () => {
         visitAndWaitForPage();
-        waitForAnalysisBoard();
-        analysisOneRow().find('input[type="number"]').click().clear().blur();
+        waitForAnalysisBoardRows();
+        noteTextarea('Analysis 1', 'number_key').click({ force: true }).clear({ force: true }).blur({ force: true });
         cy.wait('@postAnnotationAnalyses')
             .its('request.body')
             .then((body: AnnotationAnalysesPayload) => {
@@ -254,8 +348,9 @@ describe(PAGE_NAME, () => {
 
     it('moves an uncategorized image to an analysis via image PUT', () => {
         visitAndWaitForPage();
-        waitForAnalysisBoard();
-        cy.contains('orphan_map.nii').parent().find('[aria-label="Move image to analysis"]').click();
+        waitForAnalysisBoardRows();
+        ensureUncategorizedExpanded();
+        imageListItem('orphan_map.nii').find('[aria-label="Move image to analysis"]').click();
         cy.contains('[role="menuitem"]', 'Analysis 1').click();
         cy.wait('@putImage')
             .its('request.body')
@@ -266,9 +361,9 @@ describe(PAGE_NAME, () => {
 
     it('removes an image from an expanded analysis row via image PUT', () => {
         visitAndWaitForPage();
-        waitForAnalysisBoard();
-        cy.contains('Analysis 1').parent().find('[aria-label="See images"]').click();
-        cy.contains('assigned_map.nii').parent().find('[aria-label="Remove from analysis"]').click();
+        waitForAnalysisBoardRows();
+        analysisDataRow('Analysis 1').find('[aria-label="See images"]').click();
+        imageListItem('assigned_map.nii').find('[aria-label="Remove from analysis"]').click();
         cy.wait('@putImage')
             .its('request.body')
             .then((body: { analysis?: string | null }) => {
@@ -276,20 +371,17 @@ describe(PAGE_NAME, () => {
             });
     });
 
-    it('moves an image from one analysis to another via image PUT', () => {
+    it('moves an image from one analysis to another via the move menu', () => {
         visitAndWaitForPage();
-        waitForAnalysisBoard();
+        waitForAnalysisBoardRows();
 
-        cy.contains('Analysis 1').parent().find('[aria-label="See images"]').click();
-        cy.contains('assigned_map.nii').parent().find('[aria-label="Remove from analysis"]').click();
-        cy.wait('@putImage')
-            .its('request.body')
-            .then((body: { analysis?: string | null }) => {
-                expect(body.analysis).to.be.null;
-            });
+        analysisDataRow('Analysis 1').find('[aria-label="See images"]').click();
+        imageListItem('assigned_map.nii').find('[aria-label="Move image to analysis"]').click();
 
-        cy.contains('assigned_map.nii').parent().find('[aria-label="Move image to analysis"]').click();
+        cy.get('[role="menu"]').should('be.visible');
+        cy.contains('[role="menuitem"]', 'Analysis 1 (current analysis)').should('be.visible');
         cy.contains('[role="menuitem"]', 'Analysis 2').click();
+
         cy.wait('@putImage')
             .its('request.body')
             .then((body: { analysis?: string }) => {

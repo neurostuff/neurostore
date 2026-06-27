@@ -1,4 +1,5 @@
 import { useGetAnnotationById, useGetStudysetNestedById } from 'hooks';
+import { StudyReturn } from 'neurostore-typescript-sdk';
 import { useMemo } from 'react';
 import { AnnotationNoteType } from 'stores/annotation/AnnotationStore.types';
 import { useProjectExtractionAnnotationId, useProjectExtractionStudysetId } from 'stores/projects/ProjectStore';
@@ -8,6 +9,13 @@ const hasSampleSizeInObj = (note: object | null | undefined): boolean => {
     if (!note) return false;
     const val = (note as AnnotationNoteType).sample_size;
     return typeof val === 'number' && val !== null;
+};
+
+const getStudyIdAndName = (study: string | StudyReturn): { studyId: string; studyName: string | null } => {
+    if (typeof study === 'string') {
+        return { studyId: study, studyName: null };
+    }
+    return { studyId: study.id ?? '', studyName: study.name ?? null };
 };
 
 const useStudiesWithMissingSampleSizeALE = (algorithm: string | undefined) => {
@@ -22,9 +30,8 @@ const useStudiesWithMissingSampleSizeALE = (algorithm: string | undefined) => {
         const notes = annotation.notes ?? [];
         const missing: { studyId: string; studyName: string | null }[] = [];
         for (const study of studies) {
-            const studyId = study.id;
-            const studyName = study.name ?? null;
-            const studyMetadata = study.metadata;
+            const { studyId, studyName } = getStudyIdAndName(study);
+            const studyMetadata = typeof study === 'string' ? null : study.metadata;
             if (!studyId) continue;
             const notesForStudy = notes.filter((n) => n.study === studyId);
             const hasFromAnnotation =

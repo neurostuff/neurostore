@@ -69,6 +69,8 @@ const mapOldIdToNewId = (oldIds: string[], newIds: string[], label: string): Rec
     );
 };
 
+// create a mapping between all of the old image Ids amongst all of the old analyses,
+// and all of the new image Ids amongst all of the new analyses
 export const buildClonedStudyIdMap = (
     oldSnapshot: EnsureWriteableStudySnapshot,
     newSnapshot: EnsureWriteableStudySnapshot

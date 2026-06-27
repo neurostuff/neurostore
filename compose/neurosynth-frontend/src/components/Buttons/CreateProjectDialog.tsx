@@ -52,6 +52,7 @@ const CreateProjectDialog: React.FC<ICreateProjectDialog> = ({ isOpen, onCloseDi
                         <Button
                             key={analysisType.value}
                             fullWidth
+                            disableElevation
                             variant={selectedOption === analysisType.value ? 'contained' : 'outlined'}
                             color="primary"
                             onClick={() => setSelectedOption(analysisType.value)}

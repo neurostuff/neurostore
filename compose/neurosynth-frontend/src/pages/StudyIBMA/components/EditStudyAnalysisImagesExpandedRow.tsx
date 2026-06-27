@@ -101,6 +101,7 @@ const EditStudyAnalysisImagesExpandedRow: React.FC<{
                         anchorEl={moveAnchorEl?.el ?? null}
                         onClose={handleMoveMenuClose}
                         analyses={analyses}
+                        currentAnalysisId={analysisId}
                         onSelectAnalysis={(targetAnalysisId) => {
                             if (!moveAnchorEl) return;
                             handleAssignAnalysisToImage(moveAnchorEl.imageId, targetAnalysisId);

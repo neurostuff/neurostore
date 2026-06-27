@@ -1,6 +1,5 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { setUnloadHandler } from 'helpers/BeforeUnload.helpers';
 import { useGetStudysetSummaryById, useUserCanEdit } from 'hooks';
 import ExtractionStudiesPreviewer from 'pages/StudyIBMA/components/ExtractionStudiesPreviewer';
 import {
@@ -9,7 +8,6 @@ import {
     useProjectId,
     useProjectUser,
 } from 'stores/projects/ProjectStore';
-import { useStudyId } from 'stores/study/StudyStore';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Mock, vi } from 'vitest';
 
@@ -46,7 +44,7 @@ describe('ExtractionStudiesPreviewer', () => {
         });
     });
 
-    it('navigates to the next study when NEXT is clicked', () => {
+    it('navigates to the next study when NEXT is clicked', async () => {
         window.sessionStorage.setItem(
             'projectid-extraction-table',
             JSON.stringify({
@@ -56,14 +54,14 @@ describe('ExtractionStudiesPreviewer', () => {
                 pagination: { pageIndex: 0, pageSize: 25 },
             })
         );
-        (useStudyId as Mock).mockReturnValue('study-1');
+        (useParams as Mock).mockReturnValue({ projectId: 'projectid', studyId: 'study-1' });
 
         render(<ExtractionStudiesPreviewer />);
-        userEvent.click(screen.getByTestId('extraction-previewer-next'));
+        await userEvent.click(screen.getByTestId('extraction-previewer-next'));
         expect(useNavigate()).toHaveBeenCalledWith('/projects/projectid/extraction/studies/study-2/edit');
     });
 
-    it('navigates to the previous study when PREVIOUS is clicked', () => {
+    it('navigates to the previous study when PREVIOUS is clicked', async () => {
         window.sessionStorage.setItem(
             'projectid-extraction-table',
             JSON.stringify({
@@ -73,14 +71,14 @@ describe('ExtractionStudiesPreviewer', () => {
                 pagination: { pageIndex: 0, pageSize: 25 },
             })
         );
-        (useStudyId as Mock).mockReturnValue('study-2');
+        (useParams as Mock).mockReturnValue({ projectId: 'projectid', studyId: 'study-2' });
 
         render(<ExtractionStudiesPreviewer />);
-        userEvent.click(screen.getByTestId('extraction-previewer-prev'));
+        await userEvent.click(screen.getByTestId('extraction-previewer-prev'));
         expect(useNavigate()).toHaveBeenCalledWith('/projects/projectid/extraction/studies/study-1/edit');
     });
 
-    it('navigates when a study card is clicked', () => {
+    it('navigates when a study card is clicked', async () => {
         window.sessionStorage.setItem(
             'projectid-extraction-table',
             JSON.stringify({
@@ -90,32 +88,11 @@ describe('ExtractionStudiesPreviewer', () => {
                 pagination: { pageIndex: 0, pageSize: 25 },
             })
         );
-        (useStudyId as Mock).mockReturnValue('study-1');
+        (useParams as Mock).mockReturnValue({ projectId: 'projectid', studyId: 'study-1' });
 
         render(<ExtractionStudiesPreviewer />);
-        userEvent.click(screen.getByTestId('extraction-previewer-study-study-3'));
+        await userEvent.click(screen.getByTestId('extraction-previewer-study-study-3'));
         expect(useNavigate()).toHaveBeenCalledWith('/projects/projectid/extraction/studies/study-3/edit');
-    });
-
-    it('opens confirmation when navigating with unsaved changes', async () => {
-        window.sessionStorage.setItem(
-            'projectid-extraction-table',
-            JSON.stringify({
-                columnFilters: [],
-                sorting: [],
-                studies: ['study-1', 'study-2', 'study-3'],
-                pagination: { pageIndex: 0, pageSize: 25 },
-            })
-        );
-        setUnloadHandler('study');
-        (useStudyId as Mock).mockReturnValue('study-1');
-
-        render(<ExtractionStudiesPreviewer />);
-        userEvent.click(screen.getByTestId('extraction-previewer-next'));
-        await waitFor(() => {
-            expect(screen.getByTestId('mock-confirmation-dialog')).toBeInTheDocument();
-        });
-        expect(useNavigate()).not.toHaveBeenCalled();
     });
 
     it('shows active extraction column filters when stored in session', () => {
@@ -128,10 +105,32 @@ describe('ExtractionStudiesPreviewer', () => {
                 pagination: { pageIndex: 0, pageSize: 25 },
             })
         );
-        (useStudyId as Mock).mockReturnValue('study-1');
+        (useParams as Mock).mockReturnValue({ projectId: 'projectid', studyId: 'study-1' });
 
         render(<ExtractionStudiesPreviewer />);
         expect(screen.getByText('Active filters')).toBeInTheDocument();
-        expect(screen.getByText('Status: Complete')).toBeInTheDocument();
+        expect(screen.getByText('Status: completed')).toBeInTheDocument();
+    });
+
+    it('disables PREVIOUS on the first study and NEXT on the last study', () => {
+        window.sessionStorage.setItem(
+            'projectid-extraction-table',
+            JSON.stringify({
+                columnFilters: [],
+                sorting: [],
+                studies: ['study-1', 'study-2', 'study-3'],
+                pagination: { pageIndex: 0, pageSize: 25 },
+            })
+        );
+        (useParams as Mock).mockReturnValue({ projectId: 'projectid', studyId: 'study-1' });
+
+        const { rerender } = render(<ExtractionStudiesPreviewer />);
+        expect(screen.getByTestId('extraction-previewer-prev')).toBeDisabled();
+        expect(screen.getByTestId('extraction-previewer-next')).not.toBeDisabled();
+
+        (useParams as Mock).mockReturnValue({ projectId: 'projectid', studyId: 'study-3' });
+        rerender(<ExtractionStudiesPreviewer />);
+        expect(screen.getByTestId('extraction-previewer-next')).toBeDisabled();
+        expect(screen.getByTestId('extraction-previewer-prev')).not.toBeDisabled();
     });
 });
