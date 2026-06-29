@@ -80,7 +80,7 @@ const DisplayMetaAnalysisSpecification: React.FC<{ projectId: string; metaAnalys
                     to={`/projects/${projectId}/extraction`}
                     target="_blank"
                 >
-                    {(studyset as StudysetReturn | undefined)?.neurostore_id || ''}
+                    {studysetId || ''}
                 </Link>
 
                 <Typography color="primary.dark" variant="body1">
