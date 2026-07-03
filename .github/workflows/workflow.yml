@@ -37,6 +37,12 @@ jobs:
         working-directory: compose
    steps:
       -
+        name: Debug
+        run: |
+          echo "inputs.pr_number=${{ inputs.pr_number }}"
+          echo "github.event.inputs.pr_number=${{ github.event.inputs.pr_number }}"
+          echo "github.ref=${{ github.ref }}"
+      -
         name: Checkout
         uses: actions/checkout@v4
         with:
