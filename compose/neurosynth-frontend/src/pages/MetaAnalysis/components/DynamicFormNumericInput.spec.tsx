@@ -85,6 +85,21 @@ describe('DynamicFormNumericInput', () => {
         expect(mockOnUpdate).toHaveBeenLastCalledWith({ voxel_thresh: 0.001 });
     });
 
+    it('should let the user type a leading decimal point and numbers', () => {
+        render(
+            <DynamicFormNumericInput
+                parameterName="voxel_thresh"
+                parameter={baseParam}
+                value={null}
+                onUpdate={mockOnUpdate}
+            />
+        );
+        const input = screen.getByRole('textbox');
+        userEvent.type(input, '.01');
+        expect(screen.getByDisplayValue('.01')).toBeInTheDocument();
+        expect(mockOnUpdate).toHaveBeenLastCalledWith({ voxel_thresh: 0.01 });
+    });
+
     it('should emit null when cleared', () => {
         render(
             <DynamicFormNumericInput
