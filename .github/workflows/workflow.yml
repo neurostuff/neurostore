@@ -38,6 +38,7 @@ jobs:
    steps:
       -
         name: Debug
+        working-directory: ${{ github.workspace }}
         run: |
           echo "inputs.pr_number=${{ inputs.pr_number }}"
           echo "github.event.inputs.pr_number=${{ github.event.inputs.pr_number }}"
