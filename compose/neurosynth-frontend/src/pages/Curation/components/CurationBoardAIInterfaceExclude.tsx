@@ -75,7 +75,8 @@ const CurationBoardAIInterfaceExclude: React.FC<{
     );
 
     const { ref: labelContainerRef, height: labelContainerHeight } = useMeasure<HTMLDivElement>();
-    const pxInVh = Math.round(windowHeight - 220 - labelContainerHeight);
+    const { ref: searchbarContainerRef, height: searchbarContainerHeight } = useMeasure<HTMLDivElement>();
+    const pxInVh = Math.round(windowHeight - 220 - labelContainerHeight - searchbarContainerHeight);
 
     // when the group changes, clear the search and select the first stub
     useEffect(() => {
@@ -133,11 +134,12 @@ const CurationBoardAIInterfaceExclude: React.FC<{
             ) : (
                 <Box>
                     <TextField
+                        ref={searchbarContainerRef}
                         size="small"
                         value={searchTerm}
                         onChange={(event) => setSearchTerm(event.target.value)}
                         placeholder="Search excluded studies..."
-                        sx={{ width: '260px', marginBottom: '0.5rem' }}
+                        sx={{ width: '260px', paddingBottom: '0.5rem' }}
                         InputProps={{
                             startAdornment: (
                                 <InputAdornment position="start">
