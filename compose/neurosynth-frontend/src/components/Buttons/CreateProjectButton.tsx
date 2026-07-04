@@ -8,7 +8,6 @@ import { useCreateProject } from 'hooks';
 import { ProjectSearchCriteria, projectsSearchHelper } from 'hooks/projects/useGetProjects';
 import { generateNewProjectData, getNextUntitledProjectName } from 'pages/Project/store/ProjectStore.helpers';
 import { useState } from 'react';
-import { useQueryClient } from 'react-query';
 import { useNavigate } from 'react-router-dom';
 
 const projectSearchCriteria = new ProjectSearchCriteria(1, 1000);
