@@ -10,9 +10,7 @@ vi.mock('react-router-dom');
 vi.mock('pages/NotFound/NotFoundPage', () => ({
     default: () => <div data-testid="notfound">Not found</div>,
 }));
-vi.mock('components/NeurosynthLoader/NeurosynthLoader', () => ({
-    default: () => <div data-testid="loader" />,
-}));
+vi.mock('components/NeurosynthLoader/NeurosynthLoader');
 
 describe('MetaAnalysisRedirect', () => {
     beforeEach(() => {
@@ -43,7 +41,7 @@ describe('MetaAnalysisRedirect', () => {
     it('shows a loader while loading', () => {
         mockUseGet.mockReturnValue({ data: undefined, isLoading: true, isError: false });
         render(<MetaAnalysisRedirect />);
-        expect(screen.getByTestId('loader')).toBeInTheDocument();
+        expect(screen.getByTestId('neurosynth-loader')).toBeInTheDocument();
         expect(screen.queryByTestId('to')).not.toBeInTheDocument();
     });
 });
