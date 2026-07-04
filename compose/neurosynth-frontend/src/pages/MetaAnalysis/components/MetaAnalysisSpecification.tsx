@@ -12,11 +12,11 @@ import useGetSnapshotStudysetById from 'hooks/studysets/useGetSnapshotStudysetBy
 import { AnnotationReturn, StudysetReturn } from 'neurosynth-compose-typescript-sdk';
 import React, { useMemo } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
-import { getAnalysisTypeDescription, getEstimatorDescription } from '../MetaAnalysisPage.helpers';
-import { IDynamicValueType } from './DynamicForm.types';
-import DynamicInputDisplay from './DynamicInputDisplay';
-import { isMultiGroupAlgorithm } from './SelectAnalysesComponent.helpers';
-import SelectAnalysesSummaryComponent from './SelectAnalysesSummaryComponent';
+import { getAnalysisTypeDescription, getEstimatorDescription } from 'pages/MetaAnalysis/MetaAnalysisPage.helpers';
+import { IDynamicValueType } from 'pages/MetaAnalysis/components/DynamicForm.types';
+import DynamicInputDisplay from 'pages/MetaAnalysis/components/DynamicInputDisplay';
+import { isMultiGroupAlgorithm } from 'pages/MetaAnalysis/components/SelectAnalysesComponent.helpers';
+import SelectAnalysesSummaryComponent from 'pages/MetaAnalysis/components/SelectAnalysesSummaryComponent';
 
 const DisplayMetaAnalysisSpecification: React.FC<{ projectId: string; metaAnalysisId: string }> = ({
     projectId,

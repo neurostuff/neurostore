@@ -8,9 +8,7 @@ import useGetSpecificationById from 'hooks/metaAnalyses/useGetSpecificationById'
 import QueryClientTestingWrapper from 'testing/QueryClientTestingWrapper';
 import DisplayMetaAnalysisSpecification from './MetaAnalysisSpecification';
 
-vi.mock('hooks', () => ({
-    useGetMetaAnalysisById: vi.fn(),
-}));
+vi.mock('hooks');
 vi.mock('hooks/studysets/useGetSnapshotStudysetById', () => ({
     default: vi.fn(),
 }));
@@ -20,8 +18,8 @@ vi.mock('hooks/annotations/useGetSnapshotAnnotationById', () => ({
 vi.mock('hooks/metaAnalyses/useGetSpecificationById', () => ({
     default: vi.fn(),
 }));
-vi.mock('./SelectAnalysesSummaryComponent', () => ({ default: () => null }));
-vi.mock('./DynamicInputDisplay', () => ({ default: () => null }));
+vi.mock('pages/MetaAnalysis/components/SelectAnalysesSummaryComponent');
+vi.mock('pages/MetaAnalysis/components/DynamicInputDisplay');
 
 describe('DisplayMetaAnalysisSpecification', () => {
     beforeEach(() => {
