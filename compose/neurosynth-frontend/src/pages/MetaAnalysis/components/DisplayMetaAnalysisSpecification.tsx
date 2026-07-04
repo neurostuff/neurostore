@@ -26,8 +26,8 @@ const DisplayMetaAnalysisSpecification: React.FC<{ projectId: string; metaAnalys
     const specificationId = getMetaAnalysisSpecificationId(metaAnalysis);
     const annotationId = getMetaAnalysisAnnotationId(metaAnalysis);
     const studysetId = getMetaAnalysisStudysetId(metaAnalysis);
-    const { data: annotation } = useGetSnapshotAnnotationById(annotationId);
-    const { data: studyset } = useGetSnapshotStudysetById(studysetId);
+    const { data: annotationSnapshot } = useGetSnapshotAnnotationById(annotationId);
+    const { data: studysetSnapshot } = useGetSnapshotStudysetById(studysetId);
     const { data: specification } = useGetSpecificationById(specificationId);
 
     const metaAnalysisTypeDescription = useMemo(() => {
@@ -90,11 +90,11 @@ const DisplayMetaAnalysisSpecification: React.FC<{ projectId: string; metaAnalys
                     <Typography variant="body1">{selectionText}</Typography>
                     {referenceDataset && (
                         <>
-                            {!!(annotation as AnnotationReturn | undefined)?.neurostore_id &&
-                                !!(studyset as StudysetReturn | undefined)?.neurostore_id && (
+                            {!!(annotationSnapshot as AnnotationReturn | undefined)?.neurostore_id &&
+                                !!(studysetSnapshot as StudysetReturn | undefined)?.neurostore_id && (
                                     <SelectAnalysesSummaryComponent
-                                        annotationdId={(annotation as AnnotationReturn).neurostore_id || ''}
-                                        studysetId={(studyset as StudysetReturn).neurostore_id || ''}
+                                        annotationdId={(annotationSnapshot as AnnotationReturn).neurostore_id || ''}
+                                        studysetId={(studysetSnapshot as StudysetReturn).neurostore_id || ''}
                                         selectedValue={{
                                             selectionKey: specification?.filter || '',
                                             type: getType(specification?.filter || ''),

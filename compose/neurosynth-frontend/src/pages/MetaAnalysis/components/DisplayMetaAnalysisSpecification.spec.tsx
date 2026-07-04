@@ -6,7 +6,7 @@ import useGetSnapshotStudysetById from 'hooks/studysets/useGetSnapshotStudysetBy
 import useGetSnapshotAnnotationById from 'hooks/annotations/useGetSnapshotAnnotationById';
 import useGetSpecificationById from 'hooks/metaAnalyses/useGetSpecificationById';
 import QueryClientTestingWrapper from 'testing/QueryClientTestingWrapper';
-import DisplayMetaAnalysisSpecification from './MetaAnalysisSpecification';
+import DisplayMetaAnalysisSpecification from './DisplayMetaAnalysisSpecification';
 
 vi.mock('hooks');
 vi.mock('hooks/studysets/useGetSnapshotStudysetById', () => ({
