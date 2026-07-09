@@ -5,6 +5,7 @@ import {
     mockBaseStudy,
     mockConditions,
     mockMetaAnalysisResult,
+    mockMetaAnalysisReturn,
     mockNeurovault,
     mockProject,
     mockStudy,
@@ -174,6 +175,12 @@ const useGetMetaAnalysisResultById = vi.fn().mockReturnValue({
     data: mockMetaAnalysisResult(),
 });
 
+const useGetMetaAnalysisById = vi.fn().mockReturnValue({
+    isLoading: false,
+    isError: false,
+    data: mockMetaAnalysisReturn(),
+});
+
 const useGetNeurovaultImages = vi.fn().mockReturnValue({
     isLoading: false,
     isError: false,
@@ -207,6 +214,7 @@ export {
     useUpdateStudyset,
     useUserCanEdit,
     useGetProjectById,
+    useGetMetaAnalysisById,
     useGetMetaAnalysisResultById,
     useGetNeurovaultImages,
 };

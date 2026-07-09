@@ -12,11 +12,11 @@ import useGetSnapshotStudysetById from 'hooks/studysets/useGetSnapshotStudysetBy
 import { AnnotationReturn, StudysetReturn } from 'neurosynth-compose-typescript-sdk';
 import React, { useMemo } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
-import { getAnalysisTypeDescription, getEstimatorDescription } from '../MetaAnalysisPage.helpers';
-import { IDynamicValueType } from './DynamicForm.types';
-import DynamicInputDisplay from './DynamicInputDisplay';
-import { isMultiGroupAlgorithm } from './SelectAnalysesComponent.helpers';
-import SelectAnalysesSummaryComponent from './SelectAnalysesSummaryComponent';
+import { getAnalysisTypeDescription, getEstimatorDescription } from 'pages/MetaAnalysis/MetaAnalysisPage.helpers';
+import { IDynamicValueType } from 'pages/MetaAnalysis/components/DynamicForm.types';
+import DynamicInputDisplay from 'pages/MetaAnalysis/components/DynamicInputDisplay';
+import { isMultiGroupAlgorithm } from 'pages/MetaAnalysis/components/SelectAnalysesComponent.helpers';
+import SelectAnalysesSummaryComponent from 'pages/MetaAnalysis/components/SelectAnalysesSummaryComponent';
 
 const DisplayMetaAnalysisSpecification: React.FC<{ projectId: string; metaAnalysisId: string }> = ({
     projectId,
@@ -26,8 +26,8 @@ const DisplayMetaAnalysisSpecification: React.FC<{ projectId: string; metaAnalys
     const specificationId = getMetaAnalysisSpecificationId(metaAnalysis);
     const annotationId = getMetaAnalysisAnnotationId(metaAnalysis);
     const studysetId = getMetaAnalysisStudysetId(metaAnalysis);
-    const { data: annotation } = useGetSnapshotAnnotationById(annotationId);
-    const { data: studyset } = useGetSnapshotStudysetById(studysetId);
+    const { data: annotationSnapshot } = useGetSnapshotAnnotationById(annotationId);
+    const { data: studysetSnapshot } = useGetSnapshotStudysetById(studysetId);
     const { data: specification } = useGetSpecificationById(specificationId);
 
     const metaAnalysisTypeDescription = useMemo(() => {
@@ -80,7 +80,7 @@ const DisplayMetaAnalysisSpecification: React.FC<{ projectId: string; metaAnalys
                     to={`/projects/${projectId}/extraction`}
                     target="_blank"
                 >
-                    {(studyset as StudysetReturn | undefined)?.neurostore_id || ''}
+                    {studysetId || ''}
                 </Link>
 
                 <Typography color="primary.dark" variant="body1">
@@ -90,11 +90,11 @@ const DisplayMetaAnalysisSpecification: React.FC<{ projectId: string; metaAnalys
                     <Typography variant="body1">{selectionText}</Typography>
                     {referenceDataset && (
                         <>
-                            {!!(annotation as AnnotationReturn | undefined)?.neurostore_id &&
-                                !!(studyset as StudysetReturn | undefined)?.neurostore_id && (
+                            {!!(annotationSnapshot as AnnotationReturn | undefined)?.neurostore_id &&
+                                !!(studysetSnapshot as StudysetReturn | undefined)?.neurostore_id && (
                                     <SelectAnalysesSummaryComponent
-                                        annotationdId={(annotation as AnnotationReturn).neurostore_id || ''}
-                                        studysetId={(studyset as StudysetReturn).neurostore_id || ''}
+                                        annotationdId={(annotationSnapshot as AnnotationReturn).neurostore_id || ''}
+                                        studysetId={(studysetSnapshot as StudysetReturn).neurostore_id || ''}
                                         selectedValue={{
                                             selectionKey: specification?.filter || '',
                                             type: getType(specification?.filter || ''),

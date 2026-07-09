@@ -88,9 +88,8 @@ describe(PAGE_NAME, () => {
         });
 
         it('should allow specification editing when no results or jobs exist', () => {
-            cy.contains('Edit Specification').click();
-            cy.get('button').contains('Edit Specification').should('exist');
-            cy.get('button').contains('Edit Specification').should('not.be.disabled');
+            cy.contains('[role="tab"]', 'Edit Specification').click();
+            cy.contains('button', 'Edit Specification').should('exist').and('not.be.disabled');
         });
 
         it('should show Settings tab when no results or jobs exist', () => {
@@ -138,8 +137,8 @@ describe(PAGE_NAME, () => {
         });
 
         it('should NOT allow specification editing when job is running', () => {
-            cy.contains('View Specification').click();
-            cy.get('button').contains('Edit Specification').should('not.exist');
+            cy.contains('[role="tab"]', 'View Specification').click();
+            cy.contains('button', 'Edit Specification').should('not.exist');
         });
 
         it('should show "Run Again" instead of "Settings" when job is running', () => {
@@ -267,8 +266,8 @@ describe(PAGE_NAME, () => {
         });
 
         it('should NOT allow specification editing when result exists', () => {
-            cy.contains('View Specification').click();
-            cy.get('button').contains('Edit Specification').should('not.exist');
+            cy.contains('[role="tab"]', 'View Specification').click();
+            cy.contains('button', 'Edit Specification').should('not.exist');
         });
     });
 
@@ -435,9 +434,8 @@ describe(PAGE_NAME, () => {
 
             cy.login('mocked').visit(PROJECT_PATH).wait('@metaAnalysisFixture', { timeout: 20000 });
 
-            cy.contains('Edit Specification').click();
-            cy.get('button').contains('Edit Specification').should('exist');
-            cy.get('button').contains('Edit Specification').should('not.be.disabled');
+            cy.contains('[role="tab"]', 'Edit Specification').click();
+            cy.contains('button', 'Edit Specification').should('exist').and('not.be.disabled');
         });
 
         it('should not show edit button when user does not have edit permissions', () => {
@@ -454,8 +452,8 @@ describe(PAGE_NAME, () => {
             }).as('jobsFixture');
 
             cy.login('mocked').visit(PROJECT_PATH).wait('@metaAnalysisFixture', { timeout: 20000 });
-            cy.contains('View Specification').click();
-            cy.get('button').contains('Edit Specification').should('be.disabled');
+            cy.contains('[role="tab"]', 'View Specification').click();
+            cy.contains('button', 'Edit Specification').should('be.disabled');
         });
     });
 
