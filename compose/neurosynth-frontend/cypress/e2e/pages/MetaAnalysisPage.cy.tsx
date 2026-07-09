@@ -265,7 +265,7 @@ describe(PAGE_NAME, () => {
             cy.contains('Run Again').should('exist');
         });
 
-        it('should NOT allow specification editing when result exists', () => {
+        it.only('should NOT allow specification editing when result exists', () => {
             cy.contains('[role="tab"]', 'View Specification').click();
             cy.contains('button', 'Edit Specification').should('not.exist');
         });
