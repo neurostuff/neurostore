@@ -168,7 +168,7 @@ const MetaAnalysisDynamicForm: React.FC<IDynamicForm> = (props) => {
                         return null;
                     }
 
-                    return <DynamicInputComponent {...parameterAsInput} />;
+                    return <DynamicInputComponent key={parameterAsInput.parameterName} {...parameterAsInput} />;
                 })}
             {parametersAsInputList.length === 0 && <Box sx={{ color: 'warning.dark' }}>No arguments available</Box>}
         </Box>
