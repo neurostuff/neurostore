@@ -10,6 +10,17 @@ export default defineConfig({
     e2e: {
         setupNodeEvents(on, config) {
             // implement node event listeners here
+            on('before:browser:launch', (browser, launchOptions) => {
+                if (browser.family === 'chromium') {
+                    launchOptions.args.push(
+                        '--use-gl=swiftshader',
+                        '--use-angle=swiftshader',
+                        '--enable-webgl',
+                        '--ignore-gpu-blocklist'
+                    );
+                }
+                return launchOptions;
+            });
             on('task', {
                 log(message) {
                     console.log(message);

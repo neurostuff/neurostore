@@ -54,10 +54,7 @@ const CurationStubStudyDraggableContainer: React.FC<
             sx={CurationStubStudyStyles.stubStudyContainer}
         >
             {!props?.exclusionTag && canEdit ? (
-                <Box
-                    {...props.provided.dragHandleProps}
-                    sx={{ display: 'flex', alignItems: 'center', width: '30px' }}
-                >
+                <Box {...props.provided.dragHandleProps} sx={{ display: 'flex', alignItems: 'center', width: '30px' }}>
                     <Box>
                         {/* // eslint-disable-next-line react/jsx-no-undef */}
                         <DragIndicatorIcon sx={{ color: 'gray' }} />

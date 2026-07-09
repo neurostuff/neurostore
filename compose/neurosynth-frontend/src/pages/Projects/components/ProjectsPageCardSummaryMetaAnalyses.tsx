@@ -10,11 +10,7 @@ const ProjectsPageCardSummaryMetaAnalyses: React.FC<{
 }> = (props) => {
     const { metaAnalysisIds } = props;
 
-    const {
-        data: metaAnalyses,
-        isLoading,
-        isError,
-    } = useGetMetaAnalysesByIds(metaAnalysisIds as string[]);
+    const { data: metaAnalyses, isLoading, isError } = useGetMetaAnalysesByIds(metaAnalysisIds as string[]);
     return (
         <StateHandlerComponent isLoading={isLoading} isError={isError}>
             <Typography sx={{ marginBottom: '0.5rem' }} fontWeight="bold">

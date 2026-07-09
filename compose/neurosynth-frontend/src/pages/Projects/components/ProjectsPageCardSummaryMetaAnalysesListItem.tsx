@@ -1,7 +1,9 @@
 import { ListItem, ListItemButton, ListItemIcon, ListItemProps, ListItemText, Skeleton } from '@mui/material';
-import { getResultStatus } from 'helpers/MetaAnalysis.helpers';
+import { getLatestMetaAnalysisResultId, getResultStatus } from 'helpers/MetaAnalysis.helpers';
 import { useGetMetaAnalysisResultById } from 'hooks';
-import { MetaAnalysisReturn, ResultReturn } from 'neurosynth-compose-typescript-sdk';
+import { MetaAnalysisReturn } from 'neurosynth-compose-typescript-sdk';
+import useGetMetaAnalysisJobById from 'pages/MetaAnalysis/hooks/useGetMetaAnalysisJobById';
+import useGetMetaAnalysisJobsByMetaAnalysisId from 'pages/MetaAnalysis/hooks/useGetMetaAnalysisJobsByMetaAnalysisId';
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 
@@ -9,18 +11,24 @@ const ProjectsPageCardSummaryMetaAnalysesListItem: React.FC<ListItemProps & { me
     props
 ) => {
     const { metaAnalysis, ...listItemProps } = props;
+    const latestResultId = getLatestMetaAnalysisResultId(metaAnalysis);
 
     const { data: metaAnalysisResult, isLoading: getMetaAnalysisResultIsLoading } = useGetMetaAnalysisResultById(
-        metaAnalysis?.results && metaAnalysis.results.length
-            ? (metaAnalysis.results[metaAnalysis.results.length - 1] as ResultReturn).id
-            : undefined
+        latestResultId
     );
 
-    const resultStatus = useMemo(() => {
-        return getResultStatus(metaAnalysis, metaAnalysisResult);
-    }, [metaAnalysis, metaAnalysisResult]);
+    const { data: metaAnalysisJobs, isLoading: metaAnalysisJobsIsLoading } = useGetMetaAnalysisJobsByMetaAnalysisId(
+        metaAnalysis?.id
+    );
+    const jobs = metaAnalysisJobs ?? [];
+    const latestJob = jobs.length > 0 ? jobs[jobs.length - 1] : undefined;
+    const { data: latestMetaAnalysisJob, isLoading: latestJobIsLoading } = useGetMetaAnalysisJobById(latestJob?.job_id);
 
-    if (getMetaAnalysisResultIsLoading) {
+    const resultStatus = useMemo(() => {
+        return getResultStatus(metaAnalysis, metaAnalysisResult, latestMetaAnalysisJob);
+    }, [metaAnalysis, metaAnalysisResult, latestMetaAnalysisJob]);
+
+    if (getMetaAnalysisResultIsLoading || metaAnalysisJobsIsLoading || latestJobIsLoading) {
         return (
             <ListItem {...listItemProps} divider disableGutters disablePadding>
                 <ListItemButton>

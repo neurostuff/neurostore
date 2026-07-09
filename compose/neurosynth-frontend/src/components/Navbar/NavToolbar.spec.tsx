@@ -1,9 +1,20 @@
 import { vi } from 'vitest';
 import { useAuth0 } from '@auth0/auth0-react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import NavToolbar from './NavToolbar';
 
+const { mockCiteAsync, mockFormat, mockEnqueueSnackbar } = vi.hoisted(() => ({
+    mockCiteAsync: vi.fn(),
+    mockFormat: vi.fn(),
+    mockEnqueueSnackbar: vi.fn(),
+}));
+
+vi.mock('notistack', () => ({
+    useSnackbar: () => ({
+        enqueueSnackbar: mockEnqueueSnackbar,
+    }),
+}));
 vi.mock('@auth0/auth0-react');
 vi.mock('hooks');
 vi.mock('react-router-dom');
@@ -12,7 +23,26 @@ vi.mock('components/Navbar/NavToolbarPopupSubMenu');
 
 describe('NavToolbar Component', () => {
     beforeEach(() => {
+        vi.clearAllMocks();
         useAuth0().isAuthenticated = false;
+        mockCiteAsync.mockResolvedValue({
+            format: mockFormat,
+        });
+        mockFormat.mockImplementation((outputType, options) => {
+            if (outputType === 'bibtex') {
+                return 'BIBTEX CITATION TEXT';
+            }
+
+            if (options?.template === 'apa') return 'APA CITATION TEXT';
+            if (options?.template === 'vancouver') return 'VANCOUVER CITATION TEXT';
+            if (options?.template === 'harvard1') return 'HARVARD CITATION TEXT';
+            return '';
+        });
+
+        Object.defineProperty(window.navigator, 'clipboard', {
+            value: { writeText: vi.fn().mockResolvedValue(undefined) },
+            configurable: true,
+        });
     });
 
     const mockLogin = vi.fn();
@@ -66,8 +96,9 @@ describe('NavToolbar Component', () => {
     it('should open the navpopup menu with the given menu items', () => {
         render(<NavToolbar onLogin={mockLogin} onLogout={mockLogout} />);
 
-        // get the first element (the Explore button)
-        userEvent.click(screen.getAllByTestId('mock-trigger-show-popup')[0]);
+        const exploreLabel = screen.getByText('explore');
+        const exploreTriggerButton = exploreLabel.nextElementSibling as HTMLElement;
+        userEvent.click(exploreTriggerButton);
         expect(screen.getByText('Studies')).toBeInTheDocument();
         expect(screen.getByText('Meta-Analyses')).toBeInTheDocument();
     });

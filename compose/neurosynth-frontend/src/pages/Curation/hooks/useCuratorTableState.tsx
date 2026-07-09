@@ -216,7 +216,7 @@ const useCuratorTableState = (
         onSortingChange: setSorting,
         getSortedRowModel: getSortedRowModel(),
         onRowSelectionChange: setRowSelection,
-        enableRowSelection: true,
+        enableRowSelection: (row) => row.original.exclusionTag === null,
         enableMultiRowSelection: true,
         enableSubRowSelection: false,
         getRowId: (stub) => stub.id,

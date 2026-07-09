@@ -1,9 +1,6 @@
-from marshmallow import (
-    fields,
-    EXCLUDE,
-)
+from marshmallow import EXCLUDE, fields
 
-from .analysis import BaseSchema
+from neurosynth_compose.schemas.analysis import BaseSchema
 
 
 class UserSchema(BaseSchema):

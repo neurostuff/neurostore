@@ -22,19 +22,23 @@ const useEditAnnotationsHotTable = (annotationId?: string, disableEdit?: boolean
     } = useGetAnnotationById(annotationId);
     const { user } = useAuth0();
     const [annotationsHotState, setAnnotationsHotState] = useState<{
-        hotDataToStudyMapping: Map<number, { studyId: string; analysisId: string }>;
+        hotDataToStudyMapping: Map<number, { studyId: string; analysisId: string; isEdited: boolean }>;
         noteKeys: NoteKeyType[];
         hotData: AnnotationNoteValue[][];
         hotColumns: ColumnSettings[];
         mergeCells: MergeCellsSettings[];
         isEdited: boolean;
+        isReordered: boolean;
+        noteKeysHaveChanged: boolean;
     }>({
-        hotDataToStudyMapping: new Map<number, { studyId: string; analysisId: string }>(),
+        hotDataToStudyMapping: new Map<number, { studyId: string; analysisId: string; isEdited: boolean }>(),
         noteKeys: [],
         hotData: [],
         hotColumns: [],
         mergeCells: [],
         isEdited: false,
+        isReordered: false,
+        noteKeysHaveChanged: false,
     });
 
     useEffect(() => {
@@ -65,6 +69,8 @@ const useEditAnnotationsHotTable = (annotationId?: string, disableEdit?: boolean
             hotData: hotData,
             mergeCells: getMergeCells(hotDataToStudyMapping),
             isEdited: false,
+            isReordered: false,
+            noteKeysHaveChanged: false,
         });
     }, [annotations, disableEdit]);
 

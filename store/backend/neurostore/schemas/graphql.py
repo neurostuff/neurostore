@@ -4,10 +4,10 @@ import graphene
 from graphene import relay
 from graphene_sqlalchemy import SQLAlchemyConnectionField, SQLAlchemyObjectType
 
-from ..models import Study as StudyModel
-from ..models import Analysis as AnalysisModel
-from ..models import Entity as EntityModel
-from ..models import Image as ImageModel
+from neurostore.models import Analysis as AnalysisModel
+from neurostore.models import Entity as EntityModel
+from neurostore.models import Image as ImageModel
+from neurostore.models import Study as StudyModel
 
 
 class Study(SQLAlchemyObjectType):

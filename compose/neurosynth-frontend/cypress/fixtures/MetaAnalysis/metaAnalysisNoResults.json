@@ -1,0 +1,26 @@
+{
+    "neurostore_annotation": "mock-annotation-id",
+    "created_at": "2023-11-27T21:45:53.258233+00:00",
+    "description": "ALE meta analysis",
+    "id": "mock-meta-analysis-id",
+    "name": "THIS IS MY TEST META ANALYSIS",
+    "neurostore_analysis": {
+        "created_at": "2023-11-27T21:45:53.280363+00:00",
+        "exception": null,
+        "id": "mock-neurostore-analysis-id",
+        "neurostore_id": null,
+        "status": "PENDING",
+        "traceback": null,
+        "updated_at": null
+    },
+    "neurostore_url": null,
+    "project": "mock-project-id",
+    "provenance": null,
+    "results": [],
+    "run_key": "mock-run-key",
+    "specification": "mock-specification-id",
+    "neurostore_studyset": "mock-neurostore-studyset-id",
+    "updated_at": null,
+    "user": "auth0|62e0e6c9dd47048572613b4d",
+    "username": "mock-username"
+}

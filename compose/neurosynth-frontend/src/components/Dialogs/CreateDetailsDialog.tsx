@@ -1,13 +1,4 @@
-import {
-    Box,
-    Button,
-    Dialog,
-    DialogContent,
-    DialogTitle,
-    TextField,
-    Typography,
-    IconButton,
-} from '@mui/material';
+import { Box, Button, Dialog, DialogContent, DialogTitle, TextField, Typography, IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import { ChangeEvent, useEffect, useState } from 'react';
 import LoadingButton from 'components/Buttons/LoadingButton';
@@ -73,9 +64,7 @@ const CreateDetailsDialog: React.FC<ICreateDetailsDialog> = (props) => {
                     name="name"
                     id="dialog-name"
                     error={newDetails.name.length === 0 && hasEnteredText}
-                    helperText={
-                        newDetails.name.length === 0 && hasEnteredText ? 'name is required' : ''
-                    }
+                    helperText={newDetails.name.length === 0 && hasEnteredText ? 'name is required' : ''}
                     required
                     onChange={handleOnChange}
                     sx={{ width: '100%', margin: '5px 0 1rem 0' }}
@@ -90,12 +79,7 @@ const CreateDetailsDialog: React.FC<ICreateDetailsDialog> = (props) => {
                     sx={{ width: '100%', margin: '0 0 1.5rem 0' }}
                 />
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <Button
-                        sx={{ width: '150px' }}
-                        onClick={handleOnClose}
-                        variant="outlined"
-                        color="error"
-                    >
+                    <Button sx={{ width: '150px' }} onClick={handleOnClose} variant="outlined" color="error">
                         Cancel
                     </Button>
                     <LoadingButton

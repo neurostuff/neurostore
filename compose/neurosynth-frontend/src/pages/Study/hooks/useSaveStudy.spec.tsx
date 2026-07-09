@@ -1,7 +1,7 @@
-import { vi, Mock} from 'vitest';
+import { vi, Mock } from 'vitest';
 import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { useCreateStudy, useUpdateAnnotationById, useUpdateStudyset } from 'hooks';
+import { useCreateStudy, useUpdateStudyset } from 'hooks';
 import { useSnackbar } from 'notistack';
 import {
     useStudy,
@@ -10,7 +10,7 @@ import {
     useStudyUser,
     useUpdateStudyInDB,
 } from 'pages/Study/store/StudyStore';
-import { useUpdateAnnotationInDB } from 'stores/AnnotationStore.actions';
+import { useUpdateDBWithAnnotationFromStore } from 'stores/AnnotationStore.actions';
 import { useAnnotationIsEdited, useAnnotationNotes } from 'stores/AnnotationStore.getters';
 import {
     mockAnalyses,
@@ -30,7 +30,7 @@ vi.mock('pages/Study/store/StudyStore');
 vi.mock('stores/AnnotationStore.getters');
 vi.mock('stores/AnnotationStore.actions');
 vi.mock('hooks');
-vi.mock('utils/api');
+vi.mock('api/api.config');
 
 // Using a dummy component in order to test a custom hook
 const DummyComponent = () => {
@@ -54,10 +54,7 @@ describe('useSaveStudy hook', () => {
 
     it('should throw an error for duplicate analyses', async () => {
         const mockAnalysesWithDuplicates = mockAnalyses();
-        (useStudyAnalyses as Mock).mockReturnValue([
-            ...mockAnalysesWithDuplicates,
-            mockAnalysesWithDuplicates[0],
-        ]);
+        (useStudyAnalyses as Mock).mockReturnValue([...mockAnalysesWithDuplicates, mockAnalysesWithDuplicates[0]]);
 
         render(<DummyComponent />);
 
@@ -66,7 +63,7 @@ describe('useSaveStudy hook', () => {
         });
 
         expect(useSnackbar().enqueueSnackbar).toHaveBeenCalled();
-        expect(useUpdateAnnotationInDB()).not.toHaveBeenCalled();
+        expect(useUpdateDBWithAnnotationFromStore()).not.toHaveBeenCalled();
         expect(useUpdateStudyInDB()).not.toHaveBeenCalled();
     });
 
@@ -94,7 +91,7 @@ describe('useSaveStudy hook', () => {
         });
 
         expect(useSnackbar().enqueueSnackbar).toHaveBeenCalled();
-        expect(useUpdateAnnotationInDB()).not.toHaveBeenCalled();
+        expect(useUpdateDBWithAnnotationFromStore()).not.toHaveBeenCalled();
         expect(useUpdateStudyInDB()).not.toHaveBeenCalled();
     });
 
@@ -112,7 +109,7 @@ describe('useSaveStudy hook', () => {
         });
 
         expect(useUpdateStudyInDB()).toHaveBeenCalled();
-        expect(useUpdateAnnotationInDB()).toHaveBeenCalled();
+        expect(useUpdateDBWithAnnotationFromStore()).toHaveBeenCalled();
     });
 
     it('should only save the study if the annotation has not been edited', async () => {
@@ -129,7 +126,7 @@ describe('useSaveStudy hook', () => {
         });
 
         expect(useUpdateStudyInDB()).toHaveBeenCalled();
-        expect(useUpdateAnnotationInDB()).not.toHaveBeenCalled();
+        expect(useUpdateDBWithAnnotationFromStore()).not.toHaveBeenCalled();
     });
 
     it('should only save the annotation if the study has not been edited', async () => {
@@ -146,13 +143,13 @@ describe('useSaveStudy hook', () => {
         });
 
         expect(useUpdateStudyInDB()).not.toHaveBeenCalled();
-        expect(useUpdateAnnotationInDB()).toHaveBeenCalled();
+        expect(useUpdateDBWithAnnotationFromStore()).toHaveBeenCalled();
     });
 
     it('should clone the study if user does not own the study and it has been edited', async () => {
-        const nestedMockStudyset = mockStudysetNotNested();
+        const nonNestedMockStudyset = mockStudysetNotNested();
         const mockStudyWithSameIdInStudyset = mockStoreStudy();
-        mockStudyWithSameIdInStudyset.id = (nestedMockStudyset.studies as string[])[0];
+        mockStudyWithSameIdInStudyset.id = (nonNestedMockStudyset.studies as string[])[0];
         (useStudy as Mock).mockReturnValue(mockStudyWithSameIdInStudyset);
         (useStudyHasBeenEdited as Mock).mockReturnValue(true);
         (useStudyUser as Mock).mockReturnValue('different-user');
@@ -170,6 +167,6 @@ describe('useSaveStudy hook', () => {
         expect(useUpdateStudyInDB()).not.toHaveBeenCalled();
         expect(useCreateStudy().mutateAsync).toHaveBeenCalled();
         expect(useUpdateStudyset().mutateAsync).toHaveBeenCalled();
-        expect(useUpdateAnnotationById('').mutateAsync).toHaveBeenCalled(); // arg doesnt matter as it is a mock
+        expect(useUpdateDBWithAnnotationFromStore()).toHaveBeenCalled(); // arg doesnt matter as it is a mock
     });
 });

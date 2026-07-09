@@ -7,10 +7,7 @@ import { ISource } from 'hooks/projects/useGetProjects';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
-import {
-    useCreateCurationSource,
-    useProjectCurationSources,
-} from 'pages/Project/store/ProjectStore';
+import { useCreateCurationSource, useProjectCurationSources } from 'pages/Project/store/ProjectStore';
 
 interface AutoSelectOption {
     id: string;
@@ -42,9 +39,7 @@ interface ISourceSelectorPopup {
 
 const CurationPopupIdentificationSourceSelector: React.FC<ISourceSelectorPopup> = (props) => {
     const { projectId } = useParams<{ projectId: string | undefined }>();
-    const [selectedValue, setSelectedValue] = useState<AutoSelectOption | null>(
-        props.initialValue || null
-    );
+    const [selectedValue, setSelectedValue] = useState<AutoSelectOption | null>(props.initialValue || null);
     const [sourceOptions, setSourceOptions] = useState<AutoSelectOption[]>([]);
 
     const sources = useProjectCurationSources();
@@ -54,10 +49,7 @@ const CurationPopupIdentificationSourceSelector: React.FC<ISourceSelectorPopup> 
         if (sources) {
             setSourceOptions((_) => {
                 const updatedSources = sources
-                    .filter(
-                        (originalSource) =>
-                            !(props.excludeSources || []).includes(originalSource.id)
-                    )
+                    .filter((originalSource) => !(props.excludeSources || []).includes(originalSource.id))
                     .map((source) => ({
                         id: source.id,
                         label: source.label,
@@ -92,10 +84,7 @@ const CurationPopupIdentificationSourceSelector: React.FC<ISourceSelectorPopup> 
         }
     };
 
-    const handleChange = (
-        _event: React.SyntheticEvent<Element, Event>,
-        newValue: string | AutoSelectOption | null
-    ) => {
+    const handleChange = (_event: React.SyntheticEvent<Element, Event>, newValue: string | AutoSelectOption | null) => {
         // if user hits enter after typing input, we get a string and handle it here
         if (typeof newValue === 'string') {
             const foundValue = sourceOptions.find(
@@ -157,9 +146,7 @@ const CurationPopupIdentificationSourceSelector: React.FC<ISourceSelectorPopup> 
                 const filteredValues = filterOptions(options, params);
 
                 const optionExists = options.some(
-                    (option) =>
-                        params.inputValue.toLocaleLowerCase() ===
-                        (option?.label || '').toLocaleLowerCase()
+                    (option) => params.inputValue.toLocaleLowerCase() === (option?.label || '').toLocaleLowerCase()
                 );
 
                 if (params.inputValue !== '' && !optionExists) {

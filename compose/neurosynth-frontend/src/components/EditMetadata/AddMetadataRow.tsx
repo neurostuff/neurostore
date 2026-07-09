@@ -26,6 +26,7 @@ const AddMetadataRow: React.FC<IAddMetadataRowModel> = (props) => {
         allowBoolean = true,
         allowString = true,
         allowNumber = true,
+        defaultType = EPropertyType.STRING,
         valuePlaceholderText,
         allowNone = true,
         showToggleType = true,
@@ -33,11 +34,11 @@ const AddMetadataRow: React.FC<IAddMetadataRowModel> = (props) => {
         disabled = false,
     } = props;
 
-    const [currType, setCurrType] = useState(EPropertyType.STRING);
+    const [currType, setCurrType] = useState(defaultType);
     const [isValid, setIsValid] = useState(true);
     const [metadataRow, setMetadataRow] = useState<IMetadataRowModel>({
         metadataKey: '',
-        metadataValue: '',
+        metadataValue: getStartValFromType(defaultType),
     });
 
     const handleToggle = useCallback((newType: EPropertyType) => {

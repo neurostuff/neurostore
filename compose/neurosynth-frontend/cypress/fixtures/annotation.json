@@ -5,42 +5,42 @@
     "metadata": null,
     "name": "Annotation for studyset 73HRs8HaJbR8",
     "note_keys": {
-      "included": {
-        "type": "boolean",
-        "order": 0
-      },
-      "string_key": {
-        "type": "string",
-        "order": 1
-      }
+        "included": {
+            "type": "boolean",
+            "order": 0
+        },
+        "string_key": {
+            "type": "string",
+            "order": 1
+        }
     },
     "notes": [
-      {
-        "analysis": "5KyvcoE3eE8f",
-        "analysis_name": "Analysis 1",
-        "authors": "Noonan SK, Haist F, Muller RA",
-        "note": {
-          "included": false,
-          "string_key": "ABC"
+        {
+            "analysis": "5KyvcoE3eE8f",
+            "analysis_name": "Analysis 1",
+            "authors": "Noonan SK, Haist F, Muller RA",
+            "note": {
+                "included": false,
+                "string_key": "ABC"
+            },
+            "publication": "Brain research",
+            "study": "mock-study-id",
+            "study_name": "Aberrant functional connectivity in autism: evidence from low-frequency BOLD signal fluctuations.",
+            "study_year": 2009
         },
-        "publication": "Brain research",
-        "study": "mock-study-id",
-        "study_name": "Aberrant functional connectivity in autism: evidence from low-frequency BOLD signal fluctuations.",
-        "study_year": 2009
-      },
-      {
-        "analysis": "B7GDVjuVThso",
-        "analysis_name": "Analysis 2",
-        "authors": "Noonan SK, Haist F, Muller RA",
-        "note": {
-          "included": true,
-          "string_key": "DEF"
-        },
-        "publication": "Brain research",
-        "study": "mock-study-id",
-        "study_name": "Aberrant functional connectivity in autism: evidence from low-frequency BOLD signal fluctuations.",
-        "study_year": 2009
-      }
+        {
+            "analysis": "B7GDVjuVThso",
+            "analysis_name": "Analysis 2",
+            "authors": "Noonan SK, Haist F, Muller RA",
+            "note": {
+                "included": true,
+                "string_key": "DEF"
+            },
+            "publication": "Brain research",
+            "study": "mock-study-id",
+            "study_name": "Aberrant functional connectivity in autism: evidence from low-frequency BOLD signal fluctuations.",
+            "study_year": 2009
+        }
     ],
     "source": null,
     "source_id": null,
@@ -49,5 +49,4 @@
     "updated_at": null,
     "user": "github|26612023",
     "username": "Nicholas Lee"
-  }
-  
+}

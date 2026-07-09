@@ -2,7 +2,7 @@ import { AxiosError, AxiosResponse } from 'axios';
 import { useSnackbar } from 'notistack';
 import { useMutation, useQueryClient } from 'react-query';
 import { StudyRequest, StudyReturn } from 'neurostore-typescript-sdk';
-import API from 'utils/api';
+import API from 'api/api.config';
 
 const useUpdateStudy = () => {
     const { enqueueSnackbar } = useSnackbar();

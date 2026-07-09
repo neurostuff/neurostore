@@ -1,6 +1,5 @@
 import { AxiosResponse } from 'axios';
 import { IMetadataRowModel } from 'components/EditMetadata/EditMetadata.types';
-import { setAnalysesInAnnotationAsIncluded } from 'helpers/Annotation.helpers';
 import { setUnloadHandler } from 'helpers/BeforeUnload.helpers';
 import { AnalysisReturn, StudyReturn } from 'neurostore-typescript-sdk';
 import { arrayToMetadata, metadataToArray } from 'pages/Study/components/EditStudyMetadata';
@@ -16,7 +15,7 @@ import {
 } from 'pages/Study/store/StudyStore.helpers';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import API from 'utils/api';
+import API from 'api/api.config';
 import { v4 as uuid } from 'uuid';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
@@ -25,7 +24,7 @@ export type StudyStoreActions = {
     initStudyStore: (studyId?: string) => void;
     clearStudyStore: () => void;
     updateStudy: (fieldName: keyof StudyDetails, value: string | number) => void;
-    updateStudyInDB: (annotationId: string | undefined) => Promise<StudyReturn>;
+    updateStudyInDB: () => Promise<StudyReturn>;
     addOrUpdateStudyMetadataRow: (row: IMetadataRowModel) => void;
     deleteStudyMetadataRow: (key: string) => void;
     addOrUpdateAnalysis: (analysis: Partial<IStoreAnalysis>) => IStoreAnalysis;
@@ -121,7 +120,7 @@ const useStudyStore = create<
                     }
                 },
                 clearStudyStore: () => {
-                    set((state) => ({
+                    set(() => ({
                         study: getEmptyStudy(),
                         storeMetadata: {
                             studyIsEdited: false,
@@ -146,7 +145,7 @@ const useStudyStore = create<
                         },
                     }));
                 },
-                updateStudyInDB: async (annotationId) => {
+                updateStudyInDB: async () => {
                     try {
                         const state = useStudyStore.getState();
                         if (!state.study.id) throw new Error('no study id');
@@ -170,12 +169,6 @@ const useStudyStore = create<
                             metadata: arrayToMetadata(state.study.metadata),
                             analyses: storeAnalysesToStudyAnalyses(state.study.analyses),
                         });
-
-                        const newAnalysesWereCreated = state.study.analyses.some((analysis) => analysis.isNew);
-                        if (newAnalysesWereCreated && annotationId) {
-                            // new analyses created are not included by default and need to be manually set
-                            await setAnalysesInAnnotationAsIncluded(annotationId);
-                        }
 
                         // we want to reset the store with our new data because if we created any new
                         // analyses, they will now have their own IDs assigned to them by neurostore.
@@ -651,21 +644,17 @@ export const useStudyAnalysisPointStatistic = (analysisId?: string) =>
 export const useNumStudyAnalyses = () => useStudyStore((state) => state.study.analyses.length);
 export const useStudyAnalyses = () => useStudyStore((state) => state.study.analyses);
 export const useDebouncedStudyAnalyses = () => {
+    const studyAnalyses = useStudyAnalyses();
     const [debouncedAnalyses, setDebouncedAnalyses] = useState(useStudyStore.getState().study.analyses);
     useEffect(() => {
-        let debounce: NodeJS.Timeout;
-        const unsub = useStudyStore.subscribe((state) => {
-            if (debounce) clearTimeout(debounce);
-            debounce = setTimeout(() => {
-                setDebouncedAnalyses(state.study.analyses);
-            }, 400);
-        });
+        const debounce: NodeJS.Timeout = setTimeout(() => {
+            setDebouncedAnalyses(studyAnalyses);
+        }, 500);
 
         return () => {
-            unsub();
             clearTimeout(debounce);
         };
-    }, []);
+    }, [studyAnalyses]);
     return debouncedAnalyses;
 };
 

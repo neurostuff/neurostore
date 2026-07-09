@@ -2,16 +2,12 @@ import { useAuth0 } from '@auth0/auth0-react';
 import useGetDebouncedProjects from 'hooks/projects/useGetDebouncedProjects';
 import { ProjectSearchCriteria } from 'hooks/projects/useGetProjects';
 import { ProjectList } from 'neurosynth-compose-typescript-sdk';
-import {
-    addKVPToSearch,
-    getSearchCriteriaFromURL,
-    getURLFromSearchCriteria,
-} from 'components/Search/search.helpers';
+import { addKVPToSearch, getSearchCriteriaFromURL, getURLFromSearchCriteria } from 'components/Search/search.helpers';
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 const useSearchProjects = (userId?: string) => {
-    const { isLoading } = useAuth0();
+    const { isLoading, isAuthenticated } = useAuth0();
     const navigate = useNavigate();
     const location = useLocation();
 
@@ -27,7 +23,7 @@ const useSearchProjects = (userId?: string) => {
         isLoading: debouncedProjectIsLoading,
         isRefetching,
         isError,
-    } = useGetDebouncedProjects({ ...searchCriteria }, userId, !isLoading);
+    } = useGetDebouncedProjects({ ...searchCriteria }, userId, !isLoading && isAuthenticated);
 
     /**
      * the data variable itself is undefined when refetching, so we need to save it

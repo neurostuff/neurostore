@@ -1,22 +1,11 @@
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TableRow,
-    Typography,
-} from '@mui/material';
+import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from '@mui/material';
 import { Box } from '@mui/system';
 import EditStudyComponentsStyles from 'pages/Study/components/EditStudyComponents.styles';
 import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
 import { NoteCollectionReturn } from 'neurostore-typescript-sdk';
 import { Fragment, useMemo } from 'react';
 import { IAnalysesSelection } from 'pages/MetaAnalysis/components/CreateMetaAnalysisSpecificationDialogBase.types';
-import {
-    annotationNotesToTableFormatHelper,
-    getFilteredAnnotationNotes,
-} from './SelectAnalysesComponent.helpers';
+import { annotationNotesToTableFormatHelper, getFilteredAnnotationNotes } from './SelectAnalysesComponent.helpers';
 import SelectAnalysesComponentStyles from './SelectAnalysesComponent.styles';
 
 const SelectAnalysesComponentTable: React.FC<{
@@ -27,16 +16,11 @@ const SelectAnalysesComponentTable: React.FC<{
 
     const selectedNotes = useMemo(() => {
         if (!selectedValue?.selectionKey) return [];
-        return getFilteredAnnotationNotes(
-            (allNotes || []) as NoteCollectionReturn[],
-            selectedValue
-        );
+        return getFilteredAnnotationNotes((allNotes || []) as NoteCollectionReturn[], selectedValue);
     }, [allNotes, selectedValue]);
 
     const studiesList = useMemo(() => {
-        return selectedValue?.selectionKey
-            ? annotationNotesToTableFormatHelper(allNotes || [], selectedNotes)
-            : [];
+        return selectedValue?.selectionKey ? annotationNotesToTableFormatHelper(allNotes || [], selectedNotes) : [];
     }, [allNotes, selectedValue, selectedNotes]);
 
     return (
@@ -46,8 +30,8 @@ const SelectAnalysesComponentTable: React.FC<{
                     <Box>
                         <Typography sx={{ display: 'block' }}>Inclusion Summary</Typography>
                         <Typography sx={{ display: 'block' }} variant="caption">
-                            Green rows represent analyses included based on the given selection. Red
-                            rows represent analyses excluded from selection.
+                            Green rows represent analyses included based on the given selection. Red rows represent
+                            analyses excluded from selection.
                         </Typography>
                     </Box>
                 }
@@ -69,10 +53,7 @@ const SelectAnalysesComponentTable: React.FC<{
                                     <Fragment key={studyAnalyses.studyId}>
                                         <TableRow>
                                             <TableCell
-                                                sx={[
-                                                    SelectAnalysesComponentStyles.tableCell,
-                                                    { maxWidth: '300px' },
-                                                ]}
+                                                sx={[SelectAnalysesComponentStyles.tableCell, { maxWidth: '300px' }]}
                                                 rowSpan={studyAnalyses.analyses.length}
                                             >
                                                 {studyAnalyses.studyName}
@@ -82,9 +63,7 @@ const SelectAnalysesComponentTable: React.FC<{
                                                     SelectAnalysesComponentStyles.tableCell,
                                                     studyAnalyses.analyses[0].isSelected
                                                         ? SelectAnalysesComponentStyles.selected
-                                                        : SelectAnalysesComponentStyles[
-                                                              'not-selected'
-                                                          ],
+                                                        : SelectAnalysesComponentStyles['not-selected'],
                                                 ]}
                                             >
                                                 {studyAnalyses.analyses[0].analysisName}
@@ -99,9 +78,7 @@ const SelectAnalysesComponentTable: React.FC<{
                                                             SelectAnalysesComponentStyles.tableCell,
                                                             analysis.isSelected
                                                                 ? SelectAnalysesComponentStyles.selected
-                                                                : SelectAnalysesComponentStyles[
-                                                                      'not-selected'
-                                                                  ],
+                                                                : SelectAnalysesComponentStyles['not-selected'],
                                                         ]}
                                                     >
                                                         {analysis.analysisName}
@@ -114,9 +91,7 @@ const SelectAnalysesComponentTable: React.FC<{
                         </Table>
                     </TableContainer>
                     {studiesList.length === 0 && (
-                        <Typography sx={{ color: 'warning.dark', marginTop: '1rem' }}>
-                            No analyses selected
-                        </Typography>
+                        <Typography sx={{ color: 'warning.dark', marginTop: '1rem' }}>No analyses selected</Typography>
                     )}
                 </Box>
             </NeurosynthAccordion>

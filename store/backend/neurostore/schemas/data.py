@@ -1,21 +1,26 @@
+import orjson
 from marshmallow import (
-    fields,
+    EXCLUDE,
     Schema,
     SchemaOpts,
+    ValidationError,
+    fields,
     post_dump,
+    post_load,
     pre_dump,
     pre_load,
-    post_load,
     validates_schema,
-    EXCLUDE,
-    ValidationError,
 )
-
 from sqlalchemy import func
-import orjson
 
-from neurostore.core import db
+from neurostore.database import db
+from neurostore.map_types import canonicalize_map_type, map_type_label
 from neurostore.models import Analysis, Point
+from neurostore.note_keys import (
+    ALLOWED_NOTE_KEY_TYPES,
+    canonicalize_note_keys,
+    resolve_note_key_default,
+)
 
 # context parameters
 # clone: create a new object with new ids (true or false)
@@ -182,6 +187,20 @@ class StringOrNested(fields.Nested):
         return schema.load(value, many=self.many)
 
 
+class StudysetStudiesField(StringOrNested):
+    """Avoid loading Studyset.studies when only IDs are needed."""
+
+    def get_value(self, obj, attr, accessor=None, default=None):
+        if not self.context.get("nested") and not self.context.get("info"):
+            assoc = getattr(obj, "studyset_studies", None)
+            if assoc is not None:
+                return [link.study_id for link in assoc]
+        try:
+            return super().get_value(obj, attr, accessor=accessor, default=default)
+        except TypeError:
+            return super().get_value(obj, attr, accessor=accessor)
+
+
 # https://github.com/marshmallow-code/marshmallow/issues/466#issuecomment-285342071
 class BaseSchemaOpts(SchemaOpts):
     def __init__(self, meta, *args, **kwargs):
@@ -283,7 +302,12 @@ class EntitySchema(BaseDataSchema):
 
 class ImageSchema(BaseDataSchema):
     # serialization
-    analysis_id = fields.String(data_key="analysis", metadata={"id_field": True})
+    analysis_id = fields.String(
+        data_key="analysis", allow_none=True, metadata={"id_field": True}
+    )
+    study_id = fields.String(
+        data_key="study", allow_none=True, metadata={"id_field": True}
+    )
     # analysis = fields.Pluck("AnalysisSchema", "id", metadata={"id_field": True})
     analysis_name = fields.String(allow_none=True, dump_only=True)
     add_date = fields.DateTime(dump_only=True)
@@ -291,6 +315,19 @@ class ImageSchema(BaseDataSchema):
     filename = fields.String(allow_none=True)
     space = fields.String(allow_none=True)
     value_type = fields.String(allow_none=True)
+
+    @pre_load
+    def canonicalize_value_type(self, data, **kwargs):
+        if isinstance(data, dict) and data.get("value_type") is not None:
+            data["value_type"] = canonicalize_map_type(data["value_type"])
+        return data
+
+    @post_dump
+    def humanize_value_type(self, data, **kwargs):
+        if "value_type" not in data:
+            return data
+        data["value_type"] = map_type_label(data.get("value_type"))
+        return data
 
 
 class PointValueSchema(BaseSchema):
@@ -305,8 +342,10 @@ class PointSchema(BaseDataSchema):
     values = fields.Nested(PointValueSchema, many=True)
     entities = fields.Nested(EntitySchema, many=True, load_only=True)
     cluster_size = fields.Float(allow_none=True)
+    cluster_measurement_unit = fields.String(allow_none=True)
     subpeak = fields.Boolean(allow_none=True)
     deactivation = fields.Boolean(load_default=False, allow_none=True)
+    is_seed = fields.Boolean(load_default=False, allow_none=True)
     order = fields.Integer()
     coordinates = fields.List(fields.Float(), dump_only=True)
     kind = fields.String(allow_none=True)
@@ -324,30 +363,20 @@ class PointSchema(BaseDataSchema):
         # Handle case where data might be a string ID instead of dict
         if not isinstance(data, dict):
             return data
+        partial = bool(kwargs.get("partial"))
 
         # Only process coordinates if they exist in the data
         if "coordinates" in data and data["coordinates"] is not None:
             coords = data.pop("coordinates")
+            # Convert coordinates to float, handling potential null values.
+            # All-null coordinates are valid because points may be saved incrementally.
+            try:
+                converted_coords = [float(c) if c is not None else None for c in coords]
+                data["x"], data["y"], data["z"] = converted_coords
+            except (TypeError, ValueError) as e:
+                raise ValidationError(f"Invalid coordinate values: {e}")
 
-            # Check if all coordinates are null
-            if all(c is None for c in coords):
-                # During cloning, allow null coordinates but store them as None
-                if self.context.get("clone"):
-                    data["x"], data["y"], data["z"] = None, None, None
-                else:
-                    # Don't save points with all null coordinates to database
-                    raise ValidationError("Points cannot have all null coordinates")
-            else:
-                # Convert coordinates to float, handling potential null values
-                try:
-                    converted_coords = [
-                        float(c) if c is not None else None for c in coords
-                    ]
-                    data["x"], data["y"], data["z"] = converted_coords
-                except (TypeError, ValueError) as e:
-                    raise ValidationError(f"Invalid coordinate values: {e}")
-
-        if data.get("order") is None:
+        if not partial and data.get("order") is None:
             # Extract analysis_id first, then check if it exists
             analysis_id = data.get("analysis_id") or (
                 data.get("analysis") if isinstance(data.get("analysis"), str) else None
@@ -363,9 +392,16 @@ class PointSchema(BaseDataSchema):
             else:
                 data["order"] = 1
 
-        # Convert deactivation None to False
-        if data.get("deactivation") is None:
+        # Convert explicit nulls to False. For non-partial loads,
+        # missing values should also default to False.
+        if (not partial and data.get("deactivation") is None) or (
+            partial and "deactivation" in data and data.get("deactivation") is None
+        ):
             data["deactivation"] = False
+        if (not partial and data.get("is_seed") is None) or (
+            partial and "is_seed" in data and data.get("is_seed") is None
+        ):
+            data["is_seed"] = False
 
         return data
 
@@ -385,8 +421,11 @@ class AnalysisConditionSchema(BaseDataSchema):
 
 
 class StudysetStudySchema(BaseDataSchema):
-    studyset_id = fields.String()  # primary key needed (no id_field)
-    study_id = fields.String()  # primary key needed (no id_field)
+    # expose only the study id and optional stub mapping; keep everything else load-only
+    id = fields.Function(lambda obj: getattr(obj, "study_id", None), dump_only=True)
+    study_id = fields.String(load_only=True)  # primary key needed (no id_field)
+    studyset_id = fields.String(load_only=True)  # primary key needed (no id_field)
+    curation_stub_uuid = fields.String(allow_none=True)
 
 
 class AnalysisSchema(BaseDataSchema):
@@ -397,6 +436,11 @@ class AnalysisSchema(BaseDataSchema):
     )
     metadata = fields.Dict(attribute="metadata_", dump_only=True)
     metadata_ = fields.Dict(data_key="metadata", load_only=True, allow_none=True)
+    has_coordinates = fields.Bool(dump_only=True)
+    has_images = fields.Bool(dump_only=True)
+    has_z_maps = fields.Bool(dump_only=True)
+    has_t_maps = fields.Bool(dump_only=True)
+    has_beta_and_variance_maps = fields.Bool(dump_only=True)
     # study = fields.Pluck("StudySchema", "id", metadata={"id_field": True})
     conditions = StringOrNested(ConditionSchema, many=True, dump_only=True)
     order = fields.Integer()
@@ -410,6 +454,16 @@ class AnalysisSchema(BaseDataSchema):
 
     @pre_load
     def load_values(self, data, **kwargs):
+        if not isinstance(data, dict):
+            return data
+
+        # Dump/load normalization during clone flows can materialize missing
+        # nested collections as explicit nulls. Treat those as absent inputs.
+        for field_name in ("images", "points", "analysis_conditions"):
+            if data.get(field_name) is None:
+                data.pop(field_name, None)
+
+        partial = bool(kwargs.get("partial"))
         # conditions/weights need special processing
         if data.get("conditions") is not None and data.get("weights") is not None:
             assert len(data.get("conditions")) == len(data.get("weights"))
@@ -425,7 +479,7 @@ class AnalysisSchema(BaseDataSchema):
         data.pop("conditions", None)
         data.pop("weights", None)
 
-        if data.get("order") is None:
+        if not partial and data.get("order") is None:
             if data.get("study_id") is not None:
                 max_order = (
                     db.session.query(func.max(Analysis.order))
@@ -439,10 +493,34 @@ class AnalysisSchema(BaseDataSchema):
 
     @post_dump
     def dump_values(self, data, **kwargs):
+        def _sort_payload_list(values, *, order_key=None, id_key="id"):
+            if not isinstance(values, list):
+                return values
+
+            def _sort_key(item):
+                if isinstance(item, dict):
+                    if order_key is not None:
+                        order_val = item.get(order_key)
+                    else:
+                        order_val = None
+                    return (
+                        order_val is None,
+                        order_val if order_val is not None else 0,
+                        item.get(id_key) or "",
+                    )
+                return (True, 0, item or "")
+
+            return sorted(values, key=_sort_key)
+
         if data.get("analysis_conditions") is not None:
+            data["analysis_conditions"] = _sort_payload_list(
+                data["analysis_conditions"], id_key="condition"
+            )
             data["conditions"] = [ac["condition"] for ac in data["analysis_conditions"]]
             data["weights"] = [ac["weight"] for ac in data["analysis_conditions"]]
         data.pop("analysis_conditions", None)
+        data["points"] = _sort_payload_list(data.get("points"), order_key="order")
+        data["images"] = _sort_payload_list(data.get("images"))
 
         return data
 
@@ -451,6 +529,7 @@ class TableSchema(BaseDataSchema):
     study_id = fields.String(data_key="study", metadata={"id_field": True})
     t_id = fields.String(allow_none=True)
     name = fields.String(allow_none=True)
+    table_label = fields.String(allow_none=True)
     footer = fields.String(allow_none=True)
     caption = fields.String(allow_none=True)
     analyses = StringOrNested(AnalysisSchema, many=True, dump_only=True)
@@ -475,13 +554,18 @@ class BaseStudySchema(BaseDataSchema):
     year = fields.Integer(allow_none=True)
     level = fields.String(allow_none=True)
     is_oa = fields.Boolean(allow_none=True)
+    has_coordinates = fields.Bool(dump_only=True)
+    has_images = fields.Bool(dump_only=True)
+    has_z_maps = fields.Bool(dump_only=True)
+    has_t_maps = fields.Bool(dump_only=True)
+    has_beta_and_variance_maps = fields.Bool(dump_only=True)
     versions = StringOrNested("StudySchema", many=True)
     features = fields.Method("get_features")
     ace_fulltext = fields.String(load_only=True, allow_none=True)
     pubget_fulltext = fields.String(load_only=True, allow_none=True)
 
     def get_features(self, obj):
-        from .pipeline import PipelineStudyResultSchema
+        from neurostore.schemas.pipeline import PipelineStudyResultSchema
 
         pipelines = self.context.get("feature_display", None)
         pipeline_configs = self.context.get("pipeline_config", None)
@@ -524,7 +608,7 @@ class BaseStudySchema(BaseDataSchema):
         ]
         for attr in text_fields:
             val = data.get(attr, None)
-            if val is not None and (val == "" or val.isspace()):
+            if isinstance(val, str) and (val == "" or val.isspace()):
                 data[attr] = None
 
         # Clean DOI
@@ -569,15 +653,20 @@ class StudySchema(BaseDataSchema):
     base_study_id = fields.String(data_key="base_study", allow_none=True)
     has_coordinates = fields.Bool(dump_only=True)
     has_images = fields.Bool(dump_only=True)
+    has_z_maps = fields.Bool(dump_only=True)
+    has_t_maps = fields.Bool(dump_only=True)
+    has_beta_and_variance_maps = fields.Bool(dump_only=True)
     source_updated_at = fields.DateTime(dump_only=True, allow_none=True)
 
     class Meta:
-        # by default exclude this
-        exclude = ("has_coordinates", "has_images", "studysets")
+        # studysets can be very large and are hidden by default.
+        exclude = ("studysets",)
 
     @pre_load
     def check_nulls(self, data, **kwargs):
         """ensure data is not empty string or whitespace"""
+        if not isinstance(data, dict):
+            return data
         for attr in ["pmid", "pmcid", "doi"]:
             val = data.get(attr, None)
             if val is not None and (val == "" or val.isspace()):
@@ -589,12 +678,34 @@ class StudySchema(BaseDataSchema):
             return []
         return [getattr(table, "id", table) for table in obj.tables]
 
+    @post_dump
+    def sort_nested_analyses(self, data, **kwargs):
+        analyses = data.get("analyses")
+        if not isinstance(analyses, list):
+            return data
+
+        def _sort_key(item):
+            if isinstance(item, dict):
+                order_val = item.get("order")
+                return (
+                    order_val is None,
+                    order_val if order_val is not None else 0,
+                    item.get("id") or "",
+                )
+            return (True, 0, item or "")
+
+        data["analyses"] = sorted(analyses, key=_sort_key)
+        return data
+
 
 class StudysetSchema(BaseDataSchema):
     # serialize
-    studies = StringOrNested(
+    studies = StudysetStudiesField(
         StudySchema, many=True
     )  # This needs to be nested, but not cloned
+    # expose association records for stub mapping
+    studyset_studies = fields.Nested("StudysetStudySchema", many=True, dump_only=True)
+    curation_stub_map = fields.Dict(load_only=True)
     source = fields.String(dump_only=True, allow_none=True)
     source_id = fields.String(dump_only=True, allow_none=True)
     source_updated_at = fields.DateTime(dump_only=True, allow_none=True)
@@ -606,6 +717,60 @@ class StudysetSchema(BaseDataSchema):
 
     class Meta:
         render_module = orjson
+
+    @pre_load
+    def capture_curation_stub_uuids(self, data, **kwargs):
+        if not isinstance(data, dict):
+            return data
+
+        # Always derive stub mapping from inline study payload; ignore any incoming map.
+        data.pop("curation_stub_map", None)
+        studies = data.get("studies")
+        if not studies:
+            return data
+
+        stub_map = {}
+        cleaned = []
+        for item in studies:
+            if isinstance(item, dict):
+                stub = item.get("curation_stub_uuid")
+                study_id = item.get("id")
+                if stub and study_id:
+                    stub_map[study_id] = stub
+                cleaned.append(
+                    {k: v for k, v in item.items() if k != "curation_stub_uuid"}
+                )
+            else:
+                # Downstream schemas (e.g., StudySchema) expect each study
+                # to be an object with at least an 'id' key.
+                # This normalization ensures that string study IDs
+                # are converted to the required object form,
+                # enabling proper deserialization and validation by those schemas.
+                cleaned.append({"id": item})
+
+        data["studies"] = cleaned
+        if stub_map:
+            data["curation_stub_map"] = stub_map
+
+        return data
+
+    @post_dump
+    def normalize_studyset_studies(self, data, **kwargs):
+        """
+        Emit minimal association records with id and optional curation_stub_uuid.
+        If there is no stub mapping, return the study id with curation_stub_uuid as null.
+        """
+        if "studyset_studies" in data and data["studyset_studies"] is not None:
+            normalized = []
+            for assoc in data["studyset_studies"]:
+                normalized.append(
+                    {
+                        "id": assoc.get("id") or assoc.get("study_id"),
+                        "curation_stub_uuid": assoc.get("curation_stub_uuid"),
+                    }
+                )
+            data["studyset_studies"] = normalized
+        return data
 
 
 class AnnotationAnalysisSchema(BaseSchema):
@@ -664,7 +829,7 @@ class AnnotationPipelineSchema(BaseSchema):
 
 
 class NoteKeysField(fields.Field):
-    allowed_types = {"string", "number", "boolean"}
+    allowed_types = ALLOWED_NOTE_KEY_TYPES
 
     def _serialize(self, value, attr, obj, **kwargs):
         if not value:
@@ -676,55 +841,23 @@ class NoteKeysField(fields.Field):
             serialized[key] = {
                 "type": descriptor.get("type"),
                 "order": descriptor.get("order"),
+                "default": resolve_note_key_default(
+                    key,
+                    descriptor.get("type"),
+                    default_provided="default" in descriptor,
+                    default_value=descriptor.get("default"),
+                ),
             }
         return serialized
 
     def _deserialize(self, value, attr, data, **kwargs):
         if value is None:
             return {}
-        if not isinstance(value, dict):
-            raise ValidationError("`note_keys` must be an object.")
 
-        normalized = {}
-        used_orders = set()
-        explicit_orders = []
-        for descriptor in value.values():
-            if isinstance(descriptor, dict) and isinstance(
-                descriptor.get("order"), int
-            ):
-                explicit_orders.append(descriptor["order"])
-        next_order = max(explicit_orders, default=-1) + 1
+        def _fail(message):
+            raise ValidationError(message)
 
-        for key, descriptor in value.items():
-            if not isinstance(descriptor, dict):
-                raise ValidationError("Each note key must map to an object.")
-
-            note_type = descriptor.get("type")
-            if note_type not in self.allowed_types:
-                raise ValidationError(
-                    f"Invalid note type for '{key}', choose from: {sorted(self.allowed_types)}"
-                )
-
-            order = descriptor.get("order")
-            if isinstance(order, bool) or (
-                order is not None and not isinstance(order, int)
-            ):
-                order = None
-
-            if isinstance(order, int) and order not in used_orders:
-                used_orders.add(order)
-                if order >= next_order:
-                    next_order = order + 1
-            else:
-                while next_order in used_orders:
-                    next_order += 1
-                order = next_order
-                used_orders.add(order)
-                next_order += 1
-
-            normalized[key] = {"type": note_type, "order": order}
-
-        return normalized
+        return canonicalize_note_keys(value, _fail, mapping_factory=dict)
 
 
 class AnnotationSchema(BaseDataSchema):
@@ -776,6 +909,30 @@ class AnnotationSchema(BaseDataSchema):
         if invalid:
             raise ValidationError({"notes": invalid})
 
+    @pre_dump
+    def sort_notes(self, annotation, **kwargs):
+        notes = getattr(annotation, "annotation_analyses", None)
+        if not notes:
+            return annotation
+
+        def sort_key(note):
+            study_id = getattr(note, "study_id", None) or ""
+            analysis = getattr(note, "analysis", None)
+            order = getattr(analysis, "order", None)
+            if isinstance(order, bool) or not isinstance(order, int):
+                order = None
+            if order is not None:
+                return (study_id, 0, order, note.analysis_id or "")
+
+            created_at = getattr(analysis, "created_at", None) or getattr(
+                note, "created_at", None
+            )
+            created_ts = created_at.timestamp() if created_at else 0
+            return (study_id, 1, created_ts, note.analysis_id or "")
+
+        annotation.annotation_analyses = sorted(notes, key=sort_key)
+        return annotation
+
 
 class BaseSnapshot(object):
     def __init__(self):
@@ -796,9 +953,10 @@ class ImageSnapshot(BaseSnapshot):
         return {
             "id": i.id,
             "user": i.user_id,
+            "study": i.study_id,
             "url": i.url,
             "space": i.space,
-            "value_type": i.value_type,
+            "value_type": map_type_label(i.value_type),
             "filename": i.filename,
             "add_date": i.add_date,
         }
@@ -891,4 +1049,13 @@ class StudysetSnapshot(BaseSnapshot):
             "created_at": self._serialize_dt(studyset.created_at),
             "updated_at": self._serialize_dt(studyset.updated_at),
             "studies": [s_schema.dump(s) for s in studyset.studies],
+            # Include association records so the frontend can
+            # maintain stub mappings even in nested responses.
+            "studyset_studies": [
+                {
+                    "id": assoc.study_id,
+                    "curation_stub_uuid": getattr(assoc, "curation_stub_uuid", None),
+                }
+                for assoc in getattr(studyset, "studyset_studies", []) or []
+            ],
         }

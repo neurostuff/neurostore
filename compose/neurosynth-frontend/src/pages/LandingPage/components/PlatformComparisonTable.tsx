@@ -1,14 +1,6 @@
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
-import {
-    Box,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TableRow,
-} from '@mui/material';
+import { Box, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@mui/material';
 import PlatformComparisonTableStyles from './PlatformComparisonTable.styles';
 
 const PlatformComparisonTable: React.FC = (props) => {
@@ -18,42 +10,21 @@ const PlatformComparisonTable: React.FC = (props) => {
                 <Table>
                     <TableHead>
                         <TableRow>
-                            <TableCell sx={[PlatformComparisonTableStyles.cellRowHeader]}>
-                                Features
-                            </TableCell>
-                            <TableCell
-                                sx={[
-                                    PlatformComparisonTableStyles.cellColHeader,
-                                    { fontWeight: 'bold' },
-                                ]}
-                            >
+                            <TableCell sx={[PlatformComparisonTableStyles.cellRowHeader]}>Features</TableCell>
+                            <TableCell sx={[PlatformComparisonTableStyles.cellColHeader, { fontWeight: 'bold' }]}>
                                 neurosynth compose
                             </TableCell>
-                            <TableCell sx={PlatformComparisonTableStyles.cellColHeader}>
-                                neurosynth
-                            </TableCell>
+                            <TableCell sx={PlatformComparisonTableStyles.cellColHeader}>neurosynth</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
                         <TableRow sx={{ backgroundColor: 'secondary.dark' }}>
-                            <TableCell sx={PlatformComparisonTableStyles.cellRowHeader}>
-                                Large study database
+                            <TableCell sx={PlatformComparisonTableStyles.cellRowHeader}>Large study database</TableCell>
+                            <TableCell sx={PlatformComparisonTableStyles.cell}>
+                                <CheckIcon sx={[PlatformComparisonTableStyles.cellIcon, { color: 'success.main' }]} />
                             </TableCell>
                             <TableCell sx={PlatformComparisonTableStyles.cell}>
-                                <CheckIcon
-                                    sx={[
-                                        PlatformComparisonTableStyles.cellIcon,
-                                        { color: 'success.main' },
-                                    ]}
-                                />
-                            </TableCell>
-                            <TableCell sx={PlatformComparisonTableStyles.cell}>
-                                <CheckIcon
-                                    sx={[
-                                        PlatformComparisonTableStyles.cellIcon,
-                                        { color: 'success.main' },
-                                    ]}
-                                />
+                                <CheckIcon sx={[PlatformComparisonTableStyles.cellIcon, { color: 'success.main' }]} />
                             </TableCell>
                         </TableRow>
                         <TableRow>
@@ -61,41 +32,19 @@ const PlatformComparisonTable: React.FC = (props) => {
                                 Browser based workflow
                             </TableCell>
                             <TableCell sx={PlatformComparisonTableStyles.cell}>
-                                <CheckIcon
-                                    sx={[
-                                        PlatformComparisonTableStyles.cellIcon,
-                                        { color: 'success.main' },
-                                    ]}
-                                />
+                                <CheckIcon sx={[PlatformComparisonTableStyles.cellIcon, { color: 'success.main' }]} />
                             </TableCell>
                             <TableCell sx={PlatformComparisonTableStyles.cell}>
-                                <CheckIcon
-                                    sx={[
-                                        PlatformComparisonTableStyles.cellIcon,
-                                        { color: 'success.main' },
-                                    ]}
-                                />
+                                <CheckIcon sx={[PlatformComparisonTableStyles.cellIcon, { color: 'success.main' }]} />
                             </TableCell>
                         </TableRow>
                         <TableRow sx={{ backgroundColor: 'secondary.dark' }}>
-                            <TableCell sx={PlatformComparisonTableStyles.cellRowHeader}>
-                                Editable studies
+                            <TableCell sx={PlatformComparisonTableStyles.cellRowHeader}>Editable studies</TableCell>
+                            <TableCell sx={PlatformComparisonTableStyles.cell}>
+                                <CheckIcon sx={[PlatformComparisonTableStyles.cellIcon, { color: 'success.main' }]} />
                             </TableCell>
                             <TableCell sx={PlatformComparisonTableStyles.cell}>
-                                <CheckIcon
-                                    sx={[
-                                        PlatformComparisonTableStyles.cellIcon,
-                                        { color: 'success.main' },
-                                    ]}
-                                />
-                            </TableCell>
-                            <TableCell sx={PlatformComparisonTableStyles.cell}>
-                                <CloseIcon
-                                    sx={[
-                                        PlatformComparisonTableStyles.cellIcon,
-                                        { color: 'error.dark' },
-                                    ]}
-                                />
+                                <CloseIcon sx={[PlatformComparisonTableStyles.cellIcon, { color: 'error.dark' }]} />
                             </TableCell>
                         </TableRow>
                         <TableRow>
@@ -103,20 +52,10 @@ const PlatformComparisonTable: React.FC = (props) => {
                                 Filterable/Selectable studies
                             </TableCell>
                             <TableCell sx={PlatformComparisonTableStyles.cell}>
-                                <CheckIcon
-                                    sx={[
-                                        PlatformComparisonTableStyles.cellIcon,
-                                        { color: 'success.main' },
-                                    ]}
-                                />
+                                <CheckIcon sx={[PlatformComparisonTableStyles.cellIcon, { color: 'success.main' }]} />
                             </TableCell>
                             <TableCell sx={PlatformComparisonTableStyles.cell}>
-                                <CloseIcon
-                                    sx={[
-                                        PlatformComparisonTableStyles.cellIcon,
-                                        { color: 'error.dark' },
-                                    ]}
-                                />
+                                <CloseIcon sx={[PlatformComparisonTableStyles.cellIcon, { color: 'error.dark' }]} />
                             </TableCell>
                         </TableRow>
                         <TableRow sx={{ backgroundColor: 'secondary.dark' }}>
@@ -124,20 +63,10 @@ const PlatformComparisonTable: React.FC = (props) => {
                                 Multiple fMRI Meta-Analysis Algorithms
                             </TableCell>
                             <TableCell sx={PlatformComparisonTableStyles.cell}>
-                                <CheckIcon
-                                    sx={[
-                                        PlatformComparisonTableStyles.cellIcon,
-                                        { color: 'success.main' },
-                                    ]}
-                                />
+                                <CheckIcon sx={[PlatformComparisonTableStyles.cellIcon, { color: 'success.main' }]} />
                             </TableCell>
                             <TableCell sx={PlatformComparisonTableStyles.cell}>
-                                <CloseIcon
-                                    sx={[
-                                        PlatformComparisonTableStyles.cellIcon,
-                                        { color: 'error.dark' },
-                                    ]}
-                                />
+                                <CloseIcon sx={[PlatformComparisonTableStyles.cellIcon, { color: 'error.dark' }]} />
                             </TableCell>
                         </TableRow>
                         <TableRow>
@@ -145,30 +74,17 @@ const PlatformComparisonTable: React.FC = (props) => {
                                 Image Based Meta-Analysis (IBMA)
                             </TableCell>
                             <TableCell sx={PlatformComparisonTableStyles.cell}>
-                                <CheckIcon
-                                    sx={[
-                                        PlatformComparisonTableStyles.cellIcon,
-                                        { color: 'success.main' },
-                                    ]}
-                                />
-                                *
+                                <CheckIcon sx={[PlatformComparisonTableStyles.cellIcon, { color: 'success.main' }]} />*
                             </TableCell>
                             <TableCell sx={PlatformComparisonTableStyles.cell}>
-                                <CloseIcon
-                                    sx={[
-                                        PlatformComparisonTableStyles.cellIcon,
-                                        { color: 'error.dark' },
-                                    ]}
-                                />
+                                <CloseIcon sx={[PlatformComparisonTableStyles.cellIcon, { color: 'error.dark' }]} />
                             </TableCell>
                         </TableRow>
                     </TableBody>
                 </Table>
             </TableContainer>
 
-            <Box sx={{ marginTop: '2rem', color: 'white', textAlign: 'start' }}>
-                *On the roadmap to be implemented
-            </Box>
+            <Box sx={{ marginTop: '2rem', color: 'white', textAlign: 'start' }}>*On the roadmap to be implemented</Box>
         </>
     );
 };

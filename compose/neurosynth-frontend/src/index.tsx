@@ -8,6 +8,9 @@ import ReactDOM from 'react-dom';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import './index.css';
+import { QueryCache, QueryClient, QueryClientProvider } from 'react-query';
+import { AxiosError } from 'axios';
+import { HelmetProvider } from 'react-helmet-async';
 
 export type Style = Record<string, SystemStyleObject>;
 export type ColorOptions = 'inherit' | 'primary' | 'secondary' | 'success' | 'error' | 'info' | 'warning';
@@ -87,6 +90,26 @@ if (env === 'PROD') {
     });
 }
 
+const queryClient = new QueryClient({
+    defaultOptions: {
+        queries: {
+            retry: 0,
+            staleTime: 1000 * 5, // 5 seconds
+            refetchOnWindowFocus: false,
+            // staleTime: 5000, // https://tkdodo.eu/blog/practical-react-query#the-defaults-explained
+        },
+    },
+    queryCache: new QueryCache({
+        onError: (error) => {
+            console.log({ error });
+            const responseStatus = (error as AxiosError)?.response?.status;
+            if (responseStatus && responseStatus === 404) {
+                console.error('could not find resource');
+            }
+        },
+    }),
+});
+
 ReactDOM.render(
     <React.StrictMode>
         <Auth0Provider
@@ -100,7 +123,11 @@ ReactDOM.render(
         >
             <BrowserRouter>
                 <ThemeProvider theme={theme}>
-                    <App />
+                    <QueryClientProvider client={queryClient}>
+                        <HelmetProvider>
+                            <App />
+                        </HelmetProvider>
+                    </QueryClientProvider>
                 </ThemeProvider>
             </BrowserRouter>
         </Auth0Provider>

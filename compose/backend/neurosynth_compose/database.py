@@ -1,6 +1,7 @@
 import logging
-from sqlalchemy.orm import DeclarativeBase
+
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.orm import DeclarativeBase
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -38,5 +39,5 @@ def init_db(app):
         db.init_app(app)
         # Import models after db is initialized so mappings bind to this registry
         # Importing here avoids duplicate mapper registration during test collection.
-        from . import models  # noqa: F401
+        from neurosynth_compose import models  # noqa: F401
     return db

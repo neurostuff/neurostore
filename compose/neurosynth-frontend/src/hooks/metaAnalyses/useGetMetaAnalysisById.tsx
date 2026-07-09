@@ -1,10 +1,10 @@
 import { useQuery } from 'react-query';
-import API from 'utils/api';
+import API from 'api/api.config';
 
 const useGetMetaAnalysisById = (metaAnalysisId: string | undefined) => {
     const query = useQuery(
         ['meta-analyses', metaAnalysisId],
-        () => API.NeurosynthServices.MetaAnalysisService.metaAnalysesIdGet(metaAnalysisId || '', true),
+        () => API.NeurosynthServices.MetaAnalysisService.metaAnalysesIdGet(metaAnalysisId || '', false),
         {
             enabled: !!metaAnalysisId,
             select: (data) => data.data,

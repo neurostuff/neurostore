@@ -1,46 +1,49 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=82.0.1"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "neurostore"
-version = "0.10.0"
+version = "0.19.1"
 description = "neurostore"
 authors = [
     { name = "James Kent", email = "jamesdkent21@gmail.com" }
 ]
 license = { text = "MIT" }
 dependencies = [
-    "auth0-python~=4.13",
-    "authlib~=1.6",
+    "auth0-python~=5.5",
+    "authlib~=1.7",
     "connexion[swagger-ui,uvicorn,flask]==3.3.0",
     "flask~=3.1",
+    "flask-admin~=2.2",
     "flask-cors~=6.0",
-    "flask-caching~=2.0",
-    "flask-shell-ipython~=0.4",
+    "flask-caching~=2.4",
+    "flask-shell-ipython~=0.5",
     "flask-migrate~=4.1",
     "flask-sqlalchemy~=3.1", # fix multiple instance error: https://flask-sqlalchemy.palletsprojects.com/en/3.0.x/changes/#version-3-0-3
-    "gunicorn~=23.0",
-    "ipython~=9.6",
-    "marshmallow~=4.0",
+    "gunicorn~=26.0",
+    "ipython~=9.13",
+    "marshmallow~=4.3",
     "numpy<3.0.0",
-    "pandas~=2.3",
-    "psycopg2-binary~=2.8",
-    "pyld~=2.0",
-    "python-jose~=3.3",
+    "pandas~=3.0",
+    "psycopg2-binary~=2.9",
+    "pyld~=3.0",
+    "python-jose~=3.5",
     "redis",
     "shortuuid~=1.0",
+    "starlette>=1.1.0,<2",
     "sqlalchemy~=2.0",
     "sqlalchemy-utils",
     "sqltap",
     "webargs~=8.7",
-    "wrapt~=2.0",
-    "openapi-spec-validator~=0.3",
-    "scipy~=1.9",
-    "orjson~=3.8",
+    "wrapt~=2.2",
+    "openapi-spec-validator~=0.9",
+    "scipy~=1.17",
+    "orjson~=3.11",
     "flask_orjson~=2.0.0",
     "pgvector~=0.4",
-    "openai~=2.3",
+    "NiMARE[parquet]==0.20.0",
+    "openai~=2.38",
     "tenacity~=9.1",
 ]
 
@@ -52,10 +55,10 @@ include = ["neurostore*"]
 dev = [
     "flake8~=7.3",
     "pip-chill~=1.0",
-    "wheel~=0.36",
+    "wheel~=0.47",
     "pytest~=9.0",
-    "vcrpy~=7.0",
-    "pytest-recording~=0.13.1",
+    "vcrpy~=8.1",
+    "pytest-recording~=0.13.4",
 ]
 
 [tool.setuptools.package-data]

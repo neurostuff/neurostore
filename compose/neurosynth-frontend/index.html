@@ -1,11 +1,14 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en" class="notranslate" translate="no">
     <head>
         <meta charset="utf-8" />
         <link rel="icon" href="/favicon.ico" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="theme-color" content="#000000" />
-        <meta name="description" content="Neurosynth-Compose App" />
+        <meta
+            name="description"
+            content="Neurosynth Compose is a free and open platform for neuroimaging meta-analysis, enabling scientific article curation and reproducible pipelines."
+        />
         <meta name="google" content="notranslate" />
         <link rel="apple-touch-icon" href="/logo192.png" />
         <!--
@@ -14,11 +17,15 @@
         -->
         <link rel="manifest" href="/manifest.json" />
 
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 
-        <link rel="preload" as="image" href="/static/brain-analysis.png" type="image/png">
+        <link rel="preload" as="image" href="/static/brain-analysis.png" type="image/png" />
 
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/handsontable@12.3.3/dist/handsontable.full.min.css" crossorigin="anonymous" />
+        <link
+            rel="stylesheet"
+            href="https://cdn.jsdelivr.net/npm/handsontable@12.3.3/dist/handsontable.full.min.css"
+            crossorigin="anonymous"
+        />
 
         <link
             rel="stylesheet"
@@ -31,9 +38,11 @@
         <!-- Google tag (gtag.js) -->
         <script async src="https://www.googletagmanager.com/gtag/js?id=G-0L9Y0HT9NR"></script>
         <script type="text/javascript">
-            if (document.location.hostname === "compose.neurosynth.org") {
+            if (document.location.hostname === 'compose.neurosynth.org') {
                 window.dataLayer = window.dataLayer || [];
-                function gtag(){dataLayer.push(arguments);}
+                function gtag() {
+                    dataLayer.push(arguments);
+                }
                 gtag('js', new Date());
                 gtag('config', 'G-0L9Y0HT9NR');
             }
@@ -43,13 +52,13 @@
         <script>
             window.appziSettings = {
                 render: { type: 'client' },
-                portal: "jFjBf"
-            }
+                portal: 'jFjBf',
+            };
         </script>
         <script async src="https://w.appzi.io/w.js"></script>
 
         <!-- End Appzi -->
-        <title>neurosynth compose</title>
+        <title>Neurosynth Compose</title>
     </head>
     <body>
         <noscript>You need to enable JavaScript to run this app.</noscript>
@@ -64,7 +73,7 @@
             To begin the development, run `npm start` or `yarn start`.
             To create a production bundle, use `npm run build` or `yarn build`.
         -->
-        <div id="portal" style="position: fixed; left: 0; top: 0; z-index: 9999;"></div>
+        <div id="portal" style="position: fixed; left: 0; top: 0; z-index: 9999"></div>
         <script type="module" src="/src/index.tsx"></script>
     </body>
 </html>

@@ -146,7 +146,7 @@ describe('ExtractionTable', () => {
             });
         });
 
-        it.only('should remove the filter if the delete button is clicked', () => {
+        it('should remove the filter if the delete button is clicked', () => {
             let studysetYear = '';
             // ARRANGE
             cy.wait('@studysetFixture').then((studysetFixture) => {
@@ -635,6 +635,7 @@ describe('ExtractionTable', () => {
                 const parsedState = JSON.parse(state || '{}');
 
                 cy.wrap(parsedState).should('deep.equal', {
+                    pagination: { pageIndex: 0, pageSize: 25 },
                     columnFilters: [{ id: 'name', value: 'Activation' }],
                     sorting: [{ id: 'year', desc: true }],
                     studies: ['3zutS8kyg2sy'],

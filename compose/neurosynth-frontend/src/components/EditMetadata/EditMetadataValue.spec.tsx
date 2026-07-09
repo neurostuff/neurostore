@@ -15,11 +15,7 @@ describe('EditMetadataValue Component', () => {
         beforeEach(() => {
             render(
                 <MockThemeProvider>
-                    <EditMetadataValue
-                        value={true}
-                        type={EPropertyType.BOOLEAN}
-                        onEditMetadataValue={onEditMock}
-                    />
+                    <EditMetadataValue value={true} type={EPropertyType.BOOLEAN} onEditMetadataValue={onEditMock} />
                 </MockThemeProvider>
             );
         });
@@ -40,11 +36,7 @@ describe('EditMetadataValue Component', () => {
         it('should render the editMetadataNumber component', () => {
             render(
                 <MockThemeProvider>
-                    <EditMetadataValue
-                        value={0}
-                        type={EPropertyType.NUMBER}
-                        onEditMetadataValue={onEditMock}
-                    />
+                    <EditMetadataValue value={0} type={EPropertyType.NUMBER} onEditMetadataValue={onEditMock} />
                 </MockThemeProvider>
             );
             const numberInput = screen.getByRole('spinbutton');
@@ -54,11 +46,7 @@ describe('EditMetadataValue Component', () => {
         it('should emit the entered numeric value', () => {
             render(
                 <MockThemeProvider>
-                    <EditMetadataValue
-                        value={0}
-                        type={EPropertyType.NUMBER}
-                        onEditMetadataValue={onEditMock}
-                    />
+                    <EditMetadataValue value={0} type={EPropertyType.NUMBER} onEditMetadataValue={onEditMock} />
                 </MockThemeProvider>
             );
             const numberInput = screen.getByRole('spinbutton');
@@ -69,11 +57,7 @@ describe('EditMetadataValue Component', () => {
         it('should not emit for non numeric inputs', () => {
             render(
                 <MockThemeProvider>
-                    <EditMetadataValue
-                        value={''}
-                        type={EPropertyType.NUMBER}
-                        onEditMetadataValue={onEditMock}
-                    />
+                    <EditMetadataValue value={''} type={EPropertyType.NUMBER} onEditMetadataValue={onEditMock} />
                 </MockThemeProvider>
             );
             const numberInput = screen.getByRole('spinbutton');
@@ -84,11 +68,7 @@ describe('EditMetadataValue Component', () => {
         it('should accept empty inputs', () => {
             render(
                 <MockThemeProvider>
-                    <EditMetadataValue
-                        value={0}
-                        type={EPropertyType.NUMBER}
-                        onEditMetadataValue={onEditMock}
-                    />
+                    <EditMetadataValue value={0} type={EPropertyType.NUMBER} onEditMetadataValue={onEditMock} />
                 </MockThemeProvider>
             );
             const numberInput = screen.getByRole('spinbutton');
@@ -99,11 +79,7 @@ describe('EditMetadataValue Component', () => {
         it('should change to 0 on blur', async () => {
             render(
                 <MockThemeProvider>
-                    <EditMetadataValue
-                        value={''}
-                        type={EPropertyType.NUMBER}
-                        onEditMetadataValue={onEditMock}
-                    />
+                    <EditMetadataValue value={''} type={EPropertyType.NUMBER} onEditMetadataValue={onEditMock} />
                 </MockThemeProvider>
             );
             const numberInput = screen.getByRole('spinbutton');

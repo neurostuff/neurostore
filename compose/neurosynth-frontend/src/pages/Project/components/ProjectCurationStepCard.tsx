@@ -1,14 +1,7 @@
 import CloseIcon from '@mui/icons-material/Close';
 import PlaylistAddCheckIcon from '@mui/icons-material/PlaylistAddCheck';
 import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
-import {
-    Button,
-    Card,
-    CardActions,
-    CardContent,
-    CircularProgress,
-    Typography,
-} from '@mui/material';
+import { Button, Card, CardActions, CardContent, CircularProgress, Typography } from '@mui/material';
 import { Box } from '@mui/system';
 import NeurosynthLoader from 'components/NeurosynthLoader/NeurosynthLoader';
 import ProjectComponentsStyles from 'pages/Project/components/Project.styles';
@@ -18,8 +11,7 @@ import CurationStepStyles from './ProjectCurationStep.style';
 
 const getPercentageComplete = (curationSummary: ICurationSummary): number => {
     if (curationSummary.total === 0) return 0;
-    const percentageComplete =
-        ((curationSummary.included + curationSummary.excluded) / curationSummary.total) * 100;
+    const percentageComplete = ((curationSummary.included + curationSummary.excluded) / curationSummary.total) * 100;
     return Math.round(percentageComplete);
 };
 const ProjectCurationStepCard: React.FC<{ projectId: string | undefined; disabled: boolean }> = ({
@@ -45,15 +37,9 @@ const ProjectCurationStepCard: React.FC<{ projectId: string | undefined; disable
             >
                 <CardContent>
                     <Box sx={ProjectComponentsStyles.stepTitle}>
-                        <Typography sx={{ color: 'muted.main' }}>
-                            {curationSummary.total} studies
-                        </Typography>
+                        <Typography sx={{ color: 'muted.main' }}>{curationSummary.total} studies</Typography>
                         <CircularProgress
-                            color={
-                                getPercentageComplete(curationSummary) === 100
-                                    ? 'success'
-                                    : 'secondary'
-                            }
+                            color={getPercentageComplete(curationSummary) === 100 ? 'success' : 'secondary'}
                             sx={ProjectComponentsStyles.progressCircle}
                             variant="determinate"
                             value={getPercentageComplete(curationSummary)}
@@ -71,15 +57,11 @@ const ProjectCurationStepCard: React.FC<{ projectId: string | undefined; disable
                         </Box>
                         <Box sx={ProjectComponentsStyles.statusIconContainer}>
                             <CloseIcon sx={CurationStepStyles.closeIcon} />
-                            <Typography sx={{ color: 'error.dark' }}>
-                                {curationSummary.excluded} excluded
-                            </Typography>
+                            <Typography sx={{ color: 'error.dark' }}>{curationSummary.excluded} excluded</Typography>
                         </Box>
                         <Box sx={ProjectComponentsStyles.statusIconContainer}>
                             <PlaylistAddCheckIcon sx={CurationStepStyles.checkIcon} />
-                            <Typography sx={{ color: 'success.main' }}>
-                                {curationSummary.included} included
-                            </Typography>
+                            <Typography sx={{ color: 'success.main' }}>{curationSummary.included} included</Typography>
                         </Box>
                     </Box>
                 </CardContent>

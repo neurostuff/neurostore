@@ -14,11 +14,15 @@ export const hotSettings: HotTableProps = {
     licenseKey: 'non-commercial-and-evaluation',
     contextMenu: false,
     viewportRowRenderingOffset: 4,
-    viewportColumnRenderingOffset: 4, // we do not want column virtualization as it screws up the spreadsheet
+    viewportColumnRenderingOffset: 4,
     width: '100%',
     fixedColumnsStart: 2,
     wordWrap: true,
     autoRowSize: false,
+    // rowHeaderWidth: 0 is used to prevent the row headers from being offset in the manualColumnMove calculations.
+    // HOWEVER why not just remove afterGetRowHeaderRenderers? We need to apply the styling (technically it's a noop now)
+    // in order to force handsontable to recalculte the row heights. If we remove it, the heights become slightly off.
+    rowHeaderWidth: 0,
     afterGetRowHeaderRenderers: (headerRenderers) => {
         headerRenderers.push((row, TH) => {
             TH.className = styles['no-top-bottom-borders'];
@@ -37,11 +41,11 @@ export const convertRemToPx = (rem: number) => {
 
 export const hotDataToAnnotationNotes = (
     hotData: AnnotationNoteValue[][],
-    mapping: Map<number, { studyId: string; analysisId: string }>,
+    mapping: Map<number, { studyId: string; analysisId: string; isEdited: boolean }>,
     noteKeys: NoteKeyType[]
 ): NoteCollectionReturn[] => {
     const noteCollections: NoteCollectionReturn[] = hotData.map((row, index) => {
-        const mappedStudyAnalysis = mapping.get(index) as { studyId: string; analysisId: string };
+        const mappedStudyAnalysis = mapping.get(index) as { studyId: string; analysisId: string; isEdited: boolean };
 
         const updatedNote: { [key: string]: AnnotationNoteValue } = {};
         for (let i = 0; i < noteKeys.length; i++) {
@@ -65,10 +69,10 @@ export const annotationNotesToHotData = (
     getColNamesFromAnnotationNote: (note: NoteCollectionReturn) => [string, string]
 ): {
     hotData: AnnotationNoteValue[][];
-    hotDataToStudyMapping: Map<number, { studyId: string; analysisId: string }>;
+    hotDataToStudyMapping: Map<number, { studyId: string; analysisId: string; isEdited: boolean }>;
 } => {
     const hotData = new Array<AnnotationNoteValue[]>();
-    const hotDataToAnnotationMapping = new Map<number, { studyId: string; analysisId: string }>();
+    const hotDataToAnnotationMapping = new Map<number, { studyId: string; analysisId: string; isEdited: boolean }>();
 
     if (!annotationNotes) {
         return {
@@ -109,6 +113,7 @@ export const annotationNotesToHotData = (
             hotDataToAnnotationMapping.set(index, {
                 studyId: annotationNote.study as string,
                 analysisId: annotationNote.analysis as string,
+                isEdited: false,
             });
             hotData.push(row);
         });
@@ -233,7 +238,7 @@ export const getRowHeights = (
     const rowHeights: number[] = [];
     let currIndex = 0;
 
-    mergeCells.forEach(({ row, col, rowspan, colspan }) => {
+    mergeCells.forEach(({ row, rowspan }) => {
         while (currIndex < row) {
             // sometimes the merge cells skip a few rows as they do not need to be merged.
             // we therefore need to account for that by calculting those row heights (which have rowspan = 1)

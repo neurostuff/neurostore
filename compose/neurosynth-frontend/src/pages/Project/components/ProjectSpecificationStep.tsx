@@ -1,10 +1,7 @@
 import KeyboardDoubleArrowRightIcon from '@mui/icons-material/KeyboardDoubleArrowRight';
 import { Box, Button, Step, StepContent, StepLabel, StepProps, Typography } from '@mui/material';
 import { IProjectPageLocationState } from 'pages/Project/ProjectPage';
-import {
-    useAllowEditMetaAnalyses,
-    useProjectMetaAnalysisCanEdit,
-} from 'pages/Project/store/ProjectStore';
+import { useAllowEditMetaAnalyses, useProjectMetaAnalysisCanEdit } from 'pages/Project/store/ProjectStore';
 import { useEffect } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import ProjectComponentsStyles from './Project.styles';
@@ -46,8 +43,8 @@ const ProjectSpecificationStep: React.FC<ISpecificationStep & StepProps> = (prop
                 <Box sx={{ marginLeft: '2rem' }}>
                     <Typography sx={{ color: 'muted.main' }}>
                         <b>
-                            Your studyset's studies now have all the relevant information (i.e.
-                            metadata, coordinates, annotations) needed for a meta-analysis
+                            Your studyset's studies now have all the relevant information (i.e. metadata, coordinates,
+                            annotations) needed for a meta-analysis
                         </b>
                     </Typography>
                     <Typography gutterBottom sx={{ color: 'muted.main' }}>
@@ -70,9 +67,7 @@ const ProjectSpecificationStep: React.FC<ISpecificationStep & StepProps> = (prop
                             }
                             color="primary"
                             onClick={handleClickProceed}
-                            variant={
-                                disabled ? 'text' : canEditMetaAnalyses ? 'outlined' : 'contained'
-                            }
+                            variant={disabled ? 'text' : canEditMetaAnalyses ? 'outlined' : 'contained'}
                             disabled={disabled}
                             disableElevation
                             sx={{ width: '100%', height: '100%' }}
@@ -80,8 +75,8 @@ const ProjectSpecificationStep: React.FC<ISpecificationStep & StepProps> = (prop
                             {disabled
                                 ? 'Complete Curation and Extraction to continue'
                                 : canEditMetaAnalyses
-                                ? 'View meta-analyses'
-                                : 'Proceed to Meta-Analyses Page'}
+                                  ? 'View meta-analyses'
+                                  : 'Proceed to Meta-Analyses Page'}
                         </Button>
                     </Box>
                 </Box>

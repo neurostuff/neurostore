@@ -1,8 +1,4 @@
-import {
-    useStudyAnalyses,
-    useStudyAnalysisName,
-    useStudyAnalysisPoints,
-} from 'pages/Study/store/StudyStore';
+import { useStudyAnalyses, useStudyAnalysisName, useStudyAnalysisPoints } from 'pages/Study/store/StudyStore';
 import { IStorePoint } from 'pages/Study/store/StudyStore.helpers';
 import { useMemo } from 'react';
 
@@ -16,14 +12,7 @@ export const isCoordinateMNI = (x: number, y: number, z: number) => {
         zMin: -72,
     };
 
-    return (
-        x <= dims.xMax &&
-        x >= dims.xMin &&
-        y <= dims.yMax &&
-        y >= dims.yMin &&
-        z <= dims.zMax &&
-        z >= dims.zMin
-    );
+    return x <= dims.xMax && x >= dims.xMin && y <= dims.yMax && y >= dims.yMin && z <= dims.zMax && z >= dims.zMin;
 };
 
 const useDisplayWarnings = (analysisId?: string) => {

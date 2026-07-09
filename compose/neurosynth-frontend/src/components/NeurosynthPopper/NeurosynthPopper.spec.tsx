@@ -13,11 +13,7 @@ describe('NeurosynthPopper', () => {
 
         return (
             <>
-                <NeurosynthPopper
-                    open={props.open}
-                    onClickAway={mockOnClickAway}
-                    anchorElement={mockButton}
-                >
+                <NeurosynthPopper open={props.open} onClickAway={mockOnClickAway} anchorElement={mockButton}>
                     <div>test</div>
                 </NeurosynthPopper>
             </>

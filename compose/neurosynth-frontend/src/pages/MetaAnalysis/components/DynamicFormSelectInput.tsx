@@ -15,13 +15,11 @@ const DynamicFormSelectInput: React.FC<IDynamicFormInput> = (props) => {
 
     return (
         <Box sx={DynamicFormStyles.input}>
-            <MetaAnalysisDynamicFormTitle
-                name={props.parameterName}
-                description={props.parameter.description}
-            />
+            <MetaAnalysisDynamicFormTitle name={props.parameterName} description={props.parameter.description} />
 
             <Select
                 sx={{ width: '50%' }}
+                name={props.parameterName}
                 value={props.value || ''}
                 onChange={(event) =>
                     props.onUpdate({

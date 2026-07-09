@@ -1,37 +1,86 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import AutoAwesomeMotionIcon from '@mui/icons-material/AutoAwesomeMotion';
 import IosShareIcon from '@mui/icons-material/IosShare';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import OpenInNew from '@mui/icons-material/OpenInNew';
 import SearchIcon from '@mui/icons-material/Search';
 import SettingsIcon from '@mui/icons-material/Settings';
 import { Box, Button, Card, CardContent, Typography } from '@mui/material';
 import NeurosynthActivitySummary from 'components/NeurosynthActivitySummary';
+import NavToolbarPopupSubMenu from 'components/Navbar/NavToolbarPopupSubMenu';
+import { NEUROSYNTH_COMPOSE_CITATION } from 'hooks/useCitationCopy.consts';
+import { useCitationCopy } from 'hooks/useCitationCopy';
 import { useGuard } from 'hooks';
+import useAuthenticate from 'hooks/useAuthenticate';
+import { usePrerenderReady, usePageMetadata } from '../../../seo/hooks';
+import PlatformComparisonTable from 'pages/LandingPage/components/PlatformComparisonTable';
 import { LOGOS } from 'pages/LandingPage/LandingPage.helpers';
 import LandingPageStyles from './LandingPage.styles';
-import PlatformComparisonTable from 'pages/LandingPage/components/PlatformComparisonTable';
-import { useNavigate } from 'react-router';
 
-const AUTH0_AUDIENCE = import.meta.env.VITE_APP_AUTH0_AUDIENCE;
+const SEO_GRAPH_DATA = JSON.stringify({
+    '@context': 'https://schema.org',
+    '@graph': [
+        {
+            '@type': 'Organization',
+            '@id': 'https://github.com/neurostuff#organization',
+            name: 'Neurostuff',
+            url: 'https://github.com/neurostuff',
+        },
+        {
+            '@type': 'WebSite',
+            '@id': 'https://compose.neurosynth.org/#website',
+            name: 'Neurosynth Compose',
+            url: 'https://compose.neurosynth.org/',
+            publisher: { '@id': 'https://github.com/neurostuff#organization' },
+            about: { '@id': 'https://compose.neurosynth.org/#software' },
+        },
+        {
+            '@type': 'SoftwareApplication',
+            '@id': 'https://compose.neurosynth.org/#software',
+            name: 'Neurosynth Compose',
+            description:
+                'A web-based platform for creating, curating, and running reproducible neuroimaging meta-analyses.',
+            url: 'https://compose.neurosynth.org/',
+            applicationCategory: 'ScienceApplication',
+            operatingSystem: 'Web',
+            isAccessibleForFree: true,
+            publisher: { '@id': 'https://github.com/neurostuff#organization' },
+            isPartOf: {
+                '@type': 'CreativeWork',
+                name: 'Neurosynth ecosystem',
+                url: 'https://neurosynth.org/',
+                isPartOf: { '@id': 'https://github.com/neurostuff#organization' },
+            },
+            softwareHelp: {
+                '@type': 'CreativeWork',
+                name: 'Neurosynth Compose Documentation',
+                url: 'https://neurostuff.github.io/compose-docs/',
+            },
+            subjectOf: {
+                '@type': 'ScholarlyArticle',
+                name: 'Neurosynth Compose: A Web-Based Platform for Flexible and Reproducible Neuroimaging Meta-Analysis',
+                identifier: NEUROSYNTH_COMPOSE_CITATION.doiUrl,
+            },
+        },
+    ],
+});
 
 const LandingPage = () => {
-    const { isAuthenticated, isLoading, loginWithPopup } = useAuth0();
-    const navigate = useNavigate();
+    const { isAuthenticated, isLoading } = useAuth0();
     useGuard('/projects', '', isAuthenticated, isLoading, true);
-
-    const handleLogin = async () => {
-        await loginWithPopup({
-            audience: AUTH0_AUDIENCE,
-            scope: 'openid profile email offline_access',
-        });
-        if (window.gtag) {
-            window.gtag('event', 'login');
-        }
-        navigate('/');
-    };
+    const { handleLogin } = useAuthenticate();
+    const { copyCitations } = useCitationCopy();
+    usePageMetadata({
+        title: 'Neurosynth Compose | Neuroimaging Meta-Analysis Platform',
+        description:
+            'Create, curate, and run neuroimaging meta-analyses in the browser. Build studysets from published fMRI literature and execute reproducible pipelines in the cloud.',
+        canonicalPath: '/',
+    });
+    usePrerenderReady(true);
 
     return (
         <>
+            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: SEO_GRAPH_DATA }} />
             <Box sx={[LandingPageStyles.sectionContainer, { backgroundColor: 'primary.main' }]}>
                 <Box sx={[LandingPageStyles.sectionContents, LandingPageStyles.heroBannerContentContainer]}>
                     <Box sx={LandingPageStyles.heroBannerTextContainer}>
@@ -79,6 +128,84 @@ const LandingPage = () => {
                             alt="brain-analysis"
                         />
                     </Box>
+                </Box>
+            </Box>
+            <Box sx={[LandingPageStyles.sectionContainer, { backgroundColor: 'primary.dark' }]}>
+                <Box sx={LandingPageStyles.sectionContents}>
+                    <Card
+                        elevation={0}
+                        sx={{
+                            px: { xs: 2, md: 4 },
+                            py: 3,
+                            borderRadius: 2,
+                            backgroundColor: 'rgba(255, 255, 255, 0.06)',
+                            border: '1px solid rgba(255, 255, 255, 0.12)',
+                        }}
+                    >
+                        <Typography
+                            variant="overline"
+                            sx={{
+                                color: 'primary.contrastText',
+                                fontSize: '1rem',
+                                letterSpacing: 1.5,
+                            }}
+                        >
+                            Featured in Imaging Neuroscience
+                        </Typography>
+                        <Typography
+                            variant="h5"
+                            color="primary.contrastText"
+                            sx={{
+                                mb: 2,
+                                fontWeight: 'bold',
+                            }}
+                        >
+                            Read our recent publication on flexible and reproducible neuroimaging meta-analysis
+                        </Typography>
+                        <Box
+                            sx={{
+                                display: 'flex',
+                                flexWrap: 'wrap',
+                                gap: 1.5,
+                                alignItems: 'center',
+                            }}
+                        >
+                            <Button
+                                variant="contained"
+                                sx={[LandingPageStyles.getStartedButton, { color: 'primary.dark' }]}
+                                endIcon={<OpenInNew sx={{ color: 'primary.dark' }} />}
+                                target="_blank"
+                                size="large"
+                                rel="noreferrer"
+                                href={NEUROSYNTH_COMPOSE_CITATION.doiUrl}
+                            >
+                                Go to publication
+                            </Button>
+                            <NavToolbarPopupSubMenu
+                                buttonProps={{
+                                    variant: 'outlined',
+                                    size: 'large',
+                                    endIcon: <KeyboardArrowDownIcon />,
+                                    sx: {
+                                        color: 'primary.contrastText',
+                                        borderColor: 'primary.contrastText',
+                                        '&:hover': {
+                                            borderColor: 'primary.contrastText',
+                                            backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                                        },
+                                    },
+                                }}
+                                options={[
+                                    { label: 'APA format', onClick: () => copyCitations('apa') },
+                                    { label: 'Vancouver format', onClick: () => copyCitations('vancouver') },
+                                    { label: 'Harvard format', onClick: () => copyCitations('harvard1') },
+                                    { label: 'BibTeX format', onClick: () => copyCitations('bibtex') },
+                                ]}
+                                compactOptions
+                                buttonLabel="Cite Me"
+                            />
+                        </Box>
+                    </Card>
                 </Box>
             </Box>
             <Box

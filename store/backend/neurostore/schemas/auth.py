@@ -1,9 +1,6 @@
-from marshmallow import (
-    fields,
-    EXCLUDE,
-)
+from marshmallow import EXCLUDE, fields
 
-from .data import BaseSchema
+from neurostore.schemas.data import BaseSchema
 
 
 class UserSchema(BaseSchema):

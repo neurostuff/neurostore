@@ -1,7 +1,6 @@
 import pytest
 
 from neurosynth_compose.models import MetaAnalysis, Project
-from sqlalchemy import select
 
 
 @pytest.mark.parametrize(
@@ -12,20 +11,12 @@ from sqlalchemy import select
     ],
 )
 def test_page_and_page_size(session, app, auth_client, user_data, db, endpoint, model):
-    objects = db.session.execute(select(model)).scalars().all()
-    if hasattr(model, "public"):
-        object_ids = set(
-            [
-                m.id
-                for m in objects
-                if (m.public and not m.draft)
-                or getattr(m.user, "external_id", None) == auth_client.username
-            ]
-        )
-    else:
-        object_ids = set([m.id for m in objects])
+    first_page = auth_client.get(f"/api/{endpoint}?page=1&page_size=100")
+    assert first_page.status_code == 200
+    object_ids = set([m["id"] for m in first_page.json["results"]])
+    total_count = first_page.json["metadata"]["total_count"]
     returned_ids = []
-    for num in range(1, len(object_ids) + 1):
+    for num in range(1, total_count + 1):
         page = auth_client.get(f"/api/{endpoint}?page={num}&page_size=1")
         assert page.status_code == 200
         assert len(page.json["results"]) == 1

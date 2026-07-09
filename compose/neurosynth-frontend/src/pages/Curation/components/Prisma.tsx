@@ -21,7 +21,7 @@ import {
 
 const nodeTypes = { NeurosynthNode: NeurosynthNode };
 
-const PrismaComponent: React.FC<{ prisma?: INeurosynthProject }> = (props) => {
+const PrismaComponent: React.FC<{ prisma?: INeurosynthProject }> = () => {
     const [height, setHeight] = useState(700);
     const [prisma, setPrisma] = useState<IPrismaGroup>({
         nodes: [],
@@ -38,13 +38,9 @@ const PrismaComponent: React.FC<{ prisma?: INeurosynthProject }> = (props) => {
             const convertedProjectToPrisma = prismaHelper.convertProjectToPRISMA(provenance);
             const prismaNodes = prismaHelper.buildPRISMA(convertedProjectToPrisma);
             setPrisma(prismaNodes);
-            const includedGroupNode = prismaNodes.nodes.find(
-                (x) => x.type === 'group' && x.id === 'included-group'
-            );
+            const includedGroupNode = prismaNodes.nodes.find((x) => x.type === 'group' && x.id === 'included-group');
             if (includedGroupNode) {
-                setHeight(
-                    includedGroupNode.position.y + (includedGroupNode.style?.height as number)
-                );
+                setHeight(includedGroupNode.position.y + (includedGroupNode.style?.height as number));
             }
         }
     }, [columns, provenance, isPrisma]);

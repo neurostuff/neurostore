@@ -4,9 +4,7 @@ import { Box, IconButton, Tooltip, Typography } from '@mui/material';
 import { CellContext, HeaderContext } from '@tanstack/react-table';
 import { IExtractionTableStudy } from './ExtractionTable';
 
-export const ExtractionTableDOICell: React.FC<CellContext<IExtractionTableStudy, string>> = (
-    props
-) => {
+export const ExtractionTableDOICell: React.FC<CellContext<IExtractionTableStudy, string>> = (props) => {
     const value = props.getValue();
     return (
         <Typography variant="body2" sx={{ wordBreak: 'break-all' }}>
@@ -15,10 +13,7 @@ export const ExtractionTableDOICell: React.FC<CellContext<IExtractionTableStudy,
     );
 };
 
-export const ExtractionTableDOIHeader: React.FC<HeaderContext<IExtractionTableStudy, string>> = ({
-    table,
-    column,
-}) => {
+export const ExtractionTableDOIHeader: React.FC<HeaderContext<IExtractionTableStudy, string>> = ({ table, column }) => {
     const isSorted = column.getIsSorted();
     return (
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -37,25 +32,16 @@ export const ExtractionTableDOIHeader: React.FC<HeaderContext<IExtractionTableSt
                             }
                         }}
                     >
-                        <ArrowDownward
-                            sx={{ height: '0.9em', width: '0.9em', color: 'lightgray' }}
-                        />
+                        <ArrowDownward sx={{ height: '0.9em', width: '0.9em', color: 'lightgray' }} />
                     </IconButton>
                 </Tooltip>
             ) : isSorted === 'asc' ? (
                 <IconButton size="small" onClick={() => table.resetSorting()}>
-                    <ArrowUpwardIcon
-                        sx={{ height: '0.9em', width: '0.9em', color: 'secondary.main' }}
-                    />
+                    <ArrowUpwardIcon sx={{ height: '0.9em', width: '0.9em', color: 'secondary.main' }} />
                 </IconButton>
             ) : (
-                <IconButton
-                    size="small"
-                    onClick={() => table.setSorting([{ id: 'doi', desc: false }])}
-                >
-                    <ArrowDownward
-                        sx={{ height: '0.9em', width: '0.9em', color: 'secondary.main' }}
-                    />
+                <IconButton size="small" onClick={() => table.setSorting([{ id: 'doi', desc: false }])}>
+                    <ArrowDownward sx={{ height: '0.9em', width: '0.9em', color: 'secondary.main' }} />
                 </IconButton>
             )}
         </Box>

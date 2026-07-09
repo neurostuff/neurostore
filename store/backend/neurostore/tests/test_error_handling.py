@@ -1,37 +1,44 @@
-import json
-import pytest
-from starlette.requests import Request
 import asyncio
+import json
+
+import pytest
+from marshmallow import Schema
+from marshmallow import ValidationError as MarshmallowValidationError
+from marshmallow import fields
+from starlette.requests import Request
 
 from neurostore.exceptions.base import (
-    PermissionError,
     AuthenticationError,
-    UnprocessableEntityError,
-    NotFoundError,
-    ValidationError,
     InternalServerError,
+    NotFoundError,
+    PermissionError,
+    UnprocessableEntityError,
+    ValidationError,
 )
-
-from neurostore.exceptions.utils.errors import ErrorDetail, ErrorResponse
 from neurostore.exceptions.factories import (
     create_field_validation_error,
-    create_validation_error,
     create_not_found_error,
+    create_validation_error,
     make_field_error,
 )
-
+from neurostore.exceptions.handlers import (
+    general_exception_handler,
+    neurostore_exception_handler,
+)
 from neurostore.exceptions.utils.error_helpers import (
-    abort_validation,
+    abort_auth,
+    abort_internal_server_error,
     abort_not_found,
     abort_permission,
-    abort_auth,
     abort_unprocessable,
-    abort_internal_server_error,
+    abort_validation,
 )
-from neurostore.exceptions.handlers import (
-    neurostore_exception_handler,
-    general_exception_handler,
-)
+from neurostore.exceptions.utils.errors import ErrorDetail, ErrorResponse
+from neurostore.resources.base import handle_parser_error, load_schema_or_abort
+
+
+class _ValidationSchema(Schema):
+    name = fields.String(required=True)
 
 
 async def _dummy_receive():
@@ -72,7 +79,7 @@ def test_neurostore_exception_payload_and_factories():
 
 def test_neurostore_exception_properties():
     """Test that NeuroStoreException properties work correctly after refactoring"""
-    from neurostore.exceptions.base import NeuroStoreException, ErrorDetail
+    from neurostore.exceptions.base import ErrorDetail, NeuroStoreException
 
     errors = [ErrorDetail(field="test", code="TEST_ERROR", message="Test error")]
     exc = NeuroStoreException(
@@ -222,3 +229,23 @@ def test_make_field_error_helper():
         "test_field", "invalid_value", code="CUSTOM_CODE"
     )
     assert error_detail_custom_code.code == "CUSTOM_CODE"
+
+
+def test_manual_and_parser_validation_share_error_shape():
+    schema = _ValidationSchema()
+
+    with pytest.raises(UnprocessableEntityError) as manual_exc:
+        load_schema_or_abort(schema, {})
+
+    with pytest.raises(UnprocessableEntityError) as parser_exc:
+        handle_parser_error(
+            MarshmallowValidationError({"name": ["Missing data for required field."]}),
+            None,
+            schema,
+            error_status_code=422,
+            error_headers={},
+        )
+
+    assert manual_exc.value.detail == parser_exc.value.detail
+    assert manual_exc.value.status_code == parser_exc.value.status_code == 422
+    assert "input does not conform to specification" in manual_exc.value.detail

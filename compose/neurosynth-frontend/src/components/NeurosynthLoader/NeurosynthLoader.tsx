@@ -21,9 +21,7 @@ const NeurosynthLoader: React.FC<INeurosynthLoader> = (props) => {
                     }}
                 >
                     <ProgressLoader disableShrink={false} />
-                    {props.loadingText && (
-                        <Box sx={{ margin: '0.5rem' }}> {props.loadingText} </Box>
-                    )}
+                    {props.loadingText && <Box sx={{ margin: '0.5rem' }}> {props.loadingText} </Box>}
                 </Box>
             )}
         </>

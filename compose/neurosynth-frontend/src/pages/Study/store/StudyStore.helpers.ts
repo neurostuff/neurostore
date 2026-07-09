@@ -142,11 +142,12 @@ export const studyPointsToStorePoints = (
                 x: undefined,
                 y: undefined,
                 z: undefined,
+                deactivation: undefined,
             },
         ];
     } else {
         storePoints = ((points || []) as Array<PointReturn>)
-            .map(({ entities, space, subpeak, cluster_size, values, kind, label_id, ...args }) => {
+            .map(({ entities, space, subpeak, cluster_size, values, kind, label_id, deactivation, ...args }) => {
                 const typedValues = values as Array<PointValue> | undefined;
                 if (!analysisSpace && !!space) {
                     analysisSpace = DefaultSpaceTypes[space] ? DefaultSpaceTypes[space] : DefaultSpaceTypes.OTHER;
@@ -161,10 +162,12 @@ export const studyPointsToStorePoints = (
                     value = typedValues[0].value;
                 }
 
+                // for all FE point properties, we should default to undefined instead of null
                 return {
                     ...args,
-                    subpeak: subpeak === null ? undefined : subpeak,
-                    cluster_size: cluster_size === null ? undefined : cluster_size,
+                    deactivation: deactivation ?? undefined,
+                    subpeak: subpeak ?? undefined,
+                    cluster_size: cluster_size ?? undefined,
                     value: value,
                     x: (args.coordinates || [])[0],
                     y: (args.coordinates || [])[1],
@@ -186,7 +189,7 @@ export const studyPointsToStorePoints = (
 
 export const studyAnalysesToStoreAnalyses = (
     analyses?: AnalysisReturn[],
-    initPointIfEmpty?: boolean = false
+    initPointIfEmpty: boolean = false
 ): IStoreAnalysis[] => {
     const studyAnalyses: IStoreAnalysis[] = (analyses || []).map((analysis) => {
         const { entities, ...analysisProps } = analysis;
@@ -261,18 +264,19 @@ export const storeAnalysesToStudyAnalyses = (analyses?: IStoreAnalysis[]): Analy
                     id: isNew ? undefined : pointArgs.id, // if the point was created by us in the FE, make undefined so the BE gives it an ID
                     image: pointArgs.image,
                     order: index,
-                    space: pointSpace?.value || null,
-                    subpeak: pointArgs.subpeak,
-                    x: pointArgs.x === null ? undefined : pointArgs.x,
-                    y: pointArgs.y === null ? undefined : pointArgs.y,
-                    z: pointArgs.z === null ? undefined : pointArgs.z,
+                    space: pointSpace?.value ?? (isNew ? null : undefined),
+                    subpeak: pointArgs.subpeak ?? (isNew ? null : undefined),
+                    x: pointArgs.x ?? undefined,
+                    y: pointArgs.y ?? undefined,
+                    z: pointArgs.z ?? undefined,
                     values: [
                         {
-                            value: value || null,
-                            kind: pointStatistic?.value || null,
+                            value: value ?? (isNew ? null : undefined),
+                            kind: pointStatistic?.value ?? (isNew ? null : undefined),
                         },
                     ],
-                    cluster_size: pointArgs.cluster_size || null,
+                    cluster_size: pointArgs.cluster_size ?? (isNew ? null : undefined),
+                    deactivation: pointArgs.deactivation ?? (isNew ? null : undefined),
                 }));
             }
 

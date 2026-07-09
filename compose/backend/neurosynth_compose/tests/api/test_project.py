@@ -1,8 +1,14 @@
-from neurosynth_compose.models import Project, MetaAnalysisResult, User
-from neurosynth_compose.schemas import MetaAnalysisSchema
 from sqlalchemy import select
 
-from ..conftest import MockNeurostoreSession
+from neurosynth_compose.models import (
+    MetaAnalysisResult,
+    NeurostoreAnnotation,
+    NeurostoreStudyset,
+    Project,
+    User,
+)
+from neurosynth_compose.schemas import MetaAnalysisSchema
+from neurosynth_compose.tests.conftest import MockNeurostoreSession
 
 
 def test_get_all_projects(session, app, auth_client, user_data):
@@ -42,8 +48,8 @@ def test_project_info(session, app, auth_client, user_data):
         assert f in meta_analysis
 
 
-def test_project_studyset_annotation_attributes(session, app, auth_client, user_data):
-    """Test that project has studyset and annotation attributes"""
+def test_project_neurostore_reference_attributes(session, app, auth_client, user_data):
+    """Project responses should expose only the explicit neurostore reference IDs."""
     proj = session.execute(select(Project)).scalars().first()
 
     resp = auth_client.get(f"/api/projects/{proj.id}")
@@ -51,13 +57,76 @@ def test_project_studyset_annotation_attributes(session, app, auth_client, user_
 
     project_data = resp.json
 
-    # Check that studyset and annotation attributes are present
-    assert "studyset" in project_data
-    assert "annotation" in project_data
+    assert "studyset" not in project_data
+    assert "annotation" not in project_data
+    assert "neurostore_studyset_id" in project_data
+    assert "neurostore_annotation_id" in project_data
+    assert isinstance(project_data["neurostore_studyset_id"], str)
+    assert isinstance(project_data["neurostore_annotation_id"], str)
 
-    # These should be string IDs (due to pluck metadata)
-    assert isinstance(project_data["studyset"], str)
-    assert isinstance(project_data["annotation"], str)
+
+def test_get_all_projects_include_provenance_defaults_true(
+    session, app, auth_client, user_data
+):
+    response = auth_client.get("/api/projects")
+    assert response.status_code == 200
+    assert response.json["results"]
+    assert "provenance" in response.json["results"][0]
+
+
+def test_get_all_projects_filters_provenance_for_project_cards(
+    session, app, auth_client, user_data
+):
+    response = auth_client.get("/api/projects")
+    assert response.status_code == 200
+    assert response.json["results"]
+
+    allowed_top_level = {
+        "curationMetadata",
+        "extractionMetadata",
+        "metaAnalysisMetadata",
+    }
+
+    for project in response.json["results"]:
+        provenance = project["provenance"] or {}
+        assert set(provenance).issubset(allowed_top_level)
+
+        curation_metadata = provenance.get("curationMetadata") or {}
+        assert set(curation_metadata).issubset({"columns", "prismaConfig"})
+        for column in curation_metadata.get("columns", []):
+            assert set(column) == {"stubStudies"}
+            for stub in column["stubStudies"]:
+                assert set(stub) == {"exclusionTag", "tags"}
+                for tag in stub["tags"]:
+                    assert set(tag) == {"id"}
+
+        prisma_config = curation_metadata.get("prismaConfig") or {}
+        assert set(prisma_config).issubset({"isPrisma"})
+
+        extraction_metadata = provenance.get("extractionMetadata") or {}
+        assert set(extraction_metadata).issubset({"studysetId", "studyStatusList"})
+        for status in extraction_metadata.get("studyStatusList", []):
+            assert set(status).issubset({"id", "status"})
+
+        meta_analysis_metadata = provenance.get("metaAnalysisMetadata") or {}
+        assert set(meta_analysis_metadata).issubset({"canEditMetaAnalyses"})
+
+
+def test_get_all_projects_can_exclude_provenance(session, app, auth_client, user_data):
+    response = auth_client.get("/api/projects?include_provenance=false")
+    assert response.status_code == 200
+    assert response.json["results"]
+    assert all(project["provenance"] is None for project in response.json["results"])
+
+
+def test_get_project_detail_can_exclude_provenance(
+    session, app, auth_client, user_data
+):
+    proj = session.execute(select(Project)).scalars().first()
+
+    response = auth_client.get(f"/api/projects/{proj.id}?include_provenance=false")
+    assert response.status_code == 200
+    assert response.json["provenance"] is None
 
 
 def test_delete_project(session, app, auth_client, user_data):
@@ -99,6 +168,31 @@ def test_total_count(session, app, auth_client, user_data):
     assert "total_count" in response.json["metadata"]
 
 
+def test_projects_list_allows_missing_neurostore_study(
+    session, app, auth_client, user_data
+):
+    user = session.execute(
+        select(User).where(User.external_id == auth_client.username)
+    ).scalar_one()
+    project = Project(
+        name="legacy project without neurostore study",
+        user=user,
+        public=True,
+        draft=False,
+    )
+    session.add(project)
+    session.flush()
+
+    response = auth_client.get("/api/projects")
+    assert response.status_code == 200
+
+    returned_project = next(
+        p for p in response.json["results"] if p["id"] == project.id
+    )
+    assert returned_project["neurostore_study"] is None
+    assert returned_project["neurostore_url"] is None
+
+
 def test_filter_by_user_id(session, app, auth_client, user_data):
     # Add some projects to the database
     # ...
@@ -117,6 +211,48 @@ def test_search_capabilities(session, app, auth_client, user_data):
     search_term = "test"
     response = auth_client.get(f"/api/projects?search={search_term}")
     assert response.status_code == 200
+
+
+def test_update_project_creates_missing_neurostore_reference_rows(
+    session, app, auth_client, user_data
+):
+    project = (
+        session.execute(
+            select(Project)
+            .join(Project.user)
+            .where(User.external_id == auth_client.username)
+        )
+        .scalars()
+        .first()
+    )
+    assert project is not None
+
+    studyset_ref_id = "ie8dzf2iSf63"
+    annotation_ref_id = "D6HhzHy73VGN"
+
+    assert session.get(NeurostoreStudyset, studyset_ref_id) is None
+    assert session.get(NeurostoreAnnotation, annotation_ref_id) is None
+
+    response = auth_client.put(
+        f"/api/projects/{project.id}",
+        data={
+            "neurostore_studyset_id": studyset_ref_id,
+            "neurostore_annotation_id": annotation_ref_id,
+            "provenance": {
+                "extractionMetadata": {
+                    "studysetId": studyset_ref_id,
+                    "annotationId": annotation_ref_id,
+                    "studyStatusList": [],
+                }
+            },
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json["neurostore_studyset_id"] == studyset_ref_id
+    assert response.json["neurostore_annotation_id"] == annotation_ref_id
+    assert session.get(NeurostoreStudyset, studyset_ref_id) is not None
+    assert session.get(NeurostoreAnnotation, annotation_ref_id) is not None
 
 
 def test_clone_public_project_creates_new_project(
@@ -152,13 +288,17 @@ def test_clone_public_project_creates_new_project(
     )
     assert cloned_project.user.external_id == auth_client.username
     assert (
-        cloned_project.studyset_id
-        and cloned_project.studyset_id != source_project.studyset_id
+        cloned_project.neurostore_studyset_id
+        and cloned_project.neurostore_studyset_id
+        != source_project.neurostore_studyset_id
     )
-    assert (
-        cloned_project.annotation_id
-        and cloned_project.annotation_id != source_project.annotation_id
-    )
+    if source_project.neurostore_annotation_id is not None:
+        assert (
+            cloned_project.neurostore_annotation_id
+            != source_project.neurostore_annotation_id
+        )
+    else:
+        assert cloned_project.neurostore_annotation_id is None
 
     expected_auth = f"Bearer {auth_client.token}"
     auth_headers = {
@@ -203,7 +343,7 @@ def test_clone_public_project_without_annotations(
         .first()
     )
     assert source_project is not None
-    assert source_project.annotation is not None
+    assert source_project.neurostore_annotation_id is not None
 
     response = auth_client.post(
         f"/api/projects?source_id={source_project.id}&copy_annotations=false",
@@ -212,14 +352,14 @@ def test_clone_public_project_without_annotations(
 
     assert response.status_code == 200
     payload = response.json
-    assert payload["annotation"] is None
+    assert payload["neurostore_annotation_id"] is None
 
     cloned_project = (
         session.execute(select(Project).where(Project.id == payload["id"]))
         .scalars()
         .one()
     )
-    assert cloned_project.annotation_id is None
+    assert cloned_project.neurostore_annotation_id is None
 
     # ensure query parameter propagated
     assert any(
@@ -227,3 +367,86 @@ def test_clone_public_project_without_annotations(
         for call in MockNeurostoreSession.call_log
         if call["method"] == "POST" and call["path"].startswith("/api/studysets")
     )
+
+
+def test_update_project_public_without_meta_cascade(
+    session, auth_client, user_data, reset_ns_session, mock_ns
+):
+    project = (
+        session.execute(
+            select(Project)
+            .join(Project.user)
+            .where(User.external_id == auth_client.username)
+            .where(Project.meta_analyses.any())
+        )
+        .scalars()
+        .first()
+    )
+    assert project is not None
+
+    project.public = False
+    for meta in project.meta_analyses:
+        meta.public = False
+    session.add(project)
+    session.flush()
+
+    response = auth_client.put(f"/api/projects/{project.id}", data={"public": True})
+    assert response.status_code == 200
+    assert response.json["public"] is True
+
+    session.expire_all()
+    updated_project = (
+        session.execute(select(Project).where(Project.id == project.id)).scalars().one()
+    )
+    assert updated_project.public is True
+    assert all(meta.public is False for meta in updated_project.meta_analyses)
+
+
+def test_update_project_public_with_meta_cascade(
+    session, auth_client, user_data, reset_ns_session, mock_ns
+):
+    project = (
+        session.execute(
+            select(Project)
+            .join(Project.user)
+            .where(User.external_id == auth_client.username)
+            .where(Project.meta_analyses.any())
+        )
+        .scalars()
+        .first()
+    )
+    assert project is not None
+
+    project.public = False
+    for meta in project.meta_analyses:
+        meta.public = False
+    session.add(project)
+    session.flush()
+
+    update_public = auth_client.put(
+        f"/api/projects/{project.id}?sync_meta_analyses_public=true",
+        data={"public": True},
+    )
+    assert update_public.status_code == 200
+    assert update_public.json["public"] is True
+
+    session.expire_all()
+    updated_project = (
+        session.execute(select(Project).where(Project.id == project.id)).scalars().one()
+    )
+    assert updated_project.public is True
+    assert all(meta.public is True for meta in updated_project.meta_analyses)
+
+    update_private = auth_client.put(
+        f"/api/projects/{project.id}?sync_meta_analyses_public=true",
+        data={"public": False},
+    )
+    assert update_private.status_code == 200
+    assert update_private.json["public"] is False
+
+    session.expire_all()
+    private_project = (
+        session.execute(select(Project).where(Project.id == project.id)).scalars().one()
+    )
+    assert private_project.public is False
+    assert all(meta.public is False for meta in private_project.meta_analyses)

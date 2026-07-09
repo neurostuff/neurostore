@@ -1,8 +1,9 @@
 import { AxiosError, AxiosResponse } from 'axios';
 import { useMutation, useQueryClient } from 'react-query';
 import { StudysetRequest, StudysetReturn } from 'neurostore-typescript-sdk';
-import API from 'utils/api';
+import API from 'api/api.config';
 import { useSnackbar } from 'notistack';
+import { STUDYSET_QUERY_STRING } from './useGetStudysetById';
 
 const useUpdateStudyset = () => {
     const queryClient = useQueryClient();
@@ -15,18 +16,14 @@ const useUpdateStudyset = () => {
             studyset: StudysetRequest;
         },
         unknown
-    >(
-        (args) =>
-            API.NeurostoreServices.StudySetsService.studysetsIdPut(args.studysetId, args.studyset),
-        {
-            onSuccess: () => {
-                queryClient.invalidateQueries('studysets');
-            },
-            onError: () => {
-                enqueueSnackbar('there was an error updating the studyset', { variant: 'error' });
-            },
-        }
-    );
+    >((args) => API.NeurostoreServices.StudySetsService.studysetsIdPut(args.studysetId, args.studyset), {
+        onSuccess: () => {
+            queryClient.invalidateQueries(STUDYSET_QUERY_STRING);
+        },
+        onError: () => {
+            enqueueSnackbar('there was an error updating the studyset', { variant: 'error' });
+        },
+    });
 };
 
 export default useUpdateStudyset;

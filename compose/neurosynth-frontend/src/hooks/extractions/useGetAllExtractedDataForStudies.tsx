@@ -2,7 +2,7 @@
 
 import { AxiosError, AxiosResponse } from 'axios';
 import { useQuery } from 'react-query';
-import API from 'utils/api';
+import API from 'api/api.config';
 
 export enum EAIExtractors {
     PARTICIPANTSDEMOGRAPHICSEXTRACTOR = 'ParticipantDemographicsExtractor',

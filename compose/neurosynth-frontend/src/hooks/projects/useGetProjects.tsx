@@ -4,7 +4,7 @@ import { EImportMode } from 'pages/CurationImport/CurationImport.types';
 import { EExtractionStatus } from 'pages/Extraction/ExtractionPage';
 import { SortBy } from 'pages/Study/Study.types';
 import { useQuery } from 'react-query';
-import API from 'utils/api';
+import API from 'api/api.config';
 
 export interface ITag {
     label: string;
@@ -107,7 +107,11 @@ export class ProjectSearchCriteria {
     ) {}
 }
 
-export const projectsSearchHelper = (projectSearchCriteria: Partial<ProjectSearchCriteria>, userId?: string) => {
+export const projectsSearchHelper = (
+    projectSearchCriteria: Partial<ProjectSearchCriteria>,
+    userId?: string,
+    includeProvenance?: boolean
+) => {
     return API.NeurosynthServices.ProjectsService.projectsGet(
         projectSearchCriteria.pageOfResults || undefined,
         projectSearchCriteria.pageSize,
@@ -116,15 +120,20 @@ export const projectsSearchHelper = (projectSearchCriteria: Partial<ProjectSearc
         projectSearchCriteria.descriptionSearch,
         projectSearchCriteria.sortBy === SortBy.LASTUPDATED ? 'updated_at' : projectSearchCriteria.sortBy,
         projectSearchCriteria.descOrder,
-        userId
+        userId,
+        includeProvenance
     );
 };
 
-const useGetProjects = (projectSearchCriteria: ProjectSearchCriteria) => {
-    return useQuery(['projects', { ...projectSearchCriteria }], () => projectsSearchHelper(projectSearchCriteria), {
-        select: (axiosResponse) => (axiosResponse.data.results as INeurosynthProjectReturn[]) || [],
-        refetchOnWindowFocus: false,
-    });
+const useGetProjects = (projectSearchCriteria: ProjectSearchCriteria, userSub?: string) => {
+    return useQuery(
+        ['projects', { ...projectSearchCriteria }, userSub],
+        () => projectsSearchHelper(projectSearchCriteria, userSub),
+        {
+            select: (axiosResponse) => (axiosResponse.data.results as INeurosynthProjectReturn[]) || [],
+            refetchOnWindowFocus: false,
+        }
+    );
 };
 
 export default useGetProjects;

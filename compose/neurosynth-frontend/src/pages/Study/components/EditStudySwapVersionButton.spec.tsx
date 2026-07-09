@@ -8,7 +8,7 @@ import EditStudySwapVersionButton from 'pages/Study/components/EditStudySwapVers
 import { useNavigate } from 'react-router-dom';
 import { mockBaseStudy, mockStudysetNotNested } from 'testing/mockData';
 import { useStudyId } from 'pages/Study/store/StudyStore';
-import { setUnloadHandler, unsetUnloadHandler } from 'helpers/BeforeUnload.helpers';
+import { setUnloadHandler } from 'helpers/BeforeUnload.helpers';
 
 vi.mock('react-router-dom');
 vi.mock('hooks');
@@ -16,7 +16,6 @@ vi.mock('pages/Project/store/ProjectStore');
 vi.mock('pages/Study/store/StudyStore');
 vi.mock('components/Dialogs/ConfirmationDialog');
 vi.mock('notistack');
-vi.mock('helpers/Annotation.helpers');
 vi.mock('stores/AnnotationStore.getters');
 
 describe('EditStudySwapVersionButton Component', () => {
@@ -39,10 +38,19 @@ describe('EditStudySwapVersionButton Component', () => {
         userEvent.click(button);
 
         baseStudy.versions?.forEach((version) => {
-            expect(
-                screen.getByText(`Switch to version: ${(version as StudyReturn).id as string}`)
-            ).toBeInTheDocument();
+            expect(screen.getByText(`Switch to version: ${(version as StudyReturn).id as string}`)).toBeInTheDocument();
         });
+    });
+
+    it('should link to the selected base study version when viewing', () => {
+        render(<EditStudySwapVersionButton />);
+        const baseStudy = mockBaseStudy();
+        const button = screen.getByRole('button');
+        userEvent.click(button);
+
+        const viewLinks = screen.getAllByRole('link', { name: /View version/i });
+        const versionId = (baseStudy.versions as StudyReturn[])[0].id as string;
+        expect(viewLinks[0]).toHaveAttribute('href', `/base-studies/base-study-id/${versionId}`);
     });
 
     it('should switch the study version', async () => {
@@ -54,9 +62,7 @@ describe('EditStudySwapVersionButton Component', () => {
         await act(async () => {
             userEvent.click(button);
         });
-        const swapButton = screen.getByText(
-            `Switch to version: ${(baseStudy.versions as StudyReturn[])[0].id}`
-        );
+        const swapButton = screen.getByText(`Switch to version: ${(baseStudy.versions as StudyReturn[])[0].id}`);
         await act(async () => {
             userEvent.click(swapButton);
         });
@@ -70,9 +76,7 @@ describe('EditStudySwapVersionButton Component', () => {
         expect(useUpdateStudyset().mutateAsync).toHaveBeenCalled();
         expect(useProjectExtractionReplaceStudyListStatusId()).toHaveBeenCalled();
         expect(useNavigate()).toHaveBeenCalledWith(
-            `/projects/project-id/extraction/studies/${
-                (baseStudy.versions as StudyReturn[])[0].id
-            }/edit`
+            `/projects/project-id/extraction/studies/${(baseStudy.versions as StudyReturn[])[0].id}/edit`
         );
     });
 
@@ -84,9 +88,7 @@ describe('EditStudySwapVersionButton Component', () => {
         await act(async () => {
             userEvent.click(button);
         });
-        const swapButton = screen.getByText(
-            `Switch to version: ${(baseStudy.versions as StudyReturn[])[0].id}`
-        );
+        const swapButton = screen.getByText(`Switch to version: ${(baseStudy.versions as StudyReturn[])[0].id}`);
         await act(async () => {
             userEvent.click(swapButton);
         });

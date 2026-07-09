@@ -1,6 +1,6 @@
 import pytest
-from connexion.spec import Specification
 from connexion.exceptions import InvalidSpecification
+from connexion.spec import Specification
 
 
 def test_openapi_specification_validates():

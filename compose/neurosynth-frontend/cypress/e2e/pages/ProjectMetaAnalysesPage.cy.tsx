@@ -9,29 +9,23 @@ describe(PAGE_NAME, () => {
     beforeEach(() => {
         cy.clearLocalStorage();
         cy.intercept('GET', 'https://api.appzi.io/**', { fixture: 'appzi' }).as('appziFixture');
-        cy.intercept('GET', `**/api/specifications/**`, { fixture: 'specification' }).as(
+        cy.intercept('GET', `**/api/specifications/**`, { fixture: 'MetaAnalysis/specification' }).as(
             'specificationFixture'
         );
-        cy.intercept('GET', `**/api/meta-analyses/**`, { fixture: 'metaAnalysis' }).as(
+        cy.intercept('GET', `**/api/meta-analyses/**`, { fixture: 'MetaAnalysis/metaAnalysis' }).as(
             'metaAnalysisFixture'
         );
         cy.fixture('projects/project').then((project) => {
             project.public = true;
             cy.intercept('GET', `**/api/projects/*`, project).as('projectFixture');
         });
-        cy.intercept('GET', `**/api/annotations/*`, { fixture: 'annotation' }).as(
-            'annotationFixture'
-        );
+        cy.intercept('GET', `**/api/annotations/*`, { fixture: 'annotation' }).as('annotationFixture');
         cy.intercept('GET', `**/api/studysets/*`, { fixture: 'studyset' }).as('studysetFixture');
+        cy.intercept('GET', `**/api/meta-analysis-jobs`, { fixture: 'MetaAnalysis/jobs/noJobs' }).as('jobsFixture');
     });
 
     it('should load successfully', () => {
-        cy.visit(PATH)
-            .wait('@metaAnalysisFixture')
-            .wait('@projectFixture')
-            .wait('@specificationFixture')
-            .wait('@annotationFixture')
-            .wait('@studysetFixture');
+        cy.login('mocked').visit(PATH).wait('@metaAnalysisFixture').wait('@projectFixture');
     });
 
     // describe('Tour ', () => {

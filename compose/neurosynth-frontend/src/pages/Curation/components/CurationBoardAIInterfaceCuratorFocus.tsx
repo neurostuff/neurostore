@@ -1,13 +1,12 @@
-import { Box, Typography } from '@mui/material';
-import { useGetCurationSummary, useGetWindowHeight } from 'hooks';
+import { Box } from '@mui/material';
+import { useGetWindowHeight } from 'hooks';
 import React, { useCallback, useEffect, useRef } from 'react';
 import { FixedSizeList } from 'react-window';
 import { ICurationBoardAIInterfaceCurator } from './CurationBoardAIInterfaceCurator';
+import CurationBoardAIInterfaceCuratorTableHints from './CurationBoardAIInterfaceCuratorTableHints';
 import CurationEditableStubSummary from './CurationEditableStubSummary';
 import CurationStubAITableSummary from './CurationStubAITableSummary';
 import CurationStubListItemVirtualizedContainer from './CurationStubListItemVirtualizedContainer';
-import { getStatusText } from './CurationBoardAIInterfaceCuratorTable';
-import { useProjectCurationIsPrisma } from 'pages/Project/store/ProjectStore';
 
 const CurationBoardAIInterfaceCuratorFocus: React.FC<ICurationBoardAIInterfaceCurator> = ({
     selectedStub,
@@ -19,8 +18,6 @@ const CurationBoardAIInterfaceCuratorFocus: React.FC<ICurationBoardAIInterfaceCu
     const windowHeight = useGetWindowHeight();
     const scrollableBoxRef = useRef<HTMLDivElement>(null);
     const listRef = useRef<FixedSizeList>(null);
-    const { uncategorized, included, excluded } = useGetCurationSummary();
-    const isPrisma = useProjectCurationIsPrisma();
 
     const handleMoveToNextStub = useCallback(() => {
         if (!selectedStub?.id) return;
@@ -47,11 +44,15 @@ const CurationBoardAIInterfaceCuratorFocus: React.FC<ICurationBoardAIInterfaceCu
         }
     }, [selectedStub?.id]);
 
-    const { statusColor, statusText } = getStatusText(included, uncategorized, excluded, columnIndex, isPrisma);
-
     return (
         <Box sx={{ display: 'flex', padding: '0 1rem 1rem 1rem', height: 'calc(100% - 48px - 8px - 20px)' }}>
-            {rows.length === 0 && <Typography color={statusColor}>{statusText}</Typography>}
+            {rows.length === 0 && (
+                <CurationBoardAIInterfaceCuratorTableHints
+                    table={table}
+                    numVisibleStudies={rows.length}
+                    columnIndex={columnIndex}
+                />
+            )}
             {rows.length > 0 && (
                 <>
                     <Box>

@@ -1,0 +1,284 @@
+import FileUploadIcon from '@mui/icons-material/FileUpload';
+import { Box, Button, TextField, Typography } from '@mui/material';
+import { ENavigationButton } from 'components/Buttons/NavigationButtons';
+import { ISource } from 'hooks/projects/useGetProjects';
+import { ICurationStubStudy } from 'pages/Curation/Curation.types';
+import CurationPopupIdentificationSourceSelector from 'pages/Curation/components/CurationPopupIdentificationSourceSelector';
+import { ENeurosynthSourceIds } from 'pages/Project/store/ProjectStore.consts';
+import { ChangeEvent, useEffect, useState } from 'react';
+import { v4 as uuidv4 } from 'uuid';
+// @ts-ignore
+import { Cite } from '@citation-js/core';
+import '@citation-js/plugin-bibtex';
+import '@citation-js/plugin-enw';
+import '@citation-js/plugin-ris';
+import CurationImportStyles from 'pages/CurationImport/CurationImport.styles';
+
+const normalize = (t: unknown): string => {
+    if (typeof t === 'string') return t;
+    if (Array.isArray(t)) return t.find((x) => typeof x === 'string' && x.trim()) || '';
+    return '';
+};
+
+const extractYear = (dateString: string | undefined) => {
+    if (!dateString) return '';
+    const match = dateString.match(/\b\d{4}\b/);
+    return match ? match[0] : '';
+};
+
+enum EValidationReason {
+    EMPTY = 'Input is empty',
+    INCORRECT = 'Format is incorrect or unsupported',
+}
+
+interface CSLJSONDateParts {
+    'date-parts'?:
+        | [string | number, number | number, string | number][]
+        | [string | number, string | number][]
+        | [string | number][];
+    raw?: string | string[];
+}
+
+interface CSLJSON {
+    DOI?: string;
+    ISSN?: string;
+    PMID?: string;
+    PMCID?: string;
+    URL?: string;
+    abstract?: string;
+    accessed?: CSLJSONDateParts;
+    annote?: string;
+    author?: {
+        given?: string;
+        family?: string;
+        'non-dropping-particle'?: string;
+        'dropping-particle'?: string;
+    }[];
+    'citation-key'?: string;
+    genre?: string;
+    'container-title'?: string;
+    id?: string;
+    issue?: string;
+    issued?: CSLJSONDateParts;
+    language?: string;
+    note?: string;
+    page?: string;
+    title?: string;
+    'title-short'?: string;
+    type?: string;
+    volume?: string;
+}
+
+const ImportStandardFormat: React.FC<{
+    onNavigate: (button: ENavigationButton) => void;
+    onImportStubs: (stubs: ICurationStubStudy[]) => void;
+    onFileUpload: (fileName: string) => void;
+}> = ({ onNavigate, onImportStubs, onFileUpload }) => {
+    const [source, setSource] = useState<ISource>();
+    const [uploadState, setUploadState] = useState<{
+        stubs: ICurationStubStudy[];
+        rawIdText: string;
+        file: File | undefined;
+        isValid: boolean;
+        validationReason: EValidationReason | null;
+    }>({
+        stubs: [],
+        rawIdText: '',
+        file: undefined,
+        isValid: false,
+        validationReason: EValidationReason.EMPTY,
+    });
+
+    useEffect(() => {
+        if (uploadState.rawIdText.length === 0) {
+            setUploadState((prev) => ({
+                ...prev,
+                isValid: false,
+                validationReason: EValidationReason.EMPTY,
+            }));
+            return;
+        }
+
+        if (!source) return;
+
+        try {
+            const citeObj = new Cite(uploadState.rawIdText);
+            citeObj.format('data', { format: 'object' });
+
+            const formattedArticles: ICurationStubStudy[] = ((citeObj.data as CSLJSON[]) || []).map((article) => {
+                const titleRaw = article.title ?? article['title-short'];
+                const articleYear =
+                    article?.issued?.['date-parts']?.[0]?.[0]?.toString() ??
+                    extractYear(normalize(article?.issued?.raw));
+                const articleJournal = normalize(article['container-title']);
+                const articleAbstract = article.abstract ?? article.annote;
+                const articleLink =
+                    article.URL ?? (article.PMID ? `https://pubmed.ncbi.nlm.nih.gov/${normalize(article.PMID)}` : '');
+
+                return {
+                    id: uuidv4(),
+                    title: normalize(titleRaw),
+                    authors: (article.author || []).reduce((acc, curr, index, arr) => {
+                        const middleParticle = curr['non-dropping-particle'] || curr['dropping-particle'] || '';
+                        return `${acc}${curr.given} ${middleParticle ? middleParticle + ' ' : ''}${
+                            curr.family
+                        }${index < arr.length - 1 ? ', ' : ''}`;
+                    }, ''),
+                    keywords: '',
+                    pmid: normalize(article.PMID),
+                    pmcid: normalize(article.PMCID),
+                    doi: normalize(article.DOI),
+                    articleYear: articleYear ?? '',
+                    journal: articleJournal ?? '',
+                    abstractText: normalize(articleAbstract),
+                    articleLink: articleLink,
+                    exclusionTag: null,
+                    identificationSource: source,
+                    tags: [],
+                };
+            });
+
+            setUploadState((prev) => ({
+                ...prev,
+                isValid: true,
+                stubs: formattedArticles,
+                validationReason: null,
+            }));
+        } catch (e) {
+            setUploadState((prev) => ({
+                ...prev,
+                isValid: false,
+                validationReason: EValidationReason.INCORRECT,
+            }));
+        }
+    }, [source, uploadState.rawIdText]);
+
+    const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+        if (event?.target?.files && event.target.files[0]) {
+            const file = event.target.files[0];
+            onFileUpload(file.name);
+            setUploadState((prev) => ({
+                ...prev,
+                file: file,
+            }));
+
+            const reader = new FileReader();
+            reader.onload = function () {
+                const content = reader.result;
+
+                if (content && typeof content === 'string') {
+                    const replacedText = content.replace(/(?:[\r\n])+/g, '\n');
+                    setUploadState((prev) => ({
+                        ...prev,
+                        rawIdText: replacedText,
+                    }));
+                }
+            };
+            reader.readAsText(file);
+        }
+    };
+
+    const handleInputIds = (event: ChangeEvent<HTMLInputElement>) => {
+        setUploadState((prev) => ({
+            ...prev,
+            rawIdText: event.target.value,
+        }));
+    };
+
+    const handleButtonClick = (button: ENavigationButton) => {
+        if (button === ENavigationButton.PREV) {
+            onNavigate(button);
+        } else {
+            onImportStubs(uploadState.stubs);
+            onNavigate(ENavigationButton.NEXT);
+        }
+    };
+
+    const handleAddSource = (source: ISource) => {
+        setSource(source);
+    };
+
+    return (
+        <Box sx={{ width: '100%' }} mt={6}>
+            <Box
+                sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    flexDirection: 'column',
+                }}
+            >
+                <Typography sx={{ maxWidth: '600px' }} mb={4} gutterBottom>
+                    Enter the database that you exported your bibliography from. If you don't see your database listed,
+                    you can type the name of the database you used. If you are using an export from a reference manager
+                    that does not specify the source, you can select "Reference Manager" as the source.
+                </Typography>
+                <CurationPopupIdentificationSourceSelector
+                    excludeSources={[ENeurosynthSourceIds.NEUROSTORE, ENeurosynthSourceIds.SLEUTH]}
+                    sx={{ width: '100%', maxWidth: '600px' }}
+                    onAddSource={handleAddSource}
+                    label="Start typing to add or create your own source"
+                    onCreateSource={handleAddSource}
+                />
+            </Box>
+            {source && (
+                <>
+                    <Box sx={{ display: 'flex', justifyContent: 'center', marginTop: '1rem' }}>
+                        <Button component="label" endIcon={<FileUploadIcon />}>
+                            {uploadState.file?.name || 'Upload a valid .enw, .bib, or .ris file'}
+                            <input onChange={handleFileUpload} type="file" hidden />
+                        </Button>
+                    </Box>
+                    <Box
+                        sx={{
+                            display: 'flex',
+                            justifyContent: 'center',
+                            marginBottom: '0.5rem',
+                        }}
+                    >
+                        or
+                    </Box>
+                    <Box>
+                        <Box
+                            sx={{
+                                display: 'flex',
+                                justifyContent: 'center',
+                            }}
+                        >
+                            <TextField
+                                value={uploadState.rawIdText}
+                                onChange={handleInputIds}
+                                rows={16}
+                                placeholder="paste in valid endnote, bibtex, or RIS syntax"
+                                multiline
+                                helperText={uploadState.validationReason || ''}
+                                error={!uploadState.isValid}
+                                sx={{ width: '100%' }}
+                            />
+                        </Box>
+                    </Box>
+                </>
+            )}
+            <Box sx={CurationImportStyles.actionsContainer}>
+                <Button
+                    variant="outlined"
+                    color="error"
+                    sx={CurationImportStyles.actionsButton}
+                    onClick={() => handleButtonClick(ENavigationButton.PREV)}
+                >
+                    cancel
+                </Button>
+                <Button
+                    variant="contained"
+                    sx={CurationImportStyles.actionsButton}
+                    disableElevation
+                    disabled={!source || uploadState.stubs.length === 0 || !uploadState.isValid}
+                    onClick={() => handleButtonClick(ENavigationButton.NEXT)}
+                >
+                    next
+                </Button>
+            </Box>
+        </Box>
+    );
+};
+
+export default ImportStandardFormat;

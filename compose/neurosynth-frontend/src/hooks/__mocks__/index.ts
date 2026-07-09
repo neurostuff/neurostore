@@ -5,6 +5,7 @@ import {
     mockBaseStudy,
     mockConditions,
     mockMetaAnalysisResult,
+    mockMetaAnalysisReturn,
     mockNeurovault,
     mockProject,
     mockStudy,
@@ -67,19 +68,6 @@ const useCreateMetaAnalysis = vi.fn().mockReturnValue({
     createMetaAnalysis: vi.fn().mockReturnValue(Promise.resolve()),
 });
 
-const useGetStudysets = vi.fn().mockReturnValue({
-    error: undefined,
-    isLoading: false,
-    isError: false,
-    data: {
-        metadata: {
-            total_count: 100,
-            unique_count: 100,
-        },
-        results: mockStudysets(),
-    },
-});
-
 const useCreateStudyset = vi.fn().mockReturnValue({
     // isLoading: false,
     // isError: false,
@@ -121,7 +109,7 @@ const useDeleteProject = vi.fn().mockReturnValue({
 
 const useGetExtractionSummary = vi.fn().mockReturnValue({
     savedForLater: 0,
-    uncategorized: 0,
+    unreviewed: 0,
     completed: 0,
     total: 0,
 });
@@ -129,7 +117,7 @@ const useGetExtractionSummary = vi.fn().mockReturnValue({
 // need to do this to prevent an infinite loop
 const studysetNested = mockStudysetNested();
 const studysetNotNested = mockStudysetNotNested();
-const useGetStudysetById = vi.fn().mockImplementation((studysetId: string, isNested: boolean) => {
+const useGetStudysetById = vi.fn().mockImplementation((studysetId: string, isNested: boolean, summary: boolean) => {
     return {
         isLoading: false,
         isError: false,
@@ -187,6 +175,12 @@ const useGetMetaAnalysisResultById = vi.fn().mockReturnValue({
     data: mockMetaAnalysisResult(),
 });
 
+const useGetMetaAnalysisById = vi.fn().mockReturnValue({
+    isLoading: false,
+    isError: false,
+    data: mockMetaAnalysisReturn(),
+});
+
 const useGetNeurovaultImages = vi.fn().mockReturnValue({
     isLoading: false,
     isError: false,
@@ -211,7 +205,6 @@ export {
     useGetFullText,
     useGetStudyById,
     useGetStudysetById,
-    useGetStudysets,
     useInputValidation,
     useIsMounted,
     useUpdateAnalysis,
@@ -221,6 +214,7 @@ export {
     useUpdateStudyset,
     useUserCanEdit,
     useGetProjectById,
+    useGetMetaAnalysisById,
     useGetMetaAnalysisResultById,
     useGetNeurovaultImages,
 };

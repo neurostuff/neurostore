@@ -9,7 +9,7 @@ const ExtractionTableJournalAutocomplete: React.FC<{
     onChange: (value: string | null) => void;
 }> = ({ value, onChange }) => {
     const studysetId = useProjectExtractionStudysetId();
-    const { data: studyset } = useGetStudysetById(studysetId, true);
+    const { data: studyset } = useGetStudysetById(studysetId, false, true);
 
     const options = useMemo(() => {
         if (!studyset) return [];

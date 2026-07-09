@@ -1,13 +1,4 @@
-import {
-    Paper,
-    Typography,
-    List,
-    ListItem,
-    ListItemButton,
-    ListItemIcon,
-    ListItemText,
-    Box,
-} from '@mui/material';
+import { Paper, Typography, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Box } from '@mui/material';
 import { SystemStyleObject } from '@mui/system';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { useNavigate } from 'react-router-dom';
@@ -67,11 +58,7 @@ const NeurosynthList: React.FC<INeurosynthList> = (props) => {
                 </Typography>
                 {!!TitleElement && TitleElement}
             </Box>
-            <StateHandlerComponent
-                loadingColor={loaderColor}
-                isError={isError}
-                isLoading={isLoading}
-            >
+            <StateHandlerComponent loadingColor={loaderColor} isError={isError} isLoading={isLoading}>
                 {props.listItems.length === 0 ? (
                     NoDataElement
                 ) : (
@@ -85,9 +72,7 @@ const NeurosynthList: React.FC<INeurosynthList> = (props) => {
                         {props.listItems.map((listItem, index) => (
                             <ListItem key={listItem?.id || index} disablePadding>
                                 <ListItemButton onClick={() => handleNavigate(listItem.link)}>
-                                    {props.listIcon && (
-                                        <ListItemIcon>{props.listIcon}</ListItemIcon>
-                                    )}
+                                    {props.listIcon && <ListItemIcon>{props.listIcon}</ListItemIcon>}
                                     <ListItemText
                                         primary={listItem.primaryText}
                                         secondary={listItem.secondaryText}

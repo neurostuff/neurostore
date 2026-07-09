@@ -10,7 +10,7 @@ import { Optional } from 'utils/utilitytypes';
 import StudyAnalyses from './StudyAnalyses';
 import StudyStyles from './Study.styles';
 import DisplayLink from 'components/DisplayStudyLink/DisplayLink';
-import { PUBMED_ARTICLE_URL_PREFIX, PUBMED_CENTRAL_ARTICLE_URL_PREFIX } from 'hooks/external/useGetPubMedIds';
+import { PUBMED_ARTICLE_URL_PREFIX, PUBMED_CENTRAL_ARTICLE_URL_PREFIX } from 'hooks/external/useFetchPubMedIds.types';
 import DisplayStudyLinkFullText from 'components/DisplayStudyLink/DisplayStudyLinkFullText';
 
 const Study: React.FC<Optional<IStoreStudy, 'metadata'>> = (props) => {

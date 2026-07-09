@@ -1,0 +1,12 @@
+services:
+  compose:
+    image: ghcr.io/${GHCR_OWNER}/neurosynth_compose:${IMAGE_TAG}
+
+  compose_worker:
+    image: ghcr.io/${GHCR_OWNER}/compose_worker:${IMAGE_TAG}
+
+  compose_nginx:
+    image: ghcr.io/${GHCR_OWNER}/compose_nginx:${IMAGE_TAG}
+
+  compose-pgsql17:
+    image: ghcr.io/${GHCR_OWNER}/compose_pgsql17:${IMAGE_TAG}

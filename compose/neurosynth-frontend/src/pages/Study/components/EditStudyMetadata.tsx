@@ -2,11 +2,7 @@ import { Typography, Box } from '@mui/material';
 import EditMetadata from 'components/EditMetadata/EditMetadata';
 import { IMetadataRowModel } from 'components/EditMetadata/EditMetadata.types';
 import React, { useCallback } from 'react';
-import {
-    useAddOrUpdateMetadata,
-    useDeleteMetadataRow,
-    useStudyMetadata,
-} from 'pages/Study/store/StudyStore';
+import { useAddOrUpdateMetadata, useDeleteMetadataRow, useStudyMetadata } from 'pages/Study/store/StudyStore';
 import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
 import EditStudyComponentsStyles from 'pages/Study/components/EditStudyComponents.styles';
 
@@ -89,9 +85,7 @@ const EditStudyMetadata: React.FC<{ disabled?: boolean }> = ({ disabled = false 
                 },
             ]}
             accordionSummarySx={EditStudyComponentsStyles.accordionSummary}
-            TitleElement={
-                <Typography sx={EditStudyComponentsStyles.accordionTitle}>Metadata</Typography>
-            }
+            TitleElement={<Typography sx={EditStudyComponentsStyles.accordionTitle}>Metadata</Typography>}
         >
             <Box sx={{ margin: '1rem 0 0.5rem 0' }}>
                 <EditMetadata

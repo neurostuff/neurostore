@@ -1,7 +1,7 @@
 import { AxiosError, AxiosResponse } from 'axios';
 import { ConditionRequest, ConditionReturn } from 'neurostore-typescript-sdk';
 import { useMutation, useQueryClient } from 'react-query';
-import API from 'utils/api';
+import API from 'api/api.config';
 
 const useCreateCondition = () => {
     const queryClient = useQueryClient();

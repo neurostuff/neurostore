@@ -1,5 +1,5 @@
 import { Box, Chip, Tooltip, Typography } from '@mui/material';
-import { useProjectCurationIsLastColumn } from 'pages/Project/store/ProjectStore';
+import { useProjectCurationIsLastColumn, useProjectExclusionTag } from 'pages/Project/store/ProjectStore';
 import React from 'react';
 import CurationStubStudyStyles from 'pages/Curation/components/CurationStubStudy.styles';
 import { ICurationStubStudy } from 'pages/Curation/Curation.types';
@@ -10,6 +10,7 @@ const CurationStubStudy: React.FC<
     }
 > = React.memo((props) => {
     const isLastColumn = useProjectCurationIsLastColumn(props.columnIndex);
+    const exclusionTag = useProjectExclusionTag(props.exclusionTag);
 
     return (
         <Box sx={{ width: 'calc(100% - 35px)' }}>
@@ -18,18 +19,10 @@ const CurationStubStudy: React.FC<
                 sx={{
                     fontWeight: props.exclusionTag ? 'bold' : undefined,
                     marginBottom: '0',
-                    color: isLastColumn
-                        ? 'success.main'
-                        : props.exclusionTag
-                        ? 'error.dark'
-                        : 'warning.main',
+                    color: isLastColumn ? 'success.main' : props.exclusionTag ? 'error.dark' : 'warning.main',
                 }}
             >
-                {isLastColumn
-                    ? 'included'
-                    : props.exclusionTag
-                    ? props.exclusionTag.label
-                    : 'uncategorized'}
+                {isLastColumn ? 'included' : props.exclusionTag ? exclusionTag?.label : 'uncategorized'}
             </Typography>
             <Box sx={{ display: 'flex' }}>
                 {props.articleYear && (

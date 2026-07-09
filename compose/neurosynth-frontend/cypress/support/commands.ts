@@ -39,7 +39,7 @@ const createMockRequest = async (
     const id_token = await constructMockAuthJWT({
         'https://neurosynth-compose/loginsCount': 871,
         nickname: 'test-user',
-        name: 'test-user@gmail.com',
+        name: 'Test User',
         picture:
             'https://s.gravatar.com/avatar/3a6e372ed11e9bc975215430fe82c28f?s=480&r=pg&d=https%3A%2F%2Fcdn.auth0.com%2Favatars%2Fte.png',
         updated_at: '2022-08-02T18:50:33.106Z',
@@ -56,6 +56,7 @@ const createMockRequest = async (
     return {
         body: {
             access_token: access_token,
+            refresh_token: 'mock-refresh-token',
             expires_in: 86400,
             id_token: id_token,
             scope: scope,
@@ -101,7 +102,7 @@ Cypress.Commands.add('login', (loginMode = 'mocked', extraClaims = {}) => {
             client_secret,
         },
     }).then(({ body }) => {
-        const { access_token, expires_in, id_token } = body;
+        const { access_token, expires_in, id_token, refresh_token } = body;
         console.log({ access_token, id_token });
         const jwtObject = jose.decodeJwt(id_token);
         const [header, payload, signature] = id_token.split('.');
@@ -126,10 +127,17 @@ Cypress.Commands.add('login', (loginMode = 'mocked', extraClaims = {}) => {
                     header: jwtObject.header,
                     user: {
                         sub: jwtObject.sub,
+                        email: jwtObject.email,
+                        name: jwtObject.name,
+                        nickname: jwtObject.nickname,
+                        picture: jwtObject.picture,
+                        updated_at: jwtObject.updated_at,
+                        email_verified: jwtObject.email_verified,
                     },
                 },
                 expires_in,
                 id_token,
+                refresh_token: refresh_token || 'mock-refresh-token',
                 scope,
                 token_type: 'Bearer',
             },
@@ -141,10 +149,7 @@ Cypress.Commands.add('login', (loginMode = 'mocked', extraClaims = {}) => {
          * Finally managed to get it working by adding this in localstorage, which seems to be checked by auth0-react to determine
          * the isAuthenticated state. This code is in tandem with setting the auth0 provider cacheLocation=localstorage.
          */
-        cy.addToLocalStorage(
-            `@@auth0spajs@@::${client_id}::${audience}::${scope}`,
-            JSON.stringify(session)
-        );
+        cy.addToLocalStorage(`@@auth0spajs@@::${client_id}::${audience}::${scope}`, JSON.stringify(session));
     });
 });
 

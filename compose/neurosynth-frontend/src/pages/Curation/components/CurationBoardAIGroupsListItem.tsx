@@ -1,5 +1,15 @@
 import { KeyboardArrowRight } from '@mui/icons-material';
-import { Box, Chip, Collapse, ListItem, ListItemButton, ListItemIcon, ListItemText, Tooltip } from '@mui/material';
+import {
+    Box,
+    Chip,
+    Collapse,
+    ListItem,
+    ListItemButton,
+    ListItemIcon,
+    ListItemText,
+    Tooltip,
+    Typography,
+} from '@mui/material';
 import React, { useState } from 'react';
 import CurationBoardAIGroupsStyles from './CurationBoardAIGroups.styles';
 import { IGroupListItem } from './CurationBoardAIGroupsList';
@@ -50,6 +60,7 @@ const CurationBoardAIGroupsListItem: React.FC<{
                         )}
                         <ListItemText
                             sx={{
+                                p: 0.5,
                                 '.MuiListItemText-primary': {
                                     fontSize: '14px',
                                     ...CurationBoardAIGroupsStyles.lineClamp3,
@@ -59,9 +70,19 @@ const CurationBoardAIGroupsListItem: React.FC<{
                             primary={group.label}
                             secondary={group.secondaryLabel}
                         />
-                        {!expanded && group.count !== null && (
-                            <Chip label={group.count} sx={{ fontSize: '12px', height: '20px' }} />
-                        )}
+                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                            {!expanded && group.count !== null && (
+                                <Chip label={group.count} sx={{ fontSize: '12px', height: '20px' }} />
+                            )}
+                            {!expanded && group.excludedCount !== null && (
+                                <Typography
+                                    variant="body2"
+                                    sx={{ fontSize: '12px', color: 'muted.main', mt: 0.4, whiteSpace: 'nowrap' }}
+                                >
+                                    {group.excludedCount} excluded
+                                </Typography>
+                            )}
+                        </Box>
                     </ListItemButton>
                 </ListItem>
             </Tooltip>
@@ -95,7 +116,22 @@ const CurationBoardAIGroupsListItem: React.FC<{
                                             primary={child.label}
                                             secondary={child.secondaryLabel}
                                         />
-                                        <Chip label={child.count} sx={{ fontSize: '12px', height: '20px' }} />
+                                        {child.count !== null && (
+                                            <Chip label={child.count} sx={{ fontSize: '12px', height: '20px' }} />
+                                        )}
+                                        {child.excludedCount !== null && (
+                                            <Typography
+                                                variant="body2"
+                                                sx={{
+                                                    fontSize: '12px',
+                                                    color: 'muted.main',
+                                                    mt: 0.4,
+                                                    whiteSpace: 'nowrap',
+                                                }}
+                                            >
+                                                {child.excludedCount} excluded
+                                            </Typography>
+                                        )}
                                     </ListItemButton>
                                 </ListItem>
                             </Tooltip>

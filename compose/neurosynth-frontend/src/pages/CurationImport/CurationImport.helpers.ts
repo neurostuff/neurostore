@@ -1,4 +1,4 @@
-import { defaultExclusionTags } from 'pages/Project/store/ProjectStore.types';
+import { defaultExclusionTags } from 'pages/Project/store/ProjectStore.consts';
 import { ICurationStubStudy } from 'pages/Curation/Curation.types';
 
 // a study is defined as a duplicate if it has either a matching PMID, DOI, or title.
@@ -79,7 +79,7 @@ export const automaticallyResolveDuplicates = (stubs: ICurationStubStudy[]) => {
             const duplicate = orderByRichness[i];
             const foundStub = updatedStubs.find((x) => x.id === duplicate.id);
             if (!foundStub) return;
-            foundStub.exclusionTag = { ...defaultExclusionTags.duplicate };
+            foundStub.exclusionTag = defaultExclusionTags.duplicate.id;
         }
     });
     return updatedStubs;

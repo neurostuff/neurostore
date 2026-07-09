@@ -1,7 +1,4 @@
-import {
-    IMetaAnalysisParamsSpecification,
-    IDynamicValueType,
-} from 'pages/MetaAnalysis/components/DynamicForm.types';
+import { IMetaAnalysisParamsSpecification, IDynamicValueType } from 'pages/MetaAnalysis/components/DynamicForm.types';
 import { EAnalysisType } from 'hooks/metaAnalyses/useCreateAlgorithmSpecification';
 import { IAutocompleteObject } from 'components/NeurosynthAutocomplete/NeurosynthAutocomplete';
 import metaAnalysisSpec from 'assets/config/meta_analysis_params.json';
@@ -19,12 +16,10 @@ const getDefaultValuesForTypeAndParameter = (
             parameterLabel === 'FWECorrector' &&
             estimatorReferenceLabel &&
             estimatorReferenceType &&
-            metaAnalysisSpecification[estimatorReferenceType][estimatorReferenceLabel]
-                .FWE_enabled === true
+            metaAnalysisSpecification[estimatorReferenceType][estimatorReferenceLabel].FWE_enabled === true
         ) {
             const FWE_parameters =
-                metaAnalysisSpecification[estimatorReferenceType][estimatorReferenceLabel]
-                    .FWE_parameters;
+                metaAnalysisSpecification[estimatorReferenceType][estimatorReferenceLabel].FWE_parameters;
             if (FWE_parameters !== null) {
                 FWE_parameters['method'] = { ...parameters['method'] };
                 FWE_parameters['method'].default = 'montecarlo';
@@ -49,24 +44,20 @@ const getDefaultValuesForTypeAndParameter = (
 
 const metaAnalysisSpecification: IMetaAnalysisParamsSpecification = metaAnalysisSpec;
 
-const metaAnalyticAlgorithms: IAutocompleteObject[] = Object.keys(
-    metaAnalysisSpecification[EAnalysisType.CBMA]
-).map((algoName) => ({
-    label: algoName,
-    description: metaAnalysisSpecification[EAnalysisType.CBMA][algoName]?.summary || '',
-}));
+const metaAnalyticAlgorithms: IAutocompleteObject[] = Object.keys(metaAnalysisSpecification[EAnalysisType.CBMA]).map(
+    (algoName) => ({
+        label: algoName,
+        description: metaAnalysisSpecification[EAnalysisType.CBMA][algoName]?.summary || '',
+    })
+);
 
-const correctorOptions: IAutocompleteObject[] = Object.keys(
-    metaAnalysisSpecification.CORRECTOR
-).map((corrector) => ({
+const correctorOptions: IAutocompleteObject[] = Object.keys(metaAnalysisSpecification.CORRECTOR).map((corrector) => ({
     label: corrector,
     description: metaAnalysisSpecification.CORRECTOR[corrector]?.summary,
 }));
 
-const correctorDefaultOption =
-    correctorOptions.find((corrector) => corrector.label === 'FDRCorrector') || null;
-const algorithmDefaultOption =
-    metaAnalyticAlgorithms.find((algo) => algo.label === 'MKDADensity') || null;
+const correctorDefaultOption = correctorOptions.find((corrector) => corrector.label === 'FDRCorrector') || null;
+const algorithmDefaultOption = metaAnalyticAlgorithms.find((algo) => algo.label === 'MKDADensity') || null;
 
 export {
     getDefaultValuesForTypeAndParameter,

@@ -25,8 +25,7 @@ const CreateMetaAnalysisSpecificationDetailsStep: React.FC<{
         }
     }
     const { data = [] } = useGetMetaAnalysesByIds(metaAnalysisIds);
-    const { details, selectionKey, algorithmName, correctorName, onUpdateDetails, onNavigate } =
-        props;
+    const { details, selectionKey, algorithmName, correctorName, onUpdateDetails, onNavigate } = props;
     const projectName = useProjectName();
 
     const handleUpdateDetails = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -43,9 +42,7 @@ const CreateMetaAnalysisSpecificationDetailsStep: React.FC<{
         for (let i = 0; i < (data || []).length; i++) {
             const hasDuplicateName = data?.find(
                 // eslint-disable-next-line no-loop-func
-                (x) =>
-                    (x.name || '').toLocaleLowerCase() ===
-                    `${originalName}${numStr}`.toLocaleLowerCase()
+                (x) => (x.name || '').toLocaleLowerCase() === `${originalName}${numStr}`.toLocaleLowerCase()
             );
             if (hasDuplicateName) {
                 numStr = ` (${i + 1})`;

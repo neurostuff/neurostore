@@ -1,13 +1,5 @@
 import { Bookmark, CheckCircle, QuestionMark } from '@mui/icons-material';
-import {
-    Box,
-    ListItemIcon,
-    ListItemText,
-    MenuItem,
-    Select,
-    SelectChangeEvent,
-    Typography,
-} from '@mui/material';
+import { Box, ListItemIcon, ListItemText, MenuItem, Select, SelectChangeEvent, Typography } from '@mui/material';
 import { EExtractionStatus } from '../ExtractionPage';
 
 const ExtractionStatusInput: React.FC<EExtractionStatus | undefined> = (props) => {

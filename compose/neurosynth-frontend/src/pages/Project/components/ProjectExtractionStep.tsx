@@ -1,6 +1,8 @@
 import { Box, Button, Step, StepContent, StepLabel, StepProps, Typography } from '@mui/material';
+import CopyableId from 'components/CopyableId/CopyableId';
 import MoveToExtractionDialog from 'pages/Project/components/MoveToExtractionDialog';
 import { IProjectPageLocationState } from 'pages/Project/ProjectPage';
+import { useProjectExtractionAnnotationId, useProjectExtractionStudysetId } from 'pages/Project/store/ProjectStore';
 import { useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import ProjectExtractionStepCard from './ProjectExtractionStepCard';
@@ -14,6 +16,9 @@ interface IExtractionStep {
 const ProjectExtractionStep: React.FC<IExtractionStep & StepProps> = (props) => {
     const { extractionStepHasBeenInitialized, disabled, ...stepProps } = props;
     const location = useLocation();
+
+    const studysetId = useProjectExtractionStudysetId();
+    const annotationId = useProjectExtractionAnnotationId();
 
     const [moveToExtractionDialogIsOpen, setMoveToExtractionDialogIsOpen] = useState(
         !extractionStepHasBeenInitialized &&
@@ -44,6 +49,10 @@ const ProjectExtractionStep: React.FC<IExtractionStep & StepProps> = (props) => 
                         metadata) as well as analysis annotations that will be used to help filter analyses within your
                         studies
                     </Typography>
+                    <Box sx={{ display: 'flex', gap: '1.5rem', marginTop: '0.5rem' }}>
+                        <CopyableId label="Studyset ID" id={studysetId} />
+                        <CopyableId label="Annotation ID" id={annotationId} />
+                    </Box>
                     <Box sx={{ marginTop: '1rem' }}>
                         {extractionStepHasBeenInitialized ? (
                             <ProjectExtractionStepCard disabled={disabled} />
