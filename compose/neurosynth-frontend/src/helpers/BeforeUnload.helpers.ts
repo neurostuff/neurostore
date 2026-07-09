@@ -72,7 +72,7 @@ export const hasUnsavedChanges = () => {
 
 export const hasUnsavedStudyChanges = () => {
     return (
-        window.sessionStorage.getItem(EUnloadStatus.STUDYSTORE) === 'true' ||
-        window.sessionStorage.getItem(EUnloadStatus.ANNOTATIONSTORE) === 'true' // you can edit annotations via study annotations which counts as a study edit
+        // you can edit annotations via study annotations which counts as a study edit
+        (window.sessionStorage.getItem(EUnloadStatus.STUDYSTORE) === 'true' || window.sessionStorage.getItem(EUnloadStatus.ANNOTATIONSTORE) === 'true')
     );
 };

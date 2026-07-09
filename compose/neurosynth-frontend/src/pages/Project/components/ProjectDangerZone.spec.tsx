@@ -24,7 +24,7 @@ vi.mock('react-router-dom', async () => {
     };
 });
 
-vi.mock('react-query');
+vi.mock('@tanstack/react-query');
 
 vi.mock('notistack', () => ({
     useSnackbar: vi.fn(),

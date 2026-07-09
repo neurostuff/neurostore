@@ -33,7 +33,7 @@ const RelegateExtractionStudyDialog: React.FC<{ isOpen: boolean; onCloseDialog: 
     const studyId = useStudyId();
     const studysetId = useProjectExtractionStudysetId();
     const { data: studyset } = useGetStudysetById(studysetId || undefined, false);
-    const { mutateAsync: updateStudyset, isLoading } = useUpdateStudyset();
+    const { mutateAsync: updateStudyset, isPending: isLoading } = useUpdateStudyset();
     const demoteStub = useDemoteStub();
     const setExclusionForStub = useSetExclusionForStub();
     const createExclusion = useCreateNewExclusion();

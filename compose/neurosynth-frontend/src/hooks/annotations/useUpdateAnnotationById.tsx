@@ -1,5 +1,5 @@
 import { AxiosError, AxiosResponse } from 'axios';
-import { useMutation, useQueryClient } from 'react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import API, { NeurostoreAnnotation } from 'api/api.config';
 import { useSnackbar } from 'notistack';
 import { AnnotationRequestOneOf } from 'neurostore-typescript-sdk';
@@ -15,25 +15,24 @@ const useUpdateAnnotationById = (
     return useMutation<
         AxiosResponse<NeurostoreAnnotation>,
         AxiosError,
-        {
-            argAnnotationId: string;
-            annotation: AnnotationRequestOneOf;
-        },
+        { argAnnotationId: string; annotation: AnnotationRequestOneOf },
         unknown
-    >(
-        (update) =>
+    >({
+        mutationFn: (update) =>
             API.NeurostoreServices.AnnotationsService.annotationsIdPut(update.argAnnotationId, update.annotation),
-        {
-            onSuccess: () => {
-                if (invalidateOnSuccess) {
-                    queryClient.invalidateQueries(['annotations', annotationId]);
-                }
-            },
-            onError: () => {
-                enqueueSnackbar('there was an error updating the annotation', { variant: 'error' });
-            },
+
+        onSuccess: () => {
+            if (invalidateOnSuccess) {
+                queryClient.invalidateQueries({
+                    queryKey: ['annotations', annotationId]
+                });
+            }
+        },
+
+        onError: () => {
+            enqueueSnackbar('there was an error updating the annotation', { variant: 'error' });
         }
-    );
+    });
 };
 
 export default useUpdateAnnotationById;

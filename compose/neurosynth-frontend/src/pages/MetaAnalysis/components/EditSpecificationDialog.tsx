@@ -48,7 +48,7 @@ const EditSpecificationDialog: React.FC<IDialog> = (props) => {
         useGetSnapshotAnnotationById(annotationId);
     const { data: studyset, isLoading: studysetIsLoading, isError: studysetIsError } =
         useGetSnapshotStudysetById(studysetId);
-    const { mutate, isLoading: updateSpecificationIsLoading } = useUpdateSpecification();
+    const { mutate, isPending: updateSpecificationIsLoading } = useUpdateSpecification();
     const [selectedValue, setSelectedValue] = useState<IAnalysesSelection>({
         selectionKey: specification?.filter || undefined,
         type: getType(specification?.conditions?.[0]),

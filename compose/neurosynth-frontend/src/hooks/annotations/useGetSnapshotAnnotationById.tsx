@@ -1,12 +1,13 @@
 import { AxiosError } from 'axios';
 import { AnnotationReturn } from 'neurosynth-compose-typescript-sdk';
-import { useQuery } from 'react-query';
+import { useQuery } from '@tanstack/react-query';
 import API from 'api/api.config';
 
 const useGetSnapshotAnnotationById = (annotationId: string | undefined | null) => {
-    return useQuery<AnnotationReturn | null>(
-        ['snapshot-annotations', annotationId],
-        async () => {
+    return useQuery({
+        queryKey: ['snapshot-annotations', annotationId],
+
+        queryFn: async () => {
             try {
                 const res = await API.NeurosynthServices.AnnotationsService.snapshotAnnotationsIdGet(
                     annotationId || ''
@@ -19,10 +20,9 @@ const useGetSnapshotAnnotationById = (annotationId: string | undefined | null) =
                 throw error;
             }
         },
-        {
-            enabled: !!annotationId,
-        }
-    );
+
+        enabled: !!annotationId
+    });
 };
 
 export default useGetSnapshotAnnotationById;

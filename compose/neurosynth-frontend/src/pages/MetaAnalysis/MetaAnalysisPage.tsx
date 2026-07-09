@@ -26,9 +26,9 @@ const MetaAnalysisPage: React.FC = () => {
      * the name loading when we update the name, and only the description loading when
      * we update the description
      */
-    const { mutate: updateMetaAnalysisName, isLoading: updateMetaAnalysisNameIsLoading } = useUpdateMetaAnalysis();
+    const { mutate: updateMetaAnalysisName, isPending: updateMetaAnalysisNameIsLoading } = useUpdateMetaAnalysis();
 
-    const { mutate: updateMetaAnalysisDescription, isLoading: updateMetaAnalysisDescriptionIsLoading } =
+    const { mutate: updateMetaAnalysisDescription, isPending: updateMetaAnalysisDescriptionIsLoading } =
         useUpdateMetaAnalysis();
 
     const {

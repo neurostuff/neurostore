@@ -4,7 +4,7 @@ import { ICurationStubStudy } from 'pages/Curation/Curation.types';
 import { StudyReturn } from 'neurostore-typescript-sdk';
 
 const createStub = (overrides: Partial<ICurationStubStudy> = {}): ICurationStubStudy =>
-    ({
+    (({
         id: 'stub-1',
         title: '',
         authors: '',
@@ -19,17 +19,17 @@ const createStub = (overrides: Partial<ICurationStubStudy> = {}): ICurationStubS
         exclusionTag: null,
         identificationSource: { key: 'manual', label: 'Manual' },
         tags: [],
-        ...overrides,
-    }) as ICurationStubStudy;
+        ...overrides
+    }) as ICurationStubStudy);
 
 const createStudy = (overrides: Partial<StudyReturn> = {}): StudyReturn =>
-    ({
+    (({
         id: 'study-1',
         name: '',
         pmid: undefined,
         doi: undefined,
-        ...overrides,
-    }) as StudyReturn;
+        ...overrides
+    }) as StudyReturn);
 
 describe('hasDifferenceBetweenStudysetAndCuration', () => {
     it('returns false when curation and studyset match by title/name', () => {

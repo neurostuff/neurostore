@@ -23,7 +23,7 @@ import {
     updateStubFieldHelper,
 } from 'pages/Project/store/ProjectStore.helpers';
 import { useEffect } from 'react';
-import { useQueryClient } from 'react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useParams } from 'react-router-dom';
 import API from 'api/api.config';
 import { create } from 'zustand';
@@ -866,7 +866,7 @@ export const useInitProjectStoreIfRequired = () => {
     const { projectId } = useParams<{ projectId: string; studyId: string }>();
     const queryClient = useQueryClient();
 
-    const { mutate, isLoading: useUpdateProjectIsLoading, isError: useUpdateProjectIsError } = useUpdateProject();
+    const { mutate, isPending: useUpdateProjectIsLoading, isError: useUpdateProjectIsError } = useUpdateProject();
     const { data, isLoading: getProjectIsLoading, isError: getProjectIsError } = useGetProjectById(projectId);
 
     const isError = useUpdateProjectIsError || getProjectIsError;

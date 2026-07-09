@@ -21,7 +21,7 @@ import {
 } from 'testing/mockData';
 import useSaveStudy from './useSaveStudy';
 
-vi.mock('react-query');
+vi.mock('@tanstack/react-query');
 vi.mock('@auth0/auth0-react');
 vi.mock('notistack');
 vi.mock('react-router-dom');

@@ -13,7 +13,7 @@ import {
     useProjectNumCurationColumns,
 } from 'pages/Project/store/ProjectStore';
 import { useState } from 'react';
-import { useIsFetching, useQueryClient } from 'react-query';
+import { useIsFetching, useQueryClient } from '@tanstack/react-query';
 import ExtractionOutOfSyncStyles from './ExtractionOutOfSync.styles';
 import { mapStubsToStudysetPayload } from 'helpers/Extraction.helpers';
 import { STUDYSET_QUERY_STRING } from 'hooks/studysets/useGetStudysetById';
@@ -27,7 +27,7 @@ const ExtractionOutOfSync: React.FC = () => {
     const curationIncludedStudies = useProjectCurationColumn(numColumns - 1);
     const { mutateAsync: ingest } = useIngest();
     const { mutateAsync: updateStudyset } = useUpdateStudyset();
-    const getStudysetIsRefetching = useIsFetching(STUDYSET_QUERY_STRING);
+    const getStudysetIsRefetching = useIsFetching({ queryKey: [STUDYSET_QUERY_STRING] });
     const { enqueueSnackbar } = useSnackbar();
     const queryClient = useQueryClient();
 
@@ -99,9 +99,11 @@ const ExtractionOutOfSync: React.FC = () => {
 
             // Invalidate cached studyset data to ensure subsequent queries reflect the newly updated stub mappings,
             // keeping curation and extraction aligned.
-            await queryClient.invalidateQueries(STUDYSET_QUERY_STRING);
+            await queryClient.invalidateQueries({ queryKey: [STUDYSET_QUERY_STRING] });
 
-            queryClient.invalidateQueries('annotations');
+            queryClient.invalidateQueries({
+                queryKey: ['annotations']
+            });
 
 
             enqueueSnackbar('synced curation and studyset successfully', { variant: 'success' });

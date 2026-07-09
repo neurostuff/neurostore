@@ -21,10 +21,10 @@ registerAllModules();
 
 const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((props) => {
     const { enqueueSnackbar } = useSnackbar();
-    const { mutate: updateAnnotation, isLoading: updateAnnotationIsLoading } = useUpdateAnnotationById(
+    const { mutate: updateAnnotation, isPending: updateAnnotationIsLoading } = useUpdateAnnotationById(
         props.annotationId
     );
-    const { mutate: updateAnnotationNoNoteKeys, isLoading: updateAnnotationNoNoteKeysIsLoading } =
+    const { mutate: updateAnnotationNoNoteKeys, isPending: updateAnnotationNoNoteKeysIsLoading } =
         useUpdateAnnotationByAnnotationAndAnalysisId(props.annotationId);
     const projectUser = useProjectUser();
     const canEdit = useUserCanEdit(projectUser || undefined);

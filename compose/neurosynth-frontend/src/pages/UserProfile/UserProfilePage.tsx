@@ -11,7 +11,7 @@ import LoadingButton from 'components/Buttons/LoadingButton';
 const UserProfilePage: React.FC = () => {
     const { user } = useAuth0();
     const [refreshToken, setRefreshToken] = useState('');
-    const { mutate: sendResetPasswordEmail, isLoading } = useSendResetPasswordEmail();
+    const { mutate: sendResetPasswordEmail, isPending: isLoading } = useSendResetPasswordEmail();
     const { enqueueSnackbar } = useSnackbar();
 
     useEffect(() => {

@@ -1,12 +1,13 @@
 import { CITATION_DOIS, CitationFormat, FORMAT_LABELS } from 'hooks/useCitationCopy.consts';
 import { useSnackbar } from 'notistack';
-import { useQuery } from 'react-query';
+import { useQuery } from '@tanstack/react-query';
 import useCopyToClipboard from './useCopyToClipboard';
 
 const useCitation = () => {
-    return useQuery(
-        'citationPayload',
-        async () => {
+    return useQuery({
+        queryKey: ['citationPayload'],
+
+        queryFn: async () => {
             // @ts-expect-error citation-js packages do not provide first-party TS types
             const citationCore = await import('@citation-js/core');
             // @ts-expect-error citation-js packages do not provide first-party TS types
@@ -30,13 +31,16 @@ const useCitation = () => {
                 bibtex: String(citations.format('bibtex', { format: 'text' })).trim(),
             };
         },
-        {
-            retry: 3,
-            refetchOnWindowFocus: false,
-            cacheTime: 1000 * 60 * 60 * 2, // 2 hours
-            staleTime: 1000 * 60 * 60 * 2, // 2 hours
-        }
-    );
+
+        retry: 3,
+        refetchOnWindowFocus: false,
+
+        // 2 hours
+        gcTime: 1000 * 60 * 60 * 2,
+
+        // 2 hours
+        staleTime: 1000 * 60 * 60 * 2
+    });
 };
 
 export const useCitationCopy = () => {

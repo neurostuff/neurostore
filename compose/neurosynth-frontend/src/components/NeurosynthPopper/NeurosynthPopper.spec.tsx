@@ -1,5 +1,5 @@
 import { vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import NeurosynthPopper from './NeurosynthPopper';
 
@@ -28,13 +28,17 @@ describe('NeurosynthPopper', () => {
         vi.useRealTimers();
     });
 
-    it('should call the onClickAway handler', () => {
+    it('should call the onClickAway handler', async () => {
         render(<MockParentComponent open={true} />);
         /**
          * We must mock the timers due to a bug with react: https://github.com/mui-org/material-ui/issues/24783
          */
-        vi.runAllTimers();
-        userEvent.click(document.body);
+        await act(async () => {
+            vi.runAllTimers();
+        });
+        await act(async () => {
+            await userEvent.click(document.body);
+        });
         expect(mockOnClickAway).toHaveBeenCalled();
     });
 

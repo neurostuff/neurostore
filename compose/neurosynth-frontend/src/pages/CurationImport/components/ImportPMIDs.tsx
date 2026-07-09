@@ -15,7 +15,7 @@ const ImportPMIDs: React.FC<IImportArgs & { onFileUpload: (fileName: string) => 
     onImportStubs,
     onFileUpload,
 }) => {
-    const { mutate: fetchPubMedIds, isLoading, isError } = useFetchPubMedIds();
+    const { mutate: fetchPubMedIds, isPending: isLoading, isError } = useFetchPubMedIds();
     const { enqueueSnackbar } = useSnackbar();
 
     const handlePubmedIdsUploaded = (parsedIds: string[]) => {
