@@ -44,11 +44,13 @@ describe('CodeSnippet', () => {
             expect(screen.getByTestId('ContentCopyIcon')).toBeInTheDocument();
         });
 
-        it('should write the text to clipboard when clicked', () => {
+        it('should write the text to clipboard when clicked', async () => {
             render(<CodeSnippet linesOfCode={['example 1', 'example 2']} />);
 
             const copybutton = screen.getByTestId('ContentCopyIcon');
-            userEvent.click(copybutton);
+            await act(async () => {
+                await userEvent.click(copybutton);
+            });
             expect(navigator.clipboard.writeText).toHaveBeenCalledWith('example 1\nexample 2');
         });
     });
