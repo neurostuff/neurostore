@@ -13,6 +13,8 @@ vi.mock('pages/MetaAnalysis/hooks/useInclusionColumnOptions');
 vi.mock('components/NeurosynthAutocomplete/NeurosynthAutocomplete');
 
 describe('CreateMetaAnalysisSpecificationSelectionStepMultiGroup', () => {
+    let user: ReturnType<typeof userEvent.setup>;
+
     const algorithmMock: IAlgorithmSelection = {
         estimator: { label: 'Test Estimator', description: 'text estimator description' },
         estimatorArgs: {},
@@ -27,6 +29,10 @@ describe('CreateMetaAnalysisSpecificationSelectionStepMultiGroup', () => {
     };
 
     const mockSelectValue = vi.fn();
+
+    beforeEach(() => {
+        user = userEvent.setup();
+    });
 
     it('should render', () => {
         render(
@@ -69,7 +75,7 @@ describe('CreateMetaAnalysisSpecificationSelectionStepMultiGroup', () => {
         });
     });
 
-    it('should select the correct option', () => {
+    it('should select the correct option', async () => {
         render(
             <CreateMetaAnalysisSpecificationSelectionStepMultiGroup
                 algorithm={algorithmMock}
@@ -79,7 +85,7 @@ describe('CreateMetaAnalysisSpecificationSelectionStepMultiGroup', () => {
             />
         );
         const button = screen.getByText('val-1');
-        userEvent.click(button);
+        await user.click(button);
 
         expect(mockSelectValue).toHaveBeenCalled();
     });

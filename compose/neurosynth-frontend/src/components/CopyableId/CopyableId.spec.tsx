@@ -11,7 +11,10 @@ vi.mock('hooks/useCopyToClipboard', () => ({
 }));
 
 describe('CopyableId', () => {
+    let user: ReturnType<typeof userEvent.setup>;
+
     beforeEach(() => {
+        user = userEvent.setup();
         mockCopy.mockClear();
         hookState.copied = false;
     });
@@ -27,9 +30,9 @@ describe('CopyableId', () => {
         expect(container).toBeEmptyDOMElement();
     });
 
-    it('copies the id when the copy button is clicked', () => {
+    it('copies the id when the copy button is clicked', async () => {
         render(<CopyableId label="Studyset ID" id="abc123" />);
-        userEvent.click(screen.getByRole('button', { name: 'Copy Studyset ID' }));
+        await user.click(screen.getByRole('button', { name: 'Copy Studyset ID' }));
         expect(mockCopy).toHaveBeenCalledWith('abc123');
     });
 

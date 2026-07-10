@@ -4,6 +4,12 @@ import userEvent from '@testing-library/user-event';
 import NavigationButtons, { ENavigationButton } from './NavigationButtons';
 
 describe('NavigationButtons Component', () => {
+    let user: ReturnType<typeof userEvent.setup>;
+
+    beforeEach(() => {
+        user = userEvent.setup();
+    });
+
     const mockOnButtonClick = vi.fn();
 
     it('should render', () => {
@@ -40,15 +46,15 @@ describe('NavigationButtons Component', () => {
         expect(previousButton).not.toBeDisabled();
     });
 
-    it('should handle the previous button click', () => {
+    it('should handle the previous button click', async () => {
         render(<NavigationButtons prevButtonText="previous" onButtonClick={mockOnButtonClick} />);
-        userEvent.click(screen.getByText('previous'));
+        await user.click(screen.getByText('previous'));
         expect(mockOnButtonClick).toBeCalledWith(ENavigationButton.PREV);
     });
 
-    it('should handle the next button click', () => {
+    it('should handle the next button click', async () => {
         render(<NavigationButtons nextButtonText="next" onButtonClick={mockOnButtonClick} />);
-        userEvent.click(screen.getByText('next'));
+        await user.click(screen.getByText('next'));
         expect(mockOnButtonClick).toBeCalledWith(ENavigationButton.NEXT);
     });
 

@@ -6,6 +6,8 @@ import { MockThemeProvider } from 'testing/helpers';
 import EditMetadataRow from './EditMetadataRow';
 
 describe('EditMetadataRow Component', () => {
+    let user: ReturnType<typeof userEvent.setup>;
+
     const onMetadataRowDeleteMock = vi.fn();
     const onMetadataRowEditMock = vi.fn();
 
@@ -16,6 +18,7 @@ describe('EditMetadataRow Component', () => {
     });
 
     beforeEach(() => {
+        user = userEvent.setup();
         mockMetadataRow = {
             metadataKey: 'test key',
             metadataValue: 'test val',
@@ -35,7 +38,7 @@ describe('EditMetadataRow Component', () => {
         );
     });
 
-    it('should delete when the delete button is clicked', () => {
+    it('should delete when the delete button is clicked', async () => {
         render(
             <MockThemeProvider>
                 <EditMetadataRow
@@ -48,11 +51,11 @@ describe('EditMetadataRow Component', () => {
         );
 
         const deleteButton = screen.getByText('DELETE');
-        userEvent.click(deleteButton);
+        await user.click(deleteButton);
         expect(onMetadataRowDeleteMock).toBeCalledWith(mockMetadataRow);
     });
 
-    it('should edit the metadata when toggled', () => {
+    it('should edit the metadata when toggled', async () => {
         render(
             <MockThemeProvider>
                 <EditMetadataRow
@@ -65,10 +68,10 @@ describe('EditMetadataRow Component', () => {
         );
 
         const toggleButton = screen.getByText('STRING');
-        userEvent.click(toggleButton);
+        await user.click(toggleButton);
 
         const noneButton = screen.getByText('NONE');
-        userEvent.click(noneButton);
+        await user.click(noneButton);
         mockMetadataRow.metadataValue = null;
         expect(onMetadataRowEditMock).toBeCalledWith(mockMetadataRow);
     });
@@ -90,7 +93,7 @@ describe('EditMetadataRow Component', () => {
             expect(stringEditor).toBeInTheDocument();
         });
 
-        it('should be edited with the correct arguments', () => {
+        it('should be edited with the correct arguments', async () => {
             mockMetadataRow.metadataValue = '';
             render(
                 <MockThemeProvider>
@@ -104,7 +107,7 @@ describe('EditMetadataRow Component', () => {
             );
 
             const stringEditor = screen.getByRole('textbox');
-            userEvent.type(stringEditor, 'a');
+            await user.type(stringEditor, 'a');
 
             mockMetadataRow.metadataValue = 'a';
 
@@ -130,7 +133,7 @@ describe('EditMetadataRow Component', () => {
             expect(numberEditor).toBeInTheDocument();
         });
 
-        it('should be edited with the correct arguments', () => {
+        it('should be edited with the correct arguments', async () => {
             mockMetadataRow.metadataValue = 0;
             render(
                 <MockThemeProvider>
@@ -145,7 +148,7 @@ describe('EditMetadataRow Component', () => {
             mockMetadataRow.metadataValue = 1;
 
             const numberEditor = screen.getByRole('spinbutton');
-            userEvent.type(numberEditor, '1');
+            await user.type(numberEditor, '1');
 
             expect(onMetadataRowEditMock).toBeCalledWith(mockMetadataRow);
         });
@@ -168,7 +171,7 @@ describe('EditMetadataRow Component', () => {
             expect(booleanEditor).toBeInTheDocument();
         });
 
-        it('should be edited with the correct arguments', () => {
+        it('should be edited with the correct arguments', async () => {
             mockMetadataRow.metadataValue = false;
             render(
                 <MockThemeProvider>
@@ -183,7 +186,7 @@ describe('EditMetadataRow Component', () => {
 
             const booleanEditor = screen.getByRole('checkbox');
             mockMetadataRow.metadataValue = true;
-            userEvent.click(booleanEditor);
+            await user.click(booleanEditor);
 
             expect(onMetadataRowEditMock).toBeCalledWith(mockMetadataRow);
         });

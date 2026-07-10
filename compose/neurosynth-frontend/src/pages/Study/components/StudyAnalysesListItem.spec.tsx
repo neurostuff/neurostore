@@ -6,6 +6,12 @@ import useDisplayWarnings from 'pages/Study/hooks/useDisplayWarnings';
 
 vi.mock('pages/Study/hooks/useDisplayWarnings.tsx');
 describe('StudyAnalysesListItem Component', () => {
+    let user: ReturnType<typeof userEvent.setup>;
+
+    beforeEach(() => {
+        user = userEvent.setup();
+    });
+
     it('should render', () => {
         render(<StudyAnalysesListItem analysis={{}} selected={false} onSelectAnalysis={() => {}} />);
     });
@@ -60,7 +66,7 @@ describe('StudyAnalysesListItem Component', () => {
         expect(screen.queryByText('No description')).toBeInTheDocument();
     });
 
-    it('calls onSelectAnalysis when clicked', () => {
+    it('calls onSelectAnalysis when clicked', async () => {
         const handleOnSelectAnalysisMock = vi.fn();
         render(
             <StudyAnalysesListItem
@@ -69,7 +75,7 @@ describe('StudyAnalysesListItem Component', () => {
                 onSelectAnalysis={handleOnSelectAnalysisMock}
             />
         );
-        userEvent.click(screen.getByRole('button'));
+        await user.click(screen.getByRole('button'));
         expect(handleOnSelectAnalysisMock).toHaveBeenCalledWith('test-id');
     });
 

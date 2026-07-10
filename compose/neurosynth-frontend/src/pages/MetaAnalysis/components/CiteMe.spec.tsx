@@ -18,7 +18,10 @@ const mockCitationPayload: Record<CitationFormat, string> = {
 };
 
 describe('CiteMe', () => {
+    let user: ReturnType<typeof userEvent.setup>;
+
     beforeEach(() => {
+        user = userEvent.setup();
         vi.clearAllMocks();
         mockUseCitationCopy.mockReturnValue({
             isCitationLoading: false,
@@ -61,7 +64,7 @@ describe('CiteMe', () => {
     it('shows all citation format options in dropdown with APA and BibTeX first', async () => {
         render(<CiteMe />);
 
-        userEvent.click(screen.getByRole('combobox'));
+        await user.click(screen.getByRole('combobox'));
 
         const options = screen.getAllByRole('option');
         expect(options).toHaveLength(4);
@@ -76,19 +79,19 @@ describe('CiteMe', () => {
 
         expect(screen.getByText('APA citation text')).toBeInTheDocument();
 
-        await userEvent.click(screen.getByRole('combobox'));
-        await userEvent.click(screen.getByRole('option', { name: 'BibTeX' }));
+        await user.click(screen.getByRole('combobox'));
+        await user.click(screen.getByRole('option', { name: 'BibTeX' }));
 
         expect(screen.getByText('@article{key,')).toBeInTheDocument();
         expect(screen.getByText(/title=\{BibTeX citation\}/)).toBeInTheDocument();
 
-        await userEvent.click(screen.getByRole('combobox'));
-        await userEvent.click(screen.getByRole('option', { name: 'Vancouver' }));
+        await user.click(screen.getByRole('combobox'));
+        await user.click(screen.getByRole('option', { name: 'Vancouver' }));
 
         expect(screen.getByText('Vancouver citation text')).toBeInTheDocument();
 
-        await userEvent.click(screen.getByRole('combobox'));
-        await userEvent.click(screen.getByRole('option', { name: 'Harvard' }));
+        await user.click(screen.getByRole('combobox'));
+        await user.click(screen.getByRole('option', { name: 'Harvard' }));
 
         expect(screen.getByText('Harvard citation text')).toBeInTheDocument();
     });

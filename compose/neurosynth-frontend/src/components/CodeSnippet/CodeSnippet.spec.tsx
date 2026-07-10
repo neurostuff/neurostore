@@ -1,5 +1,4 @@
-import { act, render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import CodeSnippet from './CodeSnippet';
 
 describe('CodeSnippet', () => {
@@ -14,12 +13,16 @@ describe('CodeSnippet', () => {
     });
 
     describe('copy action', () => {
+        let writeTextMock: ReturnType<typeof vi.fn>;
+
         beforeEach(() => {
             vi.useFakeTimers();
-            Object.assign(navigator, {
-                clipboard: {
-                    writeText: vi.fn(() => Promise.resolve()),
+            writeTextMock = vi.fn(() => Promise.resolve());
+            Object.defineProperty(window.navigator, 'clipboard', {
+                value: {
+                    writeText: writeTextMock,
                 },
+                configurable: true,
             });
         });
 
@@ -31,13 +34,14 @@ describe('CodeSnippet', () => {
             render(<CodeSnippet linesOfCode={['example 1']} />);
             const copybutton = screen.getByTestId('ContentCopyIcon');
 
+            fireEvent.click(copybutton);
             await act(async () => {
-                userEvent.click(copybutton);
+                await Promise.resolve();
             });
 
             expect(screen.getByText('✓')).toBeInTheDocument();
 
-            await act(async () => {
+            act(() => {
                 vi.advanceTimersByTime(2500);
             });
 
@@ -48,10 +52,11 @@ describe('CodeSnippet', () => {
             render(<CodeSnippet linesOfCode={['example 1', 'example 2']} />);
 
             const copybutton = screen.getByTestId('ContentCopyIcon');
+            fireEvent.click(copybutton);
             await act(async () => {
-                await userEvent.click(copybutton);
+                await Promise.resolve();
             });
-            expect(navigator.clipboard.writeText).toHaveBeenCalledWith('example 1\nexample 2');
+            expect(writeTextMock).toHaveBeenCalledWith('example 1\nexample 2');
         });
     });
 });

@@ -30,6 +30,12 @@ vi.mock('pages/CurationImport/components/Import', () => ({
 }));
 
 describe('ImportStudiesButton', () => {
+    let user: ReturnType<typeof userEvent.setup>;
+
+    beforeEach(() => {
+        user = userEvent.setup();
+    });
+
     it('should render the Import Studies button', () => {
         render(<ImportStudiesButton />);
         expect(screen.getByRole('button', { name: /import studies/i })).toBeInTheDocument();
@@ -44,15 +50,15 @@ describe('ImportStudiesButton', () => {
         expect(screen.getAllByText('Manually create a new study').length).toBeGreaterThan(0);
     });
 
-    it('should open the import dialog when an import method is selected', () => {
+    it('should open the import dialog when an import method is selected', async () => {
         render(<ImportStudiesButton />);
         expect(screen.queryByTestId('mock-base-dialog')).not.toBeInTheDocument();
-        userEvent.click(screen.getByText('Import via Pubmed ID (PMID) List'));
+        await user.click(screen.getByText('Import via Pubmed ID (PMID) List'));
         expect(screen.getByTestId('mock-base-dialog')).toBeInTheDocument();
         expect(screen.getByTestId('mock-import-form')).toBeInTheDocument();
     });
 
-    it('should close the import dialog when the dialog close handler is invoked', () => {
+    it('should close the import dialog when the dialog close handler is invoked', async () => {
         vi.mock('components/Dialogs/BaseDialog', () => ({
             default: vi
                 .fn()
@@ -78,9 +84,9 @@ describe('ImportStudiesButton', () => {
         }));
 
         render(<ImportStudiesButton />);
-        userEvent.click(screen.getByText('Import via Pubmed ID (PMID) List'));
+        await user.click(screen.getByText('Import via Pubmed ID (PMID) List'));
         expect(screen.getByTestId('mock-base-dialog')).toBeInTheDocument();
-        userEvent.click(screen.getByTestId('close-dialog'));
+        await user.click(screen.getByTestId('close-dialog'));
         expect(screen.queryByTestId('mock-base-dialog')).not.toBeInTheDocument();
     });
 

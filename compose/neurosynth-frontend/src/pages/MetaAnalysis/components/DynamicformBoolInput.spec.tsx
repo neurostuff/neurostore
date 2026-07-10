@@ -4,6 +4,12 @@ import userEvent from '@testing-library/user-event';
 import DynamicFormBoolInput from './DynamicFormBoolInput';
 
 describe('DynamicFormBoolInput', () => {
+    let user: ReturnType<typeof userEvent.setup>;
+
+    beforeEach(() => {
+        user = userEvent.setup();
+    });
+
     const mockOnUpdate = vi.fn();
 
     it('should render', () => {
@@ -55,7 +61,7 @@ describe('DynamicFormBoolInput', () => {
         expect(screen.getByText('false').className).toContain('Mui-selected');
     });
 
-    it('should send an update', () => {
+    it('should send an update', async () => {
         render(
             <DynamicFormBoolInput
                 parameterName="null_iter"
@@ -69,7 +75,7 @@ describe('DynamicFormBoolInput', () => {
             />
         );
 
-        userEvent.click(screen.getByText('true'));
+        await user.click(screen.getByText('true'));
         expect(mockOnUpdate).toHaveBeenCalledWith({
             null_iter: true,
         });

@@ -1,6 +1,6 @@
 import { OAuthError, useAuth0 } from '@auth0/auth0-react';
 import { initAPISetAccessTokenFunc } from 'api';
-import { act, render, screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useSnackbar } from 'notistack';
 import { useNavigate } from 'react-router-dom';
@@ -32,9 +32,12 @@ const LoginHarness = () => {
 };
 
 describe('useAuthenticate', () => {
+    let user: ReturnType<typeof userEvent.setup>;
+
     const expectedAudience = import.meta.env.VITE_APP_AUTH0_AUDIENCE;
 
     beforeEach(() => {
+        user = userEvent.setup();
         vi.clearAllMocks();
         sessionStorage.clear();
         delete (window as unknown as { gtag?: (...args: unknown[]) => void }).gtag;
@@ -47,9 +50,7 @@ describe('useAuthenticate', () => {
 
             render(<LoginHarness />);
 
-            await act(async () => {
-                userEvent.click(screen.getByTestId('login'));
-            });
+            await user.click(screen.getByTestId('login'));
 
             expect(sessionStorage.getItem(AUTH0_FORCE_PROMPT_LOGIN_KEY)).toBeNull();
             expect(useAuth0().getAccessTokenWithPopup as Mock).toHaveBeenCalledWith({
@@ -69,9 +70,7 @@ describe('useAuthenticate', () => {
 
             render(<LoginHarness />);
 
-            await act(async () => {
-                userEvent.click(screen.getByTestId('login'));
-            });
+            await user.click(screen.getByTestId('login'));
 
             expect(useAuth0().getAccessTokenWithPopup as Mock).toHaveBeenCalledWith({
                 authorizationParams: {
@@ -88,9 +87,7 @@ describe('useAuthenticate', () => {
 
             render(<LoginHarness />);
 
-            await act(async () => {
-                userEvent.click(screen.getByTestId('login'));
-            });
+            await user.click(screen.getByTestId('login'));
 
             expect(gtag).toHaveBeenCalledWith('event', 'login');
         });
@@ -102,9 +99,7 @@ describe('useAuthenticate', () => {
 
             render(<LoginHarness />);
 
-            await act(async () => {
-                userEvent.click(screen.getByTestId('login'));
-            });
+            await user.click(screen.getByTestId('login'));
 
             expect(sessionStorage.getItem(AUTH0_FORCE_PROMPT_LOGIN_KEY)).toBe('1');
             expect(enqueueSnackbarMock()).toHaveBeenCalledWith('Sign in/Sign up cancelled', { variant: 'warning' });
@@ -117,9 +112,7 @@ describe('useAuthenticate', () => {
 
             render(<LoginHarness />);
 
-            await act(async () => {
-                userEvent.click(screen.getByTestId('login'));
-            });
+            await user.click(screen.getByTestId('login'));
 
             expect(sessionStorage.getItem(AUTH0_FORCE_PROMPT_LOGIN_KEY)).toBe('1');
             expect(enqueueSnackbarMock()).not.toHaveBeenCalled();
@@ -131,9 +124,7 @@ describe('useAuthenticate', () => {
 
             render(<LoginHarness />);
 
-            await act(async () => {
-                userEvent.click(screen.getByTestId('login'));
-            });
+            await user.click(screen.getByTestId('login'));
 
             expect(sessionStorage.getItem(AUTH0_FORCE_PROMPT_LOGIN_KEY)).toBeNull();
             expect(enqueueSnackbarMock()).toHaveBeenCalledWith('Sign in/Sign up Error', { variant: 'error' });
@@ -146,9 +137,7 @@ describe('useAuthenticate', () => {
 
             render(<LoginHarness />);
 
-            await act(async () => {
-                userEvent.click(screen.getByTestId('login'));
-            });
+            await user.click(screen.getByTestId('login'));
 
             expect(sessionStorage.getItem(AUTH0_FORCE_PROMPT_LOGIN_KEY)).toBeNull();
             expect(enqueueSnackbarMock()).toHaveBeenCalledWith('Sign in/Sign up Error', { variant: 'error' });
@@ -159,9 +148,7 @@ describe('useAuthenticate', () => {
 
             render(<LoginHarness />);
 
-            await act(async () => {
-                userEvent.click(screen.getByTestId('login'));
-            });
+            await user.click(screen.getByTestId('login'));
 
             expect(sessionStorage.getItem(AUTH0_FORCE_PROMPT_LOGIN_KEY)).toBeNull();
             expect(enqueueSnackbarMock()).toHaveBeenCalledWith('Sign in/Sign up Error', { variant: 'error' });
@@ -174,14 +161,10 @@ describe('useAuthenticate', () => {
 
             render(<LoginHarness />);
 
-            await act(async () => {
-                userEvent.click(screen.getByTestId('login'));
-            });
+            await user.click(screen.getByTestId('login'));
             expect(sessionStorage.getItem(AUTH0_FORCE_PROMPT_LOGIN_KEY)).toBe('1');
 
-            await act(async () => {
-                userEvent.click(screen.getByTestId('login'));
-            });
+            await user.click(screen.getByTestId('login'));
 
             expect(useAuth0().getAccessTokenWithPopup as Mock).toHaveBeenNthCalledWith(2, {
                 authorizationParams: {
@@ -196,10 +179,10 @@ describe('useAuthenticate', () => {
     });
 
     describe('handleLogout', () => {
-        it('calls Auth0 logout with returnTo origin', () => {
+        it('calls Auth0 logout with returnTo origin', async () => {
             render(<LoginHarness />);
 
-            userEvent.click(screen.getByTestId('logout'));
+            await user.click(screen.getByTestId('logout'));
 
             expect(useAuth0().logout as Mock).toHaveBeenCalledWith({
                 logoutParams: {

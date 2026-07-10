@@ -4,6 +4,12 @@ import userEvent from '@testing-library/user-event';
 import DynamicFormStringInput from './DynamicFormStringInput';
 
 describe('DynamicFormStringInput Component', () => {
+    let user: ReturnType<typeof userEvent.setup>;
+
+    beforeEach(() => {
+        user = userEvent.setup();
+    });
+
     const mockOnUpdate = vi.fn();
 
     it('should render', () => {
@@ -30,7 +36,7 @@ describe('DynamicFormStringInput Component', () => {
         expect(screen.getByDisplayValue('abc')).toBeInTheDocument();
     });
 
-    it('should send the update', () => {
+    it('should send the update', async () => {
         render(
             <DynamicFormStringInput
                 value=""
@@ -43,9 +49,9 @@ describe('DynamicFormStringInput Component', () => {
         const inputElement = screen.getByLabelText('text');
 
         // focus on input element
-        userEvent.click(inputElement);
+        await user.click(inputElement);
 
-        userEvent.type(inputElement, 'a');
+        await user.type(inputElement, 'a');
         expect(mockOnUpdate).toHaveBeenCalledWith({
             null_iter: 'a',
         });

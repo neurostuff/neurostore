@@ -4,6 +4,12 @@ import userEvent from '@testing-library/user-event';
 import LoadingButton from './LoadingButton';
 
 describe('LoadingButton', () => {
+    let user: ReturnType<typeof userEvent.setup>;
+
+    beforeEach(() => {
+        user = userEvent.setup();
+    });
+
     const mockOnClick = vi.fn();
     it('should render', () => {
         render(<LoadingButton text="test" variant="text" onClick={mockOnClick} />);
@@ -32,10 +38,10 @@ describe('LoadingButton', () => {
         expect(screen.getByText('test')).toBeInTheDocument();
     });
 
-    it('should call the click handler when clicked', () => {
+    it('should call the click handler when clicked', async () => {
         render(<LoadingButton text="test" variant="text" disabled={false} onClick={mockOnClick} />);
         const button = screen.getByText('test');
-        userEvent.click(button);
+        await user.click(button);
 
         expect(mockOnClick).toHaveBeenCalled();
     });

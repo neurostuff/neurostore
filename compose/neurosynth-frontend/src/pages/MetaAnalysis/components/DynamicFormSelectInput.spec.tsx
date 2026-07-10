@@ -4,7 +4,13 @@ import userEvent from '@testing-library/user-event';
 import DynamicFormSelectInput from './DynamicFormSelectInput';
 
 describe('DynamicFormSelectInput Component', () => {
+    let user: ReturnType<typeof userEvent.setup>;
+
     const mockOnUpdate = vi.fn();
+
+    beforeEach(() => {
+        user = userEvent.setup();
+    });
 
     it('should render', () => {
         render(
@@ -38,7 +44,7 @@ describe('DynamicFormSelectInput Component', () => {
         expect(screen.getByDisplayValue('approximate')).toBeInTheDocument();
     });
 
-    it('should have the given options', () => {
+    it('should have the given options', async () => {
         render(
             <DynamicFormSelectInput
                 value="approximate"
@@ -53,12 +59,12 @@ describe('DynamicFormSelectInput Component', () => {
         );
 
         const select = screen.getByRole('combobox');
-        userEvent.click(select);
+        await user.click(select);
 
         expect(screen.getAllByRole('option').length).toEqual(3);
     });
 
-    it('should send the update', () => {
+    it('should send the update', async () => {
         render(
             <DynamicFormSelectInput
                 value="approximate"
@@ -73,10 +79,10 @@ describe('DynamicFormSelectInput Component', () => {
         );
 
         const select = screen.getByRole('combobox');
-        userEvent.click(select);
+        await user.click(select);
 
         const option = screen.getByRole('option', { name: 'montecarlo' });
-        userEvent.click(option);
+        await user.click(option);
 
         expect(mockOnUpdate).toHaveBeenCalledWith({
             null_iter: 'montecarlo',

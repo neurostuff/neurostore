@@ -4,6 +4,12 @@ import userEvent from '@testing-library/user-event';
 import NeurosynthTable from './NeurosynthTable';
 
 describe('Neurosynth Table Component', () => {
+    let user: ReturnType<typeof userEvent.setup>;
+
+    beforeEach(() => {
+        user = userEvent.setup();
+    });
+
     it('should render', () => {
         render(<NeurosynthTable tableConfig={{}} headerCells={[]} rows={[]} />);
     });
@@ -136,7 +142,7 @@ describe('Neurosynth Table Component', () => {
             });
         });
 
-        it('should be able to handle a row click', () => {
+        it('should be able to handle a row click', async () => {
             const mockHandleClick = vi.fn();
 
             render(
@@ -168,7 +174,7 @@ describe('Neurosynth Table Component', () => {
             );
 
             const clickableRow = screen.getByTestId('mock-click-row');
-            userEvent.click(clickableRow);
+            await user.click(clickableRow);
             expect(mockHandleClick).toHaveBeenCalledWith('some-id');
         });
     });

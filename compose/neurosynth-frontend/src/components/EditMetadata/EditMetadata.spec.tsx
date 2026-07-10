@@ -6,6 +6,12 @@ import EditMetadata from 'components/EditMetadata/EditMetadata';
 import { MockThemeProvider } from 'testing/helpers';
 
 describe('EditMetadata Component', () => {
+    let user: ReturnType<typeof userEvent.setup>;
+
+    beforeEach(() => {
+        user = userEvent.setup();
+    });
+
     const handleMetadataRowEdit = vi.fn();
     const handleMetadataRowDelete = vi.fn();
     const handleMetadataRowAdd = vi.fn();
@@ -78,7 +84,7 @@ describe('EditMetadata Component', () => {
         expect(getType(null)).toEqual(EPropertyType.NONE);
     });
 
-    it('should delete the correct row and call the parent prop function', () => {
+    it('should delete the correct row and call the parent prop function', async () => {
         render(
             <MockThemeProvider>
                 <EditMetadata
@@ -91,14 +97,14 @@ describe('EditMetadata Component', () => {
         );
 
         const deleteButton = screen.getAllByRole('button', { name: 'DELETE' })[1];
-        userEvent.click(deleteButton);
+        await user.click(deleteButton);
         expect(handleMetadataRowDelete).toBeCalledWith({
             metadataKey: 'key 2',
             metadataValue: false,
         });
     });
 
-    it('should add the row and call the parent prop function', () => {
+    it('should add the row and call the parent prop function', async () => {
         render(
             <MockThemeProvider>
                 <EditMetadata
@@ -112,8 +118,8 @@ describe('EditMetadata Component', () => {
 
         const addRow = screen.getByPlaceholderText('New metadata key');
         const addRowButton = screen.getByRole('button', { name: 'ADD' });
-        userEvent.type(addRow, 'test key');
-        userEvent.click(addRowButton);
+        await user.type(addRow, 'test key');
+        await user.click(addRowButton);
 
         expect(handleMetadataRowAdd).toBeCalledWith({
             metadataKey: 'test key',
@@ -121,7 +127,7 @@ describe('EditMetadata Component', () => {
         });
     });
 
-    it('should edit the row and call the parent prop function', () => {
+    it('should edit the row and call the parent prop function', async () => {
         render(
             <MockThemeProvider>
                 <EditMetadata
@@ -135,7 +141,7 @@ describe('EditMetadata Component', () => {
 
         // targeting the first kvp textbox (first two textboxes are for the AddMetadataRow component)
         const input = screen.getAllByRole('textbox')[2];
-        userEvent.type(input, 'A');
+        await user.type(input, 'A');
 
         expect(handleMetadataRowEdit).toBeCalledWith({
             metadataKey: 'key 1',

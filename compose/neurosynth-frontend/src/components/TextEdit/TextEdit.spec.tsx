@@ -1,15 +1,18 @@
 import { vi } from 'vitest';
 import { useAuth0 } from '@auth0/auth0-react';
-import { render, screen, act } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import TextEdit from './TextEdit';
 
 vi.mock('@auth0/auth0-react');
 
 describe('TextEdit', () => {
+    let user: ReturnType<typeof userEvent.setup>;
+
     const mockOnSave = vi.fn();
 
     beforeEach(() => {
+        user = userEvent.setup();
         useAuth0().isAuthenticated = true;
     });
 
@@ -27,7 +30,7 @@ describe('TextEdit', () => {
         expect(text).toBeInTheDocument();
     });
 
-    it('should change to edit mode when icon is clicked', () => {
+    it('should change to edit mode when icon is clicked', async () => {
         render(
             <TextEdit onSave={mockOnSave} textToEdit="test-text">
                 <span>test-text</span>
@@ -35,7 +38,7 @@ describe('TextEdit', () => {
         );
 
         const editIconButton = screen.getByRole('button');
-        userEvent.click(editIconButton);
+        await user.click(editIconButton);
 
         const textField = screen.getByRole('textbox');
         expect(textField).toBeInTheDocument();
@@ -47,7 +50,7 @@ describe('TextEdit', () => {
         expect(cancelButton).toBeInTheDocument();
     });
 
-    it('should go back to display mode when cancel is clicked', () => {
+    it('should go back to display mode when cancel is clicked', async () => {
         render(
             <TextEdit onSave={mockOnSave} textToEdit="test-text">
                 <span>test-text</span>
@@ -56,17 +59,17 @@ describe('TextEdit', () => {
 
         // set to edit mode
         const editIconButton = screen.getByRole('button');
-        userEvent.click(editIconButton);
+        await user.click(editIconButton);
 
         // set back to display mode
         const cancelButton = screen.getByText('Cancel');
-        userEvent.click(cancelButton);
+        await user.click(cancelButton);
 
         const textField = screen.queryByRole('textbox');
         expect(textField).not.toBeInTheDocument();
     });
 
-    it('should update the value when modified', () => {
+    it('should update the value when modified', async () => {
         render(
             <TextEdit onSave={mockOnSave} textToEdit="test-text">
                 <span>test-text</span>
@@ -75,11 +78,11 @@ describe('TextEdit', () => {
 
         // set to edit mode
         const editIconButton = screen.getByRole('button');
-        userEvent.click(editIconButton);
+        await user.click(editIconButton);
 
         // type the letter A
         const textField = screen.getByRole('textbox');
-        userEvent.type(textField, 'A');
+        await user.type(textField, 'A');
 
         const newVal = screen.getByDisplayValue('test-textA');
         expect(newVal).toBeInTheDocument();
@@ -131,14 +134,14 @@ describe('TextEdit', () => {
 
         // set to edit mode
         const editIconButton = screen.getByRole('button');
-        userEvent.click(editIconButton);
+        await user.click(editIconButton);
 
         // type the letter A
         const textField = screen.getByRole('textbox');
-        userEvent.type(textField, 'A');
+        await user.type(textField, 'A');
 
         const saveButton = screen.getByText('Save');
-        userEvent.click(saveButton);
+        await user.click(saveButton);
 
         expect(mockOnSave).toBeCalledWith('test-textA', 'some-label');
     });

@@ -20,9 +20,12 @@ vi.mock('notistack');
 const RELEGATE_LINK_TEXT = /I couldn't find coordinates for this study/i;
 
 describe('EditStudyAnalysisPoints', () => {
+    let user: ReturnType<typeof userEvent.setup>;
+
     const mockNavigate = vi.fn();
 
     beforeEach(() => {
+        user = userEvent.setup();
         vi.clearAllMocks();
         (useNavigate as Mock).mockReturnValue(mockNavigate);
         (useProjectId as Mock).mockReturnValue('project-id');
@@ -97,25 +100,25 @@ describe('EditStudyAnalysisPoints', () => {
         expect(screen.queryByText(RELEGATE_LINK_TEXT)).not.toBeInTheDocument();
     });
 
-    it('opens the relegate dialog when the link is clicked', () => {
+    it('opens the relegate dialog when the link is clicked', async () => {
         (useStudyAnalysisPoints as Mock).mockReturnValue([]);
         render(<EditStudyAnalysisPoints analysisId="analysis-1" />);
 
         expect(screen.getByTestId('mock-relegate-closed')).toBeInTheDocument();
 
-        userEvent.click(screen.getByText(RELEGATE_LINK_TEXT));
+        await user.click(screen.getByText(RELEGATE_LINK_TEXT));
 
         expect(screen.getByTestId('mock-relegate-confirm')).toBeInTheDocument();
     });
 
-    it('navigates to extraction and enqueues a snackbar when relegate is confirmed', () => {
+    it('navigates to extraction and enqueues a snackbar when relegate is confirmed', async () => {
         const enqueueSnackbar = vi.fn();
         (useSnackbar as Mock).mockReturnValue({ enqueueSnackbar });
         (useStudyAnalysisPoints as Mock).mockReturnValue([]);
         render(<EditStudyAnalysisPoints analysisId="analysis-1" />);
 
-        userEvent.click(screen.getByText(RELEGATE_LINK_TEXT));
-        userEvent.click(screen.getByTestId('mock-relegate-confirm'));
+        await user.click(screen.getByText(RELEGATE_LINK_TEXT));
+        await user.click(screen.getByTestId('mock-relegate-confirm'));
 
         expect(mockNavigate).toHaveBeenCalledWith('/projects/project-id/extraction');
         expect(enqueueSnackbar).toHaveBeenCalledWith(

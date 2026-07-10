@@ -5,6 +5,12 @@ import { EPropertyType } from 'components/EditMetadata/EditMetadata.types';
 import ToggleType from './ToggleType';
 
 describe('ToggleType Component', () => {
+    let user: ReturnType<typeof userEvent.setup>;
+
+    beforeEach(() => {
+        user = userEvent.setup();
+    });
+
     const mockOnToggle = vi.fn();
 
     afterAll(() => {
@@ -35,70 +41,70 @@ describe('ToggleType Component', () => {
         expect(noneOption).toBeInTheDocument();
     });
 
-    it('should toggle and emit a boolean value', () => {
+    it('should toggle and emit a boolean value', async () => {
         // initial render
         render(<ToggleType onToggle={mockOnToggle} type={EPropertyType.STRING} />);
 
         // setup
         let input = screen.getByRole('combobox');
-        userEvent.click(input);
+        await user.click(input);
         const booleanOption = screen.getByText('BOOLEAN');
 
-        userEvent.click(booleanOption);
+        await user.click(booleanOption);
 
         // evaluate
         expect(mockOnToggle).toBeCalledWith(EPropertyType.BOOLEAN);
     });
 
-    it('should toggle and emit a string value', () => {
+    it('should toggle and emit a string value', async () => {
         // initial render
         render(<ToggleType onToggle={mockOnToggle} type={EPropertyType.BOOLEAN} />);
 
         // setup
         let input = screen.getByRole('combobox');
-        userEvent.click(input);
+        await user.click(input);
         const stringOption = screen.getByText('STRING');
 
-        userEvent.click(stringOption);
+        await user.click(stringOption);
 
         // evaluate
         expect(mockOnToggle).toBeCalledWith(EPropertyType.STRING);
     });
 
-    it('should toggle and emit a number value', () => {
+    it('should toggle and emit a number value', async () => {
         // initial render
         render(<ToggleType onToggle={mockOnToggle} type={EPropertyType.STRING} />);
 
         // setup
         let input = screen.getByRole('combobox');
-        userEvent.click(input);
+        await user.click(input);
         const numberOption = screen.getByText('NUMBER');
 
-        userEvent.click(numberOption);
+        await user.click(numberOption);
 
         // evaluate
         expect(mockOnToggle).toBeCalledWith(EPropertyType.NUMBER);
     });
 
-    it('should toggle and emit a null value', () => {
+    it('should toggle and emit a null value', async () => {
         // initial render
         render(<ToggleType onToggle={mockOnToggle} type={EPropertyType.STRING} />);
 
         // setup
         let input = screen.getByRole('combobox');
-        userEvent.click(input);
+        await user.click(input);
         const noneOption = screen.getByText('NONE');
 
-        userEvent.click(noneOption);
+        await user.click(noneOption);
 
         // evaluate
         expect(mockOnToggle).toBeCalledWith(EPropertyType.NONE);
     });
 
-    it('should show all types by default', () => {
+    it('should show all types by default', async () => {
         render(<ToggleType onToggle={mockOnToggle} type={EPropertyType.STRING} />);
         let input = screen.getByRole('combobox');
-        userEvent.click(input);
+        await user.click(input);
 
         expect(screen.queryByRole('option', { name: 'NONE' })).toBeTruthy();
         expect(screen.queryByRole('option', { name: 'STRING' })).toBeTruthy();
@@ -106,10 +112,10 @@ describe('ToggleType Component', () => {
         expect(screen.queryByRole('option', { name: 'NUMBER' })).toBeTruthy();
     });
 
-    it('should remove the none type', () => {
+    it('should remove the none type', async () => {
         render(<ToggleType onToggle={mockOnToggle} type={EPropertyType.STRING} allowNone={false} />);
         let input = screen.getByRole('combobox');
-        userEvent.click(input);
+        await user.click(input);
 
         expect(screen.queryByRole('option', { name: 'NONE' })).toBeFalsy();
         expect(screen.queryByRole('option', { name: 'STRING' })).toBeTruthy();
@@ -117,10 +123,10 @@ describe('ToggleType Component', () => {
         expect(screen.queryByRole('option', { name: 'NUMBER' })).toBeTruthy();
     });
 
-    it('should remove the string type', () => {
+    it('should remove the string type', async () => {
         render(<ToggleType onToggle={mockOnToggle} type={EPropertyType.NUMBER} allowString={false} />);
         let input = screen.getByRole('combobox');
-        userEvent.click(input);
+        await user.click(input);
 
         expect(screen.queryByRole('option', { name: 'NONE' })).toBeTruthy();
         expect(screen.queryByRole('option', { name: 'STRING' })).toBeFalsy();
@@ -128,10 +134,10 @@ describe('ToggleType Component', () => {
         expect(screen.queryByRole('option', { name: 'NUMBER' })).toBeTruthy();
     });
 
-    it('should remove the boolean type', () => {
+    it('should remove the boolean type', async () => {
         render(<ToggleType onToggle={mockOnToggle} type={EPropertyType.STRING} allowBoolean={false} />);
         let input = screen.getByRole('combobox');
-        userEvent.click(input);
+        await user.click(input);
 
         expect(screen.queryByRole('option', { name: 'NONE' })).toBeTruthy();
         expect(screen.queryByRole('option', { name: 'STRING' })).toBeTruthy();
@@ -139,10 +145,10 @@ describe('ToggleType Component', () => {
         expect(screen.queryByRole('option', { name: 'NUMBER' })).toBeTruthy();
     });
 
-    it('should remove the number type', () => {
+    it('should remove the number type', async () => {
         render(<ToggleType onToggle={mockOnToggle} type={EPropertyType.STRING} allowNumber={false} />);
         let input = screen.getByRole('combobox');
-        userEvent.click(input);
+        await user.click(input);
 
         expect(screen.queryByRole('option', { name: 'NONE' })).toBeTruthy();
         expect(screen.queryByRole('option', { name: 'STRING' })).toBeTruthy();

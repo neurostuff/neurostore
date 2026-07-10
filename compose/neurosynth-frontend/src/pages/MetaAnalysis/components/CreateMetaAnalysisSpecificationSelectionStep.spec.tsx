@@ -16,6 +16,8 @@ vi.mock('pages/MetaAnalysis/components/SelectAnalysesSummaryComponent');
 vi.mock('pages/MetaAnalysis/components/CreateMetaAnalysisSpecificationSelectionStepMultiGroup');
 
 describe('CreateMetaAnalysisSpecificationSelectionStep', () => {
+    let user: ReturnType<typeof userEvent.setup>;
+
     let algorithmMock: IAlgorithmSelection = {
         estimator: { label: 'Test Estimator', description: 'text estimator description' },
         estimatorArgs: {},
@@ -33,6 +35,7 @@ describe('CreateMetaAnalysisSpecificationSelectionStep', () => {
     const mockOnNavigate = vi.fn();
 
     beforeEach(() => {
+        user = userEvent.setup();
         selectedValueMock = {
             selectionKey: 'selection-key',
             type: EPropertyType.STRING,
@@ -105,7 +108,7 @@ describe('CreateMetaAnalysisSpecificationSelectionStep', () => {
     });
 
     describe('navigation', () => {
-        it('should go back', () => {
+        it('should go back', async () => {
             render(
                 <CreateMetaAnalysisSpecificationSelectionStep
                     algorithm={algorithmMock}
@@ -116,12 +119,12 @@ describe('CreateMetaAnalysisSpecificationSelectionStep', () => {
             );
 
             const backButton = screen.getByRole('button', { name: 'Back' });
-            userEvent.click(backButton);
+            await user.click(backButton);
 
             expect(mockOnNavigate).toHaveBeenCalledWith(ENavigationButton.PREV);
         });
 
-        it('should go forward', () => {
+        it('should go forward', async () => {
             render(
                 <CreateMetaAnalysisSpecificationSelectionStep
                     algorithm={algorithmMock}
@@ -132,7 +135,7 @@ describe('CreateMetaAnalysisSpecificationSelectionStep', () => {
             );
 
             const nextButton = screen.getByRole('button', { name: 'Next' });
-            userEvent.click(nextButton);
+            await user.click(nextButton);
 
             expect(mockOnNavigate).toHaveBeenCalledWith(ENavigationButton.NEXT);
         });

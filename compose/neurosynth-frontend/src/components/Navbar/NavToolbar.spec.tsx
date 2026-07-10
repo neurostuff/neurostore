@@ -22,7 +22,10 @@ vi.mock('components/Dialogs/CreateDetailsDialog');
 vi.mock('components/Navbar/NavToolbarPopupSubMenu');
 
 describe('NavToolbar Component', () => {
+    let user: ReturnType<typeof userEvent.setup>;
+
     beforeEach(() => {
+        user = userEvent.setup();
         vi.clearAllMocks();
         useAuth0().isAuthenticated = false;
         mockCiteAsync.mockResolvedValue({
@@ -75,30 +78,30 @@ describe('NavToolbar Component', () => {
         expect(screen.getByTestId('PersonIcon')).toBeInTheDocument();
     });
 
-    it('should login', () => {
+    it('should login', async () => {
         render(<NavToolbar onLogin={mockLogin} onLogout={mockLogout} />);
 
-        userEvent.click(screen.getByText('Sign In/Sign Up'));
+        await user.click(screen.getByText('Sign In/Sign Up'));
         expect(mockLogin).toHaveBeenCalled();
     });
 
-    it('should logout', () => {
+    it('should logout', async () => {
         useAuth0().isAuthenticated = true;
 
         render(<NavToolbar onLogin={mockLogin} onLogout={mockLogout} />);
 
         // open popup
-        userEvent.click(screen.getByTestId('PersonIcon'));
-        userEvent.click(screen.getByText('Logout'));
+        await user.click(screen.getByTestId('PersonIcon'));
+        await user.click(screen.getByText('Logout'));
         expect(mockLogout).toHaveBeenCalled();
     });
 
-    it('should open the navpopup menu with the given menu items', () => {
+    it('should open the navpopup menu with the given menu items', async () => {
         render(<NavToolbar onLogin={mockLogin} onLogout={mockLogout} />);
 
         const exploreLabel = screen.getByText('explore');
         const exploreTriggerButton = exploreLabel.nextElementSibling as HTMLElement;
-        userEvent.click(exploreTriggerButton);
+        await user.click(exploreTriggerButton);
         expect(screen.getByText('Studies')).toBeInTheDocument();
         expect(screen.getByText('Meta-Analyses')).toBeInTheDocument();
     });

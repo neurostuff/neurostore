@@ -6,6 +6,12 @@ import BackButton from './BackButton';
 
 vi.mock('react-router-dom');
 describe('BackButton', () => {
+    let user: ReturnType<typeof userEvent.setup>;
+
+    beforeEach(() => {
+        user = userEvent.setup();
+    });
+
     it('should render', () => {
         render(<BackButton text="test text" path="/some-path" />);
     });
@@ -17,11 +23,11 @@ describe('BackButton', () => {
         expect(testText).toBeInTheDocument();
     });
 
-    it('should go to the given path when clicked', () => {
+    it('should go to the given path when clicked', async () => {
         render(<BackButton text="test text" path="/some-path" />);
 
         const button = screen.getByRole('button');
-        userEvent.click(button);
+        await user.click(button);
         expect(useNavigate()).toBeCalledWith('/some-path');
     });
 });

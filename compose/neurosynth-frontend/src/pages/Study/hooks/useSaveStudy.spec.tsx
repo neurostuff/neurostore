@@ -1,5 +1,5 @@
 import { vi, Mock } from 'vitest';
-import { act, render, screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useCreateStudy, useUpdateStudyset } from 'hooks';
 import { useSnackbar } from 'notistack';
@@ -45,7 +45,10 @@ const DummyComponent = () => {
 };
 
 describe('useSaveStudy hook', () => {
+    let user: ReturnType<typeof userEvent.setup>;
+
     beforeEach(() => {
+        user = userEvent.setup();
         vi.clearAllMocks();
     });
     it('should render', () => {
@@ -58,9 +61,7 @@ describe('useSaveStudy hook', () => {
 
         render(<DummyComponent />);
 
-        await act(async () => {
-            userEvent.click(screen.getByTestId('save-study-button'));
-        });
+        await user.click(screen.getByTestId('save-study-button'));
 
         expect(useSnackbar().enqueueSnackbar).toHaveBeenCalled();
         expect(useUpdateDBWithAnnotationFromStore()).not.toHaveBeenCalled();
@@ -86,9 +87,7 @@ describe('useSaveStudy hook', () => {
 
         render(<DummyComponent />);
 
-        await act(async () => {
-            userEvent.click(screen.getByTestId('save-study-button'));
-        });
+        await user.click(screen.getByTestId('save-study-button'));
 
         expect(useSnackbar().enqueueSnackbar).toHaveBeenCalled();
         expect(useUpdateDBWithAnnotationFromStore()).not.toHaveBeenCalled();
@@ -104,9 +103,7 @@ describe('useSaveStudy hook', () => {
 
         render(<DummyComponent />);
 
-        await act(async () => {
-            userEvent.click(screen.getByTestId('save-study-button'));
-        });
+        await user.click(screen.getByTestId('save-study-button'));
 
         expect(useUpdateStudyInDB()).toHaveBeenCalled();
         expect(useUpdateDBWithAnnotationFromStore()).toHaveBeenCalled();
@@ -121,9 +118,7 @@ describe('useSaveStudy hook', () => {
 
         render(<DummyComponent />);
 
-        await act(async () => {
-            userEvent.click(screen.getByTestId('save-study-button'));
-        });
+        await user.click(screen.getByTestId('save-study-button'));
 
         expect(useUpdateStudyInDB()).toHaveBeenCalled();
         expect(useUpdateDBWithAnnotationFromStore()).not.toHaveBeenCalled();
@@ -138,9 +133,7 @@ describe('useSaveStudy hook', () => {
 
         render(<DummyComponent />);
 
-        await act(async () => {
-            userEvent.click(screen.getByTestId('save-study-button'));
-        });
+        await user.click(screen.getByTestId('save-study-button'));
 
         expect(useUpdateStudyInDB()).not.toHaveBeenCalled();
         expect(useUpdateDBWithAnnotationFromStore()).toHaveBeenCalled();
@@ -160,9 +153,7 @@ describe('useSaveStudy hook', () => {
 
         render(<DummyComponent />);
 
-        await act(async () => {
-            userEvent.click(screen.getByTestId('save-study-button'));
-        });
+        await user.click(screen.getByTestId('save-study-button'));
 
         expect(useUpdateStudyInDB()).not.toHaveBeenCalled();
         expect(useCreateStudy().mutateAsync).toHaveBeenCalled();

@@ -9,17 +9,20 @@ vi.mock('react-router-dom');
 vi.mock('components/Dialogs/CreateDetailsDialog');
 
 describe('NavDrawer component', () => {
+    let user: ReturnType<typeof userEvent.setup>;
+
     let renderResult: RenderResult;
 
     const mockOnLogin = vi.fn();
     const mockOnLogout = vi.fn();
 
-    beforeEach(() => {
+    beforeEach(async () => {
+        user = userEvent.setup();
         useAuth0().isAuthenticated = false;
 
         renderResult = render(<NavDrawer onLogin={mockOnLogin} onLogout={mockOnLogout} />);
 
-        userEvent.click(screen.getByTestId('MenuIcon'));
+        await user.click(screen.getByTestId('MenuIcon'));
     });
 
     it('should render', () => {
@@ -52,41 +55,41 @@ describe('NavDrawer component', () => {
         expect(screen.queryByText('Help')).toBeInTheDocument();
     });
 
-    it('should login', () => {
+    it('should login', async () => {
         const signInButton = screen.getByText('SIGN IN/SIGN UP');
-        userEvent.click(signInButton);
+        await user.click(signInButton);
 
         expect(mockOnLogin).toHaveBeenCalled();
     });
 
-    it('should logout', () => {
+    it('should logout', async () => {
         useAuth0().isAuthenticated = true;
 
         renderResult.rerender(<NavDrawer onLogin={mockOnLogin} onLogout={mockOnLogout} />);
 
-        userEvent.click(screen.getByText('LOGOUT'));
+        await user.click(screen.getByText('LOGOUT'));
         expect(mockOnLogout).toHaveBeenCalled();
     });
 
-    it('should show the menu with the given menu items', () => {
+    it('should show the menu with the given menu items', async () => {
         render(<NavDrawer onLogin={mockOnLogin} onLogout={mockOnLogout} />);
 
         expect(screen.queryByText('STUDIES')).not.toBeInTheDocument();
         expect(screen.queryByText('META-ANALYSES')).not.toBeInTheDocument();
-        userEvent.click(screen.getByText('EXPLORE'));
+        await user.click(screen.getByText('EXPLORE'));
         expect(screen.getByText('STUDIES')).toBeInTheDocument();
         expect(screen.getByText('META-ANALYSES')).toBeInTheDocument();
     });
 
-    it('should hide the menu with the given menu items', () => {
+    it('should hide the menu with the given menu items', async () => {
         render(<NavDrawer onLogin={mockOnLogin} onLogout={mockOnLogout} />);
 
         expect(screen.queryByText('STUDIES')).not.toBeInTheDocument();
         expect(screen.queryByText('META-ANALYSES')).not.toBeInTheDocument();
-        userEvent.click(screen.getByText('EXPLORE'));
+        await user.click(screen.getByText('EXPLORE'));
         expect(screen.getByText('STUDIES')).toBeInTheDocument();
         expect(screen.getByText('META-ANALYSES')).toBeInTheDocument();
-        userEvent.click(screen.getByText('EXPLORE'));
+        await user.click(screen.getByText('EXPLORE'));
         expect(screen.queryByText('STUDIES')).not.toBeInTheDocument();
         expect(screen.queryByText('META-ANALYSES')).not.toBeInTheDocument();
     });

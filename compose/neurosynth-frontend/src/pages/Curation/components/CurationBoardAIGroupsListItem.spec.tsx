@@ -31,6 +31,12 @@ const renderListItem = (props: Partial<ComponentProps<typeof CurationBoardAIGrou
 };
 
 describe('CurationBoardAIGroupsListItem', () => {
+    let user: ReturnType<typeof userEvent.setup>;
+
+    beforeEach(() => {
+        user = userEvent.setup();
+    });
+
     it('shows excluded count text when excludedCount is set on a leaf group', () => {
         renderListItem({
             group: baseListItem({
@@ -80,7 +86,7 @@ describe('CurationBoardAIGroupsListItem', () => {
         expect(within(parentButton).getByText('3 excluded')).toBeInTheDocument();
     });
 
-    it('hides parent count and excluded summary while the expandable group is expanded', () => {
+    it('hides parent count and excluded summary while the expandable group is expanded', async () => {
         renderListItem({
             group: baseListItem({
                 id: 'parent',
@@ -101,13 +107,13 @@ describe('CurationBoardAIGroupsListItem', () => {
         });
 
         const parentButton = screen.getByRole('button', { name: /Needs review/i });
-        userEvent.click(parentButton);
+        await user.click(parentButton);
 
         expect(within(parentButton).queryByText('3 excluded')).not.toBeInTheDocument();
         expect(within(parentButton).queryByText('8')).not.toBeInTheDocument();
     });
 
-    it('shows excluded count on child rows when the parent is expanded', () => {
+    it('shows excluded count on child rows when the parent is expanded', async () => {
         renderListItem({
             group: baseListItem({
                 id: 'parent',
@@ -127,13 +133,13 @@ describe('CurationBoardAIGroupsListItem', () => {
             }),
         });
 
-        userEvent.click(screen.getByRole('button', { name: /Needs review/i }));
+        await user.click(screen.getByRole('button', { name: /Needs review/i }));
 
         const childButton = screen.getByRole('button', { name: /Child A/i });
         expect(within(childButton).getByText('2 excluded')).toBeInTheDocument();
     });
 
-    it('does not render excluded text on a child when excludedCount is null', () => {
+    it('does not render excluded text on a child when excludedCount is null', async () => {
         renderListItem({
             group: baseListItem({
                 label: 'Parent',
@@ -150,7 +156,7 @@ describe('CurationBoardAIGroupsListItem', () => {
             }),
         });
 
-        userEvent.click(screen.getByRole('button', { name: /Parent/i }));
+        await user.click(screen.getByRole('button', { name: /Parent/i }));
 
         const childButton = screen.getByRole('button', { name: /Child A/i });
         expect(within(childButton).queryByText(/excluded/)).not.toBeInTheDocument();

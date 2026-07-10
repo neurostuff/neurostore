@@ -5,7 +5,13 @@ import SearchBar from './SearchBar';
 
 vi.mock('react-router-dom');
 describe('SearchBar Component', () => {
+    let user: ReturnType<typeof userEvent.setup>;
+
     const onSearchMock = vi.fn();
+
+    beforeEach(() => {
+        user = userEvent.setup();
+    });
 
     afterAll(() => {
         vi.clearAllMocks();
@@ -18,25 +24,25 @@ describe('SearchBar Component', () => {
         expect(searchBar).toBeInTheDocument();
     });
 
-    it('should input text', () => {
+    it('should input text', async () => {
         // ARRANGE
         render(<SearchBar onSearch={onSearchMock} />);
 
         const searchBar = screen.getByRole('textbox');
-        userEvent.type(searchBar, 'ABCDEF');
+        await user.type(searchBar, 'ABCDEF');
 
         // ASSERT
         expect(screen.getByDisplayValue('ABCDEF')).toBeInTheDocument();
     });
 
-    it('should invoke a search when clicked', () => {
+    it('should invoke a search when clicked', async () => {
         render(<SearchBar onSearch={onSearchMock} />);
 
         const searchBar = screen.getByRole('textbox');
-        userEvent.type(searchBar, 'ABCDEF');
+        await user.type(searchBar, 'ABCDEF');
 
         const searchButton = screen.getByTestId('SearchIcon');
-        userEvent.click(searchButton);
+        await user.click(searchButton);
         expect(onSearchMock).toBeCalledWith({
             authorSearch: undefined,
             dataType: expect.any(String),
@@ -50,11 +56,11 @@ describe('SearchBar Component', () => {
         });
     });
 
-    it('should invoke a search when enter is pressed', () => {
+    it('should invoke a search when enter is pressed', async () => {
         render(<SearchBar onSearch={onSearchMock} />);
 
         const searchBar = screen.getByRole('textbox');
-        userEvent.type(searchBar, 'ABCDEF{enter}');
+        await user.type(searchBar, 'ABCDEF{enter}');
 
         expect(onSearchMock).toBeCalled();
     });
