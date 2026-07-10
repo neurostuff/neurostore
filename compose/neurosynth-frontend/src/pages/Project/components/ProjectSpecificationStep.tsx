@@ -10,7 +10,7 @@ interface ISpecificationStep {
     disabled: boolean;
 }
 
-const ProjectSpecificationStep: React.FC<ISpecificationStep & StepProps> = (props) => {
+const ProjectSpecificationStep = (props: ISpecificationStep & StepProps) => {
     const { disabled, ...stepProps } = props;
     const navigate = useNavigate();
     const { projectId } = useParams<{ projectId: string }>();

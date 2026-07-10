@@ -18,7 +18,7 @@ import {
     useUpdateAnnotationNotes,
 } from 'stores/AnnotationStore.actions';
 
-const EditStudyAnnotationsHotTable: React.FC<{ readonly?: boolean }> = ({ readonly = false }) => {
+const EditStudyAnnotationsHotTable = ({  readonly = false  }: { readonly?: boolean }) => {
     const hotTableRef = useRef<HotTable>(null);
     const noteKeys = useAnnotationNoteKeys();
     const updateNotes = useUpdateAnnotationNotes();

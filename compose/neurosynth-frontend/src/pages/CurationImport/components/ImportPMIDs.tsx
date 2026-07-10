@@ -10,11 +10,11 @@ import { v4 as uuidv4 } from 'uuid';
 import { IImportArgs } from './ImportDoImport';
 import ImportPMIDsUpload from './ImportPMIDsUpload';
 
-const ImportPMIDs: React.FC<IImportArgs & { onFileUpload: (fileName: string) => void }> = ({
+const ImportPMIDs = ({ 
     onNavigate,
     onImportStubs,
     onFileUpload,
-}) => {
+ }: IImportArgs & { onFileUpload: (fileName: string) => void }) => {
     const { mutate: fetchPubMedIds, isPending: isLoading, isError } = useFetchPubMedIds();
     const { enqueueSnackbar } = useSnackbar();
 

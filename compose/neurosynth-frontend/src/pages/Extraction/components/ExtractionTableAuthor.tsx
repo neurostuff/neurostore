@@ -5,7 +5,7 @@ import { CellContext, HeaderContext } from '@tanstack/react-table';
 import { IExtractionTableStudy } from './ExtractionTable';
 import { getAuthorsShortName } from 'helpers/utils';
 
-export const ExtractionTableAuthorCell: React.FC<CellContext<IExtractionTableStudy, string>> = (props) => {
+export const ExtractionTableAuthorCell = (props: CellContext<IExtractionTableStudy, string>) => {
     const value = props.getValue();
     const shortName = getAuthorsShortName(value);
     return (
@@ -15,10 +15,10 @@ export const ExtractionTableAuthorCell: React.FC<CellContext<IExtractionTableStu
     );
 };
 
-export const ExtractionTableAuthorHeader: React.FC<HeaderContext<IExtractionTableStudy, string>> = ({
+export const ExtractionTableAuthorHeader = ({ 
     table,
     column,
-}) => {
+ }: HeaderContext<IExtractionTableStudy, string>) => {
     const columnLabel = column.columnDef.meta?.columnLabel || '';
     const isSorted = column.getIsSorted();
 

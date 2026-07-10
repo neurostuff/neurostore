@@ -1,12 +1,12 @@
 import { AnalysisReturn } from 'neurostore-typescript-sdk';
 import { IStoreAnalysis } from 'pages/Study/store/StudyStore.helpers';
 
-const MockEditStudyAnalysesListItem: React.FC<{
+const MockEditStudyAnalysesListItem = (props: {
     analysis: AnalysisReturn | IStoreAnalysis;
     selected: boolean;
     index: number;
     onSelectAnalysis: (analysisId: string, index: number) => void;
-}> = (props) => {
+}) => {
     return (
         <div data-testid="mock-edit-analyses-list-item">
             <div data-testid="test-name">{props.analysis.name}</div>

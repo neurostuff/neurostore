@@ -14,7 +14,7 @@ import ProjectCurationStep from 'pages/Project/components/ProjectCurationStep';
 import ProjectExtractionStep from 'pages/Project/components/ProjectExtractionStep';
 import ProjectSpecificationStep from 'pages/Project/components/ProjectSpecificationStep';
 
-const ProjectEditMetaAnalyses: React.FC = (props) => {
+const ProjectEditMetaAnalyses = () => {
     const projectUser = useProjectUser();
     const canEdit = useUserCanEdit(projectUser || undefined);
     const { projectId } = useParams<{ projectId: string }>();

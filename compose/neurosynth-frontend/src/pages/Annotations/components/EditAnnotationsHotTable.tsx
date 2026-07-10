@@ -19,7 +19,7 @@ import { NoteKeyType } from 'components/HotTables/HotTables.types';
 
 registerAllModules();
 
-const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((props) => {
+const AnnotationsHotTable = React.memo((props: { annotationId?: string }) => {
     const { enqueueSnackbar } = useSnackbar();
     const { mutate: updateAnnotation, isPending: updateAnnotationIsLoading } = useUpdateAnnotationById(
         props.annotationId

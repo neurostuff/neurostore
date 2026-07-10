@@ -2,7 +2,7 @@ import { Box, Typography } from '@mui/material';
 import { IDynamicValueType, KWARG_STRING } from 'pages/MetaAnalysis/components/DynamicForm.types';
 import DynamicInputDisplayStyles from './DynamicInputDisplay.styles';
 
-const DynamicInputDisplay: React.FC<{ dynamicArg: IDynamicValueType }> = (props) => {
+const DynamicInputDisplay = (props: { dynamicArg: IDynamicValueType }) => {
     /** filter for values that exist */
     const valuesList = Object.keys(props.dynamicArg)
         .filter((x) => !!props.dynamicArg[x])

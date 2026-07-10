@@ -8,12 +8,12 @@ import CurationEditableStubSummary from './CurationEditableStubSummary';
 import CurationStubAITableSummary from './CurationStubAITableSummary';
 import CurationStubListItemVirtualizedContainer from './CurationStubListItemVirtualizedContainer';
 
-const CurationBoardAIInterfaceCuratorFocus: React.FC<ICurationBoardAIInterfaceCurator> = ({
+const CurationBoardAIInterfaceCuratorFocus = ({ 
     selectedStub,
     table,
     onSetSelectedStub,
     columnIndex,
-}) => {
+ }: ICurationBoardAIInterfaceCurator) => {
     const rows = table.getRowModel().rows.map((row) => row.original);
     const windowHeight = useGetWindowHeight();
     const scrollableBoxRef = useRef<HTMLDivElement>(null);

@@ -18,7 +18,7 @@ import ExtractionOutOfSyncStyles from './ExtractionOutOfSync.styles';
 import { mapStubsToStudysetPayload } from 'helpers/Extraction.helpers';
 import { STUDYSET_QUERY_STRING } from 'hooks/studysets/useGetStudysetById';
 
-const ExtractionOutOfSync: React.FC = () => {
+const ExtractionOutOfSync = () => {
     const studysetId = useProjectExtractionStudysetId();
     const annotationId = useProjectExtractionAnnotationId();
     const { data: studyset } = useGetStudysetById(studysetId, false, false);

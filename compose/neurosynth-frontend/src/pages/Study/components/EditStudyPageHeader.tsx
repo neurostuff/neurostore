@@ -17,7 +17,7 @@ import {
 } from 'pages/Study/store/StudyStore';
 import { useMemo } from 'react';
 
-const EditStudyPageHeader: React.FC = () => {
+const EditStudyPageHeader = () => {
     const projectId = useProjectId();
     const studyName = useStudyName();
     const studyYear = useStudyYear();

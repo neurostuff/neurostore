@@ -6,7 +6,7 @@ import BaseDialog from './Dialogs/BaseDialog';
 // We are saving this as a global variable so that the state is reset every time the page is reloaded
 let userHasSeenPopupThisSession = false;
 
-const InfoPopup: React.FC = () => {
+const InfoPopup = () => {
     const { user } = useAuth0();
     const localStorageKey = `${user?.sub || ''}-hide-info-popup`;
     const shouldHide = !!localStorage.getItem(localStorageKey) || userHasSeenPopupThisSession;

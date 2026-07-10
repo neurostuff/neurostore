@@ -13,10 +13,10 @@ import {
 } from '../../CurationImport/helpers';
 import ImportSleuthHint from './ImportSleuthHint';
 
-const ImportSleuthUpload: React.FC<{
+const ImportSleuthUpload = (props: {
     onNext: (sleuthUploads: ISleuthFileUploadStubs[]) => void;
     onPrevious: () => void;
-}> = (props) => {
+}) => {
     const { onNext, onPrevious } = props;
 
     const [sleuthFileUploads, setSleuthFileUploads] = useState<

@@ -6,10 +6,10 @@ import AIICon from 'components/AIIcon';
 import { ICurationTableColumnType, ICurationTableStudy } from '../hooks/useCuratorTableState.types';
 import CurationBoardAIInterfaceCuratorTableHeaderFilter from './CurationBoardAIInterfaceCuratorTableHeaderFilter';
 
-export const CuratorTableHeader: React.FC<HeaderContext<ICurationTableStudy, ICurationTableColumnType>> = ({
+export const CuratorTableHeader = ({ 
     table,
     column,
-}) => {
+ }: HeaderContext<ICurationTableStudy, ICurationTableColumnType>) => {
     const removeColumn = table.options.meta?.curatorTableOnRemoveColumn;
     const columnLabel = column.columnDef.meta?.columnLabel || '';
     const canSort = column.getCanSort();

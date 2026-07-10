@@ -9,9 +9,7 @@ import {
     IGenericCustomAccessorReturn,
 } from '../hooks/useCuratorTableState.types';
 
-const CuratorTableCell: React.FC<Partial<CellContext<ICurationTableStudy, ICurationTableColumnType | null>>> = (
-    props
-) => {
+const CuratorTableCell = (props: CellContext<ICurationTableStudy, IGenericCustomAccessorReturn>) => {
     const isFetchingExtractions = useIsFetching({ queryKey: ['extraction'] }) > 0;
     const isAI = !!props?.column?.columnDef?.meta?.AIExtractor;
     const cellValue = props.getValue ? props.getValue() : undefined;

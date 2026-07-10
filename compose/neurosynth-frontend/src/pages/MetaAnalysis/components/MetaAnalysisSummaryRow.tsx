@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { Box, Typography } from '@mui/material';
 import MetaAnalysisSummaryRowStyles from './MetaAnalysisSummaryRow.styles';
 
@@ -5,9 +6,10 @@ interface IMetaAnalysisSummaryRow {
     title: string | JSX.Element;
     value: string | JSX.Element;
     caption?: string | JSX.Element;
+    children?: React.ReactNode;
 }
 
-const MetaAnalysisSummaryRow: React.FC<IMetaAnalysisSummaryRow> = (props) => {
+const MetaAnalysisSummaryRow = (props: IMetaAnalysisSummaryRow) => {
     return (
         <Box sx={{ marginBottom: '1.5rem', width: '100%' }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>

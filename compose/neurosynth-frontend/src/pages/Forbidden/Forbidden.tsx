@@ -2,7 +2,7 @@ import { Box, Typography } from '@mui/material';
 import BackButton from 'components/Buttons/BackButton';
 import { useLocation } from 'react-router-dom';
 
-const ForbiddenPage: React.FC = (props) => {
+const ForbiddenPage = () => {
     const { state } = useLocation();
 
     return (

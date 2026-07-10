@@ -53,9 +53,11 @@ describe('useAuthenticate', () => {
 
             expect(sessionStorage.getItem(AUTH0_FORCE_PROMPT_LOGIN_KEY)).toBeNull();
             expect(useAuth0().getAccessTokenWithPopup as Mock).toHaveBeenCalledWith({
-                audience: expectedAudience,
-                scope: 'openid profile email offline_access',
-                prompt: 'login',
+                authorizationParams: {
+                    audience: expectedAudience,
+                    scope: 'openid profile email offline_access',
+                    prompt: 'login',
+                },
             });
             expect(initAPISetAccessTokenFunc).toHaveBeenCalledWith(useAuth0().getAccessTokenSilently as Mock);
             expect(useNavigate() as Mock).toHaveBeenCalledWith('/');
@@ -72,8 +74,10 @@ describe('useAuthenticate', () => {
             });
 
             expect(useAuth0().getAccessTokenWithPopup as Mock).toHaveBeenCalledWith({
-                audience: expectedAudience,
-                scope: 'openid profile email offline_access',
+                authorizationParams: {
+                    audience: expectedAudience,
+                    scope: 'openid profile email offline_access',
+                },
             });
         });
 
@@ -180,9 +184,11 @@ describe('useAuthenticate', () => {
             });
 
             expect(useAuth0().getAccessTokenWithPopup as Mock).toHaveBeenNthCalledWith(2, {
-                audience: expectedAudience,
-                scope: 'openid profile email offline_access',
-                prompt: 'login',
+                authorizationParams: {
+                    audience: expectedAudience,
+                    scope: 'openid profile email offline_access',
+                    prompt: 'login',
+                },
             });
             expect(sessionStorage.getItem(AUTH0_FORCE_PROMPT_LOGIN_KEY)).toBeNull();
             expect(useNavigate() as Mock).toHaveBeenCalledWith('/');
@@ -195,7 +201,11 @@ describe('useAuthenticate', () => {
 
             userEvent.click(screen.getByTestId('logout'));
 
-            expect(useAuth0().logout as Mock).toHaveBeenCalledWith({ returnTo: window.location.origin });
+            expect(useAuth0().logout as Mock).toHaveBeenCalledWith({
+                logoutParams: {
+                    returnTo: window.location.origin,
+                },
+            });
         });
     });
 

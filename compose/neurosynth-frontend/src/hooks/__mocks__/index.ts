@@ -15,19 +15,19 @@ import {
 } from 'testing/mockData';
 
 const useUpdateAnalysis = vi.fn().mockReturnValue({
-    isLoading: false,
+    isPending: false,
     isError: false,
     mutate: vi.fn(),
 });
 
 const useDeleteAnalysis = vi.fn().mockReturnValue({
-    isLoading: false,
+    isPending: false,
     mutate: vi.fn(),
 });
 
 const useCreateCondition = vi.fn().mockReturnValue({
     mutate: vi.fn(),
-    isLoading: false,
+    isPending: false,
 });
 
 const useGetConditions = vi.fn().mockReturnValue({
@@ -37,17 +37,17 @@ const useGetConditions = vi.fn().mockReturnValue({
 });
 
 const useCreatePoint = vi.fn().mockReturnValue({
-    isLoading: false,
+    isPending: false,
     mutate: vi.fn(),
 });
 
 const useUpdatePoint = vi.fn().mockReturnValue({
-    isLoading: false,
+    isPending: false,
     mutate: vi.fn(),
 });
 
 const useDeletePoint = vi.fn().mockReturnValue({
-    isLoading: false,
+    isPending: false,
     mutate: vi.fn(),
 });
 
@@ -57,35 +57,35 @@ const useGetStudyById = vi.fn().mockReturnValue({
 });
 
 const useCreateAnalysis = vi.fn().mockReturnValue({
-    isLoading: false,
+    isPending: false,
     mutate: vi.fn(),
 });
 
 const useCreateMetaAnalysis = vi.fn().mockReturnValue({
     error: undefined,
-    isLoading: false,
+    isPending: false,
     isError: false,
     createMetaAnalysis: vi.fn().mockReturnValue(Promise.resolve()),
 });
 
 const useCreateStudyset = vi.fn().mockReturnValue({
-    // isLoading: false,
+    // isPending: false,
     // isError: false,
     // mutate: vi.fn(),
-    isLoading: false,
+    isPending: false,
     isError: false,
     mutate: vi.fn(),
 });
 
 const useUpdateStudyset = vi.fn().mockReturnValue({
-    isLoading: false,
+    isPending: false,
     isError: false,
     mutate: vi.fn(),
     mutateAsync: vi.fn().mockReturnValue(mockStudysets()),
 });
 
 const useUpdateStudy = vi.fn().mockReturnValue({
-    isLoading: false,
+    isPending: false,
     mutate: vi.fn(),
 });
 
@@ -96,13 +96,13 @@ const useGetAnnotationsByStudysetId = vi.fn().mockReturnValue({
 });
 
 const useCreateProject = vi.fn().mockReturnValue({
-    isLoading: false,
+    isPending: false,
     isError: false,
     mutate: vi.fn(),
 });
 
 const useDeleteProject = vi.fn().mockReturnValue({
-    isLoading: false,
+    isPending: false,
     isError: false,
     mutate: vi.fn(),
 });
@@ -138,7 +138,7 @@ const useGetFullText = vi.fn().mockReturnValue({
 });
 
 const useCreateStudy = vi.fn().mockReturnValue({
-    isLoading: false,
+    isPending: false,
     mutate: vi.fn(),
     mutateAsync: vi.fn().mockReturnValue({
         data: mockStudy(),
@@ -146,7 +146,7 @@ const useCreateStudy = vi.fn().mockReturnValue({
 });
 
 const useUpdateAnnotationById = vi.fn().mockReturnValue({
-    isLoading: false,
+    isPending: false,
     mutate: vi.fn(),
     mutateAsync: vi.fn(),
 });

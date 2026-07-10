@@ -12,14 +12,14 @@ const useDeleteStudy = () => {
         onSuccess: () => {
             // we need to send a request to retrieve studies again with its associated analyses and points
             queryClient.invalidateQueries({
-                queryKey: ['studies']
+                queryKey: ['studies'],
             });
             enqueueSnackbar('study deleted successfully', { variant: 'success' });
         },
 
         onError: () => {
             enqueueSnackbar('there was an error deleting the study', { variant: 'error' });
-        }
+        },
     });
 };
 

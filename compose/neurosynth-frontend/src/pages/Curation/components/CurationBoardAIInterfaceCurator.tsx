@@ -31,7 +31,7 @@ export interface ICurationBoardAIInterfaceCurator {
     onSetSelectedStub: (stubId: string | undefined) => void;
 }
 
-const CurationBoardAIInterfaceCurator: React.FC = () => {
+const CurationBoardAIInterfaceCurator = () => {
     const navigate = useNavigate();
     const { projectId } = useParams<{ projectId: string | undefined }>();
     const { handleSelectNextGroup, selectedGroup } = useCurationBoardGroups();

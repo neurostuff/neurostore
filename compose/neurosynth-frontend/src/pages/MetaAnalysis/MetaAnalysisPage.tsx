@@ -11,7 +11,7 @@ import { useProjectName, useProjectUser } from 'pages/Project/store/ProjectStore
 import { useParams } from 'react-router-dom';
 import MetaAnalysisDetails from './components/MetaAnalysisDetails';
 
-const MetaAnalysisPage: React.FC = () => {
+const MetaAnalysisPage = () => {
     // const { startTour } = useGetTour('MetaAnalysisPage');
     const { projectId, metaAnalysisId } = useParams<{
         projectId: string;

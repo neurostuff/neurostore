@@ -21,7 +21,7 @@ import DrawerToggleMenu from './DrawerToggleSubMenu';
 import { INav } from './Navbar';
 import NavbarStyles from './Navbar.styles';
 
-const NavDrawer: React.FC<INav> = (props) => {
+const NavDrawer = (props: INav) => {
     const { isAuthenticated } = useAuth0();
     const [isOpen, setIsOpen] = useState(false);
     const navigate = useNavigate();

@@ -27,7 +27,7 @@ const pointHasCompleteCoordinates = (p: IStorePoint) =>
 const analysisHasUsableCoordinates = (points: IStorePoint[] | null) =>
     !!points?.some((p) => p.isNew === false || pointHasCompleteCoordinates(p));
 
-const EditStudyAnalysisPoints: React.FC<{ analysisId?: string }> = (props) => {
+const EditStudyAnalysisPoints = (props: { analysisId?: string }) => {
     const navigate = useNavigate();
     const projectId = useProjectId();
     const { enqueueSnackbar } = useSnackbar();

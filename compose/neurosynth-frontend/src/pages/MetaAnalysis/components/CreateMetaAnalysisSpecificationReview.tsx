@@ -29,7 +29,7 @@ const triggerAppziFeedbackPopup = () => {
     }
 };
 
-const CreateMetaAnalysisSpecificationReview: React.FC<{
+const CreateMetaAnalysisSpecificationReview = (props: {
     onNavigate: (button: ENavigationButton) => void;
     onClose: () => void;
     selection: IAnalysesSelection;
@@ -38,13 +38,13 @@ const CreateMetaAnalysisSpecificationReview: React.FC<{
         name: string;
         description: string;
     };
-}> = (props) => {
+}) => {
     const navigate = useNavigate();
     const projectId = useProjectId();
     const studysetId = useProjectExtractionStudysetId();
     const annotationId = useProjectExtractionAnnotationId();
     const { data: annotations } = useGetAnnotationById(annotationId);
-    const { createMetaAnalysis, isLoading, isError } = useCreateAlgorithmSpecification();
+    const { createMetaAnalysis, isPending, isError } = useCreateAlgorithmSpecification();
     const { enqueueSnackbar } = useSnackbar();
     const projectMetaAnalyses = useProjectMetaAnalyses() || [];
     const updateProjectMetaAnalyses = useUpdateProjectMetaAnalyses();
@@ -180,7 +180,7 @@ const CreateMetaAnalysisSpecificationReview: React.FC<{
                     variant="contained"
                     sx={{ width: '350px' }}
                     color="success"
-                    isLoading={isLoading}
+                    isLoading={isPending}
                     onClick={handleCreateSpecification}
                     loaderColor="secondary"
                     text="Create Meta-Analysis Specification"

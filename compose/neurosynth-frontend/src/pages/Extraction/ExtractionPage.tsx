@@ -29,7 +29,7 @@ export enum EExtractionStatus {
     'UNCATEGORIZED' = 'uncategorized',
 }
 
-const ExtractionPage: React.FC = () => {
+const ExtractionPage = () => {
     const { projectId } = useParams<{ projectId: string | undefined }>();
     const navigate = useNavigate();
 

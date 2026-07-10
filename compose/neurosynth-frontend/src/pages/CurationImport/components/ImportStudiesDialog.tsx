@@ -3,11 +3,11 @@ import Import from './Import';
 import { EImportMode } from '../CurationImport.types';
 import { Box } from '@mui/material';
 
-const ImportStudiesDialog: React.FC<IDialog & { method: EImportMode | undefined }> = ({
+const ImportStudiesDialog = ({ 
     isOpen,
     onCloseDialog,
     method,
-}) => {
+ }: IDialog & { method: EImportMode | undefined }) => {
     return (
         <BaseDialog isOpen={isOpen} dialogTitle="Import Studies" onCloseDialog={onCloseDialog} maxWidth="lg" fullWidth>
             <Box

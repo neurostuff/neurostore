@@ -5,7 +5,7 @@ import useGetMetaAnalysisById from 'hooks/metaAnalyses/useGetMetaAnalysisById';
 
 // Resolves a legacy, project-less /meta-analyses/:id URL (written into NeuroVault by
 // compose-runner) to the canonical project-scoped page.
-const MetaAnalysisRedirect: React.FC = () => {
+const MetaAnalysisRedirect = () => {
     const { metaAnalysisId } = useParams<{ metaAnalysisId: string }>();
     const { data, isLoading, isError } = useGetMetaAnalysisById(metaAnalysisId);
 

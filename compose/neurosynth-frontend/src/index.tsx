@@ -119,12 +119,14 @@ createRoot(rootElement).render(
     <React.StrictMode>
         <Auth0Provider
             domain={domain}
-            useRefreshTokens={true}
             clientId={clientId}
-            redirectUri={window.location.origin}
-            scope="openid profile email offline_access"
-            audience={audience}
+            useRefreshTokens={true}
             cacheLocation="localstorage"
+            authorizationParams={{
+                redirect_uri: window.location.origin,
+                audience,
+                scope: 'openid profile email offline_access',
+            }}
         >
             <BrowserRouter>
                 <ThemeProvider theme={theme}>

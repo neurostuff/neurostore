@@ -11,12 +11,12 @@ export interface IImportArgs {
     onImportStubs: (stubs: ICurationStubStudy[], unimportedStubs?: string[]) => void;
 }
 
-const ImportDoImport: React.FC<
+const ImportDoImport = ({  mode, onImportStubs, onNavigate, onFileUpload  }: 
     IImportArgs & {
         mode: EImportMode;
         onFileUpload: (fileName: string) => void;
     }
-> = ({ mode, onImportStubs, onNavigate, onFileUpload }) => {
+) => {
     switch (mode) {
         case EImportMode.SLEUTH_IMPORT:
             return <ImportSleuth onImportStubs={onImportStubs} onNavigate={onNavigate} onFileUpload={onFileUpload} />;

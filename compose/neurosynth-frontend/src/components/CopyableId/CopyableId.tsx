@@ -3,7 +3,7 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import { Box, Divider, IconButton, Tooltip, Typography } from '@mui/material';
 import useCopyToClipboard from 'hooks/useCopyToClipboard';
 
-const CopyableId: React.FC<{ label: string; id: string | null | undefined }> = ({ label, id }) => {
+const CopyableId = ({  label, id  }: { label: string; id: string | null | undefined }) => {
     const { copied, copyToClipboard } = useCopyToClipboard();
 
     if (!id) return null;

@@ -9,7 +9,7 @@ const NUMERIC_IN_PROGRESS = /^-?\d*\.?\d*$/;
 
 const toRaw = (value: any): string => (value === null || value === undefined ? '' : String(value));
 
-const DynamicFormNumericInput: React.FC<IDynamicFormInput> = (props) => {
+const DynamicFormNumericInput = (props: IDynamicFormInput) => {
     const [rawValue, setRawValue] = useState<string>(toRaw(props.value));
 
     // Sync external value changes, but don't clobber an in-progress entry like "0."

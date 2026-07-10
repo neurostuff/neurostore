@@ -13,7 +13,7 @@ interface IExtractionStep {
     disabled: boolean;
 }
 
-const ProjectExtractionStep: React.FC<IExtractionStep & StepProps> = (props) => {
+const ProjectExtractionStep = (props: IExtractionStep & StepProps) => {
     const { extractionStepHasBeenInitialized, disabled, ...stepProps } = props;
     const location = useLocation();
 

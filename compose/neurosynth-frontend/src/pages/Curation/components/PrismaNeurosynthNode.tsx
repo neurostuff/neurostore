@@ -11,9 +11,9 @@ export interface INeurosynthNodeData {
     sx?: Style;
 }
 
-const NeurosynthNode: React.FC<{
+const NeurosynthNode = (props: {
     data: INeurosynthNodeData;
-}> = (props) => {
+}) => {
     return (
         <>
             <Handle type="target" id={props.data.topHandleId} position={Position.Top} />

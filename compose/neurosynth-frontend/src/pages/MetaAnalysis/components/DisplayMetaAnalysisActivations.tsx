@@ -20,10 +20,10 @@ const pointToCSVRow = (point: IStorePoint) => {
     };
 };
 
-const DisplayMetaAnalysisActivations: React.FC<{
+const DisplayMetaAnalysisActivations = (props: {
     metaAnalysis: MetaAnalysisReturn | undefined;
     metaAnalysisResult: ResultReturn | undefined;
-}> = (props) => {
+}) => {
     const { data, isLoading, isError } = useGetAnalysisById(
         props.metaAnalysis?.neurostore_analysis?.neurostore_id || undefined
     );

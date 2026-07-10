@@ -12,7 +12,6 @@ const useQueryClient = vi.fn().mockReturnValue({
 const useQuery = vi.fn().mockReturnValue({
     data: null,
     isLoading: false,
-    isPending: false,
     isError: false,
 });
 

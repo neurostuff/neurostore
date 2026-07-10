@@ -6,11 +6,11 @@ import NeurosynthTableStyles from 'components/NeurosynthTable/NeurosynthTable.st
 import { IAnalysesSelection } from 'pages/MetaAnalysis/components/CreateMetaAnalysisSpecificationDialogBase.types';
 import useInclusionColumnOptions from '../hooks/useInclusionColumnOptions';
 
-const SelectAnalysesStringValue: React.FC<{
+const SelectAnalysesStringValue = (props: {
     selectedValue: IAnalysesSelection | undefined;
     onSelectValue: (newVal: IAnalysesSelection) => void;
     annotationId: string | undefined;
-}> = (props) => {
+}) => {
     const { selectedValue, onSelectValue, annotationId } = props;
     const options = useInclusionColumnOptions(annotationId, selectedValue?.selectionKey);
 

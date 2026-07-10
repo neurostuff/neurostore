@@ -10,7 +10,7 @@ import { useParams } from 'react-router-dom';
 import useSaveStudy from '../hooks/useSaveStudy';
 import { Check } from '@mui/icons-material';
 
-const EditStudyCompleteButton: React.FC = React.memo(() => {
+const EditStudyCompleteButton = React.memo(() => {
     const { studyId } = useParams<{ studyId: string }>();
     const { isLoading, hasEdits, handleSave } = useSaveStudy();
     const extractionStatus = useProjectExtractionStudyStatus(studyId || '');

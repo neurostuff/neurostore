@@ -2,7 +2,7 @@ import { Box, Typography, ToggleButtonGroup, ToggleButton } from '@mui/material'
 import { IDynamicFormInput } from 'pages/MetaAnalysis/components/DynamicForm.types';
 import DynamicFormStyles from 'pages/MetaAnalysis/components//DynamicFormStyles';
 
-const DynamicFormBoolInput: React.FC<IDynamicFormInput> = (props) => {
+const DynamicFormBoolInput = (props: IDynamicFormInput) => {
     return (
         <Box sx={DynamicFormStyles.input}>
             <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>

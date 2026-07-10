@@ -10,7 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import React from 'react';
 
-const DisplayExtractionTableState: React.FC = () => {
+const DisplayExtractionTableState = () => {
     const projectId = useProjectId();
     const studyId = useStudyId();
     const studysetId = useProjectExtractionStudysetId();

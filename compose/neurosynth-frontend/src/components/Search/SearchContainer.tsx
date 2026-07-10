@@ -2,7 +2,7 @@ import { Box, Pagination, TablePagination, Typography } from '@mui/material';
 import { SystemStyleObject } from '@mui/system';
 import SearchBar from 'components/Search/SearchBar';
 import { SearchCriteria } from 'pages/Study/Study.types';
-import { ChangeEvent } from 'react';
+import { type ReactNode,  ChangeEvent } from 'react';
 import SearchContainerStyles from './SearchContainer.styles';
 
 export interface ISearchContainer {
@@ -17,6 +17,7 @@ export interface ISearchContainer {
     tablePaginationSelectorStyles?: SystemStyleObject;
     searchMode?: 'study-search' | 'project-search';
     error?: string;
+    children?: React.ReactNode;
 }
 
 export const getNumTotalPages = (totalCount: number | undefined, pageSize: number | undefined) => {
@@ -28,7 +29,7 @@ export const getNumTotalPages = (totalCount: number | undefined, pageSize: numbe
     return remainder > 0 ? numTotalPages + 1 : numTotalPages;
 };
 
-const SearchContainer: React.FC<ISearchContainer> = (props) => {
+const SearchContainer = (props: ISearchContainer) => {
     const {
         onPageChange,
         onRowsPerPageChange,

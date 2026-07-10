@@ -12,7 +12,7 @@ import { useNavigate } from 'react-router-dom';
 
 const projectSearchCriteria = new ProjectSearchCriteria(1, 1000);
 
-const CreateProjectButton: React.FC = () => {
+const CreateProjectButton = () => {
     const { mutate, isPending: createProjectIsLoading } = useCreateProject();
     const navigate = useNavigate();
     const [confirmationDialogIsOpen, setConfirmationDialogIsOpen] = useState(false);

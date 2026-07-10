@@ -18,10 +18,10 @@ import DynamicInputDisplay from 'pages/MetaAnalysis/components/DynamicInputDispl
 import { isMultiGroupAlgorithm } from 'pages/MetaAnalysis/components/SelectAnalysesComponent.helpers';
 import SelectAnalysesSummaryComponent from 'pages/MetaAnalysis/components/SelectAnalysesSummaryComponent';
 
-const DisplayMetaAnalysisSpecification: React.FC<{ projectId: string; metaAnalysisId: string }> = ({
+const DisplayMetaAnalysisSpecification = ({ 
     projectId,
     metaAnalysisId,
-}) => {
+ }: { projectId: string; metaAnalysisId: string }) => {
     const { data: metaAnalysis } = useGetMetaAnalysisById(metaAnalysisId);
     const specificationId = getMetaAnalysisSpecificationId(metaAnalysis);
     const annotationId = getMetaAnalysisAnnotationId(metaAnalysis);

@@ -7,7 +7,7 @@ import useSearchProjects from 'pages/Projects/hooks/useSearchProjects';
 import ProjectsPageCard from './components/ProjectsPageCard';
 import ProjectsPageEmptyState from './components/ProjectsPageEmptyState';
 
-const ProjectsPage: React.FC = () => {
+const ProjectsPage = () => {
     const { user } = useAuth0();
 
     const {

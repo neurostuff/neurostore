@@ -6,7 +6,7 @@ import NeurosynthPopper from './NeurosynthPopper';
 describe('NeurosynthPopper', () => {
     const mockOnClickAway = vi.fn();
 
-    const MockParentComponent: React.FC<{ open: boolean }> = (props) => {
+    const MockParentComponent = (props: { open: boolean }) => {
         const mockButton = document.createElement('button');
         mockButton.innerHTML = 'click me!';
         document.body.appendChild(mockButton);

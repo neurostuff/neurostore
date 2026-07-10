@@ -9,7 +9,7 @@ export const STUDYSET_QUERY_STRING = 'studysets';
 
 const useGetStudysetById = (studysetId?: string, nested: boolean = false, summary: boolean = false) => {
     const { enqueueSnackbar } = useSnackbar();
-    const { data, isPending, isError, error, refetch, isRefetching } = useQuery<
+    const { data, isLoading, isError, error, refetch, isRefetching } = useQuery<
         AxiosResponse<StudysetReturn>,
         AxiosError,
         StudysetReturn,
@@ -42,8 +42,7 @@ const useGetStudysetById = (studysetId?: string, nested: boolean = false, summar
 
     return {
         data,
-        isLoading: isPending,
-        isPending,
+        isLoading,
         isError,
         error,
         refetch,

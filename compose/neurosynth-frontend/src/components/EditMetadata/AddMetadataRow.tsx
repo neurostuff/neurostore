@@ -18,7 +18,7 @@ export const getStartValFromType = (type: EPropertyType): boolean | number | str
     }
 };
 
-const AddMetadataRow: React.FC<IAddMetadataRowModel> = (props) => {
+const AddMetadataRow = (props: IAddMetadataRowModel) => {
     const {
         onAddMetadataRow,
         keyPlaceholderText,

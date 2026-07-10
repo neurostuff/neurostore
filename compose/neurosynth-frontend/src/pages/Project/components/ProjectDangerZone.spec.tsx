@@ -79,14 +79,14 @@ describe('ProjectDangerZone', () => {
         mockedUseParams.mockReturnValue({ projectId: 'test-project-id' });
         mockedUseDeleteProject.mockReturnValue({
             mutate: mockDeleteProject,
-            isLoading: false,
+            isPending: false,
             isError: false,
             isSuccess: false,
             isIdle: true,
         } as unknown as ReturnType<typeof useDeleteProject>);
         mockedUseDeleteStudyset.mockReturnValue({
             mutateAsync: mockDeleteStudyset,
-            isLoading: false,
+            isPending: false,
             isError: false,
             isSuccess: false,
             isIdle: true,
@@ -183,7 +183,7 @@ describe('ProjectDangerZone', () => {
                     }
                     mockDeleteProject(projectId, options);
                 },
-                isLoading: false,
+                isPending: false,
                 isError: false,
                 isSuccess: false,
                 isIdle: true,

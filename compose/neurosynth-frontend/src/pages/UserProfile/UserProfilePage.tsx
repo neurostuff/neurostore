@@ -8,7 +8,7 @@ import useSendResetPasswordEmail from './hooks/useSendResetPasswordEmail';
 import { useSnackbar } from 'notistack';
 import LoadingButton from 'components/Buttons/LoadingButton';
 
-const UserProfilePage: React.FC = () => {
+const UserProfilePage = () => {
     const { user } = useAuth0();
     const [refreshToken, setRefreshToken] = useState('');
     const { mutate: sendResetPasswordEmail, isPending: isLoading } = useSendResetPasswordEmail();
@@ -19,10 +19,13 @@ const UserProfilePage: React.FC = () => {
         const keys = localStorageCache.allKeys();
         if (keys.length === 0) {
             setRefreshToken('');
-        } else {
-            const auth0Res = localStorageCache.get<{ body?: { refresh_token?: string } }>(keys[0]);
-            setRefreshToken(auth0Res?.body?.refresh_token || '');
+            return;
         }
+
+        void (async () => {
+            const auth0Res = await localStorageCache.get<{ body?: { refresh_token?: string } }>(keys[0]);
+            setRefreshToken(auth0Res?.body?.refresh_token || '');
+        })();
     }, []);
 
     const handleResetPassword = () => {

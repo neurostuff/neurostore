@@ -6,9 +6,9 @@ import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import useGetMetaAnalysisJobById from '../hooks/useGetMetaAnalysisJobById';
 
-const MetaAnalysisJob: React.FC<{
+const MetaAnalysisJob = ({  metaAnalysisJobData  }: {
     metaAnalysisJobData?: MetaAnalysisJobResponse;
-}> = ({ metaAnalysisJobData }) => {
+}) => {
     const { refetch } = useGetMetaAnalysisJobById(metaAnalysisJobData?.job_id);
     const queryClient = useQueryClient();
 

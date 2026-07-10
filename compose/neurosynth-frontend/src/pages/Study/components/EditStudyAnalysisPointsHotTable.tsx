@@ -24,8 +24,8 @@ import EditStudyAnalysisPointsHotTableToolbar from './EditStudyAnalysisPointsHot
 
 registerAllModules();
 
-const EditStudyAnalysisPointsHotTable: React.FC<{ analysisId?: string; readOnly?: boolean }> = React.memo(
-    ({ analysisId, readOnly = false }) => {
+const EditStudyAnalysisPointsHotTable = React.memo(
+    ({ analysisId, readOnly = false }: { analysisId?: string; readOnly?: boolean }) => {
         const points = useStudyAnalysisPoints(analysisId) as IStorePoint[] | null;
         const updatePoints = useUpdateAnalysisPoints();
         const createPoint = useCreateAnalysisPoints();

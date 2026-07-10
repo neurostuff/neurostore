@@ -19,7 +19,7 @@ const handleAnimation = (style: DraggableStyle | undefined, snapshot: DraggableS
     };
 };
 
-const CurationStubStudyDraggableContainer: React.FC<
+const CurationStubStudyDraggableContainer = (props: 
     ICurationStubStudy & {
         index: number;
         isVisible: boolean;
@@ -29,7 +29,7 @@ const CurationStubStudyDraggableContainer: React.FC<
         style: React.CSSProperties;
         onSelectStubStudy: (stubId: string) => void;
     }
-> = (props) => {
+) => {
     const projectUser = useProjectUser();
     const canEdit = useUserCanEdit(projectUser || undefined);
 

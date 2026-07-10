@@ -33,7 +33,7 @@ import SelectAnalysesSummaryComponent from 'pages/MetaAnalysis/components/Select
 
 const metaAnalysisSpecification: IMetaAnalysisParamsSpecification = metaAnalysisSpec;
 
-const EditSpecificationDialog: React.FC<IDialog> = (props) => {
+const EditSpecificationDialog = (props: IDialog) => {
     const { metaAnalysisId } = useParams<{ metaAnalysisId: string }>();
     const { data: metaAnalysis } = useGetMetaAnalysisById(metaAnalysisId);
     const specificationId = getMetaAnalysisSpecificationId(metaAnalysis);

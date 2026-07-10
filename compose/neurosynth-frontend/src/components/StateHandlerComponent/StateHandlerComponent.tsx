@@ -10,9 +10,10 @@ export interface IStateHandlerComponent {
     loadingColor?: string;
     disableShrink?: boolean;
     loaderSize?: number;
+    children?: React.ReactNode;
 }
 
-const StateHandlerComponent: React.FC<IStateHandlerComponent> = (props) => {
+const StateHandlerComponent = (props: IStateHandlerComponent) => {
     if (props.isError) {
         if (typeof props.errorMessage === 'string' || props.errorMessage === undefined) {
             return <Typography sx={{ color: 'error.main' }}>{props.errorMessage || 'There was an error'}</Typography>;

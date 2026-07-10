@@ -24,7 +24,7 @@ import StartExtractionButton from './components/StartExtractionButton';
 
 const localStorageNewUIKey = 'show-new-ui-may-30-2025';
 
-const CurationPage: React.FC = () => {
+const CurationPage = () => {
     const navigate = useNavigate();
     const studysetId = useProjectExtractionStudysetId();
     const { included, uncategorized } = useGetCurationSummary();

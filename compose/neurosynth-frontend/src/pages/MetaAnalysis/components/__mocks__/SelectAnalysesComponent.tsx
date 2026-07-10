@@ -4,12 +4,12 @@ import {
 } from 'pages/MetaAnalysis/components/CreateMetaAnalysisSpecificationDialogBase.types';
 import { EPropertyType } from 'components/EditMetadata/EditMetadata.types';
 
-const SelectAnalysesComponent: React.FC<{
+const SelectAnalysesComponent = (props: {
     annotationId: string;
     selectedValue: IAnalysesSelection;
     onSelectValue: (value: IAnalysesSelection) => void;
     algorithm: IAlgorithmSelection;
-}> = (props) => {
+}) => {
     return (
         <div data-testid="select-analyses-component">
             <h6>SelectAnalysesComponent</h6>

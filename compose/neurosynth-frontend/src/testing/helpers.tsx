@@ -2,7 +2,7 @@ import { grey } from '@mui/material/colors';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import React from 'react';
 
-export const MockThemeProvider: React.FC = (props) => {
+export const MockThemeProvider = (props: { children?: React.ReactNode }) => {
     const mockTheme = createTheme({
         palette: {
             primary: {

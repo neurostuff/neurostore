@@ -13,7 +13,7 @@ import DisplayLink from 'components/DisplayStudyLink/DisplayLink';
 import { PUBMED_ARTICLE_URL_PREFIX, PUBMED_CENTRAL_ARTICLE_URL_PREFIX } from 'hooks/external/useFetchPubMedIds.types';
 import DisplayStudyLinkFullText from 'components/DisplayStudyLink/DisplayStudyLinkFullText';
 
-const Study: React.FC<Optional<IStoreStudy, 'metadata'>> = (props) => {
+const Study = (props: Optional<IStoreStudy, 'metadata'>) => {
     const { id, name, description, doi, pmid, authors, publication: journal, metadata, pmcid, analyses = [] } = props;
     return (
         <Box>

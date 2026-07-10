@@ -129,7 +129,7 @@ const useCreateAlgorithmSpecification = () => {
         }
     };
 
-    const isLoading =
+    const isPending =
         createSpecificationMutation.isPending ||
         createSynthStudysetMutation.isPending ||
         createSynthAnnotationMutation.isPending ||
@@ -149,7 +149,7 @@ const useCreateAlgorithmSpecification = () => {
 
     return {
         error,
-        isLoading,
+        isPending,
         isError,
         createMetaAnalysis,
     };

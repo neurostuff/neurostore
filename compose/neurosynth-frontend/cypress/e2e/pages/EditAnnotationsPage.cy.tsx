@@ -24,9 +24,8 @@ describe(PAGE_NAME, () => {
 
         cy.fixture('projects/project').then((project: ProjectReturn) => {
             (project as ProjectReturn).id = 'abc123';
-            const prov = (project as Record<string, unknown>).provenance as Record<string, unknown> | undefined;
-            const curation = prov?.curationMetadata as Record<string, unknown> | undefined;
-            const extraction = curation?.extractionMetadata as Record<string, unknown> | undefined;
+            const provenance = (project as Record<string, unknown>).provenance as Record<string, unknown> | undefined;
+            const extraction = provenance?.extractionMetadata as Record<string, unknown> | undefined;
             if (extraction) extraction.annotationId = ANNOTATION_ID;
             cy.intercept('GET', '**/api/projects/*', project).as('projectFixture');
         });
@@ -37,7 +36,7 @@ describe(PAGE_NAME, () => {
         });
         cy.intercept('PUT', '**/api/projects/*', { fixture: 'projects/projectPut' }).as('updateProjectFixture');
 
-        cy.login('mocked').visit(PATH);
+        cy.login('mocked');
     });
 
     it('should load', () => {
@@ -152,7 +151,6 @@ describe(PAGE_NAME, () => {
         });
 
         it('shows annotation in read-only mode only', () => {
-            cy.wait('@projectFixture').wait('@annotationFixture');
             cy.contains('Annotation for studyset').should('be.visible');
             cy.get('input[placeholder="New Annotation Key"]').should('not.exist');
             cy.contains('button', 'save').should('not.be.visible');

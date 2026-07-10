@@ -8,7 +8,7 @@ import { useCreateAnnotationNote } from 'stores/AnnotationStore.actions';
 import EditStudyAnalysesList from './EditStudyAnalysesList';
 import EditStudyAnalysis from './EditStudyAnalysis';
 
-const EditStudyAnalyses: React.FC = React.memo(() => {
+const EditStudyAnalyses = React.memo(() => {
     const analyses = useStudyAnalyses();
     const studyId = useStudyId();
     const addOrUpdateAnalysis = useAddOrUpdateAnalysis();

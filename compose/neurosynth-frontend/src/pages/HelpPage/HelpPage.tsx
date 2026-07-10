@@ -4,7 +4,7 @@ import EmailIcon from '@mui/icons-material/Email';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { usePrerenderReady, usePageMetadata } from '../../../seo/hooks';
 
-const HelpPage: React.FC = () => {
+const HelpPage = () => {
     usePrerenderReady(true);
     usePageMetadata({
         title: 'Help & Support | Neurosynth Compose',

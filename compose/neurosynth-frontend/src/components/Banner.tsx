@@ -41,7 +41,7 @@ const useGetBannerConfig = () => {
     });
 };
 
-const Banner: React.FC = () => {
+const Banner = () => {
     const { data } = useGetBannerConfig();
 
     const [dismissedBanners, setDismissedBanners] = useState<Set<string>>(() => {

@@ -13,7 +13,7 @@ import DynamicFormSelectInput from './DynamicFormSelectInput';
 import DynamicFormStringInput from './DynamicFormStringInput';
 import metaAnalysisSpec from 'assets/config/meta_analysis_params.json';
 import { EAnalysisType } from 'hooks/metaAnalyses/useCreateAlgorithmSpecification';
-import { useState } from 'react';
+import { useState, type ComponentType } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import DynamicFormStyles from './DynamicFormStyles';
 import useStudiesWithMissingSampleSizeALE from '../hooks/useALEMissingSampleSize';
@@ -22,7 +22,7 @@ import { useProjectId } from 'pages/Project/store/ProjectStore';
 const metaAnalysisSpecification: IMetaAnalysisParamsSpecification = metaAnalysisSpec;
 export const isALE = (correctorOrEstimatorLabel: string) => correctorOrEstimatorLabel === 'ALE';
 
-const getDynamicFormInputComponentByParameter = (parameter: IParameter): React.FC<IDynamicFormInput> => {
+const getDynamicFormInputComponentByParameter = (parameter: IParameter): ComponentType<IDynamicFormInput> => {
     switch (parameter.type) {
         case 'str':
             return DynamicFormStringInput;
@@ -45,7 +45,7 @@ interface IDynamicForm {
     onUpdate: (arg: IDynamicValueType) => void;
 }
 
-const MetaAnalysisDynamicForm: React.FC<IDynamicForm> = (props) => {
+const MetaAnalysisDynamicForm = (props: IDynamicForm) => {
     const [isUsingSampleSize, setIsUsingSampleSize] = useState(false);
     const studiesMissingSampleSize = useStudiesWithMissingSampleSizeALE(props.correctorOrEstimatorLabel);
     const projectId = useProjectId();

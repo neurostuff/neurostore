@@ -11,7 +11,7 @@ export interface INeurosynthPopupMenu {
     }[];
 }
 
-const NeurosynthPopupMenu: React.FC<INeurosynthPopupMenu & ButtonProps> = (props) => {
+const NeurosynthPopupMenu = (props: INeurosynthPopupMenu & ButtonProps) => {
     const { buttonLabel, options, anchorEl: anchorElFromProps = null, ...buttonProps } = props;
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(anchorElFromProps);
     const open = Boolean(anchorEl);

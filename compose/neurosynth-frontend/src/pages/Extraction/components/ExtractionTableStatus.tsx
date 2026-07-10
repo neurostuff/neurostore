@@ -8,8 +8,8 @@ import { EExtractionStatus } from '../ExtractionPage';
 import { IExtractionTableStudy } from './ExtractionTable';
 import { useUserCanEdit } from 'hooks';
 
-export const ExtractionTableStatusCell: React.FC<CellContext<IExtractionTableStudy, EExtractionStatus | undefined>> = (
-    props
+export const ExtractionTableStatusCell = (
+    props: CellContext<IExtractionTableStudy, EExtractionStatus | undefined>
 ) => {
     const projectUser = useProjectUser();
     const userCanEdit = useUserCanEdit(projectUser ?? undefined);
@@ -69,10 +69,8 @@ export const ExtractionTableStatusCell: React.FC<CellContext<IExtractionTableStu
     );
 };
 
-export const ExtractionTableStatusHeader: React.FC<HeaderContext<IExtractionTableStudy, unknown>> = ({
-    table,
-    column,
-}) => {
+export const ExtractionTableStatusHeader = (props: HeaderContext<IExtractionTableStudy, unknown>) => {
+    const { column, table } = props;
     const columnLabel = column.columnDef.meta?.columnLabel || '';
     const isSorted = column.getIsSorted();
     return (
