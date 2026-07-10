@@ -1,4 +1,4 @@
-const mockDynamicFormSelectInput: React.FC = (props) => {
+const mockDynamicFormSelectInput = (props: unknown) => {
     return <div data-testid="dynamic-form-input">select</div>;
 };
 

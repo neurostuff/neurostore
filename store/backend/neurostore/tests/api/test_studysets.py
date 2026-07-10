@@ -1,6 +1,10 @@
 import random
+import re
 import string
-from neurostore.models import Studyset, Study
+
+from sqlalchemy import event
+
+from neurostore.models import Analysis, Point, Study, Studyset, StudysetStudy, User
 
 
 def test_post_and_get_studysets(auth_client, ingest_neurosynth, session):
@@ -99,6 +103,87 @@ def test_get_nested_nonnested_studysets(auth_client, ingest_neurosynth, session)
     assert isinstance(nested.json()["studies"][0], dict)
 
 
+def test_get_nested_studyset_includes_analysis_points(auth_client, session):
+    user = User.query.first()
+    study = Study(name="nested study", level="group", public=True, user=user)
+    studyset = Studyset(name="nested studyset", public=True, user=user)
+    session.add_all([study, studyset])
+    session.flush()
+
+    session.add(
+        StudysetStudy(
+            study_id=study.id,
+            studyset_id=studyset.id,
+            curation_stub_uuid="nested-stub",
+        )
+    )
+
+    analysis = Analysis(study_id=study.id, name="analysis-1", user=user, weights=[])
+    session.add(analysis)
+    session.flush()
+
+    point = Point(
+        analysis_id=analysis.id,
+        x=1.0,
+        y=2.0,
+        z=3.0,
+        space="MNI",
+        kind="peak",
+        user=user,
+    )
+    session.add(point)
+    session.commit()
+
+    nested = auth_client.get(f"/api/studysets/{studyset.id}?nested=true")
+
+    assert nested.status_code == 200
+    payload = nested.json()
+    assert payload["studyset_studies"] == [
+        {"id": study.id, "curation_stub_uuid": "nested-stub"}
+    ]
+    assert payload["studies"][0]["id"] == study.id
+    assert payload["studies"][0]["analyses"][0]["id"] == analysis.id
+    assert payload["studies"][0]["analyses"][0]["points"][0]["coordinates"] == [
+        1.0,
+        2.0,
+        3.0,
+    ]
+
+
+def test_get_summary_studyset(auth_client, ingest_neurosynth, session):
+    studyset_id = Studyset.query.first().id
+    summary = auth_client.get(f"/api/studysets/{studyset_id}?summary=true")
+    assert summary.status_code == 200
+    payload = summary.json()
+
+    assert isinstance(payload.get("studies"), list)
+    assert isinstance(payload.get("studyset_studies"), list)
+    summary_study_ids = {s["id"] for s in payload["studyset_studies"] if s.get("id")}
+    study_payload_ids = {s["id"] for s in payload["studies"] if s.get("id")}
+    assert summary_study_ids == study_payload_ids
+
+    if payload["studies"]:
+        study = payload["studies"][0]
+        for field in ["id", "name", "authors", "publication", "pmid", "doi", "year"]:
+            assert field in study
+        assert isinstance(study.get("analyses"), list)
+
+        if study["analyses"]:
+            analysis = study["analyses"][0]
+            assert "id" in analysis
+            assert isinstance(analysis.get("point_count"), int)
+            assert "metadata" not in analysis
+            assert "points" not in analysis
+            assert "images" not in analysis
+
+
+def test_summary_and_nested_are_incompatible(auth_client, ingest_neurosynth, session):
+    studyset_id = Studyset.query.first().id
+    resp = auth_client.get(f"/api/studysets/{studyset_id}?nested=true&summary=true")
+    assert resp.status_code == 400
+    assert "incompatible" in (resp.json().get("detail") or "").lower()
+
+
 def test_hot_swap_study_in_studyset(auth_client, ingest_neurosynth, session):
     # create studyset
     create_ss = auth_client.post("/api/studysets/", data={"name": "test"})
@@ -164,7 +249,7 @@ def _create_studyset_with_annotation(auth_client, study_ids, name="clone-source"
 
     annotation_payload = {
         "studyset": studyset_id,
-        "note_keys": {"include": "boolean"},
+        "note_keys": {"include": {"type": "boolean", "order": 0}},
         "name": "annotation for clone",
     }
     annotation_resp = auth_client.post("/api/annotations/", data=annotation_payload)
@@ -249,3 +334,313 @@ def test_clone_studyset_without_annotations_when_disabled(
     )
     assert cloned_annotations.status_code == 200
     assert cloned_annotations.json()["results"] == []
+
+
+def test_studyset_studies_capture_curation_stub_uuid(
+    auth_client, ingest_neurosynth, session
+):
+    payload = auth_client.get("/api/studies/?page_size=2").json()
+    study_ids = [study["id"] for study in payload["results"]]
+    stub_uuid = "123e4567-e89b-12d3-a456-426614174000"
+
+    create_resp = auth_client.post(
+        "/api/studysets/",
+        data={
+            "name": "stubbed",
+            "studies": [
+                {"id": study_ids[0], "curation_stub_uuid": stub_uuid},
+                study_ids[1],
+            ],
+        },
+    )
+    assert create_resp.status_code == 200
+    studyset_id = create_resp.json()["id"]
+
+    assoc = (
+        session.query(StudysetStudy)
+        .filter_by(studyset_id=studyset_id, study_id=study_ids[0])
+        .one()
+    )
+    assert assoc.curation_stub_uuid == stub_uuid
+
+    # If the caller omits the stub on update, we preserve the existing mapping
+    update_resp = auth_client.put(
+        f"/api/studysets/{studyset_id}",
+        data={"studies": [study_ids[0], study_ids[1]]},
+    )
+    assert update_resp.status_code == 200
+    assoc_after = (
+        session.query(StudysetStudy)
+        .filter_by(studyset_id=studyset_id, study_id=study_ids[0])
+        .one()
+    )
+    assert assoc_after.curation_stub_uuid == stub_uuid
+
+
+def test_non_nested_studyset_includes_studyset_studies(auth_client, ingest_neurosynth):
+    payload = auth_client.get("/api/studies/?page_size=2").json()
+    study_ids = [study["id"] for study in payload["results"]]
+    stub_uuid = "123e4567-e89b-12d3-a456-426614174999"
+    stub_uuid_2 = "123e4567-e89b-12d3-a456-426614174998"
+
+    create_resp = auth_client.post(
+        "/api/studysets/",
+        data={
+            "name": "stubbed-non-nested",
+            "studies": [
+                {"id": study_ids[0], "curation_stub_uuid": stub_uuid},
+            ],
+        },
+    )
+    assert create_resp.status_code == 200
+    studyset_id = create_resp.json()["id"]
+
+    get_resp = auth_client.get(f"/api/studysets/{studyset_id}?nested=false")
+    assert get_resp.status_code == 200
+    data = get_resp.json()
+    assert "studyset_studies" in data
+    assert any(
+        assoc.get("id") == study_ids[0] and assoc.get("curation_stub_uuid") == stub_uuid
+        for assoc in data.get("studyset_studies") or []
+    )
+
+    # Nested=True should also include studyset_studies
+    nested_resp = auth_client.get(f"/api/studysets/{studyset_id}?nested=true")
+    assert nested_resp.status_code == 200
+    nested_data = nested_resp.json()
+    assert "studyset_studies" in nested_data
+    assert any(
+        assoc.get("id") == study_ids[0] and assoc.get("curation_stub_uuid") == stub_uuid
+        for assoc in nested_data.get("studyset_studies") or []
+    )
+
+    # Update the studyset with a second study + stub and ensure the mapping persists and updates.
+    update_resp = auth_client.put(
+        f"/api/studysets/{studyset_id}",
+        data={
+            "studies": [
+                {"id": study_ids[0], "curation_stub_uuid": stub_uuid},
+                {"id": study_ids[1], "curation_stub_uuid": stub_uuid_2},
+            ],
+        },
+    )
+    assert update_resp.status_code == 200
+    update_data = update_resp.json()
+    assert any(
+        assoc.get("id") == study_ids[1]
+        and assoc.get("curation_stub_uuid") == stub_uuid_2
+        for assoc in update_data.get("studyset_studies") or []
+    )
+
+    # Final GET should reflect both mappings in a non-nested response.
+    final_resp = auth_client.get(f"/api/studysets/{studyset_id}?nested=false")
+    assert final_resp.status_code == 200
+    final_data = final_resp.json()
+    assert any(
+        assoc.get("id") == study_ids[0] and assoc.get("curation_stub_uuid") == stub_uuid
+        for assoc in final_data.get("studyset_studies") or []
+    )
+    assert any(
+        assoc.get("id") == study_ids[1]
+        and assoc.get("curation_stub_uuid") == stub_uuid_2
+        for assoc in final_data.get("studyset_studies") or []
+    )
+
+
+def test_studyset_studies_survive_multiple_updates(auth_client, ingest_neurosynth):
+    """
+    Emulate the curation -> extraction sync sequence where the studyset is updated
+    multiple times. Ensure associations are returned after successive PUTs.
+    """
+    payload = auth_client.get("/api/studies/?page_size=3").json()
+    study_ids = [study["id"] for study in payload["results"]]
+    stub_a = "aaaaaaaa-0000-0000-0000-aaaaaaaa0000"
+    stub_b = "bbbbbbbb-1111-1111-1111-bbbbbbbb1111"
+
+    # Initial create with one study
+    create_resp = auth_client.post(
+        "/api/studysets/",
+        data={
+            "name": "multi-update",
+            "studies": [{"id": study_ids[0], "curation_stub_uuid": stub_a}],
+        },
+    )
+    assert create_resp.status_code == 200
+    studyset_id = create_resp.json()["id"]
+
+    # First update: swap to a different study with a new stub
+    update_resp_1 = auth_client.put(
+        f"/api/studysets/{studyset_id}",
+        data={
+            "studies": [{"id": study_ids[1], "curation_stub_uuid": stub_b}],
+        },
+    )
+    assert update_resp_1.status_code == 200
+    data_1 = update_resp_1.json()
+    assert data_1.get("studyset_studies")
+    assert any(
+        assoc.get("id") == study_ids[1] and assoc.get("curation_stub_uuid") == stub_b
+        for assoc in data_1.get("studyset_studies") or []
+    )
+
+    # Second update: include both studies with their respective stubs
+    update_resp_2 = auth_client.put(
+        f"/api/studysets/{studyset_id}",
+        data={
+            "studies": [
+                {"id": study_ids[0], "curation_stub_uuid": stub_a},
+                {"id": study_ids[1], "curation_stub_uuid": stub_b},
+            ],
+        },
+    )
+    assert update_resp_2.status_code == 200
+    data_2 = update_resp_2.json()
+    assert any(
+        assoc.get("id") == study_ids[0] and assoc.get("curation_stub_uuid") == stub_a
+        for assoc in data_2.get("studyset_studies") or []
+    )
+    assert any(
+        assoc.get("id") == study_ids[1] and assoc.get("curation_stub_uuid") == stub_b
+        for assoc in data_2.get("studyset_studies") or []
+    )
+
+    # Final non-nested GET should reflect both associations, not an empty array.
+    final_resp = auth_client.get(f"/api/studysets/{studyset_id}?nested=false")
+    assert final_resp.status_code == 200
+    final = final_resp.json()
+    assert final.get("studyset_studies")
+    assert set(s.get("id") for s in final.get("studyset_studies")) == {
+        study_ids[0],
+        study_ids[1],
+    }
+
+
+def test_stub_mapping_updates_when_switching_versions(
+    auth_client, ingest_neurosynth, session
+):
+    """
+    If a stub is re-linked to a different study version,
+    the mapping should move to the new study_id.
+    """
+    payload = auth_client.get("/api/studies/?page_size=3").json()
+    study_ids = [study["id"] for study in payload["results"]]
+    stub_uuid = "aaaaaaaa-1111-2222-3333-aaaaaaaa1111"
+
+    # Initial create with study_ids[0] mapped to stub_uuid
+    create_resp = auth_client.post(
+        "/api/studysets/",
+        data={
+            "name": "switch-version",
+            "studies": [{"id": study_ids[0], "curation_stub_uuid": stub_uuid}],
+        },
+    )
+    assert create_resp.status_code == 200
+    studyset_id = create_resp.json()["id"]
+
+    # Update to point the same stub to a different study_id (study_ids[1])
+    update_resp = auth_client.put(
+        f"/api/studysets/{studyset_id}",
+        data={
+            "studies": [{"id": study_ids[1], "curation_stub_uuid": stub_uuid}],
+        },
+    )
+    assert update_resp.status_code == 200
+    data = update_resp.json()
+
+    # Ensure the mapping moved to the new study id and the old association was removed.
+    assert any(
+        assoc.get("id") == study_ids[1] and assoc.get("curation_stub_uuid") == stub_uuid
+        for assoc in data.get("studyset_studies") or []
+    )
+    assert not any(
+        assoc.get("id") == study_ids[0] and assoc.get("curation_stub_uuid") == stub_uuid
+        for assoc in data.get("studyset_studies") or []
+    )
+
+
+def test_studyset_put_studies_only_avoids_point_value_loading(
+    auth_client, ingest_neurosynth_enormous, session
+):
+    studyset = Studyset.query.first()
+    user = User.query.filter_by(external_id=auth_client.username).first()
+    studyset.user = user
+    session.commit()
+    study_ids = [
+        sid
+        for (sid,) in session.query(StudysetStudy.study_id)
+        .filter_by(studyset_id=studyset.id)
+        .all()
+    ]
+    assert len(study_ids) >= 2
+
+    swapped = study_ids[:-1]
+    replacement = auth_client.post(
+        "/api/studies/",
+        data={"name": "replacement study for fast-path test"},
+    )
+    assert replacement.status_code == 200
+    swapped.append(replacement.json()["id"])
+
+    statements = []
+
+    def _capture_sql(conn, cursor, statement, parameters, context, executemany):
+        statements.append(" ".join(statement.lower().split()))
+
+    event.listen(session.bind, "before_cursor_execute", _capture_sql)
+    try:
+        resp = auth_client.put(
+            f"/api/studysets/{studyset.id}", data={"studies": swapped}
+        )
+    finally:
+        event.remove(session.bind, "before_cursor_execute", _capture_sql)
+
+    assert resp.status_code == 200
+    point_value_queries = [stmt for stmt in statements if "from point_values" in stmt]
+    assert len(point_value_queries) < 10
+
+
+def test_studyset_put_studies_only_uses_deterministic_insert_order(
+    auth_client, ingest_neurosynth, session
+):
+    ordered_ids = [
+        sid for (sid,) in session.query(Study.id).order_by(Study.id).limit(3).all()
+    ]
+    assert len(ordered_ids) == 3
+
+    payload_order = [ordered_ids[2], ordered_ids[0], ordered_ids[1]]
+    created = auth_client.post(
+        "/api/studysets/", data={"name": "deterministic-insert-order"}
+    )
+    assert created.status_code == 200
+
+    insert_orders = []
+    study_id_key = re.compile(r"study_id__(\d+)$")
+
+    def _capture_insert_order(
+        conn, cursor, statement, parameters, context, executemany
+    ):
+        normalized_statement = " ".join(statement.lower().split())
+        if "insert into studyset_studies" not in normalized_statement:
+            return
+
+        if isinstance(parameters, dict):
+            indexed_values = []
+            for key, value in parameters.items():
+                match = study_id_key.match(key)
+                if match:
+                    indexed_values.append((int(match.group(1)), value))
+            if indexed_values:
+                insert_orders.append([value for _, value in sorted(indexed_values)])
+
+    event.listen(session.bind, "before_cursor_execute", _capture_insert_order)
+    try:
+        update_resp = auth_client.put(
+            f"/api/studysets/{created.json()['id']}",
+            data={"studies": payload_order},
+        )
+    finally:
+        event.remove(session.bind, "before_cursor_execute", _capture_insert_order)
+
+    assert update_resp.status_code == 200
+    assert insert_orders
+    assert max(insert_orders, key=len) == sorted(payload_order)

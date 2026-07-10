@@ -14,11 +14,15 @@ export const hotSettings: HotTableProps = {
     licenseKey: 'non-commercial-and-evaluation',
     contextMenu: false,
     viewportRowRenderingOffset: 4,
-    viewportColumnRenderingOffset: 4, // we do not want column virtualization as it screws up the spreadsheet
+    viewportColumnRenderingOffset: 4,
     width: '100%',
     fixedColumnsStart: 2,
     wordWrap: true,
     autoRowSize: false,
+    // rowHeaderWidth: 0 is used to prevent the row headers from being offset in the manualColumnMove calculations.
+    // HOWEVER why not just remove afterGetRowHeaderRenderers? We need to apply the styling (technically it's a noop now)
+    // in order to force handsontable to recalculte the row heights. If we remove it, the heights become slightly off.
+    rowHeaderWidth: 0,
     afterGetRowHeaderRenderers: (headerRenderers) => {
         headerRenderers.push((row, TH) => {
             TH.className = styles['no-top-bottom-borders'];
@@ -37,11 +41,11 @@ export const convertRemToPx = (rem: number) => {
 
 export const hotDataToAnnotationNotes = (
     hotData: AnnotationNoteValue[][],
-    mapping: Map<number, { studyId: string; analysisId: string }>,
+    mapping: Map<number, { studyId: string; analysisId: string; isEdited: boolean }>,
     noteKeys: NoteKeyType[]
 ): NoteCollectionReturn[] => {
     const noteCollections: NoteCollectionReturn[] = hotData.map((row, index) => {
-        const mappedStudyAnalysis = mapping.get(index) as { studyId: string; analysisId: string };
+        const mappedStudyAnalysis = mapping.get(index) as { studyId: string; analysisId: string; isEdited: boolean };
 
         const updatedNote: { [key: string]: AnnotationNoteValue } = {};
         for (let i = 0; i < noteKeys.length; i++) {
@@ -65,10 +69,10 @@ export const annotationNotesToHotData = (
     getColNamesFromAnnotationNote: (note: NoteCollectionReturn) => [string, string]
 ): {
     hotData: AnnotationNoteValue[][];
-    hotDataToStudyMapping: Map<number, { studyId: string; analysisId: string }>;
+    hotDataToStudyMapping: Map<number, { studyId: string; analysisId: string; isEdited: boolean }>;
 } => {
     const hotData = new Array<AnnotationNoteValue[]>();
-    const hotDataToAnnotationMapping = new Map<number, { studyId: string; analysisId: string }>();
+    const hotDataToAnnotationMapping = new Map<number, { studyId: string; analysisId: string; isEdited: boolean }>();
 
     if (!annotationNotes) {
         return {
@@ -109,6 +113,7 @@ export const annotationNotesToHotData = (
             hotDataToAnnotationMapping.set(index, {
                 studyId: annotationNote.study as string,
                 analysisId: annotationNote.analysis as string,
+                isEdited: false,
             });
             hotData.push(row);
         });
@@ -119,11 +124,7 @@ export const annotationNotesToHotData = (
     };
 };
 
-export const createColumnHeader = (
-    colKey: string,
-    colType: EPropertyType,
-    allowRemoveColumn: boolean
-) => {
+export const createColumnHeader = (colKey: string, colType: EPropertyType, allowRemoveColumn: boolean) => {
     const allowRemove = allowRemoveColumn
         ? `<div style="width: 50px; display: flex; align-items: center; justify-content: center">
         ${renderToString(
@@ -141,7 +142,7 @@ export const createColumnHeader = (
 
     return (
         `<div title="${colKey}" style="display: flex; align-items: center; justify-content: center;">` +
-        `<div class="${styles[colType]} ${styles.truncate}" style="width: 150px">${colKey}</div>` +
+        `<div class="${styles[colType]} ${styles.truncate}" style="width: 100px">${colKey}</div>` +
         allowRemove +
         `</div>`
     );
@@ -168,17 +169,15 @@ export const createColumns = (noteKeys: NoteKeyType[], disable?: boolean) =>
                     x.type === EPropertyType.NUMBER
                         ? numericValidator
                         : x.type === EPropertyType.BOOLEAN
-                        ? booleanValidator
-                        : undefined,
+                          ? booleanValidator
+                          : undefined,
             } as ColumnSettings;
         }),
     ] as ColumnSettings[];
 
 // we can assume that the hashmap maintains order and is sorted by key
 // this function gets all merge cells and only merge cells. If a cell does not need to be merged, a mergeCellObj is not creatd
-export const getMergeCells = (
-    hotDataToStudyMapping: Map<number, { studyId: string; analysisId: string }>
-) => {
+export const getMergeCells = (hotDataToStudyMapping: Map<number, { studyId: string; analysisId: string }>) => {
     const mergeCells: MergeCellsSettings[] = [];
 
     let studyId: string;
@@ -239,7 +238,7 @@ export const getRowHeights = (
     const rowHeights: number[] = [];
     let currIndex = 0;
 
-    mergeCells.forEach(({ row, col, rowspan, colspan }) => {
+    mergeCells.forEach(({ row, rowspan }) => {
         while (currIndex < row) {
             // sometimes the merge cells skip a few rows as they do not need to be merged.
             // we therefore need to account for that by calculting those row heights (which have rowspan = 1)

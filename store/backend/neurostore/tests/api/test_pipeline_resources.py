@@ -1,11 +1,12 @@
 import pytest
-from neurostore.models.data import (
-    PipelineStudyResult,
-    PipelineConfig,
-    Pipeline,
-    BaseStudy,
-)
+
 from neurostore.database import db
+from neurostore.models.data import (
+    BaseStudy,
+    Pipeline,
+    PipelineConfig,
+    PipelineStudyResult,
+)
 
 
 @pytest.fixture
@@ -443,7 +444,7 @@ def test_config_pipeline_study_results(
     if expected_count > 0:
         # Get the config from the database using config_id
         config_id = data["results"][0]["config_id"]
-        pipeline_config = PipelineConfig.query.get(config_id)
+        pipeline_config = db.session.get(PipelineConfig, config_id)
         assert pipeline_config is not None
 
         # Check the value using the config from database
@@ -473,7 +474,7 @@ def test_combined_filters(auth_client, result1, result2, result3):
     result = data["results"][0]
     assert result["result_data"]["string_field"] == "test value"
     # Validate against database config
-    pipeline_config = PipelineConfig.query.get(result["config_id"])
+    pipeline_config = db.session.get(PipelineConfig, result["config_id"])
     assert pipeline_config is not None
     assert pipeline_config.config_args["extraction_model"] == "gpt-4"
 

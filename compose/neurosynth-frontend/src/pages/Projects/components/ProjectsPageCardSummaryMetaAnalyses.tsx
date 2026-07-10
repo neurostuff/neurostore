@@ -4,17 +4,13 @@ import { useGetMetaAnalysesByIds } from 'hooks';
 import React from 'react';
 import ProjectsPageCardSummaryMetaAnalysesListItem from 'pages/Projects/components/ProjectsPageCardSummaryMetaAnalysesListItem';
 
-const ProjectsPageCardSummaryMetaAnalyses: React.FC<{
+const ProjectsPageCardSummaryMetaAnalyses = (props: {
     metaAnalysisIds: string[];
     projectId: string;
-}> = (props) => {
+}) => {
     const { metaAnalysisIds } = props;
 
-    const {
-        data: metaAnalyses,
-        isLoading,
-        isError,
-    } = useGetMetaAnalysesByIds(metaAnalysisIds as string[]);
+    const { data: metaAnalyses, isLoading, isError } = useGetMetaAnalysesByIds(metaAnalysisIds as string[]);
     return (
         <StateHandlerComponent isLoading={isLoading} isError={isError}>
             <Typography sx={{ marginBottom: '0.5rem' }} fontWeight="bold">

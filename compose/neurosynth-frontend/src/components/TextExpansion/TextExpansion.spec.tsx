@@ -4,28 +4,14 @@ import TextExpansion from './TextExpansion';
 
 describe('TextExpansion Component', () => {
     // save original scrollwidth
-    const originalScrollWidth = Object.getOwnPropertyDescriptor(
-        HTMLElement.prototype,
-        'offsetWidth'
-    );
+    const originalScrollWidth = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetWidth');
 
     // save original offsetWidth
-    const originalOffsetWidth = Object.getOwnPropertyDescriptor(
-        HTMLElement.prototype,
-        'offsetWidth'
-    );
+    const originalOffsetWidth = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetWidth');
 
     afterAll(() => {
-        Object.defineProperty(
-            HTMLElement.prototype,
-            'scrollwidth',
-            originalScrollWidth as PropertyDescriptor
-        );
-        Object.defineProperty(
-            HTMLElement.prototype,
-            'offsetWidth',
-            originalOffsetWidth as PropertyDescriptor
-        );
+        Object.defineProperty(HTMLElement.prototype, 'scrollwidth', originalScrollWidth as PropertyDescriptor);
+        Object.defineProperty(HTMLElement.prototype, 'offsetWidth', originalOffsetWidth as PropertyDescriptor);
 
         vi.clearAllMocks();
     });

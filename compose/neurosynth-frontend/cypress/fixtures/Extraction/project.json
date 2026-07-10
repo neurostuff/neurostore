@@ -125,6 +125,10 @@
                 {
                     "id": "neurosynth_psycinfo_id_source",
                     "label": "PsycInfo"
+                },
+                {
+                    "id": "neurosynth_reference_manager_id_source",
+                    "label": "Reference Manager"
                 }
             ],
             "infoTags": [
@@ -168,9 +172,7 @@
         },
         "extractionMetadata": {
             "annotationId": "5LSBDTGqA6RF",
-            "studyStatusList": [
-                { "id": "3zutS8kyg2sy", "status": "completed" }
-            ],
+            "studyStatusList": [{ "id": "3zutS8kyg2sy", "status": "completed" }],
             "studysetId": "73HRs8HaJbR8"
         },
         "metaAnalysisMetadata": {

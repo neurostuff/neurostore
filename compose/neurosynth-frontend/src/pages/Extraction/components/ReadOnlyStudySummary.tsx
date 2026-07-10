@@ -5,19 +5,16 @@ import CheckIcon from '@mui/icons-material/Check';
 import BookmarkIcon from '@mui/icons-material/Bookmark';
 import { useNavigate, useParams } from 'react-router-dom';
 import { EExtractionStatus } from 'pages/Extraction/ExtractionPage';
-import {
-    useProjectExtractionAddOrUpdateStudyListStatus,
-    useProjectUser,
-} from 'pages/Project/store/ProjectStore';
+import { useProjectExtractionAddOrUpdateStudyListStatus, useProjectUser } from 'pages/Project/store/ProjectStore';
 import useUserCanEdit from 'hooks/useUserCanEdit';
 
-const ReadOnlyStudySummaryVirtualizedItem: React.FC<
+const ReadOnlyStudySummaryVirtualizedItem = (props: 
     StudyReturn & {
         currentStatus: EExtractionStatus;
         canEdit: boolean;
         style: React.CSSProperties;
     }
-> = (props) => {
+) => {
     const { projectId } = useParams<{ projectId: string }>();
     const navigate = useNavigate();
     const addOrUpdateStudyListStatus = useProjectExtractionAddOrUpdateStudyListStatus();
@@ -43,14 +40,10 @@ const ReadOnlyStudySummaryVirtualizedItem: React.FC<
         props.currentStatus === EExtractionStatus.SAVEDFORLATER;
 
     const showMarkAsSaveForLaterButton =
-        props.currentStatus === EExtractionStatus.UNCATEGORIZED ||
-        props.currentStatus === EExtractionStatus.COMPLETED;
+        props.currentStatus === EExtractionStatus.UNCATEGORIZED || props.currentStatus === EExtractionStatus.COMPLETED;
 
     return (
-        <Box
-            style={props.style}
-            sx={{ ':hover': { filter: 'brightness(0.9)', cursor: 'pointer' } }}
-        >
+        <Box style={props.style} sx={{ ':hover': { filter: 'brightness(0.9)', cursor: 'pointer' } }}>
             <Box onClick={handleClick} sx={{ ...StudyListItemStyles.listItem }}>
                 <Box sx={{ width: 'calc(100% - 70px)' }}>
                     <Typography noWrap sx={{ fontWeight: 'bold' }}>
@@ -82,10 +75,7 @@ const ReadOnlyStudySummaryVirtualizedItem: React.FC<
                                         onClick={(e) => {
                                             e.preventDefault();
                                             e.stopPropagation();
-                                            handleUpdateStatus(
-                                                props.id || '',
-                                                EExtractionStatus.COMPLETED
-                                            );
+                                            handleUpdateStatus(props.id || '', EExtractionStatus.COMPLETED);
                                         }}
                                     >
                                         <CheckIcon color="success" />
@@ -101,10 +91,7 @@ const ReadOnlyStudySummaryVirtualizedItem: React.FC<
                                         onClick={(e) => {
                                             e.preventDefault();
                                             e.stopPropagation();
-                                            handleUpdateStatus(
-                                                props.id || '',
-                                                EExtractionStatus.SAVEDFORLATER
-                                            );
+                                            handleUpdateStatus(props.id || '', EExtractionStatus.SAVEDFORLATER);
                                         }}
                                     >
                                         <BookmarkIcon color="info" />

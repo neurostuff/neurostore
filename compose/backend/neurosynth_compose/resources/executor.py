@@ -1,6 +1,6 @@
 from importlib import import_module
 
-from nimare.nimads import Studyset, Annotation
+from nimare.nimads import Annotation, Studyset
 
 
 def load_specification(spec):

@@ -12,11 +12,7 @@ describe('NavigationButtons Component', () => {
 
     it('should disable the previous button', () => {
         render(
-            <NavigationButtons
-                prevButtonText="previous"
-                prevButtonDisabled={true}
-                onButtonClick={mockOnButtonClick}
-            />
+            <NavigationButtons prevButtonText="previous" prevButtonDisabled={true} onButtonClick={mockOnButtonClick} />
         );
         const previousButton = screen.getByText('previous');
         expect(previousButton).toBeDisabled();
@@ -24,35 +20,21 @@ describe('NavigationButtons Component', () => {
 
     it('should not disable the previous button', () => {
         render(
-            <NavigationButtons
-                prevButtonText="previous"
-                prevButtonDisabled={false}
-                onButtonClick={mockOnButtonClick}
-            />
+            <NavigationButtons prevButtonText="previous" prevButtonDisabled={false} onButtonClick={mockOnButtonClick} />
         );
         const previousButton = screen.getByText('previous');
         expect(previousButton).not.toBeDisabled();
     });
 
     it('should disable the next button', () => {
-        render(
-            <NavigationButtons
-                nextButtonDisabled={true}
-                nextButtonText="next"
-                onButtonClick={mockOnButtonClick}
-            />
-        );
+        render(<NavigationButtons nextButtonDisabled={true} nextButtonText="next" onButtonClick={mockOnButtonClick} />);
         const previousButton = screen.getByText('next');
         expect(previousButton).toBeDisabled();
     });
 
     it('should not disable the next button', () => {
         render(
-            <NavigationButtons
-                nextButtonDisabled={false}
-                nextButtonText="next"
-                onButtonClick={mockOnButtonClick}
-            />
+            <NavigationButtons nextButtonDisabled={false} nextButtonText="next" onButtonClick={mockOnButtonClick} />
         );
         const previousButton = screen.getByText('next');
         expect(previousButton).not.toBeDisabled();
@@ -97,11 +79,7 @@ describe('NavigationButtons Component', () => {
 
         it('should be text', () => {
             render(
-                <NavigationButtons
-                    prevButtonText="previous"
-                    prevButtonStyle="text"
-                    onButtonClick={mockOnButtonClick}
-                />
+                <NavigationButtons prevButtonText="previous" prevButtonStyle="text" onButtonClick={mockOnButtonClick} />
             );
             const prevButton = screen.getByText('previous');
             expect(prevButton).toHaveClass('MuiButton-text');

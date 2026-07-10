@@ -1,12 +1,18 @@
 import os
+import traceback
 from pathlib import Path
 
 from flask import current_app as app
-
-from ..core import celery_app
-from ..database import db
 from sqlalchemy import select
-from ..models import NeurovaultFile, NeurovaultCollection, NeurostoreAnalysis
+
+from neurosynth_compose.core import celery_app
+from neurosynth_compose.database import db
+from neurosynth_compose.map_types import canonicalize_map_type
+from neurosynth_compose.models import (
+    NeurostoreAnalysis,
+    NeurovaultCollection,
+    NeurovaultFile,
+)
 
 
 @celery_app.task(name="neurovault.upload", bind=True)
@@ -35,6 +41,7 @@ def file_upload_neurovault(self, fpath, id):
         map_type = "P"
     elif fname.startswith("stat"):
         map_type = "U"
+    map_type = canonicalize_map_type(map_type)
 
     try:
         nv_file = api.add_image(
@@ -74,7 +81,8 @@ def file_upload_neurovault(self, fpath, id):
         os.remove(fpath)
 
     except Exception as exception:  # noqa: E722
-        record.traceback = str(exception)
+        record.exception = str(exception)
+        record.traceback = traceback.format_exc()
         record.status = "FAILED"
 
     try:
@@ -90,9 +98,10 @@ def file_upload_neurovault(self, fpath, id):
 def create_or_update_neurostore_analysis(
     self, ns_analysis_id, cluster_table, nv_collection_id, access_token
 ):
-    from auth0.authentication.get_token import GetToken
     import pandas as pd
-    from .neurostore import neurostore_session
+    from auth0.authentication.get_token import GetToken
+
+    from neurosynth_compose.resources.neurostore import neurostore_session
 
     try:
         ns_analysis = db.session.execute(
@@ -160,7 +169,7 @@ def create_or_update_neurostore_analysis(
                 "url": nv_file.url,
                 "filename": nv_file.filename,
                 "space": nv_file.space,
-                "value_type": nv_file.value_type,
+                "value_type": canonicalize_map_type(nv_file.value_type),
             }
             images.append(image)
 
@@ -194,7 +203,8 @@ def create_or_update_neurostore_analysis(
             ns_analysis.neurostore_id = ns_analysis_res.json()["id"]
             ns_analysis.status = "OK"
     except Exception as exception:  # noqa: E722
-        ns_analysis.traceback = str(exception)
+        ns_analysis.exception = str(exception)
+        ns_analysis.traceback = traceback.format_exc()
         ns_analysis.status = "FAILED"
 
     db.session.add(ns_analysis)

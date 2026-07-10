@@ -1,13 +1,13 @@
 import { AxiosError, AxiosResponse } from 'axios';
 import { EPropertyType } from 'components/EditMetadata/EditMetadata.types';
 import { stringToNumber } from 'helpers/utils';
-import { INeurosynthParsedPubmedArticle } from 'hooks/external/useGetPubMedIds';
+import { INeurosynthParsedPubmedArticle } from 'hooks/external/useFetchPubMedIds.types';
 import { ICurationMetadata, IProvenance } from 'hooks/projects/useGetProjects';
 import { BaseStudy, NoteCollectionReturn } from 'neurostore-typescript-sdk';
 import { Project, ProjectReturn } from 'neurosynth-compose-typescript-sdk';
 import { EExtractionStatus } from 'pages/Extraction/ExtractionPage';
 import { generateNewProjectData, initCurationHelper } from 'pages/Project/store/ProjectStore.helpers';
-import { MutateOptions } from 'react-query';
+import { MutateOptions } from '@tanstack/react-query';
 import { sleuthIngestedStudiesToStubs } from './SleuthImport.convert';
 
 export const applyPubmedStudyDetailsToBaseStudiesAndRemoveDuplicates = (

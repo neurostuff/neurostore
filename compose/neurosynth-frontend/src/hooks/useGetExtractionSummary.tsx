@@ -6,7 +6,7 @@ import useGetStudysetById from './studysets/useGetStudysetById';
 
 export interface IExtractionSummary {
     savedForLater: number;
-    uncategorized: number;
+    unreviewed: number;
     completed: number;
     total: number;
 }
@@ -18,12 +18,12 @@ export const getExtractionSummary = (studysetStudiesArg: Array<string>, studySta
         total: studysetStudies.length,
         completed: 0,
         savedForLater: 0,
-        uncategorized: 0,
+        unreviewed: 0,
     };
 
     studysetStudies.forEach((studyId) => {
         // this studyStatusList is initially empty. Studies get added to it when they are moved to complete or saveforlater, i.e.
-        // when they are categporized. We treat any study not yet in this list as uncategorized.
+        // when they are categporized. We treat any study not yet in this list as unreviewed.
         const foundStatus = studyStatusList.find((status) => status.id === studyId);
 
         switch (foundStatus?.status) {
@@ -34,7 +34,7 @@ export const getExtractionSummary = (studysetStudiesArg: Array<string>, studySta
                 summary.savedForLater++;
                 break;
             default:
-                summary.uncategorized++;
+                summary.unreviewed++;
                 break;
         }
     });
@@ -48,7 +48,7 @@ const useGetExtractionSummary = (projectId: string | undefined) => {
     const { data: studyset } = useGetStudysetById(studysetId, false);
     const [extractionSummary, setExtractionSummary] = useState<IExtractionSummary>({
         savedForLater: 0,
-        uncategorized: 0,
+        unreviewed: 0,
         completed: 0,
         total: 0,
     });
@@ -58,7 +58,7 @@ const useGetExtractionSummary = (projectId: string | undefined) => {
             if (!projectId || !studysetId || !studyStatusList) {
                 return {
                     savedForLater: 0,
-                    uncategorized: 0,
+                    unreviewed: 0,
                     completed: 0,
                     total: 0,
                 };

@@ -1,16 +1,13 @@
 import { IConfirmationDialog } from '../ConfirmationDialog';
 
-const mockConfirmationDialog: React.FC<IConfirmationDialog> = (props) => {
+const mockConfirmationDialog = (props: IConfirmationDialog) => {
     return (
         <>
             {props.isOpen && (
                 <div data-testid="mock-confirmation-dialog">
                     <h1>{props.dialogTitle}</h1>
                     <div>{props.dialogMessage}</div>
-                    <button
-                        data-testid="accept-close-confirmation"
-                        onClick={(_event) => props.onCloseDialog(true)}
-                    >
+                    <button data-testid="accept-close-confirmation" onClick={(_event) => props.onCloseDialog(true)}>
                         {props.confirmText}
                     </button>
                     <button

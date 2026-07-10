@@ -3,7 +3,7 @@ import React, { ReactNode } from 'react';
 import { EPropertyType, IToggleTypeModel } from 'components/EditMetadata/EditMetadata.types';
 import ToggleTypeStyles from './ToggleType.styles';
 
-const ToggleType: React.FC<IToggleTypeModel> = React.memo((props) => {
+const ToggleType = React.memo((props: IToggleTypeModel) => {
     const {
         onToggle,
         type,

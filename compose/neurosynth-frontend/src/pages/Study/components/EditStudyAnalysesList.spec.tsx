@@ -8,13 +8,7 @@ vi.mock('pages/Study/components/StudyAnalysesListItem.tsx');
 
 describe('EditStudyAnalysesList Component', () => {
     it('should render', () => {
-        render(
-            <EditStudyAnalysesList
-                onSelectAnalysis={() => {}}
-                selectedAnalysisId=""
-                analyses={[]}
-            />
-        );
+        render(<EditStudyAnalysesList onSelectAnalysis={() => {}} selectedAnalysisId="" analyses={[]} />);
     });
 
     it('should show two analyses in the list', () => {
@@ -52,13 +46,7 @@ describe('EditStudyAnalysesList Component', () => {
                 },
             },
         ];
-        render(
-            <EditStudyAnalysesList
-                onSelectAnalysis={() => {}}
-                selectedAnalysisId=""
-                analyses={mockAnalyses}
-            />
-        );
+        render(<EditStudyAnalysesList onSelectAnalysis={() => {}} selectedAnalysisId="" analyses={mockAnalyses} />);
 
         mockAnalyses.forEach((mockAnalysis) => {
             expect(screen.getByText(mockAnalysis.name as string)).toBeInTheDocument();

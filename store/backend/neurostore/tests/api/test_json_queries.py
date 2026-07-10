@@ -5,7 +5,7 @@ from urllib.parse import urlencode
 import pytest
 from sqlalchemy import or_
 
-from ...models import Pipeline, PipelineConfig, PipelineStudyResult
+from neurostore.models import Pipeline, PipelineConfig, PipelineStudyResult
 
 
 @pytest.fixture

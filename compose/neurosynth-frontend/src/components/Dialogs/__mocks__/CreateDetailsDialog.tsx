@@ -1,6 +1,6 @@
 import { ICreateDetailsDialog } from 'components/Dialogs/CreateDetailsDialog';
 
-const mockCreateDetailsDialog: React.FC<ICreateDetailsDialog> = (props) => {
+const mockCreateDetailsDialog = (props: ICreateDetailsDialog) => {
     return (
         <>
             {props.isOpen && (

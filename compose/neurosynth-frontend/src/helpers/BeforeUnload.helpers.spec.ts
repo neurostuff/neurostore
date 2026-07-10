@@ -1,9 +1,4 @@
-import {
-    EUnloadStatus,
-    hasUnsavedChanges,
-    setUnloadHandler,
-    unsetUnloadHandler,
-} from './BeforeUnload.helpers';
+import { EUnloadStatus, hasUnsavedChanges, setUnloadHandler, unsetUnloadHandler } from './BeforeUnload.helpers';
 
 describe('BeforeUnload helpers', () => {
     beforeEach(() => {

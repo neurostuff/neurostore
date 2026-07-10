@@ -1,34 +1,34 @@
-from unittest.mock import patch
-
 import copy
 import itertools
+import json
+import pathlib
+from os import environ
+from os.path import isfile
+from unittest.mock import patch
 
 import flask_sqlalchemy
-import json
-from os.path import isfile
-from os import environ
-import pathlib
-
-from auth0.authentication import GetToken
 import pytest
-from nimare.results import MetaResult
 import sqlalchemy as sa
+from auth0.authentication import GetToken
+from nimare.results import MetaResult
 from requests.exceptions import HTTPError
 from sqlalchemy import select
 
-from neurosynth_compose.ingest.neurostore import create_meta_analyses
-from neurosynth_compose.models.analysis import generate_id
 from neurosynth_compose.database import db as _db
+from neurosynth_compose.ingest.neurostore import create_meta_analyses
 from neurosynth_compose.models import (
-    User,
-    Specification,
-    Studyset,
-    Annotation,
+    NeurostoreAnnotation,
     MetaAnalysis,
-    StudysetReference,
-    AnnotationReference,
     NeurostoreStudy,
     Project,
+    Specification,
+    NeurostoreStudyset,
+    User,
+)
+from neurosynth_compose.models.analysis import generate_id
+from neurosynth_compose.resources.resource_services import (
+    ensure_canonical_annotation,
+    ensure_canonical_studyset,
 )
 
 # Patch Flask-SQLAlchemy teardown to ignore AttributeError on session.remove()
@@ -62,10 +62,13 @@ def mock_create_neurovault_collection():
     if not hasattr(set_collection_id, "counter"):
         set_collection_id.counter = itertools.count(10000)
     with patch(
-        "neurosynth_compose.resources.analysis.create_neurovault_collection"
-    ) as mock_func:
-        mock_func.side_effect = set_collection_id
-        yield mock_func
+        "neurosynth_compose.resources.data_views.meta_analyses_view.create_neurovault_collection"
+    ) as mock_meta_view, patch(
+        "neurosynth_compose.resources.resource_services.create_neurovault_collection"
+    ) as mock_resource_service:
+        mock_meta_view.side_effect = set_collection_id
+        mock_resource_service.side_effect = set_collection_id
+        yield mock_meta_view
 
 
 # https://github.com/pytest-dev/pytest/issues/363#issuecomment-406536200
@@ -82,6 +85,9 @@ def mock_decode_token(token):
         return {"sub": "user1-id"}
     elif token == encode({"sub": "user2-id"}, "123", algorithm="HS256"):
         return {"sub": "user2-id"}
+    # admin user
+    elif token == encode({"sub": "admin-user-id"}, "admin123", algorithm="HS256"):
+        return {"sub": "admin-user-id"}
 
 
 class MockResponse:
@@ -131,7 +137,7 @@ class MockNeurostoreSession:
 
     def _response_payload(self, path, payload):
         data = copy.deepcopy(payload) if payload is not None else {}
-        if path.startswith("/api/studysets"):
+        if path.startswith("/api/snapshot-studysets"):
             data.setdefault("id", self._next_id("studyset"))
             data.setdefault(
                 "annotations",
@@ -143,7 +149,7 @@ class MockNeurostoreSession:
                 ],
             )
             return data
-        if path.startswith("/api/annotations"):
+        if path.startswith("/api/snapshot-annotations"):
             data.setdefault("id", self._next_id("annotation"))
             return data
         if path.startswith("/api/studies"):
@@ -182,23 +188,24 @@ def reset_ns_session():
 
 
 class MockPYNVClient:
+    _next_collection_id = 1
+    _next_image_id = 1
+
     def __init__(self, access_token):
         self.access_token = access_token
         self.collections = []
         self.files = []
 
     def create_collection(self, *args, **kwargs):
-        import random
-
-        collection_id = random.randint(1, 10000)
+        collection_id = MockPYNVClient._next_collection_id
+        MockPYNVClient._next_collection_id += 1
         self.collections.append(collection_id)
 
         return {"id": collection_id}
 
     def add_image(self, collection_id, file, **kwargs):
-        import random
-
-        image_id = random.randint(1, 10000)
+        image_id = MockPYNVClient._next_image_id
+        MockPYNVClient._next_image_id += 1
         self.files.append(image_id)
 
         response_data = {
@@ -224,9 +231,18 @@ def mock_pynv(monkeysession):
 
 @pytest.fixture(scope="session")
 def mock_auth(monkeysession):
-    """mock decode token to get around rate limits"""
-    monkeysession.setenv(
-        "BEARERINFO_FUNC", "neurosynth_compose.tests.conftest.mock_decode_token"
+    """Override auth handler config so Connexion resolves the test decoder."""
+    from neurosynth_compose import config as config_module
+
+    monkeysession.setattr(
+        config_module.Config,
+        "BEARERINFO_FUNC",
+        "neurosynth_compose.tests.conftest.mock_decode_token",
+    )
+    monkeysession.setattr(
+        config_module.Config,
+        "APIKEYINFO_FUNC",
+        "neurosynth_compose.resources.auth.verify_key",
     )
 
 
@@ -237,9 +253,9 @@ def mock_ns(monkeysession):
         "neurosynth_compose.resources.neurostore.neurostore_session", mock_ns_session
     )
     monkeysession.setattr(
-        "neurosynth_compose.resources.analysis.neurostore_session", mock_ns_session
+        "neurosynth_compose.resources.project_cloning.neurostore_session",
+        mock_ns_session,
     )
-    # Remove patch for tasks, only patch neurostore.neurostore_session
 
 
 """
@@ -250,15 +266,11 @@ Session / db management tools
 @pytest.fixture(scope="session")
 def app(mock_auth):
     """Session-wide test `Flask` application."""
-    from .. import create_app
+    environ.setdefault("APP_ENV", "testing")
+
+    from neurosynth_compose import create_app
 
     _app = create_app()
-
-    if "APP_SETTINGS" not in environ:
-        config = "neurosynth_compose.config.TestingConfig"
-    else:
-        config = environ["APP_SETTINGS"]
-    _app.config.from_object(config)
     # _app.config["SQLALCHEMY_ECHO"] = True
 
     # Establish an application context before running the tests.
@@ -288,7 +300,7 @@ def db(app):
 
 @pytest.fixture(scope="session")
 def celery_app(app):
-    from ..core import celery_app as prod_celery_app
+    from neurosynth_compose.core import celery_app as prod_celery_app
 
     # Clone the production Celery app for testing
     test_celery = prod_celery_app
@@ -344,7 +356,7 @@ def auth_client(auth_clients):
 @pytest.fixture(scope="function")
 def auth_clients(mock_add_users, app):
     """Return authorized client wrapper"""
-    from .request_utils import Client
+    from neurosynth_compose.tests.request_utils import Client
 
     tokens = mock_add_users
     clients = []
@@ -396,6 +408,15 @@ def mock_add_users(app, db, mock_auth, session):
             "external_id": token_info["sub"],
             "id": uid,
         }
+
+    # Upload-key auth resolves to sub="neurosynth_compose"; ensure that user exists
+    # so get_current_user() succeeds without needing Auth0 profile creation.
+    service_user = session.execute(
+        select(User).where(User.external_id == "neurosynth_compose")
+    ).scalar_one_or_none()
+    if service_user is None:
+        session.add(User(name="neurosynth_compose", external_id="neurosynth_compose"))
+        session.flush()
 
     yield tokens
 
@@ -472,45 +493,58 @@ def user_data(app, db, mock_add_users, session):
 
     # Use the autouse session fixture explicitly to avoid mixing scoped sessions.
     with session.no_autoflush:
-        # Ensure StudysetReference / AnnotationReference are persisted when newly created.
+        # Ensure NeurostoreStudyset / NeurostoreAnnotation are persisted when newly created.
         existing_ss_ref = session.execute(
-            select(StudysetReference).where(
-                StudysetReference.id == serialized_studyset["id"]
+            select(NeurostoreStudyset).where(
+                NeurostoreStudyset.id == serialized_studyset["id"]
             )
         ).scalar_one_or_none()
         if existing_ss_ref is None:
-            ss_ref = StudysetReference(id=serialized_studyset["id"])
+            ss_ref = NeurostoreStudyset(id=serialized_studyset["id"])
             to_commit.append(ss_ref)
         else:
             ss_ref = existing_ss_ref
 
         existing_annot_ref = session.execute(
-            select(AnnotationReference).where(
-                AnnotationReference.id == serialized_annotation["id"]
+            select(NeurostoreAnnotation).where(
+                NeurostoreAnnotation.id == serialized_annotation["id"]
             )
         ).scalar_one_or_none()
         if existing_annot_ref is None:
-            annot_ref = AnnotationReference(id=serialized_annotation["id"])
+            annot_ref = NeurostoreAnnotation(id=serialized_annotation["id"])
             to_commit.append(annot_ref)
         else:
             annot_ref = existing_annot_ref
+
+        # Persist the reference rows so they exist for FK constraints before
+        # creating Studyset/Annotation canonical rows.
+        session.add_all([ss_ref, annot_ref])
+        session.flush()
 
         for user_info in mock_add_users.values():
             user = session.execute(
                 select(User).where(User.external_id == user_info["external_id"])
             ).scalar_one_or_none()
-            studyset = Studyset(
-                user=user,
-                snapshot=serialized_studyset,
-                studyset_reference=ss_ref,
+
+            # Create canonical studyset/annotation rows using the strict
+            # DB-level dedupe path (INSERT ... ON CONFLICT DO NOTHING).
+            canonical_ss = ensure_canonical_studyset(
+                session,
+                serialized_studyset,
+                user_id=user.external_id,
+                neurostore_id=serialized_studyset["id"],
             )
 
-            annotation = Annotation(
-                user=user,
-                snapshot=serialized_annotation,
-                annotation_reference=annot_ref,
-                studyset=studyset,
+            canonical_ann = ensure_canonical_annotation(
+                session,
+                serialized_annotation,
+                user_id=user.external_id,
+                neurostore_id=serialized_annotation["id"],
+                snapshot_studyset_id=getattr(canonical_ss, "id", None),
             )
+
+            studyset = canonical_ss
+            annotation = canonical_ann
 
             specification = Specification(
                 user=user,
@@ -540,9 +574,10 @@ def user_data(app, db, mock_add_users, session):
                     name=user.id + "'s meta analysis",
                     description=user.id + "'s meta analysis",
                     user=user,
+                    public=public,
                     specification=specification,
-                    studyset=studyset,
-                    annotation=annotation,
+                    neurostore_studyset_id=getattr(studyset, "neurostore_id", None),
+                    neurostore_annotation_id=getattr(annotation, "neurostore_id", None),
                 )
 
                 # Create Project with explicit id and link deterministically to MetaAnalysis
@@ -554,8 +589,8 @@ def user_data(app, db, mock_add_users, session):
                     neurostore_study=ns_study,
                     user=user,
                     public=public,
-                    studyset=studyset,
-                    annotation=annotation,
+                    neurostore_studyset_id=getattr(studyset, "neurostore_id", None),
+                    neurostore_annotation_id=getattr(annotation, "neurostore_id", None),
                 )
                 # Ensure MetaAnalysis.project and project_id are explicitly set so
                 # the relationship is visible across sessions/savepoints immediately
@@ -568,8 +603,6 @@ def user_data(app, db, mock_add_users, session):
                     description=user.id + "'s empty project",
                     public=public,
                     neurostore_study=ns_empty_study,
-                    studyset=None,
-                    annotation=None,
                 )
                 to_commit.extend(
                     [
@@ -612,11 +645,11 @@ def user_data(app, db, mock_add_users, session):
             for m in metas:
                 # studyset, annotation and project should be present according to
                 # the fixture construction; if any are missing, surface an error.
-                if m.studyset is None:
+                if getattr(m, "neurostore_studyset_id", None) is None:
                     pytest.fail(
                         f"MetaAnalysis {m.id} missing studyset for user {user.external_id}"
                     )
-                if m.annotation is None:
+                if getattr(m, "neurostore_annotation_id", None) is None:
                     pytest.fail(
                         f"MetaAnalysis {m.id} missing annotation for user {user.external_id}"
                     )
@@ -648,10 +681,11 @@ def user_data(app, db, mock_add_users, session):
 
 @pytest.fixture(scope="function")
 def meta_analysis_results(app, db, user_data, mock_add_users):
-    from nimare.workflows.cbma import CBMAWorkflow
     from nimare.diagnostics import FocusCounter
-    from ..resources.executor import process_bundle
-    from ..schemas import MetaAnalysisSchema
+    from nimare.workflows.cbma import CBMAWorkflow
+
+    from neurosynth_compose.resources.executor import process_bundle
+    from neurosynth_compose.schemas import MetaAnalysisSchema
 
     results = {}
     for user_info in mock_add_users.values():

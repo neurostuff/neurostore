@@ -1,16 +1,17 @@
 import useIsMounted from './useIsMounted';
 import useInputValidation from './useInputValidation';
-import useGetToken from './useGetToken';
+import useConfigureAPIWithAuth from './useConfigureAPIWithAuth';
 import useGuard from './useGuard';
 import useGetTour from './useGetTour';
 import useGetWindowHeight from './useGetWindowHeight';
+import useMeasure from './useMeasure';
 
 import useCreateAlgorithmSpecification from './metaAnalyses/useCreateAlgorithmSpecification';
 import useGetMetaAnalysesByIds from './metaAnalyses/useGetMetaAnalysesByIds';
 import useGetMetaAnalysisById from './metaAnalyses/useGetMetaAnalysisById';
 import useGetMetaAnalysesPublic from './metaAnalyses/useGetMetaAnalysesPublic';
 import useGetMetaAnalysisResultById from './metaAnalyses/useGetMetaAnalysisResultById';
-import useGetAnnotationsByStudysetId from './analyses/useGetAnnotationsByStudysetId';
+import useGetAnnotationsByStudysetId from './annotations/useGetAnnotationsByStudysetId';
 import useCreatePoint from './analyses/useCreatePoint';
 import useUpdateStudy from './studies/useUpdateStudy';
 import useDeletePoint from './analyses/useDeletePoint';
@@ -22,17 +23,16 @@ import useUpdatePoint from './analyses/useUpdatePoint';
 import useDeleteAnalysis from './analyses/useDeleteAnalysis';
 import useCreateStudyset from './studysets/useCreateStudyset';
 import useUpdateStudyset from './studysets/useUpdateStudyset';
-import useGetAnnotationById from './analyses/useGetAnnotationById';
-import useDeleteAnnotation from './analyses/useDeleteAnnotation';
+import useGetAnnotationById from './annotations/useGetAnnotationById';
+import useDeleteAnnotation from './annotations/useDeleteAnnotation';
 import useGetStudysetById from './studysets/useGetStudysetById';
-import useCreateAnnotation from './analyses/useCreateAnnotation';
+import useCreateAnnotation from './annotations/useCreateAnnotation';
 import useCreateStudy from './studies/useCreateStudy';
 import useCreateProject from './projects/useCreateProject';
-import useGetStudysets from './studysets/useGetStudysets';
 import useDeleteStudyset from './studysets/useDeleteStudyset';
 import useGetBaseStudies from './studies/useGetBaseStudies';
 import useGetStudyById from './studies/useGetStudyById';
-import useUpdateAnnotationById from './analyses/useUpdateAnnotationById';
+import useUpdateAnnotationById from './annotations/useUpdateAnnotationById';
 import useGetExtractionSummary from './useGetExtractionSummary';
 import useGetCurationSummary from './useGetCurationSummary';
 import useGetFullText from './external/useGetFullText';
@@ -40,16 +40,19 @@ import useUserCanEdit from './useUserCanEdit';
 import useGetBaseStudyById from './studies/useGetBaseStudyById';
 import useGetProjectById from './projects/useGetProjectById';
 import useGetNeurovaultImages from './metaAnalyses/useGetNeurovaultImages';
+import useFetchPubMedIds from './external/useFetchPubMedIds';
+import useGetPubMedIdFromDOI from './external/useGetPubMedIdFromDOI';
 
 export {
     useGetCurationSummary,
     useGetExtractionSummary,
     useIsMounted,
     useInputValidation,
-    useGetToken,
+    useConfigureAPIWithAuth as useGetToken,
     useGuard,
     useGetTour,
     useGetWindowHeight,
+    useMeasure,
     useGetFullText,
     useUserCanEdit,
     useGetBaseStudyById,
@@ -67,7 +70,6 @@ export {
     // META-ANALYSIS RESULTS
     useGetMetaAnalysisResultById,
     // STUDYSETS
-    useGetStudysets,
     useGetStudysetById,
     useCreateStudyset,
     useDeleteStudyset,
@@ -92,4 +94,7 @@ export {
     // project
     useCreateProject,
     useGetProjectById,
+    // EXTERNAL
+    useFetchPubMedIds,
+    useGetPubMedIdFromDOI,
 };

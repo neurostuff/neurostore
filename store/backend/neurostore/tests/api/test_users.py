@@ -1,4 +1,4 @@
-from ...models import User
+from neurostore.models import User
 
 
 def test_create_user(auth_client, session):

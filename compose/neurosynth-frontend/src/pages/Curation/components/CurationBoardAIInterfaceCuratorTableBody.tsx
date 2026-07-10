@@ -1,23 +1,23 @@
 import { TableBody } from '@mui/material';
 import { Table } from '@tanstack/react-table';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import React, { RefObject, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { ICurationTableStudy } from '../hooks/useCuratorTableState.types';
 import CurationBoardAIInterfaceCuratorTableRow from './CurationBoardAIInterfaceCuratorTableRow';
 
 const isNotBrowserOrIsFirefox = typeof window === 'undefined' || navigator.userAgent.includes('Firefox');
 
-const CurationBoardAIInterfaceCuratorTableBody: React.FC<{
+const CurationBoardAIInterfaceCuratorTableBody = ({  table, onSelect, tableContainerElement, selectedStub  }: {
     table: Table<ICurationTableStudy>;
     onSelect: (id: string | undefined) => void;
-    tableContainerRef: RefObject<HTMLDivElement | null>;
+    tableContainerElement: HTMLDivElement | null;
     selectedStub: ICurationTableStudy | undefined;
-}> = ({ table, onSelect, tableContainerRef, selectedStub }) => {
+}) => {
     const rows = table.getRowModel().rows;
     const virtualizer = useVirtualizer<HTMLDivElement, HTMLTableRowElement>({
         count: rows.length,
         estimateSize: () => 100,
-        getScrollElement: () => tableContainerRef.current,
+        getScrollElement: () => tableContainerElement,
         measureElement: isNotBrowserOrIsFirefox ? undefined : (e) => e?.getBoundingClientRect()?.height,
         overscan: 5,
     });

@@ -1,12 +1,5 @@
-import {
-    Dialog,
-    DialogContent,
-    DialogTitle,
-    Box,
-    Typography,
-    IconButton,
-    Breakpoint,
-} from '@mui/material';
+import type { ReactNode } from 'react';
+import { Dialog, DialogContent, DialogTitle, Box, Typography, IconButton, Breakpoint } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import { SystemStyleObject } from '@mui/system';
 
@@ -20,20 +13,16 @@ interface IBaseDialog {
     dialogTitleSx?: SystemStyleObject;
     dialogContentSx?: SystemStyleObject;
     onCloseDialog: () => void;
+    children?: React.ReactNode;
 }
 
-const BaseDialog: React.FC<IBaseDialog> = (props) => {
+const BaseDialog = (props: IBaseDialog) => {
     const handleCloseDialog = () => {
         props.onCloseDialog();
     };
 
     return (
-        <Dialog
-            fullWidth={props.fullWidth}
-            maxWidth={props.maxWidth}
-            open={props.isOpen}
-            onClose={handleCloseDialog}
-        >
+        <Dialog fullWidth={props.fullWidth} maxWidth={props.maxWidth} open={props.isOpen} onClose={handleCloseDialog}>
             <DialogTitle sx={[{ display: 'flex' }, props.dialogTitleSx || {}]}>
                 <Box sx={{ display: 'flex', flexGrow: 1, alignItems: 'center' }}>
                     <Typography variant="h6">{props.dialogTitle}</Typography>

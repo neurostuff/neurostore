@@ -11,12 +11,12 @@ import {
 } from 'neurostore-typescript-sdk';
 import { ISleuthFileUploadStubs, PUBMED_API_KEY } from '.';
 import { DefaultSpaceTypes, IStudyVersion } from 'pages/Study/store/StudyStore.helpers';
-import API from 'utils/api';
+import API from 'api/api.config';
 import { selectBestBaseStudyVersion } from 'helpers/Extraction.helpers';
 import { IESearchResult } from 'hooks/external/useGetPubMedIdFromDOI';
-import { INeurosynthParsedPubmedArticle } from 'hooks/external/useGetPubMedIds';
+import { INeurosynthParsedPubmedArticle } from 'hooks/external/useFetchPubMedIds.types';
 import { executeHTTPRequestsAsBatches } from 'helpers/requests';
-import { MutateOptions } from 'react-query';
+import { MutateOptions } from '@tanstack/react-query';
 
 /**
  * This helper function takes each sleuth study and returns either a POST request to create a study with analyses, or a POST request to create an
@@ -122,7 +122,7 @@ export const lookForPMIDsAndFetchStudyDetails = async (
     baseStudySleuthStubs: BaseStudy[],
     getPubmedIdFromDOICallback: (doi: string) => Promise<AxiosResponse<IESearchResult>>,
     updateProgressStateCallback: (value: number) => void,
-    getPubmedStudiesFromIdsCallback: (pubmedIds: string[]) => Promise<INeurosynthParsedPubmedArticle[][]>
+    getPubmedStudiesFromIdsCallback: (pubmedIds: string[]) => Promise<INeurosynthParsedPubmedArticle[]>
 ) => {
     const responses = await executeHTTPRequestsAsBatches(
         baseStudySleuthStubs,
@@ -161,7 +161,7 @@ export const lookForPMIDsAndFetchStudyDetails = async (
             pubmedIds.push(searchResult.idlist[0]);
         }
     });
-    return (await getPubmedStudiesFromIdsCallback(pubmedIds)).flat();
+    return await getPubmedStudiesFromIdsCallback(pubmedIds);
 };
 
 export const ingestBaseStudies = async (

@@ -4,10 +4,13 @@ import { createTheme, responsiveFontSizes, ThemeProvider } from '@mui/material/s
 import { SystemStyleObject } from '@mui/system';
 import * as Sentry from '@sentry/react';
 import React from 'react';
-import ReactDOM from 'react-dom';
+import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import './index.css';
+import { QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { AxiosError } from 'axios';
+import { HelmetProvider } from 'react-helmet-async';
 
 export type Style = Record<string, SystemStyleObject>;
 export type ColorOptions = 'inherit' | 'primary' | 'secondary' | 'success' | 'error' | 'info' | 'warning';
@@ -87,23 +90,53 @@ if (env === 'PROD') {
     });
 }
 
-ReactDOM.render(
+const queryClient = new QueryClient({
+    defaultOptions: {
+        queries: {
+            retry: 0,
+            staleTime: 1000 * 5, // 5 seconds
+            refetchOnWindowFocus: false,
+            // staleTime: 5000, // https://tkdodo.eu/blog/practical-react-query#the-defaults-explained
+        },
+    },
+    queryCache: new QueryCache({
+        onError: (error) => {
+            console.log({ error });
+            const responseStatus = (error as AxiosError)?.response?.status;
+            if (responseStatus && responseStatus === 404) {
+                console.error('could not find resource');
+            }
+        },
+    }),
+});
+
+const rootElement = document.getElementById('root');
+if (!rootElement) {
+    throw new Error('Root element not found');
+}
+
+createRoot(rootElement).render(
     <React.StrictMode>
         <Auth0Provider
             domain={domain}
-            useRefreshTokens={true}
             clientId={clientId}
-            redirectUri={window.location.origin}
-            scope="openid profile email offline_access"
-            audience={audience}
+            useRefreshTokens={true}
             cacheLocation="localstorage"
+            authorizationParams={{
+                redirect_uri: window.location.origin,
+                audience,
+                scope: 'openid profile email offline_access',
+            }}
         >
             <BrowserRouter>
                 <ThemeProvider theme={theme}>
-                    <App />
+                    <QueryClientProvider client={queryClient}>
+                        <HelmetProvider>
+                            <App />
+                        </HelmetProvider>
+                    </QueryClientProvider>
                 </ThemeProvider>
             </BrowserRouter>
         </Auth0Provider>
-    </React.StrictMode>,
-    document.getElementById('root')
+    </React.StrictMode>
 );

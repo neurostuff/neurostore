@@ -1,6 +1,7 @@
 import { Box, ListItem, ListItemButton, Typography } from '@mui/material';
 import { ICurationStubStudy } from 'pages/Curation/Curation.types';
-import { ENeurosynthTagIds } from 'pages/Project/store/ProjectStore.types';
+import { useProjectExclusionTag } from 'pages/Project/store/ProjectStore';
+import { ENeurosynthTagIds } from 'pages/Project/store/ProjectStore.consts';
 import React from 'react';
 
 interface ICurationStubListItem {
@@ -10,7 +11,9 @@ interface ICurationStubListItem {
     style: React.CSSProperties;
 }
 
-const CurationStubListItem: React.FC<ICurationStubListItem> = React.memo((props) => {
+const CurationStubListItem = React.memo((props: ICurationStubListItem) => {
+    const exclusionTag = useProjectExclusionTag(props.stub.exclusionTag);
+
     const itemColor = props.stub.exclusionTag
         ? '#fff3f3'
         : props.stub.tags.some((x) => x.id === ENeurosynthTagIds.NEEDS_REVIEW_TAG_ID)
@@ -41,7 +44,7 @@ const CurationStubListItem: React.FC<ICurationStubListItem> = React.memo((props)
             >
                 {props.stub.exclusionTag && (
                     <Typography sx={{ color: 'error.dark', fontWeight: 'bold' }} variant="body2">
-                        {props.stub.exclusionTag.label}
+                        {exclusionTag?.label}
                     </Typography>
                 )}
                 <Box sx={{ width: '100%' }}>

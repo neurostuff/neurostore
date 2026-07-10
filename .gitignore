@@ -1,5 +1,7 @@
 .neurostuff_secrets
 historical/
+store/.migrations-work/
+compose/.migrations-work/
 
 # node
 node_modules/
@@ -71,7 +73,7 @@ instance/
 .webassets-cache
 
 # Postgres Python migrations:
-**/backend/migrations/versions/*
+# **/backend/migrations/versions/*
 
 # Scrapy stuff:
 .scrapy

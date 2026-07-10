@@ -1,0 +1,304 @@
+import { indexToPRISMAMapping, IPRISMAConfig } from 'hooks/projects/useGetProjects';
+import {
+    useProjectCurationColumns,
+    useProjectCurationDuplicates,
+    useProjectCurationExclusionTags,
+    useProjectCurationImports,
+    useProjectCurationPrismaConfig,
+} from 'pages/Project/store/ProjectStore';
+import { defaultExclusionTags } from 'pages/Project/store/ProjectStore.consts';
+import { type ReactNode,  createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { useParams } from 'react-router-dom';
+import { SxProps } from '@mui/system';
+import { IGroupListItem } from '../components/CurationBoardAIGroupsList';
+import { ECurationBoardAIInterface } from '../components/CurationBoardAi';
+
+const excludedListItemStyles: SxProps = {
+    '& .MuiListItemButton-root': {
+        padding: '2px 16px',
+    },
+};
+
+const excludedListItemStylesChildren: SxProps = {
+    color: 'error.dark',
+    '& .MuiListItemButton-root': {
+        padding: '2px 16px',
+    },
+};
+
+export const SELECTED_CURATION_STEP_LOCAL_STORAGE_KEY_SUFFIX = '_CURATION_STEP_ID';
+
+interface ICurationBoardGroupsContext {
+    groups: IGroupListItem[];
+    selectedGroup: IGroupListItem | undefined;
+    handleSetSelectedGroup: (group: IGroupListItem) => void;
+    handleSelectPreviousGroup: () => void;
+    handleSelectNextGroup: () => void;
+    handleSetFirstCurationGroup: () => void;
+    children?: React.ReactNode;
+}
+
+const CurationBoardGroupsContext = createContext<ICurationBoardGroupsContext | undefined>(undefined);
+
+export const CurationBoardGroupsProvider = ({  children  }: { children: React.ReactNode }) => {
+    const curationColumns = useProjectCurationColumns();
+    const curationDuplicates = useProjectCurationDuplicates();
+    const { projectId } = useParams<{ projectId: string }>();
+    const selectedCurationStepLocalStorageKey = `${projectId}${SELECTED_CURATION_STEP_LOCAL_STORAGE_KEY_SUFFIX}`;
+    const prismaConfig = useProjectCurationPrismaConfig();
+    const [selectedGroup, setSelectedGroup] = useState<IGroupListItem>();
+    const excludedGroups = useProjectCurationExclusionTags();
+    const curationImports = useProjectCurationImports();
+
+    const groups: IGroupListItem[] = useMemo(() => {
+        if (curationColumns.length === 0) return [];
+        let groupListItems: IGroupListItem[] = [];
+
+        if (prismaConfig.isPrisma) {
+            groupListItems.push({
+                id: 'prisma_header',
+                type: 'SUBHEADER',
+                label: 'PRISMA Curation',
+                count: null,
+                excludedCount: null,
+                UI: null,
+            });
+
+            curationColumns.forEach((column, index) => {
+                const prismaPhase: keyof Omit<IPRISMAConfig, 'isPrisma'> | undefined = indexToPRISMAMapping(index);
+                groupListItems.push({
+                    id: column.id,
+                    type: 'LISTITEM',
+                    label: `${index + 1}. ${column.name}`,
+                    count: column.stubStudies.filter((x) => x.exclusionTag === null).length,
+                    excludedCount:
+                        prismaPhase === 'identification'
+                            ? column.stubStudies.filter((x) => x.exclusionTag !== null).length
+                            : null,
+                    UI: ECurationBoardAIInterface.CURATOR,
+                    children: [],
+                });
+
+                const thisGroupListItem = groupListItems[groupListItems.length - 1];
+                if (prismaPhase === 'identification') {
+                    thisGroupListItem.secondaryLabel = 'Search for studies and identify duplicates';
+                } else if (prismaPhase === 'screening') {
+                    thisGroupListItem.secondaryLabel = 'Screen titles and abstracts for relevance';
+                } else if (prismaPhase === 'eligibility') {
+                    thisGroupListItem.secondaryLabel = 'Assess full full-texts against inclusion criteria';
+                } else {
+                    thisGroupListItem.secondaryLabel = 'Studies to be included in the final meta-analysis';
+                    return;
+                }
+
+                if (prismaPhase !== 'identification') {
+                    groupListItems.push({
+                        id: `excluded_${column.id}`,
+                        type: 'LISTITEM',
+                        label: 'Excluded',
+                        count: null,
+                        excludedCount: column.stubStudies.filter((x) => x.exclusionTag !== null).length,
+                        UI: ECurationBoardAIInterface.EXCLUDE,
+                        listItemStyles: excludedListItemStyles,
+                        children: prismaConfig[prismaPhase].exclusionTags.map((exclusionTag) => ({
+                            id: exclusionTag.id,
+                            type: 'LISTITEM',
+                            label: exclusionTag.label,
+                            count: null,
+                            excludedCount: column.stubStudies.filter((x) => x.exclusionTag === exclusionTag.id).length,
+                            UI: ECurationBoardAIInterface.EXCLUDE,
+                            listItemStyles: excludedListItemStylesChildren,
+                            children: [],
+                        })),
+                    });
+                }
+            });
+
+            groupListItems.push({
+                id: 'divider',
+                type: 'DIVIDER',
+                label: '',
+                count: null,
+                excludedCount: null,
+                UI: null,
+            });
+        } else {
+            if (curationColumns.length !== 2) {
+                throw new Error(
+                    'Expected 2 curation columns for a non prisma project, but got ' + curationColumns.length
+                );
+            }
+            const [unreviewedColumn, includedColumn] = curationColumns;
+
+            groupListItems = [
+                {
+                    id: 'curate_header',
+                    type: 'SUBHEADER',
+                    label: 'Curation',
+                    count: null,
+                    excludedCount: null,
+                    UI: null,
+                },
+                {
+                    id: unreviewedColumn.id,
+                    type: 'LISTITEM',
+                    label: `1. ${unreviewedColumn.name}`,
+                    count: unreviewedColumn.stubStudies.filter((x) => x.exclusionTag === null).length,
+                    excludedCount: null,
+                    UI: ECurationBoardAIInterface.CURATOR,
+                    children: [],
+                },
+                {
+                    id: 'excluded_studies_column',
+                    type: 'LISTITEM',
+                    label: 'Excluded',
+                    excludedCount: unreviewedColumn.stubStudies.filter((x) => x.exclusionTag !== null).length,
+                    count: null,
+                    UI: ECurationBoardAIInterface.EXCLUDE,
+                    listItemStyles: excludedListItemStyles,
+                    children: excludedGroups.map((excludedGroup) => {
+                        const numExcludedInGroup = curationColumns.reduce((acc, curr) => {
+                            return (
+                                acc + curr.stubStudies.filter((study) => study.exclusionTag === excludedGroup.id).length
+                            );
+                        }, 0);
+
+                        return {
+                            id: excludedGroup.id,
+                            type: 'LISTITEM',
+                            label: excludedGroup.label,
+                            count: null,
+                            excludedCount: numExcludedInGroup,
+                            UI: ECurationBoardAIInterface.EXCLUDE,
+                            listItemStyles: excludedListItemStylesChildren,
+                        } as IGroupListItem;
+                    }),
+                },
+                {
+                    id: includedColumn.id,
+                    type: 'LISTITEM',
+                    label: `2. ${includedColumn.name}`,
+                    count: includedColumn.stubStudies.filter((x) => x.exclusionTag === null).length,
+                    excludedCount: null,
+                    UI: ECurationBoardAIInterface.CURATOR,
+                    children: [],
+                },
+                {
+                    id: 'divider-1',
+                    type: 'DIVIDER',
+                    label: '',
+                    count: null,
+                    excludedCount: null,
+                    UI: null,
+                },
+            ];
+        }
+
+        if (curationImports.length > 0) {
+            groupListItems.push(
+                {
+                    id: 'imports_header',
+                    type: 'SUBHEADER',
+                    label: 'Imports',
+                    count: null,
+                    excludedCount: null,
+                    UI: null,
+                },
+                ...curationImports
+                    .map((curationImport) => {
+                        const date = new Date(curationImport.date);
+                        return {
+                            id: curationImport.id,
+                            type: 'LISTITEM',
+                            label: curationImport.name,
+                            secondaryLabel: `${curationImport.importModeUsed}\n${date.toLocaleDateString()} ${date.toLocaleTimeString()}`,
+                            count: curationImport.numImported,
+                            excludedCount: null,
+                            UI: ECurationBoardAIInterface.IMPORT_SUMMARY,
+                        } as IGroupListItem;
+                    })
+                    .reverse()
+            );
+        }
+
+        return groupListItems;
+    }, [curationColumns, curationImports, prismaConfig, excludedGroups, curationDuplicates.length]);
+
+    const handleSetSelectedGroup = useCallback((group: IGroupListItem) => {
+        localStorage.setItem(selectedCurationStepLocalStorageKey, group.id);
+        setSelectedGroup(group);
+    }, []);
+
+    const handleSelectPreviousGroup = useCallback(() => {
+        if (!selectedGroup) return;
+        const currentColIndex = curationColumns.findIndex((x) => x.id === selectedGroup.id);
+        if (currentColIndex === -1) return;
+        const previousColIndex = currentColIndex - 1;
+        if (previousColIndex < 0) return;
+        const previousCol = curationColumns[previousColIndex];
+        if (!previousCol) return;
+        const previousGroup = groups.find((x) => x.id === previousCol.id);
+        if (!previousGroup) return;
+
+        handleSetSelectedGroup(previousGroup);
+    }, [selectedGroup, curationColumns]);
+
+    const handleSelectNextGroup = useCallback(() => {
+        if (!selectedGroup) return;
+        const currentColIndex = curationColumns.findIndex((x) => x.id === selectedGroup.id);
+        if (currentColIndex === -1) return;
+        const nextColIndex = currentColIndex + 1;
+        if (nextColIndex >= curationColumns.length) return;
+        const nextCol = curationColumns[nextColIndex];
+        if (!nextCol) return;
+        const nextGroup = groups.find((x) => x.id === nextCol.id);
+        if (!nextGroup) return;
+        handleSetSelectedGroup(nextGroup);
+    }, [selectedGroup, curationColumns, groups]);
+
+    const handleSetFirstCurationGroup = useCallback(() => {
+        const firstCurateGroup = groups.find((group) => group.id === curationColumns[0].id);
+        if (firstCurateGroup) {
+            handleSetSelectedGroup(firstCurateGroup);
+        }
+    }, [groups, curationColumns]);
+
+    useEffect(() => {
+        if (selectedGroup === undefined && curationColumns.length > 0) {
+            const localStorageSelectedGroupId = localStorage.getItem(selectedCurationStepLocalStorageKey);
+
+            if (localStorageSelectedGroupId) {
+                const foundGroup = groups.find((x) => x.id === localStorageSelectedGroupId);
+                if (foundGroup) {
+                    setSelectedGroup(foundGroup);
+                    return;
+                }
+            }
+
+            localStorage.setItem(selectedCurationStepLocalStorageKey, groups[1].id);
+            setSelectedGroup(groups[1]);
+        }
+    }, [groups, curationColumns.length, selectedGroup, selectedCurationStepLocalStorageKey, projectId]);
+
+    const contextValue = useMemo(
+        () => ({
+            groups,
+            selectedGroup,
+            handleSetFirstCurationGroup,
+            handleSetSelectedGroup,
+            handleSelectPreviousGroup,
+            handleSelectNextGroup,
+        }),
+        [groups, selectedGroup]
+    );
+
+    return <CurationBoardGroupsContext.Provider value={contextValue}>{children}</CurationBoardGroupsContext.Provider>;
+};
+
+export const useCurationBoardGroups = () => {
+    const context = useContext(CurationBoardGroupsContext);
+    if (!context) {
+        throw new Error('useCurationBoardGroups must be used within CurationBoardGroupsProvider');
+    }
+    return context;
+};

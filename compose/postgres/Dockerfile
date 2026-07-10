@@ -4,8 +4,18 @@ RUN apt-get install -yq python3-pip python-dev-is-python3 build-essential
 RUN apt-get install -yq cron
 RUN pip3 install --break-system-packages awscli
 COPY pg_dump-to-s3 /home
-RUN chmod +x /home/pg_dump-to-s3.sh /home/s3-autodelete.sh
+RUN chmod +x /home/pg_dump-to-s3.sh /home/s3-autodelete.sh /home/build-reduced-dev-backup.sh
 RUN crontab /home/backup.txt
-RUN service cron start
 RUN dos2unix /home/pg_dump-to-s3.sh
 RUN dos2unix /home/s3-autodelete.sh
+RUN dos2unix /home/build-reduced-dev-backup.sh
+COPY resolve-app-db.sh /usr/local/bin/resolve-app-db.sh
+RUN chmod +x /usr/local/bin/resolve-app-db.sh
+COPY docker-entrypoint-cron.sh /usr/local/bin/docker-entrypoint-cron.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint-cron.sh
+
+COPY postgresql.conf /etc/postgresql/postgresql.conf
+COPY pg_stat_statements.sql /docker-entrypoint-initdb.d/
+
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint-cron.sh"]
+CMD ["postgres"]

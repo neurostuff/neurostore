@@ -25,8 +25,14 @@
     "source_id": null,
     "source_updated_at": null,
     "note_keys": {
-        "included": "boolean",
-        "test1_new_txt": "boolean"
+        "included": {
+            "type": "boolean",
+            "order": 0
+        },
+        "test1_new_txt": {
+            "type": "boolean",
+            "order": 1
+        }
     },
     "metadata": null,
     "name": "Annotation for Untitled sleuth project",

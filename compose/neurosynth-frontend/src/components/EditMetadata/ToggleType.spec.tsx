@@ -107,9 +107,7 @@ describe('ToggleType Component', () => {
     });
 
     it('should remove the none type', () => {
-        render(
-            <ToggleType onToggle={mockOnToggle} type={EPropertyType.STRING} allowNone={false} />
-        );
+        render(<ToggleType onToggle={mockOnToggle} type={EPropertyType.STRING} allowNone={false} />);
         let input = screen.getByRole('combobox');
         userEvent.click(input);
 
@@ -120,9 +118,7 @@ describe('ToggleType Component', () => {
     });
 
     it('should remove the string type', () => {
-        render(
-            <ToggleType onToggle={mockOnToggle} type={EPropertyType.NUMBER} allowString={false} />
-        );
+        render(<ToggleType onToggle={mockOnToggle} type={EPropertyType.NUMBER} allowString={false} />);
         let input = screen.getByRole('combobox');
         userEvent.click(input);
 
@@ -133,9 +129,7 @@ describe('ToggleType Component', () => {
     });
 
     it('should remove the boolean type', () => {
-        render(
-            <ToggleType onToggle={mockOnToggle} type={EPropertyType.STRING} allowBoolean={false} />
-        );
+        render(<ToggleType onToggle={mockOnToggle} type={EPropertyType.STRING} allowBoolean={false} />);
         let input = screen.getByRole('combobox');
         userEvent.click(input);
 
@@ -146,9 +140,7 @@ describe('ToggleType Component', () => {
     });
 
     it('should remove the number type', () => {
-        render(
-            <ToggleType onToggle={mockOnToggle} type={EPropertyType.STRING} allowNumber={false} />
-        );
+        render(<ToggleType onToggle={mockOnToggle} type={EPropertyType.STRING} allowNumber={false} />);
         let input = screen.getByRole('combobox');
         userEvent.click(input);
 

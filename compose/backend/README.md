@@ -16,33 +16,37 @@ First, set up the main environment variables in `.env` (see: `.env.example`).
 
 Edit the `.env` template to set the correct variables
 
+`APP_ENV` is the environment selector. Supported values are `development`,
+`staging`, `production`, `testing`, and `docker_test`. The stack resolves the
+matching Flask config and database name automatically.
+
 ## Initializing backend
 Create the network, build the containers, and start services using the development configuration:
 
-    docker network create nginx-proxy  # if this does not already exist
+  docker network create ${SHARED_PROXY_NETWORK:-nginx-proxy}  # if this does not already exist
     docker-compose build
     docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d
 
 The server should now be running at http://localhost:81
 
-Create the database for compose:
+The shared cross-stack network name is controlled by `SHARED_PROXY_NETWORK` in `.env`.
+Keep the default `nginx-proxy` for normal local development, or use a track-specific
+value when running multiple environments on the same host.
 
-    docker-compose exec compose_pgsql psql -U postgres -c "create database compose"
+With `APP_ENV=development`, a fresh Postgres volume initializes `compose_test_db`
+automatically. If you are reusing an older volume created under a different
+environment, recreate the volume or create `compose_test_db` manually before migrating.
 
-Next, migrate and upgrade the database migrations.
+Next, apply the existing migrations (they are the canonical schema definition):
 
-    docker-compose exec compose \
-        bash -c \
-            "flask db merge heads && \
-             flask db stamp head && \
-             flask db migrate && \
-             flask db upgrade"
+    docker-compose exec compose flask db upgrade
 
-**Note**: `flask db merge heads` is not strictly necessary
-unless you have multiple schema versions that are not from the same history
-(e.g., multiple files in the `versions` directory).
-However, `flask db merge heads` makes the migration more robust
-when there are multiple versions from different histories.
+Note: the stack now resolves the database from `APP_ENV` automatically.
+Development, testing, and `docker_test` use `compose_test_db`; staging and
+production use `compose` by default.
+
+Note: `compose-pghero` now follows the same environment-based database
+resolution as the rest of the stack.
 
 
 ## Maintaining docker image and db
@@ -50,20 +54,67 @@ If you make a change to compose, you should be able to simply restart the server
 
     docker-compose restart compose
 
-If you need to upgrade the db after changing any models:
+If you change any models, generate a new Alembic migration and migrate the database (commit the generated revision file so it becomes the new source of truth):
 
     docker-compose exec compose flask db migrate
     docker-compose exec compose flask db upgrade
 
 
+## Database migrations
+
+The migrations stored in `backend/migrations` are the **only** source of truth for the schema—avoid merging heads, stamping, or manually altering the history. Always move the database forward (or rebuild from scratch) by applying the tracked revisions.
+
+### Applying migrations after pulling a branch
+
+Any time you start the backend or pull the latest changes, bring the database to the expected state with:
+
+```sh
+docker-compose exec compose flask db upgrade
+```
+
+`upgrade` is idempotent, so rerunning it is harmless; it only applies migrations that have not been run yet.
+
+### Resetting the database when switching branches
+
+Because each branch might change the schema independently, recreate the database before starting work on a different branch so that Alembic can replay only the migrations that exist on that branch.
+
+```sh
+docker compose stop compose compose_worker compose_nginx compose-pghero compose-grafana
+docker compose exec compose-pgsql17 psql -U postgres -c "DROP DATABASE IF EXISTS compose_test_db;"
+docker compose exec compose-pgsql17 psql -U postgres -c "CREATE DATABASE compose_test_db;"
+docker compose up -d
+docker compose exec compose flask db upgrade
+```
+
+If you're using the legacy Postgres container, replace `compose-pgsql17` with `compose_pgsql` in the commands above.
+
+
 ## Running tests
-To run tests, after starting services, create a test database:
-
-    docker-compose exec compose_pgsql psql -U postgres -c "create database test_db"
-
-**NOTE**: This command will ask you for the postgres password which is defined
-in the `.env` file.
+To run tests after starting services, ensure `compose_test_db` exists.
 
 and execute:
 
-    docker-compose run -e "APP_SETTINGS=neurosynth_compose.config.DockerTestConfig" --rm -w /compose compose python -m pytest compose/tests
+    docker compose exec compose-pgsql17 psql -U postgres -tAc "SELECT 1 FROM pg_database WHERE datname = 'compose_test_db'" | grep -q 1 || docker compose exec compose-pgsql17 psql -U postgres -c "CREATE DATABASE compose_test_db;"
+    docker compose run -e "APP_ENV=docker_test" --rm compose bash -c "python -m pytest neurosynth_compose/tests"
+
+## Admin interface
+The Flask-Admin UI is served at `/admin` once the stack is running.
+
+Access:
+- Dev: http://localhost:81/admin
+- Prod: https://compose.neurosynth.org/admin
+
+Auth:
+- Set `FLASK_ADMIN_USERNAME` and `FLASK_ADMIN_PASSWORD` in the environment.
+- The browser will prompt for HTTP Basic auth when you visit `/admin`.
+
+Grant admin access (recommended for any admin UI access):
+```sh
+# Find the user ID
+docker compose exec compose-pgsql17 psql -U postgres -d compose_test_db \
+  -c "SELECT id, external_id FROM users WHERE external_id = 'user-external-id';"
+
+# Assign admin role
+docker compose exec compose-pgsql17 psql -U postgres -d compose_test_db \
+  -c "INSERT INTO roles_users (user_id, role_id) VALUES ('user-id', 'admin');"
+```

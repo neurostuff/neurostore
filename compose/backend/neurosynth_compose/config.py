@@ -6,13 +6,58 @@ Rename this file to config.py and set variables as needed.
 import os
 from pathlib import Path
 
+ENV_TO_CONFIG = {
+    "dev": "DevelopmentConfig",
+    "development": "DevelopmentConfig",
+    "stage": "StagingConfig",
+    "staging": "StagingConfig",
+    "prod": "ProductionConfig",
+    "production": "ProductionConfig",
+    "test": "TestingConfig",
+    "testing": "TestingConfig",
+    "docker_test": "DockerTestConfig",
+    "docker-test": "DockerTestConfig",
+}
+DEVLIKE_ENVS = {"dev", "development", "test", "testing", "docker_test", "docker-test"}
+PRODLIKE_ENVS = {"stage", "staging", "prod", "production"}
+
+
+def resolve_test_database_name():
+    return "compose_test_db"
+
 
 def get_env_var(name, default=None, required=False):
-    """Helper to fetch environment variables with optional default and required flag."""
+    """Fetch env vars with optional default and required flag."""
     value = os.environ.get(name, default)
     if required and value is None:
         raise RuntimeError(f"Environment variable '{name}' is required but not set.")
     return value
+
+
+def _normalize_app_env(value):
+    return (value or "").strip().lower()
+
+
+def resolve_config_object():
+    app_env = _normalize_app_env(get_env_var("APP_ENV", "development"))
+    config_name = ENV_TO_CONFIG.get(app_env)
+    if not config_name:
+        raise RuntimeError(
+            f"Unsupported APP_ENV={app_env!r}. Expected one of: {', '.join(sorted(ENV_TO_CONFIG))}"
+        )
+    return f"{__name__}.{config_name}"
+
+
+def resolve_database_name(default_db_name, config_env):
+    app_env = _normalize_app_env(get_env_var("APP_ENV", config_env))
+    if app_env in DEVLIKE_ENVS:
+        return resolve_test_database_name()
+    if app_env in PRODLIKE_ENVS:
+        return default_db_name
+
+    raise RuntimeError(
+        f"Unsupported APP_ENV={app_env!r}. Expected one of: {', '.join(sorted(ENV_TO_CONFIG))}"
+    )
 
 
 class Config:
@@ -32,7 +77,7 @@ class Config:
     FILE_DIR = Path("/file-data")
     POSTGRES_HOST = get_env_var("POSTGRES_HOST", required=True)
     POSTGRES_PASSWORD = get_env_var("POSTGRES_PASSWORD", "")
-    DB_NAME = "compose"
+    DB_NAME = resolve_database_name("compose", "production")
     SQLALCHEMY_DATABASE_URI = (
         f"postgresql://postgres:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:5432/{DB_NAME}"
     )
@@ -46,14 +91,29 @@ class Config:
     SECURITY_PASSWORD_HASH = "pbkdf2_sha512"
     SECURITY_PASSWORD_SALT = get_env_var("SECURITY_PASSWORD_SALT", "A_SECRET")
     NEUROVAULT_ACCESS_TOKEN = get_env_var("NEUROVAULT_ACCESS_TOKEN")
+    NEUROVAULT_COLLECTION_NAME_MAX_LEN = 200
+    NEUROVAULT_COLLECTION_CREATE_MAX_SUFFIX = 25
     COMPOSE_RUNNER_SUBMIT_URL = get_env_var("COMPOSE_RUNNER_SUBMIT_URL")
     COMPOSE_RUNNER_STATUS_URL = get_env_var("COMPOSE_RUNNER_STATUS_URL")
     COMPOSE_RUNNER_LOGS_URL = get_env_var("COMPOSE_RUNNER_LOGS_URL")
     COMPOSE_RUNNER_ARTIFACTS_URL = get_env_var("COMPOSE_RUNNER_ARTIFACTS_URL")
+    FLASK_ADMIN_USERNAME = get_env_var("FLASK_ADMIN_USERNAME")
+    FLASK_ADMIN_PASSWORD = get_env_var("FLASK_ADMIN_PASSWORD")
+    BEARERINFO_FUNC = get_env_var(
+        "BEARERINFO_FUNC", "neurosynth_compose.resources.auth.decode_token"
+    )
+    APIKEYINFO_FUNC = get_env_var(
+        "APIKEYINFO_FUNC", "neurosynth_compose.resources.auth.verify_key"
+    )
 
 
 class ProductionConfig(Config):
     ENV = "production"
+    DB_NAME = resolve_database_name("compose", "production")
+    SQLALCHEMY_DATABASE_URI = (
+        f"postgresql://postgres:{Config.POSTGRES_PASSWORD}"
+        f"@{Config.POSTGRES_HOST}:5432/{DB_NAME}"
+    )
 
     AUTH0_CLIENT_ID = get_env_var("AUTH0_CLIENT_ID", required=True)
     AUTH0_CLIENT_SECRET = get_env_var("AUTH0_CLIENT_SECRET", required=True)
@@ -61,26 +121,33 @@ class ProductionConfig(Config):
     AUTH0_ACCESS_TOKEN_URL = f"{AUTH0_BASE_URL}/oauth/token"
     AUTH0_AUTH_URL = f"{AUTH0_BASE_URL}/authorize"
     AUTH0_API_AUDIENCE = "https://neurostore.org/api/"
-    NEUROSTORE_API_URL = "https://neurostore.org/api"
+    NEUROSTORE_API_URL = get_env_var("NEUROSTORE_API_URL", "https://neurostore.org/api")
 
 
 class StagingConfig(Config):
     ENV = "staging"
-    DEBUG = True
+    DB_NAME = resolve_database_name("compose", "staging")
+    SQLALCHEMY_DATABASE_URI = (
+        f"postgresql://postgres:{Config.POSTGRES_PASSWORD}"
+        f"@{Config.POSTGRES_HOST}:5432/{DB_NAME}"
+    )
 
     AUTH0_CLIENT_ID = get_env_var("AUTH0_CLIENT_ID", required=True)
     AUTH0_CLIENT_SECRET = get_env_var("AUTH0_CLIENT_SECRET", required=True)
     AUTH0_BASE_URL = "https://neurosynth-staging.us.auth0.com"
     AUTH0_ACCESS_TOKEN_URL = f"{AUTH0_BASE_URL}/oauth/token"
     AUTH0_AUTH_URL = f"{AUTH0_BASE_URL}/authorize"
-    AUTH0_API_AUDIENCE = "https://neurostore.xyz/api/"
-    NEUROSTORE_API_URL = "https://neurostore.xyz/api"
+    AUTH0_API_AUDIENCE = get_env_var(
+        "AUTH0_API_AUDIENCE", "https://staging.synth.neurostore.xyz/api/"
+    )
+    NEUROSTORE_API_URL = get_env_var(
+        "NEUROSTORE_API_URL", "https://staging.neurostore.xyz/api"
+    )
 
 
 class DevelopmentConfig(Config):
     ENV = "development"
-    DB_NAME = "test_db"
-    DEBUG = True
+    DB_NAME = resolve_database_name("compose", "development")
 
     POSTGRES_HOST = get_env_var("POSTGRES_HOST", required=True)
     POSTGRES_PASSWORD = get_env_var("POSTGRES_PASSWORD", "")
@@ -93,14 +160,18 @@ class DevelopmentConfig(Config):
     AUTH0_BASE_URL = "https://dev-mui7zm42.us.auth0.com"
     AUTH0_ACCESS_TOKEN_URL = f"{AUTH0_BASE_URL}/oauth/token"
     AUTH0_AUTH_URL = f"{AUTH0_BASE_URL}/authorize"
-    AUTH0_API_AUDIENCE = "localhost"
-    NEUROSTORE_API_URL = "http://172.17.0.1/api"
+    AUTH0_API_AUDIENCE = get_env_var(
+        "AUTH0_API_AUDIENCE", "https://dev.synth.neurostore.xyz/api/"
+    )
+    NEUROSTORE_API_URL = get_env_var(
+        "NEUROSTORE_API_URL", "https://dev.neurostore.xyz/api"
+    )
 
 
 class TestingConfig(Config):
     ENV = "testing"
     TESTING = True
-    DB_NAME = "test_db"
+    DB_NAME = resolve_database_name("compose", "testing")
 
     POSTGRES_HOST = get_env_var("POSTGRES_HOST", required=True)
     POSTGRES_PASSWORD = get_env_var("POSTGRES_PASSWORD", "")
@@ -114,11 +185,11 @@ class TestingConfig(Config):
     AUTH0_ACCESS_TOKEN_URL = f"{AUTH0_BASE_URL}/oauth/token"
     AUTH0_AUTH_URL = f"{AUTH0_BASE_URL}/authorize"
     AUTH0_API_AUDIENCE = "localhost"
-    NEUROSTORE_API_URL = "http://172.17.0.1/api"
+    NEUROSTORE_API_URL = get_env_var("NEUROSTORE_API_URL", "http://172.17.0.1/api")
 
 
 class DockerTestConfig(TestingConfig):
-    DB_NAME = "test_db"
+    DB_NAME = resolve_database_name("compose", "docker_test")
     POSTGRES_HOST = get_env_var("POSTGRES_HOST", required=True)
     POSTGRES_PASSWORD = get_env_var("POSTGRES_PASSWORD", "")
     SQLALCHEMY_DATABASE_URI = (

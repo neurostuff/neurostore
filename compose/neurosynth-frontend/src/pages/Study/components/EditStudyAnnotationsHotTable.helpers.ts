@@ -27,14 +27,6 @@ export const HotSettings: HotTableProps = {
     },
 };
 
-export const createStudyAnnotationColHeaders = (noteKeys: NoteKeyType[]): string[] => {
-    return [
-        'Analysis Name',
-        'Analysis Description',
-        ...noteKeys.map((x) => `<div class="${styles[x.type]}">${x.key}</div>`),
-    ];
-};
-
 export const createStudyAnnotationColumns = (noteKeys: NoteKeyType[], readonly: boolean) =>
     [
         {

@@ -8,7 +8,7 @@ import LoadingButton from 'components/Buttons/LoadingButton';
 import NeurosynthPopper from 'components/NeurosynthPopper/NeurosynthPopper';
 import { ITag } from 'hooks/projects/useGetProjects';
 import { useProjectCurationExclusionTags, useProjectCurationPrismaConfig } from 'pages/Project/store/ProjectStore';
-import { defaultExclusionTags, ENeurosynthTagIds } from 'pages/Project/store/ProjectStore.types';
+import { defaultExclusionTags, ENeurosynthTagIds } from 'pages/Project/store/ProjectStore.consts';
 import { useEffect, useRef, useState } from 'react';
 
 interface IExclusionSelectorPopup {
@@ -37,7 +37,7 @@ const filterOptions = createFilterOptions<AutoSelectOption>({
     trim: true,
 });
 
-const CurationPopupExclusionSelector: React.FC<IExclusionSelectorPopup> = (props) => {
+const CurationPopupExclusionSelector = (props: IExclusionSelectorPopup) => {
     const excludeButtonRef = useRef<HTMLDivElement>(null);
     const [selectedValue, setSelectedValue] = useState<AutoSelectOption | null>(null);
     const [exclusions, setExclusions] = useState<AutoSelectOption[]>([]);

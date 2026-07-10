@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from .utils.errors import ErrorDetail, ErrorResponse
+from neurostore.exceptions.utils.errors import ErrorDetail, ErrorResponse
 
 # Simple mapping for titles used by ErrorResponse
 HTTP_STATUS_TITLES = {

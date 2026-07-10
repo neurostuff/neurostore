@@ -20,7 +20,7 @@ import {
     algorithmDefaultOption,
 } from './CreateMetaAnalysisSpecificationDialogConstants';
 
-const CreateMetaAnalysisSpecificationDialogBase: React.FC<IDialog> = (props) => {
+const CreateMetaAnalysisSpecificationDialogBase = (props: IDialog) => {
     const projectName = useProjectName();
 
     const [activeStep, setActiveStep] = useState(0);
@@ -36,15 +36,9 @@ const CreateMetaAnalysisSpecificationDialogBase: React.FC<IDialog> = (props) => 
     });
     const [algorithm, setAlgorithm] = useState<IAlgorithmSelection>({
         estimator: algorithmDefaultOption,
-        estimatorArgs: getDefaultValuesForTypeAndParameter(
-            EAnalysisType.CBMA,
-            algorithmDefaultOption?.label
-        ),
+        estimatorArgs: getDefaultValuesForTypeAndParameter(EAnalysisType.CBMA, algorithmDefaultOption?.label),
         corrector: correctorDefaultOption,
-        correctorArgs: getDefaultValuesForTypeAndParameter(
-            'CORRECTOR',
-            correctorDefaultOption?.label
-        ),
+        correctorArgs: getDefaultValuesForTypeAndParameter('CORRECTOR', correctorDefaultOption?.label),
     });
 
     useEffect(() => {
@@ -59,15 +53,9 @@ const CreateMetaAnalysisSpecificationDialogBase: React.FC<IDialog> = (props) => 
         setActiveStep(0);
         setAlgorithm({
             estimator: algorithmDefaultOption,
-            estimatorArgs: getDefaultValuesForTypeAndParameter(
-                EAnalysisType.CBMA,
-                algorithmDefaultOption?.label
-            ),
+            estimatorArgs: getDefaultValuesForTypeAndParameter(EAnalysisType.CBMA, algorithmDefaultOption?.label),
             corrector: correctorDefaultOption,
-            correctorArgs: getDefaultValuesForTypeAndParameter(
-                'CORRECTOR',
-                correctorDefaultOption?.label
-            ),
+            correctorArgs: getDefaultValuesForTypeAndParameter('CORRECTOR', correctorDefaultOption?.label),
         });
         setSelection({
             selectionKey: undefined,

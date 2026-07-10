@@ -1,4 +1,4 @@
-const MockNiiVueVisualizer: React.FC<{ imageURL: string }> = ({ imageURL }) => {
+const MockNiiVueVisualizer = ({  imageURL  }: { imageURL: string }) => {
     return (
         <div>
             <h1>Mocked NiiVue Visualizer</h1>

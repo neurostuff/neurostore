@@ -11,7 +11,7 @@ export interface VisualizerModel {
     styling?: SystemStyleObject;
 }
 
-const Visualizer: React.FC<VisualizerModel> = (props) => {
+const Visualizer = (props: VisualizerModel) => {
     useEffect(() => {
         const anyWindow = window as any;
         const params: any = {};
@@ -65,10 +65,7 @@ const Visualizer: React.FC<VisualizerModel> = (props) => {
         params.showControls = false;
         params.smoothDisplay = false;
 
-        if (
-            !anyWindow.papayaContainers ||
-            (anyWindow.papayaContainers && anyWindow.papayaContainers.length === 0)
-        ) {
+        if (!anyWindow.papayaContainers || (anyWindow.papayaContainers && anyWindow.papayaContainers.length === 0)) {
             anyWindow.papaya.Container.startPapaya();
         }
 

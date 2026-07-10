@@ -1,8 +1,7 @@
 import { Step, StepLabel, StepProps, Typography } from '@mui/material';
+import React from 'react';
 
-const ProjectsPageCardStep: React.FC<
-    StepProps & { isActive: boolean; optionalText: string; title: string }
-> = (props) => {
+const ProjectsPageCardStep = (props: StepProps & { title: string; optionalText?: React.ReactNode; isActive?: boolean }) => {
     const { isActive, optionalText, title, ...stepProps } = props;
 
     return (

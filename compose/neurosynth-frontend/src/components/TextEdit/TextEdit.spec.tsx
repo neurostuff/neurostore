@@ -145,12 +145,7 @@ describe('TextEdit', () => {
 
     it('should not show the loading icon', () => {
         render(
-            <TextEdit
-                isLoading={false}
-                onSave={mockOnSave}
-                label="some-label"
-                textToEdit="test-text"
-            >
+            <TextEdit isLoading={false} onSave={mockOnSave} label="some-label" textToEdit="test-text">
                 <span>test-text</span>
             </TextEdit>
         );
@@ -161,12 +156,7 @@ describe('TextEdit', () => {
 
     it('should show the loading icon', () => {
         render(
-            <TextEdit
-                isLoading={true}
-                onSave={mockOnSave}
-                label="some-label"
-                textToEdit="test-text"
-            >
+            <TextEdit isLoading={true} onSave={mockOnSave} label="some-label" textToEdit="test-text">
                 <span>test-text</span>
             </TextEdit>
         );

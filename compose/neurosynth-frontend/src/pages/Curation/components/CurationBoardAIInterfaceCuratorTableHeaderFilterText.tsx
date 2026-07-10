@@ -3,11 +3,11 @@ import { IconButton, TextField } from '@mui/material';
 import { Box } from '@mui/system';
 import { useEffect, useState } from 'react';
 
-const CurationBoardAIInterfaceCuratorTableHeaderFilterText: React.FC<{
+const CurationBoardAIInterfaceCuratorTableHeaderFilterText = ({  onChange, value, onClose  }: {
     onChange: (value: string | undefined) => void;
     value: string | undefined;
     onClose: () => void;
-}> = ({ onChange, value, onClose }) => {
+}) => {
     const [val, setVal] = useState<string | undefined>(value);
 
     useEffect(() => {

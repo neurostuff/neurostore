@@ -1,7 +1,9 @@
+import uuid
+
 import pytest
 
-from ...models import Studyset, Study, User, Analysis
-from ...schemas import StudySchema
+from neurostore.models import Analysis, Study, Studyset, User
+from neurostore.schemas import StudySchema
 
 
 def test_create_study_as_user_and_analysis_as_bot(auth_clients, session):
@@ -41,12 +43,45 @@ def test_get_studies(auth_client, ingest_neurosynth, ingest_neuroquery, session)
     full_study = resp.json()
 
     # Check extra keys
-    for k in ["analyses", "created_at", "doi", "name"]:
+    for k in ["analyses", "created_at", "doi", "name", "tables"]:
         assert k in full_study
 
     assert full_study["doi"] == Study.query.filter_by(id=s_id).first().doi
 
     assert full_study["id"] == s_id
+
+
+def test_study_emits_all_media_flags(auth_client, session):
+    create_study = auth_client.post(
+        "/api/studies/",
+        data={
+            "name": "study-media-flags",
+            "pmid": "910011",
+            "doi": "10.1000/study-media-flags",
+            "analyses": [
+                {
+                    "name": "analysis-media-flags",
+                    "images": [
+                        {"filename": "z-map.nii.gz", "value_type": "Z"},
+                        {"filename": "t-map.nii.gz", "value_type": "T map"},
+                        {"filename": "beta-map.nii.gz", "value_type": "M"},
+                        {"filename": "variance-map.nii.gz", "value_type": "variance"},
+                    ],
+                }
+            ],
+        },
+    )
+    assert create_study.status_code == 200
+
+    response = auth_client.get(f"/api/studies/{create_study.json()['id']}")
+    assert response.status_code == 200
+    payload = response.json()
+
+    assert payload["has_coordinates"] is False
+    assert payload["has_images"] is True
+    assert payload["has_z_maps"] is True
+    assert payload["has_t_maps"] is True
+    assert payload["has_beta_and_variance_maps"] is True
 
 
 @pytest.mark.parametrize(
@@ -113,6 +148,45 @@ def test_clone_studies(auth_client, ingest_neurovault, session):
     )
 
 
+def test_clone_study_with_missing_source_id_sets_null(
+    auth_client, ingest_neurosynth, session
+):
+    study_entry = Study.query.first()
+    resp = auth_client.post(f"/api/studies/?source_id={study_entry.id}", data={})
+    assert resp.status_code == 200
+    clone = resp.json()
+
+    session.delete(study_entry)
+    session.commit()
+
+    resp2 = auth_client.post(f"/api/studies/?source_id={clone['id']}", data={})
+    assert resp2.status_code == 200
+    data2 = resp2.json()
+    assert data2["source_id"] is None
+
+
+def test_put_study_with_missing_source_id_sets_null(
+    auth_client, ingest_neurosynth, session
+):
+    study_entry = Study.query.first()
+    resp = auth_client.post(f"/api/studies/?source_id={study_entry.id}", data={})
+    assert resp.status_code == 200
+    clone = resp.json()
+
+    clone_record = Study.query.filter_by(id=clone["id"]).first()
+    clone_record.source_id = str(uuid.uuid4())
+    session.add(clone_record)
+    session.commit()
+
+    put_resp = auth_client.put(
+        f"/api/studies/{clone_record.id}", data={"name": "updated name"}
+    )
+    assert put_resp.status_code == 200
+    assert put_resp.json()["source_id"] is None
+    session.expire_all()
+    assert Study.query.filter_by(id=clone_record.id).first().source_id is None
+
+
 def test_clone_studies_with_data(auth_client, ingest_neurosynth, session):
     study_entry = Study.query.first()
     schema = StudySchema(context={"nested": True})
@@ -146,7 +220,7 @@ def test_clone_studies_with_data(auth_client, ingest_neurosynth, session):
 
 
 def test_private_studies(user_data, auth_clients, session):
-    from ...resources.users import User
+    from neurostore.resources.users import User
 
     client1, client2 = auth_clients[0:2]
     id1 = client1.username

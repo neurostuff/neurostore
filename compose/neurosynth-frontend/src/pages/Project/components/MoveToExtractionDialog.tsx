@@ -2,8 +2,8 @@ import { Box, CircularProgress, LinearProgress, Typography } from '@mui/material
 import BaseDialog, { IDialog } from 'components/Dialogs/BaseDialog';
 import { EPropertyType } from 'components/EditMetadata/EditMetadata.types';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
-import { setAnalysesInAnnotationAsIncluded } from 'helpers/Annotation.helpers';
-import { selectBestVersionsForStudyset } from 'helpers/Extraction.helpers';
+import { mapStubsToStudysetPayload } from 'helpers/Extraction.helpers';
+import { getDefaultForNoteKey } from 'components/HotTables/HotTables.utils';
 import { useCreateAnnotation, useCreateStudyset, useUpdateStudyset } from 'hooks';
 import useIngest from 'hooks/studies/useIngest';
 import { BaseStudy, BaseStudyReturn } from 'neurostore-typescript-sdk';
@@ -23,7 +23,7 @@ import { useNavigate } from 'react-router-dom';
 import MoveToExtractionDialogIntroductionPart1 from './MoveToExtractionDialogIntroPart1';
 import MoveToExtractionDialogIntroductionPart2 from './MoveToExtractionDialogIntroPart2';
 
-const MoveToExtractionDialog: React.FC<IDialog> = (props) => {
+const MoveToExtractionDialog = (props: IDialog) => {
     const numColumns = useProjectNumCurationColumns();
     const curationIncludedStudies = useProjectCurationColumn(numColumns - 1);
     const projectId = useProjectId();
@@ -42,7 +42,6 @@ const MoveToExtractionDialog: React.FC<IDialog> = (props) => {
 
     const navigate = useNavigate();
 
-    const [isLoadingPhase, setIsLoadingPhase] = useState(false);
     const [isError, setIsError] = useState(false);
     const [loadingStatus, setLoadingStatus] = useState<{
         createdStudyset: boolean;
@@ -55,7 +54,6 @@ const MoveToExtractionDialog: React.FC<IDialog> = (props) => {
     });
 
     const handleCloseDialog = () => {
-        setIsLoadingPhase(false);
         setLoadingStatus({
             createdAnnotations: false,
             createdStudyset: false,
@@ -71,7 +69,7 @@ const MoveToExtractionDialog: React.FC<IDialog> = (props) => {
                 tempStudysetId = studysetId;
             } else {
                 const newStudyset = await createStudyset({
-                    name: `Studyset for ${projectName}`,
+                    name: `${projectName} Studyset`,
                     description: projectDescription,
                 });
 
@@ -105,7 +103,13 @@ const MoveToExtractionDialog: React.FC<IDialog> = (props) => {
                     annotation: {
                         name: `Annotation for studyset ${newStudysetId}`,
                         description: '',
-                        note_keys: { included: EPropertyType.BOOLEAN },
+                        note_keys: {
+                            included: {
+                                type: EPropertyType.BOOLEAN,
+                                order: 0,
+                                default: getDefaultForNoteKey('included', EPropertyType.BOOLEAN),
+                            },
+                        },
                         studyset: newStudysetId,
                     },
                 });
@@ -151,15 +155,15 @@ const MoveToExtractionDialog: React.FC<IDialog> = (props) => {
             const res = await asyncIngest(stubsToBaseStudies);
             const returnedBaseStudies = res.data as Array<BaseStudyReturn>;
 
-            const selectedStudyIds = selectBestVersionsForStudyset(returnedBaseStudies);
+            const studiesPayload = mapStubsToStudysetPayload(includedStubs, returnedBaseStudies);
+
             await asyncUpdateStudyset({
                 studysetId: newStudysetId,
                 studyset: {
-                    studies: selectedStudyIds,
+                    studies: studiesPayload,
                 },
             });
 
-            await setAnalysesInAnnotationAsIncluded(newAnnotationId);
             setLoadingStatus((prev) => ({
                 ...prev,
                 ingested: true,

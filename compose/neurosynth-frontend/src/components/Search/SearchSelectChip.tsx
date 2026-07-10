@@ -33,11 +33,7 @@ const SearchSelectChip = <T extends string>(props: ISearchSelectChip<T>) => {
                 <Box sx={{ width: '220px' }}>
                     <MenuList>
                         {options.map((option) => (
-                            <MenuItem
-                                onClick={() => onSelect(option.value)}
-                                key={option.label}
-                                value={option.value}
-                            >
+                            <MenuItem onClick={() => onSelect(option.value)} key={option.label} value={option.value}>
                                 {option.label}
                             </MenuItem>
                         ))}

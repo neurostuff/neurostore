@@ -1,12 +1,14 @@
+import type { ReactNode } from 'react';
 import Box from '@mui/material/Box';
 import ProgressLoader from 'components/ProgressLoader';
 
 export interface INeurosynthLoader {
     loaded: boolean;
     loadingText?: string;
+    children?: React.ReactNode;
 }
 
-const NeurosynthLoader: React.FC<INeurosynthLoader> = (props) => {
+const NeurosynthLoader = (props: INeurosynthLoader) => {
     return (
         <>
             {props.loaded ? (
@@ -21,9 +23,7 @@ const NeurosynthLoader: React.FC<INeurosynthLoader> = (props) => {
                     }}
                 >
                     <ProgressLoader disableShrink={false} />
-                    {props.loadingText && (
-                        <Box sx={{ margin: '0.5rem' }}> {props.loadingText} </Box>
-                    )}
+                    {props.loadingText && <Box sx={{ margin: '0.5rem' }}> {props.loadingText} </Box>}
                 </Box>
             )}
         </>

@@ -3,6 +3,7 @@ import {
     ICurationMetadata,
     INeurosynthProjectReturn,
     IPRISMAConfig,
+    IProvenance,
     ISource,
     IStudyExtractionStatus,
     ITag,
@@ -14,7 +15,7 @@ import {
     defaultIdentificationSources,
     defaultInfoTags,
     ENeurosynthTagIds,
-} from 'pages/Project/store/ProjectStore.types';
+} from 'pages/Project/store/ProjectStore.consts';
 import { ICurationColumn, ICurationStubStudy } from 'pages/Curation/Curation.types';
 
 export const handleDragEndHelper = (
@@ -305,8 +306,10 @@ export const createNewExclusionHelper = (
     const updatedState = { ...state };
 
     if (!phase) {
+        if (updatedState.exclusionTags.find((x) => x.id === newExclusion.id)) return updatedState;
         updatedState.exclusionTags = [...updatedState.exclusionTags, { ...newExclusion }];
     } else {
+        if (updatedState.prismaConfig[phase].exclusionTags.find((x) => x.id === newExclusion.id)) return updatedState;
         updatedState.prismaConfig = {
             ...updatedState.prismaConfig,
             [phase]: {
@@ -323,7 +326,7 @@ export const setExclusionForStubHelper = (
     state: ICurationColumn[],
     columnIndex: number,
     stubId: string,
-    exclusion: ITag | null
+    exclusionId: string | null
 ): ICurationColumn[] => {
     const updatedState = [...state];
 
@@ -333,7 +336,7 @@ export const setExclusionForStubHelper = (
 
     updatedStubsForColumn[stubToUpdateIndex] = {
         ...updatedStubsForColumn[stubToUpdateIndex],
-        exclusionTag: exclusion,
+        exclusionTag: exclusionId,
     };
 
     updatedState[columnIndex] = {
@@ -419,6 +422,20 @@ export const setGivenStudyStatusesAsCompleteHelper = (studyIds: string[]): IStud
         }));
 };
 
+const UNTITLED_REGEX = /^Untitled( (\d+))?$/;
+
+export const getNextUntitledProjectName = (existingProjectNames: string[]): string => {
+    const numbers = existingProjectNames
+        .map((projectName) => {
+            const m = (projectName ?? '').trim().match(UNTITLED_REGEX);
+            if (!m) return null;
+            return m[2] ? parseInt(m[2], 10) : 1;
+        })
+        .filter((x) => x !== null);
+    const max = numbers.length === 0 ? 0 : Math.max(...numbers);
+    return max === 0 ? 'Untitled' : `Untitled ${max + 1}`;
+};
+
 export const generateNewProjectData = (name?: string, description?: string): INeurosynthProjectReturn => {
     return {
         name: name || '',
@@ -453,4 +470,76 @@ export const generateNewProjectData = (name?: string, description?: string): INe
             },
         },
     };
+};
+
+export const updateExclusionTagHelper = (provenance: IProvenance, id: string, newName: string) => {
+    if (provenance.curationMetadata.prismaConfig.isPrisma) {
+        let phase: keyof Omit<IPRISMAConfig, 'isPrisma'> | undefined;
+        let foundExclusion: ITag | undefined;
+        let foundExclusionIndex: number | undefined;
+
+        for (const [key, value] of Object.entries(provenance.curationMetadata.prismaConfig)) {
+            const typedKey = key as keyof IPRISMAConfig;
+            if (typedKey === 'isPrisma') continue;
+            const typedValue = value as IPRISMAConfig[keyof Omit<IPRISMAConfig, 'isPrisma'>];
+
+            const foundIndex = typedValue.exclusionTags.findIndex((x) => x.id === id);
+            if (foundIndex >= 0) {
+                phase = typedKey;
+                foundExclusion = typedValue.exclusionTags[foundIndex];
+                foundExclusionIndex = foundIndex;
+                break;
+            }
+        }
+
+        if (!phase || !foundExclusion || foundExclusionIndex === undefined) return provenance;
+
+        const updatedExclusionTags = [...provenance.curationMetadata.prismaConfig[phase].exclusionTags];
+        updatedExclusionTags[foundExclusionIndex] = {
+            ...foundExclusion,
+            label: newName,
+        };
+
+        return {
+            ...provenance,
+            curationMetadata: {
+                ...provenance.curationMetadata,
+                prismaConfig: {
+                    ...provenance.curationMetadata.prismaConfig,
+                    [phase]: {
+                        ...provenance.curationMetadata.prismaConfig[phase],
+                        exclusionTags: updatedExclusionTags,
+                    },
+                },
+            },
+        } as IProvenance;
+    } else {
+        const foundExclusionIndex = provenance.curationMetadata.exclusionTags.findIndex((x) => x.id === id);
+        if (foundExclusionIndex < 0) return provenance;
+
+        const updatedExclusionTags = [...provenance.curationMetadata.exclusionTags];
+        updatedExclusionTags[foundExclusionIndex] = {
+            ...updatedExclusionTags[foundExclusionIndex],
+            label: newName,
+        };
+
+        return {
+            ...provenance,
+            curationMetadata: {
+                ...provenance.curationMetadata,
+                exclusionTags: updatedExclusionTags,
+            },
+        } as IProvenance;
+    }
+};
+
+export const getExclusionsHelper = (provenance: IProvenance) => {
+    if (provenance.curationMetadata.prismaConfig.isPrisma) {
+        return [
+            ...provenance.curationMetadata.prismaConfig.identification.exclusionTags,
+            ...provenance.curationMetadata.prismaConfig.screening.exclusionTags,
+            ...provenance.curationMetadata.prismaConfig.eligibility.exclusionTags,
+        ];
+    }
+    return provenance.curationMetadata.exclusionTags;
 };

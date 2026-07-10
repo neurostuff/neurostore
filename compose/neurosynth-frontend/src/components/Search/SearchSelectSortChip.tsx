@@ -5,13 +5,13 @@ import NeurosynthPopper from 'components/NeurosynthPopper/NeurosynthPopper';
 import { SortBy, SortByEnumToString } from 'pages/Study/Study.types';
 import { useMemo, useRef, useState } from 'react';
 
-const SearchSelectSortChip: React.FC<{
+const SearchSelectSortChip = (props: {
     onSelectSort: (searchBy: SortBy) => void;
     onSelectDescOrder: (descOrder: boolean) => void;
     chipLabel: string;
     descOrderChipLabel: string;
     searchMode: 'study-search' | 'project-search';
-}> = (props) => {
+}) => {
     const sortByRef = useRef(null);
     const descOrderRef = useRef(null);
     const [sortByPopperIsOpen, setSortByPopperIsOpen] = useState(false);
@@ -53,11 +53,7 @@ const SearchSelectSortChip: React.FC<{
                 <Box>
                     <MenuList sx={{ width: '160px' }}>
                         {sortByList.map((sortBy) => (
-                            <MenuItem
-                                onClick={() => handleSelectSortBy(sortBy as SortBy)}
-                                key={sortBy}
-                                value={sortBy}
-                            >
+                            <MenuItem onClick={() => handleSelectSortBy(sortBy as SortBy)} key={sortBy} value={sortBy}>
                                 {SortByEnumToString[sortBy]}
                             </MenuItem>
                         ))}
@@ -86,12 +82,8 @@ const SearchSelectSortChip: React.FC<{
             >
                 <Box>
                     <MenuList sx={{ width: '200px' }}>
-                        <MenuItem onClick={() => handleSelectIsDescOrder(false)}>
-                            Ascending Order
-                        </MenuItem>
-                        <MenuItem onClick={() => handleSelectIsDescOrder(true)}>
-                            Descending Order
-                        </MenuItem>
+                        <MenuItem onClick={() => handleSelectIsDescOrder(false)}>Ascending Order</MenuItem>
+                        <MenuItem onClick={() => handleSelectIsDescOrder(true)}>Descending Order</MenuItem>
                     </MenuList>
                 </Box>
             </NeurosynthPopper>

@@ -12,12 +12,12 @@ import SelectAnalysesComponent from 'pages/MetaAnalysis/components/SelectAnalyse
 import { isMultiGroupAlgorithm } from 'pages/MetaAnalysis/components/SelectAnalysesComponent.helpers';
 import SelectAnalysesSummaryComponent from 'pages/MetaAnalysis/components/SelectAnalysesSummaryComponent';
 
-const CreateMetaAnalysisSpecificationSelectionStep: React.FC<{
+const CreateMetaAnalysisSpecificationSelectionStep = (props: {
     onChooseSelection: (selection: IAnalysesSelection) => void;
     onNavigate: (button: ENavigationButton) => void;
     selection: IAnalysesSelection;
     algorithm: IAlgorithmSelection;
-}> = (props) => {
+}) => {
     const annotationId = useProjectExtractionAnnotationId();
     const studysetId = useProjectExtractionStudysetId();
     const isMultiGroup = isMultiGroupAlgorithm(props.algorithm?.estimator);

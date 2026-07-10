@@ -1,0 +1,70 @@
+import { Alert, CircularProgress, Typography } from '@mui/material';
+import { getLatestMetaAnalysisResultId, getResultStatus } from 'helpers/MetaAnalysis.helpers';
+import { useGetMetaAnalysisResultById } from 'hooks';
+import { MetaAnalysisJobResponse, MetaAnalysisReturn } from 'neurosynth-compose-typescript-sdk';
+import { useEffect, useMemo, useState } from 'react';
+import useGetMetaAnalysisJobById from '../hooks/useGetMetaAnalysisJobById';
+
+export const localStorageStatusAlertKey = 'hide-meta-analysis-status-alert';
+
+const MetaAnalysisStatusAlert = ({  metaAnalysis, metaAnalysisJobs  }: {
+    metaAnalysis?: MetaAnalysisReturn;
+    metaAnalysisJobs?: Array<MetaAnalysisJobResponse>;
+}) => {
+    const latestResultId = getLatestMetaAnalysisResultId(metaAnalysis);
+    const {
+        data: latestMetaAnalysisResult,
+        isLoading: latestResultIsLoading,
+        isError: latestResultIsError,
+    } = useGetMetaAnalysisResultById(latestResultId);
+
+    const jobs = metaAnalysisJobs ?? [];
+    const latestJob = jobs.length > 0 ? jobs[jobs.length - 1] : undefined;
+    const {
+        data: latestMetaAnalysisJob,
+        isLoading: latestJobIsLoading,
+        isError: latestJobIsError,
+    } = useGetMetaAnalysisJobById(latestJob?.job_id);
+
+    const resultStatus = useMemo(() => {
+        return getResultStatus(metaAnalysis, latestMetaAnalysisResult, latestMetaAnalysisJob);
+    }, [metaAnalysis, latestMetaAnalysisResult, latestMetaAnalysisJob]);
+
+    const [hideAlert, setHideAlert] = useState<boolean>(false);
+
+    useEffect(() => {
+        if (!resultStatus || !metaAnalysis?.id) return;
+        const shouldHide = !!localStorage.getItem(`${localStorageStatusAlertKey}-${metaAnalysis?.id}`);
+        setHideAlert(shouldHide);
+    }, [metaAnalysis?.id, resultStatus]);
+
+    if (
+        hideAlert === undefined ||
+        latestResultIsLoading ||
+        latestResultIsError ||
+        latestJobIsLoading ||
+        latestJobIsError
+    )
+        return null;
+
+    return (
+        <>
+            {!hideAlert && (
+                <Alert
+                    icon={resultStatus.status === 'RUNNING' ? <CircularProgress size={20} /> : undefined}
+                    severity={resultStatus.severity}
+                    color={resultStatus.color}
+                    onClose={() => {
+                        setHideAlert(true);
+                        localStorage.setItem(`${localStorageStatusAlertKey}-${metaAnalysis?.id}`, 'true');
+                    }}
+                >
+                    <Typography variant="h6">{resultStatus.statusText}</Typography>
+                    {resultStatus.description && <Typography variant="body2">{resultStatus.description}</Typography>}
+                </Alert>
+            )}
+        </>
+    );
+};
+
+export default MetaAnalysisStatusAlert;

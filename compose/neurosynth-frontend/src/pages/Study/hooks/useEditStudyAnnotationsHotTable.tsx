@@ -1,36 +1,42 @@
 import { createColWidths } from 'components/HotTables/HotTables.utils';
 import { useDebouncedStudyAnalyses, useStudyId } from 'pages/Study/store/StudyStore';
 import { useEffect, useMemo, useState } from 'react';
-import { useAnnotationNoteKeys } from 'stores/AnnotationStore.actions';
+import { useAnnotationNoteKeys, useUpdateAnnotationNoteDetails } from 'stores/AnnotationStore.actions';
 import { useAnnotationNotes } from 'stores/AnnotationStore.getters';
-import {
-    createStudyAnnotationColHeaders,
-    createStudyAnnotationColumns,
-} from 'pages/Study/components/EditStudyAnnotationsHotTable.helpers';
+import { createStudyAnnotationColumns } from '../components/EditStudyAnnotationsHotTable.helpers';
 import {
     EditStudyAnnotationsNoteCollectionReturn,
     IEditStudyAnnotationsDataRef,
-} from 'pages/Study/components/EditStudyAnnotationsHotTable.types';
+} from '../components/EditStudyAnnotationsHotTable.types';
+import { createColumnHeader } from 'pages/Annotations/components/EditAnnotationsHotTable.helpers';
 
 const useEditStudyAnnotationsHotTable = (readonly?: boolean) => {
     const studyId = useStudyId();
     const debouncedAnalyses = useDebouncedStudyAnalyses();
     const noteKeys = useAnnotationNoteKeys();
     const notes = useAnnotationNotes();
+    const updateAnnotationNoteName = useUpdateAnnotationNoteDetails();
 
     const [data, setData] = useState<EditStudyAnnotationsNoteCollectionReturn[]>();
 
     useEffect(() => {
         if (!notes) return;
-
         setData((prev) => {
-            if (!prev) return [...notes];
+            if (!prev || prev.length === 0) return [...notes];
 
-            const update = [...prev].map((updateItem, index) => ({
-                ...updateItem,
-                ...notes[index],
-            }));
-            return update;
+            // Create a hashmap for faster performance with large datasets (we could potentially have thousands of analyses)
+            const prevMap = new Map(prev.map((n) => [n.analysis, n]));
+
+            // Merge store notes with existing local state to preserve derived values like analysisDescription
+            return notes.map((storeNote) => {
+                const existingNote = prevMap.get(storeNote.analysis);
+                if (!existingNote) return storeNote;
+
+                return {
+                    ...storeNote,
+                    analysisDescription: existingNote.analysisDescription || undefined,
+                } as EditStudyAnnotationsNoteCollectionReturn;
+            });
         });
     }, [notes]);
 
@@ -39,26 +45,31 @@ const useEditStudyAnnotationsHotTable = (readonly?: boolean) => {
      * From an annotation perspective, the analysis name and description is purely decorative so we debounce the updates here
      */
     useEffect(() => {
+        debouncedAnalyses.forEach((analysis) => {
+            updateAnnotationNoteName({
+                analysis: analysis.id,
+                analysis_name: analysis.name,
+            });
+        });
+
         setData((prev) => {
             if (!prev) return prev;
-            const update: EditStudyAnnotationsNoteCollectionReturn[] = [...(notes || [])];
+            const update = [...prev];
             debouncedAnalyses.forEach((analysis) => {
-                const foundNoteIndex = update.findIndex(
-                    (updateNote) => updateNote.analysis === analysis.id
-                );
+                const foundNoteIndex = update.findIndex((updateNote) => updateNote.analysis === analysis.id);
                 if (foundNoteIndex < 0) return;
 
                 update[foundNoteIndex] = {
                     ...update[foundNoteIndex],
-                    analysis_name: analysis.name || '',
-                    analysisDescription: analysis.description || '',
+                    analysisDescription: analysis.description || undefined,
                 };
             });
+
             return update;
         });
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [debouncedAnalyses]);
+    }, [debouncedAnalyses, updateAnnotationNoteName]);
 
+    // return the indices for rows that we want to hide
     const hiddenRows = useMemo(() => {
         return (notes || [])
             .map((x, index) => (x.study !== studyId ? index : null))
@@ -68,26 +79,14 @@ const useEditStudyAnnotationsHotTable = (readonly?: boolean) => {
     const { columns, colHeaders, colWidths } = useMemo<IEditStudyAnnotationsDataRef>(() => {
         return {
             columns: createStudyAnnotationColumns(noteKeys || [], !!readonly),
-            colHeaders: createStudyAnnotationColHeaders(noteKeys || []),
-            colWidths: createColWidths(noteKeys || [], 200, 250, 150),
+            colHeaders: [
+                'Analysis Name',
+                'Analysis Description',
+                ...(noteKeys ?? []).map((x) => createColumnHeader(x.key, x.type, x.key !== 'included')),
+            ],
+            colWidths: createColWidths(noteKeys || [], 150, 150, 150),
         };
     }, [noteKeys, readonly]);
-
-    const height = useMemo(() => {
-        const MIN_HEIGHT_PX = 100;
-        const MAX_HEIGHT_PX = 500;
-        const HEADER_HEIGHT_PX = 26;
-        const ROW_HEIGHT_PX = 24; // +24 to padd row height a little bit
-
-        const visibleNotes = (notes || []).filter((x) => x.study === studyId);
-
-        const TABLE_HEIGHT_PX = HEADER_HEIGHT_PX + visibleNotes.length * ROW_HEIGHT_PX;
-        return TABLE_HEIGHT_PX < MIN_HEIGHT_PX
-            ? MIN_HEIGHT_PX
-            : TABLE_HEIGHT_PX > MAX_HEIGHT_PX
-            ? MAX_HEIGHT_PX
-            : TABLE_HEIGHT_PX;
-    }, [notes, studyId]);
 
     return {
         hiddenRows,
@@ -95,7 +94,6 @@ const useEditStudyAnnotationsHotTable = (readonly?: boolean) => {
         colHeaders,
         colWidths,
         data: data || [],
-        height,
     };
 };
 

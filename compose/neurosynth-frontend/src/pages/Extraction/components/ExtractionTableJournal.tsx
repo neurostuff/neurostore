@@ -4,15 +4,15 @@ import { Box, IconButton, Tooltip, Typography } from '@mui/material';
 import { CellContext, HeaderContext } from '@tanstack/react-table';
 import { IExtractionTableStudy } from './ExtractionTable';
 
-export const ExtractionTableJournalCell: React.FC<CellContext<IExtractionTableStudy, string>> = (props) => {
+export const ExtractionTableJournalCell = (props: CellContext<IExtractionTableStudy, string>) => {
     const value = props.getValue();
     return <Typography variant="body2">{value}</Typography>;
 };
 
-export const ExtractionTableJournalHeader: React.FC<HeaderContext<IExtractionTableStudy, string>> = ({
+export const ExtractionTableJournalHeader = ({ 
     table,
     column,
-}) => {
+ }: HeaderContext<IExtractionTableStudy, string>) => {
     const columnLabel = column.columnDef.meta?.columnLabel || '';
     const isSorted = column.getIsSorted();
     return (

@@ -1,7 +1,7 @@
 import axios, { AxiosError } from 'axios';
 import { stringToNumber } from 'helpers/utils';
 import { ICurationStubStudy } from 'pages/Curation/Curation.types';
-import { useMutation } from 'react-query';
+import { useMutation } from '@tanstack/react-query';
 
 /**
  * I'll leave this file here for now because it may be useful later and I worked hard on it
@@ -32,8 +32,7 @@ const generateBibtexNote = (study: ICurationStubStudy) => {
     }
     if (study.tags.length > 0) {
         const tagString = study.tags.reduce(
-            (prev, curr, index, arr) =>
-                `${prev}${curr.label}${index === arr.length - 1 ? '' : ','}`,
+            (prev, curr, index, arr) => `${prev}${curr.label}${index === arr.length - 1 ? '' : ','}`,
             ''
         );
         bibtexNote = `${bibtexNote}; Tags: ${tagString}`;
@@ -84,20 +83,19 @@ export const generateBibtex = (study: ICurationStubStudy): IBibtex => {
  */
 
 const useGetBibtexCitations = () => {
-    return useMutation<IBibtex, AxiosError, ICurationStubStudy, unknown>(async (study) => {
-        let res: IBibtex;
-        try {
-            res = (
-                await axios.get<{ message: IBibtex }>(
-                    `https://api.crossref.org/v1/works/${study.doi}`
-                )
-            ).data.message;
-        } catch (e) {
-            res = generateBibtex(study);
+    return useMutation({
+        mutationFn: async (study) => {
+            let res: IBibtex;
+            try {
+                res = (await axios.get<{ message: IBibtex }>(`https://api.crossref.org/v1/works/${study.doi}`)).data
+                    .message;
+            } catch (e) {
+                res = generateBibtex(study);
+            }
+            // add a note with relevant neurosynth related data for provenance
+            res.note = generateBibtexNote(study);
+            return res;
         }
-        // add a note with relevant neurosynth related data for provenance
-        res.note = generateBibtexNote(study);
-        return res;
     });
 };
 

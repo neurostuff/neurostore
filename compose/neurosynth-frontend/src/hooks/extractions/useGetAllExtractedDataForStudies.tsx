@@ -1,8 +1,8 @@
 // gotta customize this myself
 
 import { AxiosError, AxiosResponse } from 'axios';
-import { useQuery } from 'react-query';
-import API from 'utils/api';
+import { useQuery } from '@tanstack/react-query';
+import API from 'api/api.config';
 
 export enum EAIExtractors {
     PARTICIPANTSDEMOGRAPHICSEXTRACTOR = 'ParticipantDemographicsExtractor',
@@ -104,17 +104,10 @@ export interface IExtractedDataResult {
 
 const useGetAllAIExtractedDataForStudies = (baseStudyIds?: string[]) => {
     const baseStudyIdsOrEmpty = baseStudyIds ?? [];
-    return useQuery<
-        [AxiosResponse<IExtractedDataResult>, AxiosResponse<IExtractedDataResult>],
-        AxiosError,
-        {
-            [EAIExtractors.TASKEXTRACTOR]: IExtractedDataResult;
-            [EAIExtractors.PARTICIPANTSDEMOGRAPHICSEXTRACTOR]: IExtractedDataResult;
-        },
-        string[]
-    >(
-        ['extraction', ...baseStudyIdsOrEmpty],
-        async () => {
+    return useQuery({
+        queryKey: ['extraction', ...baseStudyIdsOrEmpty],
+
+        queryFn: async () => {
             const promises = await Promise.all([
                 API.NeurostoreServices.ExtractedDataResultsService.getAllExtractedDataResults(
                     [EAIExtractors.TASKEXTRACTOR],
@@ -132,17 +125,17 @@ const useGetAllAIExtractedDataForStudies = (baseStudyIds?: string[]) => {
 
             return promises;
         },
-        {
-            select: ([taskExtractionRes, participantDemographicsExtractionRes]) => {
-                return {
-                    [EAIExtractors.TASKEXTRACTOR]: taskExtractionRes.data,
-                    [EAIExtractors.PARTICIPANTSDEMOGRAPHICSEXTRACTOR]: participantDemographicsExtractionRes.data,
-                };
-            },
-            refetchOnMount: false,
-            enabled: baseStudyIdsOrEmpty.length > 0,
-        }
-    );
+
+        select: ([taskExtractionRes, participantDemographicsExtractionRes]) => {
+            return {
+                [EAIExtractors.TASKEXTRACTOR]: taskExtractionRes.data,
+                [EAIExtractors.PARTICIPANTSDEMOGRAPHICSEXTRACTOR]: participantDemographicsExtractionRes.data,
+            };
+        },
+
+        refetchOnMount: false,
+        enabled: baseStudyIdsOrEmpty.length > 0
+    });
 };
 
 export default useGetAllAIExtractedDataForStudies;

@@ -4,4 +4,6 @@ const useSnackbar = vi.fn().mockReturnValue({
     enqueueSnackbar: vi.fn(),
 });
 
-export { useSnackbar };
+const enqueueSnackbar = vi.fn();
+
+export { useSnackbar, enqueueSnackbar };

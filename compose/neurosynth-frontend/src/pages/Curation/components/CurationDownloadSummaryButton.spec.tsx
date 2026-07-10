@@ -1,16 +1,21 @@
 import { vi, Mock } from 'vitest';
-import { act, render, screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import CurationDownloadSummaryButton from 'pages/Curation/components/CurationDownloadSummaryButton';
 import userEvent from '@testing-library/user-event';
-import { useProjectCurationColumns } from 'pages/Project/store/ProjectStore';
+import { useProjectCurationColumns, useProjectExclusionTags } from 'pages/Project/store/ProjectStore';
 import { ICurationColumn } from '../Curation.types';
-import { defaultIdentificationSources } from 'pages/Project/store/ProjectStore.types';
-import { downloadFile } from '../Curation.helpers';
+import { defaultIdentificationSources } from 'pages/Project/store/ProjectStore.consts';
+import { downloadFile } from 'helpers/downloadFile.helpers';
 
-vi.mock('react-query');
-vi.mock('pages/Curation/Curation.helpers.ts', () => ({
-    downloadFile: vi.fn(),
-}));
+vi.mock('@tanstack/react-query');
+vi.mock('helpers/downloadFile.helpers', async () => {
+    const actual = await vi.importActual('helpers/downloadFile.helpers');
+
+    return {
+        ...actual,
+        downloadFile: vi.fn(),
+    };
+});
 vi.mock('pages/Project/store/ProjectStore');
 
 const mockCurationColumns: ICurationColumn[] = [
@@ -32,12 +37,7 @@ const mockCurationColumns: ICurationColumn[] = [
                 identificationSource: defaultIdentificationSources.neurostore,
                 keywords: '',
                 abstractText: 'included_abstract_1',
-                exclusionTag: {
-                    id: 'excluded',
-                    label: 'exclusion-tag-label',
-                    isExclusionTag: true,
-                    isAssignable: true,
-                },
+                exclusionTag: 'excluded',
                 neurostoreId: 'included_neurostoreid_1',
             },
         ],
@@ -81,6 +81,17 @@ const mockCurationColumns: ICurationColumn[] = [
 ];
 
 describe('CurationDownloadSummaryButton', () => {
+    beforeEach(() => {
+        (useProjectExclusionTags as Mock).mockReturnValue([
+            {
+                id: 'excluded',
+                label: 'exclusion-tag-label',
+                isExclusionTag: true,
+                isAssignable: true,
+            },
+        ]);
+    });
+
     it('should render', () => {
         (useProjectCurationColumns as Mock).mockReturnValue(mockCurationColumns);
         render(<CurationDownloadSummaryButton />);
@@ -105,7 +116,7 @@ describe('CurationDownloadSummaryButton', () => {
 
     it('downloads CSVs when the download CSV button is clicked', () => {
         const csvStudies =
-            `"Title","Authors","PMID","PMCID","DOI","Year","Journal","Link","Source","Status","Exclusion","Tags","Neurosynth ID"\r\n` +
+            `"title","authors","pmid","pmcid","doi","articleYear","journal","articleLink","source","status","exclusion","tags","neurostoreId"\r\n` +
             `"included_1","John Smith","included_pmid_1","included_pmcid_1","included_doi_1","included_articleyear_1","included_journal_1","included_articlelink_1","Neurostore","excluded","exclusion-tag-label","","included_neurostoreid_1"\r\n` +
             `"included_2","included_authors_2","included_pmid_2","included_pmcid_2","","included_articleyear_2","included_journal_2","included_articlelink_2","Neurostore","included","","tag_1_label, tag_2_label","included_neurostoreid_2"`;
 
@@ -121,7 +132,7 @@ describe('CurationDownloadSummaryButton', () => {
         );
     });
 
-    it('downloads BibTeX citations when the download BibTeX button is clicked', async () => {
+    it('downloads BibTeX citations when the download BibTeX button is clicked', () => {
         const expectedBibtex =
             `@article{Smithincluded_1,\n` +
             `\tauthor = {Smith, John},\n` +
@@ -144,15 +155,11 @@ describe('CurationDownloadSummaryButton', () => {
 
         (useProjectCurationColumns as Mock).mockReturnValue(mockCurationColumns);
 
-        await act(async () => {
-            render(<CurationDownloadSummaryButton />);
-            const dropdownButton = screen.getByTestId('ArrowDropDownIcon');
-            expect(dropdownButton).toBeInTheDocument();
-            userEvent.click(dropdownButton);
-        });
-        await act(async () => {
-            userEvent.click(screen.getByText('Download as BibTeX'));
-        });
+        render(<CurationDownloadSummaryButton />);
+        const dropdownButton = screen.getByTestId('ArrowDropDownIcon');
+        expect(dropdownButton).toBeInTheDocument();
+        userEvent.click(dropdownButton);
+        userEvent.click(screen.getByText('Download as BibTeX'));
         expect(downloadFile).toHaveBeenCalledWith(
             `project-name:Curation:${new Date().toLocaleDateString()}.bib`,
             expectedBibtex,

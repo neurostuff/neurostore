@@ -5,25 +5,22 @@ import NeurosynthTableStyles from 'components/NeurosynthTable/NeurosynthTable.st
 import { useGetAnnotationById } from 'hooks';
 import { NoteCollectionReturn } from 'neurostore-typescript-sdk';
 import { useEffect, useMemo, useRef } from 'react';
-import CreateMetaAnalysisSpecificationDialogBaseStyles from 'pages/MetaAnalysis/components/CreateMetaAnalysisSpecificationDialogBase.styles';
 import {
     IAlgorithmSelection,
     IAnalysesSelection,
 } from 'pages/MetaAnalysis/components/CreateMetaAnalysisSpecificationDialogBase.types';
-import {
-    isMultiGroupAlgorithm,
-    selectedReferenceDatasetIsDefaultDataset,
-} from './SelectAnalysesComponent.helpers';
+import { isMultiGroupAlgorithm, selectedReferenceDatasetIsDefaultDataset } from './SelectAnalysesComponent.helpers';
 import { DEFAULT_REFERENCE_DATASETS } from './SelectAnalysesComponent.types';
 import SelectAnalysesComponentTable from './SelectAnalysesComponentTable';
 import SelectAnalysesStringValue from './SelectAnalysesStringValue';
+import { noteKeyObjToArr } from 'components/HotTables/HotTables.utils';
 
-const SelectAnalysesComponent: React.FC<{
+const SelectAnalysesComponent = (props: {
     annotationId: string;
     selectedValue: IAnalysesSelection;
     onSelectValue: (value: IAnalysesSelection) => void;
     algorithm: IAlgorithmSelection;
-}> = (props) => {
+}) => {
     const { annotationId, selectedValue, onSelectValue, algorithm } = props;
     const { data: annotation } = useGetAnnotationById(annotationId);
 
@@ -49,19 +46,13 @@ const SelectAnalysesComponent: React.FC<{
             onSelectValue(initialVal);
             selectionOccurred.current = true;
         }
-    }, [
-        selectedValue.selectionKey,
-        annotation,
-        onSelectValue,
-        selectionOccurred,
-        algorithm?.estimator,
-    ]);
+    }, [selectedValue.selectionKey, annotation, onSelectValue, selectionOccurred, algorithm?.estimator]);
 
     const options = useMemo(() => {
-        return Object.entries(annotation?.note_keys || {})
-            .map(([key, value]) => ({
+        return noteKeyObjToArr(annotation?.note_keys)
+            .map(({ key, type }) => ({
                 selectionKey: key,
-                type: value as EPropertyType,
+                type,
                 selectionValue: undefined,
                 referenceDataset: undefined,
             }))
@@ -76,17 +67,13 @@ const SelectAnalysesComponent: React.FC<{
     const handleSelectColumn = (newVal: IAnalysesSelection | undefined) => {
         if (newVal?.selectionKey === selectedValue.selectionKey) return; // we selected the same option that is already selected
 
-        const referenceDatasetIsNowInvalid = !selectedReferenceDatasetIsDefaultDataset(
-            selectedValue.referenceDataset
-        );
+        const referenceDatasetIsNowInvalid = !selectedReferenceDatasetIsDefaultDataset(selectedValue.referenceDataset);
         if (!newVal) {
             onSelectValue({
                 selectionKey: undefined,
                 type: undefined,
                 selectionValue: undefined,
-                referenceDataset: referenceDatasetIsNowInvalid
-                    ? undefined
-                    : selectedValue.referenceDataset,
+                referenceDataset: referenceDatasetIsNowInvalid ? undefined : selectedValue.referenceDataset,
             });
             return;
         }
@@ -95,22 +82,17 @@ const SelectAnalysesComponent: React.FC<{
             selectionKey: newVal.selectionKey,
             type: newVal.type,
             selectionValue: newVal.type === EPropertyType.BOOLEAN ? true : undefined,
-            referenceDataset: referenceDatasetIsNowInvalid
-                ? undefined
-                : selectedValue.referenceDataset,
+            referenceDataset: referenceDatasetIsNowInvalid ? undefined : selectedValue.referenceDataset,
         };
         onSelectValue(update);
     };
 
     return (
-        <Box>
+        <Box sx={{ marginBottom: '3rem' }}>
             <NeurosynthAutocomplete
-                sx={CreateMetaAnalysisSpecificationDialogBaseStyles.highlightInput}
                 label="Inclusion Column"
                 shouldDisable={false}
-                isOptionEqualToValue={(option, value) =>
-                    option?.selectionKey === value?.selectionKey
-                }
+                isOptionEqualToValue={(option, value) => option?.selectionKey === value?.selectionKey}
                 value={selectedValue?.selectionKey ? selectedValue : undefined}
                 size="medium"
                 inputPropsSx={{
@@ -135,7 +117,7 @@ const SelectAnalysesComponent: React.FC<{
                 <Box
                     sx={{
                         padding: '1rem 0 2rem 3rem',
-                        borderLeft: '6px solid',
+                        borderLeft: '2px solid',
                         borderColor: 'secondary.main',
                     }}
                 >

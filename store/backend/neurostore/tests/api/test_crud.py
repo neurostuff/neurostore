@@ -1,29 +1,30 @@
 import pytest
 from marshmallow import fields
-from ...models import (
-    User,
-    Studyset,
-    BaseStudy,
-    Study,
+
+from neurostore.models import (
+    Analysis,
     Annotation,
     AnnotationAnalysis,
-    Analysis,
+    BaseStudy,
     Condition,
     Image,
     Point,
+    Study,
+    Studyset,
+    User,
 )
-from ...schemas import (
-    StudysetSchema,
-    BaseStudySchema,
-    StudySchema,
-    AnnotationSchema,
-    AnnotationAnalysisSchema,
+from neurostore.schemas import (
     AnalysisSchema,
+    AnnotationAnalysisSchema,
+    AnnotationSchema,
+    BaseStudySchema,
     ConditionSchema,
     ImageSchema,
     PointSchema,
+    StudySchema,
+    StudysetSchema,
 )
-from ...schemas.data import StringOrNested
+from neurostore.schemas.data import StringOrNested
 
 
 @pytest.mark.parametrize(
@@ -68,6 +69,14 @@ def test_create(auth_client, user_data, endpoint, model, schema, session):
             and k != "id"
             and not d_key_sf.get(k).dump_only
         ):
+            if (
+                model is Image
+                and k == "study"
+                and v is None
+                and payload.get("analysis")
+            ):
+                assert resp.json()[k] is not None
+                continue
             assert v == resp.json()[k]
 
 

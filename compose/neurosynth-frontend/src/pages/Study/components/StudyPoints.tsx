@@ -7,13 +7,13 @@ import { useEffect, useRef } from 'react';
 
 registerAllModules();
 
-const StudyPoints: React.FC<{
-    title: string;
+const StudyPoints = (props: {
+    title?: string;
     statistic: MapOrSpaceType | undefined;
     space: MapOrSpaceType | undefined;
     points: IStorePoint[];
     height?: string;
-}> = (props) => {
+}) => {
     const hotTableRef = useRef<HotTable>(null);
     const hotData = props.points.map((point) => [
         (point.coordinates || [])[0],
@@ -47,7 +47,7 @@ const StudyPoints: React.FC<{
     return (
         <Box sx={{ width: '100%' }}>
             <Typography sx={{ fontWeight: 'bold', marginBottom: '0.5rem' }} gutterBottom>
-                {props.title}
+                {props.title ?? ''}
             </Typography>
             <Box
                 sx={{

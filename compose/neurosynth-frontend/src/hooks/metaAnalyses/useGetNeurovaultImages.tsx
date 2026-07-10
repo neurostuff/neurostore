@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { executeHTTPRequestsAsBatches } from 'helpers/requests';
-import { useQuery } from 'react-query';
+import { useQuery } from '@tanstack/react-query';
 
 export interface INeurovault {
     url: string | null;

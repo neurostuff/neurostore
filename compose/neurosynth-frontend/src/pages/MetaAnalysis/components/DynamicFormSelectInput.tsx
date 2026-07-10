@@ -3,7 +3,7 @@ import { IDynamicFormInput } from 'pages/MetaAnalysis/components/DynamicForm.typ
 import MetaAnalysisDynamicFormTitle from './MetaAnalysisDynamicFormTitle';
 import DynamicFormStyles from 'pages/MetaAnalysis/components//DynamicFormStyles';
 
-const DynamicFormSelectInput: React.FC<IDynamicFormInput> = (props) => {
+const DynamicFormSelectInput = (props: IDynamicFormInput) => {
     const getMenuItems = (menuItems: string | null): string[] => {
         if (typeof menuItems !== 'string') return [];
 
@@ -15,13 +15,11 @@ const DynamicFormSelectInput: React.FC<IDynamicFormInput> = (props) => {
 
     return (
         <Box sx={DynamicFormStyles.input}>
-            <MetaAnalysisDynamicFormTitle
-                name={props.parameterName}
-                description={props.parameter.description}
-            />
+            <MetaAnalysisDynamicFormTitle name={props.parameterName} description={props.parameter.description} />
 
             <Select
                 sx={{ width: '50%' }}
+                name={props.parameterName}
                 value={props.value || ''}
                 onChange={(event) =>
                     props.onUpdate({

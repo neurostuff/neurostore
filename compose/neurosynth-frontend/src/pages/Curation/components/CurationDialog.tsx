@@ -15,7 +15,7 @@ interface ICurationDialog {
     onSetSelectedStub: (stub: string) => void;
 }
 
-const CurationDialog: React.FC<ICurationDialog & IDialog> = (props) => {
+const CurationDialog = (props: ICurationDialog & IDialog) => {
     const [stubs, setStubs] = useState<ICurationStubStudy[]>(props.stubs);
     const scrollableBoxRef = useRef<HTMLDivElement>(null);
     const selectedStub: ICurationStubStudy | undefined = props.stubs.find((stub) => stub.id === props.selectedStubId);

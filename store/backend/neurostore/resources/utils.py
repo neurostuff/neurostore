@@ -4,12 +4,13 @@ Resource-specific utilities for View construction and function
 
 import re
 
+import sqlalchemy as sa
 from connexion.context import context
 from psycopg2 import errors
 
-from .. import models
-from .. import schemas
-from .singular import singularize
+from neurostore import models, schemas
+from neurostore.database import db
+from neurostore.resources.singular import singularize
 
 
 def camel_case_split(str):
@@ -27,6 +28,71 @@ def get_current_user():
         context["user_obj"] = models.User.query.filter_by(external_id=user).first()
         return context["user_obj"]
     return None
+
+
+# Sentinel value to distinguish between no argument and explicit None
+_UNSET = object()
+
+
+def is_user_admin(user=_UNSET):
+    """Check if the user has the admin role
+
+    Args:
+        user: User object to check. If not provided, gets current user from context.
+              If None is explicitly passed, returns False.
+
+    Returns:
+        bool: True if user has admin role, False otherwise
+    """
+    if user is _UNSET:
+        # No argument provided, get current user from context
+        user = get_current_user()
+
+    if user is None:
+        return False
+
+    # Fast-path: memoized on request context or user instance
+    try:
+        cached = context.get("is_admin")
+        if cached is not None:
+            return cached
+    except Exception:
+        cached = None
+
+    cached = getattr(user, "_is_admin", None)
+    if cached is not None:
+        return cached
+
+    # Load roles eagerly to avoid lazy loading when raise_on_sql is enabled.
+    from sqlalchemy.orm import selectinload
+
+    user_identity = sa.inspect(user).identity
+    if not user_identity:
+        return False
+
+    with db.session.no_autoflush:
+        user_with_roles = db.session.scalar(
+            sa.select(models.User)
+            .options(selectinload(models.User.roles))
+            .where(models.User.id == user_identity[0])
+        )
+
+    if user_with_roles is None:
+        is_admin = False
+    else:
+        is_admin = any(role.name == "admin" for role in user_with_roles.roles)
+
+    # Memoize for the remainder of the request and on the user instance
+    try:
+        context["is_admin"] = is_admin
+    except Exception:
+        pass
+    try:
+        setattr(user, "_is_admin", is_admin)
+    except Exception:
+        pass
+
+    return is_admin
 
 
 def view_maker(cls):

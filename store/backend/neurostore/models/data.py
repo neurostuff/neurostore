@@ -1,19 +1,19 @@
 import re
 
-import sqlalchemy as sa
-from sqlalchemy import exists
-from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.dialects.postgresql import JSONB, ENUM as PGEnum
-from sqlalchemy import ForeignKeyConstraint, func, text
-from sqlalchemy.ext.associationproxy import association_proxy
-from sqlalchemy.ext.mutable import MutableDict
-from sqlalchemy.orm import relationship, backref, validates, aliased
 import shortuuid
+import sqlalchemy as sa
+from sqlalchemy import ForeignKeyConstraint, exists, func, text
+from sqlalchemy.dialects.postgresql import ENUM as PGEnum
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.ext.associationproxy import association_proxy
+from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.ext.mutable import MutableDict
+from sqlalchemy.orm import aliased, backref, relationship, validates
 
-
-from .migration_types import TSVector, VectorType
-from ..database import db
-from ..utils import parse_json_filter, build_jsonpath
+from neurostore.database import db
+from neurostore.map_types import MAP_TYPE_CODES, canonicalize_map_type
+from neurostore.models.migration_types import TSVector, VectorType
+from neurostore.utils import build_jsonpath, parse_json_filter
 
 # status of pipeline run
 STATUS_ENUM = PGEnum(
@@ -26,6 +26,9 @@ STATUS_ENUM = PGEnum(
 )
 
 SEMVER_REGEX = r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$"  # noqa E501
+IMAGE_VALUE_TYPE_CHECK_SQL = "value_type IS NULL OR value_type IN ({})".format(
+    ", ".join(f"'{code}'" for code in MAP_TYPE_CODES)
+)
 
 
 def _check_type(x):
@@ -84,17 +87,26 @@ class Studyset(BaseMixin, db.Model):
     public = db.Column(db.Boolean, default=True)
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"), index=True)
     user = relationship("User", backref=backref("studysets", passive_deletes=True))
+    studyset_studies = relationship(
+        "StudysetStudy",
+        back_populates="studyset",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        lazy="selectin",
+    )
     studies = relationship(
         "Study",
         secondary="studyset_studies",
-        backref=backref("studysets", lazy="dynamic"),
-        passive_deletes=True,
+        back_populates="studysets",
+        lazy="selectin",
+        viewonly=True,
     )
     annotations = relationship(
         "Annotation",
-        backref="studyset",
+        backref=backref("studyset", cascade_backrefs=False),
         passive_deletes=True,
         cascade="all, delete-orphan",
+        cascade_backrefs=False,
     )
     _ts_vector = db.Column(
         "__ts_vector__",
@@ -192,9 +204,16 @@ class BaseStudy(BaseMixin, db.Model):
     is_oa = db.Column(db.Boolean, default=None, nullable=True)
     has_coordinates = db.Column(db.Boolean, default=False, nullable=False)
     has_images = db.Column(db.Boolean, default=False, nullable=False)
+    has_z_maps = db.Column(db.Boolean, default=False, nullable=False)
+    has_t_maps = db.Column(db.Boolean, default=False, nullable=False)
+    has_beta_and_variance_maps = db.Column(db.Boolean, default=False, nullable=False)
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"), index=True)
     ace_fulltext = db.Column(db.Text)
     pubget_fulltext = db.Column(db.Text)
+    is_active = db.Column(
+        db.Boolean, default=True, server_default=sa.true(), nullable=False, index=True
+    )
+    superseded_by = db.Column(db.Text, db.ForeignKey("base_studies.id"), nullable=True)
     _ts_vector = db.Column(
         "__ts_vector__",
         TSVector(),
@@ -224,12 +243,26 @@ class BaseStudy(BaseMixin, db.Model):
     pipeline_study_results = relationship(
         "PipelineStudyResult", backref=backref("base_study"), passive_deletes=True
     )
+    # self-referential relationship for superseded_by
+    superseded_by_study = relationship(
+        "BaseStudy",
+        remote_side="BaseStudy.id",
+        foreign_keys=[superseded_by],
+        backref=backref("supersedes", passive_deletes=True),
+    )
 
     __table_args__ = (
         db.CheckConstraint(level.in_(["group", "meta"])),
-        db.UniqueConstraint("doi", "pmid", name="doi_pmid"),
+        sa.Index(
+            "uq_base_studies_doi_pmid_active",
+            "doi",
+            "pmid",
+            unique=True,
+            postgresql_where=sa.text("is_active = true"),
+        ),
         db.CheckConstraint("pmid ~ '^(?=.*\\S).+$' OR name IS NULL"),
         db.CheckConstraint("doi ~ '^(?=.*\\S).+$' OR name IS NULL"),
+        db.CheckConstraint("id != superseded_by", name="no_self_reference"),
         sa.Index("ix_base_study___ts_vector__", _ts_vector, postgresql_using="gin"),
     )
 
@@ -290,9 +323,10 @@ class BaseStudy(BaseMixin, db.Model):
         self.has_images = value
 
     def update_has_images_and_points(self):
-        # Calculate has_images and has_coordinates for the BaseStudy
-        self.has_images = self.images_exist
-        self.has_coordinates = self.points_exist
+        # Keep analysis/study/base flags consistent for this base study.
+        from neurostore.services.has_media_flags import recompute_media_flags
+
+        recompute_media_flags([self.id])
 
     def display_features(self, pipelines=None, pipeline_configs=None):
         """
@@ -438,6 +472,62 @@ class BaseStudy(BaseMixin, db.Model):
         return features
 
 
+class BaseStudyFlagOutbox(db.Model):
+    __tablename__ = "base_study_flag_outbox"
+
+    base_study_id = db.Column(
+        db.Text,
+        db.ForeignKey("base_studies.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    reason = db.Column(db.String, nullable=True)
+    enqueued_at = db.Column(
+        db.DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        index=True,
+    )
+    updated_at = db.Column(
+        db.DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        onupdate=func.now(),
+        index=True,
+    )
+
+    base_study = relationship(
+        "BaseStudy", backref=backref("flag_outbox_entry", passive_deletes=True)
+    )
+
+
+class BaseStudyMetadataOutbox(db.Model):
+    __tablename__ = "base_study_metadata_outbox"
+
+    base_study_id = db.Column(
+        db.Text,
+        db.ForeignKey("base_studies.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    reason = db.Column(db.String, nullable=True)
+    enqueued_at = db.Column(
+        db.DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        index=True,
+    )
+    updated_at = db.Column(
+        db.DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        onupdate=func.now(),
+        index=True,
+    )
+
+    base_study = relationship(
+        "BaseStudy", backref=backref("metadata_outbox_entry", passive_deletes=True)
+    )
+
+
 class Study(BaseMixin, db.Model):
     __tablename__ = "studies"
 
@@ -458,6 +548,11 @@ class Study(BaseMixin, db.Model):
     source_updated_at = db.Column(db.DateTime(timezone=True))
     base_study_id = db.Column(db.Text, db.ForeignKey("base_studies.id"), index=True)
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"), index=True)
+    has_coordinates = db.Column(db.Boolean, default=False, nullable=False)
+    has_images = db.Column(db.Boolean, default=False, nullable=False)
+    has_z_maps = db.Column(db.Boolean, default=False, nullable=False)
+    has_t_maps = db.Column(db.Boolean, default=False, nullable=False)
+    has_beta_and_variance_maps = db.Column(db.Boolean, default=False, nullable=False)
     _ts_vector = db.Column(
         "__ts_vector__",
         TSVector(),
@@ -473,11 +568,45 @@ class Study(BaseMixin, db.Model):
         passive_deletes=True,
         cascade="all, delete-orphan",
     )
+    tables = relationship(
+        "Table",
+        back_populates="study",
+        passive_deletes=True,
+        cascade="all, delete-orphan",
+        cascade_backrefs=False,
+        lazy="selectin",
+    )
+    studyset_studies = relationship(
+        "StudysetStudy",
+        back_populates="study",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        lazy="selectin",
+    )
+    studysets = relationship(
+        "Studyset",
+        secondary="studyset_studies",
+        back_populates="studies",
+        lazy="dynamic",
+        viewonly=True,
+    )
+    images = relationship(
+        "Image",
+        backref=backref("study"),
+        passive_deletes=True,
+        cascade_backrefs=False,
+    )
 
     __table_args__ = (
         db.CheckConstraint(level.in_(["group", "meta"])),
         db.CheckConstraint("pmid ~ '^(?=.*\\S).+$' OR name IS NULL"),
         db.CheckConstraint("doi ~ '^(?=.*\\S).+$' OR name IS NULL"),
+        sa.Index(
+            "ix_studies_source_source_id_neurovault",
+            "source",
+            "source_id",
+            postgresql_where=sa.text("source = 'neurovault'"),
+        ),
         sa.Index("ix_study___ts_vector__", _ts_vector, postgresql_using="gin"),
     )
 
@@ -492,15 +621,23 @@ class StudysetStudy(db.Model):
     studyset_id = db.Column(
         db.ForeignKey("studysets.id", ondelete="CASCADE"), index=True, primary_key=True
     )
+    curation_stub_uuid = db.Column(db.Text, nullable=True, index=True)
     study = relationship(
         "Study",
-        backref=backref("studyset_studies"),
-        viewonly=True,
+        back_populates="studyset_studies",
+        passive_deletes=True,
     )
     studyset = relationship(
         "Studyset",
-        backref=backref("studyset_studies"),
-        viewonly=True,
+        back_populates="studyset_studies",
+        passive_deletes=True,
+    )
+    __table_args__ = (
+        db.UniqueConstraint(
+            "studyset_id",
+            "curation_stub_uuid",
+            name="uq_studyset_stub_uuid",
+        ),
     )
     annotation_analyses = relationship(
         "AnnotationAnalysis",
@@ -510,18 +647,52 @@ class StudysetStudy(db.Model):
     )
 
 
+class Table(BaseMixin, db.Model):
+    __tablename__ = "tables"
+
+    study_id = db.Column(
+        db.Text, db.ForeignKey("studies.id", ondelete="CASCADE"), index=True
+    )
+    t_id = db.Column(db.Text)
+    name = db.Column(db.Text)
+    table_label = db.Column(db.Text)
+    footer = db.Column(db.Text)
+    caption = db.Column(db.Text)
+    user_id = db.Column(db.Text, db.ForeignKey("users.external_id"), index=True)
+
+    study = relationship(
+        "Study",
+        back_populates="tables",
+        passive_deletes=True,
+    )
+    user = relationship(
+        "User", backref=backref("tables", cascade_backrefs=False, passive_deletes=True)
+    )
+
+    __table_args__ = (
+        db.UniqueConstraint("study_id", "t_id", name="uq_tables_study_t_id"),
+    )
+
+
 class Analysis(BaseMixin, db.Model):
     __tablename__ = "analyses"
 
     study_id = db.Column(
         db.Text, db.ForeignKey("studies.id", ondelete="CASCADE"), index=True
     )
+    table_id = db.Column(
+        db.Text, db.ForeignKey("tables.id", ondelete="SET NULL"), index=True
+    )
     name = db.Column(db.String)
     description = db.Column(db.String)
     metadata_ = db.Column(JSONB)
     order = db.Column(db.Integer)
-    # used to keep track of neurosynth analyses (in case of neurosynth/ace updates)
-    table_id = db.Column(db.String)
+    point_count = db.Column(db.Integer, default=0, nullable=False)
+    has_coordinates = db.Column(db.Boolean, default=False, nullable=False)
+    has_images = db.Column(db.Boolean, default=False, nullable=False)
+    has_z_maps = db.Column(db.Boolean, default=False, nullable=False)
+    has_t_maps = db.Column(db.Boolean, default=False, nullable=False)
+    has_beta_and_variance_maps = db.Column(db.Boolean, default=False, nullable=False)
     points = relationship(
         "Point",
         backref=backref("analysis", passive_deletes=True),
@@ -533,12 +704,15 @@ class Analysis(BaseMixin, db.Model):
         "Image",
         backref=backref("analysis"),
         passive_deletes=True,
-        cascade="all, delete-orphan",
         cascade_backrefs=False,
     )
     weights = association_proxy("analysis_conditions", "weight")
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"), index=True)
-    user = relationship("User", backref=backref("analyses", passive_deletes=True))
+    user = relationship(
+        "User",
+        backref=backref("analyses", cascade_backrefs=False, passive_deletes=True),
+        cascade_backrefs=False,
+    )
     analysis_conditions = relationship(
         "AnalysisConditions",
         backref=backref("analysis"),
@@ -552,6 +726,12 @@ class Analysis(BaseMixin, db.Model):
         passive_deletes=True,
         cascade="all, delete-orphan",
         cascade_backrefs=False,
+    )
+    table = relationship(
+        "Table",
+        backref=backref("analyses", cascade_backrefs=False, passive_deletes=True),
+        foreign_keys=[table_id],
+        passive_deletes=True,
     )
 
 
@@ -661,8 +841,10 @@ class Point(BaseMixin, db.Model):
         db.Text, db.ForeignKey("analyses.id", ondelete="CASCADE"), index=True
     )
     cluster_size = db.Column(db.Float)
+    cluster_measurement_unit = db.Column(db.String)
     subpeak = db.Column(db.Boolean)
     deactivation = db.Column(db.Boolean, default=False, index=True)
+    is_seed = db.Column(db.Boolean, default=False, nullable=False)
     order = db.Column(db.Integer)
 
     entities = relationship(
@@ -677,13 +859,22 @@ class Point(BaseMixin, db.Model):
 
 class Image(BaseMixin, db.Model):
     __tablename__ = "images"
+    __table_args__ = (
+        db.CheckConstraint(
+            IMAGE_VALUE_TYPE_CHECK_SQL,
+            name="ck_images_value_type",
+        ),
+    )
 
     url = db.Column(db.String)
     filename = db.Column(db.String)
     space = db.Column(db.String)
     value_type = db.Column(db.String)
     analysis_id = db.Column(
-        db.Text, db.ForeignKey("analyses.id", ondelete="CASCADE"), index=True
+        db.Text, db.ForeignKey("analyses.id", ondelete="SET NULL"), index=True
+    )
+    study_id = db.Column(
+        db.Text, db.ForeignKey("studies.id", ondelete="CASCADE"), index=True
     )
     data = db.Column(JSONB)
     add_date = db.Column(db.DateTime(timezone=True))
@@ -697,6 +888,19 @@ class Image(BaseMixin, db.Model):
     )
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"), index=True)
     user = relationship("User", backref=backref("images", passive_deletes=True))
+
+    @validates("value_type")
+    def validate_value_type(self, key, value):
+        return canonicalize_map_type(value)
+
+    @validates("analysis")
+    def validate_analysis(self, key, value):
+        if value is not None:
+            if getattr(value, "study", None) is not None:
+                self.study = value.study
+            elif getattr(value, "study_id", None) is not None:
+                self.study_id = value.study_id
+        return value
 
 
 class PointValue(BaseMixin, db.Model):
@@ -771,7 +975,9 @@ class PipelineStudyResult(BaseMixin, db.Model):
     file_inputs = db.Column(JSONB)
     status = db.Column(STATUS_ENUM)
     config = relationship(
-        "PipelineConfig", backref=backref("results", passive_deletes=True)
+        "PipelineConfig",
+        backref=backref("results", cascade_backrefs=False, passive_deletes=True),
+        cascade_backrefs=False,
     )
 
 
@@ -802,6 +1008,6 @@ class PipelineEmbedding(db.Model):
     embedding = db.Column(VectorType(), nullable=False)
 
 
-# from . import event_listeners  # noqa E402
+from neurostore.models import point_count_listeners  # noqa E402
 
-# del event_listeners
+del point_count_listeners

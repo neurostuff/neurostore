@@ -9,13 +9,9 @@ describe(PAGE_NAME, () => {
     beforeEach(() => {
         cy.clearLocalStorage();
         cy.intercept('GET', 'https://api.appzi.io/**', { fixture: 'appzi' }).as('appziFixture');
-        cy.intercept('POST', `https://www.google-analytics.com/*/**`, {}).as(
-            'googleAnalyticsFixture'
-        );
+        cy.intercept('POST', `https://www.google-analytics.com/*/**`, {}).as('googleAnalyticsFixture');
         cy.intercept('GET', `**/api/studysets/*`, { fixture: 'studyset' }).as('studysetFixture');
-        cy.intercept('PUT', `**/api/projects/*`, { fixture: 'projects/projectPut' }).as(
-            'updateProjectFixture'
-        );
+        cy.intercept('PUT', `**/api/projects/*`, { fixture: 'projects/projectPut' }).as('updateProjectFixture');
         cy.intercept('GET', `**/api/projects/*`, {
             fixture: 'ProjectPage/projectAtExtraction',
         }).as('projectFixture');

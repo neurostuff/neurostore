@@ -5,7 +5,7 @@ import AddMetadataRow from './AddMetadataRow';
 import { IEditMetadataModel, getType } from './EditMetadata.types';
 import { Box, Divider, Typography } from '@mui/material';
 
-const EditMetadata: React.FC<IEditMetadataModel> = React.memo((props) => {
+const EditMetadata = React.memo((props: IEditMetadataModel) => {
     const {
         keyPlaceholderText,
         valuePlaceholderText,

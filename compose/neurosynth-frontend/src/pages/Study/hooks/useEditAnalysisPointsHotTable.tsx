@@ -72,7 +72,7 @@ const useAnalysisPointsHotTable = (
     }, [hotTableRef]);
 
     const height = useMemo(() => {
-        const totalHeight = 26 + (points?.length || 0) * 24;
+        const totalHeight = 38 + (points?.length || 0) * 23;
         const height = totalHeight > 600 ? 600 : totalHeight;
         return height;
     }, [points]);

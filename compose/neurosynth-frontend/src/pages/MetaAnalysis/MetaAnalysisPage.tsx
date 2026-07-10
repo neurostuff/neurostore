@@ -2,19 +2,16 @@ import { Box, Chip, Typography } from '@mui/material';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import TextEdit from 'components/TextEdit/TextEdit';
+import { getLatestMetaAnalysisResultId } from 'helpers/MetaAnalysis.helpers';
 import { useGetMetaAnalysisById, useGetMetaAnalysisResultById } from 'hooks';
 import useUpdateMetaAnalysis from 'hooks/metaAnalyses/useUpdateMetaAnalysis';
 import useUserCanEdit from 'hooks/useUserCanEdit';
-import { ResultReturn, SpecificationReturn, StudysetReturn } from 'neurosynth-compose-typescript-sdk';
 import MetaAnalysisPageStyles from 'pages/MetaAnalysis/MetaAnalysisPage.styles';
 import { useProjectName, useProjectUser } from 'pages/Project/store/ProjectStore';
 import { useParams } from 'react-router-dom';
-import { NeurostoreAnnotation } from 'utils/api';
-import MetaAnalysisDangerZone from './components/MetaAnalysisDangerZone';
-import MetaAnalysisResult from './components/MetaAnalysisResult';
-import NoMetaAnalysisResultDisplay from './components/NoMetaAnalysisResultDisplay';
+import MetaAnalysisDetails from './components/MetaAnalysisDetails';
 
-const MetaAnalysisPage: React.FC = () => {
+const MetaAnalysisPage = () => {
     // const { startTour } = useGetTour('MetaAnalysisPage');
     const { projectId, metaAnalysisId } = useParams<{
         projectId: string;
@@ -29,9 +26,9 @@ const MetaAnalysisPage: React.FC = () => {
      * the name loading when we update the name, and only the description loading when
      * we update the description
      */
-    const { mutate: updateMetaAnalysisName, isLoading: updateMetaAnalysisNameIsLoading } = useUpdateMetaAnalysis();
+    const { mutate: updateMetaAnalysisName, isPending: updateMetaAnalysisNameIsLoading } = useUpdateMetaAnalysis();
 
-    const { mutate: updateMetaAnalysisDescription, isLoading: updateMetaAnalysisDescriptionIsLoading } =
+    const { mutate: updateMetaAnalysisDescription, isPending: updateMetaAnalysisDescriptionIsLoading } =
         useUpdateMetaAnalysis();
 
     const {
@@ -39,21 +36,11 @@ const MetaAnalysisPage: React.FC = () => {
         isError: getMetaAnalysisIsError,
         isLoading: getMetaAnalysisIsLoading,
     } = useGetMetaAnalysisById(metaAnalysisId);
-    const { data: metaAnalysisResult, isLoading: getMetaAnalysisResultIsLoading } = useGetMetaAnalysisResultById(
-        metaAnalysis?.results && metaAnalysis.results.length
-            ? (metaAnalysis.results[metaAnalysis.results.length - 1] as ResultReturn).id
-            : undefined
-    );
-
-    // get request is set to nested: true so below casting is safe
-    const specification = metaAnalysis?.specification as SpecificationReturn;
-    const studyset = metaAnalysis?.studyset as StudysetReturn;
-    const annotation = metaAnalysis?.annotation as NeurostoreAnnotation;
-
-    const viewingThisPageFromProject = !!projectId;
+    const latestResultId = getLatestMetaAnalysisResultId(metaAnalysis);
+    const { isLoading: getMetaAnalysisResultIsLoading } = useGetMetaAnalysisResultById(latestResultId);
 
     const updateName = (updatedName: string) => {
-        if (metaAnalysis?.id && specification?.id && studyset?.id && annotation?.id) {
+        if (metaAnalysis?.id) {
             updateMetaAnalysisName({
                 metaAnalysisId: metaAnalysis.id,
                 metaAnalysis: {
@@ -64,7 +51,7 @@ const MetaAnalysisPage: React.FC = () => {
     };
 
     const updateDescription = (updatedDescription: string) => {
-        if (metaAnalysis?.id && specification?.id && studyset?.id && annotation?.id) {
+        if (metaAnalysis?.id) {
             updateMetaAnalysisDescription({
                 metaAnalysisId: metaAnalysis.id,
                 metaAnalysis: {
@@ -74,8 +61,6 @@ const MetaAnalysisPage: React.FC = () => {
         }
     };
 
-    const noMetaAnalysisResults = (metaAnalysis?.results || []).length === 0 && !metaAnalysisResult;
-
     return (
         <>
             <StateHandlerComponent
@@ -83,90 +68,84 @@ const MetaAnalysisPage: React.FC = () => {
                 isError={getMetaAnalysisIsError}
                 errorMessage="There was an error getting your meta-analysis"
             >
-                {viewingThisPageFromProject && (
-                    <Box sx={{ marginBottom: '0.5rem' }}>
-                        <NeurosynthBreadcrumbs
-                            breadcrumbItems={[
-                                {
-                                    link: '/projects',
-                                    text: 'Projects',
-                                    isCurrentPage: false,
-                                },
-                                {
-                                    link: `/projects/${projectId}/meta-analyses`,
-                                    text: `${projectName}`,
-                                    isCurrentPage: false,
-                                },
-                                {
-                                    link: '',
-                                    text: metaAnalysis?.name || '',
-                                    isCurrentPage: true,
-                                },
-                            ]}
-                        />
-                    </Box>
-                )}
+                <NeurosynthBreadcrumbs
+                    breadcrumbItems={[
+                        {
+                            link: '/projects',
+                            text: 'Projects',
+                            isCurrentPage: false,
+                        },
+                        {
+                            link: `/projects/${projectId}/meta-analyses`,
+                            text: `${projectName}`,
+                            isCurrentPage: false,
+                        },
+                        {
+                            link: '',
+                            text: metaAnalysis?.name || '',
+                            isCurrentPage: true,
+                        },
+                    ]}
+                />
 
-                <Box sx={{ display: 'flex', marginBottom: '1rem' }}>
-                    <Box sx={{ width: '100%' }}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', marginBottom: '1rem', mt: 1 }}>
+                    <TextEdit
+                        editIconIsVisible={editsAllowed}
+                        isLoading={updateMetaAnalysisNameIsLoading}
+                        onSave={updateName}
+                        textFieldSx={{ input: { fontSize: '1.5rem' } }}
+                        label="name"
+                        textToEdit={metaAnalysis?.name || ''}
+                    >
+                        <Box sx={MetaAnalysisPageStyles.displayedText}>
+                            <Typography
+                                sx={[
+                                    MetaAnalysisPageStyles.displayedText,
+                                    !metaAnalysis?.name ? MetaAnalysisPageStyles.noData : {},
+                                ]}
+                                variant="h5"
+                            >
+                                {metaAnalysis?.name || 'No name'}
+                            </Typography>
+                        </Box>
+                    </TextEdit>
+
+                    <TextEdit
+                        editIconIsVisible={editsAllowed}
+                        isLoading={updateMetaAnalysisDescriptionIsLoading}
+                        onSave={updateDescription}
+                        label="description"
+                        textFieldSx={{ input: { fontSize: '1rem' } }}
+                        textToEdit={metaAnalysis?.description || ''}
+                    >
+                        <Box sx={MetaAnalysisPageStyles.displayedText}>
+                            <Typography
+                                sx={[
+                                    MetaAnalysisPageStyles.displayedText,
+                                    MetaAnalysisPageStyles.description,
+                                    !metaAnalysis?.description ? MetaAnalysisPageStyles.noData : {},
+                                ]}
+                            >
+                                {metaAnalysis?.description || 'No description'}
+                            </Typography>
+                        </Box>
+                    </TextEdit>
+                    <Box>
                         {metaAnalysis?.username && (
                             <Chip
                                 variant="filled"
                                 size="small"
                                 label={`Owner: ${metaAnalysis.username}`}
                                 sx={{
-                                    color: 'muted.main',
-                                    marginBottom: '0.25rem',
+                                    color: 'muted.dark',
+                                    mt: '0.25rem',
                                 }}
                             />
                         )}
-                        <TextEdit
-                            editIconIsVisible={editsAllowed}
-                            isLoading={updateMetaAnalysisNameIsLoading}
-                            onSave={updateName}
-                            textFieldSx={{ input: { fontSize: '1.5rem' } }}
-                            label="name"
-                            textToEdit={metaAnalysis?.name || ''}
-                        >
-                            <Box sx={MetaAnalysisPageStyles.displayedText}>
-                                <Typography
-                                    sx={[
-                                        MetaAnalysisPageStyles.displayedText,
-                                        !metaAnalysis?.name ? MetaAnalysisPageStyles.noData : {},
-                                    ]}
-                                    variant="h5"
-                                >
-                                    {metaAnalysis?.name || 'No name'}
-                                </Typography>
-                            </Box>
-                        </TextEdit>
-
-                        <TextEdit
-                            editIconIsVisible={editsAllowed}
-                            isLoading={updateMetaAnalysisDescriptionIsLoading}
-                            onSave={updateDescription}
-                            label="description"
-                            textFieldSx={{ input: { fontSize: '1rem' } }}
-                            textToEdit={metaAnalysis?.description || ''}
-                        >
-                            <Box sx={MetaAnalysisPageStyles.displayedText}>
-                                <Typography
-                                    sx={[
-                                        MetaAnalysisPageStyles.displayedText,
-                                        MetaAnalysisPageStyles.description,
-                                        !metaAnalysis?.description ? MetaAnalysisPageStyles.noData : {},
-                                    ]}
-                                >
-                                    {metaAnalysis?.description || 'No description'}
-                                </Typography>
-                            </Box>
-                        </TextEdit>
                     </Box>
                 </Box>
 
-                {noMetaAnalysisResults ? <NoMetaAnalysisResultDisplay /> : <MetaAnalysisResult />}
-
-                <MetaAnalysisDangerZone metaAnalysisId={metaAnalysisId} />
+                <MetaAnalysisDetails />
             </StateHandlerComponent>
         </>
     );

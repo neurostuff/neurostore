@@ -1,4 +1,5 @@
 import { Box, Button, Tooltip, Typography } from '@mui/material';
+import CopyableId from 'components/CopyableId/CopyableId';
 import LoadingStateIndicatorProject from 'components/LoadingStateIndicator/LoadingStateIndicatorProject';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
@@ -8,11 +9,12 @@ import useGetExtractionSummary from 'hooks/useGetExtractionSummary';
 import useUserCanEdit from 'hooks/useUserCanEdit';
 import { StudyReturn } from 'neurostore-typescript-sdk';
 import ExtractionOutOfSync from 'pages/Extraction/components/ExtractionOutOfSync';
-import { resolveStudysetAndCurationDifferences } from 'pages/Extraction/Extraction.helpers';
+import { hasDifferenceBetweenStudysetAndCuration } from 'pages/Extraction/ExtractionPage.helpers';
 import { IProjectPageLocationState } from 'pages/Project/ProjectPage';
 import {
     useGetProjectIsLoading,
     useProjectCurationColumns,
+    useProjectExtractionAnnotationId,
     useProjectExtractionStudysetId,
     useProjectName,
     useProjectUser,
@@ -27,12 +29,13 @@ export enum EExtractionStatus {
     'UNCATEGORIZED' = 'uncategorized',
 }
 
-const ExtractionPage: React.FC = () => {
+const ExtractionPage = () => {
     const { projectId } = useParams<{ projectId: string | undefined }>();
     const navigate = useNavigate();
 
     const projectName = useProjectName();
     const studysetId = useProjectExtractionStudysetId();
+    const annotationId = useProjectExtractionAnnotationId();
     const columns = useProjectCurationColumns();
     const loading = useGetProjectIsLoading();
     const extractionSummary = useGetExtractionSummary(projectId || '');
@@ -44,7 +47,7 @@ const ExtractionPage: React.FC = () => {
         isLoading: getStudysetIsLoading,
         isRefetching: getStudysetIsRefetching,
         isError: getStudysetIsError,
-    } = useGetStudysetById(studysetId, true);
+    } = useGetStudysetById(studysetId, false, true);
 
     const { mutate } = useUpdateStudyset();
 
@@ -54,7 +57,7 @@ const ExtractionPage: React.FC = () => {
     useEffect(() => {
         if (!loading && !getStudysetIsLoading && columns.length > 0 && studyset?.studies) {
             const includedStudies = columns[columns.length - 1].stubStudies;
-            const isDifferent = resolveStudysetAndCurationDifferences(
+            const isDifferent = hasDifferenceBetweenStudysetAndCuration(
                 includedStudies,
                 studyset.studies as StudyReturn[]
             );
@@ -158,7 +161,15 @@ const ExtractionPage: React.FC = () => {
                         </Tooltip>
                     </Box>
                 </Box>
-                {showReconcilePrompt && <ExtractionOutOfSync />}
+                <Box sx={{ display: 'flex', gap: '1.5rem', marginBottom: '0.5rem' }}>
+                    <CopyableId label="Studyset ID" id={studysetId} />
+                    <CopyableId label="Annotation ID" id={annotationId} />
+                </Box>
+                {showReconcilePrompt && (
+                    <Box sx={{ my: 1 }}>
+                        <ExtractionOutOfSync />
+                    </Box>
+                )}
                 <Box sx={{ flexGrow: 1 }}>
                     <Box>
                         <TextEdit

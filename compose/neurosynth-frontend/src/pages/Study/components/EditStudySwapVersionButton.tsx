@@ -14,7 +14,6 @@ import {
 } from '@mui/material';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import ProgressLoader from 'components/ProgressLoader';
-import { setAnalysesInAnnotationAsIncluded } from 'helpers/Annotation.helpers';
 import { hasUnsavedStudyChanges, unsetUnloadHandler } from 'helpers/BeforeUnload.helpers';
 import { lastUpdatedAtSortFn } from 'helpers/utils';
 import { useGetStudysetById, useUpdateStudyset, useGetBaseStudyById } from 'hooks';
@@ -31,7 +30,7 @@ import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAnnotationId } from 'stores/AnnotationStore.getters';
 
-const EditStudySwapVersionButton: React.FC = () => {
+const EditStudySwapVersionButton = () => {
     const [anchorEl, setAnchorEl] = useState<null | HTMLButtonElement>(null);
     const open = Boolean(anchorEl);
     const baseStudyId = useStudyBaseStudyId();
@@ -101,17 +100,34 @@ const EditStudySwapVersionButton: React.FC = () => {
             if (currentStudyBeingEditedIndex < 0) throw new Error('study not found in studyset');
 
             updatedStudyset[currentStudyBeingEditedIndex] = versionToSwapTo;
+
+            // Preserve curation stub linkage when swapping versions.
+            const studyToStub = new Map<string, string>();
+            (studyset.studyset_studies || []).forEach((assoc) => {
+                if (assoc?.id && assoc?.curation_stub_uuid) {
+                    studyToStub.set(assoc.id, assoc.curation_stub_uuid);
+                }
+            });
+            const stubForCurrent = studyToStub.get(studyId);
+            if (stubForCurrent) {
+                studyToStub.delete(studyId);
+                studyToStub.set(versionToSwapTo, stubForCurrent);
+            }
+            const studiesPayload = updatedStudyset.map((id) => {
+                const stub = studyToStub.get(id);
+                return { id, curation_stub_uuid: stub };
+            });
+
             await updateStudyset({
                 studysetId: studysetId,
                 studyset: {
-                    studies: updatedStudyset,
+                    studies: studiesPayload,
                 },
             });
             updateStudyListStatusWithNewStudyId(studyId, versionToSwapTo);
             updateStudyByField('id', versionToSwapTo);
             unsetUnloadHandler('study');
             updateExtractionTableStateStudySwapInStorage(projectId, studyId, versionToSwapTo);
-            await setAnalysesInAnnotationAsIncluded(annotationId);
 
             navigate(`/projects/${projectId}/extraction/studies/${versionToSwapTo}/edit`);
 
@@ -245,7 +261,7 @@ const EditStudySwapVersionButton: React.FC = () => {
                                         </Typography>
                                     </Button>
                                     <Button
-                                        href={`/base-studies/${baseStudyId}/${studyId}`}
+                                        href={`/base-studies/${baseStudyId}/${version.id}`}
                                         target="_blank"
                                         rel="noreferrer"
                                         sx={{ fontSize: '0.8rem' }}

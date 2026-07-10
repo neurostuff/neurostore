@@ -19,7 +19,7 @@ const handleAnimation = (style: DraggableStyle | undefined, snapshot: DraggableS
     };
 };
 
-const CurationStubStudyDraggableContainer: React.FC<
+const CurationStubStudyDraggableContainer = (props: 
     ICurationStubStudy & {
         index: number;
         isVisible: boolean;
@@ -29,7 +29,7 @@ const CurationStubStudyDraggableContainer: React.FC<
         style: React.CSSProperties;
         onSelectStubStudy: (stubId: string) => void;
     }
-> = (props) => {
+) => {
     const projectUser = useProjectUser();
     const canEdit = useUserCanEdit(projectUser || undefined);
 
@@ -54,10 +54,7 @@ const CurationStubStudyDraggableContainer: React.FC<
             sx={CurationStubStudyStyles.stubStudyContainer}
         >
             {!props?.exclusionTag && canEdit ? (
-                <Box
-                    {...props.provided.dragHandleProps}
-                    sx={{ display: 'flex', alignItems: 'center', width: '30px' }}
-                >
+                <Box {...props.provided.dragHandleProps} sx={{ display: 'flex', alignItems: 'center', width: '30px' }}>
                     <Box>
                         {/* // eslint-disable-next-line react/jsx-no-undef */}
                         <DragIndicatorIcon sx={{ color: 'gray' }} />

@@ -5,11 +5,18 @@ import BaseDialog, { IDialog } from 'components/Dialogs/BaseDialog';
 
 import { IMetaAnalysisParamsSpecification } from 'pages/MetaAnalysis/components/DynamicForm.types';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
+import {
+    getMetaAnalysisAnnotationId,
+    getMetaAnalysisSpecificationId,
+    getMetaAnalysisStudysetId,
+} from 'helpers/MetaAnalysis.helpers';
 import { useGetMetaAnalysisById } from 'hooks';
+import useGetSnapshotAnnotationById from 'hooks/annotations/useGetSnapshotAnnotationById';
 import { EAnalysisType } from 'hooks/metaAnalyses/useCreateAlgorithmSpecification';
 import useGetSpecificationById from 'hooks/metaAnalyses/useGetSpecificationById';
 import useUpdateSpecification from 'hooks/metaAnalyses/useUpdateSpecification';
-import { AnnotationReturn, SpecificationReturn, StudysetReturn } from 'neurosynth-compose-typescript-sdk';
+import useGetSnapshotStudysetById from 'hooks/studysets/useGetSnapshotStudysetById';
+import { AnnotationReturn, StudysetReturn } from 'neurosynth-compose-typescript-sdk';
 import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { getType } from 'components/EditMetadata/EditMetadata.types';
@@ -26,15 +33,22 @@ import SelectAnalysesSummaryComponent from 'pages/MetaAnalysis/components/Select
 
 const metaAnalysisSpecification: IMetaAnalysisParamsSpecification = metaAnalysisSpec;
 
-const EditSpecificationDialog: React.FC<IDialog> = (props) => {
+const EditSpecificationDialog = (props: IDialog) => {
     const { metaAnalysisId } = useParams<{ metaAnalysisId: string }>();
     const { data: metaAnalysis } = useGetMetaAnalysisById(metaAnalysisId);
+    const specificationId = getMetaAnalysisSpecificationId(metaAnalysis);
+    const annotationId = getMetaAnalysisAnnotationId(metaAnalysis);
+    const studysetId = getMetaAnalysisStudysetId(metaAnalysis);
     const {
         data: specification,
         isLoading: getMetaAnalysisIsLoading,
         isError: getMetaAnalysisIsError,
-    } = useGetSpecificationById((metaAnalysis?.specification as SpecificationReturn)?.id);
-    const { mutate, isLoading: updateSpecificationIsLoading } = useUpdateSpecification();
+    } = useGetSpecificationById(specificationId);
+    const { data: annotation, isLoading: annotationIsLoading, isError: annotationIsError } =
+        useGetSnapshotAnnotationById(annotationId);
+    const { data: studyset, isLoading: studysetIsLoading, isError: studysetIsError } =
+        useGetSnapshotStudysetById(studysetId);
+    const { mutate, isPending: updateSpecificationIsLoading } = useUpdateSpecification();
     const [selectedValue, setSelectedValue] = useState<IAnalysesSelection>({
         selectionKey: specification?.filter || undefined,
         type: getType(specification?.conditions?.[0]),
@@ -150,12 +164,11 @@ const EditSpecificationDialog: React.FC<IDialog> = (props) => {
             dialogContentSx={{ paddingBottom: '0' }}
             maxWidth="lg"
         >
-            <StateHandlerComponent isLoading={getMetaAnalysisIsLoading} isError={getMetaAnalysisIsError}>
-                <Box
-                    sx={{
-                        margin: '1rem 2rem',
-                    }}
-                >
+            <StateHandlerComponent
+                isLoading={getMetaAnalysisIsLoading || annotationIsLoading || studysetIsLoading}
+                isError={getMetaAnalysisIsError || annotationIsError || studysetIsError}
+            >
+                <Box sx={{ margin: '0rem 2rem' }}>
                     <Typography variant="h6" sx={{ fontWeight: 'bold' }} gutterBottom>
                         Edit Algorithm:
                     </Typography>
@@ -164,15 +177,11 @@ const EditSpecificationDialog: React.FC<IDialog> = (props) => {
                         onSelectSpecification={(update) => setAlgorithmSpec(update)}
                     />
 
-                    <Typography
-                        variant="h6"
-                        sx={{ marginBottom: '1rem', fontWeight: 'bold', marginTop: '1rem' }}
-                        gutterBottom
-                    >
+                    <Typography variant="h6" sx={{ marginBottom: '1rem', marginTop: '1rem' }} gutterBottom>
                         Edit Analyses Selection:
                     </Typography>
                     <SelectAnalysesComponent
-                        annotationId={(metaAnalysis?.annotation as AnnotationReturn)?.neurostore_id || ''}
+                        annotationId={(annotation as AnnotationReturn | undefined)?.neurostore_id || ''}
                         selectedValue={selectedValue}
                         onSelectValue={(update) => {
                             setSelectedValue(update);
@@ -182,7 +191,7 @@ const EditSpecificationDialog: React.FC<IDialog> = (props) => {
                     {isMultiGroup && (
                         <CreateMetaAnalysisSpecificationSelectionStepMultiGroup
                             onSelectValue={(newVal) => setSelectedValue(newVal)}
-                            annotationId={(metaAnalysis?.annotation as AnnotationReturn)?.neurostore_id || ''}
+                            annotationId={(annotation as AnnotationReturn | undefined)?.neurostore_id || ''}
                             selectedValue={selectedValue}
                             algorithm={algorithmSpec}
                         />
@@ -205,8 +214,8 @@ const EditSpecificationDialog: React.FC<IDialog> = (props) => {
                     {/* empty div used for equally spacing and centering components */}
                     <Box>
                         <SelectAnalysesSummaryComponent
-                            studysetId={(metaAnalysis?.studyset as StudysetReturn)?.neurostore_id || ''}
-                            annotationdId={(metaAnalysis?.annotation as AnnotationReturn)?.neurostore_id || ''}
+                            studysetId={(studyset as StudysetReturn | undefined)?.neurostore_id || ''}
+                            annotationdId={(annotation as AnnotationReturn | undefined)?.neurostore_id || ''}
                             selectedValue={selectedValue}
                         />
                     </Box>

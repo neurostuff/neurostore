@@ -1,12 +1,17 @@
+import type { ReactNode } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
 import NeurosynthLoader from 'components/NeurosynthLoader/NeurosynthLoader';
 import { useGetProjectById, useUserCanEdit } from 'hooks';
 import { useGetProjectIsLoading, useInitProjectStoreIfRequired } from 'pages/Project/store/ProjectStore';
 import { Navigate, useLocation, useParams } from 'react-router-dom';
-const ProtectedProjectRoute: React.FC<{ onlyOwnerCanAccess?: boolean; errorMessage?: string }> = ({
+const ProtectedProjectRoute = ({ 
     onlyOwnerCanAccess,
     errorMessage = '',
     children,
+}: {
+    onlyOwnerCanAccess?: boolean;
+    errorMessage?: string;
+    children?: ReactNode;
 }) => {
     const { projectId } = useParams<{ projectId: string }>();
     const { data, isLoading: getProjectIsLoading, isError, error } = useGetProjectById(projectId);
@@ -31,7 +36,7 @@ const ProtectedProjectRoute: React.FC<{ onlyOwnerCanAccess?: boolean; errorMessa
     }
 
     if (isError) {
-        console.error('There was an error loading the project: ' + projectId);
+        console.error('There was an error loading the project: ' + projectId, error);
         throw new Error(JSON.stringify(error)); // go to fallback page
     }
 

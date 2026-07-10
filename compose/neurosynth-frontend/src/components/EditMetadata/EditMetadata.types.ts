@@ -17,6 +17,7 @@ export interface IAddMetadataRowModel {
     allowBoolean?: boolean;
     allowString?: boolean;
     allowNumber?: boolean;
+    defaultType?: EPropertyType;
     errorMessage?: string;
     keyPlaceholderText?: string;
     showToggleType?: boolean;

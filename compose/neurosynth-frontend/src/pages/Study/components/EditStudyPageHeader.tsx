@@ -3,7 +3,7 @@ import DisplayLink from 'components/DisplayStudyLink/DisplayLink';
 import DisplayStudyLinkFullText from 'components/DisplayStudyLink/DisplayStudyLinkFullText';
 import LoadingStateIndicatorProject from 'components/LoadingStateIndicator/LoadingStateIndicatorProject';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs';
-import { PUBMED_ARTICLE_URL_PREFIX, PUBMED_CENTRAL_ARTICLE_URL_PREFIX } from 'hooks/external/useGetPubMedIds';
+import { PUBMED_ARTICLE_URL_PREFIX, PUBMED_CENTRAL_ARTICLE_URL_PREFIX } from 'hooks/external/useFetchPubMedIds.types';
 import { useProjectId, useProjectName } from 'pages/Project/store/ProjectStore';
 import {
     useStudyAuthors,
@@ -17,7 +17,7 @@ import {
 } from 'pages/Study/store/StudyStore';
 import { useMemo } from 'react';
 
-const EditStudyPageHeader: React.FC = () => {
+const EditStudyPageHeader = () => {
     const projectId = useProjectId();
     const studyName = useStudyName();
     const studyYear = useStudyYear();

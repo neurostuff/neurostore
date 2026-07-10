@@ -38,7 +38,7 @@ export default ({ mode }) => {
         },
 
         build: {
-            sourcemap: isProduction,
+            sourcemap: true,
         },
     });
 };

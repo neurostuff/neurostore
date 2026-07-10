@@ -8,11 +8,11 @@ import CurationBoardAIInterfaceCuratorTableHeaderFilterNumeric from './CurationB
 import CurationBoardAIInterfaceCuratorTableHeaderFilterText from './CurationBoardAIInterfaceCuratorTableHeaderFilterText';
 import CurationBoardAIInterfaceCuratorTableHeaderFilterNestedAutocomplete from './CurationBoardAIInterfaceCuratorTableHeaderFilterNestedAutocomplete';
 
-const CurationBoardAIInterfaceCuratorTableHeaderFilter: React.FC<{
+const CurationBoardAIInterfaceCuratorTableHeaderFilter = ({  column, allRows  }: {
     column: Column<ICurationTableStudy, ICurationTableColumnType>;
     filteredRows: Row<ICurationTableStudy>[];
     allRows: Row<ICurationTableStudy>[];
-}> = ({ column, allRows }) => {
+}) => {
     const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
     const isOpen = Boolean(anchorEl);
     const filterVariant = column.columnDef.meta?.filterVariant;

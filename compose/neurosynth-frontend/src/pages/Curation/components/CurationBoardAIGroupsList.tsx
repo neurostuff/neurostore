@@ -16,17 +16,18 @@ export interface IGroupListItem {
     label: string;
     secondaryLabel?: string;
     count: number | null;
+    excludedCount: number | null;
     UI: ECurationBoardAIInterface | null;
     children?: IGroupListItem[];
     listItemStyles?: SxProps;
     tooltipContent?: string | React.ReactNode;
 }
 
-const CurationBoardAIGroupsList: React.FC<{
+const CurationBoardAIGroupsList = ({  selectedGroup, onSelectGroup, groups  }: {
     selectedGroup: IGroupListItem | undefined;
     groups: IGroupListItem[];
     onSelectGroup: (selectedInterface: IGroupListItem) => void;
-}> = ({ selectedGroup, onSelectGroup, groups }) => {
+}) => {
     const handleSelectGroup = (group: IGroupListItem) => {
         onSelectGroup(group);
     };

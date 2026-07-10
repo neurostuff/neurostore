@@ -1,11 +1,11 @@
 import { CloudDone, CloudQueue, Cloud } from '@mui/icons-material';
 import { Box, CircularProgress, Tooltip } from '@mui/material';
 
-const LoadingStateIndicator: React.FC<{ isLoading?: boolean; hasUnsavedchanges?: boolean; isError?: boolean }> = ({
+const LoadingStateIndicator = ({ 
     isLoading = false,
     hasUnsavedchanges = false,
     isError = false,
-}) => {
+ }: { isLoading?: boolean; hasUnsavedchanges?: boolean; isError?: boolean }) => {
     return (
         <Box sx={{ height: '100%', width: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             {isLoading ? (

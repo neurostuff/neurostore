@@ -1,16 +1,8 @@
 import { Bookmark, CheckCircle, QuestionMark } from '@mui/icons-material';
-import {
-    Box,
-    ListItemIcon,
-    ListItemText,
-    MenuItem,
-    Select,
-    SelectChangeEvent,
-    Typography,
-} from '@mui/material';
+import { Box, ListItemIcon, ListItemText, MenuItem, Select, SelectChangeEvent, Typography } from '@mui/material';
 import { EExtractionStatus } from '../ExtractionPage';
 
-const ExtractionStatusInput: React.FC<EExtractionStatus | undefined> = (props) => {
+const ExtractionStatusInput = (props: EExtractionStatus | undefined) => {
     switch (props) {
         case EExtractionStatus.COMPLETED:
             return (
@@ -43,10 +35,10 @@ const ExtractionStatusInput: React.FC<EExtractionStatus | undefined> = (props) =
     }
 };
 
-const ExtractionTableStatusFilter: React.FC<{
+const ExtractionTableStatusFilter = ({  value, onChange  }: {
     value: EExtractionStatus | null;
     onChange: (val: string | null) => void;
-}> = ({ value, onChange }) => {
+}) => {
     const handleOnChange = (event: SelectChangeEvent<EExtractionStatus | undefined>) => {
         onChange(event.target.value ? event.target.value : null);
     };

@@ -4,12 +4,10 @@ import StateHandlerComponent from 'components/StateHandlerComponent/StateHandler
 import useDisplayWarnings from '../hooks/useDisplayWarnings';
 import { useGetStudyIsLoading } from 'pages/Study/store/StudyStore';
 
-const StudyAnalysisWarnings: React.FC<{ analysisId: string }> = (props) => {
+const StudyAnalysisWarnings = (props: { analysisId: string }) => {
     const getStudyIsLoading = useGetStudyIsLoading();
 
-    const { hasNoPoints, hasNoName, hasDuplicateName, hasNonMNICoordinates } = useDisplayWarnings(
-        props.analysisId
-    );
+    const { hasNoPoints, hasNoName, hasDuplicateName, hasNonMNICoordinates } = useDisplayWarnings(props.analysisId);
 
     return (
         <StateHandlerComponent isLoading={getStudyIsLoading} isError={false} loaderSize={20}>

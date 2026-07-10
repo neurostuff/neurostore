@@ -1,0 +1,12 @@
+services:
+  neurostore:
+    image: ghcr.io/${GHCR_OWNER}/neurostore:sha-${GIT_SHA}
+
+  store_nginx:
+    image: ghcr.io/${GHCR_OWNER}/store_nginx:sha-${GIT_SHA}
+
+  store-pgsql:
+    image: ghcr.io/${GHCR_OWNER}/store-pgsql:sha-${GIT_SHA}
+
+  store-pgsql17:
+    image: ghcr.io/${GHCR_OWNER}/store-pgsql17:sha-${GIT_SHA}

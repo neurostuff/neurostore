@@ -1,5 +1,6 @@
-from neurosynth_compose.models import MetaAnalysis, MetaAnalysisResult
 from sqlalchemy import select
+
+from neurosynth_compose.models import MetaAnalysis, MetaAnalysisResult, Project, User
 
 
 def test_get_meta_analyses(session, app, auth_client, user_data, db):
@@ -15,14 +16,15 @@ def test_get_meta_analyses(session, app, auth_client, user_data, db):
     assert get_one_nested.status_code == 200
 
     data = get_one_nested.json
-    for key in ["specification", "studyset", "annotation"]:
+    for key in ["specification", "neurostore_studyset", "neurostore_annotation"]:
         assert data[key] is None or isinstance(data[key], dict)
 
 
 def test_get_specific_meta_analyses(session, app, auth_client, user_data, db):
-    metas = db.session.execute(select(MetaAnalysis).limit(3)).scalars().all()
-    ids = set([m.id for m in metas])
-    ids_str = "&".join([f"ids={m.id}" for m in metas])
+    visible_resp = auth_client.get("/api/meta-analyses?page_size=100")
+    assert visible_resp.status_code == 200
+    ids = set([m["id"] for m in visible_resp.json["results"][:3]])
+    ids_str = "&".join([f"ids={m_id}" for m_id in ids])
     get_all = auth_client.get(f"/api/meta-analyses?{ids_str}")
     assert get_all.status_code == 200
 
@@ -32,7 +34,15 @@ def test_get_specific_meta_analyses(session, app, auth_client, user_data, db):
 
 
 def test_delete_meta_analysis(session, app, auth_client, user_data, db):
-    meta_analysis = db.session.execute(select(MetaAnalysis)).scalars().first()
+    meta_analysis = (
+        db.session.execute(
+            select(MetaAnalysis)
+            .join(MetaAnalysis.user)
+            .where(User.external_id == auth_client.username)
+        )
+        .scalars()
+        .first()
+    )
 
     # add a meta-analysis result
     meta_analysis.results.append(MetaAnalysisResult())
@@ -55,3 +65,66 @@ def test_delete_meta_analysis(session, app, auth_client, user_data, db):
 
 def test_ingest_neurostore(session, neurostore_data):
     pass
+
+
+def test_update_meta_analysis_public(session, auth_client, user_data, db):
+    meta_analysis = (
+        db.session.execute(
+            select(MetaAnalysis)
+            .join(MetaAnalysis.user)
+            .where(User.external_id == auth_client.username)
+        )
+        .scalars()
+        .first()
+    )
+    assert meta_analysis is not None
+
+    update_public = auth_client.put(
+        f"/api/meta-analyses/{meta_analysis.id}",
+        data={"public": True},
+    )
+    assert update_public.status_code == 200
+    assert update_public.json["public"] is True
+
+    update_private = auth_client.put(
+        f"/api/meta-analyses/{meta_analysis.id}",
+        data={"public": False},
+    )
+    assert update_private.status_code == 200
+    assert update_private.json["public"] is False
+
+
+def test_create_meta_analysis_inherits_project_neurostore_refs(
+    session, auth_client, user_data, db
+):
+    project = (
+        db.session.execute(
+            select(Project)
+            .join(Project.user)
+            .join(Project.meta_analyses)
+            .where(User.external_id == auth_client.username)
+            .where(Project.neurostore_studyset_id.is_not(None))
+            .where(Project.neurostore_annotation_id.is_not(None))
+        )
+        .scalars()
+        .first()
+    )
+    assert project is not None
+
+    payload = {
+        "name": "frontend-created meta analysis",
+        "description": "inherits project neurostore refs",
+        "specification": project.meta_analyses[0].specification_id,
+        "project": project.id,
+    }
+
+    response = auth_client.post("/api/meta-analyses", data=payload)
+
+    assert response.status_code == 200
+    assert response.json["neurostore_studyset"] == project.neurostore_studyset_id
+    assert response.json["neurostore_annotation"] == project.neurostore_annotation_id
+
+    created = db.session.get(MetaAnalysis, response.json["id"])
+    assert created is not None
+    assert created.neurostore_studyset_id == project.neurostore_studyset_id
+    assert created.neurostore_annotation_id == project.neurostore_annotation_id
