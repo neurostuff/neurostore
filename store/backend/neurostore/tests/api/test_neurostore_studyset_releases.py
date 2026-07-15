@@ -112,7 +112,7 @@ def _seed_release_data(session):
     )
 
     demo_pipeline = Pipeline(name="ParticipantDemographicsExtractor")
-    task_pipeline = Pipeline(name="TaskInfoExtractor")
+    task_pipeline = Pipeline(name="TaskExtractor")
     session.add_all([demo_pipeline, task_pipeline])
     session.flush()
     demo_config = PipelineConfig(
@@ -231,7 +231,7 @@ def test_build_release_selects_latest_coordinate_study_and_writes_tarball(
     )
     note = annotation.annotation_analyses[0].note
     assert note["ParticipantDemographicsExtractor.predictions.groups[0].count"] == 10
-    assert note["TaskInfoExtractor.predictions.fMRITasks[0].TaskName"] == "n-back"
+    assert note["TaskExtractor.predictions.fMRITasks[0].TaskName"] == "n-back"
 
 
 def test_release_build_tracks_partial_update_manifest(app, session, tmp_path):

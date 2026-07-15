@@ -106,14 +106,14 @@ def test_pipeline_nested_queries(auth_client, study_pipeline_data):
     # Test task name
     resp = auth_client.get(
         "/api/pipeline-study-results?feature_filter="
-        "TaskInfoExtractor:predictions.fMRITasks[].TaskName=oddball"
+        "TaskExtractor:predictions.fMRITasks[].TaskName=oddball"
     )
     assert resp.status_code == 200
 
     # Test task description text search
     resp = auth_client.get(
         "/api/pipeline-study-results?feature_filter="
-        "TaskInfoExtractor:predictions.fMRITasks[].TaskDescription~visual"
+        "TaskExtractor:predictions.fMRITasks[].TaskDescription~visual"
     )
     assert resp.status_code == 200
 
@@ -138,7 +138,7 @@ def test_pipeline_multiple_filters(auth_client, study_pipeline_data):
     # Test task and group size
     resp = auth_client.get(
         "/api/pipeline-study-results?"
-        "feature_filter=TaskInfoExtractor:predictions.fMRITasks[].TaskName=oddball&"
+        "feature_filter=TaskExtractor:predictions.fMRITasks[].TaskName=oddball&"
         "feature_filter=ParticipantDemographicsExtractor:predictions.groups[].count=18"
     )
     assert resp.status_code == 200
@@ -149,7 +149,7 @@ def test_search_list_of_lists(auth_client, study_pipeline_data):
     # Test searching for a specific task name in a list of lists
     resp = auth_client.get(
         "/api/pipeline-study-results?feature_filter="
-        "TaskInfoExtractor:predictions.fMRITasks[].Concepts[]~emotion"
+        "TaskExtractor:predictions.fMRITasks[].Concepts[]~emotion"
     )
     assert resp.status_code == 200
     results = resp.json()["results"]
@@ -175,7 +175,7 @@ def test_search_list_of_lists(auth_client, study_pipeline_data):
         ("NeuroimagingMethodExtractor:groups..count=15", "Contains consecutive dots"),
         # Invalid array syntax
         (
-            "TaskInfoExtractor:predictions.fMRITasks[[].TaskName=value",
+            "TaskExtractor:predictions.fMRITasks[[].TaskName=value",
             "Invalid path segment",
         ),
         # Invalid values

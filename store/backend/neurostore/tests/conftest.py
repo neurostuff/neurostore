@@ -697,7 +697,7 @@ def create_pipeline_results(session, ingest_neurosynth, tmp_path):
     # Create directories for different pipeline results
     demo_dir = base_output_dir / "ParticipantInfo" / "1.0.0"
     method_dir = base_output_dir / "NeuroimagingMethod" / "1.0.0"
-    task_dir = base_output_dir / "TaskInfo" / "1.0.0"
+    task_dir = base_output_dir / "TaskExtractor" / "1.0.0"
     embed256_dir = base_output_dir / "Embeddings256" / "1.0.0"
     embed128_dir = base_output_dir / "Embeddings128" / "1.0.0"
 
@@ -745,13 +745,13 @@ def create_pipeline_results(session, ingest_neurosynth, tmp_path):
             "text_extraction": {"source": "text"},
             "input_sources": ["pubget", "ace"],
         },
-        "TaskInfo": {
+        "TaskExtractor": {
             "version": "1.0.0",
             "description": "Task information extractor",
             "type": "apipromptextractor",
             "date": "2025-03-05T23:55:00.000000",
             "config_hash": "cf44e82d95ca",
-            "extractor": "TaskInfoExtractor",
+            "extractor": "TaskExtractor",
             "extractor_kwargs": {
                 "extraction_model": "gpt-4-turbo",
                 "env_variable": "OPENAI_API_KEY",
@@ -839,7 +839,7 @@ def create_pipeline_results(session, ingest_neurosynth, tmp_path):
             "SampleSize": random.randint(20, 100),
         }
 
-        # TaskInfo data
+        # TaskExtractor data
         task_data = {
             "fMRITasks": [
                 {
