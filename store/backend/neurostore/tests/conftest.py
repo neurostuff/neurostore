@@ -841,18 +841,19 @@ def create_pipeline_results(session, ingest_neurosynth, tmp_path):
 
         # TaskExtractor data
         task_data = {
+            "Modality": ["fMRI-BOLD"],
             "fMRITasks": [
                 {
-                    "TaskName": random.choice(["oddball", "n-back", "rest"]),
-                    "Concepts": random.sample(
-                        ["emotion", "memory", "attention", "learning"],
-                        k=random.randint(1, 3),
-                    ),
+                    "TaskName": "Resting-state fMRI",
+                    "Concepts": [
+                        "Cognitive impairment",
+                        "Intrinsic functional connectivity",
+                    ],
                     "TaskDescription": (
-                        "Participants performed a "
-                        f"{random.choice(['visual', 'auditory'])} task"
+                        "Participants were instructed to lie with their eyes closed, "
+                        "not to fall asleep, and not to think of anything in particular."
                     ),
-                    "TaskDuration": f"{random.randint(5, 15)} minutes",
+                    "TaskDuration": "510 seconds",
                 }
             ],
             "BehavioralTasks": None,
@@ -877,7 +878,7 @@ def create_pipeline_results(session, ingest_neurosynth, tmp_path):
             study_dir.mkdir(exist_ok=True, parents=True)
 
             with open(study_dir / "results.json", "w") as f:
-                json.dump({"predictions": data}, f)
+                json.dump(data, f)
             with open(study_dir / "info.json", "w") as f:
                 json.dump(
                     {

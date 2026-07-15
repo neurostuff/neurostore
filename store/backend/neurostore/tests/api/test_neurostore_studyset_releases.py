@@ -137,15 +137,13 @@ def _seed_release_data(session):
                 date_executed=_dt(2024, 3, 1),
                 status="SUCCESS",
                 result_data={
-                    "predictions": {
-                        "groups": [
-                            {
-                                "count": 10,
-                                "diagnosis": "healthy",
-                                "age_mean": 25.5,
-                            }
-                        ]
-                    }
+                    "groups": [
+                        {
+                            "count": 10,
+                            "diagnosis": "healthy",
+                            "age_mean": 25.5,
+                        }
+                    ]
                 },
             ),
             PipelineStudyResult(
@@ -154,9 +152,12 @@ def _seed_release_data(session):
                 date_executed=_dt(2024, 3, 2),
                 status="SUCCESS",
                 result_data={
-                    "predictions": {
-                        "fMRITasks": [{"TaskName": "n-back", "Concepts": ["memory"]}]
-                    }
+                    "fMRITasks": [
+                        {
+                            "TaskName": "Resting-state fMRI",
+                            "Concepts": ["Intrinsic functional connectivity"],
+                        }
+                    ]
                 },
             ),
         ]
@@ -230,8 +231,8 @@ def test_build_release_selects_latest_coordinate_study_and_writes_tarball(
         note.analysis_id == analysis.id for note in annotation.annotation_analyses
     )
     note = annotation.annotation_analyses[0].note
-    assert note["ParticipantDemographicsExtractor.predictions.groups[0].count"] == 10
-    assert note["TaskExtractor.predictions.fMRITasks[0].TaskName"] == "n-back"
+    assert note["ParticipantDemographicsExtractor.groups[0].count"] == 10
+    assert note["TaskExtractor.fMRITasks[0].TaskName"] == "Resting-state fMRI"
 
 
 def test_release_build_tracks_partial_update_manifest(app, session, tmp_path):
