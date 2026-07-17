@@ -127,7 +127,7 @@ def test_neurostore_exception_handler():
 
         response = await neurostore_exception_handler(request, exc)
         assert response.status_code == 404
-        assert response.media_type == "application/json"
+        assert response.mimetype == "application/json"
         body = json.loads(response.body)
         assert body["status"] == 404
         assert body["title"] == "Not Found"
@@ -144,7 +144,7 @@ def test_general_exception_handler():
 
         response = await general_exception_handler(request, exc)
         assert response.status_code == 500
-        assert response.media_type == "application/json"
+        assert response.mimetype == "application/json"
         body = json.loads(response.body)
         assert body["status"] == 500
         assert body["title"] == "Internal Server Error"

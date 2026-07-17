@@ -1,4 +1,3 @@
-import json
 import os
 from copy import deepcopy
 from pathlib import Path
@@ -7,6 +6,7 @@ import connexion
 import flask
 from authlib.integrations.flask_client import OAuth
 from connexion.exceptions import OAuthProblem
+from connexion.exceptions import ProblemException
 from connexion.jsonifier import Jsonifier
 from connexion.resolver import MethodResolver
 from connexion.validators import VALIDATOR_MAP
@@ -16,16 +16,17 @@ from flask_admin import Admin, AdminIndexView
 from flask_admin.contrib.sqla import ModelView
 from flask_admin.theme import Bootstrap4Theme
 from flask_orjson import OrjsonProvider
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.cors import CORSMiddleware
 
 from neurostore.config import resolve_config_object
 from neurostore.database import init_db
 from neurostore.exceptions.base import NeuroStoreException
 from neurostore.exceptions.handlers import (
-    flask_general_body_and_status,
-    flask_neurostore_body_and_status,
     general_exception_handler,
+    http_exception_handler,
     neurostore_exception_handler,
+    problem_exception_handler,
 )
 from neurostore.extensions import cache
 from neurostore.resources import iter_request_body_validation_skip_rules
@@ -235,36 +236,11 @@ def create_app():
         allow_methods=["*"],
         allow_headers=["*"],
     )
-    connexion_app.exception_handlers = {
-        NeuroStoreException: neurostore_exception_handler,
-        OAuthProblem: asgi_oauth_problem_handler,
-        Exception: general_exception_handler,
-    }
-
-    def _flask_neurostore_handler(exc):
-        body, status = flask_neurostore_body_and_status(exc)
-        resp = app.response_class(
-            json.dumps(body), status=status, mimetype="application/json"
-        )
-        resp.headers["Access-Control-Allow-Origin"] = "*"
-        resp.headers["Access-Control-Allow-Methods"] = "*"
-        resp.headers["Access-Control-Allow-Headers"] = "*"
-        resp.headers["Access-Control-Allow-Credentials"] = "true"
-        return resp
-
-    def _flask_general_handler(exc):
-        body, status = flask_general_body_and_status(exc)
-        resp = app.response_class(
-            json.dumps(body), status=status, mimetype="application/json"
-        )
-        resp.headers["Access-Control-Allow-Origin"] = "*"
-        resp.headers["Access-Control-Allow-Methods"] = "*"
-        resp.headers["Access-Control-Allow-Headers"] = "*"
-        resp.headers["Access-Control-Allow-Credentials"] = "true"
-        return resp
-
-    app.register_error_handler(NeuroStoreException, _flask_neurostore_handler)
-    app.register_error_handler(Exception, _flask_general_handler)
+    connexion_app.add_error_handler(NeuroStoreException, neurostore_exception_handler)
+    connexion_app.add_error_handler(OAuthProblem, asgi_oauth_problem_handler)
+    connexion_app.add_error_handler(ProblemException, problem_exception_handler)
+    connexion_app.add_error_handler(StarletteHTTPException, http_exception_handler)
+    connexion_app.add_error_handler(Exception, general_exception_handler)
 
     os.environ["BEARERINFO_FUNC"] = app.config["BEARERINFO_FUNC"]
 
