@@ -18,7 +18,7 @@ Edit the `.env` template to set the correct variables
 
 `APP_ENV` is the environment selector. Supported values are `development`,
 `staging`, `production`, `testing`, and `docker_test`. The stack resolves the
-matching Flask config and database name automatically.
+matching service config and database name automatically.
 
 ## Initializing backend
 Create the network, build the containers, and start services using the development configuration:
@@ -39,7 +39,7 @@ environment, recreate the volume or create `store_test_db` manually before migra
 
 Next, apply the existing migrations (they are the canonical definition of the schema).
 
-    docker-compose exec neurostore flask db upgrade
+    docker-compose exec neurostore neurostore db upgrade
 
 The tracked migrations create the `pgvector` extension automatically. If you are recovering from a partially migrated database, it is also safe to run:
 
@@ -48,7 +48,7 @@ The tracked migrations create the `pgvector` extension automatically. If you are
 Finally ingest data
 
     docker-compose exec neurostore \
-        bash -c "flask ingest-neurosynth --max-rows 100"
+        bash -c "neurostore ingest-neurosynth --max-rows 100"
 
 Note: the stack now resolves the database from `APP_ENV` automatically.
 Development, testing, and `docker_test` use `store_test_db`; staging and
@@ -62,8 +62,8 @@ If you make a change to neurostore, you should be able to simply restart the ser
 
 If you change any models, generate a new Alembic migration and migrate the database (commit the generated revision file so it becomes the new source of truth):
 
-    docker-compose exec neurostore flask db migrate
-    docker-compose exec neurostore flask db upgrade
+    docker-compose exec neurostore neurostore db migrate
+    docker-compose exec neurostore neurostore db upgrade
 
 
 ## Database migrations
@@ -75,7 +75,7 @@ The migrations stored in `backend/migrations` are the **only** source of truth f
 Any time you start the backend or pull the latest changes, bring the database to the expected state with:
 
 ```sh
-docker-compose exec neurostore flask db upgrade
+docker-compose exec neurostore neurostore db upgrade
 ```
 
 `upgrade` is idempotent, so rerunning it is harmless; it only applies migrations that have not been run yet.
@@ -89,7 +89,7 @@ Because each branch might change the schema independently, recreate the database
     docker compose exec store-pgsql17 psql -U postgres -c "DROP DATABASE IF EXISTS store_test_db;"
     docker compose exec store-pgsql17 psql -U postgres -c "CREATE DATABASE store_test_db;"
     docker compose up -d
-    docker compose exec neurostore flask db upgrade
+    docker compose exec neurostore neurostore db upgrade
 ```
 
 If you're using the legacy Postgres container, replace `store-pgsql17` with `store-pgsql` in the commands above. Re-run any ingestion or seed scripts your branch requires once the upgrade completes.
@@ -104,14 +104,14 @@ and execute:
     docker compose run -e "APP_ENV=docker_test" --rm neurostore bash -c "python -m pytest neurostore/tests"
 
 ## Admin interface
-The Flask-Admin UI is served at `/admin` once the stack is running.
+The admin UI is served at `/admin` once the stack is running.
 
 Access:
 - Dev: http://localhost/admin
 - Prod: https://neurostore.org/admin
 
 Auth:
-- Set `FLASK_ADMIN_USERNAME` and `FLASK_ADMIN_PASSWORD` in the environment.
+- Set `ADMIN_USERNAME` and `ADMIN_PASSWORD` in the environment.
 - The browser will prompt for HTTP Basic auth when you visit `/admin`.
 
 Grant admin access (recommended for any admin UI access):

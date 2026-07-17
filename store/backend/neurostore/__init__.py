@@ -168,8 +168,8 @@ def create_app():
     )
 
     def _get_admin_credentials():
-        username = app.config.get("FLASK_ADMIN_USERNAME")
-        password = app.config.get("FLASK_ADMIN_PASSWORD")
+        username = app.config.get("ADMIN_USERNAME")
+        password = app.config.get("ADMIN_PASSWORD")
         return username, password
 
     def _admin_auth_failed():

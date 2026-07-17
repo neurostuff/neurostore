@@ -83,7 +83,7 @@ pushd "${ROOT_DIR}/store" >/dev/null
 # The release worker runs its first release build as soon as it starts, so keep it
 # scaled to zero until the app container has applied migrations successfully.
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --scale store_release_worker=0
-docker compose exec -T neurostore flask db upgrade heads
+docker compose exec -T neurostore neurostore db upgrade --revision heads
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --scale store_release_worker=1 store_release_worker
 popd >/dev/null
 
@@ -103,7 +103,7 @@ popd >/dev/null
 pushd "${ROOT_DIR}/compose" >/dev/null
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d compose compose_redis compose_worker compose-pghero compose-grafana
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d compose_nginx
-docker compose exec -T compose flask db upgrade heads
+docker compose exec -T compose compose db upgrade --revision heads
 # Frontend assets remain host-built locally to mirror deploy behavior with env-specific builds.
 docker compose exec -T compose bash -lc "cd /compose/neurosynth-frontend && npm install && npm run build:dev"
 popd >/dev/null

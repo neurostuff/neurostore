@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
-"""Compare median benchmark timings and fail only on material slowdowns."""
+"""Compare benchmark timings and fail only on material slowdowns."""
 
 from __future__ import annotations
 
 import argparse
 import json
+import re
+from collections import Counter, defaultdict
 from pathlib import Path
 
 
@@ -13,10 +15,47 @@ def load_results(path: Path) -> dict:
         return json.load(handle)
 
 
+def _case_suffix(case: dict, occurrence: int) -> str:
+    for key in (
+        "workload_size",
+        "scale",
+        "requested_count",
+        "note_count",
+        "study_count",
+        "annotation_count",
+        "base_study_count",
+    ):
+        value = case.get(key) or (case.get("metadata") or {}).get(key)
+        if value is not None:
+            return f"{key}={value}"
+
+    profiling = case.get("profiling") or {}
+    for path_key in ("stats_path", "summary_path"):
+        match = re.search(r"/scale-([^/]+)/", str(profiling.get(path_key) or ""))
+        if match:
+            return f"scale={match.group(1)}"
+
+    return f"sample={occurrence}"
+
+
+def _deduplicate_case_names(cases: list[dict]) -> list[dict]:
+    name_counts = Counter(case["name"] for case in cases)
+    seen = defaultdict(int)
+    deduplicated = []
+    for case in cases:
+        case_copy = dict(case)
+        name = case["name"]
+        if name_counts[name] > 1:
+            seen[name] += 1
+            case_copy["name"] = f"{name} [{_case_suffix(case, seen[name])}]"
+        deduplicated.append(case_copy)
+    return deduplicated
+
+
 def extract_cases(results: dict) -> list[dict]:
     cases = results.get("cases") or []
     if cases:
-        return cases
+        return _deduplicate_case_names(cases)
 
     extracted_cases = []
     for case_analysis in results.get("case_analyses", []):
@@ -25,9 +64,10 @@ def extract_cases(results: dict) -> list[dict]:
                 {
                     "name": sample.get("case_name") or case_analysis.get("case"),
                     "median_seconds": sample["median_seconds"],
+                    "p95_seconds": sample.get("p95_seconds"),
                 }
             )
-    return extracted_cases
+    return _deduplicate_case_names(extracted_cases)
 
 
 def format_pct(value: float) -> str:
@@ -38,8 +78,19 @@ def format_seconds(value: float) -> str:
     return f"{value:.4f}s"
 
 
+def case_metric(case: dict, metric: str) -> float:
+    if metric in case and case[metric] is not None:
+        return float(case[metric])
+    if metric == "p95_seconds" and "median_seconds" in case:
+        return float(case["median_seconds"])
+    raise KeyError(metric)
+
+
 def build_rows(
-    baseline_cases: dict, candidate_cases: dict, threshold: float
+    baseline_cases: dict,
+    candidate_cases: dict,
+    threshold: float,
+    metric: str = "p95_seconds",
 ) -> tuple[list[dict], list[dict], list[dict]]:
     rows = []
     slowdowns = []
@@ -56,14 +107,14 @@ def build_rows(
             )
             continue
 
-        base_median = float(baseline["median_seconds"])
-        cand_median = float(candidate["median_seconds"])
-        delta = cand_median - base_median
-        ratio = 0.0 if base_median == 0 else delta / base_median
+        base_value = case_metric(baseline, metric)
+        cand_value = case_metric(candidate, metric)
+        delta = cand_value - base_value
+        ratio = 0.0 if base_value == 0 else delta / base_value
         row = {
             "name": name,
-            "baseline": base_median,
-            "candidate": cand_median,
+            "baseline": base_value,
+            "candidate": cand_value,
             "delta": delta,
             "ratio": ratio,
             "status": "ok",
@@ -93,9 +144,11 @@ def render_report(
     slowdowns: list[dict],
     mismatches: list[dict],
     threshold: float,
+    metric: str = "p95_seconds",
 ) -> str:
     lines = [
         f"**Service:** `{service}`",
+        f"**Metric:** `{metric}`",
         f"**Threshold:** `{format_pct(threshold)} slower`",
         "",
         "| Case | Baseline | Candidate | Delta | Status |",
@@ -125,8 +178,9 @@ def render_report(
                 lines.append(f"- {slowdown['name']}: {slowdown['reason']}")
                 continue
             lines.append(
-                "- {name}: candidate median {candidate} vs baseline {baseline} ({ratio})".format(
+                "- {name}: candidate {metric} {candidate} vs baseline {baseline} ({ratio})".format(
                     name=slowdown["name"],
+                    metric=metric,
                     candidate=format_seconds(slowdown["candidate"]),
                     baseline=format_seconds(slowdown["baseline"]),
                     ratio=format_pct(slowdown["ratio"]),
@@ -156,6 +210,7 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--baseline", required=True)
     parser.add_argument("--candidate", required=True)
+    parser.add_argument("--metric", default="p95_seconds")
     parser.add_argument("--threshold", type=float, default=0.2)
     parser.add_argument("--summary-file")
     args = parser.parse_args()
@@ -167,9 +222,11 @@ def main() -> int:
     baseline_cases = {case["name"]: case for case in extract_cases(baseline)}
     candidate_cases = {case["name"]: case for case in extract_cases(candidate)}
     rows, slowdowns, mismatches = build_rows(
-        baseline_cases, candidate_cases, args.threshold
+        baseline_cases, candidate_cases, args.threshold, metric=args.metric
     )
-    report = render_report(service, rows, slowdowns, mismatches, args.threshold)
+    report = render_report(
+        service, rows, slowdowns, mismatches, args.threshold, metric=args.metric
+    )
 
     print(report)
     maybe_append_summary(args.summary_file, report)

@@ -10,6 +10,7 @@ MODULE_SPEC.loader.exec_module(compare_results)
 build_rows = compare_results.build_rows
 extract_cases = compare_results.extract_cases
 render_report = compare_results.render_report
+case_metric = compare_results.case_metric
 
 
 def test_extract_cases_prefers_flat_cases_when_present():
@@ -30,13 +31,47 @@ def test_extract_cases_prefers_flat_cases_when_present():
     ]
 
 
+def test_extract_cases_deduplicates_repeated_scaled_case_names():
+    results = {
+        "cases": [
+            {
+                "name": "list_projects",
+                "median_seconds": 1.23,
+                "metadata": {"requested_count": 10},
+            },
+            {
+                "name": "list_projects",
+                "median_seconds": 5.67,
+                "metadata": {"requested_count": 50},
+            },
+        ]
+    }
+
+    assert extract_cases(results) == [
+        {
+            "name": "list_projects [requested_count=10]",
+            "median_seconds": 1.23,
+            "metadata": {"requested_count": 10},
+        },
+        {
+            "name": "list_projects [requested_count=50]",
+            "median_seconds": 5.67,
+            "metadata": {"requested_count": 50},
+        },
+    ]
+
+
 def test_extract_cases_falls_back_to_scaling_samples():
     results = {
         "case_analyses": [
             {
                 "case": "list_projects",
                 "raw_case_samples": [
-                    {"case_name": "list_projects_10", "median_seconds": 1.23},
+                    {
+                        "case_name": "list_projects_10",
+                        "median_seconds": 1.23,
+                        "p95_seconds": 1.5,
+                    },
                     {"case_name": "list_projects_50", "median_seconds": 5.67},
                 ],
             }
@@ -44,9 +79,21 @@ def test_extract_cases_falls_back_to_scaling_samples():
     }
 
     assert extract_cases(results) == [
-        {"name": "list_projects_10", "median_seconds": 1.23},
-        {"name": "list_projects_50", "median_seconds": 5.67},
+        {
+            "name": "list_projects_10",
+            "median_seconds": 1.23,
+            "p95_seconds": 1.5,
+        },
+        {
+            "name": "list_projects_50",
+            "median_seconds": 5.67,
+            "p95_seconds": None,
+        },
     ]
+
+
+def test_case_metric_falls_back_to_median_for_old_p95_artifacts():
+    assert case_metric({"median_seconds": 1.23}, "p95_seconds") == 1.23
 
 
 def test_build_rows_reports_missing_cases_without_marking_slowdown():
@@ -66,8 +113,8 @@ def test_build_rows_reports_missing_cases_without_marking_slowdown():
 
 def test_build_rows_marks_only_true_slowdowns():
     rows, slowdowns, mismatches = build_rows(
-        {"same_case": {"median_seconds": 1.0}},
-        {"same_case": {"median_seconds": 1.5}},
+        {"same_case": {"median_seconds": 1.0, "p95_seconds": 1.1}},
+        {"same_case": {"median_seconds": 1.0, "p95_seconds": 1.5}},
         threshold=0.2,
     )
 
@@ -95,6 +142,38 @@ def test_render_report_separates_case_mismatches_from_slowdowns():
         threshold=0.2,
     )
 
+    assert "**Metric:** `p95_seconds`" in report
     assert "No slowdowns over the configured threshold." in report
     assert "Case mismatches (reported only):" in report
     assert "candidate_only: missing in baseline" in report
+
+
+def test_render_report_labels_selected_metric_for_slowdowns():
+    report = render_report(
+        "store",
+        rows=[
+            {
+                "name": "same_case",
+                "baseline": 1.0,
+                "candidate": 1.5,
+                "delta": 0.5,
+                "ratio": 0.5,
+                "status": "slow",
+            }
+        ],
+        slowdowns=[
+            {
+                "name": "same_case",
+                "baseline": 1.0,
+                "candidate": 1.5,
+                "delta": 0.5,
+                "ratio": 0.5,
+                "status": "slow",
+            }
+        ],
+        mismatches=[],
+        threshold=0.2,
+        metric="p95_seconds",
+    )
+
+    assert "candidate p95_seconds 1.5000s vs baseline 1.0000s" in report

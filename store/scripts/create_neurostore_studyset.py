@@ -6,7 +6,7 @@ maintained implementation is:
     store/backend/neurostore/services/neurostore_studyset_releases.py
 
 Use the ``build_neurostore_studyset_release`` service or the
-``flask build-neurostore-studyset-release`` CLI instead. That path creates the
+``neurostore build-neurostore-studyset-release`` CLI instead. That path creates the
 canonical ``neurostore-studyset`` / ``neurostore-annotation`` records, applies
 the current study selection rules, writes release manifests, and builds the
 downloadable release artifact.
@@ -27,7 +27,7 @@ DEPRECATION_MESSAGE = (
     "DEPRECATED: store/scripts/create_neurostore_studyset.py is legacy. "
     "Use neurostore.services.neurostore_studyset_releases."
     "build_neurostore_studyset_release or the "
-    "`flask build-neurostore-studyset-release` CLI instead."
+    "`neurostore build-neurostore-studyset-release` CLI instead."
 )
 
 print(DEPRECATION_MESSAGE, file=sys.stderr)

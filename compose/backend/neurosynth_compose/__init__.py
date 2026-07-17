@@ -53,7 +53,7 @@ def create_app():
     swagger_options = {"swagger_ui": True}
 
     # Connexion resolves security handlers from environment variables or
-    # x-... entries in the OpenAPI spec, not Flask config. Push the config
+    # x-... entries in the OpenAPI spec, not app config. Push the config
     # values into the environment so app config remains the single source of truth.
     os.environ["BEARERINFO_FUNC"] = app.config["BEARERINFO_FUNC"]
     os.environ["APIKEYINFO_FUNC"] = app.config["APIKEYINFO_FUNC"]
@@ -90,7 +90,7 @@ def create_app():
     db = init_db(app)
     init_auth(app)
 
-    # Initialize Flask-Admin
+    # Initialize admin
     from neurosynth_compose.models import (
         Annotation,
         NeurostoreAnnotation,
@@ -110,8 +110,8 @@ def create_app():
     from neurosynth_compose.models.auth import Role
 
     def _get_admin_credentials():
-        username = app.config.get("FLASK_ADMIN_USERNAME")
-        password = app.config.get("FLASK_ADMIN_PASSWORD")
+        username = app.config.get("ADMIN_USERNAME")
+        password = app.config.get("ADMIN_PASSWORD")
         return username, password
 
     def _admin_auth_failed():

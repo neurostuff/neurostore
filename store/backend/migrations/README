@@ -1,2 +1,2 @@
 Generic single-database configuration.
-Generated with `python manage.py db init` from the repository root
+Run with `neurostore db ...`; generated and applied by native Alembic config.

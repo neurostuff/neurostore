@@ -53,6 +53,12 @@ dev = [
     "pytest~=9.0"
 ]
 
+[project.scripts]
+compose = "compose_cli:main"
+
+[tool.setuptools]
+py-modules = ["compose_cli"]
+
 [tool.setuptools.packages.find]
 include = ["neurosynth_compose*"]
 

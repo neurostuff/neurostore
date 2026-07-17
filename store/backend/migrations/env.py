@@ -18,12 +18,58 @@ logger = logging.getLogger("alembic.env")
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-from flask import current_app
+try:
+    from flask import current_app, has_app_context
+except ImportError:  # pragma: no cover - Flask compatibility fallback only
+    current_app = None
 
-config.set_main_option(
-    "sqlalchemy.url", current_app.config.get("SQLALCHEMY_DATABASE_URI")
-)
-target_metadata = current_app.extensions["migrate"].db.metadata
+    def has_app_context():
+        return False
+
+
+def _load_service_config():
+    import importlib
+
+    from neurostore.config import resolve_config_object
+
+    module_name, object_name = resolve_config_object().rsplit(".", 1)
+    module = importlib.import_module(module_name)
+    return getattr(module, object_name)
+
+
+def _get_sqlalchemy_url():
+    configured_url = config.get_main_option("sqlalchemy.url")
+    if configured_url:
+        return configured_url
+    if has_app_context():
+        return current_app.config.get("SQLALCHEMY_DATABASE_URI")
+    return _load_service_config().SQLALCHEMY_DATABASE_URI
+
+
+def _get_target_metadata():
+    configured_metadata = config.attributes.get("target_metadata")
+    if configured_metadata is not None:
+        return configured_metadata
+    if has_app_context() and "migrate" in current_app.extensions:
+        return current_app.extensions["migrate"].db.metadata
+
+    from neurostore.database import db
+    import neurostore.models  # noqa: F401
+
+    return db.metadata
+
+
+def _get_configure_args():
+    configured_args = dict(config.attributes.get("configure_args") or {})
+    if configured_args:
+        return configured_args
+    if has_app_context() and "migrate" in current_app.extensions:
+        return dict(current_app.extensions["migrate"].configure_args)
+    return {}
+
+
+config.set_main_option("sqlalchemy.url", _get_sqlalchemy_url())
+target_metadata = _get_target_metadata()
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
@@ -75,12 +121,17 @@ def run_migrations_online():
     )
 
     connection = engine.connect()
+    configure_args = _get_configure_args()
+    include_object = config.attributes.get("include_object")
+    if include_object is not None:
+        configure_args.setdefault("include_object", include_object)
+
     context.configure(
         connection=connection,
         target_metadata=target_metadata,
         user_module_prefix="neurostore.models.migration_types.",  # custom column types
         process_revision_directives=process_revision_directives,
-        **current_app.extensions["migrate"].configure_args
+        **configure_args
     )
 
     try:

@@ -6,16 +6,13 @@ import os
 import time
 
 import click
-from flask_migrate import Migrate
 from sqlalchemy.exc import OperationalError
 
 from neurostore import create_app, ingest, models
-from neurostore.config import resolve_config_object
 from neurostore.database import db
 from neurostore.services.has_media_flags import process_base_study_flag_outbox_batch
 from neurostore.services.neurostore_studyset_releases import (
     build_neurostore_studyset_release as build_neurostore_studyset_release_service,
-    clear_shard_cache,
 )
 from neurostore.services.base_study_metadata_enrichment import (
     process_base_study_metadata_outbox_batch,
@@ -27,35 +24,6 @@ from neurostore.scripts.transfer_ownership import (
 )
 
 app = create_app()
-
-app.config.from_object(resolve_config_object())
-
-
-def include_object(obj, name, type_, reflected, compare_to):
-    # Skip partitions/objects created on the fly for vector embeddings; Alembic must ignore them.
-    if type_ == "table" and name.startswith("pipeline_embeddings_"):
-        return False
-    if (
-        type_ in {"index", "constraint"}
-        and name.startswith("pe_")
-        and (name.endswith("_hnsw") or name.endswith("_dims_chk"))
-    ):
-        return False
-    return True
-
-
-def init_migrate(target_app, target_db):
-    migrate = Migrate(
-        target_app,
-        target_db,
-        directory=target_app.config["MIGRATIONS_DIR"],
-        include_object=include_object,
-    )
-    migrate.init_app(target_app, target_db)
-    return migrate
-
-
-migrate = init_migrate(app, db)
 
 
 @app.shell_context_processor
@@ -301,15 +269,15 @@ def build_neurostore_studyset_release(
     clear_cache,
 ):
     """Build NeuroStore-wide NIMADS studyset release artifacts."""
-    if clear_cache:
-        clear_shard_cache()
-        click.echo("Cleared shard cache.")
     result = build_neurostore_studyset_release_service(
         nightly=nightly,
         monthly_if_due=monthly_if_due,
         force_monthly=force_monthly,
         version=monthly_version,
+        clear_cache=clear_cache,
     )
+    if clear_cache:
+        click.echo("Cleared shard cache.")
     written = result["written"]
     if written:
         for manifest in written:

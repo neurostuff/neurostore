@@ -1189,6 +1189,7 @@ def build_neurostore_studyset_release(
     monthly_if_due=False,
     force_monthly=False,
     version=None,
+    clear_cache=False,
 ):
     if not nightly and not monthly_if_due and not force_monthly and not version:
         nightly = True
@@ -1200,6 +1201,8 @@ def build_neurostore_studyset_release(
     try:
         root = release_root()
         root.mkdir(parents=True, exist_ok=True)
+        if clear_cache:
+            clear_shard_cache()
         built_at = utcnow()
         selected = select_coordinate_studies()
         studyset, annotation = ensure_canonical_records(built_at)

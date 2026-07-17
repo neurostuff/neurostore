@@ -33,12 +33,12 @@ services:
     volumes:
       - ./backend/migrations:/migrations
       - ./:/store
-    command: flask process-base-study-flag-outbox --loop
+    command: neurostore process-base-study-flag-outbox --loop
     healthcheck:
       test:
         [
           "CMD-SHELL",
-          "flask check-base-study-flag-outbox",
+          "neurostore check-base-study-flag-outbox",
         ]
       interval: 30s
       timeout: 10s
@@ -60,12 +60,12 @@ services:
     volumes:
       - ./backend/migrations:/migrations
       - ./:/store
-    command: flask process-base-study-metadata-outbox --loop
+    command: neurostore process-base-study-metadata-outbox --loop
     healthcheck:
       test:
         [
           "CMD-SHELL",
-          "flask check-base-study-metadata-outbox",
+          "neurostore check-base-study-metadata-outbox",
         ]
       interval: 30s
       timeout: 10s
@@ -91,9 +91,9 @@ services:
     command: >
       bash -lc 'while true; do
       if
-      flask process-base-study-flag-outbox --no-loop &&
-      flask process-base-study-metadata-outbox --no-loop &&
-      flask build-neurostore-studyset-release --nightly --monthly-if-due;
+      neurostore process-base-study-flag-outbox --no-loop &&
+      neurostore process-base-study-metadata-outbox --no-loop &&
+      neurostore build-neurostore-studyset-release --nightly --monthly-if-due;
       then
       sleep "$${NEUROSTORE_STUDYSET_RELEASE_INTERVAL_SECONDS:-86400}";
       else

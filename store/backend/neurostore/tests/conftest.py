@@ -12,7 +12,6 @@ import vcr
 from auth0.authentication import GetToken
 from auth0.authentication.exceptions import Auth0Error
 from auth0.authentication.users import Users
-from flask_migrate import upgrade as migrate_upgrade
 from sqlalchemy import select
 
 from neurostore import ingest
@@ -198,16 +197,15 @@ def _reset_migrated_schema(db, migrations_dir):
         conn.execute(sa.text("CREATE SCHEMA public"))
         conn.execute(sa.text("CREATE EXTENSION IF NOT EXISTS vector"))
         conn.commit()
-    migrate_upgrade(directory=migrations_dir, revision="heads")
+    from neurostore import service_migrations
+
+    service_migrations.upgrade("heads")
 
 
 @pytest.fixture(scope="session")
 def real_db(real_app):
     """Session-wide test database."""
-    from manage import init_migrate
-
     _db = real_app.extensions["sqlalchemy"]
-    init_migrate(real_app, _db)
     _reset_migrated_schema(_db, real_app.config["MIGRATIONS_DIR"])
 
     yield _db
@@ -244,10 +242,7 @@ def app(mock_auth):
 @pytest.fixture(scope="session")
 def db(app):
     """Session-wide test database."""
-    from manage import init_migrate
-
     _db = app.extensions["sqlalchemy"]
-    init_migrate(app, _db)
     _reset_migrated_schema(_db, app.config["MIGRATIONS_DIR"])
 
     yield _db
