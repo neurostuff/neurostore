@@ -27,7 +27,7 @@ dependencies = [
     "numpy<3.0.0",
     "pandas~=3.0",
     "psycopg2-binary~=2.9",
-    "pyld~=3.0",
+    "pyld~=3.1",
     "python-jose~=3.5",
     "redis",
     "shortuuid~=1.0",
