@@ -101,8 +101,8 @@ class Config(object):
     SEMANTIC_SCHOLAR_API_KEY = os.environ.get("SEMANTIC_SCHOLAR_API_KEY")
     PUBMED_TOOL_API_KEY = os.environ.get("PUBMED_TOOL_API_KEY")
     PUBMED_TOOL = "neurostore"
-    FLASK_ADMIN_USERNAME = os.environ.get("FLASK_ADMIN_USERNAME")
-    FLASK_ADMIN_PASSWORD = os.environ.get("FLASK_ADMIN_PASSWORD")
+    ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME")
+    ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD")
     BEARERINFO_FUNC = os.environ.get(
         "BEARERINFO_FUNC", "neurostore.resources.auth.decode_token"
     )

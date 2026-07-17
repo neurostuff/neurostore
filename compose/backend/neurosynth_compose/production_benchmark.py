@@ -325,6 +325,22 @@ def _fit_line(xs: list[int], ys: list[float]) -> dict[str, float]:
     return {"slope": slope, "intercept": intercept}
 
 
+def _percentile(values: list[float], percentile: float) -> float:
+    if not values:
+        return 0.0
+    if len(values) == 1:
+        return values[0]
+
+    sorted_values = sorted(values)
+    rank = (len(sorted_values) - 1) * percentile
+    lower_index = int(rank)
+    upper_index = min(lower_index + 1, len(sorted_values) - 1)
+    fraction = rank - lower_index
+    return sorted_values[lower_index] + (
+        sorted_values[upper_index] - sorted_values[lower_index]
+    ) * fraction
+
+
 def _project_line(fit: dict[str, float], x_value: int) -> float:
     return fit["intercept"] + fit["slope"] * x_value
 
@@ -847,6 +863,7 @@ def _benchmark_case(
         "name": name,
         "iterations": durations,
         "median_seconds": statistics.median(durations),
+        "p95_seconds": _percentile(durations, 0.95),
         "metadata": last_metadata,
         "peak_memory_bytes": peak_memory_bytes,
     }
@@ -923,6 +940,7 @@ def _build_scaling_case_analysis(case_runs: list[dict], *, service: str) -> dict
                 "case_name": run["case_name"],
                 "workload_size": run["workload_size"],
                 "median_seconds": run["median_seconds"],
+                "p95_seconds": run.get("p95_seconds", run["median_seconds"]),
                 "peak_memory_bytes": run.get("peak_memory_bytes"),
                 "profiling": run.get("profiling"),
                 "metadata": run.get("metadata") or {},
@@ -988,6 +1006,7 @@ def _create_meta_analysis(
     neurostore_studyset_id=None,
     neurostore_annotation_id=None,
 ):
+    del neurostore_studyset_id, neurostore_annotation_id
     payload = {
         "name": f"production-benchmark-meta-{suffix}",
         "description": "local compose benchmark meta-analysis",
@@ -995,10 +1014,6 @@ def _create_meta_analysis(
         "specification": specification_id,
         "public": False,
     }
-    if neurostore_studyset_id is not None:
-        payload["neurostore_studyset_id"] = neurostore_studyset_id
-    if neurostore_annotation_id is not None:
-        payload["neurostore_annotation_id"] = neurostore_annotation_id
     return _response_json(_request(client, "post", "/api/meta-analyses", data=payload))
 
 
@@ -1744,6 +1759,7 @@ def run_scaling_profile(
                     "target_workload_size": target_workload_size,
                     "workload_metric": workload_metric,
                     "median_seconds": case["median_seconds"],
+                    "p95_seconds": case.get("p95_seconds", case["median_seconds"]),
                     "peak_memory_bytes": case.get("peak_memory_bytes"),
                     "profiling": case.get("profiling"),
                     "metadata": metadata,

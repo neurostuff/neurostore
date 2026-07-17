@@ -5,12 +5,14 @@ FAILED_COMMAND=""
 
 usage() {
   cat <<'EOF'
-Usage: run_service_suite.sh --service <store|compose> --label <name> [--iterations <n>] [--project-name <name>] [--target-repo-root <path>] [--skip-build] [--keep-running] [--fresh-db] [--drop-db] [--scales <csv>]
+Usage: run_service_suite.sh --service <store|compose> --label <name> [--dump-path <path>] [--iterations <n>] [--project-name <name>] [--target-repo-root <path>] [--skip-build] [--keep-running] [--fresh-db] [--drop-db] [--scales <csv>]
 EOF
 }
 
 SERVICE=""
+SERVICE_CLI=""
 LABEL=""
+DUMP_PATH=""
 ITERATIONS="5"
 PROJECT_NAME=""
 TARGET_REPO_ROOT=""
@@ -30,6 +32,10 @@ while [ "$#" -gt 0 ]; do
       ;;
     --label)
       LABEL="$2"
+      shift 2
+      ;;
+    --dump-path)
+      DUMP_PATH="$2"
       shift 2
       ;;
     --iterations)
@@ -85,6 +91,10 @@ else
   TARGET_REPO_ROOT="$(cd "${TARGET_REPO_ROOT}" && pwd)"
 fi
 
+if [ -n "${DUMP_PATH}" ]; then
+  DUMP_PATH="$(cd "$(dirname "${DUMP_PATH}")" && pwd)/$(basename "${DUMP_PATH}")"
+fi
+
 case "$SERVICE" in
   store)
     SERVICE_DIR="${TARGET_REPO_ROOT}/store"
@@ -94,6 +104,7 @@ case "$SERVICE" in
     TEST_DATABASE="store_test_db"
     BENCH_SCRIPT_PATH="/production-benchmark-tooling/store/backend/neurostore/production_benchmark.py"
     BENCH_SERVICE="neurostore"
+    SERVICE_CLI="neurostore"
     BEARERINFO_FUNC_VALUE="neurostore.tests.conftest.mock_decode_token"
     REDIS_SERVICE="store_redis"
     BUILD_SERVICES=(neurostore store-pgsql17)
@@ -108,6 +119,7 @@ case "$SERVICE" in
     TEST_DATABASE="compose_test_db"
     BENCH_SCRIPT_PATH="/production-benchmark-tooling/compose/backend/neurosynth_compose/production_benchmark.py"
     BENCH_SERVICE="compose"
+    SERVICE_CLI="compose"
     BEARERINFO_FUNC_VALUE="neurosynth_compose.tests.conftest.mock_decode_token"
     REDIS_SERVICE="compose_redis"
     BUILD_SERVICES=(compose compose_worker compose-pgsql17)
@@ -279,12 +291,17 @@ RESTORE_CMD=(
   python3
   "${TOOLING_REPO_ROOT}/scripts/deploy/restore_latest_backup.py"
   --compose-dir "${SERVICE_DIR}"
-  --bucket "${BUCKET}"
   --container "${DB_CONTAINER}"
   --database "${TEST_DATABASE}"
 )
 
-if [ -n "${PRODUCTION_BENCHMARK_DUMP_CACHE_DIR:-}" ]; then
+if [ -n "${DUMP_PATH}" ]; then
+  RESTORE_CMD+=(--dump-path "${DUMP_PATH}")
+else
+  RESTORE_CMD+=(--bucket "${BUCKET}")
+fi
+
+if [ -z "${DUMP_PATH}" ] && [ -n "${PRODUCTION_BENCHMARK_DUMP_CACHE_DIR:-}" ]; then
   RESTORE_CMD+=(--cache-dir "${PRODUCTION_BENCHMARK_DUMP_CACHE_DIR}")
 fi
 
@@ -303,7 +320,7 @@ run_step "Apply database migrations" \
   docker compose run --rm -T \
   "${RUN_ENV_ARGS[@]}" \
   "${BENCH_SERVICE}" \
-  bash -lc "flask db upgrade heads"
+  bash -lc "${SERVICE_CLI} db upgrade --revision heads"
 
 run_step "Run benchmark module" \
   docker compose run --rm -T \

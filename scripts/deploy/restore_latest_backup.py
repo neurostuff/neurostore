@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Restore the newest PostgreSQL custom-format backup from S3 into a target database."""
+"""Restore a PostgreSQL custom-format backup into a target database."""
 
 from __future__ import annotations
 
@@ -219,8 +219,9 @@ def restore_dump(
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--compose-dir", required=True)
-    parser.add_argument("--bucket", required=True)
+    parser.add_argument("--bucket")
     parser.add_argument("--prefix")
+    parser.add_argument("--dump-path")
     parser.add_argument("--container", required=True)
     parser.add_argument("--database", required=True)
     parser.add_argument("--project-name")
@@ -231,7 +232,26 @@ def main() -> int:
 
     compose_dir = Path(args.compose_dir).resolve()
 
-    if args.cache_dir:
+    if args.dump_path:
+        key = f"local:{Path(args.dump_path).name}"
+        dump_path = Path(args.dump_path).resolve()
+        recreate_database(
+            compose_dir,
+            args.project_name,
+            args.container,
+            args.database,
+            with_vector=args.with_vector_extension,
+        )
+        restore_dump(
+            compose_dir,
+            args.project_name,
+            args.container,
+            args.database,
+            dump_path,
+        )
+    elif args.cache_dir:
+        if not args.bucket:
+            raise RuntimeError("--bucket is required unless --dump-path is provided")
         key, dump_path = resolve_cached_dump(
             args.bucket,
             Path(args.cache_dir).resolve(),
@@ -253,6 +273,8 @@ def main() -> int:
             dump_path,
         )
     else:
+        if not args.bucket:
+            raise RuntimeError("--bucket is required unless --dump-path is provided")
         key = latest_s3_key(args.bucket, args.prefix)
         with tempfile.TemporaryDirectory(prefix="deploy-backup-") as temp_dir:
             dump_path = Path(temp_dir) / Path(key).name
@@ -277,6 +299,7 @@ def main() -> int:
             "bucket": args.bucket,
             "prefix": args.prefix,
             "key": key,
+            "dump_path": str(dump_path),
             "database": args.database,
             "container": args.container,
             "project_name": args.project_name,

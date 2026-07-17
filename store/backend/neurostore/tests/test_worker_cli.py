@@ -16,15 +16,14 @@ from neurostore.models import (
 BACKEND_ROOT = Path(__file__).resolve().parents[2]
 
 
-def _run_flask_command(args, *, extra_env=None):
+def _run_neurostore_command(args, *, extra_env=None):
     env = os.environ.copy()
     env.setdefault("APP_ENV", "docker_test")
-    env.setdefault("FLASK_APP", "manage")
     if extra_env:
         env.update(extra_env)
 
     return subprocess.run(
-        [sys.executable, "-m", "flask", *args],
+        [sys.executable, "-m", "neurostore_cli", *args],
         cwd=BACKEND_ROOT,
         env=env,
         check=False,
@@ -36,7 +35,6 @@ def _run_flask_command(args, *, extra_env=None):
 def _run_cli_runner_command(args, *, patch_script="", extra_env=None):
     env = os.environ.copy()
     env.setdefault("APP_ENV", "docker_test")
-    env.setdefault("FLASK_APP", "manage")
     if extra_env:
         env.update(extra_env)
 
@@ -45,9 +43,10 @@ def _run_cli_runner_command(args, *, patch_script="", extra_env=None):
             "import sys",
             "import traceback",
             "",
-            "from manage import app",
+            "from click.testing import CliRunner",
+            "from neurostore_cli import main",
             textwrap.dedent(patch_script).strip(),
-            f"result = app.test_cli_runner().invoke(args={args!r})",
+            f"result = CliRunner().invoke(main, args={args!r})",
             "sys.stdout.write(result.output)",
             "if result.exception is not None:",
             "    traceback.print_exception(",
@@ -111,7 +110,7 @@ def test_flag_worker_cli_processes_outbox_batch(session):
     )
     session.commit()
 
-    result = _run_flask_command(
+    result = _run_neurostore_command(
         ["process-base-study-flag-outbox", "--batch-size", "10", "--no-loop"]
     )
     _assert_success(result)
@@ -234,7 +233,7 @@ metadata_service.fetch_metadata_pubmed = lambda *_args, **_kwargs: {}
 
 
 def test_neurostore_studyset_release_cli_writes_nightly(session, tmp_path):
-    result = _run_flask_command(
+    result = _run_neurostore_command(
         ["build-neurostore-studyset-release", "--nightly"],
         extra_env={"NEUROSTORE_STUDYSET_RELEASE_DIR": str(tmp_path)},
     )

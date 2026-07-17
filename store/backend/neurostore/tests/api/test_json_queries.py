@@ -57,9 +57,7 @@ def test_pipeline_array_queries(auth_client, study_pipeline_data):
         PipelineStudyResult.query.join(PipelineConfig)
         .join(Pipeline)
         .filter(Pipeline.name == "NeuroimagingMethodExtractor")
-        .filter(
-            PipelineStudyResult.result_data["Modality"].contains(["EEG"])
-        )
+        .filter(PipelineStudyResult.result_data["Modality"].contains(["EEG"]))
         .count()
     )
 
