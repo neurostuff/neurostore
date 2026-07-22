@@ -133,6 +133,13 @@ class Database:
         self.Model.query = self.session.query_property()
         return self
 
+    def dispose(self):
+        """Release pooled connections during an ASGI worker's shutdown."""
+        self.session.remove()
+        if self._engine is not None:
+            self._engine.dispose()
+            self._engine = None
+
 
 db = Database()
 Base = db.Model

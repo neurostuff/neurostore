@@ -34,6 +34,17 @@ def get_env_var(name, default=None, required=False):
     return value
 
 
+def positive_int_env(name, default):
+    value = get_env_var(name, str(default))
+    try:
+        parsed = int(value)
+    except ValueError as exc:
+        raise RuntimeError(f"Environment variable '{name}' must be an integer.") from exc
+    if parsed < 1:
+        raise RuntimeError(f"Environment variable '{name}' must be at least 1.")
+    return parsed
+
+
 def _normalize_app_env(value):
     return (value or "").strip().lower()
 
@@ -75,6 +86,7 @@ class Config:
     }
 
     FILE_DIR = Path("/file-data")
+    ASGI_THREAD_TOKENS = positive_int_env("ASGI_THREAD_TOKENS", 16)
     POSTGRES_HOST = get_env_var("POSTGRES_HOST", required=True)
     POSTGRES_PASSWORD = get_env_var("POSTGRES_PASSWORD", "")
     DB_NAME = resolve_database_name("compose", "production")

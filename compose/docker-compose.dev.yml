@@ -10,7 +10,7 @@ services:
   compose:
     expose:
       - "8000"
-    command: /usr/local/bin/gunicorn -k uvicorn.workers.UvicornWorker --reload -w ${WEB_CONCURRENCY:-1} -b :8000 neurosynth_compose.core:asgi_app --log-level debug --timeout 300
+    command: python -m uvicorn neurosynth_compose.core:asgi_app --host 0.0.0.0 --port 8000 --reload --reload-dir /compose/backend/neurosynth_compose --log-level debug --proxy-headers --forwarded-allow-ips ${FORWARDED_ALLOW_IPS:-*}
     restart: "no"
   
   compose_worker:
