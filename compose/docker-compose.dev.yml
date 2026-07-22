@@ -10,7 +10,7 @@ services:
   compose:
     expose:
       - "8000"
-    command: /usr/local/bin/gunicorn -k uvicorn.workers.UvicornWorker --reload -w 2 -b :8000 neurosynth_compose.core:asgi_app --log-level debug --timeout 300
+    command: /usr/local/bin/gunicorn -k uvicorn.workers.UvicornWorker --reload -w ${WEB_CONCURRENCY:-1} -b :8000 neurosynth_compose.core:asgi_app --log-level debug --timeout 300
     restart: "no"
   
   compose_worker:

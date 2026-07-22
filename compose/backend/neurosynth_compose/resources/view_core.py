@@ -3,12 +3,12 @@ from __future__ import annotations
 import inspect
 
 import sqlalchemy.sql.expression as sae
-from flask import abort, request
-from flask.views import MethodView
+from neurosynth_compose.http import abort, request
+from neurosynth_compose.http import MethodView
 from marshmallow.exceptions import ValidationError
 from sqlalchemy import func, select
 from webargs import fields
-from webargs.flaskparser import parser
+from neurosynth_compose.http import parser
 
 from neurosynth_compose.database import commit_session, db
 from neurosynth_compose.resources.common import (

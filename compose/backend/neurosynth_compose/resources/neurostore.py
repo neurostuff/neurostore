@@ -1,6 +1,6 @@
 from urllib.parse import urljoin
 
-from flask import current_app
+from neurosynth_compose.http import current_app
 from requests import Session
 
 

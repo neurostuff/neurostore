@@ -4,7 +4,7 @@ import pathlib
 from datetime import datetime
 from operator import itemgetter
 
-from flask import abort, current_app, request
+from neurosynth_compose.http import abort, current_app, request
 from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
@@ -210,7 +210,6 @@ def select_cluster_table_for_specification(cluster_table_fnames, specification):
 
 
 def create_neurovault_collection(nv_collection):
-    import flask
     from pynv import Client
 
     meta_analysis = nv_collection.result.meta_analysis
@@ -236,14 +235,14 @@ def create_neurovault_collection(nv_collection):
         fallback for fallback in (200, 150, 120, 100, 80) if fallback < max_length
     ]
 
-    url = f"{flask.request.host_url.rstrip('/')}/meta-analyses/{meta_analysis.id}"
+    url = f"{request.host_url.rstrip('/')}/meta-analyses/{meta_analysis.id}"
     last_exception = None
     last_attempted_name = None
     try:
         api = Client(access_token=current_app.config["NEUROVAULT_ACCESS_TOKEN"])
         tried_names = set()
-        for suffix_number in [None, *range(1, max_suffix + 1)]:
-            for name_length in name_length_candidates:
+        for name_length in name_length_candidates:
+            for suffix_number in [None, *range(1, max_suffix + 1)]:
                 collection_name = build_collection_name(
                     base_name=base_name,
                     created_at=created_at,

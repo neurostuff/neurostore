@@ -1,9 +1,12 @@
-from flask_celeryext import FlaskCeleryExt
+from celery import Celery
 
-from neurosynth_compose.__init__ import create_app
+from neurosynth_compose import create_asgi_app, initialize_runtime
+from neurosynth_compose.database import db
 
-app = create_app()
-asgi_app = app.extensions["connexion_asgi"]
+settings, _logger = initialize_runtime()
+asgi_app = create_asgi_app(settings)
 
-ext_celery = FlaskCeleryExt(app)
-celery_app = ext_celery.celery
+celery_app = Celery("neurosynth_compose")
+celery_app.conf.update(settings.get("CELERY_CONFIG", {}))
+
+__all__ = ["asgi_app", "celery_app", "db"]

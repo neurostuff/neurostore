@@ -84,7 +84,7 @@ def test_duplicate_studyset_reused_via_api(session, db, auth_client):
             project=project,
         )
         db.session.add_all([ss, ann, spec, project, meta_analysis])
-        db.session.flush()
+        db.session.commit()
     payload = {"a": 1, "b": 2}
     headers = {"Compose-Upload-Key": meta_analysis.run_key}
     data = {

@@ -1,28 +1,31 @@
+import logging
 import os
 from pathlib import Path
+from typing import Mapping
 
 import connexion
-from authlib.integrations.flask_client import OAuth
+import orjson
 from connexion.exceptions import OAuthProblem
 from connexion.exceptions import ProblemException
+from connexion.jsonifier import Jsonifier
 from connexion.resolver import MethodResolver
-from flask import Response, request
-from flask_admin import Admin, AdminIndexView
-from flask_admin.contrib.sqla import ModelView
-from flask_admin.theme import Bootstrap4Theme
-from flask_orjson import OrjsonProvider
+from starlette.applications import Starlette
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.cors import CORSMiddleware
 
-from neurosynth_compose.config import resolve_config_object
+from neurosynth_compose.admin import init_admin
 from neurosynth_compose.database import init_db
+from neurosynth_compose.resources.auth import (
+    asgi_oauth_problem_handler,
+)
+from neurosynth_compose.resources.auth import init_app as init_auth
 from neurosynth_compose.resources.errors import (
     general_exception_handler,
     http_exception_handler,
     problem_exception_handler,
 )
-from neurosynth_compose.resources.auth import asgi_oauth_problem_handler
-from neurosynth_compose.resources.auth import init_app as init_auth
+from neurosynth_compose.settings import load_settings
+from neurosynth_compose.validation import ReplayableMultiPartFormDataValidator
 
 
 def _env_flag(name, default=False):
@@ -32,164 +35,94 @@ def _env_flag(name, default=False):
     return value.strip().lower() in {"1", "true", "yes", "on"}
 
 
-def create_app():
-    """Create and configure the Neurosynth Compose Flask application."""
+def _should_validate_responses(config):
+    return config.get("ENV") == "development" and config.get("DEBUG", False)
 
-    connexion_app = connexion.FlaskApp(__name__, specification_dir="openapi/")
-    app = connexion_app.app
 
-    app.config.from_object(resolve_config_object())
-    app.config["DEBUG"] = _env_flag("DEBUG")
-    app.json = OrjsonProvider(app)
+class _DatabaseSessionMiddleware:
+    """Create and dispose one synchronous SQLAlchemy session per ASGI request."""
 
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        from neurosynth_compose.database import db
+
+        with db.request_scope():
+            await self.app(scope, receive, send)
+
+
+class _OrjsonModule:
+    @staticmethod
+    def dumps(value, **kwargs):
+        del kwargs
+        return orjson.dumps(value).decode()
+
+    @staticmethod
+    def loads(value):
+        return orjson.loads(value)
+
+
+def initialize_runtime(settings: Mapping[str, object] | None = None):
+    """Configure Compose's shared database, auth, and runtime settings."""
+    settings = load_settings() if settings is None else settings
+    logger = logging.getLogger("neurosynth_compose")
+
+    init_db(settings)
+    init_auth(settings, logger)
+    os.environ["BEARERINFO_FUNC"] = str(settings["BEARERINFO_FUNC"])
+    os.environ["APIKEYINFO_FUNC"] = str(settings["APIKEYINFO_FUNC"])
+    return settings, logger
+
+
+def create_asgi_app(settings: Mapping[str, object] | None = None):
+    """Create the framework-neutral Connexion ASGI Compose application."""
+    settings, _logger = initialize_runtime(settings)
+    disable_response_validation = _env_flag("CONNEXION_DISABLE_RESPONSE_VALIDATION")
+
+    from neurosynth_compose.database import db
+
+    connexion_app = connexion.AsyncApp(
+        __name__, specification_dir=Path(__file__).parent / "openapi"
+    )
     cors_kwargs = dict(
         allow_origins=["*"],
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
     )
-
-    openapi_path = Path(app.root_path) / "openapi" / "neurosynth-compose-openapi.yml"
-    swagger_options = {"swagger_ui": True}
-
-    # Connexion resolves security handlers from environment variables or
-    # x-... entries in the OpenAPI spec, not app config. Push the config
-    # values into the environment so app config remains the single source of truth.
-    os.environ["BEARERINFO_FUNC"] = app.config["BEARERINFO_FUNC"]
-    os.environ["APIKEYINFO_FUNC"] = app.config["APIKEYINFO_FUNC"]
-
-    with app.app_context():
-        disable_response_validation = _env_flag("CONNEXION_DISABLE_RESPONSE_VALIDATION")
-        # Enable strict request/response validation in both DEBUG and TESTING modes
-        # so that schema drift between the OpenAPI spec and the actual API is caught
-        # during the test suite, not just in local development.
-        validate_mode = app.config.get("DEBUG") or app.config.get("TESTING", False)
-        connexion_app.add_api(
-            openapi_path,
-            base_path="/api",
-            options=swagger_options,
-            arguments={"title": "NeuroSynth API"},
-            resolver=MethodResolver("neurosynth_compose.resources"),
-            strict_validation=validate_mode,
-            validate_responses=(
-                False if disable_response_validation else validate_mode
-            ),
-        )
-
-    oauth = OAuth(app)
-    oauth.register(
-        "auth0",
-        client_id=app.config["AUTH0_CLIENT_ID"],
-        client_secret=app.config["AUTH0_CLIENT_SECRET"],
-        api_base_url=app.config["AUTH0_BASE_URL"],
-        access_token_url=app.config["AUTH0_ACCESS_TOKEN_URL"],
-        authorize_url=app.config["AUTH0_AUTH_URL"],
-        client_kwargs={"scope": "openid profile email"},
-    )
-
-    db = init_db(app)
-    init_auth(app)
-
-    # Initialize admin
-    from neurosynth_compose.models import (
-        Annotation,
-        NeurostoreAnnotation,
-        MetaAnalysis,
-        MetaAnalysisResult,
-        NeurostoreAnalysis,
-        NeurostoreStudy,
-        NeurovaultCollection,
-        NeurovaultFile,
-        Project,
-        Specification,
-        Studyset,
-        NeurostoreStudyset,
-        User,
-    )
-    from neurosynth_compose.models.analysis import Condition, SpecificationCondition
-    from neurosynth_compose.models.auth import Role
-
-    def _get_admin_credentials():
-        username = app.config.get("ADMIN_USERNAME")
-        password = app.config.get("ADMIN_PASSWORD")
-        return username, password
-
-    def _admin_auth_failed():
-        return Response(
-            "Authentication required",
-            401,
-            {"WWW-Authenticate": 'Basic realm="Admin"'},
-        )
-
-    def _is_admin_authenticated():
-        username, password = _get_admin_credentials()
-        if not username or not password:
-            return False
-        auth = request.authorization
-        if not auth:
-            return False
-        return auth.username == username and auth.password == password
-
-    class SecureAdminIndexView(AdminIndexView):
-        def is_accessible(self):
-            return _is_admin_authenticated()
-
-        def inaccessible_callback(self, name, **kwargs):
-            return _admin_auth_failed()
-
-    class SecureModelView(ModelView):
-        def is_accessible(self):
-            return _is_admin_authenticated()
-
-        def inaccessible_callback(self, name, **kwargs):
-            return _admin_auth_failed()
-
-    admin = Admin(
-        app,
-        name="Neurosynth Compose Admin",
-        theme=Bootstrap4Theme(),
-        url="/admin",
-        index_view=SecureAdminIndexView(),
-    )
-
-    # Add model views for all major models
-    admin.add_view(SecureModelView(User, db.session, category="Auth"))
-    admin.add_view(SecureModelView(Role, db.session, category="Auth"))
-    admin.add_view(SecureModelView(Project, db.session, category="Projects"))
-    admin.add_view(SecureModelView(MetaAnalysis, db.session, category="Meta-Analysis"))
-    admin.add_view(
-        SecureModelView(MetaAnalysisResult, db.session, category="Meta-Analysis")
-    )
-    admin.add_view(
-        SecureModelView(Specification, db.session, category="Specifications")
-    )
-    admin.add_view(
-        SecureModelView(SpecificationCondition, db.session, category="Specifications")
-    )
-    admin.add_view(SecureModelView(Condition, db.session, category="Specifications"))
-    admin.add_view(SecureModelView(Studyset, db.session, category="Data"))
-    admin.add_view(SecureModelView(NeurostoreStudyset, db.session, category="Data"))
-    admin.add_view(SecureModelView(Annotation, db.session, category="Data"))
-    admin.add_view(SecureModelView(NeurostoreAnnotation, db.session, category="Data"))
-    admin.add_view(
-        SecureModelView(NeurovaultCollection, db.session, category="Neurovault")
-    )
-    admin.add_view(SecureModelView(NeurovaultFile, db.session, category="Neurovault"))
-    admin.add_view(SecureModelView(NeurostoreStudy, db.session, category="Neurostore"))
-    admin.add_view(
-        SecureModelView(NeurostoreAnalysis, db.session, category="Neurostore")
-    )
-
-    app.secret_key = app.config["JWT_SECRET_KEY"]
-
     connexion_app.add_error_handler(OAuthProblem, asgi_oauth_problem_handler)
     connexion_app.add_error_handler(ProblemException, problem_exception_handler)
     connexion_app.add_error_handler(StarletteHTTPException, http_exception_handler)
     connexion_app.add_error_handler(Exception, general_exception_handler)
 
-    cors_asgi_app = CORSMiddleware(connexion_app, **cors_kwargs)
+    validate_mode = bool(settings.get("DEBUG") or settings.get("TESTING", False))
+    connexion_app.add_api(
+        "neurosynth-compose-openapi.yml",
+        base_path="/api",
+        options={"swagger_ui": True},
+        arguments={"title": "NeuroSynth API"},
+        resolver=MethodResolver("neurosynth_compose.resources"),
+        jsonifier=Jsonifier(_OrjsonModule),
+        strict_validation=validate_mode,
+        validate_responses=(
+            False if disable_response_validation else _should_validate_responses(settings)
+        ),
+        validator_map={
+            "body": {"multipart/form-data": ReplayableMultiPartFormDataValidator}
+        },
+    )
 
-    app.extensions["connexion_app"] = connexion_app
-    app.extensions["connexion_asgi"] = cors_asgi_app
+    app = Starlette()
+    init_admin(app, db, settings)
+    app.mount("/", connexion_app)
+    return _DatabaseSessionMiddleware(CORSMiddleware(app, **cors_kwargs))
 
-    return app
+
+def create_app(settings: Mapping[str, object] | None = None):
+    """Compatibility alias returning the ASGI application."""
+    return create_asgi_app(settings)

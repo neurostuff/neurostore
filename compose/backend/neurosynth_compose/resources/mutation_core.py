@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from operator import itemgetter
 from typing import Any
 
-from flask import abort
+from neurosynth_compose.http import abort
 from sqlalchemy import select
 
 from neurosynth_compose.database import db
