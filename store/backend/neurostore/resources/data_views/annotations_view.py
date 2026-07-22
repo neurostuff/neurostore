@@ -2,7 +2,6 @@ from collections import Counter, OrderedDict
 from datetime import datetime
 from types import SimpleNamespace
 
-from flask import request
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import defaultload, joinedload, raiseload, selectinload
 from webargs import fields
@@ -484,8 +483,8 @@ class AnnotationsView(ObjectView, ListView):
                 "annotation request must contain all analyses from the studyset."
             )
 
-    def put(self, id):
-        request_data = self.insert_data(id, request.json)
+    def put(self, id, body):
+        request_data = self.insert_data(id, body)
         schema = self._schema()
         data = load_schema_or_abort(schema, request_data, partial=True)
         mutation_policy = self.mutation_policy_cls(

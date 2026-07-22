@@ -1,12 +1,11 @@
 import json
-from contextlib import contextmanager
 from urllib.request import urlopen
 
 from connexion.exceptions import OAuthProblem
 from connexion.lifecycle import ConnexionResponse
-from flask import current_app, has_app_context
 from jose import jwt
-from werkzeug.local import LocalProxy
+
+from neurostore.runtime import configure_runtime, get_runtime
 
 
 def _oauth_problem(detail):
@@ -29,78 +28,50 @@ async def asgi_oauth_problem_handler(request, exc):
     )
 
 
-_flask_app = None
-
-
-def init_app(app):
-    global _flask_app
-    _flask_app = app
-
-
-def _get_current_app():
-    if has_app_context():
-        return current_app._get_current_object()
-    if _flask_app is not None:  # pragma: no cover - defensive
-        return _flask_app
-    raise RuntimeError("No Flask application is configured for authentication helpers.")
-
-
-@contextmanager
-def _ensure_app_context():
-    if has_app_context():
-        yield current_app._get_current_object()
-        return
-
-    if _flask_app is None:  # pragma: no cover - defensive
-        raise RuntimeError(
-            "No Flask application is configured for authentication helpers."
-        )
-
-    with _flask_app.app_context():
-        yield _flask_app
-
-
-app = LocalProxy(_get_current_app)
+def init_app(app_or_config, logger=None):
+    """Configure runtime settings from either a legacy app or a mapping."""
+    if hasattr(app_or_config, "config"):
+        return configure_runtime(app_or_config.config, app_or_config.logger)
+    return configure_runtime(app_or_config, logger)
 
 
 def decode_token(token):
-    with _ensure_app_context() as app:
+    runtime = get_runtime()
+    config = runtime.config
+    try:
+        unverified_header = jwt.get_unverified_header(token)
+    except jwt.JWTError:
+        raise _oauth_problem("Unable to parse authentication token.")
+
+    jsonurl = urlopen(str(config["AUTH0_BASE_URL"]) + "/.well-known/jwks.json")
+    jwks = json.loads(jsonurl.read())
+
+    rsa_key = {}
+    for key in jwks["keys"]:
+        if key["kid"] == unverified_header["kid"]:
+            rsa_key = {
+                "kty": key["kty"],
+                "kid": key["kid"],
+                "use": key["use"],
+                "n": key["n"],
+                "e": key["e"],
+            }
+    if rsa_key:
         try:
-            unverified_header = jwt.get_unverified_header(token)
-        except jwt.JWTError:
+            payload = jwt.decode(
+                token,
+                rsa_key,
+                algorithms=["RS256"],
+                audience=config["AUTH0_API_AUDIENCE"],
+                issuer=str(config["AUTH0_BASE_URL"]) + "/",
+            )
+        except jwt.ExpiredSignatureError:
+            raise _oauth_problem("token is expired")
+        except jwt.JWTClaimsError:
+            raise _oauth_problem("incorrect claims,please check the audience and issuer")
+        except Exception:
             raise _oauth_problem("Unable to parse authentication token.")
 
-        jsonurl = urlopen(app.config["AUTH0_BASE_URL"] + "/.well-known/jwks.json")
-        jwks = json.loads(jsonurl.read())
-
-        rsa_key = {}
-        for key in jwks["keys"]:
-            if key["kid"] == unverified_header["kid"]:
-                rsa_key = {
-                    "kty": key["kty"],
-                    "kid": key["kid"],
-                    "use": key["use"],
-                    "n": key["n"],
-                    "e": key["e"],
-                }
-        if rsa_key:
-            try:
-                payload = jwt.decode(
-                    token,
-                    rsa_key,
-                    algorithms=["RS256"],
-                    audience=app.config["AUTH0_API_AUDIENCE"],
-                    issuer=app.config["AUTH0_BASE_URL"] + "/",
-                )
-            except jwt.ExpiredSignatureError:
-                raise _oauth_problem("token is expired")
-            except jwt.JWTClaimsError:
-                raise _oauth_problem(
-                    "incorrect claims,please check the audience and issuer"
-                )
-            except Exception:
-                raise _oauth_problem("Unable to parse authentication token.")
-
-            return payload
+        return payload
 
     raise _oauth_problem("Unable to find appropriate key")

@@ -18,15 +18,6 @@ logger = logging.getLogger("alembic.env")
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-try:
-    from flask import current_app, has_app_context
-except ImportError:  # pragma: no cover - Flask compatibility fallback only
-    current_app = None
-
-    def has_app_context():
-        return False
-
-
 def _load_service_config():
     import importlib
 
@@ -41,8 +32,6 @@ def _get_sqlalchemy_url():
     configured_url = config.get_main_option("sqlalchemy.url")
     if configured_url:
         return configured_url
-    if has_app_context():
-        return current_app.config.get("SQLALCHEMY_DATABASE_URI")
     return _load_service_config().SQLALCHEMY_DATABASE_URI
 
 
@@ -50,9 +39,6 @@ def _get_target_metadata():
     configured_metadata = config.attributes.get("target_metadata")
     if configured_metadata is not None:
         return configured_metadata
-    if has_app_context() and "migrate" in current_app.extensions:
-        return current_app.extensions["migrate"].db.metadata
-
     from neurostore.database import db
     import neurostore.models  # noqa: F401
 
@@ -63,8 +49,6 @@ def _get_configure_args():
     configured_args = dict(config.attributes.get("configure_args") or {})
     if configured_args:
         return configured_args
-    if has_app_context() and "migrate" in current_app.extensions:
-        return dict(current_app.extensions["migrate"].configure_args)
     return {}
 
 

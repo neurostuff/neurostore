@@ -1,25 +1,28 @@
 """Service CLI for NeuroStore."""
 
 import time
+from types import SimpleNamespace
 
 import click
 from sqlalchemy.exc import OperationalError
 
+from neurostore.scripts.transfer_ownership import (
+    OwnershipTransferError,
+    transfer_user_ownership
+)
 
 def _load_app_and_db():
-    from neurostore import create_app
-    from neurostore.config import resolve_config_object
+    from neurostore import initialize_runtime
     from neurostore.database import db
 
-    app = create_app()
-    app.config.from_object(resolve_config_object())
+    settings, logger = initialize_runtime()
+    app = SimpleNamespace(config=settings, logger=logger)
     return app, db
 
 
 def _run_with_app_context(callback):
     app, db = _load_app_and_db()
-    with app.app_context():
-        return callback(app, db)
+    return callback(app, db)
 
 
 @click.group()
@@ -38,6 +41,14 @@ def db_upgrade(revision):
     from neurostore import service_migrations
 
     service_migrations.upgrade(revision)
+
+
+@db_group.command("downgrade")
+@click.option("--revision", default="-1", show_default=True)
+def db_downgrade(revision):
+    from neurostore import service_migrations
+
+    service_migrations.downgrade(revision)
 
 
 @db_group.command("migrate")
@@ -260,6 +271,33 @@ def build_neurostore_studyset_release(
 
     _run_with_app_context(_run)
 
+
+@main.command("transfer-user-ownership")
+@click.argument("source_user_id")
+@click.argument("destination_user_id")
+@click.option(
+    "--execute",
+    is_flag=True,
+    help="Commit the transfer. Without this flag, only report matching row counts.",
+)
+def transfer_user_ownership_command(source_user_id, destination_user_id, execute):
+    """Transfer all user-owned Store objects from one external_id to another."""
+    try:
+        summary = transfer_user_ownership(
+            source_user_id,
+            destination_user_id,
+            dry_run=not execute,
+        )
+    except OwnershipTransferError as exc:
+        raise click.ClickException(str(exc)) from exc
+
+    mode = "Dry-run" if summary.dry_run else "Transferred"
+    click.echo(
+        f"{mode} {summary.total} object(s) from "
+        f"{summary.source_user_id} to {summary.destination_user_id}."
+    )
+    for table_name, count in summary.counts.items():
+        click.echo(f"{table_name}: {count}")
 
 if __name__ == "__main__":
     main()

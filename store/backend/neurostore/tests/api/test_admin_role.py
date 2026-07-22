@@ -1,3 +1,7 @@
+import pytest
+
+pytestmark = pytest.mark.anyio
+
 """
 Tests for admin role functionality
 """
@@ -63,11 +67,11 @@ def test_is_user_admin_does_not_autoflush_transient_study_relationships(session)
     assert sa.inspect(transient_study).transient is True
 
 
-def test_admin_can_modify_others_records(auth_clients, user_data, session):
+async def test_admin_can_modify_others_records(async_auth_clients, user_data, session):
     """Test that admin users can modify records they don't own"""
     from jose.jwt import encode
 
-    from neurostore.tests.request_utils import Client
+    from neurostore.tests.request_utils import AsyncClient
 
     # Get a regular user's study
     regular_user = User.query.filter_by(name="user1").first()
@@ -88,21 +92,26 @@ def test_admin_can_modify_others_records(auth_clients, user_data, session):
 
     # Create admin client
     admin_token = encode({"sub": "admin-user-id"}, "admin123", algorithm="HS256")
-    admin_client = Client(token=admin_token, username="admin-user-id")
+    admin_client = AsyncClient(token=admin_token, username="admin-user-id")
 
     # Try to modify the study as admin
     new_name = "Modified by admin"
-    resp = admin_client.put(f"/api/studies/{study.id}", data={"name": new_name})
+    try:
+        resp = await admin_client.put(
+            f"/api/studies/{study.id}", data={"name": new_name}
+        )
+    finally:
+        await admin_client.aclose()
 
     assert resp.status_code == 200
     assert resp.json()["name"] == new_name
 
 
-def test_admin_can_delete_others_records(auth_clients, user_data, session):
+async def test_admin_can_delete_others_records(async_auth_clients, user_data, session):
     """Test that admin users can delete records they don't own"""
     from jose.jwt import encode
 
-    from neurostore.tests.request_utils import Client
+    from neurostore.tests.request_utils import AsyncClient
 
     # Get a regular user's study
     regular_user = User.query.filter_by(name="user1").first()
@@ -124,21 +133,24 @@ def test_admin_can_delete_others_records(auth_clients, user_data, session):
 
     # Create admin client
     admin_token = encode({"sub": "admin-user-id"}, "admin123", algorithm="HS256")
-    admin_client = Client(token=admin_token, username="admin-user-id")
+    admin_client = AsyncClient(token=admin_token, username="admin-user-id")
 
     # Try to delete the study as admin
-    resp = admin_client.delete(f"/api/studies/{study_id}")
+    try:
+        resp = await admin_client.delete(f"/api/studies/{study_id}")
+    finally:
+        await admin_client.aclose()
 
     assert resp.status_code == 200
     # Verify study is deleted
     assert Study.query.filter_by(id=study_id).first() is None
 
 
-def test_admin_can_see_private_records(auth_clients, user_data, session):
+async def test_admin_can_see_private_records(async_auth_clients, user_data, session):
     """Test that admin users can see all records including private ones"""
     from jose.jwt import encode
 
-    from neurostore.tests.request_utils import Client
+    from neurostore.tests.request_utils import AsyncClient
 
     # Create a private studyset owned by user1
     regular_user = User.query.filter_by(name="user1").first()
@@ -163,41 +175,48 @@ def test_admin_can_see_private_records(auth_clients, user_data, session):
 
     # Create admin client
     admin_token = encode({"sub": "admin-user-id"}, "admin123", algorithm="HS256")
-    admin_client = Client(token=admin_token, username="admin-user-id")
+    admin_client = AsyncClient(token=admin_token, username="admin-user-id")
 
     # Admin should be able to see the private studyset
-    resp = admin_client.get("/api/studysets/")
+    try:
+        resp = await admin_client.get("/api/studysets/")
+    finally:
+        await admin_client.aclose()
     assert resp.status_code == 200
 
     studyset_ids = [s["id"] for s in resp.json()["results"]]
     assert studyset_id in studyset_ids
 
 
-def test_non_admin_cannot_modify_others_records(auth_clients, user_data, session):
+async def test_non_admin_cannot_modify_others_records(
+    async_auth_clients, user_data, session
+):
     """Test that non-admin users cannot modify records they don't own"""
     # Get user1's client and user2's study
-    user1_client = auth_clients[0]
+    user1_client = async_auth_clients[0]
     user2 = User.query.filter_by(name="user2").first()
     study = Study.query.filter_by(user=user2).first()
     assert study is not None
 
     # Try to modify user2's study as user1 (should fail)
-    resp = user1_client.put(
+    resp = await user1_client.put(
         f"/api/studies/{study.id}", data={"name": "Unauthorized modification"}
     )
 
     assert resp.status_code == 403
 
 
-def test_non_admin_cannot_delete_others_records(auth_clients, user_data, session):
+async def test_non_admin_cannot_delete_others_records(
+    async_auth_clients, user_data, session
+):
     """Test that non-admin users cannot delete records they don't own"""
     # Get user1's client and user2's study
-    user1_client = auth_clients[0]
+    user1_client = async_auth_clients[0]
     user2 = User.query.filter_by(name="user2").first()
     study = Study.query.filter_by(user=user2).first()
     assert study is not None
 
     # Try to delete user2's study as user1 (should fail)
-    resp = user1_client.delete(f"/api/studies/{study.id}")
+    resp = await user1_client.delete(f"/api/studies/{study.id}")
 
     assert resp.status_code == 403

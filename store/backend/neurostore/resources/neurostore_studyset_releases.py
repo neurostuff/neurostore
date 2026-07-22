@@ -1,7 +1,5 @@
 from urllib.parse import quote
 
-from flask import Response
-
 from neurostore.exceptions.utils.error_helpers import abort_not_found
 from neurostore.services.neurostore_studyset_releases import (
     list_release_manifests,
@@ -45,16 +43,15 @@ class DownloadView:
         if archive_path is None:
             abort_not_found("NeurostoreStudysetRelease", version)
 
-        response = Response(status=200)
-        response.headers["X-Accel-Redirect"] = x_accel_release_uri(archive_path)
-        response.headers["Content-Type"] = "application/gzip"
-        response.headers["Content-Disposition"] = (
-            f'attachment; filename="{archive_path.name}"'
-        )
+        headers = {
+            "X-Accel-Redirect": x_accel_release_uri(archive_path),
+            "Content-Type": "application/gzip",
+            "Content-Disposition": f'attachment; filename="{archive_path.name}"',
+        }
         if version in {"nightly", "latest"}:
-            response.headers["Cache-Control"] = "no-cache"
-            response.headers["X-Accel-Expires"] = "0"
+            headers["Cache-Control"] = "no-cache"
+            headers["X-Accel-Expires"] = "0"
         else:
-            response.headers["Cache-Control"] = "public, max-age=31536000"
-            response.headers["X-Accel-Expires"] = "31536000"
-        return response
+            headers["Cache-Control"] = "public, max-age=31536000"
+            headers["X-Accel-Expires"] = "31536000"
+        return None, 200, headers

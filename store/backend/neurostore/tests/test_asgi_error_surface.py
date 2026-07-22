@@ -1,9 +1,23 @@
 import pytest
-from flask import abort
-from starlette.testclient import TestClient
-from werkzeug.routing import Rule
+import connexion
+import httpx
+from connexion.exceptions import OAuthProblem, ProblemException
+from starlette.exceptions import HTTPException
+from starlette.middleware.cors import CORSMiddleware
 
+from neurostore import _DatabaseSessionMiddleware
+from neurostore.exceptions.base import NeuroStoreException
 from neurostore.exceptions.factories import create_not_found_error
+from neurostore.exceptions.handlers import (
+    general_exception_handler,
+    http_exception_handler,
+    neurostore_exception_handler,
+    problem_exception_handler,
+)
+from neurostore.resources.auth import asgi_oauth_problem_handler
+
+
+pytestmark = pytest.mark.anyio
 
 
 def _assert_json_error_with_cors(response, origin=None):
@@ -15,62 +29,51 @@ def _assert_json_error_with_cors(response, origin=None):
         assert response.headers["Vary"] == "Origin"
 
 
-def _install_asgi_error_test_routes(app):
-    if "__asgi_error_abort" not in app.view_functions:
+async def _raise_http_error(request):
+    raise HTTPException(request.path_params["status_code"], "test HTTP error")
 
-        def _abort_status(status_code):
-            abort(status_code, description=f"test abort {status_code}")
 
-        app.url_map.add(
-            Rule(
-                "/__test/asgi-errors/abort/<int:status_code>",
-                endpoint="__asgi_error_abort",
-                methods=["GET"],
-            )
-        )
-        app.view_functions["__asgi_error_abort"] = _abort_status
+async def _raise_domain_error(request):
+    raise create_not_found_error("Widget", "abc")
 
-    if "__asgi_error_domain" not in app.view_functions:
 
-        def _raise_domain_error():
-            raise create_not_found_error("Widget", "abc")
-
-        app.url_map.add(
-            Rule(
-                "/__test/asgi-errors/domain",
-                endpoint="__asgi_error_domain",
-                methods=["GET"],
-            )
-        )
-        app.view_functions["__asgi_error_domain"] = _raise_domain_error
-
-    if "__asgi_error_runtime" not in app.view_functions:
-
-        def _raise_runtime_error():
-            raise RuntimeError("asgi runtime failure")
-
-        app.url_map.add(
-            Rule(
-                "/__test/asgi-errors/runtime",
-                endpoint="__asgi_error_runtime",
-                methods=["GET"],
-            )
-        )
-        app.view_functions["__asgi_error_runtime"] = _raise_runtime_error
+async def _raise_runtime_error(request):
+    raise RuntimeError("asgi runtime failure")
 
 
 @pytest.fixture(scope="module")
-def asgi_error_client(app):
-    _install_asgi_error_test_routes(app)
-    client = TestClient(app.extensions["connexion_asgi"], raise_server_exceptions=False)
-    try:
+async def asgi_error_client():
+    app = connexion.AsyncApp(__name__)
+    app.add_url_rule("/abort/{status_code}", "abort", _raise_http_error)
+    app.add_url_rule("/domain", "domain", _raise_domain_error)
+    app.add_url_rule("/runtime", "runtime", _raise_runtime_error)
+    app.add_error_handler(NeuroStoreException, neurostore_exception_handler)
+    app.add_error_handler(OAuthProblem, asgi_oauth_problem_handler)
+    app.add_error_handler(ProblemException, problem_exception_handler)
+    app.add_error_handler(HTTPException, http_exception_handler)
+    app.add_error_handler(Exception, general_exception_handler)
+    wrapped_app = _DatabaseSessionMiddleware(
+        CORSMiddleware(
+            app,
+            allow_origins=["*"],
+            allow_credentials=True,
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
+    )
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=wrapped_app, raise_app_exceptions=False),
+        base_url="http://testserver",
+    ) as client:
         yield client
-    finally:
-        client.close()
 
 
-def test_connexion_validation_error_is_handled_by_asgi(asgi_error_client):
-    response = asgi_error_client.post("/api/pipeline-configs/", json=[])
+async def test_connexion_validation_error_is_handled_by_asgi(app):
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app.asgi_app, raise_app_exceptions=False),
+        base_url="http://testserver",
+    ) as client:
+        response = await client.post("/api/pipeline-configs/", json=[])
 
     assert response.status_code == 400
     _assert_json_error_with_cors(response)
@@ -79,12 +82,16 @@ def test_connexion_validation_error_is_handled_by_asgi(asgi_error_client):
     assert body["title"] == "Bad Request"
 
 
-def test_connexion_security_error_is_handled_by_asgi(asgi_error_client):
-    response = asgi_error_client.post(
-        "/api/pipelines/",
-        json={},
-        headers={"Origin": "https://client.example"},
-    )
+async def test_connexion_security_error_is_handled_by_asgi(app):
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app.asgi_app, raise_app_exceptions=False),
+        base_url="http://testserver",
+    ) as client:
+        response = await client.post(
+            "/api/pipelines/",
+            json={},
+            headers={"Origin": "https://client.example"},
+        )
 
     assert response.status_code == 401
     _assert_json_error_with_cors(response, "https://client.example")
@@ -94,9 +101,9 @@ def test_connexion_security_error_is_handled_by_asgi(asgi_error_client):
 
 
 @pytest.mark.parametrize("status_code", [401, 404, 422])
-def test_flask_abort_errors_are_handled_by_asgi(asgi_error_client, status_code):
-    response = asgi_error_client.get(
-        f"/__test/asgi-errors/abort/{status_code}",
+async def test_native_http_errors_are_handled_by_asgi(asgi_error_client, status_code):
+    response = await asgi_error_client.get(
+        f"/abort/{status_code}",
         headers={"Origin": "https://client.example"},
     )
 
@@ -104,11 +111,11 @@ def test_flask_abort_errors_are_handled_by_asgi(asgi_error_client, status_code):
     _assert_json_error_with_cors(response, "https://client.example")
     body = response.json()
     assert body["status"] == status_code
-    assert body["detail"] == f"test abort {status_code}"
+    assert body["detail"] == "test HTTP error"
 
 
-def test_neurostore_domain_error_is_handled_by_asgi(asgi_error_client):
-    response = asgi_error_client.get("/__test/asgi-errors/domain")
+async def test_neurostore_domain_error_is_handled_by_asgi(asgi_error_client):
+    response = await asgi_error_client.get("/domain")
 
     assert response.status_code == 404
     _assert_json_error_with_cors(response)
@@ -117,25 +124,11 @@ def test_neurostore_domain_error_is_handled_by_asgi(asgi_error_client):
     assert body["title"] == "Not Found"
 
 
-def test_generic_api_error_is_handled_by_asgi(asgi_error_client):
-    response = asgi_error_client.get("/__test/asgi-errors/runtime")
+async def test_generic_api_error_is_handled_by_asgi(asgi_error_client):
+    response = await asgi_error_client.get("/runtime")
 
     assert response.status_code == 500
     _assert_json_error_with_cors(response)
     body = response.json()
     assert body["status"] == 500
     assert body["title"] == "Internal Server Error"
-
-
-def test_admin_auth_failure_remains_flask_owned_with_cors(asgi_error_client):
-    response = asgi_error_client.get(
-        "/admin/",
-        headers={"Origin": "https://client.example"},
-    )
-
-    assert response.status_code == 401
-    assert response.text == "Authentication required"
-    assert response.headers["WWW-Authenticate"] == 'Basic realm="Admin"'
-    assert response.headers["Access-Control-Allow-Origin"] == "https://client.example"
-    assert response.headers["Access-Control-Allow-Credentials"] == "true"
-    assert response.headers["Vary"] == "Origin"
