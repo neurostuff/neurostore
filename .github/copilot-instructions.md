@@ -85,7 +85,7 @@ Navigate to `compose/neurosynth-frontend/`:
 
 #### Frontend Tests
 
-- `npm run test` -- takes 50-70 seconds
+- `npm run test` -- defaults to one Vitest worker locally to limit memory use; set `VITEST_MAX_WORKERS` to increase parallelism
 - Expected: ~345 tests passing
 - `npm run cy:e2e-headless-dev` -- Cypress E2E (loads `.env.dev` via `env-cmd`; create it from `.env.example` if missing). Requires backends running and the app served per repo docs.
 
@@ -128,6 +128,7 @@ Navigate to `compose/neurosynth-frontend/`:
 Both services use similar `.env` configurations:
 
 - `APP_ENV` -- Primary environment selector (`development`, `staging`, `production`). This drives the service config class and the default database name used by app/runtime services.
+- `WEB_CONCURRENCY` -- Gunicorn worker count. Local `.env` defaults to `1`; increase only after measuring the target host's memory and load.
 - `POSTGRES_HOST` -- Database host (store-pgsql17 or compose-pgsql17)
 - `POSTGRES_PASSWORD` -- Database password (usually "example")
 - `AUTH0_CLIENT_ID` -- Auth0 integration (can be placeholder for dev)
