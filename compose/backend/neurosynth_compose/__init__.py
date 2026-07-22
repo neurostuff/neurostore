@@ -1,8 +1,10 @@
 import logging
 import os
+from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Mapping
+from typing import AsyncIterator, Mapping
 
+import anyio
 import connexion
 import orjson
 from connexion.exceptions import OAuthProblem
@@ -79,6 +81,23 @@ def initialize_runtime(settings: Mapping[str, object] | None = None):
     return settings, logger
 
 
+def _asgi_lifespan(settings: Mapping[str, object], database):
+    @asynccontextmanager
+    async def lifespan(app: Starlette) -> AsyncIterator[None]:
+        """Bound sync compatibility work and release pooled resources on shutdown."""
+        del app
+        thread_limiter = anyio.to_thread.current_default_thread_limiter()
+        previous_tokens = thread_limiter.total_tokens
+        thread_limiter.total_tokens = int(settings["ASGI_THREAD_TOKENS"])
+        try:
+            yield
+        finally:
+            thread_limiter.total_tokens = previous_tokens
+            database.dispose()
+
+    return lifespan
+
+
 def create_asgi_app(settings: Mapping[str, object] | None = None):
     """Create the framework-neutral Connexion ASGI Compose application."""
     settings, _logger = initialize_runtime(settings)
@@ -117,7 +136,7 @@ def create_asgi_app(settings: Mapping[str, object] | None = None):
         },
     )
 
-    app = Starlette()
+    app = Starlette(lifespan=_asgi_lifespan(settings, db))
     init_admin(app, db, settings)
     app.mount("/", connexion_app)
     return _DatabaseSessionMiddleware(CORSMiddleware(app, **cors_kwargs))

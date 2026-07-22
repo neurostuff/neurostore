@@ -16,7 +16,6 @@ from sqlalchemy.orm import (
     sessionmaker,
 )
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
@@ -127,6 +126,13 @@ class Database:
         self.Model.metadata.bind = self._engine
         self.Model.query = self.session.query_property()
         return self
+
+    def dispose(self):
+        """Release pooled connections during an ASGI worker's shutdown."""
+        self.session.remove()
+        if self._engine is not None:
+            self._engine.dispose()
+            self._engine = None
 
 
 db = Database()

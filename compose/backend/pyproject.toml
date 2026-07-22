@@ -17,6 +17,7 @@ dependencies = [
     "celery~=5.0",
     "connexion[swagger-ui,uvicorn]==3.3.0",
     "gunicorn>=25,<27",
+    "uvicorn-worker~=0.4",
     "ipython~=9.6",
     "itsdangerous~=2.2",
     "marshmallow~=4.0",

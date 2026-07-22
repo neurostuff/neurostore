@@ -117,6 +117,13 @@ verification command has passed. Store is completed before Compose is changed.
 - Migrate one backend at a time: Store first, Compose second.
 - Flip both services in the next release branch.
 - Keep synchronous SQLAlchemy and psycopg2 during this migration.
+- Run Uvicorn directly with reload in development and use Gunicorn with
+  `uvicorn-worker` in production.
+- Bound synchronous ASGI compatibility work to `ASGI_THREAD_TOKENS=16` by
+  default, then release SQLAlchemy connection pools through Starlette lifespan
+  shutdown.
+- Trust forwarded headers only inside the private API-container-to-Nginx proxy
+  network.
 - Use native `httpx.AsyncClient`/`ASGITransport` for HTTP tests; isolate tests by
   truncating the test schema and clearing Redis before and after each test.
 - Preserve current Auth0 behavior and Connexion security handler semantics.
