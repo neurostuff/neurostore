@@ -1,7 +1,11 @@
+import pytest
+
+pytestmark = pytest.mark.anyio
+
 from neurostore.models import Analysis, AnalysisConditions, Condition, Study, User
 
 
-def test_condition_cloning_neurovault(auth_client, ingest_neurovault, session):
+async def test_condition_cloning_neurovault(async_auth_client, ingest_neurovault, session):
     """
     Integration test to verify condition cloning preserves original references via API.
     This test validates the complete end-to-end behavior.
@@ -25,7 +29,7 @@ def test_condition_cloning_neurovault(auth_client, ingest_neurovault, session):
     total_conditions_before = Condition.query.count()
 
     # Clone the study via API
-    resp = auth_client.post(
+    resp = await async_auth_client.post(
         f"/api/studies/?source_id={study_with_conditions.id}", data={}
     )
     assert resp.status_code == 200
@@ -69,13 +73,13 @@ def test_condition_cloning_neurovault(auth_client, ingest_neurovault, session):
     )
 
 
-def test_condition_cloning_cross_user_permissions(auth_client, session):
+async def test_condition_cloning_cross_user_permissions(async_auth_client, session):
     """
     Test that users can clone studies referencing conditions owned by other users.
     The conditions should be read-only references, not attempts to modify the originals.
     """
-    # Get the authenticated user from auth_client
-    user_id = auth_client.username
+    # Get the authenticated user from async_auth_client
+    user_id = async_auth_client.username
 
     # Create another user who will own the conditions
     condition_owner_data = {"external_id": "condition_owner", "name": "Condition Owner"}
@@ -120,8 +124,8 @@ def test_condition_cloning_cross_user_permissions(auth_client, session):
     # Count conditions before cloning
     conditions_before = Condition.query.count()
 
-    # Clone the study using the API (auth_client is a different user)
-    resp = auth_client.post(f"/api/studies/?source_id={test_study.id}", data={})
+    # Clone the study using the API (async_auth_client is a different user)
+    resp = await async_auth_client.post(f"/api/studies/?source_id={test_study.id}", data={})
 
     # This should now work with our fix
     assert (
@@ -139,7 +143,7 @@ def test_condition_cloning_cross_user_permissions(auth_client, session):
     assert cloned_study is not None
     assert (
         cloned_study.user_id == user_id
-    )  # Cloned study should be owned by auth_client user
+    )  # Cloned study should be owned by async_auth_client user
 
     # Get conditions from cloned study
     cloned_conditions = []
@@ -174,13 +178,13 @@ def test_condition_cloning_cross_user_permissions(auth_client, session):
     )
 
 
-def test_condition_cloning_new_data(auth_client, session):
+async def test_condition_cloning_new_data(async_auth_client, session):
     """
     Integration test to verify condition cloning with self-created test data.
     This test creates its own data instead of relying on fixtures.
     """
     # Get the authenticated user ID from the client
-    user_id = auth_client.username  # auth_client has username attribute
+    user_id = async_auth_client.username  # async_auth_client has username attribute
 
     # Create test condition
     test_condition = Condition(
@@ -212,7 +216,7 @@ def test_condition_cloning_new_data(auth_client, session):
     conditions_before = Condition.query.count()
 
     # Clone the study using the API
-    resp = auth_client.post(f"/api/studies/?source_id={test_study.id}", data={})
+    resp = await async_auth_client.post(f"/api/studies/?source_id={test_study.id}", data={})
     assert resp.status_code == 200
 
     cloned_study_data = resp.json()

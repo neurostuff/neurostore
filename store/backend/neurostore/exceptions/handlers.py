@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 import traceback
 
 import anyio
@@ -70,13 +71,14 @@ async def problem_exception_handler(request: Request, exc: ProblemException):
 
 
 async def http_exception_handler(request: Request, exc: StarletteHTTPException):
+    status_code = int(exc.status_code)
     body = {
         "type": "about:blank",
-        "title": exc.detail if exc.status_code < 500 else "Internal Server Error",
+        "title": exc.detail if status_code < 500 else "Internal Server Error",
         "detail": exc.detail,
-        "status": exc.status_code,
+        "status": status_code,
     }
-    return _json_response(body, exc.status_code, headers=exc.headers)
+    return _json_response(body, status_code, headers=exc.headers)
 
 
 async def general_exception_handler(request: Request, exc: Exception):
@@ -86,6 +88,8 @@ async def general_exception_handler(request: Request, exc: Exception):
     """
     if isinstance(exc, anyio.EndOfStream):
         raise
+    if os.getenv("NEUROSTORE_RERAISE_EXCEPTIONS") == "1":
+        raise exc
 
     logger.exception(
         "Unhandled exception in request: %s %s",

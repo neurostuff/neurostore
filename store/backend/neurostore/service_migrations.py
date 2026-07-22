@@ -65,6 +65,10 @@ def upgrade(revision: str = "heads") -> None:
     command.upgrade(make_alembic_config(), revision)
 
 
+def downgrade(revision: str = "-1") -> None:
+    command.downgrade(make_alembic_config(), revision)
+
+
 def migrate(message: str | None = None) -> None:
     command.revision(make_alembic_config(), message=message, autogenerate=True)
 

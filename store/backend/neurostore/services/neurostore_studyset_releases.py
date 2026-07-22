@@ -12,7 +12,6 @@ from pathlib import Path
 
 import orjson
 import sqlalchemy as sa
-from flask import current_app
 from sqlalchemy.orm import load_only, selectinload
 
 from neurostore.database import db
@@ -36,6 +35,7 @@ from neurostore.models import (
 from neurostore.map_types import map_type_label
 from neurostore.models.data import generate_id
 from neurostore.schemas.pipeline import PipelineStudyResultSchema
+from neurostore.runtime import get_runtime
 
 STUDYSET_SOURCE_ID = "neurostore-studyset"
 ANNOTATION_SOURCE_ID = "neurostore-annotation"
@@ -182,7 +182,7 @@ def release_root():
     configured = os.environ.get("NEUROSTORE_STUDYSET_RELEASE_DIR")
     if configured:
         return Path(configured)
-    return Path(current_app.config["FILE_DIR"]) / RELEASE_DIRNAME
+    return Path(get_runtime().config["FILE_DIR"]) / RELEASE_DIRNAME
 
 
 def stable_json_bytes(value):

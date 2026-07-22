@@ -4,6 +4,8 @@ import datetime as dt
 import threading
 
 import pytest
+
+pytestmark = pytest.mark.anyio
 import sqlalchemy as sa
 from sqlalchemy import event, text
 from sqlalchemy.orm import aliased
@@ -30,12 +32,12 @@ from neurostore.services.base_study_metadata_enrichment import (
 from neurostore.services.has_media_flags import process_base_study_flag_outbox_batch
 
 
-def test_features_query(auth_client, ingest_demographic_features):
+async def test_features_query(async_auth_client, ingest_demographic_features):
     """Test filtering features"""
     # Add OR functionality for multiple tasks (OR conditions)
     # flatten the features (flatten json objects)
     # test features organized like this: {top_key: ["list", "of", "values"]}
-    result = auth_client.get(
+    result = await async_auth_client.get(
         "/api/base-studies/?feature_filter="
         "ParticipantDemographicsExtractor:groups[].age_mean>10&"
         "feature_filter=ParticipantDemographicsExtractor:groups[].age_mean<=100&"
@@ -52,7 +54,7 @@ def test_features_query(auth_client, ingest_demographic_features):
     )
 
 
-def test_features_query_with_or(auth_client, ingest_demographic_features, session):
+async def test_features_query_with_or(async_auth_client, ingest_demographic_features, session):
     # First check diagnoses directly from database
 
     PipelineStudyResultAlias = aliased(PipelineStudyResult)
@@ -112,7 +114,7 @@ def test_features_query_with_or(auth_client, ingest_demographic_features, sessio
                 db_diagnoses.add(group["diagnosis"])
 
     # Now make the API request
-    result = auth_client.get(
+    result = await async_auth_client.get(
         "/api/base-studies/?feature_filter="
         "ParticipantDemographicsExtractor:groups[].diagnosis=ADHD|ASD&"
         "feature_display=ParticipantDemographicsExtractor&"
@@ -133,7 +135,7 @@ def test_features_query_with_or(auth_client, ingest_demographic_features, sessio
     assert db_diagnoses == api_diagnoses
 
 
-def test_post_list_of_studies(auth_client, ingest_neuroquery):
+async def test_post_list_of_studies(async_auth_client, ingest_neuroquery):
     base_studies = BaseStudy.query.all()
     test_input = [
         {
@@ -160,15 +162,15 @@ def test_post_list_of_studies(auth_client, ingest_neuroquery):
         },
     ]
 
-    result = auth_client.post("/api/base-studies/", data=test_input)
+    result = await async_auth_client.post("/api/base-studies/", data=test_input)
 
     assert result.status_code == 200
 
 
-def test_post_list_of_studies_returns_full_objects(auth_client, ingest_neuroquery):
+async def test_post_list_of_studies_returns_full_objects(async_auth_client, ingest_neuroquery):
     base_study = BaseStudy.query.filter(BaseStudy.pmid.isnot(None)).first()
 
-    result = auth_client.post("/api/base-studies/", data=[{"pmid": base_study.pmid}])
+    result = await async_auth_client.post("/api/base-studies/", data=[{"pmid": base_study.pmid}])
 
     assert result.status_code == 200
     assert len(result.json()) == 1
@@ -179,7 +181,7 @@ def test_post_list_of_studies_returns_full_objects(auth_client, ingest_neuroquer
     assert "metadata" not in result.json()[0]
 
 
-def test_field_sanitization(auth_client):
+async def test_field_sanitization(async_auth_client):
     """Test sanitization of input fields in base studies"""
     test_input = [
         {
@@ -200,7 +202,7 @@ def test_field_sanitization(auth_client):
         },
     ]
 
-    result = auth_client.post("/api/base-studies/", data=test_input)
+    result = await async_auth_client.post("/api/base-studies/", data=test_input)
     assert result.status_code == 200
 
     created_studies = result.json()
@@ -219,7 +221,7 @@ def test_field_sanitization(auth_client):
     assert created_studies[2]["description"] is None
 
 
-def test_filter_base_study_by_public_and_private_neurovault_ids(auth_client, session):
+async def test_filter_base_study_by_public_and_private_neurovault_ids(async_auth_client, session):
     user = session.query(User).first()
     public_base_study = BaseStudy(name="Public Neurovault Filter Study", level="group")
     private_base_study = BaseStudy(
@@ -246,8 +248,8 @@ def test_filter_base_study_by_public_and_private_neurovault_ids(auth_client, ses
     )
     session.commit()
 
-    public_filter = auth_client.get("/api/base-studies/?neurovault_id=19125")
-    private_filter = auth_client.get(
+    public_filter = await async_auth_client.get("/api/base-studies/?neurovault_id=19125")
+    private_filter = await async_auth_client.get(
         "/api/base-studies/?neurovault_id=private-collection-token-abc123"
     )
 
@@ -257,7 +259,7 @@ def test_filter_base_study_by_public_and_private_neurovault_ids(auth_client, ses
     assert private_base_study.id in {r["id"] for r in private_filter.json()["results"]}
 
 
-def test_filter_base_study_by_neurovault_id(auth_client, session):
+async def test_filter_base_study_by_neurovault_id(async_auth_client, session):
     user = session.query(User).first()
     base_study = BaseStudy(name="Neurovault Filter Study", level="group", user=user)
     study = Study(
@@ -271,14 +273,14 @@ def test_filter_base_study_by_neurovault_id(auth_client, session):
     session.add_all([base_study, study])
     session.commit()
 
-    filter_resp = auth_client.get("/api/base-studies/?neurovault_id=nv-filter-0001")
+    filter_resp = await async_auth_client.get("/api/base-studies/?neurovault_id=nv-filter-0001")
     assert filter_resp.status_code == 200
 
     result_ids = {result["id"] for result in filter_resp.json()["results"]}
     assert base_study.id in result_ids
 
 
-def test_multiple_neurovault_collections_share_base_study(auth_client, session):
+async def test_multiple_neurovault_collections_share_base_study(async_auth_client, session):
     payload_common = {
         "name": "Same Paper Multiple Neurovault Collections",
         "level": "group",
@@ -286,8 +288,8 @@ def test_multiple_neurovault_collections_share_base_study(auth_client, session):
         "pmid": "999002",
         "pmcid": "PMC999002",
     }
-    first_resp = auth_client.post("/api/studies/", data=payload_common)
-    second_resp = auth_client.post("/api/studies/", data=payload_common)
+    first_resp = await async_auth_client.post("/api/studies/", data=payload_common)
+    second_resp = await async_auth_client.post("/api/studies/", data=payload_common)
 
     assert first_resp.status_code == 200
     assert second_resp.status_code == 200
@@ -304,24 +306,24 @@ def test_multiple_neurovault_collections_share_base_study(auth_client, session):
     assert first_study.base_study_id == second_study.base_study_id
     shared_base_study_id = first_study.base_study_id
 
-    by_doi = auth_client.get(
+    by_doi = await async_auth_client.get(
         "/api/base-studies/?doi=10.9999/same-paper-multi-collection"
     )
     assert by_doi.status_code == 200
     doi_ids = {result["id"] for result in by_doi.json()["results"]}
     assert shared_base_study_id in doi_ids
 
-    by_nv_1 = auth_client.get("/api/base-studies/?neurovault_id=nv-dup-1")
-    by_nv_2 = auth_client.get("/api/base-studies/?neurovault_id=nv-dup-2")
+    by_nv_1 = await async_auth_client.get("/api/base-studies/?neurovault_id=nv-dup-1")
+    by_nv_2 = await async_auth_client.get("/api/base-studies/?neurovault_id=nv-dup-2")
     assert by_nv_1.status_code == 200
     assert by_nv_2.status_code == 200
     assert shared_base_study_id in {r["id"] for r in by_nv_1.json()["results"]}
     assert shared_base_study_id in {r["id"] for r in by_nv_2.json()["results"]}
 
 
-def test_flat_base_study(auth_client, ingest_neurosynth, session):
-    flat_resp = auth_client.get("/api/base-studies/?flat=true")
-    reg_resp = auth_client.get("/api/base-studies/?flat=false")
+async def test_flat_base_study(async_auth_client, ingest_neurosynth, session):
+    flat_resp = await async_auth_client.get("/api/base-studies/?flat=true")
+    reg_resp = await async_auth_client.get("/api/base-studies/?flat=false")
 
     assert flat_resp.status_code == reg_resp.status_code == 200
 
@@ -329,8 +331,8 @@ def test_flat_base_study(auth_client, ingest_neurosynth, session):
     assert "versions" in reg_resp.json()["results"][0]
 
 
-def test_flat_base_study_search_avoids_version_hydration_queries(
-    auth_client, ingest_neurosynth, session
+async def test_flat_base_study_search_avoids_version_hydration_queries(
+    async_auth_client, ingest_neurosynth, session
 ):
     statements = []
 
@@ -341,7 +343,7 @@ def test_flat_base_study_search_avoids_version_hydration_queries(
 
     event.listen(session.bind, "before_cursor_execute", before_cursor_execute)
     try:
-        response = auth_client.get(
+        response = await async_auth_client.get(
             "/api/base-studies/?flat=true&data_type=coordinate&level=group&page_size=10"
         )
     finally:
@@ -354,9 +356,9 @@ def test_flat_base_study_search_avoids_version_hydration_queries(
     )
 
 
-def test_info_base_study(auth_client, ingest_neurosynth, session):
-    info_resp = auth_client.get("/api/base-studies/?info=true")
-    reg_resp = auth_client.get("/api/base-studies/?info=false")
+async def test_info_base_study(async_auth_client, ingest_neurosynth, session):
+    info_resp = await async_auth_client.get("/api/base-studies/?info=true")
+    reg_resp = await async_auth_client.get("/api/base-studies/?info=false")
 
     assert info_resp.status_code == 200
     assert reg_resp.status_code == 200
@@ -366,8 +368,8 @@ def test_info_base_study(auth_client, ingest_neurosynth, session):
 
     # test specific base-study
     base_study_id = reg_resp.json()["results"][0]["id"]
-    single_info_resp = auth_client.get(f"/api/base-studies/{base_study_id}?info=true")
-    single_reg_resp = auth_client.get(f"/api/base-studies/{base_study_id}?info=false")
+    single_info_resp = await async_auth_client.get(f"/api/base-studies/{base_study_id}?info=true")
+    single_reg_resp = await async_auth_client.get(f"/api/base-studies/{base_study_id}?info=false")
 
     assert single_info_resp.status_code == 200
     assert single_reg_resp.status_code == 200
@@ -386,8 +388,8 @@ def test_info_base_study(auth_client, ingest_neurosynth, session):
     assert isinstance(single_reg_resp.json()["versions"][0], str)
 
 
-def test_nested_base_study(auth_client, ingest_neurosynth, session):
-    resp = auth_client.get("/api/base-studies/?nested=true")
+async def test_nested_base_study(async_auth_client, ingest_neurosynth, session):
+    resp = await async_auth_client.get("/api/base-studies/?nested=true")
     assert resp.status_code == 200
 
     first_result = resp.json()["results"][0]
@@ -404,7 +406,7 @@ def test_nested_base_study(auth_client, ingest_neurosynth, session):
         assert "user" in first_analysis
 
 
-def test_has_coordinates_images(auth_client, session):
+async def test_has_coordinates_images(async_auth_client, session):
     # create an empty study
     doi_a = "abcd"
     doi_b = "efgh"
@@ -429,7 +431,7 @@ def test_has_coordinates_images(auth_client, session):
 
     image_a_data = {"filename": "my_fake_image.nii.gz"}
     image_b_data = {"filename": "my_morefaker_image.nii.gz"}
-    create_study = auth_client.post(
+    create_study = await async_auth_client.post(
         "/api/studies/",
         data={
             **study_a_data,
@@ -450,7 +452,7 @@ def test_has_coordinates_images(auth_client, session):
     analysis_id = create_study.json()["analyses"][0]
 
     # update analysis with points
-    analysis_point = auth_client.put(
+    analysis_point = await async_auth_client.put(
         f"/api/analyses/{analysis_id}", data={"points": [point_a_data]}
     )
 
@@ -459,7 +461,7 @@ def test_has_coordinates_images(auth_client, session):
     assert base_study.has_coordinates is True
 
     # update analysis with points
-    analysis_image = auth_client.put(
+    analysis_image = await async_auth_client.put(
         f"/api/analyses/{analysis_id}",
         data={"images": [image_a_data]},
     )
@@ -471,7 +473,7 @@ def test_has_coordinates_images(auth_client, session):
     # delete point
     point_id = analysis_point.json()["points"][0]
 
-    del_point = auth_client.delete(f"/api/points/{point_id}")
+    del_point = await async_auth_client.delete(f"/api/points/{point_id}")
 
     assert del_point.status_code == 200
     session.refresh(base_study)
@@ -480,14 +482,14 @@ def test_has_coordinates_images(auth_client, session):
     # delete image
     image_id = analysis_image.json()["images"][0]
 
-    del_image = auth_client.delete(f"/api/images/{image_id}")
+    del_image = await async_auth_client.delete(f"/api/images/{image_id}")
 
     assert del_image.status_code == 200
     session.refresh(base_study)
     assert base_study.has_images is False
 
     # create study with existing points and images
-    create_full_study = auth_client.post(
+    create_full_study = await async_auth_client.post(
         "/api/studies/",
         data={
             **study_b_data,
@@ -513,7 +515,7 @@ def test_has_coordinates_images(auth_client, session):
     assert base_study_2.has_images is True
 
     # adding an analysis without media should not flip the flags back to False
-    empty_analysis_resp = auth_client.post(
+    empty_analysis_resp = await async_auth_client.post(
         "/api/analyses/",
         data={
             "study": create_full_study.json()["id"],
@@ -536,20 +538,20 @@ def test_has_coordinates_images(auth_client, session):
         if analysis.images:
             image_analysis = analysis
 
-    del_one_point = auth_client.delete(f"/api/points/{point_analysis.points[0].id}")
+    del_one_point = await async_auth_client.delete(f"/api/points/{point_analysis.points[0].id}")
     assert del_one_point.status_code == 200
     session.refresh(base_study_2)
     assert base_study_2.has_coordinates is True
     assert base_study_2.has_images is True
 
-    del_point_analysis = auth_client.delete(f"/api/analyses/{point_analysis.id}")
+    del_point_analysis = await async_auth_client.delete(f"/api/analyses/{point_analysis.id}")
 
     assert del_point_analysis.status_code == 200
     session.refresh(base_study_2)
     assert base_study_2.has_coordinates is False
     assert base_study_2.has_images is True
 
-    del_image_analysis = auth_client.delete(f"/api/analyses/{image_analysis.id}")
+    del_image_analysis = await async_auth_client.delete(f"/api/analyses/{image_analysis.id}")
 
     assert del_image_analysis.status_code == 200
     session.refresh(base_study_2)
@@ -557,7 +559,7 @@ def test_has_coordinates_images(auth_client, session):
     assert base_study_2.has_images is True
 
     # create full study again
-    create_full_study_again = auth_client.post(
+    create_full_study_again = await async_auth_client.post(
         "/api/studies/",
         data={
             **study_b_data,
@@ -582,7 +584,7 @@ def test_has_coordinates_images(auth_client, session):
     assert base_study_2.has_images is True
 
     # delete the full study
-    delete_study = auth_client.delete(
+    delete_study = await async_auth_client.delete(
         f"/api/studies/{create_full_study_again.json()['id']}"
     )
 
@@ -592,8 +594,8 @@ def test_has_coordinates_images(auth_client, session):
     assert base_study_2.has_images is True
 
 
-def test_base_study_emits_all_media_flags(auth_client, session):
-    create_study = auth_client.post(
+async def test_base_study_emits_all_media_flags(async_auth_client, session):
+    create_study = await async_auth_client.post(
         "/api/studies/",
         data={
             "name": "base-study-media-flags",
@@ -617,7 +619,7 @@ def test_base_study_emits_all_media_flags(auth_client, session):
     base_study = BaseStudy.query.filter_by(
         pmid="910001", doi="10.1000/base-study-media-flags"
     ).one()
-    response = auth_client.get(f"/api/base-studies/{base_study.id}")
+    response = await async_auth_client.get(f"/api/base-studies/{base_study.id}")
     assert response.status_code == 200
     payload = response.json()
 
@@ -628,7 +630,7 @@ def test_base_study_emits_all_media_flags(auth_client, session):
     assert payload["has_beta_and_variance_maps"] is True
 
 
-def test_async_image_reassignment_updates_hierarchy_flags(auth_client, session, app):
+async def test_async_image_reassignment_updates_hierarchy_flags(async_auth_client, session, app):
     async_original = app.config.get("BASE_STUDY_FLAGS_ASYNC", False)
     app.config["BASE_STUDY_FLAGS_ASYNC"] = True
 
@@ -638,7 +640,7 @@ def test_async_image_reassignment_updates_hierarchy_flags(auth_client, session, 
         pmid_a = "900001"
         pmid_b = "900002"
 
-        create_study_a = auth_client.post(
+        create_study_a = await async_auth_client.post(
             "/api/studies/",
             data={
                 "name": "async flags study a",
@@ -652,7 +654,7 @@ def test_async_image_reassignment_updates_hierarchy_flags(auth_client, session, 
                 ],
             },
         )
-        create_study_b = auth_client.post(
+        create_study_b = await async_auth_client.post(
             "/api/studies/",
             data={
                 "name": "async flags study b",
@@ -672,7 +674,7 @@ def test_async_image_reassignment_updates_hierarchy_flags(auth_client, session, 
         analysis_a_id = create_study_a.json()["analyses"][0]
         analysis_b_id = create_study_b.json()["analyses"][0]
 
-        analysis_a_resp = auth_client.get(f"/api/analyses/{analysis_a_id}")
+        analysis_a_resp = await async_auth_client.get(f"/api/analyses/{analysis_a_id}")
         assert analysis_a_resp.status_code == 200
         image_id = analysis_a_resp.json()["images"][0]
 
@@ -689,7 +691,7 @@ def test_async_image_reassignment_updates_hierarchy_flags(auth_client, session, 
         assert base_study_a.id in queued_before_move
         assert base_study_b.id in queued_before_move
 
-        move_image = auth_client.put(
+        move_image = await async_auth_client.put(
             f"/api/images/{image_id}", data={"analysis": analysis_b_id}
         )
         assert move_image.status_code == 200
@@ -730,7 +732,7 @@ def test_async_image_reassignment_updates_hierarchy_flags(auth_client, session, 
         app.config["BASE_STUDY_FLAGS_ASYNC"] = async_original
 
 
-def test_async_worker_map_type_flag_transitions(auth_client, session, app):
+async def test_async_worker_map_type_flag_transitions(async_auth_client, session, app):
     async_original = app.config.get("BASE_STUDY_FLAGS_ASYNC", False)
     app.config["BASE_STUDY_FLAGS_ASYNC"] = True
 
@@ -745,7 +747,7 @@ def test_async_worker_map_type_flag_transitions(auth_client, session, app):
             session.refresh(record)
 
     try:
-        create_study_a = auth_client.post(
+        create_study_a = await async_auth_client.post(
             "/api/studies/",
             data={
                 "name": "worker-map-flags-a",
@@ -762,7 +764,7 @@ def test_async_worker_map_type_flag_transitions(auth_client, session, app):
                 ],
             },
         )
-        create_study_b = auth_client.post(
+        create_study_b = await async_auth_client.post(
             "/api/studies/",
             data={
                 "name": "worker-map-flags-b",
@@ -810,7 +812,7 @@ def test_async_worker_map_type_flag_transitions(auth_client, session, app):
         ).one()
 
         # variance removed => beta only => has_beta_and_variance_maps should be false
-        delete_variance = auth_client.delete(f"/api/images/{variance_image.id}")
+        delete_variance = await async_auth_client.delete(f"/api/images/{variance_image.id}")
         assert delete_variance.status_code == 200
         drain_outbox()
         refresh_all(analysis_a, study_a, base_study_a)
@@ -819,7 +821,7 @@ def test_async_worker_map_type_flag_transitions(auth_client, session, app):
         assert base_study_a.has_beta_and_variance_maps is False
 
         # add variance back => true again
-        add_variance = auth_client.post(
+        add_variance = await async_auth_client.post(
             "/api/images/",
             data={
                 "analysis": analysis_a_id,
@@ -836,7 +838,7 @@ def test_async_worker_map_type_flag_transitions(auth_client, session, app):
         assert base_study_a.has_beta_and_variance_maps is True
 
         # move variance away => old scope beta-only false, new scope variance-only false
-        move_variance = auth_client.put(
+        move_variance = await async_auth_client.put(
             f"/api/images/{variance_image_2_id}", data={"analysis": analysis_b_id}
         )
         assert move_variance.status_code == 200
@@ -852,7 +854,7 @@ def test_async_worker_map_type_flag_transitions(auth_client, session, app):
         assert base_study_b.has_beta_and_variance_maps is False
 
         # move beta too => new scope has both => true
-        move_beta = auth_client.put(
+        move_beta = await async_auth_client.put(
             f"/api/images/{beta_image.id}", data={"analysis": analysis_b_id}
         )
         assert move_beta.status_code == 200
@@ -868,7 +870,7 @@ def test_async_worker_map_type_flag_transitions(auth_client, session, app):
         assert base_study_b.has_beta_and_variance_maps is True
 
         # add z and t maps to analysis_b and validate z/t flags
-        add_z = auth_client.post(
+        add_z = await async_auth_client.post(
             "/api/images/",
             data={
                 "analysis": analysis_b_id,
@@ -876,7 +878,7 @@ def test_async_worker_map_type_flag_transitions(auth_client, session, app):
                 "value_type": "Z",
             },
         )
-        add_t = auth_client.post(
+        add_t = await async_auth_client.post(
             "/api/images/",
             data={
                 "analysis": analysis_b_id,
@@ -898,7 +900,7 @@ def test_async_worker_map_type_flag_transitions(auth_client, session, app):
         assert base_study_b.has_t_maps is True
 
         # move z map from b -> a and validate old/new scope transitions
-        move_z = auth_client.put(
+        move_z = await async_auth_client.put(
             f"/api/images/{z_image_id}", data={"analysis": analysis_a_id}
         )
         assert move_z.status_code == 200
@@ -916,11 +918,11 @@ def test_async_worker_map_type_flag_transitions(auth_client, session, app):
         app.config["BASE_STUDY_FLAGS_ASYNC"] = async_original
 
 
-def test_base_study_create_enqueues_metadata_outbox(auth_client, app):
+async def test_base_study_create_enqueues_metadata_outbox(async_auth_client, app):
     async_original = app.config.get("BASE_STUDY_METADATA_ASYNC", False)
     app.config["BASE_STUDY_METADATA_ASYNC"] = True
     try:
-        response = auth_client.post(
+        response = await async_auth_client.post(
             "/api/base-studies/",
             data={
                 "name": "metadata-enqueue-study",
@@ -938,11 +940,11 @@ def test_base_study_create_enqueues_metadata_outbox(auth_client, app):
         app.config["BASE_STUDY_METADATA_ASYNC"] = async_original
 
 
-def test_base_study_bulk_create_enqueues_metadata_outbox(auth_client, app):
+async def test_base_study_bulk_create_enqueues_metadata_outbox(async_auth_client, app):
     async_original = app.config.get("BASE_STUDY_METADATA_ASYNC", False)
     app.config["BASE_STUDY_METADATA_ASYNC"] = True
     try:
-        response = auth_client.post(
+        response = await async_auth_client.post(
             "/api/base-studies/",
             data=[
                 {
@@ -1997,7 +1999,7 @@ def test_enqueue_metadata_updates_skips_blank_identifier_only_rows(session):
     )
 
 
-def test_filter_by_is_oa(auth_client, session):
+async def test_filter_by_is_oa(async_auth_client, session):
     base_true = BaseStudy(
         name="Open Access Study",
         doi="10.1234/oa-study",
@@ -2027,7 +2029,7 @@ def test_filter_by_is_oa(auth_client, session):
 
     assert session.query(BaseStudy).count() == 3
 
-    all_resp = auth_client.get("/api/base-studies/")
+    all_resp = await async_auth_client.get("/api/base-studies/")
     assert all_resp.status_code == 200
     all_names = {result["name"] for result in all_resp.json()["results"]}
     assert {
@@ -2036,7 +2038,7 @@ def test_filter_by_is_oa(auth_client, session):
         "Unknown Access Study",
     }.issubset(all_names)
 
-    true_resp = auth_client.get("/api/base-studies/?is_oa=true")
+    true_resp = await async_auth_client.get("/api/base-studies/?is_oa=true")
     assert true_resp.status_code == 200
     true_results = true_resp.json()["results"]
     assert all(result["is_oa"] is True for result in true_results)
@@ -2045,7 +2047,7 @@ def test_filter_by_is_oa(auth_client, session):
     assert "Closed Access Study" not in true_names
     assert "Unknown Access Study" not in true_names
 
-    false_resp = auth_client.get("/api/base-studies/?is_oa=false")
+    false_resp = await async_auth_client.get("/api/base-studies/?is_oa=false")
     assert false_resp.status_code == 200
     false_results = false_resp.json()["results"]
     assert all(result["is_oa"] is False for result in false_results)
@@ -2055,10 +2057,10 @@ def test_filter_by_is_oa(auth_client, session):
     assert "Unknown Access Study" not in false_names
 
 
-def test_config_and_feature_filters(auth_client, ingest_demographic_features, session):
+async def test_config_and_feature_filters(async_auth_client, ingest_demographic_features, session):
     """Test filtering by both config args and feature results with version specification"""
     # Test combined feature and config filtering
-    response = auth_client.get(
+    response = await async_auth_client.get(
         "/api/base-studies/?"
         "feature_filter=ParticipantDemographicsExtractor:1.0.0:groups[].age_mean>25&"
         "pipeline_config=ParticipantDemographicsExtractor:"
@@ -2069,7 +2071,7 @@ def test_config_and_feature_filters(auth_client, ingest_demographic_features, se
     assert len(response.json()["results"]) > 0
 
     # Test with mismatched version
-    response = auth_client.get(
+    response = await async_auth_client.get(
         "/api/base-studies/?"
         "feature_filter=ParticipantDemographicsExtractor:2.0.0:groups[].age_mean>30&"
         "pipeline_config=ParticipantDemographicsExtractor:2.0.0:"
@@ -2080,15 +2082,15 @@ def test_config_and_feature_filters(auth_client, ingest_demographic_features, se
     assert len(response.json()["results"]) == 0
 
     # Test error handling for invalid filter format
-    response = auth_client.get(
+    response = await async_auth_client.get(
         "/api/base-studies/?pipeline_config=ParticipantDemographicsExtractor:invalid:filter:format"
     )
 
     assert response.status_code == 400
 
 
-def test_feature_filter_with_version_uses_latest_result_within_that_version(
-    auth_client, ingest_demographic_features, session
+async def test_feature_filter_with_version_uses_latest_result_within_that_version(
+    async_auth_client, ingest_demographic_features, session
 ):
     pipeline = (
         session.query(Pipeline).filter_by(name="ParticipantDemographicsExtractor").one()
@@ -2136,7 +2138,7 @@ def test_feature_filter_with_version_uses_latest_result_within_that_version(
     )
     session.commit()
 
-    response = auth_client.get(
+    response = await async_auth_client.get(
         "/api/base-studies/?"
         "feature_filter=ParticipantDemographicsExtractor:1.0.0:groups[].age_mean>25"
     )
@@ -2145,10 +2147,10 @@ def test_feature_filter_with_version_uses_latest_result_within_that_version(
     assert base_study.id in {result["id"] for result in response.json()["results"]}
 
 
-def test_invalid_pipeline_name_returns_validation_error(
-    auth_client, ingest_demographic_features
+async def test_invalid_pipeline_name_returns_validation_error(
+    async_auth_client, ingest_demographic_features
 ):
-    response = auth_client.get(
+    response = await async_auth_client.get(
         "/api/base-studies/?feature_filter=NoSuchPipeline:groups[].age_mean>25"
     )
 
@@ -2159,10 +2161,10 @@ def test_invalid_pipeline_name_returns_validation_error(
     assert payload["errors"][0]["code"] == "NOT_FOUND"
 
 
-def test_feature_display_and_pipeline_config(auth_client, ingest_demographic_features):
+async def test_feature_display_and_pipeline_config(async_auth_client, ingest_demographic_features):
     """Test feature display and pipeline config parameters version matching and defaults"""
     # Test feature display with version specified
-    response = auth_client.get(
+    response = await async_auth_client.get(
         "/api/base-studies/?"
         "feature_display=ParticipantDemographicsExtractor:1.0.0&"
         "pipeline_config=ParticipantDemographicsExtractor:1.0.0:"
@@ -2175,7 +2177,7 @@ def test_feature_display_and_pipeline_config(auth_client, ingest_demographic_fea
     assert "ParticipantDemographicsExtractor" in results[0]["features"]
 
     # Test default behavior when version not specified (should use latest version)
-    default_response = auth_client.get(
+    default_response = await async_auth_client.get(
         "/api/base-studies/?"
         "feature_display=ParticipantDemographicsExtractor&"
         "pipeline_config=ParticipantDemographicsExtractor:"
@@ -2193,7 +2195,7 @@ def test_feature_display_and_pipeline_config(auth_client, ingest_demographic_fea
         assert isinstance(features["groups"], list)
 
     # Test mismatched versions between feature_display and pipeline_config
-    mismatch_response = auth_client.get(
+    mismatch_response = await async_auth_client.get(
         "/api/base-studies/?"
         "feature_display=ParticipantDemographicsExtractor:1.0.0&"
         "pipeline_config=ParticipantDemographicsExtractor:2.0.0:model_version=2"
@@ -2202,16 +2204,16 @@ def test_feature_display_and_pipeline_config(auth_client, ingest_demographic_fea
     assert len(mismatch_response.json()["results"]) == 0
 
 
-def test_pipeline_config_with_quoted_value(auth_client, ingest_demographic_features):
+async def test_pipeline_config_with_quoted_value(async_auth_client, ingest_demographic_features):
     """Ensure quoted config filter values do not break jsonpath parsing."""
-    quoted_resp = auth_client.get(
+    quoted_resp = await async_auth_client.get(
         "/api/base-studies/?"
         "pipeline_config=ParticipantDemographicsExtractor:1.0.0:"
         'extractor_kwargs.extraction_model="gpt-4-turbo"'
     )
     assert quoted_resp.status_code == 200
 
-    unquoted_resp = auth_client.get(
+    unquoted_resp = await async_auth_client.get(
         "/api/base-studies/?"
         "pipeline_config=ParticipantDemographicsExtractor:1.0.0:"
         "extractor_kwargs.extraction_model=gpt-4-turbo"
@@ -2223,16 +2225,16 @@ def test_pipeline_config_with_quoted_value(auth_client, ingest_demographic_featu
     assert quoted_ids == unquoted_ids
 
 
-def test_feature_flatten(auth_client, ingest_demographic_features):
+async def test_feature_flatten(async_auth_client, ingest_demographic_features):
     """Test flattening nested feature objects into dot notation"""
     # Get response without flattening
-    unflattened = auth_client.get(
+    unflattened = await async_auth_client.get(
         "/api/base-studies/?feature_display=ParticipantDemographicsExtractor"
     )
     assert unflattened.status_code == 200
 
     # Get response with flattening
-    flattened = auth_client.get(
+    flattened = await async_auth_client.get(
         "/api/base-studies/?feature_display=ParticipantDemographicsExtractor&feature_flatten=true"
     )
     assert flattened.status_code == 200
@@ -2262,10 +2264,10 @@ def test_feature_flatten(auth_client, ingest_demographic_features):
             assert nested_age == flattened_age
 
 
-def test_invalid_search_query_cors(auth_client):
+async def test_invalid_search_query_cors(async_auth_client):
     """Test that invalid search query returns 400 with CORS headers"""
     origin = "https://client.example"
-    result = auth_client.get(
+    result = await async_auth_client.get(
         "/api/base-studies/?search=AND+OR",
         headers={"Origin": origin},
     )
@@ -2276,9 +2278,9 @@ def test_invalid_search_query_cors(auth_client):
     assert result.headers["Vary"] == "Origin"
 
 
-def test_base_studies_year_range(auth_client, session):
+async def test_base_studies_year_range(async_auth_client, session):
     # Create studies with different years
-    user_id = auth_client.username
+    user_id = async_auth_client.username
     user_obj = session.query(User).filter_by(external_id=user_id).first()
     years = [1999, 2005, 2010, 2020]
     for y in years:
@@ -2286,22 +2288,22 @@ def test_base_studies_year_range(auth_client, session):
     session.commit()
 
     # Query with year_min
-    resp = auth_client.get("/api/base-studies/?year_min=2005")
+    resp = await async_auth_client.get("/api/base-studies/?year_min=2005")
     results = resp.json().get("results", [])
     assert all(study["year"] >= 2005 for study in results)
 
     # Query with year_max
-    resp = auth_client.get("/api/base-studies/?year_max=2010")
+    resp = await async_auth_client.get("/api/base-studies/?year_max=2010")
     results = resp.json().get("results", [])
     assert all(study["year"] <= 2010 for study in results)
 
     # Query with both
-    resp = auth_client.get("/api/base-studies/?year_min=2005&year_max=2010")
+    resp = await async_auth_client.get("/api/base-studies/?year_min=2005&year_max=2010")
     results = resp.json().get("results", [])
     assert all(2005 <= study["year"] <= 2010 for study in results)
 
 
-def test_base_studies_spatial_query_with_mock_data(auth_client, session):
+async def test_base_studies_spatial_query_with_mock_data(async_auth_client, session):
     """Test spatial filtering for base studies endpoint with mock data"""
     from neurostore.models import Analysis, BaseStudy, Point, Study
 
@@ -2330,18 +2332,18 @@ def test_base_studies_spatial_query_with_mock_data(auth_client, session):
     # Query for base studies with a point near (10, 20, 30) radius 15
     # Query for base studies with a point near (10, 20, 30) radius 15
     url = "/api/base-studies/?x=10&y=20&z=30&radius=15"
-    result = auth_client.get(url)
+    result = await async_auth_client.get(url)
     assert result.status_code == 200
     ids = [s["id"] for s in result.json()["results"]]
     assert base_study.id in ids
 
 
-def test_base_studies_semantic_search(
-    auth_client, mock_get_embedding, ingest_demographic_features
+async def test_base_studies_semantic_search(
+    async_auth_client, mock_get_embedding, ingest_demographic_features
 ):
     """Query base-studies with semantic_search."""
     # have a very liberal distance threshold since arrays are randomly created.
-    resp = auth_client.get(
+    resp = await async_auth_client.get(
         "/api/base-studies/?semantic_search='neural developmental disorders'&distance_threshold=1"
     )
     assert resp.status_code == 200
@@ -2354,7 +2356,7 @@ def test_base_studies_semantic_search(
     # test with pipeline_config_id
     pipeline_config_id = PipelineConfig.query.filter_by(has_embeddings=True).first().id
 
-    resp = auth_client.get(
+    resp = await async_auth_client.get(
         f"/api/base-studies/?semantic_search='neural developmental disorders'&"
         f"distance_threshold=1&pipeline_config_id={pipeline_config_id}"
     )
@@ -2366,12 +2368,12 @@ def test_base_studies_semantic_search(
         assert "id" in data["results"][0]
 
 
-def test_is_active_filter_list(auth_client, session, ingest_neurosynth):
+async def test_is_active_filter_list(async_auth_client, session, ingest_neurosynth):
     """Test that inactive base studies are filtered out from list view"""
     from neurostore.extensions import cache
 
     # First get the list of all base studies
-    resp = auth_client.get("/api/base-studies/")
+    resp = await async_auth_client.get("/api/base-studies/")
     assert resp.status_code == 200
     data = resp.json()
     initial_count = len(data["results"])
@@ -2390,7 +2392,7 @@ def test_is_active_filter_list(auth_client, session, ingest_neurosynth):
     cache.clear()
 
     # Try to list all base studies - should not include the inactive one
-    resp = auth_client.get("/api/base-studies/")
+    resp = await async_auth_client.get("/api/base-studies/")
     assert resp.status_code == 200
     data = resp.json()
 
@@ -2401,7 +2403,7 @@ def test_is_active_filter_list(auth_client, session, ingest_neurosynth):
     assert len(data["results"]) == initial_count - 1
 
 
-def test_is_active_filter_get(auth_client, session, ingest_neurosynth):
+async def test_is_active_filter_get(async_auth_client, session, ingest_neurosynth):
     """Test that inactive base studies CAN still be retrieved via direct link"""
     # Get a base study and mark it as inactive
     base_study = BaseStudy.query.first()
@@ -2411,7 +2413,7 @@ def test_is_active_filter_get(auth_client, session, ingest_neurosynth):
     inactive_id = base_study.id
 
     # First verify we can get it while active
-    resp = auth_client.get(f"/api/base-studies/{inactive_id}")
+    resp = await async_auth_client.get(f"/api/base-studies/{inactive_id}")
     assert resp.status_code == 200
 
     # Mark it as inactive
@@ -2419,7 +2421,7 @@ def test_is_active_filter_get(auth_client, session, ingest_neurosynth):
     session.commit()
 
     # Try to get the inactive base study via direct link - should still work (200)
-    resp = auth_client.get(f"/api/base-studies/{inactive_id}")
+    resp = await async_auth_client.get(f"/api/base-studies/{inactive_id}")
     assert resp.status_code == 200
     assert resp.json()["id"] == inactive_id
 
@@ -2514,10 +2516,10 @@ def test_doi_pmid_unique_applies_only_to_active_base_studies(session):
     assert {row.is_active for row in rows} == {True, False}
 
 
-def test_is_active_not_exposed_in_api(auth_client, ingest_neurosynth):
+async def test_is_active_not_exposed_in_api(async_auth_client, ingest_neurosynth):
     """Test that is_active and superseded_by are not exposed in API responses"""
     # Get a base study
-    resp = auth_client.get("/api/base-studies/")
+    resp = await async_auth_client.get("/api/base-studies/")
     assert resp.status_code == 200
     data = resp.json()
 

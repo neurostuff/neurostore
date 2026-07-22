@@ -1,9 +1,7 @@
-from neurostore import create_app
+from neurostore import create_asgi_app
 from neurostore.database import db
 from neurostore.extensions import cache
 
-app = create_app()
-connexion_app = app.extensions["connexion_app"]
-asgi_app = app.extensions["connexion_asgi"]
+asgi_app = create_asgi_app()
 
-__all__ = ["app", "connexion_app", "asgi_app", "db", "cache"]
+__all__ = ["asgi_app", "db", "cache"]

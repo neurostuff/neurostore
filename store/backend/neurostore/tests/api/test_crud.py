@@ -1,4 +1,6 @@
 import pytest
+
+pytestmark = pytest.mark.anyio
 from marshmallow import fields
 
 from neurostore.models import (
@@ -40,7 +42,7 @@ from neurostore.schemas.data import StringOrNested
         ("points", Point, PointSchema),
     ],
 )
-def test_create(auth_client, user_data, endpoint, model, schema, session):
+async def test_create(async_auth_client, user_data, endpoint, model, schema, session):
     user = User.query.filter_by(name="user1").first()
 
     rows = model.query.filter_by(user=user).all()
@@ -51,11 +53,11 @@ def test_create(auth_client, user_data, endpoint, model, schema, session):
             payload["doi"] = payload["doi"] + "new"
             payload["pmid"] = payload["pmid"] + "new"
 
-        resp = auth_client.post(f"/api/{endpoint}/", data=payload)
+        resp = await async_auth_client.post(f"/api/{endpoint}/", data=payload)
         if resp.status_code == 422:
             print(resp.text)
             print(payload)
-            print(auth_client.username)
+            print(async_auth_client.username)
         assert resp.status_code == 200
     sf = schema().fields
     # do not check keys if they are nested (difficult to generally check)
@@ -94,7 +96,7 @@ def test_create(auth_client, user_data, endpoint, model, schema, session):
         ("points", Point, PointSchema),  # user, point_value
     ],
 )
-def test_read(auth_client, user_data, endpoint, model, schema, session):
+async def test_read(async_auth_client, user_data, endpoint, model, schema, session):
     user = User.query.filter_by(name="user1").first()
     query = True
     if hasattr(model, "public"):
@@ -104,7 +106,7 @@ def test_read(auth_client, user_data, endpoint, model, schema, session):
 
     expected_results = model.query.filter(query).all()
 
-    pre = auth_client.client.options(
+    pre = await async_auth_client.client.options(
         f"/api/{endpoint}",
         headers={
             "Origin": "http://example.com",
@@ -112,7 +114,7 @@ def test_read(auth_client, user_data, endpoint, model, schema, session):
         },
     )
     assert pre.status_code == 200
-    resp = auth_client.get(f"/api/{endpoint}/")
+    resp = await async_auth_client.get(f"/api/{endpoint}/")
 
     assert resp.status_code == 200
     assert len(expected_results) == len(resp.json()["results"])
@@ -123,7 +125,7 @@ def test_read(auth_client, user_data, endpoint, model, schema, session):
 
     # get specific record
     record = expected_results[0]
-    get_resp = auth_client.get(f"/api/{endpoint}/{record.id}")
+    get_resp = await async_auth_client.get(f"/api/{endpoint}/{record.id}")
     assert get_resp.status_code == 200
 
 
@@ -146,11 +148,11 @@ def test_read(auth_client, user_data, endpoint, model, schema, session):
         ("points", Point, PointSchema, {"space": "MNI"}),
     ],
 )
-def test_update(auth_client, user_data, endpoint, model, schema, update, session):
+async def test_update(async_auth_client, user_data, endpoint, model, schema, update, session):
     user = User.query.filter_by(name="user1").first()
     record = model.query.filter_by(user=user).first()
 
-    resp = auth_client.put(f"/api/{endpoint}/{record.id}", data=update)
+    resp = await async_auth_client.put(f"/api/{endpoint}/{record.id}", data=update)
 
     assert resp.status_code == 200
     session.refresh(record)
@@ -171,12 +173,12 @@ def test_update(auth_client, user_data, endpoint, model, schema, update, session
         ("points", Point, PointSchema),
     ],
 )
-def test_delete(auth_client, mock_auth, user_data, endpoint, model, schema, session):
+async def test_delete(async_auth_client, mock_auth, user_data, endpoint, model, schema, session):
     user = User.query.filter_by(name="user1").first()
     record = model.query.filter_by(user=user).first()
     r_id = record.id
 
-    resp = auth_client.delete(f"/api/{endpoint}/{r_id}")
+    resp = await async_auth_client.delete(f"/api/{endpoint}/{r_id}")
 
     assert resp.status_code == 200
 
