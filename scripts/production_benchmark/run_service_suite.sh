@@ -102,7 +102,7 @@ case "$SERVICE" in
     BUCKET="neurostore-backup"
     APP_ENV_VALUE="docker_test"
     TEST_DATABASE="store_test_db"
-    BENCH_SCRIPT_PATH="/production-benchmark-tooling/store/backend/neurostore/production_benchmark.py"
+    BENCH_MODULE="neurostore.production_benchmark"
     BENCH_SERVICE="neurostore"
     SERVICE_CLI="neurostore"
     BEARERINFO_FUNC_VALUE="neurostore.tests.conftest.mock_decode_token"
@@ -117,7 +117,7 @@ case "$SERVICE" in
     BUCKET="neurosynth-backup"
     APP_ENV_VALUE="docker_test"
     TEST_DATABASE="compose_test_db"
-    BENCH_SCRIPT_PATH="/production-benchmark-tooling/compose/backend/neurosynth_compose/production_benchmark.py"
+    BENCH_MODULE="neurosynth_compose.production_benchmark"
     BENCH_SERVICE="compose"
     SERVICE_CLI="compose"
     BEARERINFO_FUNC_VALUE="neurosynth_compose.tests.conftest.mock_decode_token"
@@ -320,14 +320,13 @@ run_step "Apply database migrations" \
   docker compose run --rm -T \
   "${RUN_ENV_ARGS[@]}" \
   "${BENCH_SERVICE}" \
-  bash -lc "${SERVICE_CLI} db upgrade --revision heads"
+  bash -lc "if command -v ${SERVICE_CLI} >/dev/null 2>&1; then ${SERVICE_CLI} db upgrade --revision heads; else flask --app manage:app db upgrade heads; fi"
 
 run_step "Run benchmark module" \
   docker compose run --rm -T \
-  -v "${TOOLING_REPO_ROOT}:/production-benchmark-tooling:ro" \
   "${RUN_ENV_ARGS[@]}" \
   -e "BEARERINFO_FUNC=${BEARERINFO_FUNC_VALUE}" \
   "${BENCH_SERVICE}" \
-  bash -lc "python ${BENCH_SCRIPT_PATH} --iterations ${ITERATIONS} --output /${SERVICE}/.benchmark-artifacts/${LABEL}.json --scales ${SCALES} ${PROFILE_ARGS[*]}"
+  bash -lc "python -m ${BENCH_MODULE} --iterations ${ITERATIONS} --output /${SERVICE}/.benchmark-artifacts/${LABEL}.json --scales ${SCALES} ${PROFILE_ARGS[*]}"
 
 echo "${RESULT_PATH}"

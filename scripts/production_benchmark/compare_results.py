@@ -52,10 +52,49 @@ def _deduplicate_case_names(cases: list[dict]) -> list[dict]:
     return deduplicated
 
 
-def extract_cases(results: dict) -> list[dict]:
+def _percentile(values: list[float], percentile: float) -> float:
+    if not values:
+        return 0.0
+    if len(values) == 1:
+        return values[0]
+
+    sorted_values = sorted(values)
+    rank = (len(sorted_values) - 1) * percentile
+    lower_index = int(rank)
+    upper_index = min(lower_index + 1, len(sorted_values) - 1)
+    fraction = rank - lower_index
+    return sorted_values[lower_index] + (
+        sorted_values[upper_index] - sorted_values[lower_index]
+    ) * fraction
+
+
+def _with_iteration_metrics(case: dict, *, drop_first_iteration: bool) -> dict:
+    if not drop_first_iteration:
+        return case
+
+    iterations = list(case.get("iterations") or [])
+    if len(iterations) <= 1:
+        return case
+
+    measured = iterations[1:]
+    case = dict(case)
+    case["iterations"] = measured
+    case["median_seconds"] = _percentile(measured, 0.5)
+    case["p95_seconds"] = _percentile(measured, 0.95)
+    return case
+
+
+def extract_cases(results: dict, *, drop_first_iteration: bool = False) -> list[dict]:
     cases = results.get("cases") or []
     if cases:
-        return _deduplicate_case_names(cases)
+        return _deduplicate_case_names(
+            [
+                _with_iteration_metrics(
+                    case, drop_first_iteration=drop_first_iteration
+                )
+                for case in cases
+            ]
+        )
 
     extracted_cases = []
     for case_analysis in results.get("case_analyses", []):
@@ -91,6 +130,7 @@ def build_rows(
     candidate_cases: dict,
     threshold: float,
     metric: str = "p95_seconds",
+    min_delta_seconds: float = 0.0,
 ) -> tuple[list[dict], list[dict], list[dict]]:
     rows = []
     slowdowns = []
@@ -119,7 +159,7 @@ def build_rows(
             "ratio": ratio,
             "status": "ok",
         }
-        if ratio > threshold:
+        if ratio > threshold and delta > min_delta_seconds:
             row["status"] = "slow"
             slowdowns.append(row)
         rows.append(row)
@@ -145,11 +185,13 @@ def render_report(
     mismatches: list[dict],
     threshold: float,
     metric: str = "p95_seconds",
+    min_delta_seconds: float = 0.0,
 ) -> str:
     lines = [
         f"**Service:** `{service}`",
         f"**Metric:** `{metric}`",
         f"**Threshold:** `{format_pct(threshold)} slower`",
+        f"**Minimum absolute slowdown:** `{format_seconds(min_delta_seconds)}`",
         "",
         "| Case | Baseline | Candidate | Delta | Status |",
         "| --- | ---: | ---: | ---: | --- |",
@@ -212,20 +254,57 @@ def main() -> int:
     parser.add_argument("--candidate", required=True)
     parser.add_argument("--metric", default="p95_seconds")
     parser.add_argument("--threshold", type=float, default=0.2)
+    parser.add_argument(
+        "--min-delta-seconds",
+        type=float,
+        default=0.0,
+        help=(
+            "Only fail a slowdown when the relative threshold is exceeded and "
+            "the absolute delta is larger than this many seconds."
+        ),
+    )
     parser.add_argument("--summary-file")
+    parser.add_argument(
+        "--drop-first-iteration",
+        action="store_true",
+        help=(
+            "Recompute median/p95 from the per-case iterations after dropping "
+            "the first sample for both baseline and candidate."
+        ),
+    )
     args = parser.parse_args()
 
     baseline = load_results(Path(args.baseline))
     candidate = load_results(Path(args.candidate))
     service = candidate.get("service") or baseline.get("service") or "unknown"
 
-    baseline_cases = {case["name"]: case for case in extract_cases(baseline)}
-    candidate_cases = {case["name"]: case for case in extract_cases(candidate)}
+    baseline_cases = {
+        case["name"]: case
+        for case in extract_cases(
+            baseline, drop_first_iteration=args.drop_first_iteration
+        )
+    }
+    candidate_cases = {
+        case["name"]: case
+        for case in extract_cases(
+            candidate, drop_first_iteration=args.drop_first_iteration
+        )
+    }
     rows, slowdowns, mismatches = build_rows(
-        baseline_cases, candidate_cases, args.threshold, metric=args.metric
+        baseline_cases,
+        candidate_cases,
+        args.threshold,
+        metric=args.metric,
+        min_delta_seconds=args.min_delta_seconds,
     )
     report = render_report(
-        service, rows, slowdowns, mismatches, args.threshold, metric=args.metric
+        service,
+        rows,
+        slowdowns,
+        mismatches,
+        args.threshold,
+        metric=args.metric,
+        min_delta_seconds=args.min_delta_seconds,
     )
 
     print(report)
