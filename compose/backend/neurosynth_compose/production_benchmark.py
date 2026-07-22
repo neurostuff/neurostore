@@ -34,9 +34,8 @@ from neurosynth_compose.models.analysis import (
     NeurostoreStudyset as NeurostoreStudyset,
 )
 from neurosynth_compose.models.auth import User
-from flask import current_app
 from neurosynth_compose.resources.data_views import meta_analysis_jobs_view
-from neurosynth_compose.tests.request_utils import Client
+from neurosynth_compose.tests.request_utils import Client, configure_default_asgi_app
 
 TOKEN = encode({"sub": "user1-id"}, "abc", algorithm="HS256")
 DEFAULT_SCALES = [10, 50, 100, 200]
@@ -53,7 +52,8 @@ def _load_app():
     os.environ.setdefault("APP_ENV", "testing")
     os.environ["CONNEXION_DISABLE_RESPONSE_VALIDATION"] = "1"
     from neurosynth_compose import config as config_module
-    from neurosynth_compose import create_app
+    from neurosynth_compose import create_asgi_app
+    from neurosynth_compose.settings import load_settings
 
     config_module.Config.BEARERINFO_FUNC = (
         "neurosynth_compose.tests.conftest.mock_decode_token"
@@ -61,7 +61,10 @@ def _load_app():
     config_module.Config.APIKEYINFO_FUNC = (
         "neurosynth_compose.resources.auth.verify_key"
     )
-    return create_app()
+    settings = load_settings()
+    app = create_asgi_app(settings)
+    configure_default_asgi_app(app)
+    return SimpleNamespace(config=settings, asgi_app=app)
 
 
 def _response_json(response):
@@ -109,7 +112,9 @@ def _ensure_user():
 def _ensure_schema_ready():
     if "users" in inspect(db.engine).get_table_names():
         return
-    db.create_all()
+    from neurosynth_compose import service_migrations
+
+    service_migrations.upgrade("heads")
 
 
 def _discover_project_provenance_target_bytes():
@@ -771,9 +776,7 @@ def _benchmark_case(
     profiling = None
     peak_memory_bytes = None
 
-    use_isolated_clients = client_ref is not None and not getattr(
-        client_ref.current, "client_flask", False
-    )
+    use_isolated_clients = client_ref is not None
     original_client = client_ref.current if client_ref is not None else None
     warmup_client = Client(token=TOKEN) if use_isolated_clients else None
     try:
@@ -808,16 +811,7 @@ def _benchmark_case(
                         return fn(index) or {}
                     if not use_isolated_clients:
                         return fn(index) or {}
-                    connexion_app = current_app.extensions.get("connexion_app")
-                    if connexion_app is not None and hasattr(
-                        connexion_app, "test_client"
-                    ):
-                        profile_test_client = connexion_app.test_client()
-                    else:
-                        profile_test_client = current_app.test_client()
-                    profile_client = Client(
-                        token=TOKEN, test_client=profile_test_client
-                    )
+                    profile_client = Client(token=TOKEN)
                     previous_client = client_ref.current
                     client_ref.current = profile_client
                     try:
@@ -1198,12 +1192,12 @@ def run(
     scale_limit: int | None = None,
     production_project_provenance_bytes: int | None = None,
 ):
-    app = _load_app()
-    ctx = app.app_context()
-    ctx.push()
+    _load_app()
     client = Client(token=TOKEN)
     client_ref = SimpleNamespace(current=client)
-    rollback_writes = _env_flag("PRODUCTION_BENCHMARK_ROLLBACK_WRITES", True)
+    # ASGI requests run in independent request-scoped sessions. Wrapping the
+    # benchmark driver in an outer transaction can lock rows those requests need.
+    rollback_writes = _env_flag("PRODUCTION_BENCHMARK_ROLLBACK_WRITES", False)
     job_store = _InMemoryJobStore()
 
     try:
@@ -1714,7 +1708,6 @@ def run(
                 }
     finally:
         client.close()
-        ctx.pop()
 
 
 def run_scaling_profile(

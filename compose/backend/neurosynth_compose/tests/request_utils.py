@@ -1,28 +1,24 @@
 import json
 from functools import partialmethod
 
-from starlette.testclient import TestClient as StarletteTestClient
+import anyio
+import httpx
+
+
+_default_asgi_app = None
+
+
+def configure_default_asgi_app(asgi_app):
+    global _default_asgi_app
+    _default_asgi_app = asgi_app
 
 
 class Client(object):
     def __init__(self, token, test_client=None, prepend="", username=None):
-        self.client_mode = "requests"
-
         if test_client is None:
-            from flask import current_app as app
-
-            asgi_app = app.extensions.get("connexion_asgi")
-            connexion_app = app.extensions.get("connexion_app")
-
-            if asgi_app is not None:
-                test_client = StarletteTestClient(asgi_app)
-            elif connexion_app is not None and hasattr(connexion_app, "test_client"):
-                test_client = connexion_app.test_client()
-            else:
-                test_client = app.test_client()
-
-        self.client_flask = hasattr(test_client, "open")
-        self.client_mode = "flask" if self.client_flask else "requests"
+            if _default_asgi_app is None:
+                raise RuntimeError("No default ASGI test application has been configured.")
+            test_client = _default_asgi_app
 
         self.client = test_client
         self.prepend = prepend
@@ -36,8 +32,7 @@ class Client(object):
     def _get_headers(self):
         if self.token is not None:
             return {"Authorization": "Bearer %s" % self.token}
-        else:
-            return None
+        return None
 
     def _make_request(
         self,
@@ -49,8 +44,6 @@ class Client(object):
         content_type=None,
         json_dump=True,
     ):
-        """Generic request handler"""
-        request_function = getattr(self.client, request)
         base_headers = self._get_headers()
         headers = headers or {}
         if base_headers:
@@ -60,34 +53,37 @@ class Client(object):
             content_type = "application/json"
 
         headers.setdefault("Accept", content_type)
-
         route = self.prepend + route
 
-        if self.client_mode == "flask":
-            if data is not None and json_dump is True:
-                data = json.dumps(data)
-
-            return request_function(
-                route,
-                data=data,
-                headers=headers,
-                content_type=content_type,
-                query_string=params,
-            )
-        else:
-            kwargs = {"headers": headers}
-            if params is not None:
-                kwargs["params"] = params
-            if data is not None:
-                if json_dump and content_type == "application/json":
-                    kwargs["json"] = data
-                elif content_type.startswith("multipart/form-data"):
-                    kwargs["files"] = data
-                    kwargs["headers"].pop("Content-Type", None)
-                else:
-                    kwargs["data"] = data
+        kwargs = {"headers": headers}
+        if params is not None:
+            kwargs["params"] = params
+        if data is not None:
+            if json_dump and content_type == "application/json":
+                kwargs["json"] = data
+            elif content_type.startswith("multipart/form-data"):
+                kwargs["files"] = data
+                kwargs["headers"].pop("Content-Type", None)
+            else:
+                kwargs["data"] = data
+        request_function = getattr(self.client, request, None)
+        if callable(request_function):
             response = request_function(route, **kwargs)
-            return ResponseWrapper(response)
+        else:
+            response = anyio.run(self._make_asgi_request, request, route, kwargs)
+
+        from neurosynth_compose.database import db
+
+        db.session.expire_all()
+        return ResponseWrapper(response)
+
+    async def _make_asgi_request(self, request, route, kwargs):
+        transport = httpx.ASGITransport(app=self.client)
+        async with httpx.AsyncClient(
+            transport=transport, base_url="http://testserver", follow_redirects=True
+        ) as client:
+            request_function = getattr(client, request)
+            return await request_function(route, **kwargs)
 
     get = partialmethod(_make_request, "get")
     post = partialmethod(_make_request, "post")

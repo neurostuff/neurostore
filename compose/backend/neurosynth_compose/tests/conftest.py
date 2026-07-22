@@ -2,11 +2,11 @@ import copy
 import itertools
 import json
 import pathlib
+from contextlib import nullcontext
 from os import environ
 from os.path import isfile
 from unittest.mock import patch
 
-import flask_sqlalchemy
 import pytest
 import sqlalchemy as sa
 from auth0.authentication import GetToken
@@ -30,19 +30,6 @@ from neurosynth_compose.resources.resource_services import (
     ensure_canonical_annotation,
     ensure_canonical_studyset,
 )
-
-# Patch Flask-SQLAlchemy teardown to ignore AttributeError on session.remove()
-orig_teardown_session = flask_sqlalchemy.SQLAlchemy._teardown_session
-
-
-def safe_teardown_session(self, exc):
-    try:
-        orig_teardown_session(self, exc)
-    except AttributeError:
-        pass
-
-
-flask_sqlalchemy.SQLAlchemy._teardown_session = safe_teardown_session
 
 DATA_PATH = pathlib.Path(__file__).parent.resolve() / "data"
 
@@ -224,9 +211,22 @@ class MockNSSDKClient:
         self.access_token = access_token
 
 
+class MockGetToken:
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def client_credentials(self, audience=None):
+        return {"token_type": "Bearer", "access_token": "mock-client-token"}
+
+
 @pytest.fixture(scope="session")
 def mock_pynv(monkeysession):
     monkeysession.setattr("pynv.Client", MockPYNVClient)
+
+
+@pytest.fixture(scope="session", autouse=True)
+def mock_auth0_get_token(monkeysession):
+    monkeysession.setattr("auth0.authentication.get_token.GetToken", MockGetToken)
 
 
 @pytest.fixture(scope="session")
@@ -234,6 +234,12 @@ def mock_auth(monkeysession):
     """Override auth handler config so Connexion resolves the test decoder."""
     from neurosynth_compose import config as config_module
 
+    monkeysession.setenv(
+        "BEARERINFO_FUNC", "neurosynth_compose.tests.conftest.mock_decode_token"
+    )
+    monkeysession.setenv(
+        "APIKEYINFO_FUNC", "neurosynth_compose.resources.auth.verify_key"
+    )
     monkeysession.setattr(
         config_module.Config,
         "BEARERINFO_FUNC",
@@ -263,39 +269,93 @@ Session / db management tools
 """
 
 
+class TestApplication:
+    """Small application facade retained for tests that inspect runtime config."""
+
+    def __init__(self, config, asgi_app, database):
+        self.config = config
+        self.asgi_app = asgi_app
+        self.extensions = {
+            "sqlalchemy": database,
+            "connexion_asgi": asgi_app,
+        }
+
+    def app_context(self):
+        return nullcontext(self)
+
+    def test_request_context(self, path="/", **kwargs):
+        del path
+        from neurosynth_compose.http import test_request_context
+        from neurosynth_compose.runtime import configure_runtime, get_runtime
+
+        previous_runtime = get_runtime()
+        configure_runtime(self.config, previous_runtime.logger)
+
+        request_context = test_request_context(**kwargs)
+
+        class _RuntimeRequestContext:
+            def __enter__(self_inner):
+                return request_context.__enter__()
+
+            def __exit__(self_inner, exc_type, exc, traceback):
+                try:
+                    return request_context.__exit__(exc_type, exc, traceback)
+                finally:
+                    configure_runtime(previous_runtime.config, previous_runtime.logger)
+
+        return _RuntimeRequestContext()
+
+
 @pytest.fixture(scope="session")
 def app(mock_auth):
-    """Session-wide test `Flask` application."""
+    """Session-wide native ASGI test application."""
     environ.setdefault("APP_ENV", "testing")
 
-    from neurosynth_compose import create_app
+    from neurosynth_compose import create_asgi_app
+    from neurosynth_compose.settings import load_settings
+    from neurosynth_compose.tests.request_utils import configure_default_asgi_app
 
-    _app = create_app()
-    # _app.config["SQLALCHEMY_ECHO"] = True
-
-    # Establish an application context before running the tests.
-    ctx = _app.app_context()
-    ctx.push()
+    settings = load_settings()
+    settings["SQLALCHEMY_ENGINE_OPTIONS"] = {
+        "max_overflow": -1,
+        "pool_timeout": 5,
+        "pool_size": 0,
+    }
+    asgi_app = create_asgi_app(settings)
+    _app = TestApplication(settings, asgi_app, _db)
+    configure_default_asgi_app(asgi_app)
 
     yield _app
 
-    ctx.pop()
+
+def _reset_migrated_schema(db):
+    with db.engine.connect() as conn:
+        conn.execute(
+            sa.text(
+                "SELECT pg_terminate_backend(pid) "
+                "FROM pg_stat_activity "
+                "WHERE datname = current_database() "
+                "AND pid <> pg_backend_pid()"
+            )
+        )
+        conn.execute(sa.text("DROP SCHEMA IF EXISTS public CASCADE"))
+        conn.execute(sa.text("CREATE SCHEMA public"))
+        conn.commit()
+    from neurosynth_compose import service_migrations
+
+    service_migrations.upgrade("heads")
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="session")
 def db(app):
     """Session-wide test database."""
-    _db.create_all()
+    _db.session.remove()
+    _reset_migrated_schema(_db)
 
     yield _db
 
-    try:
-        _db.session.remove()
-    except AttributeError:
-        pass
-
     sa.orm.close_all_sessions()
-    _db.drop_all()
+    _db.session.remove()
 
 
 @pytest.fixture(scope="session")
@@ -309,37 +369,43 @@ def celery_app(app):
     return test_celery
 
 
+def _truncate_public_tables(db):
+    inspector = sa.inspect(db.engine)
+    table_names = sorted(
+        table_name
+        for table_name in inspector.get_table_names(schema="public")
+        if table_name != "alembic_version"
+    )
+    if not table_names:
+        return
+
+    quoted_tables = ", ".join(f'"public"."{table_name}"' for table_name in table_names)
+    with db.engine.begin() as conn:
+        conn.execute(
+            sa.text(f"TRUNCATE TABLE {quoted_tables} RESTART IDENTITY CASCADE")
+        )
+
+
+class _ScopedSessionProxy:
+    def __init__(self, scoped_session, bind):
+        self._scoped_session = scoped_session
+        self.bind = bind
+
+    def __getattr__(self, name):
+        return getattr(self._scoped_session, name)
+
+
 @pytest.fixture(scope="function", autouse=True)
 def session(db):
-    """Creates a single standardized db session for each test.
-    Changes in session are rolled back at test end via savepoint/transaction."""
-    connection = db.engine.connect()
-    transaction = connection.begin()
+    """Reset the migrated test database between tests."""
+    scoped_session = db.session
+    scoped_session.remove()
+    _truncate_public_tables(db)
 
-    options = dict(bind=connection, binds={})
-    session = db._make_scoped_session(options=options)
+    yield _ScopedSessionProxy(scoped_session, db.engine)
 
-    session.begin_nested()
-
-    # session is actually a scoped_session
-    # for the `after_transaction_end` event, we need a session instance to
-    # listen for, hence the `session()` call
-    @sa.event.listens_for(session(), "after_transaction_end")
-    def restart_savepoint(sess, trans):
-        # On nested transaction end, restart the savepoint to preserve isolation
-        if trans.nested and not getattr(
-            getattr(trans, "_parent", None), "nested", False
-        ):
-            session.expire_all()
-            session.begin_nested()
-
-    db.session = session
-
-    yield session
-
-    session.remove()
-    transaction.rollback()
-    connection.close()
+    scoped_session.remove()
+    _truncate_public_tables(db)
 
 
 """
@@ -418,6 +484,7 @@ def mock_add_users(app, db, mock_auth, session):
         session.add(User(name="neurosynth_compose", external_id="neurosynth_compose"))
         session.flush()
 
+    session.commit()
     yield tokens
 
 
@@ -525,6 +592,14 @@ def user_data(app, db, mock_add_users, session):
             user = session.execute(
                 select(User).where(User.external_id == user_info["external_id"])
             ).scalar_one_or_none()
+            if user is None:
+                user = User(
+                    id=user_info["id"],
+                    name=user_info["external_id"].removesuffix("-id"),
+                    external_id=user_info["external_id"],
+                )
+                session.add(user)
+                session.flush()
 
             # Create canonical studyset/annotation rows using the strict
             # DB-level dedupe path (INSERT ... ON CONFLICT DO NOTHING).
@@ -614,9 +689,10 @@ def user_data(app, db, mock_add_users, session):
                 )
 
         session.add_all(to_commit)
-        # Use flush so objects are persisted to the current transaction/savepoint
-        # but not committed at session level; test savepoint will handle rollback.
-        session.flush()
+        # ASGI requests use independent request-scoped sessions. Commit seeded
+        # fixture data so endpoint handlers can read it without blocking on the
+        # fixture transaction; per-test truncation provides isolation.
+        session.commit()
 
         # Verify the objects we expected to be created were actually persisted.
         # Do not attempt to create missing related objects post-commit; instead

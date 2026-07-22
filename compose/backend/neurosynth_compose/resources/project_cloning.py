@@ -3,7 +3,7 @@ from __future__ import annotations
 from copy import deepcopy
 from urllib.parse import urlencode
 
-from flask import abort, current_app, request
+from neurosynth_compose.http import abort, current_app, request
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 

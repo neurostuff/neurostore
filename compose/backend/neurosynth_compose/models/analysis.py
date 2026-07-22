@@ -119,7 +119,7 @@ class Specification(BaseMixin, db.Model):
 
     type = Column(Text)
     estimator = Column(JSON)
-    filter = Column(Text)
+    filter = Column(JSON)
     weights = association_proxy("specification_conditions", "weight")
     conditions = association_proxy("specification_conditions", "condition")
     database_studyset = Column(Text)

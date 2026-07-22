@@ -2,7 +2,7 @@ import os
 import traceback
 from pathlib import Path
 
-from flask import current_app as app
+from neurosynth_compose.http import current_app as app
 from sqlalchemy import select
 
 from neurosynth_compose.core import celery_app

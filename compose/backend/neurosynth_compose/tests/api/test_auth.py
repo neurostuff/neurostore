@@ -21,11 +21,12 @@ def mock_add_users_pure():
 
 def test_decode_token(monkeypatch, mock_add_users_pure):
     import json
-    import types
+    import logging
 
     from connexion.exceptions import OAuthProblem
 
     from neurosynth_compose.resources import auth
+    from neurosynth_compose.runtime import configure_runtime, get_runtime
 
     # Patch urlopen to return a fake JWKS
     class FakeResponse:
@@ -60,12 +61,12 @@ def test_decode_token(monkeypatch, mock_add_users_pure):
 
     monkeypatch.setattr(auth.jwt, "decode", fake_jwt_decode)
 
-    # Patch app.config
     fake_config = {
         "AUTH0_BASE_URL": "https://fake-auth0.com",
         "AUTH0_API_AUDIENCE": "fake-audience",
     }
-    monkeypatch.setattr(auth, "app", types.SimpleNamespace(config=fake_config))
+    previous_runtime = get_runtime()
+    configure_runtime(fake_config, logging.getLogger("test"))
 
     # Test invalid token raises a Connexion-native 401
     with pytest.raises(OAuthProblem) as exc_info:
@@ -77,6 +78,8 @@ def test_decode_token(monkeypatch, mock_add_users_pure):
     for user in mock_add_users_pure.values():
         result = auth.decode_token(user["token"])
         assert result["sub"] == "mocked-user-id"
+
+    configure_runtime(previous_runtime.config, previous_runtime.logger)
 
 
 def test_creating_new_user_on_db(session, mock_add_users):

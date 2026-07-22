@@ -1,5 +1,5 @@
 from auth0.management import ManagementClient
-from flask import current_app
+from neurosynth_compose.http import current_app
 
 from neurosynth_compose.resources.users import User
 

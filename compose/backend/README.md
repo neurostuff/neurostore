@@ -74,6 +74,16 @@ docker-compose exec compose compose db upgrade
 
 `upgrade` is idempotent, so rerunning it is harmless; it only applies migrations that have not been run yet.
 
+For a deployment rollback within the current compatible migration window, use:
+
+```sh
+docker-compose exec compose compose db downgrade --revision -1
+```
+
+Migrations must follow expand/contract: add compatible schema first, deploy
+read-compatible code, backfill, then remove obsolete schema only in a later
+release. CI verifies the current-head downgrade/upgrade round trip.
+
 ### Resetting the database when switching branches
 
 Because each branch might change the schema independently, recreate the database before starting work on a different branch so that Alembic can replay only the migrations that exist on that branch.

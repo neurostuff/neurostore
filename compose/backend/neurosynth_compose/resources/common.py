@@ -3,7 +3,7 @@ from __future__ import annotations
 import connexion
 import orjson
 from connexion.lifecycle import ConnexionResponse
-from flask import current_app, g, request
+from neurosynth_compose.http import current_app, g, request
 from sqlalchemy.orm import selectinload
 from webargs import fields
 
@@ -61,8 +61,7 @@ def create_user():
     if "@" in name:
         name = profile_info.get("nickname", "Unknown")
 
-    # Prefer Flask `g` if present (set by security handlers), then
-    # request-specific Connexion context, then module-level Connexion context.
+    # Prefer the request-local runtime context, then Connexion fallbacks used by tests.
     try:
         user_id = getattr(g, "user", None)
     except Exception:
@@ -84,8 +83,7 @@ def create_user():
 
 
 def get_current_user():
-    # Prefer Flask `g` first, then request-scoped Connexion context,
-    # then module-level Connexion context.
+    # Prefer the request-local runtime context, then Connexion fallbacks used by tests.
     try:
         user_id = getattr(g, "user", None)
     except Exception:

@@ -1,5 +1,5 @@
 from marshmallow import Schema, fields, post_dump, post_load, pre_load, utils
-from flask import current_app
+from neurosynth_compose.http import current_app
 
 from neurosynth_compose.map_types import canonicalize_map_type, map_type_label
 

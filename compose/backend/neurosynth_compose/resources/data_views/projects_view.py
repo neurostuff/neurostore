@@ -3,12 +3,12 @@ from __future__ import annotations
 from functools import lru_cache
 
 import orjson
-from flask import request
+from neurosynth_compose.http import request
 from marshmallow.exceptions import ValidationError
 from sqlalchemy import Text, cast, func, literal, select, update
 from sqlalchemy.orm import joinedload, load_only, selectinload
 from webargs import fields
-from webargs.flaskparser import parser
+from neurosynth_compose.http import parser
 
 from neurosynth_compose.database import commit_session, db
 from neurosynth_compose.models.analysis import (
@@ -495,7 +495,7 @@ class ProjectsView(ObjectView, ListView):
         args = parser.parse(getattr(self, "_user_args", {}), request, location="query")
         row = db.session.execute(self.load_object_query(id, args=args)).first()
         if row is None:
-            from flask import abort
+            from neurosynth_compose.http import abort
 
             abort(404)
         record, raw_provenance_json = row
@@ -520,7 +520,7 @@ class ProjectsView(ObjectView, ListView):
         if project:
             for meta_analysis in project.meta_analyses:
                 if meta_analysis.results:
-                    from flask import abort
+                    from neurosynth_compose.http import abort
 
                     abort(
                         409,
@@ -547,7 +547,7 @@ class ProjectsView(ObjectView, ListView):
         try:
             data = parser.parse(self.__class__._schema, request)
         except ValidationError as exc:
-            from flask import abort
+            from neurosynth_compose.http import abort
 
             abort(
                 422, description=f"input does not conform to specification: {str(exc)}"
@@ -570,7 +570,7 @@ class ProjectsView(ObjectView, ListView):
         try:
             data = self.__class__._schema().load(request_data)
         except ValidationError as exc:
-            from flask import abort
+            from neurosynth_compose.http import abort
 
             abort(
                 422, description=f"input does not conform to specification: {str(exc)}"
