@@ -11,32 +11,32 @@ describe('SearchBar Component', () => {
         vi.clearAllMocks();
     });
 
-    it('should render', () => {
+    it('should render', async () => {
         render(<SearchBar onSearch={onSearchMock} />);
 
         const searchBar = screen.getByRole('textbox');
         expect(searchBar).toBeInTheDocument();
     });
 
-    it('should input text', () => {
+    it('should input text', async () => {
         // ARRANGE
         render(<SearchBar onSearch={onSearchMock} />);
 
         const searchBar = screen.getByRole('textbox');
-        userEvent.type(searchBar, 'ABCDEF');
+        await userEvent.type(searchBar, 'ABCDEF');
 
         // ASSERT
         expect(screen.getByDisplayValue('ABCDEF')).toBeInTheDocument();
     });
 
-    it('should invoke a search when clicked', () => {
+    it('should invoke a search when clicked', async () => {
         render(<SearchBar onSearch={onSearchMock} />);
 
         const searchBar = screen.getByRole('textbox');
-        userEvent.type(searchBar, 'ABCDEF');
+        await userEvent.type(searchBar, 'ABCDEF');
 
         const searchButton = screen.getByTestId('SearchIcon');
-        userEvent.click(searchButton);
+        await userEvent.click(searchButton);
         expect(onSearchMock).toBeCalledWith({
             authorSearch: undefined,
             dataType: expect.any(String),
@@ -50,23 +50,23 @@ describe('SearchBar Component', () => {
         });
     });
 
-    it('should invoke a search when enter is pressed', () => {
+    it('should invoke a search when enter is pressed', async () => {
         render(<SearchBar onSearch={onSearchMock} />);
 
         const searchBar = screen.getByRole('textbox');
-        userEvent.type(searchBar, 'ABCDEF{enter}');
+        await userEvent.type(searchBar, 'ABCDEF{enter}');
 
         expect(onSearchMock).toBeCalled();
     });
 
-    it('should color the search button with the given styling', () => {
+    it('should color the search button with the given styling', async () => {
         render(<SearchBar searchButtonColor="#FFFFFF" onSearch={onSearchMock} />);
 
         const button = screen.getByTestId('SearchIcon');
         expect(button.parentElement).toHaveStyle({ backgroundColor: 'rgb(255, 255, 255);' }); // equivalent to '#FFFFFF', dont forget semicolon
     });
 
-    it('should show the error when there is one', () => {
+    it('should show the error when there is one', async () => {
         render(<SearchBar error="there is an error" onSearch={onSearchMock} />);
         expect(screen.getByText('there is an error')).toBeInTheDocument();
     });

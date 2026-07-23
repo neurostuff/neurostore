@@ -92,29 +92,29 @@ describe('CurationDownloadSummaryButton', () => {
         ]);
     });
 
-    it('should render', () => {
+    it('should render', async () => {
         (useProjectCurationColumns as Mock).mockReturnValue(mockCurationColumns);
         render(<CurationDownloadSummaryButton />);
     });
 
-    it('should be disabled if there are no included studies', () => {
+    it('should be disabled if there are no included studies', async () => {
         (useProjectCurationColumns as Mock).mockReturnValue([]);
         render(<CurationDownloadSummaryButton />);
         const downloadButton = screen.getByText('Download as CSV');
         expect(downloadButton).toBeDisabled();
     });
 
-    it('renders the button group and opens the dropdown menu when clicked', () => {
+    it('renders the button group and opens the dropdown menu when clicked', async () => {
         (useProjectCurationColumns as Mock).mockReturnValue(mockCurationColumns);
         render(<CurationDownloadSummaryButton />);
         const dropdownButton = screen.getByTestId('ArrowDropDownIcon');
         expect(dropdownButton).toBeInTheDocument();
         expect(screen.getByText('Download as CSV')).toBeInTheDocument();
-        userEvent.click(dropdownButton);
+        await userEvent.click(dropdownButton);
         expect(screen.getByRole('menuitem', { name: 'Download as BibTeX' })).toBeInTheDocument();
     });
 
-    it('downloads CSVs when the download CSV button is clicked', () => {
+    it('downloads CSVs when the download CSV button is clicked', async () => {
         const csvStudies =
             `"title","authors","pmid","pmcid","doi","articleYear","journal","articleLink","source","status","exclusion","tags","neurostoreId"\r\n` +
             `"included_1","John Smith","included_pmid_1","included_pmcid_1","included_doi_1","included_articleyear_1","included_journal_1","included_articlelink_1","Neurostore","excluded","exclusion-tag-label","","included_neurostoreid_1"\r\n` +
@@ -123,7 +123,7 @@ describe('CurationDownloadSummaryButton', () => {
         (useProjectCurationColumns as Mock).mockReturnValue(mockCurationColumns);
 
         render(<CurationDownloadSummaryButton />);
-        userEvent.click(screen.getByText('Download as CSV'));
+        await userEvent.click(screen.getByText('Download as CSV'));
         expect(downloadFile).toHaveBeenCalledTimes(1);
         expect(downloadFile).toHaveBeenCalledWith(
             `project-name:Curation:${new Date().toLocaleDateString()}.csv`,
@@ -132,7 +132,7 @@ describe('CurationDownloadSummaryButton', () => {
         );
     });
 
-    it('downloads BibTeX citations when the download BibTeX button is clicked', () => {
+    it('downloads BibTeX citations when the download BibTeX button is clicked', async () => {
         const expectedBibtex =
             `@article{Smithincluded_1,\n` +
             `\tauthor = {Smith, John},\n` +
@@ -158,8 +158,8 @@ describe('CurationDownloadSummaryButton', () => {
         render(<CurationDownloadSummaryButton />);
         const dropdownButton = screen.getByTestId('ArrowDropDownIcon');
         expect(dropdownButton).toBeInTheDocument();
-        userEvent.click(dropdownButton);
-        userEvent.click(screen.getByText('Download as BibTeX'));
+        await userEvent.click(dropdownButton);
+        await userEvent.click(screen.getByText('Download as BibTeX'));
         expect(downloadFile).toHaveBeenCalledWith(
             `project-name:Curation:${new Date().toLocaleDateString()}.bib`,
             expectedBibtex,

@@ -1,5 +1,4 @@
-import { act, render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import CodeSnippet from './CodeSnippet';
 
 describe('CodeSnippet', () => {
@@ -16,8 +15,9 @@ describe('CodeSnippet', () => {
     describe('copy action', () => {
         beforeEach(() => {
             vi.useFakeTimers();
-            Object.assign(navigator, {
-                clipboard: {
+            Object.defineProperty(navigator, 'clipboard', {
+                configurable: true,
+                value: {
                     writeText: vi.fn(() => Promise.resolve()),
                 },
             });
@@ -32,7 +32,7 @@ describe('CodeSnippet', () => {
             const copybutton = screen.getByTestId('ContentCopyIcon');
 
             await act(async () => {
-                userEvent.click(copybutton);
+                fireEvent.click(copybutton);
             });
 
             expect(screen.getByText('✓')).toBeInTheDocument();
@@ -49,7 +49,7 @@ describe('CodeSnippet', () => {
 
             const copybutton = screen.getByTestId('ContentCopyIcon');
             await act(async () => {
-                await userEvent.click(copybutton);
+                fireEvent.click(copybutton);
             });
             expect(navigator.clipboard.writeText).toHaveBeenCalledWith('example 1\nexample 2');
         });

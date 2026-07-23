@@ -48,7 +48,7 @@ describe('useSaveStudy hook', () => {
     beforeEach(() => {
         vi.clearAllMocks();
     });
-    it('should render', () => {
+    it('should render', async () => {
         render(<DummyComponent />);
     });
 
@@ -59,7 +59,7 @@ describe('useSaveStudy hook', () => {
         render(<DummyComponent />);
 
         await act(async () => {
-            userEvent.click(screen.getByTestId('save-study-button'));
+            await userEvent.click(screen.getByTestId('save-study-button'));
         });
 
         expect(useSnackbar().enqueueSnackbar).toHaveBeenCalled();
@@ -87,7 +87,7 @@ describe('useSaveStudy hook', () => {
         render(<DummyComponent />);
 
         await act(async () => {
-            userEvent.click(screen.getByTestId('save-study-button'));
+            await userEvent.click(screen.getByTestId('save-study-button'));
         });
 
         expect(useSnackbar().enqueueSnackbar).toHaveBeenCalled();
@@ -105,7 +105,7 @@ describe('useSaveStudy hook', () => {
         render(<DummyComponent />);
 
         await act(async () => {
-            userEvent.click(screen.getByTestId('save-study-button'));
+            await userEvent.click(screen.getByTestId('save-study-button'));
         });
 
         expect(useUpdateStudyInDB()).toHaveBeenCalled();
@@ -122,7 +122,7 @@ describe('useSaveStudy hook', () => {
         render(<DummyComponent />);
 
         await act(async () => {
-            userEvent.click(screen.getByTestId('save-study-button'));
+            await userEvent.click(screen.getByTestId('save-study-button'));
         });
 
         expect(useUpdateStudyInDB()).toHaveBeenCalled();
@@ -139,7 +139,7 @@ describe('useSaveStudy hook', () => {
         render(<DummyComponent />);
 
         await act(async () => {
-            userEvent.click(screen.getByTestId('save-study-button'));
+            await userEvent.click(screen.getByTestId('save-study-button'));
         });
 
         expect(useUpdateStudyInDB()).not.toHaveBeenCalled();
@@ -161,7 +161,7 @@ describe('useSaveStudy hook', () => {
         render(<DummyComponent />);
 
         await act(async () => {
-            userEvent.click(screen.getByTestId('save-study-button'));
+            await userEvent.click(screen.getByTestId('save-study-button'));
         });
 
         expect(useUpdateStudyInDB()).not.toHaveBeenCalled();

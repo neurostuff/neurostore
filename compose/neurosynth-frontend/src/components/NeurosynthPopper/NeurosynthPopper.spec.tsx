@@ -1,6 +1,5 @@
 import { vi } from 'vitest';
-import { act, render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import NeurosynthPopper from './NeurosynthPopper';
 
 describe('NeurosynthPopper', () => {
@@ -37,19 +36,19 @@ describe('NeurosynthPopper', () => {
             vi.runAllTimers();
         });
         await act(async () => {
-            await userEvent.click(document.body);
+            fireEvent.click(document.body);
         });
         expect(mockOnClickAway).toHaveBeenCalled();
     });
 
-    it('should render and show children when open', () => {
+    it('should render and show children when open', async () => {
         render(<MockParentComponent open={true} />);
 
         const child = screen.getByText('test');
         expect(child).toBeTruthy();
     });
 
-    it('should not render children when closed', () => {
+    it('should not render children when closed', async () => {
         render(<MockParentComponent open={false} />);
         const child = screen.queryByText('test');
         expect(child).not.toBeInTheDocument();

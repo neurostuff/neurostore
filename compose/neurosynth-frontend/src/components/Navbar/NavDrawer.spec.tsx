@@ -31,7 +31,7 @@ describe('NavDrawer component', () => {
     const mockOnLogin = vi.fn();
     const mockOnLogout = vi.fn();
 
-    beforeEach(() => {
+    beforeEach(async () => {
         vi.clearAllMocks();
         clearUnloadHandlers();
         useAuth0().isAuthenticated = false;
@@ -47,18 +47,18 @@ describe('NavDrawer component', () => {
 
         renderResult = render(<NavDrawer onLogin={mockOnLogin} onLogout={mockOnLogout} />);
 
-        userEvent.click(screen.getByTestId('MenuIcon'));
+        await userEvent.click(screen.getByTestId('MenuIcon'));
     });
 
-    it('should render', () => {
+    it('should render', async () => {
         render(<NavDrawer onLogin={mockOnLogin} onLogout={mockOnLogout} />);
     });
 
-    it('should open the drawer', () => {
+    it('should open the drawer', async () => {
         expect(screen.queryByRole('presentation')).toBeInTheDocument();
     });
 
-    it('should show limited options when not authenticated', () => {
+    it('should show limited options when not authenticated', async () => {
         expect(screen.queryByText('new project')).not.toBeInTheDocument();
         expect(screen.queryByText('my projects')).not.toBeInTheDocument();
         expect(screen.queryByText('LOGOUT')).not.toBeInTheDocument();
@@ -68,7 +68,7 @@ describe('NavDrawer component', () => {
         expect(screen.queryByText('SIGN IN/SIGN UP')).toBeInTheDocument();
     });
 
-    it('should show the full range of options when authenticated', () => {
+    it('should show the full range of options when authenticated', async () => {
         useAuth0().isAuthenticated = true;
 
         renderResult.rerender(<NavDrawer onLogin={mockOnLogin} onLogout={mockOnLogout} />);
@@ -99,41 +99,41 @@ describe('NavDrawer component', () => {
         expect(useNavigate()).toHaveBeenCalledWith('/projects/new-project-id');
     });
 
-    it('should login', () => {
+    it('should login', async () => {
         const signInButton = screen.getByText('SIGN IN/SIGN UP');
-        userEvent.click(signInButton);
+        await userEvent.click(signInButton);
 
         expect(mockOnLogin).toHaveBeenCalled();
     });
 
-    it('should logout', () => {
+    it('should logout', async () => {
         useAuth0().isAuthenticated = true;
 
         renderResult.rerender(<NavDrawer onLogin={mockOnLogin} onLogout={mockOnLogout} />);
 
-        userEvent.click(screen.getByText('LOGOUT'));
+        await userEvent.click(screen.getByText('LOGOUT'));
         expect(mockOnLogout).toHaveBeenCalled();
     });
 
-    it('should show the menu with the given menu items', () => {
+    it('should show the menu with the given menu items', async () => {
         render(<NavDrawer onLogin={mockOnLogin} onLogout={mockOnLogout} />);
 
         expect(screen.queryByText('STUDIES')).not.toBeInTheDocument();
         expect(screen.queryByText('META-ANALYSES')).not.toBeInTheDocument();
-        userEvent.click(screen.getByText('EXPLORE'));
+        await userEvent.click(screen.getByText('EXPLORE'));
         expect(screen.getByText('STUDIES')).toBeInTheDocument();
         expect(screen.getByText('META-ANALYSES')).toBeInTheDocument();
     });
 
-    it('should hide the menu with the given menu items', () => {
+    it('should hide the menu with the given menu items', async () => {
         render(<NavDrawer onLogin={mockOnLogin} onLogout={mockOnLogout} />);
 
         expect(screen.queryByText('STUDIES')).not.toBeInTheDocument();
         expect(screen.queryByText('META-ANALYSES')).not.toBeInTheDocument();
-        userEvent.click(screen.getByText('EXPLORE'));
+        await userEvent.click(screen.getByText('EXPLORE'));
         expect(screen.getByText('STUDIES')).toBeInTheDocument();
         expect(screen.getByText('META-ANALYSES')).toBeInTheDocument();
-        userEvent.click(screen.getByText('EXPLORE'));
+        await userEvent.click(screen.getByText('EXPLORE'));
         expect(screen.queryByText('STUDIES')).not.toBeInTheDocument();
         expect(screen.queryByText('META-ANALYSES')).not.toBeInTheDocument();
     });

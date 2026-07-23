@@ -48,7 +48,7 @@ describe('useAuthenticate', () => {
             render(<LoginHarness />);
 
             await act(async () => {
-                userEvent.click(screen.getByTestId('login'));
+                await userEvent.click(screen.getByTestId('login'));
             });
 
             expect(sessionStorage.getItem(AUTH0_FORCE_PROMPT_LOGIN_KEY)).toBeNull();
@@ -70,7 +70,7 @@ describe('useAuthenticate', () => {
             render(<LoginHarness />);
 
             await act(async () => {
-                userEvent.click(screen.getByTestId('login'));
+                await userEvent.click(screen.getByTestId('login'));
             });
 
             expect(useAuth0().getAccessTokenWithPopup as Mock).toHaveBeenCalledWith({
@@ -89,7 +89,7 @@ describe('useAuthenticate', () => {
             render(<LoginHarness />);
 
             await act(async () => {
-                userEvent.click(screen.getByTestId('login'));
+                await userEvent.click(screen.getByTestId('login'));
             });
 
             expect(gtag).toHaveBeenCalledWith('event', 'login');
@@ -103,7 +103,7 @@ describe('useAuthenticate', () => {
             render(<LoginHarness />);
 
             await act(async () => {
-                userEvent.click(screen.getByTestId('login'));
+                await userEvent.click(screen.getByTestId('login'));
             });
 
             expect(sessionStorage.getItem(AUTH0_FORCE_PROMPT_LOGIN_KEY)).toBe('1');
@@ -118,7 +118,7 @@ describe('useAuthenticate', () => {
             render(<LoginHarness />);
 
             await act(async () => {
-                userEvent.click(screen.getByTestId('login'));
+                await userEvent.click(screen.getByTestId('login'));
             });
 
             expect(sessionStorage.getItem(AUTH0_FORCE_PROMPT_LOGIN_KEY)).toBe('1');
@@ -132,7 +132,7 @@ describe('useAuthenticate', () => {
             render(<LoginHarness />);
 
             await act(async () => {
-                userEvent.click(screen.getByTestId('login'));
+                await userEvent.click(screen.getByTestId('login'));
             });
 
             expect(sessionStorage.getItem(AUTH0_FORCE_PROMPT_LOGIN_KEY)).toBeNull();
@@ -147,7 +147,7 @@ describe('useAuthenticate', () => {
             render(<LoginHarness />);
 
             await act(async () => {
-                userEvent.click(screen.getByTestId('login'));
+                await userEvent.click(screen.getByTestId('login'));
             });
 
             expect(sessionStorage.getItem(AUTH0_FORCE_PROMPT_LOGIN_KEY)).toBeNull();
@@ -160,7 +160,7 @@ describe('useAuthenticate', () => {
             render(<LoginHarness />);
 
             await act(async () => {
-                userEvent.click(screen.getByTestId('login'));
+                await userEvent.click(screen.getByTestId('login'));
             });
 
             expect(sessionStorage.getItem(AUTH0_FORCE_PROMPT_LOGIN_KEY)).toBeNull();
@@ -175,12 +175,12 @@ describe('useAuthenticate', () => {
             render(<LoginHarness />);
 
             await act(async () => {
-                userEvent.click(screen.getByTestId('login'));
+                await userEvent.click(screen.getByTestId('login'));
             });
             expect(sessionStorage.getItem(AUTH0_FORCE_PROMPT_LOGIN_KEY)).toBe('1');
 
             await act(async () => {
-                userEvent.click(screen.getByTestId('login'));
+                await userEvent.click(screen.getByTestId('login'));
             });
 
             expect(useAuth0().getAccessTokenWithPopup as Mock).toHaveBeenNthCalledWith(2, {
@@ -196,10 +196,10 @@ describe('useAuthenticate', () => {
     });
 
     describe('handleLogout', () => {
-        it('calls Auth0 logout with returnTo origin', () => {
+        it('calls Auth0 logout with returnTo origin', async () => {
             render(<LoginHarness />);
 
-            userEvent.click(screen.getByTestId('logout'));
+            await userEvent.click(screen.getByTestId('logout'));
 
             expect(useAuth0().logout as Mock).toHaveBeenCalledWith({
                 logoutParams: {
@@ -210,7 +210,7 @@ describe('useAuthenticate', () => {
     });
 
     describe('useAuth0 wiring', () => {
-        it('reads auth helpers from useAuth0', () => {
+        it('reads auth helpers from useAuth0', async () => {
             render(<LoginHarness />);
             expect(useAuth0).toHaveBeenCalled();
             expect(useSnackbar).toHaveBeenCalled();

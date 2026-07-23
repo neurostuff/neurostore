@@ -17,11 +17,11 @@ describe('NavToolbarPopupSubMenu', () => {
         },
     ];
 
-    it('should render', () => {
+    it('should render', async () => {
         render(<NavToolbarPopupSubMenu buttonProps={{}} buttonLabel="button-name" options={[]} />);
     });
 
-    it('should not show the options by default', () => {
+    it('should not show the options by default', async () => {
         render(<NavToolbarPopupSubMenu buttonProps={{}} buttonLabel="button-name" options={mockOptions} />);
 
         mockOptions.forEach((mockOption) => {
@@ -30,9 +30,9 @@ describe('NavToolbarPopupSubMenu', () => {
         });
     });
 
-    it('should show the options when clicked', () => {
+    it('should show the options when clicked', async () => {
         render(<NavToolbarPopupSubMenu buttonProps={{}} buttonLabel="button-name" options={mockOptions} />);
-        userEvent.click(screen.getByText('button-name'));
+        await userEvent.click(screen.getByText('button-name'));
 
         mockOptions.forEach((mockOption) => {
             expect(screen.queryByText(mockOption.label)).toBeInTheDocument();
@@ -43,7 +43,7 @@ describe('NavToolbarPopupSubMenu', () => {
     it('should hide the options when clicked away', async () => {
         render(<NavToolbarPopupSubMenu buttonProps={{}} buttonLabel="button-name" options={mockOptions} />);
 
-        userEvent.click(screen.getByText('button-name'));
+        await userEvent.click(screen.getByText('button-name'));
 
         // It is really annoying to test the Menu Popover. We must select the backdrop that is generated
         // and then get its first child, as that is what the click event listener is attached to.
@@ -64,11 +64,9 @@ describe('NavToolbarPopupSubMenu', () => {
     it('should close the options menu when an option has been selected', async () => {
         render(<NavToolbarPopupSubMenu buttonProps={{}} buttonLabel="button-name" options={mockOptions} />);
 
-        userEvent.click(screen.getByText('button-name'));
+        await userEvent.click(screen.getByText('button-name'));
 
-        userEvent.click(screen.getByText(mockOptions[0].label));
-
-        await waitForElementToBeRemoved(() => screen.queryByText(mockOptions[0].label));
+        await userEvent.click(screen.getByText(mockOptions[0].label));
 
         mockOptions.forEach((mockOption) => {
             expect(screen.queryByText(mockOption.label)).not.toBeInTheDocument();
@@ -76,12 +74,12 @@ describe('NavToolbarPopupSubMenu', () => {
         });
     });
 
-    it('should call the click handler when the option has been clicked', () => {
+    it('should call the click handler when the option has been clicked', async () => {
         render(<NavToolbarPopupSubMenu buttonProps={{}} buttonLabel="button-name" options={mockOptions} />);
 
-        userEvent.click(screen.getByText('button-name'));
+        await userEvent.click(screen.getByText('button-name'));
 
-        userEvent.click(screen.getByText(mockOptions[0].label));
+        await userEvent.click(screen.getByText(mockOptions[0].label));
 
         expect(mockOptions[0].onClick).toHaveBeenCalled();
     });
