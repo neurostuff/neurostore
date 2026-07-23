@@ -285,3 +285,25 @@ def test_create_duplicate_analysis(auth_client, ingest_neurosynth, session):
     original_analysis = resp.json()
     duplicate_analysis = resp_duplicate.json()
     assert original_analysis["id"] == duplicate_analysis["id"]
+
+
+def test_post_analyses_without_order_increments_within_study(auth_client, session):
+    # A fresh study owned by the authenticated user, with no analyses yet.
+    id_ = auth_client.username
+    user = User.query.filter_by(external_id=id_).first()
+    study = Study(name="order increment study", user=user)
+    session.add(study)
+    session.commit()
+
+    payload = {"study": study.id, "name": "order increment analysis"}
+
+    # POST two analyses to the same study, neither carrying an explicit order.
+    resp1 = auth_client.post("/api/analyses/", data=dict(payload))
+    resp2 = auth_client.post("/api/analyses/", data=dict(payload))
+
+    assert resp1.status_code == 200
+    assert resp2.status_code == 200
+
+    # First analysis in the study -> order 1; second -> order 2 (not 1).
+    assert resp1.json()["order"] == 1
+    assert resp2.json()["order"] == 2

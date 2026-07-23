@@ -1,10 +1,8 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import MenuIcon from '@mui/icons-material/Menu';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import {
     Box,
-    Button,
     Drawer,
     IconButton,
     List,
@@ -15,6 +13,7 @@ import {
     Toolbar,
     Typography,
 } from '@mui/material';
+import CreateProjectButton from 'components/Buttons/CreateProjectButton';
 import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import DrawerToggleMenu from './DrawerToggleSubMenu';
@@ -42,15 +41,12 @@ const NavDrawer = (props: INav) => {
                 </IconButton>
             </Box>
             <Drawer anchor="right" open={isOpen} onClose={() => setIsOpen(false)}>
-                <List>
+                <List sx={{ width: '260px' }}>
                     {isAuthenticated && (
                         <>
                             <ListItem>
-                                <ListItemButton>
-                                    <ListItemIcon>
-                                        <AddCircleOutlineIcon color="secondary" />
-                                    </ListItemIcon>
-                                    <ListItemText sx={{ color: 'secondary.main' }} primary="NEW PROJECT" />
+                                <ListItemButton sx={{ padding: 0 }}>
+                                    <CreateProjectButton buttonProps={{ sx: { width: '100%', fontSize: '1rem' } }} />
                                 </ListItemButton>
                             </ListItem>
                             <ListItem>
