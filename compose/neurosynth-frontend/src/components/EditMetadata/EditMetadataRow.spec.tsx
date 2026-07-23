@@ -22,7 +22,7 @@ describe('EditMetadataRow Component', () => {
         };
     });
 
-    it('should render', () => {
+    it('should render', async () => {
         render(
             <MockThemeProvider>
                 <EditMetadataRow
@@ -35,7 +35,7 @@ describe('EditMetadataRow Component', () => {
         );
     });
 
-    it('should delete when the delete button is clicked', () => {
+    it('should delete when the delete button is clicked', async () => {
         render(
             <MockThemeProvider>
                 <EditMetadataRow
@@ -48,11 +48,11 @@ describe('EditMetadataRow Component', () => {
         );
 
         const deleteButton = screen.getByText('DELETE');
-        userEvent.click(deleteButton);
+        await userEvent.click(deleteButton);
         expect(onMetadataRowDeleteMock).toBeCalledWith(mockMetadataRow);
     });
 
-    it('should edit the metadata when toggled', () => {
+    it('should edit the metadata when toggled', async () => {
         render(
             <MockThemeProvider>
                 <EditMetadataRow
@@ -65,16 +65,16 @@ describe('EditMetadataRow Component', () => {
         );
 
         const toggleButton = screen.getByText('STRING');
-        userEvent.click(toggleButton);
+        await userEvent.click(toggleButton);
 
         const noneButton = screen.getByText('NONE');
-        userEvent.click(noneButton);
+        await userEvent.click(noneButton);
         mockMetadataRow.metadataValue = null;
         expect(onMetadataRowEditMock).toBeCalledWith(mockMetadataRow);
     });
 
     describe('EditMetadataRow String Case', () => {
-        it('should render the string editor', () => {
+        it('should render the string editor', async () => {
             render(
                 <MockThemeProvider>
                     <EditMetadataRow
@@ -90,7 +90,7 @@ describe('EditMetadataRow Component', () => {
             expect(stringEditor).toBeInTheDocument();
         });
 
-        it('should be edited with the correct arguments', () => {
+        it('should be edited with the correct arguments', async () => {
             mockMetadataRow.metadataValue = '';
             render(
                 <MockThemeProvider>
@@ -104,7 +104,7 @@ describe('EditMetadataRow Component', () => {
             );
 
             const stringEditor = screen.getByRole('textbox');
-            userEvent.type(stringEditor, 'a');
+            await userEvent.type(stringEditor, 'a');
 
             mockMetadataRow.metadataValue = 'a';
 
@@ -113,7 +113,7 @@ describe('EditMetadataRow Component', () => {
     });
 
     describe('EditMetadataRow Number Case', () => {
-        it('should render the number editor', () => {
+        it('should render the number editor', async () => {
             mockMetadataRow.metadataValue = 1;
             render(
                 <MockThemeProvider>
@@ -130,7 +130,7 @@ describe('EditMetadataRow Component', () => {
             expect(numberEditor).toBeInTheDocument();
         });
 
-        it('should be edited with the correct arguments', () => {
+        it('should be edited with the correct arguments', async () => {
             mockMetadataRow.metadataValue = 0;
             render(
                 <MockThemeProvider>
@@ -145,14 +145,14 @@ describe('EditMetadataRow Component', () => {
             mockMetadataRow.metadataValue = 1;
 
             const numberEditor = screen.getByRole('spinbutton');
-            userEvent.type(numberEditor, '1');
+            await userEvent.type(numberEditor, '1');
 
             expect(onMetadataRowEditMock).toBeCalledWith(mockMetadataRow);
         });
     });
 
     describe('EditMetadataRow Boolean Case', () => {
-        it('should render', () => {
+        it('should render', async () => {
             mockMetadataRow.metadataValue = false;
             render(
                 <MockThemeProvider>
@@ -168,7 +168,7 @@ describe('EditMetadataRow Component', () => {
             expect(booleanEditor).toBeInTheDocument();
         });
 
-        it('should be edited with the correct arguments', () => {
+        it('should be edited with the correct arguments', async () => {
             mockMetadataRow.metadataValue = false;
             render(
                 <MockThemeProvider>
@@ -183,14 +183,14 @@ describe('EditMetadataRow Component', () => {
 
             const booleanEditor = screen.getByRole('checkbox');
             mockMetadataRow.metadataValue = true;
-            userEvent.click(booleanEditor);
+            await userEvent.click(booleanEditor);
 
             expect(onMetadataRowEditMock).toBeCalledWith(mockMetadataRow);
         });
     });
 
     describe('EditMetadataRow None Case', () => {
-        it('should render', () => {
+        it('should render', async () => {
             mockMetadataRow.metadataValue = null;
             render(
                 <MockThemeProvider>

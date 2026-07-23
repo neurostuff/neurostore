@@ -21,11 +21,11 @@ describe('NeurosynthAutocomplete Component', () => {
         },
     ];
 
-    it('should render', () => {
+    it('should render', async () => {
         expect(true).toBeTruthy();
     });
 
-    // it('should render', () => {
+    // it('should render', async () => {
     //     render(
     //         <NeurosynthAutocomplete
     //             isOptionEqualToValue={(x, y) => x?.id === y?.id}
@@ -39,7 +39,7 @@ describe('NeurosynthAutocomplete Component', () => {
     //     );
     // });
 
-    // it('should show the options', () => {
+    // it('should show the options', async () => {
     //     render(
     //         <NeurosynthAutocomplete
     //             isOptionEqualToValue={(x, y) => x?.id === y?.id}
@@ -58,14 +58,14 @@ describe('NeurosynthAutocomplete Component', () => {
 
     //     // open up the autocomplete dropdown
     //     const autocomplete = screen.getByRole('combobox', { name: 'test-label' });
-    //     userEvent.click(autocomplete);
+    //     await userEvent.click(autocomplete);
 
     //     mockAutocompleteOptions.forEach((autocompleteOption, index) => {
     //         expect(screen.getByText(autocompleteOption.label)).toBeInTheDocument();
     //     });
     // });
 
-    // it('should call the onChange function on option selection', () => {
+    // it('should call the onChange function on option selection', async () => {
     //     render(
     //         <NeurosynthAutocomplete
     //             isOptionEqualToValue={(x, y) => x?.id === y?.id}
@@ -84,15 +84,15 @@ describe('NeurosynthAutocomplete Component', () => {
 
     //     // open up the autocomplete dropdown
     //     const autocomplete = screen.getByRole('combobox', { name: 'test-label' });
-    //     userEvent.click(autocomplete);
+    //     await userEvent.click(autocomplete);
 
     //     const option = screen.getAllByTestId('option')[0];
-    //     userEvent.click(option);
+    //     await userEvent.click(option);
 
     //     expect(mockOnChange.mock.calls[0][1]).toEqual(mockAutocompleteOptions[0]);
     // });
 
-    // it('should narrow down the options when text is entered', () => {
+    // it('should narrow down the options when text is entered', async () => {
     //     render(
     //         <NeurosynthAutocomplete
     //             isOptionEqualToValue={(x, y) => x?.id === y?.id}
@@ -110,13 +110,13 @@ describe('NeurosynthAutocomplete Component', () => {
     //     );
 
     //     const input = screen.getByRole('combobox');
-    //     userEvent.type(input, 'u');
+    //     await userEvent.type(input, 'u');
 
     //     const options = screen.getAllByTestId('option');
     //     expect(options.length).toEqual(1);
     // });
 
-    // it('should show a loader on loading', () => {
+    // it('should show a loader on loading', async () => {
     //     render(
     //         <NeurosynthAutocomplete
     //             isLoading={true}
@@ -137,7 +137,7 @@ describe('NeurosynthAutocomplete Component', () => {
     //     expect(screen.getByRole('progressbar')).toBeInTheDocument();
     // });
 
-    // it('should show an error if there is an error', () => {
+    // it('should show an error if there is an error', async () => {
     //     render(
     //         <NeurosynthAutocomplete
     //             isLoading={false}
@@ -159,7 +159,7 @@ describe('NeurosynthAutocomplete Component', () => {
     //     expect(screen.getByText('There was an error')).toBeInTheDocument();
     // });
 
-    // it('should show a validation message when the field is cleared', () => {
+    // it('should show a validation message when the field is cleared', async () => {
     //     render(
     //         <NeurosynthAutocomplete
     //             isOptionEqualToValue={(x, y) => x?.id === y?.id}
@@ -178,10 +178,10 @@ describe('NeurosynthAutocomplete Component', () => {
 
     //     // open up the autocomplete dropdown
     //     const input = screen.getByRole('combobox');
-    //     userEvent.click(input);
+    //     await userEvent.click(input);
 
     //     // click out to lose focus
-    //     userEvent.click(document.body);
+    //     await userEvent.click(document.body);
 
     //     expect(screen.getByText('this is required')).toBeInTheDocument();
     // });

@@ -9,7 +9,7 @@ vi.mock('components/EditMetadata/AddMetadataRow');
 describe('DynamicFormKwargInput Component', () => {
     const mockOnUpdate = vi.fn();
 
-    it('should render', () => {
+    it('should render', async () => {
         render(
             <DynamicFormKwargInput
                 parameterName="**kwargs"
@@ -24,7 +24,7 @@ describe('DynamicFormKwargInput Component', () => {
         );
     });
 
-    it('should display the value', () => {
+    it('should display the value', async () => {
         render(
             <DynamicFormKwargInput
                 parameterName="**kwargs"
@@ -47,7 +47,7 @@ describe('DynamicFormKwargInput Component', () => {
         expect(screen.getByText('def')).toBeInTheDocument();
     });
 
-    it('should update the table when a new kvp is added', () => {
+    it('should update the table when a new kvp is added', async () => {
         render(
             <DynamicFormKwargInput
                 parameterName="**kwargs"
@@ -65,7 +65,7 @@ describe('DynamicFormKwargInput Component', () => {
         );
 
         const addMetadataRow = screen.getByTestId('trigger-add');
-        userEvent.click(addMetadataRow);
+        await userEvent.click(addMetadataRow);
 
         expect(mockOnUpdate).toHaveBeenCalledWith({
             '**kwargs': {
@@ -76,7 +76,7 @@ describe('DynamicFormKwargInput Component', () => {
         });
     });
 
-    it('should update the table when a row has been deleted', () => {
+    it('should update the table when a row has been deleted', async () => {
         render(
             <DynamicFormKwargInput
                 parameterName="**kwargs"
@@ -93,7 +93,7 @@ describe('DynamicFormKwargInput Component', () => {
             />
         );
 
-        userEvent.click(screen.getAllByTestId('RemoveCircleIcon')[0]);
+        await userEvent.click(screen.getAllByTestId('RemoveCircleIcon')[0]);
         expect(mockOnUpdate).toBeCalledWith({
             '**kwargs': {
                 another_arg: 'def',
@@ -101,7 +101,7 @@ describe('DynamicFormKwargInput Component', () => {
         });
     });
 
-    it('should hide initially', () => {
+    it('should hide initially', async () => {
         render(
             <DynamicFormKwargInput
                 parameterName="**kwargs"
@@ -124,7 +124,7 @@ describe('DynamicFormKwargInput Component', () => {
         expect(table).not.toBeVisible();
     });
 
-    it('should become visible', () => {
+    it('should become visible', async () => {
         render(
             <DynamicFormKwargInput
                 parameterName="**kwargs"
@@ -141,7 +141,7 @@ describe('DynamicFormKwargInput Component', () => {
             />
         );
 
-        userEvent.click(screen.getByRole('button', { name: 'show advanced' }));
+        await userEvent.click(screen.getByRole('button', { name: 'show advanced' }));
         const addMetadataRow = screen.getByTestId('trigger-add');
         const table = screen.getByTestId('mock-table');
         expect(addMetadataRow).toBeVisible();

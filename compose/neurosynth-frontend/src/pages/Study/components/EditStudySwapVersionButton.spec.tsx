@@ -19,34 +19,34 @@ vi.mock('notistack');
 vi.mock('stores/AnnotationStore.getters');
 
 describe('EditStudySwapVersionButton Component', () => {
-    it('should render', () => {
+    it('should render', async () => {
         render(<EditStudySwapVersionButton />);
     });
 
-    it('should open the menu when clicked', () => {
+    it('should open the menu when clicked', async () => {
         render(<EditStudySwapVersionButton />);
         const button = screen.getByRole('button');
-        userEvent.click(button);
+        await userEvent.click(button);
 
         expect(screen.getByRole('menu')).toBeInTheDocument();
     });
 
-    it('should show the base study versions', () => {
+    it('should show the base study versions', async () => {
         render(<EditStudySwapVersionButton />);
         const baseStudy = mockBaseStudy();
         const button = screen.getByRole('button');
-        userEvent.click(button);
+        await userEvent.click(button);
 
         baseStudy.versions?.forEach((version) => {
             expect(screen.getByText(`Switch to version: ${(version as StudyReturn).id as string}`)).toBeInTheDocument();
         });
     });
 
-    it('should link to the selected base study version when viewing', () => {
+    it('should link to the selected base study version when viewing', async () => {
         render(<EditStudySwapVersionButton />);
         const baseStudy = mockBaseStudy();
         const button = screen.getByRole('button');
-        userEvent.click(button);
+        await userEvent.click(button);
 
         const viewLinks = screen.getAllByRole('link', { name: /View version/i });
         const versionId = (baseStudy.versions as StudyReturn[])[0].id as string;
@@ -60,17 +60,17 @@ describe('EditStudySwapVersionButton Component', () => {
         render(<EditStudySwapVersionButton />);
         const button = screen.getByRole('button');
         await act(async () => {
-            userEvent.click(button);
+            await userEvent.click(button);
         });
         const swapButton = screen.getByText(`Switch to version: ${(baseStudy.versions as StudyReturn[])[0].id}`);
         await act(async () => {
-            userEvent.click(swapButton);
+            await userEvent.click(swapButton);
         });
         expect(screen.getByText('Are you sure you want to switch the study version?'));
 
         const confirmButton = screen.getByTestId('accept-close-confirmation');
         await act(async () => {
-            userEvent.click(confirmButton);
+            await userEvent.click(confirmButton);
         });
 
         expect(useUpdateStudyset().mutateAsync).toHaveBeenCalled();
@@ -86,16 +86,16 @@ describe('EditStudySwapVersionButton Component', () => {
         render(<EditStudySwapVersionButton />);
         const button = screen.getByRole('button');
         await act(async () => {
-            userEvent.click(button);
+            await userEvent.click(button);
         });
         const swapButton = screen.getByText(`Switch to version: ${(baseStudy.versions as StudyReturn[])[0].id}`);
         await act(async () => {
-            userEvent.click(swapButton);
+            await userEvent.click(swapButton);
         });
 
         const confirmButton = screen.getByTestId('accept-close-confirmation');
         await act(async () => {
-            userEvent.click(confirmButton);
+            await userEvent.click(confirmButton);
         });
 
         expect(screen.getByText('Unsaved Changes')).toBeInTheDocument();

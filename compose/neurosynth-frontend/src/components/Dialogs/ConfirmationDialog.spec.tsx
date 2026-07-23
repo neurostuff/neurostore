@@ -10,7 +10,7 @@ describe('ConfirmationDialog', () => {
         vi.clearAllMocks();
     });
 
-    it('should render', () => {
+    it('should render', async () => {
         render(
             <ConfirmationDialog
                 isOpen={true}
@@ -29,7 +29,7 @@ describe('ConfirmationDialog', () => {
         expect(rejectText).toBeInTheDocument();
     });
 
-    it('should signal false when cancel is clicked', () => {
+    it('should signal false when cancel is clicked', async () => {
         render(
             <ConfirmationDialog
                 isOpen={true}
@@ -41,11 +41,11 @@ describe('ConfirmationDialog', () => {
         );
 
         const rejectButton = screen.getByRole('button', { name: 'reject' });
-        userEvent.click(rejectButton);
+        await userEvent.click(rejectButton);
         expect(mockOnClose).toBeCalledWith(false);
     });
 
-    it('should signal true when confirm is clicked', () => {
+    it('should signal true when confirm is clicked', async () => {
         render(
             <ConfirmationDialog
                 isOpen={true}
@@ -57,7 +57,7 @@ describe('ConfirmationDialog', () => {
         );
 
         const confirmButton = screen.getByRole('button', { name: 'confirm' });
-        userEvent.click(confirmButton);
+        await userEvent.click(confirmButton);
         expect(mockOnClose).toBeCalledWith(true);
     });
 
@@ -77,11 +77,11 @@ describe('ConfirmationDialog', () => {
 
         // we need to trigger a click away by clicking the backdrop. For some reason,
         // the second presentation div accomplishes this
-        userEvent.click(screen.getAllByRole('presentation')[1]);
+        await userEvent.click(screen.getAllByRole('presentation')[1]);
         expect(mockOnClose).toBeCalledWith(undefined);
     });
 
-    it('should close when close icon button is clicked', () => {
+    it('should close when close icon button is clicked', async () => {
         render(
             <ConfirmationDialog
                 isOpen={true}
@@ -92,11 +92,11 @@ describe('ConfirmationDialog', () => {
             />
         );
 
-        userEvent.click(screen.getByTestId('CloseIcon'));
+        await userEvent.click(screen.getByTestId('CloseIcon'));
         expect(mockOnClose).toHaveBeenCalledWith(undefined);
     });
 
-    it('should be called with the data', () => {
+    it('should be called with the data', async () => {
         render(
             <ConfirmationDialog
                 isOpen={true}
@@ -108,7 +108,7 @@ describe('ConfirmationDialog', () => {
         );
 
         const confirmButton = screen.getByRole('button', { name: 'confirm' });
-        userEvent.click(confirmButton);
+        await userEvent.click(confirmButton);
 
         expect(mockOnClose).toHaveBeenCalledWith(true);
     });

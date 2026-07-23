@@ -30,29 +30,29 @@ describe('EditStudyAnalysisPoints', () => {
         (useStudyAnalysisPoints as Mock).mockReturnValue([]);
     });
 
-    it('renders the Analysis Coordinates heading', () => {
+    it('renders the Analysis Coordinates heading', async () => {
         render(<EditStudyAnalysisPoints analysisId="analysis-1" />);
         expect(screen.getByText('Analysis Coordinates')).toBeInTheDocument();
     });
 
-    it('passes analysisId to coordinate subcomponents', () => {
+    it('passes analysisId to coordinate subcomponents', async () => {
         render(<EditStudyAnalysisPoints analysisId="analysis-xyz" />);
         expect(screen.getByTestId('mock-analysis-points-hot-table')).toHaveTextContent('analysis-xyz');
         expect(screen.getByTestId('mock-point-space-and-statistic')).toHaveTextContent('analysis-xyz');
     });
 
-    it('calls useStudyAnalysisPoints with the current analysisId', () => {
+    it('calls useStudyAnalysisPoints with the current analysisId', async () => {
         render(<EditStudyAnalysisPoints analysisId="analysis-abc" />);
         expect(useStudyAnalysisPoints).toHaveBeenCalledWith('analysis-abc');
     });
 
-    it('shows the relegate link text when there are no coordinates (empty points)', () => {
+    it('shows the relegate link text when there are no coordinates (empty points)', async () => {
         (useStudyAnalysisPoints as Mock).mockReturnValue([]);
         render(<EditStudyAnalysisPoints analysisId="analysis-1" />);
         expect(screen.getByText(RELEGATE_LINK_TEXT)).toBeInTheDocument();
     });
 
-    it('shows the relegate link when only empty placeholder rows exist (store initPointIfEmpty shape)', () => {
+    it('shows the relegate link when only empty placeholder rows exist (store initPointIfEmpty shape)', async () => {
         (useStudyAnalysisPoints as Mock).mockReturnValue([
             {
                 id: 'placeholder-id',
@@ -70,7 +70,7 @@ describe('EditStudyAnalysisPoints', () => {
         expect(screen.getByText(RELEGATE_LINK_TEXT)).toBeInTheDocument();
     });
 
-    it('does not show the relegate link when a new row has a full coordinate triple entered', () => {
+    it('does not show the relegate link when a new row has a full coordinate triple entered', async () => {
         (useStudyAnalysisPoints as Mock).mockReturnValue([
             {
                 id: 'p1',
@@ -85,37 +85,37 @@ describe('EditStudyAnalysisPoints', () => {
         expect(screen.queryByText(RELEGATE_LINK_TEXT)).not.toBeInTheDocument();
     });
 
-    it('shows the relegate link text when points is null', () => {
+    it('shows the relegate link text when points is null', async () => {
         (useStudyAnalysisPoints as Mock).mockReturnValue(null);
         render(<EditStudyAnalysisPoints analysisId="analysis-1" />);
         expect(screen.getByText(RELEGATE_LINK_TEXT)).toBeInTheDocument();
     });
 
-    it('does not show the relegate link text when points exist', () => {
+    it('does not show the relegate link text when points exist', async () => {
         (useStudyAnalysisPoints as Mock).mockReturnValue(mockStorePoints());
         render(<EditStudyAnalysisPoints analysisId="analysis-1" />);
         expect(screen.queryByText(RELEGATE_LINK_TEXT)).not.toBeInTheDocument();
     });
 
-    it('opens the relegate dialog when the link is clicked', () => {
+    it('opens the relegate dialog when the link is clicked', async () => {
         (useStudyAnalysisPoints as Mock).mockReturnValue([]);
         render(<EditStudyAnalysisPoints analysisId="analysis-1" />);
 
         expect(screen.getByTestId('mock-relegate-closed')).toBeInTheDocument();
 
-        userEvent.click(screen.getByText(RELEGATE_LINK_TEXT));
+        await userEvent.click(screen.getByText(RELEGATE_LINK_TEXT));
 
         expect(screen.getByTestId('mock-relegate-confirm')).toBeInTheDocument();
     });
 
-    it('navigates to extraction and enqueues a snackbar when relegate is confirmed', () => {
+    it('navigates to extraction and enqueues a snackbar when relegate is confirmed', async () => {
         const enqueueSnackbar = vi.fn();
         (useSnackbar as Mock).mockReturnValue({ enqueueSnackbar });
         (useStudyAnalysisPoints as Mock).mockReturnValue([]);
         render(<EditStudyAnalysisPoints analysisId="analysis-1" />);
 
-        userEvent.click(screen.getByText(RELEGATE_LINK_TEXT));
-        userEvent.click(screen.getByTestId('mock-relegate-confirm'));
+        await userEvent.click(screen.getByText(RELEGATE_LINK_TEXT));
+        await userEvent.click(screen.getByTestId('mock-relegate-confirm'));
 
         expect(mockNavigate).toHaveBeenCalledWith('/projects/project-id/extraction');
         expect(enqueueSnackbar).toHaveBeenCalledWith(

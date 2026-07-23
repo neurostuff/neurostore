@@ -16,24 +16,24 @@ describe('CopyableId', () => {
         hookState.copied = false;
     });
 
-    it('renders the label and id', () => {
+    it('renders the label and id', async () => {
         render(<CopyableId label="Studyset ID" id="abc123" />);
         expect(screen.getByText('Studyset ID:')).toBeInTheDocument();
         expect(screen.getByText('abc123')).toBeInTheDocument();
     });
 
-    it('renders nothing when id is empty', () => {
+    it('renders nothing when id is empty', async () => {
         const { container } = render(<CopyableId label="Studyset ID" id={null} />);
         expect(container).toBeEmptyDOMElement();
     });
 
-    it('copies the id when the copy button is clicked', () => {
+    it('copies the id when the copy button is clicked', async () => {
         render(<CopyableId label="Studyset ID" id="abc123" />);
-        userEvent.click(screen.getByRole('button', { name: 'Copy Studyset ID' }));
+        await userEvent.click(screen.getByRole('button', { name: 'Copy Studyset ID' }));
         expect(mockCopy).toHaveBeenCalledWith('abc123');
     });
 
-    it('shows the copied state', () => {
+    it('shows the copied state', async () => {
         hookState.copied = true;
         render(<CopyableId label="Studyset ID" id="abc123" />);
         expect(screen.getByTestId('CheckIcon')).toBeInTheDocument();

@@ -111,21 +111,21 @@ describe('ProjectDangerZone', () => {
     });
 
     describe('Rendering', () => {
-        it('should render the danger zone when user can edit', () => {
+        it('should render the danger zone when user can edit', async () => {
             render(<ProjectDangerZone />);
 
             expect(screen.getByText('Danger zone')).toBeInTheDocument();
             expect(screen.getByRole('button', { name: /delete this project/i })).toBeInTheDocument();
         });
 
-        it('should not render anything when user cannot edit', () => {
+        it('should not render anything when user cannot edit', async () => {
             mockedUseUserCanEdit.mockReturnValue(false);
 
             const { container } = render(<ProjectDangerZone />);
             expect(container).toBeEmptyDOMElement();
         });
 
-        it('should render disabled button with warning text when project has meta-analyses', () => {
+        it('should render disabled button with warning text when project has meta-analyses', async () => {
             mockedUseProjectMetaAnalyses.mockReturnValue(['meta-analysis-1', 'meta-analysis-2']);
 
             render(<ProjectDangerZone />);
@@ -137,7 +137,7 @@ describe('ProjectDangerZone', () => {
             expect(deleteButton).toBeDisabled();
         });
 
-        it('should render enabled button when project has no meta-analyses', () => {
+        it('should render enabled button when project has no meta-analyses', async () => {
             mockedUseProjectMetaAnalyses.mockReturnValue([]);
 
             render(<ProjectDangerZone />);
@@ -149,31 +149,31 @@ describe('ProjectDangerZone', () => {
     });
 
     describe('Delete Project Flow', () => {
-        it('should open confirmation dialog when delete button is clicked', () => {
+        it('should open confirmation dialog when delete button is clicked', async () => {
             render(<ProjectDangerZone />);
 
             const deleteButton = screen.getByRole('button', { name: /delete this project/i });
-            userEvent.click(deleteButton);
+            await userEvent.click(deleteButton);
 
             expect(screen.getByText('Are you sure you want to delete the project?')).toBeInTheDocument();
             expect(screen.getByText('This action cannot be undone')).toBeInTheDocument();
         });
 
-        it('should close dialog when cancel is clicked', () => {
+        it('should close dialog when cancel is clicked', async () => {
             render(<ProjectDangerZone />);
 
             const deleteButton = screen.getByRole('button', { name: /delete this project/i });
-            userEvent.click(deleteButton);
+            await userEvent.click(deleteButton);
 
             const cancelButton = screen.getByRole('button', { name: /cancel/i });
-            userEvent.click(cancelButton);
+            await userEvent.click(cancelButton);
 
             waitFor(() => {
                 expect(screen.queryByText('Are you sure you want to delete the project?')).not.toBeInTheDocument();
             });
         });
 
-        it('should delete project and navigate when confirmed', () => {
+        it('should delete project and navigate when confirmed', async () => {
             let onSuccessCallback: (() => void) | undefined;
 
             mockedUseDeleteProject.mockReturnValue({
@@ -192,10 +192,10 @@ describe('ProjectDangerZone', () => {
             render(<ProjectDangerZone />);
 
             const deleteButton = screen.getByRole('button', { name: /delete this project/i });
-            userEvent.click(deleteButton);
+            await userEvent.click(deleteButton);
 
             const confirmButton = screen.getByRole('button', { name: /confirm/i });
-            userEvent.click(confirmButton);
+            await userEvent.click(confirmButton);
 
             expect(mockDeleteProject).toHaveBeenCalledWith('test-project-id', expect.any(Object));
 
@@ -210,23 +210,23 @@ describe('ProjectDangerZone', () => {
             expect(mockNavigate).toHaveBeenCalledWith('/projects');
         });
 
-        it('should not delete project if projectId is undefined', () => {
+        it('should not delete project if projectId is undefined', async () => {
             mockedUseParams.mockReturnValue({ projectId: undefined });
 
             render(<ProjectDangerZone />);
 
             const deleteButton = screen.getByRole('button', { name: /delete this project/i });
-            userEvent.click(deleteButton);
+            await userEvent.click(deleteButton);
 
             const confirmButton = screen.getByRole('button', { name: /confirm/i });
-            userEvent.click(confirmButton);
+            await userEvent.click(confirmButton);
 
             expect(mockDeleteProject).not.toHaveBeenCalled();
         });
     });
 
     describe('Dev/Staging Clear Project Button', () => {
-        it('should show clear project button in DEV environment on localhost', () => {
+        it('should show clear project button in DEV environment on localhost', async () => {
             import.meta.env.VITE_APP_ENV = 'DEV';
             render(<ProjectDangerZone />);
 
@@ -235,7 +235,7 @@ describe('ProjectDangerZone', () => {
             ).toBeInTheDocument();
         });
 
-        it('should show clear project button in STAGING environment on localhost', () => {
+        it('should show clear project button in STAGING environment on localhost', async () => {
             import.meta.env.VITE_APP_ENV = 'STAGING';
 
             render(<ProjectDangerZone />);
@@ -245,7 +245,7 @@ describe('ProjectDangerZone', () => {
             ).toBeInTheDocument();
         });
 
-        it('should not show clear project button in PROD environment', () => {
+        it('should not show clear project button in PROD environment', async () => {
             import.meta.env.VITE_APP_ENV = 'PROD';
 
             render(<ProjectDangerZone />);
@@ -255,7 +255,7 @@ describe('ProjectDangerZone', () => {
             ).not.toBeInTheDocument();
         });
 
-        it('should not show clear project button when not on localhost', () => {
+        it('should not show clear project button when not on localhost', async () => {
             Object.defineProperty(window, 'location', {
                 writable: true,
                 value: { hostname: 'production.com' },
@@ -268,7 +268,7 @@ describe('ProjectDangerZone', () => {
             ).not.toBeInTheDocument();
         });
 
-        it('should delete studyset and clear provenance when clear button is clicked', () => {
+        it('should delete studyset and clear provenance when clear button is clicked', async () => {
             mockDeleteStudyset.mockResolvedValue(undefined);
 
             render(<ProjectDangerZone />);
@@ -276,7 +276,7 @@ describe('ProjectDangerZone', () => {
             const clearButton = screen.getByRole('button', {
                 name: /clear this project \(FOR DEV PURPOSES\)/i,
             });
-            userEvent.click(clearButton);
+            await userEvent.click(clearButton);
 
             waitFor(() => {
                 expect(mockDeleteStudyset).toHaveBeenCalledWith('test-studyset-id');
@@ -284,7 +284,7 @@ describe('ProjectDangerZone', () => {
             });
         });
 
-        it('should only clear provenance when studysetId is undefined', () => {
+        it('should only clear provenance when studysetId is undefined', async () => {
             mockedUseProjectExtractionStudysetId.mockReturnValue(undefined);
 
             render(<ProjectDangerZone />);
@@ -292,7 +292,7 @@ describe('ProjectDangerZone', () => {
             const clearButton = screen.getByRole('button', {
                 name: /clear this project \(FOR DEV PURPOSES\)/i,
             });
-            userEvent.click(clearButton);
+            await userEvent.click(clearButton);
 
             waitFor(() => {
                 expect(mockDeleteStudyset).not.toHaveBeenCalled();
@@ -302,7 +302,7 @@ describe('ProjectDangerZone', () => {
     });
 
     describe('User Permissions', () => {
-        it('should pass undefined to useUserCanEdit when projectUser is null', () => {
+        it('should pass undefined to useUserCanEdit when projectUser is null', async () => {
             mockedUseProjectUser.mockReturnValue(null);
 
             render(<ProjectDangerZone />);
@@ -310,7 +310,7 @@ describe('ProjectDangerZone', () => {
             expect(useUserCanEdit).toHaveBeenCalledWith(undefined);
         });
 
-        it('should pass projectUser to useUserCanEdit when available', () => {
+        it('should pass projectUser to useUserCanEdit when available', async () => {
             const projectUser = 'test-user-id';
             mockedUseProjectUser.mockReturnValue(projectUser);
 

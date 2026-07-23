@@ -4,17 +4,17 @@ import userEvent from '@testing-library/user-event';
 import NeurosynthTable from './NeurosynthTable';
 
 describe('Neurosynth Table Component', () => {
-    it('should render', () => {
+    it('should render', async () => {
         render(<NeurosynthTable tableConfig={{}} headerCells={[]} rows={[]} />);
     });
 
     describe('config', () => {
-        it('should load', () => {
+        it('should load', async () => {
             render(<NeurosynthTable tableConfig={{ isLoading: true }} headerCells={[]} rows={[]} />);
             expect(screen.getByRole('progressbar')).toBeInTheDocument();
         });
 
-        it('should display the custom no data message', () => {
+        it('should display the custom no data message', async () => {
             render(
                 <NeurosynthTable
                     tableConfig={{ noDataDisplay: <span>test-custom-no-data-message</span> }}
@@ -25,7 +25,7 @@ describe('Neurosynth Table Component', () => {
             expect(screen.getByText('test-custom-no-data-message')).toBeInTheDocument();
         });
 
-        it('should have the correct loader color', () => {
+        it('should have the correct loader color', async () => {
             render(
                 <NeurosynthTable
                     tableConfig={{ isLoading: true, loaderColor: 'secondary' }}
@@ -37,7 +37,7 @@ describe('Neurosynth Table Component', () => {
             expect(screen.getByRole('progressbar').className).toContain('Secondary');
         });
 
-        it('should have the correct table elevation', () => {
+        it('should have the correct table elevation', async () => {
             render(<NeurosynthTable tableConfig={{ tableElevation: 3 }} headerCells={[]} rows={[]} />);
             // checking for set mui classes
             expect(screen.getByRole('table')?.parentElement?.className).toContain('elevation3');
@@ -45,7 +45,7 @@ describe('Neurosynth Table Component', () => {
     });
 
     describe('header cells', () => {
-        it('should render the header cells', () => {
+        it('should render the header cells', async () => {
             render(
                 <NeurosynthTable
                     tableConfig={{ tableElevation: 3 }}
@@ -69,7 +69,7 @@ describe('Neurosynth Table Component', () => {
             expect(screen.getByText('header-2'));
         });
 
-        it('should apply the relevant styling to the header row', () => {
+        it('should apply the relevant styling to the header row', async () => {
             render(
                 <NeurosynthTable
                     tableConfig={{ tableElevation: 3 }}
@@ -88,7 +88,7 @@ describe('Neurosynth Table Component', () => {
     });
 
     describe('rows', () => {
-        it('should render correctly', () => {
+        it('should render correctly', async () => {
             const mockSourceData = [
                 {
                     header1: 'data-1',
@@ -136,7 +136,7 @@ describe('Neurosynth Table Component', () => {
             });
         });
 
-        it('should be able to handle a row click', () => {
+        it('should be able to handle a row click', async () => {
             const mockHandleClick = vi.fn();
 
             render(
@@ -168,7 +168,7 @@ describe('Neurosynth Table Component', () => {
             );
 
             const clickableRow = screen.getByTestId('mock-click-row');
-            userEvent.click(clickableRow);
+            await userEvent.click(clickableRow);
             expect(mockHandleClick).toHaveBeenCalledWith('some-id');
         });
     });

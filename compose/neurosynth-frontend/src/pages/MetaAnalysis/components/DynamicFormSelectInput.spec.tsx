@@ -6,7 +6,7 @@ import DynamicFormSelectInput from './DynamicFormSelectInput';
 describe('DynamicFormSelectInput Component', () => {
     const mockOnUpdate = vi.fn();
 
-    it('should render', () => {
+    it('should render', async () => {
         render(
             <DynamicFormSelectInput
                 value={null}
@@ -21,7 +21,7 @@ describe('DynamicFormSelectInput Component', () => {
         );
     });
 
-    it('should show the given value', () => {
+    it('should show the given value', async () => {
         render(
             <DynamicFormSelectInput
                 value="approximate"
@@ -38,7 +38,7 @@ describe('DynamicFormSelectInput Component', () => {
         expect(screen.getByDisplayValue('approximate')).toBeInTheDocument();
     });
 
-    it('should have the given options', () => {
+    it('should have the given options', async () => {
         render(
             <DynamicFormSelectInput
                 value="approximate"
@@ -53,12 +53,12 @@ describe('DynamicFormSelectInput Component', () => {
         );
 
         const select = screen.getByRole('combobox');
-        userEvent.click(select);
+        await userEvent.click(select);
 
         expect(screen.getAllByRole('option').length).toEqual(3);
     });
 
-    it('should send the update', () => {
+    it('should send the update', async () => {
         render(
             <DynamicFormSelectInput
                 value="approximate"
@@ -73,10 +73,10 @@ describe('DynamicFormSelectInput Component', () => {
         );
 
         const select = screen.getByRole('combobox');
-        userEvent.click(select);
+        await userEvent.click(select);
 
         const option = screen.getByRole('option', { name: 'montecarlo' });
-        userEvent.click(option);
+        await userEvent.click(option);
 
         expect(mockOnUpdate).toHaveBeenCalledWith({
             null_iter: 'montecarlo',

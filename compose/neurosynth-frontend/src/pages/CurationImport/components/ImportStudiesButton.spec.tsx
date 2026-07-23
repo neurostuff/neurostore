@@ -30,12 +30,12 @@ vi.mock('pages/CurationImport/components/Import', () => ({
 }));
 
 describe('ImportStudiesButton', () => {
-    it('should render the Import Studies button', () => {
+    it('should render the Import Studies button', async () => {
         render(<ImportStudiesButton />);
         expect(screen.getByRole('button', { name: /import studies/i })).toBeInTheDocument();
     });
 
-    it('should show all import method options in the dropdown', () => {
+    it('should show all import method options in the dropdown', async () => {
         render(<ImportStudiesButton />);
         // NeurosynthPopper mock always renders its children, so menu items are visible
         expect(screen.getAllByText('Import via Pubmed ID (PMID) List').length).toBeGreaterThan(0);
@@ -44,15 +44,15 @@ describe('ImportStudiesButton', () => {
         expect(screen.getAllByText('Manually create a new study').length).toBeGreaterThan(0);
     });
 
-    it('should open the import dialog when an import method is selected', () => {
+    it('should open the import dialog when an import method is selected', async () => {
         render(<ImportStudiesButton />);
         expect(screen.queryByTestId('mock-base-dialog')).not.toBeInTheDocument();
-        userEvent.click(screen.getByText('Import via Pubmed ID (PMID) List'));
+        await userEvent.click(screen.getByText('Import via Pubmed ID (PMID) List'));
         expect(screen.getByTestId('mock-base-dialog')).toBeInTheDocument();
         expect(screen.getByTestId('mock-import-form')).toBeInTheDocument();
     });
 
-    it('should close the import dialog when the dialog close handler is invoked', () => {
+    it('should close the import dialog when the dialog close handler is invoked', async () => {
         vi.mock('components/Dialogs/BaseDialog', () => ({
             default: vi
                 .fn()
@@ -78,13 +78,13 @@ describe('ImportStudiesButton', () => {
         }));
 
         render(<ImportStudiesButton />);
-        userEvent.click(screen.getByText('Import via Pubmed ID (PMID) List'));
+        await userEvent.click(screen.getByText('Import via Pubmed ID (PMID) List'));
         expect(screen.getByTestId('mock-base-dialog')).toBeInTheDocument();
-        userEvent.click(screen.getByTestId('close-dialog'));
+        await userEvent.click(screen.getByTestId('close-dialog'));
         expect(screen.queryByTestId('mock-base-dialog')).not.toBeInTheDocument();
     });
 
-    it('should not render dialog content when no import method is selected', () => {
+    it('should not render dialog content when no import method is selected', async () => {
         render(<ImportStudiesButton />);
         // Dialog is closed - no mock-import-form should be visible
         expect(screen.queryByTestId('mock-import-form')).not.toBeInTheDocument();
