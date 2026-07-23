@@ -1,5 +1,5 @@
 import { vi, Mock } from 'vitest';
-import { act, render, screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useUpdateStudyset } from 'hooks';
 import { StudyReturn } from 'neurostore-typescript-sdk';
@@ -59,19 +59,13 @@ describe('EditStudySwapVersionButton Component', () => {
         const baseStudy = mockBaseStudy();
         render(<EditStudySwapVersionButton />);
         const button = screen.getByRole('button');
-        await act(async () => {
-            await userEvent.click(button);
-        });
+        await userEvent.click(button);
         const swapButton = screen.getByText(`Switch to version: ${(baseStudy.versions as StudyReturn[])[0].id}`);
-        await act(async () => {
-            await userEvent.click(swapButton);
-        });
+        await userEvent.click(swapButton);
         expect(screen.getByText('Are you sure you want to switch the study version?'));
 
         const confirmButton = screen.getByTestId('accept-close-confirmation');
-        await act(async () => {
-            await userEvent.click(confirmButton);
-        });
+        await userEvent.click(confirmButton);
 
         expect(useUpdateStudyset().mutateAsync).toHaveBeenCalled();
         expect(useProjectExtractionReplaceStudyListStatusId()).toHaveBeenCalled();
@@ -85,18 +79,12 @@ describe('EditStudySwapVersionButton Component', () => {
         setUnloadHandler('study');
         render(<EditStudySwapVersionButton />);
         const button = screen.getByRole('button');
-        await act(async () => {
-            await userEvent.click(button);
-        });
+        await userEvent.click(button);
         const swapButton = screen.getByText(`Switch to version: ${(baseStudy.versions as StudyReturn[])[0].id}`);
-        await act(async () => {
-            await userEvent.click(swapButton);
-        });
+        await userEvent.click(swapButton);
 
         const confirmButton = screen.getByTestId('accept-close-confirmation');
-        await act(async () => {
-            await userEvent.click(confirmButton);
-        });
+        await userEvent.click(confirmButton);
 
         expect(screen.getByText('Unsaved Changes')).toBeInTheDocument();
     });
