@@ -12,7 +12,7 @@ export interface INavToolbarPopupSubMenu {
     }[];
 }
 
-const NavToolbarPopupSubMenu: React.FC<INavToolbarPopupSubMenu> = (props) => {
+const NavToolbarPopupSubMenu = (props: INavToolbarPopupSubMenu) => {
     const [anchorEl, setAnchorEl] = useState<null | HTMLButtonElement>(null);
     const open = Boolean(anchorEl);
 

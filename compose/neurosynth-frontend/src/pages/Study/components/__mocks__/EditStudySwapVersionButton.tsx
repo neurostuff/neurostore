@@ -1,4 +1,4 @@
-const MockEditStudySwapVersionButton: React.FC<{}> = (props) => {
+const MockEditStudySwapVersionButton = (props: {}) => {
     return <button data-testid="mock-edit-study-swap-version-button"></button>;
 };
 

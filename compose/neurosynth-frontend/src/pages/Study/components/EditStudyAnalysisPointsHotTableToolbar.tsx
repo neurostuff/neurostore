@@ -2,11 +2,11 @@ import { Add, Delete, TableRows } from '@mui/icons-material';
 import { Box, Button, ButtonGroup, Tooltip } from '@mui/material';
 import React from 'react';
 
-const EditStudyAnalysisPointsHotTableToolbar: React.FC<{
+const EditStudyAnalysisPointsHotTableToolbar = React.memo(({  onAddRow, onAddRows, onDeleteRows  }: {
     onAddRow: () => void;
     onAddRows: () => void;
     onDeleteRows: () => void;
-}> = React.memo(({ onAddRow, onAddRows, onDeleteRows }) => {
+}) => {
     return (
         <Box sx={{ borderRadius: '8px', width: '100%' }}>
             <ButtonGroup orientation="vertical" sx={{ width: '40px' }}>

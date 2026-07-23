@@ -1,12 +1,13 @@
 import { AxiosError } from 'axios';
 import { StudysetReturn } from 'neurosynth-compose-typescript-sdk';
-import { useQuery } from 'react-query';
+import { useQuery } from '@tanstack/react-query';
 import API from 'api/api.config';
 
 const useGetSnapshotStudysetById = (studysetId: string | undefined | null) => {
-    return useQuery<StudysetReturn | null>(
-        ['snapshot-studysets', studysetId],
-        async () => {
+    return useQuery({
+        queryKey: ['snapshot-studysets', studysetId],
+
+        queryFn: async () => {
             try {
                 const res = await API.NeurosynthServices.StudysetsService.snapshotStudysetsIdGet(studysetId || '');
                 return res.data;
@@ -17,10 +18,9 @@ const useGetSnapshotStudysetById = (studysetId: string | undefined | null) => {
                 throw error;
             }
         },
-        {
-            enabled: !!studysetId,
-        }
-    );
+
+        enabled: !!studysetId
+    });
 };
 
 export default useGetSnapshotStudysetById;

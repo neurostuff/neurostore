@@ -1,6 +1,6 @@
 import { CircularProgress, CircularProgressProps } from '@mui/material';
 
-const ProgressLoader: React.FC<CircularProgressProps> = (props) => {
+const ProgressLoader = (props: CircularProgressProps) => {
     return <CircularProgress disableShrink {...props} />;
 };
 

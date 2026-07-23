@@ -30,10 +30,10 @@ import { IGroupListItem } from './CurationBoardAIGroupsList';
 
 const LIST_HEIGHT = 95;
 
-const CurationBoardAIInterfaceImportSummary: React.FC<{
+const CurationBoardAIInterfaceImportSummary = ({  group, onDeleteCurationImport  }: {
     group: IGroupListItem;
     onDeleteCurationImport: (curationImportId: string) => void;
-}> = ({ group, onDeleteCurationImport }) => {
+}) => {
     const projectUser = useProjectUser();
     const curationImport = useProjectCurationImport(group.id);
     const updateCurationImportName = useUpdateCurationImportName();

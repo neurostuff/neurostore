@@ -10,10 +10,10 @@ import {
     metaAnalyticAlgorithms,
 } from './CreateMetaAnalysisSpecificationDialogConstants';
 
-const SelectSpecificationComponent: React.FC<{
+const SelectSpecificationComponent = (props: {
     onSelectSpecification: (algorithm: IAlgorithmSelection) => void;
     algorithm: IAlgorithmSelection;
-}> = (props) => {
+}) => {
     return (
         <Box>
             <Box sx={{ marginBottom: '3rem' }}>

@@ -19,7 +19,7 @@ export interface INavigationButtons {
     onButtonClick: (button: ENavigationButton) => void;
 }
 
-const NavigationButtons: React.FC<INavigationButtons> = (props) => {
+const NavigationButtons = (props: INavigationButtons) => {
     const {
         prevButtonDisabled = false,
         prevButtonText = 'Back',

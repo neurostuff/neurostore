@@ -1,4 +1,4 @@
-const DynamicInputDisplay: React.FC = () => {
+const DynamicInputDisplay = () => {
     return <div>DynamicInputDisplay</div>;
 };
 

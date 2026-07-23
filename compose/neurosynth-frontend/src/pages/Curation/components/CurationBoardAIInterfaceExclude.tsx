@@ -17,9 +17,9 @@ import TextEdit from 'components/TextEdit/TextEdit';
 import { ENeurosynthTagIds } from 'pages/Project/store/ProjectStore.consts';
 import { filterStubsBySearch } from './CurationBoardAIInterfaceExclude.helpers';
 
-const CurationBoardAIInterfaceExclude: React.FC<{
+const CurationBoardAIInterfaceExclude = ({  group  }: {
     group: IGroupListItem;
-}> = ({ group }) => {
+}) => {
     const windowHeight = useGetWindowHeight();
     const scrollableBoxRef = useRef<HTMLDivElement>(null);
     const listRef = useRef<FixedSizeList>(null);

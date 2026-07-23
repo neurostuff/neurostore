@@ -21,7 +21,7 @@ import {
 
 const nodeTypes = { NeurosynthNode: NeurosynthNode };
 
-const PrismaComponent: React.FC<{ prisma?: INeurosynthProject }> = () => {
+const PrismaComponent = () => {
     const [height, setHeight] = useState(700);
     const [prisma, setPrisma] = useState<IPrismaGroup>({
         nodes: [],

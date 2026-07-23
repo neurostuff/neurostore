@@ -8,7 +8,7 @@ import { IAlgorithmSelection } from 'pages/MetaAnalysis/components/CreateMetaAna
 import useStudiesWithMissingSampleSizeALE from '../hooks/useALEMissingSampleSize';
 import { isALE } from './MetaAnalysisDynamicForm';
 
-const CreateMetaAnalysisSpecificationAlgorithmStep: React.FC<{
+const CreateMetaAnalysisSpecificationAlgorithmStep = (props: {
     onChooseAlgorithm: (
         estimator: IAutocompleteObject,
         estimatorArgs: IDynamicValueType,
@@ -17,7 +17,7 @@ const CreateMetaAnalysisSpecificationAlgorithmStep: React.FC<{
     ) => void;
     algorithm: IAlgorithmSelection;
     onNavigate: (button: ENavigationButton) => void;
-}> = (props) => {
+}) => {
     const [algorithmSpec, setAlgorithmSpec] = useState<IAlgorithmSelection>(props.algorithm);
     const studiesMissingSampleSize = useStudiesWithMissingSampleSizeALE(algorithmSpec.estimator?.label);
 

@@ -6,11 +6,11 @@ import ImportSleuthIngest from './ImportSleuthIngest';
 import ImportSleuthUpload from './ImportSleuthUpload';
 import { ICurationStubStudy } from 'pages/Curation/Curation.types';
 
-const ImportSleuth: React.FC<
+const ImportSleuth = ({  onFileUpload, onImportStubs, onNavigate  }: 
     IImportArgs & {
         onFileUpload: (fileName: string) => void;
     }
-> = ({ onFileUpload, onImportStubs, onNavigate }) => {
+) => {
     const [uploadFilePhase, setUploadFilePhase] = useState(true);
     const [sleuthUploads, setSleuthUploads] = useState<ISleuthFileUploadStubs[]>([]);
 

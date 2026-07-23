@@ -1,7 +1,7 @@
 import { Box, Slider, TextField, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
 
-const ThresholdSlider: React.FC<{
+const ThresholdSlider = ({  threshold, thresholdMin, thresholdMax, onDebouncedThresholdChange  }: {
     onDebouncedThresholdChange: (update: {
         thresholdValue: number;
         thresholdMin: number;
@@ -10,7 +10,7 @@ const ThresholdSlider: React.FC<{
     thresholdMin: number;
     thresholdMax: number;
     threshold: number;
-}> = ({ threshold, thresholdMin, thresholdMax, onDebouncedThresholdChange }) => {
+}) => {
     // These just hold the values for the various inputs, the actual threshold value may differ as it debounces changes
     const [thresholdInputs, setThresholdInputs] = useState<{
         thresholdMin: string;

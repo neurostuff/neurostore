@@ -38,7 +38,7 @@ import useSaveStudy from 'pages/Study/hooks/useSaveStudy';
 import EditStudySwapVersionButton from 'pages/Study/components/EditStudySwapVersionButton';
 import EditStudyToolbarStyles from './EditStudyToolbar.styles';
 
-const EditStudyToolbar: React.FC = () => {
+const EditStudyToolbar = () => {
     const [confirmationDialogState, setConfirmationDialogState] = useState<{
         isOpen: boolean;
         action: 'PREV' | 'NEXT' | 'COMPLETE' | undefined;

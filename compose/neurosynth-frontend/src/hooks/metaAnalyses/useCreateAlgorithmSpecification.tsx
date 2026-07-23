@@ -11,7 +11,7 @@ import {
     StudysetPostBody,
     StudysetReturn,
 } from 'neurosynth-compose-typescript-sdk';
-import { useMutation, useQueryClient } from 'react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import API, { NeurostoreAnnotation } from 'api/api.config';
 
 export enum EAnalysisType {
@@ -26,27 +26,36 @@ const useCreateAlgorithmSpecification = () => {
         AxiosError,
         SpecificationPostBody,
         unknown
-    >((spec: SpecificationPostBody) => API.NeurosynthServices.SpecificationsService.specificationsPost(spec));
+    >({
+        mutationFn: (spec: SpecificationPostBody) => API.NeurosynthServices.SpecificationsService.specificationsPost(spec),
+    });
     const createSynthStudysetMutation = useMutation<
         AxiosResponse<StudysetReturn>,
         AxiosError,
         StudysetPostBody,
         unknown
-    >((studyset) => API.NeurosynthServices.StudysetsService.snapshotStudysetsPost(studyset));
+    >({
+        mutationFn: (studyset: StudysetPostBody) =>
+            API.NeurosynthServices.StudysetsService.snapshotStudysetsPost(studyset),
+    });
     const createSynthAnnotationMutation = useMutation<
         AxiosResponse<NeurostoreAnnotation>,
         AxiosError,
         AnnotationPostBody,
         unknown
-    >((annotation) => API.NeurosynthServices.AnnotationsService.snapshotAnnotationsPost(annotation));
+    >({
+        mutationFn: (annotation: AnnotationPostBody) =>
+            API.NeurosynthServices.AnnotationsService.snapshotAnnotationsPost(annotation),
+    });
     const createMetaAnalysisMutation = useMutation<
         AxiosResponse<MetaAnalysisReturn>,
         AxiosError,
         MetaAnalysisPostBody,
         unknown
-    >((metaAnalysis: MetaAnalysisPostBody) =>
-        API.NeurosynthServices.MetaAnalysisService.metaAnalysesPost(metaAnalysis)
-    );
+    >({
+        mutationFn: (metaAnalysis: MetaAnalysisPostBody) =>
+            API.NeurosynthServices.MetaAnalysisService.metaAnalysesPost(metaAnalysis)
+    });
 
     const createMetaAnalysis = async (
         projectId: string | undefined,
@@ -120,11 +129,11 @@ const useCreateAlgorithmSpecification = () => {
         }
     };
 
-    const isLoading =
-        createSpecificationMutation.isLoading ||
-        createSynthStudysetMutation.isLoading ||
-        createSynthAnnotationMutation.isLoading ||
-        createMetaAnalysisMutation.isLoading;
+    const isPending =
+        createSpecificationMutation.isPending ||
+        createSynthStudysetMutation.isPending ||
+        createSynthAnnotationMutation.isPending ||
+        createMetaAnalysisMutation.isPending;
 
     const isError =
         createSpecificationMutation.isError ||
@@ -140,7 +149,7 @@ const useCreateAlgorithmSpecification = () => {
 
     return {
         error,
-        isLoading,
+        isPending,
         isError,
         createMetaAnalysis,
     };

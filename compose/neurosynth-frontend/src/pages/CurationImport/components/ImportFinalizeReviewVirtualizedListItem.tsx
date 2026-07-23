@@ -2,14 +2,13 @@ import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { Box, Chip, Divider, Typography } from '@mui/material';
 import { ICurationStubStudy } from 'pages/Curation/Curation.types';
 import { PUBMED_ARTICLE_URL_PREFIX, PUBMED_CENTRAL_ARTICLE_URL_PREFIX } from 'hooks/external/useFetchPubMedIds.types';
+import React from 'react';
 
 /**
  * Study summary for studies that are being imported and tagged. We cannot reuse the ReadOnlyStubSummary easily here because
  * all data needs to be a one liner with fixed height for virtualization purposes
  */
-const ImportFinalizeReviewVirtualizedListItem: React.FC<ICurationStubStudy & { style: React.CSSProperties }> = (
-    props
-) => {
+const ImportFinalizeReviewVirtualizedListItem = (props: ICurationStubStudy & { style?: React.CSSProperties }) => {
     const { articleLink, articleYear, title, authors, pmid, doi, journal, neurostoreId, style, pmcid } = props;
 
     const articleYearText = articleYear ? `(${articleYear}). ` : '';

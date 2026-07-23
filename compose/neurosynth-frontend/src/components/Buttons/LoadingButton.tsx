@@ -2,13 +2,13 @@ import { Button, ButtonProps } from '@mui/material';
 import ProgressLoader from 'components/ProgressLoader';
 import { ColorOptions } from 'index';
 
-const LoadingButton: React.FC<
+const LoadingButton = (props: 
     ButtonProps & {
         text: string | React.ReactNode;
         isLoading?: boolean;
         loaderColor?: ColorOptions;
     }
-> = (props) => {
+) => {
     const {
         text,
         isLoading = false,

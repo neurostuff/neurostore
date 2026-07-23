@@ -9,7 +9,7 @@ import { SearchCriteria } from 'pages/Study/Study.types';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const Search: React.FC = () => {
+const Search = () => {
     const [activeStep, setActiveStep] = useState(0);
     const [stubs, setStubs] = useState<ICurationStubStudy[]>([]);
     const [searchCriteria, setSearchCriteria] = useState<SearchCriteria>();

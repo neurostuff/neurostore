@@ -11,7 +11,7 @@ import { useProjectName, useProjectUser } from 'pages/Project/store/ProjectStore
 import { useParams } from 'react-router-dom';
 import MetaAnalysisDetails from './components/MetaAnalysisDetails';
 
-const MetaAnalysisPage: React.FC = () => {
+const MetaAnalysisPage = () => {
     // const { startTour } = useGetTour('MetaAnalysisPage');
     const { projectId, metaAnalysisId } = useParams<{
         projectId: string;
@@ -26,9 +26,9 @@ const MetaAnalysisPage: React.FC = () => {
      * the name loading when we update the name, and only the description loading when
      * we update the description
      */
-    const { mutate: updateMetaAnalysisName, isLoading: updateMetaAnalysisNameIsLoading } = useUpdateMetaAnalysis();
+    const { mutate: updateMetaAnalysisName, isPending: updateMetaAnalysisNameIsLoading } = useUpdateMetaAnalysis();
 
-    const { mutate: updateMetaAnalysisDescription, isLoading: updateMetaAnalysisDescriptionIsLoading } =
+    const { mutate: updateMetaAnalysisDescription, isPending: updateMetaAnalysisDescriptionIsLoading } =
         useUpdateMetaAnalysis();
 
     const {

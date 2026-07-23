@@ -14,11 +14,11 @@ import React, { useState } from 'react';
 import CurationBoardAIGroupsStyles from './CurationBoardAIGroups.styles';
 import { IGroupListItem } from './CurationBoardAIGroupsList';
 
-const CurationBoardAIGroupsListItem: React.FC<{
+const CurationBoardAIGroupsListItem = ({  selectedGroupId, handleSelectGroup = () => {}, group  }: {
     selectedGroupId: string | undefined;
     group: IGroupListItem;
     handleSelectGroup: (group: IGroupListItem) => void;
-}> = ({ selectedGroupId, handleSelectGroup = () => {}, group }) => {
+}) => {
     const [expanded, setExpanded] = useState(false);
 
     const isExpandable = !!group.children?.length;

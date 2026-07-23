@@ -4,12 +4,12 @@ import { VirtualItem, Virtualizer } from '@tanstack/react-virtual';
 import { ICurationTableStudy } from '../hooks/useCuratorTableState.types';
 import { getGridTemplateColumns } from '../hooks/useCuratorTableState.helpers';
 
-const CurationBoardAIInterfaceCuratorTableRow: React.FC<{
+const CurationBoardAIInterfaceCuratorTableRow = ({  data, virtualRow, virtualizer, onSelect  }: {
     data: Row<ICurationTableStudy>;
     virtualRow: VirtualItem;
     virtualizer: Virtualizer<HTMLDivElement, HTMLTableRowElement>;
     onSelect: (id: string) => void;
-}> = ({ data, virtualRow, virtualizer, onSelect }) => {
+}) => {
     const tableCells = data.getVisibleCells();
 
     return (

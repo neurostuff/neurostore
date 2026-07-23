@@ -7,15 +7,12 @@ import useGetMetaAnalysisJobsByMetaAnalysisId from 'pages/MetaAnalysis/hooks/use
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 
-const ProjectsPageCardSummaryMetaAnalysesListItem: React.FC<ListItemProps & { metaAnalysis: MetaAnalysisReturn }> = (
-    props
-) => {
+const ProjectsPageCardSummaryMetaAnalysesListItem = (props: ListItemProps & { metaAnalysis: MetaAnalysisReturn }) => {
     const { metaAnalysis, ...listItemProps } = props;
     const latestResultId = getLatestMetaAnalysisResultId(metaAnalysis);
 
-    const { data: metaAnalysisResult, isLoading: getMetaAnalysisResultIsLoading } = useGetMetaAnalysisResultById(
-        latestResultId
-    );
+    const { data: metaAnalysisResult, isLoading: getMetaAnalysisResultIsLoading } =
+        useGetMetaAnalysisResultById(latestResultId);
 
     const { data: metaAnalysisJobs, isLoading: metaAnalysisJobsIsLoading } = useGetMetaAnalysisJobsByMetaAnalysisId(
         metaAnalysis?.id

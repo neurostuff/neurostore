@@ -13,8 +13,8 @@ import { useNavigate } from 'react-router-dom';
 
 const projectSearchCriteria = new ProjectSearchCriteria(1, 1000);
 
-const CreateProjectButton: React.FC<{ buttonProps?: ButtonProps }> = ({ buttonProps }) => {
-    const { mutate, isLoading: createProjectIsLoading } = useCreateProject();
+const CreateProjectButton = (props?: { buttonProps?: ButtonProps }) => {
+    const { mutate, isPending: createProjectIsLoading } = useCreateProject();
     const navigate = useNavigate();
     const [confirmationDialogIsOpen, setConfirmationDialogIsOpen] = useState(false);
     const { user } = useAuth0();
@@ -62,7 +62,7 @@ const CreateProjectButton: React.FC<{ buttonProps?: ButtonProps }> = ({ buttonPr
     const sx = {
         ...NavToolbarStyles.menuItem,
         ...NavToolbarStyles.createProjectButton,
-        ...buttonProps?.sx,
+        ...props?.buttonProps?.sx,
     };
 
     return (

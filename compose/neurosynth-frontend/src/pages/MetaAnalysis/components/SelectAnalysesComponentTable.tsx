@@ -8,10 +8,10 @@ import { IAnalysesSelection } from 'pages/MetaAnalysis/components/CreateMetaAnal
 import { annotationNotesToTableFormatHelper, getFilteredAnnotationNotes } from './SelectAnalysesComponent.helpers';
 import SelectAnalysesComponentStyles from './SelectAnalysesComponent.styles';
 
-const SelectAnalysesComponentTable: React.FC<{
+const SelectAnalysesComponentTable = (props: {
     allNotes: NoteCollectionReturn[] | undefined;
     selectedValue: IAnalysesSelection;
-}> = (props) => {
+}) => {
     const { selectedValue, allNotes } = props;
 
     const selectedNotes = useMemo(() => {

@@ -26,12 +26,12 @@ declare module '@tanstack/react-table' {
     }
 }
 
-const CurationBoardAIInterfaceCuratorTable: React.FC<ICurationBoardAIInterfaceCurator> = ({
+const CurationBoardAIInterfaceCuratorTable = ({ 
     table,
     onSetSelectedStub,
     selectedStub,
     columnIndex,
-}) => {
+ }: ICurationBoardAIInterfaceCurator) => {
     const prismaConfig = useProjectCurationPrismaConfig();
     const prismaPhase = prismaConfig.isPrisma ? indexToPRISMAMapping(columnIndex) : undefined;
 

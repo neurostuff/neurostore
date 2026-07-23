@@ -1,5 +1,5 @@
 import { vi, Mock } from 'vitest';
-import { act, render, screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import CurationDownloadSummaryButton from 'pages/Curation/components/CurationDownloadSummaryButton';
 import userEvent from '@testing-library/user-event';
 import { useProjectCurationColumns, useProjectExclusionTags } from 'pages/Project/store/ProjectStore';
@@ -7,7 +7,7 @@ import { ICurationColumn } from '../Curation.types';
 import { defaultIdentificationSources } from 'pages/Project/store/ProjectStore.consts';
 import { downloadFile } from 'helpers/downloadFile.helpers';
 
-vi.mock('react-query');
+vi.mock('@tanstack/react-query');
 vi.mock('helpers/downloadFile.helpers', async () => {
     const actual = await vi.importActual('helpers/downloadFile.helpers');
 
@@ -132,7 +132,7 @@ describe('CurationDownloadSummaryButton', () => {
         );
     });
 
-    it('downloads BibTeX citations when the download BibTeX button is clicked', async () => {
+    it('downloads BibTeX citations when the download BibTeX button is clicked', () => {
         const expectedBibtex =
             `@article{Smithincluded_1,\n` +
             `\tauthor = {Smith, John},\n` +
@@ -155,15 +155,11 @@ describe('CurationDownloadSummaryButton', () => {
 
         (useProjectCurationColumns as Mock).mockReturnValue(mockCurationColumns);
 
-        await act(async () => {
-            render(<CurationDownloadSummaryButton />);
-            const dropdownButton = screen.getByTestId('ArrowDropDownIcon');
-            expect(dropdownButton).toBeInTheDocument();
-            userEvent.click(dropdownButton);
-        });
-        await act(async () => {
-            userEvent.click(screen.getByText('Download as BibTeX'));
-        });
+        render(<CurationDownloadSummaryButton />);
+        const dropdownButton = screen.getByTestId('ArrowDropDownIcon');
+        expect(dropdownButton).toBeInTheDocument();
+        userEvent.click(dropdownButton);
+        userEvent.click(screen.getByText('Download as BibTeX'));
         expect(downloadFile).toHaveBeenCalledWith(
             `project-name:Curation:${new Date().toLocaleDateString()}.bib`,
             expectedBibtex,

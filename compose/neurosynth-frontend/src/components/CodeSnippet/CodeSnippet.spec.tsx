@@ -14,8 +14,8 @@ describe('CodeSnippet', () => {
     });
 
     describe('copy action', () => {
-        vi.useFakeTimers();
         beforeEach(() => {
+            vi.useFakeTimers();
             Object.assign(navigator, {
                 clipboard: {
                     writeText: vi.fn(() => Promise.resolve()),
@@ -23,13 +23,19 @@ describe('CodeSnippet', () => {
             });
         });
 
+        afterEach(() => {
+            vi.useRealTimers();
+        });
+
         it('should change text to copied and back to copy', async () => {
             render(<CodeSnippet linesOfCode={['example 1']} />);
             const copybutton = screen.getByTestId('ContentCopyIcon');
 
-            userEvent.click(copybutton);
+            await act(async () => {
+                userEvent.click(copybutton);
+            });
 
-            expect(await screen.findByText('✓')).toBeInTheDocument();
+            expect(screen.getByText('✓')).toBeInTheDocument();
 
             await act(async () => {
                 vi.advanceTimersByTime(2500);
@@ -38,11 +44,13 @@ describe('CodeSnippet', () => {
             expect(screen.getByTestId('ContentCopyIcon')).toBeInTheDocument();
         });
 
-        it('should write the text to clipboard when clicked', () => {
+        it('should write the text to clipboard when clicked', async () => {
             render(<CodeSnippet linesOfCode={['example 1', 'example 2']} />);
 
             const copybutton = screen.getByTestId('ContentCopyIcon');
-            userEvent.click(copybutton);
+            await act(async () => {
+                await userEvent.click(copybutton);
+            });
             expect(navigator.clipboard.writeText).toHaveBeenCalledWith('example 1\nexample 2');
         });
     });

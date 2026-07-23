@@ -4,7 +4,7 @@ import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs';
 import Search from 'pages/CurationImport/components/Search';
 import { useProjectId, useProjectName } from 'pages/Project/store/ProjectStore';
 
-const CurationSearchPage: React.FC = () => {
+const CurationSearchPage = () => {
     const projectId = useProjectId();
     const projectName = useProjectName();
 

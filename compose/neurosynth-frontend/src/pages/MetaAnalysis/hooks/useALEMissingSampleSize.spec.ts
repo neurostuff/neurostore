@@ -1,5 +1,5 @@
 import { vi, Mock } from 'vitest';
-import { renderHook } from '@testing-library/react-hooks';
+import { renderHook } from '@testing-library/react';
 import { useGetAnnotationById, useGetStudysetById } from 'hooks';
 import { useProjectExtractionAnnotationId, useProjectExtractionStudysetId } from 'pages/Project/store/ProjectStore';
 import useStudiesWithMissingSampleSizeALE from './useALEMissingSampleSize';

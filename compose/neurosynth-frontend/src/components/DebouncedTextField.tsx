@@ -6,7 +6,7 @@ type EDebouncedTextFieldProps = Omit<TextFieldProps, 'onChange' | 'value'> & {
     value?: string | undefined;
 };
 
-const DebouncedTextField: React.FC<EDebouncedTextFieldProps> = ({ value, onChange, ...otherProps }) => {
+const DebouncedTextField = ({  value, onChange, ...otherProps  }: EDebouncedTextFieldProps) => {
     const [debouncedValue, setDebouncedValue] = useState(value);
 
     useEffect(() => {

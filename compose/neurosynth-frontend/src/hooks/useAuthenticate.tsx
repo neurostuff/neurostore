@@ -28,9 +28,11 @@ function useAuthenticate() {
 
         try {
             await getAccessTokenWithPopup({
-                audience: AUTH0_AUDIENCE,
-                scope: 'openid profile email offline_access',
-                ...(forcePromptLogin ? { prompt: 'login' as const } : {}),
+                authorizationParams: {
+                    audience: AUTH0_AUDIENCE,
+                    scope: 'openid profile email offline_access',
+                    ...(forcePromptLogin ? { prompt: 'login' as const } : {}),
+                },
             });
 
             sessionStorage.removeItem(AUTH0_FORCE_PROMPT_LOGIN_KEY);
@@ -57,7 +59,12 @@ function useAuthenticate() {
         }
     };
 
-    const handleLogout = () => logout({ returnTo: window.location.origin });
+    const handleLogout = () =>
+        logout({
+            logoutParams: {
+                returnTo: window.location.origin,
+            },
+        });
 
     return {
         handleLogin,

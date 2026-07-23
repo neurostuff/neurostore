@@ -1,4 +1,4 @@
-import { useQuery } from 'react-query';
+import { useQuery } from '@tanstack/react-query';
 import API from 'api/api.config';
 
 /**
@@ -9,18 +9,18 @@ import API from 'api/api.config';
  */
 
 const useGetMetaAnalysisJobsByMetaAnalysisId = (metaAnalysisId: string | undefined, enabled: boolean = true) => {
-    return useQuery(
-        ['meta-analysis-jobs', metaAnalysisId],
-        async () => {
+    return useQuery({
+        queryKey: ['meta-analysis-jobs', metaAnalysisId],
+
+        queryFn: async () => {
             const res = await API.NeurosynthServices.MetaAnalysisService.metaAnalysisJobsGet();
             return res.data.results
                 ?.filter((job) => job.meta_analysis_id === metaAnalysisId)
                 .sort((a, b) => new Date(a.created_at ?? '').getTime() - new Date(b.created_at ?? '').getTime());
         },
-        {
-            enabled: enabled && !!metaAnalysisId,
-        }
-    );
+
+        enabled: enabled && !!metaAnalysisId
+    });
 };
 
 export default useGetMetaAnalysisJobsByMetaAnalysisId;

@@ -1,5 +1,5 @@
 import { vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { EPropertyType } from './EditMetadata.types';
 import { MockThemeProvider } from 'testing/helpers';
@@ -72,7 +72,9 @@ describe('EditMetadataValue Component', () => {
                 </MockThemeProvider>
             );
             const numberInput = screen.getByRole('spinbutton');
-            userEvent.clear(numberInput);
+            act(() => {
+                userEvent.clear(numberInput);
+            });
             expect(onEditMock).toBeCalledWith('');
         });
 

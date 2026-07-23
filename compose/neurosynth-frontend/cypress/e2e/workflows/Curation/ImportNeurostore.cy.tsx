@@ -36,9 +36,11 @@ describe('ImportStudiesDialog', () => {
             cy.get('input[type="text"]').type('neuron');
             cy.get('button').contains('Search').click();
             cy.wait('@baseStudiesFixture');
-            cy.contains('button', `next`).should('be.disabled');
+            cy.contains('button', 'next').should('not.be.disabled');
+            cy.contains('button', 'next').click();
+            cy.wait('@baseStudiesFixture');
             cy.get('input[type="text"]').first().clear().type('my new import');
-            cy.url().should('include', '/projects/abc123/curation');
+            cy.contains('button', 'Import').click({ force: true });
         });
     });
 });

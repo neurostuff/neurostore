@@ -5,7 +5,7 @@ import DisplayLink from './DisplayLink';
 
 let debounce: NodeJS.Timeout;
 
-const DisplayStudyLinkFullText: React.FC<{ studyName: string } & LinkProps> = ({ studyName, ...linkProps }) => {
+const DisplayStudyLinkFullText = ({  studyName, ...linkProps  }: { studyName: string } & LinkProps) => {
     useEffect(() => {
         debounce = setTimeout(() => {
             setDebouncedName(studyName || '');

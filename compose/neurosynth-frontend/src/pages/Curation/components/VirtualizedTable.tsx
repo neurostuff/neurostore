@@ -21,11 +21,11 @@ const inner = forwardRef<HTMLDivElement, React.HTMLProps<HTMLDivElement>>((props
     );
 });
 
-const Row: React.FC<{
+const Row = ({  row, virtualRow, rowVirtualizer  }: {
     row: { id: number; name: string };
     virtualRow: VirtualItem;
     rowVirtualizer: Virtualizer<HTMLDivElement, HTMLTableRowElement>;
-}> = ({ row, virtualRow, rowVirtualizer }) => {
+}) => {
     const lngth = useMemo(() => {
         return Math.round(Math.random() * 100);
     }, []);
@@ -64,7 +64,7 @@ const Row: React.FC<{
 const generateData = () => {
     return Array.from({ length: 1000 }, (_, i) => ({ id: i, name: `Row ${i}` }));
 };
-const VirtualizedTable: React.FC = (props) => {
+const VirtualizedTable = () => {
     const data = generateData();
     const ref = useRef<HTMLDivElement | null>(null);
 

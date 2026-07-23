@@ -34,7 +34,7 @@ const MetaAnalysisPage = React.lazy(() => import('pages/MetaAnalysis/MetaAnalysi
 
 const CurationPage = React.lazy(() => import('pages/Curation/CurationPage'));
 
-const BaseNavigation: React.FC = () => {
+const BaseNavigation = () => {
     return (
         <ErrorBoundary
             fallback={

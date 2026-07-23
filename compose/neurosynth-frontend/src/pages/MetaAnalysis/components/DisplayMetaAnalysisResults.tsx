@@ -12,9 +12,9 @@ import { NimareOutputs, parseNimareFileName } from '../Nimare.helpers';
 import DisplayParsedNiMareFile from './DisplayParsedNiMareFile';
 import DisplayMetaAnalysisActivations from './DisplayMetaAnalysisActivations';
 
-const DisplayMetaAnalysisResults: React.FC<{
+const DisplayMetaAnalysisResults = ({  metaAnalysis  }: {
     metaAnalysis: MetaAnalysisReturn | undefined;
-}> = ({ metaAnalysis }) => {
+}) => {
     const latestResultId = getLatestMetaAnalysisResultId(metaAnalysis);
     const { data, isLoading, isError } = useGetMetaAnalysisResultById(latestResultId);
     const { data: specification } = useGetSpecificationById((metaAnalysis?.specification as string | undefined) || '');

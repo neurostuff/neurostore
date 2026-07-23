@@ -6,7 +6,7 @@ import { EPropertyType, IEditMetadataRowModel, IMetadataRowModel } from 'compone
 import ToggleType from './ToggleType';
 import EditMetadataValue from './EditMetadataValue';
 
-const EditMetadataRow: React.FC<IEditMetadataRowModel> = React.memo((props) => {
+const EditMetadataRow = React.memo((props: IEditMetadataRowModel) => {
     const { onMetadataRowEdit, onMetadataRowDelete, metadataRow, disabled = false } = props;
 
     const handleEditMetadataValue = useCallback(

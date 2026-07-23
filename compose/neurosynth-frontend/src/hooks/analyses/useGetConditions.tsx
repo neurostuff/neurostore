@@ -1,10 +1,12 @@
-import { useQuery } from 'react-query';
+import { useQuery } from '@tanstack/react-query';
 import API from 'api/api.config';
 
 const useGetConditions = () => {
-    return useQuery('conditions', () => API.NeurostoreServices.ConditionsService.conditionsGet(), {
+    return useQuery({
+        queryKey: ['conditions'],
+        queryFn: () => API.NeurostoreServices.ConditionsService.conditionsGet(),
         select: (res) => res.data.results,
-        staleTime: 5000,
+        staleTime: 5000
     });
 };
 

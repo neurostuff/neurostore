@@ -7,7 +7,7 @@ import { Download } from '@mui/icons-material';
 import NeurosynthPopper from 'components/NeurosynthPopper/NeurosynthPopper';
 import ProgressLoader from 'components/ProgressLoader';
 
-const CurationDownloadIncludedStudiesIcon: React.FC = () => {
+const CurationDownloadIncludedStudiesIcon = () => {
     const [optionsIsOpen, setOptionsIsOpen] = useState(false);
     const anchorRef = useRef(null);
     const curationColumns = useProjectCurationColumns();

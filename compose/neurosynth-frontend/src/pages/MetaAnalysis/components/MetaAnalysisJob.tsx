@@ -3,12 +3,12 @@ import { Accordion, AccordionDetails, AccordionSummary, Box, Typography } from '
 import CodeSnippet from 'components/CodeSnippet/CodeSnippet';
 import { MetaAnalysisJobResponse } from 'neurosynth-compose-typescript-sdk';
 import { useEffect } from 'react';
-import { useQueryClient } from 'react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import useGetMetaAnalysisJobById from '../hooks/useGetMetaAnalysisJobById';
 
-const MetaAnalysisJob: React.FC<{
+const MetaAnalysisJob = ({  metaAnalysisJobData  }: {
     metaAnalysisJobData?: MetaAnalysisJobResponse;
-}> = ({ metaAnalysisJobData }) => {
+}) => {
     const { refetch } = useGetMetaAnalysisJobById(metaAnalysisJobData?.job_id);
     const queryClient = useQueryClient();
 
@@ -16,7 +16,9 @@ const MetaAnalysisJob: React.FC<{
         if (metaAnalysisJobData?.status === 'SUCCEEDED' || metaAnalysisJobData?.status === 'FAILED') {
             // run is complete.
             // invalidate meta-analyses to refresh and retrieve the latest meta-analysis results
-            queryClient.invalidateQueries('meta-analyses');
+            queryClient.invalidateQueries({
+                queryKey: ['meta-analyses']
+            });
             return;
         }
 
