@@ -1,5 +1,7 @@
-import { Box, InputAdornment, TextField, Typography } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
+import { Box, InputAdornment, TextField, Typography } from '@mui/material';
+import TextEdit from 'components/TextEdit/TextEdit';
+import VirtualizedList from 'components/VirtualizedList/VirtualizedList';
 import { useGetWindowHeight, useMeasure, useUserCanEdit } from 'hooks';
 import {
     useProjectCurationColumns,
@@ -7,22 +9,20 @@ import {
     useProjectUser,
     useUpdateExclusionTag,
 } from 'pages/Project/store/ProjectStore';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { FixedSizeList } from 'react-window';
+import { ENeurosynthTagIds } from 'pages/Project/store/ProjectStore.consts';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ICurationStubStudy } from '../Curation.types';
 import { IGroupListItem } from './CurationBoardAIGroupsList';
+import { filterStubsBySearch } from './CurationBoardAIInterfaceExclude.helpers';
 import CurationEditableStubSummary from './CurationEditableStubSummary';
 import CurationStubListItemVirtualizedContainer from './CurationStubListItemVirtualizedContainer';
-import TextEdit from 'components/TextEdit/TextEdit';
-import { ENeurosynthTagIds } from 'pages/Project/store/ProjectStore.consts';
-import { filterStubsBySearch } from './CurationBoardAIInterfaceExclude.helpers';
 
-const CurationBoardAIInterfaceExclude = ({  group  }: {
-    group: IGroupListItem;
-}) => {
+const ROW_HEIGHT_PX = 90;
+const LIST_WIDTH_PX = 260;
+
+const CurationBoardAIInterfaceExclude = ({ group }: { group: IGroupListItem }) => {
     const windowHeight = useGetWindowHeight();
     const scrollableBoxRef = useRef<HTMLDivElement>(null);
-    const listRef = useRef<FixedSizeList>(null);
     const [selectedStubId, setSelectedStubId] = useState<string>();
     const [searchTerm, setSearchTerm] = useState('');
     const columns = useProjectCurationColumns();
@@ -55,6 +55,11 @@ const CurationBoardAIInterfaceExclude = ({  group  }: {
         const foundColumn = columns.findIndex((col) => col.stubStudies.find((stub) => stub.id === selectedStubId));
         return foundColumn < 0 ? undefined : foundColumn;
     }, [columns, selectedStubId]);
+
+    const selectedItemIndex = useMemo(
+        () => filteredStubs.findIndex((stub) => stub.id === selectedStubId),
+        [filteredStubs, selectedStubId]
+    );
 
     const handleMoveToNextStub = useCallback(() => {
         if (!selectedStub?.id) return;
@@ -94,13 +99,6 @@ const CurationBoardAIInterfaceExclude = ({  group  }: {
             setSelectedStubId(filteredStubs[0]?.id);
         }
     }, [filteredStubs, selectedStubId]);
-
-    // scroll to the selected stub when the selection changes
-    useEffect(() => {
-        if (!listRef.current) return;
-        const selectedItemIndex = (filteredStubs || []).findIndex((x) => x.id === selectedStubId);
-        listRef.current.scrollToItem(selectedItemIndex, 'smart');
-    }, [selectedStubId, filteredStubs]);
 
     // reset scroll position of details page when the selected stub changes
     useEffect(() => {
@@ -154,25 +152,24 @@ const CurationBoardAIInterfaceExclude = ({  group  }: {
                         </Box>
                     ) : (
                         <Box sx={{ display: 'flex' }}>
-                            <Box>
-                                <FixedSizeList
-                                    height={pxInVh}
-                                    itemCount={filteredStubs.length || 0}
-                                    width={260}
-                                    itemSize={90}
-                                    itemKey={(index, data) => data.stubs[index]?.id}
-                                    itemData={{
-                                        stubs: filteredStubs,
-                                        selectedStubId: selectedStub?.id,
-                                        onSetSelectedStub: setSelectedStubId,
-                                    }}
-                                    layout="vertical"
-                                    overscanCount={5}
-                                    ref={listRef}
-                                >
-                                    {CurationStubListItemVirtualizedContainer}
-                                </FixedSizeList>
-                            </Box>
+                            <VirtualizedList
+                                rows={filteredStubs}
+                                rowHeightInPx={ROW_HEIGHT_PX}
+                                listHeightInPx={pxInVh}
+                                width={LIST_WIDTH_PX}
+                                overscan={5}
+                                scrollToIndex={selectedItemIndex >= 0 ? selectedItemIndex : undefined}
+                                scrollToAlign="auto"
+                                getItemKey={(stub) => stub.id}
+                                renderRow={(stub, style) => (
+                                    <CurationStubListItemVirtualizedContainer
+                                        stub={stub}
+                                        selectedStubId={selectedStub?.id}
+                                        onSetSelectedStub={setSelectedStubId}
+                                        style={style}
+                                    />
+                                )}
+                            />
                             <Box
                                 ref={scrollableBoxRef}
                                 sx={{ overflowY: 'auto', width: '100%', height: `${pxInVh}px` }}

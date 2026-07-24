@@ -1,23 +1,28 @@
 import { Box } from '@mui/material';
+import VirtualizedList from 'components/VirtualizedList/VirtualizedList';
 import { useGetWindowHeight } from 'hooks';
-import React, { useCallback, useEffect, useRef } from 'react';
-import { FixedSizeList } from 'react-window';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { ICurationBoardAIInterfaceCurator } from './CurationBoardAIInterfaceCurator';
 import CurationBoardAIInterfaceCuratorTableHints from './CurationBoardAIInterfaceCuratorTableHints';
 import CurationEditableStubSummary from './CurationEditableStubSummary';
 import CurationStubAITableSummary from './CurationStubAITableSummary';
 import CurationStubListItemVirtualizedContainer from './CurationStubListItemVirtualizedContainer';
 
-const CurationBoardAIInterfaceCuratorFocus = ({ 
+const ROW_HEIGHT_PX = 90;
+const LIST_WIDTH_PX = 260;
+
+const CurationBoardAIInterfaceCuratorFocus = ({
     selectedStub,
     table,
     onSetSelectedStub,
     columnIndex,
- }: ICurationBoardAIInterfaceCurator) => {
-    const rows = table.getRowModel().rows.map((row) => row.original);
+}: ICurationBoardAIInterfaceCurator) => {
+    const rows = useMemo(() => {
+        return table.getRowModel().rows.map((row) => row.original) ?? [];
+    }, [table]);
+
     const windowHeight = useGetWindowHeight();
     const scrollableBoxRef = useRef<HTMLDivElement>(null);
-    const listRef = useRef<FixedSizeList>(null);
 
     const handleMoveToNextStub = useCallback(() => {
         if (!selectedStub?.id) return;
@@ -32,11 +37,10 @@ const CurationBoardAIInterfaceCuratorFocus = ({
 
     const pxInVh = Math.round(windowHeight - 250);
 
-    useEffect(() => {
-        if (!listRef.current) return;
-        const selectedItemIndex = (rows || []).findIndex((row) => row.id === selectedStub?.id);
-        listRef.current.scrollToItem(selectedItemIndex, 'smart');
-    }, [selectedStub?.id, rows, pxInVh]);
+    const selectedItemIndex = useMemo(
+        () => rows.findIndex((row) => row.id === selectedStub?.id),
+        [rows, selectedStub?.id]
+    );
 
     useEffect(() => {
         if (scrollableBoxRef.current) {
@@ -55,25 +59,25 @@ const CurationBoardAIInterfaceCuratorFocus = ({
             )}
             {rows.length > 0 && (
                 <>
-                    <Box>
-                        <FixedSizeList
-                            height={pxInVh}
-                            itemCount={rows.length || 0}
-                            width={260}
-                            itemSize={90}
-                            itemKey={(index, data) => data.stubs[index]?.id}
-                            itemData={{
-                                stubs: rows,
-                                selectedStubId: selectedStub?.id,
-                                onSetSelectedStub: onSetSelectedStub,
-                            }}
-                            layout="vertical"
-                            overscanCount={5}
-                            ref={listRef}
-                        >
-                            {CurationStubListItemVirtualizedContainer}
-                        </FixedSizeList>
-                    </Box>
+                    <VirtualizedList
+                        rows={rows}
+                        rowHeightInPx={ROW_HEIGHT_PX}
+                        listHeightInPx={pxInVh}
+                        width={LIST_WIDTH_PX}
+                        overscan={5}
+                        scrollToIndex={selectedItemIndex >= 0 ? selectedItemIndex : undefined}
+                        scrollToAlign="center"
+                        scrollBehavior="auto"
+                        getItemKey={(stub) => stub.id}
+                        renderRow={(stub, style) => (
+                            <CurationStubListItemVirtualizedContainer
+                                stub={stub}
+                                selectedStubId={selectedStub?.id}
+                                onSetSelectedStub={onSetSelectedStub}
+                                style={style}
+                            />
+                        )}
+                    />
                     <Box ref={scrollableBoxRef} sx={{ overflowY: 'auto', width: '100%' }}>
                         <CurationEditableStubSummary
                             onMoveToNextStub={handleMoveToNextStub}
