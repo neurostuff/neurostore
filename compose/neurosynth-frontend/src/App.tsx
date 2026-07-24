@@ -1,4 +1,4 @@
-import Close from '@mui/icons-material/Close';
+import { Close } from '@mui/icons-material';
 import { IconButton } from '@mui/material';
 import Navbar from 'components/Navbar/Navbar';
 import useGoogleAnalytics from 'hooks/useGoogleAnalytics';

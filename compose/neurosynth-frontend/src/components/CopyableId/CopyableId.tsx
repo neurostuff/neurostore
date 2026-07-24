@@ -1,9 +1,8 @@
-import CheckIcon from '@mui/icons-material/Check';
-import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import { Check, ContentCopy } from '@mui/icons-material';
 import { Box, Divider, IconButton, Tooltip, Typography } from '@mui/material';
 import useCopyToClipboard from 'hooks/useCopyToClipboard';
 
-const CopyableId = ({  label, id  }: { label: string; id: string | null | undefined }) => {
+const CopyableId = ({ label, id }: { label: string; id: string | null | undefined }) => {
     const { copied, copyToClipboard } = useCopyToClipboard();
 
     if (!id) return null;
@@ -52,9 +51,9 @@ const CopyableId = ({  label, id  }: { label: string; id: string | null | undefi
                     sx={{ p: 0.25, mr: 0.25, fontSize: '0.75rem' }}
                 >
                     {copied ? (
-                        <CheckIcon sx={{ fontSize: '16px' }} color="success" />
+                        <Check sx={{ fontSize: '16px' }} color="success" />
                     ) : (
-                        <ContentCopyIcon sx={{ fontSize: '16px' }} />
+                        <ContentCopy sx={{ fontSize: '16px' }} />
                     )}
                 </IconButton>
             </Tooltip>

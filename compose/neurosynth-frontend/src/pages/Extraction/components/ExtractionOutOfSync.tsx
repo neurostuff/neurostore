@@ -1,4 +1,4 @@
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import { ErrorOutline } from '@mui/icons-material';
 import { Box, Typography } from '@mui/material';
 import LoadingButton from 'components/Buttons/LoadingButton';
 import { useGetStudysetById, useUpdateStudyset } from 'hooks';
@@ -102,9 +102,8 @@ const ExtractionOutOfSync = () => {
             await queryClient.invalidateQueries({ queryKey: [STUDYSET_QUERY_STRING] });
 
             queryClient.invalidateQueries({
-                queryKey: ['annotations']
+                queryKey: ['annotations'],
             });
-
 
             enqueueSnackbar('synced curation and studyset successfully', { variant: 'success' });
 
@@ -121,7 +120,7 @@ const ExtractionOutOfSync = () => {
     return (
         <Box sx={ExtractionOutOfSyncStyles.banner}>
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <ErrorOutlineIcon sx={{ marginRight: '10px', fontSize: '2.5rem' }} />
+                <ErrorOutline sx={{ marginRight: '10px', fontSize: '2.5rem' }} />
                 <Box>
                     <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center' }}>
                         <b>This studyset is out of sync</b>

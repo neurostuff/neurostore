@@ -1,5 +1,4 @@
-import { ChevronLeft } from '@mui/icons-material';
-import ChangeHistoryIcon from '@mui/icons-material/ChangeHistory';
+import { ChangeHistory, ChevronLeft, TableRows } from '@mui/icons-material';
 import { Box, Button, Typography } from '@mui/material';
 import { Row, Table } from '@tanstack/react-table';
 import CurationPromoteUncategorizedButton from 'components/Buttons/CurationPromoteUncategorizedButton';
@@ -12,7 +11,7 @@ import {
     useProjectCurationIsPrisma,
     useProjectUser,
 } from 'pages/Project/store/ProjectStore';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useCurationBoardGroups } from '../context/CurationBoardGroupsContext';
 import useCuratorTableState from '../hooks/useCuratorTableState';
@@ -22,7 +21,6 @@ import CurationBoardAIInterfaceCuratorTable from './CurationBoardAIInterfaceCura
 import CurationBoardAIInterfaceIdentificationUI from './CurationBoardAIInterfaceIdentificationUI';
 import CurationDownloadSummaryButton from './CurationDownloadSummaryButton';
 import PrismaDialog from './PrismaDialog';
-import TableRows from '@mui/icons-material/TableRows';
 
 export interface ICurationBoardAIInterfaceCurator {
     selectedStub: ICurationTableStudy | undefined;
@@ -191,7 +189,7 @@ const CurationBoardAIInterfaceCurator = () => {
                                     variant="outlined"
                                     size="small"
                                     style={{ marginRight: '0.5rem', fontSize: '12px' }}
-                                    startIcon={<ChangeHistoryIcon />}
+                                    startIcon={<ChangeHistory />}
                                 >
                                     PRISMA diagram
                                 </Button>

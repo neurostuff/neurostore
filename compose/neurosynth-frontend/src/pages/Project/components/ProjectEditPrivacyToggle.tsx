@@ -1,6 +1,5 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import LockIcon from '@mui/icons-material/Lock';
-import PublicIcon from '@mui/icons-material/Public';
+import { Lock, Public } from '@mui/icons-material';
 import { ToggleButtonGroup, ToggleButton, Box } from '@mui/material';
 import useUserCanEdit from 'hooks/useUserCanEdit';
 import { useProjectIsPublic, useUpdateProjectIsPublic } from 'pages/Project/store/ProjectStore';
@@ -25,7 +24,7 @@ const ProjectEditPrivacyToggle = () => {
                         height: '30px',
                     }}
                 >
-                    Public <PublicIcon sx={{ marginLeft: '10px', fontSize: '20px' }} />
+                    Public <Public sx={{ marginLeft: '10px', fontSize: '20px' }} />
                 </ToggleButton>
             </Box>
         );
@@ -45,7 +44,7 @@ const ProjectEditPrivacyToggle = () => {
                         height: '30px',
                     }}
                 >
-                    Private <LockIcon sx={{ marginLeft: '10px', fontSize: '20px' }} />
+                    Private <Lock sx={{ marginLeft: '10px', fontSize: '20px' }} />
                 </ToggleButton>
             </Box>
         );
@@ -72,7 +71,7 @@ const ProjectEditPrivacyToggle = () => {
                         height: '30px',
                     }}
                 >
-                    Public <PublicIcon sx={{ marginLeft: '10px', fontSize: '20px' }} />
+                    Public <Public sx={{ marginLeft: '10px', fontSize: '20px' }} />
                 </ToggleButton>
                 <ToggleButton
                     value="PRIVATE"
@@ -82,7 +81,7 @@ const ProjectEditPrivacyToggle = () => {
                         height: '30px',
                     }}
                 >
-                    Private <LockIcon sx={{ marginLeft: '10px', fontSize: '20px' }} />
+                    Private <Lock sx={{ marginLeft: '10px', fontSize: '20px' }} />
                 </ToggleButton>
             </ToggleButtonGroup>
         </Box>

@@ -10,9 +10,7 @@ import ProjectsPageCardSummaryCuration from './ProjectsPageCardSummaryCuration';
 import ProjectsPageCardExtractionSummary from './ProjectsPageCardSummaryExtraction';
 import ProjectsPageCardSummaryMetaAnalyses from './ProjectsPageCardSummaryMetaAnalyses';
 import { MetaAnalysis } from 'neurosynth-compose-typescript-sdk';
-import LockIcon from '@mui/icons-material/Lock';
-import PublicIcon from '@mui/icons-material/Public';
-import ChangeHistoryIcon from '@mui/icons-material/ChangeHistory';
+import { Lock, Public, ChangeHistory } from '@mui/icons-material';
 
 const isToday = (date: Date) => {
     const today = new Date();
@@ -138,7 +136,7 @@ const ProjectsPageCard = (props: INeurosynthProjectReturn) => {
                 <Box mb="0.5rem" sx={{ width: '100%' }}>
                     <Chip
                         label={isPublic ? 'Public' : 'Private'}
-                        icon={isPublic ? <PublicIcon /> : <LockIcon />}
+                        icon={isPublic ? <Public /> : <Lock />}
                         variant="outlined"
                         size="small"
                         sx={{ mr: '6px' }}
@@ -157,7 +155,7 @@ const ProjectsPageCard = (props: INeurosynthProjectReturn) => {
                     {provenance?.curationMetadata?.prismaConfig?.isPrisma && (
                         <Chip
                             label="PRISMA"
-                            icon={<ChangeHistoryIcon />}
+                            icon={<ChangeHistory />}
                             variant="outlined"
                             size="small"
                             sx={{ mr: '6px', pl: '2px' }}

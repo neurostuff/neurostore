@@ -1,7 +1,6 @@
 import { sentryVitePlugin } from '@sentry/vite-plugin';
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
-import viteTsconfigPaths from 'vite-tsconfig-paths';
 import { loadEnv } from 'vite';
 
 export default ({ mode }) => {
@@ -11,7 +10,6 @@ export default ({ mode }) => {
     return defineConfig({
         plugins: [
             react(),
-            viteTsconfigPaths(),
             sentryVitePlugin({
                 org: 'neurosynth',
                 project: 'javascript-react',
@@ -19,6 +17,10 @@ export default ({ mode }) => {
                 telemetry: isProduction,
             }),
         ],
+
+        resolve: {
+            tsconfigPaths: true,
+        },
 
         server: {
             host: 'localhost',

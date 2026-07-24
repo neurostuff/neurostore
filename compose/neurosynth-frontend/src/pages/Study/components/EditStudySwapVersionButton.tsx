@@ -1,5 +1,4 @@
-import OpenInNewIcon from '@mui/icons-material/OpenInNew';
-import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
+import { OpenInNew, SwapHoriz } from '@mui/icons-material';
 import {
     Box,
     Button,
@@ -199,7 +198,7 @@ const EditStudySwapVersionButton = () => {
                             padding: 0,
                         }}
                     >
-                        {isSwapping ? <ProgressLoader color="secondary" size={20} /> : <SwapHorizIcon />}
+                        {isSwapping ? <ProgressLoader color="secondary" size={20} /> : <SwapHoriz />}
                     </Button>
                 </Tooltip>
             </Box>
@@ -265,7 +264,7 @@ const EditStudySwapVersionButton = () => {
                                         target="_blank"
                                         rel="noreferrer"
                                         sx={{ fontSize: '0.8rem' }}
-                                        endIcon={<OpenInNewIcon />}
+                                        endIcon={<OpenInNew />}
                                     >
                                         View version
                                     </Button>

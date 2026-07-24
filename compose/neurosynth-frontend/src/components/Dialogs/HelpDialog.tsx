@@ -1,16 +1,15 @@
-import HelpIcon from '@mui/icons-material/Help';
+import { Help } from '@mui/icons-material';
 import { Button, IconButton } from '@mui/material';
 import React, { useState } from 'react';
 import BaseDialog from './BaseDialog';
 
-const HelpDialog = (props: { dialogTitle: string;
-    children?: React.ReactNode}) => {
+const HelpDialog = (props: { dialogTitle: string; children?: React.ReactNode }) => {
     const [isOpen, setIsOpen] = useState(false);
 
     return (
         <>
             <IconButton color="primary" onClick={() => setIsOpen(true)}>
-                <HelpIcon />
+                <Help />
             </IconButton>
             <BaseDialog
                 dialogTitle={props.dialogTitle}
