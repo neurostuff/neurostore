@@ -4,8 +4,8 @@ from datetime import datetime, timezone
 from typing import Optional
 
 import requests
-from flask import abort, current_app, request
-from flask.views import MethodView
+from neurosynth_compose.http import abort, current_app, request
+from neurosynth_compose.http import MethodView
 from marshmallow import ValidationError
 from redis import Redis
 from sqlalchemy import select

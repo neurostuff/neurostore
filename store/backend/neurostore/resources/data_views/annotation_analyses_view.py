@@ -1,8 +1,7 @@
-from flask import request
 from sqlalchemy.orm import joinedload, raiseload
-from webargs.flaskparser import parser
 
 from neurostore.database import db
+from neurostore.http import parser, request
 from neurostore.models import Analysis, AnnotationAnalysis, Study
 from neurostore.models.data import StudysetStudy
 from neurostore.resources.base import (
@@ -33,8 +32,8 @@ class AnnotationAnalysesView(ObjectView, ListView):
         "studyset_study": "StudysetStudiesResource",
     }
 
-    def post(self, arg=None):
-        data = parser.parse(self.__class__._schema(many=True), request)
+    def post(self, body):
+        data = self.__class__._schema(many=True).load(body)
         args = parser.parse(self._user_args, request, location="query")
         schema = self._schema(many=True, context=args)
         ids = {d.get("id"): d for d in data if d.get("id")}

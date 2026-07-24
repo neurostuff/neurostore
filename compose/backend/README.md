@@ -18,7 +18,7 @@ Edit the `.env` template to set the correct variables
 
 `APP_ENV` is the environment selector. Supported values are `development`,
 `staging`, `production`, `testing`, and `docker_test`. The stack resolves the
-matching Flask config and database name automatically.
+matching service config and database name automatically.
 
 ## Initializing backend
 Create the network, build the containers, and start services using the development configuration:
@@ -39,7 +39,7 @@ environment, recreate the volume or create `compose_test_db` manually before mig
 
 Next, apply the existing migrations (they are the canonical schema definition):
 
-    docker-compose exec compose flask db upgrade
+    docker-compose exec compose compose db upgrade
 
 Note: the stack now resolves the database from `APP_ENV` automatically.
 Development, testing, and `docker_test` use `compose_test_db`; staging and
@@ -56,8 +56,8 @@ If you make a change to compose, you should be able to simply restart the server
 
 If you change any models, generate a new Alembic migration and migrate the database (commit the generated revision file so it becomes the new source of truth):
 
-    docker-compose exec compose flask db migrate
-    docker-compose exec compose flask db upgrade
+    docker-compose exec compose compose db migrate
+    docker-compose exec compose compose db upgrade
 
 
 ## Database migrations
@@ -69,10 +69,20 @@ The migrations stored in `backend/migrations` are the **only** source of truth f
 Any time you start the backend or pull the latest changes, bring the database to the expected state with:
 
 ```sh
-docker-compose exec compose flask db upgrade
+docker-compose exec compose compose db upgrade
 ```
 
 `upgrade` is idempotent, so rerunning it is harmless; it only applies migrations that have not been run yet.
+
+For a deployment rollback within the current compatible migration window, use:
+
+```sh
+docker-compose exec compose compose db downgrade --revision -1
+```
+
+Migrations must follow expand/contract: add compatible schema first, deploy
+read-compatible code, backfill, then remove obsolete schema only in a later
+release. CI verifies the current-head downgrade/upgrade round trip.
 
 ### Resetting the database when switching branches
 
@@ -83,7 +93,7 @@ docker compose stop compose compose_worker compose_nginx compose-pghero compose-
 docker compose exec compose-pgsql17 psql -U postgres -c "DROP DATABASE IF EXISTS compose_test_db;"
 docker compose exec compose-pgsql17 psql -U postgres -c "CREATE DATABASE compose_test_db;"
 docker compose up -d
-docker compose exec compose flask db upgrade
+docker compose exec compose compose db upgrade
 ```
 
 If you're using the legacy Postgres container, replace `compose-pgsql17` with `compose_pgsql` in the commands above.
@@ -98,14 +108,14 @@ and execute:
     docker compose run -e "APP_ENV=docker_test" --rm compose bash -c "python -m pytest neurosynth_compose/tests"
 
 ## Admin interface
-The Flask-Admin UI is served at `/admin` once the stack is running.
+The admin UI is served at `/admin` once the stack is running.
 
 Access:
 - Dev: http://localhost:81/admin
 - Prod: https://compose.neurosynth.org/admin
 
 Auth:
-- Set `FLASK_ADMIN_USERNAME` and `FLASK_ADMIN_PASSWORD` in the environment.
+- Set `ADMIN_USERNAME` and `ADMIN_PASSWORD` in the environment.
 - The browser will prompt for HTTP Basic auth when you visit `/admin`.
 
 Grant admin access (recommended for any admin UI access):

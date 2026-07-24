@@ -58,6 +58,17 @@ def require_env_var(name):
     return value
 
 
+def positive_int_env(name, default):
+    value = os.environ.get(name, str(default))
+    try:
+        parsed = int(value)
+    except ValueError as exc:
+        raise RuntimeError(f"Environment variable '{name}' must be an integer.") from exc
+    if parsed < 1:
+        raise RuntimeError(f"Environment variable '{name}' must be at least 1.")
+    return parsed
+
+
 class Config(object):
     # SERVER_NAME = 'localhost'  # Set to external server name in production
 
@@ -69,6 +80,7 @@ class Config(object):
     CACHE_TYPE = "RedisCache"
     CACHE_REDIS_URL = require_env_var("CACHE_REDIS_URL")
     CACHE_KEY_PREFIX = None
+    ASGI_THREAD_TOKENS = positive_int_env("ASGI_THREAD_TOKENS", 16)
     POSTGRES_HOST = os.environ.get("POSTGRES_HOST")
     POSTGRES_PASSWORD = os.environ.get("POSTGRES_PASSWORD", "")
     DB_NAME = resolve_database_name("neurostore", "production")
@@ -101,8 +113,8 @@ class Config(object):
     SEMANTIC_SCHOLAR_API_KEY = os.environ.get("SEMANTIC_SCHOLAR_API_KEY")
     PUBMED_TOOL_API_KEY = os.environ.get("PUBMED_TOOL_API_KEY")
     PUBMED_TOOL = "neurostore"
-    FLASK_ADMIN_USERNAME = os.environ.get("FLASK_ADMIN_USERNAME")
-    FLASK_ADMIN_PASSWORD = os.environ.get("FLASK_ADMIN_PASSWORD")
+    ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME")
+    ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD")
     BEARERINFO_FUNC = os.environ.get(
         "BEARERINFO_FUNC", "neurostore.resources.auth.decode_token"
     )

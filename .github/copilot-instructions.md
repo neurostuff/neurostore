@@ -1,6 +1,6 @@
 # Neurostore: Meta-Analysis Backend Services & Frontend
 
-Neurostore is a containerized neuroimaging meta-analysis platform consisting of two Python Flask backend services (Neurostore and Neurosynth-Compose) and a React/TypeScript frontend. All services are deployed using Docker Compose.
+Neurostore is a containerized neuroimaging meta-analysis platform consisting of two Python backend services (Neurostore and Neurosynth-Compose) and a React/TypeScript frontend. All services are deployed using Docker Compose.
 
 **Always reference these instructions first and fallback to `.github/workflows/workflow.yml` for testing setup help, and then fallback to search or bash commands only when you encounter unexpected information that does not match the info here.**
 
@@ -37,14 +37,14 @@ Create and migrate databases for both services:
 #### Store Database
 
 - `.env` selects the environment with `APP_ENV`; on a fresh volume, the matching default database is created automatically (`store_test_db` for development/testing/docker_test, `neurostore` for staging/production)
-- `docker compose exec -T neurostore bash -c "flask db upgrade"` -- takes 5-10 seconds
-- `docker compose exec -T neurostore bash -c "flask ingest-neurosynth --max-rows 100"` -- takes 5-10 seconds
+- `docker compose exec -T neurostore bash -c "neurostore db upgrade"` -- takes 5-10 seconds
+- `docker compose exec -T neurostore bash -c "neurostore ingest-neurosynth --max-rows 100"` -- takes 5-10 seconds
 - The tracked store migrations create `pgvector` automatically. If you are recovering a partially migrated database, `docker compose exec -T store-pgsql17 psql -U postgres -d store_test_db -c "CREATE EXTENSION IF NOT EXISTS vector;"` is still a safe fallback.
 
 #### Compose Database
 
 - `.env` selects the environment with `APP_ENV`; on a fresh volume, the matching default database is created automatically (`compose_test_db` for development/testing/docker_test, `compose` for staging/production)
-- `docker compose exec -T compose bash -c "flask db upgrade"` -- takes 5-10 seconds
+- `docker compose exec -T compose bash -c "compose db upgrade"` -- takes 5-10 seconds
 
 ### Frontend Development
 
@@ -85,7 +85,7 @@ Navigate to `compose/neurosynth-frontend/`:
 
 #### Frontend Tests
 
-- `npm run test` -- takes 50-70 seconds
+- `npm run test` -- defaults to one Vitest worker locally to limit memory use; set `VITEST_MAX_WORKERS` to increase parallelism
 - Expected: ~345 tests passing
 - `npm run cy:e2e-headless-dev` -- Cypress E2E (loads `.env.dev` via `env-cmd`; create it from `.env.example` if missing). Requires backends running and the app served per repo docs.
 
@@ -94,7 +94,7 @@ Navigate to `compose/neurosynth-frontend/`:
 ### Always Test These Workflows After Changes
 
 1. **API Functionality**: `curl http://localhost/api/studies` -- Store API should return JSON
-2. **Base Study Datatype Filtering**: `curl "http://localhost/api/base-studies?data_type=coordinate"` -- should return ingested coordinate studies after `flask ingest-neurosynth --max-rows 100`
+2. **Base Study Datatype Filtering**: `curl "http://localhost/api/base-studies?data_type=coordinate"` -- should return ingested coordinate studies after `neurostore ingest-neurosynth --max-rows 100`
 3. **Frontend Build**: Ensure `npm run build:dev` completes without errors
 4. **Backend Migration**: Test database migration commands work
 5. **Docker Services**: All containers should start and stay healthy
@@ -127,7 +127,8 @@ Navigate to `compose/neurosynth-frontend/`:
 
 Both services use similar `.env` configurations:
 
-- `APP_ENV` -- Primary environment selector (`development`, `staging`, `production`). This drives the Flask config class and the default database name used by app/runtime services.
+- `APP_ENV` -- Primary environment selector (`development`, `staging`, `production`). This drives the service config class and the default database name used by app/runtime services.
+- `WEB_CONCURRENCY` -- Gunicorn worker count. Local `.env` defaults to `1`; increase only after measuring the target host's memory and load.
 - `POSTGRES_HOST` -- Database host (store-pgsql17 or compose-pgsql17)
 - `POSTGRES_PASSWORD` -- Database password (usually "example")
 - `AUTH0_CLIENT_ID` -- Auth0 integration (can be placeholder for dev)
@@ -143,14 +144,14 @@ Use `APP_ENV` as the only environment selector. For Docker-based tests, use `APP
 ```
 /
 ├── store/                    # Neurostore backend service
-│   ├── backend/             # Python Flask application
+│   ├── backend/             # Python backend application
 │   │   ├── neurostore/      # Main package
 │   │   ├── migrations/      # Database migrations
 │   │   └── pyproject.toml   # Python dependencies
 │   ├── docker-compose.yml   # Production config
 │   └── docker-compose.dev.yml # Development overrides
 ├── compose/                 # Neurosynth-Compose service
-│   ├── backend/             # Python Flask application
+│   ├── backend/             # Python backend application
 │   │   ├── neurosynth_compose/ # Main package
 │   │   └── pyproject.toml   # Python dependencies
 │   ├── neurosynth-frontend/ # React/TypeScript app

@@ -7,15 +7,12 @@ import re
 
 import sqlalchemy as sa
 import sqlalchemy.sql.expression as sae
-from flask import current_app, request  # jsonify
-from flask.views import MethodView
 from marshmallow import ValidationError
 from psycopg2 import errors
 from sqlalchemy import func
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import raiseload, selectinload
 from webargs import fields
-from webargs.flaskparser import parser
 
 from neurostore.cache_versioning import bump_cache_versions, get_cache_version_for_path
 from neurostore.database import db
@@ -26,6 +23,7 @@ from neurostore.exceptions.utils.error_helpers import (
     abort_validation,
 )
 from neurostore.extensions import cache
+from neurostore.http import parser, request
 from neurostore.models import (
     Analysis,
     Annotation,
@@ -34,6 +32,7 @@ from neurostore.models import (
     User,
 )
 from neurostore.note_keys import resolve_note_key_default
+from neurostore.runtime import get_runtime
 from neurostore.resources import data as viewdata
 from neurostore.resources.common import merge_unique_ids
 from neurostore.resources.mutation_core import (
@@ -98,7 +97,7 @@ class DefaultObjectViewPolicy:
         return record
 
 
-class BaseView(MethodView):
+class BaseView:
     _model = None
     _o2m = {}
     _m2o = {}
@@ -195,13 +194,14 @@ class BaseView(MethodView):
         if not base_studies:
             return
 
-        if current_app.config.get("BASE_STUDY_FLAGS_ASYNC", True):
+        config = get_runtime().config
+        if config.get("BASE_STUDY_FLAGS_ASYNC", True):
             reason = f"{self.__class__.__name__}.update_base_studies"
             enqueue_base_study_flag_updates(base_studies, reason=reason)
         else:
             recompute_media_flags(base_studies)
 
-        if current_app.config.get("BASE_STUDY_METADATA_ASYNC", True):
+        if config.get("BASE_STUDY_METADATA_ASYNC", True):
             reason = f"{self.__class__.__name__}.update_base_studies"
             enqueue_base_study_metadata_updates(base_studies, reason=reason)
 
@@ -289,7 +289,7 @@ def cache_key_creator(*args, **kwargs):
     user = get_current_user().id if get_current_user() else ""
 
     # Get query args from request
-    query_items = list(request.args.items(multi=True))
+    query_items = request.query_items()
 
     # If extra_args is present, merge into query_items
     extra_args = kwargs.get("extra_args")
@@ -340,9 +340,9 @@ class ObjectView(BaseView):
             {"Content-Type": "application/json"},
         )
 
-    def put(self, id):
+    def put(self, id, body):
         object_view_policy = self.build_object_view_policy()
-        request_data = self.insert_data(id, request.json)
+        request_data = self.insert_data(id, body)
         schema = self.__class__._schema()
         data = load_schema_or_abort(schema, request_data, partial=True)
 

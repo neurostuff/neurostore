@@ -1,19 +1,23 @@
+import pytest
+
+pytestmark = pytest.mark.anyio
+
 from neurostore.models import Analysis, Image, Point, Study, User
 from neurostore.schemas import AnalysisSchema
 
 
-def test_get_nested_and_not_nested_analyses(auth_client, ingest_neurosynth, session):
+async def test_get_nested_and_not_nested_analyses(async_auth_client, ingest_neurosynth, session):
     analysis_id = Analysis.query.first().id
-    non_nested = auth_client.get(f"/api/analyses/{analysis_id}?nested=false")
-    nested = auth_client.get(f"/api/analyses/{analysis_id}?nested=true")
+    non_nested = await async_auth_client.get(f"/api/analyses/{analysis_id}?nested=false")
+    nested = await async_auth_client.get(f"/api/analyses/{analysis_id}?nested=true")
 
     assert isinstance(non_nested.json()["points"][0], str)
     assert isinstance(nested.json()["points"][0], dict)
 
 
-def test_get_analyses(auth_client, ingest_neurosynth, session):
+async def test_get_analyses(async_auth_client, ingest_neurosynth, session):
     # List of analyses
-    resp = auth_client.get("/api/analyses/")
+    resp = await async_auth_client.get("/api/analyses/")
     assert resp.status_code == 200
     analysis_list = resp.json()["results"]
     assert isinstance(analysis_list, list)
@@ -39,7 +43,7 @@ def test_get_analyses(auth_client, ingest_neurosynth, session):
     a_id = analysis["id"]
 
     # Query specify analysis ID
-    resp = auth_client.get(f"/api/analyses/{a_id}")
+    resp = await async_auth_client.get(f"/api/analyses/{a_id}")
     resp_json = resp.json()
     assert resp.status_code == 200
     assert set(resp_json["points"]) == set(analysis["points"])
@@ -53,8 +57,8 @@ def test_get_analyses(auth_client, ingest_neurosynth, session):
     assert resp_json["id"] == a_id
 
 
-def test_get_analyses_filter_by_study(auth_client, session):
-    first_study_resp = auth_client.post(
+async def test_get_analyses_filter_by_study(async_auth_client, session):
+    first_study_resp = await async_auth_client.post(
         "/api/studies/",
         data={
             "name": "analysis-study-filter-first",
@@ -63,7 +67,7 @@ def test_get_analyses_filter_by_study(auth_client, session):
             "analyses": [{"name": "analysis-study-filter-first-analysis"}],
         },
     )
-    second_study_resp = auth_client.post(
+    second_study_resp = await async_auth_client.post(
         "/api/studies/",
         data={
             "name": "analysis-study-filter-second",
@@ -81,8 +85,8 @@ def test_get_analyses_filter_by_study(auth_client, session):
     first_analysis_id = first_study_resp.json()["analyses"][0]
     second_analysis_id = second_study_resp.json()["analyses"][0]
 
-    filtered_resp = auth_client.get(f"/api/analyses/?study={first_study_id}")
-    second_filtered_resp = auth_client.get(f"/api/analyses/?study={second_study_id}")
+    filtered_resp = await async_auth_client.get(f"/api/analyses/?study={first_study_id}")
+    second_filtered_resp = await async_auth_client.get(f"/api/analyses/?study={second_study_id}")
 
     assert filtered_resp.status_code == 200
     assert second_filtered_resp.status_code == 200
@@ -100,8 +104,8 @@ def test_get_analyses_filter_by_study(auth_client, session):
     assert first_analysis_id not in second_filtered_analysis_ids
 
 
-def test_analysis_emits_all_media_flags(auth_client, session):
-    create_study = auth_client.post(
+async def test_analysis_emits_all_media_flags(async_auth_client, session):
+    create_study = await async_auth_client.post(
         "/api/studies/",
         data={
             "name": "analysis-media-flags",
@@ -123,7 +127,7 @@ def test_analysis_emits_all_media_flags(auth_client, session):
     assert create_study.status_code == 200
 
     analysis_id = create_study.json()["analyses"][0]
-    response = auth_client.get(f"/api/analyses/{analysis_id}")
+    response = await async_auth_client.get(f"/api/analyses/{analysis_id}")
     assert response.status_code == 200
     payload = response.json()
 
@@ -134,46 +138,46 @@ def test_analysis_emits_all_media_flags(auth_client, session):
     assert payload["has_beta_and_variance_maps"] is True
 
 
-def test_post_analyses(auth_client, ingest_neurosynth, session):
+async def test_post_analyses(async_auth_client, ingest_neurosynth, session):
     analysis_db = Analysis.query.first()
     analysis = AnalysisSchema().dump(analysis_db)
-    id_ = auth_client.username
+    id_ = async_auth_client.username
     user = User.query.filter_by(external_id=id_).first()
     analysis_db.study.user = user
     session.add(analysis_db.study)
     session.commit()
     for k in ["user", "id", "created_at", "updated_at", "entities"]:
         analysis.pop(k, None)
-    resp = auth_client.post("/api/analyses/", data=analysis)
+    resp = await async_auth_client.post("/api/analyses/", data=analysis)
 
     assert resp.status_code == 200
 
 
-def test_delete_coordinate_analyses(auth_client, ingest_neurosynth, session):
+async def test_delete_coordinate_analyses(async_auth_client, ingest_neurosynth, session):
     analysis_db = Analysis.query.first()
     analysis = AnalysisSchema().dump(analysis_db)
-    id_ = auth_client.username
+    id_ = async_auth_client.username
     user = User.query.filter_by(external_id=id_).first()
     analysis_db.user = user
     session.add(analysis_db)
     session.commit()
 
-    auth_client.delete(f"/api/analyses/{analysis_db.id}")
+    await async_auth_client.delete(f"/api/analyses/{analysis_db.id}")
 
     for point in analysis["points"]:
         assert Point.query.filter_by(id=point).first() is None
 
 
-def test_delete_image_analyses(auth_client, ingest_neurovault, session):
+async def test_delete_image_analyses(async_auth_client, ingest_neurovault, session):
     analysis_db = Analysis.query.first()
     analysis = AnalysisSchema().dump(analysis_db)
-    id_ = auth_client.username
+    id_ = async_auth_client.username
     user = User.query.filter_by(external_id=id_).first()
     analysis_db.user = user
     session.add(analysis_db)
     session.commit()
 
-    auth_client.delete(f"/api/analyses/{analysis_db.id}")
+    await async_auth_client.delete(f"/api/analyses/{analysis_db.id}")
 
     for image in analysis["images"]:
         image_db = Image.query.filter_by(id=image).one()
@@ -181,10 +185,10 @@ def test_delete_image_analyses(auth_client, ingest_neurovault, session):
         assert image_db.study_id == analysis["study"]
 
 
-def test_update_points_analyses(auth_client, ingest_neurovault, session):
+async def test_update_points_analyses(async_auth_client, ingest_neurovault, session):
     analysis_db = Analysis.query.where(Analysis.analysis_conditions.any()).first()
     analysis = AnalysisSchema().dump(analysis_db)
-    id_ = auth_client.username
+    id_ = async_auth_client.username
     user = User.query.filter_by(external_id=id_).first()
     analysis_db.user = user
     session.add(analysis_db)
@@ -194,19 +198,19 @@ def test_update_points_analyses(auth_client, ingest_neurovault, session):
 
     payload = {"points": points[:-1]}
     # cache the get endpoints
-    auth_client.get(f"/api/analyses/{analysis_db.id}?nested=false")
-    auth_client.get(f"/api/analyses/{analysis_db.id}?nested=true")
-    auth_client.get(f"/api/analyses/{analysis_db.id}")
+    await async_auth_client.get(f"/api/analyses/{analysis_db.id}?nested=false")
+    await async_auth_client.get(f"/api/analyses/{analysis_db.id}?nested=true")
+    await async_auth_client.get(f"/api/analyses/{analysis_db.id}")
 
-    update_points = auth_client.put(f"/api/analyses/{analysis_db.id}", data=payload)
+    update_points = await async_auth_client.put(f"/api/analyses/{analysis_db.id}", data=payload)
 
     assert update_points.status_code == 200
     assert payload["points"] == update_points.json()["points"]
 
     # see if cache updated
-    nested_get = auth_client.get(f"/api/analyses/{analysis_db.id}?nested=false")
-    nonnested_get = auth_client.get(f"/api/analyses/{analysis_db.id}?nested=true")
-    get = auth_client.get(f"/api/analyses/{analysis_db.id}")
+    nested_get = await async_auth_client.get(f"/api/analyses/{analysis_db.id}?nested=false")
+    nonnested_get = await async_auth_client.get(f"/api/analyses/{analysis_db.id}?nested=true")
+    get = await async_auth_client.get(f"/api/analyses/{analysis_db.id}")
 
     assert (
         set(p["id"] for p in nested_get.json()["points"])
@@ -216,7 +220,7 @@ def test_update_points_analyses(auth_client, ingest_neurovault, session):
     )
 
 
-def test_post_analysis_without_order(auth_client, ingest_neurosynth, session):
+async def test_post_analysis_without_order(async_auth_client, ingest_neurosynth, session):
     # Get an existing analysis from the database
     analysis_db = Analysis.query.first()
     analysis = AnalysisSchema().dump(analysis_db)
@@ -225,7 +229,7 @@ def test_post_analysis_without_order(auth_client, ingest_neurosynth, session):
     analysis.pop("order", None)
 
     # Submit a POST request without the 'order' field
-    resp = auth_client.post("/api/analyses/", data=analysis)
+    resp = await async_auth_client.post("/api/analyses/", data=analysis)
 
     # Check if the response status code is 200 (OK)
     assert resp.status_code == 200
@@ -237,8 +241,8 @@ def test_post_analysis_without_order(auth_client, ingest_neurosynth, session):
     assert resp.json()["order"] is not None
 
 
-def test_put_analysis_partial_does_not_reset_order(auth_client, session):
-    id_ = auth_client.username
+async def test_put_analysis_partial_does_not_reset_order(async_auth_client, session):
+    id_ = async_auth_client.username
     user = User.query.filter_by(external_id=id_).first()
     study = Study(
         name="partial analysis update",
@@ -249,18 +253,18 @@ def test_put_analysis_partial_does_not_reset_order(auth_client, session):
     session.commit()
 
     analysis_id = study.analyses[0].id
-    resp = auth_client.put(f"/api/analyses/{analysis_id}", data={"name": "renamed"})
+    resp = await async_auth_client.put(f"/api/analyses/{analysis_id}", data={"name": "renamed"})
 
     assert resp.status_code == 200
     assert resp.json()["name"] == "renamed"
     assert resp.json()["order"] == 3
 
 
-def test_create_duplicate_analysis(auth_client, ingest_neurosynth, session):
+async def test_create_duplicate_analysis(async_auth_client, ingest_neurosynth, session):
     # Get an existing analysis from the database
     analysis_db = Analysis.query.first()
     analysis = AnalysisSchema().dump(analysis_db)
-    id_ = auth_client.username
+    id_ = async_auth_client.username
     user = User.query.filter_by(external_id=id_).first()
     analysis_db.study.user = user
     for a in analysis_db.study.analyses:
@@ -274,11 +278,11 @@ def test_create_duplicate_analysis(auth_client, ingest_neurosynth, session):
         analysis.pop(k, None)
 
     # Create the first analysis
-    resp = auth_client.post("/api/analyses/", data=analysis)
+    resp = await async_auth_client.post("/api/analyses/", data=analysis)
     assert resp.status_code == 200
 
     # Attempt to create a duplicate analysis
-    resp_duplicate = auth_client.post("/api/analyses/", data=analysis)
+    resp_duplicate = await async_auth_client.post("/api/analyses/", data=analysis)
     assert resp_duplicate.status_code == 200
 
     # Check if the duplicate analysis is the same as the original

@@ -147,6 +147,7 @@ def test_create_meta_analysis_result_backfills_existing_canonical_snapshot_refs(
     assert existing_studyset.neurostore_id is None
     assert existing_annotation.neurostore_id is None
     assert existing_annotation.snapshot_studyset_id is None
+    session.commit()
 
     headers = {"Compose-Upload-Key": meta_analysis.run_key}
     auth_client.token = None

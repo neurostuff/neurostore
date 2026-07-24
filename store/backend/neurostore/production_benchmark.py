@@ -3,28 +3,28 @@
 from __future__ import annotations
 
 import argparse
+import asyncio
+import inspect
 import json
 import os
 import re
 import statistics
 import threading
-from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from io import StringIO
 from pathlib import Path
 from time import perf_counter
 from types import SimpleNamespace
-from unittest.mock import patch
 from urllib.parse import urlencode
 from uuid import uuid4
 
+import httpx
 from jose.jwt import encode
-from sqlalchemy import event, func, select
+from sqlalchemy import delete, event, func, select
 
 from neurostore.database import db
-from neurostore.models import Analysis, BaseStudy, Study, User
-from neurostore.tests.request_utils import Client
+from neurostore.models import Analysis, Annotation, BaseStudy, Study, Studyset, User
 
 TOKEN = encode({"sub": "user1-id"}, "abc", algorithm="HS256")
 DEFAULT_SCALES = [10, 50, 100, 200]
@@ -39,28 +39,55 @@ def _env_flag(name, default=False):
 
 def _load_app():
     os.environ.setdefault("APP_ENV", "testing")
-    from neurostore import create_app
+    from neurostore import create_asgi_app
 
-    return create_app()
+    return create_asgi_app()
 
 
 def _response_json(response):
-    if hasattr(response, "get_json"):
-        return response.get_json()
     payload = getattr(response, "json", None)
     if callable(payload):
         return payload()
     return payload
 
 
-def _request(client: Client, method: str, path: str, *, data=None, params=None):
+class BenchmarkClient:
+    """Small native-ASGI client for in-process production benchmark runs."""
+
+    def __init__(self, app, token: str):
+        self._client = httpx.AsyncClient(
+            transport=httpx.ASGITransport(app=app),
+            base_url="http://testserver",
+            follow_redirects=True,
+        )
+        self._token = token
+
+    async def aclose(self):
+        await self._client.aclose()
+
+    def _headers(self):
+        return {
+            "Authorization": f"Bearer {self._token}",
+            "Accept": "application/json",
+        }
+
+    async def request(self, method: str, path: str, *, data=None):
+        kwargs = {"headers": self._headers()}
+        if data is not None:
+            kwargs["json"] = data
+        return await self._client.request(method.upper(), path, **kwargs)
+
+
+async def _request(
+    client: BenchmarkClient, method: str, path: str, *, data=None, params=None
+):
     if params:
         separator = "&" if "?" in path else "?"
         path = f"{path}{separator}{urlencode(params, doseq=True)}"
-    response = getattr(client, method)(path, data=data)
+    response = await client.request(method, path, data=data)
     if response.status_code >= 400:
         raise RuntimeError(
-            f"{method.upper()} {path} failed with {response.status_code}: {response.data}"
+            f"{method.upper()} {path} failed with {response.status_code}: {response.text}"
         )
     return response
 
@@ -74,60 +101,58 @@ def _ensure_user() -> None:
         db.session.commit()
 
 
-def _flush_scoped_session_commit(self):
-    return self.flush()
+class _BenchmarkWriteTracker:
+    def __init__(self):
+        self.annotation_ids: list[str] = []
+        self.studyset_ids: list[str] = []
+        self.study_ids: list[str] = []
 
+    def checkpoint(self):
+        return (
+            len(self.annotation_ids),
+            len(self.studyset_ids),
+            len(self.study_ids),
+        )
 
-def _noop_scoped_session_remove(self):
-    return None
+    def track_annotation(self, annotation_id: str):
+        self.annotation_ids.append(annotation_id)
 
+    def track_studyset(self, studyset_id: str):
+        self.studyset_ids.append(studyset_id)
 
-@contextmanager
-def _benchmark_write_isolation(*, enabled: bool):
-    if not enabled:
-        yield
-        return
+    def track_study(self, study_id: str):
+        self.study_ids.append(study_id)
 
-    scoped_session_cls = type(db.session)
-    original_remove = scoped_session_cls.remove
-    db.session.remove()
+    async def cleanup_since(self, checkpoint, client: BenchmarkClient):
+        annotation_index, studyset_index, study_index = checkpoint
+        await self._cleanup_ids(
+            client,
+            self.annotation_ids[annotation_index:],
+            self.studyset_ids[studyset_index:],
+            self.study_ids[study_index:],
+        )
+        del self.annotation_ids[annotation_index:]
+        del self.studyset_ids[studyset_index:]
+        del self.study_ids[study_index:]
 
-    with patch.object(
-        scoped_session_cls,
-        "commit",
-        _flush_scoped_session_commit,
-    ), patch.object(
-        scoped_session_cls,
-        "remove",
-        _noop_scoped_session_remove,
-    ):
-        outer_transaction = db.session.begin()
-        try:
-            yield
-        finally:
-            if outer_transaction.is_active:
-                outer_transaction.rollback()
-            else:
-                db.session.rollback()
+    async def cleanup_all(self, client: BenchmarkClient):
+        await self._cleanup_ids(
+            client, self.annotation_ids, self.studyset_ids, self.study_ids
+        )
+        self.annotation_ids.clear()
+        self.studyset_ids.clear()
+        self.study_ids.clear()
 
-    original_remove(db.session)
-
-
-@contextmanager
-def _benchmark_case_rollback(*, enabled: bool):
-    if not enabled:
-        yield
-        return
-
-    savepoint = db.session.begin_nested()
-    try:
-        yield
-    finally:
-        if savepoint.is_active:
-            savepoint.rollback()
-        else:
-            db.session.rollback()
-        db.session.expire_all()
+    async def _cleanup_ids(self, client, annotation_ids, studyset_ids, study_ids):
+        del client
+        if annotation_ids:
+            db.session.execute(delete(Annotation).where(Annotation.id.in_(annotation_ids)))
+        if studyset_ids:
+            db.session.execute(delete(Studyset).where(Studyset.id.in_(studyset_ids)))
+        if study_ids:
+            db.session.execute(delete(Study).where(Study.id.in_(study_ids)))
+        db.session.commit()
+        db.session.remove()
 
 
 def _extract_search_term(base_study_name: str, fallback_id: str) -> str:
@@ -182,6 +207,22 @@ def _fit_line(xs: list[int], ys: list[float]) -> dict[str, float]:
     slope = numerator / denominator
     intercept = y_mean - slope * x_mean
     return {"slope": slope, "intercept": intercept}
+
+
+def _percentile(values: list[float], percentile: float) -> float:
+    if not values:
+        return 0.0
+    if len(values) == 1:
+        return values[0]
+
+    sorted_values = sorted(values)
+    rank = (len(sorted_values) - 1) * percentile
+    lower_index = int(rank)
+    upper_index = min(lower_index + 1, len(sorted_values) - 1)
+    fraction = rank - lower_index
+    return sorted_values[lower_index] + (
+        sorted_values[upper_index] - sorted_values[lower_index]
+    ) * fraction
 
 
 def _project_line(fit: dict[str, float], x_value: int) -> float:
@@ -381,6 +422,19 @@ class _ThreadAwareProfiler:
             sys.setprofile(previous_profile)
             threading.setprofile(previous_thread_profile)
 
+    async def profile_awaitable(self, fn):
+        import sys
+
+        previous_thread_profile = threading.getprofile()
+        previous_profile = sys.getprofile()
+        threading.setprofile(self._profile_hook)
+        sys.setprofile(self._profile_hook)
+        try:
+            return await fn()
+        finally:
+            sys.setprofile(previous_profile)
+            threading.setprofile(previous_thread_profile)
+
     def export(self) -> dict:
         merged: dict[tuple[str, int, str], dict] = {}
         for state in self._thread_state.values():
@@ -477,6 +531,7 @@ def _build_scaling_case_analysis(case_runs: list[dict], *, service: str) -> dict
             "case_name": run["case_name"],
             "workload_size": run["workload_size"],
             "median_seconds": run["median_seconds"],
+            "p95_seconds": run.get("p95_seconds", run["median_seconds"]),
             "profiling": run.get("profiling"),
             "metadata": run.get("metadata") or {},
         }
@@ -541,6 +596,7 @@ def run_scaling_profile(
                     "target_workload_size": target_workload_size,
                     "workload_metric": workload_metric,
                     "median_seconds": case["median_seconds"],
+                    "p95_seconds": case.get("p95_seconds", case["median_seconds"]),
                     "profiling": case.get("profiling"),
                     "metadata": case.get("metadata") or {},
                 }
@@ -695,17 +751,31 @@ def _pick_bulk_post_payload(
     return rows[:resolved_limit], available_count
 
 
-def _create_large_studyset(client: Client, study_ids: list[str], *, suffix: str) -> str:
+async def _create_large_studyset(
+    client: BenchmarkClient,
+    study_ids: list[str],
+    *,
+    suffix: str,
+    tracker: _BenchmarkWriteTracker | None = None,
+) -> str:
     payload = {
         "name": f"production-benchmark-studyset-{suffix}",
         "studies": [{"id": study_id} for study_id in study_ids],
     }
-    response = _request(client, "post", "/api/studysets/", data=payload)
+    response = await _request(client, "post", "/api/studysets/", data=payload)
     body = _response_json(response)
+    if tracker is not None:
+        tracker.track_studyset(body["id"])
     return body["id"]
 
 
-def _create_large_annotation(client: Client, studyset_id: str, *, suffix: str) -> str:
+async def _create_large_annotation(
+    client: BenchmarkClient,
+    studyset_id: str,
+    *,
+    suffix: str,
+    tracker: _BenchmarkWriteTracker | None = None,
+) -> str:
     payload = {
         "studyset": studyset_id,
         "name": f"production-benchmark-annotation-{suffix}",
@@ -715,13 +785,17 @@ def _create_large_annotation(client: Client, studyset_id: str, *, suffix: str) -
             "priority": {"type": "number", "order": 2, "default": 1},
         },
     }
-    response = _request(client, "post", "/api/annotations/", data=payload)
+    response = await _request(client, "post", "/api/annotations/", data=payload)
     body = _response_json(response)
+    if tracker is not None:
+        tracker.track_annotation(body["id"])
     return body["id"]
 
 
-def _load_annotation_payload(client: Client, annotation_id: str) -> dict:
-    response = _request(client, "get", f"/api/annotations/{annotation_id}")
+async def _load_annotation_payload(
+    client: BenchmarkClient, annotation_id: str
+) -> dict:
+    response = await _request(client, "get", f"/api/annotations/{annotation_id}")
     return _response_json(response)
 
 
@@ -810,7 +884,13 @@ def _write_profile_artifacts(
     }
 
 
-def _benchmark_case(
+async def _resolve_case_result(result):
+    if inspect.isawaitable(result):
+        return await result
+    return result
+
+
+async def _benchmark_case(
     name: str,
     iterations: int,
     fn,
@@ -818,44 +898,59 @@ def _benchmark_case(
     profile_dir: Path | None = None,
     client_ref: SimpleNamespace | None = None,
     rollback_after: bool = False,
+    app=None,
+    cleanup_tracker: _BenchmarkWriteTracker | None = None,
 ) -> dict:
     durations = []
     last_metadata = {}
     profiling = None
 
     for index in range(iterations):
+        cleanup_checkpoint = (
+            cleanup_tracker.checkpoint()
+            if cleanup_tracker is not None and rollback_after
+            else None
+        )
         if profile_dir is None:
-            with _benchmark_case_rollback(enabled=rollback_after):
-                started = perf_counter()
-                last_metadata = fn(index) or {}
-                durations.append(perf_counter() - started)
+            started = perf_counter()
+            last_metadata = await _resolve_case_result(fn(index)) or {}
+            durations.append(perf_counter() - started)
+            if cleanup_checkpoint is not None and client_ref is not None:
+                await cleanup_tracker.cleanup_since(
+                    cleanup_checkpoint, client_ref.current
+                )
             continue
 
         sql_collector = _SqlTimingCollector(db.engine)
         profiler = _ThreadAwareProfiler() if index == 0 else None
         original_client = client_ref.current if client_ref is not None else None
         profiled_client = (
-            Client(token=TOKEN) if client_ref is not None and profiler else None
+            BenchmarkClient(app, TOKEN)
+            if client_ref is not None and profiler and app is not None
+            else None
         )
 
-        with _benchmark_case_rollback(enabled=rollback_after):
-            with sql_collector:
-                started = perf_counter()
-                try:
-                    if client_ref is not None and profiled_client is not None:
-                        client_ref.current = profiled_client
-                    if profiler is not None:
-                        last_metadata = profiler.profile_callable(
-                            lambda: fn(index) or {}
-                        )
-                    else:
-                        last_metadata = fn(index) or {}
-                finally:
-                    if client_ref is not None:
-                        client_ref.current = original_client
-                    if profiled_client is not None:
-                        profiled_client.close()
-                durations.append(perf_counter() - started)
+        with sql_collector:
+            started = perf_counter()
+            try:
+                if client_ref is not None and profiled_client is not None:
+                    client_ref.current = profiled_client
+                if profiler is not None:
+                    last_metadata = await profiler.profile_awaitable(
+                        lambda: _resolve_case_result(fn(index))
+                    )
+                    last_metadata = last_metadata or {}
+                else:
+                    last_metadata = await _resolve_case_result(fn(index)) or {}
+            finally:
+                if client_ref is not None:
+                    client_ref.current = original_client
+                if profiled_client is not None:
+                    await profiled_client.aclose()
+            durations.append(perf_counter() - started)
+
+        if cleanup_checkpoint is not None and client_ref is not None:
+            await cleanup_tracker.cleanup_since(cleanup_checkpoint, client_ref.current)
 
         if profiler is not None:
             profiling = _write_profile_artifacts(
@@ -866,6 +961,7 @@ def _benchmark_case(
         "name": name,
         "iterations": durations,
         "median_seconds": statistics.median(durations),
+        "p95_seconds": _percentile(durations, 0.95),
         "metadata": last_metadata,
     }
     if profiling is not None:
@@ -888,8 +984,10 @@ def _pick_seed_analysis_id(study_id: str) -> str:
     return analysis_id
 
 
-def _load_base_study_detail(client: Client, base_study_id: str) -> dict:
-    response = _request(
+async def _load_base_study_detail(
+    client: BenchmarkClient, base_study_id: str
+) -> dict:
+    response = await _request(
         client,
         "get",
         f"/api/base-studies/{base_study_id}",
@@ -898,8 +996,8 @@ def _load_base_study_detail(client: Client, base_study_id: str) -> dict:
     return _response_json(response)
 
 
-def _load_study_detail(client: Client, study_id: str) -> dict:
-    response = _request(
+async def _load_study_detail(client: BenchmarkClient, study_id: str) -> dict:
+    response = await _request(
         client,
         "get",
         f"/api/studies/{study_id}",
@@ -908,8 +1006,8 @@ def _load_study_detail(client: Client, study_id: str) -> dict:
     return _response_json(response)
 
 
-def _load_analysis_detail(client: Client, analysis_id: str) -> dict:
-    response = _request(
+async def _load_analysis_detail(client: BenchmarkClient, analysis_id: str) -> dict:
+    response = await _request(
         client,
         "get",
         f"/api/analyses/{analysis_id}",
@@ -918,8 +1016,10 @@ def _load_analysis_detail(client: Client, analysis_id: str) -> dict:
     return _response_json(response)
 
 
-def _list_annotations_for_studyset(client: Client, studyset_id: str) -> dict:
-    response = _request(
+async def _list_annotations_for_studyset(
+    client: BenchmarkClient, studyset_id: str
+) -> dict:
+    response = await _request(
         client,
         "get",
         "/api/annotations/",
@@ -928,8 +1028,8 @@ def _list_annotations_for_studyset(client: Client, studyset_id: str) -> dict:
     return _response_json(response)
 
 
-def _list_frontend_base_studies(
-    client: Client, *, search_term: str | None = None
+async def _list_frontend_base_studies(
+    client: BenchmarkClient, *, search_term: str | None = None
 ) -> dict:
     params = {
         "page": "1",
@@ -942,7 +1042,7 @@ def _list_frontend_base_studies(
     }
     if search_term:
         params["search"] = search_term
-    response = _request(client, "get", "/api/base-studies/", params=params)
+    response = await _request(client, "get", "/api/base-studies/", params=params)
     return _response_json(response)
 
 
@@ -952,6 +1052,124 @@ def _case_name(base_name: str, scale: int | None = None) -> str:
     return f"{base_name}_{scale}"
 
 
+async def _post_studyset_case(client, study_ids, study_scale, index, tracker):
+    studyset_id = await _create_large_studyset(
+        client,
+        study_ids,
+        suffix=f"{index}-{uuid4().hex[:8]}",
+        tracker=tracker,
+    )
+    return {"studyset_id": studyset_id, "study_count": study_scale}
+
+
+async def _post_annotation_case(
+    client, shared_studyset_id, study_scale, index, tracker
+):
+    annotation_id = await _create_large_annotation(
+        client,
+        shared_studyset_id,
+        suffix=f"{index}-{uuid4().hex[:8]}",
+        tracker=tracker,
+    )
+    return {"annotation_id": annotation_id, "study_count": study_scale}
+
+
+async def _get_annotation_case(client, shared_annotation_id):
+    payload = await _load_annotation_payload(client, shared_annotation_id)
+    return {"note_count": len(payload.get("notes", []))}
+
+
+async def _list_annotations_case(client, shared_studyset_id):
+    payload = await _list_annotations_for_studyset(client, shared_studyset_id)
+    return {"result_count": len(payload.get("results", []))}
+
+
+async def _get_nested_studyset_case(client, shared_studyset_id):
+    payload = _response_json(
+        await _request(
+            client,
+            "get",
+            f"/api/studysets/{shared_studyset_id}",
+            params={"nested": "true"},
+        )
+    )
+    return {"study_count": len(payload.get("studies", []))}
+
+
+async def _get_study_nested_case(client, source_study_id):
+    payload = await _load_study_detail(client, source_study_id)
+    return {"analysis_count": len(payload.get("analyses", []))}
+
+
+async def _get_analysis_nested_case(client, source_analysis_id):
+    payload = await _load_analysis_detail(client, source_analysis_id)
+    return {"point_count": len(payload.get("points", []))}
+
+
+async def _browse_base_studies_case(client):
+    payload = await _list_frontend_base_studies(client)
+    return {"result_count": len(payload.get("results", []))}
+
+
+async def _search_base_studies_text_case(client, search_term):
+    payload = _response_json(
+        await _request(
+            client,
+            "get",
+            "/api/base-studies/",
+            params={"search": search_term, "page_size": "50"},
+        )
+    )
+    return {"query": search_term, "total_count": payload["metadata"]["total_count"]}
+
+
+async def _search_base_studies_frontend_case(client, search_term):
+    payload = await _list_frontend_base_studies(client, search_term=search_term)
+    return {"query": search_term, "result_count": len(payload.get("results", []))}
+
+
+async def _search_base_studies_info_case(client, search_term):
+    payload = _response_json(
+        await _request(
+            client,
+            "get",
+            "/api/base-studies/",
+            params={"search": search_term, "page_size": "50", "info": "true"},
+        )
+    )
+    return {"query": search_term, "total_count": payload["metadata"]["total_count"]}
+
+
+async def _get_base_study_detail_case(client, base_study_id):
+    payload = await _load_base_study_detail(client, base_study_id)
+    return {"version_count": len(payload.get("versions", []))}
+
+
+async def _post_base_studies_bulk_case(client, bulk_post_payload, bulk_post_scale):
+    payload = _response_json(
+        await _request(
+            client,
+            "post",
+            "/api/base-studies/",
+            data=bulk_post_payload,
+        )
+    )
+    return {"count": len(payload), "requested_count": bulk_post_scale}
+
+
+async def _clone_study_case(client, source_study_id, tracker):
+    payload = _response_json(
+        await _request(
+            client,
+            "post",
+            f"/api/studies/?source_id={source_study_id}",
+            data={},
+        )
+    )
+    tracker.track_study(payload["id"])
+    return {"study_id": payload["id"]}
+
+
 def run(
     iterations: int,
     *,
@@ -959,15 +1177,31 @@ def run(
     seed_study_limit: int | None = None,
     bulk_post_limit: int | None = None,
 ) -> dict:
+    return asyncio.run(
+        _run_async(
+            iterations,
+            profile_dir=profile_dir,
+            seed_study_limit=seed_study_limit,
+            bulk_post_limit=bulk_post_limit,
+        )
+    )
+
+
+async def _run_async(
+    iterations: int,
+    *,
+    profile_dir: Path | None = None,
+    seed_study_limit: int | None = None,
+    bulk_post_limit: int | None = None,
+) -> dict:
     app = _load_app()
-    ctx = app.app_context()
-    ctx.push()
-    client = Client(token=TOKEN)
+    client = BenchmarkClient(app, TOKEN)
     client_ref = SimpleNamespace(current=client)
+    write_tracker = _BenchmarkWriteTracker()
     rollback_writes = _env_flag("PRODUCTION_BENCHMARK_ROLLBACK_WRITES", True)
 
     try:
-        with _benchmark_write_isolation(enabled=rollback_writes):
+        try:
             _ensure_user()
             (
                 base_study_ids,
@@ -982,48 +1216,57 @@ def run(
             source_analysis_id = _pick_seed_analysis_id(source_study_id)
             study_scale = len(study_ids)
             bulk_post_scale = len(bulk_post_payload)
+            db.session.rollback()
+            db.session.remove()
 
-            shared_studyset_id = _create_large_studyset(
-                client, study_ids, suffix="seed"
+            shared_studyset_id = await _create_large_studyset(
+                client, study_ids, suffix="seed", tracker=write_tracker
             )
-            shared_annotation_id = _create_large_annotation(
-                client, shared_studyset_id, suffix="seed"
+            shared_annotation_id = await _create_large_annotation(
+                client,
+                shared_studyset_id,
+                suffix="seed",
+                tracker=write_tracker,
             )
-            shared_annotation = _load_annotation_payload(client, shared_annotation_id)
+            shared_annotation = await _load_annotation_payload(
+                client, shared_annotation_id
+            )
             note_count = len(shared_annotation.get("notes", []))
 
             cases = [
-                _benchmark_case(
+                await _benchmark_case(
                     _case_name("post_studyset_seed_studies", study_scale),
                     iterations,
-                    lambda index: {
-                        "studyset_id": _create_large_studyset(
-                            client_ref.current,
-                            study_ids,
-                            suffix=f"{index}-{uuid4().hex[:8]}",
-                        ),
-                        "study_count": study_scale,
-                    },
+                    lambda index: _post_studyset_case(
+                        client_ref.current,
+                        study_ids,
+                        study_scale,
+                        index,
+                        write_tracker,
+                    ),
                     profile_dir=profile_dir,
                     client_ref=client_ref,
                     rollback_after=rollback_writes,
+                    app=app,
+                    cleanup_tracker=write_tracker,
                 ),
-                _benchmark_case(
+                await _benchmark_case(
                     _case_name("post_annotation_on_seed_studyset", study_scale),
                     iterations,
-                    lambda index: {
-                        "annotation_id": _create_large_annotation(
-                            client_ref.current,
-                            shared_studyset_id,
-                            suffix=f"{index}-{uuid4().hex[:8]}",
-                        ),
-                        "study_count": study_scale,
-                    },
+                    lambda index: _post_annotation_case(
+                        client_ref.current,
+                        shared_studyset_id,
+                        study_scale,
+                        index,
+                        write_tracker,
+                    ),
                     profile_dir=profile_dir,
                     client_ref=client_ref,
                     rollback_after=rollback_writes,
+                    app=app,
+                    cleanup_tracker=write_tracker,
                 ),
-                _benchmark_case(
+                await _benchmark_case(
                     "put_annotation_note_keys",
                     iterations,
                     lambda index: _update_annotation_case(
@@ -1034,191 +1277,130 @@ def run(
                     profile_dir=profile_dir,
                     client_ref=client_ref,
                     rollback_after=rollback_writes,
+                    app=app,
+                    cleanup_tracker=write_tracker,
                 ),
-                _benchmark_case(
+                await _benchmark_case(
                     "get_annotation_large",
                     iterations,
-                    lambda _index: {
-                        "note_count": len(
-                            _load_annotation_payload(
-                                client_ref.current, shared_annotation_id
-                            ).get("notes", [])
-                        )
-                    },
+                    lambda _index: _get_annotation_case(
+                        client_ref.current, shared_annotation_id
+                    ),
                     profile_dir=profile_dir,
                     client_ref=client_ref,
+                    app=app,
                 ),
-                _benchmark_case(
+                await _benchmark_case(
                     "list_annotations_for_studyset_frontend",
                     iterations,
-                    lambda _index: {
-                        "result_count": len(
-                            _list_annotations_for_studyset(
-                                client_ref.current, shared_studyset_id
-                            ).get("results", [])
-                        )
-                    },
+                    lambda _index: _list_annotations_case(
+                        client_ref.current, shared_studyset_id
+                    ),
                     profile_dir=profile_dir,
                     client_ref=client_ref,
+                    app=app,
                 ),
-                _benchmark_case(
+                await _benchmark_case(
                     _case_name("get_nested_studyset_seed", study_scale),
                     iterations,
-                    lambda _index: {
-                        "study_count": len(
-                            _response_json(
-                                _request(
-                                    client_ref.current,
-                                    "get",
-                                    f"/api/studysets/{shared_studyset_id}",
-                                    params={"nested": "true"},
-                                )
-                            ).get("studies", [])
-                        )
-                    },
+                    lambda _index: _get_nested_studyset_case(
+                        client_ref.current, shared_studyset_id
+                    ),
                     profile_dir=profile_dir,
                     client_ref=client_ref,
+                    app=app,
                 ),
-                _benchmark_case(
+                await _benchmark_case(
                     "get_study_nested_frontend",
                     iterations,
-                    lambda _index: {
-                        "analysis_count": len(
-                            _load_study_detail(client_ref.current, source_study_id).get(
-                                "analyses", []
-                            )
-                        )
-                    },
+                    lambda _index: _get_study_nested_case(
+                        client_ref.current, source_study_id
+                    ),
                     profile_dir=profile_dir,
                     client_ref=client_ref,
+                    app=app,
                 ),
-                _benchmark_case(
+                await _benchmark_case(
                     "get_analysis_nested_frontend",
                     iterations,
-                    lambda _index: {
-                        "point_count": len(
-                            _load_analysis_detail(
-                                client_ref.current, source_analysis_id
-                            ).get("points", [])
-                        )
-                    },
+                    lambda _index: _get_analysis_nested_case(
+                        client_ref.current, source_analysis_id
+                    ),
                     profile_dir=profile_dir,
                     client_ref=client_ref,
+                    app=app,
                 ),
-                _benchmark_case(
+                await _benchmark_case(
                     "browse_base_studies_frontend",
                     iterations,
-                    lambda _index: {
-                        "result_count": len(
-                            _list_frontend_base_studies(client_ref.current).get(
-                                "results", []
-                            )
-                        )
-                    },
+                    lambda _index: _browse_base_studies_case(client_ref.current),
                     profile_dir=profile_dir,
                     client_ref=client_ref,
+                    app=app,
                 ),
-                _benchmark_case(
+                await _benchmark_case(
                     "search_base_studies_text",
                     iterations,
-                    lambda _index: {
-                        "query": search_term,
-                        "total_count": _response_json(
-                            _request(
-                                client_ref.current,
-                                "get",
-                                "/api/base-studies/",
-                                params={"search": search_term, "page_size": "50"},
-                            )
-                        )["metadata"]["total_count"],
-                    },
+                    lambda _index: _search_base_studies_text_case(
+                        client_ref.current, search_term
+                    ),
                     profile_dir=profile_dir,
                     client_ref=client_ref,
+                    app=app,
                 ),
-                _benchmark_case(
+                await _benchmark_case(
                     "search_base_studies_frontend",
                     iterations,
-                    lambda _index: {
-                        "query": search_term,
-                        "result_count": len(
-                            _list_frontend_base_studies(
-                                client_ref.current, search_term=search_term
-                            ).get("results", [])
-                        ),
-                    },
+                    lambda _index: _search_base_studies_frontend_case(
+                        client_ref.current, search_term
+                    ),
                     profile_dir=profile_dir,
                     client_ref=client_ref,
+                    app=app,
                 ),
-                _benchmark_case(
+                await _benchmark_case(
                     "search_base_studies_info",
                     iterations,
-                    lambda _index: {
-                        "query": search_term,
-                        "total_count": _response_json(
-                            _request(
-                                client_ref.current,
-                                "get",
-                                "/api/base-studies/",
-                                params={
-                                    "search": search_term,
-                                    "page_size": "50",
-                                    "info": "true",
-                                },
-                            )
-                        )["metadata"]["total_count"],
-                    },
+                    lambda _index: _search_base_studies_info_case(
+                        client_ref.current, search_term
+                    ),
                     profile_dir=profile_dir,
                     client_ref=client_ref,
+                    app=app,
                 ),
-                _benchmark_case(
+                await _benchmark_case(
                     "get_base_study_detail_frontend",
                     iterations,
-                    lambda _index: {
-                        "version_count": len(
-                            _load_base_study_detail(
-                                client_ref.current, base_study_ids[0]
-                            ).get("versions", [])
-                        )
-                    },
+                    lambda _index: _get_base_study_detail_case(
+                        client_ref.current, base_study_ids[0]
+                    ),
                     profile_dir=profile_dir,
                     client_ref=client_ref,
+                    app=app,
                 ),
-                _benchmark_case(
+                await _benchmark_case(
                     _case_name("post_base_studies_bulk_full_objects", bulk_post_scale),
                     iterations,
-                    lambda _index: {
-                        "count": len(
-                            _response_json(
-                                _request(
-                                    client_ref.current,
-                                    "post",
-                                    "/api/base-studies/",
-                                    data=bulk_post_payload,
-                                )
-                            )
-                        ),
-                        "requested_count": bulk_post_scale,
-                    },
+                    lambda _index: _post_base_studies_bulk_case(
+                        client_ref.current, bulk_post_payload, bulk_post_scale
+                    ),
                     profile_dir=profile_dir,
                     client_ref=client_ref,
                     rollback_after=rollback_writes,
+                    app=app,
+                    cleanup_tracker=write_tracker,
                 ),
-                _benchmark_case(
+                await _benchmark_case(
                     "clone_study",
                     iterations,
-                    lambda _index: {
-                        "study_id": _response_json(
-                            _request(
-                                client_ref.current,
-                                "post",
-                                f"/api/studies/?source_id={source_study_id}",
-                                data={},
-                            )
-                        )["id"]
-                    },
+                    lambda _index: _clone_study_case(
+                        client_ref.current, source_study_id, write_tracker
+                    ),
                     profile_dir=profile_dir,
                     client_ref=client_ref,
                     rollback_after=rollback_writes,
+                    app=app,
+                    cleanup_tracker=write_tracker,
                 ),
             ]
 
@@ -1235,16 +1417,17 @@ def run(
                 "shared_annotation_notes": note_count,
                 "cases": cases,
             }
+        finally:
+            if rollback_writes:
+                await write_tracker.cleanup_all(client)
     finally:
-        if hasattr(client, "client") and hasattr(client.client, "close"):
-            client.client.close()
-        ctx.pop()
+        await client.aclose()
 
 
-def _update_annotation_case(
-    client: Client, annotation_id: str, *, variant: bool
+async def _update_annotation_case(
+    client: BenchmarkClient, annotation_id: str, *, variant: bool
 ) -> dict:
-    payload = _load_annotation_payload(client, annotation_id)
+    payload = await _load_annotation_payload(client, annotation_id)
     payload["name"] = (
         "production-benchmark-annotation-updated-a"
         if variant
@@ -1268,7 +1451,7 @@ def _update_annotation_case(
         note["note"]["priority"] = 2 if variant else 1
         note["note"]["reviewed"] = variant
 
-    response = _request(
+    response = await _request(
         client, "put", f"/api/annotations/{annotation_id}", data=payload
     )
     body = _response_json(response)

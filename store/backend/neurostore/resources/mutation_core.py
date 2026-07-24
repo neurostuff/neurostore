@@ -7,7 +7,6 @@ import sqlalchemy as sa
 from auth0.authentication.exceptions import Auth0Error
 from auth0.authentication.users import Users
 from connexion.context import context
-from flask import current_app, request
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import raiseload, selectinload
 
@@ -17,12 +16,14 @@ from neurostore.exceptions.utils.error_helpers import (
     abort_permission,
     abort_validation,
 )
+from neurostore.http import request
 from neurostore.models import User
 from neurostore.resources.utils import get_current_user, is_user_admin
+from neurostore.runtime import get_runtime
 
 
 def _machine_client_name(external_id: str | None) -> str:
-    compose_client_id = current_app.config.get("COMPOSE_AUTH0_CLIENT_ID")
+    compose_client_id = get_runtime().config.get("COMPOSE_AUTH0_CLIENT_ID")
     compose_subject = f"{compose_client_id}@clients" if compose_client_id else None
 
     if compose_subject and external_id == compose_subject:
@@ -43,7 +44,7 @@ def create_user():
     token = auth.split()[1]
     try:
         profile_info = Users(
-            current_app.config["AUTH0_BASE_URL"].removeprefix("https://")
+            get_runtime().config["AUTH0_BASE_URL"].removeprefix("https://")
         ).userinfo(access_token=token)
     except Auth0Error:
         if external_id and external_id.endswith("@clients"):
@@ -328,7 +329,7 @@ class MutationExecutor:
         self.context.current_user = resolve_current_user(self.context.user)
         self.context.is_admin = is_user_admin(self.context.current_user)
         self.context.compose_bot = (
-            current_app.config["COMPOSE_AUTH0_CLIENT_ID"] + "@clients"
+            get_runtime().config["COMPOSE_AUTH0_CLIENT_ID"] + "@clients"
         )
 
         self.policy.prepare()

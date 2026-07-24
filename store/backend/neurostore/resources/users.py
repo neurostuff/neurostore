@@ -1,6 +1,4 @@
 import connexion
-from flask import request
-from webargs.flaskparser import parser
 
 from neurostore.database import db
 from neurostore.exceptions.utils.error_helpers import (
@@ -16,8 +14,8 @@ class UsersView(ObjectView, ListView):
     _model = User
     _schema = UserSchema
 
-    def post(self, **kwargs):
-        data = parser.parse(self.__class__._schema, request)
+    def post(self, body):
+        data = self.__class__._schema().load(body)
         record = self._model()
         # Store all models so we can atomically update in one commit
         to_commit = []
@@ -33,11 +31,11 @@ class UsersView(ObjectView, ListView):
 
         return self.__class__._schema().dump(record)
 
-    def put(self, id):
+    def put(self, id, body):
         current_user = User.query.filter_by(
             external_id=connexion.context["user"]
         ).first()
-        data = parser.parse(self.__class__._schema, request)
+        data = self.__class__._schema().load(body)
         if id != data["id"] or id != current_user.id:
             abort_unprocessable(
                 f"User ID mismatch. URL ID: {id}, Data ID: {data['id']}, "

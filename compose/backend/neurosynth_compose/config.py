@@ -34,6 +34,17 @@ def get_env_var(name, default=None, required=False):
     return value
 
 
+def positive_int_env(name, default):
+    value = get_env_var(name, str(default))
+    try:
+        parsed = int(value)
+    except ValueError as exc:
+        raise RuntimeError(f"Environment variable '{name}' must be an integer.") from exc
+    if parsed < 1:
+        raise RuntimeError(f"Environment variable '{name}' must be at least 1.")
+    return parsed
+
+
 def _normalize_app_env(value):
     return (value or "").strip().lower()
 
@@ -75,6 +86,7 @@ class Config:
     }
 
     FILE_DIR = Path("/file-data")
+    ASGI_THREAD_TOKENS = positive_int_env("ASGI_THREAD_TOKENS", 16)
     POSTGRES_HOST = get_env_var("POSTGRES_HOST", required=True)
     POSTGRES_PASSWORD = get_env_var("POSTGRES_PASSWORD", "")
     DB_NAME = resolve_database_name("compose", "production")
@@ -97,8 +109,8 @@ class Config:
     COMPOSE_RUNNER_STATUS_URL = get_env_var("COMPOSE_RUNNER_STATUS_URL")
     COMPOSE_RUNNER_LOGS_URL = get_env_var("COMPOSE_RUNNER_LOGS_URL")
     COMPOSE_RUNNER_ARTIFACTS_URL = get_env_var("COMPOSE_RUNNER_ARTIFACTS_URL")
-    FLASK_ADMIN_USERNAME = get_env_var("FLASK_ADMIN_USERNAME")
-    FLASK_ADMIN_PASSWORD = get_env_var("FLASK_ADMIN_PASSWORD")
+    ADMIN_USERNAME = get_env_var("ADMIN_USERNAME")
+    ADMIN_PASSWORD = get_env_var("ADMIN_PASSWORD")
     BEARERINFO_FUNC = get_env_var(
         "BEARERINFO_FUNC", "neurosynth_compose.resources.auth.decode_token"
     )

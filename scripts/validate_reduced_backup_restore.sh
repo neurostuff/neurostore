@@ -64,7 +64,7 @@ docker compose up -d --wait --no-build "${PG_SERVICE}"
 docker compose exec -T "${PG_SERVICE}" bash -lc \
   "psql -U postgres -d postgres -c \"DROP DATABASE IF EXISTS ${APP_DB} WITH (FORCE);\" && psql -U postgres -d postgres -c \"CREATE DATABASE ${APP_DB};\""
 
-docker compose run -e "APP_ENV=docker_test" --rm --no-deps "${APP_SERVICE}" bash -lc "flask db upgrade"
+docker compose run -e "APP_ENV=docker_test" --rm --no-deps "${APP_SERVICE}" bash -lc "${APP_SERVICE} db upgrade"
 
 docker compose exec -T "${PG_SERVICE}" bash -lc \
   "rm -f '${DUMP_PATH}' && KEEP_REDUCED_DUMP=1 UPLOAD_REDUCED_DUMP=0 /home/build-reduced-dev-backup.sh '${APP_DB}' '${NOW}' && test -s '${DUMP_PATH}'"
@@ -74,7 +74,7 @@ docker compose exec -T "${PG_SERVICE}" bash -lc \
 docker compose exec -T "${PG_SERVICE}" bash -lc \
   "psql -U postgres -d postgres -c \"DROP DATABASE IF EXISTS ${APP_DB} WITH (FORCE);\" && psql -U postgres -d postgres -c \"CREATE DATABASE ${APP_DB};\" && pg_restore -U postgres -d '${APP_DB}' --no-owner --no-privileges -Fc '${DUMP_PATH}'"
 
-docker compose run -e "APP_ENV=docker_test" --rm --no-deps "${APP_SERVICE}" bash -lc "flask db upgrade"
+docker compose run -e "APP_ENV=docker_test" --rm --no-deps "${APP_SERVICE}" bash -lc "${APP_SERVICE} db upgrade"
 
 # Leave the shared test database empty so subsequent local test runs start from
 # the same baseline they expect.

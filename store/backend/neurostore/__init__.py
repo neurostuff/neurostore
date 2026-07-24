@@ -1,26 +1,22 @@
 import os
+import logging
+from contextlib import asynccontextmanager
 from copy import deepcopy
 from pathlib import Path
+from typing import AsyncIterator, Mapping
 
+import anyio
 import connexion
-import flask
-from authlib.integrations.flask_client import OAuth
 from connexion.exceptions import OAuthProblem
 from connexion.exceptions import ProblemException
 from connexion.jsonifier import Jsonifier
 from connexion.resolver import MethodResolver
 from connexion.validators import VALIDATOR_MAP
 from connexion.validators.json import JSONRequestBodyValidator
-from flask import Response, request
-from flask_admin import Admin, AdminIndexView
-from flask_admin.contrib.sqla import ModelView
-from flask_admin.theme import Bootstrap4Theme
-from flask_orjson import OrjsonProvider
 from starlette.exceptions import HTTPException as StarletteHTTPException
+from starlette.applications import Starlette
 from starlette.middleware.cors import CORSMiddleware
 
-from neurostore.config import resolve_config_object
-from neurostore.database import init_db
 from neurostore.exceptions.base import NeuroStoreException
 from neurostore.exceptions.handlers import (
     general_exception_handler,
@@ -29,6 +25,8 @@ from neurostore.exceptions.handlers import (
     problem_exception_handler,
 )
 from neurostore.extensions import cache
+from neurostore.admin import init_admin
+from neurostore.settings import load_settings
 from neurostore.resources import iter_request_body_validation_skip_rules
 from neurostore.resources.auth import (
     asgi_oauth_problem_handler,
@@ -43,8 +41,9 @@ def _env_flag(name, default=False):
     return value.strip().lower() in {"1", "true", "yes", "on"}
 
 
-def _should_validate_responses(app):
-    return app.config.get("ENV") == "development" and app.config["DEBUG"]
+def _should_validate_responses(app_or_config):
+    config = getattr(app_or_config, "config", app_or_config)
+    return config.get("ENV") == "development" and config.get("DEBUG", False)
 
 
 def _normalize_request_path(path):
@@ -120,116 +119,79 @@ class _SelectiveRequestBodyValidator(JSONRequestBodyValidator):
         return await super().wrap_receive(receive, scope=scope)
 
 
-def create_app():
-    connexion_app = connexion.FlaskApp(__name__, specification_dir="openapi/")
-    app = connexion_app.app
+class _DatabaseSessionMiddleware:
+    """Create and dispose one synchronous SQLAlchemy session per ASGI request."""
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        from neurostore.database import db
+
+        with db.request_scope():
+            await self.app(scope, receive, send)
+
+
+class _OrjsonModule:
+    @staticmethod
+    def dumps(value, **kwargs):
+        del kwargs
+        import orjson
+
+        return orjson.dumps(value).decode()
+
+    @staticmethod
+    def loads(value):
+        import orjson
+
+        return orjson.loads(value)
+
+
+def initialize_runtime(settings: Mapping[str, object] | None = None):
+    """Configure Store's shared database, cache, and auth runtime."""
+    settings = load_settings() if settings is None else settings
+    logger = logging.getLogger("neurostore")
+
+    from neurostore.database import db
+
+    db.configure(settings)
+    cache.init_app(settings)
+    init_auth(settings, logger)
+    os.environ["BEARERINFO_FUNC"] = str(settings["BEARERINFO_FUNC"])
+    return settings, logger
+
+
+def _asgi_lifespan(settings: Mapping[str, object], database):
+    @asynccontextmanager
+    async def lifespan(app: Starlette) -> AsyncIterator[None]:
+        """Bound sync compatibility work and release pooled resources on shutdown."""
+        del app
+        thread_limiter = anyio.to_thread.current_default_thread_limiter()
+        previous_tokens = thread_limiter.total_tokens
+        thread_limiter.total_tokens = int(settings["ASGI_THREAD_TOKENS"])
+        try:
+            yield
+        finally:
+            thread_limiter.total_tokens = previous_tokens
+            database.dispose()
+
+    return lifespan
+
+
+def create_asgi_app(settings: Mapping[str, object] | None = None):
+    """Create the framework-neutral Connexion ASGI Store application."""
+    settings, _logger = initialize_runtime(settings)
     disable_connexion_validation = _env_flag("CONNEXION_DISABLE_VALIDATION")
     disable_connexion_body_validation = _env_flag("CONNEXION_DISABLE_BODY_VALIDATION")
+    from neurostore.database import db
 
-    app.config.from_object(resolve_config_object())
-    app.config["DEBUG"] = _env_flag("DEBUG")
-    app.secret_key = app.config["JWT_SECRET_KEY"]
-    app.json = OrjsonProvider(app)
-
-    db = init_db(app)
-    cache.init_app(app)
-    init_auth(app)
-
-    oauth = OAuth(app)
-    oauth.register(
-        "auth0",
-        client_id=app.config["AUTH0_CLIENT_ID"],
-        client_secret=app.config["AUTH0_CLIENT_SECRET"],
-        api_base_url=app.config["AUTH0_BASE_URL"],
-        access_token_url=app.config["AUTH0_ACCESS_TOKEN_URL"],
-        authorize_url=app.config["AUTH0_AUTH_URL"],
-        client_kwargs={"scope": "openid profile email"},
+    connexion_app = connexion.AsyncApp(
+        __name__, specification_dir=Path(__file__).parent / "openapi"
     )
-
-    from neurostore.models import (
-        Analysis,
-        AnalysisConditions,
-        Annotation,
-        AnnotationAnalysis,
-        BaseStudy,
-        BaseStudyFlagOutbox,
-        BaseStudyMetadataOutbox,
-        Condition,
-        Entity,
-        Image,
-        Point,
-        PointValue,
-        Role,
-        Study,
-        Studyset,
-        StudysetStudy,
-        Table,
-        User,
-    )
-
-    def _get_admin_credentials():
-        username = app.config.get("FLASK_ADMIN_USERNAME")
-        password = app.config.get("FLASK_ADMIN_PASSWORD")
-        return username, password
-
-    def _admin_auth_failed():
-        return Response(
-            "Authentication required",
-            401,
-            {"WWW-Authenticate": 'Basic realm="Admin"'},
-        )
-
-    def _is_admin_authenticated():
-        username, password = _get_admin_credentials()
-        if not username or not password:
-            return False
-        auth = request.authorization
-        if not auth:
-            return False
-        return auth.username == username and auth.password == password
-
-    class SecureAdminIndexView(AdminIndexView):
-        def is_accessible(self):
-            return _is_admin_authenticated()
-
-        def inaccessible_callback(self, name, **kwargs):
-            return _admin_auth_failed()
-
-    class SecureModelView(ModelView):
-        def is_accessible(self):
-            return _is_admin_authenticated()
-
-        def inaccessible_callback(self, name, **kwargs):
-            return _admin_auth_failed()
-
-    admin = Admin(
-        app,
-        name="NeuroStore Admin",
-        theme=Bootstrap4Theme(),
-        url="/admin",
-        index_view=SecureAdminIndexView(),
-    )
-    admin.add_view(SecureModelView(User, db.session, category="Auth"))
-    admin.add_view(SecureModelView(Role, db.session, category="Auth"))
-    admin.add_view(SecureModelView(Studyset, db.session, category="Data"))
-    admin.add_view(SecureModelView(StudysetStudy, db.session, category="Data"))
-    admin.add_view(SecureModelView(Annotation, db.session, category="Data"))
-    admin.add_view(SecureModelView(BaseStudy, db.session, category="Studies"))
-    admin.add_view(SecureModelView(BaseStudyFlagOutbox, db.session, category="Studies"))
-    admin.add_view(
-        SecureModelView(BaseStudyMetadataOutbox, db.session, category="Studies")
-    )
-    admin.add_view(SecureModelView(Study, db.session, category="Studies"))
-    admin.add_view(SecureModelView(Analysis, db.session, category="Studies"))
-    admin.add_view(SecureModelView(Table, db.session, category="Studies"))
-    admin.add_view(SecureModelView(Condition, db.session, category="Studies"))
-    admin.add_view(SecureModelView(Point, db.session, category="Studies"))
-    admin.add_view(SecureModelView(Image, db.session, category="Studies"))
-    admin.add_view(SecureModelView(Entity, db.session, category="Studies"))
-    admin.add_view(SecureModelView(AnnotationAnalysis, db.session, category="Analysis"))
-    admin.add_view(SecureModelView(PointValue, db.session, category="Analysis"))
-    admin.add_view(SecureModelView(AnalysisConditions, db.session, category="Analysis"))
-
     cors_kwargs = dict(
         allow_origins=["*"],
         allow_credentials=True,
@@ -242,13 +204,9 @@ def create_app():
     connexion_app.add_error_handler(StarletteHTTPException, http_exception_handler)
     connexion_app.add_error_handler(Exception, general_exception_handler)
 
-    os.environ["BEARERINFO_FUNC"] = app.config["BEARERINFO_FUNC"]
-
-    openapi_file = Path(app.root_path) / "openapi" / "neurostore-openapi.yml"
-    connexion_jsonifier = Jsonifier(flask.json)
     validator_map = None
-    strict_validation = app.config["DEBUG"]
-    validate_responses = _should_validate_responses(app)
+    strict_validation = bool(settings.get("DEBUG", False))
+    validate_responses = _should_validate_responses(settings)
     if disable_connexion_validation:
         validator_map = {"parameter": _NoOpParameterValidator, "body": {}}
         strict_validation = False
@@ -256,24 +214,22 @@ def create_app():
     elif disable_connexion_body_validation:
         validator_map = deepcopy(VALIDATOR_MAP)
         validator_map["body"]["*/*json"] = _NoOpRequestBodyValidator
-    elif not app.config["DEBUG"]:
+    elif not settings.get("DEBUG", False):
         validator_map = deepcopy(VALIDATOR_MAP)
         validator_map["body"]["*/*json"] = _SelectiveRequestBodyValidator
 
     connexion_app.add_api(
-        openapi_file,
+        "neurostore-openapi.yml",
         base_path="/api",
         options={"swagger_ui": True},
         arguments={"title": "NeuroStore API"},
         resolver=MethodResolver("neurostore.resources"),
-        jsonifier=connexion_jsonifier,
+        jsonifier=Jsonifier(_OrjsonModule),
         strict_validation=strict_validation,
         validate_responses=validate_responses,
         validator_map=validator_map,
     )
-
-    cors_asgi_app = CORSMiddleware(connexion_app, **cors_kwargs)
-
-    app.extensions["connexion_app"] = connexion_app
-    app.extensions["connexion_asgi"] = cors_asgi_app
-    return app
+    app = Starlette(lifespan=_asgi_lifespan(settings, db))
+    init_admin(app, db, settings)
+    app.mount("/", connexion_app)
+    return _DatabaseSessionMiddleware(CORSMiddleware(app, **cors_kwargs))

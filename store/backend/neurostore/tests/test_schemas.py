@@ -29,7 +29,7 @@ def test_clone_study(ingest_neurosynth):
     assert "id" not in shallow_clone
 
 
-def test_StudySchema(auth_client, ingest_neurosynth):
+def test_StudySchema(ingest_neurosynth):
     study_entry = Study.query.first()
 
     payload = StudySchema(context={"nested": False}).dump(study_entry)

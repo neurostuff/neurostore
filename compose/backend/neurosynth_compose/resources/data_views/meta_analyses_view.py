@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import json
+from collections import defaultdict
 from functools import lru_cache
 
-from flask import abort, request
+from neurosynth_compose.http import abort, request
 from marshmallow.exceptions import ValidationError
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload, load_only, selectinload
-from webargs.flaskparser import parser
+from neurosynth_compose.http import parser
 
 from neurosynth_compose.database import commit_session, db
 
@@ -63,6 +64,24 @@ from neurosynth_compose.schemas import (  # noqa: F401
 from neurosynth_compose.schemas.analysis import get_ns_base
 
 
+class _PreloadedFile:
+    """Sync-compatible wrapper around pre-read multipart file content.
+
+    Starlette UploadFile is async-only; this wrapper materialises the
+    content at the async boundary so parse_upload_files can call .save()
+    from a worker thread without re-entering the event loop.
+    """
+
+    def __init__(self, filename: str, content: bytes) -> None:
+        self.filename = filename
+        self._content = content
+
+    def save(self, path) -> None:
+        import pathlib
+
+        pathlib.Path(path).write_bytes(self._content)
+
+
 @lru_cache(maxsize=None)
 def _meta_analysis_detail_nested_options():
     return (
@@ -112,6 +131,8 @@ def _meta_analysis_list_query_options(nested: bool):
             MetaAnalysis.specification_id,
             MetaAnalysis.project_id,
             MetaAnalysis.run_key,
+            MetaAnalysis.neurostore_studyset_id,
+            MetaAnalysis.neurostore_annotation_id,
         ),
         joinedload(MetaAnalysis.user).load_only(User.name),
         selectinload(MetaAnalysis.tags).load_only(
@@ -160,6 +181,8 @@ def _meta_analysis_detail_query_options(nested: bool):
             MetaAnalysis.specification_id,
             MetaAnalysis.project_id,
             MetaAnalysis.run_key,
+            MetaAnalysis.neurostore_studyset_id,
+            MetaAnalysis.neurostore_annotation_id,
         ),
         joinedload(MetaAnalysis.user).load_only(User.name),
         selectinload(MetaAnalysis.tags).load_only(
@@ -748,16 +771,63 @@ class MetaAnalysisResultsView(ObjectView, ListView):
             commit_session()
         return make_json_response(serialize_meta_analysis_result(record))
 
-    def put(self, id):
+    async def put(self, id):
+        import anyio
         import connexion
+
+        # Read all async request data at the ASGI boundary before dispatching
+        # to the synchronous worker thread.  connexion.request proxies are
+        # not safe to call from a worker thread without anyio portals; reading
+        # everything here avoids that complexity entirely.
+        cached_form = connexion.request.scope.get("extensions", {}).get(
+            "compose_multipart_form_data"
+        )
+        if cached_form is not None:
+            raw_files = defaultdict(list)
+            raw_form = defaultdict(list)
+            for key, value in cached_form.multi_items():
+                if hasattr(value, "filename"):
+                    raw_files[key].append(value)
+                else:
+                    raw_form[key].append(value)
+            form_data = {
+                key: values[0] if len(values) == 1 else values
+                for key, values in raw_form.items()
+            }
+        else:
+            raw_files = await connexion.request.files()
+            form_data = await connexion.request.form()
+
+        preloaded: dict[str, list[_PreloadedFile]] = {}
+        for key, file_list in raw_files.items():
+            preloaded[key] = []
+            for upload_file in file_list:
+                content = await upload_file.read()
+                preloaded[key].append(
+                        _PreloadedFile(upload_file.filename, content)
+                )
+
+        if str(connexion.request.content_type).startswith("application/json"):
+            try:
+                json_body = await connexion.request.json() or {}
+            except Exception:
+                json_body = {}
+        else:
+            json_body = {}
+        authorization = connexion.request.headers.get("Authorization")
+        token_info = connexion.context.request.context.get("token_info", {})
+
+        return await anyio.to_thread.run_sync(
+            self._put, id, preloaded, form_data, json_body, authorization, token_info
+        )
+
+    def _put(self, id, uploaded_files, form_data, json_body, authorization, token_info):
         from celery import group
 
         from neurosynth_compose.resources.tasks import (
             create_or_update_neurostore_analysis,
             file_upload_neurovault,
         )
-
-        token_info = connexion.context.request.context.get("token_info", {})
         upload_meta_id = token_info.get("meta_analysis_id")
 
         result = db.session.execute(
@@ -773,10 +843,10 @@ class MetaAnalysisResultsView(ObjectView, ListView):
                 description="Upload key does not match the target meta-analysis.",
             )
 
-        if request.files:
-            stat_maps = request.files.getlist("statistical_maps")
-            cluster_tables = request.files.getlist("cluster_tables")
-            diagnostic_tables = request.files.getlist("diagnostic_tables")
+        if uploaded_files:
+            stat_maps = uploaded_files.get("statistical_maps", [])
+            cluster_tables = uploaded_files.get("cluster_tables", [])
+            diagnostic_tables = uploaded_files.get("diagnostic_tables", [])
             (
                 records,
                 stat_map_fnames,
@@ -807,7 +877,6 @@ class MetaAnalysisResultsView(ObjectView, ListView):
                 for path, record in stat_map_fnames.items()
             ]
             nv_upload_group = group(upload_tasks)
-            access_token = request.headers.get("Authorization")
             selected_cluster_table = select_cluster_table_for_specification(
                 cluster_table_fnames,
                 result.meta_analysis.specification if result.meta_analysis else None,
@@ -818,18 +887,12 @@ class MetaAnalysisResultsView(ObjectView, ListView):
                     str(selected_cluster_table) if selected_cluster_table else None
                 ),
                 nv_collection_id=result.neurovault_collection.id,
-                access_token=access_token,
+                access_token=authorization,
             )
             _ = (nv_upload_group | neurostore_analysis_upload).delay()
 
         # Also allow updating meta-analysis snapshots via PUT body or form fields.
-        # Accept JSON body or form-encoded JSON strings under
-        # `studyset_snapshot` and `annotation_snapshot` keys.
-        try:
-            json_body = request.get_json(silent=True) or {}
-        except Exception:
-            json_body = {}
-
+        # json_body and form_data were pre-read at the async boundary in put().
         ss_payload = None
         ann_payload = None
         ss_id_input = None
@@ -841,7 +904,7 @@ class MetaAnalysisResultsView(ObjectView, ListView):
             ann_id_input = json_body.get("annotation_snapshot_id")
 
         def _parse_form_field(key):
-            val = request.form.get(key)
+            val = form_data.get(key) if form_data else None
             if not val:
                 return None
             try:
@@ -854,9 +917,9 @@ class MetaAnalysisResultsView(ObjectView, ListView):
         if ann_payload is None:
             ann_payload = _parse_form_field("annotation_snapshot")
         if ss_id_input is None:
-            ss_id_input = request.form.get("studyset_snapshot_id")
+            ss_id_input = form_data.get("studyset_snapshot_id") if form_data else None
         if ann_id_input is None:
-            ann_id_input = request.form.get("annotation_snapshot_id")
+            ann_id_input = form_data.get("annotation_snapshot_id") if form_data else None
 
         meta = getattr(result, "meta_analysis", None)
         if meta:

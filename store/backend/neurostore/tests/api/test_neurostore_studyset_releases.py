@@ -1,6 +1,13 @@
+import pytest
+
+pytestmark = pytest.mark.anyio
+
 import json
 import tarfile
+from io import BytesIO
 from datetime import datetime, timezone
+
+import pandas as pd
 
 from neurostore.models import (
     Analysis,
@@ -123,8 +130,8 @@ def _seed_release_data(session):
     )
     task_config = PipelineConfig(
         pipeline=task_pipeline,
-        version="1.0.0",
-        config_hash="task",
+        version="1.1.0",
+        config_hash="da73c01b87bf",
         config_args={},
     )
     session.add_all([demo_config, task_config])
@@ -152,12 +159,42 @@ def _seed_release_data(session):
                 date_executed=_dt(2024, 3, 2),
                 status="SUCCESS",
                 result_data={
+                    "Modality": ["fMRI-BOLD"],
+                    "StudyObjective": (
+                        "To explore the characteristics of resting state brain "
+                        "activity."
+                    ),
+                    "Exclude": None,
                     "fMRITasks": [
                         {
                             "TaskName": "Resting-state fMRI",
+                            "TaskDescription": (
+                                "Participants were instructed to keep their eyes "
+                                "closed during resting state fMRI scans."
+                            ),
+                            "DesignDetails": (
+                                "A resting state fMRI scan was conducted using an "
+                                "EPI sequence."
+                            ),
+                            "Conditions": None,
+                            "TaskMetrics": [
+                                "Amplitude of low-frequency fluctuations (ALFF)"
+                            ],
                             "Concepts": ["Intrinsic functional connectivity"],
+                            "Domain": ["Attention"],
+                            "RestingState": True,
+                            "RestingStateMetadata": {
+                                "Instructions": (
+                                    "Participants were instructed to keep their eyes "
+                                    "closed."
+                                ),
+                                "EyesOpenClosed": "Eyes closed",
+                            },
+                            "TaskDesign": ["Other"],
+                            "TaskDuration": "7 minutes",
                         }
-                    ]
+                    ],
+                    "BehavioralTasks": None,
                 },
             ),
         ]
@@ -179,6 +216,10 @@ def test_build_release_selects_latest_coordinate_study_and_writes_tarball(
     )
 
     assert len(result["written"]) == 2
+    assert result["written"][0]["feature_pipelines"] == [
+        "ParticipantDemographicsExtractor",
+        "TaskExtractor",
+    ]
     studyset = Studyset.query.filter_by(source_id=STUDYSET_SOURCE_ID).one()
     annotation = Annotation.query.filter_by(source_id=ANNOTATION_SOURCE_ID).one()
     assert studyset.name == "neurostore-studyset"
@@ -223,9 +264,15 @@ def test_build_release_selects_latest_coordinate_study_and_writes_tarball(
     }.issubset(parquet_metadata["tables"])
 
     with tarfile.open(archive_path, mode="r:gz") as tar:
-        assert any(
-            member.name.endswith("/annotations.parquet") for member in tar.getmembers()
+        annotations_member = next(
+            member
+            for member in tar.getmembers()
+            if member.name.endswith("/annotations.parquet")
         )
+        annotations_df = pd.read_parquet(
+            BytesIO(tar.extractfile(annotations_member).read())
+        )
+    assert "TaskExtractor.fMRITasks[0].TaskName" in annotations_df.columns
 
     assert any(
         note.analysis_id == analysis.id for note in annotation.annotation_analyses
@@ -310,8 +357,8 @@ def test_release_build_serializes_changed_studies_in_batches(
     assert calls == []
 
 
-def test_release_api_resolves_nightly_latest_and_monthly(
-    app, auth_client, session, tmp_path
+async def test_release_api_resolves_nightly_latest_and_monthly(
+    app, async_auth_client, session, tmp_path
 ):
     app.config["FILE_DIR"] = tmp_path
     _seed_release_data(session)
@@ -321,20 +368,20 @@ def test_release_api_resolves_nightly_latest_and_monthly(
         version="2026-05",
     )
 
-    list_resp = auth_client.get("/api/neurostore-studyset-releases/")
+    list_resp = await async_auth_client.get("/api/neurostore-studyset-releases/")
     assert list_resp.status_code == 200
     versions = {release["version"] for release in list_resp.json()["results"]}
     assert {"nightly", "2026-05"}.issubset(versions)
 
-    nightly = auth_client.get("/api/neurostore-studyset-releases/nightly")
-    latest = auth_client.get("/api/neurostore-studyset-releases/latest")
-    monthly = auth_client.get("/api/neurostore-studyset-releases/2026-05")
+    nightly = await async_auth_client.get("/api/neurostore-studyset-releases/nightly")
+    latest = await async_auth_client.get("/api/neurostore-studyset-releases/latest")
+    monthly = await async_auth_client.get("/api/neurostore-studyset-releases/2026-05")
     assert nightly.status_code == latest.status_code == monthly.status_code == 200
     assert nightly.json()["version"] == "nightly"
     assert latest.json()["version"] == "2026-05"
     assert monthly.json()["release_type"] == "monthly"
 
-    download = auth_client.get(
+    download = await async_auth_client.get(
         "/api/neurostore-studyset-releases/latest/download",
         content_type="application/gzip",
     )
@@ -361,13 +408,13 @@ def test_monthly_release_is_immutable_without_force(app, session, tmp_path):
     assert second["written"] == []
 
 
-def test_latest_returns_404_without_monthly_release(
-    app, auth_client, session, tmp_path
+async def test_latest_returns_404_without_monthly_release(
+    app, async_auth_client, session, tmp_path
 ):
     app.config["FILE_DIR"] = tmp_path
     _seed_release_data(session)
     build_neurostore_studyset_release(nightly=True)
 
-    resp = auth_client.get("/api/neurostore-studyset-releases/latest")
+    resp = await async_auth_client.get("/api/neurostore-studyset-releases/latest")
 
     assert resp.status_code == 404

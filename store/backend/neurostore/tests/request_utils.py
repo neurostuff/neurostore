@@ -1,45 +1,44 @@
 import json
 from functools import partialmethod
 
-from starlette.testclient import TestClient as StarletteTestClient
+import httpx
 
 
-class Client(object):
+_default_asgi_app = None
+
+
+def configure_default_asgi_app(asgi_app):
+    global _default_asgi_app
+    _default_asgi_app = asgi_app
+
+
+class AsyncClient:
+    """Native ASGI test client that keeps the established request helper API."""
+
     def __init__(self, token, test_client=None, prepend="", username=None):
-        self.client_mode = "requests"
-
         if test_client is None:
-            from flask import current_app as app
-
-            asgi_app = app.extensions.get("connexion_asgi")
-            connexion_app = app.extensions.get("connexion_app")
-
-            if asgi_app is not None:
-                test_client = StarletteTestClient(asgi_app)
-            elif connexion_app is not None and hasattr(connexion_app, "test_client"):
-                test_client = connexion_app.test_client()
-            else:
-                test_client = app.test_client()
-
-        self.client_flask = hasattr(test_client, "open")
-        self.client_mode = "flask" if self.client_flask else "requests"
+            if _default_asgi_app is None:
+                raise RuntimeError("No default ASGI test application has been configured.")
+            test_client = httpx.AsyncClient(
+                transport=httpx.ASGITransport(app=_default_asgi_app),
+                base_url="http://testserver",
+                follow_redirects=True,
+            )
 
         self.client = test_client
         self.prepend = prepend
         self.token = token
         self.username = username
 
-    def close(self):
-        if hasattr(self.client, "close"):
-            self.client.close()
+    async def aclose(self):
+        await self.client.aclose()
 
     def _get_headers(self):
         if self.token is not None:
             return {"Authorization": "Bearer %s" % self.token}
-        else:
-            return None
+        return None
 
-    def _make_request(
+    async def _make_request(
         self,
         request,
         route,
@@ -61,31 +60,24 @@ class Client(object):
         headers.setdefault("Accept", content_type)
         route = self.prepend + route
 
-        if self.client_mode == "flask":
-            if data is not None and json_dump is True:
-                data = json.dumps(data)
+        kwargs = {"headers": headers}
+        if params is not None:
+            kwargs["params"] = params
+        if data is not None:
+            if json_dump and content_type == "application/json":
+                kwargs["json"] = data
+            elif content_type.startswith("multipart/form-data"):
+                kwargs["files"] = data
+                kwargs["headers"].pop("Content-Type", None)
+            else:
+                kwargs["data"] = data
+        response = await request_function(route, **kwargs)
+        # The ASGI handler commits in its own request-scoped session. Expire
+        # fixture-session identities so follow-up assertions read that commit.
+        from neurostore.database import db
 
-            return request_function(
-                route,
-                data=data,
-                headers=headers,
-                content_type=content_type,
-                query_string=params,
-            )
-        else:
-            kwargs = {"headers": headers}
-            if params is not None:
-                kwargs["params"] = params
-            if data is not None:
-                if json_dump and content_type == "application/json":
-                    kwargs["json"] = data
-                elif content_type.startswith("multipart/form-data"):
-                    kwargs["files"] = data
-                    kwargs["headers"].pop("Content-Type", None)
-                else:
-                    kwargs["data"] = data
-            response = request_function(route, **kwargs)
-            return ResponseWrapper(response)
+        db.session.expire_all()
+        return ResponseWrapper(response)
 
     get = partialmethod(_make_request, "get")
     post = partialmethod(_make_request, "post")

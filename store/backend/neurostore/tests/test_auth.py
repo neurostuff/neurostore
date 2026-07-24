@@ -1,7 +1,9 @@
 import pytest
 
+pytestmark = pytest.mark.anyio
+
 from neurostore.tests.conftest import auth_test
-from neurostore.tests.request_utils import Client
+from neurostore.tests.request_utils import AsyncClient
 
 
 @auth_test
@@ -19,32 +21,34 @@ def test_decode_token(add_users):
 
 
 @auth_test
-def test_creating_new_user_on_db(add_users):
-    from neurostore.tests.request_utils import Client
+async def test_creating_new_user_on_db(add_users):
 
     token_info = add_users
     user_name = "user1"  # user1 was not entered into database
 
-    client = Client(
+    client = AsyncClient(
         token=token_info[user_name]["token"],
         username=token_info[user_name]["external_id"],
     )
 
-    client.post("/api/studies/", data={"name": "my study"})
+    try:
+        await client.post("/api/studies/", data={"name": "my study"})
+    finally:
+        await client.aclose()
 
 
-def test_studysets_no_auth_returns_cors_headers(app):
-    client = Client(token=None)
+async def test_studysets_no_auth_returns_cors_headers(app):
+    client = AsyncClient(token=None)
     origin = "https://client.example"
 
     try:
-        response = client.post(
+        response = await client.post(
             "/api/studysets/",
             data={},
             headers={"Origin": origin},
         )
     finally:
-        client.close()
+        await client.aclose()
 
     assert response.status_code == 401
     assert response.headers["content-type"].startswith("application/json")
@@ -54,18 +58,18 @@ def test_studysets_no_auth_returns_cors_headers(app):
     assert response.headers.get("Vary") == "Origin"
 
 
-def test_studysets_bad_token_returns_cors_headers(app):
-    client = Client(token="not-a-real-token")
+async def test_studysets_bad_token_returns_cors_headers(app):
+    client = AsyncClient(token="not-a-real-token")
     origin = "https://client.example"
 
     try:
-        response = client.post(
+        response = await client.post(
             "/api/studysets/",
             data={},
             headers={"Origin": origin},
         )
     finally:
-        client.close()
+        await client.aclose()
 
     assert response.status_code == 401
     assert response.headers["content-type"].startswith("application/json")
