@@ -3,7 +3,6 @@ import { createColWidths, noteKeyObjToArr } from 'components/HotTables/HotTables
 import { ColumnSettings } from 'handsontable/settings';
 import { useGetAnnotationById } from 'hooks';
 import { useEffect, useMemo, useState } from 'react';
-import { DetailedSettings as MergeCellsSettings } from 'handsontable/plugins/mergeCells';
 import { NoteCollectionReturn } from 'neurostore-typescript-sdk';
 import { AnnotationNoteValue, NoteKeyType } from 'components/HotTables/HotTables.types';
 import {
@@ -12,6 +11,7 @@ import {
     getMergeCells,
     createColumns,
     getRowHeights,
+    MergeCellRange,
 } from 'pages/Annotations/components/EditAnnotationsHotTable.helpers';
 
 const useEditAnnotationsHotTable = (annotationId?: string, disableEdit?: boolean) => {
@@ -26,7 +26,7 @@ const useEditAnnotationsHotTable = (annotationId?: string, disableEdit?: boolean
         noteKeys: NoteKeyType[];
         hotData: AnnotationNoteValue[][];
         hotColumns: ColumnSettings[];
-        mergeCells: MergeCellsSettings[];
+        mergeCells: MergeCellRange[];
         isEdited: boolean;
         isReordered: boolean;
         noteKeysHaveChanged: boolean;

@@ -111,8 +111,8 @@ describe(PAGE_NAME, () => {
                 'postAnnotationAnalyses'
             );
 
-            cy.get('.htCore').find('tbody td').eq(3).click();
-            cy.focused().type('_cell_edit').type('{enter}');
+            cy.get('.htCore').find('tbody td').eq(3).dblclick();
+            cy.get('textarea.handsontableInput:visible').type('_cell_edit{enter}');
             cy.contains('button', 'save').click();
 
             cy.get('@postAnnotationAnalyses')

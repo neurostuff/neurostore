@@ -1,7 +1,7 @@
-import { HotTable } from '@handsontable/react';
+import { HotTable, HotTableRef } from '@handsontable/react-wrapper';
 import { Box } from '@mui/material';
 import { CellRange } from 'handsontable';
-import { CellChange, ChangeSource, RangeType } from 'handsontable/common';
+import { CellChange, ChangeSource, RangeType } from 'handsontable';
 import { registerAllModules } from 'handsontable/registry';
 import InputNumberDialog from 'pages/Study/components/EditStudyAnalysisInputNumberDialog';
 import {
@@ -30,7 +30,7 @@ const EditStudyAnalysisPointsHotTable = React.memo(
         const updatePoints = useUpdateAnalysisPoints();
         const createPoint = useCreateAnalysisPoints();
         const deletePoints = useDeleteAnalysisPoints();
-        const hotTableRef = useRef<HotTable>(null);
+        const hotTableRef = useRef<HotTableRef>(null);
         const hotTableMetadata = useRef<{
             insertRowsAbove: boolean;
             insertedRowsViaPaste: any[][];
@@ -63,7 +63,7 @@ const EditStudyAnalysisPointsHotTable = React.memo(
                 }
                 updatedPoints[index] = {
                     ...updatedPoints[index],
-                    [colName]: newVal,
+                    [colName as string]: newVal,
                 };
             });
             updatePoints(analysisId, updatedPoints);
