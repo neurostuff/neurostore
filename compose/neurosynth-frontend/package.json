@@ -72,7 +72,7 @@
         "react-window": "^1.8.8",
         "reactflow": "^11.5.3",
         "uuid": "^9.0.0",
-        "vite": "^6.4.2",
+        "vite": "^7.3.1",
         "web-vitals": "^1.1.2",
         "zustand": "^4.3.3"
     },
@@ -87,7 +87,7 @@
         "@testing-library/react": "^16.3.2",
         "@testing-library/user-event": "^14.6.1",
         "@types/eslint__js": "^8.42.3",
-        "@types/node": "^18.19.63",
+        "@types/node": "^20.19.0",
         "@types/react": "^19.2.7",
         "@types/react-dom": "^19.2.3",
         "@types/react-window": "^1.8.5",
