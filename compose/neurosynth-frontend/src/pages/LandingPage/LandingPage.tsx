@@ -1,10 +1,12 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import AutoAwesomeMotionIcon from '@mui/icons-material/AutoAwesomeMotion';
-import IosShareIcon from '@mui/icons-material/IosShare';
-import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
-import OpenInNew from '@mui/icons-material/OpenInNew';
-import SearchIcon from '@mui/icons-material/Search';
-import SettingsIcon from '@mui/icons-material/Settings';
+import {
+    KeyboardArrowDown,
+    AutoAwesomeMotion as AutoAwesomeMotionIcon,
+    IosShare as IosShareIcon,
+    OpenInNew,
+    Search as SearchIcon,
+    Settings as SettingsIcon,
+} from '@mui/icons-material';
 import { Box, Button, Card, CardContent, Typography } from '@mui/material';
 import NeurosynthActivitySummary from 'components/NeurosynthActivitySummary';
 import NavToolbarPopupSubMenu from 'components/Navbar/NavToolbarPopupSubMenu';
@@ -185,7 +187,7 @@ const LandingPage = () => {
                                 buttonProps={{
                                     variant: 'outlined',
                                     size: 'large',
-                                    endIcon: <KeyboardArrowDownIcon />,
+                                    endIcon: <KeyboardArrowDown />,
                                     sx: {
                                         color: 'primary.contrastText',
                                         borderColor: 'primary.contrastText',

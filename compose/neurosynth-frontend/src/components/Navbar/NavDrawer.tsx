@@ -1,6 +1,5 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import MenuIcon from '@mui/icons-material/Menu';
-import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import { Menu as MenuIcon, OpenInNew as OpenInNewIcon } from '@mui/icons-material';
 import {
     Box,
     Drawer,

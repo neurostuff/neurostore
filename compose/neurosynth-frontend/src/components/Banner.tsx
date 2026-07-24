@@ -1,5 +1,4 @@
-import { Cancel } from '@mui/icons-material';
-import EmojiPeopleIcon from '@mui/icons-material/EmojiPeople';
+import { Cancel, EmojiPeople as EmojiPeopleIcon } from '@mui/icons-material';
 import { Box, IconButton, Link, Typography } from '@mui/material';
 import axios, { AxiosError, AxiosResponse } from 'axios';
 import BaseNavigationStyles from 'pages/BaseNavigation/BaseNavigation.styles';
@@ -37,7 +36,7 @@ const useGetBannerConfig = () => {
     return useQuery({
         queryKey: ['bannerConfig'],
         queryFn: () => axios.get<IBanner[]>('/config/banner.config.json'),
-        select: (res) => res?.data ?? []
+        select: (res) => res?.data ?? [],
     });
 };
 

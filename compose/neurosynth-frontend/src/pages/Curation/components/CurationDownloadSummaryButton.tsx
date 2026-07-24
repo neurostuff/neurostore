@@ -1,4 +1,4 @@
-import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
+import { ArrowDropDown as ArrowDropDownIcon } from '@mui/icons-material';
 import { Box, Button, ButtonGroup, ButtonGroupProps, MenuItem, MenuList } from '@mui/material';
 import NeurosynthPopper from 'components/NeurosynthPopper/NeurosynthPopper';
 import ProgressLoader from 'components/ProgressLoader';
@@ -7,9 +7,7 @@ import { useRef, useState } from 'react';
 import { downloadFile } from 'helpers/downloadFile.helpers';
 import { stubsToBibtex, stubsToCSV } from './CurationDownloadSummary.helpers';
 
-const CurationDownloadSummaryButton = ({  buttonGroupProps = {}  }: {
-    buttonGroupProps?: ButtonGroupProps;
-}) => {
+const CurationDownloadSummaryButton = ({ buttonGroupProps = {} }: { buttonGroupProps?: ButtonGroupProps }) => {
     const [optionsIsOpen, setOptionsIsOpen] = useState(false);
     const anchorRef = useRef(null);
     const curationColumns = useProjectCurationColumns();

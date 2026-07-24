@@ -1,4 +1,4 @@
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import { ErrorOutline as ErrorOutlineIcon } from '@mui/icons-material';
 import { Chip } from '@mui/material';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import useDisplayWarnings from '../hooks/useDisplayWarnings';

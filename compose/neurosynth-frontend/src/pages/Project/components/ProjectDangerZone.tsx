@@ -1,4 +1,4 @@
-import ReportProblemIcon from '@mui/icons-material/ReportProblem';
+import { ReportProblem as ReportProblemIcon } from '@mui/icons-material';
 import { Box, Button, Typography } from '@mui/material';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import { useDeleteStudyset } from 'hooks';

@@ -1,6 +1,5 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import LockIcon from '@mui/icons-material/Lock';
-import PublicIcon from '@mui/icons-material/Public';
+import { Lock as LockIcon, Public as PublicIcon } from '@mui/icons-material';
 import { ToggleButtonGroup, ToggleButton, Box } from '@mui/material';
 import useUserCanEdit from 'hooks/useUserCanEdit';
 import { useProjectIsPublic, useUpdateProjectIsPublic } from 'pages/Project/store/ProjectStore';

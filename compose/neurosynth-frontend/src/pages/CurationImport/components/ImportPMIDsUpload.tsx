@@ -1,4 +1,4 @@
-import FileUploadIcon from '@mui/icons-material/FileUpload';
+import { FileUpload as FileUploadIcon } from '@mui/icons-material';
 import { Box, Button, TextField } from '@mui/material';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons';
 import { ChangeEvent, useEffect, useState } from 'react';

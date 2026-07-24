@@ -1,5 +1,5 @@
 import { DraggableProvided, DraggableStateSnapshot, DraggableStyle } from '@hello-pangea/dnd';
-import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
+import { DragIndicator as DragIndicatorIcon } from '@mui/icons-material';
 import { Box, Paper } from '@mui/material';
 import useUserCanEdit from 'hooks/useUserCanEdit';
 import { ICurationStubStudy } from 'pages/Curation/Curation.types';
@@ -19,8 +19,8 @@ const handleAnimation = (style: DraggableStyle | undefined, snapshot: DraggableS
     };
 };
 
-const CurationStubStudyDraggableContainer = (props: 
-    ICurationStubStudy & {
+const CurationStubStudyDraggableContainer = (
+    props: ICurationStubStudy & {
         index: number;
         isVisible: boolean;
         columnIndex: number;

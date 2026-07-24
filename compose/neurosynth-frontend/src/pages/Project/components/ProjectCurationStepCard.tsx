@@ -1,6 +1,8 @@
-import CloseIcon from '@mui/icons-material/Close';
-import PlaylistAddCheckIcon from '@mui/icons-material/PlaylistAddCheck';
-import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
+import {
+    Close as CloseIcon,
+    PlaylistAddCheck as PlaylistAddCheckIcon,
+    QuestionMark as QuestionMarkIcon,
+} from '@mui/icons-material';
 import { Button, Card, CardActions, CardContent, CircularProgress, Typography } from '@mui/material';
 import { Box } from '@mui/system';
 import NeurosynthLoader from 'components/NeurosynthLoader/NeurosynthLoader';
@@ -14,10 +16,7 @@ const getPercentageComplete = (curationSummary: ICurationSummary): number => {
     const percentageComplete = ((curationSummary.included + curationSummary.excluded) / curationSummary.total) * 100;
     return Math.round(percentageComplete);
 };
-const ProjectCurationStepCard = ({ 
-    projectId,
-    disabled,
- }: { projectId: string | undefined; disabled: boolean }) => {
+const ProjectCurationStepCard = ({ projectId, disabled }: { projectId: string | undefined; disabled: boolean }) => {
     const navigate = useNavigate();
     const curationSummary = useGetCurationSummary();
 

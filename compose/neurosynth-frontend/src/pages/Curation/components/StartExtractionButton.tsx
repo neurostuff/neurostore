@@ -12,7 +12,7 @@ import { enqueueSnackbar, SnackbarKey, closeSnackbar } from 'notistack';
 import { useCurationBoardGroups } from '../context/CurationBoardGroupsContext';
 import { IProjectPageLocationState } from 'pages/Project/ProjectPage';
 import { useNavigate } from 'react-router-dom';
-import PriorityHighIcon from '@mui/icons-material/PriorityHigh';
+import { PriorityHigh as PriorityHighIcon } from '@mui/icons-material';
 
 const StartExtractionButton = (props: ButtonProps) => {
     const { included, uncategorized } = useGetCurationSummary();

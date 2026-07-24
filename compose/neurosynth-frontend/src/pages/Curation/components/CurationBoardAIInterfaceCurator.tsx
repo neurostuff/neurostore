@@ -1,5 +1,4 @@
-import { ChevronLeft } from '@mui/icons-material';
-import ChangeHistoryIcon from '@mui/icons-material/ChangeHistory';
+import { ChevronLeft, ChangeHistory as ChangeHistoryIcon, TableRows } from '@mui/icons-material';
 import { Box, Button, Typography } from '@mui/material';
 import { Row, Table } from '@tanstack/react-table';
 import CurationPromoteUncategorizedButton from 'components/Buttons/CurationPromoteUncategorizedButton';
@@ -22,7 +21,6 @@ import CurationBoardAIInterfaceCuratorTable from './CurationBoardAIInterfaceCura
 import CurationBoardAIInterfaceIdentificationUI from './CurationBoardAIInterfaceIdentificationUI';
 import CurationDownloadSummaryButton from './CurationDownloadSummaryButton';
 import PrismaDialog from './PrismaDialog';
-import TableRows from '@mui/icons-material/TableRows';
 
 export interface ICurationBoardAIInterfaceCurator {
     selectedStub: ICurationTableStudy | undefined;

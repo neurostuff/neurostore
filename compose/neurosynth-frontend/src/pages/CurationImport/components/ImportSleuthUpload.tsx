@@ -1,7 +1,9 @@
-import { Warning } from '@mui/icons-material';
-import CloseIcon from '@mui/icons-material/Close';
-import FileUploadIcon from '@mui/icons-material/FileUpload';
-import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
+import {
+    Warning,
+    Close as CloseIcon,
+    FileUpload as FileUploadIcon,
+    InsertDriveFile as InsertDriveFileIcon,
+} from '@mui/icons-material';
 import { Box, Button, IconButton, List, ListItem, ListItemIcon, ListItemText, Typography } from '@mui/material';
 import CurationImportStyles from 'pages/CurationImport/CurationImport.styles';
 import React, { useMemo, useState } from 'react';

@@ -1,8 +1,12 @@
-import { Check, KeyboardArrowLeft, KeyboardArrowRight } from '@mui/icons-material';
-import BookmarkIcon from '@mui/icons-material/Bookmark';
-import DoneAllIcon from '@mui/icons-material/DoneAll';
-import QuestionMark from '@mui/icons-material/QuestionMark';
-import SaveIcon from '@mui/icons-material/Save';
+import {
+    Check,
+    KeyboardArrowLeft,
+    KeyboardArrowRight,
+    Bookmark as BookmarkIcon,
+    DoneAll as DoneAllIcon,
+    QuestionMark,
+    Save as SaveIcon,
+} from '@mui/icons-material';
 import {
     Box,
     Button,

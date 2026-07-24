@@ -1,8 +1,6 @@
 import { Box, Button, Typography } from '@mui/material';
 import { IExtractionSummary } from 'hooks/useGetExtractionSummary';
-import BookmarkIcon from '@mui/icons-material/Bookmark';
-import CheckIcon from '@mui/icons-material/Check';
-import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
+import { Bookmark as BookmarkIcon, Check as CheckIcon, QuestionMark as QuestionMarkIcon } from '@mui/icons-material';
 import { Link } from 'react-router-dom';
 
 const ProjectsPageCardExtractionSummary = (props: IExtractionSummary & { projectId: string }) => {

@@ -1,5 +1,4 @@
-import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
-import HighlightOffIcon from '@mui/icons-material/HighlightOff';
+import { ArrowDropDown as ArrowDropDownIcon, HighlightOff as HighlightOffIcon } from '@mui/icons-material';
 import { Box, Button, ButtonGroup, TextField } from '@mui/material';
 import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete';
 import ListItem from '@mui/material/ListItem';

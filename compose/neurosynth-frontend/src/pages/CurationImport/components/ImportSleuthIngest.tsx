@@ -1,5 +1,5 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
+import { InsertDriveFile as InsertDriveFileIcon } from '@mui/icons-material';
 import { Box, Button, CircularProgress, LinearProgress, Typography } from '@mui/material';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { useFetchPubMedIds, useGetPubMedIdFromDOI } from 'hooks';

@@ -1,7 +1,7 @@
-import ExpandMoreOutlined from '@mui/icons-material/ExpandMoreOutlined';
+import { ExpandMoreOutlined } from '@mui/icons-material';
 import { Accordion, AccordionDetails, AccordionSummary } from '@mui/material';
 import { SystemStyleObject } from '@mui/system';
-import { type ReactNode,  useEffect, useState } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 
 interface INeurosynthAccordion {
     defaultExpanded?: boolean;

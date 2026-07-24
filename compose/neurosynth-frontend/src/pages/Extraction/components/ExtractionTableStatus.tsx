@@ -1,6 +1,10 @@
-import { ArrowDownward, CheckCircle, QuestionMark } from '@mui/icons-material';
-import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
-import BookmarkIcon from '@mui/icons-material/Bookmark';
+import {
+    ArrowDownward,
+    CheckCircle,
+    QuestionMark,
+    ArrowUpward as ArrowUpwardIcon,
+    Bookmark as BookmarkIcon,
+} from '@mui/icons-material';
 import { Box, Button, ButtonGroup, IconButton, Tooltip, Typography } from '@mui/material';
 import { CellContext, HeaderContext } from '@tanstack/react-table';
 import { useProjectExtractionAddOrUpdateStudyListStatus, useProjectUser } from 'pages/Project/store/ProjectStore';
@@ -8,9 +12,7 @@ import { EExtractionStatus } from '../ExtractionPage';
 import { IExtractionTableStudy } from './ExtractionTable';
 import { useUserCanEdit } from 'hooks';
 
-export const ExtractionTableStatusCell = (
-    props: CellContext<IExtractionTableStudy, EExtractionStatus | undefined>
-) => {
+export const ExtractionTableStatusCell = (props: CellContext<IExtractionTableStudy, EExtractionStatus | undefined>) => {
     const projectUser = useProjectUser();
     const userCanEdit = useUserCanEdit(projectUser ?? undefined);
     const status = props.getValue();

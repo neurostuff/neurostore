@@ -1,4 +1,4 @@
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import { ErrorOutline as ErrorOutlineIcon } from '@mui/icons-material';
 import { Box, Typography } from '@mui/material';
 import LoadingButton from 'components/Buttons/LoadingButton';
 import { useGetStudysetById, useUpdateStudyset } from 'hooks';
@@ -102,9 +102,8 @@ const ExtractionOutOfSync = () => {
             await queryClient.invalidateQueries({ queryKey: [STUDYSET_QUERY_STRING] });
 
             queryClient.invalidateQueries({
-                queryKey: ['annotations']
+                queryKey: ['annotations'],
             });
-
 
             enqueueSnackbar('synced curation and studyset successfully', { variant: 'success' });
 

@@ -1,8 +1,10 @@
 import { Box, Button, Typography } from '@mui/material';
 import { ICurationSummary } from 'hooks/useGetCurationSummary';
-import CloseIcon from '@mui/icons-material/Close';
-import PlaylistAddCheckIcon from '@mui/icons-material/PlaylistAddCheck';
-import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
+import {
+    Close as CloseIcon,
+    PlaylistAddCheck as PlaylistAddCheckIcon,
+    QuestionMark as QuestionMarkIcon,
+} from '@mui/icons-material';
 import { Link } from 'react-router-dom';
 
 const ProjectsPageCardSummaryCuration = (props: ICurationSummary & { projectId: string }) => {

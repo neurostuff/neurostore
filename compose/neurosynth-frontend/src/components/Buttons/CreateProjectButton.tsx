@@ -1,5 +1,5 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import { AddCircleOutline as AddCircleOutlineIcon } from '@mui/icons-material';
 import { ButtonProps } from '@mui/material';
 import LoadingButton from 'components/Buttons/LoadingButton';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';

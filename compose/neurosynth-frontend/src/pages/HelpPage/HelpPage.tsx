@@ -1,7 +1,5 @@
 import { Box, Button, Card, CardContent, Container, Link, Typography } from '@mui/material';
-import ForumIcon from '@mui/icons-material/Forum';
-import EmailIcon from '@mui/icons-material/Email';
-import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import { Forum as ForumIcon, Email as EmailIcon, OpenInNew as OpenInNewIcon } from '@mui/icons-material';
 import { usePrerenderReady, usePageMetadata } from '../../../seo/hooks';
 
 const HelpPage = () => {

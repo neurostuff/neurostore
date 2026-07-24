@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Dialog, DialogContent, DialogTitle, Box, Typography, IconButton, Breakpoint } from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
+import { Close as CloseIcon } from '@mui/icons-material';
 import { SystemStyleObject } from '@mui/system';
 
 export interface IDialog extends Omit<IBaseDialog, 'dialogTitle' | 'fullWidth' | 'maxWidth'> {}

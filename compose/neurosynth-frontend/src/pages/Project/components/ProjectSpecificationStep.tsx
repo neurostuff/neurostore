@@ -1,4 +1,4 @@
-import KeyboardDoubleArrowRightIcon from '@mui/icons-material/KeyboardDoubleArrowRight';
+import { KeyboardDoubleArrowRight as KeyboardDoubleArrowRightIcon } from '@mui/icons-material';
 import { Box, Button, Step, StepContent, StepLabel, StepProps, Typography } from '@mui/material';
 import { IProjectPageLocationState } from 'pages/Project/ProjectPage';
 import { useAllowEditMetaAnalyses, useProjectMetaAnalysisCanEdit } from 'pages/Project/store/ProjectStore';

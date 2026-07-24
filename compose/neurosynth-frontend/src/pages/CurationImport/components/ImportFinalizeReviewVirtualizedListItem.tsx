@@ -1,4 +1,4 @@
-import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import { OpenInNew as OpenInNewIcon } from '@mui/icons-material';
 import { Box, Chip, Divider, Typography } from '@mui/material';
 import { ICurationStubStudy } from 'pages/Curation/Curation.types';
 import { PUBMED_ARTICLE_URL_PREFIX, PUBMED_CENTRAL_ARTICLE_URL_PREFIX } from 'hooks/external/useFetchPubMedIds.types';

@@ -9,7 +9,7 @@ import {
     IconButton,
     ButtonProps,
 } from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
+import { Close as CloseIcon } from '@mui/icons-material';
 import React, { ReactNode, useMemo } from 'react';
 import LoadingButton from 'components/Buttons/LoadingButton';
 import { ColorOptions } from 'index';

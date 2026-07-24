@@ -1,6 +1,5 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
-import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import { KeyboardArrowDown, OpenInNew as OpenInNewIcon } from '@mui/icons-material';
 import { Box, Button, Toolbar, Typography } from '@mui/material';
 import CreateProjectButton from 'components/Buttons/CreateProjectButton';
 import NeurosynthAvatar from 'components/Navbar/NeurosynthAvatar';
@@ -53,7 +52,7 @@ const NavToolbar = (props: INav) => {
                                 NavToolbarStyles.menuItemPadding,
                                 NavToolbarStyles.menuItem,
                             ],
-                            endIcon: <KeyboardArrowDownIcon />,
+                            endIcon: <KeyboardArrowDown />,
                         }}
                         options={[
                             {
@@ -75,7 +74,7 @@ const NavToolbar = (props: INav) => {
                                 NavToolbarStyles.menuItemPadding,
                                 NavToolbarStyles.menuItem,
                             ],
-                            endIcon: <KeyboardArrowDownIcon />,
+                            endIcon: <KeyboardArrowDown />,
                         }}
                         options={[
                             {

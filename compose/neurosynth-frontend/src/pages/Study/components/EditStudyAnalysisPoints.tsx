@@ -1,6 +1,5 @@
 import EditStudyAnalysisPointsHotTable from 'pages/Study/components/EditStudyAnalysisPointsHotTable';
 import { Box, Link, Tooltip, Typography } from '@mui/material';
-import HelpIcon from '@mui/icons-material/Help';
 import EditStudyAnalysisPointSpaceAndStatistic from 'pages/Study/components/EditStudyAnalysisPointSpaceAndStatistic';
 import RelegateExtractionStudyDialog from './RelegateExtractionStudyDialog';
 import { useNavigate } from 'react-router-dom';
@@ -9,7 +8,7 @@ import { useStudyAnalysisPoints } from 'pages/Study/store/StudyStore';
 import { IStorePoint } from 'pages/Study/store/StudyStore.helpers';
 import { useState } from 'react';
 import { useSnackbar } from 'notistack';
-import { Warning } from '@mui/icons-material';
+import { Warning, Help as HelpIcon } from '@mui/icons-material';
 
 /** True if this row is a coordinate triple the user (or API) has actually set. */
 const pointHasCompleteCoordinates = (p: IStorePoint) =>

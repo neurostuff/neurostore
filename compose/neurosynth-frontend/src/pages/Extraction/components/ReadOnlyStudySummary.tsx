@@ -1,15 +1,14 @@
 import { Box, IconButton, Tooltip, Typography } from '@mui/material';
 import { StudyReturn } from 'neurostore-typescript-sdk';
 import StudyListItemStyles from './ReadOnlyStudySummary.styles';
-import CheckIcon from '@mui/icons-material/Check';
-import BookmarkIcon from '@mui/icons-material/Bookmark';
+import { Check as CheckIcon, Bookmark as BookmarkIcon } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
 import { EExtractionStatus } from 'pages/Extraction/ExtractionPage';
 import { useProjectExtractionAddOrUpdateStudyListStatus, useProjectUser } from 'pages/Project/store/ProjectStore';
 import useUserCanEdit from 'hooks/useUserCanEdit';
 
-const ReadOnlyStudySummaryVirtualizedItem = (props: 
-    StudyReturn & {
+const ReadOnlyStudySummaryVirtualizedItem = (
+    props: StudyReturn & {
         currentStatus: EExtractionStatus;
         canEdit: boolean;
         style: React.CSSProperties;

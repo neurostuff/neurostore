@@ -1,6 +1,4 @@
-import BookmarkIcon from '@mui/icons-material/Bookmark';
-import CheckIcon from '@mui/icons-material/Check';
-import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
+import { Bookmark as BookmarkIcon, Check as CheckIcon, QuestionMark as QuestionMarkIcon } from '@mui/icons-material';
 import { Box, Card, CardContent, Typography, CircularProgress, CardActions, Button } from '@mui/material';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import ProjectComponentsStyles from 'pages/Project/components/Project.styles';
@@ -21,7 +19,7 @@ const getPercentageComplete = (extractionSummary: IExtractionSummary): number =>
     return Math.round(percentageComplete);
 };
 
-const ProjectExtractionStepCard = ({  disabled  }: { disabled: boolean }) => {
+const ProjectExtractionStepCard = ({ disabled }: { disabled: boolean }) => {
     const [markAllAsCompleteConfirmationDialogIsOpen, setMarkAllAsCompleteConfirmationDialogIsOpen] = useState(false);
     const studysetId = useProjectExtractionStudysetId();
     const { projectId } = useParams<{ projectId: string }>();

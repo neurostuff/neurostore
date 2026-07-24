@@ -1,8 +1,8 @@
 import { Link, LinkProps } from '@mui/material';
 import DisplayLinkStyles from './DisplayLink.styles';
-import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import { OpenInNew as OpenInNewIcon } from '@mui/icons-material';
 
-const DisplayLink = ({  label, ...linkProps  }: { label: string } & LinkProps) => {
+const DisplayLink = ({ label, ...linkProps }: { label: string } & LinkProps) => {
     return (
         <Link
             color="primary"

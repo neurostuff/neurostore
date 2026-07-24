@@ -1,6 +1,6 @@
 import { Button, ButtonProps } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import { ArrowBack as ArrowBackIcon } from '@mui/icons-material';
 
 interface IBackButton {
     path: string;

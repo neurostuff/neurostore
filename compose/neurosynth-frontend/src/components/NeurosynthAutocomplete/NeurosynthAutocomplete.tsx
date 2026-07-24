@@ -1,4 +1,4 @@
-import ErrorIcon from '@mui/icons-material/Error';
+import { Error as ErrorIcon } from '@mui/icons-material';
 import { Autocomplete, AutocompleteRenderOptionState, Box, FilterOptionsState, TextField } from '@mui/material';
 import { SystemStyleObject } from '@mui/system';
 import ProgressLoader from 'components/ProgressLoader';

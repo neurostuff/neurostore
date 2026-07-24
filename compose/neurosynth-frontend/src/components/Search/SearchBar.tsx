@@ -1,4 +1,4 @@
-import SearchIcon from '@mui/icons-material/Search';
+import { Search as SearchIcon } from '@mui/icons-material';
 import { Alert, Box, Button, InputBase, Paper } from '@mui/material';
 import SearchBarStyles from 'components/Search/SearchBar.styles';
 import {

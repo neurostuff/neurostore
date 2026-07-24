@@ -1,6 +1,5 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import { ArrowCircleLeftOutlined } from '@mui/icons-material';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import { ArrowCircleLeftOutlined, CheckCircleOutline as CheckCircleOutlineIcon } from '@mui/icons-material';
 import { Box, Button, Chip } from '@mui/material';
 import { useUserCanEdit } from 'hooks';
 import { indexToPRISMAMapping, ITag } from 'hooks/projects/useGetProjects';

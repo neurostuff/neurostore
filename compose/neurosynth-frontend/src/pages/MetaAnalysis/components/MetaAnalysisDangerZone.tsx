@@ -1,4 +1,4 @@
-import ReportProblemIcon from '@mui/icons-material/ReportProblem';
+import { ReportProblem as ReportProblemIcon } from '@mui/icons-material';
 import { Box, Button, Typography } from '@mui/material';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import useDeleteMetaAnalysis from 'hooks/metaAnalyses/useDeleteMetaAnalysis';
@@ -8,7 +8,7 @@ import { useProjectUser } from 'pages/Project/store/ProjectStore';
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
-const MetaAnalysisDangerZone = ({  metaAnalysisId  }: { metaAnalysisId: string | undefined }) => {
+const MetaAnalysisDangerZone = ({ metaAnalysisId }: { metaAnalysisId: string | undefined }) => {
     const { projectId } = useParams<{ projectId: string }>();
     const projectUser = useProjectUser();
     const { mutate: deleteMetaAnalysis } = useDeleteMetaAnalysis();

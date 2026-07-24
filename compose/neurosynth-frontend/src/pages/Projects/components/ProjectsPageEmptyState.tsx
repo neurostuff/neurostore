@@ -1,4 +1,4 @@
-import FolderOpenIcon from '@mui/icons-material/FolderOpen';
+import { FolderOpen as FolderOpenIcon } from '@mui/icons-material';
 import { Avatar, Box, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import CreateProjectButton from 'components/Buttons/CreateProjectButton';

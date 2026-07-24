@@ -1,5 +1,4 @@
-import { ArrowDownward } from '@mui/icons-material';
-import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
+import { ArrowDownward, ArrowUpward as ArrowUpwardIcon } from '@mui/icons-material';
 import { Box, IconButton, Tooltip, Typography } from '@mui/material';
 import { CellContext, HeaderContext } from '@tanstack/react-table';
 import { IExtractionTableStudy } from './ExtractionTable';
@@ -15,10 +14,7 @@ export const ExtractionTableAuthorCell = (props: CellContext<IExtractionTableStu
     );
 };
 
-export const ExtractionTableAuthorHeader = ({ 
-    table,
-    column,
- }: HeaderContext<IExtractionTableStudy, string>) => {
+export const ExtractionTableAuthorHeader = ({ table, column }: HeaderContext<IExtractionTableStudy, string>) => {
     const columnLabel = column.columnDef.meta?.columnLabel || '';
     const isSorted = column.getIsSorted();
 

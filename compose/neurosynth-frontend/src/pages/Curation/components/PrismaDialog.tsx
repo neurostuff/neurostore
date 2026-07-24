@@ -11,12 +11,11 @@ import {
     Typography,
 } from '@mui/material';
 import PrismaComponent from 'pages/Curation/components/Prisma';
-import CloseIcon from '@mui/icons-material/Close';
+import { Close as CloseIcon, ArrowDropDown as ArrowDropDownIcon } from '@mui/icons-material';
 import { IDialog } from '../../../components/Dialogs/BaseDialog';
 import { toSvg, toPng, toJpeg } from 'html-to-image';
 import { useRef, useState } from 'react';
 import NeurosynthPopper from 'components/NeurosynthPopper/NeurosynthPopper';
-import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import { Options } from 'html-to-image/lib/types';
 
 const PrismaDialog = (props: IDialog) => {

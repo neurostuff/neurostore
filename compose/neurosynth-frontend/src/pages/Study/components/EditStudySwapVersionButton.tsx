@@ -1,5 +1,4 @@
-import OpenInNewIcon from '@mui/icons-material/OpenInNew';
-import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
+import { OpenInNew as OpenInNewIcon, SwapHoriz as SwapHorizIcon } from '@mui/icons-material';
 import {
     Box,
     Button,

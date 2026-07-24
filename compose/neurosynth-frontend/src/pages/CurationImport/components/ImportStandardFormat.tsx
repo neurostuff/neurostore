@@ -1,4 +1,4 @@
-import FileUploadIcon from '@mui/icons-material/FileUpload';
+import { FileUpload as FileUploadIcon } from '@mui/icons-material';
 import { Box, Button, TextField, Typography } from '@mui/material';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons';
 import { ISource } from 'hooks/projects/useGetProjects';
@@ -69,7 +69,11 @@ interface CSLJSON {
     volume?: string;
 }
 
-const ImportStandardFormat = ({  onNavigate, onImportStubs, onFileUpload  }: {
+const ImportStandardFormat = ({
+    onNavigate,
+    onImportStubs,
+    onFileUpload,
+}: {
     onNavigate: (button: ENavigationButton) => void;
     onImportStubs: (stubs: ICurationStubStudy[]) => void;
     onFileUpload: (fileName: string) => void;

@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import NeurosynthList from './NeurosynthList';
-import ArticleIcon from '@mui/icons-material/Article';
+import { Article as ArticleIcon } from '@mui/icons-material';
 
 vi.mock('react-router-dom');
 

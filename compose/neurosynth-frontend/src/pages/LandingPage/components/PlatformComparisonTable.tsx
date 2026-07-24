@@ -1,5 +1,4 @@
-import CheckIcon from '@mui/icons-material/Check';
-import CloseIcon from '@mui/icons-material/Close';
+import { Check as CheckIcon, Close as CloseIcon } from '@mui/icons-material';
 import { Box, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@mui/material';
 import PlatformComparisonTableStyles from './PlatformComparisonTable.styles';
 

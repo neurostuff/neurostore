@@ -1,15 +1,11 @@
-import { ArrowDownward, Delete } from '@mui/icons-material';
-import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
+import { ArrowDownward, Delete, ArrowUpward as ArrowUpwardIcon } from '@mui/icons-material';
 import { Box, IconButton, Tooltip, Typography } from '@mui/material';
 import { HeaderContext } from '@tanstack/react-table';
 import AIICon from 'components/AIIcon';
 import { ICurationTableColumnType, ICurationTableStudy } from '../hooks/useCuratorTableState.types';
 import CurationBoardAIInterfaceCuratorTableHeaderFilter from './CurationBoardAIInterfaceCuratorTableHeaderFilter';
 
-export const CuratorTableHeader = ({ 
-    table,
-    column,
- }: HeaderContext<ICurationTableStudy, ICurationTableColumnType>) => {
+export const CuratorTableHeader = ({ table, column }: HeaderContext<ICurationTableStudy, ICurationTableColumnType>) => {
     const removeColumn = table.options.meta?.curatorTableOnRemoveColumn;
     const columnLabel = column.columnDef.meta?.columnLabel || '';
     const canSort = column.getCanSort();

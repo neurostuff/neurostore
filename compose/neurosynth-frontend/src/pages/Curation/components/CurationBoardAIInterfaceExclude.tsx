@@ -1,4 +1,4 @@
-import SearchIcon from '@mui/icons-material/Search';
+import { Search as SearchIcon } from '@mui/icons-material';
 import { Box, InputAdornment, TextField, Typography } from '@mui/material';
 import TextEdit from 'components/TextEdit/TextEdit';
 import VirtualizedList from 'components/VirtualizedList/VirtualizedList';

@@ -1,4 +1,4 @@
-import ChangeHistoryIcon from '@mui/icons-material/ChangeHistory';
+import { ChangeHistory as ChangeHistoryIcon } from '@mui/icons-material';
 import { Box, Button, FormControlLabel, Switch, Tooltip, Typography } from '@mui/material';
 import LoadingStateIndicatorProject from 'components/LoadingStateIndicator/LoadingStateIndicatorProject';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs';

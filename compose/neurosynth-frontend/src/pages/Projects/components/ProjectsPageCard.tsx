@@ -10,9 +10,7 @@ import ProjectsPageCardSummaryCuration from './ProjectsPageCardSummaryCuration';
 import ProjectsPageCardExtractionSummary from './ProjectsPageCardSummaryExtraction';
 import ProjectsPageCardSummaryMetaAnalyses from './ProjectsPageCardSummaryMetaAnalyses';
 import { MetaAnalysis } from 'neurosynth-compose-typescript-sdk';
-import LockIcon from '@mui/icons-material/Lock';
-import PublicIcon from '@mui/icons-material/Public';
-import ChangeHistoryIcon from '@mui/icons-material/ChangeHistory';
+import { Lock as LockIcon, Public as PublicIcon, ChangeHistory as ChangeHistoryIcon } from '@mui/icons-material';
 
 const isToday = (date: Date) => {
     const today = new Date();
