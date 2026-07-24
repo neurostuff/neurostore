@@ -28,7 +28,10 @@ const updateUploadSummary = (sleuthUpload: ISleuthFileUploadStubs) => {
     };
 };
 
-const ImportSleuthIngest = ({  sleuthUploads, onStubsUploaded  }: {
+const ImportSleuthIngest = ({
+    sleuthUploads,
+    onStubsUploaded,
+}: {
     sleuthUploads: ISleuthFileUploadStubs[];
     onStubsUploaded: (stubs: ICurationStubStudy[]) => void;
 }) => {

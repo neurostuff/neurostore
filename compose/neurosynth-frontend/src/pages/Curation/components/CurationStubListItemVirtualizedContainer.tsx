@@ -1,23 +1,24 @@
-import { ListChildComponentProps } from 'react-window';
+import React from 'react';
 import { ICurationStubStudy } from '../Curation.types';
 import CurationStubListItem from './CurationStubListItem';
 
-const CurationStubListItemVirtualizedContainer = (props: 
-    ListChildComponentProps<{
-        stubs: ICurationStubStudy[];
-        selectedStubId: string | undefined;
-        onSetSelectedStub: (stub: string) => void;
-    }>
-) => {
-    const stub = props.data.stubs[props.index];
-    const isSelected = props.data.selectedStubId === stub.id;
-
+const CurationStubListItemVirtualizedContainer = ({
+    stub,
+    selectedStubId,
+    onSetSelectedStub,
+    style,
+}: {
+    stub: ICurationStubStudy;
+    selectedStubId: string | undefined;
+    onSetSelectedStub: (stubId: string) => void;
+    style: React.CSSProperties;
+}) => {
     return (
         <CurationStubListItem
-            selected={isSelected}
-            onSetSelectedStub={props.data.onSetSelectedStub}
+            selected={selectedStubId === stub.id}
+            onSetSelectedStub={onSetSelectedStub}
             stub={stub}
-            style={props.style}
+            style={style}
         />
     );
 };
