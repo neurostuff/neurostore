@@ -1,7 +1,6 @@
 import { Box, Button } from '@mui/material';
 import { Table } from '@tanstack/react-table';
 import { indexToPRISMAMapping, ITag } from 'hooks/projects/useGetProjects';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import {
     useCreateNewExclusion,
     useDemoteStub,
@@ -13,11 +12,14 @@ import { useState } from 'react';
 import { v4 as uuid } from 'uuid';
 import { ICurationTableStudy } from '../hooks/useCuratorTableState.types';
 import CurationPopupExclusionSelector from './CurationPopupExclusionSelector';
-import { ArrowCircleLeftOutlined } from '@mui/icons-material';
+import { ArrowCircleLeftOutlined, CheckCircleOutline } from '@mui/icons-material';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useUserCanEdit } from 'hooks';
 
-const CurationBoardAIInterfaceCuratorTableSelectedRowsActions = ({  table, columnIndex  }: {
+const CurationBoardAIInterfaceCuratorTableSelectedRowsActions = ({
+    table,
+    columnIndex,
+}: {
     table: Table<ICurationTableStudy>;
     columnIndex: number;
 }) => {
@@ -77,7 +79,7 @@ const CurationBoardAIInterfaceCuratorTableSelectedRowsActions = ({  table, colum
                 style={{ marginRight: '8px', fontSize: '12px' }}
                 variant="outlined"
                 disabled={!canEdit}
-                startIcon={<CheckCircleOutlineIcon />}
+                startIcon={<CheckCircleOutline />}
                 onClick={handlePromoteStudies}
             >
                 {isStepBeforeInclude ? 'Include' : 'Promote'} ({numRowsSelected})

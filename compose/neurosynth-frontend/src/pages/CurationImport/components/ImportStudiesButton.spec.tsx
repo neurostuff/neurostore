@@ -17,11 +17,25 @@ vi.mock('pages/Project/store/ProjectStore', () => ({
 vi.mock('components/NeurosynthPopper/NeurosynthPopper');
 
 vi.mock('components/Dialogs/BaseDialog', () => ({
-    default: vi
-        .fn()
-        .mockImplementation(({ isOpen, children }: { isOpen: boolean; children: React.ReactNode }) =>
-            isOpen ? <div data-testid="mock-base-dialog">{children}</div> : null
-        ),
+    default: vi.fn().mockImplementation(
+        ({
+            isOpen,
+            onCloseDialog,
+            children,
+        }: {
+            isOpen: boolean;
+            onCloseDialog: () => void;
+            children: ReactNode;
+        }) =>
+            isOpen ? (
+                <div data-testid="mock-base-dialog">
+                    {children}
+                    <button data-testid="close-dialog" onClick={onCloseDialog}>
+                        close
+                    </button>
+                </div>
+            ) : null
+    ),
 }));
 
 // Prevent full rendering of the multi-step import form in unit tests
@@ -53,30 +67,6 @@ describe('ImportStudiesButton', () => {
     });
 
     it('should close the import dialog when the dialog close handler is invoked', async () => {
-        vi.mock('components/Dialogs/BaseDialog', () => ({
-            default: vi
-                .fn()
-                .mockImplementation(
-                    ({
-                        isOpen,
-                        onCloseDialog,
-                        children,
-                    }: {
-                        isOpen: boolean;
-                        onCloseDialog: () => void;
-                        children: React.ReactNode;
-                    }) =>
-                        isOpen ? (
-                            <div data-testid="mock-base-dialog">
-                                {children}
-                                <button data-testid="close-dialog" onClick={onCloseDialog}>
-                                    close
-                                </button>
-                            </div>
-                        ) : null
-                ),
-        }));
-
         render(<ImportStudiesButton />);
         await userEvent.click(screen.getByText('Import via Pubmed ID (PMID) List'));
         expect(screen.getByTestId('mock-base-dialog')).toBeInTheDocument();

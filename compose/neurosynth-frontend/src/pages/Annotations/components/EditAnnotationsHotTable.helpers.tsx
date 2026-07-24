@@ -3,7 +3,7 @@ import { EPropertyType } from 'components/EditMetadata/EditMetadata.types';
 import { AnnotationNoteValue, NoteKeyType } from 'components/HotTables/HotTables.types';
 import { NoteCollectionReturn } from 'neurostore-typescript-sdk';
 import { renderToString } from 'react-dom/server';
-import Cancel from '@mui/icons-material/Cancel';
+import { Cancel } from '@mui/icons-material';
 import styles from 'components/HotTables/HotTables.module.css';
 import { numericValidator } from 'handsontable/validators';
 import { booleanValidator } from 'components/HotTables/HotTables.utils';

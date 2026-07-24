@@ -12,7 +12,7 @@ import { enqueueSnackbar, SnackbarKey, closeSnackbar } from 'notistack';
 import { useCurationBoardGroups } from '../context/CurationBoardGroupsContext';
 import { IProjectPageLocationState } from 'pages/Project/ProjectPage';
 import { useNavigate } from 'react-router-dom';
-import PriorityHighIcon from '@mui/icons-material/PriorityHigh';
+import { PriorityHigh } from '@mui/icons-material';
 
 const StartExtractionButton = (props: ButtonProps) => {
     const { included, uncategorized } = useGetCurationSummary();
@@ -105,7 +105,7 @@ const StartExtractionButton = (props: ButtonProps) => {
             onClick={handleMoveToExtractionPhase}
             {...props}
         >
-            {indicateGoToExtraction && <PriorityHighIcon sx={{ fontSize: '16px', marginRight: '4px' }} />}
+            {indicateGoToExtraction && <PriorityHigh sx={{ fontSize: '16px', marginRight: '4px' }} />}
             {extractionStepInitialized ? 'view extraction' : 'start extraction'}
         </Button>
     );

@@ -1,5 +1,4 @@
-import { ArrowDownward } from '@mui/icons-material';
-import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
+import { ArrowDownward, ArrowUpward } from '@mui/icons-material';
 import { Box, IconButton, Tooltip, Typography } from '@mui/material';
 import { CellContext, HeaderContext } from '@tanstack/react-table';
 import { IExtractionTableStudy } from './ExtractionTable';
@@ -9,10 +8,7 @@ export const ExtractionTableYearCell = (props: CellContext<IExtractionTableStudy
     return <Typography variant="body2">{value}</Typography>;
 };
 
-export const ExtractionTableYearHeader = ({ 
-    table,
-    column,
- }: HeaderContext<IExtractionTableStudy, string>) => {
+export const ExtractionTableYearHeader = ({ table, column }: HeaderContext<IExtractionTableStudy, string>) => {
     const columnLabel = column.columnDef.meta?.columnLabel || '';
     const isSorted = column.getIsSorted();
 
@@ -38,7 +34,7 @@ export const ExtractionTableYearHeader = ({
                 </Tooltip>
             ) : isSorted === 'asc' ? (
                 <IconButton size="small" onClick={() => table.resetSorting()}>
-                    <ArrowUpwardIcon sx={{ height: '0.9em', width: '0.9em', color: 'secondary.main' }} />
+                    <ArrowUpward sx={{ height: '0.9em', width: '0.9em', color: 'secondary.main' }} />
                 </IconButton>
             ) : (
                 <IconButton size="small" onClick={() => table.setSorting([{ id: 'year', desc: false }])}>

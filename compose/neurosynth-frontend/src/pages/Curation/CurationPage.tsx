@@ -1,4 +1,4 @@
-import ChangeHistoryIcon from '@mui/icons-material/ChangeHistory';
+import { ChangeHistory } from '@mui/icons-material';
 import { Box, Button, FormControlLabel, Switch, Tooltip, Typography } from '@mui/material';
 import LoadingStateIndicatorProject from 'components/LoadingStateIndicator/LoadingStateIndicatorProject';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs';
@@ -141,7 +141,7 @@ const CurationPage = () => {
                                     variant="outlined"
                                     size="small"
                                     sx={{ marginLeft: '0.5rem', fontSize: '12px' }}
-                                    startIcon={<ChangeHistoryIcon />}
+                                    startIcon={<ChangeHistory />}
                                 >
                                     PRISMA diagram
                                 </Button>

@@ -1,4 +1,4 @@
-import ErrorIcon from '@mui/icons-material/Error';
+import { Error } from '@mui/icons-material';
 import { Autocomplete, AutocompleteRenderOptionState, Box, FilterOptionsState, TextField } from '@mui/material';
 import { SystemStyleObject } from '@mui/system';
 import ProgressLoader from 'components/ProgressLoader';
@@ -93,7 +93,7 @@ const NeurosynthAutocomplete = <T,>(props: INeurosynthAutocomplete<T>) => {
                                 {isError && (
                                     <Box sx={{ color: 'error.main', display: 'flex' }}>
                                         {errorText}
-                                        <ErrorIcon sx={{ marginLeft: '5px' }} />
+                                        <Error sx={{ marginLeft: '5px' }} />
                                     </Box>
                                 )}
                                 {isLoading && <ProgressLoader size={20} />}

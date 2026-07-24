@@ -1,4 +1,4 @@
-import FileUploadIcon from '@mui/icons-material/FileUpload';
+import { FileUpload } from '@mui/icons-material';
 import { Box, Button, TextField } from '@mui/material';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons';
 import { ChangeEvent, useEffect, useState } from 'react';
@@ -121,7 +121,7 @@ const ImportPMIDsUpload = (props: {
     return (
         <Box sx={CurationImportStyles.importContainer}>
             <Box sx={{ display: 'flex', justifyContent: 'center', marginTop: '1rem' }}>
-                <Button component="label" endIcon={<FileUploadIcon />}>
+                <Button component="label" endIcon={<FileUpload />}>
                     {uploadState.file?.name || 'Upload File'}
                     <input onChange={handleFileUpload} type="file" hidden />
                 </Button>

@@ -1,4 +1,4 @@
-import Help from '@mui/icons-material/Help';
+import { Help } from '@mui/icons-material';
 import Typography from '@mui/material/Typography';
 import { StepType } from '@reactour/tour';
 

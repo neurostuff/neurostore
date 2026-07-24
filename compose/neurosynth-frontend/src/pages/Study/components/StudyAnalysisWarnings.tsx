@@ -1,4 +1,4 @@
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import { ErrorOutline } from '@mui/icons-material';
 import { Chip } from '@mui/material';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import useDisplayWarnings from '../hooks/useDisplayWarnings';
@@ -14,7 +14,7 @@ const StudyAnalysisWarnings = (props: { analysisId: string }) => {
             {hasNoPoints && (
                 <Chip
                     sx={{ margin: '2px', marginBottom: '1rem' }}
-                    icon={<ErrorOutlineIcon />}
+                    icon={<ErrorOutline />}
                     label="This analysis has no coordinates"
                     color="warning"
                 />
@@ -22,7 +22,7 @@ const StudyAnalysisWarnings = (props: { analysisId: string }) => {
             {hasNoName && (
                 <Chip
                     sx={{ margin: '2px', marginBottom: '1rem' }}
-                    icon={<ErrorOutlineIcon />}
+                    icon={<ErrorOutline />}
                     label="No analysis name"
                     color="warning"
                 />
@@ -30,7 +30,7 @@ const StudyAnalysisWarnings = (props: { analysisId: string }) => {
             {hasDuplicateName && (
                 <Chip
                     sx={{ margin: '2px', marginBottom: '1rem' }}
-                    icon={<ErrorOutlineIcon />}
+                    icon={<ErrorOutline />}
                     label="Duplicate analysis name"
                     color="warning"
                 />
@@ -38,7 +38,7 @@ const StudyAnalysisWarnings = (props: { analysisId: string }) => {
             {hasNonMNICoordinates && (
                 <Chip
                     sx={{ margin: '2px', marginBottom: '1rem' }}
-                    icon={<ErrorOutlineIcon />}
+                    icon={<ErrorOutline />}
                     label="This analysis may contain non MNI coordinates"
                     color="warning"
                 />
