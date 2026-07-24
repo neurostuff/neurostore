@@ -7,11 +7,11 @@ import userEvent from '@testing-library/user-event';
 vi.mock('pages/Study/components/StudyAnalysesListItem.tsx');
 
 describe('EditStudyAnalysesList Component', () => {
-    it('should render', () => {
+    it('should render', async () => {
         render(<EditStudyAnalysesList onSelectAnalysis={() => {}} selectedAnalysisId="" analyses={[]} />);
     });
 
-    it('should show two analyses in the list', () => {
+    it('should show two analyses in the list', async () => {
         const mockAnalyses: IStoreAnalysis[] = [
             {
                 id: 'test-id-1',
@@ -54,7 +54,7 @@ describe('EditStudyAnalysesList Component', () => {
         });
     });
 
-    it('should call the onSelectAnalysis function when analysis is selected', () => {
+    it('should call the onSelectAnalysis function when analysis is selected', async () => {
         const handleOnSelectAnalysisMock = vi.fn();
         const mockAnalyses: IStoreAnalysis[] = [
             {
@@ -82,7 +82,7 @@ describe('EditStudyAnalysesList Component', () => {
             />
         );
 
-        userEvent.click(screen.getByTestId('test-trigger-select-analysis'));
+        await userEvent.click(screen.getByTestId('test-trigger-select-analysis'));
         expect(handleOnSelectAnalysisMock).toHaveBeenCalledWith(mockAnalyses[0].id);
     });
 });

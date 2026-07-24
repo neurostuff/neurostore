@@ -3,7 +3,7 @@ import { ICurationColumn } from 'pages/Curation/Curation.types';
 import { EImportMode } from 'pages/CurationImport/CurationImport.types';
 import { EExtractionStatus } from 'pages/Extraction/ExtractionPage';
 import { SortBy } from 'pages/Study/Study.types';
-import { useQuery } from 'react-query';
+import { useQuery } from '@tanstack/react-query';
 import API from 'api/api.config';
 
 export interface ITag {
@@ -126,14 +126,12 @@ export const projectsSearchHelper = (
 };
 
 const useGetProjects = (projectSearchCriteria: ProjectSearchCriteria, userSub?: string) => {
-    return useQuery(
-        ['projects', { ...projectSearchCriteria }, userSub],
-        () => projectsSearchHelper(projectSearchCriteria, userSub),
-        {
-            select: (axiosResponse) => (axiosResponse.data.results as INeurosynthProjectReturn[]) || [],
-            refetchOnWindowFocus: false,
-        }
-    );
+    return useQuery({
+        queryKey: ['projects', { ...projectSearchCriteria }, userSub],
+        queryFn: () => projectsSearchHelper(projectSearchCriteria, userSub),
+        select: (axiosResponse) => (axiosResponse.data.results as INeurosynthProjectReturn[]) || [],
+        refetchOnWindowFocus: false
+    });
 };
 
 export default useGetProjects;

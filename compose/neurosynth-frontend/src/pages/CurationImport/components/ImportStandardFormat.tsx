@@ -69,11 +69,11 @@ interface CSLJSON {
     volume?: string;
 }
 
-const ImportStandardFormat: React.FC<{
+const ImportStandardFormat = ({  onNavigate, onImportStubs, onFileUpload  }: {
     onNavigate: (button: ENavigationButton) => void;
     onImportStubs: (stubs: ICurationStubStudy[]) => void;
     onFileUpload: (fileName: string) => void;
-}> = ({ onNavigate, onImportStubs, onFileUpload }) => {
+}) => {
     const [source, setSource] = useState<ISource>();
     const [uploadState, setUploadState] = useState<{
         stubs: ICurationStubStudy[];

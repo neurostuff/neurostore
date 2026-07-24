@@ -10,7 +10,7 @@ import { INav } from './Navbar';
 import NavbarStyles from './Navbar.styles';
 import NavToolbarStyles from './NavToolbar.styles';
 
-const NavToolbar: React.FC<INav> = (props) => {
+const NavToolbar = (props: INav) => {
     const { isAuthenticated } = useAuth0();
     const navigate = useNavigate();
 

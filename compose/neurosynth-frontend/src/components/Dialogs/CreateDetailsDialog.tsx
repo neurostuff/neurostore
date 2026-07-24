@@ -13,7 +13,7 @@ export interface ICreateDetailsDialog {
     descriptionLabel?: string;
 }
 
-const CreateDetailsDialog: React.FC<ICreateDetailsDialog> = (props) => {
+const CreateDetailsDialog = (props: ICreateDetailsDialog) => {
     const [hasEnteredText, setHasEnteredText] = useState(false);
 
     const [newDetails, setDetails] = useState({

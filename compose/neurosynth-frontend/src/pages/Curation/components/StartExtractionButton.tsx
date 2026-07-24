@@ -14,7 +14,7 @@ import { IProjectPageLocationState } from 'pages/Project/ProjectPage';
 import { useNavigate } from 'react-router-dom';
 import PriorityHighIcon from '@mui/icons-material/PriorityHigh';
 
-const StartExtractionButton: React.FC<ButtonProps> = (props) => {
+const StartExtractionButton = (props: ButtonProps) => {
     const { included, uncategorized } = useGetCurationSummary();
     const columns = useProjectCurationColumns();
     const { groups, handleSetSelectedGroup } = useCurationBoardGroups();

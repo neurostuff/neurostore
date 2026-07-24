@@ -2,7 +2,7 @@ import { Box, Skeleton, Typography } from '@mui/material';
 import { useGetBaseStudies } from 'hooks';
 import useGetPoints from 'hooks/analyses/useGetPoints';
 
-const NeurosynthActivitySummary: React.FC = () => {
+const NeurosynthActivitySummary = () => {
     const { data: studies, isLoading: getStudiesIsLoading } = useGetBaseStudies({});
     const { data: points, isLoading: getPointsIsLoading } = useGetPoints();
 

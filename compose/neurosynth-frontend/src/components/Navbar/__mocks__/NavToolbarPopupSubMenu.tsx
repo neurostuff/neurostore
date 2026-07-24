@@ -2,7 +2,7 @@ import { INavToolbarPopupSubMenu } from 'components/Navbar/NavToolbarPopupSubMen
 import React from 'react';
 import { useState } from 'react';
 
-const MockNavToolbarPopupSubMenu: React.FC<INavToolbarPopupSubMenu> = (props) => {
+const MockNavToolbarPopupSubMenu = (props: INavToolbarPopupSubMenu) => {
     const [showPopup, setShowPopup] = useState(false);
 
     return (

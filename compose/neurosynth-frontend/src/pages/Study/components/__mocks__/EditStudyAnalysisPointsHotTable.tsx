@@ -1,4 +1,4 @@
-const MockEditStudyAnalysisPointsHotTable: React.FC<{ analysisId?: string }> = ({ analysisId }) => (
+const MockEditStudyAnalysisPointsHotTable = ({  analysisId  }: { analysisId?: string }) => (
     <div data-testid="mock-analysis-points-hot-table">{analysisId ?? ''}</div>
 );
 

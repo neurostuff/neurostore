@@ -37,7 +37,7 @@ const filterOptions = createFilterOptions<AutoSelectOption>({
     trim: true,
 });
 
-const CurationPopupExclusionSelector: React.FC<IExclusionSelectorPopup> = (props) => {
+const CurationPopupExclusionSelector = (props: IExclusionSelectorPopup) => {
     const excludeButtonRef = useRef<HTMLDivElement>(null);
     const [selectedValue, setSelectedValue] = useState<AutoSelectOption | null>(null);
     const [exclusions, setExclusions] = useState<AutoSelectOption[]>([]);

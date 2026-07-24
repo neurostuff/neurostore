@@ -1,4 +1,4 @@
-const MockEditAnalysisPoints: React.FC = (props) => {
+const MockEditAnalysisPoints = (props: unknown) => {
     return <h1>mock edit analysis points</h1>;
 };
 

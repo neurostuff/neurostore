@@ -3,11 +3,11 @@ from contextlib import contextmanager
 from urllib.request import urlopen
 
 from connexion.exceptions import OAuthProblem
+from connexion.lifecycle import ConnexionResponse
 from connexion.security import NO_VALUE
 from flask import current_app, has_app_context
 from jose import jwt
 from sqlalchemy import select
-from starlette.responses import JSONResponse
 from werkzeug.local import LocalProxy
 
 from neurosynth_compose.database import db
@@ -17,29 +17,20 @@ def _oauth_problem(detail):
     return OAuthProblem(detail=detail)
 
 
-def _apply_cors_headers(response, origin=None):
-    response.headers["Access-Control-Allow-Origin"] = origin or "*"
-    response.headers["Access-Control-Allow-Methods"] = "*"
-    response.headers["Access-Control-Allow-Headers"] = "*"
-    response.headers["Access-Control-Allow-Credentials"] = "true"
-    if origin:
-        response.headers["Vary"] = "Origin"
-    return response
-
-
 async def asgi_oauth_problem_handler(request, exc):
     status_code = getattr(exc, "status_code", 401)
-    response = JSONResponse(
-        {
-            "type": "about:blank",
-            "title": "Unauthorized" if status_code == 401 else "Error",
-            "detail": getattr(exc, "detail", str(exc)),
-            "status": status_code,
-        },
+    return ConnexionResponse(
+        body=json.dumps(
+            {
+                "type": "about:blank",
+                "title": "Unauthorized" if status_code == 401 else "Error",
+                "detail": getattr(exc, "detail", str(exc)),
+                "status": status_code,
+            }
+        ),
         status_code=status_code,
-        media_type="application/problem+json",
+        mimetype="application/json",
     )
-    return _apply_cors_headers(response, request.headers.get("origin"))
 
 
 _flask_app = None

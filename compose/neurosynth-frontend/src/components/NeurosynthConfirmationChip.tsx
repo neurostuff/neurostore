@@ -3,7 +3,7 @@ import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import ProgressLoader from 'components/ProgressLoader';
 import { useState } from 'react';
 
-const NeurosynthConfirmationChip: React.FC<ChipProps & { isLoading?: boolean }> = (props) => {
+const NeurosynthConfirmationChip = (props: ChipProps & { isLoading?: boolean }) => {
     const { isLoading, ...chipProps } = props;
 
     const [confirmationDialogIsOpen, setConfirmationDialogIsOpen] = useState(false);

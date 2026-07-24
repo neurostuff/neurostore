@@ -7,7 +7,7 @@ import {
 import { IStoreAnalysis } from 'pages/Study/store/StudyStore.helpers';
 import EditStudyAnalysisDeleteButton from './EditStudyAnalysisDeleteButton';
 
-const EditStudyAnalysisDetails: React.FC<{ analysisId?: string; onDeleteAnalysis: () => void }> = (props) => {
+const EditStudyAnalysisDetails = (props: { analysisId?: string; onDeleteAnalysis: () => void }) => {
     const addOrUpdateAnalysis = useAddOrUpdateAnalysis();
     const name = useStudyAnalysisName(props.analysisId);
     const description = useStudyAnalysisDescription(props.analysisId);

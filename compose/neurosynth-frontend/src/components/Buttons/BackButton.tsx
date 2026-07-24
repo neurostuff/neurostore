@@ -7,7 +7,7 @@ interface IBackButton {
     text: string;
 }
 
-const BackButton: React.FC<IBackButton & ButtonProps> = (props) => {
+const BackButton = (props: IBackButton & ButtonProps) => {
     const navigate = useNavigate();
 
     const handleOnClick = (_event: React.MouseEvent) => {

@@ -1,8 +1,9 @@
+import type { ReactNode } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
 import NeurosynthLoader from 'components/NeurosynthLoader/NeurosynthLoader';
 import { Navigate, useLocation } from 'react-router-dom';
 
-const ProtectedRoute: React.FC<{ errorMessage?: string }> = ({ errorMessage = '', children }) => {
+const ProtectedRoute = ({ errorMessage = '', children }: { errorMessage?: string; children?: ReactNode }) => {
     const { isAuthenticated, isLoading } = useAuth0();
     const { pathname } = useLocation();
 

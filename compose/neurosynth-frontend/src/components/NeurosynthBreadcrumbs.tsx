@@ -10,7 +10,7 @@ interface INeurosynthBreadcrumbs {
     isCurrentPage: boolean;
 }
 
-const NeurosynthBreadcrumbs: React.FC<{ breadcrumbItems: INeurosynthBreadcrumbs[] }> = React.memo((props) => {
+const NeurosynthBreadcrumbs = React.memo((props: { breadcrumbItems: INeurosynthBreadcrumbs[] }) => {
     const [confirmationDialogState, setConfirmationDialogState] = useState({
         isOpen: false,
         navigationLink: '',

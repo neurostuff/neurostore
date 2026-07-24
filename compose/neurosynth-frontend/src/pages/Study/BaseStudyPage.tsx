@@ -9,7 +9,7 @@ import React, { useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { studyAnalysesToStoreAnalyses } from './store/StudyStore.helpers';
 
-const BaseStudyPage: React.FC = (props) => {
+const BaseStudyPage = () => {
     const navigate = useNavigate();
     const initStudyStore = useInitStudyStore();
 

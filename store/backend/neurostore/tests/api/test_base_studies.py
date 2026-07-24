@@ -37,8 +37,8 @@ def test_features_query(auth_client, ingest_demographic_features):
     # test features organized like this: {top_key: ["list", "of", "values"]}
     result = auth_client.get(
         "/api/base-studies/?feature_filter="
-        "ParticipantDemographicsExtractor:predictions.groups[].age_mean>10&"
-        "feature_filter=ParticipantDemographicsExtractor:predictions.groups[].age_mean<=100&"
+        "ParticipantDemographicsExtractor:groups[].age_mean>10&"
+        "feature_filter=ParticipantDemographicsExtractor:groups[].age_mean<=100&"
         "feature_display=ParticipantDemographicsExtractor&"
         "feature_flatten=true"
     )
@@ -48,7 +48,7 @@ def test_features_query(auth_client, ingest_demographic_features):
         "ParticipantDemographicsExtractor"
     ]
     assert any(
-        key.startswith("predictions") and key.endswith("].age_mean") for key in features
+        key.startswith("groups") and key.endswith("].age_mean") for key in features
     )
 
 
@@ -99,7 +99,7 @@ def test_features_query_with_or(auth_client, ingest_demographic_features, sessio
         .filter(PipelineAlias.name == "ParticipantDemographicsExtractor")
         .filter(
             text(
-                "jsonb_path_exists(result_data, '$.predictions.groups[*].diagnosis ?"
+                "jsonb_path_exists(result_data, '$.groups[*].diagnosis ?"
                 ' (@ == "ADHD" || @ == "ASD")\')'
             )
         )
@@ -107,14 +107,14 @@ def test_features_query_with_or(auth_client, ingest_demographic_features, sessio
 
     db_diagnoses = set()
     for result in db_query.all():
-        for group in result.result_data["predictions"]["groups"]:
+        for group in result.result_data["groups"]:
             if "diagnosis" in group:
                 db_diagnoses.add(group["diagnosis"])
 
     # Now make the API request
     result = auth_client.get(
         "/api/base-studies/?feature_filter="
-        "ParticipantDemographicsExtractor:predictions.groups[].diagnosis=ADHD|ASD&"
+        "ParticipantDemographicsExtractor:groups[].diagnosis=ADHD|ASD&"
         "feature_display=ParticipantDemographicsExtractor&"
         "feature_flatten=true"
     )
@@ -2060,7 +2060,7 @@ def test_config_and_feature_filters(auth_client, ingest_demographic_features, se
     # Test combined feature and config filtering
     response = auth_client.get(
         "/api/base-studies/?"
-        "feature_filter=ParticipantDemographicsExtractor:1.0.0:predictions.groups[].age_mean>25&"
+        "feature_filter=ParticipantDemographicsExtractor:1.0.0:groups[].age_mean>25&"
         "pipeline_config=ParticipantDemographicsExtractor:"
         "1.0.0:extractor_kwargs.extraction_model=gpt-4-turbo"
     )
@@ -2071,7 +2071,7 @@ def test_config_and_feature_filters(auth_client, ingest_demographic_features, se
     # Test with mismatched version
     response = auth_client.get(
         "/api/base-studies/?"
-        "feature_filter=ParticipantDemographicsExtractor:2.0.0:predictions.groups[].age_mean>30&"
+        "feature_filter=ParticipantDemographicsExtractor:2.0.0:groups[].age_mean>30&"
         "pipeline_config=ParticipantDemographicsExtractor:2.0.0:"
         "extractor_kwargs.extraction_model=gpt-4-turbo"
     )
@@ -2124,14 +2124,12 @@ def test_feature_filter_with_version_uses_latest_result_within_that_version(
             base_study_id=base_study.id,
             config_id=v2_config.id,
             result_data={
-                "predictions": {
-                    "groups": [
-                        {
-                            "group_name": "patient",
-                            "age_mean": 5.0,
-                        }
-                    ]
-                }
+                "groups": [
+                    {
+                        "group_name": "patient",
+                        "age_mean": 5.0,
+                    }
+                ]
             },
             date_executed=original_result.date_executed + dt.timedelta(days=365),
         )
@@ -2140,7 +2138,7 @@ def test_feature_filter_with_version_uses_latest_result_within_that_version(
 
     response = auth_client.get(
         "/api/base-studies/?"
-        "feature_filter=ParticipantDemographicsExtractor:1.0.0:predictions.groups[].age_mean>25"
+        "feature_filter=ParticipantDemographicsExtractor:1.0.0:groups[].age_mean>25"
     )
 
     assert response.status_code == 200
@@ -2151,7 +2149,7 @@ def test_invalid_pipeline_name_returns_validation_error(
     auth_client, ingest_demographic_features
 ):
     response = auth_client.get(
-        "/api/base-studies/?feature_filter=NoSuchPipeline:predictions.groups[].age_mean>25"
+        "/api/base-studies/?feature_filter=NoSuchPipeline:groups[].age_mean>25"
     )
 
     assert response.status_code == 400
@@ -2191,8 +2189,8 @@ def test_feature_display_and_pipeline_config(auth_client, ingest_demographic_fea
     assert "features" in result
     features = result["features"]["ParticipantDemographicsExtractor"]
     assert isinstance(features, dict)
-    if "predictions" in features:
-        assert isinstance(features["predictions"], dict)
+    if "groups" in features:
+        assert isinstance(features["groups"], list)
 
     # Test mismatched versions between feature_display and pipeline_config
     mismatch_response = auth_client.get(
@@ -2252,30 +2250,30 @@ def test_feature_flatten(auth_client, ingest_demographic_features):
     ]
 
     # Verify features are flattened in dot notation
-    # Check nested predictions.groups objects are flattened
-    assert any(
-        key.startswith("predictions.groups") for key in flattened_features.keys()
-    )
+    # Check nested groups objects are flattened
+    assert any(key.startswith("groups") for key in flattened_features.keys())
 
     # Verify values are preserved after flattening
-    # Example: predictions.groups[0].age_mean should equal the nested value
-    if "predictions" in unflattened_features and unflattened_features[
-        "predictions"
-    ].get("groups"):
-        nested_age = unflattened_features["predictions"]["groups"][0].get("age_mean")
+    # Example: groups[0].age_mean should equal the nested value
+    if unflattened_features.get("groups"):
+        nested_age = unflattened_features["groups"][0].get("age_mean")
         if nested_age is not None:
-            flattened_age = flattened_features.get("predictions.groups[0].age_mean")
+            flattened_age = flattened_features.get("groups[0].age_mean")
             assert nested_age == flattened_age
 
 
 def test_invalid_search_query_cors(auth_client):
     """Test that invalid search query returns 400 with CORS headers"""
-    result = auth_client.get("/api/base-studies/?search=AND+OR")
+    origin = "https://client.example"
+    result = auth_client.get(
+        "/api/base-studies/?search=AND+OR",
+        headers={"Origin": origin},
+    )
     assert result.status_code == 400
     assert "Access-Control-Allow-Origin" in result.headers
-    assert "Access-Control-Allow-Methods" in result.headers
-    assert "Access-Control-Allow-Headers" in result.headers
-    assert result.headers["Access-Control-Allow-Origin"] == "*"
+    assert result.headers["Access-Control-Allow-Origin"] == origin
+    assert result.headers["Access-Control-Allow-Credentials"] == "true"
+    assert result.headers["Vary"] == "Origin"
 
 
 def test_base_studies_year_range(auth_client, session):

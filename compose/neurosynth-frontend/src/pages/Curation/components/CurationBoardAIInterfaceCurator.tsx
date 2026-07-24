@@ -1,7 +1,6 @@
 import { ChevronLeft } from '@mui/icons-material';
 import ChangeHistoryIcon from '@mui/icons-material/ChangeHistory';
 import { Box, Button, Typography } from '@mui/material';
-import { GridTableRowsIcon } from '@mui/x-data-grid';
 import { Row, Table } from '@tanstack/react-table';
 import CurationPromoteUncategorizedButton from 'components/Buttons/CurationPromoteUncategorizedButton';
 import { useUserCanEdit } from 'hooks';
@@ -23,6 +22,7 @@ import CurationBoardAIInterfaceCuratorTable from './CurationBoardAIInterfaceCura
 import CurationBoardAIInterfaceIdentificationUI from './CurationBoardAIInterfaceIdentificationUI';
 import CurationDownloadSummaryButton from './CurationDownloadSummaryButton';
 import PrismaDialog from './PrismaDialog';
+import TableRows from '@mui/icons-material/TableRows';
 
 export interface ICurationBoardAIInterfaceCurator {
     selectedStub: ICurationTableStudy | undefined;
@@ -31,7 +31,7 @@ export interface ICurationBoardAIInterfaceCurator {
     onSetSelectedStub: (stubId: string | undefined) => void;
 }
 
-const CurationBoardAIInterfaceCurator: React.FC = () => {
+const CurationBoardAIInterfaceCurator = () => {
     const navigate = useNavigate();
     const { projectId } = useParams<{ projectId: string | undefined }>();
     const { handleSelectNextGroup, selectedGroup } = useCurationBoardGroups();
@@ -155,7 +155,7 @@ const CurationBoardAIInterfaceCurator: React.FC = () => {
                         )}
                         {UIMode === 'FOCUSMODE' && (
                             <Button
-                                startIcon={<GridTableRowsIcon />}
+                                startIcon={<TableRows />}
                                 sx={{ marginRight: '0.5rem', fontSize: '12px' }}
                                 size="small"
                                 color="secondary"

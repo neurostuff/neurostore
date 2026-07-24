@@ -1,7 +1,7 @@
 import { Box, Typography } from '@mui/material';
 import { usePrerenderReady, usePageMetadata } from '../../../seo/hooks';
 
-const TermsAndConditions: React.FC = (props) => {
+const TermsAndConditions = () => {
     usePageMetadata({
         title: 'Terms and Conditions | Neurosynth Compose',
         description: 'Read the terms, conditions, and privacy policy for using the Neurosynth Compose platform.',

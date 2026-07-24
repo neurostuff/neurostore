@@ -4,12 +4,12 @@ import { useMemo, useState } from 'react';
 import { flattenColumnValues } from '../hooks/useCuratorTableState.helpers';
 import { ICurationTableColumnType, ICurationTableStudy } from '../hooks/useCuratorTableState.types';
 
-const CurationBoardAIInterfaceCuratorTableHeaderFilterNestedAutocomplete: React.FC<{
+const CurationBoardAIInterfaceCuratorTableHeaderFilterNestedAutocomplete = ({  rows, onChange, value, accessorFn  }: {
     rows: Row<ICurationTableStudy>[];
     accessorFn: AccessorFn<ICurationTableStudy, ICurationTableColumnType> | undefined;
     value: string[] | undefined;
     onChange: (newVal: string[] | undefined) => void;
-}> = ({ rows, onChange, value, accessorFn }) => {
+}) => {
     const [inputValue, setInputValue] = useState('');
 
     // note that for this data, we only expect column data to be a string or an object

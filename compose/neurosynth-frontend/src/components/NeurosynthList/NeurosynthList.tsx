@@ -20,7 +20,7 @@ interface INeurosynthList {
     TitleElement?: JSX.Element;
 }
 
-const NeurosynthList: React.FC<INeurosynthList> = (props) => {
+const NeurosynthList = (props: INeurosynthList) => {
     const navigate = useNavigate();
 
     const {

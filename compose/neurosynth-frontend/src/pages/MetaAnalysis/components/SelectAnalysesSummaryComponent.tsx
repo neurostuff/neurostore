@@ -5,11 +5,11 @@ import { useEffect, useState } from 'react';
 import { IAnalysesSelection } from 'pages/MetaAnalysis/components/CreateMetaAnalysisSpecificationDialogBase.types';
 import { getFilteredAnnotationNotes } from './SelectAnalysesComponent.helpers';
 
-const SelectAnalysesSummaryComponent: React.FC<{
+const SelectAnalysesSummaryComponent = (props: {
     annotationdId: string;
     studysetId: string;
     selectedValue: IAnalysesSelection | undefined;
-}> = (props) => {
+}) => {
     const { data: annotation } = useGetAnnotationById(props.annotationdId);
     const { data: studyset } = useGetStudysetById(props.studysetId, false, true);
 

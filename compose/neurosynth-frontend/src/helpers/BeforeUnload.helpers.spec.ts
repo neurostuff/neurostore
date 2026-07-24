@@ -12,7 +12,6 @@ describe('BeforeUnload helpers', () => {
 
         expect(window.sessionStorage.getItem(EUnloadStatus.PROJECTSTORE)).toBe('true');
         expect(spy).toHaveBeenCalledWith('beforeunload', expect.any(Function));
-        expect(spy).toHaveBeenCalledWith('unload', expect.any(Function));
 
         // cleanup
         unsetUnloadHandler('project');
@@ -24,7 +23,6 @@ describe('BeforeUnload helpers', () => {
 
         expect(window.sessionStorage.getItem(EUnloadStatus.STUDYSTORE)).toBe('true');
         expect(spy).toHaveBeenCalledWith('beforeunload', expect.any(Function));
-        expect(spy).toHaveBeenCalledWith('unload', expect.any(Function));
 
         // cleanup
         unsetUnloadHandler('study');
@@ -36,7 +34,6 @@ describe('BeforeUnload helpers', () => {
 
         expect(window.sessionStorage.getItem(EUnloadStatus.ANNOTATIONSTORE)).toBe('true');
         expect(spy).toHaveBeenCalledWith('beforeunload', expect.any(Function));
-        expect(spy).toHaveBeenCalledWith('unload', expect.any(Function));
 
         // cleanup
         unsetUnloadHandler('annotation');
@@ -56,7 +53,6 @@ describe('BeforeUnload helpers', () => {
         expect(window.sessionStorage.getItem(EUnloadStatus.STUDYSTORE)).toBe(null);
         expect(window.sessionStorage.getItem(EUnloadStatus.ANNOTATIONSTORE)).toBe(null);
         expect(spy).toHaveBeenCalledWith('beforeunload', expect.any(Function));
-        expect(spy).toHaveBeenCalledWith('unload', expect.any(Function));
     });
 
     it('should not remove the unload handler if there are still unsaved changes', () => {

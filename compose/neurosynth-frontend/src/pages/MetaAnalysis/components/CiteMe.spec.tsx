@@ -26,7 +26,7 @@ describe('CiteMe', () => {
         });
     });
 
-    it('renders loading spinner when citations are loading', () => {
+    it('renders loading spinner when citations are loading', async () => {
         mockUseCitationCopy.mockReturnValue({
             isCitationLoading: true,
             citationPayload: undefined,
@@ -38,7 +38,7 @@ describe('CiteMe', () => {
         expect(screen.queryByText('Copy citations in your preferred format:')).not.toBeInTheDocument();
     });
 
-    it('renders nothing when citation payload is null', () => {
+    it('renders nothing when citation payload is null', async () => {
         mockUseCitationCopy.mockReturnValue({
             isCitationLoading: false,
             citationPayload: null,
@@ -49,7 +49,7 @@ describe('CiteMe', () => {
         expect(container.firstChild).toBeNull();
     });
 
-    it('renders heading, dropdown, and default APA citation when loaded', () => {
+    it('renders heading, dropdown, and default APA citation when loaded', async () => {
         render(<CiteMe />);
 
         expect(screen.getByText('Copy citations in your preferred format:')).toBeInTheDocument();
@@ -61,7 +61,7 @@ describe('CiteMe', () => {
     it('shows all citation format options in dropdown with APA and BibTeX first', async () => {
         render(<CiteMe />);
 
-        userEvent.click(screen.getByRole('combobox'));
+        await userEvent.click(screen.getByRole('combobox'));
 
         const options = screen.getAllByRole('option');
         expect(options).toHaveLength(4);

@@ -15,8 +15,12 @@ const useMeasure = <T extends HTMLElement>(): UseMeasureResult<T> => {
         if (!element) return;
 
         const resizeObserver = new ResizeObserver((entries) => {
-            if (!entries[0]) return;
-            const { width, height } = entries[0].contentRect;
+            const entry = entries[0];
+            if (!entry) return;
+            const borderBox = entry.borderBoxSize[0];
+            if (!borderBox) return;
+            const width = borderBox.inlineSize;
+            const height = borderBox.blockSize;
             setDimensions({ width, height });
         });
 

@@ -1,7 +1,7 @@
 import { AnalysisReturn } from 'neurostore-typescript-sdk';
 import { useState } from 'react';
 
-const MockEditAnalysis: React.FC<{ analysis: AnalysisReturn | undefined }> = (props) => {
+const MockEditAnalysis = (props: { analysis: AnalysisReturn | undefined }) => {
     const [tabIndex, setTabIndex] = useState(0);
 
     return (

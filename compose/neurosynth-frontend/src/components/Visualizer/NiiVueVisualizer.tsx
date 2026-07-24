@@ -5,11 +5,11 @@ import { Niivue, SHOW_RENDER } from '@niivue/niivue';
 import { ChangeEvent, useCallback, useEffect, useRef, useState } from 'react';
 import ThresholdSlider from './ThresholdSlider';
 
-const NiiVueVisualizer: React.FC<{ file: string; filename: string; neurovaultCollectionLink?: string }> = ({
+const NiiVueVisualizer = ({ 
     file,
     filename,
     neurovaultCollectionLink: neurovaultCollectionLink,
-}) => {
+ }: { file: string; filename: string; neurovaultCollectionLink?: string }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const niivueRef = useRef<Niivue | null>(null);
     const [softThreshold, setSoftThreshold] = useState(true);

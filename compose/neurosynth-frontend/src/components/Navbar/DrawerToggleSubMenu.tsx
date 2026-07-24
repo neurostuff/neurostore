@@ -1,12 +1,13 @@
 import { ListItem, ListItemButton, ListItemIcon, ListItemText } from '@mui/material';
-import { useState } from 'react';
+import { type ReactNode,  useState } from 'react';
 import { KeyboardArrowDownOutlined, KeyboardArrowUpOutlined } from '@mui/icons-material';
 
 interface IDrawerToggleSubMenu {
     labelText: string;
+    children?: React.ReactNode;
 }
 
-const DrawerToggleSubMenu: React.FC<IDrawerToggleSubMenu> = (props) => {
+const DrawerToggleSubMenu = (props: IDrawerToggleSubMenu) => {
     const [expanded, setExpanded] = useState(false);
 
     return (

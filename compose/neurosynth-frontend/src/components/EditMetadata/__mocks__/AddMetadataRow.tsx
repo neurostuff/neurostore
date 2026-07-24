@@ -1,6 +1,6 @@
 import { IAddMetadataRowModel } from 'components/EditMetadata/EditMetadata.types';
 
-const MockAddMetadataRow: React.FC<IAddMetadataRowModel> = (props) => {
+const MockAddMetadataRow = (props: IAddMetadataRowModel) => {
     return (
         <>
             <button

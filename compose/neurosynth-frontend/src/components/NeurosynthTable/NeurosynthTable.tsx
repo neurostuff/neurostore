@@ -40,7 +40,7 @@ export const getValue = (value: any): string => {
     }
 };
 
-const NeurosynthTable: React.FC<INeurosynthTable> = React.memo((props) => {
+const NeurosynthTable = React.memo((props: INeurosynthTable) => {
     const { tableConfig, headerCells = [], rows = [] } = props;
     const {
         tableHeaderBackgroundColor = 'primary.main',

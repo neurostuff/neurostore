@@ -4,12 +4,12 @@ import { AccessorFn, Row } from '@tanstack/react-table';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ICurationTableColumnType, ICurationTableStudy } from '../hooks/useCuratorTableState.types';
 
-const CurationBoardAIInterfaceCuratorTableHeaderFilterNumeric: React.FC<{
+const CurationBoardAIInterfaceCuratorTableHeaderFilterNumeric = ({  value, onChange, rows, accessorFn  }: {
     value: [number | undefined, number | undefined] | undefined;
     rows: Row<ICurationTableStudy>[];
     accessorFn: AccessorFn<ICurationTableStudy, ICurationTableColumnType> | undefined;
     onChange: (arg: [number | undefined, number | undefined] | undefined) => void;
-}> = ({ value, onChange, rows, accessorFn }) => {
+}) => {
     const valMin = value?.[0];
     const valMax = value?.[1];
 

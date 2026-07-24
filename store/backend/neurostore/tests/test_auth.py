@@ -47,6 +47,8 @@ def test_studysets_no_auth_returns_cors_headers(app):
         client.close()
 
     assert response.status_code == 401
+    assert response.headers["content-type"].startswith("application/json")
+    assert "application/problem+json" not in response.headers["content-type"]
     assert response.headers.get("Access-Control-Allow-Origin") == origin
     assert response.headers.get("Access-Control-Allow-Credentials") == "true"
     assert response.headers.get("Vary") == "Origin"
@@ -66,6 +68,8 @@ def test_studysets_bad_token_returns_cors_headers(app):
         client.close()
 
     assert response.status_code == 401
+    assert response.headers["content-type"].startswith("application/json")
+    assert "application/problem+json" not in response.headers["content-type"]
     assert response.headers.get("Access-Control-Allow-Origin") == origin
     assert response.headers.get("Access-Control-Allow-Credentials") == "true"
     assert response.headers.get("Vary") == "Origin"

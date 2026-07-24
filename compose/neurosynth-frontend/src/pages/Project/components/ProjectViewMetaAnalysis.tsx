@@ -9,7 +9,7 @@ import useGetMetaAnalysisJobsByMetaAnalysisId from 'pages/MetaAnalysis/hooks/use
 import { useProjectUser } from 'pages/Project/store/ProjectStore';
 import { useNavigate } from 'react-router-dom';
 
-const ProjectViewMetaAnalysis: React.FC<MetaAnalysisReturn> = (props) => {
+const ProjectViewMetaAnalysis = (props: MetaAnalysisReturn) => {
     const { created_at, results, name, description, id, project } = props;
     const projectUser = useProjectUser();
     const canEdit = useUserCanEdit(projectUser || undefined);

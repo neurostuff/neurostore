@@ -1,5 +1,5 @@
 import { AxiosError, AxiosResponse } from 'axios';
-import { useMutation, useQueryClient } from 'react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { AnalysisRequest, AnalysisReturn } from 'neurostore-typescript-sdk';
 import API from 'api/api.config';
 import { useSnackbar } from 'notistack';
@@ -11,18 +11,20 @@ const useUpdateAnalysis = () => {
     return useMutation<
         AxiosResponse<AnalysisReturn>,
         AxiosError,
-        {
-            analysisId: string;
-            analysis: AnalysisRequest;
-        },
+        { analysisId: string; analysis: AnalysisRequest },
         unknown
-    >((args) => API.NeurostoreServices.AnalysesService.analysesIdPut(args.analysisId, args.analysis), {
+    >({
+        mutationFn: (args) => API.NeurostoreServices.AnalysesService.analysesIdPut(args.analysisId, args.analysis),
+
         onSuccess: (res) => {
-            queryClient.invalidateQueries('studies');
+            queryClient.invalidateQueries({
+                queryKey: ['studies']
+            });
         },
+
         onError: () => {
             enqueueSnackbar('there was an error updating the analysis', { variant: 'error' });
-        },
+        }
     });
 };
 

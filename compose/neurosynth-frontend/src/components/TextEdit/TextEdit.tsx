@@ -17,9 +17,10 @@ export interface ITextEdit {
     isLoading?: boolean;
     editIconIsVisible?: boolean;
     onSave: (updatedText: string, label: string) => void;
+    children?: React.ReactNode;
 }
 
-const TextEdit: React.FC<ITextEdit> = (props) => {
+const TextEdit = (props: ITextEdit) => {
     const { isAuthenticated } = useAuth0();
 
     const {

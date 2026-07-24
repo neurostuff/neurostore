@@ -6,7 +6,7 @@ interface IDynamicFormBaseTitle {
     disabled?: boolean;
 }
 
-const MetaAnalysisDynamicFormTitle: React.FC<IDynamicFormBaseTitle> = (props) => {
+const MetaAnalysisDynamicFormTitle = (props: IDynamicFormBaseTitle) => {
     return (
         <>
             <Typography variant="subtitle1" sx={{ fontWeight: 'bold', opacity: props.disabled ? 0.4 : 1 }}>

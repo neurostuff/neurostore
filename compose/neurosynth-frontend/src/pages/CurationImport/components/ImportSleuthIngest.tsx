@@ -28,10 +28,10 @@ const updateUploadSummary = (sleuthUpload: ISleuthFileUploadStubs) => {
     };
 };
 
-const ImportSleuthIngest: React.FC<{
+const ImportSleuthIngest = ({  sleuthUploads, onStubsUploaded  }: {
     sleuthUploads: ISleuthFileUploadStubs[];
     onStubsUploaded: (stubs: ICurationStubStudy[]) => void;
-}> = ({ sleuthUploads, onStubsUploaded }) => {
+}) => {
     const { user } = useAuth0();
     const { mutateAsync: fetchPubmedIds } = useFetchPubMedIds();
     const { mutateAsync: getPubMedIdFromDOI } = useGetPubMedIdFromDOI();

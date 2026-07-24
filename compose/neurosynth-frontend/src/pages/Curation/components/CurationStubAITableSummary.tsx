@@ -21,9 +21,9 @@ import {
     TASK_EXTRACTOR_CURATOR_COLUMNS,
 } from '../hooks/useCuratorTableState.consts';
 import { ICurationTableStudy } from '../hooks/useCuratorTableState.types';
-import { useIsFetching } from 'react-query';
+import { useIsFetching } from '@tanstack/react-query';
 
-const CurationStubAITableSummary: React.FC<{ stub: ICurationTableStudy | undefined }> = ({ stub }) => {
+const CurationStubAITableSummary = ({  stub  }: { stub: ICurationTableStudy | undefined }) => {
     const isFetchingExtractions = useIsFetching({ queryKey: ['extraction'] }) > 0;
     const TaskExtractor = stub?.TaskExtractor;
     const { projectId } = useParams<{ projectId: string }>();

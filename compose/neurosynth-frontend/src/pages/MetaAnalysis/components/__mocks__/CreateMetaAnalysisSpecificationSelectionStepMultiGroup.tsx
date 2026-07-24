@@ -1,4 +1,4 @@
-const CreateMetaAnalysisSpecificationSelectionStepMultiGroup: React.FC = (props) => {
+const CreateMetaAnalysisSpecificationSelectionStepMultiGroup = (props: unknown) => {
     return (
         <div data-testid="CreateMetaAnalysisSpecificationSelectionStepMultiGroup">
             CreateMetaAnalysisSpecificationSelectionStepMultiGroup

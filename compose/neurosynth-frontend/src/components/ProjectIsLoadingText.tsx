@@ -1,7 +1,7 @@
 import { Box, Typography } from '@mui/material';
 import { useProjectMetadataHasUnsavedchanges, useUpdateProjectIsLoading } from 'pages/Project/store/ProjectStore';
 
-const ProjectIsLoadingText: React.FC<{ isLoading?: boolean }> = (props) => {
+const ProjectIsLoadingText = (props: { isLoading?: boolean }) => {
     const updateProjectIsLoading = useUpdateProjectIsLoading();
     const projectMetadataHasUnsavedchanges = useProjectMetadataHasUnsavedchanges();
 

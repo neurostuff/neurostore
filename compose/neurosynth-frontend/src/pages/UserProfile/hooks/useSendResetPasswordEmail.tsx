@@ -1,5 +1,5 @@
 import { axiosInstance } from 'api/api.state';
-import { useMutation } from 'react-query';
+import { useMutation } from '@tanstack/react-query';
 
 const ENV_DOMAIN = import.meta.env.VITE_APP_AUTH0_DOMAIN;
 const ENV_CLIENT_ID = import.meta.env.VITE_APP_AUTH0_CLIENT_ID;

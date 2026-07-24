@@ -1,6 +1,6 @@
 import { AxiosResponse } from 'axios';
 import { ProjectList } from 'neurosynth-compose-typescript-sdk';
-import { useQuery } from 'react-query';
+import { useQuery } from '@tanstack/react-query';
 import { ProjectSearchCriteria, projectsSearchHelper } from './useGetProjects';
 
 let debounce: NodeJS.Timeout;
@@ -9,9 +9,10 @@ const useGetDebouncedProjects = (
     userId?: string,
     enabled?: boolean
 ) => {
-    return useQuery(
-        ['projects', { ...projectsearchCriteria }, userId],
-        () => {
+    return useQuery({
+        queryKey: ['projects', { ...projectsearchCriteria }, userId],
+
+        queryFn: () => {
             if (debounce) clearTimeout(debounce);
 
             return new Promise<AxiosResponse<ProjectList>>((resolve, reject) => {
@@ -25,15 +26,16 @@ const useGetDebouncedProjects = (
                 }, 500);
             });
         },
-        {
-            enabled,
-            select: (res) => {
-                const projectsList = res.data;
-                return projectsList;
-            },
-            refetchOnWindowFocus: false,
-        }
-    );
+
+        enabled,
+
+        select: (res) => {
+            const projectsList = res.data;
+            return projectsList;
+        },
+
+        refetchOnWindowFocus: false
+    });
 };
 
 export default useGetDebouncedProjects;

@@ -5,11 +5,11 @@ import useDisplayWarnings from 'pages/Study/hooks/useDisplayWarnings';
 import { IStoreAnalysis } from 'pages/Study/store/StudyStore.helpers';
 import React, { useMemo } from 'react';
 
-const StudyAnalysesListItem: React.FC<{
+const StudyAnalysesListItem = React.memo((props: {
     analysis: AnalysisReturn | IStoreAnalysis;
     selected: boolean;
     onSelectAnalysis: (analysisId: string) => void;
-}> = React.memo((props) => {
+}) => {
     const { analysis, selected, onSelectAnalysis } = props;
     const { hasDuplicateName, hasNoName, hasNoPoints, hasNonMNICoordinates } = useDisplayWarnings(analysis.id);
 

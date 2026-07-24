@@ -3,7 +3,7 @@ import StudyAnalysisWarnings from './StudyAnalysisWarnings';
 import StudyPoints from './StudyPoints';
 import { IStoreAnalysis } from 'pages/Study/store/StudyStore.helpers';
 
-const StudyAnalysis: React.FC<IStoreAnalysis | undefined> = (props) => {
+const StudyAnalysis = (props: IStoreAnalysis) => {
     return (
         <Box>
             <StudyAnalysisWarnings analysisId={props.id || ''} />

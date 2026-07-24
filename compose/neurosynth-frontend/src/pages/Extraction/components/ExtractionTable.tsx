@@ -61,7 +61,7 @@ export type IExtractionTableStudy = StudyReturn & { status: EExtractionStatus | 
 
 const columnHelper = createColumnHelper<IExtractionTableStudy>();
 
-const ExtractionTable: React.FC = () => {
+const ExtractionTable = () => {
     const studysetId = useProjectExtractionStudysetId();
     const projectId = useProjectId();
     const navigate = useNavigate();

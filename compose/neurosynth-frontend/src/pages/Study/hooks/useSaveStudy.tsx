@@ -10,7 +10,7 @@ import {
     useProjectId,
 } from 'pages/Project/store/ProjectStore';
 import { useState } from 'react';
-import { useQueryClient } from 'react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { useUpdateDBWithAnnotationFromStore, useUpdateAnnotationNotes } from 'stores/AnnotationStore.actions';
 import {
@@ -90,8 +90,12 @@ const useSaveStudy = () => {
             unsetUnloadHandler('study');
             unsetUnloadHandler('annotation');
 
-            queryClient.invalidateQueries('studies');
-            queryClient.invalidateQueries('annotations');
+            queryClient.invalidateQueries({
+                queryKey: ['studies']
+            });
+            queryClient.invalidateQueries({
+                queryKey: ['annotations']
+            });
 
             enqueueSnackbar('Study and annotation saved', { variant: 'success' });
         } catch (e) {
@@ -105,8 +109,12 @@ const useSaveStudy = () => {
             await updateStudyInDB();
             unsetUnloadHandler('study');
             unsetUnloadHandler('annotation');
-            queryClient.invalidateQueries('studies');
-            queryClient.invalidateQueries('annotations');
+            queryClient.invalidateQueries({
+                queryKey: ['studies']
+            });
+            queryClient.invalidateQueries({
+                queryKey: ['annotations']
+            });
 
             enqueueSnackbar('Study saved', { variant: 'success' });
         } catch (e) {
@@ -120,7 +128,9 @@ const useSaveStudy = () => {
             await updateAnnotationInDB();
             unsetUnloadHandler('study');
             unsetUnloadHandler('annotation');
-            queryClient.invalidateQueries('annotations');
+            queryClient.invalidateQueries({
+                queryKey: ['annotations']
+            });
             enqueueSnackbar('Annotation saved', { variant: 'success' });
         } catch (e) {
             console.error(e);
@@ -217,7 +227,7 @@ const useSaveStudy = () => {
                     studies: studiesPayload,
                 },
             });
-            queryClient.invalidateQueries(STUDYSET_QUERY_STRING);
+            queryClient.invalidateQueries({ queryKey: [STUDYSET_QUERY_STRING] });
 
             // 3. update the project as this keeps track of completion status of studies
             replaceStudyWithNewClonedStudy(storeStudy.id, clonedStudyId);

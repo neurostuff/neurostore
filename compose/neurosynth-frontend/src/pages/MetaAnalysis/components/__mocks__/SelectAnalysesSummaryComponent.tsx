@@ -1,4 +1,4 @@
-const SelectAnalysesSummaryComponent: React.FC = (props) => {
+const SelectAnalysesSummaryComponent = (props: unknown) => {
     return <div>SelectAnalysesSummaryComponent</div>;
 };
 

@@ -3,7 +3,7 @@ import { CellContext, HeaderContext } from '@tanstack/react-table';
 import { getAuthorsShortName } from 'helpers/utils';
 import { ICurationTableStudy } from '../hooks/useCuratorTableState.types';
 
-export const CuratorTableSummaryCell: React.FC<CellContext<ICurationTableStudy, unknown>> = (props) => {
+export const CuratorTableSummaryCell = (props: CellContext<ICurationTableStudy, unknown>) => {
     const row = props.row.original;
     const authorsShortened = getAuthorsShortName(row.authors);
     return (
@@ -21,7 +21,7 @@ export const CuratorTableSummaryCell: React.FC<CellContext<ICurationTableStudy, 
     );
 };
 
-export const CuratorTableSummaryHeader: React.FC<HeaderContext<ICurationTableStudy, unknown>> = () => {
+export const CuratorTableSummaryHeader = () => {
     return (
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
             <Typography

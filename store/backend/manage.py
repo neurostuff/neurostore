@@ -21,6 +21,10 @@ from neurostore.services.base_study_metadata_enrichment import (
     process_base_study_metadata_outbox_batch,
 )
 from neurostore.services.utils import outbox_health_snapshot
+from neurostore.scripts.transfer_ownership import (
+    OwnershipTransferError,
+    transfer_user_ownership,
+)
 
 app = create_app()
 
@@ -57,6 +61,34 @@ migrate = init_migrate(app, db)
 @app.shell_context_processor
 def make_shell_context():
     return dict(app=app, db=db, ms=models)
+
+
+@app.cli.command("transfer-user-ownership")
+@click.argument("source_user_id")
+@click.argument("destination_user_id")
+@click.option(
+    "--execute",
+    is_flag=True,
+    help="Commit the transfer. Without this flag, only report matching row counts.",
+)
+def transfer_user_ownership_command(source_user_id, destination_user_id, execute):
+    """Transfer all user-owned Store objects from one external_id to another."""
+    try:
+        summary = transfer_user_ownership(
+            source_user_id,
+            destination_user_id,
+            dry_run=not execute,
+        )
+    except OwnershipTransferError as exc:
+        raise click.ClickException(str(exc)) from exc
+
+    mode = "Dry-run" if summary.dry_run else "Transferred"
+    click.echo(
+        f"{mode} {summary.total} object(s) from "
+        f"{summary.source_user_id} to {summary.destination_user_id}."
+    )
+    for table_name, count in summary.counts.items():
+        click.echo(f"{table_name}: {count}")
 
 
 @app.cli.command()

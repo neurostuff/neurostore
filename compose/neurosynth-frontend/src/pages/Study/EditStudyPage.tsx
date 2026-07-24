@@ -19,7 +19,7 @@ import EditStudyCompleteButton from './components/EditStudyCompleteButton';
 import EditStudyToolbar from './components/EditStudyToolbar';
 import { ArrowBack } from '@mui/icons-material';
 
-const EditStudyPage: React.FC = () => {
+const EditStudyPage = () => {
     const { projectId, studyId } = useParams<{ projectId: string; studyId: string }>();
 
     const navigate = useNavigate();
