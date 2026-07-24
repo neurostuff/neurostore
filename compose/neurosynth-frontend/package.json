@@ -68,7 +68,7 @@
         "react": "^19.2.7",
         "react-dom": "^19.2.7",
         "react-helmet-async": "^3.0.0",
-        "react-router-dom": "^6.30.3",
+        "react-router-dom": "^7.18.1",
         "react-window": "^1.8.8",
         "reactflow": "^11.5.3",
         "uuid": "^9.0.0",
