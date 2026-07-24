@@ -4,7 +4,7 @@ import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
 import { SystemStyleObject } from '@mui/system';
 import { useProjectCurationInfoTags } from 'pages/Project/store/ProjectStore';
-import { ENeurosynthTagIds } from 'pages/Project/store/ProjectStore.types';
+import { ENeurosynthTagIds } from 'pages/Project/store/ProjectStore.consts';
 import { useEffect, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -34,7 +34,7 @@ interface ITagSelectorPopup {
     value: AutoSelectOption | undefined;
 }
 
-const CurationPopupTagSelector: React.FC<ITagSelectorPopup> = (props) => {
+const CurationPopupTagSelector = (props: ITagSelectorPopup) => {
     const {
         placeholder = 'start typing',
         addOptionText = 'Add',

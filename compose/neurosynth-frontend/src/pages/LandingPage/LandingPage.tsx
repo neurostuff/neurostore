@@ -1,11 +1,15 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import AutoAwesomeMotionIcon from '@mui/icons-material/AutoAwesomeMotion';
 import IosShareIcon from '@mui/icons-material/IosShare';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import OpenInNew from '@mui/icons-material/OpenInNew';
 import SearchIcon from '@mui/icons-material/Search';
 import SettingsIcon from '@mui/icons-material/Settings';
 import { Box, Button, Card, CardContent, Typography } from '@mui/material';
 import NeurosynthActivitySummary from 'components/NeurosynthActivitySummary';
+import NavToolbarPopupSubMenu from 'components/Navbar/NavToolbarPopupSubMenu';
+import { NEUROSYNTH_COMPOSE_CITATION } from 'hooks/useCitationCopy.consts';
+import { useCitationCopy } from 'hooks/useCitationCopy';
 import { useGuard } from 'hooks';
 import useAuthenticate from 'hooks/useAuthenticate';
 import { usePrerenderReady, usePageMetadata } from '../../../seo/hooks';
@@ -55,7 +59,7 @@ const SEO_GRAPH_DATA = JSON.stringify({
             subjectOf: {
                 '@type': 'ScholarlyArticle',
                 name: 'Neurosynth Compose: A Web-Based Platform for Flexible and Reproducible Neuroimaging Meta-Analysis',
-                identifier: 'https://doi.org/10.1162/IMAG.a.1114',
+                identifier: NEUROSYNTH_COMPOSE_CITATION.doiUrl,
             },
         },
     ],
@@ -65,6 +69,7 @@ const LandingPage = () => {
     const { isAuthenticated, isLoading } = useAuth0();
     useGuard('/projects', '', isAuthenticated, isLoading, true);
     const { handleLogin } = useAuthenticate();
+    const { copyCitations } = useCitationCopy();
     usePageMetadata({
         title: 'Neurosynth Compose | Neuroimaging Meta-Analysis Platform',
         description:
@@ -123,6 +128,84 @@ const LandingPage = () => {
                             alt="brain-analysis"
                         />
                     </Box>
+                </Box>
+            </Box>
+            <Box sx={[LandingPageStyles.sectionContainer, { backgroundColor: 'primary.dark' }]}>
+                <Box sx={LandingPageStyles.sectionContents}>
+                    <Card
+                        elevation={0}
+                        sx={{
+                            px: { xs: 2, md: 4 },
+                            py: 3,
+                            borderRadius: 2,
+                            backgroundColor: 'rgba(255, 255, 255, 0.06)',
+                            border: '1px solid rgba(255, 255, 255, 0.12)',
+                        }}
+                    >
+                        <Typography
+                            variant="overline"
+                            sx={{
+                                color: 'primary.contrastText',
+                                fontSize: '1rem',
+                                letterSpacing: 1.5,
+                            }}
+                        >
+                            Featured in Imaging Neuroscience
+                        </Typography>
+                        <Typography
+                            variant="h5"
+                            color="primary.contrastText"
+                            sx={{
+                                mb: 2,
+                                fontWeight: 'bold',
+                            }}
+                        >
+                            Read our recent publication on flexible and reproducible neuroimaging meta-analysis
+                        </Typography>
+                        <Box
+                            sx={{
+                                display: 'flex',
+                                flexWrap: 'wrap',
+                                gap: 1.5,
+                                alignItems: 'center',
+                            }}
+                        >
+                            <Button
+                                variant="contained"
+                                sx={[LandingPageStyles.getStartedButton, { color: 'primary.dark' }]}
+                                endIcon={<OpenInNew sx={{ color: 'primary.dark' }} />}
+                                target="_blank"
+                                size="large"
+                                rel="noreferrer"
+                                href={NEUROSYNTH_COMPOSE_CITATION.doiUrl}
+                            >
+                                Go to publication
+                            </Button>
+                            <NavToolbarPopupSubMenu
+                                buttonProps={{
+                                    variant: 'outlined',
+                                    size: 'large',
+                                    endIcon: <KeyboardArrowDownIcon />,
+                                    sx: {
+                                        color: 'primary.contrastText',
+                                        borderColor: 'primary.contrastText',
+                                        '&:hover': {
+                                            borderColor: 'primary.contrastText',
+                                            backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                                        },
+                                    },
+                                }}
+                                options={[
+                                    { label: 'APA format', onClick: () => copyCitations('apa') },
+                                    { label: 'Vancouver format', onClick: () => copyCitations('vancouver') },
+                                    { label: 'Harvard format', onClick: () => copyCitations('harvard1') },
+                                    { label: 'BibTeX format', onClick: () => copyCitations('bibtex') },
+                                ]}
+                                compactOptions
+                                buttonLabel="Cite Me"
+                            />
+                        </Box>
+                    </Card>
                 </Box>
             </Box>
             <Box

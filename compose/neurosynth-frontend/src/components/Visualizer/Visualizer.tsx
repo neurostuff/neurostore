@@ -11,7 +11,7 @@ export interface VisualizerModel {
     styling?: SystemStyleObject;
 }
 
-const Visualizer: React.FC<VisualizerModel> = (props) => {
+const Visualizer = (props: VisualizerModel) => {
     useEffect(() => {
         const anyWindow = window as any;
         const params: any = {};

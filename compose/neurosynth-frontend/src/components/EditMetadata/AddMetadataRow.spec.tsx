@@ -12,7 +12,7 @@ describe('AddMetadataRow Component', () => {
         vi.clearAllMocks();
     });
 
-    it('should render', () => {
+    it('should render', async () => {
         render(
             <MockThemeProvider>
                 <AddMetadataRow onAddMetadataRow={onAddMetadataRowMock} />
@@ -22,7 +22,34 @@ describe('AddMetadataRow Component', () => {
         expect(addButton).toBeInTheDocument();
     });
 
-    it('should get the correct starting value from the getStartValFromType function', () => {
+    it('defaults to boolean for study annotations add column (hidden value input)', async () => {
+        onAddMetadataRowMock.mockReturnValue(true);
+        render(
+            <MockThemeProvider>
+                <AddMetadataRow
+                    onAddMetadataRow={onAddMetadataRowMock}
+                    keyPlaceholderText="New Column"
+                    defaultType={EPropertyType.BOOLEAN}
+                    showMetadataValueInput={false}
+                    allowNone={false}
+                    errorMessage="can't add column (key already exists)"
+                />
+            </MockThemeProvider>
+        );
+
+        expect(screen.getByRole('combobox')).toHaveTextContent('BOOLEAN');
+
+        const newColumnKey = 'new_bool_col';
+        await userEvent.type(screen.getByPlaceholderText('New Column'), newColumnKey);
+        await userEvent.click(screen.getByText('ADD').closest('button') as HTMLElement);
+
+        expect(onAddMetadataRowMock).toHaveBeenCalledWith({
+            metadataKey: newColumnKey,
+            metadataValue: false,
+        });
+    });
+
+    it('should get the correct starting value from the getStartValFromType function', async () => {
         render(
             <MockThemeProvider>
                 <AddMetadataRow onAddMetadataRow={onAddMetadataRowMock} />
@@ -34,23 +61,22 @@ describe('AddMetadataRow Component', () => {
         expect(getStartValFromType(EPropertyType.NONE)).toEqual(null);
     });
 
-    it('should be disabled when metadata key input is empty', () => {
+    it('should be disabled when metadata key input is empty', async () => {
         render(
             <MockThemeProvider>
                 <AddMetadataRow onAddMetadataRow={onAddMetadataRowMock} />
             </MockThemeProvider>
         );
         const metadataKeyInput = screen.getByPlaceholderText('New metadata key');
-        userEvent.type(metadataKeyInput, '');
 
         const addButton = screen.getByText('ADD').closest('button');
         expect(addButton).toBeDisabled();
 
-        userEvent.type(metadataKeyInput, 'some test key');
+        await userEvent.type(metadataKeyInput, 'some test key');
         expect(addButton).not.toBeDisabled();
     });
 
-    it('should add the correct string type', () => {
+    it('should add the correct string type', async () => {
         render(
             <MockThemeProvider>
                 <AddMetadataRow onAddMetadataRow={onAddMetadataRowMock} />
@@ -66,14 +92,14 @@ describe('AddMetadataRow Component', () => {
         const metadataKeyInput = screen.getByPlaceholderText('New metadata key');
         const metadataValueInput = screen.getByPlaceholderText('New metadata value');
 
-        userEvent.type(metadataKeyInput, 'test key');
-        userEvent.type(metadataValueInput, 'test val');
+        await userEvent.type(metadataKeyInput, 'test key');
+        await userEvent.type(metadataValueInput, 'test val');
 
-        userEvent.click(addButton);
+        await userEvent.click(addButton);
         expect(onAddMetadataRowMock).toBeCalledWith(mockArg);
     });
 
-    it('should add the correct boolean type', () => {
+    it('should add the correct boolean type', async () => {
         render(
             <MockThemeProvider>
                 <AddMetadataRow onAddMetadataRow={onAddMetadataRowMock} />
@@ -85,23 +111,23 @@ describe('AddMetadataRow Component', () => {
         };
 
         const stringType = screen.getByText('STRING');
-        userEvent.click(stringType);
+        await userEvent.click(stringType);
 
         const booleanType = screen.getByText('BOOLEAN');
-        userEvent.click(booleanType);
+        await userEvent.click(booleanType);
 
         const addButton = screen.getByText('ADD').closest('button') as HTMLElement;
         const metadataKeyInput = screen.getByPlaceholderText('New metadata key');
         const metadataValueInput = screen.getByRole('checkbox');
 
-        userEvent.type(metadataKeyInput, mockArg.metadataKey);
-        userEvent.click(metadataValueInput);
-        userEvent.click(addButton);
+        await userEvent.type(metadataKeyInput, mockArg.metadataKey);
+        await userEvent.click(metadataValueInput);
+        await userEvent.click(addButton);
 
         expect(onAddMetadataRowMock).toBeCalledWith(mockArg);
     });
 
-    it('should add the correct number type', () => {
+    it('should add the correct number type', async () => {
         render(
             <MockThemeProvider>
                 <AddMetadataRow onAddMetadataRow={onAddMetadataRowMock} />
@@ -113,23 +139,23 @@ describe('AddMetadataRow Component', () => {
         };
 
         const stringType = screen.getByText('STRING');
-        userEvent.click(stringType);
+        await userEvent.click(stringType);
 
         const booleanType = screen.getByText('NUMBER');
-        userEvent.click(booleanType);
+        await userEvent.click(booleanType);
 
         const addButton = screen.getByText('ADD').closest('button') as HTMLElement;
         const metadataKeyInput = screen.getByPlaceholderText('New metadata key');
         const metadataValueInput = screen.getByRole('spinbutton');
 
-        userEvent.type(metadataKeyInput, mockArg.metadataKey);
-        userEvent.type(metadataValueInput, '12345');
-        userEvent.click(addButton);
+        await userEvent.type(metadataKeyInput, mockArg.metadataKey);
+        await userEvent.type(metadataValueInput, '12345');
+        await userEvent.click(addButton);
 
         expect(onAddMetadataRowMock).toBeCalledWith(mockArg);
     });
 
-    it('should add the correct none type', () => {
+    it('should add the correct none type', async () => {
         render(
             <MockThemeProvider>
                 <AddMetadataRow onAddMetadataRow={onAddMetadataRowMock} />
@@ -141,21 +167,21 @@ describe('AddMetadataRow Component', () => {
         };
 
         const stringType = screen.getByText('STRING');
-        userEvent.click(stringType);
+        await userEvent.click(stringType);
 
         const noneType = screen.getByText('NONE');
-        userEvent.click(noneType);
+        await userEvent.click(noneType);
 
         const addButton = screen.getByText('ADD').closest('button') as HTMLElement;
         const metadataKeyInput = screen.getByPlaceholderText('New metadata key');
 
-        userEvent.type(metadataKeyInput, mockArg.metadataKey);
-        userEvent.click(addButton);
+        await userEvent.type(metadataKeyInput, mockArg.metadataKey);
+        await userEvent.click(addButton);
 
         expect(onAddMetadataRowMock).toBeCalledWith(mockArg);
     });
 
-    it('should show an error message if the key is invalid', () => {
+    it('should show an error message if the key is invalid', async () => {
         const onAddMetadataRowMock = vi.fn();
         onAddMetadataRowMock.mockReturnValue(false);
 
@@ -167,15 +193,15 @@ describe('AddMetadataRow Component', () => {
 
         const metadataKeyInput = screen.getByPlaceholderText('New metadata key');
 
-        userEvent.type(metadataKeyInput, 'some test key');
+        await userEvent.type(metadataKeyInput, 'some test key');
         const addButton = screen.getByText('ADD').closest('button') as HTMLElement;
-        userEvent.click(addButton);
+        await userEvent.click(addButton);
 
         const errorMessage = screen.getByText('All keys must be unique');
         expect(errorMessage).toBeInTheDocument();
     });
 
-    it('should set a new key placeholder text', () => {
+    it('should set a new key placeholder text', async () => {
         const onAddMetadataRowMock = vi.fn();
         onAddMetadataRowMock.mockReturnValue(false);
 
@@ -189,7 +215,7 @@ describe('AddMetadataRow Component', () => {
         expect(placeholderText).toBeInTheDocument();
     });
 
-    it('should set a new value placeholder text', () => {
+    it('should set a new value placeholder text', async () => {
         const onAddMetadataRowMock = vi.fn();
         onAddMetadataRowMock.mockReturnValue(false);
 

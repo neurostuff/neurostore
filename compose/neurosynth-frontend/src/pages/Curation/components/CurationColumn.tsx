@@ -17,7 +17,7 @@ import {
     useProjectCurationPrismaConfig,
     useProjectUser,
 } from 'pages/Project/store/ProjectStore';
-import { ENeurosynthTagIds } from 'pages/Project/store/ProjectStore.types';
+import { ENeurosynthTagIds } from 'pages/Project/store/ProjectStore.consts';
 import React, { useEffect, useMemo, useState } from 'react';
 import { FixedSizeList, ListChildComponentProps } from 'react-window';
 
@@ -37,14 +37,15 @@ const getVisibility = (stub: ICurationStubStudy, selectedTag: ITag | undefined):
     return isVisible;
 };
 
-const FixedSizeListRow: React.FC<
-    ListChildComponentProps<{
-        stubs: ICurationStubStudy[];
-        columnIndex: number;
-        onSelectStub: (stubId: string) => void;
-        selectedTag: ITag | undefined;
-    }>
-> = (props) => {
+const FixedSizeListRow = React.memo(
+    (
+        props: ListChildComponentProps<{
+            stubs: ICurationStubStudy[];
+            columnIndex: number;
+            onSelectStub: (stubId: string) => void;
+            selectedTag: ITag | undefined;
+        }>
+    ) => {
     const projectUser = useProjectUser();
     const canEdit = useUserCanEdit(projectUser || undefined);
     const stub = props.data.stubs[props.index];
@@ -70,9 +71,9 @@ const FixedSizeListRow: React.FC<
             )}
         </Draggable>
     );
-};
+});
 
-const CurationColumn: React.FC<{ columnIndex: number }> = React.memo((props) => {
+const CurationColumn = React.memo((props: { columnIndex: number }) => {
     const { isAuthenticated } = useAuth0();
     const column = useProjectCurationColumn(props.columnIndex);
     const prismaConfig = useProjectCurationPrismaConfig();

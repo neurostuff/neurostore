@@ -1,11 +1,10 @@
-import { HotTable } from '@handsontable/react';
+import { HotTable, HotTableRef } from '@handsontable/react-wrapper';
 import { Box } from '@mui/material';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import AddMetadataRow from 'components/EditMetadata/AddMetadataRow';
-import { getType, IMetadataRowModel } from 'components/EditMetadata/EditMetadata.types';
-import { sanitizePaste } from 'components/HotTables/HotTables.utils';
-import CellCoords from 'handsontable/3rdparty/walkontable/src/cell/coords';
-import { CellChange } from 'handsontable/common';
+import { EPropertyType, getType, IMetadataRowModel } from 'components/EditMetadata/EditMetadata.types';
+import { getDefaultForNoteKey, sanitizePaste } from 'components/HotTables/HotTables.utils';
+import { CellCoords, CellChange } from 'handsontable';
 import { useUserCanEdit } from 'hooks';
 import { useProjectUser } from 'pages/Project/store/ProjectStore';
 import { HotSettings } from 'pages/Study/components/EditStudyAnnotationsHotTable.helpers';
@@ -18,8 +17,8 @@ import {
     useUpdateAnnotationNotes,
 } from 'stores/AnnotationStore.actions';
 
-const EditStudyAnnotationsHotTable: React.FC<{ readonly?: boolean }> = ({ readonly = false }) => {
-    const hotTableRef = useRef<HotTable>(null);
+const EditStudyAnnotationsHotTable = ({  readonly = false  }: { readonly?: boolean }) => {
+    const hotTableRef = useRef<HotTableRef>(null);
     const noteKeys = useAnnotationNoteKeys();
     const updateNotes = useUpdateAnnotationNotes();
     const createAnnotationColumn = useCreateAnnotationColumn();
@@ -50,6 +49,7 @@ const EditStudyAnnotationsHotTable: React.FC<{ readonly?: boolean }> = ({ readon
                     ...updatedNotes[row].note,
                     [(colName as string).split('.')[1]]: newVal, // col names are given to us in the form "note.key"
                 },
+                isEdited: true,
             };
         });
         updateNotes(updatedNotes);
@@ -66,9 +66,13 @@ const EditStudyAnnotationsHotTable: React.FC<{ readonly?: boolean }> = ({ readon
         const trimmedKey = row.metadataKey.trim();
         if (noteKeys.find((x) => x.key === trimmedKey)) return false;
 
+        const columnType = getType(row.metadataValue);
+        const defaultValue = getDefaultForNoteKey(trimmedKey, columnType);
+
         createAnnotationColumn({
             key: trimmedKey,
-            type: getType(row.metadataValue),
+            type: columnType,
+            default: defaultValue ?? null,
         });
 
         return true;
@@ -86,7 +90,7 @@ const EditStudyAnnotationsHotTable: React.FC<{ readonly?: boolean }> = ({ readon
 
     const handleCellMouseUp = (event: MouseEvent, coords: CellCoords, TD: HTMLTableCellElement) => {
         const target = event.target as HTMLButtonElement;
-        if (coords.row < 0 && (target.tagName === 'svg' || target.tagName === 'path')) {
+        if (coords.row != null && coords.row < 0 && (target.tagName === 'svg' || target.tagName === 'path')) {
             setConfirmationDialogState({
                 isOpen: true,
                 colKey: TD.innerText,
@@ -117,6 +121,7 @@ const EditStudyAnnotationsHotTable: React.FC<{ readonly?: boolean }> = ({ readon
                     <AddMetadataRow
                         keyPlaceholderText="New Column"
                         onAddMetadataRow={handleAddHotColumn}
+                        defaultType={EPropertyType.BOOLEAN}
                         showMetadataValueInput={false}
                         allowNone={false}
                         errorMessage="can't add column (key already exists)"

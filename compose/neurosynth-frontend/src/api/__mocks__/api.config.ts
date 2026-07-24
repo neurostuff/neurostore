@@ -17,6 +17,7 @@ const MockAPI = {
             analysesIdPut: vi.fn(),
             analysesPost: vi.fn(),
             analysesIdDelete: vi.fn(),
+            annotationAnalysesPost: vi.fn(),
         },
         ConditionsService: {
             conditionsGet: vi.fn(),

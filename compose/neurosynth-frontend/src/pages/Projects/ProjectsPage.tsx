@@ -5,8 +5,9 @@ import StateHandlerComponent from 'components/StateHandlerComponent/StateHandler
 import { INeurosynthProjectReturn } from 'hooks/projects/useGetProjects';
 import useSearchProjects from 'pages/Projects/hooks/useSearchProjects';
 import ProjectsPageCard from './components/ProjectsPageCard';
+import ProjectsPageEmptyState from './components/ProjectsPageEmptyState';
 
-const ProjectsPage: React.FC = () => {
+const ProjectsPage = () => {
     const { user } = useAuth0();
 
     const {
@@ -53,9 +54,7 @@ const ProjectsPage: React.FC = () => {
                             </Box>
                         ))
                     ) : (
-                        <Typography sx={{ margin: '0 10px' }} color="warning.dark">
-                            No projects
-                        </Typography>
+                        <ProjectsPageEmptyState />
                     )}
                 </StateHandlerComponent>
             </SearchContainer>

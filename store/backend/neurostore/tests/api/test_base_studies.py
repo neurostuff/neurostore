@@ -1,18 +1,33 @@
 """Test Base Study Endpoint"""
 
-from sqlalchemy import text
+import datetime as dt
+import threading
+
+import pytest
+import sqlalchemy as sa
+from sqlalchemy import event, text
 from sqlalchemy.orm import aliased
 from sqlalchemy.sql import func
 
 from neurostore.models import (
+    Analysis,
+    BaseStudy,
+    BaseStudyFlagOutbox,
+    BaseStudyMetadataOutbox,
+    Image,
     Pipeline,
     PipelineConfig,
+    PipelineEmbedding,
     PipelineStudyResult,
-    BaseStudy,
-    Analysis,
+    Study,
     User,
 )
 from neurostore.schemas import StudySchema
+from neurostore.services.base_study_metadata_enrichment import (
+    enqueue_base_study_metadata_updates,
+    process_base_study_metadata_outbox_batch,
+)
+from neurostore.services.has_media_flags import process_base_study_flag_outbox_batch
 
 
 def test_features_query(auth_client, ingest_demographic_features):
@@ -22,8 +37,8 @@ def test_features_query(auth_client, ingest_demographic_features):
     # test features organized like this: {top_key: ["list", "of", "values"]}
     result = auth_client.get(
         "/api/base-studies/?feature_filter="
-        "ParticipantDemographicsExtractor:predictions.groups[].age_mean>10&"
-        "feature_filter=ParticipantDemographicsExtractor:predictions.groups[].age_mean<=100&"
+        "ParticipantDemographicsExtractor:groups[].age_mean>10&"
+        "feature_filter=ParticipantDemographicsExtractor:groups[].age_mean<=100&"
         "feature_display=ParticipantDemographicsExtractor&"
         "feature_flatten=true"
     )
@@ -33,7 +48,7 @@ def test_features_query(auth_client, ingest_demographic_features):
         "ParticipantDemographicsExtractor"
     ]
     assert any(
-        key.startswith("predictions") and key.endswith("].age_mean") for key in features
+        key.startswith("groups") and key.endswith("].age_mean") for key in features
     )
 
 
@@ -84,7 +99,7 @@ def test_features_query_with_or(auth_client, ingest_demographic_features, sessio
         .filter(PipelineAlias.name == "ParticipantDemographicsExtractor")
         .filter(
             text(
-                "jsonb_path_exists(result_data, '$.predictions.groups[*].diagnosis ?"
+                "jsonb_path_exists(result_data, '$.groups[*].diagnosis ?"
                 ' (@ == "ADHD" || @ == "ASD")\')'
             )
         )
@@ -92,14 +107,14 @@ def test_features_query_with_or(auth_client, ingest_demographic_features, sessio
 
     db_diagnoses = set()
     for result in db_query.all():
-        for group in result.result_data["predictions"]["groups"]:
+        for group in result.result_data["groups"]:
             if "diagnosis" in group:
                 db_diagnoses.add(group["diagnosis"])
 
     # Now make the API request
     result = auth_client.get(
         "/api/base-studies/?feature_filter="
-        "ParticipantDemographicsExtractor:predictions.groups[].diagnosis=ADHD|ASD&"
+        "ParticipantDemographicsExtractor:groups[].diagnosis=ADHD|ASD&"
         "feature_display=ParticipantDemographicsExtractor&"
         "feature_flatten=true"
     )
@@ -150,6 +165,20 @@ def test_post_list_of_studies(auth_client, ingest_neuroquery):
     assert result.status_code == 200
 
 
+def test_post_list_of_studies_returns_full_objects(auth_client, ingest_neuroquery):
+    base_study = BaseStudy.query.filter(BaseStudy.pmid.isnot(None)).first()
+
+    result = auth_client.post("/api/base-studies/", data=[{"pmid": base_study.pmid}])
+
+    assert result.status_code == 200
+    assert len(result.json()) == 1
+    assert result.json()[0]["id"] == base_study.id
+    assert result.json()[0]["name"] == base_study.name
+    assert "versions" in result.json()[0]
+    assert isinstance(result.json()[0]["versions"], list)
+    assert "metadata" not in result.json()[0]
+
+
 def test_field_sanitization(auth_client):
     """Test sanitization of input fields in base studies"""
     test_input = [
@@ -190,6 +219,106 @@ def test_field_sanitization(auth_client):
     assert created_studies[2]["description"] is None
 
 
+def test_filter_base_study_by_public_and_private_neurovault_ids(auth_client, session):
+    user = session.query(User).first()
+    public_base_study = BaseStudy(name="Public Neurovault Filter Study", level="group")
+    private_base_study = BaseStudy(
+        name="Private Neurovault Filter Study", level="group"
+    )
+    public_study = Study(
+        name="Public Neurovault Study Version",
+        level="group",
+        source="neurovault",
+        source_id="19125",
+        base_study=public_base_study,
+        user=user,
+    )
+    private_study = Study(
+        name="Private Neurovault Study Version",
+        level="group",
+        source="neurovault",
+        source_id="private-collection-token-abc123",
+        base_study=private_base_study,
+        user=user,
+    )
+    session.add_all(
+        [public_base_study, private_base_study, public_study, private_study]
+    )
+    session.commit()
+
+    public_filter = auth_client.get("/api/base-studies/?neurovault_id=19125")
+    private_filter = auth_client.get(
+        "/api/base-studies/?neurovault_id=private-collection-token-abc123"
+    )
+
+    assert public_filter.status_code == 200
+    assert private_filter.status_code == 200
+    assert public_base_study.id in {r["id"] for r in public_filter.json()["results"]}
+    assert private_base_study.id in {r["id"] for r in private_filter.json()["results"]}
+
+
+def test_filter_base_study_by_neurovault_id(auth_client, session):
+    user = session.query(User).first()
+    base_study = BaseStudy(name="Neurovault Filter Study", level="group", user=user)
+    study = Study(
+        name="Neurovault-backed Study Version",
+        level="group",
+        source="neurovault",
+        source_id="nv-filter-0001",
+        base_study=base_study,
+        user=user,
+    )
+    session.add_all([base_study, study])
+    session.commit()
+
+    filter_resp = auth_client.get("/api/base-studies/?neurovault_id=nv-filter-0001")
+    assert filter_resp.status_code == 200
+
+    result_ids = {result["id"] for result in filter_resp.json()["results"]}
+    assert base_study.id in result_ids
+
+
+def test_multiple_neurovault_collections_share_base_study(auth_client, session):
+    payload_common = {
+        "name": "Same Paper Multiple Neurovault Collections",
+        "level": "group",
+        "doi": "10.9999/same-paper-multi-collection",
+        "pmid": "999002",
+        "pmcid": "PMC999002",
+    }
+    first_resp = auth_client.post("/api/studies/", data=payload_common)
+    second_resp = auth_client.post("/api/studies/", data=payload_common)
+
+    assert first_resp.status_code == 200
+    assert second_resp.status_code == 200
+    assert first_resp.json()["id"] != second_resp.json()["id"]
+
+    first_study = session.query(Study).filter_by(id=first_resp.json()["id"]).one()
+    second_study = session.query(Study).filter_by(id=second_resp.json()["id"]).one()
+    first_study.source = "neurovault"
+    first_study.source_id = "nv-dup-1"
+    second_study.source = "neurovault"
+    second_study.source_id = "nv-dup-2"
+    session.commit()
+
+    assert first_study.base_study_id == second_study.base_study_id
+    shared_base_study_id = first_study.base_study_id
+
+    by_doi = auth_client.get(
+        "/api/base-studies/?doi=10.9999/same-paper-multi-collection"
+    )
+    assert by_doi.status_code == 200
+    doi_ids = {result["id"] for result in by_doi.json()["results"]}
+    assert shared_base_study_id in doi_ids
+
+    by_nv_1 = auth_client.get("/api/base-studies/?neurovault_id=nv-dup-1")
+    by_nv_2 = auth_client.get("/api/base-studies/?neurovault_id=nv-dup-2")
+    assert by_nv_1.status_code == 200
+    assert by_nv_2.status_code == 200
+    assert shared_base_study_id in {r["id"] for r in by_nv_1.json()["results"]}
+    assert shared_base_study_id in {r["id"] for r in by_nv_2.json()["results"]}
+
+
 def test_flat_base_study(auth_client, ingest_neurosynth, session):
     flat_resp = auth_client.get("/api/base-studies/?flat=true")
     reg_resp = auth_client.get("/api/base-studies/?flat=false")
@@ -198,6 +327,31 @@ def test_flat_base_study(auth_client, ingest_neurosynth, session):
 
     assert "versions" not in flat_resp.json()["results"][0]
     assert "versions" in reg_resp.json()["results"][0]
+
+
+def test_flat_base_study_search_avoids_version_hydration_queries(
+    auth_client, ingest_neurosynth, session
+):
+    statements = []
+
+    def before_cursor_execute(
+        conn, cursor, statement, parameters, context, executemany
+    ):
+        statements.append(" ".join(statement.lower().split()))
+
+    event.listen(session.bind, "before_cursor_execute", before_cursor_execute)
+    try:
+        response = auth_client.get(
+            "/api/base-studies/?flat=true&data_type=coordinate&level=group&page_size=10"
+        )
+    finally:
+        event.remove(session.bind, "before_cursor_execute", before_cursor_execute)
+
+    assert response.status_code == 200
+    assert all(
+        " join studies " not in statement and " from studies " not in statement
+        for statement in statements
+    )
 
 
 def test_info_base_study(auth_client, ingest_neurosynth, session):
@@ -400,7 +554,7 @@ def test_has_coordinates_images(auth_client, session):
     assert del_image_analysis.status_code == 200
     session.refresh(base_study_2)
     assert base_study_2.has_coordinates is False
-    assert base_study_2.has_images is False
+    assert base_study_2.has_images is True
 
     # create full study again
     create_full_study_again = auth_client.post(
@@ -435,7 +589,1412 @@ def test_has_coordinates_images(auth_client, session):
     assert delete_study.status_code == 200
     session.refresh(base_study_2)
     assert base_study_2.has_coordinates is False
-    assert base_study_2.has_images is False
+    assert base_study_2.has_images is True
+
+
+def test_base_study_emits_all_media_flags(auth_client, session):
+    create_study = auth_client.post(
+        "/api/studies/",
+        data={
+            "name": "base-study-media-flags",
+            "pmid": "910001",
+            "doi": "10.1000/base-study-media-flags",
+            "analyses": [
+                {
+                    "name": "analysis-media-flags",
+                    "images": [
+                        {"filename": "z-map.nii.gz", "value_type": "Z map"},
+                        {"filename": "t-map.nii.gz", "value_type": "T"},
+                        {"filename": "beta-map.nii.gz", "value_type": "U"},
+                        {"filename": "variance-map.nii.gz", "value_type": "V"},
+                    ],
+                }
+            ],
+        },
+    )
+    assert create_study.status_code == 200
+
+    base_study = BaseStudy.query.filter_by(
+        pmid="910001", doi="10.1000/base-study-media-flags"
+    ).one()
+    response = auth_client.get(f"/api/base-studies/{base_study.id}")
+    assert response.status_code == 200
+    payload = response.json()
+
+    assert payload["has_coordinates"] is False
+    assert payload["has_images"] is True
+    assert payload["has_z_maps"] is True
+    assert payload["has_t_maps"] is True
+    assert payload["has_beta_and_variance_maps"] is True
+
+
+def test_async_image_reassignment_updates_hierarchy_flags(auth_client, session, app):
+    async_original = app.config.get("BASE_STUDY_FLAGS_ASYNC", False)
+    app.config["BASE_STUDY_FLAGS_ASYNC"] = True
+
+    try:
+        doi_a = "10.1000/async-flags-a"
+        doi_b = "10.1000/async-flags-b"
+        pmid_a = "900001"
+        pmid_b = "900002"
+
+        create_study_a = auth_client.post(
+            "/api/studies/",
+            data={
+                "name": "async flags study a",
+                "pmid": pmid_a,
+                "doi": doi_a,
+                "analyses": [
+                    {
+                        "name": "analysis a",
+                        "images": [{"filename": "image-a.nii.gz"}],
+                    }
+                ],
+            },
+        )
+        create_study_b = auth_client.post(
+            "/api/studies/",
+            data={
+                "name": "async flags study b",
+                "pmid": pmid_b,
+                "doi": doi_b,
+                "analyses": [
+                    {
+                        "name": "analysis b",
+                    }
+                ],
+            },
+        )
+
+        assert create_study_a.status_code == 200
+        assert create_study_b.status_code == 200
+
+        analysis_a_id = create_study_a.json()["analyses"][0]
+        analysis_b_id = create_study_b.json()["analyses"][0]
+
+        analysis_a_resp = auth_client.get(f"/api/analyses/{analysis_a_id}")
+        assert analysis_a_resp.status_code == 200
+        image_id = analysis_a_resp.json()["images"][0]
+
+        base_study_a = BaseStudy.query.filter_by(doi=doi_a, pmid=pmid_a).one()
+        base_study_b = BaseStudy.query.filter_by(doi=doi_b, pmid=pmid_b).one()
+        study_a = Study.query.filter_by(id=create_study_a.json()["id"]).one()
+        study_b = Study.query.filter_by(id=create_study_b.json()["id"]).one()
+        analysis_a = Analysis.query.filter_by(id=analysis_a_id).one()
+        analysis_b = Analysis.query.filter_by(id=analysis_b_id).one()
+
+        queued_before_move = {
+            row.base_study_id for row in BaseStudyFlagOutbox.query.all()
+        }
+        assert base_study_a.id in queued_before_move
+        assert base_study_b.id in queued_before_move
+
+        move_image = auth_client.put(
+            f"/api/images/{image_id}", data={"analysis": analysis_b_id}
+        )
+        assert move_image.status_code == 200
+
+        queued_after_move = {
+            row.base_study_id for row in BaseStudyFlagOutbox.query.all()
+        }
+        assert base_study_a.id in queued_after_move
+        assert base_study_b.id in queued_after_move
+
+        for _ in range(10):
+            processed = process_base_study_flag_outbox_batch(batch_size=200)
+            if processed == 0:
+                break
+
+        session.refresh(base_study_a)
+        session.refresh(base_study_b)
+        session.refresh(study_a)
+        session.refresh(study_b)
+        session.refresh(analysis_a)
+        session.refresh(analysis_b)
+
+        assert analysis_a.has_images is False
+        assert analysis_b.has_images is True
+        assert analysis_a.has_coordinates is False
+        assert analysis_b.has_coordinates is False
+
+        assert study_a.has_images is False
+        assert study_b.has_images is True
+        assert study_a.has_coordinates is False
+        assert study_b.has_coordinates is False
+
+        assert base_study_a.has_images is False
+        assert base_study_b.has_images is True
+        assert base_study_a.has_coordinates is False
+        assert base_study_b.has_coordinates is False
+    finally:
+        app.config["BASE_STUDY_FLAGS_ASYNC"] = async_original
+
+
+def test_async_worker_map_type_flag_transitions(auth_client, session, app):
+    async_original = app.config.get("BASE_STUDY_FLAGS_ASYNC", False)
+    app.config["BASE_STUDY_FLAGS_ASYNC"] = True
+
+    def drain_outbox():
+        for _ in range(20):
+            processed = process_base_study_flag_outbox_batch(batch_size=200)
+            if processed == 0:
+                break
+
+    def refresh_all(*records):
+        for record in records:
+            session.refresh(record)
+
+    try:
+        create_study_a = auth_client.post(
+            "/api/studies/",
+            data={
+                "name": "worker-map-flags-a",
+                "pmid": "920001",
+                "doi": "10.1000/worker-map-flags-a",
+                "analyses": [
+                    {
+                        "name": "analysis-a",
+                        "images": [
+                            {"filename": "beta-a.nii.gz", "value_type": "U"},
+                            {"filename": "variance-a.nii.gz", "value_type": "V"},
+                        ],
+                    }
+                ],
+            },
+        )
+        create_study_b = auth_client.post(
+            "/api/studies/",
+            data={
+                "name": "worker-map-flags-b",
+                "pmid": "920002",
+                "doi": "10.1000/worker-map-flags-b",
+                "analyses": [{"name": "analysis-b"}],
+            },
+        )
+
+        assert create_study_a.status_code == 200
+        assert create_study_b.status_code == 200
+
+        analysis_a_id = create_study_a.json()["analyses"][0]
+        analysis_b_id = create_study_b.json()["analyses"][0]
+
+        analysis_a = Analysis.query.filter_by(id=analysis_a_id).one()
+        analysis_b = Analysis.query.filter_by(id=analysis_b_id).one()
+        study_a = Study.query.filter_by(id=create_study_a.json()["id"]).one()
+        study_b = Study.query.filter_by(id=create_study_b.json()["id"]).one()
+        base_study_a = BaseStudy.query.filter_by(
+            doi="10.1000/worker-map-flags-a", pmid="920001"
+        ).one()
+        base_study_b = BaseStudy.query.filter_by(
+            doi="10.1000/worker-map-flags-b", pmid="920002"
+        ).one()
+
+        drain_outbox()
+        refresh_all(
+            analysis_a, analysis_b, study_a, study_b, base_study_a, base_study_b
+        )
+
+        # Initial state: analysis_a has beta+variance maps, analysis_b has none.
+        assert analysis_a.has_beta_and_variance_maps is True
+        assert study_a.has_beta_and_variance_maps is True
+        assert base_study_a.has_beta_and_variance_maps is True
+        assert analysis_b.has_beta_and_variance_maps is False
+        assert study_b.has_beta_and_variance_maps is False
+        assert base_study_b.has_beta_and_variance_maps is False
+
+        beta_image = Image.query.filter_by(
+            analysis_id=analysis_a_id, filename="beta-a.nii.gz"
+        ).one()
+        variance_image = Image.query.filter_by(
+            analysis_id=analysis_a_id, filename="variance-a.nii.gz"
+        ).one()
+
+        # variance removed => beta only => has_beta_and_variance_maps should be false
+        delete_variance = auth_client.delete(f"/api/images/{variance_image.id}")
+        assert delete_variance.status_code == 200
+        drain_outbox()
+        refresh_all(analysis_a, study_a, base_study_a)
+        assert analysis_a.has_beta_and_variance_maps is False
+        assert study_a.has_beta_and_variance_maps is False
+        assert base_study_a.has_beta_and_variance_maps is False
+
+        # add variance back => true again
+        add_variance = auth_client.post(
+            "/api/images/",
+            data={
+                "analysis": analysis_a_id,
+                "filename": "variance-a-2.nii.gz",
+                "value_type": "variance",
+            },
+        )
+        assert add_variance.status_code == 200
+        variance_image_2_id = add_variance.json()["id"]
+        drain_outbox()
+        refresh_all(analysis_a, study_a, base_study_a)
+        assert analysis_a.has_beta_and_variance_maps is True
+        assert study_a.has_beta_and_variance_maps is True
+        assert base_study_a.has_beta_and_variance_maps is True
+
+        # move variance away => old scope beta-only false, new scope variance-only false
+        move_variance = auth_client.put(
+            f"/api/images/{variance_image_2_id}", data={"analysis": analysis_b_id}
+        )
+        assert move_variance.status_code == 200
+        drain_outbox()
+        refresh_all(
+            analysis_a, analysis_b, study_a, study_b, base_study_a, base_study_b
+        )
+        assert analysis_a.has_beta_and_variance_maps is False
+        assert study_a.has_beta_and_variance_maps is False
+        assert base_study_a.has_beta_and_variance_maps is False
+        assert analysis_b.has_beta_and_variance_maps is False
+        assert study_b.has_beta_and_variance_maps is False
+        assert base_study_b.has_beta_and_variance_maps is False
+
+        # move beta too => new scope has both => true
+        move_beta = auth_client.put(
+            f"/api/images/{beta_image.id}", data={"analysis": analysis_b_id}
+        )
+        assert move_beta.status_code == 200
+        drain_outbox()
+        refresh_all(
+            analysis_a, analysis_b, study_a, study_b, base_study_a, base_study_b
+        )
+        assert analysis_a.has_beta_and_variance_maps is False
+        assert study_a.has_beta_and_variance_maps is False
+        assert base_study_a.has_beta_and_variance_maps is False
+        assert analysis_b.has_beta_and_variance_maps is True
+        assert study_b.has_beta_and_variance_maps is True
+        assert base_study_b.has_beta_and_variance_maps is True
+
+        # add z and t maps to analysis_b and validate z/t flags
+        add_z = auth_client.post(
+            "/api/images/",
+            data={
+                "analysis": analysis_b_id,
+                "filename": "z-b.nii.gz",
+                "value_type": "Z",
+            },
+        )
+        add_t = auth_client.post(
+            "/api/images/",
+            data={
+                "analysis": analysis_b_id,
+                "filename": "t-b.nii.gz",
+                "value_type": "T map",
+            },
+        )
+        assert add_z.status_code == 200
+        assert add_t.status_code == 200
+        z_image_id = add_z.json()["id"]
+
+        drain_outbox()
+        refresh_all(analysis_b, study_b, base_study_b)
+        assert analysis_b.has_z_maps is True
+        assert analysis_b.has_t_maps is True
+        assert study_b.has_z_maps is True
+        assert study_b.has_t_maps is True
+        assert base_study_b.has_z_maps is True
+        assert base_study_b.has_t_maps is True
+
+        # move z map from b -> a and validate old/new scope transitions
+        move_z = auth_client.put(
+            f"/api/images/{z_image_id}", data={"analysis": analysis_a_id}
+        )
+        assert move_z.status_code == 200
+        drain_outbox()
+        refresh_all(
+            analysis_a, analysis_b, study_a, study_b, base_study_a, base_study_b
+        )
+        assert analysis_a.has_z_maps is True
+        assert study_a.has_z_maps is True
+        assert base_study_a.has_z_maps is True
+        assert analysis_b.has_z_maps is False
+        assert study_b.has_z_maps is False
+        assert base_study_b.has_z_maps is False
+    finally:
+        app.config["BASE_STUDY_FLAGS_ASYNC"] = async_original
+
+
+def test_base_study_create_enqueues_metadata_outbox(auth_client, app):
+    async_original = app.config.get("BASE_STUDY_METADATA_ASYNC", False)
+    app.config["BASE_STUDY_METADATA_ASYNC"] = True
+    try:
+        response = auth_client.post(
+            "/api/base-studies/",
+            data={
+                "name": "metadata-enqueue-study",
+                "pmid": "930001",
+                "level": "group",
+            },
+        )
+        assert response.status_code == 200
+
+        outbox_entry = BaseStudyMetadataOutbox.query.filter_by(
+            base_study_id=response.json()["id"]
+        ).one_or_none()
+        assert outbox_entry is not None
+    finally:
+        app.config["BASE_STUDY_METADATA_ASYNC"] = async_original
+
+
+def test_base_study_bulk_create_enqueues_metadata_outbox(auth_client, app):
+    async_original = app.config.get("BASE_STUDY_METADATA_ASYNC", False)
+    app.config["BASE_STUDY_METADATA_ASYNC"] = True
+    try:
+        response = auth_client.post(
+            "/api/base-studies/",
+            data=[
+                {
+                    "name": "metadata-enqueue-study-bulk",
+                    "pmid": "930002",
+                    "level": "group",
+                }
+            ],
+        )
+        assert response.status_code == 200
+        assert len(response.json()) == 1
+
+        outbox_entry = BaseStudyMetadataOutbox.query.filter_by(
+            base_study_id=response.json()[0]["id"]
+        ).one_or_none()
+        assert outbox_entry is not None
+    finally:
+        app.config["BASE_STUDY_METADATA_ASYNC"] = async_original
+
+
+def test_metadata_worker_merges_duplicates_and_keeps_existing_metadata(
+    session, app, monkeypatch
+):
+    from neurostore.services import base_study_metadata_enrichment as metadata_service
+
+    primary = BaseStudy(
+        name="Curated Title",
+        pmid="940001",
+        level="group",
+    )
+    duplicate = BaseStudy(
+        name="Duplicate Title",
+        doi="10.1000/metadata-merge",
+        level="group",
+    )
+    primary_study = Study(
+        name="primary-study-version",
+        level="group",
+        base_study=primary,
+    )
+    duplicate_study = Study(
+        name="duplicate-study-version",
+        level="group",
+        base_study=duplicate,
+    )
+    now = dt.datetime.now(dt.timezone.utc)
+    primary.created_at = now - dt.timedelta(seconds=10)
+    duplicate.created_at = now
+    session.add_all([primary, duplicate, primary_study, duplicate_study])
+    session.commit()
+
+    session.add(
+        BaseStudyMetadataOutbox(
+            base_study_id=primary.id,
+            reason="test-enrichment",
+        )
+    )
+    session.commit()
+
+    def fake_lookup_semantic(_identifiers, api_key=None):
+        return {"doi": "10.1000/metadata-merge", "pmcid": "PMC940001"}
+
+    def fake_lookup_pubmed(_identifiers, email=None, api_key=None, tool=None):
+        return {"pmcid": "PMC940001"}
+
+    def fake_lookup_openalex(_identifiers, email=None):
+        return {"doi": "10.1000/metadata-merge"}
+
+    def fake_metadata_semantic(_identifiers, api_key=None):
+        return {
+            "name": "Provider Title Should Not Override",
+            "description": "Provider abstract",
+            "publication": "Provider Journal",
+            "authors": "Provider A, Provider B",
+            "year": 2025,
+            "is_oa": True,
+            "doi": "10.1000/metadata-merge",
+            "pmcid": "PMC940001",
+        }
+
+    def fake_metadata_pubmed(_identifiers, email=None, api_key=None, tool=None):
+        return {"publication": "PubMed Journal", "year": 2024}
+
+    captured_cache_ids = []
+
+    monkeypatch.setattr(
+        metadata_service, "lookup_ids_semantic_scholar", fake_lookup_semantic
+    )
+    monkeypatch.setattr(metadata_service, "lookup_ids_pubmed", fake_lookup_pubmed)
+    monkeypatch.setattr(metadata_service, "lookup_ids_openalex", fake_lookup_openalex)
+    monkeypatch.setattr(
+        metadata_service, "fetch_metadata_semantic_scholar", fake_metadata_semantic
+    )
+    monkeypatch.setattr(metadata_service, "fetch_metadata_pubmed", fake_metadata_pubmed)
+    monkeypatch.setattr(
+        metadata_service,
+        "bump_cache_versions",
+        lambda unique_ids: captured_cache_ids.append(unique_ids),
+    )
+
+    processed = process_base_study_metadata_outbox_batch(batch_size=10)
+    assert processed == 1
+
+    session.refresh(primary)
+    session.refresh(duplicate)
+    session.refresh(primary_study)
+    session.refresh(duplicate_study)
+
+    # Older record remains canonical and preserves curated metadata.
+    assert primary.name == "Curated Title"
+    assert primary.doi == "10.1000/metadata-merge"
+    assert primary.pmcid == "PMC940001"
+    assert primary.description == "Provider abstract"
+    assert primary.publication == "Provider Journal"
+    assert primary.authors == "Provider A, Provider B"
+    assert primary.year == 2025
+    assert primary.is_oa is True
+
+    # Newer duplicate is superseded and all versions are merged into canonical.
+    assert duplicate.is_active is False
+    assert duplicate.superseded_by == primary.id
+    assert primary_study.base_study_id == primary.id
+    assert duplicate_study.base_study_id == primary.id
+
+    assert (
+        BaseStudyMetadataOutbox.query.filter_by(base_study_id=primary.id).one_or_none()
+        is None
+    )
+    assert (
+        BaseStudyMetadataOutbox.query.filter_by(
+            base_study_id=duplicate.id
+        ).one_or_none()
+        is None
+    )
+    assert BaseStudyFlagOutbox.query.filter_by(base_study_id=primary.id).first()
+
+    assert captured_cache_ids, "Expected metadata worker to invalidate cache versions"
+    assert any(
+        primary.id in ids.get("base-studies", set()) for ids in captured_cache_ids
+    )
+    assert any(
+        duplicate_study.id in ids.get("studies", set()) for ids in captured_cache_ids
+    )
+
+
+def test_metadata_worker_merge_avoids_doi_pmid_unique_conflict(session, monkeypatch):
+    from neurostore.services import base_study_metadata_enrichment as metadata_service
+
+    primary = BaseStudy(
+        name="Primary Record",
+        doi="10.2000/unique-merge",
+        level="group",
+    )
+    duplicate = BaseStudy(
+        name="Duplicate Record",
+        doi="10.2000/unique-merge",
+        pmid="950001",
+        level="group",
+    )
+    now = dt.datetime.now(dt.timezone.utc)
+    primary.created_at = now - dt.timedelta(seconds=10)
+    duplicate.created_at = now
+    session.add_all([primary, duplicate])
+    session.commit()
+
+    session.add(
+        BaseStudyMetadataOutbox(
+            base_study_id=primary.id,
+            reason="test-unique-merge",
+        )
+    )
+    session.commit()
+
+    monkeypatch.setattr(
+        metadata_service, "lookup_ids_semantic_scholar", lambda *_args, **_kwargs: {}
+    )
+    monkeypatch.setattr(
+        metadata_service, "lookup_ids_pubmed", lambda *_args, **_kwargs: {}
+    )
+    monkeypatch.setattr(
+        metadata_service, "lookup_ids_openalex", lambda *_args, **_kwargs: {}
+    )
+    monkeypatch.setattr(
+        metadata_service,
+        "fetch_metadata_semantic_scholar",
+        lambda *_args, **_kwargs: {},
+    )
+    monkeypatch.setattr(
+        metadata_service, "fetch_metadata_pubmed", lambda *_args, **_kwargs: {}
+    )
+
+    processed = process_base_study_metadata_outbox_batch(batch_size=10)
+    assert processed == 1
+
+    session.refresh(primary)
+    session.refresh(duplicate)
+    assert primary.pmid == "950001"
+    assert duplicate.is_active is False
+    assert duplicate.superseded_by == primary.id
+    assert duplicate.doi == "10.2000/unique-merge"
+    assert duplicate.pmid == "950001"
+    assert (
+        BaseStudyMetadataOutbox.query.filter_by(base_study_id=primary.id).one_or_none()
+        is None
+    )
+
+
+def test_metadata_worker_merge_reassigns_pipeline_rows(
+    session, ingest_demographic_features, monkeypatch
+):
+    from neurostore.services import base_study_metadata_enrichment as metadata_service
+
+    primary = (
+        session.query(BaseStudy)
+        .join(PipelineStudyResult, PipelineStudyResult.base_study_id == BaseStudy.id)
+        .join(PipelineEmbedding, PipelineEmbedding.base_study_id == BaseStudy.id)
+        .first()
+    )
+    assert primary is not None
+
+    shared_identifier = None
+    identifier_field = None
+    for field in ("pmid", "doi", "pmcid"):
+        value = getattr(primary, field)
+        if value:
+            shared_identifier = value
+            identifier_field = field
+            break
+    assert (
+        shared_identifier is not None
+    ), "Expected seeded base study to have an identifier"
+
+    duplicate_kwargs = {
+        "name": "Pipeline Duplicate",
+        "level": "group",
+        identifier_field: shared_identifier,
+    }
+    duplicate = BaseStudy(**duplicate_kwargs)
+    session.add(duplicate)
+    session.commit()
+
+    # Ensure the seeded study remains canonical during duplicate merge.
+    now = dt.datetime.now(dt.timezone.utc)
+    primary.created_at = now - dt.timedelta(seconds=10)
+    duplicate.created_at = now
+    session.commit()
+
+    pipeline_result = (
+        session.query(PipelineStudyResult)
+        .filter(PipelineStudyResult.base_study_id == primary.id)
+        .first()
+    )
+    pipeline_embedding = (
+        session.query(PipelineEmbedding)
+        .filter(PipelineEmbedding.base_study_id == primary.id)
+        .first()
+    )
+    assert pipeline_result is not None
+    assert pipeline_embedding is not None
+
+    pipeline_result_id = pipeline_result.id
+    pipeline_embedding_id = pipeline_embedding.id
+    pipeline_embedding_config_id = pipeline_embedding.config_id
+
+    pipeline_result.base_study_id = duplicate.id
+    pipeline_embedding.base_study_id = duplicate.id
+    session.commit()
+
+    session.add(
+        BaseStudyMetadataOutbox(
+            base_study_id=duplicate.id,
+            reason="test-pipeline-row-reassign",
+        )
+    )
+    session.commit()
+
+    monkeypatch.setattr(
+        metadata_service, "lookup_ids_semantic_scholar", lambda *_args, **_kwargs: {}
+    )
+    monkeypatch.setattr(
+        metadata_service, "lookup_ids_pubmed", lambda *_args, **_kwargs: {}
+    )
+    monkeypatch.setattr(
+        metadata_service, "lookup_ids_openalex", lambda *_args, **_kwargs: {}
+    )
+    monkeypatch.setattr(
+        metadata_service,
+        "fetch_metadata_semantic_scholar",
+        lambda *_args, **_kwargs: {},
+    )
+    monkeypatch.setattr(
+        metadata_service, "fetch_metadata_pubmed", lambda *_args, **_kwargs: {}
+    )
+
+    processed = process_base_study_metadata_outbox_batch(batch_size=10)
+    assert processed == 1
+
+    session.refresh(primary)
+    session.refresh(duplicate)
+    assert duplicate.is_active is False
+    assert duplicate.superseded_by == primary.id
+
+    reassigned_result = (
+        session.query(PipelineStudyResult)
+        .filter(PipelineStudyResult.id == pipeline_result_id)
+        .one()
+    )
+    reassigned_embedding = (
+        session.query(PipelineEmbedding)
+        .filter(
+            PipelineEmbedding.id == pipeline_embedding_id,
+            PipelineEmbedding.config_id == pipeline_embedding_config_id,
+        )
+        .one()
+    )
+    assert reassigned_result.base_study_id == primary.id
+    assert reassigned_embedding.base_study_id == primary.id
+
+    assert (
+        session.query(PipelineStudyResult)
+        .filter(
+            PipelineStudyResult.id == pipeline_result_id,
+            PipelineStudyResult.base_study_id == duplicate.id,
+        )
+        .count()
+        == 0
+    )
+    assert (
+        session.query(PipelineEmbedding)
+        .filter(
+            PipelineEmbedding.id == pipeline_embedding_id,
+            PipelineEmbedding.config_id == pipeline_embedding_config_id,
+            PipelineEmbedding.base_study_id == duplicate.id,
+        )
+        .count()
+        == 0
+    )
+
+
+def test_metadata_worker_defers_failed_rows(session, app, monkeypatch):
+    from neurostore.services import base_study_metadata_enrichment as metadata_service
+
+    delay_original = app.config.get("BASE_STUDY_METADATA_RETRY_DELAY_SECONDS", "30")
+    app.config["BASE_STUDY_METADATA_RETRY_DELAY_SECONDS"] = "120"
+    try:
+        base_study = BaseStudy(
+            name="Retry Row",
+            pmid="960001",
+            level="group",
+        )
+        session.add(base_study)
+        session.commit()
+
+        old_updated_at = dt.datetime.now(dt.timezone.utc) - dt.timedelta(hours=1)
+        session.add(
+            BaseStudyMetadataOutbox(
+                base_study_id=base_study.id,
+                reason="test-retry-delay",
+                updated_at=old_updated_at,
+            )
+        )
+        session.commit()
+
+        monkeypatch.setattr(
+            metadata_service,
+            "enrich_base_study_metadata",
+            lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("boom")),
+        )
+
+        processed = process_base_study_metadata_outbox_batch(batch_size=10)
+        assert processed == 0
+
+        outbox_entry = BaseStudyMetadataOutbox.query.filter_by(
+            base_study_id=base_study.id
+        ).one()
+        assert outbox_entry.updated_at > old_updated_at
+    finally:
+        app.config["BASE_STUDY_METADATA_RETRY_DELAY_SECONDS"] = delay_original
+
+
+def test_metadata_worker_stops_after_first_satisfied_provider(session, monkeypatch):
+    from neurostore.services import base_study_metadata_enrichment as metadata_service
+
+    base_study = BaseStudy(
+        name=None,
+        pmid="980001",
+        level="group",
+    )
+    session.add(base_study)
+    session.commit()
+
+    session.add(
+        BaseStudyMetadataOutbox(
+            base_study_id=base_study.id,
+            reason="test-provider-short-circuit",
+        )
+    )
+    session.commit()
+
+    call_counts = {
+        "lookup_pubmed": 0,
+        "lookup_openalex": 0,
+        "fetch_pubmed": 0,
+    }
+
+    monkeypatch.setattr(
+        metadata_service,
+        "lookup_ids_semantic_scholar",
+        lambda *_args, **_kwargs: {
+            "doi": "10.9800/short-circuit",
+            "pmcid": "PMC980001",
+        },
+    )
+
+    def _unexpected_lookup_pubmed(*_args, **_kwargs):
+        call_counts["lookup_pubmed"] += 1
+        return {}
+
+    def _unexpected_lookup_openalex(*_args, **_kwargs):
+        call_counts["lookup_openalex"] += 1
+        return {}
+
+    monkeypatch.setattr(
+        metadata_service, "lookup_ids_pubmed", _unexpected_lookup_pubmed
+    )
+    monkeypatch.setattr(
+        metadata_service, "lookup_ids_openalex", _unexpected_lookup_openalex
+    )
+    monkeypatch.setattr(
+        metadata_service,
+        "fetch_metadata_semantic_scholar",
+        lambda *_args, **_kwargs: {
+            "name": "Semantic Title",
+            "description": "Semantic abstract",
+            "publication": "Semantic Journal",
+            "authors": "Author A, Author B",
+            "year": 2023,
+            "is_oa": True,
+            "doi": "10.9800/short-circuit",
+            "pmid": "980001",
+            "pmcid": "PMC980001",
+        },
+    )
+
+    def _unexpected_fetch_pubmed(*_args, **_kwargs):
+        call_counts["fetch_pubmed"] += 1
+        return {}
+
+    monkeypatch.setattr(
+        metadata_service, "fetch_metadata_pubmed", _unexpected_fetch_pubmed
+    )
+
+    processed = process_base_study_metadata_outbox_batch(batch_size=10)
+    assert processed == 1
+
+    session.refresh(base_study)
+    assert base_study.doi == "10.9800/short-circuit"
+    assert base_study.pmcid == "PMC980001"
+    assert base_study.name == "Semantic Title"
+    assert base_study.publication == "Semantic Journal"
+    assert base_study.authors == "Author A, Author B"
+    assert base_study.year == 2023
+    assert base_study.is_oa is True
+
+    assert call_counts["lookup_pubmed"] == 0
+    assert call_counts["lookup_openalex"] == 0
+    assert call_counts["fetch_pubmed"] == 0
+
+
+def test_metadata_worker_propagates_metadata_to_study_versions(session, monkeypatch):
+    from neurostore.services import base_study_metadata_enrichment as metadata_service
+
+    base_study = BaseStudy(
+        name=None,
+        pmid="990010",
+        level="group",
+    )
+    version_missing = Study(
+        name=None,
+        publication=None,
+        authors=None,
+        year=None,
+        doi=None,
+        pmid=None,
+        pmcid=None,
+        level="group",
+        base_study=base_study,
+    )
+    version_curated = Study(
+        name="Curated Study Title",
+        publication=None,
+        authors="Curated Author",
+        year=None,
+        doi="10.7777/curated",
+        pmid=None,
+        pmcid=None,
+        level="group",
+        base_study=base_study,
+    )
+    session.add_all([base_study, version_missing, version_curated])
+    session.commit()
+
+    session.add(
+        BaseStudyMetadataOutbox(
+            base_study_id=base_study.id,
+            reason="test-study-version-propagation",
+        )
+    )
+    session.commit()
+
+    monkeypatch.setattr(
+        metadata_service,
+        "lookup_ids_semantic_scholar",
+        lambda *_args, **_kwargs: {
+            "doi": "10.9900/propagate",
+            "pmcid": "PMC990010",
+        },
+    )
+    monkeypatch.setattr(
+        metadata_service, "lookup_ids_pubmed", lambda *_args, **_kwargs: {}
+    )
+    monkeypatch.setattr(
+        metadata_service, "lookup_ids_openalex", lambda *_args, **_kwargs: {}
+    )
+    monkeypatch.setattr(
+        metadata_service,
+        "fetch_metadata_semantic_scholar",
+        lambda *_args, **_kwargs: {
+            "name": "Provider Title",
+            "description": "Provider abstract",
+            "publication": "Provider Journal",
+            "authors": "Provider Author",
+            "year": 2024,
+            "is_oa": True,
+            "doi": "10.9900/propagate",
+            "pmid": "990010",
+            "pmcid": "PMC990010",
+        },
+    )
+    monkeypatch.setattr(
+        metadata_service, "fetch_metadata_pubmed", lambda *_args, **_kwargs: {}
+    )
+
+    captured_cache_ids = []
+    monkeypatch.setattr(
+        metadata_service,
+        "bump_cache_versions",
+        lambda unique_ids: captured_cache_ids.append(unique_ids),
+    )
+
+    processed = process_base_study_metadata_outbox_batch(batch_size=10)
+    assert processed == 1
+
+    session.refresh(base_study)
+    session.refresh(version_missing)
+    session.refresh(version_curated)
+
+    assert base_study.name == "Provider Title"
+    assert base_study.description == "Provider abstract"
+    assert base_study.publication == "Provider Journal"
+    assert base_study.authors == "Provider Author"
+    assert base_study.year == 2024
+    assert base_study.doi == "10.9900/propagate"
+    assert base_study.pmcid == "PMC990010"
+
+    assert version_missing.name == "Provider Title"
+    assert version_missing.publication == "Provider Journal"
+    assert version_missing.authors == "Provider Author"
+    assert version_missing.year == 2024
+    assert version_missing.doi == "10.9900/propagate"
+    assert version_missing.pmid == "990010"
+    assert version_missing.pmcid == "PMC990010"
+
+    # Existing version metadata remains unchanged.
+    assert version_curated.name == "Curated Study Title"
+    assert version_curated.authors == "Curated Author"
+    assert version_curated.doi == "10.7777/curated"
+    # Missing fields still get backfilled.
+    assert version_curated.publication == "Provider Journal"
+    assert version_curated.year == 2024
+    assert version_curated.pmid == "990010"
+    assert version_curated.pmcid == "PMC990010"
+
+    assert captured_cache_ids, "Expected metadata worker to invalidate cache versions"
+    assert any(
+        version_missing.id in ids.get("studies", set()) for ids in captured_cache_ids
+    )
+    assert any(
+        version_curated.id in ids.get("studies", set()) for ids in captured_cache_ids
+    )
+
+
+def test_metadata_worker_treats_year_zero_as_missing(session, monkeypatch):
+    from neurostore.services import base_study_metadata_enrichment as metadata_service
+
+    base_study = BaseStudy(
+        name="Existing Name",
+        description="Existing Description",
+        publication="Existing Journal",
+        authors="Existing Author",
+        year=0,
+        is_oa=True,
+        pmid="990020",
+        doi="10.9900/year-zero",
+        pmcid="PMC990020",
+        level="group",
+    )
+    session.add(base_study)
+    session.commit()
+
+    session.add(
+        BaseStudyMetadataOutbox(
+            base_study_id=base_study.id,
+            reason="test-year-zero-missing",
+        )
+    )
+    session.commit()
+
+    fetch_counts = {"semantic": 0, "pubmed": 0}
+
+    monkeypatch.setattr(
+        metadata_service, "lookup_ids_semantic_scholar", lambda *_args, **_kwargs: {}
+    )
+    monkeypatch.setattr(
+        metadata_service, "lookup_ids_pubmed", lambda *_args, **_kwargs: {}
+    )
+    monkeypatch.setattr(
+        metadata_service, "lookup_ids_openalex", lambda *_args, **_kwargs: {}
+    )
+
+    def _semantic_with_invalid_year(*_args, **_kwargs):
+        fetch_counts["semantic"] += 1
+        return {
+            "year": 0,
+            "name": "Provider Name",
+            "description": "Provider Description",
+            "publication": "Provider Journal",
+            "authors": "Provider Author",
+        }
+
+    def _pubmed_with_valid_year(*_args, **_kwargs):
+        fetch_counts["pubmed"] += 1
+        return {"year": 2023}
+
+    monkeypatch.setattr(
+        metadata_service, "fetch_metadata_semantic_scholar", _semantic_with_invalid_year
+    )
+    monkeypatch.setattr(
+        metadata_service, "fetch_metadata_pubmed", _pubmed_with_valid_year
+    )
+
+    processed = process_base_study_metadata_outbox_batch(batch_size=10)
+    assert processed == 1
+
+    session.refresh(base_study)
+    assert base_study.year == 2023
+    assert fetch_counts["semantic"] == 1
+    assert fetch_counts["pubmed"] == 1
+
+
+def test_metadata_worker_uses_new_provider_config_keys(session, app, monkeypatch):
+    from neurostore.services import base_study_metadata_enrichment as metadata_service
+
+    base_study = BaseStudy(
+        name=None,
+        pmid="990001",
+        level="group",
+    )
+    session.add(base_study)
+    session.commit()
+
+    captured_kwargs = {}
+
+    def _fake_lookup_semantic(_identifiers, api_key=None):
+        captured_kwargs["semantic_lookup_api_key"] = api_key
+        return {}
+
+    def _fake_lookup_pubmed(_identifiers, email=None, api_key=None, tool=None):
+        captured_kwargs["pubmed_lookup"] = {
+            "email": email,
+            "api_key": api_key,
+            "tool": tool,
+        }
+        return {}
+
+    def _fake_lookup_openalex(_identifiers, email=None):
+        captured_kwargs["openalex_lookup_email"] = email
+        return {}
+
+    def _fake_fetch_semantic(_identifiers, api_key=None):
+        captured_kwargs["semantic_fetch_api_key"] = api_key
+        return {}
+
+    def _fake_fetch_pubmed(_identifiers, email=None, api_key=None, tool=None):
+        captured_kwargs["pubmed_fetch"] = {
+            "email": email,
+            "api_key": api_key,
+            "tool": tool,
+        }
+        return {}
+
+    monkeypatch.setattr(
+        metadata_service, "lookup_ids_semantic_scholar", _fake_lookup_semantic
+    )
+    monkeypatch.setattr(metadata_service, "lookup_ids_pubmed", _fake_lookup_pubmed)
+    monkeypatch.setattr(metadata_service, "lookup_ids_openalex", _fake_lookup_openalex)
+    monkeypatch.setattr(
+        metadata_service, "fetch_metadata_semantic_scholar", _fake_fetch_semantic
+    )
+    monkeypatch.setattr(metadata_service, "fetch_metadata_pubmed", _fake_fetch_pubmed)
+
+    original_values = {
+        "SEMANTIC_SCHOLAR_API_KEY": app.config.get("SEMANTIC_SCHOLAR_API_KEY"),
+        "PUBMED_TOOL_API_KEY": app.config.get("PUBMED_TOOL_API_KEY"),
+        "EMAIL": app.config.get("EMAIL"),
+        "PUBMED_TOOL": app.config.get("PUBMED_TOOL"),
+        "PUBMED_API_KEY": app.config.get("PUBMED_API_KEY"),
+        "PUBMED_EMAIL": app.config.get("PUBMED_EMAIL"),
+        "OPENALEX_EMAIL": app.config.get("OPENALEX_EMAIL"),
+    }
+    app.config["SEMANTIC_SCHOLAR_API_KEY"] = "semantic-new-key"
+    app.config["PUBMED_TOOL_API_KEY"] = "pubmed-new-key"
+    app.config["EMAIL"] = "new@example.org"
+    app.config["PUBMED_TOOL"] = "neurostore-test-tool"
+    app.config["PUBMED_API_KEY"] = "pubmed-old-key"
+    app.config["PUBMED_EMAIL"] = "old-pubmed@example.org"
+    app.config["OPENALEX_EMAIL"] = "old-openalex@example.org"
+    try:
+        metadata_service.enrich_base_study_metadata(base_study.id)
+    finally:
+        for key, value in original_values.items():
+            app.config[key] = value
+
+    assert captured_kwargs["semantic_lookup_api_key"] == "semantic-new-key"
+    assert captured_kwargs["semantic_fetch_api_key"] == "semantic-new-key"
+    assert captured_kwargs["pubmed_lookup"] == {
+        "email": "new@example.org",
+        "api_key": "pubmed-new-key",
+        "tool": "neurostore-test-tool",
+    }
+    assert captured_kwargs["pubmed_fetch"] == {
+        "email": "new@example.org",
+        "api_key": "pubmed-new-key",
+        "tool": "neurostore-test-tool",
+    }
+    assert captured_kwargs["openalex_lookup_email"] == "new@example.org"
+
+
+def test_metadata_and_flag_workers_do_not_deadlock_on_same_base_study(
+    session, app, monkeypatch
+):
+    from neurostore.services import base_study_metadata_enrichment as metadata_service
+    from neurostore.services import has_media_flags as flag_service
+
+    base_study = BaseStudy(
+        name="deadlock-repro",
+        pmid="999001",
+        level="group",
+    )
+    session.add(base_study)
+    session.commit()
+
+    session.add(
+        BaseStudyMetadataOutbox(
+            base_study_id=base_study.id,
+            reason="test-deadlock-metadata",
+        )
+    )
+    session.add(
+        BaseStudyFlagOutbox(
+            base_study_id=base_study.id,
+            reason="test-deadlock-flag",
+        )
+    )
+    session.commit()
+
+    metadata_has_base_lock = threading.Event()
+    flag_has_outbox_lock = threading.Event()
+    results = {}
+
+    def _patched_enrich(target_id):
+        metadata_service.db.session.execute(sa.text("SET deadlock_timeout = '100ms'"))
+        locked_base_study = metadata_service.db.session.scalar(
+            sa.select(BaseStudy)
+            .where(BaseStudy.id == target_id)
+            .with_for_update(of=BaseStudy)
+        )
+        metadata_has_base_lock.set()
+        assert flag_has_outbox_lock.wait(timeout=5), "flag worker never claimed outbox"
+        return {
+            "base-studies": {locked_base_study.id},
+            "studies": set(),
+        }
+
+    def _patched_recompute(base_study_ids):
+        flag_service.db.session.execute(sa.text("SET deadlock_timeout = '100ms'"))
+        flag_has_outbox_lock.set()
+        assert metadata_has_base_lock.wait(
+            timeout=5
+        ), "metadata worker never locked base study"
+        flag_service.db.session.execute(
+            sa.update(BaseStudy)
+            .where(BaseStudy.id.in_(base_study_ids))
+            .values(name="flag-worker-touch")
+        )
+        return {
+            "base-studies": set(base_study_ids),
+            "studies": set(),
+            "analyses": set(),
+        }
+
+    monkeypatch.setattr(metadata_service, "enrich_base_study_metadata", _patched_enrich)
+    monkeypatch.setattr(flag_service, "recompute_media_flags", _patched_recompute)
+
+    def _run(name, fn):
+        with app.app_context():
+            scoped_session = app.extensions["sqlalchemy"].session
+            scoped_session.remove()
+            try:
+                results[name] = fn(batch_size=10)
+            except Exception as exc:  # noqa: BLE001
+                results[f"{name}_exc"] = exc
+            finally:
+                scoped_session.remove()
+
+    metadata_thread = threading.Thread(
+        target=_run,
+        args=("metadata", metadata_service.process_base_study_metadata_outbox_batch),
+    )
+    flag_thread = threading.Thread(
+        target=_run,
+        args=("flag", flag_service.process_base_study_flag_outbox_batch),
+    )
+
+    metadata_thread.start()
+    flag_thread.start()
+    metadata_thread.join(timeout=10)
+    flag_thread.join(timeout=10)
+
+    assert not metadata_thread.is_alive()
+    assert not flag_thread.is_alive()
+    assert "metadata_exc" not in results
+    assert "flag_exc" not in results
+    assert results["metadata"] == 1
+    assert results["flag"] == 1
+
+    session.expire_all()
+    outbox_rows = BaseStudyFlagOutbox.query.filter_by(base_study_id=base_study.id).all()
+    assert len(outbox_rows) == 1
+
+
+def test_metadata_worker_propagation_does_not_deadlock_with_study_then_base_write(
+    session, app, monkeypatch
+):
+    from neurostore.services import base_study_metadata_enrichment as metadata_service
+
+    base_study = BaseStudy(
+        name=None,
+        pmid="999002",
+        level="group",
+    )
+    version = Study(
+        name=None,
+        publication=None,
+        authors=None,
+        year=None,
+        doi=None,
+        pmid=None,
+        pmcid=None,
+        level="group",
+        base_study=base_study,
+    )
+    session.add_all([base_study, version])
+    session.commit()
+
+    session.add(
+        BaseStudyMetadataOutbox(
+            base_study_id=base_study.id,
+            reason="test-study-base-deadlock",
+        )
+    )
+    session.commit()
+
+    monkeypatch.setattr(
+        metadata_service, "lookup_ids_semantic_scholar", lambda *_args, **_kwargs: {}
+    )
+    monkeypatch.setattr(
+        metadata_service, "lookup_ids_pubmed", lambda *_args, **_kwargs: {}
+    )
+    monkeypatch.setattr(
+        metadata_service, "lookup_ids_openalex", lambda *_args, **_kwargs: {}
+    )
+    monkeypatch.setattr(
+        metadata_service,
+        "fetch_metadata_semantic_scholar",
+        lambda *_args, **_kwargs: {
+            "name": "Metadata Title",
+            "publication": "Metadata Journal",
+            "authors": "Metadata Author",
+            "year": 2024,
+        },
+    )
+    monkeypatch.setattr(
+        metadata_service, "fetch_metadata_pubmed", lambda *_args, **_kwargs: {}
+    )
+
+    propagation_started = threading.Event()
+    request_has_study_lock = threading.Event()
+    results = {}
+    original_propagate = metadata_service._propagate_base_study_metadata_to_versions
+
+    def _patched_propagate(base_study_record):
+        propagation_started.set()
+        assert request_has_study_lock.wait(
+            timeout=5
+        ), "request transaction never locked study row"
+        return original_propagate(base_study_record)
+
+    monkeypatch.setattr(
+        metadata_service,
+        "_propagate_base_study_metadata_to_versions",
+        _patched_propagate,
+    )
+
+    def _run_metadata():
+        with app.app_context():
+            scoped_session = app.extensions["sqlalchemy"].session
+            scoped_session.remove()
+            try:
+                results["metadata"] = (
+                    metadata_service.process_base_study_metadata_outbox_batch(
+                        batch_size=10
+                    )
+                )
+            except Exception as exc:  # noqa: BLE001
+                results["metadata_exc"] = exc
+            finally:
+                scoped_session.remove()
+
+    def _run_request_like_writer():
+        with app.app_context():
+            scoped_session = app.extensions["sqlalchemy"].session
+            scoped_session.remove()
+            try:
+                scoped_session.execute(
+                    sa.select(Study)
+                    .where(Study.id == version.id)
+                    .with_for_update(of=Study)
+                ).scalar_one()
+                request_has_study_lock.set()
+                assert propagation_started.wait(
+                    timeout=5
+                ), "metadata worker never reached propagation"
+                scoped_session.execute(
+                    sa.update(BaseStudy)
+                    .where(BaseStudy.id == base_study.id)
+                    .values(metadata_={"request": "touch"})
+                )
+                scoped_session.commit()
+                results["request"] = "committed"
+            except Exception as exc:  # noqa: BLE001
+                scoped_session.rollback()
+                results["request_exc"] = exc
+            finally:
+                scoped_session.remove()
+
+    request_thread = threading.Thread(target=_run_request_like_writer)
+    metadata_thread = threading.Thread(target=_run_metadata)
+
+    request_thread.start()
+    metadata_thread.start()
+    request_thread.join(timeout=10)
+    metadata_thread.join(timeout=10)
+
+    assert not request_thread.is_alive()
+    assert not metadata_thread.is_alive()
+    assert "request_exc" not in results
+    assert "metadata_exc" not in results
+    assert results["request"] == "committed"
+    assert results["metadata"] == 1
+
+    session.expire_all()
+    session.refresh(base_study)
+    session.refresh(version)
+    assert base_study.name == "Metadata Title"
+    assert version.name == "Metadata Title"
+    assert version.publication == "Metadata Journal"
+
+
+def test_enqueue_metadata_updates_treats_blank_values_as_missing(session):
+    base_study = BaseStudy(
+        name="Metadata Missing",
+        pmid="970001",
+        doi="10.9700/test",
+        publication="   ",
+        level="group",
+    )
+    session.add(base_study)
+    session.commit()
+
+    enqueued = enqueue_base_study_metadata_updates([base_study.id], reason="test-blank")
+    assert enqueued == 1
+    assert (
+        BaseStudyMetadataOutbox.query.filter_by(
+            base_study_id=base_study.id
+        ).one_or_none()
+        is not None
+    )
+
+
+def test_enqueue_metadata_updates_treats_year_zero_as_missing(session):
+    base_study = BaseStudy(
+        name="Year Zero Metadata",
+        pmid="970002",
+        doi="10.9700/year-zero",
+        year=0,
+        level="group",
+    )
+    session.add(base_study)
+    session.commit()
+
+    enqueued = enqueue_base_study_metadata_updates(
+        [base_study.id], reason="test-year-zero"
+    )
+    assert enqueued == 1
+    assert (
+        BaseStudyMetadataOutbox.query.filter_by(
+            base_study_id=base_study.id
+        ).one_or_none()
+        is not None
+    )
+
+
+def test_enqueue_metadata_updates_skips_blank_identifier_only_rows(session):
+    base_study = BaseStudy(
+        name=None,
+        pmid="   ",
+        doi="",
+        pmcid="",
+        level="group",
+    )
+    session.add(base_study)
+    session.commit()
+
+    enqueued = enqueue_base_study_metadata_updates([base_study.id], reason="test-skip")
+    assert enqueued == 0
+    assert (
+        BaseStudyMetadataOutbox.query.filter_by(
+            base_study_id=base_study.id
+        ).one_or_none()
+        is None
+    )
 
 
 def test_filter_by_is_oa(auth_client, session):
@@ -501,7 +2060,7 @@ def test_config_and_feature_filters(auth_client, ingest_demographic_features, se
     # Test combined feature and config filtering
     response = auth_client.get(
         "/api/base-studies/?"
-        "feature_filter=ParticipantDemographicsExtractor:1.0.0:predictions.groups[].age_mean>25&"
+        "feature_filter=ParticipantDemographicsExtractor:1.0.0:groups[].age_mean>25&"
         "pipeline_config=ParticipantDemographicsExtractor:"
         "1.0.0:extractor_kwargs.extraction_model=gpt-4-turbo"
     )
@@ -512,7 +2071,7 @@ def test_config_and_feature_filters(auth_client, ingest_demographic_features, se
     # Test with mismatched version
     response = auth_client.get(
         "/api/base-studies/?"
-        "feature_filter=ParticipantDemographicsExtractor:2.0.0:predictions.groups[].age_mean>30&"
+        "feature_filter=ParticipantDemographicsExtractor:2.0.0:groups[].age_mean>30&"
         "pipeline_config=ParticipantDemographicsExtractor:2.0.0:"
         "extractor_kwargs.extraction_model=gpt-4-turbo"
     )
@@ -526,6 +2085,78 @@ def test_config_and_feature_filters(auth_client, ingest_demographic_features, se
     )
 
     assert response.status_code == 400
+
+
+def test_feature_filter_with_version_uses_latest_result_within_that_version(
+    auth_client, ingest_demographic_features, session
+):
+    pipeline = (
+        session.query(Pipeline).filter_by(name="ParticipantDemographicsExtractor").one()
+    )
+    base_study = session.query(BaseStudy).order_by(BaseStudy.id).first()
+    original_result = (
+        session.query(PipelineStudyResult)
+        .join(PipelineConfig, PipelineStudyResult.config_id == PipelineConfig.id)
+        .filter(
+            PipelineStudyResult.base_study_id == base_study.id,
+            PipelineConfig.pipeline_id == pipeline.id,
+            PipelineConfig.version == "1.0.0",
+        )
+        .order_by(PipelineStudyResult.date_executed.desc())
+        .first()
+    )
+    assert original_result is not None
+
+    v2_config = PipelineConfig(
+        pipeline_id=pipeline.id,
+        version="2.0.0",
+        config_args={
+            "extractor_kwargs": {"extraction_model": "gpt-4-turbo"},
+            "model_version": 2,
+        },
+        has_embeddings=False,
+    )
+    session.add(v2_config)
+    session.flush()
+
+    session.add(
+        PipelineStudyResult(
+            base_study_id=base_study.id,
+            config_id=v2_config.id,
+            result_data={
+                "groups": [
+                    {
+                        "group_name": "patient",
+                        "age_mean": 5.0,
+                    }
+                ]
+            },
+            date_executed=original_result.date_executed + dt.timedelta(days=365),
+        )
+    )
+    session.commit()
+
+    response = auth_client.get(
+        "/api/base-studies/?"
+        "feature_filter=ParticipantDemographicsExtractor:1.0.0:groups[].age_mean>25"
+    )
+
+    assert response.status_code == 200
+    assert base_study.id in {result["id"] for result in response.json()["results"]}
+
+
+def test_invalid_pipeline_name_returns_validation_error(
+    auth_client, ingest_demographic_features
+):
+    response = auth_client.get(
+        "/api/base-studies/?feature_filter=NoSuchPipeline:groups[].age_mean>25"
+    )
+
+    assert response.status_code == 400
+    payload = response.json()
+    assert "Unknown pipeline" in payload["detail"]["message"]
+    assert payload["errors"][0]["field"] == "feature_filters"
+    assert payload["errors"][0]["code"] == "NOT_FOUND"
 
 
 def test_feature_display_and_pipeline_config(auth_client, ingest_demographic_features):
@@ -558,8 +2189,8 @@ def test_feature_display_and_pipeline_config(auth_client, ingest_demographic_fea
     assert "features" in result
     features = result["features"]["ParticipantDemographicsExtractor"]
     assert isinstance(features, dict)
-    if "predictions" in features:
-        assert isinstance(features["predictions"], dict)
+    if "groups" in features:
+        assert isinstance(features["groups"], list)
 
     # Test mismatched versions between feature_display and pipeline_config
     mismatch_response = auth_client.get(
@@ -619,30 +2250,30 @@ def test_feature_flatten(auth_client, ingest_demographic_features):
     ]
 
     # Verify features are flattened in dot notation
-    # Check nested predictions.groups objects are flattened
-    assert any(
-        key.startswith("predictions.groups") for key in flattened_features.keys()
-    )
+    # Check nested groups objects are flattened
+    assert any(key.startswith("groups") for key in flattened_features.keys())
 
     # Verify values are preserved after flattening
-    # Example: predictions.groups[0].age_mean should equal the nested value
-    if "predictions" in unflattened_features and unflattened_features[
-        "predictions"
-    ].get("groups"):
-        nested_age = unflattened_features["predictions"]["groups"][0].get("age_mean")
+    # Example: groups[0].age_mean should equal the nested value
+    if unflattened_features.get("groups"):
+        nested_age = unflattened_features["groups"][0].get("age_mean")
         if nested_age is not None:
-            flattened_age = flattened_features.get("predictions.groups[0].age_mean")
+            flattened_age = flattened_features.get("groups[0].age_mean")
             assert nested_age == flattened_age
 
 
 def test_invalid_search_query_cors(auth_client):
     """Test that invalid search query returns 400 with CORS headers"""
-    result = auth_client.get("/api/base-studies/?search=AND+OR")
+    origin = "https://client.example"
+    result = auth_client.get(
+        "/api/base-studies/?search=AND+OR",
+        headers={"Origin": origin},
+    )
     assert result.status_code == 400
     assert "Access-Control-Allow-Origin" in result.headers
-    assert "Access-Control-Allow-Methods" in result.headers
-    assert "Access-Control-Allow-Headers" in result.headers
-    assert result.headers["Access-Control-Allow-Origin"] == "*"
+    assert result.headers["Access-Control-Allow-Origin"] == origin
+    assert result.headers["Access-Control-Allow-Credentials"] == "true"
+    assert result.headers["Vary"] == "Origin"
 
 
 def test_base_studies_year_range(auth_client, session):
@@ -672,7 +2303,7 @@ def test_base_studies_year_range(auth_client, session):
 
 def test_base_studies_spatial_query_with_mock_data(auth_client, session):
     """Test spatial filtering for base studies endpoint with mock data"""
-    from neurostore.models import BaseStudy, Study, Analysis, Point
+    from neurostore.models import Analysis, BaseStudy, Point, Study
 
     # Create mock base study, study, analysis, and points
     base_study = BaseStudy(
@@ -737,7 +2368,7 @@ def test_base_studies_semantic_search(
 
 def test_is_active_filter_list(auth_client, session, ingest_neurosynth):
     """Test that inactive base studies are filtered out from list view"""
-    from neurostore.core import cache
+    from neurostore.extensions import cache
 
     # First get the list of all base studies
     resp = auth_client.get("/api/base-studies/")
@@ -797,16 +2428,10 @@ def test_superseded_by_relationship(session):
     """Test that superseded_by creates a valid relationship"""
     # Create two base studies
     study1 = BaseStudy(
-        name="Old Study",
-        doi="10.1234/old.study",
-        pmid="11111111",
-        is_active=False
+        name="Old Study", doi="10.1234/old.study", pmid="11111111", is_active=False
     )
     study2 = BaseStudy(
-        name="New Study",
-        doi="10.1234/new.study",
-        pmid="22222222",
-        is_active=True
+        name="New Study", doi="10.1234/new.study", pmid="22222222", is_active=True
     )
     session.add(study1)
     session.add(study2)
@@ -847,6 +2472,48 @@ def test_superseded_by_no_self_reference(session):
         # Expected behavior
 
 
+def test_doi_pmid_unique_applies_only_to_active_base_studies(session):
+    from sqlalchemy.exc import IntegrityError
+
+    shared_doi = "10.1234/active-only-unique"
+    shared_pmid = "77777777"
+    active = BaseStudy(
+        name="Active Study",
+        doi=shared_doi,
+        pmid=shared_pmid,
+        level="group",
+        is_active=True,
+    )
+    inactive_duplicate = BaseStudy(
+        name="Inactive Duplicate",
+        doi=shared_doi,
+        pmid=shared_pmid,
+        level="group",
+        is_active=False,
+    )
+    session.add_all([active, inactive_duplicate])
+    session.commit()
+
+    conflicting_active = BaseStudy(
+        name="Conflicting Active",
+        doi=shared_doi,
+        pmid=shared_pmid,
+        level="group",
+        is_active=True,
+    )
+    session.add(conflicting_active)
+
+    try:
+        session.commit()
+        assert False, "Should have raised IntegrityError for active duplicate"
+    except IntegrityError:
+        session.rollback()
+
+    rows = session.query(BaseStudy).filter_by(doi=shared_doi, pmid=shared_pmid).all()
+    assert len(rows) == 2
+    assert {row.is_active for row in rows} == {True, False}
+
+
 def test_is_active_not_exposed_in_api(auth_client, ingest_neurosynth):
     """Test that is_active and superseded_by are not exposed in API responses"""
     # Get a base study
@@ -859,3 +2526,109 @@ def test_is_active_not_exposed_in_api(auth_client, ingest_neurosynth):
         # Verify internal fields are not exposed
         assert "is_active" not in result
         assert "superseded_by" not in result
+
+
+def test_metadata_requests_throttle_semantic_scholar_by_configured_rps(
+    app, monkeypatch
+):
+    from neurostore.services import base_study_metadata_enrichment as metadata_service
+
+    class FakeResponse:
+        status_code = 200
+
+    class FakeClock:
+        def __init__(self):
+            self.now = 100.0
+            self.sleeps = []
+
+        def monotonic(self):
+            return self.now
+
+        def sleep(self, seconds):
+            self.sleeps.append(seconds)
+            self.now += seconds
+
+    fake_clock = FakeClock()
+    calls = []
+    metadata_service._reset_provider_rate_limits()
+    app.config["SEMANTIC_SCHOLAR_API_RPS"] = 1
+
+    monkeypatch.setattr(metadata_service.time, "monotonic", fake_clock.monotonic)
+    monkeypatch.setattr(metadata_service.time, "sleep", fake_clock.sleep)
+    monkeypatch.setattr(
+        metadata_service.requests,
+        "request",
+        lambda method, url, **kwargs: calls.append((method, url, kwargs))
+        or FakeResponse(),
+    )
+
+    metadata_service._request_with_retry(
+        "POST",
+        "https://api.semanticscholar.org/graph/v1/paper/batch",
+        headers={"x-api-key": "semantic-key"},
+    )
+    metadata_service._request_with_retry(
+        "POST",
+        "https://api.semanticscholar.org/graph/v1/paper/batch",
+        headers={"x-api-key": "semantic-key"},
+    )
+
+    assert len(calls) == 2
+    assert fake_clock.sleeps == pytest.approx([1.01])
+
+
+def test_metadata_requests_throttle_pubmed_by_key_presence(app, monkeypatch):
+    from neurostore.services import base_study_metadata_enrichment as metadata_service
+
+    class FakeResponse:
+        status_code = 200
+
+    class FakeClock:
+        def __init__(self):
+            self.now = 200.0
+            self.sleeps = []
+
+        def monotonic(self):
+            return self.now
+
+        def sleep(self, seconds):
+            self.sleeps.append(seconds)
+            self.now += seconds
+
+    fake_clock = FakeClock()
+    metadata_service._reset_provider_rate_limits()
+    app.config["PUBMED_API_RPS_WITH_KEY"] = 10
+    app.config["PUBMED_API_RPS_WITHOUT_KEY"] = 3
+
+    monkeypatch.setattr(metadata_service.time, "monotonic", fake_clock.monotonic)
+    monkeypatch.setattr(metadata_service.time, "sleep", fake_clock.sleep)
+    monkeypatch.setattr(
+        metadata_service.requests,
+        "request",
+        lambda *_args, **_kwargs: FakeResponse(),
+    )
+
+    metadata_service._request_with_retry(
+        "GET",
+        "https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/",
+        params={"api_key": "pubmed-key"},
+    )
+    metadata_service._request_with_retry(
+        "GET",
+        "https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/",
+        params={"api_key": "pubmed-key"},
+    )
+    metadata_service._reset_provider_rate_limits()
+    fake_clock.now = 300.0
+    metadata_service._request_with_retry(
+        "GET",
+        "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi",
+        params={},
+    )
+    metadata_service._request_with_retry(
+        "GET",
+        "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi",
+        params={},
+    )
+
+    assert fake_clock.sleeps == pytest.approx([0.11, (1.0 / 3.0) + 0.01])

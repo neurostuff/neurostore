@@ -10,16 +10,23 @@ import { INav } from './Navbar';
 import NavbarStyles from './Navbar.styles';
 import NavToolbarStyles from './NavToolbar.styles';
 
-const NavToolbar: React.FC<INav> = (props) => {
+const NavToolbar = (props: INav) => {
     const { isAuthenticated } = useAuth0();
     const navigate = useNavigate();
 
     return (
         <Toolbar disableGutters>
             <Box sx={NavbarStyles.toolbar}>
-                <Box component={NavLink} to="/" sx={NavbarStyles.logoContainer}>
-                    <Box component="img" sx={NavbarStyles.logo} alt="neurosynth compose logo" src="/static/synth.png" />
-                    <Typography sx={NavbarStyles.logoText}>neurosynth compose</Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Box component={NavLink} to="/" sx={NavbarStyles.logoContainer}>
+                        <Box
+                            component="img"
+                            sx={NavbarStyles.logo}
+                            alt="neurosynth compose logo"
+                            src="/static/synth.png"
+                        />
+                        <Typography sx={NavbarStyles.logoText}>neurosynth compose</Typography>
+                    </Box>
                 </Box>
 
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>

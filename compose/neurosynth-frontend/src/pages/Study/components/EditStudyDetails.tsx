@@ -15,7 +15,7 @@ import {
 import { StudyDetails } from 'pages/Study/store/StudyStore.helpers';
 import React from 'react';
 
-const EditStudyDetails: React.FC = React.memo(() => {
+const EditStudyDetails = React.memo(() => {
     const name = useStudyName();
     const description = useStudyDescription();
     const authors = useStudyAuthors();

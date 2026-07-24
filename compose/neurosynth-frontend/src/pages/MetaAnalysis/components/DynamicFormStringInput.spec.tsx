@@ -6,7 +6,7 @@ import DynamicFormStringInput from './DynamicFormStringInput';
 describe('DynamicFormStringInput Component', () => {
     const mockOnUpdate = vi.fn();
 
-    it('should render', () => {
+    it('should render', async () => {
         render(
             <DynamicFormStringInput
                 value={null}
@@ -17,7 +17,7 @@ describe('DynamicFormStringInput Component', () => {
         );
     });
 
-    it('should show the given value', () => {
+    it('should show the given value', async () => {
         render(
             <DynamicFormStringInput
                 value="abc"
@@ -30,7 +30,7 @@ describe('DynamicFormStringInput Component', () => {
         expect(screen.getByDisplayValue('abc')).toBeInTheDocument();
     });
 
-    it('should send the update', () => {
+    it('should send the update', async () => {
         render(
             <DynamicFormStringInput
                 value=""
@@ -43,9 +43,9 @@ describe('DynamicFormStringInput Component', () => {
         const inputElement = screen.getByLabelText('text');
 
         // focus on input element
-        userEvent.click(inputElement);
+        await userEvent.click(inputElement);
 
-        userEvent.type(inputElement, 'a');
+        await userEvent.type(inputElement, 'a');
         expect(mockOnUpdate).toHaveBeenCalledWith({
             null_iter: 'a',
         });

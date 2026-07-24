@@ -5,13 +5,13 @@ import { useEffect, useState } from 'react';
 import { IAnalysesSelection } from 'pages/MetaAnalysis/components/CreateMetaAnalysisSpecificationDialogBase.types';
 import { getFilteredAnnotationNotes } from './SelectAnalysesComponent.helpers';
 
-const SelectAnalysesSummaryComponent: React.FC<{
+const SelectAnalysesSummaryComponent = (props: {
     annotationdId: string;
     studysetId: string;
     selectedValue: IAnalysesSelection | undefined;
-}> = (props) => {
+}) => {
     const { data: annotation } = useGetAnnotationById(props.annotationdId);
-    const { data: studyset } = useGetStudysetById(props.studysetId, true);
+    const { data: studyset } = useGetStudysetById(props.studysetId, false, true);
 
     const [count, setCount] = useState({
         studies: 0,
@@ -55,7 +55,11 @@ const SelectAnalysesSummaryComponent: React.FC<{
                     return;
                 }
 
-                numCoordinatesSelected = numCoordinatesSelected + (analysis.points || []).length;
+                if (typeof analysis.point_count !== 'number') {
+                    throw new Error('Expected analysis.point_count in summary studyset payload');
+                }
+
+                numCoordinatesSelected = numCoordinatesSelected + analysis.point_count;
             });
         });
 

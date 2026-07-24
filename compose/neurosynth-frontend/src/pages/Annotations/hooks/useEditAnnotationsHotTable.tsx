@@ -3,7 +3,6 @@ import { createColWidths, noteKeyObjToArr } from 'components/HotTables/HotTables
 import { ColumnSettings } from 'handsontable/settings';
 import { useGetAnnotationById } from 'hooks';
 import { useEffect, useMemo, useState } from 'react';
-import { DetailedSettings as MergeCellsSettings } from 'handsontable/plugins/mergeCells';
 import { NoteCollectionReturn } from 'neurostore-typescript-sdk';
 import { AnnotationNoteValue, NoteKeyType } from 'components/HotTables/HotTables.types';
 import {
@@ -12,6 +11,7 @@ import {
     getMergeCells,
     createColumns,
     getRowHeights,
+    MergeCellRange,
 } from 'pages/Annotations/components/EditAnnotationsHotTable.helpers';
 
 const useEditAnnotationsHotTable = (annotationId?: string, disableEdit?: boolean) => {
@@ -22,21 +22,23 @@ const useEditAnnotationsHotTable = (annotationId?: string, disableEdit?: boolean
     } = useGetAnnotationById(annotationId);
     const { user } = useAuth0();
     const [annotationsHotState, setAnnotationsHotState] = useState<{
-        hotDataToStudyMapping: Map<number, { studyId: string; analysisId: string }>;
+        hotDataToStudyMapping: Map<number, { studyId: string; analysisId: string; isEdited: boolean }>;
         noteKeys: NoteKeyType[];
         hotData: AnnotationNoteValue[][];
         hotColumns: ColumnSettings[];
-        mergeCells: MergeCellsSettings[];
+        mergeCells: MergeCellRange[];
         isEdited: boolean;
         isReordered: boolean;
+        noteKeysHaveChanged: boolean;
     }>({
-        hotDataToStudyMapping: new Map<number, { studyId: string; analysisId: string }>(),
+        hotDataToStudyMapping: new Map<number, { studyId: string; analysisId: string; isEdited: boolean }>(),
         noteKeys: [],
         hotData: [],
         hotColumns: [],
         mergeCells: [],
         isEdited: false,
         isReordered: false,
+        noteKeysHaveChanged: false,
     });
 
     useEffect(() => {
@@ -68,6 +70,7 @@ const useEditAnnotationsHotTable = (annotationId?: string, disableEdit?: boolean
             mergeCells: getMergeCells(hotDataToStudyMapping),
             isEdited: false,
             isReordered: false,
+            noteKeysHaveChanged: false,
         });
     }, [annotations, disableEdit]);
 

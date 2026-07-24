@@ -1,4 +1,3 @@
-version: "2"
 services:
   neurostore:
     image: neurostore
@@ -18,10 +17,91 @@ services:
       - ./:/store
       - ${FILE_DIR}:/file-data
       - ${ACE_DIR}:/ace
-    command: /usr/local/bin/gunicorn -w 8 -b :8000 neurostore.core:connexion_app --worker-class uvicorn.workers.UvicornWorker --log-level debug --timeout 120
+    command: /usr/local/bin/gunicorn -w 8 -b :8000 neurostore.core:asgi_app --worker-class uvicorn.workers.UvicornWorker --log-level debug --timeout 120
     env_file:
       - .env
-    container_name: neurostore
+  store_outbox_worker:
+    image: neurostore
+    restart: always
+    depends_on:
+      neurostore:
+        condition: service_started
+      store-pgsql17:
+        condition: service_healthy
+      store_redis:
+        condition: service_healthy
+    volumes:
+      - ./backend/migrations:/migrations
+      - ./:/store
+    command: flask process-base-study-flag-outbox --loop
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "flask check-base-study-flag-outbox",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    env_file:
+      - .env
+
+  store_metadata_outbox_worker:
+    image: neurostore
+    restart: always
+    depends_on:
+      neurostore:
+        condition: service_started
+      store-pgsql17:
+        condition: service_healthy
+      store_redis:
+        condition: service_healthy
+    volumes:
+      - ./backend/migrations:/migrations
+      - ./:/store
+    command: flask process-base-study-metadata-outbox --loop
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "flask check-base-study-metadata-outbox",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    env_file:
+      - .env
+
+  store_release_worker:
+    image: neurostore
+    restart: always
+    depends_on:
+      neurostore:
+        condition: service_started
+      store-pgsql17:
+        condition: service_healthy
+      store_redis:
+        condition: service_healthy
+    volumes:
+      - ./backend/migrations:/migrations
+      - ./:/store
+      - ${FILE_DIR}:/file-data
+    command: >
+      bash -lc 'while true; do
+      if
+      flask process-base-study-flag-outbox --no-loop &&
+      flask process-base-study-metadata-outbox --no-loop &&
+      flask build-neurostore-studyset-release --nightly --monthly-if-due;
+      then
+      sleep "$${NEUROSTORE_STUDYSET_RELEASE_INTERVAL_SECONDS:-86400}";
+      else
+      sleep "$${NEUROSTORE_STUDYSET_RELEASE_RETRY_SECONDS:-300}";
+      fi;
+      done'
+    env_file:
+      - .env
   
   store_redis:
     image: redis
@@ -46,6 +126,9 @@ services:
     environment:
       - VIRTUAL_HOST=${V_HOST}
       - LETSENCRYPT_HOST=${V_HOST}
+    networks:
+      - default
+      - proxy_shared
 
   store-pgsql:
     image: store-pgsql
@@ -95,8 +178,12 @@ services:
     env_file:
       - .env
     environment:
-      DATABASE_URL: "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:5432/${POSTGRES_DB}"
       RAILS_RELATIVE_URL_ROOT: "/pghero"
+    volumes:
+      - ./postgres/resolve-app-db.sh:/usr/local/bin/resolve-app-db.sh:ro
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - 'export PATH="/usr/local/bundle/bin:${PATH}"; db_name="$(/usr/local/bin/resolve-app-db.sh neurostore)"; export DATABASE_URL="postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:5432/$${db_name}"; exec puma -C /app/config/puma.rb'
     depends_on:
       store-pgsql17:
         condition: service_healthy
@@ -117,6 +204,10 @@ services:
     volumes:
       - grafana_data:/var/lib/grafana
       - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+      - ./postgres/resolve-app-db.sh:/usr/local/bin/resolve-app-db.sh:ro
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - 'export PATH="/usr/share/grafana/bin:${PATH}"; export POSTGRES_DB="$(/usr/local/bin/resolve-app-db.sh neurostore)"; exec /run.sh'
     depends_on:
       store-pgsql17:
         condition: service_healthy
@@ -129,6 +220,6 @@ volumes:
   postgres17_data:
 
 networks:
-  default:
-    external:
-      name: nginx-proxy
+  proxy_shared:
+    name: ${SHARED_PROXY_NETWORK:-nginx-proxy}
+    external: true

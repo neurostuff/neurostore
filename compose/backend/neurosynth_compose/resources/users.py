@@ -1,12 +1,13 @@
 import connexion
-from flask import request, abort
+from flask import abort, request
+from sqlalchemy import select
 from webargs.flaskparser import parser
 
-from .analysis import ListView, ObjectView, _make_json_response
-from ..models.auth import User
-from ..schemas import UserSchema  # noqa E401
-from ..database import db
-from sqlalchemy import select
+from neurosynth_compose.database import db
+from neurosynth_compose.models.auth import User
+from neurosynth_compose.resources.common import make_json_response
+from neurosynth_compose.resources.view_core import ListView, ObjectView
+from neurosynth_compose.schemas import UserSchema  # noqa E401
 
 
 class UsersView(ObjectView, ListView):
@@ -29,7 +30,7 @@ class UsersView(ObjectView, ListView):
         db.session.commit()
 
         payload = self.__class__._schema().dump(record)
-        return _make_json_response(payload)
+        return make_json_response(payload)
 
     def put(self, id):
         current_user = db.session.execute(
@@ -53,4 +54,4 @@ class UsersView(ObjectView, ListView):
         db.session.commit()
 
         payload = self.__class__._schema().dump(record)
-        return _make_json_response(payload)
+        return make_json_response(payload)

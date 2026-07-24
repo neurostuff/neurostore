@@ -3,7 +3,8 @@ import { Button, IconButton } from '@mui/material';
 import React, { useState } from 'react';
 import BaseDialog from './BaseDialog';
 
-const HelpDialog: React.FC<{ dialogTitle: string }> = (props) => {
+const HelpDialog = (props: { dialogTitle: string;
+    children?: React.ReactNode}) => {
     const [isOpen, setIsOpen] = useState(false);
 
     return (

@@ -2,14 +2,14 @@ import { Box, LinkProps, Tooltip, Typography } from '@mui/material';
 import TextEdit, { ITextEdit } from 'components/TextEdit/TextEdit';
 import DisplayLink from './DisplayLink';
 
-const EditableDisplayLink: React.FC<{
+const EditableDisplayLink = ({  linkProps, label, noLabelText = '', textEditProps, stubId, tooltip  }: {
     linkProps: LinkProps;
     label: string;
     textEditProps: ITextEdit;
     noLabelText: string;
     stubId: string; // for resetting the textEdit component
     tooltip?: string;
-}> = ({ linkProps, label, noLabelText = '', textEditProps, stubId, tooltip }) => {
+}) => {
     return (
         <Box sx={{ display: 'flex', alignItems: 'center', marginRight: '0.5rem' }}>
             <TextEdit

@@ -2,11 +2,11 @@ import { Box, Button, Typography } from '@mui/material';
 import { SystemStyleObject } from '@mui/system';
 import React, { useEffect, useRef, useState } from 'react';
 
-const TextExpansion: React.FC<{
+const TextExpansion = (props: {
     text: string;
     sx?: SystemStyleObject | SystemStyleObject[];
     textSx?: SystemStyleObject;
-}> = (props) => {
+}) => {
     const [expanded, setExpanded] = useState(false);
     const [isOverflowingElement, setIsOverflowing] = useState(false);
     const textRef = useRef<HTMLSpanElement>(null);

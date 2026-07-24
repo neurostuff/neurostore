@@ -25,7 +25,7 @@ interface ICurationEditableStubSummaryHeader {
     onMoveToNextStub: () => void;
 }
 
-const CurationEditableStubSummaryHeader: React.FC<ICurationEditableStubSummaryHeader> = React.memo((props) => {
+const CurationEditableStubSummaryHeader = React.memo((props: ICurationEditableStubSummaryHeader) => {
     const { user } = useAuth0();
     const canEdit = useUserCanEdit(user?.sub || undefined);
 

@@ -4,12 +4,12 @@ import NeurosynthPopper from 'components/NeurosynthPopper/NeurosynthPopper';
 import ProgressLoader from 'components/ProgressLoader';
 import { useProjectCurationColumns, useProjectExclusionTags, useProjectName } from 'pages/Project/store/ProjectStore';
 import { useRef, useState } from 'react';
-import { downloadFile } from '../Curation.helpers';
+import { downloadFile } from 'helpers/downloadFile.helpers';
 import { stubsToBibtex, stubsToCSV } from './CurationDownloadSummary.helpers';
 
-const CurationDownloadSummaryButton: React.FC<{
+const CurationDownloadSummaryButton = ({  buttonGroupProps = {}  }: {
     buttonGroupProps?: ButtonGroupProps;
-}> = ({ buttonGroupProps = {} }) => {
+}) => {
     const [optionsIsOpen, setOptionsIsOpen] = useState(false);
     const anchorRef = useRef(null);
     const curationColumns = useProjectCurationColumns();

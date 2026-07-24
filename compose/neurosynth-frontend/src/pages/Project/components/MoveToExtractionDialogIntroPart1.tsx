@@ -1,8 +1,8 @@
 import { Box, Button, Link, Typography } from '@mui/material';
 
-const MoveToExtractionDialogIntroductionPart1: React.FC<{
+const MoveToExtractionDialogIntroductionPart1 = (props: {
     onNext: () => void;
-}> = (props) => {
+}) => {
     return (
         <Box>
             <Typography sx={{ fontWeight: 'bold' }} gutterBottom>

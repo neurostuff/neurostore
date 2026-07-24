@@ -21,27 +21,18 @@ type StubLike = Pick<ICurationStubStudy, 'id'>;
 export const mapStubsToStudysetPayload = (
     stubs: Array<StubLike>,
     stubBaseStudies: Array<BaseStudyReturn>,
-    existingStudyIds?: Set<string>,
-    lockedStubToStudyId?: Map<string, string>
+    existingStudyIds?: Set<string>
 ): Array<{ id: string; curation_stub_uuid: string }> => {
     const payload: Array<{ id: string; curation_stub_uuid: string }> = [];
 
     stubs.forEach((stub, idx) => {
-        const lockedStudyId = lockedStubToStudyId?.get(stub.id);
-        if (lockedStudyId) {
-            payload.push({
-                id: lockedStudyId,
-                curation_stub_uuid: stub.id,
-            });
-            return;
-        }
-
         const stubBaseStudy = stubBaseStudies[idx];
         if (!stubBaseStudy) return;
 
         const versions = Array.isArray(stubBaseStudy.versions) ? (stubBaseStudy.versions as Array<StudyReturn>) : [];
 
-        // Prefer a version that already exists in the studyset
+        // Prefer a version that already exists in the studyset.
+        // Note: The backend will deduplicate versions, so we dont have to worry about the same version appearing multiple times in the studyset.
         const foundVersion = versions.find((studyVersion) => existingStudyIds?.has(studyVersion.id || ''));
 
         const chosenVersion = foundVersion || selectBestBaseStudyVersion(versions);

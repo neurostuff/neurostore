@@ -4,40 +4,43 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "neurosynth_compose"
-version = "0.10.0"
+version = "0.19.1"
 description = "neurosynth compose"
 authors = [
     { name="James Kent", email="jamesdkent21@gmail.com" }
 ]
 license = { text = "MIT" }
 dependencies = [
-    "auth0-python~=4.13",
+    "auth0-python>=5.3,<7.0",
     "authlib~=1.6",
     "celery~=5.0",
     "connexion[swagger-ui,uvicorn,flask]==3.3.0",
     "flask~=3.1",
-    "flask-admin~=1.6",
+    "flask-admin~=2.0",
+    "flask-orjson~=2.0",
     "Flask-CeleryExt~=0.5",
     "flask-cors~=6.0",
     "flask-migrate~=4.1",
     "Flask-Security-Too~=5.5",
     "flask-shell-ipython~=0.4",
     "flask-sqlalchemy~=3.1",
-    "gunicorn~=24.1",
+    "gunicorn>=25,<27",
     "ipython~=9.6",
     "marshmallow~=4.0",
+    "orjson~=3.10",
     "pandas~=3.0",
     "psycopg2-binary~=2.8",
-    "pyld~=2.0",
+    "pyld>=2,<4",
     "python-jose~=3.3",
-    "redis~=7.0",
+    "redis>=7,<9",
     "scipy~=1.9",
     "shortuuid~=1.0",
     "sqlalchemy~=2.0",
     "sqlalchemy-utils~=0.36",
+    "starlette>=1.0.0,<2",
     "webargs~=8.7",
-    "wrapt~=2.0",
-    "NiMARE==0.7.0",
+    "wrapt~=2.1",
+    "NiMARE==0.20.0",
     "pynv @ git+https://github.com/NeuroVault/pynv.git#egg=pynv",
     "neurostore-sdk @ git+https://github.com/neurostuff/neurostore-python-sdk.git#egg=neurostore-sdk"
 ]

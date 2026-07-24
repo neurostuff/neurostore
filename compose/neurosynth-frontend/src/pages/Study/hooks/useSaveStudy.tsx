@@ -10,7 +10,7 @@ import {
     useProjectId,
 } from 'pages/Project/store/ProjectStore';
 import { useState } from 'react';
-import { useQueryClient } from 'react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { useUpdateDBWithAnnotationFromStore, useUpdateAnnotationNotes } from 'stores/AnnotationStore.actions';
 import {
@@ -66,7 +66,7 @@ const useSaveStudy = () => {
 
     const handleUpdateBothInDB = async () => {
         try {
-            const updatedStudy = await updateStudyInDB(annotationId as string);
+            const updatedStudy = await updateStudyInDB();
             const updatedNotes = [...(notes || [])];
 
             // for new analyses, temporary uuids() are given to them. During study update, any new analyses are instantiated
@@ -90,8 +90,12 @@ const useSaveStudy = () => {
             unsetUnloadHandler('study');
             unsetUnloadHandler('annotation');
 
-            queryClient.invalidateQueries('studies');
-            queryClient.invalidateQueries('annotations');
+            queryClient.invalidateQueries({
+                queryKey: ['studies']
+            });
+            queryClient.invalidateQueries({
+                queryKey: ['annotations']
+            });
 
             enqueueSnackbar('Study and annotation saved', { variant: 'success' });
         } catch (e) {
@@ -102,11 +106,15 @@ const useSaveStudy = () => {
 
     const handleUpdateStudyInDB = async () => {
         try {
-            await updateStudyInDB(annotationId as string);
+            await updateStudyInDB();
             unsetUnloadHandler('study');
             unsetUnloadHandler('annotation');
-            queryClient.invalidateQueries('studies');
-            queryClient.invalidateQueries('annotations');
+            queryClient.invalidateQueries({
+                queryKey: ['studies']
+            });
+            queryClient.invalidateQueries({
+                queryKey: ['annotations']
+            });
 
             enqueueSnackbar('Study saved', { variant: 'success' });
         } catch (e) {
@@ -120,7 +128,9 @@ const useSaveStudy = () => {
             await updateAnnotationInDB();
             unsetUnloadHandler('study');
             unsetUnloadHandler('annotation');
-            queryClient.invalidateQueries('annotations');
+            queryClient.invalidateQueries({
+                queryKey: ['annotations']
+            });
             enqueueSnackbar('Annotation saved', { variant: 'success' });
         } catch (e) {
             console.error(e);
@@ -195,7 +205,7 @@ const useSaveStudy = () => {
 
             const updatedClone = (await API.NeurostoreServices.StudiesService.studiesIdGet(clonedStudyId, true)).data;
 
-            // 3. update the studyset containing the study with our new clone
+            // 2. update the studyset containing the study with our new clone
             const updatedStudies = [...(studyset.studies as string[])];
             updatedStudies[currentStudyBeingEditedIndex] = clonedStudyId;
 
@@ -217,13 +227,13 @@ const useSaveStudy = () => {
                     studies: studiesPayload,
                 },
             });
-            queryClient.invalidateQueries(STUDYSET_QUERY_STRING);
+            queryClient.invalidateQueries({ queryKey: [STUDYSET_QUERY_STRING] });
 
-            // 4. update the project as this keeps track of completion status of studies
+            // 3. update the project as this keeps track of completion status of studies
             replaceStudyWithNewClonedStudy(storeStudy.id, clonedStudyId);
             updateExtractionTableStateStudySwapInStorage(projectId, storeStudy.id, clonedStudyId);
 
-            // 5. as this is a completely new study, that we've just created, the annotations are cleared.
+            // 4. as this is a completely new study, that we've just created, the annotations are cleared.
             // We need to update the annotations with our latest changes, and associate newly created analyses with their corresponding analysis changes.
             //      - we do this based on the analysis names since the IDs are reinitialized by neurostore
             const updatedNotes = [...(notes || [])];

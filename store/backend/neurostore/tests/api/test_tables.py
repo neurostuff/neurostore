@@ -1,4 +1,4 @@
-from ...models import Study, Table, User
+from neurostore.models import Study, Table, User
 
 
 def _assign_user_to_study_tree(study, user):

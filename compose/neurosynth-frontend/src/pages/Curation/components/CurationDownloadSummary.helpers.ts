@@ -3,6 +3,7 @@ import { ICurationColumn, ICurationStubStudy } from '../Curation.types';
 import { Cite } from '@citation-js/core';
 import '@citation-js/plugin-bibtex';
 import '@citation-js/plugin-doi';
+import { toCSV } from 'helpers/downloadFile.helpers';
 import { generateBibtex } from 'hooks/external/useGetBibtexCitations';
 import { ITag } from 'hooks/projects/useGetProjects';
 
@@ -32,33 +33,24 @@ export const stubsToCSV = (curationColumns: ICurationColumn[], exclusionTags: IT
         };
     });
 
-    return [
-        {
-            title: 'Title',
-            authors: 'Authors',
-            pmid: 'PMID',
-            pmcid: 'PMCID',
-            doi: 'DOI',
-            articleYear: 'Year',
-            journal: 'Journal',
-            articleLink: 'Link',
-            source: 'Source',
-            status: 'Status', // curation column status
-            exclusion: 'Exclusion',
-            Tags: 'Tags',
-            neurostoreId: 'Neurosynth ID',
-        },
-        ...mappedCSVStudyObjs,
-    ]
-        .map((study) => {
-            const studyValues = Object.values(study); // order is respected
-            return studyValues
-                .map(String)
-                .map((value) => value.replaceAll('"', '""'))
-                .map((value) => `"${value}"`)
-                .join(',');
-        })
-        .join('\r\n');
+    return toCSV(
+        [
+            'title',
+            'authors',
+            'pmid',
+            'pmcid',
+            'doi',
+            'articleYear',
+            'journal',
+            'articleLink',
+            'source',
+            'status',
+            'exclusion',
+            'tags',
+            'neurostoreId',
+        ],
+        mappedCSVStudyObjs
+    );
 };
 
 export const stubsToBibtex = (curationColumns: ICurationColumn[], exclusionTags: ITag[]) => {

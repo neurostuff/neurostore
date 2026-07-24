@@ -1,19 +1,83 @@
 from datetime import datetime, timezone
 
-from ...models import (
-    Studyset,
-    Annotation,
-    User,
-    BaseStudy,
-    Study,
+from sqlalchemy import event
+
+from neurostore.database import db
+from neurostore.models import (
     Analysis,
-    StudysetStudy,
+    Annotation,
     AnnotationAnalysis,
+    BaseStudy,
     Pipeline,
     PipelineConfig,
     PipelineStudyResult,
+    Study,
+    Studyset,
+    StudysetStudy,
+    User,
 )
-from ..utils import ordered_note_keys
+from neurostore.tests.utils import ordered_note_keys
+
+
+def _is_annotation_analysis_concat_id_lookup(statement):
+    normalized_statement = " ".join(statement.lower().split())
+    return (
+        "from annotation_analyses" in normalized_statement
+        and "annotation_analyses.annotation_id" in normalized_statement
+        and "||" in normalized_statement
+        and "limit" in normalized_statement
+    )
+
+
+def _is_annotation_analysis_pk_lookup(statement):
+    normalized_statement = " ".join(statement.lower().split())
+    return (
+        normalized_statement.startswith("select")
+        and "from annotation_analyses" in normalized_statement
+        and "where annotation_analyses.annotation_id =" in normalized_statement
+        and "annotation_analyses.analysis_id =" in normalized_statement
+    )
+
+
+def _is_annotation_analysis_user_id_pk_lookup(statement):
+    normalized_statement = " ".join(statement.lower().split())
+    return (
+        normalized_statement.startswith("select")
+        and "from annotation_analyses" in normalized_statement
+        and "annotation_analyses.user_id" in normalized_statement
+        and "where annotation_analyses.annotation_id =" in normalized_statement
+        and "annotation_analyses.analysis_id =" in normalized_statement
+    )
+
+
+def _is_analysis_id_lookup(statement):
+    normalized_statement = " ".join(statement.lower().split())
+    return (
+        normalized_statement.startswith("select")
+        and "from analyses" in normalized_statement
+        and "where analyses.id =" in normalized_statement
+        and "limit" in normalized_statement
+    )
+
+
+def _is_studyset_study_lookup(statement):
+    normalized_statement = " ".join(statement.lower().split())
+    return (
+        normalized_statement.startswith("select")
+        and "from studyset_studies" in normalized_statement
+        and "studyset_studies.study_id =" in normalized_statement
+        and "studyset_studies.studyset_id =" in normalized_statement
+        and "limit" in normalized_statement
+    )
+
+
+def _is_user_external_id_lookup(statement):
+    normalized_statement = " ".join(statement.lower().split())
+    return (
+        normalized_statement.startswith("select")
+        and "from users" in normalized_statement
+        and "where users.external_id =" in normalized_statement
+    )
 
 
 def _create_annotation_with_two_analyses(session, user, analysis_orders=None):
@@ -50,28 +114,28 @@ def _create_annotation_with_two_analyses(session, user, analysis_orders=None):
     session.add(annotation)
     session.flush()
 
-    annotation.annotation_analyses = [
-        AnnotationAnalysis(
-            analysis=analysis1,
-            studyset_study=studyset_study,
-            annotation=annotation,
-            note={"existing": "A1"},
-            user=user,
-            study_id=analysis1.study_id,
-            studyset_id=studyset_study.studyset_id,
-        ),
-        AnnotationAnalysis(
-            analysis=analysis2,
-            studyset_study=studyset_study,
-            annotation=annotation,
-            note={"existing": "A2"},
-            user=user,
-            study_id=analysis2.study_id,
-            studyset_id=studyset_study.studyset_id,
-        ),
-    ]
-
-    session.add_all(annotation.annotation_analyses)
+    with session.no_autoflush:
+        annotation.annotation_analyses = [
+            AnnotationAnalysis(
+                analysis=analysis1,
+                studyset_study=studyset_study,
+                annotation=annotation,
+                note={"existing": "A1"},
+                user=user,
+                study_id=analysis1.study_id,
+                studyset_id=studyset_study.studyset_id,
+            ),
+            AnnotationAnalysis(
+                analysis=analysis2,
+                studyset_study=studyset_study,
+                annotation=annotation,
+                note={"existing": "A2"},
+                user=user,
+                study_id=analysis2.study_id,
+                studyset_id=studyset_study.studyset_id,
+            ),
+        ]
+        session.add_all(annotation.annotation_analyses)
     session.commit()
     return annotation, base_study
 
@@ -97,7 +161,44 @@ def test_blank_annotation_populates_note_fields(
     auth_client, ingest_neurosynth, session
 ):
     dset = Studyset.query.first()
-    note_keys = ordered_note_keys({"included": "boolean", "quality": "string"})
+    note_keys = ordered_note_keys(
+        {
+            "included": "boolean",
+            "flag": "boolean",
+            "quality": "string",
+            "score": "number",
+        }
+    )
+    payload = {
+        "studyset": dset.id,
+        "note_keys": note_keys,
+        "name": "with defaults",
+    }
+
+    resp = auth_client.post("/api/annotations/", data=payload)
+    assert resp.status_code == 200
+    assert resp.json()["note_keys"]["included"]["default"] is True
+    assert resp.json()["note_keys"]["flag"]["default"] is False
+    assert resp.json()["note_keys"]["quality"]["default"] is None
+    assert resp.json()["note_keys"]["score"]["default"] is None
+
+    for note in resp.json()["notes"]:
+        assert set(note["note"].keys()) == set(note_keys.keys())
+        assert note["note"]["included"] is True
+        assert note["note"]["flag"] is False
+        assert note["note"]["quality"] is None
+        assert note["note"]["score"] is None
+
+
+def test_blank_annotation_populates_note_fields_with_defaults(
+    auth_client, ingest_neurosynth, session
+):
+    dset = Studyset.query.first()
+    note_keys = {
+        "included": {"type": "boolean", "order": 0, "default": False},
+        "quality": {"type": "string", "order": 1, "default": "low"},
+        "score": {"type": "number", "order": 2, "default": 1.5},
+    }
     payload = {
         "studyset": dset.id,
         "note_keys": note_keys,
@@ -109,7 +210,131 @@ def test_blank_annotation_populates_note_fields(
 
     for note in resp.json()["notes"]:
         assert set(note["note"].keys()) == set(note_keys.keys())
-        assert all(value is None for value in note["note"].values())
+        assert note["note"]["included"] is False
+        assert note["note"]["quality"] == "low"
+        assert note["note"]["score"] == 1.5
+
+
+def test_put_annotation_assigns_missing_note_key_defaults(
+    auth_client, ingest_neurosynth, session
+):
+    dset = Studyset.query.first()
+    payload = {
+        "studyset": dset.id,
+        "note_keys": ordered_note_keys(
+            {
+                "included": "boolean",
+                "flag": "boolean",
+                "quality": "string",
+                "score": "number",
+            }
+        ),
+        "name": "normalize included default",
+    }
+
+    post_resp = auth_client.post("/api/annotations/", data=payload)
+    assert post_resp.status_code == 200
+
+    notes = [
+        {
+            "study": note["study"],
+            "analysis": note["analysis"],
+            "note": note["note"],
+        }
+        for note in post_resp.json()["notes"]
+    ]
+    put_resp = auth_client.put(
+        f"/api/annotations/{post_resp.json()['id']}",
+        data={
+            "note_keys": {
+                "included": {"type": "boolean", "order": 0},
+                "flag": {"type": "boolean", "order": 1},
+                "quality": {"type": "string", "order": 2},
+                "score": {"type": "number", "order": 3},
+            },
+            "notes": notes,
+        },
+    )
+
+    assert put_resp.status_code == 200
+    assert put_resp.json()["note_keys"]["included"]["default"] is True
+    assert put_resp.json()["note_keys"]["flag"]["default"] is False
+    assert put_resp.json()["note_keys"]["quality"]["default"] is None
+    assert put_resp.json()["note_keys"]["score"]["default"] is None
+
+
+def test_put_annotation_preserves_explicit_note_key_defaults(
+    auth_client, ingest_neurosynth, session
+):
+    dset = Studyset.query.first()
+    post_resp = auth_client.post(
+        "/api/annotations/",
+        data={
+            "studyset": dset.id,
+            "note_keys": ordered_note_keys({"included": "boolean"}),
+            "name": "preserve explicit defaults",
+        },
+    )
+    assert post_resp.status_code == 200
+
+    put_resp = auth_client.put(
+        f"/api/annotations/{post_resp.json()['id']}",
+        data={
+            "note_keys": {
+                "included": {"type": "boolean", "order": 0, "default": None},
+                "flag": {"type": "boolean", "order": 1, "default": True},
+                "quality": {"type": "string", "order": 2, "default": "low"},
+                "score": {"type": "number", "order": 3, "default": 1.5},
+            }
+        },
+    )
+
+    assert put_resp.status_code == 200
+    assert put_resp.json()["note_keys"]["included"]["default"] is None
+    assert put_resp.json()["note_keys"]["flag"]["default"] is True
+    assert put_resp.json()["note_keys"]["quality"]["default"] == "low"
+    assert put_resp.json()["note_keys"]["score"]["default"] == 1.5
+
+
+def test_put_annotation_note_keys_only_updates_existing_notes(
+    auth_client, ingest_neurosynth, session
+):
+    dset = Studyset.query.first()
+    notes = [
+        {"study": s.id, "analysis": a.id, "note": {"foo": a.id, "doo": s.id}}
+        for s in dset.studies
+        for a in s.analyses
+    ]
+    post_resp = auth_client.post(
+        "/api/annotations/",
+        data={
+            "studyset": dset.id,
+            "notes": notes,
+            "note_keys": ordered_note_keys({"foo": "string", "doo": "string"}),
+            "name": "note-key-only update",
+        },
+    )
+
+    assert post_resp.status_code == 200
+
+    put_resp = auth_client.put(
+        f"/api/annotations/{post_resp.json()['id']}",
+        data={
+            "note_keys": {
+                "foo": {"type": "string", "order": 0},
+                "bar": {"type": "boolean", "order": 1, "default": False},
+            }
+        },
+    )
+
+    assert put_resp.status_code == 200
+    assert set(put_resp.json()["note_keys"].keys()) == {"foo", "bar"}
+    assert put_resp.json()["note_keys"]["foo"]["default"] is None
+    assert put_resp.json()["note_keys"]["bar"]["default"] is False
+    for note in put_resp.json()["notes"]:
+        assert set(note["note"].keys()) == {"foo", "bar"}
+        assert note["note"]["foo"] == note["analysis"]
+        assert note["note"]["bar"] is False
 
 
 def test_annotation_rejects_empty_note(auth_client, ingest_neurosynth, session):
@@ -194,6 +419,43 @@ def test_get_annotation_orders_notes_by_analysis_order(auth_client, session):
         "Analysis 2",
         "Analysis 1",
     ]
+
+
+def test_get_annotation_avoids_per_note_annotation_analysis_pk_lookup(
+    auth_client, ingest_neurosynth, session
+):
+    dset = Studyset.query.first()
+    data = [
+        {"study": s.id, "analysis": a.id, "note": {"foo": a.id}}
+        for s in dset.studies
+        for a in s.analyses
+    ]
+    payload = {
+        "studyset": dset.id,
+        "notes": data,
+        "note_keys": ordered_note_keys({"foo": "string"}),
+        "name": "get-perf-test",
+    }
+    post_resp = auth_client.post("/api/annotations/", data=payload)
+    assert post_resp.status_code == 200
+    annotation_id = post_resp.json()["id"]
+
+    pk_lookups = []
+
+    def before_cursor_execute(
+        conn, cursor, statement, parameters, context, executemany
+    ):
+        if _is_annotation_analysis_pk_lookup(statement):
+            pk_lookups.append(statement)
+
+    event.listen(db.engine, "before_cursor_execute", before_cursor_execute)
+    try:
+        get_resp = auth_client.get(f"/api/annotations/{annotation_id}")
+    finally:
+        event.remove(db.engine, "before_cursor_execute", before_cursor_execute)
+
+    assert get_resp.status_code == 200
+    assert pk_lookups == []
 
 
 def test_clone_annotation(auth_client, simple_neurosynth_annotation, session):
@@ -491,6 +753,109 @@ def test_correct_note_overwrite(auth_client, ingest_neurosynth, session):
     assert notes_by_analysis[target_analysis_id]["note"]["doo"] == new_value
 
 
+def test_put_annotation_avoids_concat_id_annotation_analysis_lookup(
+    auth_client, ingest_neurosynth, session
+):
+    dset = Studyset.query.first()
+    notes = [
+        {"study": s.id, "analysis": a.id, "note": {"foo": a.id, "doo": s.id}}
+        for s in dset.studies
+        for a in s.analyses
+    ]
+    payload = {
+        "studyset": dset.id,
+        "notes": notes,
+        "note_keys": ordered_note_keys({"foo": "string", "doo": "string"}),
+        "name": "put-perf-test",
+    }
+    annot_resp = auth_client.post("/api/annotations/", data=payload)
+    assert annot_resp.status_code == 200
+    annotation_id = annot_resp.json()["id"]
+
+    put_notes = [
+        {
+            "study": note["study"],
+            "analysis": note["analysis"],
+            "annotation": annotation_id,
+            "note": {
+                **note["note"],
+                "doo": "updated",
+            },
+        }
+        for note in notes
+    ]
+
+    concat_id_lookups = []
+    analysis_lookups = []
+    studyset_study_lookups = []
+    annotation_analysis_user_id_lookups = []
+    user_external_id_lookups = []
+
+    def before_cursor_execute(
+        conn, cursor, statement, parameters, context, executemany
+    ):
+        if _is_annotation_analysis_concat_id_lookup(statement):
+            concat_id_lookups.append(statement)
+        if _is_annotation_analysis_user_id_pk_lookup(statement):
+            annotation_analysis_user_id_lookups.append(statement)
+        if _is_analysis_id_lookup(statement):
+            analysis_lookups.append(statement)
+        if _is_studyset_study_lookup(statement):
+            studyset_study_lookups.append(statement)
+        if _is_user_external_id_lookup(statement):
+            user_external_id_lookups.append(statement)
+
+    event.listen(db.engine, "before_cursor_execute", before_cursor_execute)
+    try:
+        put_resp = auth_client.put(
+            f"/api/annotations/{annotation_id}",
+            data={"notes": put_notes},
+        )
+    finally:
+        event.remove(db.engine, "before_cursor_execute", before_cursor_execute)
+
+    assert put_resp.status_code == 200
+    assert concat_id_lookups == []
+    assert annotation_analysis_user_id_lookups == []
+    assert analysis_lookups == []
+    assert studyset_study_lookups == []
+    assert len(user_external_id_lookups) < len(put_notes)
+
+
+def test_post_annotation_avoids_concat_id_annotation_analysis_lookup(
+    auth_client, ingest_neurosynth, session
+):
+    dset = Studyset.query.first()
+    notes = [
+        {"study": s.id, "analysis": a.id, "note": {"foo": a.id, "doo": s.id}}
+        for s in dset.studies
+        for a in s.analyses
+    ]
+    payload = {
+        "studyset": dset.id,
+        "notes": notes,
+        "note_keys": ordered_note_keys({"foo": "string", "doo": "string"}),
+        "name": "post-perf-test",
+    }
+
+    concat_id_lookups = []
+
+    def before_cursor_execute(
+        conn, cursor, statement, parameters, context, executemany
+    ):
+        if _is_annotation_analysis_concat_id_lookup(statement):
+            concat_id_lookups.append(statement)
+
+    event.listen(db.engine, "before_cursor_execute", before_cursor_execute)
+    try:
+        post_resp = auth_client.post("/api/annotations/", data=payload)
+    finally:
+        event.remove(db.engine, "before_cursor_execute", before_cursor_execute)
+
+    assert post_resp.status_code == 200
+    assert concat_id_lookups == []
+
+
 def test_put_annotation_applies_pipeline_columns(auth_client, session):
     user = User.query.filter_by(external_id=auth_client.username).first()
     annotation, base_study = _create_annotation_with_two_analyses(session, user)
@@ -673,3 +1038,18 @@ def test_annotation_analyses_post(auth_client, ingest_neurosynth, session):
     }
     for analysis_id, value in updated_by_analysis.items():
         assert current_by_analysis[analysis_id] == value == new_value
+
+
+def test_annotation_analyses_post_no_valid_ids_noop(auth_client, ingest_neurosynth):
+    dset = Studyset.query.first()
+    payload = [
+        {
+            "study": dset.studies[0].id,
+            "analysis": dset.studies[0].analyses[0].id,
+            "note": {"foo": "bar"},
+        }
+    ]
+
+    resp = auth_client.post("/api/annotation-analyses/", data=payload)
+    assert resp.status_code == 200
+    assert resp.json() == []

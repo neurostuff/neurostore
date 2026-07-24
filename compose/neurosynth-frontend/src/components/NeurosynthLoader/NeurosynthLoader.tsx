@@ -1,12 +1,14 @@
+import type { ReactNode } from 'react';
 import Box from '@mui/material/Box';
 import ProgressLoader from 'components/ProgressLoader';
 
 export interface INeurosynthLoader {
     loaded: boolean;
     loadingText?: string;
+    children?: React.ReactNode;
 }
 
-const NeurosynthLoader: React.FC<INeurosynthLoader> = (props) => {
+const NeurosynthLoader = (props: INeurosynthLoader) => {
     return (
         <>
             {props.loaded ? (

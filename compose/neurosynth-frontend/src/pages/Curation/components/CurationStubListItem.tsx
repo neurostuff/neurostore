@@ -1,7 +1,7 @@
 import { Box, ListItem, ListItemButton, Typography } from '@mui/material';
 import { ICurationStubStudy } from 'pages/Curation/Curation.types';
 import { useProjectExclusionTag } from 'pages/Project/store/ProjectStore';
-import { ENeurosynthTagIds } from 'pages/Project/store/ProjectStore.types';
+import { ENeurosynthTagIds } from 'pages/Project/store/ProjectStore.consts';
 import React from 'react';
 
 interface ICurationStubListItem {
@@ -11,7 +11,7 @@ interface ICurationStubListItem {
     style: React.CSSProperties;
 }
 
-const CurationStubListItem: React.FC<ICurationStubListItem> = React.memo((props) => {
+const CurationStubListItem = React.memo((props: ICurationStubListItem) => {
     const exclusionTag = useProjectExclusionTag(props.stub.exclusionTag);
 
     const itemColor = props.stub.exclusionTag

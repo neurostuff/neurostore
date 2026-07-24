@@ -1,8 +1,9 @@
-from neurostore.tests.conftest import performance_test
-from neurostore.models import Studyset, Study, Annotation
-from neurostore.schemas import AnnotationSchema
-from neurostore.resources import AnnotationsView
 from time import time
+
+from neurostore.models import Annotation, Study, Studyset
+from neurostore.resources import AnnotationsView
+from neurostore.schemas import AnnotationSchema
+from neurostore.tests.conftest import performance_test
 
 # import yappi
 # import contextlib

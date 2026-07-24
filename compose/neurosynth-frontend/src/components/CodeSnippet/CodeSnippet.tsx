@@ -1,25 +1,22 @@
-import { Box, Button, Typography } from '@mui/material';
+import { ContentCopy } from '@mui/icons-material';
+import { Box, IconButton, Tooltip, Typography } from '@mui/material';
 import { SystemStyleObject } from '@mui/system';
-import { useState } from 'react';
+import useCopyToClipboard from 'hooks/useCopyToClipboard';
 import CodeSnippetStyles from './CodeSnippet.styles';
 
-const CodeSnippet: React.FC<{
+const CodeSnippet = (props: {
     linesOfCode: string[];
     noCopyButton?: boolean;
     sx?: SystemStyleObject;
     title?: string;
-}> = (props) => {
-    const [copied, setCopied] = useState(false);
+}) => {
+    const { copied, copyToClipboard } = useCopyToClipboard();
 
-    const copyToClipboard = () => {
-        setCopied(true);
+    const handleCopyToClipboard = () => {
         const codeString = props.linesOfCode.reduce((prev, curr, index) => {
             return index === 0 ? curr : `${prev}\n${curr}`;
         }, '');
-        navigator.clipboard.writeText(codeString);
-        setTimeout(() => {
-            setCopied(false);
-        }, 2000);
+        copyToClipboard(codeString);
     };
 
     return (
@@ -30,20 +27,26 @@ const CodeSnippet: React.FC<{
                 </Box>
                 {props.noCopyButton ? null : (
                     <Box>
-                        <Button
-                            size="small"
-                            sx={{ fontSize: '12px', height: '24px', color: copied ? 'success.main' : 'white' }}
-                            onClick={copyToClipboard}
-                            disableElevation
-                            variant="contained"
-                        >
-                            {copied ? '✓' : 'copy'}
-                        </Button>
+                        <Tooltip title="Copy to clipboard">
+                            <IconButton
+                                size="small"
+                                onClick={handleCopyToClipboard}
+                                sx={{
+                                    color: copied ? 'success.main' : 'white',
+                                    fontSize: '16px',
+                                    width: '28px',
+                                    height: '28px',
+                                    ':hover': { backgroundColor: '#717171' },
+                                }}
+                            >
+                                {copied ? '✓' : <ContentCopy sx={{ fontSize: '16px' }} />}
+                            </IconButton>
+                        </Tooltip>
                     </Box>
                 )}
             </Box>
-            <Box sx={[CodeSnippetStyles.codeBlock, props.sx ?? {}]}>
-                <Box sx={{ whiteSpace: 'nowrap', overflow: 'auto' }} className="sleek-scrollbar">
+            <Box sx={{ backgroundColor: '#585858', padding: '0.75rem' }}>
+                <Box sx={[CodeSnippetStyles.codeBlock, props.sx ?? {}]} className="sleek-scrollbar">
                     {props.linesOfCode.map((code, index) => (
                         <Box key={index} sx={{ marginBottom: '3px', minHeight: '15px' }}>
                             {code}

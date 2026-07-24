@@ -3,10 +3,11 @@ import { ErrorBoundary } from '@sentry/react';
 import ProgressLoader from 'components/ProgressLoader';
 import AnnotationsPage from 'pages/Annotations/AnnotationsPage';
 import ProtectedProjectRoute from 'pages/BaseNavigation/components/ProtectedProjectRoute';
-import CurationImportPage from 'pages/CurationImport/CurationImportPage';
+import CurationSearchPage from 'pages/CurationImport/CurationSearchPage';
 import ExtractionPage from 'pages/Extraction/ExtractionPage';
 import ForbiddenPage from 'pages/Forbidden/Forbidden';
 import HelpPage from 'pages/HelpPage/HelpPage';
+import MetaAnalysisRedirect from 'pages/MetaAnalysis/MetaAnalysisRedirect';
 import NotFoundPage from 'pages/NotFound/NotFoundPage';
 import ProjectEditMetaAnalyses from 'pages/Project/components/ProjectEditMetaAnalyses';
 import ProjectViewMetaAnalyses from 'pages/Project/components/ProjectViewMetaAnalyses';
@@ -20,6 +21,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import LandingPage from '../LandingPage/LandingPage';
 import BaseNavigationStyles from './BaseNavigation.styles';
 import ProtectedRoute from './components/ProtectedRoute';
+import { CurationBoardGroupsProvider } from 'pages/Curation/context/CurationBoardGroupsContext';
 
 const EditStudyPage = React.lazy(() => import('pages/Study/EditStudyPage'));
 const ProjectStudyPage = React.lazy(() => import('pages/Study/ProjectStudyPage'));
@@ -32,7 +34,7 @@ const MetaAnalysisPage = React.lazy(() => import('pages/MetaAnalysis/MetaAnalysi
 
 const CurationPage = React.lazy(() => import('pages/Curation/CurationPage'));
 
-const BaseNavigation: React.FC = () => {
+const BaseNavigation = () => {
     return (
         <ErrorBoundary
             fallback={
@@ -98,20 +100,22 @@ const BaseNavigation: React.FC = () => {
                         element={
                             <ProtectedProjectRoute errorMessage="You do not have access to this page">
                                 <Box sx={BaseNavigationStyles.curationPageContainer}>
-                                    <CurationPage />
+                                    <CurationBoardGroupsProvider>
+                                        <CurationPage />
+                                    </CurationBoardGroupsProvider>
                                 </Box>
                             </ProtectedProjectRoute>
                         }
                     />
                     <Route
-                        path="/projects/:projectId/curation/import"
+                        path="/projects/:projectId/curation/search"
                         element={
                             <ProtectedProjectRoute
                                 onlyOwnerCanAccess
-                                errorMessage="You do not own this project, so you cannot import studies into it."
+                                errorMessage="You do not own this project, so you cannot search for studies in it."
                             >
                                 <Box sx={BaseNavigationStyles.pagesContainer}>
-                                    <CurationImportPage />
+                                    <CurationSearchPage />
                                 </Box>
                             </ProtectedProjectRoute>
                         }
@@ -223,6 +227,7 @@ const BaseNavigation: React.FC = () => {
                             </Box>
                         }
                     />
+                    <Route path="/meta-analyses/:metaAnalysisId" element={<MetaAnalysisRedirect />} />
                     <Route
                         path="*"
                         element={

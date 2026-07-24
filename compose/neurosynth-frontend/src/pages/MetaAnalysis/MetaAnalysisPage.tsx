@@ -2,17 +2,16 @@ import { Box, Chip, Typography } from '@mui/material';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import TextEdit from 'components/TextEdit/TextEdit';
+import { getLatestMetaAnalysisResultId } from 'helpers/MetaAnalysis.helpers';
 import { useGetMetaAnalysisById, useGetMetaAnalysisResultById } from 'hooks';
 import useUpdateMetaAnalysis from 'hooks/metaAnalyses/useUpdateMetaAnalysis';
 import useUserCanEdit from 'hooks/useUserCanEdit';
-import { ResultReturn, SpecificationReturn, StudysetReturn } from 'neurosynth-compose-typescript-sdk';
 import MetaAnalysisPageStyles from 'pages/MetaAnalysis/MetaAnalysisPage.styles';
 import { useProjectName, useProjectUser } from 'pages/Project/store/ProjectStore';
 import { useParams } from 'react-router-dom';
-import { NeurostoreAnnotation } from 'api/api.config';
 import MetaAnalysisDetails from './components/MetaAnalysisDetails';
 
-const MetaAnalysisPage: React.FC = () => {
+const MetaAnalysisPage = () => {
     // const { startTour } = useGetTour('MetaAnalysisPage');
     const { projectId, metaAnalysisId } = useParams<{
         projectId: string;
@@ -27,9 +26,9 @@ const MetaAnalysisPage: React.FC = () => {
      * the name loading when we update the name, and only the description loading when
      * we update the description
      */
-    const { mutate: updateMetaAnalysisName, isLoading: updateMetaAnalysisNameIsLoading } = useUpdateMetaAnalysis();
+    const { mutate: updateMetaAnalysisName, isPending: updateMetaAnalysisNameIsLoading } = useUpdateMetaAnalysis();
 
-    const { mutate: updateMetaAnalysisDescription, isLoading: updateMetaAnalysisDescriptionIsLoading } =
+    const { mutate: updateMetaAnalysisDescription, isPending: updateMetaAnalysisDescriptionIsLoading } =
         useUpdateMetaAnalysis();
 
     const {
@@ -37,21 +36,11 @@ const MetaAnalysisPage: React.FC = () => {
         isError: getMetaAnalysisIsError,
         isLoading: getMetaAnalysisIsLoading,
     } = useGetMetaAnalysisById(metaAnalysisId);
-    const { isLoading: getMetaAnalysisResultIsLoading } = useGetMetaAnalysisResultById(
-        metaAnalysis?.results && metaAnalysis.results.length
-            ? (metaAnalysis.results[metaAnalysis.results.length - 1] as ResultReturn).id
-            : undefined
-    );
-
-    // get request is set to nested: true so below casting is safe
-    const specification = metaAnalysis?.specification as SpecificationReturn;
-    const studyset = metaAnalysis?.studyset as StudysetReturn;
-    const annotation = metaAnalysis?.annotation as NeurostoreAnnotation;
-
-    const viewingThisPageFromProject = !!projectId;
+    const latestResultId = getLatestMetaAnalysisResultId(metaAnalysis);
+    const { isLoading: getMetaAnalysisResultIsLoading } = useGetMetaAnalysisResultById(latestResultId);
 
     const updateName = (updatedName: string) => {
-        if (metaAnalysis?.id && specification?.id && studyset?.id && annotation?.id) {
+        if (metaAnalysis?.id) {
             updateMetaAnalysisName({
                 metaAnalysisId: metaAnalysis.id,
                 metaAnalysis: {
@@ -62,7 +51,7 @@ const MetaAnalysisPage: React.FC = () => {
     };
 
     const updateDescription = (updatedDescription: string) => {
-        if (metaAnalysis?.id && specification?.id && studyset?.id && annotation?.id) {
+        if (metaAnalysis?.id) {
             updateMetaAnalysisDescription({
                 metaAnalysisId: metaAnalysis.id,
                 metaAnalysis: {
@@ -79,29 +68,25 @@ const MetaAnalysisPage: React.FC = () => {
                 isError={getMetaAnalysisIsError}
                 errorMessage="There was an error getting your meta-analysis"
             >
-                {viewingThisPageFromProject && (
-                    <Box>
-                        <NeurosynthBreadcrumbs
-                            breadcrumbItems={[
-                                {
-                                    link: '/projects',
-                                    text: 'Projects',
-                                    isCurrentPage: false,
-                                },
-                                {
-                                    link: `/projects/${projectId}/meta-analyses`,
-                                    text: `${projectName}`,
-                                    isCurrentPage: false,
-                                },
-                                {
-                                    link: '',
-                                    text: metaAnalysis?.name || '',
-                                    isCurrentPage: true,
-                                },
-                            ]}
-                        />
-                    </Box>
-                )}
+                <NeurosynthBreadcrumbs
+                    breadcrumbItems={[
+                        {
+                            link: '/projects',
+                            text: 'Projects',
+                            isCurrentPage: false,
+                        },
+                        {
+                            link: `/projects/${projectId}/meta-analyses`,
+                            text: `${projectName}`,
+                            isCurrentPage: false,
+                        },
+                        {
+                            link: '',
+                            text: metaAnalysis?.name || '',
+                            isCurrentPage: true,
+                        },
+                    ]}
+                />
 
                 <Box sx={{ display: 'flex', flexDirection: 'column', marginBottom: '1rem', mt: 1 }}>
                     <TextEdit

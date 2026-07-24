@@ -4,12 +4,12 @@ import { StudyReturn } from 'neurostore-typescript-sdk';
 import { useProjectExtractionStudysetId } from 'pages/Project/store/ProjectStore';
 import { useMemo } from 'react';
 
-const ExtractionTableJournalAutocomplete: React.FC<{
+const ExtractionTableJournalAutocomplete = ({  value, onChange  }: {
     value: string;
     onChange: (value: string | null) => void;
-}> = ({ value, onChange }) => {
+}) => {
     const studysetId = useProjectExtractionStudysetId();
-    const { data: studyset } = useGetStudysetById(studysetId, true);
+    const { data: studyset } = useGetStudysetById(studysetId, false, true);
 
     const options = useMemo(() => {
         if (!studyset) return [];

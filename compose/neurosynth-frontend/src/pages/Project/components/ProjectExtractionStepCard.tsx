@@ -21,7 +21,7 @@ const getPercentageComplete = (extractionSummary: IExtractionSummary): number =>
     return Math.round(percentageComplete);
 };
 
-const ProjectExtractionStepCard: React.FC<{ disabled: boolean }> = ({ disabled }) => {
+const ProjectExtractionStepCard = ({  disabled  }: { disabled: boolean }) => {
     const [markAllAsCompleteConfirmationDialogIsOpen, setMarkAllAsCompleteConfirmationDialogIsOpen] = useState(false);
     const studysetId = useProjectExtractionStudysetId();
     const { projectId } = useParams<{ projectId: string }>();
@@ -78,7 +78,7 @@ const ProjectExtractionStepCard: React.FC<{ disabled: boolean }> = ({ disabled }
                             <Box sx={ProjectComponentsStyles.statusIconContainer}>
                                 <QuestionMarkIcon sx={ProjectExtractionStep.uncategorizedIcon} />
                                 <Typography sx={{ color: 'warning.dark' }}>
-                                    {extractionSummary.uncategorized} uncategorized
+                                    {extractionSummary.unreviewed} unreviewed
                                 </Typography>
                             </Box>
                             <Box sx={ProjectComponentsStyles.statusIconContainer}>

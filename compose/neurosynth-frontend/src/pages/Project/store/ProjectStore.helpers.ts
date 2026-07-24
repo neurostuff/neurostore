@@ -15,7 +15,7 @@ import {
     defaultIdentificationSources,
     defaultInfoTags,
     ENeurosynthTagIds,
-} from 'pages/Project/store/ProjectStore.types';
+} from 'pages/Project/store/ProjectStore.consts';
 import { ICurationColumn, ICurationStubStudy } from 'pages/Curation/Curation.types';
 
 export const handleDragEndHelper = (
@@ -306,8 +306,10 @@ export const createNewExclusionHelper = (
     const updatedState = { ...state };
 
     if (!phase) {
+        if (updatedState.exclusionTags.find((x) => x.id === newExclusion.id)) return updatedState;
         updatedState.exclusionTags = [...updatedState.exclusionTags, { ...newExclusion }];
     } else {
+        if (updatedState.prismaConfig[phase].exclusionTags.find((x) => x.id === newExclusion.id)) return updatedState;
         updatedState.prismaConfig = {
             ...updatedState.prismaConfig,
             [phase]: {
@@ -418,6 +420,20 @@ export const setGivenStudyStatusesAsCompleteHelper = (studyIds: string[]): IStud
             id: studyId,
             status: EExtractionStatus.COMPLETED,
         }));
+};
+
+const UNTITLED_REGEX = /^Untitled( (\d+))?$/;
+
+export const getNextUntitledProjectName = (existingProjectNames: string[]): string => {
+    const numbers = existingProjectNames
+        .map((projectName) => {
+            const m = (projectName ?? '').trim().match(UNTITLED_REGEX);
+            if (!m) return null;
+            return m[2] ? parseInt(m[2], 10) : 1;
+        })
+        .filter((x) => x !== null);
+    const max = numbers.length === 0 ? 0 : Math.max(...numbers);
+    return max === 0 ? 'Untitled' : `Untitled ${max + 1}`;
 };
 
 export const generateNewProjectData = (name?: string, description?: string): INeurosynthProjectReturn => {

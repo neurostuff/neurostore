@@ -37,7 +37,7 @@ interface ISourceSelectorPopup {
     disabled?: boolean;
 }
 
-const CurationPopupIdentificationSourceSelector: React.FC<ISourceSelectorPopup> = (props) => {
+const CurationPopupIdentificationSourceSelector = (props: ISourceSelectorPopup) => {
     const { projectId } = useParams<{ projectId: string | undefined }>();
     const [selectedValue, setSelectedValue] = useState<AutoSelectOption | null>(props.initialValue || null);
     const [sourceOptions, setSourceOptions] = useState<AutoSelectOption[]>([]);

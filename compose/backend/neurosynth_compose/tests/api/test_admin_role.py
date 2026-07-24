@@ -1,14 +1,10 @@
 """
 Tests for admin role functionality in compose
 """
+
 import pytest
-from neurosynth_compose.models import (
-    User,
-    Role,
-    MetaAnalysis,
-    Project,
-    NeurostoreStudy,
-)
+
+from neurosynth_compose.models import MetaAnalysis, NeurostoreStudy, Project, Role, User
 from neurosynth_compose.models.analysis import generate_id
 from neurosynth_compose.resources.analysis import is_user_admin
 
@@ -62,8 +58,9 @@ def test_admin_can_modify_others_records(auth_client, user_data, session, db):
     session.commit()
 
     # Create admin client
-    from ..request_utils import Client
     from jose.jwt import encode
+
+    from neurosynth_compose.tests.request_utils import Client
 
     admin_token = encode({"sub": "admin-user-id"}, "admin123", algorithm="HS256")
     admin_client = Client(token=admin_token, username="admin-user-id")
@@ -71,8 +68,7 @@ def test_admin_can_modify_others_records(auth_client, user_data, session, db):
     # Try to modify the meta-analysis as admin
     new_name = "Modified by admin"
     resp = admin_client.put(
-        f"/api/meta-analyses/{meta_analysis.id}",
-        data={"name": new_name}
+        f"/api/meta-analyses/{meta_analysis.id}", data={"name": new_name}
     )
 
     assert resp.status_code == 200
@@ -100,8 +96,9 @@ def test_admin_can_delete_others_records(auth_client, user_data, session, db):
     session.commit()
 
     # Create admin client
-    from ..request_utils import Client
     from jose.jwt import encode
+
+    from neurosynth_compose.tests.request_utils import Client
 
     admin_token = encode({"sub": "admin-user-id"}, "admin123", algorithm="HS256")
     admin_client = Client(token=admin_token, username="admin-user-id")
@@ -142,8 +139,9 @@ def test_admin_can_see_private_records(auth_client, user_data, session, db):
     session.commit()
 
     # Create admin client
-    from ..request_utils import Client
     from jose.jwt import encode
+
+    from neurosynth_compose.tests.request_utils import Client
 
     admin_token = encode({"sub": "admin-user-id"}, "admin123", algorithm="HS256")
     admin_client = Client(token=admin_token, username="admin-user-id")
@@ -171,7 +169,7 @@ def test_non_admin_cannot_modify_others_records(auth_client, user_data, session,
     # Try to modify user2's meta-analysis as user1 (should fail)
     resp = user1_client.put(
         f"/api/meta-analyses/{meta_analysis.id}",
-        data={"name": "Unauthorized modification"}
+        data={"name": "Unauthorized modification"},
     )
 
     assert resp.status_code == 403

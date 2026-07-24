@@ -8,11 +8,11 @@ import { useState } from 'react';
 import { useSnackbar } from 'notistack';
 import { localStorageStatusAlertKey } from './MetaAnalysisStatusAlert';
 
-const MetaAnalysisInstructions: React.FC<{
+const MetaAnalysisInstructions = ({  metaAnalysisId, onSubmitMetaAnalysisJob = () => {}  }: {
     metaAnalysisId: string;
     onSubmitMetaAnalysisJob?: () => void;
-}> = ({ metaAnalysisId, onSubmitMetaAnalysisJob = () => {} }) => {
-    const { mutate: submitMetaAnalysisJob, isLoading: submitMetaAnalysisJobIsLoading } = useSubmitMetaAnalysisJob();
+}) => {
+    const { mutate: submitMetaAnalysisJob, isPending: submitMetaAnalysisJobIsLoading } = useSubmitMetaAnalysisJob();
     const { enqueueSnackbar } = useSnackbar();
     const [showConfirmationDialog, setShowConfirmationDialog] = useState(false);
     const handleCloseConfirmationDialog = (confirm: boolean | undefined) => {
@@ -125,6 +125,7 @@ const MetaAnalysisInstructions: React.FC<{
                     />
                     <CardContent sx={{ flexGrow: 1 }}>
                         <CodeSnippet
+                            sx={{ overflow: 'auto', whiteSpace: 'normal' }}
                             linesOfCode={[
                                 `docker run ghcr.io/neurostuff/nsc-runner:latest ${metaAnalysisId} --n-cores 1`,
                             ]}

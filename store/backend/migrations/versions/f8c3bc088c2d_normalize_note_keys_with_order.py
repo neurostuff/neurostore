@@ -47,7 +47,9 @@ def _normalize_note_keys(note_keys):
         if note_type not in ALLOWED_TYPES:
             note_type = "string"
 
-        if isinstance(order, bool) or (order is not None and not isinstance(order, int)):
+        if isinstance(order, bool) or (
+            order is not None and not isinstance(order, int)
+        ):
             order = None
 
         if isinstance(order, int) and order not in used_orders:

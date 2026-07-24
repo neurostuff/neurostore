@@ -13,12 +13,12 @@ import {
 } from 'pages/MetaAnalysis/components/SelectAnalysesComponent.types';
 import useInclusionColumnOptions from 'pages/MetaAnalysis/hooks/useInclusionColumnOptions';
 
-const CreateMetaAnalysisSpecificationSelectionStepMultiGroup: React.FC<{
+const CreateMetaAnalysisSpecificationSelectionStepMultiGroup = (props: {
     algorithm: IAlgorithmSelection;
     onSelectValue: (option: IAnalysesSelection) => void;
     annotationId: string | undefined;
     selectedValue: IAnalysesSelection;
-}> = (props) => {
+}) => {
     const { algorithm, onSelectValue, annotationId, selectedValue } = props;
     const columnOptions = useInclusionColumnOptions(annotationId, selectedValue?.selectionKey);
     const colOptionsToMultiGroupOptions: IMultiGroupOption[] = useMemo(() => {

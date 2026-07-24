@@ -1,6 +1,6 @@
 import { VisualizerModel } from '../Visualizer';
 
-const MockVisualizer: React.FC<VisualizerModel> = (props) => {
+const MockVisualizer = (props: VisualizerModel) => {
     return (
         <div>
             <h1>Mocked Visualizer</h1>

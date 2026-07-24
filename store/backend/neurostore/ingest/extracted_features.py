@@ -1,13 +1,13 @@
 """Ingest extracted features into the database."""
 
+import hashlib
 import json
+import logging
 import os.path as op
 from pathlib import Path
-from dateutil.parser import parse as parse_date
 
-import hashlib
-import logging
 import sqlalchemy as sa
+from dateutil.parser import parse as parse_date
 from sqlalchemy.sql import quoted_name
 
 # numpy is optional for type compatibility; runtime checks handle absence
@@ -18,11 +18,11 @@ except Exception:  # pragma: no cover - numpy may not be installed in test env
 
 from neurostore.database import db
 from neurostore.models import (
+    BaseStudy,
     Pipeline,
     PipelineConfig,
-    PipelineStudyResult,
-    BaseStudy,
     PipelineEmbedding,
+    PipelineStudyResult,
 )
 from neurostore.models.data import generate_id
 
@@ -214,6 +214,7 @@ def ingest_feature(
 
     # get a list of all the paper directories in the feature directory
     paper_dirs = [d for d in Path(feature_directory).iterdir() if d.is_dir()]
+    valid_base_study_ids = set(db.session.scalars(sa.select(BaseStudy.id)).all())
 
     # for each subject directory, read the results.json file and the info.json file
     pipeline_study_results = []
@@ -225,7 +226,7 @@ def ingest_feature(
         # use the directory name as the base_study_id
         base_study_id = paper_dir.name
 
-        if BaseStudy.query.filter_by(id=base_study_id).first() is None:
+        if base_study_id not in valid_base_study_ids:
             logging.warning(
                 "Skipping %s as it does not correspond to a valid base_study_id",
                 paper_dir,
@@ -385,7 +386,7 @@ def ingest_feature(
                         result_data=results,
                         date_executed=parse_date(dt) if dt else None,
                         file_inputs=info.get("inputs"),
-                        config=pipeline_config,
+                        config_id=pipeline_config.id,
                         status="SUCCESS",
                     )
                 )

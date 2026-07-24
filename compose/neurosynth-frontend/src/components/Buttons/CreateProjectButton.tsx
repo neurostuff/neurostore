@@ -1,24 +1,42 @@
+import { useAuth0 } from '@auth0/auth0-react';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import { ButtonProps } from '@mui/material';
 import LoadingButton from 'components/Buttons/LoadingButton';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import NavToolbarStyles from 'components/Navbar/NavToolbar.styles';
 import { hasUnsavedChanges, unsetUnloadHandler } from 'helpers/BeforeUnload.helpers';
 import { useCreateProject } from 'hooks';
-import { generateNewProjectData } from 'pages/Project/store/ProjectStore.helpers';
+import { ProjectSearchCriteria, projectsSearchHelper } from 'hooks/projects/useGetProjects';
+import { generateNewProjectData, getNextUntitledProjectName } from 'pages/Project/store/ProjectStore.helpers';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const CreateProjectButton: React.FC = () => {
-    const { mutate, isLoading: createProjectIsLoading } = useCreateProject();
+const projectSearchCriteria = new ProjectSearchCriteria(1, 1000);
+
+const CreateProjectButton = (props?: { buttonProps?: ButtonProps }) => {
+    const { mutate, isPending: createProjectIsLoading } = useCreateProject();
     const navigate = useNavigate();
     const [confirmationDialogIsOpen, setConfirmationDialogIsOpen] = useState(false);
+    const { user } = useAuth0();
+    const [getProjectsIsLoading, setGetProjectsIsLoading] = useState(false);
 
-    const handleCreateProject = () => {
-        mutate(generateNewProjectData('Untitled', ''), {
-            onSuccess: (arg) => {
-                navigate(`/projects/${arg.data.id || ''}`);
-            },
-        });
+    const handleCreateProject = async () => {
+        try {
+            setGetProjectsIsLoading(true);
+            const userProjects = await projectsSearchHelper(projectSearchCriteria, user?.sub, false);
+            const newProjectName = getNextUntitledProjectName(
+                userProjects?.data?.results?.map((p) => p.name ?? '') ?? []
+            );
+            mutate(generateNewProjectData(newProjectName, ''), {
+                onSuccess: (arg) => {
+                    navigate(`/projects/${arg.data.id || ''}`);
+                },
+            });
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setGetProjectsIsLoading(false);
+        }
     };
 
     const handleButtonClick = () => {
@@ -41,6 +59,12 @@ const CreateProjectButton: React.FC = () => {
         setConfirmationDialogIsOpen(false);
     };
 
+    const sx = {
+        ...NavToolbarStyles.menuItem,
+        ...NavToolbarStyles.createProjectButton,
+        ...props?.buttonProps?.sx,
+    };
+
     return (
         <>
             <ConfirmationDialog
@@ -57,8 +81,8 @@ const CreateProjectButton: React.FC = () => {
                 disableElevation
                 loaderColor="primary"
                 onClick={handleButtonClick}
-                isLoading={createProjectIsLoading}
-                sx={[NavToolbarStyles.menuItem, NavToolbarStyles.createProjectButton]}
+                isLoading={createProjectIsLoading || getProjectsIsLoading}
+                sx={sx}
                 startIcon={<AddCircleOutlineIcon />}
                 text="NEW PROJECT"
             />

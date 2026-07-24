@@ -1,33 +1,36 @@
-import { HotTableProps } from '@handsontable/react';
+import { HotTableProps } from '@handsontable/react-wrapper';
 import { EPropertyType } from 'components/EditMetadata/EditMetadata.types';
 import { AnnotationNoteValue, NoteKeyType } from 'components/HotTables/HotTables.types';
 import { NoteCollectionReturn } from 'neurostore-typescript-sdk';
 import { renderToString } from 'react-dom/server';
 import Cancel from '@mui/icons-material/Cancel';
-import { DetailedSettings as MergeCellsSettings } from 'handsontable/plugins/mergeCells';
 import styles from 'components/HotTables/HotTables.module.css';
 import { numericValidator } from 'handsontable/validators';
 import { booleanValidator } from 'components/HotTables/HotTables.utils';
 import { ColumnSettings } from 'handsontable/settings';
 
+/** Cell merge range shape accepted by Handsontable's mergeCells option. */
+export type MergeCellRange = {
+    row: number;
+    col: number;
+    rowspan: number;
+    colspan: number;
+};
+
 export const hotSettings: HotTableProps = {
+    theme: 'ht-theme-classic',
     licenseKey: 'non-commercial-and-evaluation',
     contextMenu: false,
     viewportRowRenderingOffset: 4,
-    viewportColumnRenderingOffset: 4,
+    viewportColumnRenderingOffset: 20, // some arbitrarily large number to ensure that the row heights are calculated correctly when the user scrolls to the right
     width: '100%',
     fixedColumnsStart: 2,
     wordWrap: true,
     autoRowSize: false,
-    // rowHeaderWidth: 0 is used to prevent the row headers from being offset in the manualColumnMove calculations.
-    // HOWEVER why not just remove afterGetRowHeaderRenderers? We need to apply the styling (technically it's a noop now)
-    // in order to force handsontable to recalculte the row heights. If we remove it, the heights become slightly off.
-    rowHeaderWidth: 0,
-    afterGetRowHeaderRenderers: (headerRenderers) => {
-        headerRenderers.push((row, TH) => {
-            TH.className = styles['no-top-bottom-borders'];
-        });
-    },
+    // we need the rowHeaders setting, otherwise the row heights are not calculated correctly when merge cells are present
+    // however, we don't actually want to display the row headers, so we set the rowHeaderWidth to 0 and the rowHeaders to an empty string
+    rowHeaders: () => '', // do not display row header numbers
+    rowHeaderWidth: 0, // hide row headers
     id: 'hot-annotations',
     fillHandle: {
         direction: 'vertical',
@@ -41,11 +44,11 @@ export const convertRemToPx = (rem: number) => {
 
 export const hotDataToAnnotationNotes = (
     hotData: AnnotationNoteValue[][],
-    mapping: Map<number, { studyId: string; analysisId: string }>,
+    mapping: Map<number, { studyId: string; analysisId: string; isEdited: boolean }>,
     noteKeys: NoteKeyType[]
 ): NoteCollectionReturn[] => {
     const noteCollections: NoteCollectionReturn[] = hotData.map((row, index) => {
-        const mappedStudyAnalysis = mapping.get(index) as { studyId: string; analysisId: string };
+        const mappedStudyAnalysis = mapping.get(index) as { studyId: string; analysisId: string; isEdited: boolean };
 
         const updatedNote: { [key: string]: AnnotationNoteValue } = {};
         for (let i = 0; i < noteKeys.length; i++) {
@@ -69,10 +72,10 @@ export const annotationNotesToHotData = (
     getColNamesFromAnnotationNote: (note: NoteCollectionReturn) => [string, string]
 ): {
     hotData: AnnotationNoteValue[][];
-    hotDataToStudyMapping: Map<number, { studyId: string; analysisId: string }>;
+    hotDataToStudyMapping: Map<number, { studyId: string; analysisId: string; isEdited: boolean }>;
 } => {
     const hotData = new Array<AnnotationNoteValue[]>();
-    const hotDataToAnnotationMapping = new Map<number, { studyId: string; analysisId: string }>();
+    const hotDataToAnnotationMapping = new Map<number, { studyId: string; analysisId: string; isEdited: boolean }>();
 
     if (!annotationNotes) {
         return {
@@ -113,6 +116,7 @@ export const annotationNotesToHotData = (
             hotDataToAnnotationMapping.set(index, {
                 studyId: annotationNote.study as string,
                 analysisId: annotationNote.analysis as string,
+                isEdited: false,
             });
             hotData.push(row);
         });
@@ -125,16 +129,16 @@ export const annotationNotesToHotData = (
 
 export const createColumnHeader = (colKey: string, colType: EPropertyType, allowRemoveColumn: boolean) => {
     const allowRemove = allowRemoveColumn
-        ? `<div style="width: 50px; display: flex; align-items: center; justify-content: center">
+        ? `<div style="max-width: 50px; display: flex; align-items: center; justify-content: center">
         ${renderToString(
-            <Cancel
-                sx={{
-                    width: '18px',
-                    height: '18px',
-                    ':hover': { color: 'error.light', cursor: 'pointer' },
-                }}
-                color="error"
-            />
+            <div className={styles['remove-column-icon']} style={{ width: '18px', height: '18px' }}>
+                <Cancel
+                    style={{
+                        width: '100%',
+                        height: '100%',
+                    }}
+                />
+            </div>
         )}
           </div>`
         : '<div></div>';
@@ -175,12 +179,12 @@ export const createColumns = (noteKeys: NoteKeyType[], disable?: boolean) =>
     ] as ColumnSettings[];
 
 // we can assume that the hashmap maintains order and is sorted by key
-// this function gets all merge cells and only merge cells. If a cell does not need to be merged, a mergeCellObj is not creatd
+// this function gets all merge cells and only merge cells. If a cell does not need to be merged, a mergeCellObj is not created
 export const getMergeCells = (hotDataToStudyMapping: Map<number, { studyId: string; analysisId: string }>) => {
-    const mergeCells: MergeCellsSettings[] = [];
+    const mergeCells: MergeCellRange[] = [];
 
     let studyId: string;
-    let mergeCellObj: MergeCellsSettings = {
+    let mergeCellObj: MergeCellRange = {
         row: 0,
         col: 0,
         rowspan: 1,
@@ -229,15 +233,11 @@ const getCalculatedRowHeight = (title: string, maxWidthInPx: number) => {
     return height;
 };
 
-export const getRowHeights = (
-    hotData: AnnotationNoteValue[][],
-    mergeCells: MergeCellsSettings[],
-    maxWidthInPx: number
-) => {
+export const getRowHeights = (hotData: AnnotationNoteValue[][], mergeCells: MergeCellRange[], maxWidthInPx: number) => {
     const rowHeights: number[] = [];
     let currIndex = 0;
 
-    mergeCells.forEach(({ row, col, rowspan, colspan }) => {
+    mergeCells.forEach(({ row, rowspan }) => {
         while (currIndex < row) {
             // sometimes the merge cells skip a few rows as they do not need to be merged.
             // we therefore need to account for that by calculting those row heights (which have rowspan = 1)
@@ -248,11 +248,13 @@ export const getRowHeights = (
         const title = hotData[row][0] as string;
         const height = getCalculatedRowHeight(title, maxWidthInPx);
 
+        // Handsontable classic theme default row height is 26px; values below that are clamped.
+        const themeMinRowHeight = 26;
         const potentialRowHeight = Math.ceil(height / rowspan);
-        if (rowspan * 23 >= height) {
+        if (rowspan * themeMinRowHeight >= height) {
             // the title is smaller than the space taken up by the analyses
             for (let i = 0; i < rowspan; i++) {
-                rowHeights.push(potentialRowHeight < 23 ? 23 : potentialRowHeight);
+                rowHeights.push(potentialRowHeight < themeMinRowHeight ? themeMinRowHeight : potentialRowHeight);
             }
         } else {
             // the title is bigger than the space taken up by the analyses

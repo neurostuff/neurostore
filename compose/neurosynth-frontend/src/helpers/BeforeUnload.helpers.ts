@@ -11,13 +11,6 @@ const onBeforeUnloadHandler = (event: BeforeUnloadEvent) => {
     return 'Are you sure you want to leave?';
 };
 
-const onUnloadHandler = (event: any) => {
-    event.preventDefault();
-    window.sessionStorage.removeItem(EUnloadStatus.PROJECTSTORE);
-    window.sessionStorage.removeItem(EUnloadStatus.STUDYSTORE);
-    window.sessionStorage.removeItem(EUnloadStatus.ANNOTATIONSTORE);
-};
-
 export const setUnloadHandler = (store: 'project' | 'study' | 'annotation') => {
     if (store === 'project') {
         window.sessionStorage.setItem(EUnloadStatus.PROJECTSTORE, 'true');
@@ -28,7 +21,6 @@ export const setUnloadHandler = (store: 'project' | 'study' | 'annotation') => {
     }
     if (!eventListenerSet) {
         window.addEventListener('beforeunload', onBeforeUnloadHandler);
-        window.addEventListener('unload', onUnloadHandler);
         eventListenerSet = true;
     }
 };
@@ -48,7 +40,6 @@ export const unsetUnloadHandler = (store: 'project' | 'study' | 'annotation') =>
         window.sessionStorage.getItem(EUnloadStatus.ANNOTATIONSTORE) === null
     ) {
         window.removeEventListener('beforeunload', onBeforeUnloadHandler);
-        window.removeEventListener('unload', onUnloadHandler);
         eventListenerSet = false;
     }
 };
@@ -58,7 +49,6 @@ export const clearUnloadHandlers = () => {
     window.sessionStorage.removeItem(EUnloadStatus.STUDYSTORE);
     window.sessionStorage.removeItem(EUnloadStatus.ANNOTATIONSTORE);
     window.removeEventListener('beforeunload', onBeforeUnloadHandler);
-    window.removeEventListener('unload', onUnloadHandler);
     eventListenerSet = false;
 };
 
@@ -72,7 +62,11 @@ export const hasUnsavedChanges = () => {
 
 export const hasUnsavedStudyChanges = () => {
     return (
+        // you can edit annotations via study annotations which counts as a study edit
         window.sessionStorage.getItem(EUnloadStatus.STUDYSTORE) === 'true' ||
-        window.sessionStorage.getItem(EUnloadStatus.ANNOTATIONSTORE) === 'true' // you can edit annotations via study annotations which counts as a study edit
+        window.sessionStorage.getItem(EUnloadStatus.ANNOTATIONSTORE) === 'true'
     );
 };
+
+// Clear unload handlers on init
+clearUnloadHandlers();

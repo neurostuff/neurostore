@@ -4,11 +4,12 @@ import { createTheme, responsiveFontSizes, ThemeProvider } from '@mui/material/s
 import { SystemStyleObject } from '@mui/system';
 import * as Sentry from '@sentry/react';
 import React from 'react';
-import ReactDOM from 'react-dom';
+import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import './index.css';
-import { QueryCache, QueryClient, QueryClientProvider } from 'react-query';
+import 'handsontable/styles/ht-theme-classic.min.css';
+import { QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
 import { HelmetProvider } from 'react-helmet-async';
 
@@ -94,6 +95,7 @@ const queryClient = new QueryClient({
     defaultOptions: {
         queries: {
             retry: 0,
+            staleTime: 1000 * 5, // 5 seconds
             refetchOnWindowFocus: false,
             // staleTime: 5000, // https://tkdodo.eu/blog/practical-react-query#the-defaults-explained
         },
@@ -109,16 +111,23 @@ const queryClient = new QueryClient({
     }),
 });
 
-ReactDOM.render(
+const rootElement = document.getElementById('root');
+if (!rootElement) {
+    throw new Error('Root element not found');
+}
+
+createRoot(rootElement).render(
     <React.StrictMode>
         <Auth0Provider
             domain={domain}
-            useRefreshTokens={true}
             clientId={clientId}
-            redirectUri={window.location.origin}
-            scope="openid profile email offline_access"
-            audience={audience}
+            useRefreshTokens={true}
             cacheLocation="localstorage"
+            authorizationParams={{
+                redirect_uri: window.location.origin,
+                audience,
+                scope: 'openid profile email offline_access',
+            }}
         >
             <BrowserRouter>
                 <ThemeProvider theme={theme}>
@@ -130,6 +139,5 @@ ReactDOM.render(
                 </ThemeProvider>
             </BrowserRouter>
         </Auth0Provider>
-    </React.StrictMode>,
-    document.getElementById('root')
+    </React.StrictMode>
 );

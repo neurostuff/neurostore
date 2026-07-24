@@ -21,6 +21,8 @@ const useStudyHasBeenEdited = vi.fn().mockReturnValue(false);
 
 const useStudyAnalyses = vi.fn().mockReturnValue(mockAnalyses());
 
+const useStudyAnalysisPoints = vi.fn().mockReturnValue([]);
+
 const useUpdateStudyInDB = vi.fn().mockReturnValue(vi.fn());
 
 export {
@@ -34,5 +36,6 @@ export {
     useUpdateStudyIsLoading,
     useStudyHasBeenEdited,
     useStudyAnalyses,
+    useStudyAnalysisPoints,
     useUpdateStudyInDB,
 };

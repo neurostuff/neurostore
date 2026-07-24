@@ -4,7 +4,7 @@ import { Box, IconButton, Link, Typography } from '@mui/material';
 import axios, { AxiosError, AxiosResponse } from 'axios';
 import BaseNavigationStyles from 'pages/BaseNavigation/BaseNavigation.styles';
 import { useMemo, useState } from 'react';
-import { useQuery } from 'react-query';
+import { useQuery } from '@tanstack/react-query';
 
 // banner.config.json should adhere to this interface
 interface IBanner {
@@ -34,16 +34,14 @@ const isBannerDismissed = (bannerId: string): boolean => {
 };
 
 const useGetBannerConfig = () => {
-    return useQuery<AxiosResponse<IBanner[]>, AxiosError, IBanner[], string>(
-        'bannerConfig',
-        () => axios.get<IBanner[]>('/config/banner.config.json'),
-        {
-            select: (res) => res?.data ?? [],
-        }
-    );
+    return useQuery({
+        queryKey: ['bannerConfig'],
+        queryFn: () => axios.get<IBanner[]>('/config/banner.config.json'),
+        select: (res) => res?.data ?? []
+    });
 };
 
-const Banner: React.FC = () => {
+const Banner = () => {
     const { data } = useGetBannerConfig();
 
     const [dismissedBanners, setDismissedBanners] = useState<Set<string>>(() => {

@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { Popper, Grow, Paper, ClickAwayListener, PopperPlacementType } from '@mui/material';
 
 export interface INeurosynthPopper {
@@ -7,9 +8,10 @@ export interface INeurosynthPopper {
     disablePortal?: boolean;
     style?: React.CSSProperties;
     onClickAway: (event: MouseEvent | TouchEvent) => void;
+    children?: React.ReactNode;
 }
 
-const NeurosynthPopper: React.FC<INeurosynthPopper> = (props) => {
+const NeurosynthPopper = (props: INeurosynthPopper) => {
     const {
         open,
         anchorElement,
@@ -23,7 +25,7 @@ const NeurosynthPopper: React.FC<INeurosynthPopper> = (props) => {
     return (
         <Popper
             className="tour-highlighted-popper"
-            style={{ zIndex: 9999, ...style }}
+            style={{ zIndex: 9999, minWidth: anchorElement?.clientWidth, ...style }}
             anchorEl={anchorElement}
             open={open}
             disablePortal={disablePortal}

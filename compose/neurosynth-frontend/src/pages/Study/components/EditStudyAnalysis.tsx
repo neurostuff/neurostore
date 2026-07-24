@@ -3,10 +3,10 @@ import EditStudyAnalysisDetails from 'pages/Study/components/EditStudyAnalysisDe
 import EditStudyAnalysisPoints from 'pages/Study/components/EditStudyAnalysisPoints';
 import StudyAnalysisWarnings from 'pages/Study/components/StudyAnalysisWarnings';
 
-const EditStudyAnalysis: React.FC<{
+const EditStudyAnalysis = (props: {
     analysisId?: string;
     onDeleteAnalysis: () => void;
-}> = (props) => {
+}) => {
     if (!props.analysisId) {
         return <Typography sx={{ color: 'warning.dark' }}>No analysis selected</Typography>;
     }

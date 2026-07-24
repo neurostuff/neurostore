@@ -47,7 +47,7 @@ describe('CreateMetaAnalysisSpecificationSelectionStep', () => {
         };
     });
 
-    it('should render', () => {
+    it('should render', async () => {
         render(
             <CreateMetaAnalysisSpecificationSelectionStep
                 algorithm={algorithmMock}
@@ -58,7 +58,7 @@ describe('CreateMetaAnalysisSpecificationSelectionStep', () => {
         );
     });
 
-    it('should hide the multigroup selection component if the estimator is not a multigroup estimator', () => {
+    it('should hide the multigroup selection component if the estimator is not a multigroup estimator', async () => {
         algorithmMock = {
             estimator: {
                 label: 'Random estimator',
@@ -81,7 +81,7 @@ describe('CreateMetaAnalysisSpecificationSelectionStep', () => {
         expect(screen.queryByTestId('CreateMetaAnalysisSpecificationSelectionStepMultiGroup')).not.toBeInTheDocument();
     });
 
-    it('should show the multigroup selection component if the estimator is a multigroup estimator', () => {
+    it('should show the multigroup selection component if the estimator is a multigroup estimator', async () => {
         algorithmMock = {
             estimator: {
                 label: MULTIGROUP_ALGORITHMS[0],
@@ -105,7 +105,7 @@ describe('CreateMetaAnalysisSpecificationSelectionStep', () => {
     });
 
     describe('navigation', () => {
-        it('should go back', () => {
+        it('should go back', async () => {
             render(
                 <CreateMetaAnalysisSpecificationSelectionStep
                     algorithm={algorithmMock}
@@ -116,12 +116,12 @@ describe('CreateMetaAnalysisSpecificationSelectionStep', () => {
             );
 
             const backButton = screen.getByRole('button', { name: 'Back' });
-            userEvent.click(backButton);
+            await userEvent.click(backButton);
 
             expect(mockOnNavigate).toHaveBeenCalledWith(ENavigationButton.PREV);
         });
 
-        it('should go forward', () => {
+        it('should go forward', async () => {
             render(
                 <CreateMetaAnalysisSpecificationSelectionStep
                     algorithm={algorithmMock}
@@ -132,12 +132,12 @@ describe('CreateMetaAnalysisSpecificationSelectionStep', () => {
             );
 
             const nextButton = screen.getByRole('button', { name: 'Next' });
-            userEvent.click(nextButton);
+            await userEvent.click(nextButton);
 
             expect(mockOnNavigate).toHaveBeenCalledWith(ENavigationButton.NEXT);
         });
 
-        it('should disable the next button when selection key is undefined', () => {
+        it('should disable the next button when selection key is undefined', async () => {
             selectedValueMock = {
                 selectionKey: undefined,
                 type: EPropertyType.STRING,
@@ -157,7 +157,7 @@ describe('CreateMetaAnalysisSpecificationSelectionStep', () => {
             expect(nextButton).toBeDisabled();
         });
 
-        it('should disable the next button when the selection value is undefined', () => {
+        it('should disable the next button when the selection value is undefined', async () => {
             selectedValueMock = {
                 selectionKey: 'key',
                 type: EPropertyType.STRING,
@@ -177,7 +177,7 @@ describe('CreateMetaAnalysisSpecificationSelectionStep', () => {
             expect(nextButton).toBeDisabled();
         });
 
-        it('should disable the next button when the estimator is multi group and the reference dataset is undefined', () => {
+        it('should disable the next button when the estimator is multi group and the reference dataset is undefined', async () => {
             selectedValueMock = {
                 selectionKey: 'key',
                 type: EPropertyType.STRING,

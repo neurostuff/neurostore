@@ -1,6 +1,5 @@
-from ...models import Point
-from ...schemas import PointSchema
-from ...models import User, Analysis, Study
+from neurostore.models import Analysis, Point, Study, User
+from neurostore.schemas import PointSchema
 
 
 def test_get_points(auth_client, ingest_neurosynth, session):
@@ -104,6 +103,79 @@ def test_delete_points(auth_client, session):
     assert Point.query.filter_by(id=point_id).first() is None
 
 
+def test_analysis_point_count_updates_on_point_writes(auth_client, session):
+    id_ = auth_client.username
+    user = User.query.filter_by(external_id=id_).first()
+    study = Study(
+        name="point count study",
+        user=user,
+        analyses=[
+            Analysis(
+                name="analysis-a",
+                user=user,
+                points=[
+                    Point(
+                        x=0,
+                        y=0,
+                        z=0,
+                        space="MNI",
+                        user=user,
+                        order=1,
+                    )
+                ],
+            ),
+            Analysis(name="analysis-b", user=user),
+        ],
+    )
+    session.add(study)
+    session.commit()
+
+    analysis_a = study.analyses[0]
+    analysis_b = study.analyses[1]
+    session.refresh(analysis_a)
+    session.refresh(analysis_b)
+    assert analysis_a.point_count == 1
+    assert analysis_b.point_count == 0
+
+    create_resp = auth_client.post(
+        "/api/points/",
+        data={
+            "analysis": analysis_b.id,
+            "x": 1,
+            "y": 1,
+            "z": 1,
+            "space": "MNI",
+            "order": 1,
+        },
+    )
+    assert create_resp.status_code == 200
+    created_point_id = create_resp.json()["id"]
+
+    session.expire_all()
+    analysis_a = Analysis.query.filter_by(id=analysis_a.id).first()
+    analysis_b = Analysis.query.filter_by(id=analysis_b.id).first()
+    assert analysis_a.point_count == 1
+    assert analysis_b.point_count == 1
+
+    move_resp = auth_client.put(
+        f"/api/points/{created_point_id}", data={"analysis": analysis_a.id}
+    )
+    assert move_resp.status_code == 200
+
+    session.expire_all()
+    analysis_a = Analysis.query.filter_by(id=analysis_a.id).first()
+    analysis_b = Analysis.query.filter_by(id=analysis_b.id).first()
+    assert analysis_a.point_count == 2
+    assert analysis_b.point_count == 0
+
+    delete_resp = auth_client.delete(f"/api/points/{created_point_id}")
+    assert delete_resp.status_code == 200
+
+    session.expire_all()
+    analysis_a = Analysis.query.filter_by(id=analysis_a.id).first()
+    assert analysis_a.point_count == 1
+
+
 def test_post_point_without_order(auth_client, ingest_neurosynth, session):
     # Get an existing analysis from the database
     point_db = Point.query.first()
@@ -125,8 +197,66 @@ def test_post_point_without_order(auth_client, ingest_neurosynth, session):
     assert resp.json()["order"] is not None
 
 
+def test_post_points_with_null_coordinates(auth_client, session):
+    id_ = auth_client.username
+    user = User.query.filter_by(external_id=id_).first()
+    study = Study(
+        name="null coordinate post",
+        user=user,
+        analyses=[Analysis(name="analysis", user=user)],
+    )
+    session.add(study)
+    session.commit()
+
+    analysis_id = study.analyses[0].id
+    post_point = {
+        "analysis": analysis_id,
+        "x": None,
+        "y": None,
+        "z": None,
+        "order": 1,
+    }
+    resp = auth_client.post("/api/points/", data=post_point)
+    assert resp.status_code == 200
+    assert resp.json()["coordinates"] == [None, None, None]
+
+    point_id = resp.json()["id"]
+    db_point = Point.query.filter_by(id=point_id).first()
+    assert db_point is not None
+    assert db_point.coordinates == [None, None, None]
+
+
+def test_put_points_with_null_coordinates(auth_client, session):
+    id_ = auth_client.username
+    user = User.query.filter_by(external_id=id_).first()
+    study = Study(
+        name="null coordinate put",
+        user=user,
+        analyses=[
+            Analysis(
+                name="analysis",
+                user=user,
+                points=[Point(x=1, y=2, z=3, user=user, order=1)],
+            )
+        ],
+    )
+    session.add(study)
+    session.commit()
+
+    point_id = study.analyses[0].points[0].id
+    resp = auth_client.put(
+        f"/api/points/{point_id}",
+        data={"x": None, "y": None, "z": None},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["coordinates"] == [None, None, None]
+
+    db_point = Point.query.filter_by(id=point_id).first()
+    assert db_point.coordinates == [None, None, None]
+
+
 def test_point_deactivation_column(auth_client, session):
-    from ...models import User, Point, Analysis, Study
+    from neurostore.models import Analysis, Point, Study, User
 
     id_ = auth_client.username
     user = User.query.filter_by(external_id=id_).first()
@@ -170,7 +300,7 @@ def test_point_deactivation_column(auth_client, session):
 
 
 def test_point_cluster_measurement_unit(auth_client, session):
-    from ...models import User, Point, Analysis, Study
+    from neurostore.models import Analysis, Point, Study, User
 
     id_ = auth_client.username
     user = User.query.filter_by(external_id=id_).first()
@@ -232,3 +362,48 @@ def test_point_cluster_measurement_unit(auth_client, session):
     )
     assert resp_update.status_code == 200
     assert resp_update.json()["cluster_measurement_unit"] == "voxels"
+
+
+def test_point_is_seed_column(auth_client, session):
+    from neurostore.models import Analysis, Point, Study, User
+
+    id_ = auth_client.username
+    user = User.query.filter_by(external_id=id_).first()
+    s = Study(
+        name="is_seed test",
+        user=user,
+        analyses=[
+            Analysis(
+                name="analysis",
+                user=user,
+                points=[
+                    Point(x=1, y=2, z=3, user=user, order=1, is_seed=True),
+                    Point(x=4, y=5, z=6, user=user, order=2),  # default False
+                ],
+            )
+        ],
+    )
+    session.add(s)
+    session.commit()
+
+    point_true = s.analyses[0].points[0]
+    point_false = s.analyses[0].points[1]
+
+    resp_true = auth_client.get(f"/api/points/{point_true.id}")
+    resp_false = auth_client.get(f"/api/points/{point_false.id}")
+
+    assert resp_true.status_code == 200
+    assert resp_false.status_code == 200
+    assert resp_true.json()["is_seed"] is True
+    assert resp_false.json()["is_seed"] is False
+
+    # Partial PUT should not reset is_seed when omitted from payload.
+    resp_partial = auth_client.put(f"/api/points/{point_true.id}", data={"x": 10})
+    assert resp_partial.status_code == 200
+    assert resp_partial.json()["is_seed"] is True
+
+    resp_update = auth_client.put(
+        f"/api/points/{point_false.id}", data={"is_seed": True}
+    )
+    assert resp_update.status_code == 200
+    assert resp_update.json()["is_seed"] is True

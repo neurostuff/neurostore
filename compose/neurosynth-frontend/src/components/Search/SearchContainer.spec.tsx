@@ -32,7 +32,7 @@ describe('SearchContainer Component', () => {
     const mockOnRowsPerPageChange = vi.fn();
     const mockOnSearch = vi.fn();
 
-    it('should render', () => {
+    it('should render', async () => {
         render(
             <SearchContainer
                 totalCount={0}
@@ -49,7 +49,7 @@ describe('SearchContainer Component', () => {
         expect(screen.getByText('hello hello hello')).toBeInTheDocument();
     });
 
-    it('should call the search function', () => {
+    it('should call the search function', async () => {
         render(
             <SearchContainer
                 totalCount={0}
@@ -63,12 +63,12 @@ describe('SearchContainer Component', () => {
             </SearchContainer>
         );
         const search = screen.getByTestId('trigger-search');
-        userEvent.click(search);
+        await userEvent.click(search);
 
         expect(mockOnSearch).toHaveBeenCalledWith({ genericSearchStr: 'searchedstring' });
     });
 
-    it('should call the on page change function', () => {
+    it('should call the on page change function', async () => {
         render(
             <SearchContainer
                 totalCount={100}
@@ -83,7 +83,7 @@ describe('SearchContainer Component', () => {
         );
 
         const muiNavigateRightButton = screen.getByTestId('trigger-right-paginate');
-        userEvent.click(muiNavigateRightButton);
+        await userEvent.click(muiNavigateRightButton);
 
         expect(mockOnPageChange).toHaveBeenCalledWith(2);
     });
@@ -101,11 +101,11 @@ describe('SearchContainer Component', () => {
                 <div>hello hello hello</div>
             </SearchContainer>
         );
-        userEvent.click(screen.getByTestId('trigger-rows-per-page-change'));
+        await userEvent.click(screen.getByTestId('trigger-rows-per-page-change'));
         expect(mockOnRowsPerPageChange).toHaveBeenCalledWith(25);
     });
 
-    it('should set the total count', () => {
+    it('should set the total count', async () => {
         render(
             <SearchContainer
                 totalCount={101}
@@ -122,7 +122,7 @@ describe('SearchContainer Component', () => {
         expect(screen.getByText('count: 11'));
     });
 
-    it('should set the rows per page', () => {
+    it('should set the rows per page', async () => {
         render(
             <SearchContainer
                 totalCount={101}
@@ -139,7 +139,7 @@ describe('SearchContainer Component', () => {
         expect(screen.getByText('rows per page: 10'));
     });
 
-    it('should set the page of results', () => {
+    it('should set the page of results', async () => {
         render(
             <SearchContainer
                 totalCount={101}
@@ -156,7 +156,7 @@ describe('SearchContainer Component', () => {
         expect('page: 4');
     });
 
-    it('should set the search button color', () => {
+    it('should set the search button color', async () => {
         render(
             <SearchContainer
                 totalCount={101}
@@ -175,7 +175,7 @@ describe('SearchContainer Component', () => {
         expect(searchButton).toHaveStyle('background-color: rgb(255, 255, 0)');
     });
 
-    it('should set the pagination selector styles', () => {
+    it('should set the pagination selector styles', async () => {
         render(
             <SearchContainer
                 totalCount={101}

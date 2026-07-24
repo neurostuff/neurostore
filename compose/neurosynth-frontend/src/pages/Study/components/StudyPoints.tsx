@@ -1,4 +1,4 @@
-import { HotTable } from '@handsontable/react';
+import { HotTable, HotTableRef } from '@handsontable/react-wrapper';
 import { Box, Typography } from '@mui/material';
 import { registerAllModules } from 'handsontable/registry';
 import styles from 'components/HotTables/HotTables.module.css';
@@ -7,14 +7,14 @@ import { useEffect, useRef } from 'react';
 
 registerAllModules();
 
-const StudyPoints: React.FC<{
-    title: string;
+const StudyPoints = (props: {
+    title?: string;
     statistic: MapOrSpaceType | undefined;
     space: MapOrSpaceType | undefined;
     points: IStorePoint[];
     height?: string;
-}> = (props) => {
-    const hotTableRef = useRef<HotTable>(null);
+}) => {
+    const hotTableRef = useRef<HotTableRef>(null);
     const hotData = props.points.map((point) => [
         (point.coordinates || [])[0],
         (point.coordinates || [])[1],
@@ -24,17 +24,13 @@ const StudyPoints: React.FC<{
         point.subpeak,
     ]);
 
-    // this allows handsontable to be responsive to the window...
-    // Using this library has been soul crushing. We have to force it to update on window resize. render() and refreshDimensions()
-    // don't do anything
+    // Handsontable does not always pick up container size changes on its own.
     useEffect(() => {
         let debounce: NodeJS.Timeout;
-        const resizeHandler = (event: UIEvent) => {
+        const resizeHandler = () => {
             if (debounce) clearTimeout(debounce);
             debounce = setTimeout(() => {
-                if (hotTableRef?.current) {
-                    hotTableRef?.current?.forceUpdate();
-                }
+                hotTableRef.current?.hotInstance?.refreshDimensions();
             }, 100);
         };
         window.addEventListener('resize', resizeHandler);
@@ -47,7 +43,7 @@ const StudyPoints: React.FC<{
     return (
         <Box sx={{ width: '100%' }}>
             <Typography sx={{ fontWeight: 'bold', marginBottom: '0.5rem' }} gutterBottom>
-                {props.title}
+                {props.title ?? ''}
             </Typography>
             <Box
                 sx={{
@@ -76,6 +72,7 @@ const StudyPoints: React.FC<{
                     <div style={{ width: '100%', height: '100%' }}>
                         <HotTable
                             ref={hotTableRef}
+                            theme="ht-theme-classic"
                             data={hotData}
                             height={props.height}
                             columns={[

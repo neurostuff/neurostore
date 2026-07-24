@@ -61,12 +61,12 @@ export type IExtractionTableStudy = StudyReturn & { status: EExtractionStatus | 
 
 const columnHelper = createColumnHelper<IExtractionTableStudy>();
 
-const ExtractionTable: React.FC = () => {
+const ExtractionTable = () => {
     const studysetId = useProjectExtractionStudysetId();
     const projectId = useProjectId();
     const navigate = useNavigate();
     const studyStatusList = useProjectExtractionStudyStatusList();
-    const { data: studyset } = useGetStudysetById(studysetId, true); // this should already be loaded in the cache from the parent component
+    const { data: studyset } = useGetStudysetById(studysetId, false, true); // this should already be loaded in the cache from the parent component
     const setGivenStudyStatusesAsComplete = useProjectExtractionSetGivenStudyStatusesAsComplete();
     const projectUser = useProjectUser();
     const usercanEdit = useUserCanEdit(projectUser || undefined);

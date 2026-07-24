@@ -1,6 +1,6 @@
 import { ICurationColumn, ICurationStubStudy } from 'pages/Curation/Curation.types';
 import { INeurosynthNodeData } from 'pages/Curation/components/PrismaNeurosynthNode';
-import { ENeurosynthTagIds } from 'pages/Project/store/ProjectStore.types';
+import { ENeurosynthTagIds } from 'pages/Project/store/ProjectStore.consts';
 import { CSSProperties } from 'react';
 import { Edge, MarkerType, Node } from 'reactflow';
 import { IProvenance, ISource, ITag } from 'hooks/projects/useGetProjects';

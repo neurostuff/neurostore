@@ -5,7 +5,6 @@ import NeurosynthTableStyles from 'components/NeurosynthTable/NeurosynthTable.st
 import { useGetAnnotationById } from 'hooks';
 import { NoteCollectionReturn } from 'neurostore-typescript-sdk';
 import { useEffect, useMemo, useRef } from 'react';
-import CreateMetaAnalysisSpecificationDialogBaseStyles from 'pages/MetaAnalysis/components/CreateMetaAnalysisSpecificationDialogBase.styles';
 import {
     IAlgorithmSelection,
     IAnalysesSelection,
@@ -16,12 +15,12 @@ import SelectAnalysesComponentTable from './SelectAnalysesComponentTable';
 import SelectAnalysesStringValue from './SelectAnalysesStringValue';
 import { noteKeyObjToArr } from 'components/HotTables/HotTables.utils';
 
-const SelectAnalysesComponent: React.FC<{
+const SelectAnalysesComponent = (props: {
     annotationId: string;
     selectedValue: IAnalysesSelection;
     onSelectValue: (value: IAnalysesSelection) => void;
     algorithm: IAlgorithmSelection;
-}> = (props) => {
+}) => {
     const { annotationId, selectedValue, onSelectValue, algorithm } = props;
     const { data: annotation } = useGetAnnotationById(annotationId);
 
@@ -89,9 +88,8 @@ const SelectAnalysesComponent: React.FC<{
     };
 
     return (
-        <Box>
+        <Box sx={{ marginBottom: '3rem' }}>
             <NeurosynthAutocomplete
-                sx={CreateMetaAnalysisSpecificationDialogBaseStyles.highlightInput}
                 label="Inclusion Column"
                 shouldDisable={false}
                 isOptionEqualToValue={(option, value) => option?.selectionKey === value?.selectionKey}

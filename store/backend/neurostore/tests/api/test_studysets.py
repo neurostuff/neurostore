@@ -1,6 +1,10 @@
 import random
+import re
 import string
-from neurostore.models import Studyset, Study, StudysetStudy
+
+from sqlalchemy import event
+
+from neurostore.models import Analysis, Point, Study, Studyset, StudysetStudy, User
 
 
 def test_post_and_get_studysets(auth_client, ingest_neurosynth, session):
@@ -97,6 +101,87 @@ def test_get_nested_nonnested_studysets(auth_client, ingest_neurosynth, session)
 
     assert isinstance(non_nested.json()["studies"][0], str)
     assert isinstance(nested.json()["studies"][0], dict)
+
+
+def test_get_nested_studyset_includes_analysis_points(auth_client, session):
+    user = User.query.first()
+    study = Study(name="nested study", level="group", public=True, user=user)
+    studyset = Studyset(name="nested studyset", public=True, user=user)
+    session.add_all([study, studyset])
+    session.flush()
+
+    session.add(
+        StudysetStudy(
+            study_id=study.id,
+            studyset_id=studyset.id,
+            curation_stub_uuid="nested-stub",
+        )
+    )
+
+    analysis = Analysis(study_id=study.id, name="analysis-1", user=user, weights=[])
+    session.add(analysis)
+    session.flush()
+
+    point = Point(
+        analysis_id=analysis.id,
+        x=1.0,
+        y=2.0,
+        z=3.0,
+        space="MNI",
+        kind="peak",
+        user=user,
+    )
+    session.add(point)
+    session.commit()
+
+    nested = auth_client.get(f"/api/studysets/{studyset.id}?nested=true")
+
+    assert nested.status_code == 200
+    payload = nested.json()
+    assert payload["studyset_studies"] == [
+        {"id": study.id, "curation_stub_uuid": "nested-stub"}
+    ]
+    assert payload["studies"][0]["id"] == study.id
+    assert payload["studies"][0]["analyses"][0]["id"] == analysis.id
+    assert payload["studies"][0]["analyses"][0]["points"][0]["coordinates"] == [
+        1.0,
+        2.0,
+        3.0,
+    ]
+
+
+def test_get_summary_studyset(auth_client, ingest_neurosynth, session):
+    studyset_id = Studyset.query.first().id
+    summary = auth_client.get(f"/api/studysets/{studyset_id}?summary=true")
+    assert summary.status_code == 200
+    payload = summary.json()
+
+    assert isinstance(payload.get("studies"), list)
+    assert isinstance(payload.get("studyset_studies"), list)
+    summary_study_ids = {s["id"] for s in payload["studyset_studies"] if s.get("id")}
+    study_payload_ids = {s["id"] for s in payload["studies"] if s.get("id")}
+    assert summary_study_ids == study_payload_ids
+
+    if payload["studies"]:
+        study = payload["studies"][0]
+        for field in ["id", "name", "authors", "publication", "pmid", "doi", "year"]:
+            assert field in study
+        assert isinstance(study.get("analyses"), list)
+
+        if study["analyses"]:
+            analysis = study["analyses"][0]
+            assert "id" in analysis
+            assert isinstance(analysis.get("point_count"), int)
+            assert "metadata" not in analysis
+            assert "points" not in analysis
+            assert "images" not in analysis
+
+
+def test_summary_and_nested_are_incompatible(auth_client, ingest_neurosynth, session):
+    studyset_id = Studyset.query.first().id
+    resp = auth_client.get(f"/api/studysets/{studyset_id}?nested=true&summary=true")
+    assert resp.status_code == 400
+    assert "incompatible" in (resp.json().get("detail") or "").lower()
 
 
 def test_hot_swap_study_in_studyset(auth_client, ingest_neurosynth, session):
@@ -471,3 +556,91 @@ def test_stub_mapping_updates_when_switching_versions(
         assoc.get("id") == study_ids[0] and assoc.get("curation_stub_uuid") == stub_uuid
         for assoc in data.get("studyset_studies") or []
     )
+
+
+def test_studyset_put_studies_only_avoids_point_value_loading(
+    auth_client, ingest_neurosynth_enormous, session
+):
+    studyset = Studyset.query.first()
+    user = User.query.filter_by(external_id=auth_client.username).first()
+    studyset.user = user
+    session.commit()
+    study_ids = [
+        sid
+        for (sid,) in session.query(StudysetStudy.study_id)
+        .filter_by(studyset_id=studyset.id)
+        .all()
+    ]
+    assert len(study_ids) >= 2
+
+    swapped = study_ids[:-1]
+    replacement = auth_client.post(
+        "/api/studies/",
+        data={"name": "replacement study for fast-path test"},
+    )
+    assert replacement.status_code == 200
+    swapped.append(replacement.json()["id"])
+
+    statements = []
+
+    def _capture_sql(conn, cursor, statement, parameters, context, executemany):
+        statements.append(" ".join(statement.lower().split()))
+
+    event.listen(session.bind, "before_cursor_execute", _capture_sql)
+    try:
+        resp = auth_client.put(
+            f"/api/studysets/{studyset.id}", data={"studies": swapped}
+        )
+    finally:
+        event.remove(session.bind, "before_cursor_execute", _capture_sql)
+
+    assert resp.status_code == 200
+    point_value_queries = [stmt for stmt in statements if "from point_values" in stmt]
+    assert len(point_value_queries) < 10
+
+
+def test_studyset_put_studies_only_uses_deterministic_insert_order(
+    auth_client, ingest_neurosynth, session
+):
+    ordered_ids = [
+        sid for (sid,) in session.query(Study.id).order_by(Study.id).limit(3).all()
+    ]
+    assert len(ordered_ids) == 3
+
+    payload_order = [ordered_ids[2], ordered_ids[0], ordered_ids[1]]
+    created = auth_client.post(
+        "/api/studysets/", data={"name": "deterministic-insert-order"}
+    )
+    assert created.status_code == 200
+
+    insert_orders = []
+    study_id_key = re.compile(r"study_id__(\d+)$")
+
+    def _capture_insert_order(
+        conn, cursor, statement, parameters, context, executemany
+    ):
+        normalized_statement = " ".join(statement.lower().split())
+        if "insert into studyset_studies" not in normalized_statement:
+            return
+
+        if isinstance(parameters, dict):
+            indexed_values = []
+            for key, value in parameters.items():
+                match = study_id_key.match(key)
+                if match:
+                    indexed_values.append((int(match.group(1)), value))
+            if indexed_values:
+                insert_orders.append([value for _, value in sorted(indexed_values)])
+
+    event.listen(session.bind, "before_cursor_execute", _capture_insert_order)
+    try:
+        update_resp = auth_client.put(
+            f"/api/studysets/{created.json()['id']}",
+            data={"studies": payload_order},
+        )
+    finally:
+        event.remove(session.bind, "before_cursor_execute", _capture_insert_order)
+
+    assert update_resp.status_code == 200
+    assert insert_orders
+    assert max(insert_orders, key=len) == sorted(payload_order)

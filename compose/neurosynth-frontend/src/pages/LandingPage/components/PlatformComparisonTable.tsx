@@ -3,7 +3,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import { Box, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@mui/material';
 import PlatformComparisonTableStyles from './PlatformComparisonTable.styles';
 
-const PlatformComparisonTable: React.FC = (props) => {
+const PlatformComparisonTable = () => {
     return (
         <>
             <TableContainer>

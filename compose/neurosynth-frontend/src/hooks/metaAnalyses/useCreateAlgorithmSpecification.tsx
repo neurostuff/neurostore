@@ -11,7 +11,7 @@ import {
     StudysetPostBody,
     StudysetReturn,
 } from 'neurosynth-compose-typescript-sdk';
-import { useMutation, useQueryClient } from 'react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import API, { NeurostoreAnnotation } from 'api/api.config';
 
 export enum EAnalysisType {
@@ -26,27 +26,36 @@ const useCreateAlgorithmSpecification = () => {
         AxiosError,
         SpecificationPostBody,
         unknown
-    >((spec: SpecificationPostBody) => API.NeurosynthServices.SpecificationsService.specificationsPost(spec));
+    >({
+        mutationFn: (spec: SpecificationPostBody) => API.NeurosynthServices.SpecificationsService.specificationsPost(spec),
+    });
     const createSynthStudysetMutation = useMutation<
         AxiosResponse<StudysetReturn>,
         AxiosError,
         StudysetPostBody,
         unknown
-    >((studyset) => API.NeurosynthServices.StudysetsService.studysetsPost(studyset));
+    >({
+        mutationFn: (studyset: StudysetPostBody) =>
+            API.NeurosynthServices.StudysetsService.snapshotStudysetsPost(studyset),
+    });
     const createSynthAnnotationMutation = useMutation<
         AxiosResponse<NeurostoreAnnotation>,
         AxiosError,
         AnnotationPostBody,
         unknown
-    >((annotation) => API.NeurosynthServices.AnnotationsService.annotationsPost(annotation));
+    >({
+        mutationFn: (annotation: AnnotationPostBody) =>
+            API.NeurosynthServices.AnnotationsService.snapshotAnnotationsPost(annotation),
+    });
     const createMetaAnalysisMutation = useMutation<
         AxiosResponse<MetaAnalysisReturn>,
         AxiosError,
         MetaAnalysisPostBody,
         unknown
-    >((metaAnalysis: MetaAnalysisPostBody) =>
-        API.NeurosynthServices.MetaAnalysisService.metaAnalysesPost(metaAnalysis)
-    );
+    >({
+        mutationFn: (metaAnalysis: MetaAnalysisPostBody) =>
+            API.NeurosynthServices.MetaAnalysisService.metaAnalysesPost(metaAnalysis)
+    });
 
     const createMetaAnalysis = async (
         projectId: string | undefined,
@@ -97,15 +106,15 @@ const useCreateAlgorithmSpecification = () => {
 
             const createdSynthAnnotation = await createSynthAnnotationMutation.mutateAsync({
                 neurostore_id: annotationId,
-                cached_studyset_id: createdSynthStudyset.data.id,
+                snapshot_studyset_id: createdSynthStudyset.data.id,
             });
             if (!createdSynthAnnotation.data.id) throw new Error('no id from created synth annotation');
 
+            // Meta-analysis creation should not include cached snapshot IDs.
+            // The backend handles snapshot linkage later when results are uploaded.
             const createdMetaAnalysis = await createMetaAnalysisMutation.mutateAsync({
                 name: metaAnalysisName,
                 description: metaAnalysisDescription,
-                cached_studyset_id: createdSynthStudyset.data.id,
-                cached_annotation_id: createdSynthAnnotation.data.id,
                 specification: createdSpec.data.id,
                 project: projectId,
             });
@@ -120,11 +129,11 @@ const useCreateAlgorithmSpecification = () => {
         }
     };
 
-    const isLoading =
-        createSpecificationMutation.isLoading ||
-        createSynthStudysetMutation.isLoading ||
-        createSynthAnnotationMutation.isLoading ||
-        createMetaAnalysisMutation.isLoading;
+    const isPending =
+        createSpecificationMutation.isPending ||
+        createSynthStudysetMutation.isPending ||
+        createSynthAnnotationMutation.isPending ||
+        createMetaAnalysisMutation.isPending;
 
     const isError =
         createSpecificationMutation.isError ||
@@ -140,7 +149,7 @@ const useCreateAlgorithmSpecification = () => {
 
     return {
         error,
-        isLoading,
+        isPending,
         isError,
         createMetaAnalysis,
     };

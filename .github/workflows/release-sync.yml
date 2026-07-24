@@ -1,0 +1,83 @@
+name: Release Metadata Sync
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to sync, for example v0.17.4"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  sync_or_verify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.ref }}
+
+      - name: Resolve tag and mode
+        id: release
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "tag=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
+            echo "mode=write" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+            echo "mode=check" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Sync release metadata
+        shell: bash
+        run: |
+          cmd=(python3 scripts/release/sync_release_metadata.py --tag "${{ steps.release.outputs.tag }}")
+          if [ "${{ steps.release.outputs.mode }}" = "check" ]; then
+            cmd+=(--check)
+          fi
+          "${cmd[@]}"
+
+      - name: Commit synced metadata
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        shell: bash
+        run: |
+          if git diff --quiet; then
+            echo "No release metadata changes to commit."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add codemeta.json .zenodo.json store/backend/pyproject.toml compose/backend/pyproject.toml compose/neurosynth-frontend/package.json
+          git commit -m "Sync release metadata for ${{ steps.release.outputs.tag }}"
+          git push
+
+      - name: Create and push tag
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        shell: bash
+        run: |
+          tag="${{ steps.release.outputs.tag }}"
+
+          if git rev-parse -q --verify "refs/tags/${tag}" >/dev/null; then
+            echo "Tag ${tag} already exists locally." >&2
+            exit 1
+          fi
+
+          if git ls-remote --exit-code --tags origin "refs/tags/${tag}" >/dev/null 2>&1; then
+            echo "Tag ${tag} already exists on origin." >&2
+            exit 1
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "${tag}" -m "${tag}"
+          git push origin "${tag}"

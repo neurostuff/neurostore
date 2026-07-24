@@ -1,0 +1,13 @@
+{
+  "type": "article-journal",
+  "id": "10.1162/IMAG.a.1114",
+  "title": "Neurosynth Compose: A web-based platform for flexible and reproducible neuroimaging meta-analysis",
+  "author": [
+    { "family": "Kent", "given": "J. D." },
+    { "family": "Lee", "given": "N." },
+    { "family": "Laird", "given": "A. R." }
+  ],
+  "issued": { "date-parts": [[2026]] },
+  "DOI": "10.1162/IMAG.a.1114",
+  "container-title": "Imaging Neuroscience"
+}

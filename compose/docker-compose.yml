@@ -1,4 +1,3 @@
-version: "2"
 services:
   compose:
     image: compose
@@ -20,6 +19,9 @@ services:
     command: /usr/local/bin/gunicorn -k uvicorn.workers.UvicornWorker -w 2 -b :8000 neurosynth_compose.core:asgi_app --log-level debug --timeout 120
     env_file:
       - .env
+    networks:
+      - default
+      - proxy_shared
 
   compose_redis:
     image: redis
@@ -39,12 +41,15 @@ services:
     depends_on:
       compose_redis:
         condition: service_healthy
-    entrypoint: celery -A neurosynth_compose.resources.tasks.celery_app worker --loglevel=debug
+    entrypoint: celery -A neurosynth_compose.resources.tasks.celery_app worker --loglevel=debug --autoscale=4,1 --max-tasks-per-child=5
     volumes:
       - ${CELERY_LOG_DIR}:/logs:rw
       - ${FILE_DIR}:/file-data
     env_file:
       - .env
+    networks:
+      - default
+      - proxy_shared
 
   compose_nginx:
     image: compose_nginx
@@ -59,6 +64,9 @@ services:
     environment:
       - VIRTUAL_HOST=${V_HOST}
       - LETSENCRYPT_HOST=${V_HOST}
+    networks:
+      - default
+      - proxy_shared
 
   compose_pgsql:
     image: compose_pgsql
@@ -105,8 +113,12 @@ services:
     env_file:
       - .env
     environment:
-      DATABASE_URL: "postgres://postgres:example@compose-pgsql17:5432/compose"
       RAILS_RELATIVE_URL_ROOT: "/pghero"
+    volumes:
+      - ./postgres/resolve-app-db.sh:/usr/local/bin/resolve-app-db.sh:ro
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - 'export PATH="/usr/local/bundle/bin:${PATH}"; db_name="$(/usr/local/bin/resolve-app-db.sh compose)"; export DATABASE_URL="postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:5432/$${db_name}"; exec puma -C /app/config/puma.rb'
     depends_on:
       compose-pgsql17:
         condition: service_healthy
@@ -127,6 +139,10 @@ services:
     volumes:
       - grafana_data:/var/lib/grafana
       - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+      - ./postgres/resolve-app-db.sh:/usr/local/bin/resolve-app-db.sh:ro
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - 'export PATH="/usr/share/grafana/bin:${PATH}"; export POSTGRES_DB="$(/usr/local/bin/resolve-app-db.sh compose)"; exec /run.sh'
     depends_on:
       compose-pgsql17:
         condition: service_healthy
@@ -155,6 +171,6 @@ volumes:
   grafana_data:
 
 networks:
-  default:
-    external:
-      name: nginx-proxy
+  proxy_shared:
+    name: ${SHARED_PROXY_NETWORK:-nginx-proxy}
+    external: true

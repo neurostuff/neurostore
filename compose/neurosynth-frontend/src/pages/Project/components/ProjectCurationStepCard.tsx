@@ -14,10 +14,10 @@ const getPercentageComplete = (curationSummary: ICurationSummary): number => {
     const percentageComplete = ((curationSummary.included + curationSummary.excluded) / curationSummary.total) * 100;
     return Math.round(percentageComplete);
 };
-const ProjectCurationStepCard: React.FC<{ projectId: string | undefined; disabled: boolean }> = ({
+const ProjectCurationStepCard = ({ 
     projectId,
     disabled,
-}) => {
+ }: { projectId: string | undefined; disabled: boolean }) => {
     const navigate = useNavigate();
     const curationSummary = useGetCurationSummary();
 

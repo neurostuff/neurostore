@@ -1,12 +1,12 @@
 import os
-from typing import List, Any, Optional
+from typing import Any, List, Optional
 
 import openai
 from tenacity import (
     retry,
+    retry_if_exception_type,
     stop_after_attempt,
     wait_exponential,
-    retry_if_exception_type,
 )
 
 
@@ -22,44 +22,22 @@ def _call_openai_create(
     input_text: str,
     dimensions: Optional[int] = None,
     api_key: Optional[str] = None,
+    api_gateway: Optional[str] = None,
 ) -> Any:
-    """
-    Internal call wrapped with tenacity to perform the OpenAI embeddings request.
+    client_kwargs = {}
+    if api_key:
+        client_kwargs["api_key"] = api_key
+    if api_gateway:
+        client_kwargs["base_url"] = api_gateway
+    if api_gateway and "portkey.ai" in api_gateway:
+        client_kwargs["default_headers"] = {"x-portkey-api-key": api_key}
 
-    This prefers the modern SDK client (openai.OpenAI().embeddings.create) when available,
-    and falls back to legacy surfaces (openai.Embedding.create or openai.embeddings.create).
-    The `dimensions` argument is forwarded to the OpenAI API when provided.
-    The optional `api_key` is used to construct the modern OpenAI client if supplied.
-    """
-    # Try modern OpenAI client (openai>=1.x)
-    try:
-        if hasattr(openai, "OpenAI"):
-            client = openai.OpenAI(api_key=api_key) if api_key else openai.OpenAI()
-            if dimensions is None:
-                return client.embeddings.create(model=model, input=input_text)
-            return client.embeddings.create(
-                model=model, input=input_text, dimensions=dimensions
-            )
-    except Exception:
-        # If the modern client fails for any reason, fall through to legacy surfaces.
-        pass
-
-    # Fallback: older SDK surfaces
-    if hasattr(openai, "Embedding") and hasattr(openai.Embedding, "create"):
-        if dimensions is None:
-            return openai.Embedding.create(model=model, input=input_text)
-        return openai.Embedding.create(
-            model=model, input=input_text, dimensions=dimensions
-        )
-
-    if hasattr(openai, "embeddings") and hasattr(openai.embeddings, "create"):
-        if dimensions is None:
-            return openai.embeddings.create(model=model, input=input_text)
-        return openai.embeddings.create(
-            model=model, input=input_text, dimensions=dimensions
-        )
-
-    raise AttributeError("No supported OpenAI embeddings API found on openai package")
+    client = openai.OpenAI(**client_kwargs)
+    if dimensions is None:
+        return client.embeddings.create(model=model, input=input_text)
+    return client.embeddings.create(
+        model=model, input=input_text, dimensions=dimensions
+    )
 
 
 def get_embedding(text: str, dimensions: Optional[int] = None) -> List[float]:
@@ -68,6 +46,9 @@ def get_embedding(text: str, dimensions: Optional[int] = None) -> List[float]:
 
     Behavior:
     - Reads OPENAI_API_KEY from environment (raises RuntimeError if missing).
+    - Reads OPENAI_API_GATEWAY from environment as an optional OpenAI-compatible
+      base URL.
+    - Reads OPENAI_EMBEDDING_MODEL from environment as an optional embedding model.
     - Uses the openai Python package to request embeddings. If `dimension` is provided
       it will be passed through to the OpenAI API via the `dimensions` parameter.
     - Retries up to 3 attempts with small backoff via tenacity on transient/network errors.
@@ -92,11 +73,12 @@ def get_embedding(text: str, dimensions: Optional[int] = None) -> List[float]:
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
         raise RuntimeError("OPENAI_API_KEY not set")
+    api_gateway = os.getenv("OPENAI_API_GATEWAY")
 
     # configure key for the openai client
     openai.api_key = api_key
 
-    model_name = "text-embedding-3-small"
+    model_name = os.getenv("OPENAI_EMBEDDING_MODEL", "text-embedding-3-small")
 
     if dimensions is not None and not isinstance(dimensions, int):
         raise ValueError("dimensions must be an int when provided")
@@ -104,7 +86,11 @@ def get_embedding(text: str, dimensions: Optional[int] = None) -> List[float]:
     try:
         # Use unified caller that handles both modern and legacy SDKs.
         resp = _call_openai_create(
-            model=model_name, input_text=text, dimensions=dimensions, api_key=api_key
+            model=model_name,
+            input_text=text,
+            dimensions=dimensions,
+            api_key=api_key,
+            api_gateway=api_gateway,
         )
 
         # Handle both legacy dict responses and modern OpenAI response objects.

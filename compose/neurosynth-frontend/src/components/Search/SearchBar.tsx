@@ -33,7 +33,7 @@ const searchPlaceholderExamples = [
     'Try: "working memory" OR "spatial memory"',
 ];
 
-const SearchBar: React.FC<ISearchBar> = (props) => {
+const SearchBar = (props: ISearchBar) => {
     const { onSearch, searchButtonColor = 'primary', searchMode = 'study-search' } = props;
     const [placeholder, setPlaceholder] = useState(searchPlaceholderExamples[0]);
     const location = useLocation();

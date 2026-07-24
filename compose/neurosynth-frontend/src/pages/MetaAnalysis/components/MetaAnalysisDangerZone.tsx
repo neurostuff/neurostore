@@ -8,7 +8,7 @@ import { useProjectUser } from 'pages/Project/store/ProjectStore';
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
-const MetaAnalysisDangerZone: React.FC<{ metaAnalysisId: string | undefined }> = ({ metaAnalysisId }) => {
+const MetaAnalysisDangerZone = ({  metaAnalysisId  }: { metaAnalysisId: string | undefined }) => {
     const { projectId } = useParams<{ projectId: string }>();
     const projectUser = useProjectUser();
     const { mutate: deleteMetaAnalysis } = useDeleteMetaAnalysis();

@@ -25,7 +25,7 @@ export interface IConfirmationDialog {
     rejectText?: string;
 }
 
-const ConfirmationDialog: React.FC<IConfirmationDialog> = (props) => {
+const ConfirmationDialog = (props: IConfirmationDialog) => {
     const dialogContent = useMemo(() => {
         if (!props.dialogMessage) return undefined;
 

@@ -18,11 +18,13 @@ const CodeSnippetStyles: Style = {
     codeBlock: {
         backgroundColor: '#585858',
         color: 'white',
-        padding: '0.75rem',
+        paddingBottom: '4px',
         fontFamily: 'monospace',
         borderBottomLeftRadius: '3px',
         borderBottomRightRadius: '3px',
         minHeight: '1rem',
+        whiteSpace: 'nowrap',
+        overflow: 'auto',
     },
 };
 

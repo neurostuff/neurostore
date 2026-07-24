@@ -56,16 +56,39 @@ def load_env_file(path: Path) -> dict:
 def load_db_config(env: dict, label: str) -> DbConfig:
     """
     Build DbConfig from a single, canonical set of keys in the provided env mapping.
-    Required keys: POSTGRES_HOST, POSTGRES_DB, POSTGRES_USER, POSTGRES_PASSWORD.
+    Required keys: POSTGRES_HOST, POSTGRES_USER, POSTGRES_PASSWORD.
+    Database name is resolved from APP_ENV.
     Optional: POSTGRES_PORT (defaults to 5432, matching the app config).
     """
+    default_db_name = {"compose": "compose", "neurostore": "neurostore"}.get(label)
+    if not default_db_name:
+        raise RuntimeError(f"Unsupported database label: {label}")
+
+    app_env = env.get("APP_ENV", "development").strip().lower()
+    if app_env in {
+        "dev",
+        "development",
+        "test",
+        "testing",
+        "docker_test",
+        "docker-test",
+    }:
+        dbname = "store_test_db" if label == "neurostore" else "compose_test_db"
+    elif app_env in {"stage", "staging", "prod", "production"}:
+        dbname = default_db_name
+    else:
+        dbname = None
+
     required_present = {
         "host": "POSTGRES_HOST",
-        "dbname": "POSTGRES_DB",
         "user": "POSTGRES_USER",
         "password": "POSTGRES_PASSWORD",
     }
-    missing_required = [env_key for env_key in required_present.values() if not env.get(env_key)]
+    missing_required = [
+        env_key for env_key in required_present.values() if not env.get(env_key)
+    ]
+    if not dbname:
+        missing_required.append("APP_ENV")
     if missing_required:
         raise RuntimeError(
             f"Missing required environment variables for {label} database: {', '.join(missing_required)}"
@@ -75,11 +98,13 @@ def load_db_config(env: dict, label: str) -> DbConfig:
     try:
         port = int(port_raw)
     except ValueError as exc:
-        raise RuntimeError(f"Invalid port for {label} database; expected integer in POSTGRES_PORT") from exc
+        raise RuntimeError(
+            f"Invalid port for {label} database; expected integer in POSTGRES_PORT"
+        ) from exc
 
     return DbConfig(
         host=env[required_present["host"]],
-        dbname=env[required_present["dbname"]],
+        dbname=dbname,
         user=env[required_present["user"]],
         password=env[required_present["password"]],
         port=port,
@@ -139,7 +164,9 @@ def fetch_neurostore_missing(cur) -> List[dict]:
     Returns rows with: studyset_id, study_id, pmid, doi, pmcid, name
     Only where curation_stub_uuid is NULL.
     """
-    cur.execute("SELECT to_regclass('public.studyset_studies'), to_regclass('public.studies')")
+    cur.execute(
+        "SELECT to_regclass('public.studyset_studies'), to_regclass('public.studies')"
+    )
     ss_table, s_table = cur.fetchone()
     if not ss_table or not s_table:
         print("Neurostore DB: required tables missing; skipping missing-stub fetch.")
@@ -209,7 +236,9 @@ def build_stub_map(stubs: Iterable[dict]) -> Dict[str, Dict[Tuple[str, str], Set
     """
     Map: studyset_id -> (key -> set(stub_ids))
     """
-    out: Dict[str, Dict[Tuple[str, str], Set[str]]] = defaultdict(lambda: defaultdict(set))
+    out: Dict[str, Dict[Tuple[str, str], Set[str]]] = defaultdict(
+        lambda: defaultdict(set)
+    )
     for stub in stubs:
         studyset_id = stub.get("studyset_id")
         stub_id = stub.get("stub_id")
@@ -305,8 +334,12 @@ def find_repo_root() -> Path:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Backfill curation_stub_uuid from compose stubs")
-    parser.add_argument("--execute", action="store_true", help="Apply updates (otherwise dry-run)")
+    parser = argparse.ArgumentParser(
+        description="Backfill curation_stub_uuid from compose stubs"
+    )
+    parser.add_argument(
+        "--execute", action="store_true", help="Apply updates (otherwise dry-run)"
+    )
     args = parser.parse_args()
 
     repo_root = find_repo_root()
@@ -314,9 +347,13 @@ def main():
     store_env = load_env_file(repo_root / "store" / ".env")
 
     if not compose_env:
-        raise RuntimeError("compose/.env is required to configure the compose database connection.")
+        raise RuntimeError(
+            "compose/.env is required to configure the compose database connection."
+        )
     if not store_env:
-        raise RuntimeError("store/.env is required to configure the neurostore database connection.")
+        raise RuntimeError(
+            "store/.env is required to configure the neurostore database connection."
+        )
 
     compose_cfg = load_db_config(compose_env, "compose")
     neuro_cfg = load_db_config(store_env, "neurostore")
@@ -326,7 +363,9 @@ def main():
             stubs = fetch_compose_stubs(ccur)
         with neuro_conn.cursor() as ncur:
             missing = fetch_neurostore_missing(ncur)
-            assigned = fetch_neurostore_assigned(ncur, (row["studyset_id"] for row in missing))
+            assigned = fetch_neurostore_assigned(
+                ncur, (row["studyset_id"] for row in missing)
+            )
 
         stub_map = build_stub_map(stubs)
         updates, skipped = plan_updates(stub_map, missing, assigned_stub_map=assigned)

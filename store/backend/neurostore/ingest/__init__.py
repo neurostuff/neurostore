@@ -3,32 +3,34 @@ Ingest and sync data from various sources (Neurosynth, NeuroVault, etc.).
 """
 
 import os.path as op
-import re
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import requests
-from scipy import sparse
 from dateutil.parser import parse as parse_date
+from scipy import sparse
 from sqlalchemy import or_
 
 from neurostore.database import db
+from neurostore.map_types import canonicalize_map_type
 from neurostore.models import (
     Analysis,
-    Table,
     AnalysisConditions,
-    AnnotationAnalysis,
     Annotation,
+    AnnotationAnalysis,
+    BaseStudy,
     Condition,
+    Entity,
     Image,
     Point,
     Study,
-    BaseStudy,
     Studyset,
-    Entity,
+    Table,
 )
 from neurostore.models.data import StudysetStudy, _check_type
+from neurostore.note_keys import resolve_note_key_default
+from neurostore.services.has_media_flags import recompute_media_flags
 
 META_ANALYSIS_WORDS = ["meta analysis", "meta-analysis", "systematic review"]
 
@@ -48,13 +50,33 @@ def _coerce_optional_int(value):
     return int(float(value))
 
 
+def _recompute_base_study_flags(base_studies):
+    base_study_ids = [getattr(base_study, "id", None) for base_study in base_studies]
+    base_study_ids = [
+        base_study_id for base_study_id in base_study_ids if base_study_id
+    ]
+    if not base_study_ids:
+        return
+    db.session.remove()
+    recompute_media_flags(base_study_ids)
+    db.session.commit()
+    db.session.remove()
+
+
 def ingest_neurovault(verbose=False, limit=20, overwrite=False, max_images=None):
     # Store existing studies for quick lookup
-    all_studies = {s.doi: s for s in Study.query.filter_by(source="neurovault").all()}
+    all_studies = {
+        str(s.source_id): s for s in Study.query.filter_by(source="neurovault").all()
+    }
 
     def add_collection(data):
-        if data["DOI"] in all_studies and not overwrite:
-            print("Skipping {} (already exists)...".format(data["DOI"]))
+        collection_id = data.get("id")
+        if str(collection_id) in all_studies and not overwrite:
+            print(
+                "Skipping collection {} with DOI {} (already exists)...".format(
+                    collection_id, data.get("DOI")
+                )
+            )
             return
         collection_id = data.pop("id")
         doi = data.pop("DOI", None)
@@ -66,7 +88,7 @@ def ingest_neurovault(verbose=False, limit=20, overwrite=False, max_images=None)
             base_study = BaseStudy(
                 name=data.pop("name", None),
                 description=data.pop("description", None),
-                doi=data.pop("DOI", None),
+                doi=doi,
                 authors=data.pop("authors", None),
                 publication=data.pop("journal_name", None),
                 metadata_=data,
@@ -94,10 +116,12 @@ def ingest_neurovault(verbose=False, limit=20, overwrite=False, max_images=None)
         analyses = {}
         images = []
         conditions = set()
+        existing_conditions = {cond.name: cond for cond in Condition.query.all()}
         order = 0
         for img in data["results"]:
-            aname = img["name"]
-            if aname not in analyses:
+            aname = img.get("name")
+            analysis = None
+            if aname and aname not in analyses:
                 condition = img.get("cognitive_paradigm_cogatlas")
                 analysis_kwargs = {
                     "name": aname,
@@ -109,46 +133,54 @@ def ingest_neurovault(verbose=False, limit=20, overwrite=False, max_images=None)
                 analysis = Analysis(**analysis_kwargs)
                 if condition:
                     cond = next(
-                        (
-                            cond
-                            for cond in list(conditions) + Condition.query.all()
-                            if cond.name == condition
-                        ),
-                        Condition(name=condition),
+                        (cond for cond in conditions if cond.name == condition),
+                        existing_conditions.get(condition),
                     )
+                    if cond is None:
+                        cond = Condition(name=condition)
+                        existing_conditions[condition] = cond
                     conditions.add(cond)
 
-                    analysis.analysis_conditions.append(
-                        AnalysisConditions(weight=1, condition=cond)
-                    )
+                    if getattr(cond, "id", None):
+                        analysis.analysis_conditions.append(
+                            AnalysisConditions(weight=1, condition_id=cond.id)
+                        )
+                    else:
+                        analysis.analysis_conditions.append(
+                            AnalysisConditions(weight=1, condition=cond)
+                        )
 
                 analyses[aname] = analysis
-            else:
+            elif aname:
                 analysis = analyses[aname]
             space = space or "Unknown" if img.get("not_mni", False) else "MNI"
-            type_ = img.get("map_type", "Unknown")
-            if re.match(r"\w\smap.*", type_):
-                type_ = type_[0]
+            type_ = canonicalize_map_type(img.get("map_type"))
+            entities = []
+            if analysis is not None:
+                entities.append(
+                    Entity(level="group", label=analysis.name, analysis=analysis)
+                )
             image = Image(
                 url=img["file"],
                 space=space,
                 value_type=type_,
                 analysis=analysis,
+                study=s,
                 data=img,
                 filename=op.basename(img["file"]),
                 add_date=parse_date(img["add_date"]),
-                entities=[
-                    Entity(level="group", label=analysis.name, analysis=analysis)
-                ],
+                entities=entities,
             )
             images.append(image)
 
-        base_study.update_has_images_and_points()
+        study_source_id = str(s.source_id) if s.source_id is not None else None
         db.session.add_all(
             [base_study] + [s] + list(analyses.values()) + images + list(conditions)
         )
         db.session.commit()
-        all_studies[s.name] = s
+        _recompute_base_study_flags([base_study])
+        if study_source_id is not None:
+            all_studies[study_source_id] = s
         return s
 
     url = "https://neurovault.org/api/collections.json"
@@ -177,6 +209,15 @@ def ingest_neurovault(verbose=False, limit=20, overwrite=False, max_images=None)
 
 
 def ingest_neurosynth(max_rows=None):
+    """Ingest the bundled Neurosynth coordinate dataset.
+
+    Deprecated:
+        This still creates the legacy public ``neurosynth`` Studyset and
+        Annotation for backwards compatibility with tests and older local
+        bootstrap flows. New platform-wide studyset creation should use the
+        canonical platform/release builders instead of adding dataset-specific
+        studysets during ingestion.
+    """
     coords_file = (
         Path(__file__).parent.parent
         / "data"
@@ -213,7 +254,9 @@ def ingest_neurosynth(max_rows=None):
         metadata = metadata.iloc[:max_rows]
         annotations = annotations.iloc[:max_rows]
 
-    # create studyset object
+    # DEPRECATED: retained only for backwards compatibility with tests and older
+    # bootstrap flows. New platform-wide studyset creation happens outside these
+    # source-specific ingest routines.
     d = Studyset(
         name="neurosynth",
         description="TODO",
@@ -227,7 +270,7 @@ def ingest_neurosynth(max_rows=None):
     studies = []
     to_commit = []
     all_studies = {s.pmid: s for s in Study.query.filter_by(source="neurosynth").all()}
-    base_studies = []
+    base_study_records = []
     with db.session.no_autoflush:
         for metadata_row, annotation_row in zip(
             metadata.itertuples(), annotations.itertuples(index=False)
@@ -238,14 +281,14 @@ def ingest_neurosynth(max_rows=None):
 
             # find an base_study based on available information
             if doi is not None:
-                base_studies = BaseStudy.query.filter(
+                existing_base_studies = BaseStudy.query.filter(
                     or_(BaseStudy.doi == doi, BaseStudy.pmid == pmid)
                 ).all()
 
-                if len(base_studies) == 1:
-                    base_study = base_studies[0]
-                elif len(base_studies) > 1:
-                    source_base_study = base_studies[0]
+                if len(existing_base_studies) == 1:
+                    base_study = existing_base_studies[0]
+                elif len(existing_base_studies) > 1:
+                    source_base_study = existing_base_studies[0]
                     # do not overwrite the versions column
                     # we want to append to this column
                     columns = [
@@ -253,7 +296,7 @@ def ingest_neurosynth(max_rows=None):
                         for c in source_base_study.__table__.columns
                         if c not in ("versions", "__ts_vector__")
                     ]
-                    for ab in base_studies[1:]:
+                    for ab in existing_base_studies[1:]:
                         for col in columns:
                             source_attr = getattr(source_base_study, col)
                             new_attr = getattr(ab, col)
@@ -290,7 +333,7 @@ def ingest_neurosynth(max_rows=None):
                     source_attr = getattr(base_study, col)
                     setattr(base_study, col, source_attr or value)
             to_commit.append(base_study)
-            base_studies.append(base_study)
+            base_study_records.append(base_study)
             study_coord_data = coord_data.loc[[id_]]
             md = {
                 "year": int(metadata_row.year),
@@ -378,22 +421,31 @@ def ingest_neurosynth(max_rows=None):
                 notes.append(aa)
 
         # add notes to annotation
-        annot.note_keys = {
-            k: {"type": _check_type(v) or "string", "order": idx}
-            for idx, (k, v) in enumerate(annotation_row._asdict().items())
-        }
+        annot.note_keys = {}
+        for idx, (k, v) in enumerate(annotation_row._asdict().items()):
+            note_type = _check_type(v) or "string"
+            annot.note_keys[k] = {
+                "type": note_type,
+                "order": idx,
+                "default": resolve_note_key_default(k, note_type),
+            }
         annot.annotation_analyses = notes
         for note in notes:
             to_commit.append(note.analysis)
         db.session.add_all([annot] + notes + to_commit + [d])
         db.session.commit()
-        for bs in base_studies:
-            bs.update_has_images_and_points()
-            db.session.add_all(base_studies)
-        db.session.commit()
+        _recompute_base_study_flags(base_study_records)
 
 
 def ingest_neuroquery(max_rows=None):
+    """Ingest the bundled NeuroQuery coordinate dataset.
+
+    Deprecated:
+        This still creates the legacy public ``neuroquery`` Studyset for
+        backwards compatibility with tests and older local bootstrap flows. New
+        platform-wide studyset creation should use the canonical platform/release
+        builders instead of adding dataset-specific studysets during ingestion.
+    """
     coords_file = (
         Path(__file__).parent.parent
         / "data"
@@ -465,7 +517,9 @@ def ingest_neuroquery(max_rows=None):
         )
         # db.session.commit()
 
-    # make a neuroquery studyset
+    # DEPRECATED: retained only for backwards compatibility with tests and older
+    # bootstrap flows. New platform-wide studyset creation happens outside these
+    # source-specific ingest routines.
     d = Studyset(
         name="neuroquery",
         description="TODO",
@@ -477,10 +531,7 @@ def ingest_neuroquery(max_rows=None):
     )
     db.session.add(d)
     db.session.commit()
-    for bs in base_studies:
-        bs.update_has_images_and_points()
-        db.session.add_all(base_studies)
-    db.session.commit()
+    _recompute_base_study_flags(base_studies)
 
 
 def load_ace_files(coordinates_file, metadata_file, text_file):
@@ -683,6 +734,7 @@ def ace_ingestion_logic(coordinates_df, metadata_df, text_df, skip_existing=Fals
                 )
 
             to_commit.append(base_study)
+            all_base_studies.append(base_study)
 
             s = all_studies.get(pmid, Study())
             update_study_info(s, metadata_row, text_row, doi, pmcid, year, level)
@@ -695,10 +747,7 @@ def ace_ingestion_logic(coordinates_df, metadata_df, text_df, skip_existing=Fals
 
     db.session.add_all(to_commit)
     db.session.commit()
-    for bs in all_base_studies:
-        bs.update_has_images_and_points()
-        db.session.add_all(all_base_studies)
-    db.session.commit()
+    _recompute_base_study_flags(all_base_studies)
 
 
 def ingest_ace(max_rows=None):

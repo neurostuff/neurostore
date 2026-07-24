@@ -1,15 +1,28 @@
+import json
 import logging
 import traceback
+
 import anyio
-from typing import Tuple, Dict, Any
-
+from connexion.exceptions import ProblemException
+from connexion.lifecycle import ConnexionResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.requests import Request
-from starlette.responses import JSONResponse
 
-from .base import NeuroStoreException, InternalServerError
-from .utils.errors import ErrorResponse, ErrorDetail
+from neurostore.exceptions.base import InternalServerError, NeuroStoreException
+from neurostore.exceptions.utils.errors import ErrorDetail, ErrorResponse
 
 logger = logging.getLogger(__name__)
+
+
+def _json_response(
+    body: dict, status_code: int, headers: dict | None = None
+) -> ConnexionResponse:
+    return ConnexionResponse(
+        body=json.dumps(body),
+        status_code=status_code,
+        mimetype="application/json",
+        headers=headers,
+    )
 
 
 def _build_error_response_from_payload(
@@ -39,13 +52,31 @@ async def neurostore_exception_handler(request: Request, exc: NeuroStoreExceptio
     payload = exc.to_payload()
     err = _build_error_response_from_payload(payload, default_exc=exc)
     body = err.to_dict()
-    response = JSONResponse(body, status_code=err.status, media_type="application/json")
-    # Ensure CORS headers are present on ASGI error responses (mirrors WSGI handlers)
-    response.headers["Access-Control-Allow-Origin"] = "*"
-    response.headers["Access-Control-Allow-Methods"] = "*"
-    response.headers["Access-Control-Allow-Headers"] = "*"
-    response.headers["Access-Control-Allow-Credentials"] = "true"
-    return response
+    return _json_response(body, err.status)
+
+
+async def problem_exception_handler(request: Request, exc: ProblemException):
+    body = {
+        "type": exc.type or "about:blank",
+        "title": exc.title,
+        "detail": exc.detail,
+        "status": exc.status,
+    }
+    if exc.instance is not None:
+        body["instance"] = exc.instance
+    if exc.ext:
+        body.update(exc.ext)
+    return _json_response(body, exc.status, headers=exc.headers)
+
+
+async def http_exception_handler(request: Request, exc: StarletteHTTPException):
+    body = {
+        "type": "about:blank",
+        "title": exc.detail if exc.status_code < 500 else "Internal Server Error",
+        "detail": exc.detail,
+        "status": exc.status_code,
+    }
+    return _json_response(body, exc.status_code, headers=exc.headers)
 
 
 async def general_exception_handler(request: Request, exc: Exception):
@@ -70,34 +101,4 @@ async def general_exception_handler(request: Request, exc: Exception):
     )
     err = _build_error_response_from_payload(payload, default_exc=internal)
     body = err.to_dict()
-    response = JSONResponse(body, status_code=err.status, media_type="application/json")
-    # Ensure CORS headers are present on ASGI error responses (mirrors WSGI handlers)
-    response.headers["Access-Control-Allow-Origin"] = "*"
-    response.headers["Access-Control-Allow-Methods"] = "*"
-    response.headers["Access-Control-Allow-Headers"] = "*"
-    response.headers["Access-Control-Allow-Credentials"] = "true"
-    return response
-
-
-# Helper functions for WSGI/Flask handlers:
-# Return serializable body dict and status so core.py can construct a Flask Response
-def flask_neurostore_body_and_status(
-    exc: NeuroStoreException,
-) -> Tuple[Dict[str, Any], int]:
-    payload = exc.to_payload()
-    err = _build_error_response_from_payload(payload, default_exc=exc)
-    return err.to_dict(), err.status
-
-
-def flask_general_body_and_status(exc: Exception) -> Tuple[Dict[str, Any], int]:
-    if isinstance(exc, anyio.EndOfStream):
-        # Shouldn't normally occur in WSGI, but keep parity with ASGI behavior:
-        raise
-    logger.exception("Unhandled WSGI exception: %s", exc)
-    internal = InternalServerError()
-    payload = internal.to_payload()
-    payload["detail"] = (
-        str(exc) if logger.isEnabledFor(logging.DEBUG) else internal.detail
-    )
-    err = _build_error_response_from_payload(payload, default_exc=internal)
-    return err.to_dict(), err.status
+    return _json_response(body, err.status)

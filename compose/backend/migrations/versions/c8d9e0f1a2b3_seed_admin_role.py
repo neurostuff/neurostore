@@ -5,14 +5,15 @@ Revises: 28251f5cb6d5
 Create Date: 2026-01-28 00:15:00.000000
 
 """
+
 from alembic import op
 import sqlalchemy as sa  # noqa: F401
 import sqlalchemy_utils  # noqa: F401
 
 
 # revision identifiers, used by Alembic.
-revision = 'c8d9e0f1a2b3'
-down_revision = '8c4b2a1e3f20'
+revision = "c8d9e0f1a2b3"
+down_revision = "8c4b2a1e3f20"
 branch_labels = None
 depends_on = None
 

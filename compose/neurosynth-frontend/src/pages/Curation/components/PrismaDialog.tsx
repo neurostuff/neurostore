@@ -19,7 +19,7 @@ import NeurosynthPopper from 'components/NeurosynthPopper/NeurosynthPopper';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import { Options } from 'html-to-image/lib/types';
 
-const PrismaDialog: React.FC<IDialog> = (props) => {
+const PrismaDialog = (props: IDialog) => {
     const [optionsIsOpen, setOptionsIsOpen] = useState(false);
     const [selectedOption, setSelectedOption] = useState<'SVG' | 'PNG' | 'JPEG'>('SVG');
     const handleCloseDialog = () => {

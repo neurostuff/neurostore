@@ -1,8 +1,8 @@
 import { axiosInstance, neurostoreConfig, neurosynthConfig } from './api.state';
 import {
     StudiesApi,
+    StoreApi,
     ConditionsApi,
-    StudysetsApi as NeurostoreStudysetsApi,
     AnnotationsApi as NeurostoreAnnotationsApi,
     UserApi,
     PointsApi,
@@ -34,11 +34,14 @@ export type NeurostoreAnnotation = AnnotationBase &
     AnnotationReturnRelationships &
     AnnotationCommon;
 
+const storeApi = new StoreApi(neurostoreConfig, undefined, axiosInstance);
+
 const NeurostoreServices = {
-    StudiesService: new StudiesApi(neurostoreConfig, undefined, axiosInstance),
+    StudiesService: storeApi,
+    BaseStudiesService: new StudiesApi(neurostoreConfig, undefined, axiosInstance),
     AnalysesService: new AnalysesApi(neurostoreConfig, undefined, axiosInstance),
     ConditionsService: new ConditionsApi(neurostoreConfig, undefined, axiosInstance),
-    StudySetsService: new NeurostoreStudysetsApi(neurostoreConfig, undefined, axiosInstance),
+    StudySetsService: storeApi,
     ImagesService: new ImagesApi(neurostoreConfig, undefined, axiosInstance),
     PointsService: new PointsApi(neurostoreConfig, undefined, axiosInstance),
     UsersService: new UserApi(neurostoreConfig, undefined, axiosInstance),

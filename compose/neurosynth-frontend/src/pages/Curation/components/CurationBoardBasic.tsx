@@ -4,7 +4,7 @@ import CurationColumn from './CurationColumn';
 import CurationBoardStyles from './CurationBoard.styles';
 import { DragDropContext } from '@hello-pangea/dnd';
 
-const CurationBoardBasic: React.FC = () => {
+const CurationBoardBasic = () => {
     const handleDrag = useHandleCurationDrag();
     const numColumns = useProjectNumCurationColumns();
     const columnArr = [...Array(numColumns).keys()];

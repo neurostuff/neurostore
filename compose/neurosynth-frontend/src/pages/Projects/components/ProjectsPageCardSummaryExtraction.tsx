@@ -5,8 +5,8 @@ import CheckIcon from '@mui/icons-material/Check';
 import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
 import { Link } from 'react-router-dom';
 
-const ProjectsPageCardExtractionSummary: React.FC<IExtractionSummary & { projectId: string }> = (props) => {
-    const { savedForLater, completed, uncategorized, projectId } = props;
+const ProjectsPageCardExtractionSummary = (props: IExtractionSummary & { projectId: string }) => {
+    const { savedForLater, completed, unreviewed: uncategorized, projectId } = props;
 
     return (
         <Box>
@@ -15,7 +15,7 @@ const ProjectsPageCardExtractionSummary: React.FC<IExtractionSummary & { project
                 <Box sx={{ display: 'flex' }}>
                     <QuestionMarkIcon color="warning" fontSize="small" />
                     <Typography color="warning.dark" mr="2rem">
-                        {uncategorized} uncategorized
+                        {uncategorized} unreviewed
                     </Typography>
                 </Box>
                 <Box sx={{ display: 'flex' }}>

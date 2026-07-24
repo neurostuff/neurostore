@@ -3,7 +3,7 @@ import { IDynamicFormInput } from 'pages/MetaAnalysis/components/DynamicForm.typ
 import MetaAnalysisDynamicFormTitle from './MetaAnalysisDynamicFormTitle';
 import DynamicFormStyles from 'pages/MetaAnalysis/components//DynamicFormStyles';
 
-const DynamicFormStringInput: React.FC<IDynamicFormInput> = (props) => {
+const DynamicFormStringInput = (props: IDynamicFormInput) => {
     return (
         <Box sx={DynamicFormStyles.input}>
             <MetaAnalysisDynamicFormTitle name={props.parameterName} description={props.parameter.description} />
@@ -11,6 +11,7 @@ const DynamicFormStringInput: React.FC<IDynamicFormInput> = (props) => {
             <Box sx={{ width: '50%' }}>
                 <TextField
                     value={props.value || ''}
+                    name={props.parameterName}
                     label="text"
                     sx={{ width: '100%' }}
                     type="text"

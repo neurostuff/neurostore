@@ -25,16 +25,6 @@ export const axiosInstance = axios.create({
 
 /**
  * Only for usage within the api folder.
- * For external usage, use the updateAPISetToken function.
- */
-export const _updateServicesWithToken = (token: string) => {
-    if (env === 'DEV' || env === 'STAGING') console.log(token);
-    neurostoreConfig.accessToken = token;
-    neurosynthConfig.accessToken = token;
-};
-
-/**
- * Only for usage within the api folder.
  * For external usage, use the initAPISetAccessTokenFunc function.
  */
 export let _getAccessTokenSilentlyFunc: (() => Promise<string>) | null = null;

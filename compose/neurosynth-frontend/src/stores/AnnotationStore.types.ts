@@ -3,6 +3,7 @@ import { AnnotationReturnOneOf, NoteCollectionReturn } from 'neurostore-typescri
 
 export type AnnotationStoreMetadata = {
     annotationIsEdited: boolean;
+    noteKeysHaveChanged: boolean;
     getAnnotationIsLoading: boolean;
     updateAnnotationIsLoading: boolean;
     isError: boolean; // for http errors that occur
@@ -10,6 +11,7 @@ export type AnnotationStoreMetadata = {
 
 export interface IStoreNoteCollectionReturn extends NoteCollectionReturn {
     isNew?: boolean;
+    isEdited?: boolean;
 }
 
 export interface IStoreAnnotation extends Omit<AnnotationReturnOneOf, 'notes' | 'note_keys'> {
