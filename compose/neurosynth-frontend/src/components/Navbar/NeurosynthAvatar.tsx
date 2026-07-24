@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import NavToolbarStyles from 'components/Navbar/NavToolbar.styles';
 
-const NeurosynthAvatar: React.FC<{ onLogin: () => void; onLogout: () => void }> = (props) => {
+const NeurosynthAvatar = (props: { onLogin: () => void; onLogout: () => void }) => {
     const navigate = useNavigate();
     const { user, isAuthenticated } = useAuth0();
     const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);

@@ -1,9 +1,9 @@
 import { fireEvent, render, screen } from '@testing-library/react';
-import { useQuery } from 'react-query';
+import { useQuery } from '@tanstack/react-query';
 import { Mock, vi } from 'vitest';
 import Banner from './Banner';
 
-vi.mock('react-query');
+vi.mock('@tanstack/react-query');
 
 const createMockBanner = (overrides = {}) => ({
     id: '1',

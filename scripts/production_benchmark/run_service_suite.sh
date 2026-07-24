@@ -277,7 +277,7 @@ RUN_ENV_ARGS=(
 
 RESTORE_CMD=(
   python3
-  "${TOOLING_REPO_ROOT}/scripts/production_benchmark/restore_latest_backup.py"
+  "${TOOLING_REPO_ROOT}/scripts/deploy/restore_latest_backup.py"
   --compose-dir "${SERVICE_DIR}"
   --bucket "${BUCKET}"
   --container "${DB_CONTAINER}"

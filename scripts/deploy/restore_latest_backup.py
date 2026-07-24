@@ -76,6 +76,8 @@ def latest_s3_key(bucket: str, prefix: str | None = None) -> str:
         "list-objects-v2",
         "--bucket",
         bucket,
+        "--delimiter",
+        "/",
     ]
     if prefix:
         cmd.extend(["--prefix", f"{prefix.strip('/')}/"])

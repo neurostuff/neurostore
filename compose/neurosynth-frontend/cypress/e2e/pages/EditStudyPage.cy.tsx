@@ -325,8 +325,8 @@ describe(PAGE_NAME, () => {
         });
 
         it('should enable the Save button when an annotation is updated', () => {
-            cy.get('.htCore').first().find('tbody td').eq(3).click();
-            cy.focused().type(' updated').type('{enter}');
+            cy.get('.htCore').first().find('tbody td').eq(3).dblclick();
+            cy.get('textarea.handsontableInput:visible').type(' updated{enter}');
             cy.get('button').find('[data-testid="SaveIcon"]').parent().should('not.be.disabled');
         });
 
@@ -393,8 +393,8 @@ describe(PAGE_NAME, () => {
                 'postAnnotationAnalyses'
             );
 
-            cy.get('.htCore').first().find('tbody td').eq(3).click();
-            cy.focused().type('_cell_updated').type('{enter}');
+            cy.get('.htCore').first().find('tbody td').eq(3).dblclick();
+            cy.get('textarea.handsontableInput:visible').clear().type('_cell_updated{enter}');
             cy.get('button').find('[data-testid="SaveIcon"]').parent().click();
 
             cy.get('@postAnnotationAnalyses')
@@ -522,7 +522,8 @@ describe(PAGE_NAME, () => {
                 .find('tbody tr')
                 .its('length')
                 .then((rowCountBefore) => {
-                    cy.get('.ht_master').eq(1).find('tbody tr').first().find('td').first().click();
+                    // Classic theme clone headers can cover the top-left body cell; force past the overlay.
+                    cy.get('.ht_master').eq(1).find('tbody tr').first().find('td').first().click({ force: true });
                     cy.get('[aria-label="Delete row(s)"]').click();
                     cy.get('.ht_master')
                         .eq(1)
@@ -532,8 +533,9 @@ describe(PAGE_NAME, () => {
         });
 
         it('should edit a coordinate and enable the Save button', () => {
-            cy.get('.ht_master').eq(1).find('tbody td').first().click();
-            cy.focused().clear().type('10').type('{enter}');
+            // Classic theme clone headers can cover the top-left body cell; force past the overlay.
+            cy.get('.ht_master').eq(1).find('tbody td').first().dblclick({ force: true });
+            cy.get('textarea.handsontableInput:visible').clear().type('10{enter}');
             cy.get('button').find('[data-testid="SaveIcon"]').parent().should('not.be.disabled');
         });
 

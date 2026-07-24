@@ -6,11 +6,11 @@ import useDisplayWarnings from 'pages/Study/hooks/useDisplayWarnings';
 
 vi.mock('pages/Study/hooks/useDisplayWarnings.tsx');
 describe('StudyAnalysesListItem Component', () => {
-    it('should render', () => {
+    it('should render', async () => {
         render(<StudyAnalysesListItem analysis={{}} selected={false} onSelectAnalysis={() => {}} />);
     });
 
-    it('render analysis name and description', () => {
+    it('render analysis name and description', async () => {
         render(
             <StudyAnalysesListItem
                 analysis={{ name: 'test-name', description: 'test-description' }}
@@ -23,7 +23,7 @@ describe('StudyAnalysesListItem Component', () => {
         expect(screen.getByText('test-description')).toBeInTheDocument();
     });
 
-    it('should be selected', () => {
+    it('should be selected', async () => {
         render(
             <StudyAnalysesListItem
                 analysis={{ name: 'test-name', description: 'test-description' }}
@@ -35,7 +35,7 @@ describe('StudyAnalysesListItem Component', () => {
         expect(screen.getByRole('button')).toHaveClass('Mui-selected');
     });
 
-    it('should not be selected', () => {
+    it('should not be selected', async () => {
         render(
             <StudyAnalysesListItem
                 analysis={{ name: 'test-name', description: 'test-description' }}
@@ -47,7 +47,7 @@ describe('StudyAnalysesListItem Component', () => {
         expect(screen.getByRole('button')).not.toHaveClass('Mui-selected');
     });
 
-    it('shows no name and no description', () => {
+    it('shows no name and no description', async () => {
         render(
             <StudyAnalysesListItem
                 analysis={{ name: '', description: '' }}
@@ -60,7 +60,7 @@ describe('StudyAnalysesListItem Component', () => {
         expect(screen.queryByText('No description')).toBeInTheDocument();
     });
 
-    it('calls onSelectAnalysis when clicked', () => {
+    it('calls onSelectAnalysis when clicked', async () => {
         const handleOnSelectAnalysisMock = vi.fn();
         render(
             <StudyAnalysesListItem
@@ -69,7 +69,7 @@ describe('StudyAnalysesListItem Component', () => {
                 onSelectAnalysis={handleOnSelectAnalysisMock}
             />
         );
-        userEvent.click(screen.getByRole('button'));
+        await userEvent.click(screen.getByRole('button'));
         expect(handleOnSelectAnalysisMock).toHaveBeenCalledWith('test-id');
     });
 
@@ -81,7 +81,7 @@ describe('StudyAnalysesListItem Component', () => {
             useDisplayWarnings().hasNonMNICoordinates = false;
         });
 
-        it('does not show a warning by default', () => {
+        it('does not show a warning by default', async () => {
             render(
                 <StudyAnalysesListItem
                     analysis={{
@@ -95,7 +95,7 @@ describe('StudyAnalysesListItem Component', () => {
             expect(screen.queryByTestId('ErrorOutlineIcon')).not.toBeInTheDocument();
         });
 
-        it('shows a warning if there is a duplicate name', () => {
+        it('shows a warning if there is a duplicate name', async () => {
             useDisplayWarnings().hasDuplicateName = true;
             render(
                 <StudyAnalysesListItem
@@ -111,7 +111,7 @@ describe('StudyAnalysesListItem Component', () => {
             expect(screen.getByTestId('ErrorOutlineIcon')).toBeInTheDocument();
         });
 
-        it('shows a warning if there is no name', () => {
+        it('shows a warning if there is no name', async () => {
             useDisplayWarnings().hasDuplicateName = true;
             render(
                 <StudyAnalysesListItem
@@ -126,7 +126,7 @@ describe('StudyAnalysesListItem Component', () => {
 
             expect(screen.getByTestId('ErrorOutlineIcon')).toBeInTheDocument();
         });
-        it('shows a warning if there are no points', () => {
+        it('shows a warning if there are no points', async () => {
             useDisplayWarnings().hasDuplicateName = true;
             render(
                 <StudyAnalysesListItem
@@ -141,7 +141,7 @@ describe('StudyAnalysesListItem Component', () => {
 
             expect(screen.getByTestId('ErrorOutlineIcon')).toBeInTheDocument();
         });
-        it('shows a warning if the coordinates are not MNI', () => {
+        it('shows a warning if the coordinates are not MNI', async () => {
             useDisplayWarnings().hasDuplicateName = true;
             render(
                 <StudyAnalysesListItem

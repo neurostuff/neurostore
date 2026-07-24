@@ -231,3 +231,14 @@ metadata_service.fetch_metadata_pubmed = lambda *_args, **_kwargs: {}
         .count()
         == 1
     )
+
+
+def test_neurostore_studyset_release_cli_writes_nightly(session, tmp_path):
+    result = _run_flask_command(
+        ["build-neurostore-studyset-release", "--nightly"],
+        extra_env={"NEUROSTORE_STUDYSET_RELEASE_DIR": str(tmp_path)},
+    )
+    _assert_success(result)
+    assert "Wrote nightly release nightly" in result.stdout
+    assert (tmp_path / "nightly" / "manifest.json").exists()
+    assert (tmp_path / "nightly" / "neurostore-studyset-nightly.tar.gz").exists()

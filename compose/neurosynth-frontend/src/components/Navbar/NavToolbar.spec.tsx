@@ -47,11 +47,11 @@ describe('NavToolbar Component', () => {
 
     const mockLogin = vi.fn();
     const mockLogout = vi.fn();
-    it('should render', () => {
+    it('should render', async () => {
         render(<NavToolbar onLogin={mockLogin} onLogout={mockLogout} />);
     });
 
-    it('should show limited options when not authenticated', () => {
+    it('should show limited options when not authenticated', async () => {
         render(<NavToolbar onLogin={mockLogin} onLogout={mockLogout} />);
 
         expect(screen.queryByText('NEW PROJECT')).not.toBeInTheDocument();
@@ -63,7 +63,7 @@ describe('NavToolbar Component', () => {
         expect(screen.queryByText('Sign In/Sign Up')).toBeInTheDocument();
     });
 
-    it('should show the full list of options when authenticated', () => {
+    it('should show the full list of options when authenticated', async () => {
         useAuth0().isAuthenticated = true;
 
         render(<NavToolbar onLogin={mockLogin} onLogout={mockLogout} />);
@@ -75,30 +75,30 @@ describe('NavToolbar Component', () => {
         expect(screen.getByTestId('PersonIcon')).toBeInTheDocument();
     });
 
-    it('should login', () => {
+    it('should login', async () => {
         render(<NavToolbar onLogin={mockLogin} onLogout={mockLogout} />);
 
-        userEvent.click(screen.getByText('Sign In/Sign Up'));
+        await userEvent.click(screen.getByText('Sign In/Sign Up'));
         expect(mockLogin).toHaveBeenCalled();
     });
 
-    it('should logout', () => {
+    it('should logout', async () => {
         useAuth0().isAuthenticated = true;
 
         render(<NavToolbar onLogin={mockLogin} onLogout={mockLogout} />);
 
         // open popup
-        userEvent.click(screen.getByTestId('PersonIcon'));
-        userEvent.click(screen.getByText('Logout'));
+        await userEvent.click(screen.getByTestId('PersonIcon'));
+        await userEvent.click(screen.getByText('Logout'));
         expect(mockLogout).toHaveBeenCalled();
     });
 
-    it('should open the navpopup menu with the given menu items', () => {
+    it('should open the navpopup menu with the given menu items', async () => {
         render(<NavToolbar onLogin={mockLogin} onLogout={mockLogout} />);
 
         const exploreLabel = screen.getByText('explore');
         const exploreTriggerButton = exploreLabel.nextElementSibling as HTMLElement;
-        userEvent.click(exploreTriggerButton);
+        await userEvent.click(exploreTriggerButton);
         expect(screen.getByText('Studies')).toBeInTheDocument();
         expect(screen.getByText('Meta-Analyses')).toBeInTheDocument();
     });

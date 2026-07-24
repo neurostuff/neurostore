@@ -15,7 +15,7 @@ import { useState } from 'react';
 
 const CITATION_FORMAT_ORDER: CitationFormat[] = ['apa', 'bibtex', 'vancouver', 'harvard1'];
 
-const CiteMe: React.FC = () => {
+const CiteMe = () => {
     const { isCitationLoading, citationPayload } = useCitationCopy();
     const [selectedFormat, setSelectedFormat] = useState<CitationFormat>('apa');
 

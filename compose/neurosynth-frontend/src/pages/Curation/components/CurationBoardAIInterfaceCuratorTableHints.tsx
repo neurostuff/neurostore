@@ -11,11 +11,11 @@ import { useCurationBoardGroups } from '../context/CurationBoardGroupsContext';
 import { ICurationTableStudy } from '../hooks/useCuratorTableState.types';
 import StartExtractionButton from './StartExtractionButton';
 
-const CurationBoardAIInterfaceCuratorTableHints: React.FC<{
+const CurationBoardAIInterfaceCuratorTableHints = ({  table, columnIndex, numVisibleStudies  }: {
     table?: Table<ICurationTableStudy> | undefined;
     columnIndex: number;
     numVisibleStudies: number;
-}> = ({ table, columnIndex, numVisibleStudies }) => {
+}) => {
     const isPrisma = useProjectCurationIsPrisma();
     const { included, uncategorized, excluded } = useGetCurationSummary();
     const noStudiesInCuration = included === 0 && uncategorized === 0 && excluded === 0;

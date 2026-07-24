@@ -13,10 +13,18 @@ from neurostore import create_app, ingest, models
 from neurostore.config import resolve_config_object
 from neurostore.database import db
 from neurostore.services.has_media_flags import process_base_study_flag_outbox_batch
+from neurostore.services.neurostore_studyset_releases import (
+    build_neurostore_studyset_release as build_neurostore_studyset_release_service,
+    clear_shard_cache,
+)
 from neurostore.services.base_study_metadata_enrichment import (
     process_base_study_metadata_outbox_batch,
 )
 from neurostore.services.utils import outbox_health_snapshot
+from neurostore.scripts.transfer_ownership import (
+    OwnershipTransferError,
+    transfer_user_ownership,
+)
 
 app = create_app()
 
@@ -53,6 +61,34 @@ migrate = init_migrate(app, db)
 @app.shell_context_processor
 def make_shell_context():
     return dict(app=app, db=db, ms=models)
+
+
+@app.cli.command("transfer-user-ownership")
+@click.argument("source_user_id")
+@click.argument("destination_user_id")
+@click.option(
+    "--execute",
+    is_flag=True,
+    help="Commit the transfer. Without this flag, only report matching row counts.",
+)
+def transfer_user_ownership_command(source_user_id, destination_user_id, execute):
+    """Transfer all user-owned Store objects from one external_id to another."""
+    try:
+        summary = transfer_user_ownership(
+            source_user_id,
+            destination_user_id,
+            dry_run=not execute,
+        )
+    except OwnershipTransferError as exc:
+        raise click.ClickException(str(exc)) from exc
+
+    mode = "Dry-run" if summary.dry_run else "Transferred"
+    click.echo(
+        f"{mode} {summary.total} object(s) from "
+        f"{summary.source_user_id} to {summary.destination_user_id}."
+    )
+    for table_name, count in summary.counts.items():
+        click.echo(f"{table_name}: {count}")
 
 
 @app.cli.command()
@@ -224,3 +260,65 @@ def check_base_study_metadata_outbox(max_pending, max_oldest_seconds):
     from neurostore.models import BaseStudyMetadataOutbox
 
     _emit_outbox_health(BaseStudyMetadataOutbox, max_pending, max_oldest_seconds)
+
+
+@app.cli.command()
+@click.option(
+    "--nightly/--no-nightly",
+    default=False,
+    show_default=True,
+    help="Write the overwritten nightly release.",
+)
+@click.option(
+    "--monthly-if-due/--no-monthly-if-due",
+    default=False,
+    show_default=True,
+    help="Write the current monthly release only when it does not already exist.",
+)
+@click.option(
+    "--force-monthly/--no-force-monthly",
+    default=False,
+    show_default=True,
+    help="Overwrite the selected monthly release.",
+)
+@click.option(
+    "--version",
+    "monthly_version",
+    default=None,
+    help="Monthly release version to write, in YYYY-MM format.",
+)
+@click.option(
+    "--clear-cache/--no-clear-cache",
+    default=False,
+    show_default=True,
+    help="Delete cached study and note shards before building, forcing full regeneration.",
+)
+def build_neurostore_studyset_release(
+    nightly,
+    monthly_if_due,
+    force_monthly,
+    monthly_version,
+    clear_cache,
+):
+    """Build NeuroStore-wide NIMADS studyset release artifacts."""
+    if clear_cache:
+        clear_shard_cache()
+        click.echo("Cleared shard cache.")
+    result = build_neurostore_studyset_release_service(
+        nightly=nightly,
+        monthly_if_due=monthly_if_due,
+        force_monthly=force_monthly,
+        version=monthly_version,
+    )
+    written = result["written"]
+    if written:
+        for manifest in written:
+            click.echo(
+                "Wrote {release_type} release {version} to {root}".format(
+                    release_type=manifest["release_type"],
+                    version=manifest["version"],
+                    root=result["root"],
+                )
+            )
+    else:
+        click.echo("No NeuroStore studyset release was written.")

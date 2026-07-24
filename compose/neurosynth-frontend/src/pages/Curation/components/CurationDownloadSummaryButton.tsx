@@ -7,9 +7,9 @@ import { useRef, useState } from 'react';
 import { downloadFile } from 'helpers/downloadFile.helpers';
 import { stubsToBibtex, stubsToCSV } from './CurationDownloadSummary.helpers';
 
-const CurationDownloadSummaryButton: React.FC<{
+const CurationDownloadSummaryButton = ({  buttonGroupProps = {}  }: {
     buttonGroupProps?: ButtonGroupProps;
-}> = ({ buttonGroupProps = {} }) => {
+}) => {
     const [optionsIsOpen, setOptionsIsOpen] = useState(false);
     const anchorRef = useRef(null);
     const curationColumns = useProjectCurationColumns();

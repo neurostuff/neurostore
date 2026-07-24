@@ -28,7 +28,7 @@ describe('CreateMetaAnalysisSpecificationSelectionStepMultiGroup', () => {
 
     const mockSelectValue = vi.fn();
 
-    it('should render', () => {
+    it('should render', async () => {
         render(
             <CreateMetaAnalysisSpecificationSelectionStepMultiGroup
                 algorithm={algorithmMock}
@@ -39,7 +39,7 @@ describe('CreateMetaAnalysisSpecificationSelectionStepMultiGroup', () => {
         );
     });
 
-    it('should show the options in the autocomplete dropdown', () => {
+    it('should show the options in the autocomplete dropdown', async () => {
         render(
             <CreateMetaAnalysisSpecificationSelectionStepMultiGroup
                 algorithm={algorithmMock}
@@ -54,7 +54,7 @@ describe('CreateMetaAnalysisSpecificationSelectionStepMultiGroup', () => {
         });
     });
 
-    it('should show the default reference datasets in the autocomplete dropdown', () => {
+    it('should show the default reference datasets in the autocomplete dropdown', async () => {
         render(
             <CreateMetaAnalysisSpecificationSelectionStepMultiGroup
                 algorithm={algorithmMock}
@@ -69,7 +69,7 @@ describe('CreateMetaAnalysisSpecificationSelectionStepMultiGroup', () => {
         });
     });
 
-    it('should select the correct option', () => {
+    it('should select the correct option', async () => {
         render(
             <CreateMetaAnalysisSpecificationSelectionStepMultiGroup
                 algorithm={algorithmMock}
@@ -79,7 +79,7 @@ describe('CreateMetaAnalysisSpecificationSelectionStepMultiGroup', () => {
             />
         );
         const button = screen.getByText('val-1');
-        userEvent.click(button);
+        await userEvent.click(button);
 
         expect(mockSelectValue).toHaveBeenCalled();
     });

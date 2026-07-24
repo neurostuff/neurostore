@@ -23,7 +23,7 @@ const isToday = (date: Date) => {
     );
 };
 
-const ProjectsPageCard: React.FC<INeurosynthProjectReturn> = (props) => {
+const ProjectsPageCard = (props: INeurosynthProjectReturn) => {
     const {
         name,
         description,

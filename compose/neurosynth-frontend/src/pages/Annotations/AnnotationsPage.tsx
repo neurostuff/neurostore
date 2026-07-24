@@ -6,7 +6,7 @@ import EditAnnotationsHotTable from 'pages/Annotations/components/EditAnnotation
 import { useProjectExtractionAnnotationId, useProjectName } from 'pages/Project/store/ProjectStore';
 import { useParams } from 'react-router-dom';
 
-const AnnotationsPage: React.FC = () => {
+const AnnotationsPage = () => {
     const { annotationId } = useParams<{ annotationId: string }>();
     const annotationIdFromProject = useProjectExtractionAnnotationId();
     const projectName = useProjectName();

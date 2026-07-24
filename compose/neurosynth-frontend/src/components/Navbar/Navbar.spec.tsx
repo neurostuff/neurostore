@@ -11,25 +11,25 @@ vi.mock('components/Navbar/NavToolbar.tsx');
 vi.mock('hooks');
 
 describe('Navbar', () => {
-    it('should render', () => {
+    it('should render', async () => {
         render(<Navbar />);
 
         expect(screen.getByTestId('mock-nav-drawer')).toBeInTheDocument();
         expect(screen.getByTestId('mock-nav-toolbar')).toBeInTheDocument();
     });
 
-    it('should call the auth0 login method when logging in', () => {
+    it('should call the auth0 login method when logging in', async () => {
         render(<Navbar />);
 
-        userEvent.click(screen.getByTestId('toolbar-trigger-login'));
+        await userEvent.click(screen.getByTestId('toolbar-trigger-login'));
 
         expect(useAuth0().getAccessTokenWithPopup).toHaveBeenCalled();
     });
 
-    it('should call the auth0 logout method when logging out', () => {
+    it('should call the auth0 logout method when logging out', async () => {
         render(<Navbar />);
 
-        userEvent.click(screen.getByTestId('toolbar-trigger-logout'));
+        await userEvent.click(screen.getByTestId('toolbar-trigger-logout'));
 
         expect(useAuth0().logout).toHaveBeenCalled();
     });

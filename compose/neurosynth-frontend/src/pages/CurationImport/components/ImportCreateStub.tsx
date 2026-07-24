@@ -9,10 +9,10 @@ import CurationPopupIdentificationSourceSelector from 'pages/Curation/components
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import CurationImportStyles from '../CurationImport.styles';
 
-const ImportCreateStub: React.FC<{
+const ImportCreateStub = (props: {
     onNavigate: (button: ENavigationButton) => void;
     onImportStubs: (stubs: ICurationStubStudy[], unimportedStubs?: string[]) => void;
-}> = (props) => {
+}) => {
     const [formFieldTouched, setFormFieldTouched] = useState({
         name: false,
         doi: false,

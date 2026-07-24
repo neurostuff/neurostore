@@ -1,11 +1,11 @@
 import { Button, ButtonProps } from '@mui/material';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import { usePromoteAllUncategorized } from 'pages/Project/store/ProjectStore';
-import { useState } from 'react';
+import { type ReactNode,  useState } from 'react';
 
-const CurationPromoteUncategorizedButton: React.FC<
+const CurationPromoteUncategorizedButton = ({  dialogTitle, dialogMessage, onComplete, ...props  }: 
     ButtonProps & { dialogTitle: string; dialogMessage: string; onComplete?: () => void }
-> = ({ dialogTitle, dialogMessage, onComplete, ...props }) => {
+) => {
     const [skipCurationDialogIsOpen, setSkipCurationDialogIsOpen] = useState(false);
     const promoteAllUncategorized = usePromoteAllUncategorized();
 

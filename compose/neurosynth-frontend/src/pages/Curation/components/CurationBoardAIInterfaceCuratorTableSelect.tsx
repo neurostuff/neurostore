@@ -4,7 +4,7 @@ import React from 'react';
 import { ICurationTableStudy } from '../hooks/useCuratorTableState.types';
 import { useProjectGetColumnForStub, useSetExclusionForStub } from 'pages/Project/store/ProjectStore';
 
-export const CuratorTableSelectCell: React.FC<CellContext<ICurationTableStudy, unknown>> = (props) => {
+export const CuratorTableSelectCell = (props: CellContext<ICurationTableStudy, unknown>) => {
     const handleSelectCell = (event: React.ChangeEvent<HTMLInputElement>, checked: boolean) => {
         props.row.toggleSelected(checked);
     };
@@ -46,7 +46,7 @@ export const CuratorTableSelectCell: React.FC<CellContext<ICurationTableStudy, u
     );
 };
 
-export const CuratorTableSelectHeader: React.FC<HeaderContext<ICurationTableStudy, unknown>> = ({ table }) => {
+export const CuratorTableSelectHeader = ({  table  }: HeaderContext<ICurationTableStudy, unknown>) => {
     const isSelected = table.getIsAllRowsSelected();
     const isIndeterminate = table.getIsSomeRowsSelected();
 

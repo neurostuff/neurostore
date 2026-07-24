@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { Dialog, DialogContent, DialogTitle, Box, Typography, IconButton, Breakpoint } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import { SystemStyleObject } from '@mui/system';
@@ -12,9 +13,10 @@ interface IBaseDialog {
     dialogTitleSx?: SystemStyleObject;
     dialogContentSx?: SystemStyleObject;
     onCloseDialog: () => void;
+    children?: React.ReactNode;
 }
 
-const BaseDialog: React.FC<IBaseDialog> = (props) => {
+const BaseDialog = (props: IBaseDialog) => {
     const handleCloseDialog = () => {
         props.onCloseDialog();
     };

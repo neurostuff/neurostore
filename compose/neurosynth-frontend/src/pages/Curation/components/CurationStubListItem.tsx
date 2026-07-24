@@ -11,7 +11,7 @@ interface ICurationStubListItem {
     style: React.CSSProperties;
 }
 
-const CurationStubListItem: React.FC<ICurationStubListItem> = React.memo((props) => {
+const CurationStubListItem = React.memo((props: ICurationStubListItem) => {
     const exclusionTag = useProjectExclusionTag(props.stub.exclusionTag);
 
     const itemColor = props.stub.exclusionTag

@@ -8,7 +8,7 @@ import { SearchCriteria } from 'pages/Study/Study.types';
 import { useEffect, useState } from 'react';
 import ImportFinalize from './ImportFinalize';
 
-const Import: React.FC<{ method: EImportMode; onClose: () => void }> = ({ method, onClose: onClose }) => {
+const Import = ({  method, onClose: onClose  }: { method: EImportMode; onClose: () => void }) => {
     const [activeStep, setActiveStep] = useState(0);
     const [stubs, setStubs] = useState<ICurationStubStudy[]>([]);
     const [unimportedStubs, setUnimportedStubs] = useState<string[]>([]);

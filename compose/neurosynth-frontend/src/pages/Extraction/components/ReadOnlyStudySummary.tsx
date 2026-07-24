@@ -8,13 +8,13 @@ import { EExtractionStatus } from 'pages/Extraction/ExtractionPage';
 import { useProjectExtractionAddOrUpdateStudyListStatus, useProjectUser } from 'pages/Project/store/ProjectStore';
 import useUserCanEdit from 'hooks/useUserCanEdit';
 
-const ReadOnlyStudySummaryVirtualizedItem: React.FC<
+const ReadOnlyStudySummaryVirtualizedItem = (props: 
     StudyReturn & {
         currentStatus: EExtractionStatus;
         canEdit: boolean;
         style: React.CSSProperties;
     }
-> = (props) => {
+) => {
     const { projectId } = useParams<{ projectId: string }>();
     const navigate = useNavigate();
     const addOrUpdateStudyListStatus = useProjectExtractionAddOrUpdateStudyListStatus();

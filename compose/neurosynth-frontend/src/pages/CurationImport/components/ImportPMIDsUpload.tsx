@@ -19,11 +19,11 @@ const isValidNumberList = (rawIdText: string | undefined) => {
         .every((pmid) => /^\d+$/.test(pmid));
 };
 
-const ImportPMIDsUpload: React.FC<{
+const ImportPMIDsUpload = (props: {
     onPubmedIdsUploaded: (parsedIds: string[]) => void;
     onNavigate: (button: ENavigationButton) => void;
     onFileUpload: (fileName: string) => void;
-}> = (props) => {
+}) => {
     const [uploadState, setUploadState] = useState<{
         parsedIdList: string[];
         rawIdText: string;

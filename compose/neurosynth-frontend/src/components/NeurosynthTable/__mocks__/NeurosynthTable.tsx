@@ -1,6 +1,6 @@
 import { INeurosynthTable } from '../NeurosynthTable';
 
-const mockNeurosynthTable: React.FC<INeurosynthTable> = (props: INeurosynthTable) => {
+const mockNeurosynthTable = (props: INeurosynthTable) => {
     return (
         <table data-testid="mock-table">
             <thead>

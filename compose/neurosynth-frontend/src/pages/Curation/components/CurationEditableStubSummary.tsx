@@ -15,16 +15,17 @@ interface ICurationEditableStubSummary {
     stub: ICurationStubStudy | undefined;
     columnIndex: number;
     onMoveToNextStub: () => void;
+    children?: React.ReactNode;
 }
 
 const DOI_PREFIX = 'https://doi.org/';
 
-const CurationEditableStubSummary: React.FC<ICurationEditableStubSummary> = ({
+const CurationEditableStubSummary = ({ 
     stub,
     columnIndex,
     onMoveToNextStub,
     children,
-}) => {
+ }: ICurationEditableStubSummary) => {
     const updateStubField = useUpdateStubField();
     const curationColumns = useProjectCurationColumns();
     const projectUser = useProjectUser();

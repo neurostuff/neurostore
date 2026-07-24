@@ -1,5 +1,5 @@
 import { SearchCriteria, SearchDataType, SortBy } from 'pages/Study/Study.types';
-import { useQuery } from 'react-query';
+import { useQuery } from '@tanstack/react-query';
 import API from 'api/api.config';
 
 export const baseStudiesSearchHelper = (searchCriteria: Partial<SearchCriteria>) => {
@@ -41,12 +41,15 @@ export const baseStudiesSearchHelper = (searchCriteria: Partial<SearchCriteria>)
 };
 
 const useGetBaseStudies = (searchCriteria: Partial<SearchCriteria>, enabled?: boolean) => {
-    return useQuery(['studies', { ...searchCriteria }], () => baseStudiesSearchHelper(searchCriteria), {
+    return useQuery({
+        queryKey: ['studies', { ...searchCriteria }],
+        queryFn: () => baseStudiesSearchHelper(searchCriteria),
         enabled,
+
         select: (res) => {
             const studyList = res.data;
             return studyList;
-        },
+        }
     });
 };
 

@@ -82,6 +82,7 @@ def _serialize_image(image, analysis_name=None):
         "username": _serialize_username(getattr(image, "user", None)),
         "created_at": _serialize_dt(image.created_at),
         "updated_at": _serialize_dt(image.updated_at),
+        "study": image.study_id,
         "analysis": image.analysis_id,
         "analysis_name": analysis_name,
         "add_date": _serialize_dt(image.add_date),

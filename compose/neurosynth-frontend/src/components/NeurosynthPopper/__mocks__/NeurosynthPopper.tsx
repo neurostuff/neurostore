@@ -1,7 +1,7 @@
 import { INeurosynthPopper } from '../NeurosynthPopper';
 
 // already tested child component
-const MockNeurosynthPopper: React.FC<INeurosynthPopper> = (props: any) => {
+const MockNeurosynthPopper = (props: any) => {
     return (
         <>
             <button onClick={props.onClickAway as any} data-testid="trigger-click-away">

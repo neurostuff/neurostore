@@ -1,6 +1,6 @@
 import { IConfirmationDialog } from '../ConfirmationDialog';
 
-const mockConfirmationDialog: React.FC<IConfirmationDialog> = (props) => {
+const mockConfirmationDialog = (props: IConfirmationDialog) => {
     return (
         <>
             {props.isOpen && (

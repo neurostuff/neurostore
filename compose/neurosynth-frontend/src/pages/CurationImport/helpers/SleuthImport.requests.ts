@@ -16,7 +16,7 @@ import { selectBestBaseStudyVersion } from 'helpers/Extraction.helpers';
 import { IESearchResult } from 'hooks/external/useGetPubMedIdFromDOI';
 import { INeurosynthParsedPubmedArticle } from 'hooks/external/useFetchPubMedIds.types';
 import { executeHTTPRequestsAsBatches } from 'helpers/requests';
-import { MutateOptions } from 'react-query';
+import { MutateOptions } from '@tanstack/react-query';
 
 /**
  * This helper function takes each sleuth study and returns either a POST request to create a study with analyses, or a POST request to create an

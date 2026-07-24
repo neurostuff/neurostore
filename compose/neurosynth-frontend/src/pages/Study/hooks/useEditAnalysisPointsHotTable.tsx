@@ -1,12 +1,12 @@
-import HotTable from '@handsontable/react';
+import { HotTableRef } from '@handsontable/react-wrapper';
 import { useStudyAnalysisPoints } from 'pages/Study/store/StudyStore';
 import { IStorePoint } from 'pages/Study/store/StudyStore.helpers';
 import { useEffect, useMemo, useState } from 'react';
 
 const useAnalysisPointsHotTable = (
     aanlysisId: string | undefined,
-    hotTableRef: React.RefObject<HotTable>,
-    hotTableMetadata: React.MutableRefObject<{
+    hotTableRef: React.RefObject<HotTableRef | null>,
+    hotTableMetadata: React.RefObject<{
         insertRowsAbove: boolean;
         insertedRowsViaPaste: any[][];
     }>
@@ -43,14 +43,14 @@ const useAnalysisPointsHotTable = (
                     items: {
                         row_above: {
                             name: 'Add rows above',
-                            callback: (key, options) => {
+                            callback: () => {
                                 hotTableMetadata.current.insertRowsAbove = true;
                                 openInsertRowsDialog();
                             },
                         },
                         row_below: {
                             name: 'Add rows below',
-                            callback: (key, options) => {
+                            callback: () => {
                                 hotTableMetadata.current.insertRowsAbove = false;
                                 openInsertRowsDialog();
                             },

@@ -96,14 +96,14 @@ const generateDefaultImportName = (
     }
 };
 
-const ImportFinalize: React.FC<{
+const ImportFinalize = ({  onNavigate, stubs, unimportedStubs, importMode, searchCriteria, fileName  }: {
     importMode: EImportMode;
     onNavigate: (button: ENavigationButton) => void;
     stubs: ICurationStubStudy[];
     unimportedStubs: string[];
     searchCriteria: SearchCriteria | undefined;
     fileName: string | undefined;
-}> = ({ onNavigate, stubs, unimportedStubs, importMode, searchCriteria, fileName }) => {
+}) => {
     const { enqueueSnackbar } = useSnackbar();
     const updateCurationColumns = useUpdateCurationColumns();
     const columns = useProjectCurationColumns();

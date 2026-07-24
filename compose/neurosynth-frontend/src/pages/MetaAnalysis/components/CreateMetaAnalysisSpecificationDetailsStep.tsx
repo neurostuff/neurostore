@@ -5,14 +5,14 @@ import { useProjectName, useProjectMetaAnalyses } from 'pages/Project/store/Proj
 import { MetaAnalysisReturn } from 'neurosynth-compose-typescript-sdk';
 import { ChangeEvent, useEffect } from 'react';
 
-const CreateMetaAnalysisSpecificationDetailsStep: React.FC<{
+const CreateMetaAnalysisSpecificationDetailsStep = (props: {
     details: { name: string; description: string };
     selectionKey: string | undefined;
     algorithmName: string | undefined;
     correctorName: string | undefined;
     onUpdateDetails: (details: { name: string; description: string }) => void;
     onNavigate: (button: ENavigationButton) => void;
-}> = (props) => {
+}) => {
     const projectMetaAnalyses = useProjectMetaAnalyses() || [];
     let metaAnalysisIds: string[] = [];
     if (projectMetaAnalyses.length > 0) {

@@ -2,16 +2,14 @@ import { Skeleton, Typography } from '@mui/material';
 import { Box } from '@mui/system';
 import { CellContext } from '@tanstack/react-table';
 import React from 'react';
-import { useIsFetching } from 'react-query';
+import { useIsFetching } from '@tanstack/react-query';
 import {
     ICurationTableColumnType,
     ICurationTableStudy,
     IGenericCustomAccessorReturn,
 } from '../hooks/useCuratorTableState.types';
 
-const CuratorTableCell: React.FC<Partial<CellContext<ICurationTableStudy, ICurationTableColumnType | null>>> = (
-    props
-) => {
+const CuratorTableCell = (props: CellContext<ICurationTableStudy, IGenericCustomAccessorReturn>) => {
     const isFetchingExtractions = useIsFetching({ queryKey: ['extraction'] }) > 0;
     const isAI = !!props?.column?.columnDef?.meta?.AIExtractor;
     const cellValue = props.getValue ? props.getValue() : undefined;

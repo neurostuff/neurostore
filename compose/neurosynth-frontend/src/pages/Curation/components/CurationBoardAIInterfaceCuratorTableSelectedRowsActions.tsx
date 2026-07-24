@@ -17,10 +17,10 @@ import { ArrowCircleLeftOutlined } from '@mui/icons-material';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useUserCanEdit } from 'hooks';
 
-const CurationBoardAIInterfaceCuratorTableSelectedRowsActions: React.FC<{
+const CurationBoardAIInterfaceCuratorTableSelectedRowsActions = ({  table, columnIndex  }: {
     table: Table<ICurationTableStudy>;
     columnIndex: number;
-}> = ({ table, columnIndex }) => {
+}) => {
     const [exclusionTagSelectorIsOpen, setExclusionTagSelectorIsOpen] = useState(false);
     const rows = table.getSelectedRowModel().rows;
     const createExclusion = useCreateNewExclusion();

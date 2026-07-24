@@ -1,7 +1,7 @@
 import string
 
 import sqlalchemy.sql.expression as sae
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.orm import raiseload, selectinload
 from webargs import fields
 
@@ -92,6 +92,24 @@ class StudyMutationPolicy(DefaultMutationPolicy):
 
         record.base_study = base_study
         self.context.record = record
+
+    def post_nested_record_update(self):
+        record = self.context.record
+        analysis_ids = []
+        for analysis in getattr(record, "analyses", []) or []:
+            if getattr(analysis, "id", None):
+                analysis_ids.append(analysis.id)
+            if "images" not in getattr(analysis, "__dict__", {}):
+                continue
+            for image in analysis.images or []:
+                image.study = record
+        if analysis_ids and getattr(record, "id", None):
+            db.session.execute(
+                update(Image)
+                .where(Image.analysis_id.in_(analysis_ids))
+                .values(study_id=record.id)
+            )
+        return record
 
 
 class StudyObjectViewPolicy(DefaultObjectViewPolicy):

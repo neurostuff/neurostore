@@ -33,7 +33,7 @@ const importMethods = [
     },
 ];
 
-const ImportStudiesButton: React.FC<ButtonProps> = (buttonProps) => {
+const ImportStudiesButton = (buttonProps: ButtonProps) => {
     const anchorRef = useRef<HTMLButtonElement>(null);
     const [optionsIsOpen, setOptionsIsOpen] = useState(false);
     const [dialogIsOpen, setDialogIsOpen] = useState(false);

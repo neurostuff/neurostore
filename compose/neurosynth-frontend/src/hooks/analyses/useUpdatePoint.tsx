@@ -1,6 +1,6 @@
 import { AxiosResponse, AxiosError } from 'axios';
 import { PointRequest, PointReturn } from 'neurostore-typescript-sdk';
-import { useMutation, useQueryClient } from 'react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import API from 'api/api.config';
 
 const useUpdatePoint = () => {
@@ -8,15 +8,16 @@ const useUpdatePoint = () => {
     return useMutation<
         AxiosResponse<PointReturn>,
         AxiosError,
-        {
-            pointId: string;
-            point: PointRequest;
-        },
+        { pointId: string; point: PointRequest },
         unknown
-    >((args) => API.NeurostoreServices.PointsService.pointsIdPut(args.pointId, args.point), {
+    >({
+        mutationFn: (args) => API.NeurostoreServices.PointsService.pointsIdPut(args.pointId, args.point),
+
         onSuccess: () => {
-            queryClient.invalidateQueries('studies');
-        },
+            queryClient.invalidateQueries({
+                queryKey: ['studies']
+            });
+        }
     });
 };
 

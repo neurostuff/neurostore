@@ -11,7 +11,7 @@ import React, { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { studyAnalysesToStoreAnalyses } from './store/StudyStore.helpers';
 
-const ProjectStudyPage: React.FC = () => {
+const ProjectStudyPage = () => {
     const initStudyStore = useInitStudyStore();
 
     const getProjectIsLoading = useGetProjectIsLoading();

@@ -15,7 +15,7 @@ export enum ECurationBoardAIInterface {
     EXCLUDE = 'EXCLUDE', // exclusion view
 }
 
-const CurationBoardAI: React.FC = () => {
+const CurationBoardAI = () => {
     const deleteCurationImport = useDeleteCurationImport();
     const { enqueueSnackbar } = useSnackbar();
     const { groups, selectedGroup, handleSetSelectedGroup } = useCurationBoardGroups();

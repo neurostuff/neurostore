@@ -4,10 +4,10 @@ import { useEffect, useMemo, useState } from 'react';
 import StudyAnalysis from './StudyAnalysis';
 import { IStoreAnalysis } from 'pages/Study/store/StudyStore.helpers';
 
-const StudyAnalyses: React.FC<{
+const StudyAnalyses = (props: {
     id: string | undefined;
     analyses: IStoreAnalysis[];
-}> = (props) => {
+}) => {
     const [selectedAnalysisId, setSelectedAnalysisId] = useState<string | undefined>('');
 
     useEffect(() => {

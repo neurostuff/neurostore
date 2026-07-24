@@ -4,7 +4,7 @@ import EditStudyAnnotationsHotTable from 'pages/Study/components/EditStudyAnnota
 import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
 import { useNumStudyAnalyses } from 'pages/Study/store/StudyStore';
 
-const EditStudyAnnotations: React.FC = () => {
+const EditStudyAnnotations = () => {
     const numAnalyses = useNumStudyAnalyses();
     return (
         <NeurosynthAccordion

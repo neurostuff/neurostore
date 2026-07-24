@@ -7,7 +7,7 @@ import {
     useProjectCurationPrismaConfig,
 } from 'pages/Project/store/ProjectStore';
 import { defaultExclusionTags } from 'pages/Project/store/ProjectStore.consts';
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { type ReactNode,  createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { SxProps } from '@mui/system';
 import { IGroupListItem } from '../components/CurationBoardAIGroupsList';
@@ -35,11 +35,12 @@ interface ICurationBoardGroupsContext {
     handleSelectPreviousGroup: () => void;
     handleSelectNextGroup: () => void;
     handleSetFirstCurationGroup: () => void;
+    children?: React.ReactNode;
 }
 
 const CurationBoardGroupsContext = createContext<ICurationBoardGroupsContext | undefined>(undefined);
 
-export const CurationBoardGroupsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const CurationBoardGroupsProvider = ({  children  }: { children: React.ReactNode }) => {
     const curationColumns = useProjectCurationColumns();
     const curationDuplicates = useProjectCurationDuplicates();
     const { projectId } = useParams<{ projectId: string }>();

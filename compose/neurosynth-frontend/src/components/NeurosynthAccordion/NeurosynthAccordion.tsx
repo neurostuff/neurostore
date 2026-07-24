@@ -1,7 +1,7 @@
 import ExpandMoreOutlined from '@mui/icons-material/ExpandMoreOutlined';
 import { Accordion, AccordionDetails, AccordionSummary } from '@mui/material';
 import { SystemStyleObject } from '@mui/system';
-import { useEffect, useState } from 'react';
+import { type ReactNode,  useEffect, useState } from 'react';
 
 interface INeurosynthAccordion {
     defaultExpanded?: boolean;
@@ -11,9 +11,10 @@ interface INeurosynthAccordion {
     accordionDetailsSx?: SystemStyleObject;
     TitleElement?: JSX.Element;
     expandIconColor?: string;
+    children?: React.ReactNode;
 }
 
-const NeurosynthAccordion: React.FC<INeurosynthAccordion> = (props) => {
+const NeurosynthAccordion = (props: INeurosynthAccordion) => {
     const {
         defaultExpanded = false,
         elevation = 1,

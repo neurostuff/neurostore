@@ -119,8 +119,9 @@ def ingest_neurovault(verbose=False, limit=20, overwrite=False, max_images=None)
         existing_conditions = {cond.name: cond for cond in Condition.query.all()}
         order = 0
         for img in data["results"]:
-            aname = img["name"]
-            if aname not in analyses:
+            aname = img.get("name")
+            analysis = None
+            if aname and aname not in analyses:
                 condition = img.get("cognitive_paradigm_cogatlas")
                 analysis_kwargs = {
                     "name": aname,
@@ -150,21 +151,25 @@ def ingest_neurovault(verbose=False, limit=20, overwrite=False, max_images=None)
                         )
 
                 analyses[aname] = analysis
-            else:
+            elif aname:
                 analysis = analyses[aname]
             space = space or "Unknown" if img.get("not_mni", False) else "MNI"
             type_ = canonicalize_map_type(img.get("map_type"))
+            entities = []
+            if analysis is not None:
+                entities.append(
+                    Entity(level="group", label=analysis.name, analysis=analysis)
+                )
             image = Image(
                 url=img["file"],
                 space=space,
                 value_type=type_,
                 analysis=analysis,
+                study=s,
                 data=img,
                 filename=op.basename(img["file"]),
                 add_date=parse_date(img["add_date"]),
-                entities=[
-                    Entity(level="group", label=analysis.name, analysis=analysis)
-                ],
+                entities=entities,
             )
             images.append(image)
 
@@ -204,6 +209,15 @@ def ingest_neurovault(verbose=False, limit=20, overwrite=False, max_images=None)
 
 
 def ingest_neurosynth(max_rows=None):
+    """Ingest the bundled Neurosynth coordinate dataset.
+
+    Deprecated:
+        This still creates the legacy public ``neurosynth`` Studyset and
+        Annotation for backwards compatibility with tests and older local
+        bootstrap flows. New platform-wide studyset creation should use the
+        canonical platform/release builders instead of adding dataset-specific
+        studysets during ingestion.
+    """
     coords_file = (
         Path(__file__).parent.parent
         / "data"
@@ -240,7 +254,9 @@ def ingest_neurosynth(max_rows=None):
         metadata = metadata.iloc[:max_rows]
         annotations = annotations.iloc[:max_rows]
 
-    # create studyset object
+    # DEPRECATED: retained only for backwards compatibility with tests and older
+    # bootstrap flows. New platform-wide studyset creation happens outside these
+    # source-specific ingest routines.
     d = Studyset(
         name="neurosynth",
         description="TODO",
@@ -422,6 +438,14 @@ def ingest_neurosynth(max_rows=None):
 
 
 def ingest_neuroquery(max_rows=None):
+    """Ingest the bundled NeuroQuery coordinate dataset.
+
+    Deprecated:
+        This still creates the legacy public ``neuroquery`` Studyset for
+        backwards compatibility with tests and older local bootstrap flows. New
+        platform-wide studyset creation should use the canonical platform/release
+        builders instead of adding dataset-specific studysets during ingestion.
+    """
     coords_file = (
         Path(__file__).parent.parent
         / "data"
@@ -493,7 +517,9 @@ def ingest_neuroquery(max_rows=None):
         )
         # db.session.commit()
 
-    # make a neuroquery studyset
+    # DEPRECATED: retained only for backwards compatibility with tests and older
+    # bootstrap flows. New platform-wide studyset creation happens outside these
+    # source-specific ingest routines.
     d = Studyset(
         name="neuroquery",
         description="TODO",

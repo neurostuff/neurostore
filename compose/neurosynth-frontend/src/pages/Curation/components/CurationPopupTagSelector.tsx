@@ -34,7 +34,7 @@ interface ITagSelectorPopup {
     value: AutoSelectOption | undefined;
 }
 
-const CurationPopupTagSelector: React.FC<ITagSelectorPopup> = (props) => {
+const CurationPopupTagSelector = (props: ITagSelectorPopup) => {
     const {
         placeholder = 'start typing',
         addOptionText = 'Add',

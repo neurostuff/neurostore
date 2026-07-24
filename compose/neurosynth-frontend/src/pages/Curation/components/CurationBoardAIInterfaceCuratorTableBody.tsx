@@ -7,12 +7,12 @@ import CurationBoardAIInterfaceCuratorTableRow from './CurationBoardAIInterfaceC
 
 const isNotBrowserOrIsFirefox = typeof window === 'undefined' || navigator.userAgent.includes('Firefox');
 
-const CurationBoardAIInterfaceCuratorTableBody: React.FC<{
+const CurationBoardAIInterfaceCuratorTableBody = ({  table, onSelect, tableContainerElement, selectedStub  }: {
     table: Table<ICurationTableStudy>;
     onSelect: (id: string | undefined) => void;
     tableContainerElement: HTMLDivElement | null;
     selectedStub: ICurationTableStudy | undefined;
-}> = ({ table, onSelect, tableContainerElement, selectedStub }) => {
+}) => {
     const rows = table.getRowModel().rows;
     const virtualizer = useVirtualizer<HTMLDivElement, HTMLTableRowElement>({
         count: rows.length,

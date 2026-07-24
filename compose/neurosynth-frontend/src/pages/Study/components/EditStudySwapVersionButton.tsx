@@ -30,7 +30,7 @@ import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAnnotationId } from 'stores/AnnotationStore.getters';
 
-const EditStudySwapVersionButton: React.FC = () => {
+const EditStudySwapVersionButton = () => {
     const [anchorEl, setAnchorEl] = useState<null | HTMLButtonElement>(null);
     const open = Boolean(anchorEl);
     const baseStudyId = useStudyBaseStudyId();

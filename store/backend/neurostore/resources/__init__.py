@@ -6,6 +6,9 @@ from neurostore.resources.pipeline import (
     PipelineStudyResultsView,
     PipelinesView,
 )
+from neurostore.resources.neurostore_studyset_releases import (
+    NeurostoreStudysetReleasesView,
+)
 from neurostore.resources.users import UsersView
 
 __all__ = [
@@ -15,6 +18,7 @@ __all__ = [
     "PipelineConfigsView",
     "PipelineStudyResultsView",
     "PipelineEmbeddingsView",
+    "NeurostoreStudysetReleasesView",
 ]
 
 

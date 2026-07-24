@@ -4,12 +4,12 @@ import { SystemStyleObject } from '@mui/system';
 import useCopyToClipboard from 'hooks/useCopyToClipboard';
 import CodeSnippetStyles from './CodeSnippet.styles';
 
-const CodeSnippet: React.FC<{
+const CodeSnippet = (props: {
     linesOfCode: string[];
     noCopyButton?: boolean;
     sx?: SystemStyleObject;
     title?: string;
-}> = (props) => {
+}) => {
     const { copied, copyToClipboard } = useCopyToClipboard();
 
     const handleCopyToClipboard = () => {

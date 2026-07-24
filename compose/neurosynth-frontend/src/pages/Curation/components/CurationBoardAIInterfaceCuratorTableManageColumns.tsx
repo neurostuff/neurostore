@@ -24,12 +24,12 @@ import {
     TASK_EXTRACTOR_CURATOR_COLUMNS,
 } from '../hooks/useCuratorTableState.consts';
 
-const CurationBoardAIInterfaceCuratorTableManageColumns: React.FC<{
+const CurationBoardAIInterfaceCuratorTableManageColumns = ({  onAddColumn = () => {}, onRemoveColumn = () => {}, columns, allowAIColumns  }: {
     columns: (DisplayColumnDef<ICurationTableStudy, unknown> | AccessorFnColumnDef<ICurationTableStudy, string>)[];
     onAddColumn?: (column: string) => void;
     onRemoveColumn?: (column: string) => void;
     allowAIColumns: boolean;
-}> = ({ onAddColumn = () => {}, onRemoveColumn = () => {}, columns, allowAIColumns }) => {
+}) => {
     const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
     const [search, setSearch] = useState<string>();
 

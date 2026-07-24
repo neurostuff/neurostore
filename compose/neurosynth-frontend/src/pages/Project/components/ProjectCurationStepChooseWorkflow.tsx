@@ -4,10 +4,10 @@ import NavToolbarPopupSubMenu from 'components/Navbar/NavToolbarPopupSubMenu';
 import ProjectComponentsStyles from 'pages/Project/components/Project.styles';
 import { ECurationBoardTypes } from './ProjectCurationStep';
 
-const ProjectCurationStepChooseWorkflow: React.FC<{
+const ProjectCurationStepChooseWorkflow = ({  onCreateCuration, disabled  }: {
     onCreateCuration: (colNames: string[], isPRISMA: boolean) => void;
     disabled: boolean;
-}> = ({ onCreateCuration, disabled }) => {
+}) => {
     const handleCreateCreationBoard = (curationBoardType: ECurationBoardTypes) => {
         switch (curationBoardType) {
             case ECurationBoardTypes.PRISMA:

@@ -4,11 +4,11 @@ import React from 'react';
 import CurationStubStudyStyles from 'pages/Curation/components/CurationStubStudy.styles';
 import { ICurationStubStudy } from 'pages/Curation/Curation.types';
 
-const CurationStubStudy: React.FC<
+const CurationStubStudy = React.memo((props: 
     ICurationStubStudy & {
         columnIndex: number;
     }
-> = React.memo((props) => {
+) => {
     const isLastColumn = useProjectCurationIsLastColumn(props.columnIndex);
     const exclusionTag = useProjectExclusionTag(props.exclusionTag);
 

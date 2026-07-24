@@ -2,13 +2,13 @@ import API from 'api/api.config';
 import { AxiosError, AxiosResponse } from 'axios';
 import { Project, ProjectReturn } from 'neurosynth-compose-typescript-sdk';
 import { useSnackbar } from 'notistack';
-import { useMutation, useQueryClient } from 'react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 const useCreateProject = () => {
     const queryClient = useQueryClient();
     const { enqueueSnackbar } = useSnackbar();
-    return useMutation<AxiosResponse<ProjectReturn>, AxiosError, Project, unknown>(
-        (project) =>
+    return useMutation<AxiosResponse<ProjectReturn>, AxiosError, Project, unknown>({
+        mutationFn: (project) =>
             // Signature: projectsPost(sourceId?, copyAnnotations?, project)
             // Explicitly pass `undefined` for the optional query params so the payload is treated as the body argument.
             API.NeurosynthServices.ProjectsService.projectsPost(
@@ -16,18 +16,19 @@ const useCreateProject = () => {
                 undefined, // copyAnnotations
                 project
             ),
-        {
-            onSuccess: () => {
-                // update queries
-                queryClient.invalidateQueries('projects');
-                enqueueSnackbar('Created new project successfully', { variant: 'success' });
-            },
-            onError: () => {
-                enqueueSnackbar('There was an error creating the project', { variant: 'error' });
-            },
-            mutationKey: 'create-project',
+
+        onSuccess: () => {
+            // update queries
+            queryClient.invalidateQueries({
+                queryKey: ['projects']
+            });
+            enqueueSnackbar('Created new project successfully', { variant: 'success' });
+        },
+
+        onError: () => {
+            enqueueSnackbar('There was an error creating the project', { variant: 'error' });
         }
-    );
+    });
 };
 
 export default useCreateProject;

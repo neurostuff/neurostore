@@ -1,5 +1,6 @@
 from sqlalchemy import select
 from sqlalchemy.orm import raiseload, selectinload
+from webargs import fields
 
 from neurostore.database import db
 from neurostore.exceptions.factories import make_field_error
@@ -36,7 +37,10 @@ class AnalysisObjectViewPolicy(DefaultObjectViewPolicy):
 @view_maker
 class AnalysesView(ObjectView, ListView):
     object_view_policy_cls = AnalysisObjectViewPolicy
-    _view_fields = {**LIST_NESTED_ARGS}
+    _view_fields = {
+        **LIST_NESTED_ARGS,
+        "study": fields.String(load_default=None),
+    }
     _o2m = {
         "images": "ImagesView",
         "points": "PointsView",
@@ -53,16 +57,29 @@ class AnalysesView(ObjectView, ListView):
     _linked = {"annotation_analyses": "AnnotationAnalysesView"}
     _search_fields = ("name", "description")
 
+    def view_search(self, q, args):
+        """Apply analysis-specific filters.
+
+        Intentionally does not call ``super().view_search()`` because the
+        parent ``ListView.view_search`` hook is a no-op.
+        """
+        study_id = args.get("study")
+        if study_id:
+            q = q.filter(Analysis.study_id == study_id)
+        return q
+
     def get_affected_ids(self, ids):
         query = (
             select(
                 Annotation.id.label("annotation_id"),
                 Analysis.study_id,
+                Image.id.label("image_id"),
                 StudysetStudy.studyset_id,
                 Study.base_study_id,
                 Analysis.table_id,
             )
             .outerjoin(Study, Analysis.study_id == Study.id)
+            .outerjoin(Image, Image.analysis_id == Analysis.id)
             .outerjoin(StudysetStudy, Study.id == StudysetStudy.study_id)
             .outerjoin(Studyset, StudysetStudy.studyset_id == Studyset.id)
             .outerjoin(Annotation, Annotation.studyset_id == Studyset.id)
@@ -77,12 +94,22 @@ class AnalysesView(ObjectView, ListView):
             "studysets": set(),
             "base-studies": set(),
             "tables": set(),
+            "images": set(),
         }
-        for annotation_id, study_id, studyset_id, base_study_id, table_id in result:
+        for (
+            annotation_id,
+            study_id,
+            image_id,
+            studyset_id,
+            base_study_id,
+            table_id,
+        ) in result:
             if annotation_id:
                 unique_ids["annotations"].add(annotation_id)
             if study_id:
                 unique_ids["studies"].add(study_id)
+            if image_id:
+                unique_ids["images"].add(image_id)
             if studyset_id:
                 unique_ids["studysets"].add(studyset_id)
             if base_study_id:

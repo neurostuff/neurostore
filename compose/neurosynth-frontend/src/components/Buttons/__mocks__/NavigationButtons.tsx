@@ -1,6 +1,6 @@
 import { INavigationButtons, ENavigationButton } from '../NavigationButtons';
 
-const mockNavigationButtons: React.FC<INavigationButtons> = (props) => {
+const mockNavigationButtons = (props: INavigationButtons) => {
     return (
         <>
             <button

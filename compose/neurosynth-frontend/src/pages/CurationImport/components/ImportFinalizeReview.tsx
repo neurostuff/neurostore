@@ -7,22 +7,25 @@ import ImportFinalizeReviewVirtualizedListItem from './ImportFinalizeReviewVirtu
 import { ICurationStubStudy } from 'pages/Curation/Curation.types';
 import React from 'react';
 
-const ImportFinalizeReviewFixedSizeListRow: React.FC<
-    ListChildComponentProps<{
-        stubs: ICurationStubStudy[];
-    }>
-> = (props) => {
-    const stub = props.data.stubs[props.index];
+const ImportFinalizeReviewFixedSizeListRow = React.memo(
+    (
+        props: ListChildComponentProps<{
+            stubs: ICurationStubStudy[];
+        }>
+    ) => {
+        const stub = props.data.stubs[props.index];
 
-    return <ImportFinalizeReviewVirtualizedListItem {...stub} style={props.style} />;
-};
+        return <ImportFinalizeReviewVirtualizedListItem {...stub} style={props.style} />;
+    }
+);
 
 const LIST_HEIGHT = 95;
 
-const ImportFinalizeReview: React.FC<{
-    stubs: ICurationStubStudy[];
-    unimportedStubs: string[];
-}> = React.memo((props) => {
+const ImportFinalizeReview = React.memo(
+    (props: {
+        stubs: ICurationStubStudy[];
+        unimportedStubs: string[];
+    }) => {
     const { stubs, unimportedStubs } = props;
     const nonExcludedStubs = useMemo(() => {
         return stubs.filter((x) => !x.exclusionTag);

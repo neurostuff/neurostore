@@ -2,7 +2,7 @@ import { TextField, FormGroup, FormControlLabel, Switch, Typography, Box } from 
 import { EPropertyType, IEditMetadataValue } from 'components/EditMetadata/EditMetadata.types';
 import EditMetadataValueStyles from './EditMetadataValueStyles.styles';
 
-const EditMetadataValue: React.FC<IEditMetadataValue> = (props) => {
+const EditMetadataValue = (props: IEditMetadataValue) => {
     const { onEditMetadataValue, value, type, disabled = false } = props;
 
     const map = {

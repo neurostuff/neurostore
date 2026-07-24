@@ -2,7 +2,7 @@ import { Link, LinkProps } from '@mui/material';
 import DisplayLinkStyles from './DisplayLink.styles';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 
-const DisplayLink: React.FC<{ label: string } & LinkProps> = ({ label, ...linkProps }) => {
+const DisplayLink = ({  label, ...linkProps  }: { label: string } & LinkProps) => {
     return (
         <Link
             color="primary"

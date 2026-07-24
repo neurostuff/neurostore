@@ -2,11 +2,11 @@ import { Box, List } from '@mui/material';
 import StudyAnalysesListItem from 'pages/Study/components/StudyAnalysesListItem';
 import { IStoreAnalysis } from 'pages/Study/store/StudyStore.helpers';
 
-const StudyAnalysesList: React.FC<{
+const StudyAnalysesList = (props: {
     analyses: IStoreAnalysis[];
     selectedId: string | undefined;
     onSelectAnalysisIndex: (id: string) => void;
-}> = (props) => {
+}) => {
     return (
         <Box
             sx={{

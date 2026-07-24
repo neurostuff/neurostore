@@ -4,16 +4,23 @@ from pathlib import Path
 import connexion
 from authlib.integrations.flask_client import OAuth
 from connexion.exceptions import OAuthProblem
+from connexion.exceptions import ProblemException
 from connexion.resolver import MethodResolver
 from flask import Response, request
 from flask_admin import Admin, AdminIndexView
 from flask_admin.contrib.sqla import ModelView
 from flask_admin.theme import Bootstrap4Theme
 from flask_orjson import OrjsonProvider
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.cors import CORSMiddleware
 
 from neurosynth_compose.config import resolve_config_object
 from neurosynth_compose.database import init_db
+from neurosynth_compose.resources.errors import (
+    general_exception_handler,
+    http_exception_handler,
+    problem_exception_handler,
+)
 from neurosynth_compose.resources.auth import asgi_oauth_problem_handler
 from neurosynth_compose.resources.auth import init_app as init_auth
 
@@ -175,10 +182,10 @@ def create_app():
 
     app.secret_key = app.config["JWT_SECRET_KEY"]
 
-    connexion_app.exception_handlers = {
-        **getattr(connexion_app, "exception_handlers", {}),
-        OAuthProblem: asgi_oauth_problem_handler,
-    }
+    connexion_app.add_error_handler(OAuthProblem, asgi_oauth_problem_handler)
+    connexion_app.add_error_handler(ProblemException, problem_exception_handler)
+    connexion_app.add_error_handler(StarletteHTTPException, http_exception_handler)
+    connexion_app.add_error_handler(Exception, general_exception_handler)
 
     cors_asgi_app = CORSMiddleware(connexion_app, **cors_kwargs)
 

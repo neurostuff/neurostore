@@ -10,11 +10,20 @@ import * as jose from 'jose';
 // commands please read more here:
 // https://on.cypress.io/custom-commands
 // ***********************************************
+
+const AUTH0_CACHE_PREFIX = '@@auth0spajs@@';
+const AUTH0_USER_CACHE_SUFFIX = '@@user@@';
+const DEFAULT_MOCKED_USER_SUB = 'auth0|62e0e6c9dd47048572613b4d';
+
+const normalizeAuth0Scope = (scope: string) =>
+    Array.from(new Set(scope.trim().split(/\s+/))).join(' ');
+
 const constructMockAuthJWT = async (jwtPayload = {}): Promise<string> => {
+    const nowInSeconds = Math.floor(Date.now() / 1000);
     const jwt = await new jose.SignJWT({ ...jwtPayload })
         .setProtectedHeader({ alg: 'HS256' })
-        .setIssuedAt()
-        .setExpirationTime('2h')
+        .setIssuedAt(nowInSeconds)
+        .setExpirationTime(nowInSeconds + 86400)
         .sign(new TextEncoder().encode('SECRET'));
     return jwt;
 };
@@ -28,10 +37,8 @@ const createMockRequest = async (
 ) => {
     const access_token = await constructMockAuthJWT({
         iss: 'https://dev-mui7zm42.us.auth0.com/',
-        sub: 'auth0|62e0e6c9dd47048572613b4d',
+        sub: DEFAULT_MOCKED_USER_SUB,
         aud: ['https://dev-mui7zm42.us.auth0.com/userinfo', audience],
-        iat: Math.floor(Date.now() / 1000 + 86400),
-        exp: Math.floor(Date.now() / 1000 + 86400),
         azp: 'EmcOFhu0XAINM4EyslaKpZ3u09QlBvef',
         scope: scope,
     });
@@ -46,10 +53,8 @@ const createMockRequest = async (
         email: 'test-user@gmail.com',
         email_verified: false,
         iss: `https://${domain}/`,
-        sub: 'auth0|62e0e6c9dd47048572613b4d',
+        sub: DEFAULT_MOCKED_USER_SUB,
         aud: client_id,
-        iat: Math.floor(Date.now() / 1000 + 86400),
-        exp: Math.floor(Date.now() / 1000 + 86400),
         ...extraClaims,
     });
 
@@ -63,6 +68,66 @@ const createMockRequest = async (
             token_type: 'Bearer',
         },
     };
+};
+
+const buildAuth0LocalStorageEntries = ({
+    access_token,
+    audience,
+    client_id,
+    expires_in,
+    id_token,
+    refresh_token,
+    scope,
+}: {
+    access_token: string;
+    audience: string;
+    client_id: string;
+    expires_in: number;
+    id_token: string;
+    refresh_token: string;
+    scope: string;
+}) => {
+    const jwtObject = jose.decodeJwt(id_token);
+    const normalizedScope = normalizeAuth0Scope(scope);
+    const decodedToken = {
+        claims: {
+            ...jwtObject,
+            __raw: id_token,
+        },
+        user: {
+            sub: jwtObject.sub,
+            email: jwtObject.email,
+            name: jwtObject.name,
+            nickname: jwtObject.nickname,
+            picture: jwtObject.picture,
+            updated_at: jwtObject.updated_at,
+            email_verified: jwtObject.email_verified,
+        },
+    };
+
+    const tokenCacheKey = `${AUTH0_CACHE_PREFIX}::${client_id}::${audience}::${normalizedScope}`;
+    const tokenCacheEntry = {
+        body: {
+            access_token,
+            audience,
+            client_id,
+            decodedToken,
+            expires_in,
+            id_token,
+            refresh_token,
+            scope: normalizedScope,
+            token_type: 'Bearer',
+        },
+        expiresAt: Math.floor(Date.now() / 1000) + expires_in,
+    };
+
+    const idTokenCacheKey = `${AUTH0_CACHE_PREFIX}::${client_id}::${AUTH0_USER_CACHE_SUFFIX}`;
+    const idTokenCacheEntry = {
+        id_token,
+        decodedToken,
+    };
+
+    return { tokenCacheKey, tokenCacheEntry, idTokenCacheKey, idTokenCacheEntry };
 };
 
 Cypress.Commands.add('login', (loginMode = 'mocked', extraClaims = {}) => {
@@ -103,53 +168,22 @@ Cypress.Commands.add('login', (loginMode = 'mocked', extraClaims = {}) => {
         },
     }).then(({ body }) => {
         const { access_token, expires_in, id_token, refresh_token } = body;
-        console.log({ access_token, id_token });
-        const jwtObject = jose.decodeJwt(id_token);
-        const [header, payload, signature] = id_token.split('.');
-
-        // localstorage object that is used by auth0.
-        // we need this to ensure that auth0-react state gets updated
-        const session = {
-            body: {
-                access_token,
-                audience,
-                client_id,
-                decodedToken: {
-                    claims: {
-                        ...jwtObject,
-                        __raw: id_token,
-                    },
-                    encoded: {
-                        header,
-                        payload,
-                        signature,
-                    },
-                    header: jwtObject.header,
-                    user: {
-                        sub: jwtObject.sub,
-                        email: jwtObject.email,
-                        name: jwtObject.name,
-                        nickname: jwtObject.nickname,
-                        picture: jwtObject.picture,
-                        updated_at: jwtObject.updated_at,
-                        email_verified: jwtObject.email_verified,
-                    },
-                },
-                expires_in,
-                id_token,
-                refresh_token: refresh_token || 'mock-refresh-token',
-                scope,
-                token_type: 'Bearer',
-            },
-            expiresAt: Math.floor(Date.now() / 1000) + expires_in,
-        };
+        const { tokenCacheKey, tokenCacheEntry, idTokenCacheKey, idTokenCacheEntry } = buildAuth0LocalStorageEntries({
+            access_token,
+            audience,
+            client_id,
+            expires_in,
+            id_token,
+            refresh_token: refresh_token || 'mock-refresh-token',
+            scope,
+        });
 
         /**
-         * There are a lot of resources online regarding integration of auth0 and cypress; however, very few of them work.
-         * Finally managed to get it working by adding this in localstorage, which seems to be checked by auth0-react to determine
-         * the isAuthenticated state. This code is in tandem with setting the auth0 provider cacheLocation=localstorage.
+         * Auth0 SPA JS v2 reads the user profile from a dedicated @@user@@ cache entry.
+         * The access-token entry alone is not enough for getUser() / isAuthenticated.
          */
-        cy.addToLocalStorage(`@@auth0spajs@@::${client_id}::${audience}::${scope}`, JSON.stringify(session));
+        cy.addToLocalStorage(tokenCacheKey, JSON.stringify(tokenCacheEntry));
+        cy.addToLocalStorage(idTokenCacheKey, JSON.stringify(idTokenCacheEntry));
     });
 });
 

@@ -5,7 +5,7 @@ import PlaylistAddCheckIcon from '@mui/icons-material/PlaylistAddCheck';
 import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
 import { Link } from 'react-router-dom';
 
-const ProjectsPageCardSummaryCuration: React.FC<ICurationSummary & { projectId: string }> = (props) => {
+const ProjectsPageCardSummaryCuration = (props: ICurationSummary & { projectId: string }) => {
     const { excluded, included, uncategorized, projectId } = props;
 
     return (

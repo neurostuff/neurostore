@@ -7,10 +7,10 @@ import useGetMetaAnalysisJobById from '../hooks/useGetMetaAnalysisJobById';
 
 export const localStorageStatusAlertKey = 'hide-meta-analysis-status-alert';
 
-const MetaAnalysisStatusAlert: React.FC<{
+const MetaAnalysisStatusAlert = ({  metaAnalysis, metaAnalysisJobs  }: {
     metaAnalysis?: MetaAnalysisReturn;
     metaAnalysisJobs?: Array<MetaAnalysisJobResponse>;
-}> = ({ metaAnalysis, metaAnalysisJobs }) => {
+}) => {
     const latestResultId = getLatestMetaAnalysisResultId(metaAnalysis);
     const {
         data: latestMetaAnalysisResult,

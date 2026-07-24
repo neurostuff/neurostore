@@ -20,7 +20,7 @@ import {
     algorithmDefaultOption,
 } from './CreateMetaAnalysisSpecificationDialogConstants';
 
-const CreateMetaAnalysisSpecificationDialogBase: React.FC<IDialog> = (props) => {
+const CreateMetaAnalysisSpecificationDialogBase = (props: IDialog) => {
     const projectName = useProjectName();
 
     const [activeStep, setActiveStep] = useState(0);

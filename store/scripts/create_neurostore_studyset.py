@@ -1,5 +1,37 @@
-from neurostore.models import BaseStudy, Studyset
+"""DEPRECATED legacy NeuroStore-wide studyset helper.
+
+Do not use this script for new NeuroStore-wide studyset generation. The
+maintained implementation is:
+
+    store/backend/neurostore/services/neurostore_studyset_releases.py
+
+Use the ``build_neurostore_studyset_release`` service or the
+``flask build-neurostore-studyset-release`` CLI instead. That path creates the
+canonical ``neurostore-studyset`` / ``neurostore-annotation`` records, applies
+the current study selection rules, writes release manifests, and builds the
+downloadable release artifact.
+
+This file is kept only as a historical reference while downstream callers are
+migrated. It should be removed once no jobs or notebooks import it.
+"""
+
+import sys
+import warnings
+
 from sqlalchemy.orm import joinedload
+
+from neurostore.models import BaseStudy, Studyset
+
+
+DEPRECATION_MESSAGE = (
+    "DEPRECATED: store/scripts/create_neurostore_studyset.py is legacy. "
+    "Use neurostore.services.neurostore_studyset_releases."
+    "build_neurostore_studyset_release or the "
+    "`flask build-neurostore-studyset-release` CLI instead."
+)
+
+print(DEPRECATION_MESSAGE, file=sys.stderr)
+warnings.warn(DEPRECATION_MESSAGE, FutureWarning, stacklevel=2)
 
 
 base_studies = (
@@ -30,6 +62,9 @@ for bs in base_studies:
 
 ss = Studyset(
     name="Neurostore Studyset",
-    description="aggregation of studies on the neurostore database. Ran periodically, may not represent the latest state of the database.",
+    description=(
+        "aggregation of studies on the neurostore database. Ran periodically, "
+        "may not represent the latest state of the database."
+    ),
     studies=neurostore_studyset,
 )
