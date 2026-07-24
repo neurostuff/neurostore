@@ -1,26 +1,23 @@
-.read-only-col {
+/* :global(.handsontable) raises specificity above HT18's `.handsontable .htDimmed`
+   (read-only cells), which also uses !important for background/color. */
+:global(.handsontable) td.read-only-col {
     background-color: #f0f0f0 !important;
-    color: black;
+    color: black !important;
 }
 
-.truncate {
+:global(.handsontable) td.truncate {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-.no-top-bottom-borders {
-    border-bottom-color: transparent !important;
-    border-top-color: transparent !important;
-}
-
-.no-wrap {
+:global(.handsontable) td.no-wrap {
     /* max-width: 100px !important; */
     overflow-wrap: break-word !important;
     white-space: pre-line !important;
 }
 
-.study-col {
+:global(.handsontable) td.study-col {
     text-align: center !important;
     vertical-align: middle !important;
 }
@@ -43,4 +40,13 @@
 .null {
     color: gray !important;
     text-align: center !important;
+}
+
+.remove-column-icon {
+    color: #db2222;
+    cursor: pointer;
+}
+
+.remove-column-icon:hover {
+    color: #b05f5f;
 }

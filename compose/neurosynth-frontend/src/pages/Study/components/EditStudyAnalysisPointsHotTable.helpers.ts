@@ -1,9 +1,9 @@
-import { HotTableProps } from '@handsontable/react';
+import { HotTableProps } from '@handsontable/react-wrapper';
 import styles from 'components/HotTables/HotTables.module.css';
-import { CellValue } from 'handsontable/common';
+import { CellValue } from 'handsontable';
 
 const nonEmptyNumericValidator = (value: CellValue, callback: (isValid: boolean) => void) => {
-    const isNumber = !isNaN(value);
+    const isNumber = !Number.isNaN(Number(value));
     if (
         isNumber &&
         value !== 'e' &&
@@ -70,6 +70,7 @@ export const getHotTableColumnSettings = (disabled: boolean) => [
 ];
 
 export const EditStudyAnalysisPointsDefaultConfig: HotTableProps = {
+    theme: 'ht-theme-classic',
     outsideClickDeselects: false,
     licenseKey: 'non-commercial-and-evaluation',
     selectionMode: 'range',
@@ -85,7 +86,7 @@ export const EditStudyAnalysisPointsDefaultConfig: HotTableProps = {
     colWidths: [30, 30, 30, 80, 100, 70, 70],
 };
 
-export const getHotTableInsertionIndices = (selectedCoords: [number, number, number, number][]) => {
+export const getHotTableInsertionIndices = (selectedCoords: number[][]) => {
     if (selectedCoords.length === 0)
         return {
             insertAboveIndex: 0,

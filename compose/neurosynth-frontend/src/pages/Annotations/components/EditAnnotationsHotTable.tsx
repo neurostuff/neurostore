@@ -1,11 +1,11 @@
-import HotTable from '@handsontable/react';
+import { HotTable, HotTableRef } from '@handsontable/react-wrapper';
 import { Box, Typography } from '@mui/material';
 import LoadingButton from 'components/Buttons/LoadingButton';
 import { EPropertyType, IMetadataRowModel, getType } from 'components/EditMetadata/EditMetadata.types';
 import AddMetadataRow from 'components/EditMetadata/AddMetadataRow';
 import useEditAnnotationsHotTable from 'pages/Annotations/hooks/useEditAnnotationsHotTable';
 import { getDefaultForNoteKey, noteKeyArrToObj } from 'components/HotTables/HotTables.utils';
-import { CellCoords } from 'handsontable';
+import { CellChange, CellCoords } from 'handsontable';
 import { registerAllModules } from 'handsontable/registry';
 import { useGetWindowHeight, useUpdateAnnotationById } from 'hooks';
 import useUserCanEdit from 'hooks/useUserCanEdit';
@@ -14,8 +14,7 @@ import { useProjectUser } from 'pages/Project/store/ProjectStore';
 import React, { useEffect, useRef } from 'react';
 import { createColumns, hotDataToAnnotationNotes, hotSettings } from './EditAnnotationsHotTable.helpers';
 import useUpdateAnnotationByAnnotationAndAnalysisId from 'hooks/annotations/useUpdateAnnotationByAnnotationAndAnalysisId';
-import { CellChange } from 'handsontable/common';
-import { NoteKeyType } from 'components/HotTables/HotTables.types';
+import { AnnotationNoteValue, NoteKeyType } from 'components/HotTables/HotTables.types';
 
 registerAllModules();
 
@@ -28,7 +27,7 @@ const AnnotationsHotTable = React.memo((props: { annotationId?: string }) => {
         useUpdateAnnotationByAnnotationAndAnalysisId(props.annotationId);
     const projectUser = useProjectUser();
     const canEdit = useUserCanEdit(projectUser || undefined);
-    const hotTableRef = useRef<HotTable>(null);
+    const hotTableRef = useRef<HotTableRef>(null);
     const isColumnDraggingRef = useRef<boolean>(false);
     const windowSize = useGetWindowHeight();
     const {
@@ -175,19 +174,16 @@ const AnnotationsHotTable = React.memo((props: { annotationId?: string }) => {
     };
 
     /**
-     * NOTE: there is a bug where fixed, mergedCells (such as the cells showing our studies) get messed up when you scroll to the right. I think that this is
-     * due to virtualization - as we scroll to the right, the original heights of the cells are no longer in the DOM and so the calculated row heights are lost and
-     * they revert to the default.
+     * Fixed columns + mergeCells can desync sticky vs scrollable row heights on horizontal
+     * scroll when row virtualization is enabled. We use renderAllRows: true in hotSettings
+     * (see EditAnnotationsHotTable.helpers) so rowHeights stay consistent across overlays.
      *
-     * What ended up fixing this issue was adding row headers...I think this is because their heights are calculated and maintained regardless of virtualization.
-     * In conclusion, implementing the following solved this issue:
-     * 1. adding autoRowSize: true
-     * 2. implementing afterGetRowHeaderRenderers to remove the top and bottom borders for stylistic reasons as they dont look good next to the merged cells
-     *      the row headers themselves are not merged
-     * 3. add handleCellMouseDown to prevent the user from selecting an entire row - for stylistic reasons but also theres no reason for them to select a row
+     * Row headers (width 0 / empty labels) are still required so MergeCells does not apply
+     * sum-of-merge heights to every row. handleCellMouseDown blocks selecting the first two
+     * columns as a full row for UX.
      */
     const handleCellMouseDown = (event: MouseEvent, coords: CellCoords): void => {
-        const isRowHeader = coords.col < 2;
+        const isRowHeader = coords.col != null && coords.col < 2;
         if (isRowHeader) {
             event.stopImmediatePropagation();
             return;
@@ -211,7 +207,7 @@ const AnnotationsHotTable = React.memo((props: { annotationId?: string }) => {
         }
 
         const target = event.target as HTMLButtonElement;
-        if (coords.row < 0 && (target.tagName === 'svg' || target.tagName === 'path')) {
+        if (coords.row != null && coords.row < 0 && (target.tagName === 'svg' || target.tagName === 'path')) {
             handleRemoveHotColumn(TD.innerText);
         }
     };
@@ -329,7 +325,7 @@ const AnnotationsHotTable = React.memo((props: { annotationId?: string }) => {
             const updatedHotData = [...prev.hotData];
             changes.forEach(([row, col, , valChangedTo]) => {
                 updatedHotData[row] = [...updatedHotData[row]];
-                updatedHotData[row][col as number] = valChangedTo;
+                updatedHotData[row][col as number] = valChangedTo as AnnotationNoteValue;
 
                 const studyMapping = prev.hotDataToStudyMapping.get(row);
                 if (!studyMapping) return prev;

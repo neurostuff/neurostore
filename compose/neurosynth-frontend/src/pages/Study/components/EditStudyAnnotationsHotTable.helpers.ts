@@ -1,4 +1,4 @@
-import { HotTableProps } from '@handsontable/react';
+import { HotTableProps } from '@handsontable/react-wrapper';
 import { EPropertyType } from 'components/EditMetadata/EditMetadata.types';
 import { EditStudyAnnotationsNoteCollectionReturn } from 'pages/Study/components/EditStudyAnnotationsHotTable.types';
 import styles from 'components/HotTables/HotTables.module.css';
@@ -9,6 +9,7 @@ import { IStoreAnalysis } from 'pages/Study/store/StudyStore.helpers';
 import { booleanValidator } from 'components/HotTables/HotTables.utils';
 
 export const HotSettings: HotTableProps = {
+    theme: 'ht-theme-classic',
     licenseKey: 'non-commercial-and-evaluation',
     undo: false,
     width: '100%',
