@@ -1,4 +1,4 @@
-import { ArrowDropDown as ArrowDropDownIcon } from '@mui/icons-material';
+import { ArrowDropDown } from '@mui/icons-material';
 import { Box, Button, ButtonGroup, ButtonGroupProps, MenuItem, MenuList } from '@mui/material';
 import NeurosynthPopper from 'components/NeurosynthPopper/NeurosynthPopper';
 import ProgressLoader from 'components/ProgressLoader';
@@ -59,7 +59,7 @@ const CurationDownloadSummaryButton = ({ buttonGroupProps = {} }: { buttonGroupP
                     {isLoading ? (
                         <ProgressLoader size={14} color="secondary" />
                     ) : (
-                        <ArrowDropDownIcon sx={{ fontSize: '20px' }} />
+                        <ArrowDropDown sx={{ fontSize: '20px' }} />
                     )}
                 </Button>
             </ButtonGroup>

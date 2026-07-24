@@ -1,4 +1,4 @@
-import { Search as SearchIcon } from '@mui/icons-material';
+import { Search } from '@mui/icons-material';
 import { Box, InputAdornment, TextField, Typography } from '@mui/material';
 import TextEdit from 'components/TextEdit/TextEdit';
 import VirtualizedList from 'components/VirtualizedList/VirtualizedList';
@@ -141,7 +141,7 @@ const CurationBoardAIInterfaceExclude = ({ group }: { group: IGroupListItem }) =
                         InputProps={{
                             startAdornment: (
                                 <InputAdornment position="start">
-                                    <SearchIcon fontSize="small" />
+                                    <Search fontSize="small" />
                                 </InputAdornment>
                             ),
                         }}

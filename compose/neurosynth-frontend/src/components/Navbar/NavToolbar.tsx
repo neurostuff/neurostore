@@ -1,5 +1,5 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import { KeyboardArrowDown, OpenInNew as OpenInNewIcon } from '@mui/icons-material';
+import { KeyboardArrowDown, OpenInNew } from '@mui/icons-material';
 import { Box, Button, Toolbar, Typography } from '@mui/material';
 import CreateProjectButton from 'components/Buttons/CreateProjectButton';
 import NeurosynthAvatar from 'components/Navbar/NeurosynthAvatar';
@@ -80,7 +80,7 @@ const NavToolbar = (props: INav) => {
                             {
                                 label: (
                                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                        Documentation <OpenInNewIcon fontSize="small" sx={{ ml: 1 }} />
+                                        Documentation <OpenInNew fontSize="small" sx={{ ml: 1 }} />
                                     </Box>
                                 ),
                                 onClick: () => window.open('https://neurostuff.github.io/compose-docs/', '_blank'),

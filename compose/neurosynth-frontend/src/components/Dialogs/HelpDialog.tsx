@@ -1,4 +1,4 @@
-import { Help as HelpIcon } from '@mui/icons-material';
+import { Help } from '@mui/icons-material';
 import { Button, IconButton } from '@mui/material';
 import React, { useState } from 'react';
 import BaseDialog from './BaseDialog';
@@ -9,7 +9,7 @@ const HelpDialog = (props: { dialogTitle: string; children?: React.ReactNode }) 
     return (
         <>
             <IconButton color="primary" onClick={() => setIsOpen(true)}>
-                <HelpIcon />
+                <Help />
             </IconButton>
             <BaseDialog
                 dialogTitle={props.dialogTitle}

@@ -1,4 +1,4 @@
-import { ArrowDownward, Delete, ArrowUpward as ArrowUpwardIcon } from '@mui/icons-material';
+import { ArrowDownward, Delete, ArrowUpward } from '@mui/icons-material';
 import { Box, IconButton, Tooltip, Typography } from '@mui/material';
 import { HeaderContext } from '@tanstack/react-table';
 import AIICon from 'components/AIIcon';
@@ -48,7 +48,7 @@ export const CuratorTableHeader = ({ table, column }: HeaderContext<ICurationTab
                         </IconButton>
                     ) : isSorted === 'asc' ? (
                         <IconButton size="small" onClick={() => table.resetSorting()}>
-                            <ArrowUpwardIcon sx={{ height: '0.8em', width: '0.8em', color: 'secondary.main' }} />
+                            <ArrowUpward sx={{ height: '0.8em', width: '0.8em', color: 'secondary.main' }} />
                         </IconButton>
                     ) : (
                         <IconButton size="small" onClick={() => table.setSorting([{ id: column.id, desc: false }])}>

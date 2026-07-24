@@ -1,4 +1,4 @@
-import { Download, HelpOutline, OpenInNew, Image as ImageIcon } from '@mui/icons-material';
+import { Download, HelpOutline, OpenInNew, Image } from '@mui/icons-material';
 import { Box, Button, Checkbox, Icon, Link, Tooltip, Typography } from '@mui/material';
 import { Niivue, SHOW_RENDER } from '@niivue/niivue';
 import { ChangeEvent, useCallback, useEffect, useRef, useState } from 'react';
@@ -311,7 +311,7 @@ const NiiVueVisualizer = ({
                         size="small"
                         variant="contained"
                         onClick={handleDownloadImage}
-                        endIcon={<ImageIcon />}
+                        endIcon={<Image />}
                         sx={{ marginTop: '0.5rem' }}
                     >
                         Download image

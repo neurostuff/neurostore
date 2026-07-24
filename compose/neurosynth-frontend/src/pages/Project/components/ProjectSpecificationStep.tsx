@@ -1,4 +1,4 @@
-import { KeyboardDoubleArrowRight as KeyboardDoubleArrowRightIcon } from '@mui/icons-material';
+import { KeyboardDoubleArrowRight } from '@mui/icons-material';
 import { Box, Button, Step, StepContent, StepLabel, StepProps, Typography } from '@mui/material';
 import { IProjectPageLocationState } from 'pages/Project/ProjectPage';
 import { useAllowEditMetaAnalyses, useProjectMetaAnalysisCanEdit } from 'pages/Project/store/ProjectStore';
@@ -61,9 +61,7 @@ const ProjectSpecificationStep = (props: ISpecificationStep & StepProps) => {
                     >
                         <Button
                             endIcon={
-                                disabled ? undefined : canEditMetaAnalyses ? undefined : (
-                                    <KeyboardDoubleArrowRightIcon />
-                                )
+                                disabled ? undefined : canEditMetaAnalyses ? undefined : <KeyboardDoubleArrowRight />
                             }
                             color="primary"
                             onClick={handleClickProceed}

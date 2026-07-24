@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import NeurosynthList from './NeurosynthList';
-import { Article as ArticleIcon } from '@mui/icons-material';
+import { Article } from '@mui/icons-material';
 
 vi.mock('react-router-dom');
 
@@ -41,7 +41,7 @@ describe('NeurosynthList Component', () => {
     });
 
     it('should render the correct icon for each listitem', () => {
-        render(<NeurosynthList listIcon={<ArticleIcon />} listItems={mockListItems} />);
+        render(<NeurosynthList listIcon={<Article />} listItems={mockListItems} />);
         expect(screen.getAllByTestId('ArticleIcon').length).toEqual(mockListItems.length);
     });
 

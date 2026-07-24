@@ -1,4 +1,4 @@
-import { Search as SearchIcon } from '@mui/icons-material';
+import { Search } from '@mui/icons-material';
 import { Alert, Box, Button, InputBase, Paper } from '@mui/material';
 import SearchBarStyles from 'components/Search/SearchBar.styles';
 import {
@@ -169,7 +169,7 @@ const SearchBar = (props: ISearchBar) => {
                                 width: '150px',
                             }}
                             variant="contained"
-                            startIcon={<SearchIcon />}
+                            startIcon={<Search />}
                         >
                             Search
                         </Button>

@@ -1,7 +1,7 @@
 import { ExpandMoreOutlined } from '@mui/icons-material';
 import { Accordion, AccordionDetails, AccordionSummary } from '@mui/material';
 import { SystemStyleObject } from '@mui/system';
-import { type ReactNode, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 interface INeurosynthAccordion {
     defaultExpanded?: boolean;
@@ -9,7 +9,7 @@ interface INeurosynthAccordion {
     sx?: SystemStyleObject | Array<SystemStyleObject>;
     accordionSummarySx?: SystemStyleObject;
     accordionDetailsSx?: SystemStyleObject;
-    TitleElement?: JSX.Element;
+    TitleElement?: React.ReactNode;
     expandIconColor?: string;
     children?: React.ReactNode;
 }

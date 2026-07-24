@@ -1,10 +1,4 @@
-import {
-    ArrowDownward,
-    CheckCircle,
-    QuestionMark,
-    ArrowUpward as ArrowUpwardIcon,
-    Bookmark as BookmarkIcon,
-} from '@mui/icons-material';
+import { ArrowDownward, CheckCircle, QuestionMark, ArrowUpward, Bookmark } from '@mui/icons-material';
 import { Box, Button, ButtonGroup, IconButton, Tooltip, Typography } from '@mui/material';
 import { CellContext, HeaderContext } from '@tanstack/react-table';
 import { useProjectExtractionAddOrUpdateStudyListStatus, useProjectUser } from 'pages/Project/store/ProjectStore';
@@ -50,7 +44,7 @@ export const ExtractionTableStatusCell = (props: CellContext<IExtractionTableStu
                     size="small"
                     variant={status === EExtractionStatus.SAVEDFORLATER ? 'contained' : 'outlined'}
                 >
-                    <BookmarkIcon />
+                    <Bookmark />
                 </Button>
                 <Button
                     onClick={(event) => {
@@ -97,7 +91,7 @@ export const ExtractionTableStatusHeader = (props: HeaderContext<IExtractionTabl
                 </Tooltip>
             ) : isSorted === 'asc' ? (
                 <IconButton size="small" onClick={() => table.resetSorting()}>
-                    <ArrowUpwardIcon sx={{ height: '0.9em', width: '0.9em', color: 'secondary.main' }} />
+                    <ArrowUpward sx={{ height: '0.9em', width: '0.9em', color: 'secondary.main' }} />
                 </IconButton>
             ) : (
                 <IconButton size="small" onClick={() => table.setSorting([{ id: 'status', desc: false }])}>

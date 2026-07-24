@@ -1,4 +1,4 @@
-import { Bookmark as BookmarkIcon, Check as CheckIcon, QuestionMark as QuestionMarkIcon } from '@mui/icons-material';
+import { Bookmark, Check, QuestionMark } from '@mui/icons-material';
 import { Box, Card, CardContent, Typography, CircularProgress, CardActions, Button } from '@mui/material';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import ProjectComponentsStyles from 'pages/Project/components/Project.styles';
@@ -74,19 +74,19 @@ const ProjectExtractionStepCard = ({ disabled }: { disabled: boolean }) => {
 
                         <Box sx={ProjectComponentsStyles.statusContainer}>
                             <Box sx={ProjectComponentsStyles.statusIconContainer}>
-                                <QuestionMarkIcon sx={ProjectExtractionStep.uncategorizedIcon} />
+                                <QuestionMark sx={ProjectExtractionStep.uncategorizedIcon} />
                                 <Typography sx={{ color: 'warning.dark' }}>
                                     {extractionSummary.unreviewed} unreviewed
                                 </Typography>
                             </Box>
                             <Box sx={ProjectComponentsStyles.statusIconContainer}>
-                                <BookmarkIcon sx={ProjectExtractionStep.saveForLater} />
+                                <Bookmark sx={ProjectExtractionStep.saveForLater} />
                                 <Typography sx={{ color: 'info.main' }}>
                                     {extractionSummary.savedForLater} saved for later
                                 </Typography>
                             </Box>
                             <Box sx={ProjectComponentsStyles.statusIconContainer}>
-                                <CheckIcon sx={ProjectExtractionStep.checkIcon} />
+                                <Check sx={ProjectExtractionStep.checkIcon} />
                                 <Typography sx={{ color: 'success.main' }}>
                                     {extractionSummary.completed} completed
                                 </Typography>

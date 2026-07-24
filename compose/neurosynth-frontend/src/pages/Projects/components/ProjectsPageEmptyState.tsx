@@ -1,4 +1,4 @@
-import { FolderOpen as FolderOpenIcon } from '@mui/icons-material';
+import { FolderOpen } from '@mui/icons-material';
 import { Avatar, Box, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import CreateProjectButton from 'components/Buttons/CreateProjectButton';
@@ -23,7 +23,7 @@ const ProjectsPageEmptyState = () => {
                     color: 'primary.main',
                 }}
             >
-                <FolderOpenIcon sx={{ fontSize: '2rem' }} />
+                <FolderOpen sx={{ fontSize: '2rem' }} />
             </Avatar>
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, maxWidth: '420px' }}>
                 <Typography variant="h5" sx={{ fontWeight: 600 }}>

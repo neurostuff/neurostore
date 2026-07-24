@@ -1,6 +1,6 @@
 import { Link, LinkProps } from '@mui/material';
 import DisplayLinkStyles from './DisplayLink.styles';
-import { OpenInNew as OpenInNewIcon } from '@mui/icons-material';
+import { OpenInNew } from '@mui/icons-material';
 
 const DisplayLink = ({ label, ...linkProps }: { label: string } & LinkProps) => {
     return (
@@ -13,7 +13,7 @@ const DisplayLink = ({ label, ...linkProps }: { label: string } & LinkProps) => 
             sx={{ ...DisplayLinkStyles.link, ...(linkProps?.sx || {}) }}
         >
             {label}
-            <OpenInNewIcon sx={DisplayLinkStyles.linkIcon} fontSize="small" />
+            <OpenInNew sx={DisplayLinkStyles.linkIcon} fontSize="small" />
         </Link>
     );
 };

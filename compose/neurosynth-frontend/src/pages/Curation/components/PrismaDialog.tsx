@@ -11,7 +11,7 @@ import {
     Typography,
 } from '@mui/material';
 import PrismaComponent from 'pages/Curation/components/Prisma';
-import { Close as CloseIcon, ArrowDropDown as ArrowDropDownIcon } from '@mui/icons-material';
+import { Close, ArrowDropDown } from '@mui/icons-material';
 import { IDialog } from '../../../components/Dialogs/BaseDialog';
 import { toSvg, toPng, toJpeg } from 'html-to-image';
 import { useRef, useState } from 'react';
@@ -117,11 +117,11 @@ const PrismaDialog = (props: IDialog) => {
                             Download PRISMA Diagram as {selectedOption}
                         </Button>
                         <Button size="small" onClick={() => setOptionsIsOpen(true)}>
-                            <ArrowDropDownIcon />
+                            <ArrowDropDown />
                         </Button>
                     </ButtonGroup>
                     <IconButton onClick={handleCloseDialog}>
-                        <CloseIcon sx={{ fontSize: '2rem' }} />
+                        <Close sx={{ fontSize: '2rem' }} />
                     </IconButton>
                 </Box>
             </DialogTitle>

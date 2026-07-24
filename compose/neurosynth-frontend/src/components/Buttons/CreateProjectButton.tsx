@@ -1,5 +1,5 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import { AddCircleOutline as AddCircleOutlineIcon } from '@mui/icons-material';
+import { AddCircleOutline } from '@mui/icons-material';
 import { ButtonProps } from '@mui/material';
 import LoadingButton from 'components/Buttons/LoadingButton';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
@@ -83,7 +83,7 @@ const CreateProjectButton = (props?: { buttonProps?: ButtonProps }) => {
                 onClick={handleButtonClick}
                 isLoading={createProjectIsLoading || getProjectsIsLoading}
                 sx={sx}
-                startIcon={<AddCircleOutlineIcon />}
+                startIcon={<AddCircleOutline />}
                 text="NEW PROJECT"
             />
         </>

@@ -1,4 +1,4 @@
-import { ErrorOutline as ErrorOutlineIcon } from '@mui/icons-material';
+import { ErrorOutline } from '@mui/icons-material';
 import { ListItem, ListItemButton, ListItemIcon, ListItemText, Tooltip, useMediaQuery, useTheme } from '@mui/material';
 import { AnalysisReturn } from 'neurostore-typescript-sdk';
 import useDisplayWarnings from 'pages/Study/hooks/useDisplayWarnings';
@@ -48,7 +48,7 @@ const StudyAnalysesListItem = React.memo(
                     {showWarningIcon && (
                         <Tooltip title="This analysis has a warning" placement="top">
                             <ListItemIcon sx={{ minWidth: 0 }}>
-                                <ErrorOutlineIcon color="warning" />
+                                <ErrorOutline color="warning" />
                             </ListItemIcon>
                         </Tooltip>
                     )}

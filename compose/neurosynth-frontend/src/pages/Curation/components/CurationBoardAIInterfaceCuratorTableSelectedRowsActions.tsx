@@ -12,7 +12,7 @@ import { useState } from 'react';
 import { v4 as uuid } from 'uuid';
 import { ICurationTableStudy } from '../hooks/useCuratorTableState.types';
 import CurationPopupExclusionSelector from './CurationPopupExclusionSelector';
-import { ArrowCircleLeftOutlined, CheckCircleOutline as CheckCircleOutlineIcon } from '@mui/icons-material';
+import { ArrowCircleLeftOutlined, CheckCircleOutline } from '@mui/icons-material';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useUserCanEdit } from 'hooks';
 
@@ -79,7 +79,7 @@ const CurationBoardAIInterfaceCuratorTableSelectedRowsActions = ({
                 style={{ marginRight: '8px', fontSize: '12px' }}
                 variant="outlined"
                 disabled={!canEdit}
-                startIcon={<CheckCircleOutlineIcon />}
+                startIcon={<CheckCircleOutline />}
                 onClick={handlePromoteStudies}
             >
                 {isStepBeforeInclude ? 'Include' : 'Promote'} ({numRowsSelected})

@@ -1,5 +1,5 @@
 import { DraggableProvided, DraggableStateSnapshot, DraggableStyle } from '@hello-pangea/dnd';
-import { DragIndicator as DragIndicatorIcon } from '@mui/icons-material';
+import { DragIndicator } from '@mui/icons-material';
 import { Box, Paper } from '@mui/material';
 import useUserCanEdit from 'hooks/useUserCanEdit';
 import { ICurationStubStudy } from 'pages/Curation/Curation.types';
@@ -57,7 +57,7 @@ const CurationStubStudyDraggableContainer = (
                 <Box {...props.provided.dragHandleProps} sx={{ display: 'flex', alignItems: 'center', width: '30px' }}>
                     <Box>
                         {/* // eslint-disable-next-line react/jsx-no-undef */}
-                        <DragIndicatorIcon sx={{ color: 'gray' }} />
+                        <DragIndicator sx={{ color: 'gray' }} />
                     </Box>
                 </Box>
             ) : (

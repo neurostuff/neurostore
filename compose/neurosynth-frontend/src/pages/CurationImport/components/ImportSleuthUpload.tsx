@@ -1,9 +1,4 @@
-import {
-    Warning,
-    Close as CloseIcon,
-    FileUpload as FileUploadIcon,
-    InsertDriveFile as InsertDriveFileIcon,
-} from '@mui/icons-material';
+import { Warning, Close, FileUpload, InsertDriveFile } from '@mui/icons-material';
 import { Box, Button, IconButton, List, ListItem, ListItemIcon, ListItemText, Typography } from '@mui/material';
 import CurationImportStyles from 'pages/CurationImport/CurationImport.styles';
 import React, { useMemo, useState } from 'react';
@@ -144,7 +139,7 @@ const ImportSleuthUpload = (props: {
                         component="label"
                     >
                         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                            <FileUploadIcon
+                            <FileUpload
                                 sx={{
                                     width: '50px',
                                     height: '50px',
@@ -170,7 +165,7 @@ const ImportSleuthUpload = (props: {
                             <ListItem key={index}>
                                 <ListItemIcon>
                                     {sleuthFile.isValidFile ? (
-                                        <InsertDriveFileIcon color="primary" />
+                                        <InsertDriveFile color="primary" />
                                     ) : (
                                         <Warning color="error" />
                                     )}
@@ -192,7 +187,7 @@ const ImportSleuthUpload = (props: {
                                     {sleuthFile.file.name}
                                 </ListItemText>
                                 <IconButton sx={{ color: 'error.main' }} onClick={() => handleRemoveFile(index)}>
-                                    <CloseIcon />
+                                    <Close />
                                 </IconButton>
                             </ListItem>
                         ))}

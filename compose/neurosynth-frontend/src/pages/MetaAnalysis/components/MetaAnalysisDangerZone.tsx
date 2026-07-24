@@ -1,4 +1,4 @@
-import { ReportProblem as ReportProblemIcon } from '@mui/icons-material';
+import { ReportProblem } from '@mui/icons-material';
 import { Box, Button, Typography } from '@mui/material';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import useDeleteMetaAnalysis from 'hooks/metaAnalyses/useDeleteMetaAnalysis';
@@ -64,7 +64,7 @@ const MetaAnalysisDangerZone = ({ metaAnalysisId }: { metaAnalysisId: string | u
                 confirmText="Confirm"
             />
             <Button
-                startIcon={<ReportProblemIcon />}
+                startIcon={<ReportProblem />}
                 onClick={() => setConfirmationDialogIsOpen(true)}
                 variant="contained"
                 disableElevation

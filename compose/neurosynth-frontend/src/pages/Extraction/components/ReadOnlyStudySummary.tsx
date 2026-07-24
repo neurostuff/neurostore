@@ -1,7 +1,7 @@
 import { Box, IconButton, Tooltip, Typography } from '@mui/material';
 import { StudyReturn } from 'neurostore-typescript-sdk';
 import StudyListItemStyles from './ReadOnlyStudySummary.styles';
-import { Check as CheckIcon, Bookmark as BookmarkIcon } from '@mui/icons-material';
+import { Check, Bookmark } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
 import { EExtractionStatus } from 'pages/Extraction/ExtractionPage';
 import { useProjectExtractionAddOrUpdateStudyListStatus, useProjectUser } from 'pages/Project/store/ProjectStore';
@@ -77,7 +77,7 @@ const ReadOnlyStudySummaryVirtualizedItem = (
                                             handleUpdateStatus(props.id || '', EExtractionStatus.COMPLETED);
                                         }}
                                     >
-                                        <CheckIcon color="success" />
+                                        <Check color="success" />
                                     </IconButton>
                                 </Tooltip>
                             </Box>
@@ -93,7 +93,7 @@ const ReadOnlyStudySummaryVirtualizedItem = (
                                             handleUpdateStatus(props.id || '', EExtractionStatus.SAVEDFORLATER);
                                         }}
                                     >
-                                        <BookmarkIcon color="info" />
+                                        <Bookmark color="info" />
                                     </IconButton>
                                 </Tooltip>
                             </Box>

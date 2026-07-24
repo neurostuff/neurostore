@@ -1,5 +1,5 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import { ArrowCircleLeftOutlined, CheckCircleOutline as CheckCircleOutlineIcon } from '@mui/icons-material';
+import { ArrowCircleLeftOutlined, CheckCircleOutline } from '@mui/icons-material';
 import { Box, Button, Chip } from '@mui/material';
 import { useUserCanEdit } from 'hooks';
 import { indexToPRISMAMapping, ITag } from 'hooks/projects/useGetProjects';
@@ -99,7 +99,7 @@ const CurationEditableStubSummaryHeader = React.memo((props: ICurationEditableSt
     //     props.onMoveToNextStub();
     // };
 
-    let categorizeHeader: JSX.Element;
+    let categorizeHeader: React.ReactNode;
     switch (props.type) {
         case 'excluded':
             categorizeHeader = (
@@ -135,7 +135,7 @@ const CurationEditableStubSummaryHeader = React.memo((props: ICurationEditableSt
                         color="success"
                         size="small"
                         sx={{ marginRight: '10px', width: '140px' }}
-                        startIcon={<CheckCircleOutlineIcon />}
+                        startIcon={<CheckCircleOutline />}
                     >
                         {isStepBeforeInclude ? 'Include' : 'Promote'}
                     </Button>

@@ -1,6 +1,5 @@
-import type { ReactNode } from 'react';
-import { Dialog, DialogContent, DialogTitle, Box, Typography, IconButton, Breakpoint } from '@mui/material';
-import { Close as CloseIcon } from '@mui/icons-material';
+import { Close } from '@mui/icons-material';
+import { Box, Breakpoint, Dialog, DialogContent, DialogTitle, IconButton, Typography } from '@mui/material';
 import { SystemStyleObject } from '@mui/system';
 
 export interface IDialog extends Omit<IBaseDialog, 'dialogTitle' | 'fullWidth' | 'maxWidth'> {}
@@ -29,7 +28,7 @@ const BaseDialog = (props: IBaseDialog) => {
                 </Box>
                 <Box sx={{ display: 'flex' }}>
                     <IconButton onClick={handleCloseDialog}>
-                        <CloseIcon sx={{ fontSize: '2rem' }} />
+                        <Close sx={{ fontSize: '2rem' }} />
                     </IconButton>
                 </Box>
             </DialogTitle>

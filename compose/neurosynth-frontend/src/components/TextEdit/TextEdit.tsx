@@ -1,7 +1,7 @@
 import { Box, IconButton, TextField, Button } from '@mui/material';
 import { SystemStyleObject } from '@mui/system';
 import React, { useEffect, useState } from 'react';
-import { Edit as EditIcon } from '@mui/icons-material';
+import { Edit } from '@mui/icons-material';
 import { useAuth0 } from '@auth0/auth0-react';
 import ProgressLoader from 'components/ProgressLoader';
 
@@ -105,7 +105,7 @@ const TextEdit = (props: ITextEdit) => {
                         }}
                         onClick={() => setEditMode(true)}
                     >
-                        <EditIcon sx={{ fontSize: '20px' }} color="secondary" />
+                        <Edit sx={{ fontSize: '20px' }} color="secondary" />
                     </IconButton>
                 )}
             </Box>

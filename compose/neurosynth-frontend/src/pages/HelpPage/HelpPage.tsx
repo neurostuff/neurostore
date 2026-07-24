@@ -1,5 +1,5 @@
 import { Box, Button, Card, CardContent, Container, Link, Typography } from '@mui/material';
-import { Forum as ForumIcon, Email as EmailIcon, OpenInNew as OpenInNewIcon } from '@mui/icons-material';
+import { Forum, Email, OpenInNew } from '@mui/icons-material';
 import { usePrerenderReady, usePageMetadata } from '../../../seo/hooks';
 
 const HelpPage = () => {
@@ -60,7 +60,7 @@ const HelpPage = () => {
                                     neuroscience community.
                                 </Typography>
                             ),
-                            icon: <ForumIcon sx={{ fontSize: '2rem', color: 'white' }} />,
+                            icon: <Forum sx={{ fontSize: '2rem', color: 'white' }} />,
                             button: {
                                 label: 'Visit NeuroStars',
                                 href: 'https://neurostars.org/tag/neurosynth-compose',
@@ -84,7 +84,7 @@ const HelpPage = () => {
                                     issues.
                                 </Typography>
                             ),
-                            icon: <EmailIcon sx={{ fontSize: '2rem', color: 'white' }} />,
+                            icon: <Email sx={{ fontSize: '2rem', color: 'white' }} />,
                             button: {
                                 label: 'Send Email',
                                 href: 'mailto:neurosynthorg@gmail.com',
@@ -140,7 +140,7 @@ const HelpPage = () => {
                                     rel="noopener noreferrer"
                                     size="large"
                                     disableElevation
-                                    endIcon={<OpenInNewIcon />}
+                                    endIcon={<OpenInNew />}
                                     href={button.href}
                                     component="a"
                                     sx={{

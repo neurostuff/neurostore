@@ -1,4 +1,4 @@
-import { ArrowDownward, ArrowUpward as ArrowUpwardIcon } from '@mui/icons-material';
+import { ArrowDownward, ArrowUpward } from '@mui/icons-material';
 import { Box, IconButton, Tooltip, Typography } from '@mui/material';
 import { CellContext, HeaderContext } from '@tanstack/react-table';
 import { IExtractionTableStudy } from './ExtractionTable';
@@ -40,7 +40,7 @@ export const ExtractionTableAuthorHeader = ({ table, column }: HeaderContext<IEx
                 </Tooltip>
             ) : isSorted === 'asc' ? (
                 <IconButton size="small" onClick={() => table.resetSorting()}>
-                    <ArrowUpwardIcon sx={{ width: '0.9em', height: '0.9em', color: 'secondary.main' }} />
+                    <ArrowUpward sx={{ width: '0.9em', height: '0.9em', color: 'secondary.main' }} />
                 </IconButton>
             ) : (
                 <IconButton size="small" onClick={() => table.setSorting([{ id: 'authors', desc: false }])}>

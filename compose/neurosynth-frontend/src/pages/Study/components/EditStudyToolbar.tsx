@@ -2,10 +2,10 @@ import {
     Check,
     KeyboardArrowLeft,
     KeyboardArrowRight,
-    Bookmark as BookmarkIcon,
-    DoneAll as DoneAllIcon,
+    Bookmark,
+    DoneAll,
     QuestionMark,
-    Save as SaveIcon,
+    Save,
 } from '@mui/icons-material';
 import {
     Box,
@@ -244,7 +244,7 @@ const EditStudyToolbar = () => {
                         >
                             <Box>
                                 <IconButton onClick={handleMoveToComplete} sx={GlobalStyles.colorPulseAnimation}>
-                                    <DoneAllIcon color="success" />
+                                    <DoneAll color="success" />
                                 </IconButton>
                             </Box>
                         </Tooltip>
@@ -309,7 +309,7 @@ const EditStudyToolbar = () => {
                                         : 'outlined'
                                 }
                             >
-                                <BookmarkIcon />
+                                <Bookmark />
                             </Button>
                         </Tooltip>
                         <Tooltip title="Complete" placement={mdDown ? 'bottom' : 'left'}>
@@ -362,7 +362,7 @@ const EditStudyToolbar = () => {
                                     padding: 0,
                                 }}
                             >
-                                {saveStudyIsLoading ? <ProgressLoader color="secondary" size={20} /> : <SaveIcon />}
+                                {saveStudyIsLoading ? <ProgressLoader color="secondary" size={20} /> : <Save />}
                             </Button>
                         </Box>
                     </Tooltip>

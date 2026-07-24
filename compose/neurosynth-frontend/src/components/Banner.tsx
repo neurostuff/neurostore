@@ -1,9 +1,9 @@
-import { Cancel, EmojiPeople as EmojiPeopleIcon } from '@mui/icons-material';
+import { Cancel, EmojiPeople } from '@mui/icons-material';
 import { Box, IconButton, Link, Typography } from '@mui/material';
-import axios, { AxiosError, AxiosResponse } from 'axios';
+import { useQuery } from '@tanstack/react-query';
+import axios from 'axios';
 import BaseNavigationStyles from 'pages/BaseNavigation/BaseNavigation.styles';
 import { useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
 
 // banner.config.json should adhere to this interface
 interface IBanner {
@@ -101,7 +101,7 @@ const Banner = () => {
                                     alignItems: 'center',
                                 }}
                             >
-                                <EmojiPeopleIcon sx={{ marginRight: '0.5rem' }} />
+                                <EmojiPeople sx={{ marginRight: '0.5rem' }} />
                                 {banner.description}
                             </Typography>
                             <Link

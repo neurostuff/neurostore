@@ -1,4 +1,4 @@
-import { ReportProblem as ReportProblemIcon } from '@mui/icons-material';
+import { ReportProblem } from '@mui/icons-material';
 import { Box, Button, Typography } from '@mui/material';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog';
 import { useDeleteStudyset } from 'hooks';
@@ -80,7 +80,7 @@ const DangerZone = () => {
                 confirmText="Confirm"
             />
             <Button
-                startIcon={<ReportProblemIcon />}
+                startIcon={<ReportProblem />}
                 onClick={() => setConfirmationDialogIsOpen(true)}
                 variant="contained"
                 disableElevation

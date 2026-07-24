@@ -1,5 +1,5 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import { Menu as MenuIcon, OpenInNew as OpenInNewIcon } from '@mui/icons-material';
+import { Menu, OpenInNew } from '@mui/icons-material';
 import {
     Box,
     Drawer,
@@ -36,7 +36,7 @@ const NavDrawer = (props: INav) => {
             </Box>
             <Box sx={{ flexGrow: 1, justifyContent: 'flex-end', display: 'flex' }}>
                 <IconButton onClick={() => setIsOpen(true)}>
-                    <MenuIcon />
+                    <Menu />
                 </IconButton>
             </Box>
             <Drawer anchor="right" open={isOpen} onClose={() => setIsOpen(false)}>
@@ -80,7 +80,7 @@ const NavDrawer = (props: INav) => {
                                 >
                                     <ListItemIcon />
                                     <ListItemText primaryTypographyProps={{ display: 'flex', alignItems: 'center' }}>
-                                        Documentation <OpenInNewIcon fontSize="small" sx={{ ml: 1 }} />
+                                        Documentation <OpenInNew fontSize="small" sx={{ ml: 1 }} />
                                     </ListItemText>
                                 </ListItemButton>
                             </ListItem>

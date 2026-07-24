@@ -1,4 +1,4 @@
-import { Check as CheckIcon, Close as CloseIcon } from '@mui/icons-material';
+import { Check, Close } from '@mui/icons-material';
 import { Box, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@mui/material';
 import PlatformComparisonTableStyles from './PlatformComparisonTable.styles';
 
@@ -20,10 +20,10 @@ const PlatformComparisonTable = () => {
                         <TableRow sx={{ backgroundColor: 'secondary.dark' }}>
                             <TableCell sx={PlatformComparisonTableStyles.cellRowHeader}>Large study database</TableCell>
                             <TableCell sx={PlatformComparisonTableStyles.cell}>
-                                <CheckIcon sx={[PlatformComparisonTableStyles.cellIcon, { color: 'success.main' }]} />
+                                <Check sx={[PlatformComparisonTableStyles.cellIcon, { color: 'success.main' }]} />
                             </TableCell>
                             <TableCell sx={PlatformComparisonTableStyles.cell}>
-                                <CheckIcon sx={[PlatformComparisonTableStyles.cellIcon, { color: 'success.main' }]} />
+                                <Check sx={[PlatformComparisonTableStyles.cellIcon, { color: 'success.main' }]} />
                             </TableCell>
                         </TableRow>
                         <TableRow>
@@ -31,19 +31,19 @@ const PlatformComparisonTable = () => {
                                 Browser based workflow
                             </TableCell>
                             <TableCell sx={PlatformComparisonTableStyles.cell}>
-                                <CheckIcon sx={[PlatformComparisonTableStyles.cellIcon, { color: 'success.main' }]} />
+                                <Check sx={[PlatformComparisonTableStyles.cellIcon, { color: 'success.main' }]} />
                             </TableCell>
                             <TableCell sx={PlatformComparisonTableStyles.cell}>
-                                <CheckIcon sx={[PlatformComparisonTableStyles.cellIcon, { color: 'success.main' }]} />
+                                <Check sx={[PlatformComparisonTableStyles.cellIcon, { color: 'success.main' }]} />
                             </TableCell>
                         </TableRow>
                         <TableRow sx={{ backgroundColor: 'secondary.dark' }}>
                             <TableCell sx={PlatformComparisonTableStyles.cellRowHeader}>Editable studies</TableCell>
                             <TableCell sx={PlatformComparisonTableStyles.cell}>
-                                <CheckIcon sx={[PlatformComparisonTableStyles.cellIcon, { color: 'success.main' }]} />
+                                <Check sx={[PlatformComparisonTableStyles.cellIcon, { color: 'success.main' }]} />
                             </TableCell>
                             <TableCell sx={PlatformComparisonTableStyles.cell}>
-                                <CloseIcon sx={[PlatformComparisonTableStyles.cellIcon, { color: 'error.dark' }]} />
+                                <Close sx={[PlatformComparisonTableStyles.cellIcon, { color: 'error.dark' }]} />
                             </TableCell>
                         </TableRow>
                         <TableRow>
@@ -51,10 +51,10 @@ const PlatformComparisonTable = () => {
                                 Filterable/Selectable studies
                             </TableCell>
                             <TableCell sx={PlatformComparisonTableStyles.cell}>
-                                <CheckIcon sx={[PlatformComparisonTableStyles.cellIcon, { color: 'success.main' }]} />
+                                <Check sx={[PlatformComparisonTableStyles.cellIcon, { color: 'success.main' }]} />
                             </TableCell>
                             <TableCell sx={PlatformComparisonTableStyles.cell}>
-                                <CloseIcon sx={[PlatformComparisonTableStyles.cellIcon, { color: 'error.dark' }]} />
+                                <Close sx={[PlatformComparisonTableStyles.cellIcon, { color: 'error.dark' }]} />
                             </TableCell>
                         </TableRow>
                         <TableRow sx={{ backgroundColor: 'secondary.dark' }}>
@@ -62,10 +62,10 @@ const PlatformComparisonTable = () => {
                                 Multiple fMRI Meta-Analysis Algorithms
                             </TableCell>
                             <TableCell sx={PlatformComparisonTableStyles.cell}>
-                                <CheckIcon sx={[PlatformComparisonTableStyles.cellIcon, { color: 'success.main' }]} />
+                                <Check sx={[PlatformComparisonTableStyles.cellIcon, { color: 'success.main' }]} />
                             </TableCell>
                             <TableCell sx={PlatformComparisonTableStyles.cell}>
-                                <CloseIcon sx={[PlatformComparisonTableStyles.cellIcon, { color: 'error.dark' }]} />
+                                <Close sx={[PlatformComparisonTableStyles.cellIcon, { color: 'error.dark' }]} />
                             </TableCell>
                         </TableRow>
                         <TableRow>
@@ -73,10 +73,10 @@ const PlatformComparisonTable = () => {
                                 Image Based Meta-Analysis (IBMA)
                             </TableCell>
                             <TableCell sx={PlatformComparisonTableStyles.cell}>
-                                <CheckIcon sx={[PlatformComparisonTableStyles.cellIcon, { color: 'success.main' }]} />*
+                                <Check sx={[PlatformComparisonTableStyles.cellIcon, { color: 'success.main' }]} />*
                             </TableCell>
                             <TableCell sx={PlatformComparisonTableStyles.cell}>
-                                <CloseIcon sx={[PlatformComparisonTableStyles.cellIcon, { color: 'error.dark' }]} />
+                                <Close sx={[PlatformComparisonTableStyles.cellIcon, { color: 'error.dark' }]} />
                             </TableCell>
                         </TableRow>
                     </TableBody>

@@ -1,8 +1,4 @@
-import {
-    Close as CloseIcon,
-    PlaylistAddCheck as PlaylistAddCheckIcon,
-    QuestionMark as QuestionMarkIcon,
-} from '@mui/icons-material';
+import { Close, PlaylistAddCheck, QuestionMark } from '@mui/icons-material';
 import { Button, Card, CardActions, CardContent, CircularProgress, Typography } from '@mui/material';
 import { Box } from '@mui/system';
 import NeurosynthLoader from 'components/NeurosynthLoader/NeurosynthLoader';
@@ -49,17 +45,17 @@ const ProjectCurationStepCard = ({ projectId, disabled }: { projectId: string | 
                     </Typography>
                     <Box sx={ProjectComponentsStyles.statusContainer}>
                         <Box sx={ProjectComponentsStyles.statusIconContainer}>
-                            <QuestionMarkIcon sx={CurationStepStyles.questionMarkIcon} />
+                            <QuestionMark sx={CurationStepStyles.questionMarkIcon} />
                             <Typography sx={{ color: 'warning.dark' }}>
                                 {curationSummary.uncategorized} uncategorized
                             </Typography>
                         </Box>
                         <Box sx={ProjectComponentsStyles.statusIconContainer}>
-                            <CloseIcon sx={CurationStepStyles.closeIcon} />
+                            <Close sx={CurationStepStyles.closeIcon} />
                             <Typography sx={{ color: 'error.dark' }}>{curationSummary.excluded} excluded</Typography>
                         </Box>
                         <Box sx={ProjectComponentsStyles.statusIconContainer}>
-                            <PlaylistAddCheckIcon sx={CurationStepStyles.checkIcon} />
+                            <PlaylistAddCheck sx={CurationStepStyles.checkIcon} />
                             <Typography sx={{ color: 'success.main' }}>{curationSummary.included} included</Typography>
                         </Box>
                     </Box>

@@ -1,4 +1,4 @@
-import { OpenInNew as OpenInNewIcon } from '@mui/icons-material';
+import { OpenInNew } from '@mui/icons-material';
 import { Box, Chip, Divider, Typography } from '@mui/material';
 import { ICurationStubStudy } from 'pages/Curation/Curation.types';
 import { PUBMED_ARTICLE_URL_PREFIX, PUBMED_CENTRAL_ARTICLE_URL_PREFIX } from 'hooks/external/useFetchPubMedIds.types';
@@ -27,7 +27,7 @@ const ImportFinalizeReviewVirtualizedListItem = (props: ICurationStubStudy & { s
                 {neurostoreId && (
                     <Chip
                         component="a"
-                        icon={<OpenInNewIcon sx={{ height: '12px' }} />}
+                        icon={<OpenInNew sx={{ height: '12px' }} />}
                         target="_blank"
                         rel="noreferrer"
                         clickable
@@ -42,7 +42,7 @@ const ImportFinalizeReviewVirtualizedListItem = (props: ICurationStubStudy & { s
                 {pmid && (
                     <Chip
                         component="a"
-                        icon={<OpenInNewIcon sx={{ height: '12px' }} />}
+                        icon={<OpenInNew sx={{ height: '12px' }} />}
                         target="_blank"
                         rel="noreferrer"
                         clickable
@@ -57,7 +57,7 @@ const ImportFinalizeReviewVirtualizedListItem = (props: ICurationStubStudy & { s
                 {pmcid && (
                     <Chip
                         component="a"
-                        icon={<OpenInNewIcon sx={{ height: '12px' }} />}
+                        icon={<OpenInNew sx={{ height: '12px' }} />}
                         target="_blank"
                         rel="noreferrer"
                         clickable
@@ -72,7 +72,7 @@ const ImportFinalizeReviewVirtualizedListItem = (props: ICurationStubStudy & { s
                 {articleLink && (
                     <Chip
                         component="a"
-                        icon={<OpenInNewIcon sx={{ height: '12px' }} />}
+                        icon={<OpenInNew sx={{ height: '12px' }} />}
                         target="_blank"
                         rel="noreferrer"
                         clickable
