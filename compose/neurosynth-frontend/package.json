@@ -50,7 +50,7 @@
         "@emotion/styled": "^11.8.1",
         "@handsontable/react-wrapper": "^18.0.0",
         "@hello-pangea/dnd": "^18.0.1",
-        "@mui/icons-material": "^5.0.1",
+        "@mui/icons-material": "^9.2.0",
         "@mui/material": "^5.7.0",
         "@mui/styles": "^5.5.1",
         "@mui/system": "^5.5.1",
