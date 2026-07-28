@@ -59,10 +59,7 @@ dev = [
 ]
 
 [project.scripts]
-neurostore = "neurostore_cli:main"
-
-[tool.setuptools]
-py-modules = ["neurostore_cli"]
+manage = "neurostore.cli:main"
 
 [tool.setuptools.package-data]
 neurostore = ["openapi/**/*"]

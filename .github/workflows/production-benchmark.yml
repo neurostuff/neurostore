@@ -130,7 +130,7 @@ jobs:
           docker buildx bake \
             --file docker-compose.yml \
             --file docker-compose.dev.yml \
-            --set "neurostore.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/neurostore:${{ hashFiles('production-benchmark-base/store/backend/neurostore/**', 'production-benchmark-base/store/backend/migrations/**', 'production-benchmark-base/store/backend/manage.py', 'production-benchmark-base/store/backend/pyproject.toml', 'production-benchmark-base/store/backend/Dockerfile') }}" \
+            --set "neurostore.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/neurostore:${{ hashFiles('production-benchmark-base/store/backend/neurostore/**', 'production-benchmark-base/store/backend/migrations/**', 'production-benchmark-base/store/backend/pyproject.toml', 'production-benchmark-base/store/backend/Dockerfile') }}" \
             --set "neurostore.cache-from=type=gha,scope=cached-neurostore" \
             --set "store-pgsql17.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/store-pgsql17:${{ hashFiles('production-benchmark-base/store/postgres/**') }}" \
             --set "store-pgsql17.cache-from=type=gha,scope=cached-store-pgsql17" \
@@ -179,7 +179,7 @@ jobs:
           workdir: store
           source: "{{defaultContext}}:store"
           set: |
-            neurostore.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/neurostore:${{ hashFiles('store/backend/neurostore/**', 'store/backend/migrations/**', 'store/backend/manage.py', 'store/backend/pyproject.toml', 'store/backend/Dockerfile') }}
+            neurostore.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/neurostore:${{ hashFiles('store/backend/neurostore/**', 'store/backend/migrations/**', 'store/backend/pyproject.toml', 'store/backend/Dockerfile') }}
             neurostore.cache-from=type=gha,scope=cached-neurostore
             store-pgsql17.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/store-pgsql17:${{ hashFiles('store/postgres/**') }}
             store-pgsql17.cache-from=type=gha,scope=cached-store-pgsql17

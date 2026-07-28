@@ -170,9 +170,9 @@ jobs:
           workdir: store
           source: "{{defaultContext}}:store"
           set: |
-              neurostore.tags+=ghcr.io/${{ github.repository_owner }}/neurostore:${{ hashFiles('store/backend/neurostore/**', 'store/backend/migrations/**', 'store/backend/manage.py', 'store/backend/pyproject.toml', 'store/backend/Dockerfile') }}
+              neurostore.tags+=ghcr.io/${{ github.repository_owner }}/neurostore:${{ hashFiles('store/backend/neurostore/**', 'store/backend/migrations/**', 'store/backend/pyproject.toml', 'store/backend/Dockerfile') }}
               ${{ steps.image_channel.outputs.channel != '' && format('neurostore.tags+=ghcr.io/{0}/neurostore:{1}', github.repository_owner, steps.image_channel.outputs.channel) || '' }}
-              neurostore.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/neurostore:${{ hashFiles('store/backend/neurostore/**', 'store/backend/migrations/**', 'store/backend/manage.py', 'store/backend/pyproject.toml', 'store/backend/Dockerfile') }}
+              neurostore.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/neurostore:${{ hashFiles('store/backend/neurostore/**', 'store/backend/migrations/**', 'store/backend/pyproject.toml', 'store/backend/Dockerfile') }}
               neurostore.cache-from=type=gha,scope=cached-neurostore
               neurostore.cache-to=type=gha,scope=cached-neurostore,mode=max,ignore-error=true
               store_nginx.tags+=ghcr.io/${{ github.repository_owner }}/store_nginx:${{ hashFiles('**/store/nginx/**') }}
@@ -257,7 +257,7 @@ jobs:
             -e "APP_ENV=docker_test" \
             --rm \
             neurostore \
-            bash -c "set -euo pipefail; neurostore db upgrade; neurostore db current; neurostore db downgrade --revision -1; neurostore db upgrade; neurostore db current"
+            bash -c "set -euo pipefail; manage db upgrade; manage db current; manage db downgrade --revision -1; manage db upgrade; manage db current"
       -
         name: Backend Tests
         env:
@@ -409,7 +409,7 @@ jobs:
           -e "APP_ENV=docker_test" \
           --rm \
           compose \
-          bash -c "set -euo pipefail; compose db upgrade; compose db current; compose db downgrade --revision -1; compose db upgrade; compose db current"
+            bash -c "set -euo pipefail; manage db upgrade; manage db current; manage db downgrade --revision -1; manage db upgrade; manage db current"
     -
       name: Backend Tests
       env:
@@ -712,22 +712,22 @@ jobs:
       name: Apply Compose migrations
       run: |
         cd compose
-        docker compose exec -T compose compose db upgrade
+        docker compose exec -T compose manage db upgrade
     -
       name: Apply Store migrations
       run: |
         cd store
-        docker compose exec -T neurostore neurostore db upgrade
+        docker compose exec -T neurostore manage db upgrade
     - 
       name: Ingest data into Store
       run: |
         cd store
-        docker compose exec -T neurostore bash -c "neurostore ingest-neurosynth --max-rows 100"
+        docker compose exec -T neurostore manage ingest-neurosynth --max-rows 100
     -
       name: Ingest data into Compose
       run: |
         cd compose
-        docker compose exec -T compose bash -c "compose create-meta-analyses --n-studysets 1 --neurostore-url http://store_nginx"
+        docker compose exec -T compose manage create-meta-analyses --n-studysets 1 --neurostore-url http://store_nginx
     -
       name: Frontend Cypress E2E Tests
       uses: cypress-io/github-action@v6

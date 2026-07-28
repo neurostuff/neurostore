@@ -1,2 +1,2 @@
 Generic single-database configuration.
-Run with `neurostore db ...`; generated and applied by native Alembic config.
+Run with `manage db ...`; generated and applied by native Alembic config.

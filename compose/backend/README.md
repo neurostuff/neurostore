@@ -39,7 +39,7 @@ environment, recreate the volume or create `compose_test_db` manually before mig
 
 Next, apply the existing migrations (they are the canonical schema definition):
 
-    docker-compose exec compose compose db upgrade
+    docker-compose exec compose manage db upgrade
 
 Note: the stack now resolves the database from `APP_ENV` automatically.
 Development, testing, and `docker_test` use `compose_test_db`; staging and
@@ -56,8 +56,8 @@ If you make a change to compose, you should be able to simply restart the server
 
 If you change any models, generate a new Alembic migration and migrate the database (commit the generated revision file so it becomes the new source of truth):
 
-    docker-compose exec compose compose db migrate
-    docker-compose exec compose compose db upgrade
+    docker-compose exec compose manage db migrate
+    docker-compose exec compose manage db upgrade
 
 
 ## Database migrations
@@ -69,7 +69,7 @@ The migrations stored in `backend/migrations` are the **only** source of truth f
 Any time you start the backend or pull the latest changes, bring the database to the expected state with:
 
 ```sh
-docker-compose exec compose compose db upgrade
+docker-compose exec compose manage db upgrade
 ```
 
 `upgrade` is idempotent, so rerunning it is harmless; it only applies migrations that have not been run yet.
@@ -77,7 +77,7 @@ docker-compose exec compose compose db upgrade
 For a deployment rollback within the current compatible migration window, use:
 
 ```sh
-docker-compose exec compose compose db downgrade --revision -1
+docker-compose exec compose manage db downgrade --revision -1
 ```
 
 Migrations must follow expand/contract: add compatible schema first, deploy
@@ -93,7 +93,7 @@ docker compose stop compose compose_worker compose_nginx compose-pghero compose-
 docker compose exec compose-pgsql17 psql -U postgres -c "DROP DATABASE IF EXISTS compose_test_db;"
 docker compose exec compose-pgsql17 psql -U postgres -c "CREATE DATABASE compose_test_db;"
 docker compose up -d
-docker compose exec compose compose db upgrade
+docker compose exec compose manage db upgrade
 ```
 
 If you're using the legacy Postgres container, replace `compose-pgsql17` with `compose_pgsql` in the commands above.
