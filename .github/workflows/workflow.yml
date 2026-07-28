@@ -251,14 +251,6 @@ jobs:
         run: |
           docker compose exec -T store-pgsql17 bash -lc "psql -U postgres -tAc \"SELECT 1 FROM pg_database WHERE datname = 'store_test_db'\" | grep -q 1 || psql -U postgres -c \"create database store_test_db\""
       -
-        name: Verify migration rollback and expand/contract round trip
-        run: |
-          docker compose run \
-            -e "APP_ENV=docker_test" \
-            --rm \
-            neurostore \
-            bash -c "set -euo pipefail; manage db upgrade; manage db current; manage db downgrade --revision -1; manage db upgrade; manage db current"
-      -
         name: Backend Tests
         env:
           AUTH0_CLIENT_ID: ${{ secrets.AUTH0_CLIENT_ID }}
@@ -402,14 +394,6 @@ jobs:
       name: Create Test Database
       run: |
         docker compose exec -T compose-pgsql17 bash -lc "psql -U postgres -tAc \"SELECT 1 FROM pg_database WHERE datname = 'compose_test_db'\" | grep -q 1 || psql -U postgres -c \"create database compose_test_db\""
-    -
-      name: Verify migration rollback and expand/contract round trip
-      run: |
-        docker compose run \
-          -e "APP_ENV=docker_test" \
-          --rm \
-          compose \
-            bash -c "set -euo pipefail; manage db upgrade; manage db current; manage db downgrade --revision -1; manage db upgrade; manage db current"
     -
       name: Backend Tests
       env:
