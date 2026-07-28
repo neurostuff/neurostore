@@ -120,8 +120,6 @@ def format_seconds(value: float) -> str:
 def case_metric(case: dict, metric: str) -> float:
     if metric in case and case[metric] is not None:
         return float(case[metric])
-    if metric == "p95_seconds" and "median_seconds" in case:
-        return float(case["median_seconds"])
     raise KeyError(metric)
 
 

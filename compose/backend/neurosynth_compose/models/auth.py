@@ -12,17 +12,13 @@ roles_users = Table(
 )
 
 
-class RoleMixin:
-    pass
-
-
 class UserMixin:
     @property
     def is_active(self):
         return bool(self.active)
 
 
-class Role(BaseMixin, db.Model, RoleMixin):
+class Role(BaseMixin, db.Model):
     __tablename__ = "roles"
 
     name = Column(Text, unique=True)

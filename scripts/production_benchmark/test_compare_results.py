@@ -1,6 +1,8 @@
 import importlib.util
 from pathlib import Path
 
+import pytest
+
 
 MODULE_PATH = Path(__file__).with_name("compare_results.py")
 MODULE_SPEC = importlib.util.spec_from_file_location("compare_results", MODULE_PATH)
@@ -92,8 +94,9 @@ def test_extract_cases_falls_back_to_scaling_samples():
     ]
 
 
-def test_case_metric_falls_back_to_median_for_old_p95_artifacts():
-    assert case_metric({"median_seconds": 1.23}, "p95_seconds") == 1.23
+def test_case_metric_requires_the_requested_metric():
+    with pytest.raises(KeyError, match="p95_seconds"):
+        case_metric({"median_seconds": 1.23}, "p95_seconds")
 
 
 def test_build_rows_reports_missing_cases_without_marking_slowdown():

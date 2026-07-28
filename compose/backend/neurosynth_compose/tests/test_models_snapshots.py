@@ -1,5 +1,6 @@
 import pytest
 from sqlalchemy import select
+from sqlalchemy import JSON
 
 from neurosynth_compose.models import (
     NeurostoreAnnotation,
@@ -39,6 +40,24 @@ def test_annotation_md5_saved_on_insert(session):
 
     assert hasattr(row, "md5"), "Annotation.md5 column not found"
     assert row.md5 == md5_of_snapshot(payload)
+
+
+def test_specification_filter_uses_existing_json_schema(session):
+    from neurosynth_compose.models import Specification, User
+
+    assert isinstance(Specification.__table__.c.filter.type, JSON)
+    user = User(name="specification-owner", external_id="specification-owner")
+    specification = Specification(
+        user=user,
+        type="cbma",
+        filter={"study_ids": ["study-1"], "minimum_sample_size": 20},
+    )
+    session.add(specification)
+    session.commit()
+    session.expire_all()
+
+    loaded = session.get(Specification, specification.id)
+    assert loaded.filter == specification.filter
 
 
 def test_duplicate_studyset_reused_via_api(session, db, auth_client):
