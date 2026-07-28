@@ -2,7 +2,7 @@ import os
 import traceback
 from pathlib import Path
 
-from neurosynth_compose.http import current_app as app
+from neurosynth_compose.runtime import get_runtime
 from sqlalchemy import select
 
 from neurosynth_compose.core import celery_app
@@ -15,8 +15,8 @@ from neurosynth_compose.models import (
 )
 
 
-@celery_app.task(name="neurovault.upload", bind=True)
-def file_upload_neurovault(self, fpath, id):
+@celery_app.task(name="neurovault.upload")
+def file_upload_neurovault(fpath, id):
     from pynv import Client
 
     try:
@@ -30,7 +30,7 @@ def file_upload_neurovault(self, fpath, id):
         ).scalar_one()
 
     # record = NeurovaultFile.query.filter_by(id=id).one()
-    api = Client(access_token=app.config["NEUROVAULT_ACCESS_TOKEN"])
+    api = Client(access_token=get_runtime().config["NEUROVAULT_ACCESS_TOKEN"])
     fname = Path(fpath).name
 
     map_type = "Other"
@@ -94,9 +94,9 @@ def file_upload_neurovault(self, fpath, id):
         db.session.commit()
 
 
-@celery_app.task(name="neurostore.analysis_upload", bind=True)
+@celery_app.task(name="neurostore.analysis_upload")
 def create_or_update_neurostore_analysis(
-    self, ns_analysis_id, cluster_table, nv_collection_id, access_token
+    ns_analysis_id, cluster_table, nv_collection_id, access_token
 ):
     import pandas as pd
     from auth0.authentication.get_token import GetToken
@@ -115,14 +115,15 @@ def create_or_update_neurostore_analysis(
 
         # use the client to authenticate if user credentials were not used
         if not access_token:
-            domain = app.config["AUTH0_BASE_URL"].lstrip("https://")
+            config = get_runtime().config
+            domain = config["AUTH0_BASE_URL"].lstrip("https://")
             g_token = GetToken(
                 domain,
-                app.config["AUTH0_CLIENT_ID"],
-                client_secret=app.config["AUTH0_CLIENT_SECRET"],
+                config["AUTH0_CLIENT_ID"],
+                client_secret=config["AUTH0_CLIENT_SECRET"],
             )
             token_resp = g_token.client_credentials(
-                audience=app.config["AUTH0_API_AUDIENCE"],
+                audience=config["AUTH0_API_AUDIENCE"],
             )
             access_token = " ".join(
                 [token_resp["token_type"], token_resp["access_token"]]
