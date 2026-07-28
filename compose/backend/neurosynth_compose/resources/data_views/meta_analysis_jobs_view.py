@@ -4,20 +4,20 @@ from datetime import datetime, timezone
 from typing import Optional
 
 import requests
-from neurosynth_compose.http import MethodView
-from neurosynth_compose.http import abort, request
+from connexion import request
 from marshmallow import ValidationError
 from redis import Redis
 from sqlalchemy import select
 
 from neurosynth_compose.database import db
+from neurosynth_compose.asgi_requests import raise_http_error, read_json
+from neurosynth_compose.dependencies import get_request_dependencies
 from neurosynth_compose.models import MetaAnalysis
 from neurosynth_compose.resources.common import (
     get_current_user,
     is_user_admin,
     make_json_response,
 )
-from neurosynth_compose.runtime import get_runtime
 from neurosynth_compose.schemas import MetaAnalysisJobRequestSchema
 
 logger = logging.getLogger(__name__)
@@ -39,7 +39,7 @@ class ComposeRunnerError(RuntimeError):
 
 def get_job_store() -> Redis:
     """Return a Redis client configured from the Celery result backend."""
-    redis_url = get_runtime().config.get("CELERY_RESULT_BACKEND")
+    redis_url = get_request_dependencies(request).settings.get("CELERY_RESULT_BACKEND")
     if not redis_url:
         raise JobStoreError("CELERY_RESULT_BACKEND is not configured.")
 
@@ -134,32 +134,32 @@ def call_lambda(url: Optional[str], payload: dict) -> dict:
 
 def _abort_with_runner_error(exc: Exception) -> None:
     logger.exception("Compose runner call failed", exc_info=exc)
-    abort(502, description="compose runner unavailable")
+    raise_http_error(502, "compose runner unavailable")
 
 
 def _abort_with_job_store_error(exc: Exception) -> None:
     logger.exception("Job store error", exc_info=exc)
-    abort(503, description="job store unavailable")
+    raise_http_error(503, "job store unavailable")
 
 
 def _ensure_authenticated_user():
     user = get_current_user()
     if not user:
-        abort(401, description="authentication required")
+        raise_http_error(401, "authentication required")
     return user
 
 
 def submit_job():
     schema = MetaAnalysisJobRequestSchema()
     try:
-        request_data = request.get_json(force=True)
+        request_data = read_json(request)
     except Exception:  # noqa: BLE001
-        abort(400, description="invalid JSON payload")
+        raise_http_error(400, "invalid JSON payload")
 
     try:
         data = schema.load(request_data or {})
     except ValidationError as exc:
-        abort(422, description=f"input does not conform to specification: {exc}")
+        raise_http_error(422, f"input does not conform to specification: {exc}")
 
     current_user = _ensure_authenticated_user()
 
@@ -171,19 +171,19 @@ def submit_job():
         .first()
     )
     if meta_analysis is None:
-        abort(404, description="meta-analysis not found")
+        raise_http_error(404, "meta-analysis not found")
 
     is_admin = is_user_admin(current_user)
     if meta_analysis.user_id != current_user.external_id and not is_admin:
-        abort(
+        raise_http_error(
             403,
-            description=(
+            (
                 "user is not authorized to submit jobs for this "
                 "meta-analysis. Must be the owner or an admin."
             ),
         )
 
-    config = get_runtime().config
+    config = get_request_dependencies(request).settings
     submit_url = config.get("COMPOSE_RUNNER_SUBMIT_URL")
     environment = config.get("ENV", "production")
 
@@ -203,7 +203,7 @@ def submit_job():
     status = submission_response.get("status", "SUBMITTED")
 
     if not job_id:
-        abort(502, description="compose runner returned an invalid response")
+        raise_http_error(502, "compose runner returned an invalid response")
 
     now = datetime.now(timezone.utc).isoformat()
     status_url = f"/meta-analysis-jobs/{job_id}"
@@ -242,9 +242,9 @@ def get_job_status(job_id: str):
         _abort_with_job_store_error(exc)
 
     if cached_job is None:
-        abort(404, description="job not found")
+        raise_http_error(404, "job not found")
 
-    config = get_runtime().config
+    config = get_request_dependencies(request).settings
     status_url = config.get("COMPOSE_RUNNER_STATUS_URL")
     logs_url = config.get("COMPOSE_RUNNER_LOGS_URL")
 
@@ -333,7 +333,7 @@ def list_jobs():
     return make_json_response(payload)
 
 
-class MetaAnalysisJobsView(MethodView):
+class MetaAnalysisJobsView:
     @classmethod
     def post(cls):
         return submit_job()

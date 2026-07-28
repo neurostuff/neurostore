@@ -57,8 +57,8 @@ class _DatabaseSessionMiddleware:
             await self.app(scope, receive, send)
 
 
-class _RuntimeMiddleware:
-    """Bind immutable application dependencies for the lifetime of one request."""
+class _RequestDependenciesMiddleware:
+    """Attach immutable dependencies to each native ASGI request scope."""
 
     def __init__(self, app, settings, logger):
         self.app = app
@@ -66,10 +66,13 @@ class _RuntimeMiddleware:
         self.logger = logger
 
     async def __call__(self, scope, receive, send):
-        from neurosynth_compose.runtime import runtime_scope
+        if scope["type"] == "http":
+            from neurosynth_compose.dependencies import RequestDependencies
 
-        with runtime_scope(self.settings, self.logger):
-            await self.app(scope, receive, send)
+            scope.setdefault("state", {})["compose.dependencies"] = RequestDependencies(
+                self.settings, self.logger
+            )
+        await self.app(scope, receive, send)
 
 
 class _OrjsonModule:
@@ -153,7 +156,7 @@ def create_asgi_app(settings: Mapping[str, object] | None = None):
     init_admin(app, db, settings)
     app.mount("/", connexion_app)
     app = _DatabaseSessionMiddleware(CORSMiddleware(app, **cors_kwargs))
-    return _RuntimeMiddleware(app, settings, _logger)
+    return _RequestDependenciesMiddleware(app, settings, _logger)
 
 
 def create_app(settings: Mapping[str, object] | None = None):

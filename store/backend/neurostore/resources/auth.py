@@ -1,11 +1,12 @@
 import json
 from urllib.request import urlopen
 
+from connexion import request as connexion_request
 from connexion.exceptions import OAuthProblem
 from connexion.lifecycle import ConnexionResponse
 from jose import jwt
 
-from neurostore.runtime import get_runtime
+from neurostore.dependencies import get_request_dependencies
 
 
 def _oauth_problem(detail):
@@ -29,8 +30,7 @@ async def asgi_oauth_problem_handler(request, exc):
 
 
 def decode_token(token):
-    runtime = get_runtime()
-    config = runtime.config
+    config = get_request_dependencies(connexion_request).settings
     try:
         unverified_header = jwt.get_unverified_header(token)
     except jwt.JWTError:

@@ -1,16 +1,16 @@
 from __future__ import annotations
 
-import logging
 import pathlib
 from datetime import datetime
 from operator import itemgetter
 
-from neurosynth_compose.http import abort, request
-from neurosynth_compose.runtime import get_runtime
+from connexion import request
 from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from neurosynth_compose.database import db
+from neurosynth_compose.asgi_requests import raise_http_error, request_base_url
+from neurosynth_compose.dependencies import get_request_dependencies
 from neurosynth_compose.models.analysis import (
     NeurostoreAnnotation,
     NeurostoreStudyset,
@@ -212,7 +212,7 @@ def select_cluster_table_for_specification(cluster_table_fnames, specification):
 
 
 def create_neurovault_collection(
-    nv_collection, public_base_url=None, runtime_config=None, runtime_logger=None
+    nv_collection, public_base_url=None, settings=None, logger=None
 ):
     from pynv import Client
 
@@ -233,22 +233,22 @@ def create_neurovault_collection(
 
     created_at = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
     base_name = getattr(meta_analysis, "name", None) or "Untitled"
-    config = runtime_config or get_runtime().config
-    logger = runtime_logger or (
-        get_runtime().logger if runtime_config is None else logging.getLogger(__name__)
-    )
-    max_length = int(config["NEUROVAULT_COLLECTION_NAME_MAX_LEN"])
-    max_suffix = int(config["NEUROVAULT_COLLECTION_CREATE_MAX_SUFFIX"])
+    if settings is None or logger is None:
+        dependencies = get_request_dependencies(request)
+        settings = settings or dependencies.settings
+        logger = logger or dependencies.logger
+    max_length = int(settings["NEUROVAULT_COLLECTION_NAME_MAX_LEN"])
+    max_suffix = int(settings["NEUROVAULT_COLLECTION_CREATE_MAX_SUFFIX"])
     name_length_candidates = [max_length] + [
         fallback for fallback in (200, 150, 120, 100, 80) if fallback < max_length
     ]
 
-    base_url = public_base_url or request.host_url
+    base_url = public_base_url or request_base_url(request)
     url = f"{base_url.rstrip('/')}/meta-analyses/{meta_analysis.id}"
     last_exception = None
     last_attempted_name = None
     try:
-        api = Client(access_token=config["NEUROVAULT_ACCESS_TOKEN"])
+        api = Client(access_token=settings["NEUROVAULT_ACCESS_TOKEN"])
         tried_names = set()
         for name_length in name_length_candidates:
             for suffix_number in [None, *range(1, max_suffix + 1)]:
@@ -280,7 +280,7 @@ def create_neurovault_collection(
     except Exception as exception:  # noqa: BLE001
         last_exception = exception
 
-    abort(
+    raise_http_error(
         422,
         (
             "Error creating Neurovault collection after retries. "
@@ -297,19 +297,22 @@ def create_or_update_neurostore_study(ns_study):
 
     access_token = request.headers.get("Authorization")
     if not access_token:
-        config = get_runtime().config
-        domain = config["AUTH0_BASE_URL"].lstrip("https://")
+        settings = get_request_dependencies(request).settings
+        domain = settings["AUTH0_BASE_URL"].lstrip("https://")
         g_token = GetToken(
             domain,
-            config["AUTH0_CLIENT_ID"],
-            client_secret=config["AUTH0_CLIENT_SECRET"],
+            settings["AUTH0_CLIENT_ID"],
+            client_secret=settings["AUTH0_CLIENT_SECRET"],
         )
         token_resp = g_token.client_credentials(
-            audience=config["AUTH0_API_AUDIENCE"],
+            audience=settings["AUTH0_API_AUDIENCE"],
         )
         access_token = " ".join([token_resp["token_type"], token_resp["access_token"]])
 
-    ns_ses = neurostore_session(access_token)
+    ns_ses = neurostore_session(
+        access_token,
+        get_request_dependencies(request).settings["NEUROSTORE_API_URL"],
+    )
     study_data = {
         "name": getattr(ns_study.project, "name", "Untitled"),
         "description": getattr(ns_study.project, "description", None),
@@ -337,7 +340,9 @@ def create_or_update_neurostore_study(ns_study):
 
 def parse_upload_files(result, stat_maps, cluster_tables, diagnostic_tables):
     records = []
-    file_dir = pathlib.Path(get_runtime().config["FILE_DIR"], result.id)
+    file_dir = pathlib.Path(
+        get_request_dependencies(request).settings["FILE_DIR"], result.id
+    )
     file_dir.mkdir(parents=True, exist_ok=True)
 
     stat_map_fnames = {}

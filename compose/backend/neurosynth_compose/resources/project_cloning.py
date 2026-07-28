@@ -3,12 +3,13 @@ from __future__ import annotations
 from copy import deepcopy
 from urllib.parse import urlencode
 
-from neurosynth_compose.http import abort, request
-from neurosynth_compose.runtime import get_runtime
+from connexion import request
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from neurosynth_compose.database import commit_session, db
+from neurosynth_compose.asgi_requests import raise_http_error
+from neurosynth_compose.dependencies import get_request_dependencies
 from neurosynth_compose.models.analysis import (
     NeurostoreAnnotation,
     MetaAnalysis,
@@ -35,7 +36,7 @@ class ProjectCloneService:
             db.session.add(current_user)
             commit_session()
             return current_user
-        raise abort(401, description="user authentication required")
+        raise_http_error(401, "user authentication required")
 
     def clone(self, source_id, *, copy_annotations):
         current_user = self.ensure_current_user()
@@ -53,32 +54,35 @@ class ProjectCloneService:
         ).scalar_one_or_none()
 
         if source_project is None:
-            abort(404)
+            raise_http_error(404)
         if (
             not source_project.public
             and source_project.user_id != current_user.external_id
         ):
-            abort(403, description="project is not public")
+            raise_http_error(403, "project is not public")
 
         access_token = request.headers.get("Authorization")
         if not access_token:
             from auth0.authentication.get_token import GetToken
 
-            config = get_runtime().config
-            domain = config["AUTH0_BASE_URL"].lstrip("https://")
+            settings = get_request_dependencies(request).settings
+            domain = settings["AUTH0_BASE_URL"].lstrip("https://")
             g_token = GetToken(
                 domain,
-                config["AUTH0_CLIENT_ID"],
-                client_secret=config["AUTH0_CLIENT_SECRET"],
+                settings["AUTH0_CLIENT_ID"],
+                client_secret=settings["AUTH0_CLIENT_SECRET"],
             )
             token_resp = g_token.client_credentials(
-                audience=config["AUTH0_API_AUDIENCE"],
+                audience=settings["AUTH0_API_AUDIENCE"],
             )
             access_token = " ".join(
                 [token_resp["token_type"], token_resp["access_token"]]
             )
 
-        ns_session = neurostore_session(access_token)
+        ns_session = neurostore_session(
+            access_token,
+            get_request_dependencies(request).settings["NEUROSTORE_API_URL"],
+        )
         with db.session.no_autoflush:
             new_ss_ref_id, new_ann_ref_id = self._clone_references(
                 ns_session,

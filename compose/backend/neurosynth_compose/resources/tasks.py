@@ -2,7 +2,6 @@ import os
 import traceback
 from pathlib import Path
 
-from neurosynth_compose.runtime import get_runtime
 from sqlalchemy import select
 
 from neurosynth_compose.core import celery_app
@@ -15,8 +14,8 @@ from neurosynth_compose.models import (
 )
 
 
-@celery_app.task(name="neurovault.upload")
-def file_upload_neurovault(fpath, id):
+@celery_app.task(name="neurovault.upload", bind=True)
+def file_upload_neurovault(task, fpath, id):
     from pynv import Client
 
     try:
@@ -30,7 +29,8 @@ def file_upload_neurovault(fpath, id):
         ).scalar_one()
 
     # record = NeurovaultFile.query.filter_by(id=id).one()
-    api = Client(access_token=get_runtime().config["NEUROVAULT_ACCESS_TOKEN"])
+    settings = task.app.conf.SERVICE_SETTINGS
+    api = Client(access_token=settings["NEUROVAULT_ACCESS_TOKEN"])
     fname = Path(fpath).name
 
     map_type = "Other"
@@ -94,9 +94,9 @@ def file_upload_neurovault(fpath, id):
         db.session.commit()
 
 
-@celery_app.task(name="neurostore.analysis_upload")
+@celery_app.task(name="neurostore.analysis_upload", bind=True)
 def create_or_update_neurostore_analysis(
-    ns_analysis_id, cluster_table, nv_collection_id, access_token
+    task, ns_analysis_id, cluster_table, nv_collection_id, access_token
 ):
     import pandas as pd
     from auth0.authentication.get_token import GetToken
@@ -104,6 +104,7 @@ def create_or_update_neurostore_analysis(
     from neurosynth_compose.resources.neurostore import neurostore_session
 
     try:
+        settings = task.app.conf.SERVICE_SETTINGS
         ns_analysis = db.session.execute(
             select(NeurostoreAnalysis).where(NeurostoreAnalysis.id == ns_analysis_id)
         ).scalar_one()
@@ -115,21 +116,20 @@ def create_or_update_neurostore_analysis(
 
         # use the client to authenticate if user credentials were not used
         if not access_token:
-            config = get_runtime().config
-            domain = config["AUTH0_BASE_URL"].lstrip("https://")
+            domain = settings["AUTH0_BASE_URL"].lstrip("https://")
             g_token = GetToken(
                 domain,
-                config["AUTH0_CLIENT_ID"],
-                client_secret=config["AUTH0_CLIENT_SECRET"],
+                settings["AUTH0_CLIENT_ID"],
+                client_secret=settings["AUTH0_CLIENT_SECRET"],
             )
             token_resp = g_token.client_credentials(
-                audience=config["AUTH0_API_AUDIENCE"],
+                audience=settings["AUTH0_API_AUDIENCE"],
             )
             access_token = " ".join(
                 [token_resp["token_type"], token_resp["access_token"]]
             )
 
-        ns_ses = neurostore_session(access_token)
+        ns_ses = neurostore_session(access_token, settings["NEUROSTORE_API_URL"])
 
         # get the study(project) the (meta)analysis is associated with
         analysis_data = {

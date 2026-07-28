@@ -1,29 +1,34 @@
 from celery import Celery, Task
 
-from neurosynth_compose import create_asgi_app, initialize_runtime
+from neurosynth_compose import create_asgi_app
 from neurosynth_compose.database import db
-from neurosynth_compose.runtime import runtime_scope
+from neurosynth_compose.settings import load_settings
 
-settings, _logger = initialize_runtime()
-asgi_app = create_asgi_app(settings)
-
-celery_app = Celery("neurosynth_compose")
-celery_app.conf.update(settings.get("CELERY_CONFIG", {}))
+asgi_app = create_asgi_app()
 
 
-class RuntimeTask(Task):
-    """Bind worker-local dependencies without coupling Celery to the ASGI app."""
+class DatabaseTask(Task):
+    """Release the synchronous SQLAlchemy session after every worker task."""
 
     abstract = True
 
     def __call__(self, *args, **kwargs):
         try:
-            with runtime_scope(settings, _logger):
-                return self.run(*args, **kwargs)
+            return self.run(*args, **kwargs)
         finally:
             db.session.remove()
 
 
-celery_app.Task = RuntimeTask
+def create_celery_app(settings=None):
+    """Create a Celery application with its immutable worker settings attached."""
+    settings = load_settings() if settings is None else settings
+    celery = Celery("neurosynth_compose")
+    celery.conf.update(settings.get("CELERY_CONFIG", {}))
+    celery.conf.update(SERVICE_SETTINGS=dict(settings))
+    celery.Task = DatabaseTask
+    return celery
+
+
+celery_app = create_celery_app()
 
 __all__ = ["asgi_app", "celery_app", "db"]

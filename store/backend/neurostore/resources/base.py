@@ -7,6 +7,7 @@ import re
 
 import sqlalchemy as sa
 import sqlalchemy.sql.expression as sae
+from connexion import request
 from marshmallow import ValidationError
 from psycopg2 import errors
 from sqlalchemy import func
@@ -15,7 +16,9 @@ from sqlalchemy.orm import raiseload, selectinload
 from webargs import fields
 
 from neurostore.cache_versioning import bump_cache_versions, get_cache_version_for_path
+from neurostore.asgi_requests import parse_query_parameters
 from neurostore.database import db
+from neurostore.dependencies import get_request_dependencies
 from neurostore.exceptions.utils.error_helpers import (
     abort_not_found,
     abort_permission,
@@ -23,7 +26,6 @@ from neurostore.exceptions.utils.error_helpers import (
     abort_validation,
 )
 from neurostore.extensions import cache
-from neurostore.http import parser, request
 from neurostore.models import (
     Analysis,
     Annotation,
@@ -32,7 +34,6 @@ from neurostore.models import (
     User,
 )
 from neurostore.note_keys import resolve_note_key_default
-from neurostore.runtime import get_runtime
 from neurostore.resources import data as viewdata
 from neurostore.resources.common import merge_unique_ids
 from neurostore.resources.mutation_core import (
@@ -53,11 +54,6 @@ from neurostore.services.has_media_flags import (
     enqueue_base_study_flag_updates,
     recompute_media_flags,
 )
-
-
-@parser.error_handler
-def handle_parser_error(err, req, schema, *, error_status_code, error_headers):
-    abort_schema_validation(err.messages)
 
 
 def abort_schema_validation(messages):
@@ -194,7 +190,7 @@ class BaseView:
         if not base_studies:
             return
 
-        config = get_runtime().config
+        config = get_request_dependencies(request).settings
         if config.get("BASE_STUDY_FLAGS_ASYNC", True):
             reason = f"{self.__class__.__name__}.update_base_studies"
             enqueue_base_study_flag_updates(base_studies, reason=reason)
@@ -289,7 +285,7 @@ def cache_key_creator(*args, **kwargs):
     user = get_current_user().id if get_current_user() else ""
 
     # Get query args from request
-    query_items = request.query_items()
+    query_items = list(request.query_params.multi_items())
 
     # If extra_args is present, merge into query_items
     extra_args = kwargs.get("extra_args")
@@ -316,11 +312,11 @@ class ObjectView(BaseView):
     )
     def get(self, id):
         object_view_policy = self.build_object_view_policy()
-        args = parser.parse(self._view_fields, request, location="query")
+        args = parse_query_parameters(self._view_fields, request)
         if args.get("nested") is None:
-            args["nested"] = request.args.get("nested", False) == "true"
+            args["nested"] = request.query_params.get("nested", "false") == "true"
         if args.get("summary") is None:
-            args["summary"] = request.args.get("summary", False) == "true"
+            args["summary"] = request.query_params.get("summary", "false") == "true"
 
         payload = object_view_policy.get_payload(id, args)
         if payload is not None:
@@ -486,7 +482,7 @@ class ListView(BaseView):
 
     @cache.cached(60 * 60, query_string=True, make_cache_key=cache_key_creator)
     def search(self, extra_args=None):
-        args = parser.parse(self._user_args, request, location="query")
+        args = parse_query_parameters(self._user_args, request)
         if extra_args:
             args.update(extra_args)
 
@@ -590,7 +586,7 @@ class ListView(BaseView):
         # record with most/all of the same details (e.g., DOI for studies)
 
         # Parse arguments using webargs
-        args = parser.parse(self._user_args, request, location="query")
+        args = parse_query_parameters(self._user_args, request)
         source_id = args.get("source_id")
         source = args.get("source") or "neurostore"
 
@@ -601,7 +597,9 @@ class ListView(BaseView):
         if source_id:
             data = self._load_from_source(source, source_id, data)
 
-        args["nested"] = bool(args.get("nested") or request.args.get("source_id"))
+        args["nested"] = bool(
+            args.get("nested") or request.query_params.get("source_id")
+        )
 
         with db.session.no_autoflush:
             record = self.__class__.update_or_create(data)

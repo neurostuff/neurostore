@@ -2,14 +2,17 @@ from __future__ import annotations
 
 import inspect
 
+from connexion import request
 import sqlalchemy.sql.expression as sae
-from neurosynth_compose.http import abort, request
-from neurosynth_compose.http import MethodView
 from marshmallow.exceptions import ValidationError
 from sqlalchemy import func, select
 from webargs import fields
-from neurosynth_compose.http import parser
 
+from neurosynth_compose.asgi_requests import (
+    parse_request_data,
+    raise_http_error,
+    read_json,
+)
 from neurosynth_compose.database import commit_session, db
 from neurosynth_compose.resources.common import (
     LIST_USER_ARGS,
@@ -34,7 +37,7 @@ def view_maker(cls):
     return ClassView
 
 
-class BaseView(MethodView):
+class BaseView:
     _model = None
     _schema = None
     _nested = {}
@@ -93,22 +96,24 @@ class BaseView(MethodView):
 class ObjectView(BaseView):
     def get(self, id):
         id = id.replace("\x00", "\ufffd")
-        args = parser.parse(getattr(self, "_user_args", {}), request, location="query")
+        args = parse_request_data(
+            getattr(self, "_user_args", {}), request, location="query"
+        )
         record = db.session.execute(
             self.load_object_query(id, args=args)
         ).scalar_one_or_none()
         if record is None:
-            abort(404)
+            raise_http_error(404)
         return make_json_response(self.serialize_record(record, args))
 
     def put(self, id):
         id = id.replace("\x00", "\ufffd")
-        request_data = self.insert_data(id, request.json)
+        request_data = self.insert_data(id, read_json(request))
         try:
             data = self.__class__._schema().load(request_data)
         except ValidationError as exc:
-            abort(
-                422, description=f"input does not conform to specification: {str(exc)}"
+            raise_http_error(
+                422, f"input does not conform to specification: {str(exc)}"
             )
 
         with db.session.no_autoflush:
@@ -121,21 +126,21 @@ class ObjectView(BaseView):
             select(self.__class__._model).where(self.__class__._model.id == id)
         ).scalar_one_or_none()
         if record is None:
-            abort(404)
+            raise_http_error(404)
 
         self.db_validation({"id": id})
         current_user = get_current_user()
         if getattr(record, "user_id", None) is not None and current_user is None:
-            abort(401, description="authentication required")
+            raise_http_error(401, "authentication required")
         if (
             getattr(record, "user_id", None) is not None
             and current_user is not None
             and record.user_id != current_user.external_id
             and not is_user_admin(current_user)
         ):
-            abort(
+            raise_http_error(
                 403,
-                description=(
+                (
                     f"user {current_user.external_id} cannot change "
                     f"record owned by {record.user_id}. Only the owner or "
                     f"an admin can delete records."
@@ -239,7 +244,7 @@ class ListView(BaseView):
         )
 
     def search(self):
-        args = parser.parse(self._user_args, request, location="query")
+        args = parse_request_data(self._user_args, request, location="query")
         count_query = self.apply_filters(self.load_count_query(args=args), args)
         query = self.apply_filters(self.load_query(args=args), args)
         query = self.sort_query(query, args)
@@ -247,10 +252,10 @@ class ListView(BaseView):
 
     def post(self):
         try:
-            data = parser.parse(self.__class__._schema, request)
+            data = parse_request_data(self.__class__._schema, request)
         except ValidationError as exc:
-            abort(
-                422, description=f"input does not conform to specification: {str(exc)}"
+            raise_http_error(
+                422, f"input does not conform to specification: {str(exc)}"
             )
 
         with db.session.no_autoflush:

@@ -23,10 +23,7 @@ def _load_app_and_db():
 
 def _run_with_runtime(callback):
     app, db = _load_app_and_db()
-    from neurostore.runtime import runtime_scope
-
-    with runtime_scope(app.config, app.logger):
-        return callback(app, db)
+    return callback(app, db)
 
 
 @click.group()

@@ -1,3 +1,4 @@
+import logging
 import sys
 import types
 
@@ -40,7 +41,8 @@ def test_create_neurovault_collection_retries_with_suffix(app, monkeypatch):
     create_neurovault_collection(
         nv_collection,
         public_base_url="http://example.com/",
-        runtime_config=app.config,
+        settings=app.config,
+        logger=logging.getLogger(__name__),
     )
 
     assert nv_collection.collection_id == 123
@@ -80,7 +82,8 @@ def test_create_neurovault_collection_suffix_increments(app, monkeypatch):
     create_neurovault_collection(
         nv_collection,
         public_base_url="http://example.com/",
-        runtime_config=app.config,
+        settings=app.config,
+        logger=logging.getLogger(__name__),
     )
 
     assert nv_collection.collection_id == 456

@@ -4,12 +4,12 @@ import json
 from collections import defaultdict
 from functools import lru_cache
 
-from neurosynth_compose.http import abort, request
+from connexion import request
 from marshmallow.exceptions import ValidationError
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload, load_only, selectinload
-from neurosynth_compose.http import parser
 
+from neurosynth_compose.asgi_requests import parse_request_data, raise_http_error
 from neurosynth_compose.database import commit_session, db
 
 # Imported for dynamic resolution by `view_maker` on *View classes.
@@ -550,9 +550,9 @@ class MetaAnalysesView(ObjectView, ListView):
                     .first()
                 )
                 if tag_record and not _tag_accessible(tag_record, current_user):
-                    abort(403, description="tag is not accessible to this user")
+                    raise_http_error(403, "tag is not accessible to this user")
                 if tag_record is None and not tag_name:
-                    abort(404, description="tag not found")
+                    raise_http_error(404, "tag not found")
 
             if tag_record is None and tag_name:
                 tag_record = _find_tag_by_name(tag_name, current_user)
@@ -570,17 +570,16 @@ class MetaAnalysesView(ObjectView, ListView):
             .where(MetaAnalysis.id == data["id"])
         ).scalar_one_or_none()
         if meta_analysis and meta_analysis.results:
-            abort(
-                409,
-                description="this meta-analysis already has results and cannot be deleted.",
+            raise_http_error(
+                409, "this meta-analysis already has results and cannot be deleted."
             )
 
     def post(self):
         try:
-            data = parser.parse(self.__class__._schema, request)
+            data = parse_request_data(self.__class__._schema, request)
         except ValidationError as exc:
-            abort(
-                422, description=f"input does not conform to specification: {str(exc)}"
+            raise_http_error(
+                422, f"input does not conform to specification: {str(exc)}"
             )
 
         with db.session.no_autoflush:
@@ -618,10 +617,10 @@ class MetaAnalysisResultsView(ObjectView, ListView):
         import connexion
 
         try:
-            data = parser.parse(self.__class__._schema, request)
+            data = parse_request_data(self.__class__._schema, request)
         except ValidationError as exc:
-            abort(
-                422, description=f"input does not conform to specification: {str(exc)}"
+            raise_http_error(
+                422, f"input does not conform to specification: {str(exc)}"
             )
 
         token_info = connexion.context.request.context.get("token_info", {})
@@ -632,9 +631,8 @@ class MetaAnalysisResultsView(ObjectView, ListView):
                 select(MetaAnalysis).where(MetaAnalysis.id == data["meta_analysis_id"])
             ).scalar_one_or_none()
             if upload_meta_id is not None and meta and meta.id != upload_meta_id:
-                abort(
-                    401,
-                    description="Upload key does not match the target meta-analysis.",
+                raise_http_error(
+                    401, "Upload key does not match the target meta-analysis."
                 )
             # Extract snapshot payloads/IDs before mutation logic so that
             # downstream `update_or_create` does not create transient
@@ -838,9 +836,8 @@ class MetaAnalysisResultsView(ObjectView, ListView):
             and result.meta_analysis
             and result.meta_analysis.id != upload_meta_id
         ):
-            abort(
-                401,
-                description="Upload key does not match the target meta-analysis.",
+            raise_http_error(
+                401, "Upload key does not match the target meta-analysis."
             )
 
         if uploaded_files:

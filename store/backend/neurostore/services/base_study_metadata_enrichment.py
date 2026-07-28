@@ -1,4 +1,5 @@
 import datetime as dt
+import logging
 import re
 import threading
 import time
@@ -22,7 +23,7 @@ from neurostore.models import (
     StudysetStudy,
 )
 from neurostore.resources.common import merge_unique_ids, normalize_ids
-from neurostore.runtime import get_runtime
+from neurostore.settings import load_settings
 from neurostore.services.has_media_flags import enqueue_base_study_flag_updates
 
 ID_FIELDS = ("pmid", "doi", "pmcid")
@@ -34,6 +35,7 @@ SEMANTIC_SCHOLAR_DEFAULT_RPS = 1.0
 PUBMED_DEFAULT_RPS_WITH_KEY = 10.0
 PUBMED_DEFAULT_RPS_WITHOUT_KEY = 3.0
 RATE_LIMIT_SAFETY_MARGIN_SECONDS = 0.01
+logger = logging.getLogger(__name__)
 
 
 def _has_value(value):
@@ -183,7 +185,7 @@ def _request_with_retry(method, url, **kwargs):
 
 
 def _request_timeout():
-    timeout = get_runtime().config.get("BASE_STUDY_METADATA_REQUEST_TIMEOUT_SECONDS", 10)
+    timeout = load_settings().get("BASE_STUDY_METADATA_REQUEST_TIMEOUT_SECONDS", 10)
     try:
         timeout = float(timeout)
     except (TypeError, ValueError):
@@ -192,7 +194,7 @@ def _request_timeout():
 
 
 def _retry_delay_seconds():
-    delay = get_runtime().config.get("BASE_STUDY_METADATA_RETRY_DELAY_SECONDS", 30)
+    delay = load_settings().get("BASE_STUDY_METADATA_RETRY_DELAY_SECONDS", 30)
     try:
         delay = float(delay)
     except (TypeError, ValueError):
@@ -201,7 +203,7 @@ def _retry_delay_seconds():
 
 
 def _provider_error(provider_name, exc):
-    get_runtime().logger.warning(
+    logger.warning(
         "base-study metadata provider failed (%s): %s", provider_name, exc
     )
 
@@ -221,7 +223,7 @@ def _provider_rps_for_request(url, kwargs):
     if "api.semanticscholar.org" in url:
         if headers.get("x-api-key"):
             rps = _coerce_positive_float(
-                get_runtime().config.get(
+                load_settings().get(
                     "SEMANTIC_SCHOLAR_API_RPS", SEMANTIC_SCHOLAR_DEFAULT_RPS
                 ),
                 SEMANTIC_SCHOLAR_DEFAULT_RPS,
@@ -242,7 +244,7 @@ def _provider_rps_for_request(url, kwargs):
             else PUBMED_DEFAULT_RPS_WITHOUT_KEY
         )
         rps = _coerce_positive_float(
-            get_runtime().config.get(config_key, default_rps), default_rps
+            load_settings().get(config_key, default_rps), default_rps
         )
         provider_name = "pubmed_with_key" if has_api_key else "pubmed_without_key"
         return provider_name, rps
@@ -867,7 +869,7 @@ def _propagate_base_study_metadata_to_versions_post_commit(
                 raise
             if attempts >= max_attempts:
                 raise
-            get_runtime().logger.warning(
+            logger.warning(
                 "retrying study metadata propagation after deadlock "
                 "(attempt %s/%s) for %s base studies",
                 attempts + 1,
@@ -912,7 +914,7 @@ def enrich_base_study_metadata(base_study_id):
     if not _needs_enrichment(base_study_snapshot):
         return {"base-studies": {base_study_snapshot.id}, "studies": set()}
 
-    config = get_runtime().config
+    config = load_settings()
     semantic_scholar_api_key = config.get("SEMANTIC_SCHOLAR_API_KEY")
     contact_email = config.get("EMAIL")
     pubmed_api_key = config.get("PUBMED_TOOL_API_KEY")
@@ -1070,7 +1072,7 @@ def _enqueue_base_study_flag_updates_post_commit(
                 raise
             if attempts >= max_attempts:
                 raise
-            get_runtime().logger.warning(
+            logger.warning(
                 "retrying base-study flag enqueue after deadlock "
                 "(attempt %s/%s) for %s base studies",
                 attempts + 1,
@@ -1111,7 +1113,7 @@ def process_base_study_metadata_outbox_batch(batch_size=50):
                 flag_update_ids.update(affected_ids.get("base-studies", set()))
                 successful_ids.append(base_study_id)
         except Exception as exc:  # noqa: BLE001
-            get_runtime().logger.warning(
+            logger.warning(
                 "base-study metadata enrichment failed for %s: %s",
                 base_study_id,
                 exc,

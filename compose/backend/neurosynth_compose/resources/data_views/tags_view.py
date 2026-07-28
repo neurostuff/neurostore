@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import sqlalchemy.sql.expression as sae
-from neurosynth_compose.http import abort, request
+from connexion import request
 from sqlalchemy import func, select
 from webargs import fields
-from neurosynth_compose.http import parser
 
+from neurosynth_compose.asgi_requests import parse_request_data, raise_http_error
 from neurosynth_compose.database import commit_session, db
 from neurosynth_compose.models.analysis import Tag  # noqa: F401
 from neurosynth_compose.resources.common import get_current_user, make_json_response
@@ -77,12 +77,12 @@ class TagsView(ObjectView, ListView):
             select(self._model).where(self._model.id == id)
         ).scalar_one_or_none()
         if record is None or not _tag_accessible(record, get_current_user()):
-            abort(404)
-        args = parser.parse(self._user_args, request, location="query")
+            raise_http_error(404)
+        args = parse_request_data(self._user_args, request, location="query")
         return make_json_response(self.serialize_record(record, args))
 
     def search(self):
-        args = parser.parse(self._user_args, request, location="query")
+        args = parse_request_data(self._user_args, request, location="query")
         current_user = get_current_user()
         query = _scoped_tags_query(current_user)
 

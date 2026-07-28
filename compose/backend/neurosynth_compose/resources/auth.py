@@ -1,6 +1,7 @@
 import json
 from urllib.request import urlopen
 
+from connexion import request as connexion_request
 from connexion.exceptions import OAuthProblem
 from connexion.lifecycle import ConnexionResponse
 from connexion.security import NO_VALUE
@@ -8,7 +9,7 @@ from jose import jwt
 from sqlalchemy import select
 
 from neurosynth_compose.database import db
-from neurosynth_compose.runtime import get_runtime
+from neurosynth_compose.dependencies import get_request_dependencies
 
 
 def _oauth_problem(detail):
@@ -32,7 +33,7 @@ async def asgi_oauth_problem_handler(request, exc):
 
 
 def decode_token(token):
-    config = get_runtime().config
+    config = get_request_dependencies(connexion_request).settings
     jsonurl = urlopen(str(config["AUTH0_BASE_URL"]) + "/.well-known/jwks.json")
     jwks = json.loads(jsonurl.read())
     try:

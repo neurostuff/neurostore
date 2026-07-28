@@ -1,6 +1,5 @@
 from urllib.parse import urljoin
 
-from neurosynth_compose.runtime import get_runtime
 from requests import Session
 
 
@@ -14,8 +13,8 @@ class LiveServerSession(Session):
         return super(LiveServerSession, self).request(method, url, *args, **kwargs)
 
 
-def neurostore_session(access_token):
-    ns_ses = LiveServerSession(prefix_url=get_runtime().config["NEUROSTORE_API_URL"])
+def neurostore_session(access_token, neurostore_api_url):
+    ns_ses = LiveServerSession(prefix_url=neurostore_api_url)
 
     auth = {"Authorization": access_token}
     ns_ses.headers.update(auth)

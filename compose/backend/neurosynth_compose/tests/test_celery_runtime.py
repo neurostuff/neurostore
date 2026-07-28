@@ -1,14 +1,12 @@
-from neurosynth_compose.core import celery_app, settings
+from neurosynth_compose.core import celery_app
 
 
-def test_celery_task_receives_worker_runtime_without_asgi_app():
-    @celery_app.task(name="tests.runtime-probe")
-    def runtime_probe():
-        from neurosynth_compose.runtime import get_runtime
+def test_celery_task_receives_worker_settings_without_asgi_app():
+    @celery_app.task(name="tests.settings-probe", bind=True)
+    def settings_probe(task):
+        return task.app.conf.SERVICE_SETTINGS["SQLALCHEMY_DATABASE_URI"]
 
-        return get_runtime().config["SQLALCHEMY_DATABASE_URI"]
-
-    result = runtime_probe.apply()
+    result = settings_probe.apply()
 
     assert result.successful()
-    assert result.result == settings["SQLALCHEMY_DATABASE_URI"]
+    assert result.result == celery_app.conf.SERVICE_SETTINGS["SQLALCHEMY_DATABASE_URI"]

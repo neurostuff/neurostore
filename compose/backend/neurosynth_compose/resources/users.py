@@ -1,8 +1,8 @@
 import connexion
-from neurosynth_compose.http import abort, request
+from connexion import request
 from sqlalchemy import select
-from neurosynth_compose.http import parser
 
+from neurosynth_compose.asgi_requests import parse_request_data, raise_http_error
 from neurosynth_compose.database import db
 from neurosynth_compose.models.auth import User
 from neurosynth_compose.resources.common import make_json_response
@@ -15,7 +15,7 @@ class UsersView(ObjectView, ListView):
     _schema = UserSchema
 
     def post(self, **kwargs):
-        data = parser.parse(self.__class__._schema, request)
+        data = parse_request_data(self.__class__._schema, request)
         record = self._model()
         # Store all models so we can atomically update in one commit
         to_commit = []
@@ -36,16 +36,16 @@ class UsersView(ObjectView, ListView):
         current_user = db.session.execute(
             select(User).where(User.external_id == connexion.context.context["user"])
         ).scalar_one_or_none()
-        data = parser.parse(self.__class__._schema, request)
+        data = parse_request_data(self.__class__._schema, request)
         if id != data["id"] or id != current_user.id:
-            return abort(422)
+            raise_http_error(422)
 
         record = db.session.execute(
             select(self._model).where(self._model.id == id)
         ).scalar_one_or_none()
 
         if record is None:
-            abort(422)
+            raise_http_error(422)
 
         for k, v in data.items():
             setattr(record, k, v)

@@ -3,13 +3,17 @@ from __future__ import annotations
 from functools import lru_cache
 
 import orjson
-from neurosynth_compose.http import request
+from connexion import request
 from marshmallow.exceptions import ValidationError
 from sqlalchemy import Text, cast, func, literal, select, update
 from sqlalchemy.orm import joinedload, load_only, selectinload
 from webargs import fields
-from neurosynth_compose.http import parser
 
+from neurosynth_compose.asgi_requests import (
+    parse_request_data,
+    raise_http_error,
+    read_json,
+)
 from neurosynth_compose.database import commit_session, db
 from neurosynth_compose.models.analysis import (
     MetaAnalysis,
@@ -492,12 +496,12 @@ class ProjectsView(ObjectView, ListView):
 
     def get(self, id):
         id = id.replace("\x00", "\ufffd")
-        args = parser.parse(getattr(self, "_user_args", {}), request, location="query")
+        args = parse_request_data(
+            getattr(self, "_user_args", {}), request, location="query"
+        )
         row = db.session.execute(self.load_object_query(id, args=args)).first()
         if row is None:
-            from neurosynth_compose.http import abort
-
-            abort(404)
+            raise_http_error(404)
         record, raw_provenance_json = row
         return make_json_response(
             serialize_project(
@@ -520,15 +524,12 @@ class ProjectsView(ObjectView, ListView):
         if project:
             for meta_analysis in project.meta_analyses:
                 if meta_analysis.results:
-                    from neurosynth_compose.http import abort
-
-                    abort(
-                        409,
-                        description="this project already has results and cannot be deleted.",
+                    raise_http_error(
+                        409, "this project already has results and cannot be deleted."
                     )
 
     def post(self):
-        clone_args = parser.parse(
+        clone_args = parse_request_data(
             {
                 "source_id": fields.String(load_default=None),
                 "copy_annotations": fields.Boolean(load_default=True),
@@ -545,12 +546,10 @@ class ProjectsView(ObjectView, ListView):
             return make_json_response(self.serialize_record(cloned_project, {}))
 
         try:
-            data = parser.parse(self.__class__._schema, request)
+            data = parse_request_data(self.__class__._schema, request)
         except ValidationError as exc:
-            from neurosynth_compose.http import abort
-
-            abort(
-                422, description=f"input does not conform to specification: {str(exc)}"
+            raise_http_error(
+                422, f"input does not conform to specification: {str(exc)}"
             )
 
         with db.session.no_autoflush:
@@ -565,15 +564,15 @@ class ProjectsView(ObjectView, ListView):
 
     def put(self, id):
         id = id.replace("\x00", "\ufffd")
-        query_args = parser.parse(self._project_put_args, request, location="query")
-        request_data = self.insert_data(id, request.json)
+        query_args = parse_request_data(
+            self._project_put_args, request, location="query"
+        )
+        request_data = self.insert_data(id, read_json(request))
         try:
             data = self.__class__._schema().load(request_data)
         except ValidationError as exc:
-            from neurosynth_compose.http import abort
-
-            abort(
-                422, description=f"input does not conform to specification: {str(exc)}"
+            raise_http_error(
+                422, f"input does not conform to specification: {str(exc)}"
             )
 
         with db.session.no_autoflush:

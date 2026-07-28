@@ -29,7 +29,7 @@ def orjson_serializer(obj):
 
 @dataclass(frozen=True)
 class Pagination:
-    """Small Flask-SQLAlchemy-compatible pagination result."""
+    """Pagination result returned by the service query helpers."""
 
     items: list
     page: int

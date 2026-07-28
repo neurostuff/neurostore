@@ -5,9 +5,9 @@ from dataclasses import dataclass
 from operator import itemgetter
 from typing import Any
 
-from neurosynth_compose.http import abort
 from sqlalchemy import select
 
+from neurosynth_compose.asgi_requests import raise_http_error
 from neurosynth_compose.database import db
 from neurosynth_compose.models.analysis import (
     NeurostoreAnnotation,
@@ -98,7 +98,7 @@ class ComposeMutationPolicy:
         ):
             return self.context.model(id=self.context.id)
         if record is None:
-            abort(422)
+            raise_http_error(422)
         return record
 
     def ensure_mutation_allowed(self):
@@ -111,9 +111,9 @@ class ComposeMutationPolicy:
             return
         if is_user_admin(self.context.current_user):
             return
-        abort(
+        raise_http_error(
             403,
-            description=(
+            (
                 "You do not have permission to modify this record. "
                 "You must be the owner or an admin."
             ),
@@ -201,7 +201,7 @@ class ComposeMutationPolicy:
 
     def finalize(self):
         if self.context.current_user is None:
-            abort(401, description="user authentication required")
+            raise_http_error(401, "user authentication required")
 
         if (
             hasattr(self.context.record, "user_id")

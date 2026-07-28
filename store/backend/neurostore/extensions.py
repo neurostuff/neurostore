@@ -10,16 +10,12 @@ from redis import from_url
 
 
 class Cache:
-    """Subset of Flask-Caching used by Store, backed by Cachelib RedisCache.
-
-    Cachelib uses the same Redis value representation as Flask-Caching's
-    Redis backend, so existing cache entries remain readable after the switch.
-    """
+    """Cachelib-backed response cache preserving the deployed Redis key format."""
 
     def __init__(self):
         self.cache: RedisCache | None = None
 
-    def init_app(self, config: Mapping[str, object]):
+    def configure(self, config: Mapping[str, object]):
         redis_url = str(config["CACHE_REDIS_URL"])
         key_prefix = config.get("CACHE_KEY_PREFIX")
         self.cache = RedisCache(
