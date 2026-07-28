@@ -67,7 +67,7 @@ def test_is_user_admin_does_not_autoflush_transient_study_relationships(session)
     assert sa.inspect(transient_study).transient is True
 
 
-async def test_admin_can_modify_others_records(async_auth_clients, user_data, session):
+async def test_admin_can_modify_others_records(async_auth_clients, user_data, session, app):
     """Test that admin users can modify records they don't own"""
     from jose.jwt import encode
 
@@ -92,7 +92,9 @@ async def test_admin_can_modify_others_records(async_auth_clients, user_data, se
 
     # Create admin client
     admin_token = encode({"sub": "admin-user-id"}, "admin123", algorithm="HS256")
-    admin_client = AsyncClient(token=admin_token, username="admin-user-id")
+    admin_client = AsyncClient(
+        token=admin_token, asgi_app=app.asgi_app, username="admin-user-id"
+    )
 
     # Try to modify the study as admin
     new_name = "Modified by admin"
@@ -107,7 +109,7 @@ async def test_admin_can_modify_others_records(async_auth_clients, user_data, se
     assert resp.json()["name"] == new_name
 
 
-async def test_admin_can_delete_others_records(async_auth_clients, user_data, session):
+async def test_admin_can_delete_others_records(async_auth_clients, user_data, session, app):
     """Test that admin users can delete records they don't own"""
     from jose.jwt import encode
 
@@ -133,7 +135,9 @@ async def test_admin_can_delete_others_records(async_auth_clients, user_data, se
 
     # Create admin client
     admin_token = encode({"sub": "admin-user-id"}, "admin123", algorithm="HS256")
-    admin_client = AsyncClient(token=admin_token, username="admin-user-id")
+    admin_client = AsyncClient(
+        token=admin_token, asgi_app=app.asgi_app, username="admin-user-id"
+    )
 
     # Try to delete the study as admin
     try:
@@ -146,7 +150,7 @@ async def test_admin_can_delete_others_records(async_auth_clients, user_data, se
     assert Study.query.filter_by(id=study_id).first() is None
 
 
-async def test_admin_can_see_private_records(async_auth_clients, user_data, session):
+async def test_admin_can_see_private_records(async_auth_clients, user_data, session, app):
     """Test that admin users can see all records including private ones"""
     from jose.jwt import encode
 
@@ -175,7 +179,9 @@ async def test_admin_can_see_private_records(async_auth_clients, user_data, sess
 
     # Create admin client
     admin_token = encode({"sub": "admin-user-id"}, "admin123", algorithm="HS256")
-    admin_client = AsyncClient(token=admin_token, username="admin-user-id")
+    admin_client = AsyncClient(
+        token=admin_token, asgi_app=app.asgi_app, username="admin-user-id"
+    )
 
     # Admin should be able to see the private studyset
     try:

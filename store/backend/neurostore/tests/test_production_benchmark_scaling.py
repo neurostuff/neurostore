@@ -136,7 +136,7 @@ def test_extract_profile_functions_reads_thread_aware_json(tmp_path):
 
 
 async def test_benchmark_write_cleanup_removes_case_writes(
-    mock_add_users, ingest_neurosynth
+    mock_add_users, ingest_neurosynth, app
 ):
     token = mock_add_users["user1"]["token"]
     study_ids = [
@@ -147,7 +147,7 @@ async def test_benchmark_write_cleanup_removes_case_writes(
 
     from neurostore.tests.request_utils import AsyncClient
 
-    client = AsyncClient(token=token)
+    client = AsyncClient(token=token, asgi_app=app.asgi_app)
     studyset_id = None
     try:
         response = await client.post(

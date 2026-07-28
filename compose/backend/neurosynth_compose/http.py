@@ -3,23 +3,13 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from contextlib import contextmanager
-from contextvars import ContextVar
 from http import HTTPStatus
-from types import SimpleNamespace
-from urllib.parse import urljoin
 
 import anyio
 from connexion import request as connexion_request
 from marshmallow import EXCLUDE, Schema, ValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from webargs.multidictproxy import MultiDictProxy
-
-from neurosynth_compose.runtime import get_runtime
-
-_request_base_url: ContextVar[str | None] = ContextVar(
-    "compose_request_base_url", default=None
-)
 
 
 class MethodView:
@@ -71,9 +61,6 @@ class RequestProxy:
 
     @property
     def host_url(self):
-        overridden = _request_base_url.get()
-        if overridden:
-            return overridden
         scope = connexion_request.scope
         scheme = scope.get("scheme", "http")
         headers = dict(connexion_request.headers)
@@ -136,20 +123,6 @@ request = RequestProxy()
 parser = QueryParser()
 
 
-class CurrentAppProxy:
-    @property
-    def config(self):
-        return get_runtime().config
-
-    @property
-    def logger(self):
-        return get_runtime().logger
-
-
-current_app = CurrentAppProxy()
-g = SimpleNamespace()
-
-
 def abort(status_code, description=None, **kwargs):
     del kwargs
     try:
@@ -159,20 +132,3 @@ def abort(status_code, description=None, **kwargs):
     raise StarletteHTTPException(
         status_code=status_code, detail=description or default_detail
     )
-
-
-def url_for(endpoint, **values):
-    path = endpoint.strip(".")
-    if values:
-        path = f"{path}?{values}"
-    return urljoin(request.host_url, path)
-
-
-@contextmanager
-def test_request_context(base_url="http://example.com/", **kwargs):
-    del kwargs
-    token = _request_base_url.set(base_url)
-    try:
-        yield
-    finally:
-        _request_base_url.reset(token)

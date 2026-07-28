@@ -8,8 +8,9 @@ from sqlalchemy.exc import OperationalError
 
 from neurostore.scripts.transfer_ownership import (
     OwnershipTransferError,
-    transfer_user_ownership
+    transfer_user_ownership,
 )
+
 
 def _load_app_and_db():
     from neurostore import initialize_runtime
@@ -20,9 +21,12 @@ def _load_app_and_db():
     return app, db
 
 
-def _run_with_app_context(callback):
+def _run_with_runtime(callback):
     app, db = _load_app_and_db()
-    return callback(app, db)
+    from neurostore.runtime import runtime_scope
+
+    with runtime_scope(app.config, app.logger):
+        return callback(app, db)
 
 
 @click.group()
@@ -77,7 +81,7 @@ def ingest_neurosynth(max_rows):
             max_rows=int(max_rows) if max_rows is not None else None
         )
 
-    _run_with_app_context(_run)
+    _run_with_runtime(_run)
 
 
 @main.command("ingest-neurovault")
@@ -96,7 +100,7 @@ def ingest_neurovault(verbose, limit):
             limit=int(limit) if limit is not None else None,
         )
 
-    _run_with_app_context(_run)
+    _run_with_runtime(_run)
 
 
 @main.command("ingest-neuroquery")
@@ -109,7 +113,7 @@ def ingest_neuroquery(max_rows):
             max_rows=int(max_rows) if max_rows is not None else None
         )
 
-    _run_with_app_context(_run)
+    _run_with_runtime(_run)
 
 
 def _run_outbox_processor(process_fn, batch_size, loop, sleep_seconds, db, app):
@@ -179,7 +183,7 @@ def process_base_study_flag_outbox(batch_size, loop, sleep_seconds):
         )
         click.echo(f"Processed {processed_total} base-study flag outbox rows.")
 
-    _run_with_app_context(_run)
+    _run_with_runtime(_run)
 
 
 @main.command("check-base-study-flag-outbox")
@@ -191,7 +195,7 @@ def check_base_study_flag_outbox(max_pending, max_oldest_seconds):
 
         _emit_outbox_health(BaseStudyFlagOutbox, max_pending, max_oldest_seconds)
 
-    _run_with_app_context(_run)
+    _run_with_runtime(_run)
 
 
 @main.command("process-base-study-metadata-outbox")
@@ -214,7 +218,7 @@ def process_base_study_metadata_outbox(batch_size, loop, sleep_seconds):
         )
         click.echo(f"Processed {processed_total} base-study metadata outbox rows.")
 
-    _run_with_app_context(_run)
+    _run_with_runtime(_run)
 
 
 @main.command("check-base-study-metadata-outbox")
@@ -226,7 +230,7 @@ def check_base_study_metadata_outbox(max_pending, max_oldest_seconds):
 
         _emit_outbox_health(BaseStudyMetadataOutbox, max_pending, max_oldest_seconds)
 
-    _run_with_app_context(_run)
+    _run_with_runtime(_run)
 
 
 @main.command("build-neurostore-studyset-release")
@@ -269,7 +273,7 @@ def build_neurostore_studyset_release(
         else:
             click.echo("No NeuroStore studyset release was written.")
 
-    _run_with_app_context(_run)
+    _run_with_runtime(_run)
 
 
 @main.command("transfer-user-ownership")
@@ -298,6 +302,7 @@ def transfer_user_ownership_command(source_user_id, destination_user_id, execute
     )
     for table_name, count in summary.counts.items():
         click.echo(f"{table_name}: {count}")
+
 
 if __name__ == "__main__":
     main()

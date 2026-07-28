@@ -4,8 +4,8 @@ from datetime import datetime, timezone
 from typing import Optional
 
 import requests
-from neurosynth_compose.http import abort, current_app, request
 from neurosynth_compose.http import MethodView
+from neurosynth_compose.http import abort, request
 from marshmallow import ValidationError
 from redis import Redis
 from sqlalchemy import select
@@ -17,6 +17,7 @@ from neurosynth_compose.resources.common import (
     is_user_admin,
     make_json_response,
 )
+from neurosynth_compose.runtime import get_runtime
 from neurosynth_compose.schemas import MetaAnalysisJobRequestSchema
 
 logger = logging.getLogger(__name__)
@@ -26,8 +27,6 @@ USER_JOB_INDEX_PREFIX = "compose:user-jobs"
 META_ANALYSIS_JOB_INDEX_PREFIX = "compose:meta-analysis-jobs"
 JOB_CACHE_TTL_SECONDS = 60 * 60 * 24 * 3  # 3 days
 LOG_TIME_PADDING_MS = 5 * 60 * 1000  # pad log queries by 5 minutes on each side
-
-_job_store_client: Optional[Redis] = None
 
 
 class JobStoreError(RuntimeError):
@@ -40,11 +39,7 @@ class ComposeRunnerError(RuntimeError):
 
 def get_job_store() -> Redis:
     """Return a Redis client configured from the Celery result backend."""
-    global _job_store_client
-    if _job_store_client is not None:
-        return _job_store_client
-
-    redis_url = current_app.config.get("CELERY_RESULT_BACKEND")
+    redis_url = get_runtime().config.get("CELERY_RESULT_BACKEND")
     if not redis_url:
         raise JobStoreError("CELERY_RESULT_BACKEND is not configured.")
 
@@ -54,7 +49,6 @@ def get_job_store() -> Redis:
     except Exception as exc:  # noqa: BLE001
         raise JobStoreError("unable to reach redis job store") from exc
 
-    _job_store_client = client
     return client
 
 
@@ -189,8 +183,9 @@ def submit_job():
             ),
         )
 
-    submit_url = current_app.config.get("COMPOSE_RUNNER_SUBMIT_URL")
-    environment = current_app.config.get("ENV", "production")
+    config = get_runtime().config
+    submit_url = config.get("COMPOSE_RUNNER_SUBMIT_URL")
+    environment = config.get("ENV", "production")
 
     submission_payload = {
         "meta_analysis_id": meta_analysis.id,
@@ -249,8 +244,9 @@ def get_job_status(job_id: str):
     if cached_job is None:
         abort(404, description="job not found")
 
-    status_url = current_app.config.get("COMPOSE_RUNNER_STATUS_URL")
-    logs_url = current_app.config.get("COMPOSE_RUNNER_LOGS_URL")
+    config = get_runtime().config
+    status_url = config.get("COMPOSE_RUNNER_STATUS_URL")
+    logs_url = config.get("COMPOSE_RUNNER_LOGS_URL")
 
     try:
         status_response = call_lambda(status_url, {"job_id": job_id})

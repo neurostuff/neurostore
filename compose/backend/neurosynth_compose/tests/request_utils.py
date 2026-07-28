@@ -5,20 +5,9 @@ import anyio
 import httpx
 
 
-_default_asgi_app = None
-
-
-def configure_default_asgi_app(asgi_app):
-    global _default_asgi_app
-    _default_asgi_app = asgi_app
-
-
 class Client(object):
-    def __init__(self, token, test_client=None, prepend="", username=None):
-        if test_client is None:
-            if _default_asgi_app is None:
-                raise RuntimeError("No default ASGI test application has been configured.")
-            test_client = _default_asgi_app
+    def __init__(self, token, asgi_app, prepend="", username=None):
+        test_client = asgi_app
 
         self.client = test_client
         self.prepend = prepend
@@ -72,9 +61,6 @@ class Client(object):
         else:
             response = anyio.run(self._make_asgi_request, request, route, kwargs)
 
-        from neurosynth_compose.database import db
-
-        db.session.expire_all()
         return ResponseWrapper(response)
 
     async def _make_asgi_request(self, request, route, kwargs):

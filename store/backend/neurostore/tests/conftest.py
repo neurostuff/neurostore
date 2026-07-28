@@ -3,7 +3,6 @@ import logging
 import os
 import random
 from asyncio import gather
-from contextlib import nullcontext
 from os import environ
 from unittest.mock import patch
 
@@ -38,16 +37,13 @@ from neurostore.tests.utils import ordered_note_keys
 LOGGER = logging.getLogger(__name__)
 
 
-class TestApplication:
-    """Small application facade retained for tests that inspect runtime config."""
+class TestRuntime:
+    """Explicit ASGI dependencies shared by the test fixtures."""
 
     def __init__(self, config, asgi_app, database):
         self.config = config
         self.asgi_app = asgi_app
-        self.extensions = {"sqlalchemy": database}
-
-    def app_context(self):
-        return nullcontext(self)
+        self.database = database
 
 
 @pytest.fixture(scope="module")
@@ -192,13 +188,11 @@ def real_app():
     from neurostore.database import db
     from neurostore.extensions import cache
     from neurostore.settings import load_settings
-    from neurostore.tests.request_utils import configure_default_asgi_app
 
     environ.setdefault("APP_ENV", "testing")
     settings = load_settings()
     asgi_app = create_asgi_app(settings)
-    _app = TestApplication(settings, asgi_app, db)
-    configure_default_asgi_app(asgi_app)
+    _app = TestRuntime(settings, asgi_app, db)
 
     cache.clear()
 
@@ -221,7 +215,7 @@ def _reset_migrated_schema(db, migrations_dir):
 @pytest.fixture(scope="session")
 def real_db(real_app):
     """Session-wide test database."""
-    _db = real_app.extensions["sqlalchemy"]
+    _db = real_app.database
     _reset_migrated_schema(_db, real_app.config["MIGRATIONS_DIR"])
 
     yield _db
@@ -236,7 +230,6 @@ def app(mock_auth):
     from neurostore.database import db
     from neurostore.extensions import cache
     from neurostore.settings import load_settings
-    from neurostore.tests.request_utils import configure_default_asgi_app
 
     environ.setdefault("APP_ENV", "testing")
     settings = load_settings()
@@ -247,8 +240,7 @@ def app(mock_auth):
         "pool_size": 0,
     }
     asgi_app = create_asgi_app(settings)
-    _app = TestApplication(settings, asgi_app, db)
-    configure_default_asgi_app(asgi_app)
+    _app = TestRuntime(settings, asgi_app, db)
 
     cache.clear()
 
@@ -260,7 +252,7 @@ def app(mock_auth):
 @pytest.fixture(scope="session")
 def db(app):
     """Session-wide test database."""
-    _db = app.extensions["sqlalchemy"]
+    _db = app.database
     _reset_migrated_schema(_db, app.config["MIGRATIONS_DIR"])
 
     yield _db
@@ -339,7 +331,11 @@ async def async_auth_clients(mock_add_users, app):
 
     tokens = mock_add_users
     clients = [
-        AsyncClient(token=token["token"], username=token["external_id"])
+        AsyncClient(
+            token=token["token"],
+            asgi_app=app.asgi_app,
+            username=token["external_id"],
+        )
         for token in tokens.values()
     ]
     try:

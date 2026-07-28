@@ -9,6 +9,7 @@ from neurosynth_compose.scripts.transfer_ownership import (
     transfer_user_ownership,
 )
 
+
 def _load_app_and_db():
     from neurosynth_compose import initialize_runtime
     from neurosynth_compose.database import db
@@ -20,7 +21,10 @@ def _load_app_and_db():
 
 def _run_with_runtime(callback):
     app, db = _load_app_and_db()
-    return callback(app, db)
+    from neurosynth_compose.runtime import runtime_scope
+
+    with runtime_scope(app.config, app.logger):
+        return callback(app, db)
 
 
 @click.group()
@@ -110,6 +114,7 @@ def backfill_extraction_metadata():
 
     _run_with_runtime(_run)
 
+
 @main.command("transfer-user-ownership")
 @click.argument("source_user_id")
 @click.argument("destination_user_id")
@@ -136,6 +141,7 @@ def transfer_user_ownership_command(source_user_id, destination_user_id, execute
     )
     for table_name, count in summary.counts.items():
         click.echo(f"{table_name}: {count}")
+
 
 if __name__ == "__main__":
     main()

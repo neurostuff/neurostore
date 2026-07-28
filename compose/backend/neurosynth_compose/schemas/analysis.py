@@ -1,5 +1,5 @@
 from marshmallow import Schema, fields, post_dump, post_load, pre_load, utils
-from neurosynth_compose.http import current_app
+from neurosynth_compose.runtime import get_runtime
 
 from neurosynth_compose.map_types import canonicalize_map_type, map_type_label
 
@@ -8,7 +8,7 @@ NV_BASE = "https://neurovault.org/api"
 
 
 def get_ns_base():
-    return current_app.config["NEUROSTORE_API_URL"].rstrip("/")
+    return get_runtime().config["NEUROSTORE_API_URL"].rstrip("/")
 
 
 class ContextSchema(Schema):

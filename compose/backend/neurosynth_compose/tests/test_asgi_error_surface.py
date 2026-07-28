@@ -14,7 +14,7 @@ def _assert_json_error_with_cors(response, origin=None):
 
 @pytest.fixture(scope="module")
 def asgi_error_client(app):
-    client = TestClient(app.extensions["connexion_asgi"], raise_server_exceptions=False)
+    client = TestClient(app.asgi_app, raise_server_exceptions=False)
     try:
         yield client
     finally:

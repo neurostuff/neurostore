@@ -21,13 +21,14 @@ def test_decode_token(add_users):
 
 
 @auth_test
-async def test_creating_new_user_on_db(add_users):
+async def test_creating_new_user_on_db(add_users, app):
 
     token_info = add_users
     user_name = "user1"  # user1 was not entered into database
 
     client = AsyncClient(
         token=token_info[user_name]["token"],
+        asgi_app=app.asgi_app,
         username=token_info[user_name]["external_id"],
     )
 
@@ -38,7 +39,7 @@ async def test_creating_new_user_on_db(add_users):
 
 
 async def test_studysets_no_auth_returns_cors_headers(app):
-    client = AsyncClient(token=None)
+    client = AsyncClient(token=None, asgi_app=app.asgi_app)
     origin = "https://client.example"
 
     try:
@@ -59,7 +60,7 @@ async def test_studysets_no_auth_returns_cors_headers(app):
 
 
 async def test_studysets_bad_token_returns_cors_headers(app):
-    client = AsyncClient(token="not-a-real-token")
+    client = AsyncClient(token="not-a-real-token", asgi_app=app.asgi_app)
     origin = "https://client.example"
 
     try:

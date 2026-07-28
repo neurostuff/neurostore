@@ -3,7 +3,8 @@ from __future__ import annotations
 from copy import deepcopy
 from urllib.parse import urlencode
 
-from neurosynth_compose.http import abort, current_app, request
+from neurosynth_compose.http import abort, request
+from neurosynth_compose.runtime import get_runtime
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
@@ -63,14 +64,15 @@ class ProjectCloneService:
         if not access_token:
             from auth0.authentication.get_token import GetToken
 
-            domain = current_app.config["AUTH0_BASE_URL"].lstrip("https://")
+            config = get_runtime().config
+            domain = config["AUTH0_BASE_URL"].lstrip("https://")
             g_token = GetToken(
                 domain,
-                current_app.config["AUTH0_CLIENT_ID"],
-                client_secret=current_app.config["AUTH0_CLIENT_SECRET"],
+                config["AUTH0_CLIENT_ID"],
+                client_secret=config["AUTH0_CLIENT_SECRET"],
             )
             token_resp = g_token.client_credentials(
-                audience=current_app.config["AUTH0_API_AUDIENCE"],
+                audience=config["AUTH0_API_AUDIENCE"],
             )
             access_token = " ".join(
                 [token_resp["token_type"], token_resp["access_token"]]

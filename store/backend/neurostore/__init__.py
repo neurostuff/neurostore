@@ -31,7 +31,6 @@ from neurostore.resources import iter_request_body_validation_skip_rules
 from neurostore.resources.auth import (
     asgi_oauth_problem_handler,
 )
-from neurostore.resources.auth import init_app as init_auth
 
 
 def _env_flag(name, default=False):
@@ -136,6 +135,21 @@ class _DatabaseSessionMiddleware:
             await self.app(scope, receive, send)
 
 
+class _RuntimeMiddleware:
+    """Bind immutable application dependencies for the lifetime of one request."""
+
+    def __init__(self, app, settings, logger):
+        self.app = app
+        self.settings = settings
+        self.logger = logger
+
+    async def __call__(self, scope, receive, send):
+        from neurostore.runtime import runtime_scope
+
+        with runtime_scope(self.settings, self.logger):
+            await self.app(scope, receive, send)
+
+
 class _OrjsonModule:
     @staticmethod
     def dumps(value, **kwargs):
@@ -160,7 +174,6 @@ def initialize_runtime(settings: Mapping[str, object] | None = None):
 
     db.configure(settings)
     cache.init_app(settings)
-    init_auth(settings, logger)
     os.environ["BEARERINFO_FUNC"] = str(settings["BEARERINFO_FUNC"])
     return settings, logger
 
@@ -232,4 +245,5 @@ def create_asgi_app(settings: Mapping[str, object] | None = None):
     app = Starlette(lifespan=_asgi_lifespan(settings, db))
     init_admin(app, db, settings)
     app.mount("/", connexion_app)
-    return _DatabaseSessionMiddleware(CORSMiddleware(app, **cors_kwargs))
+    app = _DatabaseSessionMiddleware(CORSMiddleware(app, **cors_kwargs))
+    return _RuntimeMiddleware(app, settings, _logger)

@@ -4,26 +4,15 @@ from functools import partialmethod
 import httpx
 
 
-_default_asgi_app = None
-
-
-def configure_default_asgi_app(asgi_app):
-    global _default_asgi_app
-    _default_asgi_app = asgi_app
-
-
 class AsyncClient:
     """Native ASGI test client that keeps the established request helper API."""
 
-    def __init__(self, token, test_client=None, prepend="", username=None):
-        if test_client is None:
-            if _default_asgi_app is None:
-                raise RuntimeError("No default ASGI test application has been configured.")
-            test_client = httpx.AsyncClient(
-                transport=httpx.ASGITransport(app=_default_asgi_app),
-                base_url="http://testserver",
-                follow_redirects=True,
-            )
+    def __init__(self, token, asgi_app, prepend="", username=None):
+        test_client = httpx.AsyncClient(
+            transport=httpx.ASGITransport(app=asgi_app),
+            base_url="http://testserver",
+            follow_redirects=True,
+        )
 
         self.client = test_client
         self.prepend = prepend
@@ -72,11 +61,6 @@ class AsyncClient:
             else:
                 kwargs["data"] = data
         response = await request_function(route, **kwargs)
-        # The ASGI handler commits in its own request-scoped session. Expire
-        # fixture-session identities so follow-up assertions read that commit.
-        from neurostore.database import db
-
-        db.session.expire_all()
         return ResponseWrapper(response)
 
     get = partialmethod(_make_request, "get")

@@ -2,7 +2,6 @@ import copy
 import itertools
 import json
 import pathlib
-from contextlib import nullcontext
 from os import environ
 from os.path import isfile
 from unittest.mock import patch
@@ -269,41 +268,13 @@ Session / db management tools
 """
 
 
-class TestApplication:
-    """Small application facade retained for tests that inspect runtime config."""
+class TestRuntime:
+    """Explicit ASGI dependencies shared by the test fixtures."""
 
     def __init__(self, config, asgi_app, database):
         self.config = config
         self.asgi_app = asgi_app
-        self.extensions = {
-            "sqlalchemy": database,
-            "connexion_asgi": asgi_app,
-        }
-
-    def app_context(self):
-        return nullcontext(self)
-
-    def test_request_context(self, path="/", **kwargs):
-        del path
-        from neurosynth_compose.http import test_request_context
-        from neurosynth_compose.runtime import configure_runtime, get_runtime
-
-        previous_runtime = get_runtime()
-        configure_runtime(self.config, previous_runtime.logger)
-
-        request_context = test_request_context(**kwargs)
-
-        class _RuntimeRequestContext:
-            def __enter__(self_inner):
-                return request_context.__enter__()
-
-            def __exit__(self_inner, exc_type, exc, traceback):
-                try:
-                    return request_context.__exit__(exc_type, exc, traceback)
-                finally:
-                    configure_runtime(previous_runtime.config, previous_runtime.logger)
-
-        return _RuntimeRequestContext()
+        self.database = database
 
 
 @pytest.fixture(scope="session")
@@ -313,7 +284,6 @@ def app(mock_auth):
 
     from neurosynth_compose import create_asgi_app
     from neurosynth_compose.settings import load_settings
-    from neurosynth_compose.tests.request_utils import configure_default_asgi_app
 
     settings = load_settings()
     settings["SQLALCHEMY_ENGINE_OPTIONS"] = {
@@ -322,8 +292,7 @@ def app(mock_auth):
         "pool_size": 0,
     }
     asgi_app = create_asgi_app(settings)
-    _app = TestApplication(settings, asgi_app, _db)
-    configure_default_asgi_app(asgi_app)
+    _app = TestRuntime(settings, asgi_app, _db)
 
     yield _app
 
@@ -428,7 +397,11 @@ def auth_clients(mock_add_users, app):
     clients = []
     for user in tokens:
         clients.append(
-            Client(token=tokens[user]["token"], username=tokens[user]["external_id"])
+            Client(
+                token=tokens[user]["token"],
+                asgi_app=app.asgi_app,
+                username=tokens[user]["external_id"],
+            )
         )
     return clients
 

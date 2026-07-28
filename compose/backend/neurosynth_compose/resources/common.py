@@ -3,7 +3,8 @@ from __future__ import annotations
 import connexion
 import orjson
 from connexion.lifecycle import ConnexionResponse
-from neurosynth_compose.http import current_app, g, request
+from neurosynth_compose.http import request
+from neurosynth_compose.runtime import get_runtime
 from sqlalchemy.orm import selectinload
 from webargs import fields
 
@@ -52,7 +53,7 @@ def create_user():
 
     try:
         profile_info = Users(
-            current_app.config["AUTH0_BASE_URL"].removeprefix("https://")
+            get_runtime().config["AUTH0_BASE_URL"].removeprefix("https://")
         ).userinfo(access_token=token)
     except Auth0Error:
         profile_info = {}
@@ -61,45 +62,13 @@ def create_user():
     if "@" in name:
         name = profile_info.get("nickname", "Unknown")
 
-    # Prefer the request-local runtime context, then Connexion fallbacks used by tests.
-    try:
-        user_id = getattr(g, "user", None)
-    except Exception:
-        user_id = None
-
-    if user_id is None:
-        try:
-            user_id = connexion.context.request.context.get("user")
-        except Exception:
-            user_id = None
-
-    if user_id is None:
-        try:
-            user_id = connexion.context.context.get("user")
-        except Exception:
-            user_id = None
+    user_id = connexion.context.request.context.get("user")
 
     return User(external_id=user_id, name=name)
 
 
 def get_current_user():
-    # Prefer the request-local runtime context, then Connexion fallbacks used by tests.
-    try:
-        user_id = getattr(g, "user", None)
-    except Exception:
-        user_id = None
-
-    if user_id is None:
-        try:
-            user_id = connexion.context.request.context.get("user")
-        except Exception:
-            user_id = None
-
-    if user_id is None:
-        try:
-            user_id = connexion.context.context.get("user")
-        except Exception:
-            user_id = None
+    user_id = connexion.context.request.context.get("user")
 
     if user_id:
         return User.query.filter_by(external_id=user_id).first()

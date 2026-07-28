@@ -35,7 +35,7 @@ from neurosynth_compose.models.analysis import (
 )
 from neurosynth_compose.models.auth import User
 from neurosynth_compose.resources.data_views import meta_analysis_jobs_view
-from neurosynth_compose.tests.request_utils import Client, configure_default_asgi_app
+from neurosynth_compose.tests.request_utils import Client
 
 TOKEN = encode({"sub": "user1-id"}, "abc", algorithm="HS256")
 DEFAULT_SCALES = [10, 50, 100, 200]
@@ -62,9 +62,8 @@ def _load_app():
         "neurosynth_compose.resources.auth.verify_key"
     )
     settings = load_settings()
-    app = create_asgi_app(settings)
-    configure_default_asgi_app(app)
-    return SimpleNamespace(config=settings, asgi_app=app)
+    asgi_app = create_asgi_app(settings)
+    return SimpleNamespace(config=settings, asgi_app=asgi_app)
 
 
 def _response_json(response):
@@ -778,7 +777,11 @@ def _benchmark_case(
 
     use_isolated_clients = client_ref is not None
     original_client = client_ref.current if client_ref is not None else None
-    warmup_client = Client(token=TOKEN) if use_isolated_clients else None
+    warmup_client = (
+        Client(token=TOKEN, asgi_app=client_ref.asgi_app)
+        if use_isolated_clients
+        else None
+    )
     try:
         with _benchmark_case_rollback(enabled=rollback_after):
             if client_ref is not None and warmup_client is not None:
@@ -811,7 +814,7 @@ def _benchmark_case(
                         return fn(index) or {}
                     if not use_isolated_clients:
                         return fn(index) or {}
-                    profile_client = Client(token=TOKEN)
+                    profile_client = Client(token=TOKEN, asgi_app=client_ref.asgi_app)
                     previous_client = client_ref.current
                     client_ref.current = profile_client
                     try:
@@ -836,7 +839,11 @@ def _benchmark_case(
             )
 
     original_client = client_ref.current if client_ref is not None else None
-    memory_client = Client(token=TOKEN) if use_isolated_clients else None
+    memory_client = (
+        Client(token=TOKEN, asgi_app=client_ref.asgi_app)
+        if use_isolated_clients
+        else None
+    )
     try:
         with _benchmark_case_rollback(enabled=rollback_after):
             if client_ref is not None and memory_client is not None:
@@ -1192,9 +1199,9 @@ def run(
     scale_limit: int | None = None,
     production_project_provenance_bytes: int | None = None,
 ):
-    _load_app()
-    client = Client(token=TOKEN)
-    client_ref = SimpleNamespace(current=client)
+    app = _load_app()
+    client = Client(token=TOKEN, asgi_app=app.asgi_app)
+    client_ref = SimpleNamespace(current=client, asgi_app=app.asgi_app)
     # ASGI requests run in independent request-scoped sessions. Wrapping the
     # benchmark driver in an outer transaction can lock rows those requests need.
     rollback_writes = _env_flag("PRODUCTION_BENCHMARK_ROLLBACK_WRITES", False)

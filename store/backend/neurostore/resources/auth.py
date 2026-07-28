@@ -5,7 +5,7 @@ from connexion.exceptions import OAuthProblem
 from connexion.lifecycle import ConnexionResponse
 from jose import jwt
 
-from neurostore.runtime import configure_runtime, get_runtime
+from neurostore.runtime import get_runtime
 
 
 def _oauth_problem(detail):
@@ -26,13 +26,6 @@ async def asgi_oauth_problem_handler(request, exc):
         status_code=status_code,
         mimetype="application/json",
     )
-
-
-def init_app(app_or_config, logger=None):
-    """Configure runtime settings from either a legacy app or a mapping."""
-    if hasattr(app_or_config, "config"):
-        return configure_runtime(app_or_config.config, app_or_config.logger)
-    return configure_runtime(app_or_config, logger)
 
 
 def decode_token(token):

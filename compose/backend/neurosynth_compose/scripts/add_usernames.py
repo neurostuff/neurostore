@@ -1,5 +1,5 @@
 from auth0.management import ManagementClient
-from neurosynth_compose.http import current_app
+from neurosynth_compose.runtime import get_runtime
 
 from neurosynth_compose.resources.users import User
 
@@ -7,7 +7,7 @@ TOKEN = "INSERT TOKEN"
 
 
 management_client = ManagementClient(
-    domain=current_app.config["AUTH0_BASE_URL"].removeprefix("https://"), token=TOKEN
+    domain=get_runtime().config["AUTH0_BASE_URL"].removeprefix("https://"), token=TOKEN
 )
 
 result_pager = management_client.users.list(per_page=100)

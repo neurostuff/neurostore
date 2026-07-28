@@ -1,6 +1,7 @@
 """Test Base Study Endpoint"""
 
 import datetime as dt
+import logging
 import threading
 
 import pytest
@@ -25,11 +26,14 @@ from neurostore.models import (
     User,
 )
 from neurostore.schemas import StudySchema
+from neurostore.runtime import runtime_scope
 from neurostore.services.base_study_metadata_enrichment import (
     enqueue_base_study_metadata_updates,
     process_base_study_metadata_outbox_batch,
 )
 from neurostore.services.has_media_flags import process_base_study_flag_outbox_batch
+
+LOGGER = logging.getLogger(__name__)
 
 
 async def test_features_query(async_auth_client, ingest_demographic_features):
@@ -1760,8 +1764,8 @@ def test_metadata_and_flag_workers_do_not_deadlock_on_same_base_study(
     monkeypatch.setattr(flag_service, "recompute_media_flags", _patched_recompute)
 
     def _run(name, fn):
-        with app.app_context():
-            scoped_session = app.extensions["sqlalchemy"].session
+        with runtime_scope(app.config, LOGGER):
+            scoped_session = app.database.session
             scoped_session.remove()
             try:
                 results[name] = fn(batch_size=10)
@@ -1870,8 +1874,8 @@ def test_metadata_worker_propagation_does_not_deadlock_with_study_then_base_writ
     )
 
     def _run_metadata():
-        with app.app_context():
-            scoped_session = app.extensions["sqlalchemy"].session
+        with runtime_scope(app.config, LOGGER):
+            scoped_session = app.database.session
             scoped_session.remove()
             try:
                 results["metadata"] = (
@@ -1885,8 +1889,8 @@ def test_metadata_worker_propagation_does_not_deadlock_with_study_then_base_writ
                 scoped_session.remove()
 
     def _run_request_like_writer():
-        with app.app_context():
-            scoped_session = app.extensions["sqlalchemy"].session
+        with runtime_scope(app.config, LOGGER):
+            scoped_session = app.database.session
             scoped_session.remove()
             try:
                 scoped_session.execute(

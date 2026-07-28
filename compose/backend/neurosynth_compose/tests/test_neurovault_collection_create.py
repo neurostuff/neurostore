@@ -37,8 +37,11 @@ def test_create_neurovault_collection_retries_with_suffix(app, monkeypatch):
         result=types.SimpleNamespace(meta_analysis=meta), collection_id=None
     )
 
-    with app.test_request_context("/", base_url="http://example.com/"):
-        create_neurovault_collection(nv_collection)
+    create_neurovault_collection(
+        nv_collection,
+        public_base_url="http://example.com/",
+        runtime_config=app.config,
+    )
 
     assert nv_collection.collection_id == 123
     assert len(FakeClient.names) == 2
@@ -74,8 +77,11 @@ def test_create_neurovault_collection_suffix_increments(app, monkeypatch):
         result=types.SimpleNamespace(meta_analysis=meta), collection_id=None
     )
 
-    with app.test_request_context("/", base_url="http://example.com/"):
-        create_neurovault_collection(nv_collection)
+    create_neurovault_collection(
+        nv_collection,
+        public_base_url="http://example.com/",
+        runtime_config=app.config,
+    )
 
     assert nv_collection.collection_id == 456
     assert len(FakeClient.names) == 4
