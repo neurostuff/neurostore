@@ -2,21 +2,12 @@ import pytest
 from marshmallow import fields
 from sqlalchemy import select
 
-from neurosynth_compose.models import (
-    Annotation,
-    MetaAnalysis,
-    Project,
-    Specification,
-    Studyset,
-    User,
-)
-from neurosynth_compose.schemas import (
-    SnapshotAnnotationSchema,
-    MetaAnalysisSchema,
-    ProjectSchema,
-    SpecificationSchema,
-    SnapshotStudysetSchema,
-)
+from neurosynth_compose.models import (Annotation, MetaAnalysis, Project,
+                                       Specification, Studyset, User)
+from neurosynth_compose.schemas import (MetaAnalysisSchema, ProjectSchema,
+                                        SnapshotAnnotationSchema,
+                                        SnapshotStudysetSchema,
+                                        SpecificationSchema)
 from neurosynth_compose.schemas.analysis import StringOrNested
 
 
@@ -30,7 +21,7 @@ from neurosynth_compose.schemas.analysis import StringOrNested
         ("projects", Project, ProjectSchema),
     ],
 )
-def test_create(session, auth_client, user_data, db, endpoint, model, schema):
+def test_create(session, auth_client, user_data, db, app, endpoint, model, schema):
     user = (
         db.session.execute(select(User).where(User.name == "user1")).scalars().first()
     )
@@ -38,7 +29,7 @@ def test_create(session, auth_client, user_data, db, endpoint, model, schema):
         db.session.execute(select(model).where(model.user == user)).scalars().all()
     )
     for example in examples:
-        payload = schema().dump(example)
+        payload = schema(context={"settings": app.config}).dump(example)
         if "id" in payload:
             del payload["id"]
         if "studyset" in payload:
@@ -157,6 +148,7 @@ def test_update(session, auth_client, db, user_data, endpoint, model, schema, up
     assert resp.status_code == 200
 
     k, v = list(update.items())[0]
+    session.expire(record)
     assert resp.json[k] == getattr(record, k) == v
 
 

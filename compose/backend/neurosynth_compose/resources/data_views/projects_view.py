@@ -9,28 +9,21 @@ from sqlalchemy import Text, cast, func, literal, select, update
 from sqlalchemy.orm import joinedload, load_only, selectinload
 from webargs import fields
 
-from neurosynth_compose.asgi_requests import (
-    parse_request_data,
-    raise_http_error,
-    read_json,
-)
+from neurosynth_compose.asgi_requests import (parse_request_data,
+                                              raise_http_error, read_json)
 from neurosynth_compose.database import commit_session, db
-from neurosynth_compose.models.analysis import (
-    MetaAnalysis,
-    NeurostoreAnnotation,
-    NeurostoreStudy,
-    NeurostoreStudyset,
-    Project,
-)
+from neurosynth_compose.models.analysis import (MetaAnalysis,
+                                                NeurostoreAnnotation,
+                                                NeurostoreStudy,
+                                                NeurostoreStudyset, Project)
 from neurosynth_compose.models.auth import User
 from neurosynth_compose.resources.common import make_json_response
 from neurosynth_compose.resources.data_views.common import _serialize_datetime
 from neurosynth_compose.resources.project_cloning import ProjectCloneService
-from neurosynth_compose.resources.resource_services import (
-    create_or_update_neurostore_study,
-)
-from neurosynth_compose.resources.view_core import ListView, ObjectView, view_maker
-
+from neurosynth_compose.resources.resource_services import \
+    create_or_update_neurostore_study
+from neurosynth_compose.resources.view_core import (ListView, ObjectView,
+                                                    view_maker)
 # Imported for dynamic resolution by `view_maker` on `ProjectsView`.
 from neurosynth_compose.schemas import ProjectSchema  # noqa: F401
 from neurosynth_compose.schemas.analysis import get_ns_base
@@ -315,7 +308,9 @@ def _filter_project_list_provenance(raw_provenance_json):
     return filtered
 
 
-def serialize_project(record, *, info: bool, raw_provenance_json=_RAW_PROVENANCE_UNSET):
+def serialize_project(
+    record, *, info: bool, settings, raw_provenance_json=_RAW_PROVENANCE_UNSET
+):
     provenance = (
         getattr(record, "provenance", None)
         if raw_provenance_json is _RAW_PROVENANCE_UNSET
@@ -353,7 +348,7 @@ def serialize_project(record, *, info: bool, raw_provenance_json=_RAW_PROVENANCE
         "neurostore_url": (
             None
             if not neurostore_id
-            else "/".join([get_ns_base(), "studies", neurostore_id])
+            else "/".join([get_ns_base(settings), "studies", neurostore_id])
         ),
     }
 
@@ -366,12 +361,13 @@ def serialize_project(record, *, info: bool, raw_provenance_json=_RAW_PROVENANCE
     return output
 
 
-def serialize_projects(records, *, info: bool, provenance_map=None):
+def serialize_projects(records, *, info: bool, settings, provenance_map=None):
     provenance_map = provenance_map or {}
     return [
         serialize_project(
             record,
             info=info,
+            settings=settings,
             raw_provenance_json=provenance_map.get(record.id, _RAW_PROVENANCE_UNSET),
         )
         for record in records
@@ -457,10 +453,18 @@ class ProjectsView(ObjectView, ListView):
         )
 
     def serialize_record(self, record, args):
-        return serialize_project(record, info=bool(args.get("info")))
+        return serialize_project(
+            record,
+            info=bool(args.get("info")),
+            settings=request.state.settings,
+        )
 
     def serialize_records(self, records, args):
-        return serialize_projects(records, info=bool(args.get("info")))
+        return serialize_projects(
+            records,
+            info=bool(args.get("info")),
+            settings=request.state.settings,
+        )
 
     def finalize_search(self, query, args, *, count_query=None):
         if count_query is None:
@@ -483,6 +487,7 @@ class ProjectsView(ObjectView, ListView):
                     serialize_project(
                         record,
                         info=bool(args.get("info")),
+                        settings=request.state.settings,
                         raw_provenance_json=(
                             _filter_project_list_provenance(raw_provenance_json)
                             if include_provenance
@@ -507,6 +512,7 @@ class ProjectsView(ObjectView, ListView):
             serialize_project(
                 record,
                 info=bool(args.get("info")),
+                settings=request.state.settings,
                 raw_provenance_json=raw_provenance_json,
             )
         )

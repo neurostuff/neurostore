@@ -1,64 +1,50 @@
 from __future__ import annotations
 
 import json
+import pathlib
 from collections import defaultdict
 from functools import lru_cache
-import pathlib
 
 import anyio
-from celery import group
 import connexion
+from celery import group
 from connexion import request
 from marshmallow.exceptions import ValidationError
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload, load_only, selectinload
 
-from neurosynth_compose.asgi_requests import parse_request_data, raise_http_error
+from neurosynth_compose.asgi_requests import (parse_request_data,
+                                              raise_http_error)
 from neurosynth_compose.database import commit_session, db
-
 # Imported for dynamic resolution by `view_maker` on *View classes.
-from neurosynth_compose.models.analysis import (  # noqa: F401
-    Condition,
-    MetaAnalysis,
-    MetaAnalysisResult,
-    NeurostoreAnalysis,
-    NeurostoreAnnotation,
-    NeurovaultFile,
-    NeurostoreStudy,
-    NeurostoreStudyset,
-    NeurovaultCollection,
-    Project,
-    SnapshotAnnotation,
-    SnapshotStudyset,
-    Specification,
-    SpecificationCondition,
-    Tag,
-)
+from neurosynth_compose.models.analysis import Condition  # noqa: F401
+from neurosynth_compose.models.analysis import NeurostoreStudy  # noqa: F401
+from neurosynth_compose.models.analysis import NeurovaultFile  # noqa: F401
+from neurosynth_compose.models.analysis import (MetaAnalysis,
+                                                MetaAnalysisResult,
+                                                NeurostoreAnalysis,
+                                                NeurostoreAnnotation,
+                                                NeurostoreStudyset,
+                                                NeurovaultCollection, Project,
+                                                SnapshotAnnotation,
+                                                SnapshotStudyset,
+                                                Specification,
+                                                SpecificationCondition, Tag)
 from neurosynth_compose.models.auth import User
-from neurosynth_compose.resources.common import get_current_user, make_json_response
+from neurosynth_compose.resources.common import (get_current_user,
+                                                 make_json_response)
 from neurosynth_compose.resources.data_views.common import (
-    _MISSING,
-    _serialize_base_record,
-    _serialize_datetime,
-    _set_if_present,
-)
+    _MISSING, _serialize_base_record, _serialize_datetime, _set_if_present)
 from neurosynth_compose.resources.data_views.tags_view import (
-    _find_tag_by_name,
-    _tag_accessible,
-)
+    _find_tag_by_name, _tag_accessible)
 from neurosynth_compose.resources.resource_services import (
-    create_neurovault_collection,
-    ensure_canonical_annotation,
-    ensure_canonical_studyset,
-    parse_upload_files,
-    select_cluster_table_for_specification,
-)
+    create_neurovault_collection, ensure_canonical_annotation,
+    ensure_canonical_studyset, parse_upload_files,
+    select_cluster_table_for_specification)
 from neurosynth_compose.resources.tasks import (
-    create_or_update_neurostore_analysis,
-    file_upload_neurovault,
-)
-from neurosynth_compose.resources.view_core import ListView, ObjectView, view_maker
-
+    create_or_update_neurostore_analysis, file_upload_neurovault)
+from neurosynth_compose.resources.view_core import (ListView, ObjectView,
+                                                    view_maker)
 # Imported for dynamic resolution by `view_maker` on *View classes.
 from neurosynth_compose.schemas import MetaAnalysisResultSchema  # noqa: F401
 from neurosynth_compose.schemas import MetaAnalysisSchema  # noqa: F401
@@ -375,7 +361,7 @@ def _serialize_snapshots_from_results(results):
     return entries
 
 
-def serialize_meta_analysis(record, *, nested: bool):
+def serialize_meta_analysis(record, *, nested: bool, settings):
     tags = getattr(record, "tags", None)
     results = getattr(record, "results", None)
     specification = getattr(record, "specification", None) if nested else None
@@ -418,7 +404,7 @@ def serialize_meta_analysis(record, *, nested: bool):
         "neurostore_url": (
             None
             if not neurostore_id
-            else "/".join([get_ns_base(), "analyses", neurostore_id])
+            else "/".join([get_ns_base(settings), "analyses", neurostore_id])
         ),
     }
 
@@ -459,8 +445,11 @@ def _resolve_meta_neurostore_annotation_id(meta):
     )
 
 
-def serialize_meta_analyses(records, *, nested: bool):
-    return [serialize_meta_analysis(record, nested=nested) for record in records]
+def serialize_meta_analyses(records, *, nested: bool, settings):
+    return [
+        serialize_meta_analysis(record, nested=nested, settings=settings)
+        for record in records
+    ]
 
 
 def serialize_meta_analysis_result(record):
@@ -492,10 +481,18 @@ class MetaAnalysesView(ObjectView, ListView):
         )
 
     def serialize_record(self, record, args):
-        return serialize_meta_analysis(record, nested=bool(args.get("nested")))
+        return serialize_meta_analysis(
+            record,
+            nested=bool(args.get("nested")),
+            settings=request.state.settings,
+        )
 
     def serialize_records(self, records, args):
-        return serialize_meta_analyses(records, nested=bool(args.get("nested")))
+        return serialize_meta_analyses(
+            records,
+            nested=bool(args.get("nested")),
+            settings=request.state.settings,
+        )
 
     @classmethod
     def update_or_create(
@@ -595,7 +592,13 @@ class MetaAnalysesView(ObjectView, ListView):
             )
             db.session.add(ns_analysis)
             commit_session()
-        return make_json_response(serialize_meta_analysis(record, nested=False))
+        return make_json_response(
+            serialize_meta_analysis(
+                record,
+                nested=False,
+                settings=request.state.settings,
+            )
+        )
 
 
 @view_maker

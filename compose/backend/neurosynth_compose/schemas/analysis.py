@@ -7,8 +7,16 @@ from neurosynth_compose.map_types import canonicalize_map_type, map_type_label
 NV_BASE = "https://neurovault.org/api"
 
 
-def get_ns_base():
-    return request.state.settings["NEUROSTORE_API_URL"].rstrip("/")
+def get_ns_base(settings=None):
+    """Return the configured Neurostore API base URL.
+
+    Schema serialization may run outside an HTTP operation, so schemas pass
+    settings explicitly through their Marshmallow context. Resource helpers can
+    use the request-local settings during an operation.
+    """
+    if settings is None:
+        settings = request.state.settings
+    return settings["NEUROSTORE_API_URL"].rstrip("/")
 
 
 class ContextSchema(Schema):
@@ -304,7 +312,9 @@ class SnapshotStudysetSchema(BaseSchema):
     @post_dump
     def create_neurostore_url(self, data, **kwargs):
         if data.get("neurostore_id", None):
-            data["url"] = "/".join([get_ns_base(), "studysets", data["neurostore_id"]])
+            data["url"] = "/".join(
+                [get_ns_base(self.context["settings"]), "studysets", data["neurostore_id"]]
+            )
         else:
             data["url"] = None
         return data
@@ -343,7 +353,7 @@ class SnapshotAnnotationSchema(BaseSchema):
     def create_neurostore_url(self, data, **kwargs):
         if data.get("neurostore_id", None):
             data["url"] = "/".join(
-                [get_ns_base(), "annotations", data["neurostore_id"]]
+                [get_ns_base(self.context["settings"]), "annotations", data["neurostore_id"]]
             )
         else:
             data["url"] = None
@@ -449,7 +459,7 @@ class MetaAnalysisSchema(BaseSchema):
         ):
             data["neurostore_url"] = "/".join(
                 [
-                    get_ns_base(),
+                    get_ns_base(self.context["settings"]),
                     "analyses",
                     data["neurostore_analysis"]["neurostore_id"],
                 ]
@@ -581,7 +591,11 @@ class ProjectSchema(BaseSchema):
             "neurostore_id", None
         ):
             data["neurostore_url"] = "/".join(
-                [get_ns_base(), "studies", data["neurostore_study"]["neurostore_id"]]
+                [
+                    get_ns_base(self.context["settings"]),
+                    "studies",
+                    data["neurostore_study"]["neurostore_id"],
+                ]
             )
         else:
             data["neurostore_url"] = None

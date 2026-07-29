@@ -15,20 +15,12 @@ from sqlalchemy import select
 
 from neurosynth_compose.database import db as _db
 from neurosynth_compose.ingest.neurostore import create_meta_analyses
-from neurosynth_compose.models import (
-    NeurostoreAnnotation,
-    MetaAnalysis,
-    NeurostoreStudy,
-    Project,
-    Specification,
-    NeurostoreStudyset,
-    User,
-)
+from neurosynth_compose.models import (MetaAnalysis, NeurostoreAnnotation,
+                                       NeurostoreStudy, NeurostoreStudyset,
+                                       Project, Specification, User)
 from neurosynth_compose.models.analysis import generate_id
 from neurosynth_compose.resources.resource_services import (
-    ensure_canonical_annotation,
-    ensure_canonical_studyset,
-)
+    ensure_canonical_annotation, ensure_canonical_studyset)
 
 DATA_PATH = pathlib.Path(__file__).parent.resolve() / "data"
 
@@ -747,9 +739,9 @@ def meta_analysis_results(app, db, user_data, mock_add_users):
             .scalars()
             .all()
         ):
-            meta_schema = MetaAnalysisSchema(context={"nested": True}).dump(
-                meta_analysis
-            )
+            meta_schema = MetaAnalysisSchema(
+                context={"nested": True, "settings": app.config}
+            ).dump(meta_analysis)
             studyset_dict = meta_schema["studyset"]["snapshot"]
             annotation_dict = meta_schema["annotation"]["snapshot"]
             specification_dict = meta_schema["specification"]
