@@ -8,10 +8,8 @@ from neurostore.resources import base as base_resource
 pytestmark = pytest.mark.anyio
 
 
-async def test_list_cache_key_matches_flask_shape(
-    async_auth_client, mock_add_users, session
-):
-    response = await async_auth_client.get("/api/studies/?b=2&a=1&b=1")
+async def test_list_cache_key_matches_flask_shape(auth_client, mock_add_users, session):
+    response = await auth_client.get("/api/studies/?b=2&a=1&b=1")
 
     assert response.status_code == 200
     expected_key = (
@@ -22,11 +20,11 @@ async def test_list_cache_key_matches_flask_shape(
 
 
 async def test_list_cache_key_embeds_existing_version(
-    async_auth_client, mock_add_users, session
+    auth_client, mock_add_users, session
 ):
     bump_cache_versions({"studies": ["study-1"]})
 
-    response = await async_auth_client.get("/api/studies/?nested=false")
+    response = await auth_client.get("/api/studies/?nested=false")
 
     assert response.status_code == 200
     expected_key = (
@@ -36,11 +34,11 @@ async def test_list_cache_key_embeds_existing_version(
 
 
 async def test_list_cache_serves_warm_value_with_flask_compatible_key(
-    async_auth_client, mock_add_users, user_data
+    auth_client, mock_add_users, user_data
 ):
     cache_key = f"/api/studies/_()_{mock_add_users['user1']['id']}_v=0"
 
-    cold_response = await async_auth_client.get("/api/studies/")
+    cold_response = await auth_client.get("/api/studies/")
 
     assert cold_response.status_code == 200
     assert cache.cache.get(cache_key) is not None
@@ -52,14 +50,14 @@ async def test_list_cache_serves_warm_value_with_flask_compatible_key(
     )
     cache.cache.set(cache_key, cached_payload, timeout=60)
 
-    warm_response = await async_auth_client.get("/api/studies/")
+    warm_response = await auth_client.get("/api/studies/")
 
     assert warm_response.status_code == 200
     assert warm_response.json()["warm_cache"] is True
 
 
 async def test_object_cache_serves_warm_value_with_flask_compatible_key(
-    async_auth_client, mock_add_users, user_data, session, monkeypatch
+    auth_client, mock_add_users, user_data, session, monkeypatch
 ):
     study = session.query(Study).filter_by(public=True).first()
     # Detail GET is anonymous in the OpenAPI contract, so Connexion does not
@@ -74,7 +72,7 @@ async def test_object_cache_serves_warm_value_with_flask_compatible_key(
 
     monkeypatch.setattr(cache.cache, "set", record_set)
 
-    cold_response = await async_auth_client.get(f"/api/studies/{study.id}")
+    cold_response = await auth_client.get(f"/api/studies/{study.id}")
 
     assert cold_response.status_code == 200
     assert cache_key in written_keys
@@ -87,7 +85,7 @@ async def test_object_cache_serves_warm_value_with_flask_compatible_key(
     )
     cache.cache.set(cache_key, cached_payload, timeout=60)
 
-    warm_response = await async_auth_client.get(f"/api/studies/{study.id}")
+    warm_response = await auth_client.get(f"/api/studies/{study.id}")
 
     assert warm_response.status_code == 200
     assert warm_response.json()["name"] == "warm-cache-study"

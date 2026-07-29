@@ -22,10 +22,10 @@ def study_pipeline_data(session, create_pipeline_results, ingest_demographic_fea
     return results
 
 
-async def test_pipeline_numeric_queries(async_auth_client, study_pipeline_data):
+async def test_pipeline_numeric_queries(auth_client, study_pipeline_data):
     """Test numeric comparisons on pipeline results."""
     # Verify control group count query
-    resp = await async_auth_client.get(
+    resp = await auth_client.get(
         (
             "/api/pipeline-study-results?feature_filter="
             "ParticipantDemographicsExtractor:groups[].count=18"
@@ -35,7 +35,7 @@ async def test_pipeline_numeric_queries(async_auth_client, study_pipeline_data):
     assert len(resp.json()["results"]) > 0
 
     # Verify patient group count query
-    resp = await async_auth_client.get(
+    resp = await auth_client.get(
         (
             "/api/pipeline-study-results?feature_filter="
             "ParticipantDemographicsExtractor:groups[].count=15"
@@ -45,7 +45,7 @@ async def test_pipeline_numeric_queries(async_auth_client, study_pipeline_data):
     assert len(resp.json()["results"]) > 0
 
     # Test age range query
-    resp = await async_auth_client.get(
+    resp = await auth_client.get(
         "/api/pipeline-study-results?feature_filter="
         "ParticipantDemographicsExtractor:groups[].age_mean>25"
     )
@@ -53,7 +53,7 @@ async def test_pipeline_numeric_queries(async_auth_client, study_pipeline_data):
     assert len(resp.json()["results"]) > 0
 
 
-async def test_pipeline_array_queries(async_auth_client, study_pipeline_data):
+async def test_pipeline_array_queries(auth_client, study_pipeline_data):
     """Test array field queries."""
     # Query database directly to count EEG results
     eeg_count = (
@@ -65,7 +65,7 @@ async def test_pipeline_array_queries(async_auth_client, study_pipeline_data):
     )
 
     # Test single modality
-    resp = await async_auth_client.get(
+    resp = await auth_client.get(
         "/api/pipeline-study-results?feature_filter="
         "NeuroimagingMethodExtractor:Modality[]=EEG"
     )
@@ -89,7 +89,7 @@ async def test_pipeline_array_queries(async_auth_client, study_pipeline_data):
     )
 
     # Test multiple modalities with pipe (should be same as comma)
-    resp = await async_auth_client.get(
+    resp = await auth_client.get(
         "/api/pipeline-study-results?feature_filter="
         "NeuroimagingMethodExtractor:Modality[]=EEG|fMRI"
     )
@@ -98,10 +98,10 @@ async def test_pipeline_array_queries(async_auth_client, study_pipeline_data):
     assert len(results) == eeg_fmri_count  # Verify API results match direct DB query
 
 
-async def test_pipeline_nested_queries(async_auth_client, study_pipeline_data):
+async def test_pipeline_nested_queries(auth_client, study_pipeline_data):
     """Test queries on nested objects and arrays."""
     # Test task name
-    resp = await async_auth_client.get(
+    resp = await auth_client.get(
         "/api/pipeline-study-results?feature_filter="
         "TaskExtractor:fMRITasks[].TaskName=Resting-state fMRI"
     )
@@ -109,7 +109,7 @@ async def test_pipeline_nested_queries(async_auth_client, study_pipeline_data):
     assert len(resp.json()["results"]) > 0
 
     # Test task description text search
-    resp = await async_auth_client.get(
+    resp = await auth_client.get(
         "/api/pipeline-study-results?feature_filter="
         "TaskExtractor:fMRITasks[].TaskDescription~eyes closed"
     )
@@ -117,17 +117,17 @@ async def test_pipeline_nested_queries(async_auth_client, study_pipeline_data):
     assert len(resp.json()["results"]) > 0
 
     # Test group diagnosis
-    resp = await async_auth_client.get(
+    resp = await auth_client.get(
         "/api/pipeline-study-results?feature_filter="
         "ParticipantDemographicsExtractor:groups[].diagnosis=ADHD"
     )
     assert resp.status_code == 200
 
 
-async def test_pipeline_multiple_filters(async_auth_client, study_pipeline_data):
+async def test_pipeline_multiple_filters(auth_client, study_pipeline_data):
     """Test combining multiple filters."""
     # Test modality and diagnosis
-    resp = await async_auth_client.get(
+    resp = await auth_client.get(
         "/api/pipeline-study-results?"
         "feature_filter=NeuroimagingMethodExtractor:Modality[]=EEG&"
         "feature_filter=ParticipantDemographicsExtractor:groups[].diagnosis=ADHD"
@@ -135,7 +135,7 @@ async def test_pipeline_multiple_filters(async_auth_client, study_pipeline_data)
     assert resp.status_code == 200
 
     # Test task and group size
-    resp = await async_auth_client.get(
+    resp = await auth_client.get(
         "/api/pipeline-study-results?"
         "feature_filter=TaskExtractor:fMRITasks[].TaskName=Resting-state fMRI&"
         "feature_filter=ParticipantDemographicsExtractor:groups[].count=18"
@@ -143,10 +143,10 @@ async def test_pipeline_multiple_filters(async_auth_client, study_pipeline_data)
     assert resp.status_code == 200
 
 
-async def test_search_list_of_lists(async_auth_client, study_pipeline_data):
+async def test_search_list_of_lists(auth_client, study_pipeline_data):
     """Test search queries on lists of lists."""
     # Test searching for a specific task name in a list of lists
-    resp = await async_auth_client.get(
+    resp = await auth_client.get(
         "/api/pipeline-study-results?feature_filter="
         "TaskExtractor:fMRITasks[].Concepts[]~connectivity"
     )
@@ -189,13 +189,13 @@ async def test_search_list_of_lists(async_auth_client, study_pipeline_data):
     ],
 )
 async def test_invalid_pipeline_queries(
-    async_auth_client, study_pipeline_data, query, expected_error
+    auth_client, study_pipeline_data, query, expected_error
 ):
     """Test handling of invalid queries returns appropriate errors."""
     # Make request
     url_safe_query = urlencode({"feature_filter": query})
 
-    resp = await async_auth_client.get(f"/api/pipeline-study-results?{url_safe_query}")
+    resp = await auth_client.get(f"/api/pipeline-study-results?{url_safe_query}")
 
     # Verify error response
     assert resp.status_code == 400

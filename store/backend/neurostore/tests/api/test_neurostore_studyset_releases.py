@@ -365,7 +365,7 @@ def test_release_build_serializes_changed_studies_in_batches(
 
 
 async def test_release_api_resolves_nightly_latest_and_monthly(
-    app, async_auth_client, session, tmp_path
+    app, auth_client, session, tmp_path
 ):
     app.config["FILE_DIR"] = tmp_path
     _seed_release_data(session)
@@ -376,20 +376,20 @@ async def test_release_api_resolves_nightly_latest_and_monthly(
         version="2026-05",
     )
 
-    list_resp = await async_auth_client.get("/api/neurostore-studyset-releases/")
+    list_resp = await auth_client.get("/api/neurostore-studyset-releases/")
     assert list_resp.status_code == 200
     versions = {release["version"] for release in list_resp.json()["results"]}
     assert {"nightly", "2026-05"}.issubset(versions)
 
-    nightly = await async_auth_client.get("/api/neurostore-studyset-releases/nightly")
-    latest = await async_auth_client.get("/api/neurostore-studyset-releases/latest")
-    monthly = await async_auth_client.get("/api/neurostore-studyset-releases/2026-05")
+    nightly = await auth_client.get("/api/neurostore-studyset-releases/nightly")
+    latest = await auth_client.get("/api/neurostore-studyset-releases/latest")
+    monthly = await auth_client.get("/api/neurostore-studyset-releases/2026-05")
     assert nightly.status_code == latest.status_code == monthly.status_code == 200
     assert nightly.json()["version"] == "nightly"
     assert latest.json()["version"] == "2026-05"
     assert monthly.json()["release_type"] == "monthly"
 
-    download = await async_auth_client.get(
+    download = await auth_client.get(
         "/api/neurostore-studyset-releases/latest/download",
         content_type="application/gzip",
     )
@@ -418,12 +418,12 @@ def test_monthly_release_is_immutable_without_force(app, session, tmp_path):
 
 
 async def test_latest_returns_404_without_monthly_release(
-    app, async_auth_client, session, tmp_path
+    app, auth_client, session, tmp_path
 ):
     app.config["FILE_DIR"] = tmp_path
     _seed_release_data(session)
     build_neurostore_studyset_release(settings=app.config, nightly=True)
 
-    resp = await async_auth_client.get("/api/neurostore-studyset-releases/latest")
+    resp = await auth_client.get("/api/neurostore-studyset-releases/latest")
 
     assert resp.status_code == 404

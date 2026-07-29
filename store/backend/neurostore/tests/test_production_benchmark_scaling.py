@@ -1,8 +1,7 @@
-import pytest
-
-
 import json
 import threading
+
+import pytest
 
 from neurostore.database import db
 from neurostore.models import Study, Studyset
@@ -137,21 +136,17 @@ def test_extract_profile_functions_reads_thread_aware_json(tmp_path):
 
 
 async def test_benchmark_write_cleanup_removes_case_writes(
-    mock_add_users, ingest_neurosynth, app
+    auth_client, ingest_neurosynth
 ):
-    token = mock_add_users["user1"]["token"]
     study_ids = [
         study_id
         for (study_id,) in db.session.query(Study.id).order_by(Study.id).limit(2)
     ]
     initial_count = db.session.query(Studyset).count()
 
-    from neurostore.tests.request_utils import AsyncClient
-
-    client = AsyncClient(token=token, asgi_app=app.asgi_app)
     studyset_id = None
     try:
-        response = await client.post(
+        response = await auth_client.post(
             "/api/studysets/",
             data={
                 "name": "production-benchmark-studyset-cleanup-check",
@@ -163,14 +158,11 @@ async def test_benchmark_write_cleanup_removes_case_writes(
         db.session.expire_all()
         assert db.session.query(Studyset).count() == initial_count + 1
     finally:
-        try:
-            if studyset_id is not None:
-                response = await client.delete(f"/api/studysets/{studyset_id}")
-                assert response.status_code == 200
-                db.session.expire_all()
-            assert db.session.query(Studyset).count() == initial_count
-        finally:
-            await client.aclose()
+        if studyset_id is not None:
+            response = await auth_client.delete(f"/api/studysets/{studyset_id}")
+            assert response.status_code == 200
+            db.session.expire_all()
+        assert db.session.query(Studyset).count() == initial_count
 
 
 async def test_production_benchmark_runs_on_native_asgi_transport(

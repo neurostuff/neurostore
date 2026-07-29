@@ -14,7 +14,7 @@ def _client(app):
     )
 
 
-async def test_async_app_serves_openapi_validation_errors_with_cors():
+async def test_app_serves_openapi_validation_errors_with_cors():
     async with _client(create_asgi_app()) as client:
         response = await client.post(
             "/api/pipeline-configs/",
@@ -27,7 +27,7 @@ async def test_async_app_serves_openapi_validation_errors_with_cors():
     assert response.headers["Access-Control-Allow-Credentials"] == "true"
 
 
-async def test_async_app_preserves_protected_operation_auth_errors():
+async def test_app_preserves_protected_operation_auth_errors():
     async with _client(create_asgi_app()) as client:
         response = await client.post(
             "/api/pipelines/",
@@ -62,9 +62,7 @@ async def test_async_admin_requires_the_configured_username_and_password(monkeyp
     assert "NeuroStore Admin" in dashboard.text
 
 
-async def test_async_app_serves_a_cached_resource_through_the_native_request_path(
-    app, db
-):
+async def test_app_serves_a_cached_resource_through_the_native_request_path(app, db):
     async with _client(app.asgi_app) as client:
         first = await client.get("/api/studies/?page=1&page_size=10")
         second = await client.get("/api/studies/?page_size=10&page=1")

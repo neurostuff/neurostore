@@ -14,6 +14,7 @@ import vcr
 from auth0.authentication import GetToken
 from auth0.authentication.exceptions import Auth0Error
 from auth0.authentication.users import Users
+from jose.jwt import encode
 from sqlalchemy import select
 
 from neurostore import ingest
@@ -28,11 +29,13 @@ from neurostore.models import (
     Entity,
     Image,
     Point,
+    Role,
     Study,
     Studyset,
     StudysetStudy,
     User,
 )
+from neurostore.tests.request_utils import AsyncClient
 from neurostore.tests.utils import ordered_note_keys
 
 LOGGER = logging.getLogger(__name__)
@@ -108,10 +111,6 @@ def monkeysession(request):
 
 
 def mock_decode_token(token):
-    import os
-
-    from jose.jwt import encode
-
     if token == encode({"sub": "user1-id"}, "abc", algorithm="HS256"):
         return {"sub": "user1-id"}
     elif token == encode({"sub": "user2-id"}, "123", algorithm="HS256"):
@@ -327,10 +326,8 @@ Data population fixtures
 
 
 @pytest.fixture(scope="function")
-async def async_auth_clients(mock_add_users, app):
+async def auth_clients(mock_add_users, app):
     """Native async authorized clients, closed before database teardown."""
-    from neurostore.tests.request_utils import AsyncClient
-
     tokens = mock_add_users
     clients = [
         AsyncClient(
@@ -347,22 +344,41 @@ async def async_auth_clients(mock_add_users, app):
 
 
 @pytest.fixture(scope="function")
-async def async_auth_client(async_auth_clients):
-    return async_auth_clients[0]
+async def auth_client(auth_clients):
+    return auth_clients[0]
 
 
 @pytest.fixture(scope="function")
-async def async_new_user_client(async_auth_clients):
-    return next(
-        client for client in async_auth_clients if client.username == "newuser-id"
+async def admin_client(user_data, session, app):
+    """Authenticated ASGI client for a database-backed admin user."""
+    admin_role = Role.query.filter_by(name="admin").first()
+    if admin_role is None:
+        admin_role = Role(id="admin", name="admin", description="Admin role")
+        session.add(admin_role)
+
+    admin_user = User(name="admin_user", external_id="admin-user-id")
+    admin_user.roles.append(admin_role)
+    session.add(admin_user)
+    session.commit()
+
+    client = AsyncClient(
+        token=encode({"sub": "admin-user-id"}, "admin123", algorithm="HS256"),
+        asgi_app=app.asgi_app,
+        username="admin-user-id",
     )
+    try:
+        yield client
+    finally:
+        await client.aclose()
+
+
+@pytest.fixture(scope="function")
+async def new_user_client(auth_clients):
+    return next(client for client in auth_clients if client.username == "newuser-id")
 
 
 @pytest.fixture(scope="function")
 def mock_add_users(app, db, session, mock_auth):
-    # from neurostore.resources.auth import decode_token
-    from jose.jwt import encode
-
     users = [
         {
             "name": "user1",
