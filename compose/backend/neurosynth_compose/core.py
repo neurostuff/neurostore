@@ -1,10 +1,7 @@
 from celery import Celery, Task
 
-from neurosynth_compose import create_asgi_app
 from neurosynth_compose.database import db
 from neurosynth_compose.settings import load_settings
-
-asgi_app = create_asgi_app()
 
 
 class DatabaseTask(Task):
@@ -30,4 +27,4 @@ def create_celery_app(settings=None):
 
 celery_app = create_celery_app()
 
-__all__ = ["asgi_app", "celery_app", "db"]
+__all__ = ["celery_app", "db"]
