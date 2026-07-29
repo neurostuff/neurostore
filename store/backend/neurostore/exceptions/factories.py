@@ -1,13 +1,10 @@
 from typing import Any, List, Optional
 
-from neurostore.exceptions.base import (
-    AuthenticationError,
-    InternalServerError,
-    NotFoundError,
-    PermissionError,
-    UnprocessableEntityError,
-    ValidationError,
-)
+from neurostore.exceptions.base import (AuthenticationError,
+                                        InternalServerError, NotFoundError,
+                                        PermissionError,
+                                        UnprocessableEntityError,
+                                        ValidationError)
 from neurostore.exceptions.utils.errors import ErrorDetail
 
 

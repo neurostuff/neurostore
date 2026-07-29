@@ -3,11 +3,10 @@ from __future__ import annotations
 from collections.abc import AsyncGenerator
 from typing import Any
 
-from starlette.datastructures import Headers, UploadFile
-from starlette.types import Receive, Scope
-
 from connexion.exceptions import BadRequestProblem
 from connexion.validators.form_data import MultiPartFormDataValidator
+from starlette.datastructures import Headers, UploadFile
+from starlette.types import Receive, Scope
 
 
 class ReplayableMultiPartFormDataValidator(MultiPartFormDataValidator):

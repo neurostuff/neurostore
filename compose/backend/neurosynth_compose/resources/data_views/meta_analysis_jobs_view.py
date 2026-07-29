@@ -9,14 +9,12 @@ from marshmallow import ValidationError
 from redis import Redis
 from sqlalchemy import select
 
-from neurosynth_compose.database import db
 from neurosynth_compose.asgi_requests import raise_http_error, read_json
+from neurosynth_compose.database import db
 from neurosynth_compose.models import MetaAnalysis
-from neurosynth_compose.resources.common import (
-    get_current_user,
-    is_user_admin,
-    make_json_response,
-)
+from neurosynth_compose.resources.common import (get_current_user,
+                                                 is_user_admin,
+                                                 make_json_response)
 from neurosynth_compose.schemas import MetaAnalysisJobRequestSchema
 
 logger = logging.getLogger(__name__)

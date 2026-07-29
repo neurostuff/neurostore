@@ -7,11 +7,8 @@ from sqlalchemy import select
 from neurosynth_compose.core import celery_app
 from neurosynth_compose.database import db
 from neurosynth_compose.map_types import canonicalize_map_type
-from neurosynth_compose.models import (
-    NeurostoreAnalysis,
-    NeurovaultCollection,
-    NeurovaultFile,
-)
+from neurosynth_compose.models import (NeurostoreAnalysis,
+                                       NeurovaultCollection, NeurovaultFile)
 
 
 @celery_app.task(name="neurovault.upload")

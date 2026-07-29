@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import connexion
 import orjson
-from connexion.lifecycle import ConnexionResponse
 from connexion import request
+from connexion.lifecycle import ConnexionResponse
 from sqlalchemy.orm import selectinload
 from webargs import fields
 

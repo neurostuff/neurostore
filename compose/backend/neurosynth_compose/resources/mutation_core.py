@@ -9,16 +9,11 @@ from sqlalchemy import select
 
 from neurosynth_compose.asgi_requests import raise_http_error
 from neurosynth_compose.database import db
-from neurosynth_compose.models.analysis import (
-    NeurostoreAnnotation,
-    Condition,
-    NeurostoreStudyset,
-)
-from neurosynth_compose.resources.common import (
-    create_user,
-    get_current_user,
-    is_user_admin,
-)
+from neurosynth_compose.models.analysis import (Condition,
+                                                NeurostoreAnnotation,
+                                                NeurostoreStudyset)
+from neurosynth_compose.resources.common import (create_user, get_current_user,
+                                                 is_user_admin)
 
 
 @dataclass

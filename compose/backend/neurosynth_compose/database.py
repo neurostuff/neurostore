@@ -7,14 +7,8 @@ from typing import Mapping
 
 import orjson
 import sqlalchemy as sa
-from sqlalchemy.orm import (
-    DeclarativeBase,
-    Query,
-    backref,
-    relationship,
-    scoped_session,
-    sessionmaker,
-)
+from sqlalchemy.orm import (DeclarativeBase, Query, backref, relationship,
+                            scoped_session, sessionmaker)
 
 logger = logging.getLogger(__name__)
 

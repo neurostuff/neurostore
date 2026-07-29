@@ -1,20 +1,14 @@
-from dataclasses import dataclass
-from math import ceil
 from contextlib import contextmanager
 from contextvars import ContextVar
+from dataclasses import dataclass
+from math import ceil
 from threading import get_ident
 from typing import Mapping
 
 import orjson
 import sqlalchemy as sa
-from sqlalchemy.orm import (
-    Query,
-    backref,
-    declarative_base,
-    relationship,
-    scoped_session,
-    sessionmaker,
-)
+from sqlalchemy.orm import (Query, backref, declarative_base, relationship,
+                            scoped_session, sessionmaker)
 
 
 def orjson_serializer(obj):

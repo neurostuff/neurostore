@@ -6,14 +6,9 @@ import requests
 from sqlalchemy import select
 
 from neurosynth_compose.database import commit_session, db
-from neurosynth_compose.models import (
-    SnapshotAnnotation,
-    SnapshotStudyset,
-    NeurostoreAnnotation,
-    NeurostoreStudyset,
-    MetaAnalysis,
-    Specification,
-)
+from neurosynth_compose.models import (MetaAnalysis, NeurostoreAnnotation,
+                                       NeurostoreStudyset, SnapshotAnnotation,
+                                       SnapshotStudyset, Specification)
 
 
 def ingest_neurostore(

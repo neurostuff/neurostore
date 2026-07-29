@@ -1,4 +1,5 @@
-from neurostore.resources.data_views import DATA_VIEW_EXPORTS, DATA_VIEW_MODULES
+from neurostore.resources.data_views import (DATA_VIEW_EXPORTS,
+                                             DATA_VIEW_MODULES)
 
 __all__ = list(DATA_VIEW_EXPORTS)
 

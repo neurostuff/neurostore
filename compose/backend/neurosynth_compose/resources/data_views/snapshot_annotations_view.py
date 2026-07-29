@@ -4,10 +4,13 @@ from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 
 from neurosynth_compose.database import commit_session, db
-from neurosynth_compose.models import SnapshotAnnotation, SnapshotStudyset  # noqa: F401
+from neurosynth_compose.models import SnapshotAnnotation  # noqa: F401
+from neurosynth_compose.models import SnapshotStudyset
 from neurosynth_compose.resources.common import get_current_user
-from neurosynth_compose.resources.resource_services import ensure_canonical_annotation
-from neurosynth_compose.resources.view_core import ListView, ObjectView, view_maker
+from neurosynth_compose.resources.resource_services import \
+    ensure_canonical_annotation
+from neurosynth_compose.resources.view_core import (ListView, ObjectView,
+                                                    view_maker)
 from neurosynth_compose.schemas import NeurostoreAnnotationSchema  # noqa: F401
 from neurosynth_compose.schemas import SnapshotAnnotationSchema  # noqa: F401
 
@@ -40,16 +43,14 @@ class SnapshotAnnotationsView(ObjectView, ListView):
         )
 
     def serialize_record(self, record, args):
-        from neurosynth_compose.resources.data_views.meta_analyses_view import (
-            _serialize_annotation,
-        )
+        from neurosynth_compose.resources.data_views.meta_analyses_view import \
+            _serialize_annotation
 
         return _serialize_annotation(record)
 
     def serialize_records(self, records, args):
-        from neurosynth_compose.resources.data_views.meta_analyses_view import (
-            _serialize_annotation,
-        )
+        from neurosynth_compose.resources.data_views.meta_analyses_view import \
+            _serialize_annotation
 
         return [_serialize_annotation(record) for record in records]
 

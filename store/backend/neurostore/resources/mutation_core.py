@@ -6,17 +6,15 @@ from typing import Any
 import sqlalchemy as sa
 from auth0.authentication.exceptions import Auth0Error
 from auth0.authentication.users import Users
+from connexion import request
 from connexion.context import context
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import raiseload, selectinload
 
 from neurostore.database import db
-from neurostore.exceptions.utils.error_helpers import (
-    abort_not_found,
-    abort_permission,
-    abort_validation,
-)
-from connexion import request
+from neurostore.exceptions.utils.error_helpers import (abort_not_found,
+                                                       abort_permission,
+                                                       abort_validation)
 from neurostore.models import User
 from neurostore.resources.utils import get_current_user, is_user_admin
 

@@ -5,11 +5,14 @@ from connexion import request
 from sqlalchemy import func, select
 from webargs import fields
 
-from neurosynth_compose.asgi_requests import parse_request_data, raise_http_error
+from neurosynth_compose.asgi_requests import (parse_request_data,
+                                              raise_http_error)
 from neurosynth_compose.database import commit_session, db
 from neurosynth_compose.models.analysis import Tag  # noqa: F401
-from neurosynth_compose.resources.common import get_current_user, make_json_response
-from neurosynth_compose.resources.view_core import ListView, ObjectView, view_maker
+from neurosynth_compose.resources.common import (get_current_user,
+                                                 make_json_response)
+from neurosynth_compose.resources.view_core import (ListView, ObjectView,
+                                                    view_maker)
 from neurosynth_compose.schemas import TagSchema  # noqa: F401
 
 
