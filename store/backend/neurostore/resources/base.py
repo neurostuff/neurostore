@@ -41,6 +41,12 @@ from neurostore.services.has_media_flags import (
     enqueue_base_study_flag_updates, recompute_media_flags)
 
 
+def handle_parser_error(err, req, schema, *, error_status_code, error_headers):
+    """Translate legacy parser validation failures to the API error contract."""
+    del req, schema, error_status_code, error_headers
+    abort_schema_validation(err.messages)
+
+
 def abort_schema_validation(messages):
     detail = json.dumps(messages)
     abort_unprocessable(f"input does not conform to specification: {detail}")
