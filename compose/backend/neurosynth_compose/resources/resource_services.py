@@ -1,20 +1,20 @@
 from __future__ import annotations
 
 import pathlib
-from datetime import datetime
+from datetime import datetime, timezone
 from operator import itemgetter
 
-from flask import abort, current_app, request
 from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
+from neurosynth_compose.asgi_requests import raise_http_error
 from neurosynth_compose.database import db
 from neurosynth_compose.models.analysis import (
     NeurostoreAnnotation,
     NeurostoreStudyset,
-    SnapshotAnnotation,
     NeurovaultCollection,
     NeurovaultFile,
+    SnapshotAnnotation,
     SnapshotStudyset,
     generate_id,
 )
@@ -209,8 +209,7 @@ def select_cluster_table_for_specification(cluster_table_fnames, specification):
     return None
 
 
-def create_neurovault_collection(nv_collection):
-    import flask
+def create_neurovault_collection(nv_collection, *, settings, logger, public_base_url):
     from pynv import Client
 
     meta_analysis = nv_collection.result.meta_analysis
@@ -228,22 +227,22 @@ def create_neurovault_collection(nv_collection):
             base_name = base_name[:remaining].rstrip() or "Untitled"
         return base_name + tail
 
-    created_at = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+    created_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
     base_name = getattr(meta_analysis, "name", None) or "Untitled"
-    max_length = int(current_app.config["NEUROVAULT_COLLECTION_NAME_MAX_LEN"])
-    max_suffix = int(current_app.config["NEUROVAULT_COLLECTION_CREATE_MAX_SUFFIX"])
+    max_length = int(settings["NEUROVAULT_COLLECTION_NAME_MAX_LEN"])
+    max_suffix = int(settings["NEUROVAULT_COLLECTION_CREATE_MAX_SUFFIX"])
     name_length_candidates = [max_length] + [
         fallback for fallback in (200, 150, 120, 100, 80) if fallback < max_length
     ]
 
-    url = f"{flask.request.host_url.rstrip('/')}/meta-analyses/{meta_analysis.id}"
+    url = f"{public_base_url.rstrip('/')}/meta-analyses/{meta_analysis.id}"
     last_exception = None
     last_attempted_name = None
     try:
-        api = Client(access_token=current_app.config["NEUROVAULT_ACCESS_TOKEN"])
+        api = Client(access_token=settings["NEUROVAULT_ACCESS_TOKEN"])
         tried_names = set()
-        for suffix_number in [None, *range(1, max_suffix + 1)]:
-            for name_length in name_length_candidates:
+        for name_length in name_length_candidates:
+            for suffix_number in [None, *range(1, max_suffix + 1)]:
                 collection_name = build_collection_name(
                     base_name=base_name,
                     created_at=created_at,
@@ -264,7 +263,7 @@ def create_neurovault_collection(nv_collection):
                     return nv_collection
                 except Exception as exception:  # noqa: BLE001
                     last_exception = exception
-                    current_app.logger.warning(
+                    logger.warning(
                         "Neurovault collection create failed for name=%r: %s",
                         collection_name,
                         str(exception),
@@ -272,7 +271,7 @@ def create_neurovault_collection(nv_collection):
     except Exception as exception:  # noqa: BLE001
         last_exception = exception
 
-    abort(
+    raise_http_error(
         422,
         (
             "Error creating Neurovault collection after retries. "
@@ -282,25 +281,24 @@ def create_neurovault_collection(nv_collection):
     )
 
 
-def create_or_update_neurostore_study(ns_study):
+def create_or_update_neurostore_study(ns_study, *, settings, access_token=None):
     from auth0.authentication.get_token import GetToken
 
     from neurosynth_compose.resources.neurostore import neurostore_session
 
-    access_token = request.headers.get("Authorization")
     if not access_token:
-        domain = current_app.config["AUTH0_BASE_URL"].lstrip("https://")
+        domain = settings["AUTH0_BASE_URL"].lstrip("https://")
         g_token = GetToken(
             domain,
-            current_app.config["AUTH0_CLIENT_ID"],
-            client_secret=current_app.config["AUTH0_CLIENT_SECRET"],
+            settings["AUTH0_CLIENT_ID"],
+            client_secret=settings["AUTH0_CLIENT_SECRET"],
         )
         token_resp = g_token.client_credentials(
-            audience=current_app.config["AUTH0_API_AUDIENCE"],
+            audience=settings["AUTH0_API_AUDIENCE"],
         )
         access_token = " ".join([token_resp["token_type"], token_resp["access_token"]])
 
-    ns_ses = neurostore_session(access_token)
+    ns_ses = neurostore_session(access_token, settings["NEUROSTORE_API_URL"])
     study_data = {
         "name": getattr(ns_study.project, "name", "Untitled"),
         "description": getattr(ns_study.project, "description", None),
@@ -326,9 +324,18 @@ def create_or_update_neurostore_study(ns_study):
     return ns_study
 
 
-def parse_upload_files(result, stat_maps, cluster_tables, diagnostic_tables):
+def parse_upload_files(
+    result,
+    stat_maps,
+    cluster_tables,
+    diagnostic_tables,
+    *,
+    settings,
+    logger,
+    public_base_url,
+):
     records = []
-    file_dir = pathlib.Path(current_app.config["FILE_DIR"], result.id)
+    file_dir = pathlib.Path(settings["FILE_DIR"], result.id)
     file_dir.mkdir(parents=True, exist_ok=True)
 
     stat_map_fnames = {}
@@ -353,7 +360,12 @@ def parse_upload_files(result, stat_maps, cluster_tables, diagnostic_tables):
         nv_collection = result.neurovault_collection
     else:
         nv_collection = NeurovaultCollection(result=result)
-        create_neurovault_collection(nv_collection)
+        create_neurovault_collection(
+            nv_collection,
+            settings=settings,
+            logger=logger,
+            public_base_url=public_base_url,
+        )
         existing = db.session.execute(
             select(NeurovaultCollection).where(
                 NeurovaultCollection.collection_id == nv_collection.collection_id

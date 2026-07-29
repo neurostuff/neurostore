@@ -3,13 +3,17 @@ from __future__ import annotations
 from functools import lru_cache
 
 import orjson
-from flask import request
+from connexion import request
 from marshmallow.exceptions import ValidationError
 from sqlalchemy import Text, cast, func, literal, select, update
 from sqlalchemy.orm import joinedload, load_only, selectinload
 from webargs import fields
-from webargs.flaskparser import parser
 
+from neurosynth_compose.asgi_requests import (
+    parse_request_data,
+    raise_http_error,
+    read_json,
+)
 from neurosynth_compose.database import commit_session, db
 from neurosynth_compose.models.analysis import (
     MetaAnalysis,
@@ -311,7 +315,9 @@ def _filter_project_list_provenance(raw_provenance_json):
     return filtered
 
 
-def serialize_project(record, *, info: bool, raw_provenance_json=_RAW_PROVENANCE_UNSET):
+def serialize_project(
+    record, *, info: bool, settings, raw_provenance_json=_RAW_PROVENANCE_UNSET
+):
     provenance = (
         getattr(record, "provenance", None)
         if raw_provenance_json is _RAW_PROVENANCE_UNSET
@@ -349,7 +355,7 @@ def serialize_project(record, *, info: bool, raw_provenance_json=_RAW_PROVENANCE
         "neurostore_url": (
             None
             if not neurostore_id
-            else "/".join([get_ns_base(), "studies", neurostore_id])
+            else "/".join([get_ns_base(settings), "studies", neurostore_id])
         ),
     }
 
@@ -362,12 +368,13 @@ def serialize_project(record, *, info: bool, raw_provenance_json=_RAW_PROVENANCE
     return output
 
 
-def serialize_projects(records, *, info: bool, provenance_map=None):
+def serialize_projects(records, *, info: bool, settings, provenance_map=None):
     provenance_map = provenance_map or {}
     return [
         serialize_project(
             record,
             info=info,
+            settings=settings,
             raw_provenance_json=provenance_map.get(record.id, _RAW_PROVENANCE_UNSET),
         )
         for record in records
@@ -453,10 +460,18 @@ class ProjectsView(ObjectView, ListView):
         )
 
     def serialize_record(self, record, args):
-        return serialize_project(record, info=bool(args.get("info")))
+        return serialize_project(
+            record,
+            info=bool(args.get("info")),
+            settings=request.state.settings,
+        )
 
     def serialize_records(self, records, args):
-        return serialize_projects(records, info=bool(args.get("info")))
+        return serialize_projects(
+            records,
+            info=bool(args.get("info")),
+            settings=request.state.settings,
+        )
 
     def finalize_search(self, query, args, *, count_query=None):
         if count_query is None:
@@ -479,6 +494,7 @@ class ProjectsView(ObjectView, ListView):
                     serialize_project(
                         record,
                         info=bool(args.get("info")),
+                        settings=request.state.settings,
                         raw_provenance_json=(
                             _filter_project_list_provenance(raw_provenance_json)
                             if include_provenance
@@ -492,17 +508,18 @@ class ProjectsView(ObjectView, ListView):
 
     def get(self, id):
         id = id.replace("\x00", "\ufffd")
-        args = parser.parse(getattr(self, "_user_args", {}), request, location="query")
+        args = parse_request_data(
+            getattr(self, "_user_args", {}), request, location="query"
+        )
         row = db.session.execute(self.load_object_query(id, args=args)).first()
         if row is None:
-            from flask import abort
-
-            abort(404)
+            raise_http_error(404)
         record, raw_provenance_json = row
         return make_json_response(
             serialize_project(
                 record,
                 info=bool(args.get("info")),
+                settings=request.state.settings,
                 raw_provenance_json=raw_provenance_json,
             )
         )
@@ -520,15 +537,12 @@ class ProjectsView(ObjectView, ListView):
         if project:
             for meta_analysis in project.meta_analyses:
                 if meta_analysis.results:
-                    from flask import abort
-
-                    abort(
-                        409,
-                        description="this project already has results and cannot be deleted.",
+                    raise_http_error(
+                        409, "this project already has results and cannot be deleted."
                     )
 
     def post(self):
-        clone_args = parser.parse(
+        clone_args = parse_request_data(
             {
                 "source_id": fields.String(load_default=None),
                 "copy_annotations": fields.Boolean(load_default=True),
@@ -538,19 +552,17 @@ class ProjectsView(ObjectView, ListView):
         )
         source_id = clone_args.get("source_id")
         if source_id:
-            cloned_project = ProjectCloneService().clone(
+            cloned_project = ProjectCloneService(request.state.settings).clone(
                 source_id,
                 copy_annotations=clone_args.get("copy_annotations", True),
             )
             return make_json_response(self.serialize_record(cloned_project, {}))
 
         try:
-            data = parser.parse(self.__class__._schema, request)
+            data = parse_request_data(self.__class__._schema, request)
         except ValidationError as exc:
-            from flask import abort
-
-            abort(
-                422, description=f"input does not conform to specification: {str(exc)}"
+            raise_http_error(
+                422, f"input does not conform to specification: {str(exc)}"
             )
 
         with db.session.no_autoflush:
@@ -558,22 +570,26 @@ class ProjectsView(ObjectView, ListView):
             ns_study = NeurostoreStudy(project=record)
             db.session.add(ns_study)
             commit_session()
-            create_or_update_neurostore_study(ns_study)
+            create_or_update_neurostore_study(
+                ns_study,
+                settings=request.state.settings,
+                access_token=request.headers.get("Authorization"),
+            )
             db.session.add(ns_study)
             commit_session()
         return make_json_response(self.serialize_record(record, {}))
 
     def put(self, id):
         id = id.replace("\x00", "\ufffd")
-        query_args = parser.parse(self._project_put_args, request, location="query")
-        request_data = self.insert_data(id, request.json)
+        query_args = parse_request_data(
+            self._project_put_args, request, location="query"
+        )
+        request_data = self.insert_data(id, read_json(request))
         try:
             data = self.__class__._schema().load(request_data)
         except ValidationError as exc:
-            from flask import abort
-
-            abort(
-                422, description=f"input does not conform to specification: {str(exc)}"
+            raise_http_error(
+                422, f"input does not conform to specification: {str(exc)}"
             )
 
         with db.session.no_autoflush:

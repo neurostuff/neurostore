@@ -1,4 +1,3 @@
-from flask_security import RoleMixin, SQLAlchemyUserDatastore, UserMixin
 from sqlalchemy import Boolean, Column, ForeignKey, String, Table, Text
 from sqlalchemy.orm import backref, relationship
 
@@ -13,7 +12,13 @@ roles_users = Table(
 )
 
 
-class Role(BaseMixin, db.Model, RoleMixin):
+class UserMixin:
+    @property
+    def is_active(self):
+        return bool(self.active)
+
+
+class Role(BaseMixin, db.Model):
     __tablename__ = "roles"
 
     name = Column(Text, unique=True)
@@ -37,6 +42,3 @@ class Device(BaseMixin, db.Model):
     api_key = Column(String)
     user_id = Column("user_id", Text, ForeignKey("users.id"))
     user = relationship("User", backref=backref("devices"))
-
-
-user_datastore = SQLAlchemyUserDatastore(db, User, Role)

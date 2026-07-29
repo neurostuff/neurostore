@@ -3,10 +3,10 @@ from __future__ import annotations
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
-from neurosynth_compose.models.analysis import (
+from neurosynth_compose.models.analysis import (  # noqa: F401
     NeurostoreStudyset,
     SnapshotStudyset,
-)  # noqa: F401
+)
 from neurosynth_compose.resources.view_core import ListView, ObjectView, view_maker
 from neurosynth_compose.schemas import NeurostoreStudysetSchema  # noqa: F401
 

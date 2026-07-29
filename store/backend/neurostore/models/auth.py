@@ -1,6 +1,3 @@
-# from flask_security import UserMixin, RoleMixin, SQLAlchemyUserDatastore
-
-
 from neurostore.database import db
 from neurostore.models.data import BaseMixin
 

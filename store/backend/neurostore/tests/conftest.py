@@ -2,9 +2,11 @@ import json
 import logging
 import os
 import random
+from asyncio import gather
 from os import environ
 from unittest.mock import patch
 
+import anyio
 import pytest
 import shortuuid
 import sqlalchemy as sa
@@ -12,7 +14,7 @@ import vcr
 from auth0.authentication import GetToken
 from auth0.authentication.exceptions import Auth0Error
 from auth0.authentication.users import Users
-from flask_migrate import upgrade as migrate_upgrade
+from jose.jwt import encode
 from sqlalchemy import select
 
 from neurostore import ingest
@@ -27,14 +29,26 @@ from neurostore.models import (
     Entity,
     Image,
     Point,
+    Role,
     Study,
     Studyset,
     StudysetStudy,
     User,
 )
+from neurostore.tests.request_utils import AsyncClient
 from neurostore.tests.utils import ordered_note_keys
 
 LOGGER = logging.getLogger(__name__)
+
+
+class TestRuntime:
+    """Explicit ASGI dependencies shared by the test fixtures."""
+
+    def __init__(self, config, asgi_app, database, logger=LOGGER):
+        self.config = config
+        self.asgi_app = asgi_app
+        self.database = database
+        self.logger = logger
 
 
 @pytest.fixture(scope="module")
@@ -97,10 +111,6 @@ def monkeysession(request):
 
 
 def mock_decode_token(token):
-    import os
-
-    from jose.jwt import encode
-
     if token == encode({"sub": "user1-id"}, "abc", algorithm="HS256"):
         return {"sub": "user1-id"}
     elif token == encode({"sub": "user2-id"}, "123", algorithm="HS256"):
@@ -174,22 +184,22 @@ Session / db management tools
 
 @pytest.fixture(scope="session")
 def real_app():
-    """Session-wide test `Flask` application."""
-    from neurostore import create_app
+    """Session-wide native ASGI test application."""
+    from neurostore import create_asgi_app
+    from neurostore.database import db
     from neurostore.extensions import cache
+    from neurostore.settings import load_settings
 
     environ.setdefault("APP_ENV", "testing")
-    _app = create_app()
+    settings = load_settings()
+    asgi_app = create_asgi_app(settings)
+    _app = TestRuntime(settings, asgi_app, db)
 
     cache.clear()
-    # Establish an application context before running the tests.
-    ctx = _app.app_context()
-    ctx.push()
 
     yield _app
 
     cache.clear()
-    ctx.pop()
 
 
 def _reset_migrated_schema(db, migrations_dir):
@@ -198,16 +208,15 @@ def _reset_migrated_schema(db, migrations_dir):
         conn.execute(sa.text("CREATE SCHEMA public"))
         conn.execute(sa.text("CREATE EXTENSION IF NOT EXISTS vector"))
         conn.commit()
-    migrate_upgrade(directory=migrations_dir, revision="heads")
+    from neurostore import service_migrations
+
+    service_migrations.upgrade("heads")
 
 
 @pytest.fixture(scope="session")
 def real_db(real_app):
     """Session-wide test database."""
-    from manage import init_migrate
-
-    _db = real_app.extensions["sqlalchemy"]
-    init_migrate(real_app, _db)
+    _db = real_app.database
     _reset_migrated_schema(_db, real_app.config["MIGRATIONS_DIR"])
 
     yield _db
@@ -217,37 +226,34 @@ def real_db(real_app):
 
 @pytest.fixture(scope="session")
 def app(mock_auth):
-    """Session-wide test `Flask` application."""
-    from neurostore import create_app
+    """Session-wide native ASGI test application."""
+    from neurostore import create_asgi_app
+    from neurostore.database import db
     from neurostore.extensions import cache
+    from neurostore.settings import load_settings
 
     environ.setdefault("APP_ENV", "testing")
-    _app = create_app()
+    settings = load_settings()
     # https://docs.sqlalchemy.org/en/14/errors.html#error-3o7r
-    _app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+    settings["SQLALCHEMY_ENGINE_OPTIONS"] = {
         "max_overflow": -1,
         "pool_timeout": 5,
         "pool_size": 0,
     }
+    asgi_app = create_asgi_app(settings)
+    _app = TestRuntime(settings, asgi_app, db)
 
     cache.clear()
-    # Establish an application context before running the tests.
-    ctx = _app.app_context()
-    ctx.push()
 
     yield _app
 
     cache.clear()
-    ctx.pop()
 
 
 @pytest.fixture(scope="session")
 def db(app):
     """Session-wide test database."""
-    from manage import init_migrate
-
-    _db = app.extensions["sqlalchemy"]
-    init_migrate(app, _db)
+    _db = app.database
     _reset_migrated_schema(_db, app.config["MIGRATIONS_DIR"])
 
     yield _db
@@ -297,6 +303,13 @@ def session(db):
 
     cache.clear()
     scoped_session.remove()
+    _truncate_public_tables(db)
+
+
+@pytest.fixture(scope="session")
+def anyio_backend():
+    """Use asyncio for native ASGI tests; the application has no Trio runtime."""
+    return "asyncio"
 
 
 @pytest.fixture(scope="session")
@@ -313,36 +326,59 @@ Data population fixtures
 
 
 @pytest.fixture(scope="function")
-def auth_client(auth_clients):
-    """Return authorized client wrapper"""
+async def auth_clients(mock_add_users, app):
+    """Native async authorized clients, closed before database teardown."""
+    tokens = mock_add_users
+    clients = [
+        AsyncClient(
+            token=token["token"],
+            asgi_app=app.asgi_app,
+            username=token["external_id"],
+        )
+        for token in tokens.values()
+    ]
+    try:
+        yield clients
+    finally:
+        await gather(*(client.aclose() for client in clients))
+
+
+@pytest.fixture(scope="function")
+async def auth_client(auth_clients):
     return auth_clients[0]
 
 
 @pytest.fixture(scope="function")
-def new_user_client(auth_clients):
-    """Return authorized client wrapper for new user"""
-    return next(c for c in auth_clients if c.username == "newuser-id")
+async def admin_client(user_data, session, app):
+    """Authenticated ASGI client for a database-backed admin user."""
+    admin_role = Role.query.filter_by(name="admin").first()
+    if admin_role is None:
+        admin_role = Role(id="admin", name="admin", description="Admin role")
+        session.add(admin_role)
+
+    admin_user = User(name="admin_user", external_id="admin-user-id")
+    admin_user.roles.append(admin_role)
+    session.add(admin_user)
+    session.commit()
+
+    client = AsyncClient(
+        token=encode({"sub": "admin-user-id"}, "admin123", algorithm="HS256"),
+        asgi_app=app.asgi_app,
+        username="admin-user-id",
+    )
+    try:
+        yield client
+    finally:
+        await client.aclose()
 
 
 @pytest.fixture(scope="function")
-def auth_clients(mock_add_users, app):
-    """Return authorized client wrapper"""
-    from neurostore.tests.request_utils import Client
-
-    tokens = mock_add_users
-    clients = []
-    for user in tokens:
-        clients.append(
-            Client(token=tokens[user]["token"], username=tokens[user]["external_id"])
-        )
-    return clients
+async def new_user_client(auth_clients):
+    return next(client for client in auth_clients if client.username == "newuser-id")
 
 
 @pytest.fixture(scope="function")
 def mock_add_users(app, db, session, mock_auth):
-    # from neurostore.resources.auth import decode_token
-    from jose.jwt import encode
-
     users = [
         {
             "name": "user1",
@@ -393,6 +429,9 @@ def mock_add_users(app, db, session, mock_auth):
 
             tokens[u["name"]]["id"] = existing_user.id
 
+    # ASGI requests use a separate request-scoped session, so fixture users
+    # must be committed before the authenticated client can resolve them.
+    session.commit()
     yield tokens
 
 
@@ -438,7 +477,9 @@ def add_users(real_app, real_db):
                 audience=real_app.config["AUTH0_API_AUDIENCE"],
                 scope="openid profile email",
             )
-            token_info = decode_token(payload["access_token"])
+            token_info = anyio.run(
+                lambda: decode_token(payload["access_token"], settings=real_app.config)
+            )
             # do not add user1 into database
             if name != "user1":
                 user = User(
@@ -478,11 +519,13 @@ def ingest_neurosynth_large(session):
 
 
 @pytest.fixture(scope="function")
-def assign_neurosynth_to_user(session, ingest_neurosynth_large, auth_client):
+def assign_neurosynth_to_user(session, ingest_neurosynth_large, mock_add_users):
     """assign the studyset and all studies/analyses/points to the user."""
     studyset = Studyset.query.filter_by(name="neurosynth").first()
     annotation = Annotation.query.filter_by(name="neurosynth").first()
-    user = User.query.filter_by(external_id=auth_client.username).first()
+    user = User.query.filter_by(
+        external_id=mock_add_users["user1"]["external_id"]
+    ).first()
     studyset.user = user
     for study in studyset.studies:
         study.user = user

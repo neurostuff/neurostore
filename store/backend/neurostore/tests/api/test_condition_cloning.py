@@ -1,7 +1,11 @@
+import pytest
+
 from neurostore.models import Analysis, AnalysisConditions, Condition, Study, User
 
+pytestmark = pytest.mark.anyio
 
-def test_condition_cloning_neurovault(auth_client, ingest_neurovault, session):
+
+async def test_condition_cloning_neurovault(auth_client, ingest_neurovault, session):
     """
     Integration test to verify condition cloning preserves original references via API.
     This test validates the complete end-to-end behavior.
@@ -25,7 +29,7 @@ def test_condition_cloning_neurovault(auth_client, ingest_neurovault, session):
     total_conditions_before = Condition.query.count()
 
     # Clone the study via API
-    resp = auth_client.post(
+    resp = await auth_client.post(
         f"/api/studies/?source_id={study_with_conditions.id}", data={}
     )
     assert resp.status_code == 200
@@ -69,7 +73,7 @@ def test_condition_cloning_neurovault(auth_client, ingest_neurovault, session):
     )
 
 
-def test_condition_cloning_cross_user_permissions(auth_client, session):
+async def test_condition_cloning_cross_user_permissions(auth_client, session):
     """
     Test that users can clone studies referencing conditions owned by other users.
     The conditions should be read-only references, not attempts to modify the originals.
@@ -121,7 +125,7 @@ def test_condition_cloning_cross_user_permissions(auth_client, session):
     conditions_before = Condition.query.count()
 
     # Clone the study using the API (auth_client is a different user)
-    resp = auth_client.post(f"/api/studies/?source_id={test_study.id}", data={})
+    resp = await auth_client.post(f"/api/studies/?source_id={test_study.id}", data={})
 
     # This should now work with our fix
     assert (
@@ -174,7 +178,7 @@ def test_condition_cloning_cross_user_permissions(auth_client, session):
     )
 
 
-def test_condition_cloning_new_data(auth_client, session):
+async def test_condition_cloning_new_data(auth_client, session):
     """
     Integration test to verify condition cloning with self-created test data.
     This test creates its own data instead of relying on fixtures.
@@ -212,7 +216,7 @@ def test_condition_cloning_new_data(auth_client, session):
     conditions_before = Condition.query.count()
 
     # Clone the study using the API
-    resp = auth_client.post(f"/api/studies/?source_id={test_study.id}", data={})
+    resp = await auth_client.post(f"/api/studies/?source_id={test_study.id}", data={})
     assert resp.status_code == 200
 
     cloned_study_data = resp.json()

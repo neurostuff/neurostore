@@ -12,17 +12,14 @@ authors = [
 license = { text = "MIT" }
 dependencies = [
     "auth0-python~=6.1",
-    "authlib~=1.7",
-    "connexion[swagger-ui,uvicorn,flask]==3.3.0",
-    "flask~=3.1",
-    "flask-admin~=2.2",
-    "flask-cors~=6.0",
-    "flask-caching~=2.4",
-    "flask-shell-ipython~=0.5",
-    "flask-migrate~=4.1",
-    "flask-sqlalchemy~=3.1", # fix multiple instance error: https://flask-sqlalchemy.palletsprojects.com/en/3.0.x/changes/#version-3-0-3
+    "alembic~=1.18",
+    "connexion[swagger-ui,uvicorn]==3.3.0",
+    "cachelib~=0.13",
     "gunicorn~=26.0",
+    "httpx2~=2.7",
+    "uvicorn-worker~=0.4",
     "ipython~=9.15",
+    "itsdangerous~=2.2",
     "marshmallow~=4.3",
     "numpy<3.0.0",
     "pandas~=3.0",
@@ -34,13 +31,13 @@ dependencies = [
     "starlette>=1.3.1,<2",
     "sqlalchemy~=2.0",
     "sqlalchemy-utils",
+    "sqladmin~=0.23",
     "sqltap",
     "webargs~=8.7",
     "wrapt~=2.2",
     "openapi-spec-validator~=0.9",
     "scipy~=1.18",
     "orjson~=3.11",
-    "flask_orjson~=2.0.0",
     "pgvector~=0.5",
     "NiMARE[parquet]==0.20.0",
     "openai~=2.48",
@@ -60,6 +57,9 @@ dev = [
     "vcrpy~=8.3",
     "pytest-recording~=0.13.4",
 ]
+
+[project.scripts]
+manage = "neurostore.cli:main"
 
 [tool.setuptools.package-data]
 neurostore = ["openapi/**/*"]

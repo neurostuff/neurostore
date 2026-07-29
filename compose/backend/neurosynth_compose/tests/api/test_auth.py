@@ -1,4 +1,5 @@
 import pytest
+from types import SimpleNamespace
 
 
 @pytest.fixture
@@ -19,9 +20,9 @@ def mock_add_users_pure():
     yield tokens
 
 
-def test_decode_token(monkeypatch, mock_add_users_pure):
+@pytest.mark.anyio
+async def test_decode_token(monkeypatch, mock_add_users_pure):
     import json
-    import types
 
     from connexion.exceptions import OAuthProblem
 
@@ -60,26 +61,24 @@ def test_decode_token(monkeypatch, mock_add_users_pure):
 
     monkeypatch.setattr(auth.jwt, "decode", fake_jwt_decode)
 
-    # Patch app.config
     fake_config = {
         "AUTH0_BASE_URL": "https://fake-auth0.com",
         "AUTH0_API_AUDIENCE": "fake-audience",
     }
-    monkeypatch.setattr(auth, "app", types.SimpleNamespace(config=fake_config))
-
+    fake_request = SimpleNamespace(state=SimpleNamespace(settings=fake_config))
     # Test invalid token raises a Connexion-native 401
     with pytest.raises(OAuthProblem) as exc_info:
-        auth.decode_token("improper_token")
+        await auth.decode_token("improper_token", settings=fake_config)
 
     assert exc_info.value.status_code == 401
 
     # Test valid tokens
     for user in mock_add_users_pure.values():
-        result = auth.decode_token(user["token"])
+        result = await auth.decode_token(user["token"], request=fake_request)
         assert result["sub"] == "mocked-user-id"
 
 
-def test_creating_new_user_on_db(session, mock_add_users):
+def test_creating_new_user_on_db(session, mock_add_users, app):
     from neurosynth_compose.tests.request_utils import Client
 
     token_info = mock_add_users
@@ -87,6 +86,7 @@ def test_creating_new_user_on_db(session, mock_add_users):
 
     client = Client(
         token=token_info[user_name]["token"],
+        asgi_app=app.asgi_app,
         username=token_info[user_name]["external_id"],
     )
 

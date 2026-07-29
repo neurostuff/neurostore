@@ -38,7 +38,7 @@ def test_is_user_admin_returns_false_for_none(session):
     assert is_user_admin(None) is False
 
 
-def test_admin_can_modify_others_records(auth_client, user_data, session, db):
+def test_admin_can_modify_others_records(auth_client, user_data, session, db, app):
     """Test that admin users can modify records they don't own"""
     # Get a regular user's meta-analysis
     regular_user = User.query.filter_by(name="user1").first()
@@ -63,7 +63,9 @@ def test_admin_can_modify_others_records(auth_client, user_data, session, db):
     from neurosynth_compose.tests.request_utils import Client
 
     admin_token = encode({"sub": "admin-user-id"}, "admin123", algorithm="HS256")
-    admin_client = Client(token=admin_token, username="admin-user-id")
+    admin_client = Client(
+        token=admin_token, asgi_app=app.asgi_app, username="admin-user-id"
+    )
 
     # Try to modify the meta-analysis as admin
     new_name = "Modified by admin"
@@ -75,7 +77,7 @@ def test_admin_can_modify_others_records(auth_client, user_data, session, db):
     assert resp.json()["name"] == new_name
 
 
-def test_admin_can_delete_others_records(auth_client, user_data, session, db):
+def test_admin_can_delete_others_records(auth_client, user_data, session, db, app):
     """Test that admin users can delete records they don't own"""
     # Get a regular user's meta-analysis
     regular_user = User.query.filter_by(name="user1").first()
@@ -101,7 +103,9 @@ def test_admin_can_delete_others_records(auth_client, user_data, session, db):
     from neurosynth_compose.tests.request_utils import Client
 
     admin_token = encode({"sub": "admin-user-id"}, "admin123", algorithm="HS256")
-    admin_client = Client(token=admin_token, username="admin-user-id")
+    admin_client = Client(
+        token=admin_token, asgi_app=app.asgi_app, username="admin-user-id"
+    )
 
     # Try to delete the meta-analysis as admin
     resp = admin_client.delete(f"/api/meta-analyses/{meta_analysis_id}")
@@ -111,7 +115,7 @@ def test_admin_can_delete_others_records(auth_client, user_data, session, db):
     assert MetaAnalysis.query.filter_by(id=meta_analysis_id).first() is None
 
 
-def test_admin_can_see_private_records(auth_client, user_data, session, db):
+def test_admin_can_see_private_records(auth_client, user_data, session, db, app):
     """Test that admin users can see all records including private ones"""
     # Create a private project owned by user1
     regular_user = User.query.filter_by(name="user1").first()
@@ -144,7 +148,9 @@ def test_admin_can_see_private_records(auth_client, user_data, session, db):
     from neurosynth_compose.tests.request_utils import Client
 
     admin_token = encode({"sub": "admin-user-id"}, "admin123", algorithm="HS256")
-    admin_client = Client(token=admin_token, username="admin-user-id")
+    admin_client = Client(
+        token=admin_token, asgi_app=app.asgi_app, username="admin-user-id"
+    )
 
     # Admin should be able to see the private project
     resp = admin_client.get("/api/projects/")

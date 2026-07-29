@@ -2,7 +2,7 @@ from collections import Counter, OrderedDict
 from datetime import datetime
 from types import SimpleNamespace
 
-from flask import request
+from connexion import request
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import defaultload, joinedload, raiseload, selectinload
 from webargs import fields
@@ -244,6 +244,7 @@ class AnnotationMutationPolicy(DefaultMutationPolicy):
             user=self.context.current_user,
             record=annotation,
             flush=False,
+            settings=getattr(self.context, "settings", {}),
         )
 
         if "note_keys" in data:
@@ -285,6 +286,7 @@ class AnnotationMutationPolicy(DefaultMutationPolicy):
             user=self.context.current_user,
             record=annotation,
             flush=False,
+            settings=getattr(self.context, "settings", {}),
         )
 
         notes_by_id = {
@@ -484,8 +486,8 @@ class AnnotationsView(ObjectView, ListView):
                 "annotation request must contain all analyses from the studyset."
             )
 
-    def put(self, id):
-        request_data = self.insert_data(id, request.json)
+    def put(self, id, body):
+        request_data = self.insert_data(id, body)
         schema = self._schema()
         data = load_schema_or_abort(schema, request_data, partial=True)
         mutation_policy = self.mutation_policy_cls(
@@ -540,7 +542,10 @@ class AnnotationsView(ObjectView, ListView):
                         }
                     }
                     record = self.__class__.update_or_create(
-                        data, id, record=input_record
+                        data,
+                        id,
+                        record=input_record,
+                        settings=request.state.settings,
                     )
             elif bulk_note_update_candidate:
                 bulk_path_succeeded = mutation_policy.try_bulk_note_update(
@@ -555,10 +560,18 @@ class AnnotationsView(ObjectView, ListView):
                 else:
                     mutation_policy.attach_existing_nested_records(input_record, data)
                     record = self.__class__.update_or_create(
-                        data, id, record=input_record
+                        data,
+                        id,
+                        record=input_record,
+                        settings=request.state.settings,
                     )
             else:
-                record = self.__class__.update_or_create(data, id, record=input_record)
+                record = self.__class__.update_or_create(
+                    data,
+                    id,
+                    record=input_record,
+                    settings=request.state.settings,
+                )
 
         with db.session.no_autoflush:
             unique_ids = self.get_affected_ids([id])

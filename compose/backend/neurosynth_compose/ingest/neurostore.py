@@ -7,11 +7,11 @@ from sqlalchemy import select
 
 from neurosynth_compose.database import commit_session, db
 from neurosynth_compose.models import (
-    SnapshotAnnotation,
-    SnapshotStudyset,
+    MetaAnalysis,
     NeurostoreAnnotation,
     NeurostoreStudyset,
-    MetaAnalysis,
+    SnapshotAnnotation,
+    SnapshotStudyset,
     Specification,
 )
 

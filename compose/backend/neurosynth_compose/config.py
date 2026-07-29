@@ -75,6 +75,7 @@ class Config:
     }
 
     FILE_DIR = Path("/file-data")
+    ASGI_THREAD_TOKENS = int(get_env_var("ASGI_THREAD_TOKENS", "16"))
     POSTGRES_HOST = get_env_var("POSTGRES_HOST", required=True)
     POSTGRES_PASSWORD = get_env_var("POSTGRES_PASSWORD", "")
     DB_NAME = resolve_database_name("compose", "production")
@@ -97,8 +98,8 @@ class Config:
     COMPOSE_RUNNER_STATUS_URL = get_env_var("COMPOSE_RUNNER_STATUS_URL")
     COMPOSE_RUNNER_LOGS_URL = get_env_var("COMPOSE_RUNNER_LOGS_URL")
     COMPOSE_RUNNER_ARTIFACTS_URL = get_env_var("COMPOSE_RUNNER_ARTIFACTS_URL")
-    FLASK_ADMIN_USERNAME = get_env_var("FLASK_ADMIN_USERNAME")
-    FLASK_ADMIN_PASSWORD = get_env_var("FLASK_ADMIN_PASSWORD")
+    ADMIN_USERNAME = get_env_var("ADMIN_USERNAME")
+    ADMIN_PASSWORD = get_env_var("ADMIN_PASSWORD")
     BEARERINFO_FUNC = get_env_var(
         "BEARERINFO_FUNC", "neurosynth_compose.resources.auth.decode_token"
     )

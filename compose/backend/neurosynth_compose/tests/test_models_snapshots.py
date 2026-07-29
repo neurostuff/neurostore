@@ -1,5 +1,6 @@
 import pytest
 from sqlalchemy import select
+from sqlalchemy import Text
 
 from neurosynth_compose.models import (
     NeurostoreAnnotation,
@@ -39,6 +40,24 @@ def test_annotation_md5_saved_on_insert(session):
 
     assert hasattr(row, "md5"), "Annotation.md5 column not found"
     assert row.md5 == md5_of_snapshot(payload)
+
+
+def test_specification_filter_uses_text_schema(session):
+    from neurosynth_compose.models import Specification, User
+
+    assert isinstance(Specification.__table__.c.filter.type, Text)
+    user = User(name="specification-owner", external_id="specification-owner")
+    specification = Specification(
+        user=user,
+        type="cbma",
+        filter="included",
+    )
+    session.add(specification)
+    session.commit()
+    session.expire_all()
+
+    loaded = session.get(Specification, specification.id)
+    assert loaded.filter == specification.filter
 
 
 def test_duplicate_studyset_reused_via_api(session, db, auth_client):
@@ -84,7 +103,7 @@ def test_duplicate_studyset_reused_via_api(session, db, auth_client):
             project=project,
         )
         db.session.add_all([ss, ann, spec, project, meta_analysis])
-        db.session.flush()
+        db.session.commit()
     payload = {"a": 1, "b": 2}
     headers = {"Compose-Upload-Key": meta_analysis.run_key}
     data = {

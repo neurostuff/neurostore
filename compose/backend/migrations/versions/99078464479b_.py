@@ -95,7 +95,7 @@ def upgrade():
             sa.Column("updated_at", sa.DateTime(timezone=True), nullable=True),
             sa.Column("type", sa.Text(), nullable=True),
             sa.Column("estimator", sa.JSON(), nullable=True),
-            sa.Column("filter", sa.JSON(), nullable=True),
+            sa.Column("filter", sa.Text(), nullable=True),
             sa.Column("contrast", sa.JSON(), nullable=True),
             sa.Column("corrector", sa.JSON(), nullable=True),
             sa.Column("public", sa.Boolean(), nullable=True),

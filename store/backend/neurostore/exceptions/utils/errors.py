@@ -1,6 +1,6 @@
 import uuid
 from dataclasses import asdict, dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 
@@ -29,7 +29,9 @@ class ErrorResponse:
 
     def __post_init__(self):
         if not self.timestamp:
-            self.timestamp = datetime.utcnow().isoformat() + "Z"
+            self.timestamp = (
+                datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+            )
         if not self.request_id:
             self.request_id = str(uuid.uuid4())[:8]
 

@@ -1,20 +1,22 @@
 import json
 import threading
 
+import pytest
+
 from neurostore.database import db
 from neurostore.models import Study, Studyset
 from neurostore.production_benchmark import (
-    _benchmark_case_rollback,
-    _benchmark_write_isolation,
     _canonical_case_name,
     _case_workload_info,
-    _create_large_studyset,
     _extract_profile_functions,
     _fit_line,
     _parse_scales,
     _project_line,
+    _run_async,
     _ThreadAwareProfiler,
 )
+
+pytestmark = pytest.mark.anyio
 
 
 def test_fit_line_returns_expected_slope_and_projection():
@@ -133,28 +135,50 @@ def test_extract_profile_functions_reads_thread_aware_json(tmp_path):
     ]
 
 
-def test_benchmark_write_isolation_rolls_back_case_writes(
-    mock_add_users, ingest_neurosynth
+async def test_benchmark_write_cleanup_removes_case_writes(
+    auth_client, ingest_neurosynth
 ):
-    token = mock_add_users["user1"]["token"]
     study_ids = [
         study_id
         for (study_id,) in db.session.query(Study.id).order_by(Study.id).limit(2)
     ]
     initial_count = db.session.query(Studyset).count()
 
-    from neurostore.tests.request_utils import Client
-
-    client = Client(token=token)
+    studyset_id = None
     try:
-        with _benchmark_write_isolation(enabled=True):
-            with _benchmark_case_rollback(enabled=True):
-                _create_large_studyset(client, study_ids, suffix="rollback-check")
-                assert db.session.query(Studyset).count() == initial_count + 1
-
-            db.session.expire_all()
-            assert db.session.query(Studyset).count() == initial_count
-
-        assert db.session.query(Studyset).count() == initial_count
+        response = await auth_client.post(
+            "/api/studysets/",
+            data={
+                "name": "production-benchmark-studyset-cleanup-check",
+                "studies": [{"id": study_id} for study_id in study_ids],
+            },
+        )
+        assert response.status_code == 200
+        studyset_id = response.json()["id"]
+        db.session.expire_all()
+        assert db.session.query(Studyset).count() == initial_count + 1
     finally:
-        client.close()
+        if studyset_id is not None:
+            response = await auth_client.delete(f"/api/studysets/{studyset_id}")
+            assert response.status_code == 200
+            db.session.expire_all()
+        assert db.session.query(Studyset).count() == initial_count
+
+
+async def test_production_benchmark_runs_on_native_asgi_transport(
+    mock_add_users, ingest_neurosynth, session
+):
+    initial_studyset_count = db.session.query(Studyset).count()
+
+    results = await _run_async(iterations=1, seed_study_limit=1, bulk_post_limit=1)
+
+    assert results["service"] == "store"
+    assert results["iterations_per_case"] == 1
+    assert results["rollback_writes"] is True
+    assert {case["name"] for case in results["cases"]} >= {
+        "post_studyset_seed_studies_1",
+        "get_study_nested_frontend",
+        "clone_study",
+    }
+    db.session.expire_all()
+    assert db.session.query(Studyset).count() == initial_studyset_count

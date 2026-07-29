@@ -6,6 +6,7 @@ from neurosynth_compose.resources.common import (
 from neurosynth_compose.resources.common import (
     make_json_response as _make_json_response,
 )
+from neurosynth_compose.resources.data_views.conditions_view import ConditionsResource
 from neurosynth_compose.resources.data_views.meta_analyses_view import (
     MetaAnalysesView,
     MetaAnalysisResultsView,
@@ -13,7 +14,26 @@ from neurosynth_compose.resources.data_views.meta_analyses_view import (
     NeurovaultCollectionsView,
     NeurovaultFilesView,
 )
+from neurosynth_compose.resources.data_views.neurostore_annotation_view import (
+    NeurostoreAnnotationsView,
+)
+from neurosynth_compose.resources.data_views.neurostore_studyset_view import (
+    NeurostoreStudysetsView,
+)
 from neurosynth_compose.resources.data_views.projects_view import ProjectsView
+from neurosynth_compose.resources.data_views.snapshot_annotations_view import (
+    SnapshotAnnotationsView,
+)
+from neurosynth_compose.resources.data_views.snapshot_studysets_view import (
+    SnapshotStudysetsView,
+)
+from neurosynth_compose.resources.data_views.specification_conditions_view import (
+    SpecificationConditionsResource,
+)
+from neurosynth_compose.resources.data_views.specification_view import (
+    SpecificationsView,
+)
+from neurosynth_compose.resources.data_views.tags_view import TagsView
 from neurosynth_compose.resources.resource_services import (
     NIMARE_CLUSTER_TABLE_TARGET_NAME,
     NIMARE_TABLE_FILENAME_PATTERNS,
@@ -23,28 +43,7 @@ from neurosynth_compose.resources.resource_services import (
     parse_upload_files,
     select_cluster_table_for_specification,
 )
-from neurosynth_compose.resources.data_views.neurostore_annotation_view import (
-    NeurostoreAnnotationsView,
-)
-from neurosynth_compose.resources.data_views.snapshot_annotations_view import (
-    SnapshotAnnotationsView,
-)
-from neurosynth_compose.resources.data_views.conditions_view import ConditionsResource
-from neurosynth_compose.resources.data_views.specification_conditions_view import (
-    SpecificationConditionsResource,
-)
-from neurosynth_compose.resources.data_views.specification_view import (
-    SpecificationsView,
-)
-from neurosynth_compose.resources.data_views.neurostore_studyset_view import (
-    NeurostoreStudysetsView,
-)
-from neurosynth_compose.resources.data_views.snapshot_studysets_view import (
-    SnapshotStudysetsView,
-)
-from neurosynth_compose.resources.data_views.tags_view import TagsView
 from neurosynth_compose.resources.view_core import BaseView, ListView, ObjectView
-
 
 __all__ = [
     "_make_json_response",

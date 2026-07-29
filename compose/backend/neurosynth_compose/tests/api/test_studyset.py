@@ -25,14 +25,14 @@ def test_get_studysets(session, auth_client, user_data):
     assert set(get_one.json["annotations"][0].keys()) == {"id", "md5"}
 
 
-def test_post_studyset_with_new_neurostore_id(session, auth_client, user_data, db):
+def test_post_studyset_with_new_neurostore_id(session, auth_client, user_data, db, app):
     user = db.session.execute(
         select(User).where(User.name == "user1")
     ).scalar_one_or_none()
     example = db.session.execute(
         select(Studyset).where(Studyset.user == user)
     ).scalar_one_or_none()
-    schema = SnapshotStudysetSchema()
+    schema = SnapshotStudysetSchema(context={"settings": app.config})
     payload = schema.dump(example)
     payload.pop("annotations")
     payload.pop("url")

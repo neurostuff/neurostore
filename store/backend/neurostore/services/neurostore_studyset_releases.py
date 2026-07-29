@@ -12,10 +12,10 @@ from pathlib import Path
 
 import orjson
 import sqlalchemy as sa
-from flask import current_app
 from sqlalchemy.orm import load_only, selectinload
 
 from neurostore.database import db
+from neurostore.map_types import map_type_label
 from neurostore.models import (
     Analysis,
     AnalysisConditions,
@@ -33,7 +33,6 @@ from neurostore.models import (
     Studyset,
     StudysetStudy,
 )
-from neurostore.map_types import map_type_label
 from neurostore.models.data import generate_id
 from neurostore.schemas.pipeline import PipelineStudyResultSchema
 
@@ -170,19 +169,18 @@ def serialize_dt(value):
     return value.isoformat()
 
 
-def clear_shard_cache():
-    root = release_root()
+def clear_shard_cache(root):
     for subdir in ("studies", "notes"):
         shard_dir = root / "_cache" / subdir
         if shard_dir.exists():
             shutil.rmtree(shard_dir)
 
 
-def release_root():
-    configured = os.environ.get("NEUROSTORE_STUDYSET_RELEASE_DIR")
+def release_root(settings):
+    configured = settings.get("NEUROSTORE_STUDYSET_RELEASE_DIR")
     if configured:
         return Path(configured)
-    return Path(current_app.config["FILE_DIR"]) / RELEASE_DIRNAME
+    return Path(settings["FILE_DIR"]) / RELEASE_DIRNAME
 
 
 def stable_json_bytes(value):
@@ -1130,6 +1128,7 @@ def write_release_files(
 
 
 def base_manifest(
+    root,
     built_at,
     studyset,
     annotation,
@@ -1160,7 +1159,7 @@ def base_manifest(
         "note_count": sum(
             len(
                 read_json(
-                    release_root() / "_cache" / "notes" / f"{base_id}.json",
+                    root / "_cache" / "notes" / f"{base_id}.json",
                     [],
                 )
             )
@@ -1185,10 +1184,12 @@ def validate_monthly_version(version):
 
 def build_neurostore_studyset_release(
     *,
+    settings,
     nightly=False,
     monthly_if_due=False,
     force_monthly=False,
     version=None,
+    clear_cache=False,
 ):
     if not nightly and not monthly_if_due and not force_monthly and not version:
         nightly = True
@@ -1198,8 +1199,10 @@ def build_neurostore_studyset_release(
         raise RuntimeError("A neurostore studyset release build is already running.")
 
     try:
-        root = release_root()
+        root = release_root(settings)
         root.mkdir(parents=True, exist_ok=True)
+        if clear_cache:
+            clear_shard_cache(root)
         built_at = utcnow()
         selected = select_coordinate_studies()
         studyset, annotation = ensure_canonical_records(built_at)
@@ -1227,6 +1230,7 @@ def build_neurostore_studyset_release(
             previous_manifest,
         )
         manifest = base_manifest(
+            root,
             built_at,
             studyset,
             annotation,
@@ -1281,8 +1285,8 @@ def build_neurostore_studyset_release(
         raise
 
 
-def resolve_release_version(version):
-    root = release_root()
+def resolve_release_version(version, *, settings):
+    root = release_root(settings)
     if version == NIGHTLY_VERSION:
         release_dir = root / NIGHTLY_VERSION
         manifest = release_dir / "manifest.json"
@@ -1290,7 +1294,7 @@ def resolve_release_version(version):
         return release_dir, manifest, release_dir / archive_name
 
     if version == LATEST_VERSION:
-        monthly = latest_monthly_version()
+        monthly = latest_monthly_version(settings=settings)
         if monthly is None:
             return None, None, None
         version = monthly
@@ -1301,8 +1305,8 @@ def resolve_release_version(version):
     return release_dir, manifest, release_dir / archive_name
 
 
-def latest_monthly_version():
-    monthly_root = release_root() / "monthly"
+def latest_monthly_version(*, settings):
+    monthly_root = release_root(settings) / "monthly"
     if not monthly_root.exists():
         return None
     versions = sorted(
@@ -1327,8 +1331,8 @@ def manifest_summary(manifest):
     return {key: manifest.get(key) for key in keys if key in manifest}
 
 
-def list_release_manifests():
-    root = release_root()
+def list_release_manifests(*, settings):
+    root = release_root(settings)
     manifests = []
     nightly_manifest = read_json(root / NIGHTLY_VERSION / "manifest.json")
     if nightly_manifest:
@@ -1344,15 +1348,19 @@ def list_release_manifests():
     return manifests
 
 
-def load_release_manifest(version):
-    _release_dir, manifest_path, _archive_path = resolve_release_version(version)
+def load_release_manifest(version, *, settings):
+    _release_dir, manifest_path, _archive_path = resolve_release_version(
+        version, settings=settings
+    )
     if not manifest_path or not manifest_path.exists():
         return None
     return read_json(manifest_path)
 
 
-def release_archive_path(version):
-    _release_dir, _manifest_path, archive_path = resolve_release_version(version)
+def release_archive_path(version, *, settings):
+    _release_dir, _manifest_path, archive_path = resolve_release_version(
+        version, settings=settings
+    )
     if not archive_path or not archive_path.exists():
         return None
     return archive_path

@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+
 from sqlalchemy import func, select, update
 
 from neurosynth_compose.database import db
