@@ -100,6 +100,7 @@ class ProjectCloneService:
                 user=current_user,
                 public=False,
                 draft=True,
+                type=source_project.type,
                 neurostore_studyset_id=new_ss_ref_id,
                 neurostore_annotation_id=new_ann_ref_id,
             )

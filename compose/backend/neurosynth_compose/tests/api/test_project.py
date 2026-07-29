@@ -1,3 +1,4 @@
+import pytest
 from sqlalchemy import select
 
 from neurosynth_compose.models import (
@@ -9,6 +10,36 @@ from neurosynth_compose.models import (
 )
 from neurosynth_compose.schemas import MetaAnalysisSchema
 from neurosynth_compose.tests.conftest import MockNeurostoreSession
+
+
+def test_project_type_is_an_enum():
+    assert Project.__table__.c.type.type.enums == ["CBMA", "IBMA"]
+
+
+@pytest.mark.parametrize("project_type", ["CBMA", "IBMA"])
+def test_create_project_with_type(project_type, auth_client):
+    response = auth_client.post(
+        "/api/projects",
+        data={"name": f"{project_type} project", "type": project_type},
+    )
+
+    assert response.status_code == 200
+    assert response.json["type"] == project_type
+
+
+def test_create_project_defaults_to_cbma(auth_client):
+    response = auth_client.post("/api/projects", data={"name": "default project"})
+
+    assert response.status_code == 200
+    assert response.json["type"] == "CBMA"
+
+
+def test_create_project_rejects_invalid_type(auth_client):
+    response = auth_client.post(
+        "/api/projects", data={"name": "invalid project", "type": "invalid"}
+    )
+
+    assert response.status_code == 422
 
 
 def test_get_all_projects(session, app, auth_client, user_data):

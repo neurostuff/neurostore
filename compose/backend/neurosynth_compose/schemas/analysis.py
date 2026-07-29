@@ -1,5 +1,13 @@
 from connexion import request
-from marshmallow import Schema, fields, post_dump, post_load, pre_load, utils
+from marshmallow import (
+    Schema,
+    fields,
+    post_dump,
+    post_load,
+    pre_load,
+    validate,
+    utils,
+)
 
 from neurosynth_compose.map_types import canonicalize_map_type, map_type_label
 
@@ -572,6 +580,7 @@ class NeurostoreAnalysisSchema(BaseSchema):
 class ProjectSchema(BaseSchema):
     name = fields.String(allow_none=True)
     description = fields.String(allow_none=True)
+    type = fields.String(validate=validate.OneOf(["CBMA", "IBMA"]))
     provenance = fields.Dict(allow_none=True)
     public = fields.Boolean()
     draft = fields.Boolean()

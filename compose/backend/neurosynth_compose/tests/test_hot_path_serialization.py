@@ -35,6 +35,7 @@ def _build_project_namespace():
         user_id="user-1",
         name="project",
         description="description",
+        type="CBMA",
         provenance={
             "curationMetadata": {"columns": [{"id": "column-1", "stubStudies": []}]},
             "extractionMetadata": {
