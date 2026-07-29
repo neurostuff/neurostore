@@ -26,6 +26,28 @@ def _run_with_runtime(callback):
     return callback(app, db)
 
 
+def _load_shell_runtime():
+    import importlib
+    import logging
+
+    from neurostore import create_asgi_app
+    from neurostore.database import db
+    from neurostore.settings import load_settings
+
+    settings = load_settings()
+    app = create_asgi_app(settings)
+    namespace = {
+        "app": app,
+        "asgi_app": app,
+        "settings": settings,
+        "db": db,
+        "session": db.session,
+        "logger": logging.getLogger("neurostore"),
+        "models": importlib.import_module("neurostore.models"),
+    }
+    return namespace, db
+
+
 @click.group()
 def main():
     """NeuroStore service management commands."""
@@ -66,6 +88,18 @@ def db_current(verbose):
     from neurostore import service_migrations
 
     service_migrations.current(verbose=verbose)
+
+
+@main.command("shell")
+def shell():
+    """Open an IPython shell with the initialized ASGI runtime."""
+    from IPython import start_ipython
+
+    namespace, database = _load_shell_runtime()
+    try:
+        start_ipython(argv=[], user_ns=namespace)
+    finally:
+        database.dispose()
 
 
 @main.command("ingest-neurosynth")

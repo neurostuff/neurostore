@@ -4,10 +4,10 @@
   - [`neurostore/`](store/backend/neurostore): Python package source code
   - [`pyproject.toml`](pyproject.toml), [`setup.cfg`](setup.cfg), [`README.md`](README.md): Backend config and docs
 
-Other unrelated files (data, cassettes, nginx, postgres, scripts, docker-compose files) remain at the top level of `store/`.
+Other unrelated files (data, cassettes, nginx, postgres, scripts, docker compose files) remain at the top level of `store/`.
 # neurostore
 
-Requirements: Docker and docker-compose.
+Requirements: Docker and docker compose.
 
 ## Configuration
 First, set up the main environment variables in `.env` (see: `.env.example`).
@@ -24,8 +24,8 @@ matching service config and database name automatically.
 Create the network, build the containers, and start services using the development configuration:
 
     docker network create ${SHARED_PROXY_NETWORK:-nginx-proxy}
-    docker-compose build
-    docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+    docker compose build
+    docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
 
 The server should now be running at http://localhost/
 
@@ -39,15 +39,15 @@ environment, recreate the volume or create `store_test_db` manually before migra
 
 Next, apply the existing migrations (they are the canonical definition of the schema).
 
-    docker-compose exec neurostore manage db upgrade
+    docker compose exec neurostore manage db upgrade
 
 The tracked migrations create the `pgvector` extension automatically. If you are recovering from a partially migrated database, it is also safe to run:
 
-    docker-compose exec store-pgsql17 psql -U postgres -d store_test_db -c "CREATE EXTENSION IF NOT EXISTS vector;"
+    docker compose exec store-pgsql17 psql -U postgres -d store_test_db -c "CREATE EXTENSION IF NOT EXISTS vector;"
 
 Finally ingest data
 
-    docker-compose exec neurostore manage ingest-neurosynth --max-rows 100
+    docker compose exec neurostore manage ingest-neurosynth --max-rows 100
 
 Note: the stack now resolves the database from `APP_ENV` automatically.
 Development, testing, and `docker_test` use `store_test_db`; staging and
@@ -57,12 +57,12 @@ production use `neurostore` by default.
 ## Maintaining docker image and db
 If you make a change to neurostore, you should be able to simply restart the server.
 
-    docker-compose restart neurostore
+    docker compose restart neurostore
 
 If you change any models, generate a new Alembic migration and migrate the database (commit the generated revision file so it becomes the new source of truth):
 
-    docker-compose exec neurostore manage db migrate
-    docker-compose exec neurostore manage db upgrade
+    docker compose exec neurostore manage db migrate
+    docker compose exec neurostore manage db upgrade
 
 
 ## Database migrations
@@ -74,7 +74,7 @@ The migrations stored in `backend/migrations` are the **only** source of truth f
 Any time you start the backend or pull the latest changes, bring the database to the expected state with:
 
 ```sh
-docker-compose exec neurostore manage db upgrade
+docker compose exec neurostore manage db upgrade
 ```
 
 `upgrade` is idempotent, so rerunning it is harmless; it only applies migrations that have not been run yet.
@@ -82,12 +82,24 @@ docker-compose exec neurostore manage db upgrade
 For a deployment rollback within the current compatible migration window, use:
 
 ```sh
-docker-compose exec neurostore manage db downgrade --revision -1
+docker compose exec neurostore manage db downgrade --revision -1
 ```
 
 Migrations must follow expand/contract: add compatible schema first, deploy
 read-compatible code, backfill, then remove obsolete schema only in a later
 release. CI verifies the current-head downgrade/upgrade round trip.
+
+## Interactive ASGI shell
+
+Open an IPython session with the initialized ASGI application and database:
+
+```sh
+docker compose exec neurostore manage shell
+```
+
+The shell exposes `app`/`asgi_app`, `settings`, `db`, `session`, `models`, and
+`logger`. Starlette has no Flask-style application context; use these explicit
+objects, or exercise HTTP routes with an ASGI test client.
 
 ### Resetting the database when switching branches
 

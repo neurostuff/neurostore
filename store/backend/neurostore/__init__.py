@@ -37,8 +37,7 @@ def _env_flag(name, default=False):
     return value.strip().lower() in {"1", "true", "yes", "on"}
 
 
-def _should_validate_responses(app_or_config):
-    config = getattr(app_or_config, "config", app_or_config)
+def _should_validate_responses(config):
     return config.get("ENV") == "development" and config.get("DEBUG", False)
 
 
