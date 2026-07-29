@@ -5,8 +5,12 @@ from neurostore.asgi_requests import parse_query_parameters
 from neurostore.database import db
 from neurostore.models import Analysis, AnnotationAnalysis, Study
 from neurostore.models.data import StudysetStudy
-from neurostore.resources.base import (DefaultObjectViewPolicy, ListView,
-                                       ObjectView, clear_cache)
+from neurostore.resources.base import (
+    DefaultObjectViewPolicy,
+    ListView,
+    ObjectView,
+    clear_cache,
+)
 from neurostore.resources.utils import view_maker
 
 

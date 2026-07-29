@@ -1,6 +1,7 @@
 """
 Tests for admin role functionality
 """
+
 import pytest
 
 import warnings

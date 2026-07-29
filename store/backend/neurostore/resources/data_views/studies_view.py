@@ -8,17 +8,30 @@ from webargs import fields
 from neurostore.database import db
 from neurostore.exceptions.factories import make_field_error
 from neurostore.exceptions.utils.error_helpers import abort_unprocessable
-from neurostore.models import (Analysis, AnalysisConditions, Annotation,
-                               BaseStudy, Condition, Image, Point, Study,
-                               Studyset, Table, User)
+from neurostore.models import (
+    Analysis,
+    AnalysisConditions,
+    Annotation,
+    BaseStudy,
+    Condition,
+    Image,
+    Point,
+    Study,
+    Studyset,
+    Table,
+    User,
+)
 from neurostore.models.data import StudysetStudy
-from neurostore.resources.base import (DefaultObjectViewPolicy, ListView,
-                                       ObjectView)
-from neurostore.resources.data_views.cloning import (build_study_clone_payload,
-                                                     load_study_clone_source)
-from neurostore.resources.data_views.common import (LIST_CLONE_ARGS,
-                                                    LIST_NESTED_ARGS,
-                                                    apply_map_type_filter)
+from neurostore.resources.base import DefaultObjectViewPolicy, ListView, ObjectView
+from neurostore.resources.data_views.cloning import (
+    build_study_clone_payload,
+    load_study_clone_source,
+)
+from neurostore.resources.data_views.common import (
+    LIST_CLONE_ARGS,
+    LIST_NESTED_ARGS,
+    apply_map_type_filter,
+)
 from neurostore.resources.mutation_core import DefaultMutationPolicy
 from neurostore.resources.utils import view_maker
 
@@ -103,8 +116,7 @@ class StudyObjectViewPolicy(DefaultObjectViewPolicy):
     def get_payload(self, id, args):
         if not args.get("nested"):
             return None
-        from neurostore.resources.data_views.serialization import \
-            serialize_study_detail
+        from neurostore.resources.data_views.serialization import serialize_study_detail
 
         return serialize_study_detail(self.get_record(id, args))
 

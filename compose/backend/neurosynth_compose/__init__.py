@@ -17,9 +17,11 @@ from starlette.middleware.cors import CORSMiddleware
 from neurosynth_compose.admin import init_admin
 from neurosynth_compose.database import init_db
 from neurosynth_compose.resources.auth import asgi_oauth_problem_handler
-from neurosynth_compose.resources.errors import (general_exception_handler,
-                                                 http_exception_handler,
-                                                 problem_exception_handler)
+from neurosynth_compose.resources.errors import (
+    general_exception_handler,
+    http_exception_handler,
+    problem_exception_handler,
+)
 from neurosynth_compose.settings import load_settings
 from neurosynth_compose.validation import ReplayableMultiPartFormDataValidator
 

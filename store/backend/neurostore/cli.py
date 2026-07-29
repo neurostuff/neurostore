@@ -6,8 +6,10 @@ from types import SimpleNamespace
 import click
 from sqlalchemy.exc import OperationalError
 
-from neurostore.scripts.transfer_ownership import (OwnershipTransferError,
-                                                   transfer_user_ownership)
+from neurostore.scripts.transfer_ownership import (
+    OwnershipTransferError,
+    transfer_user_ownership,
+)
 
 
 def _load_app_and_db():
@@ -164,8 +166,9 @@ def _emit_outbox_health(model_cls, max_pending, max_oldest_seconds):
 @click.option("--sleep-seconds", default=2.0, show_default=True)
 def process_base_study_flag_outbox(batch_size, loop, sleep_seconds):
     def _run(app, db):
-        from neurostore.services.has_media_flags import \
-            process_base_study_flag_outbox_batch
+        from neurostore.services.has_media_flags import (
+            process_base_study_flag_outbox_batch,
+        )
 
         processed_total = _run_outbox_processor(
             process_base_study_flag_outbox_batch,
@@ -198,8 +201,9 @@ def check_base_study_flag_outbox(max_pending, max_oldest_seconds):
 @click.option("--sleep-seconds", default=2.0, show_default=True)
 def process_base_study_metadata_outbox(batch_size, loop, sleep_seconds):
     def _run(app, db):
-        from neurostore.services.base_study_metadata_enrichment import \
-            process_base_study_metadata_outbox_batch
+        from neurostore.services.base_study_metadata_enrichment import (
+            process_base_study_metadata_outbox_batch,
+        )
 
         processed_total = _run_outbox_processor(
             lambda *, batch_size: process_base_study_metadata_outbox_batch(
@@ -244,8 +248,9 @@ def build_neurostore_studyset_release(
     clear_cache,
 ):
     def _run(app, _db):
-        from neurostore.services.neurostore_studyset_releases import \
-            build_neurostore_studyset_release as build_release
+        from neurostore.services.neurostore_studyset_releases import (
+            build_neurostore_studyset_release as build_release,
+        )
 
         result = build_release(
             settings=app.config,

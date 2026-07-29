@@ -18,10 +18,12 @@ from starlette.middleware.cors import CORSMiddleware
 
 from neurostore.admin import init_admin
 from neurostore.exceptions.base import NeuroStoreException
-from neurostore.exceptions.handlers import (general_exception_handler,
-                                            http_exception_handler,
-                                            neurostore_exception_handler,
-                                            problem_exception_handler)
+from neurostore.exceptions.handlers import (
+    general_exception_handler,
+    http_exception_handler,
+    neurostore_exception_handler,
+    problem_exception_handler,
+)
 from neurostore.extensions import cache
 from neurostore.resources import iter_request_body_validation_skip_rules
 from neurostore.resources.auth import asgi_oauth_problem_handler

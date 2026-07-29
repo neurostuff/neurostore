@@ -3,11 +3,15 @@ from dataclasses import dataclass
 from sqlalchemy import func, select, update
 
 from neurosynth_compose.database import db
-from neurosynth_compose.models.analysis import (MetaAnalysis, Project,
-                                                SnapshotAnnotation,
-                                                SnapshotStudyset,
-                                                Specification,
-                                                SpecificationCondition, Tag)
+from neurosynth_compose.models.analysis import (
+    MetaAnalysis,
+    Project,
+    SnapshotAnnotation,
+    SnapshotStudyset,
+    Specification,
+    SpecificationCondition,
+    Tag,
+)
 from neurosynth_compose.models.auth import User
 
 

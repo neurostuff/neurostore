@@ -6,8 +6,15 @@ from sqlalchemy.orm import raiseload, selectinload
 
 from neurostore.database import db
 from neurostore.exceptions.utils.error_helpers import abort_not_found
-from neurostore.models import (Analysis, AnalysisConditions, Annotation,
-                               AnnotationAnalysis, Point, Study, Studyset)
+from neurostore.models import (
+    Analysis,
+    AnalysisConditions,
+    Annotation,
+    AnnotationAnalysis,
+    Point,
+    Study,
+    Studyset,
+)
 
 
 def resolve_neurostore_origin(record):

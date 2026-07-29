@@ -24,8 +24,7 @@ from jose.jwt import encode
 from sqlalchemy import delete, event, func, select
 
 from neurostore.database import db
-from neurostore.models import (Analysis, Annotation, BaseStudy, Study,
-                               Studyset, User)
+from neurostore.models import Analysis, Annotation, BaseStudy, Study, Studyset, User
 
 TOKEN = encode({"sub": "user1-id"}, "abc", algorithm="HS256")
 DEFAULT_SCALES = [10, 50, 100, 200]

@@ -13,9 +13,16 @@ from neurostore import embeddings
 from neurostore.database import db
 from neurostore.exceptions.factories import make_field_error
 from neurostore.exceptions.utils.error_helpers import abort_validation
-from neurostore.models import (Analysis, BaseStudy, Pipeline, PipelineConfig,
-                               PipelineEmbedding, PipelineStudyResult, Point,
-                               Study)
+from neurostore.models import (
+    Analysis,
+    BaseStudy,
+    Pipeline,
+    PipelineConfig,
+    PipelineEmbedding,
+    PipelineStudyResult,
+    Point,
+    Study,
+)
 from neurostore.utils import build_jsonpath, parse_json_filter
 
 

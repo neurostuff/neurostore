@@ -9,12 +9,15 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from neurosynth_compose.asgi_requests import raise_http_error
 from neurosynth_compose.database import db
-from neurosynth_compose.models.analysis import (NeurostoreAnnotation,
-                                                NeurostoreStudyset,
-                                                NeurovaultCollection,
-                                                NeurovaultFile,
-                                                SnapshotAnnotation,
-                                                SnapshotStudyset, generate_id)
+from neurosynth_compose.models.analysis import (
+    NeurostoreAnnotation,
+    NeurostoreStudyset,
+    NeurovaultCollection,
+    NeurovaultFile,
+    SnapshotAnnotation,
+    SnapshotStudyset,
+    generate_id,
+)
 from neurosynth_compose.utils.snapshots import md5_of_snapshot
 
 # NiMARE 0.9.0 emits table files from MetaResult.save_tables using:

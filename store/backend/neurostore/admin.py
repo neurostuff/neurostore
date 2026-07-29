@@ -50,12 +50,26 @@ def _model_view(model, category):
 
 def init_admin(app, database, config: Mapping[str, object]):
     """Mount Store's retained admin model coverage at ``/admin``."""
-    from neurostore.models import (Analysis, AnalysisConditions, Annotation,
-                                   AnnotationAnalysis, BaseStudy,
-                                   BaseStudyFlagOutbox,
-                                   BaseStudyMetadataOutbox, Condition, Entity,
-                                   Image, Point, PointValue, Role, Study,
-                                   Studyset, StudysetStudy, Table, User)
+    from neurostore.models import (
+        Analysis,
+        AnalysisConditions,
+        Annotation,
+        AnnotationAnalysis,
+        BaseStudy,
+        BaseStudyFlagOutbox,
+        BaseStudyMetadataOutbox,
+        Condition,
+        Entity,
+        Image,
+        Point,
+        PointValue,
+        Role,
+        Study,
+        Studyset,
+        StudysetStudy,
+        Table,
+        User,
+    )
 
     admin = Admin(
         app,

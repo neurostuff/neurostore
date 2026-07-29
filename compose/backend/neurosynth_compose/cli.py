@@ -5,7 +5,9 @@ from types import SimpleNamespace
 import click
 
 from neurosynth_compose.scripts.transfer_ownership import (
-    OwnershipTransferError, transfer_user_ownership)
+    OwnershipTransferError,
+    transfer_user_ownership,
+)
 
 
 def _load_app_and_db():
@@ -97,8 +99,9 @@ def create_meta_analyses(n_studysets, neurostore_url):
 @main.command("backfill-extraction-metadata")
 def backfill_extraction_metadata():
     def _run(_app, _db):
-        from neurosynth_compose.scripts.backfill_extraction_metadata import \
-            add_missing_extraction_ids
+        from neurosynth_compose.scripts.backfill_extraction_metadata import (
+            add_missing_extraction_ids,
+        )
 
         updated, skipped = add_missing_extraction_ids()
         click.echo(

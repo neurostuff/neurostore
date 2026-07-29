@@ -7,8 +7,14 @@ from typing import Mapping
 
 import orjson
 import sqlalchemy as sa
-from sqlalchemy.orm import (Query, backref, declarative_base, relationship,
-                            scoped_session, sessionmaker)
+from sqlalchemy.orm import (
+    Query,
+    backref,
+    declarative_base,
+    relationship,
+    scoped_session,
+    sessionmaker,
+)
 
 
 def orjson_serializer(obj):

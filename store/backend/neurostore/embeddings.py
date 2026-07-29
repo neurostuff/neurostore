@@ -2,8 +2,12 @@ import os
 from typing import Any, List, Optional
 
 import openai
-from tenacity import (retry, retry_if_exception_type, stop_after_attempt,
-                      wait_exponential)
+from tenacity import (
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
 
 
 # Retry up to 3 attempts with small backoff: 0.5s then up to 1.0s

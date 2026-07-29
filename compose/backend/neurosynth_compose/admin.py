@@ -50,16 +50,22 @@ def _model_view(model, category):
 
 def init_admin(app, database, config: Mapping[str, object]):
     """Mount Compose's retained admin model coverage at ``/admin``."""
-    from neurosynth_compose.models import (Annotation, MetaAnalysis,
-                                           MetaAnalysisResult,
-                                           NeurostoreAnalysis,
-                                           NeurostoreAnnotation,
-                                           NeurostoreStudy, NeurostoreStudyset,
-                                           NeurovaultCollection,
-                                           NeurovaultFile, Project,
-                                           Specification, Studyset, User)
-    from neurosynth_compose.models.analysis import (Condition,
-                                                    SpecificationCondition)
+    from neurosynth_compose.models import (
+        Annotation,
+        MetaAnalysis,
+        MetaAnalysisResult,
+        NeurostoreAnalysis,
+        NeurostoreAnnotation,
+        NeurostoreStudy,
+        NeurostoreStudyset,
+        NeurovaultCollection,
+        NeurovaultFile,
+        Project,
+        Specification,
+        Studyset,
+        User,
+    )
+    from neurosynth_compose.models.analysis import Condition, SpecificationCondition
     from neurosynth_compose.models.auth import Role
 
     admin = Admin(

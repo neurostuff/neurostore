@@ -4,8 +4,11 @@ from connexion import request
 
 from neurostore.exceptions.utils.error_helpers import abort_not_found
 from neurostore.services.neurostore_studyset_releases import (
-    list_release_manifests, load_release_manifest, release_archive_path,
-    release_root)
+    list_release_manifests,
+    load_release_manifest,
+    release_archive_path,
+    release_root,
+)
 
 INTERNAL_RELEASE_URI_PREFIX = "/_protected/neurostore-studyset-releases"
 

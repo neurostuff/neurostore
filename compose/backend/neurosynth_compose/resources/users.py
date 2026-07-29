@@ -2,8 +2,7 @@ import connexion
 from connexion import request
 from sqlalchemy import select
 
-from neurosynth_compose.asgi_requests import (parse_request_data,
-                                              raise_http_error)
+from neurosynth_compose.asgi_requests import parse_request_data, raise_http_error
 from neurosynth_compose.database import db
 from neurosynth_compose.models.auth import User
 from neurosynth_compose.resources.common import make_json_response

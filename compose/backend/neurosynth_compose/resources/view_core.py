@@ -8,13 +8,18 @@ from marshmallow.exceptions import ValidationError
 from sqlalchemy import func, select
 from webargs import fields
 
-from neurosynth_compose.asgi_requests import (parse_request_data,
-                                              raise_http_error, read_json)
+from neurosynth_compose.asgi_requests import (
+    parse_request_data,
+    raise_http_error,
+    read_json,
+)
 from neurosynth_compose.database import commit_session, db
-from neurosynth_compose.resources.common import (LIST_USER_ARGS,
-                                                 get_current_user,
-                                                 is_user_admin,
-                                                 make_json_response)
+from neurosynth_compose.resources.common import (
+    LIST_USER_ARGS,
+    get_current_user,
+    is_user_admin,
+    make_json_response,
+)
 from neurosynth_compose.resources.mutation_core import execute_mutation
 from neurosynth_compose.resources.singular import singularize
 

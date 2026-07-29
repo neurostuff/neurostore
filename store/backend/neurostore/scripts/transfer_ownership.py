@@ -4,9 +4,19 @@ from sqlalchemy import func, inspect, select, text, update
 
 from neurostore.database import db
 from neurostore.models.auth import User
-from neurostore.models.data import (Analysis, Annotation, AnnotationAnalysis,
-                                    BaseStudy, Condition, Image, Point,
-                                    PointValue, Study, Studyset, Table)
+from neurostore.models.data import (
+    Analysis,
+    Annotation,
+    AnnotationAnalysis,
+    BaseStudy,
+    Condition,
+    Image,
+    Point,
+    PointValue,
+    Study,
+    Studyset,
+    Table,
+)
 
 
 class OwnershipTransferError(ValueError):

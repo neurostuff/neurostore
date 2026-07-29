@@ -4,7 +4,9 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from neurosynth_compose.models.analysis import (  # noqa: F401
-    NeurostoreAnnotation, SnapshotAnnotation)
+    NeurostoreAnnotation,
+    SnapshotAnnotation,
+)
 from neurosynth_compose.resources.view_core import ObjectView, view_maker
 from neurosynth_compose.schemas import NeurostoreAnnotationSchema  # noqa: F401
 

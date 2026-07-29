@@ -9,16 +9,20 @@ from sqlalchemy.orm import selectinload
 
 from neurosynth_compose.asgi_requests import raise_http_error
 from neurosynth_compose.database import commit_session, db
-from neurosynth_compose.models.analysis import (MetaAnalysis,
-                                                NeurostoreAnnotation,
-                                                NeurostoreStudy,
-                                                NeurostoreStudyset, Project,
-                                                Specification,
-                                                SpecificationCondition)
+from neurosynth_compose.models.analysis import (
+    MetaAnalysis,
+    NeurostoreAnnotation,
+    NeurostoreStudy,
+    NeurostoreStudyset,
+    Project,
+    Specification,
+    SpecificationCondition,
+)
 from neurosynth_compose.resources.common import create_user, get_current_user
 from neurosynth_compose.resources.neurostore import neurostore_session
-from neurosynth_compose.resources.resource_services import \
-    create_or_update_neurostore_study
+from neurosynth_compose.resources.resource_services import (
+    create_or_update_neurostore_study,
+)
 
 
 class ProjectCloneService:

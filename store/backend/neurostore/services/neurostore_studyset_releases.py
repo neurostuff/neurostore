@@ -16,11 +16,23 @@ from sqlalchemy.orm import load_only, selectinload
 
 from neurostore.database import db
 from neurostore.map_types import map_type_label
-from neurostore.models import (Analysis, AnalysisConditions, Annotation,
-                               AnnotationAnalysis, BaseStudy, Condition, Image,
-                               Pipeline, PipelineConfig, PipelineStudyResult,
-                               Point, PointValue, Study, Studyset,
-                               StudysetStudy)
+from neurostore.models import (
+    Analysis,
+    AnalysisConditions,
+    Annotation,
+    AnnotationAnalysis,
+    BaseStudy,
+    Condition,
+    Image,
+    Pipeline,
+    PipelineConfig,
+    PipelineStudyResult,
+    Point,
+    PointValue,
+    Study,
+    Studyset,
+    StudysetStudy,
+)
 from neurostore.models.data import generate_id
 from neurostore.schemas.pipeline import PipelineStudyResultSchema
 

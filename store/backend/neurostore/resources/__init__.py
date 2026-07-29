@@ -1,11 +1,14 @@
 from neurostore.resources import data_views
 from neurostore.resources.data import *  # noqa: F401,F403
-from neurostore.resources.neurostore_studyset_releases import \
-    NeurostoreStudysetReleasesView
-from neurostore.resources.pipeline import (PipelineConfigsView,
-                                           PipelineEmbeddingsView,
-                                           PipelineStudyResultsView,
-                                           PipelinesView)
+from neurostore.resources.neurostore_studyset_releases import (
+    NeurostoreStudysetReleasesView,
+)
+from neurostore.resources.pipeline import (
+    PipelineConfigsView,
+    PipelineEmbeddingsView,
+    PipelineStudyResultsView,
+    PipelinesView,
+)
 from neurostore.resources.users import UsersView
 
 __all__ = [

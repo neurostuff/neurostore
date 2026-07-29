@@ -17,8 +17,13 @@ except Exception:  # pragma: no cover - numpy may not be installed in test env
     np = None  # type: ignore
 
 from neurostore.database import db
-from neurostore.models import (BaseStudy, Pipeline, PipelineConfig,
-                               PipelineEmbedding, PipelineStudyResult)
+from neurostore.models import (
+    BaseStudy,
+    Pipeline,
+    PipelineConfig,
+    PipelineEmbedding,
+    PipelineStudyResult,
+)
 from neurostore.models.data import generate_id
 
 

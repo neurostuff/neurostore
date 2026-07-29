@@ -3,8 +3,20 @@
 import secrets
 
 import shortuuid
-from sqlalchemy import (JSON, Boolean, CheckConstraint, Column, DateTime,
-                        Float, ForeignKey, Index, Integer, Table, Text, event)
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    CheckConstraint,
+    Column,
+    DateTime,
+    Float,
+    ForeignKey,
+    Index,
+    Integer,
+    Table,
+    Text,
+    event,
+)
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.orm import backref, relationship
