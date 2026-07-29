@@ -25,7 +25,7 @@ This checklist records the accepted follow-up work from PR #1627 review.
 - [x] Require p95 in benchmark comparison inputs; do not substitute median latency.
 - [x] Verify CORS headers across successful, empty, validation, authentication,
   not-found, and rate-limit responses.
-- [x] Preserve the existing JSON database type for `Specification.filter` and add
-  a regression test for its mapping and round trip.
+- [x] Keep `Specification.filter` as a text column and add a regression test for
+  its mapping and round trip.
 - [x] Run targeted Store and Compose regression tests, lint, migration tests, and
   benchmark comparison tests.
