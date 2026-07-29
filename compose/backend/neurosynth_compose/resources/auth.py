@@ -3,7 +3,6 @@ from collections.abc import Mapping
 from urllib.request import urlopen
 
 import anyio
-from connexion import request as connexion_request
 from connexion.exceptions import OAuthProblem
 from connexion.lifecycle import ConnexionResponse
 from connexion.security import NO_VALUE
@@ -74,10 +73,14 @@ def _decode_token(token, settings: Mapping[str, object]):
     raise _oauth_problem("Unable to find appropriate key")
 
 
-async def decode_token(token, *, settings: Mapping[str, object] | None = None):
+async def decode_token(
+    token, request=None, *, settings: Mapping[str, object] | None = None
+):
     """Decode a bearer token without blocking Connexion's ASGI event loop."""
     if settings is None:
-        settings = connexion_request.state.settings
+        if request is None:
+            raise RuntimeError("decode_token requires a request or settings")
+        settings = request.state.settings
     return await anyio.to_thread.run_sync(_decode_token, token, settings)
 
 
