@@ -9,7 +9,7 @@ pytestmark = pytest.mark.anyio
 def _client(app):
     return httpx.AsyncClient(
         transport=httpx.ASGITransport(app=app, raise_app_exceptions=False),
-        base_url="http://testserver",
+        base_url="https://testserver",
         follow_redirects=True,
     )
 
@@ -40,13 +40,14 @@ async def test_app_preserves_protected_operation_auth_errors():
     assert response.headers["Access-Control-Allow-Origin"] == "https://client.example"
 
 
-async def test_async_admin_requires_the_configured_username_and_password(monkeypatch):
+async def test_admin_requires_the_configured_username_and_password(monkeypatch):
     from neurostore.config import DockerTestConfig
 
     monkeypatch.setattr(DockerTestConfig, "ADMIN_USERNAME", "operator")
     monkeypatch.setattr(DockerTestConfig, "ADMIN_PASSWORD", "secret")
 
     async with _client(create_asgi_app()) as client:
+        login_page = await client.get("/admin/login")
         unauthenticated = await client.get("/admin/", follow_redirects=False)
         authenticated = await client.post(
             "/admin/login",
@@ -57,7 +58,10 @@ async def test_async_admin_requires_the_configured_username_and_password(monkeyp
 
     assert unauthenticated.status_code == 302
     assert unauthenticated.headers["location"].endswith("/admin/login")
+    assert 'action="https://testserver/admin/login"' in login_page.text
     assert authenticated.status_code == 302
+    assert "secure" in authenticated.headers["set-cookie"].lower()
+    assert "samesite=lax" in authenticated.headers["set-cookie"].lower()
     assert dashboard.status_code == 200
     assert "NeuroStore Admin" in dashboard.text
 
