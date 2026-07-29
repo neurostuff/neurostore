@@ -19,7 +19,7 @@ def _assert_json_error_with_cors(response, origin=None):
 async def asgi_error_client(app):
     async with httpx.AsyncClient(
         transport=httpx.ASGITransport(app=app.asgi_app, raise_app_exceptions=False),
-        base_url="http://testserver",
+        base_url="https://testserver",
     ) as client:
         yield client
 
@@ -80,3 +80,10 @@ async def test_admin_unauthenticated_request_redirects_to_login_with_cors(
     assert response.headers["Access-Control-Allow-Origin"] == "https://client.example"
     assert response.headers["Access-Control-Allow-Credentials"] == "true"
     assert "Origin" in response.headers["Vary"]
+
+
+async def test_admin_login_form_uses_https(asgi_error_client):
+    response = await asgi_error_client.get("/admin/login")
+
+    assert response.status_code == 200
+    assert 'action="https://testserver/admin/login"' in response.text
