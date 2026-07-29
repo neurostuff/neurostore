@@ -53,6 +53,8 @@ class Client(object):
             elif content_type.startswith("multipart/form-data"):
                 kwargs["files"] = data
                 kwargs["headers"].pop("Content-Type", None)
+            elif isinstance(data, (bytes, bytearray, memoryview, str)):
+                kwargs["content"] = data
             else:
                 kwargs["data"] = data
         request_function = getattr(self.client, request, None)

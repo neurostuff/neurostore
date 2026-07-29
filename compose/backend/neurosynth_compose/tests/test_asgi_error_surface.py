@@ -1,6 +1,9 @@
 import pytest
+import httpx
 from jose.jwt import encode
-from starlette.testclient import TestClient
+
+
+pytestmark = pytest.mark.anyio
 
 
 def _assert_json_error_with_cors(response, origin=None):
@@ -13,16 +16,18 @@ def _assert_json_error_with_cors(response, origin=None):
 
 
 @pytest.fixture(scope="module")
-def asgi_error_client(app):
-    client = TestClient(app.asgi_app, raise_server_exceptions=False)
-    try:
+async def asgi_error_client(app):
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app.asgi_app, raise_app_exceptions=False),
+        base_url="http://testserver",
+    ) as client:
         yield client
-    finally:
-        client.close()
 
 
-def test_connexion_parameter_validation_error_is_handled_by_asgi(asgi_error_client):
-    response = asgi_error_client.get("/api/meta-analyses?page_size=not-an-int")
+async def test_connexion_parameter_validation_error_is_handled_by_asgi(
+    asgi_error_client,
+):
+    response = await asgi_error_client.get("/api/meta-analyses?page_size=not-an-int")
 
     assert response.status_code == 400
     _assert_json_error_with_cors(response)
@@ -31,12 +36,12 @@ def test_connexion_parameter_validation_error_is_handled_by_asgi(asgi_error_clie
     assert body["title"] == "Bad Request"
 
 
-def test_connexion_body_validation_error_is_handled_by_asgi(
+async def test_connexion_body_validation_error_is_handled_by_asgi(
     asgi_error_client, mock_add_users
 ):
     token = encode({"sub": "user1-id"}, "abc", algorithm="HS256")
 
-    response = asgi_error_client.post(
+    response = await asgi_error_client.post(
         "/api/meta-analyses",
         json={"name": 123},
         headers={"Authorization": f"Bearer {token}"},
@@ -49,8 +54,8 @@ def test_connexion_body_validation_error_is_handled_by_asgi(
     assert "Not a valid string" in body["title"]
 
 
-def test_not_found_errors_are_handled_by_asgi(asgi_error_client):
-    response = asgi_error_client.get(
+async def test_not_found_errors_are_handled_by_asgi(asgi_error_client):
+    response = await asgi_error_client.get(
         "/api/not-a-real-route",
         headers={"Origin": "https://client.example"},
     )
@@ -61,8 +66,10 @@ def test_not_found_errors_are_handled_by_asgi(asgi_error_client):
     assert body["status"] == 404
 
 
-def test_admin_unauthenticated_request_redirects_to_login_with_cors(asgi_error_client):
-    response = asgi_error_client.get(
+async def test_admin_unauthenticated_request_redirects_to_login_with_cors(
+    asgi_error_client,
+):
+    response = await asgi_error_client.get(
         "/admin/",
         headers={"Origin": "https://client.example"},
         follow_redirects=False,

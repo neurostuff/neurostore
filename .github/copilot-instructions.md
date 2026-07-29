@@ -39,12 +39,14 @@ Create and migrate databases for both services:
 - `.env` selects the environment with `APP_ENV`; on a fresh volume, the matching default database is created automatically (`store_test_db` for development/testing/docker_test, `neurostore` for staging/production)
 - `docker compose exec -T neurostore manage db upgrade` -- takes 5-10 seconds
 - `docker compose exec -T neurostore manage ingest-neurosynth --max-rows 100` -- takes 5-10 seconds
+- `docker compose exec -T neurostore manage shell` -- opens IPython with the ASGI app and database
 - The tracked store migrations create `pgvector` automatically. If you are recovering a partially migrated database, `docker compose exec -T store-pgsql17 psql -U postgres -d store_test_db -c "CREATE EXTENSION IF NOT EXISTS vector;"` is still a safe fallback.
 
 #### Compose Database
 
 - `.env` selects the environment with `APP_ENV`; on a fresh volume, the matching default database is created automatically (`compose_test_db` for development/testing/docker_test, `compose` for staging/production)
 - `docker compose exec -T compose manage db upgrade` -- takes 5-10 seconds
+- `docker compose exec -T compose manage shell` -- opens IPython with the ASGI app and database
 
 ### Frontend Development
 

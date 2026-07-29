@@ -113,6 +113,10 @@ class Database:
             raise RuntimeError("Database has not been configured.")
         return self._engine
 
+    @property
+    def is_configured(self):
+        return self._engine is not None
+
     def configure(self, config: Mapping[str, object]):
         options = {
             "future": True,

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import pathlib
-from datetime import datetime
+from datetime import datetime, timezone
 from operator import itemgetter
 
 from sqlalchemy import select
@@ -227,7 +227,7 @@ def create_neurovault_collection(nv_collection, *, settings, logger, public_base
             base_name = base_name[:remaining].rstrip() or "Untitled"
         return base_name + tail
 
-    created_at = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+    created_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
     base_name = getattr(meta_analysis, "name", None) or "Untitled"
     max_length = int(settings["NEUROVAULT_COLLECTION_NAME_MAX_LEN"])
     max_suffix = int(settings["NEUROVAULT_COLLECTION_CREATE_MAX_SUFFIX"])

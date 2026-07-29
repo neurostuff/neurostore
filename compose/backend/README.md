@@ -2,12 +2,12 @@
 
 - [`compose/backend/`](compose/backend): Contains all neurosynth_compose backend code and configuration.
   - [`neurosynth_compose/`](compose/backend/neurosynth_compose): Python package source code
-  - [`manage.py`](compose/backend/manage.py), [`pyproject.toml`](compose/backend/pyproject.toml), [`setup.cfg`](compose/backend/setup.cfg), [`MANIFEST.in`](compose/backend/MANIFEST.in), [`README.md`](compose/backend/README.md): Backend config and docs
+  - [`pyproject.toml`](compose/backend/pyproject.toml), [`setup.cfg`](compose/backend/setup.cfg), [`MANIFEST.in`](compose/backend/MANIFEST.in), [`README.md`](compose/backend/README.md): Backend config and docs
 
-Other unrelated files (neurosynth-frontend, nginx, postgres, scripts, docker-compose files) remain at the top level of `compose/`.
+Other unrelated files (neurosynth-frontend, nginx, postgres, scripts, docker compose files) remain at the top level of `compose/`.
 # neurosynth-compose
 
-Requirements: Docker and docker-compose.
+Requirements: Docker and docker compose.
 
 ## Configuration
 First, set up the main environment variables in `.env` (see: `.env.example`).
@@ -24,8 +24,8 @@ matching service config and database name automatically.
 Create the network, build the containers, and start services using the development configuration:
 
   docker network create ${SHARED_PROXY_NETWORK:-nginx-proxy}  # if this does not already exist
-    docker-compose build
-    docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+    docker compose build
+    docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
 
 The server should now be running at http://localhost:81
 
@@ -39,7 +39,7 @@ environment, recreate the volume or create `compose_test_db` manually before mig
 
 Next, apply the existing migrations (they are the canonical schema definition):
 
-    docker-compose exec compose manage db upgrade
+    docker compose exec compose manage db upgrade
 
 Note: the stack now resolves the database from `APP_ENV` automatically.
 Development, testing, and `docker_test` use `compose_test_db`; staging and
@@ -52,12 +52,12 @@ resolution as the rest of the stack.
 ## Maintaining docker image and db
 If you make a change to compose, you should be able to simply restart the server.
 
-    docker-compose restart compose
+    docker compose restart compose
 
 If you change any models, generate a new Alembic migration and migrate the database (commit the generated revision file so it becomes the new source of truth):
 
-    docker-compose exec compose manage db migrate
-    docker-compose exec compose manage db upgrade
+    docker compose exec compose manage db migrate
+    docker compose exec compose manage db upgrade
 
 
 ## Database migrations
@@ -69,7 +69,7 @@ The migrations stored in `backend/migrations` are the **only** source of truth f
 Any time you start the backend or pull the latest changes, bring the database to the expected state with:
 
 ```sh
-docker-compose exec compose manage db upgrade
+docker compose exec compose manage db upgrade
 ```
 
 `upgrade` is idempotent, so rerunning it is harmless; it only applies migrations that have not been run yet.
@@ -77,12 +77,24 @@ docker-compose exec compose manage db upgrade
 For a deployment rollback within the current compatible migration window, use:
 
 ```sh
-docker-compose exec compose manage db downgrade --revision -1
+docker compose exec compose manage db downgrade --revision -1
 ```
 
 Migrations must follow expand/contract: add compatible schema first, deploy
 read-compatible code, backfill, then remove obsolete schema only in a later
 release. CI verifies the current-head downgrade/upgrade round trip.
+
+## Interactive ASGI shell
+
+Open an IPython session with the initialized ASGI application and database:
+
+```sh
+docker compose exec compose manage shell
+```
+
+The shell exposes `app`/`asgi_app`, `settings`, `db`, `session`, `models`, and
+`logger`. Starlette has no Flask-style application context; use these explicit
+objects, or exercise HTTP routes with an ASGI test client.
 
 ### Resetting the database when switching branches
 

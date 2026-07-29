@@ -158,8 +158,3 @@ def create_asgi_app(settings: Mapping[str, object] | None = None):
         _logger,
     )
     return app
-
-
-def create_app(settings: Mapping[str, object] | None = None):
-    """Compatibility alias returning the ASGI application."""
-    return create_asgi_app(settings)

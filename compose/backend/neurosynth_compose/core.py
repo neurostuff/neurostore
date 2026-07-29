@@ -1,6 +1,7 @@
 from celery import Celery, Task
+from celery.signals import worker_process_init
 
-from neurosynth_compose.database import db
+from neurosynth_compose.database import db, init_db
 from neurosynth_compose.settings import load_settings
 
 
@@ -10,6 +11,7 @@ class DatabaseTask(Task):
     abstract = True
 
     def __call__(self, *args, **kwargs):
+        initialize_worker_runtime()
         try:
             return self.run(*args, **kwargs)
         finally:
@@ -23,6 +25,22 @@ def create_celery_app(settings=None):
     celery.conf.update(settings.get("CELERY_CONFIG", {}))
     celery.Task = DatabaseTask
     return celery
+
+
+def initialize_worker_runtime(settings=None):
+    """Configure the database in a Celery worker process when needed."""
+    if db.is_configured:
+        return settings
+
+    settings = load_settings() if settings is None else settings
+    init_db(settings)
+    return settings
+
+
+@worker_process_init.connect
+def _initialize_worker_process(**_kwargs):
+    """Initialize pooled database resources after Celery forks a worker."""
+    initialize_worker_runtime()
 
 
 celery_app = create_celery_app()

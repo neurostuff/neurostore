@@ -16,6 +16,7 @@ dependencies = [
     "celery~=5.0",
     "connexion[swagger-ui,uvicorn]==3.3.0",
     "gunicorn>=25,<27",
+    "httpx2~=2.7",
     "uvicorn-worker~=0.4",
     "ipython~=9.6",
     "itsdangerous~=2.2",
