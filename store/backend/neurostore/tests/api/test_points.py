@@ -255,6 +255,7 @@ async def test_put_points_with_null_coordinates(async_auth_client, session):
     assert resp.status_code == 200
     assert resp.json()["coordinates"] == [None, None, None]
 
+    session.expire_all()
     db_point = Point.query.filter_by(id=point_id).first()
     assert db_point.coordinates == [None, None, None]
 

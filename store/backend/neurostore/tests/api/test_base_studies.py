@@ -1784,7 +1784,7 @@ def test_metadata_and_flag_workers_do_not_deadlock_on_same_base_study(
     flag_has_outbox_lock = threading.Event()
     results = {}
 
-    def _patched_enrich(target_id):
+    def _patched_enrich(target_id, **_kwargs):
         metadata_service.db.session.execute(sa.text("SET deadlock_timeout = '100ms'"))
         locked_base_study = metadata_service.db.session.scalar(
             sa.select(BaseStudy)
@@ -1830,7 +1830,14 @@ def test_metadata_and_flag_workers_do_not_deadlock_on_same_base_study(
 
     metadata_thread = threading.Thread(
         target=_run,
-        args=("metadata", metadata_service.process_base_study_metadata_outbox_batch),
+        args=(
+            "metadata",
+            lambda *, batch_size: metadata_service.process_base_study_metadata_outbox_batch(
+                batch_size=batch_size,
+                settings=app.config,
+                logger=app.logger,
+            ),
+        ),
     )
     flag_thread = threading.Thread(
         target=_run,
@@ -2625,11 +2632,13 @@ def test_metadata_requests_throttle_semantic_scholar_by_configured_rps(
     )
 
     metadata_service._request_with_retry(
+        app.config,
         "POST",
         "https://api.semanticscholar.org/graph/v1/paper/batch",
         headers={"x-api-key": "semantic-key"},
     )
     metadata_service._request_with_retry(
+        app.config,
         "POST",
         "https://api.semanticscholar.org/graph/v1/paper/batch",
         headers={"x-api-key": "semantic-key"},
@@ -2671,11 +2680,13 @@ def test_metadata_requests_throttle_pubmed_by_key_presence(app, monkeypatch):
     )
 
     metadata_service._request_with_retry(
+        app.config,
         "GET",
         "https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/",
         params={"api_key": "pubmed-key"},
     )
     metadata_service._request_with_retry(
+        app.config,
         "GET",
         "https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/",
         params={"api_key": "pubmed-key"},
@@ -2683,11 +2694,13 @@ def test_metadata_requests_throttle_pubmed_by_key_presence(app, monkeypatch):
     metadata_service._reset_provider_rate_limits()
     fake_clock.now = 300.0
     metadata_service._request_with_retry(
+        app.config,
         "GET",
         "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi",
         params={},
     )
     metadata_service._request_with_retry(
+        app.config,
         "GET",
         "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi",
         params={},
