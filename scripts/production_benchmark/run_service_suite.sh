@@ -320,7 +320,7 @@ run_step "Apply database migrations" \
   docker compose run --rm -T \
   "${RUN_ENV_ARGS[@]}" \
   "${BENCH_SERVICE}" \
-  bash -lc "if command -v ${SERVICE_CLI} >/dev/null 2>&1; then ${SERVICE_CLI} db upgrade --revision heads; else flask --app manage:app db upgrade heads; fi"
+  bash -lc "${SERVICE_CLI} db upgrade --revision heads"
 
 run_step "Run benchmark module" \
   docker compose run --rm -T \

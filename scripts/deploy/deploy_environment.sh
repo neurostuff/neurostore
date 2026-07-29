@@ -555,7 +555,7 @@ deploy_compose_staging() {
     compose_worker \
     compose-pghero \
     compose-grafana
-  compose_for "${service_root}" "${project}" exec -T compose compose db upgrade --revision heads
+  compose_for "${service_root}" "${project}" exec -T compose manage db upgrade --revision heads
   # Frontend assets remain host-built on the deployment host because env files are host-managed.
   compose_for "${service_root}" "${project}" exec -T compose \
     bash -lc "cd /compose/neurosynth-frontend && npm install && npm run build:${FRONTEND_MODE}"
@@ -603,7 +603,7 @@ deploy_compose_dev() {
   ensure_compose_dev_schema_bootstrappable "${service_root}" "${project}"
   compose_for "${service_root}" "${project}" up -d --no-build compose compose_redis compose_worker compose-pghero compose-grafana
   compose_for "${service_root}" "${project}" up -d --no-build compose_nginx
-  compose_for "${service_root}" "${project}" exec -T compose compose db upgrade --revision heads
+  compose_for "${service_root}" "${project}" exec -T compose manage db upgrade --revision heads
   # Frontend assets remain host-built on the deployment host because env files are host-managed.
   compose_for "${service_root}" "${project}" exec -T compose \
     bash -lc "cd /compose/neurosynth-frontend && npm install && npm run build:${FRONTEND_MODE}"

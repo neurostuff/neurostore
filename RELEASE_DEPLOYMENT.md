@@ -215,7 +215,7 @@ Start Store in order:
 cd store
 docker compose stop store_nginx neurostore store_outbox_worker store_metadata_outbox_worker store_release_worker store-pghero store-grafana || true
 docker compose up -d store-pgsql17 store_redis
-docker compose run --rm --no-deps neurostore flask db upgrade heads
+docker compose run --rm --no-deps neurostore manage db upgrade --revision heads
 docker compose up -d --no-build neurostore store_outbox_worker store_metadata_outbox_worker store-pghero store-grafana
 docker compose exec -T store_redis redis-cli FLUSHDB
 docker compose up -d --no-build store_release_worker
@@ -228,7 +228,7 @@ Start Compose in order:
 cd ../compose
 docker compose stop compose_nginx compose compose_worker compose-pghero compose-grafana || true
 docker compose up -d compose-pgsql17 compose_redis
-docker compose run --rm --no-deps compose flask db upgrade heads
+docker compose run --rm --no-deps compose manage db upgrade --revision heads
 docker compose up -d --no-build compose_worker compose compose-pghero compose-grafana
 docker compose exec -T compose bash -lc "cd /compose/neurosynth-frontend && npm install && npm run build:prod"
 docker compose up -d --no-build compose_nginx
@@ -264,10 +264,10 @@ Check database migration heads:
 
 ```bash
 cd store
-docker compose exec -T neurostore flask db current
+docker compose exec -T neurostore manage db current
 
 cd ../compose
-docker compose exec -T compose flask db current
+docker compose exec -T compose manage db current
 ```
 
 Smoke check APIs. Replace the hostnames with the production hostnames:
