@@ -3,7 +3,11 @@ from __future__ import annotations
 import json
 from collections import defaultdict
 from functools import lru_cache
+import pathlib
 
+import anyio
+from celery import group
+import connexion
 from connexion import request
 from marshmallow.exceptions import ValidationError
 from sqlalchemy import select
@@ -13,15 +17,15 @@ from neurosynth_compose.asgi_requests import (parse_request_data,
                                               raise_http_error)
 from neurosynth_compose.database import commit_session, db
 # Imported for dynamic resolution by `view_maker` on *View classes.
-from neurosynth_compose.models.analysis import NeurostoreStudy  # noqa: F401
-from neurosynth_compose.models.analysis import NeurovaultFile  # noqa: F401
-from neurosynth_compose.models.analysis import SnapshotAnnotation  # noqa: F401
 from neurosynth_compose.models.analysis import (Condition, MetaAnalysis,
                                                 MetaAnalysisResult,
                                                 NeurostoreAnalysis,
                                                 NeurostoreAnnotation,
+                                                NeurovaultFile,  # noqa: F401
+                                                NeurostoreStudy,  # noqa: F401
                                                 NeurostoreStudyset,
                                                 NeurovaultCollection, Project,
+                                                SnapshotAnnotation,
                                                 SnapshotStudyset,
                                                 Specification,
                                                 SpecificationCondition, Tag)
@@ -36,6 +40,8 @@ from neurosynth_compose.resources.resource_services import (
     create_neurovault_collection, ensure_canonical_annotation,
     ensure_canonical_studyset, parse_upload_files,
     select_cluster_table_for_specification)
+from neurosynth_compose.resources.tasks import (
+            create_or_update_neurostore_analysis, file_upload_neurovault)
 from neurosynth_compose.resources.view_core import (ListView, ObjectView,
                                                     view_maker)
 # Imported for dynamic resolution by `view_maker` on *View classes.
@@ -62,8 +68,7 @@ class _PreloadedFile:
         self._content = content
 
     def save(self, path) -> None:
-        import pathlib
-
+        """Write the preloaded content to the given path."""
         pathlib.Path(path).write_bytes(self._content)
 
 
@@ -599,8 +604,6 @@ class MetaAnalysisResultsView(ObjectView, ListView):
         return MetaAnalysisResultSchema(many=True).dump(records)
 
     def post(self):
-        import connexion
-
         try:
             data = parse_request_data(self.__class__._schema, request)
         except ValidationError as exc:
@@ -760,9 +763,6 @@ class MetaAnalysisResultsView(ObjectView, ListView):
         return make_json_response(serialize_meta_analysis_result(record))
 
     async def put(self, id):
-        import anyio
-        import connexion
-
         # Read all async request data at the ASGI boundary before dispatching
         # to the synchronous worker thread.  connexion.request proxies are
         # not safe to call from a worker thread without anyio portals; reading
@@ -831,11 +831,6 @@ class MetaAnalysisResultsView(ObjectView, ListView):
         logger,
         public_base_url,
     ):
-        from celery import group
-
-        from neurosynth_compose.resources.tasks import (
-            create_or_update_neurostore_analysis, file_upload_neurovault)
-
         upload_meta_id = token_info.get("meta_analysis_id")
 
         result = db.session.execute(
