@@ -14,8 +14,8 @@ from neurosynth_compose.models import (
 )
 
 
-@celery_app.task(name="neurovault.upload", bind=True)
-def file_upload_neurovault(task, fpath, id):
+@celery_app.task(name="neurovault.upload")
+def file_upload_neurovault(fpath, id, neurovault_access_token):
     from pynv import Client
 
     try:
@@ -29,8 +29,7 @@ def file_upload_neurovault(task, fpath, id):
         ).scalar_one()
 
     # record = NeurovaultFile.query.filter_by(id=id).one()
-    settings = task.app.conf.SERVICE_SETTINGS
-    api = Client(access_token=settings["NEUROVAULT_ACCESS_TOKEN"])
+    api = Client(access_token=neurovault_access_token)
     fname = Path(fpath).name
 
     map_type = "Other"
@@ -94,9 +93,13 @@ def file_upload_neurovault(task, fpath, id):
         db.session.commit()
 
 
-@celery_app.task(name="neurostore.analysis_upload", bind=True)
+@celery_app.task(name="neurostore.analysis_upload")
 def create_or_update_neurostore_analysis(
-    task, ns_analysis_id, cluster_table, nv_collection_id, access_token
+    ns_analysis_id,
+    cluster_table,
+    nv_collection_id,
+    access_token,
+    service_settings,
 ):
     import pandas as pd
     from auth0.authentication.get_token import GetToken
@@ -104,7 +107,7 @@ def create_or_update_neurostore_analysis(
     from neurosynth_compose.resources.neurostore import neurostore_session
 
     try:
-        settings = task.app.conf.SERVICE_SETTINGS
+        settings = service_settings
         ns_analysis = db.session.execute(
             select(NeurostoreAnalysis).where(NeurostoreAnalysis.id == ns_analysis_id)
         ).scalar_one()

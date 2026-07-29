@@ -753,7 +753,12 @@ class MetaAnalysisResultsView(ObjectView, ListView):
                 db.session.add(record)
 
             nv_collection = NeurovaultCollection(result=record)
-            create_neurovault_collection(nv_collection)
+            create_neurovault_collection(
+                nv_collection,
+                settings=request.state.settings,
+                logger=request.state.logger,
+                public_base_url=str(request.base_url),
+            )
             existing = db.session.execute(
                 select(NeurovaultCollection).where(
                     NeurovaultCollection.collection_id == nv_collection.collection_id
@@ -814,12 +819,35 @@ class MetaAnalysisResultsView(ObjectView, ListView):
             json_body = {}
         authorization = connexion.request.headers.get("Authorization")
         token_info = connexion.context.request.context.get("token_info", {})
+        settings = connexion.request.state.settings
+        logger = connexion.request.state.logger
+        public_base_url = str(connexion.request.base_url)
 
         return await anyio.to_thread.run_sync(
-            self._put, id, preloaded, form_data, json_body, authorization, token_info
+            self._put,
+            id,
+            preloaded,
+            form_data,
+            json_body,
+            authorization,
+            token_info,
+            settings,
+            logger,
+            public_base_url,
         )
 
-    def _put(self, id, uploaded_files, form_data, json_body, authorization, token_info):
+    def _put(
+        self,
+        id,
+        uploaded_files,
+        form_data,
+        json_body,
+        authorization,
+        token_info,
+        settings,
+        logger,
+        public_base_url,
+    ):
         from celery import group
 
         from neurosynth_compose.resources.tasks import (
@@ -849,7 +877,15 @@ class MetaAnalysisResultsView(ObjectView, ListView):
                 stat_map_fnames,
                 cluster_table_fnames,
                 diagnostic_table_fnames,
-            ) = parse_upload_files(result, stat_maps, cluster_tables, diagnostic_tables)
+            ) = parse_upload_files(
+                result,
+                stat_maps,
+                cluster_tables,
+                diagnostic_tables,
+                settings=settings,
+                logger=logger,
+                public_base_url=public_base_url,
+            )
 
             if diagnostic_table_fnames:
                 with open(diagnostic_table_fnames[0], "r") as handle:
@@ -870,7 +906,11 @@ class MetaAnalysisResultsView(ObjectView, ListView):
                 commit_session()
 
             upload_tasks = [
-                file_upload_neurovault.s(str(path), record.id)
+                file_upload_neurovault.s(
+                    str(path),
+                    record.id,
+                    settings["NEUROVAULT_ACCESS_TOKEN"],
+                )
                 for path, record in stat_map_fnames.items()
             ]
             nv_upload_group = group(upload_tasks)
@@ -885,8 +925,22 @@ class MetaAnalysisResultsView(ObjectView, ListView):
                 ),
                 nv_collection_id=result.neurovault_collection.id,
                 access_token=authorization,
+                service_settings={
+                    key: settings[key]
+                    for key in (
+                        "AUTH0_BASE_URL",
+                        "AUTH0_CLIENT_ID",
+                        "AUTH0_CLIENT_SECRET",
+                        "AUTH0_API_AUDIENCE",
+                        "NEUROSTORE_API_URL",
+                    )
+                },
             )
             _ = (nv_upload_group | neurostore_analysis_upload).delay()
+
+            # Eager Celery execution may release this synchronous session before
+            # the request continues. Reload the result before accessing relations.
+            result = db.session.get(self._model, id)
 
         # Also allow updating meta-analysis snapshots via PUT body or form fields.
         # json_body and form_data were pre-read at the async boundary in put().

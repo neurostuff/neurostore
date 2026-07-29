@@ -41,7 +41,8 @@ Test fixtures for bypassing authentication
 def mock_create_neurovault_collection():
     import itertools
 
-    def set_collection_id(collection):
+    def set_collection_id(collection, **kwargs):
+        del kwargs
         collection.collection_id = next(set_collection_id.counter)
         return None
 
@@ -159,7 +160,7 @@ class MockNeurostoreSession:
         return MockResponse({"metadata": {"test": "value"}})
 
 
-def mock_ns_session(access_token):
+def mock_ns_session(access_token, _neurostore_api_url):
     session = MockNeurostoreSession()
     if access_token:
         session.headers.update({"Authorization": access_token})

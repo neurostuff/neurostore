@@ -168,7 +168,8 @@ def _install_local_neurostore_stub():
     from neurosynth_compose.resources import resource_services
     from neurosynth_compose.resources.data_views import projects_view
 
-    def _stub_create_or_update_neurostore_study(ns_study):
+    def _stub_create_or_update_neurostore_study(ns_study, **kwargs):
+        del kwargs
         if not ns_study.neurostore_id:
             project_id = getattr(ns_study, "project_id", None) or "unknown"
             ns_study.neurostore_id = f"local-neurostore-study-{project_id}"

@@ -20,11 +20,10 @@ class DatabaseTask(Task):
 
 
 def create_celery_app(settings=None):
-    """Create a Celery application with its immutable worker settings attached."""
+    """Create the Celery application from explicit process settings."""
     settings = load_settings() if settings is None else settings
     celery = Celery("neurosynth_compose")
     celery.conf.update(settings.get("CELERY_CONFIG", {}))
-    celery.conf.update(SERVICE_SETTINGS=dict(settings))
     celery.Task = DatabaseTask
     return celery
 

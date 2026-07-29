@@ -9,7 +9,6 @@ from jose import jwt
 from sqlalchemy import select
 
 from neurosynth_compose.database import db
-from neurosynth_compose.dependencies import get_request_dependencies
 
 
 def _oauth_problem(detail):
@@ -33,7 +32,7 @@ async def asgi_oauth_problem_handler(request, exc):
 
 
 def decode_token(token):
-    config = get_request_dependencies(connexion_request).settings
+    config = connexion_request.state.settings
     jsonurl = urlopen(str(config["AUTH0_BASE_URL"]) + "/.well-known/jwks.json")
     jwks = json.loads(jsonurl.read())
     try:

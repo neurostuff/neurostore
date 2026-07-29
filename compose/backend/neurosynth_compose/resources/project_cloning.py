@@ -9,7 +9,6 @@ from sqlalchemy.orm import selectinload
 
 from neurosynth_compose.database import commit_session, db
 from neurosynth_compose.asgi_requests import raise_http_error
-from neurosynth_compose.dependencies import get_request_dependencies
 from neurosynth_compose.models.analysis import (
     NeurostoreAnnotation,
     MetaAnalysis,
@@ -27,6 +26,9 @@ from neurosynth_compose.resources.resource_services import (
 
 
 class ProjectCloneService:
+    def __init__(self, settings):
+        self.settings = settings
+
     def ensure_current_user(self):
         current_user = get_current_user()
         if current_user:
@@ -65,23 +67,21 @@ class ProjectCloneService:
         if not access_token:
             from auth0.authentication.get_token import GetToken
 
-            settings = get_request_dependencies(request).settings
-            domain = settings["AUTH0_BASE_URL"].lstrip("https://")
+            domain = self.settings["AUTH0_BASE_URL"].lstrip("https://")
             g_token = GetToken(
                 domain,
-                settings["AUTH0_CLIENT_ID"],
-                client_secret=settings["AUTH0_CLIENT_SECRET"],
+                self.settings["AUTH0_CLIENT_ID"],
+                client_secret=self.settings["AUTH0_CLIENT_SECRET"],
             )
             token_resp = g_token.client_credentials(
-                audience=settings["AUTH0_API_AUDIENCE"],
+                audience=self.settings["AUTH0_API_AUDIENCE"],
             )
             access_token = " ".join(
                 [token_resp["token_type"], token_resp["access_token"]]
             )
 
         ns_session = neurostore_session(
-            access_token,
-            get_request_dependencies(request).settings["NEUROSTORE_API_URL"],
+            access_token, self.settings["NEUROSTORE_API_URL"]
         )
         with db.session.no_autoflush:
             new_ss_ref_id, new_ann_ref_id = self._clone_references(
@@ -123,7 +123,11 @@ class ProjectCloneService:
             ns_study = NeurostoreStudy(project=cloned_project)
             db.session.add(ns_study)
             commit_session()
-            create_or_update_neurostore_study(ns_study)
+            create_or_update_neurostore_study(
+                ns_study,
+                settings=self.settings,
+                access_token=access_token,
+            )
             db.session.add(ns_study)
             commit_session()
 

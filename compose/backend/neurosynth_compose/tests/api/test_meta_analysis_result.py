@@ -26,9 +26,10 @@ def test_create_meta_analysis_result(session, db, app, auth_client, user_data):
     # project should be a draft before running
     assert meta_analysis.project.draft is True
     resp = _create_meta_analysis_result(auth_client, meta_analysis)
+    assert resp.status_code == 200
+    session.refresh(meta_analysis.project)
     # project should be not be a draft after running
     assert meta_analysis.project.draft is False
-    assert resp.status_code == 200
 
     # view the meta_analysis
     meta_resp = auth_client.get(f"/api/meta-analyses/{meta_analysis.id}")
@@ -285,7 +286,10 @@ def test_put_meta_analysis_result_with_celery(
     assert neurostore_analysis is not None, "NeurostoreAnalysis object not found"
     assert (
         neurostore_analysis.status == "OK"
-    ), f"NeurostoreAnalysis.status is '{neurostore_analysis.status}', expected 'OK'"
+    ), (
+        f"NeurostoreAnalysis.status is '{neurostore_analysis.status}', expected 'OK'; "
+        f"exception: {neurostore_analysis.exception}"
+    )
     # Further assertions can be added to validate Neurovault/Neurostore integration
 
     # PREP Files again

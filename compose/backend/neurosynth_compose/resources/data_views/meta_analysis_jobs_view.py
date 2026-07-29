@@ -11,7 +11,6 @@ from sqlalchemy import select
 
 from neurosynth_compose.database import db
 from neurosynth_compose.asgi_requests import raise_http_error, read_json
-from neurosynth_compose.dependencies import get_request_dependencies
 from neurosynth_compose.models import MetaAnalysis
 from neurosynth_compose.resources.common import (
     get_current_user,
@@ -39,7 +38,7 @@ class ComposeRunnerError(RuntimeError):
 
 def get_job_store() -> Redis:
     """Return a Redis client configured from the Celery result backend."""
-    redis_url = get_request_dependencies(request).settings.get("CELERY_RESULT_BACKEND")
+    redis_url = request.state.settings.get("CELERY_RESULT_BACKEND")
     if not redis_url:
         raise JobStoreError("CELERY_RESULT_BACKEND is not configured.")
 
@@ -183,7 +182,7 @@ def submit_job():
             ),
         )
 
-    config = get_request_dependencies(request).settings
+    config = request.state.settings
     submit_url = config.get("COMPOSE_RUNNER_SUBMIT_URL")
     environment = config.get("ENV", "production")
 
@@ -244,7 +243,7 @@ def get_job_status(job_id: str):
     if cached_job is None:
         raise_http_error(404, "job not found")
 
-    config = get_request_dependencies(request).settings
+    config = request.state.settings
     status_url = config.get("COMPOSE_RUNNER_STATUS_URL")
     logs_url = config.get("COMPOSE_RUNNER_LOGS_URL")
 

@@ -7,7 +7,6 @@ from connexion import request
 from sqlalchemy.orm import selectinload
 from webargs import fields
 
-from neurosynth_compose.dependencies import get_request_dependencies
 from neurosynth_compose.models.auth import User
 
 _UNSET = object()
@@ -53,9 +52,7 @@ def create_user():
 
     try:
         profile_info = Users(
-            get_request_dependencies(request)
-            .settings["AUTH0_BASE_URL"]
-            .removeprefix("https://")
+            request.state.settings["AUTH0_BASE_URL"].removeprefix("https://")
         ).userinfo(access_token=token)
     except Auth0Error:
         profile_info = {}

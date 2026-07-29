@@ -57,8 +57,8 @@ class _DatabaseSessionMiddleware:
             await self.app(scope, receive, send)
 
 
-class _RequestDependenciesMiddleware:
-    """Attach immutable dependencies to each native ASGI request scope."""
+class _SettingsMiddleware:
+    """Expose immutable process settings through the standard ASGI request state."""
 
     def __init__(self, app, settings, logger):
         self.app = app
@@ -67,11 +67,9 @@ class _RequestDependenciesMiddleware:
 
     async def __call__(self, scope, receive, send):
         if scope["type"] == "http":
-            from neurosynth_compose.dependencies import RequestDependencies
-
-            scope.setdefault("state", {})["compose.dependencies"] = RequestDependencies(
-                self.settings, self.logger
-            )
+            state = scope.setdefault("state", {})
+            state["settings"] = self.settings
+            state["logger"] = self.logger
         await self.app(scope, receive, send)
 
 
@@ -86,8 +84,8 @@ class _OrjsonModule:
         return orjson.loads(value)
 
 
-def initialize_runtime(settings: Mapping[str, object] | None = None):
-    """Configure Compose's shared database, auth, and runtime settings."""
+def initialize_application(settings: Mapping[str, object] | None = None):
+    """Configure Compose's process-wide database and auth services."""
     settings = load_settings() if settings is None else settings
     logger = logging.getLogger("neurosynth_compose")
 
@@ -116,7 +114,7 @@ def _asgi_lifespan(settings: Mapping[str, object], database):
 
 def create_asgi_app(settings: Mapping[str, object] | None = None):
     """Create the framework-neutral Connexion ASGI Compose application."""
-    settings, _logger = initialize_runtime(settings)
+    settings, _logger = initialize_application(settings)
     disable_response_validation = _env_flag("CONNEXION_DISABLE_RESPONSE_VALIDATION")
 
     from neurosynth_compose.database import db
@@ -155,8 +153,10 @@ def create_asgi_app(settings: Mapping[str, object] | None = None):
     app = Starlette(lifespan=_asgi_lifespan(settings, db))
     init_admin(app, db, settings)
     app.mount("/", connexion_app)
-    app = _DatabaseSessionMiddleware(CORSMiddleware(app, **cors_kwargs))
-    return _RequestDependenciesMiddleware(app, settings, _logger)
+    app = _SettingsMiddleware(
+        _DatabaseSessionMiddleware(CORSMiddleware(app, **cors_kwargs)), settings, _logger
+    )
+    return app
 
 
 def create_app(settings: Mapping[str, object] | None = None):

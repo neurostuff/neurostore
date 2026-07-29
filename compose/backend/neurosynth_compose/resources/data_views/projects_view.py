@@ -539,7 +539,7 @@ class ProjectsView(ObjectView, ListView):
         )
         source_id = clone_args.get("source_id")
         if source_id:
-            cloned_project = ProjectCloneService().clone(
+            cloned_project = ProjectCloneService(request.state.settings).clone(
                 source_id,
                 copy_annotations=clone_args.get("copy_annotations", True),
             )
@@ -557,7 +557,11 @@ class ProjectsView(ObjectView, ListView):
             ns_study = NeurostoreStudy(project=record)
             db.session.add(ns_study)
             commit_session()
-            create_or_update_neurostore_study(ns_study)
+            create_or_update_neurostore_study(
+                ns_study,
+                settings=request.state.settings,
+                access_token=request.headers.get("Authorization"),
+            )
             db.session.add(ns_study)
             commit_session()
         return make_json_response(self.serialize_record(record, {}))

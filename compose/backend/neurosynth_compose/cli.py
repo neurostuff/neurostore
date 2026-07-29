@@ -11,10 +11,10 @@ from neurosynth_compose.scripts.transfer_ownership import (
 
 
 def _load_app_and_db():
-    from neurosynth_compose import initialize_runtime
+    from neurosynth_compose import initialize_application
     from neurosynth_compose.database import db
 
-    settings, logger = initialize_runtime()
+    settings, logger = initialize_application()
     app = SimpleNamespace(config=settings, logger=logger)
     return app, db
 

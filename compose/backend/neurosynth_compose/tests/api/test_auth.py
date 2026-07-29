@@ -27,7 +27,6 @@ def test_decode_token(monkeypatch, mock_add_users_pure):
     from connexion.exceptions import OAuthProblem
 
     from neurosynth_compose.resources import auth
-    from neurosynth_compose.dependencies import RequestDependencies
 
     # Patch urlopen to return a fake JWKS
     class FakeResponse:
@@ -67,13 +66,7 @@ def test_decode_token(monkeypatch, mock_add_users_pure):
         "AUTH0_API_AUDIENCE": "fake-audience",
     }
     request = SimpleNamespace(
-        scope={
-            "state": {
-                "compose.dependencies": RequestDependencies(
-                    fake_config, logging.getLogger("test")
-                )
-            }
-        }
+        state=SimpleNamespace(settings=fake_config, logger=logging.getLogger("test"))
     )
     monkeypatch.setattr(auth, "connexion_request", request)
 
