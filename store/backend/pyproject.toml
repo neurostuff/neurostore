@@ -37,7 +37,6 @@ dependencies = [
     "openapi-spec-validator~=0.9",
     "scipy~=1.18",
     "orjson~=3.11",
-    "flask_orjson~=2.0.0",
     "pgvector~=0.5",
     "NiMARE[parquet]==0.20.0",
     "openai~=2.48",

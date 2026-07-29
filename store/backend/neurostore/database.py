@@ -127,6 +127,8 @@ class Database:
         }
         options.update(config.get("SQLALCHEMY_ENGINE_OPTIONS", {}))
         self.session.remove()
+        if self._engine is not None:
+            self._engine.dispose()
         self._engine = sa.create_engine(config["SQLALCHEMY_DATABASE_URI"], **options)
         self.session.configure(bind=self._engine)
         self.Model.metadata.bind = self._engine
