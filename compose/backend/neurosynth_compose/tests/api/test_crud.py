@@ -2,12 +2,21 @@ import pytest
 from marshmallow import fields
 from sqlalchemy import select
 
-from neurosynth_compose.models import (Annotation, MetaAnalysis, Project,
-                                       Specification, Studyset, User)
-from neurosynth_compose.schemas import (MetaAnalysisSchema, ProjectSchema,
-                                        SnapshotAnnotationSchema,
-                                        SnapshotStudysetSchema,
-                                        SpecificationSchema)
+from neurosynth_compose.models import (
+    Annotation,
+    MetaAnalysis,
+    Project,
+    Specification,
+    Studyset,
+    User,
+)
+from neurosynth_compose.schemas import (
+    MetaAnalysisSchema,
+    ProjectSchema,
+    SnapshotAnnotationSchema,
+    SnapshotStudysetSchema,
+    SpecificationSchema,
+)
 from neurosynth_compose.schemas.analysis import StringOrNested
 
 

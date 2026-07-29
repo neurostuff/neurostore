@@ -25,9 +25,7 @@ def test_get_studysets(session, auth_client, user_data):
     assert set(get_one.json["annotations"][0].keys()) == {"id", "md5"}
 
 
-def test_post_studyset_with_new_neurostore_id(
-    session, auth_client, user_data, db, app
-):
+def test_post_studyset_with_new_neurostore_id(session, auth_client, user_data, db, app):
     user = db.session.execute(
         select(User).where(User.name == "user1")
     ).scalar_one_or_none()

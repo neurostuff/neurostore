@@ -4,8 +4,14 @@ import sys
 import textwrap
 from pathlib import Path
 
-from neurostore.models import (Analysis, BaseStudy, BaseStudyFlagOutbox,
-                               BaseStudyMetadataOutbox, Image, Study)
+from neurostore.models import (
+    Analysis,
+    BaseStudy,
+    BaseStudyFlagOutbox,
+    BaseStudyMetadataOutbox,
+    Image,
+    Study,
+)
 
 BACKEND_ROOT = Path(__file__).resolve().parents[2]
 

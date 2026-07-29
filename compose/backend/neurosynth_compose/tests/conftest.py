@@ -15,12 +15,20 @@ from sqlalchemy import select
 
 from neurosynth_compose.database import db as _db
 from neurosynth_compose.ingest.neurostore import create_meta_analyses
-from neurosynth_compose.models import (MetaAnalysis, NeurostoreAnnotation,
-                                       NeurostoreStudy, NeurostoreStudyset,
-                                       Project, Specification, User)
+from neurosynth_compose.models import (
+    MetaAnalysis,
+    NeurostoreAnnotation,
+    NeurostoreStudy,
+    NeurostoreStudyset,
+    Project,
+    Specification,
+    User,
+)
 from neurosynth_compose.models.analysis import generate_id
 from neurosynth_compose.resources.resource_services import (
-    ensure_canonical_annotation, ensure_canonical_studyset)
+    ensure_canonical_annotation,
+    ensure_canonical_studyset,
+)
 
 DATA_PATH = pathlib.Path(__file__).parent.resolve() / "data"
 

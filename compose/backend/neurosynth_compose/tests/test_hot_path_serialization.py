@@ -3,11 +3,15 @@ from types import SimpleNamespace
 import orjson
 
 from neurosynth_compose.resources.data_views.meta_analyses_view import (
-    serialize_meta_analyses, serialize_meta_analysis)
+    serialize_meta_analyses,
+    serialize_meta_analysis,
+)
 from neurosynth_compose.resources.data_views.projects_view import (
-    _filter_project_list_provenance, serialize_project, serialize_projects)
-from neurosynth_compose.schemas.analysis import (MetaAnalysisSchema,
-                                                 ProjectSchema)
+    _filter_project_list_provenance,
+    serialize_project,
+    serialize_projects,
+)
+from neurosynth_compose.schemas.analysis import MetaAnalysisSchema, ProjectSchema
 
 _SETTINGS = {"NEUROSTORE_API_URL": "http://neurostore/api"}
 
@@ -153,7 +157,9 @@ def _build_meta_analysis_namespace():
 def test_serialize_project_matches_project_schema_default():
     project = _build_project_namespace()
 
-    expected = ProjectSchema(context={"info": False, "settings": _SETTINGS}).dump(project)
+    expected = ProjectSchema(context={"info": False, "settings": _SETTINGS}).dump(
+        project
+    )
     actual = serialize_project(project, info=False, settings=_SETTINGS)
 
     assert actual == expected
@@ -162,7 +168,9 @@ def test_serialize_project_matches_project_schema_default():
 def test_serialize_project_matches_project_schema_info():
     project = _build_project_namespace()
 
-    expected = ProjectSchema(context={"info": True, "settings": _SETTINGS}).dump(project)
+    expected = ProjectSchema(context={"info": True, "settings": _SETTINGS}).dump(
+        project
+    )
     actual = serialize_project(project, info=True, settings=_SETTINGS)
 
     assert actual == expected
@@ -261,9 +269,9 @@ def test_serialize_meta_analysis_matches_schema_default():
 def test_serialize_meta_analysis_matches_schema_nested():
     meta_analysis = _build_meta_analysis_namespace()
 
-    expected = MetaAnalysisSchema(
-        context={"nested": True, "settings": _SETTINGS}
-    ).dump(meta_analysis)
+    expected = MetaAnalysisSchema(context={"nested": True, "settings": _SETTINGS}).dump(
+        meta_analysis
+    )
     actual = serialize_meta_analysis(meta_analysis, nested=True, settings=_SETTINGS)
 
     assert actual == expected
@@ -275,8 +283,6 @@ def test_serialize_meta_analyses_matches_schema_many():
     expected = MetaAnalysisSchema(
         many=True, context={"nested": False, "settings": _SETTINGS}
     ).dump(meta_analyses)
-    actual = serialize_meta_analyses(
-        meta_analyses, nested=False, settings=_SETTINGS
-    )
+    actual = serialize_meta_analyses(meta_analyses, nested=False, settings=_SETTINGS)
 
     assert actual == expected

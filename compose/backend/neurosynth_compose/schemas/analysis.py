@@ -313,7 +313,11 @@ class SnapshotStudysetSchema(BaseSchema):
     def create_neurostore_url(self, data, **kwargs):
         if data.get("neurostore_id", None):
             data["url"] = "/".join(
-                [get_ns_base(self.context["settings"]), "studysets", data["neurostore_id"]]
+                [
+                    get_ns_base(self.context["settings"]),
+                    "studysets",
+                    data["neurostore_id"],
+                ]
             )
         else:
             data["url"] = None
@@ -353,7 +357,11 @@ class SnapshotAnnotationSchema(BaseSchema):
     def create_neurostore_url(self, data, **kwargs):
         if data.get("neurostore_id", None):
             data["url"] = "/".join(
-                [get_ns_base(self.context["settings"]), "annotations", data["neurostore_id"]]
+                [
+                    get_ns_base(self.context["settings"]),
+                    "annotations",
+                    data["neurostore_id"],
+                ]
             )
         else:
             data["url"] = None
