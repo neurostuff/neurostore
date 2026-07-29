@@ -64,6 +64,9 @@ async def test_admin_requires_the_configured_username_and_password(monkeypatch):
     assert "samesite=lax" in authenticated.headers["set-cookie"].lower()
     assert dashboard.status_code == 200
     assert "NeuroStore Admin" in dashboard.text
+    assert 'href="#admin-menu-auth"' in dashboard.text
+    assert "ti ti-list" in dashboard.text
+    assert "border-start" in dashboard.text
 
 
 async def test_app_serves_a_cached_resource_through_the_native_request_path(app, db):
