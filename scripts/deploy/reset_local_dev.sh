@@ -83,7 +83,7 @@ pushd "${ROOT_DIR}/store" >/dev/null
 # The release worker runs its first release build as soon as it starts, so keep it
 # scaled to zero until the app container has applied migrations successfully.
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --scale store_release_worker=0
-docker compose exec -T neurostore neurostore db upgrade --revision heads
+docker compose exec -T neurostore manage db upgrade --revision heads
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --scale store_release_worker=1 store_release_worker
 popd >/dev/null
 

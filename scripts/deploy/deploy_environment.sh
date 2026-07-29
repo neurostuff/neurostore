@@ -518,7 +518,7 @@ deploy_store_staging() {
     store_release_worker \
     store-pghero \
     store-grafana
-  compose_for "${service_root}" "${project}" exec -T neurostore neurostore db upgrade --revision heads
+  compose_for "${service_root}" "${project}" exec -T neurostore manage db upgrade --revision heads
   compose_for "${service_root}" "${project}" exec -T store_redis redis-cli FLUSHDB >/dev/null
   recreate_services_cleanly "${service_root}" "${project}" store_nginx
 }
@@ -580,7 +580,7 @@ deploy_store_dev() {
     --refresh-latest \
     --with-vector-extension
   compose_for "${service_root}" "${project}" up -d --no-build --scale store_release_worker=0
-  compose_for "${service_root}" "${project}" exec -T neurostore neurostore db upgrade --revision heads
+  compose_for "${service_root}" "${project}" exec -T neurostore manage db upgrade --revision heads
   compose_for "${service_root}" "${project}" up -d --no-build --scale store_release_worker=1 store_release_worker
 }
 
