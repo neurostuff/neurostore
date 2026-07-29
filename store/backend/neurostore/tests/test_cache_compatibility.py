@@ -5,7 +5,6 @@ from neurostore.extensions import cache
 from neurostore.models import Study
 from neurostore.resources import base as base_resource
 
-
 pytestmark = pytest.mark.anyio
 
 
@@ -96,11 +95,12 @@ async def test_object_cache_serves_warm_value_with_flask_compatible_key(
 
 def test_cache_key_creator_preserves_extra_args(monkeypatch):
     class DummyRequest:
-        path = "/api/studies/"
+        url = type("URL", (), {"path": "/api/studies/"})()
 
-        @staticmethod
-        def query_items():
-            return [("b", "2"), ("a", "1")]
+        class query_params:
+            @staticmethod
+            def multi_items():
+                return [("b", "2"), ("a", "1")]
 
     class DummyUser:
         id = "user-1"

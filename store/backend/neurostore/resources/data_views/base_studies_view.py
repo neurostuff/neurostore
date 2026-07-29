@@ -1,38 +1,23 @@
+from connexion import request
 from marshmallow import fields as marshmallow_fields
 from sqlalchemy.orm import joinedload, raiseload, selectinload
 from webargs import fields
 
 from neurostore.database import db
-from neurostore.models import (
-    Analysis,
-    AnalysisConditions,
-    Condition,
-    Image,
-    PipelineConfig,
-    PipelineStudyResult,
-    Point,
-    Study,
-    Table,
-    User,
-)
+from neurostore.models import (Analysis, AnalysisConditions, Condition, Image,
+                               PipelineConfig, PipelineStudyResult, Point,
+                               Study, Table, User)
 from neurostore.models.data import BaseStudy
-from neurostore.resources.base import (
-    ListView,
-    ObjectView,
-    clear_cache,
-    load_schema_or_abort,
-)
-from neurostore.resources.data_views.base_studies_bulk_post import (
-    BaseStudyBulkPostService,
-)
-from neurostore.resources.data_views.base_studies_bulk_post import (
-    load_response_records as load_base_study_response_records,
-)
-from neurostore.resources.data_views.base_studies_search import BaseStudySearchService
-from neurostore.resources.data_views.common import (
-    LIST_NESTED_ARGS,
-    apply_map_type_filter,
-)
+from neurostore.resources.base import (ListView, ObjectView, clear_cache,
+                                       load_schema_or_abort)
+from neurostore.resources.data_views.base_studies_bulk_post import \
+    BaseStudyBulkPostService
+from neurostore.resources.data_views.base_studies_bulk_post import \
+    load_response_records as load_base_study_response_records
+from neurostore.resources.data_views.base_studies_search import \
+    BaseStudySearchService
+from neurostore.resources.data_views.common import (LIST_NESTED_ARGS,
+                                                    apply_map_type_filter)
 from neurostore.resources.utils import view_maker
 from neurostore.schemas.data import BaseDataSchema, StringOrNested, StudySchema
 
@@ -200,7 +185,11 @@ class BaseStudiesView(ObjectView, ListView):
         data = load_schema_or_abort(schema, body)
         from neurostore.resources.data_views.studies_view import StudiesView
 
-        bulk_post_service = BaseStudyBulkPostService(self.__class__, User)
+        bulk_post_service = BaseStudyBulkPostService(
+            self.__class__,
+            User,
+            settings=request.state.settings,
+        )
         base_studies, to_commit, changed_base_study_records = (
             bulk_post_service.create_or_reuse(data, StudiesView)
         )

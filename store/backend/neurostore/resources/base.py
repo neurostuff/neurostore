@@ -16,43 +16,29 @@ from sqlalchemy.orm import raiseload, selectinload
 from webargs import fields
 
 from neurostore.asgi_requests import parse_query_parameters
-from neurostore.cache_versioning import bump_cache_versions, get_cache_version_for_path
+from neurostore.cache_versioning import (bump_cache_versions,
+                                         get_cache_version_for_path)
 from neurostore.database import db
-from neurostore.exceptions.utils.error_helpers import (
-    abort_not_found,
-    abort_permission,
-    abort_unprocessable,
-    abort_validation,
-)
+from neurostore.exceptions.utils.error_helpers import (abort_not_found,
+                                                       abort_permission,
+                                                       abort_unprocessable,
+                                                       abort_validation)
 from neurostore.extensions import cache
-from neurostore.models import (
-    Analysis,
-    Annotation,
-    AnnotationAnalysis,
-    StudysetStudy,
-    User,
-)
+from neurostore.models import (Analysis, Annotation, AnnotationAnalysis,
+                               StudysetStudy, User)
 from neurostore.note_keys import resolve_note_key_default
 from neurostore.resources import data as viewdata
 from neurostore.resources.common import merge_unique_ids
-from neurostore.resources.mutation_core import (
-    DefaultMutationPolicy,
-    MutationContext,
-    MutationExecutor,
-)
-from neurostore.resources.utils import (
-    get_current_user,
-    is_user_admin,
-    pubmed_to_tsquery,
-    validate_search_query,
-)
-from neurostore.services.base_study_metadata_enrichment import (
-    enqueue_base_study_metadata_updates,
-)
+from neurostore.resources.mutation_core import (DefaultMutationPolicy,
+                                                MutationContext,
+                                                MutationExecutor)
+from neurostore.resources.utils import (get_current_user, is_user_admin,
+                                        pubmed_to_tsquery,
+                                        validate_search_query)
+from neurostore.services.base_study_metadata_enrichment import \
+    enqueue_base_study_metadata_updates
 from neurostore.services.has_media_flags import (
-    enqueue_base_study_flag_updates,
-    recompute_media_flags,
-)
+    enqueue_base_study_flag_updates, recompute_media_flags)
 
 
 def handle_parser_error(err, req, schema, *, error_status_code, error_headers):
@@ -259,7 +245,9 @@ class BaseView:
         return self.object_view_policy_cls(self)
 
     @classmethod
-    def update_or_create(cls, data, id=None, user=None, record=None, flush=True):
+    def update_or_create(
+        cls, data, id=None, user=None, record=None, flush=True, settings=None
+    ):
         mutation_context = MutationContext(
             resource_cls=cls,
             data=data,
@@ -267,6 +255,7 @@ class BaseView:
             user=user,
             record=record,
             flush=flush,
+            settings=settings or {},
         )
         mutation_policy = cls.build_mutation_policy(mutation_context)
         return MutationExecutor(mutation_context, mutation_policy).execute()
@@ -286,7 +275,7 @@ def cache_key_creator(*args, **kwargs):
     # 1. the query arguments (including extra_args if present)
     # 2. the path
     # 3. the user
-    path = request.path
+    path = request.url.path
     user = get_current_user().id if get_current_user() else ""
 
     # Get query args from request
@@ -355,7 +344,12 @@ class ObjectView(BaseView):
         self.db_validation(input_record, data)
 
         with db.session.no_autoflush:
-            record = self.__class__.update_or_create(data, id, record=input_record)
+            record = self.__class__.update_or_create(
+                data,
+                id,
+                record=input_record,
+                settings=request.state.settings,
+            )
 
         # clear relevant caches
         # clear the cache for this endpoint
@@ -607,7 +601,10 @@ class ListView(BaseView):
         )
 
         with db.session.no_autoflush:
-            record = self.__class__.update_or_create(data)
+            record = self.__class__.update_or_create(
+                data,
+                settings=request.state.settings,
+            )
 
         # clear the cache for this endpoint
         with db.session.no_autoflush:

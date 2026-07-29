@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Mapping
 
 import sqlalchemy as sa
 from auth0.authentication.exceptions import Auth0Error
@@ -12,11 +12,9 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import raiseload, selectinload
 
 from neurostore.database import db
-from neurostore.exceptions.utils.error_helpers import (
-    abort_not_found,
-    abort_permission,
-    abort_validation,
-)
+from neurostore.exceptions.utils.error_helpers import (abort_not_found,
+                                                       abort_permission,
+                                                       abort_validation)
 from neurostore.models import User
 from neurostore.resources.utils import get_current_user, is_user_admin
 
@@ -81,6 +79,7 @@ class MutationContext:
     user: Any = None
     record: Any = None
     flush: bool = True
+    settings: Mapping[str, Any] = field(default_factory=dict)
     current_user: Any = None
     is_admin: bool = False
     compose_bot: str = ""
@@ -284,6 +283,7 @@ class DefaultMutationPolicy:
                             user=self.context.current_user,
                             record=nested_record,
                             flush=False,
+                            settings=self.context.settings,
                         )
                     )
                 self.context.to_commit.extend(nested_records)
@@ -297,6 +297,7 @@ class DefaultMutationPolicy:
                     user=self.context.current_user,
                     record=nested_record,
                     flush=False,
+                    settings=self.context.settings,
                 )
                 self.context.to_commit.append(nested_records)
 
@@ -327,8 +328,9 @@ class MutationExecutor:
     def execute(self):
         self.context.current_user = resolve_current_user(self.context.user)
         self.context.is_admin = is_user_admin(self.context.current_user)
+        compose_client_id = self.context.settings.get("COMPOSE_AUTH0_CLIENT_ID")
         self.context.compose_bot = (
-            request.state.settings["COMPOSE_AUTH0_CLIENT_ID"] + "@clients"
+            f"{compose_client_id}@clients" if compose_client_id else ""
         )
 
         self.policy.prepare()

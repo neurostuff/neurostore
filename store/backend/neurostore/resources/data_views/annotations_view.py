@@ -2,45 +2,28 @@ from collections import Counter, OrderedDict
 from datetime import datetime
 from types import SimpleNamespace
 
+from connexion import request
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import defaultload, joinedload, raiseload, selectinload
 from webargs import fields
 
 from neurostore.database import db
 from neurostore.exceptions.factories import make_field_error
-from neurostore.exceptions.utils.error_helpers import (
-    abort_unprocessable,
-    abort_validation,
-)
-from neurostore.models import (
-    Analysis,
-    Annotation,
-    AnnotationAnalysis,
-    Pipeline,
-    PipelineConfig,
-    PipelineStudyResult,
-    Study,
-    Studyset,
-    User,
-)
+from neurostore.exceptions.utils.error_helpers import (abort_unprocessable,
+                                                       abort_validation)
+from neurostore.models import (Analysis, Annotation, AnnotationAnalysis,
+                               Pipeline, PipelineConfig, PipelineStudyResult,
+                               Study, Studyset, User)
 from neurostore.models.data import StudysetStudy, _check_type
 from neurostore.note_keys import canonicalize_note_keys, ordered_note_key_names
-from neurostore.resources.base import (
-    DefaultObjectViewPolicy,
-    ListView,
-    ObjectView,
-    clear_cache,
-    load_schema_or_abort,
-)
+from neurostore.resources.base import (DefaultObjectViewPolicy, ListView,
+                                       ObjectView, clear_cache,
+                                       load_schema_or_abort)
 from neurostore.resources.data_views.cloning import (
-    build_annotation_clone_payload,
-    load_annotation_clone_source,
-)
+    build_annotation_clone_payload, load_annotation_clone_source)
 from neurostore.resources.data_views.common import LIST_CLONE_ARGS
-from neurostore.resources.mutation_core import (
-    DefaultMutationPolicy,
-    resolve_current_user,
-)
+from neurostore.resources.mutation_core import (DefaultMutationPolicy,
+                                                resolve_current_user)
 from neurostore.resources.utils import get_current_user, view_maker
 from neurostore.schemas import PipelineStudyResultSchema
 
@@ -243,6 +226,7 @@ class AnnotationMutationPolicy(DefaultMutationPolicy):
             user=self.context.current_user,
             record=annotation,
             flush=False,
+            settings=getattr(self.context, "settings", {}),
         )
 
         if "note_keys" in data:
@@ -284,6 +268,7 @@ class AnnotationMutationPolicy(DefaultMutationPolicy):
             user=self.context.current_user,
             record=annotation,
             flush=False,
+            settings=getattr(self.context, "settings", {}),
         )
 
         notes_by_id = {
@@ -539,7 +524,10 @@ class AnnotationsView(ObjectView, ListView):
                         }
                     }
                     record = self.__class__.update_or_create(
-                        data, id, record=input_record
+                        data,
+                        id,
+                        record=input_record,
+                        settings=request.state.settings,
                     )
             elif bulk_note_update_candidate:
                 bulk_path_succeeded = mutation_policy.try_bulk_note_update(
@@ -554,10 +542,18 @@ class AnnotationsView(ObjectView, ListView):
                 else:
                     mutation_policy.attach_existing_nested_records(input_record, data)
                     record = self.__class__.update_or_create(
-                        data, id, record=input_record
+                        data,
+                        id,
+                        record=input_record,
+                        settings=request.state.settings,
                     )
             else:
-                record = self.__class__.update_or_create(data, id, record=input_record)
+                record = self.__class__.update_or_create(
+                    data,
+                    id,
+                    record=input_record,
+                    settings=request.state.settings,
+                )
 
         with db.session.no_autoflush:
             unique_ids = self.get_affected_ids([id])

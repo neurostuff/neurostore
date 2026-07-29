@@ -131,9 +131,10 @@ def load_response_records(base_study_ids, user_model):
 
 
 class BaseStudyBulkPostService:
-    def __init__(self, resource_cls, user_model):
+    def __init__(self, resource_cls, user_model, *, settings):
         self.resource_cls = resource_cls
         self.user_model = user_model
+        self.settings = settings
 
     @staticmethod
     def ensure_user():
@@ -145,13 +146,16 @@ class BaseStudyBulkPostService:
         db.session.add(current_user)
         return current_user
 
-    @staticmethod
-    def create_initial_version(record, study_data, current_user, studies_view_cls):
+    def create_initial_version(self, record, study_data, current_user, studies_view_cls):
         version = studies_view_cls._model()
         version.base_study = record
         version.user = current_user
         version = studies_view_cls.update_or_create(
-            study_data, record=version, user=current_user, flush=False
+            study_data,
+            record=version,
+            user=current_user,
+            flush=False,
+            settings=self.settings,
         )
         record.versions.append(version)
         return version
@@ -172,7 +176,10 @@ class BaseStudyBulkPostService:
                     current_user = self.ensure_user()
                 with db.session.no_autoflush:
                     record = self.resource_cls.update_or_create(
-                        study_data, user=current_user, flush=False
+                        study_data,
+                        user=current_user,
+                        flush=False,
+                        settings=self.settings,
                     )
                 to_commit.append(record)
                 register_lookup_record(lookup, record)
