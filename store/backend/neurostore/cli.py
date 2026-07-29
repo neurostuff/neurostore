@@ -13,10 +13,10 @@ from neurostore.scripts.transfer_ownership import (
 
 
 def _load_app_and_db():
-    from neurostore import initialize_runtime
+    from neurostore import initialize_application
     from neurostore.database import db
 
-    settings, logger = initialize_runtime()
+    settings, logger = initialize_application()
     app = SimpleNamespace(config=settings, logger=logger)
     return app, db
 
@@ -206,7 +206,11 @@ def process_base_study_metadata_outbox(batch_size, loop, sleep_seconds):
         )
 
         processed_total = _run_outbox_processor(
-            process_base_study_metadata_outbox_batch,
+            lambda *, batch_size: process_base_study_metadata_outbox_batch(
+                batch_size=batch_size,
+                settings=app.config,
+                logger=app.logger,
+            ),
             batch_size,
             loop,
             sleep_seconds,
@@ -243,12 +247,13 @@ def build_neurostore_studyset_release(
     monthly_version,
     clear_cache,
 ):
-    def _run(_app, _db):
+    def _run(app, _db):
         from neurostore.services.neurostore_studyset_releases import (
             build_neurostore_studyset_release as build_release,
         )
 
         result = build_release(
+            settings=app.config,
             nightly=nightly,
             monthly_if_due=monthly_if_due,
             force_monthly=force_monthly,

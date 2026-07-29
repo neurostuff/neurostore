@@ -1,5 +1,4 @@
 import datetime as dt
-import logging
 import re
 import threading
 import time
@@ -23,7 +22,6 @@ from neurostore.models import (
     StudysetStudy,
 )
 from neurostore.resources.common import merge_unique_ids, normalize_ids
-from neurostore.settings import load_settings
 from neurostore.services.has_media_flags import enqueue_base_study_flag_updates
 
 ID_FIELDS = ("pmid", "doi", "pmcid")
@@ -35,7 +33,6 @@ SEMANTIC_SCHOLAR_DEFAULT_RPS = 1.0
 PUBMED_DEFAULT_RPS_WITH_KEY = 10.0
 PUBMED_DEFAULT_RPS_WITHOUT_KEY = 3.0
 RATE_LIMIT_SAFETY_MARGIN_SECONDS = 0.01
-logger = logging.getLogger(__name__)
 
 
 def _has_value(value):
@@ -173,8 +170,8 @@ def _is_retryable_request_exception(exc):
     wait=wait_exponential(multiplier=0.4, max=2),
     retry=retry_if_exception(_is_retryable_request_exception),
 )
-def _request_with_retry(method, url, **kwargs):
-    _apply_provider_rate_limit(url, kwargs)
+def _request_with_retry(settings, method, url, **kwargs):
+    _apply_provider_rate_limit(settings, url, kwargs)
     response = requests.request(method, url, **kwargs)
     if response.status_code >= 400:
         error = requests.HTTPError(
@@ -184,8 +181,8 @@ def _request_with_retry(method, url, **kwargs):
     return response
 
 
-def _request_timeout():
-    timeout = load_settings().get("BASE_STUDY_METADATA_REQUEST_TIMEOUT_SECONDS", 10)
+def _request_timeout(settings):
+    timeout = settings.get("BASE_STUDY_METADATA_REQUEST_TIMEOUT_SECONDS", 10)
     try:
         timeout = float(timeout)
     except (TypeError, ValueError):
@@ -193,8 +190,8 @@ def _request_timeout():
     return max(1.0, timeout)
 
 
-def _retry_delay_seconds():
-    delay = load_settings().get("BASE_STUDY_METADATA_RETRY_DELAY_SECONDS", 30)
+def _retry_delay_seconds(settings):
+    delay = settings.get("BASE_STUDY_METADATA_RETRY_DELAY_SECONDS", 30)
     try:
         delay = float(delay)
     except (TypeError, ValueError):
@@ -202,7 +199,7 @@ def _retry_delay_seconds():
     return max(0.0, delay)
 
 
-def _provider_error(provider_name, exc):
+def _provider_error(logger, provider_name, exc):
     logger.warning(
         "base-study metadata provider failed (%s): %s", provider_name, exc
     )
@@ -216,14 +213,14 @@ def _coerce_positive_float(value, default):
     return value if value > 0 else default
 
 
-def _provider_rps_for_request(url, kwargs):
+def _provider_rps_for_request(settings, url, kwargs):
     headers = kwargs.get("headers") or {}
     params = kwargs.get("params") or {}
 
     if "api.semanticscholar.org" in url:
         if headers.get("x-api-key"):
             rps = _coerce_positive_float(
-                load_settings().get(
+                settings.get(
                     "SEMANTIC_SCHOLAR_API_RPS", SEMANTIC_SCHOLAR_DEFAULT_RPS
                 ),
                 SEMANTIC_SCHOLAR_DEFAULT_RPS,
@@ -244,7 +241,7 @@ def _provider_rps_for_request(url, kwargs):
             else PUBMED_DEFAULT_RPS_WITHOUT_KEY
         )
         rps = _coerce_positive_float(
-            load_settings().get(config_key, default_rps), default_rps
+            settings.get(config_key, default_rps), default_rps
         )
         provider_name = "pubmed_with_key" if has_api_key else "pubmed_without_key"
         return provider_name, rps
@@ -285,12 +282,14 @@ def _reset_provider_rate_limits():
     _provider_rate_limiter.reset()
 
 
-def _apply_provider_rate_limit(url, kwargs):
-    provider_name, requests_per_second = _provider_rps_for_request(url, kwargs)
+def _apply_provider_rate_limit(settings, url, kwargs):
+    provider_name, requests_per_second = _provider_rps_for_request(
+        settings, url, kwargs
+    )
     _provider_rate_limiter.wait(provider_name, requests_per_second)
 
 
-def lookup_ids_semantic_scholar(identifiers, api_key=None):
+def lookup_ids_semantic_scholar(identifiers, *, settings, logger, api_key=None):
     request_ids = []
     doi = _normalize_doi(identifiers.get("doi"))
     pmid = _normalize_pmid(identifiers.get("pmid"))
@@ -308,16 +307,17 @@ def lookup_ids_semantic_scholar(identifiers, api_key=None):
 
     try:
         response = _request_with_retry(
+            settings,
             "POST",
             "https://api.semanticscholar.org/graph/v1/paper/batch",
             params={"fields": "externalIds"},
             json={"ids": request_ids},
             headers=headers,
-            timeout=_request_timeout(),
+            timeout=_request_timeout(settings),
         )
         payload = response.json()
     except Exception as exc:  # noqa: BLE001
-        _provider_error("semantic_scholar_id_lookup", exc)
+        _provider_error(logger, "semantic_scholar_id_lookup", exc)
         return {}
 
     if not isinstance(payload, list):
@@ -339,7 +339,9 @@ def lookup_ids_semantic_scholar(identifiers, api_key=None):
     return {}
 
 
-def lookup_ids_pubmed(identifiers, email=None, api_key=None, tool="neurostore"):
+def lookup_ids_pubmed(
+    identifiers, *, settings, logger, email=None, api_key=None, tool="neurostore"
+):
     id_values = []
     for value in (
         _normalize_pmid(identifiers.get("pmid")),
@@ -365,14 +367,15 @@ def lookup_ids_pubmed(identifiers, email=None, api_key=None, tool="neurostore"):
 
     try:
         response = _request_with_retry(
+            settings,
             "GET",
             "https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/",
             params=params,
-            timeout=_request_timeout(),
+            timeout=_request_timeout(settings),
         )
         payload = response.json()
     except Exception as exc:  # noqa: BLE001
-        _provider_error("pubmed_id_lookup", exc)
+        _provider_error(logger, "pubmed_id_lookup", exc)
         return {}
 
     records = payload.get("records") if isinstance(payload, dict) else None
@@ -394,7 +397,7 @@ def lookup_ids_pubmed(identifiers, email=None, api_key=None, tool="neurostore"):
     return {}
 
 
-def lookup_ids_openalex(identifiers, email=None):
+def lookup_ids_openalex(identifiers, *, settings, logger, email=None):
     doi = _normalize_doi(identifiers.get("doi"))
     pmid = _normalize_pmid(identifiers.get("pmid"))
 
@@ -411,14 +414,15 @@ def lookup_ids_openalex(identifiers, email=None):
 
     try:
         response = _request_with_retry(
+            settings,
             "GET",
             "https://api.openalex.org/works",
             params=params,
-            timeout=_request_timeout(),
+            timeout=_request_timeout(settings),
         )
         payload = response.json()
     except Exception as exc:  # noqa: BLE001
-        _provider_error("openalex_id_lookup", exc)
+        _provider_error(logger, "openalex_id_lookup", exc)
         return {}
 
     results = payload.get("results") if isinstance(payload, dict) else None
@@ -460,7 +464,7 @@ def _int_or_none(value):
         return int(match.group(1))
 
 
-def fetch_metadata_semantic_scholar(identifiers, api_key=None):
+def fetch_metadata_semantic_scholar(identifiers, *, settings, logger, api_key=None):
     request_ids = []
     doi = _normalize_doi(identifiers.get("doi"))
     pmid = _normalize_pmid(identifiers.get("pmid"))
@@ -490,16 +494,17 @@ def fetch_metadata_semantic_scholar(identifiers, api_key=None):
 
     try:
         response = _request_with_retry(
+            settings,
             "POST",
             "https://api.semanticscholar.org/graph/v1/paper/batch",
             params={"fields": fields},
             json={"ids": request_ids},
             headers=headers,
-            timeout=_request_timeout(),
+            timeout=_request_timeout(settings),
         )
         payload = response.json()
     except Exception as exc:  # noqa: BLE001
-        _provider_error("semantic_scholar_metadata", exc)
+        _provider_error(logger, "semantic_scholar_metadata", exc)
         return {}
 
     if not isinstance(payload, list):
@@ -548,7 +553,9 @@ def fetch_metadata_semantic_scholar(identifiers, api_key=None):
     return {}
 
 
-def fetch_metadata_pubmed(identifiers, email=None, api_key=None, tool="neurostore"):
+def fetch_metadata_pubmed(
+    identifiers, *, settings, logger, email=None, api_key=None, tool="neurostore"
+):
     pmid = _normalize_pmid(identifiers.get("pmid"))
     if not pmid:
         return {}
@@ -566,14 +573,15 @@ def fetch_metadata_pubmed(identifiers, email=None, api_key=None, tool="neurostor
 
     try:
         response = _request_with_retry(
+            settings,
             "GET",
             "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi",
             params=params,
-            timeout=_request_timeout(),
+            timeout=_request_timeout(settings),
         )
         root = ElementTree.fromstring(response.text)
     except Exception as exc:  # noqa: BLE001
-        _provider_error("pubmed_metadata", exc)
+        _provider_error(logger, "pubmed_metadata", exc)
         return {}
 
     article = root.find(".//PubmedArticle")
@@ -838,6 +846,7 @@ def _propagate_base_study_metadata_to_versions(base_study):
 def _propagate_base_study_metadata_to_versions_post_commit(
     base_study_ids,
     *,
+    logger,
     max_attempts=5,
     retry_sleep_seconds=0.1,
 ):
@@ -905,7 +914,7 @@ def _merge_duplicates(primary):
     return primary, cache_ids
 
 
-def enrich_base_study_metadata(base_study_id):
+def enrich_base_study_metadata(base_study_id, *, settings, logger):
     base_study_snapshot = db.session.scalar(
         sa.select(BaseStudy).where(BaseStudy.id == base_study_id)
     )
@@ -914,11 +923,10 @@ def enrich_base_study_metadata(base_study_id):
     if not _needs_enrichment(base_study_snapshot):
         return {"base-studies": {base_study_snapshot.id}, "studies": set()}
 
-    config = load_settings()
-    semantic_scholar_api_key = config.get("SEMANTIC_SCHOLAR_API_KEY")
-    contact_email = config.get("EMAIL")
-    pubmed_api_key = config.get("PUBMED_TOOL_API_KEY")
-    pubmed_tool = config["PUBMED_TOOL"]
+    semantic_scholar_api_key = settings.get("SEMANTIC_SCHOLAR_API_KEY")
+    contact_email = settings.get("EMAIL")
+    pubmed_api_key = settings.get("PUBMED_TOOL_API_KEY")
+    pubmed_tool = settings["PUBMED_TOOL"]
 
     external_identifiers = _extract_identifiers(base_study_snapshot)
     missing_ids = _missing_id_fields(external_identifiers)
@@ -926,7 +934,10 @@ def enrich_base_study_metadata(base_study_id):
         _merge_ids_in_place(
             external_identifiers,
             lookup_ids_semantic_scholar(
-                external_identifiers, api_key=semantic_scholar_api_key
+                external_identifiers,
+                settings=settings,
+                logger=logger,
+                api_key=semantic_scholar_api_key,
             ),
         )
         missing_ids = _missing_id_fields(external_identifiers)
@@ -935,6 +946,8 @@ def enrich_base_study_metadata(base_study_id):
             external_identifiers,
             lookup_ids_pubmed(
                 external_identifiers,
+                settings=settings,
+                logger=logger,
                 email=contact_email,
                 api_key=pubmed_api_key,
                 tool=pubmed_tool,
@@ -944,14 +957,22 @@ def enrich_base_study_metadata(base_study_id):
     if missing_ids:
         _merge_ids_in_place(
             external_identifiers,
-            lookup_ids_openalex(external_identifiers, email=contact_email),
+            lookup_ids_openalex(
+                external_identifiers,
+                settings=settings,
+                logger=logger,
+                email=contact_email,
+            ),
         )
 
     metadata_candidates = []
     missing_metadata = _missing_metadata_fields(base_study_snapshot)
     if missing_metadata:
         semantic_metadata = fetch_metadata_semantic_scholar(
-            external_identifiers, api_key=semantic_scholar_api_key
+            external_identifiers,
+            settings=settings,
+            logger=logger,
+            api_key=semantic_scholar_api_key,
         )
         if semantic_metadata:
             metadata_candidates.append(semantic_metadata)
@@ -963,6 +984,8 @@ def enrich_base_study_metadata(base_study_id):
     if missing_metadata:
         pubmed_metadata = fetch_metadata_pubmed(
             external_identifiers,
+            settings=settings,
+            logger=logger,
             email=contact_email,
             api_key=pubmed_api_key,
             tool=pubmed_tool,
@@ -1056,6 +1079,7 @@ def _enqueue_base_study_flag_updates_post_commit(
     base_study_ids,
     reason,
     *,
+    logger,
     max_attempts=5,
     retry_sleep_seconds=0.1,
 ):
@@ -1082,7 +1106,7 @@ def _enqueue_base_study_flag_updates_post_commit(
             time.sleep(retry_sleep_seconds)
 
 
-def process_base_study_metadata_outbox_batch(batch_size=50):
+def process_base_study_metadata_outbox_batch(batch_size=50, *, settings, logger):
     batch_size = max(1, int(batch_size))
 
     successful_ids = []
@@ -1108,7 +1132,11 @@ def process_base_study_metadata_outbox_batch(batch_size=50):
     for base_study_id in claimed_ids:
         try:
             with db.session.begin_nested():
-                affected_ids = enrich_base_study_metadata(base_study_id)
+                affected_ids = enrich_base_study_metadata(
+                    base_study_id,
+                    settings=settings,
+                    logger=logger,
+                )
                 cache_ids = merge_unique_ids(cache_ids, affected_ids)
                 flag_update_ids.update(affected_ids.get("base-studies", set()))
                 successful_ids.append(base_study_id)
@@ -1119,7 +1147,7 @@ def process_base_study_metadata_outbox_batch(batch_size=50):
                 exc,
             )
             retry_at = dt.datetime.now(dt.timezone.utc) + dt.timedelta(
-                seconds=_retry_delay_seconds()
+                seconds=_retry_delay_seconds(settings)
             )
             db.session.execute(
                 sa.update(BaseStudyMetadataOutbox)
@@ -1144,13 +1172,15 @@ def process_base_study_metadata_outbox_batch(batch_size=50):
     if propagation_base_study_ids:
         cache_ids.setdefault("studies", set()).update(
             _propagate_base_study_metadata_to_versions_post_commit(
-                propagation_base_study_ids
+                propagation_base_study_ids,
+                logger=logger,
             )
         )
     if queued_flag_ids:
         _enqueue_base_study_flag_updates_post_commit(
             queued_flag_ids,
             reason="base-study-metadata-enrichment",
+            logger=logger,
         )
     if cache_ids:
         bump_cache_versions(cache_ids)

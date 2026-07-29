@@ -1,5 +1,7 @@
 from urllib.parse import quote
 
+from connexion import request
+
 from neurostore.exceptions.utils.error_helpers import abort_not_found
 from neurostore.services.neurostore_studyset_releases import (
     list_release_manifests,
@@ -11,8 +13,8 @@ from neurostore.services.neurostore_studyset_releases import (
 INTERNAL_RELEASE_URI_PREFIX = "/_protected/neurostore-studyset-releases"
 
 
-def x_accel_release_uri(archive_path):
-    root = release_root().resolve()
+def x_accel_release_uri(archive_path, *, settings):
+    root = release_root(settings).resolve()
     resolved = archive_path.resolve()
     try:
         relative_path = resolved.relative_to(root)
@@ -24,14 +26,14 @@ def x_accel_release_uri(archive_path):
 
 class NeurostoreStudysetReleasesView:
     def search(self):
-        manifests = list_release_manifests()
+        manifests = list_release_manifests(settings=request.state.settings)
         return {
             "metadata": {"total_count": len(manifests)},
             "results": manifests,
         }
 
     def get(self, version):
-        manifest = load_release_manifest(version)
+        manifest = load_release_manifest(version, settings=request.state.settings)
         if manifest is None:
             abort_not_found("NeurostoreStudysetRelease", version)
         return manifest
@@ -39,12 +41,13 @@ class NeurostoreStudysetReleasesView:
 
 class DownloadView:
     def search(self, version):
-        archive_path = release_archive_path(version)
+        settings = request.state.settings
+        archive_path = release_archive_path(version, settings=settings)
         if archive_path is None:
             abort_not_found("NeurostoreStudysetRelease", version)
 
         headers = {
-            "X-Accel-Redirect": x_accel_release_uri(archive_path),
+            "X-Accel-Redirect": x_accel_release_uri(archive_path, settings=settings),
             "Content-Type": "application/gzip",
             "Content-Disposition": f'attachment; filename="{archive_path.name}"',
         }

@@ -6,8 +6,6 @@ from connexion.exceptions import OAuthProblem
 from connexion.lifecycle import ConnexionResponse
 from jose import jwt
 
-from neurostore.dependencies import get_request_dependencies
-
 
 def _oauth_problem(detail):
     return OAuthProblem(detail=detail)
@@ -30,7 +28,7 @@ async def asgi_oauth_problem_handler(request, exc):
 
 
 def decode_token(token):
-    config = get_request_dependencies(connexion_request).settings
+    config = connexion_request.state.settings
     try:
         unverified_header = jwt.get_unverified_header(token)
     except jwt.JWTError:

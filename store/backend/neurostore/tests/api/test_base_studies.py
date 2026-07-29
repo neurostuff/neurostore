@@ -1004,16 +1004,16 @@ def test_metadata_worker_merges_duplicates_and_keeps_existing_metadata(
     )
     session.commit()
 
-    def fake_lookup_semantic(_identifiers, api_key=None):
+    def fake_lookup_semantic(_identifiers, api_key=None, **_kwargs):
         return {"doi": "10.1000/metadata-merge", "pmcid": "PMC940001"}
 
-    def fake_lookup_pubmed(_identifiers, email=None, api_key=None, tool=None):
+    def fake_lookup_pubmed(_identifiers, email=None, api_key=None, tool=None, **_kwargs):
         return {"pmcid": "PMC940001"}
 
-    def fake_lookup_openalex(_identifiers, email=None):
+    def fake_lookup_openalex(_identifiers, email=None, **_kwargs):
         return {"doi": "10.1000/metadata-merge"}
 
-    def fake_metadata_semantic(_identifiers, api_key=None):
+    def fake_metadata_semantic(_identifiers, api_key=None, **_kwargs):
         return {
             "name": "Provider Title Should Not Override",
             "description": "Provider abstract",
@@ -1025,7 +1025,7 @@ def test_metadata_worker_merges_duplicates_and_keeps_existing_metadata(
             "pmcid": "PMC940001",
         }
 
-    def fake_metadata_pubmed(_identifiers, email=None, api_key=None, tool=None):
+    def fake_metadata_pubmed(_identifiers, email=None, api_key=None, tool=None, **_kwargs):
         return {"publication": "PubMed Journal", "year": 2024}
 
     captured_cache_ids = []
@@ -1045,7 +1045,9 @@ def test_metadata_worker_merges_duplicates_and_keeps_existing_metadata(
         lambda unique_ids: captured_cache_ids.append(unique_ids),
     )
 
-    processed = process_base_study_metadata_outbox_batch(batch_size=10)
+    processed = process_base_study_metadata_outbox_batch(
+        batch_size=10, settings=app.config, logger=app.logger
+    )
     assert processed == 1
 
     session.refresh(primary)
@@ -1090,7 +1092,9 @@ def test_metadata_worker_merges_duplicates_and_keeps_existing_metadata(
     )
 
 
-def test_metadata_worker_merge_avoids_doi_pmid_unique_conflict(session, monkeypatch):
+def test_metadata_worker_merge_avoids_doi_pmid_unique_conflict(
+    session, app, monkeypatch
+):
     from neurostore.services import base_study_metadata_enrichment as metadata_service
 
     primary = BaseStudy(
@@ -1136,7 +1140,9 @@ def test_metadata_worker_merge_avoids_doi_pmid_unique_conflict(session, monkeypa
         metadata_service, "fetch_metadata_pubmed", lambda *_args, **_kwargs: {}
     )
 
-    processed = process_base_study_metadata_outbox_batch(batch_size=10)
+    processed = process_base_study_metadata_outbox_batch(
+        batch_size=10, settings=app.config, logger=app.logger
+    )
     assert processed == 1
 
     session.refresh(primary)
@@ -1153,7 +1159,7 @@ def test_metadata_worker_merge_avoids_doi_pmid_unique_conflict(session, monkeypa
 
 
 def test_metadata_worker_merge_reassigns_pipeline_rows(
-    session, ingest_demographic_features, monkeypatch
+    session, app, ingest_demographic_features, monkeypatch
 ):
     from neurostore.services import base_study_metadata_enrichment as metadata_service
 
@@ -1239,7 +1245,9 @@ def test_metadata_worker_merge_reassigns_pipeline_rows(
         metadata_service, "fetch_metadata_pubmed", lambda *_args, **_kwargs: {}
     )
 
-    processed = process_base_study_metadata_outbox_batch(batch_size=10)
+    processed = process_base_study_metadata_outbox_batch(
+        batch_size=10, settings=app.config, logger=app.logger
+    )
     assert processed == 1
 
     session.refresh(primary)
@@ -1314,7 +1322,9 @@ def test_metadata_worker_defers_failed_rows(session, app, monkeypatch):
             lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("boom")),
         )
 
-        processed = process_base_study_metadata_outbox_batch(batch_size=10)
+        processed = process_base_study_metadata_outbox_batch(
+            batch_size=10, settings=app.config, logger=app.logger
+        )
         assert processed == 0
 
         outbox_entry = BaseStudyMetadataOutbox.query.filter_by(
@@ -1325,7 +1335,7 @@ def test_metadata_worker_defers_failed_rows(session, app, monkeypatch):
         app.config["BASE_STUDY_METADATA_RETRY_DELAY_SECONDS"] = delay_original
 
 
-def test_metadata_worker_stops_after_first_satisfied_provider(session, monkeypatch):
+def test_metadata_worker_stops_after_first_satisfied_provider(session, app, monkeypatch):
     from neurostore.services import base_study_metadata_enrichment as metadata_service
 
     base_study = BaseStudy(
@@ -1397,7 +1407,9 @@ def test_metadata_worker_stops_after_first_satisfied_provider(session, monkeypat
         metadata_service, "fetch_metadata_pubmed", _unexpected_fetch_pubmed
     )
 
-    processed = process_base_study_metadata_outbox_batch(batch_size=10)
+    processed = process_base_study_metadata_outbox_batch(
+        batch_size=10, settings=app.config, logger=app.logger
+    )
     assert processed == 1
 
     session.refresh(base_study)
@@ -1414,7 +1426,9 @@ def test_metadata_worker_stops_after_first_satisfied_provider(session, monkeypat
     assert call_counts["fetch_pubmed"] == 0
 
 
-def test_metadata_worker_propagates_metadata_to_study_versions(session, monkeypatch):
+def test_metadata_worker_propagates_metadata_to_study_versions(
+    session, app, monkeypatch
+):
     from neurostore.services import base_study_metadata_enrichment as metadata_service
 
     base_study = BaseStudy(
@@ -1495,7 +1509,9 @@ def test_metadata_worker_propagates_metadata_to_study_versions(session, monkeypa
         lambda unique_ids: captured_cache_ids.append(unique_ids),
     )
 
-    processed = process_base_study_metadata_outbox_batch(batch_size=10)
+    processed = process_base_study_metadata_outbox_batch(
+        batch_size=10, settings=app.config, logger=app.logger
+    )
     assert processed == 1
 
     session.refresh(base_study)
@@ -1537,7 +1553,7 @@ def test_metadata_worker_propagates_metadata_to_study_versions(session, monkeypa
     )
 
 
-def test_metadata_worker_treats_year_zero_as_missing(session, monkeypatch):
+def test_metadata_worker_treats_year_zero_as_missing(session, app, monkeypatch):
     from neurostore.services import base_study_metadata_enrichment as metadata_service
 
     base_study = BaseStudy(
@@ -1596,7 +1612,9 @@ def test_metadata_worker_treats_year_zero_as_missing(session, monkeypatch):
         metadata_service, "fetch_metadata_pubmed", _pubmed_with_valid_year
     )
 
-    processed = process_base_study_metadata_outbox_batch(batch_size=10)
+    processed = process_base_study_metadata_outbox_batch(
+        batch_size=10, settings=app.config, logger=app.logger
+    )
     assert processed == 1
 
     session.refresh(base_study)
@@ -1618,11 +1636,13 @@ def test_metadata_worker_uses_new_provider_config_keys(session, app, monkeypatch
 
     captured_kwargs = {}
 
-    def _fake_lookup_semantic(_identifiers, api_key=None):
+    def _fake_lookup_semantic(_identifiers, api_key=None, **_kwargs):
         captured_kwargs["semantic_lookup_api_key"] = api_key
         return {}
 
-    def _fake_lookup_pubmed(_identifiers, email=None, api_key=None, tool=None):
+    def _fake_lookup_pubmed(
+        _identifiers, email=None, api_key=None, tool=None, **_kwargs
+    ):
         captured_kwargs["pubmed_lookup"] = {
             "email": email,
             "api_key": api_key,
@@ -1630,15 +1650,17 @@ def test_metadata_worker_uses_new_provider_config_keys(session, app, monkeypatch
         }
         return {}
 
-    def _fake_lookup_openalex(_identifiers, email=None):
+    def _fake_lookup_openalex(_identifiers, email=None, **_kwargs):
         captured_kwargs["openalex_lookup_email"] = email
         return {}
 
-    def _fake_fetch_semantic(_identifiers, api_key=None):
+    def _fake_fetch_semantic(_identifiers, api_key=None, **_kwargs):
         captured_kwargs["semantic_fetch_api_key"] = api_key
         return {}
 
-    def _fake_fetch_pubmed(_identifiers, email=None, api_key=None, tool=None):
+    def _fake_fetch_pubmed(
+        _identifiers, email=None, api_key=None, tool=None, **_kwargs
+    ):
         captured_kwargs["pubmed_fetch"] = {
             "email": email,
             "api_key": api_key,
@@ -1673,7 +1695,9 @@ def test_metadata_worker_uses_new_provider_config_keys(session, app, monkeypatch
     app.config["PUBMED_EMAIL"] = "old-pubmed@example.org"
     app.config["OPENALEX_EMAIL"] = "old-openalex@example.org"
     try:
-        metadata_service.enrich_base_study_metadata(base_study.id)
+        metadata_service.enrich_base_study_metadata(
+            base_study.id, settings=app.config, logger=app.logger
+        )
     finally:
         for key, value in original_values.items():
             app.config[key] = value
@@ -1873,7 +1897,7 @@ def test_metadata_worker_propagation_does_not_deadlock_with_study_then_base_writ
         scoped_session.remove()
         try:
             results["metadata"] = metadata_service.process_base_study_metadata_outbox_batch(
-                batch_size=10
+                batch_size=10, settings=app.config, logger=app.logger
             )
         except Exception as exc:  # noqa: BLE001
             results["metadata_exc"] = exc

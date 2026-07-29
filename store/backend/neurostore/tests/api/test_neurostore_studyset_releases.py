@@ -210,6 +210,7 @@ def test_build_release_selects_latest_coordinate_study_and_writes_tarball(
     base, old_study, newest_study, analysis = _seed_release_data(session)
 
     result = build_neurostore_studyset_release(
+        settings=app.config,
         nightly=True,
         force_monthly=True,
         version="2026-05",
@@ -286,8 +287,12 @@ def test_release_build_tracks_partial_update_manifest(app, session, tmp_path):
     app.config["FILE_DIR"] = tmp_path
     base, _old_study, newest_study, _analysis = _seed_release_data(session)
 
-    first = build_neurostore_studyset_release(nightly=True)["written"][0]
-    second = build_neurostore_studyset_release(nightly=True)["written"][0]
+    first = build_neurostore_studyset_release(
+        settings=app.config, nightly=True
+    )["written"][0]
+    second = build_neurostore_studyset_release(
+        settings=app.config, nightly=True
+    )["written"][0]
     assert second["changed_base_study_ids"] == []
     assert (
         second["studies"][base.id]["study_checksum"]
@@ -299,7 +304,9 @@ def test_release_build_tracks_partial_update_manifest(app, session, tmp_path):
     session.add(newest_study)
     session.commit()
 
-    third = build_neurostore_studyset_release(nightly=True)["written"][0]
+    third = build_neurostore_studyset_release(
+        settings=app.config, nightly=True
+    )["written"][0]
     assert third["changed_base_study_ids"] == [base.id]
     assert (
         third["studies"][base.id]["study_checksum"]
@@ -348,12 +355,12 @@ def test_release_build_serializes_changed_studies_in_batches(
 
     monkeypatch.setattr(release_service, "serialize_study_shards", wrapped_serialize)
 
-    build_neurostore_studyset_release(nightly=True)
+    build_neurostore_studyset_release(settings=app.config, nightly=True)
     assert len(calls) == 1
     assert set(calls[0]) == {newest_study.id, extra_study.id}
 
     calls.clear()
-    build_neurostore_studyset_release(nightly=True)
+    build_neurostore_studyset_release(settings=app.config, nightly=True)
     assert calls == []
 
 
@@ -363,6 +370,7 @@ async def test_release_api_resolves_nightly_latest_and_monthly(
     app.config["FILE_DIR"] = tmp_path
     _seed_release_data(session)
     build_neurostore_studyset_release(
+        settings=app.config,
         nightly=True,
         force_monthly=True,
         version="2026-05",
@@ -399,10 +407,13 @@ def test_monthly_release_is_immutable_without_force(app, session, tmp_path):
     _seed_release_data(session)
 
     first = build_neurostore_studyset_release(
+        settings=app.config,
         force_monthly=True,
         version="2026-05",
     )
-    second = build_neurostore_studyset_release(version="2026-05")
+    second = build_neurostore_studyset_release(
+        settings=app.config, version="2026-05"
+    )
 
     assert len(first["written"]) == 1
     assert second["written"] == []
@@ -413,7 +424,7 @@ async def test_latest_returns_404_without_monthly_release(
 ):
     app.config["FILE_DIR"] = tmp_path
     _seed_release_data(session)
-    build_neurostore_studyset_release(nightly=True)
+    build_neurostore_studyset_release(settings=app.config, nightly=True)
 
     resp = await async_auth_client.get("/api/neurostore-studyset-releases/latest")
 

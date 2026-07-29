@@ -40,10 +40,11 @@ LOGGER = logging.getLogger(__name__)
 class TestRuntime:
     """Explicit ASGI dependencies shared by the test fixtures."""
 
-    def __init__(self, config, asgi_app, database):
+    def __init__(self, config, asgi_app, database, logger=LOGGER):
         self.config = config
         self.asgi_app = asgi_app
         self.database = database
+        self.logger = logger
 
 
 @pytest.fixture(scope="module")

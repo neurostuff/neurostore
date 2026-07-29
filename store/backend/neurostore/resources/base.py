@@ -18,7 +18,6 @@ from webargs import fields
 from neurostore.cache_versioning import bump_cache_versions, get_cache_version_for_path
 from neurostore.asgi_requests import parse_query_parameters
 from neurostore.database import db
-from neurostore.dependencies import get_request_dependencies
 from neurostore.exceptions.utils.error_helpers import (
     abort_not_found,
     abort_permission,
@@ -190,7 +189,7 @@ class BaseView:
         if not base_studies:
             return
 
-        config = get_request_dependencies(request).settings
+        config = request.state.settings
         if config.get("BASE_STUDY_FLAGS_ASYNC", True):
             reason = f"{self.__class__.__name__}.update_base_studies"
             enqueue_base_study_flag_updates(base_studies, reason=reason)
