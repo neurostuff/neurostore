@@ -9,21 +9,39 @@ from webargs import fields
 
 from neurostore.database import db
 from neurostore.exceptions.factories import make_field_error
-from neurostore.exceptions.utils.error_helpers import (abort_unprocessable,
-                                                       abort_validation)
-from neurostore.models import (Analysis, Annotation, AnnotationAnalysis,
-                               Pipeline, PipelineConfig, PipelineStudyResult,
-                               Study, Studyset, User)
+from neurostore.exceptions.utils.error_helpers import (
+    abort_unprocessable,
+    abort_validation,
+)
+from neurostore.models import (
+    Analysis,
+    Annotation,
+    AnnotationAnalysis,
+    Pipeline,
+    PipelineConfig,
+    PipelineStudyResult,
+    Study,
+    Studyset,
+    User,
+)
 from neurostore.models.data import StudysetStudy, _check_type
 from neurostore.note_keys import canonicalize_note_keys, ordered_note_key_names
-from neurostore.resources.base import (DefaultObjectViewPolicy, ListView,
-                                       ObjectView, clear_cache,
-                                       load_schema_or_abort)
+from neurostore.resources.base import (
+    DefaultObjectViewPolicy,
+    ListView,
+    ObjectView,
+    clear_cache,
+    load_schema_or_abort,
+)
 from neurostore.resources.data_views.cloning import (
-    build_annotation_clone_payload, load_annotation_clone_source)
+    build_annotation_clone_payload,
+    load_annotation_clone_source,
+)
 from neurostore.resources.data_views.common import LIST_CLONE_ARGS
-from neurostore.resources.mutation_core import (DefaultMutationPolicy,
-                                                resolve_current_user)
+from neurostore.resources.mutation_core import (
+    DefaultMutationPolicy,
+    resolve_current_user,
+)
 from neurostore.resources.utils import get_current_user, view_maker
 from neurostore.schemas import PipelineStudyResultSchema
 

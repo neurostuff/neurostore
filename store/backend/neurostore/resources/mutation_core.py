@@ -12,9 +12,11 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import raiseload, selectinload
 
 from neurostore.database import db
-from neurostore.exceptions.utils.error_helpers import (abort_not_found,
-                                                       abort_permission,
-                                                       abort_validation)
+from neurostore.exceptions.utils.error_helpers import (
+    abort_not_found,
+    abort_permission,
+    abort_validation,
+)
 from neurostore.models import User
 from neurostore.resources.utils import get_current_user, is_user_admin
 

@@ -146,7 +146,9 @@ class BaseStudyBulkPostService:
         db.session.add(current_user)
         return current_user
 
-    def create_initial_version(self, record, study_data, current_user, studies_view_cls):
+    def create_initial_version(
+        self, record, study_data, current_user, studies_view_cls
+    ):
         version = studies_view_cls._model()
         version.base_study = record
         version.user = current_user
