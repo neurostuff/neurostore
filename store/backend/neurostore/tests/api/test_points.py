@@ -1,9 +1,9 @@
 import pytest
 
-pytestmark = pytest.mark.anyio
-
 from neurostore.models import Analysis, Point, Study, User
 from neurostore.schemas import PointSchema
+
+pytestmark = pytest.mark.anyio
 
 
 async def test_get_points(async_auth_client, ingest_neurosynth, session):
@@ -402,7 +402,9 @@ async def test_point_is_seed_column(async_auth_client, session):
     assert resp_false.json()["is_seed"] is False
 
     # Partial PUT should not reset is_seed when omitted from payload.
-    resp_partial = await async_auth_client.put(f"/api/points/{point_true.id}", data={"x": 10})
+    resp_partial = await async_auth_client.put(
+        f"/api/points/{point_true.id}", data={"x": 10}
+    )
     assert resp_partial.status_code == 200
     assert resp_partial.json()["is_seed"] is True
 

@@ -1,7 +1,5 @@
 import pytest
 
-pytestmark = pytest.mark.anyio
-
 from neurostore.database import db
 from neurostore.models.data import (
     BaseStudy,
@@ -9,6 +7,8 @@ from neurostore.models.data import (
     PipelineConfig,
     PipelineStudyResult,
 )
+
+pytestmark = pytest.mark.anyio
 
 
 @pytest.fixture
@@ -271,7 +271,9 @@ async def test_read_pipeline_configs(async_auth_client, result1, result2, result
     )
 
     # Test filtering with non-existent pipeline
-    response = await async_auth_client.get("/api/pipeline-configs/?pipeline=NonExistentPipeline")
+    response = await async_auth_client.get(
+        "/api/pipeline-configs/?pipeline=NonExistentPipeline"
+    )
     assert response.status_code == 200
     assert len(response.json()["results"]) == 0
 
@@ -282,7 +284,9 @@ async def test_read_pipeline_configs(async_auth_client, result1, result2, result
     assert response.status_code == 200
 
 
-async def test_read_single_pipeline_config(async_auth_client, pipeline_study_result_payload):
+async def test_read_single_pipeline_config(
+    async_auth_client, pipeline_study_result_payload
+):
     """Test reading a single pipeline config."""
     # Get config ID from the payload
     config_id = pipeline_study_result_payload[0]["config_id"]
@@ -532,14 +536,18 @@ async def test_list_of_studies(
     study2_id = pipeline_study_result_payload[1]["base_study_id"]
 
     # Test filtering by first study
-    response = await async_auth_client.get(f"/api/pipeline-study-results/?study_id={study1_id}")
+    response = await async_auth_client.get(
+        f"/api/pipeline-study-results/?study_id={study1_id}"
+    )
     assert response.status_code == 200
     data = response.json()
     assert len(data["results"]) == 1
     assert data["results"][0]["base_study_id"] == study1_id
 
     # Test filtering by second study
-    response = await async_auth_client.get(f"/api/pipeline-study-results/?study_id={study2_id}")
+    response = await async_auth_client.get(
+        f"/api/pipeline-study-results/?study_id={study2_id}"
+    )
     assert response.status_code == 200
     data = response.json()
     assert len(data["results"]) == 1
@@ -583,7 +591,9 @@ async def test_pipeline_config_with_schema(async_auth_client, pipeline1):
     db.session.commit()
 
     # Test reading the config
-    response = await async_auth_client.get(f"/api/pipeline-configs/{pipeline_config.id}")
+    response = await async_auth_client.get(
+        f"/api/pipeline-configs/{pipeline_config.id}"
+    )
     assert response.status_code == 200
 
     data = response.json()
@@ -604,7 +614,9 @@ async def test_post_pipeline_study_results_with_study_ids(
     payload = {"study_ids": [study1_id, study2_id]}
 
     # First request: should call search logic and return both results
-    response = await async_auth_client.post(url, data=payload, content_type="application/json")
+    response = await async_auth_client.post(
+        url, data=payload, content_type="application/json"
+    )
     assert response.status_code == 200
     data = response.json()
     returned_ids = {r["base_study_id"] for r in data["results"]}
@@ -618,7 +630,9 @@ async def test_post_pipeline_study_results_with_study_ids(
     assert returned_ids2 == {study1_id, study2_id}
 
 
-async def test_get_pipeline_embeddings_list(async_auth_client, ingest_demographic_features):
+async def test_get_pipeline_embeddings_list(
+    async_auth_client, ingest_demographic_features
+):
     """Test GET /api/pipeline-embeddings/ returns embeddings created by ingestion."""
     response = await async_auth_client.get("/api/pipeline-embeddings/")
     assert response.status_code == 200
@@ -637,7 +651,9 @@ async def test_get_pipeline_embeddings_list(async_auth_client, ingest_demographi
     assert all(isinstance(x, (int, float)) for x in item["embedding"])
 
 
-async def test_get_pipeline_embedding_by_id(async_auth_client, ingest_demographic_features):
+async def test_get_pipeline_embedding_by_id(
+    async_auth_client, ingest_demographic_features
+):
     """Test GET /api/pipeline-embeddings/{id} returns the correct embedding."""
     list_resp = await async_auth_client.get("/api/pipeline-embeddings/")
     assert list_resp.status_code == 200
@@ -668,7 +684,9 @@ async def test_filter_pipeline_configs(async_auth_client, ingest_demographic_fea
         assert config["embedding_dimensions"] > 0
 
     # Test filtering for configs without embeddings (should be none in this test)
-    response = await async_auth_client.get("/api/pipeline-configs/?has_embeddings=false")
+    response = await async_auth_client.get(
+        "/api/pipeline-configs/?has_embeddings=false"
+    )
     assert response.status_code == 200
     data = response.json()
     # Depending on test setup, there may or may not be configs without embeddings

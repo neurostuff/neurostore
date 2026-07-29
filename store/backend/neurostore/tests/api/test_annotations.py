@@ -1,7 +1,5 @@
 import pytest
 
-pytestmark = pytest.mark.anyio
-
 from datetime import datetime, timezone
 
 from sqlalchemy import event
@@ -21,6 +19,8 @@ from neurostore.models import (
     User,
 )
 from neurostore.tests.utils import ordered_note_keys
+
+pytestmark = pytest.mark.anyio
 
 
 def _is_annotation_analysis_concat_id_lookup(statement):
@@ -341,7 +341,9 @@ async def test_put_annotation_note_keys_only_updates_existing_notes(
         assert note["note"]["bar"] is False
 
 
-async def test_annotation_rejects_empty_note(async_auth_client, ingest_neurosynth, session):
+async def test_annotation_rejects_empty_note(
+    async_auth_client, ingest_neurosynth, session
+):
     dset = Studyset.query.first()
     study = dset.studies[0]
     analysis = study.analyses[0]
@@ -409,7 +411,9 @@ async def test_get_annotations(async_auth_client, ingest_neurosynth, session):
     # assert isinstance(df, pd.DataFrame)
 
 
-async def test_get_annotation_orders_notes_by_analysis_order(async_auth_client, session):
+async def test_get_annotation_orders_notes_by_analysis_order(
+    async_auth_client, session
+):
     user = User.query.filter_by(external_id=async_auth_client.username).first()
     annotation, _ = _create_annotation_with_two_analyses(
         session, user, analysis_orders=(2, 1)
@@ -462,7 +466,9 @@ async def test_get_annotation_avoids_per_note_annotation_analysis_pk_lookup(
     assert pk_lookups == []
 
 
-async def test_clone_annotation(async_auth_client, simple_neurosynth_annotation, session):
+async def test_clone_annotation(
+    async_auth_client, simple_neurosynth_annotation, session
+):
     annotation_entry = simple_neurosynth_annotation
     resp = await async_auth_client.post(
         f"/api/annotations/?source_id={annotation_entry.id}", data={}
@@ -477,11 +483,15 @@ async def test_clone_annotation(async_auth_client, simple_neurosynth_annotation,
 async def test_single_analysis_delete(async_auth_client, user_data, session):
     user = User.query.filter_by(name="user1").first()
     # get relevant studyset
-    studysets = await async_auth_client.get(f"/api/studysets/?user_id={user.external_id}")
+    studysets = await async_auth_client.get(
+        f"/api/studysets/?user_id={user.external_id}"
+    )
     studyset_id = studysets.json()["results"][0]["id"]
     studyset = await async_auth_client.get(f"/api/studysets/{studyset_id}")
     # get relevant annotation
-    annotations = await async_auth_client.get(f"/api/annotations/?studyset_id={studyset_id}")
+    annotations = await async_auth_client.get(
+        f"/api/annotations/?studyset_id={studyset_id}"
+    )
     annotation_id = annotations.json()["results"][0]["id"]
     annotation = await async_auth_client.get(f"/api/annotations/{annotation_id}")
     # pick study to edit
@@ -493,7 +503,9 @@ async def test_single_analysis_delete(async_auth_client, user_data, session):
     await async_auth_client.delete(f"/api/analyses/{analysis_id}")
 
     # test if annotations were updated
-    updated_annotation = await async_auth_client.get(f"/api/annotations/{annotation_id}")
+    updated_annotation = await async_auth_client.get(
+        f"/api/annotations/{annotation_id}"
+    )
 
     assert updated_annotation.status_code == 200
     assert (len(annotation.json()["notes"]) - 1) == (
@@ -504,11 +516,15 @@ async def test_single_analysis_delete(async_auth_client, user_data, session):
 async def test_study_removal_from_studyset(async_auth_client, session, user_data):
     user = User.query.filter_by(name="user1").first()
     # get relevant studyset
-    studysets = await async_auth_client.get(f"/api/studysets/?user_id={user.external_id}")
+    studysets = await async_auth_client.get(
+        f"/api/studysets/?user_id={user.external_id}"
+    )
     studyset_id = studysets.json()["results"][0]["id"]
     studyset = await async_auth_client.get(f"/api/studysets/{studyset_id}")
     # get relevant annotation
-    annotations = await async_auth_client.get(f"/api/annotations/?studyset_id={studyset_id}")
+    annotations = await async_auth_client.get(
+        f"/api/annotations/?studyset_id={studyset_id}"
+    )
     annotation_id = annotations.json()["results"][0]["id"]
     annotation = await async_auth_client.get(f"/api/annotations/{annotation_id}")
     # remove study from studyset
@@ -522,7 +538,9 @@ async def test_study_removal_from_studyset(async_auth_client, session, user_data
     assert ss_update.status_code == 200
 
     # test if annotations were updated
-    updated_annotation = await async_auth_client.get(f"/api/annotations/{annotation_id}")
+    updated_annotation = await async_auth_client.get(
+        f"/api/annotations/{annotation_id}"
+    )
 
     assert updated_annotation.status_code == 200
     assert (len(annotation.json()["notes"]) - 1) == (
@@ -533,25 +551,35 @@ async def test_study_removal_from_studyset(async_auth_client, session, user_data
 async def test_study_addition_to_studyset(async_auth_client, session, user_data):
     user = User.query.filter_by(name="user1").first()
     # get relevant studyset
-    studysets = await async_auth_client.get(f"/api/studysets/?user_id={user.external_id}")
+    studysets = await async_auth_client.get(
+        f"/api/studysets/?user_id={user.external_id}"
+    )
     studyset_id = studysets.json()["results"][0]["id"]
     studyset = await async_auth_client.get(f"/api/studysets/{studyset_id}")
     # get relevant annotation
-    annotations = await async_auth_client.get(f"/api/annotations/?studyset_id={studyset_id}")
+    annotations = await async_auth_client.get(
+        f"/api/annotations/?studyset_id={studyset_id}"
+    )
     annotation_id = annotations.json()["results"][0]["id"]
     annotation = await async_auth_client.get(f"/api/annotations/{annotation_id}")
     # add a new study
     studies = studyset.json()["studies"]
     user2 = User.query.filter_by(name="user2").first()
-    studies_u2 = await async_auth_client.get(f"/api/studies/?user_id={user2.external_id}")
+    studies_u2 = await async_auth_client.get(
+        f"/api/studies/?user_id={user2.external_id}"
+    )
     studies_u2_ids = [s["id"] for s in studies_u2.json()["results"]]
     studies.extend(studies_u2_ids)
 
     # update studyset
-    await async_auth_client.put(f"/api/studysets/{studyset_id}", data={"studies": studies})
+    await async_auth_client.put(
+        f"/api/studysets/{studyset_id}", data={"studies": studies}
+    )
 
     # test if annotations were updated
-    updated_annotation = await async_auth_client.get(f"/api/annotations/{annotation_id}")
+    updated_annotation = await async_auth_client.get(
+        f"/api/annotations/{annotation_id}"
+    )
 
     assert updated_annotation.status_code == 200
     assert (len(annotation.json()["notes"]) + 1) == (
@@ -570,7 +598,9 @@ async def test_blank_slate_creation(async_auth_client, session):
         "note_keys": ordered_note_keys({"include": "boolean"}),
         "name": "mah notes",
     }
-    annotation_post = await async_auth_client.post("/api/annotations/", data=annotation_data)
+    annotation_post = await async_auth_client.post(
+        "/api/annotations/", data=annotation_data
+    )
 
     # create study
     study_data = {"name": "fake study"}
@@ -585,7 +615,9 @@ async def test_blank_slate_creation(async_auth_client, session):
     study_put_data = {"analyses": [{"name": "analysis1"}, {"name": "analysis2"}]}
     _ = await async_auth_client.put(f"/api/studies/{s_id}", data=study_put_data)
 
-    annotation_get = await async_auth_client.get(f"/api/annotations/{annotation_post.json()['id']}")
+    annotation_get = await async_auth_client.get(
+        f"/api/annotations/{annotation_post.json()['id']}"
+    )
 
     assert len(annotation_get.json()["notes"]) == (
         (len(annotation_post.json()["notes"]) + 2)
@@ -595,16 +627,24 @@ async def test_blank_slate_creation(async_auth_client, session):
 async def test_analysis_addition_to_studyset(async_auth_client, session, user_data):
     user = User.query.filter_by(name="user1").first()
     # get relevant studyset
-    studysets = await async_auth_client.get(f"/api/studysets/?user_id={user.external_id}")
+    studysets = await async_auth_client.get(
+        f"/api/studysets/?user_id={user.external_id}"
+    )
     studyset_id = studysets.json()["results"][0]["id"]
     studyset = await async_auth_client.get(f"/api/studysets/{studyset_id}")
     # get relevant annotation
-    annotations = await async_auth_client.get(f"/api/annotations/?studyset_id={studyset_id}")
+    annotations = await async_auth_client.get(
+        f"/api/annotations/?studyset_id={studyset_id}"
+    )
     annotation_id = annotations.json()["results"][0]["id"]
     annotation = await async_auth_client.get(f"/api/annotations/{annotation_id}")
     # add a new analysis
     study_id = studyset.json()["studies"][0]
-    analysis = {"id": (await async_auth_client.get(f"/api/studies/{study_id}")).json()["analyses"][0]}
+    analysis = {
+        "id": (await async_auth_client.get(f"/api/studies/{study_id}")).json()[
+            "analyses"
+        ][0]
+    }
     analysis_new = {"name": "new_analysis"}
     analyses = [analysis, analysis_new]
     updated_study = await async_auth_client.put(
@@ -613,7 +653,9 @@ async def test_analysis_addition_to_studyset(async_auth_client, session, user_da
     assert len(updated_study.json()["analyses"]) == len(analyses)
 
     # test if annotations were updated
-    updated_annotation = await async_auth_client.get(f"/api/annotations/{annotation_id}")
+    updated_annotation = await async_auth_client.get(
+        f"/api/annotations/{annotation_id}"
+    )
 
     assert updated_annotation.status_code == 200
     assert (len(annotation.json()["notes"]) + 1) == (
@@ -643,15 +685,21 @@ async def test_mismatched_notes(async_auth_client, ingest_neurosynth, session):
     # allowing this behavior now
     # additional key only added to one analysis
     data[0]["note"]["bar"] = "not real!"
-    assert (await async_auth_client.post("/api/annotations/", data=payload)).status_code == 200
+    assert (
+        await async_auth_client.post("/api/annotations/", data=payload)
+    ).status_code == 200
 
     # incorrect key in one analysis
     data[0]["note"].pop("foo")
-    assert (await async_auth_client.post("/api/annotations/", data=payload)).status_code == 200
+    assert (
+        await async_auth_client.post("/api/annotations/", data=payload)
+    ).status_code == 200
 
     # update a single analysis with incorrect key
     bad_payload = {"notes": [data[0]]}
-    assert (await async_auth_client.post("/api/annotations/", data=bad_payload)).status_code == 400
+    assert (
+        await async_auth_client.post("/api/annotations/", data=bad_payload)
+    ).status_code == 400
 
 
 # test push analysis id that does not exist
@@ -681,14 +729,15 @@ async def test_put_nonexistent_analysis(async_auth_client, ingest_neurosynth, se
     bad_payload = {"notes": data}
 
     assert (
-        (await async_auth_client.put(
+        await async_auth_client.put(
             f"/api/annotations/{annot.json()['id']}", data=bad_payload
-        )).status_code
-        == 400
-    )
+        )
+    ).status_code == 400
 
 
-async def test_post_put_subset_of_analyses(async_auth_client, ingest_neurosynth, session):
+async def test_post_put_subset_of_analyses(
+    async_auth_client, ingest_neurosynth, session
+):
     dset = Studyset.query.first()
     # y for x in non_flat for y in x
     data = [
@@ -713,11 +762,10 @@ async def test_post_put_subset_of_analyses(async_auth_client, ingest_neurosynth,
     # remove last note again
 
     assert (
-        (await async_auth_client.put(
+        await async_auth_client.put(
             f"/api/annotations/{annot.json()['id']}", data=payload
-        )).status_code
-        == 400
-    )
+        )
+    ).status_code == 400
 
 
 async def test_correct_note_overwrite(async_auth_client, ingest_neurosynth, session):
@@ -898,7 +946,9 @@ async def test_put_annotation_applies_pipeline_columns(async_auth_client, sessio
         ]
     }
 
-    resp = await async_auth_client.put(f"/api/annotations/{annotation.id}", data=payload)
+    resp = await async_auth_client.put(
+        f"/api/annotations/{annotation.id}", data=payload
+    )
     assert resp.status_code == 200
     body = resp.json()
 
@@ -917,7 +967,9 @@ async def test_put_annotation_applies_pipeline_columns(async_auth_client, sessio
         assert note["name"] == "a,b"
 
 
-async def test_put_annotation_pipeline_column_conflict_suffix(async_auth_client, session):
+async def test_put_annotation_pipeline_column_conflict_suffix(
+    async_auth_client, session
+):
     user = User.query.filter_by(external_id=async_auth_client.username).first()
     annotation, base_study = _create_annotation_with_two_analyses(session, user)
 
@@ -982,7 +1034,9 @@ async def test_put_annotation_pipeline_column_conflict_suffix(async_auth_client,
         ]
     }
 
-    resp = await async_auth_client.put(f"/api/annotations/{annotation.id}", data=payload)
+    resp = await async_auth_client.put(
+        f"/api/annotations/{annotation.id}", data=payload
+    )
     assert resp.status_code == 200
     body = resp.json()
 
@@ -1028,7 +1082,9 @@ async def test_annotation_analyses_post(async_auth_client, ingest_neurosynth, se
     data[2]["note"]["doo"] = new_value  # will not be updated
     data[0]["id"] = annot.json()["id"] + "_" + data[0]["analysis"]
     data[1]["annotation"] = annot.json()["id"]
-    post_resp = await async_auth_client.post("/api/annotation-analyses/", data=data[0:3])
+    post_resp = await async_auth_client.post(
+        "/api/annotation-analyses/", data=data[0:3]
+    )
     assert post_resp.status_code == 200
 
     get_resp = await async_auth_client.get(f"/api/annotations/{annot.json()['id']}")
@@ -1044,7 +1100,9 @@ async def test_annotation_analyses_post(async_auth_client, ingest_neurosynth, se
         assert current_by_analysis[analysis_id] == value == new_value
 
 
-async def test_annotation_analyses_post_no_valid_ids_noop(async_auth_client, ingest_neurosynth):
+async def test_annotation_analyses_post_no_valid_ids_noop(
+    async_auth_client, ingest_neurosynth
+):
     dset = Studyset.query.first()
     payload = [
         {

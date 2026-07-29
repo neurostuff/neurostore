@@ -1,8 +1,8 @@
 import pytest
 
-pytestmark = pytest.mark.anyio
-
 from neurostore.models import Analysis, BaseStudy, Image, Study, User
+
+pytestmark = pytest.mark.anyio
 
 
 async def test_get_images(async_auth_client, ingest_neurovault, session):
@@ -190,7 +190,9 @@ async def test_clearing_image_analysis_preserves_study(async_auth_client, sessio
     session.add_all([study, analysis, image])
     session.commit()
 
-    resp = await async_auth_client.put(f"/api/images/{image.id}", data={"analysis": None})
+    resp = await async_auth_client.put(
+        f"/api/images/{image.id}", data={"analysis": None}
+    )
 
     assert resp.status_code == 200
     assert resp.json()["analysis"] is None

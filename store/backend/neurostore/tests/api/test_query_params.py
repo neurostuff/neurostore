@@ -2,8 +2,6 @@ from urllib.parse import urlencode
 
 import pytest
 
-pytestmark = pytest.mark.anyio
-
 from neurostore.models import BaseStudy, Study
 from neurostore.schemas.data import (
     AnalysisSchema,
@@ -13,6 +11,8 @@ from neurostore.schemas.data import (
 )
 from neurostore.services.has_media_flags import recompute_media_flags
 from neurostore.tests.conftest import invalid_queries, valid_queries
+
+pytestmark = pytest.mark.anyio
 
 
 @pytest.mark.parametrize("nested", ["true", "false"])
@@ -24,7 +24,9 @@ from neurostore.tests.conftest import invalid_queries, valid_queries
         ("analyses", AnalysisSchema()),
     ],
 )
-async def test_nested(async_auth_client, ingest_neurosynth, nested, resource_schema, session):
+async def test_nested(
+    async_auth_client, ingest_neurosynth, nested, resource_schema, session
+):
     resource, schema = resource_schema
     resp = await async_auth_client.get(f"/api/{resource}/?nested={nested}")
     fields = [f for f in schema.fields if isinstance(schema.fields[f], StringOrNested)]
@@ -141,8 +143,12 @@ async def test_map_type_filter(async_auth_client, session, endpoint):
     beta_var_miss = await async_auth_client.get(
         f"/api/{endpoint}/?doi={z_doi}&map_type=beta_variance"
     )
-    any_match = await async_auth_client.get(f"/api/{endpoint}/?doi={any_doi}&map_type=any")
-    any_match_z = await async_auth_client.get(f"/api/{endpoint}/?doi={z_doi}&map_type=any")
+    any_match = await async_auth_client.get(
+        f"/api/{endpoint}/?doi={any_doi}&map_type=any"
+    )
+    any_match_z = await async_auth_client.get(
+        f"/api/{endpoint}/?doi={z_doi}&map_type=any"
+    )
 
     assert z_match.status_code == 200
     assert z_miss.status_code == 200
@@ -169,7 +175,9 @@ async def test_page_size(async_auth_client, ingest_neurosynth, session):
     num_studies = Study.query.count()
     results = []
     for i in range(1, num_studies + 1):
-        get_page_size = await async_auth_client.get(f"/api/studies/?page_size=1&page={i}")
+        get_page_size = await async_auth_client.get(
+            f"/api/studies/?page_size=1&page={i}"
+        )
         assert get_page_size.status_code == 200
         results.append(get_page_size.json()["results"][0]["id"])
     assert len(set(results)) == num_studies
@@ -180,7 +188,9 @@ async def test_common_queries(async_auth_client, ingest_neurosynth, session):
 
     pmid_search = await async_auth_client.get(f"/api/base-studies/?pmid={study.pmid}")
 
-    total_search = await async_auth_client.get(f"/api/base-studies/?search={study.pmid}")
+    total_search = await async_auth_client.get(
+        f"/api/base-studies/?search={study.pmid}"
+    )
 
     assert pmid_search.status_code == total_search.status_code == 200
     assert len(pmid_search.json()["results"]) == len(total_search.json()["results"])
@@ -193,17 +203,23 @@ async def test_multiword_queries(async_auth_client, ingest_neurosynth, session):
     single_word = word_list[-1]
     multiple_words = " ".join(word_list[-3:])
 
-    single_word_search = await async_auth_client.get(f"/api/base-studies/?search={single_word}")
+    single_word_search = await async_auth_client.get(
+        f"/api/base-studies/?search={single_word}"
+    )
     assert single_word_search.status_code == 200
     assert len(single_word_search.json()["results"]) > 0
 
-    multi_word_search = await async_auth_client.get(f"/api/base-studies/?search={multiple_words}")
+    multi_word_search = await async_auth_client.get(
+        f"/api/base-studies/?search={multiple_words}"
+    )
     assert multi_word_search.status_code == 200
     assert len(multi_word_search.json()["results"]) > 0
 
 
 @pytest.mark.parametrize("query, expected", valid_queries)
-async def test_valid_pubmed_queries(query, expected, async_auth_client, ingest_neurosynth, session):
+async def test_valid_pubmed_queries(
+    query, expected, async_auth_client, ingest_neurosynth, session
+):
     search = await async_auth_client.get(f"/api/base-studies/?search={query}")
     assert search.status_code == 200
 

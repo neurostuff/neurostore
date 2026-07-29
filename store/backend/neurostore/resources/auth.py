@@ -59,7 +59,9 @@ def decode_token(token):
         except jwt.ExpiredSignatureError:
             raise _oauth_problem("token is expired")
         except jwt.JWTClaimsError:
-            raise _oauth_problem("incorrect claims,please check the audience and issuer")
+            raise _oauth_problem(
+                "incorrect claims,please check the audience and issuer"
+            )
         except Exception:
             raise _oauth_problem("Unable to parse authentication token.")
 

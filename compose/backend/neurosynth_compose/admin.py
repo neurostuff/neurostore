@@ -22,9 +22,11 @@ class UsernamePasswordAdminAuth(AuthenticationBackend):
         form = await request.form()
         username = str(form.get("username") or "")
         password = str(form.get("password") or "")
-        authenticated = bool(self.username and self.password) and compare_digest(
-            username, self.username
-        ) and compare_digest(password, self.password)
+        authenticated = (
+            bool(self.username and self.password)
+            and compare_digest(username, self.username)
+            and compare_digest(password, self.password)
+        )
         if authenticated:
             request.session["compose_admin_authenticated"] = True
         return authenticated
@@ -48,22 +50,16 @@ def _model_view(model, category):
 
 def init_admin(app, database, config: Mapping[str, object]):
     """Mount Compose's retained admin model coverage at ``/admin``."""
-    from neurosynth_compose.models import (
-        Annotation,
-        MetaAnalysis,
-        MetaAnalysisResult,
-        NeurostoreAnalysis,
-        NeurostoreAnnotation,
-        NeurostoreStudy,
-        NeurostoreStudyset,
-        NeurovaultCollection,
-        NeurovaultFile,
-        Project,
-        Specification,
-        Studyset,
-        User,
-    )
-    from neurosynth_compose.models.analysis import Condition, SpecificationCondition
+    from neurosynth_compose.models import (Annotation, MetaAnalysis,
+                                           MetaAnalysisResult,
+                                           NeurostoreAnalysis,
+                                           NeurostoreAnnotation,
+                                           NeurostoreStudy, NeurostoreStudyset,
+                                           NeurovaultCollection,
+                                           NeurovaultFile, Project,
+                                           Specification, Studyset, User)
+    from neurosynth_compose.models.analysis import (Condition,
+                                                    SpecificationCondition)
     from neurosynth_compose.models.auth import Role
 
     admin = Admin(

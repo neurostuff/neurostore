@@ -1,6 +1,5 @@
 import pytest
 
-pytestmark = pytest.mark.anyio
 from marshmallow import fields
 
 from neurostore.models import (
@@ -27,6 +26,8 @@ from neurostore.schemas import (
     StudysetSchema,
 )
 from neurostore.schemas.data import StringOrNested
+
+pytestmark = pytest.mark.anyio
 
 
 @pytest.mark.parametrize(
@@ -148,7 +149,9 @@ async def test_read(async_auth_client, user_data, endpoint, model, schema, sessi
         ("points", Point, PointSchema, {"space": "MNI"}),
     ],
 )
-async def test_update(async_auth_client, user_data, endpoint, model, schema, update, session):
+async def test_update(
+    async_auth_client, user_data, endpoint, model, schema, update, session
+):
     user = User.query.filter_by(name="user1").first()
     record = model.query.filter_by(user=user).first()
 
@@ -173,7 +176,9 @@ async def test_update(async_auth_client, user_data, endpoint, model, schema, upd
         ("points", Point, PointSchema),
     ],
 )
-async def test_delete(async_auth_client, mock_auth, user_data, endpoint, model, schema, session):
+async def test_delete(
+    async_auth_client, mock_auth, user_data, endpoint, model, schema, session
+):
     user = User.query.filter_by(name="user1").first()
     record = model.query.filter_by(user=user).first()
     r_id = record.id

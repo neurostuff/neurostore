@@ -2,15 +2,17 @@ import uuid
 
 import pytest
 
-pytestmark = pytest.mark.anyio
-
 from neurostore.models import Analysis, Study, Studyset, User
 from neurostore.schemas import StudySchema
+
+pytestmark = pytest.mark.anyio
 
 
 async def test_create_study_as_user_and_analysis_as_bot(async_auth_clients, session):
     # create study as user
-    user_auth_client = next(ac for ac in async_auth_clients if ac.username == "user1-id")
+    user_auth_client = next(
+        ac for ac in async_auth_clients if ac.username == "user1-id"
+    )
 
     study_resp = await user_auth_client.post("/api/studies/", data={"name": "test"})
     assert study_resp.status_code == 200
@@ -24,7 +26,9 @@ async def test_create_study_as_user_and_analysis_as_bot(async_auth_clients, sess
     assert analysis_resp.status_code == 200
 
 
-async def test_get_studies(async_auth_client, ingest_neurosynth, ingest_neuroquery, session):
+async def test_get_studies(
+    async_auth_client, ingest_neurosynth, ingest_neuroquery, session
+):
     # List of studies
     resp = await async_auth_client.get("/api/studies/?nested=true&level=group")
     assert resp.status_code == 200
@@ -102,9 +106,11 @@ async def test_study_emits_all_media_flags(async_auth_client, session):
 )
 async def test_put_studies(async_auth_client, ingest_neurosynth, data, session):
     study_entry = Study.query.first()
-    study_clone = (await async_auth_client.post(
-        f"/api/studies/?source_id={study_entry.id}", data={}
-    )).json()
+    study_clone = (
+        await async_auth_client.post(
+            f"/api/studies/?source_id={study_entry.id}", data={}
+        )
+    ).json()
     study_clone_id = study_clone["id"]
     payload = data
     if payload.get("analyses"):
@@ -119,7 +125,9 @@ async def test_put_studies(async_auth_client, ingest_neurosynth, data, session):
             ]
         analysis_clone_id = study_clone["analyses"][0]["id"]
         payload["analyses"][0]["id"] = analysis_clone_id
-    put_resp = await async_auth_client.put(f"/api/studies/{study_clone_id}", data=payload)
+    put_resp = await async_auth_client.put(
+        f"/api/studies/{study_clone_id}", data=payload
+    )
     assert put_resp.status_code == 200
 
     updated_study_entry = Study.query.filter_by(id=study_clone_id).first()
@@ -129,7 +137,9 @@ async def test_put_studies(async_auth_client, ingest_neurosynth, data, session):
 
 async def test_clone_studies(async_auth_client, ingest_neurovault, session):
     study_entry = Study.query.first()
-    resp = await async_auth_client.post(f"/api/studies/?source_id={study_entry.id}", data={})
+    resp = await async_auth_client.post(
+        f"/api/studies/?source_id={study_entry.id}", data={}
+    )
     data = resp.json()
     assert data["name"] == study_entry.name
     assert data["source_id"] == study_entry.id
@@ -139,7 +149,9 @@ async def test_clone_studies(async_auth_client, ingest_neurovault, session):
     )
 
     # a clone of a clone should reference the original parent
-    resp2 = await async_auth_client.post(f"/api/studies/?source_id={data['id']}", data={})
+    resp2 = await async_auth_client.post(
+        f"/api/studies/?source_id={data['id']}", data={}
+    )
     data2 = resp2.json()
 
     assert data2["name"] == study_entry.name
@@ -154,14 +166,18 @@ async def test_clone_study_with_missing_source_id_sets_null(
     async_auth_client, ingest_neurosynth, session
 ):
     study_entry = Study.query.first()
-    resp = await async_auth_client.post(f"/api/studies/?source_id={study_entry.id}", data={})
+    resp = await async_auth_client.post(
+        f"/api/studies/?source_id={study_entry.id}", data={}
+    )
     assert resp.status_code == 200
     clone = resp.json()
 
     session.delete(study_entry)
     session.commit()
 
-    resp2 = await async_auth_client.post(f"/api/studies/?source_id={clone['id']}", data={})
+    resp2 = await async_auth_client.post(
+        f"/api/studies/?source_id={clone['id']}", data={}
+    )
     assert resp2.status_code == 200
     data2 = resp2.json()
     assert data2["source_id"] is None
@@ -171,7 +187,9 @@ async def test_put_study_with_missing_source_id_sets_null(
     async_auth_client, ingest_neurosynth, session
 ):
     study_entry = Study.query.first()
-    resp = await async_auth_client.post(f"/api/studies/?source_id={study_entry.id}", data={})
+    resp = await async_auth_client.post(
+        f"/api/studies/?source_id={study_entry.id}", data={}
+    )
     assert resp.status_code == 200
     clone = resp.json()
 
@@ -319,7 +337,9 @@ async def test_cache_update(async_auth_client, user_data, session):
     await async_auth_client.get(f"/api/studies/{study_entry.id}")
     await async_auth_client.get(f"/api/studies/{study_entry.id}?nested=true")
     await async_auth_client.get(f"/api/studies/{study_entry.id}")
-    await async_auth_client.put(f"/api/studies/{study_entry.id}", data={"name": "new name"})
+    await async_auth_client.put(
+        f"/api/studies/{study_entry.id}", data={"name": "new name"}
+    )
     await async_auth_client.get(f"/api/studies/{study_entry.id}")
 
 
@@ -367,5 +387,7 @@ async def test_studies_flat(async_auth_client, ingest_neurosynth, session):
 
 async def test_create_study_new_user(async_new_user_client, mock_auth0_auth, session):
 
-    study_resp = await async_new_user_client.post("/api/studies/", data={"name": "test"})
+    study_resp = await async_new_user_client.post(
+        "/api/studies/", data={"name": "test"}
+    )
     assert study_resp.status_code == 200

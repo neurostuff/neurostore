@@ -9,58 +9,43 @@ from marshmallow.exceptions import ValidationError
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload, load_only, selectinload
 
-from neurosynth_compose.asgi_requests import parse_request_data, raise_http_error
+from neurosynth_compose.asgi_requests import (parse_request_data,
+                                              raise_http_error)
 from neurosynth_compose.database import commit_session, db
-
 # Imported for dynamic resolution by `view_maker` on *View classes.
 from neurosynth_compose.models.analysis import NeurostoreStudy  # noqa: F401
 from neurosynth_compose.models.analysis import NeurovaultFile  # noqa: F401
-from neurosynth_compose.models.analysis import (
-    SnapshotAnnotation,  # noqa: F401
-    Condition,
-    MetaAnalysis,
-    MetaAnalysisResult,
-    NeurostoreAnalysis,
-    NeurostoreAnnotation,
-    NeurovaultCollection,
-    NeurostoreStudyset,
-    Project,
-    Specification,
-    SpecificationCondition,
-    SnapshotStudyset,
-    Tag,
-)
+from neurosynth_compose.models.analysis import SnapshotAnnotation  # noqa: F401
+from neurosynth_compose.models.analysis import (Condition, MetaAnalysis,
+                                                MetaAnalysisResult,
+                                                NeurostoreAnalysis,
+                                                NeurostoreAnnotation,
+                                                NeurostoreStudyset,
+                                                NeurovaultCollection, Project,
+                                                SnapshotStudyset,
+                                                Specification,
+                                                SpecificationCondition, Tag)
 from neurosynth_compose.models.auth import User
-from neurosynth_compose.resources.common import get_current_user, make_json_response
+from neurosynth_compose.resources.common import (get_current_user,
+                                                 make_json_response)
 from neurosynth_compose.resources.data_views.common import (
-    _MISSING,
-    _serialize_base_record,
-    _serialize_datetime,
-    _set_if_present,
-)
-from neurosynth_compose.resources.resource_services import (
-    create_neurovault_collection,
-    ensure_canonical_annotation,
-    ensure_canonical_studyset,
-    parse_upload_files,
-    select_cluster_table_for_specification,
-)
+    _MISSING, _serialize_base_record, _serialize_datetime, _set_if_present)
 from neurosynth_compose.resources.data_views.tags_view import (
-    _find_tag_by_name,
-    _tag_accessible,
-)
-from neurosynth_compose.resources.view_core import ListView, ObjectView, view_maker
-
+    _find_tag_by_name, _tag_accessible)
+from neurosynth_compose.resources.resource_services import (
+    create_neurovault_collection, ensure_canonical_annotation,
+    ensure_canonical_studyset, parse_upload_files,
+    select_cluster_table_for_specification)
+from neurosynth_compose.resources.view_core import (ListView, ObjectView,
+                                                    view_maker)
 # Imported for dynamic resolution by `view_maker` on *View classes.
-from neurosynth_compose.schemas import (  # noqa: F401
-    MetaAnalysisResultSchema,
-    MetaAnalysisSchema,
-    NeurostoreAnnotationSchema,
-    NeurostoreStudySchema,
-    NeurostoreStudysetSchema,
-    NeurovaultCollectionSchema,
-    NeurovaultFileSchema,
-)
+from neurosynth_compose.schemas import MetaAnalysisResultSchema  # noqa: F401
+from neurosynth_compose.schemas import MetaAnalysisSchema  # noqa: F401
+from neurosynth_compose.schemas import NeurostoreAnnotationSchema  # noqa: F401
+from neurosynth_compose.schemas import NeurostoreStudySchema  # noqa: F401
+from neurosynth_compose.schemas import NeurostoreStudysetSchema  # noqa: F401
+from neurosynth_compose.schemas import NeurovaultCollectionSchema  # noqa: F401
+from neurosynth_compose.schemas import NeurovaultFileSchema  # noqa: F401
 from neurosynth_compose.schemas.analysis import get_ns_base
 
 
@@ -806,9 +791,7 @@ class MetaAnalysisResultsView(ObjectView, ListView):
             preloaded[key] = []
             for upload_file in file_list:
                 content = await upload_file.read()
-                preloaded[key].append(
-                        _PreloadedFile(upload_file.filename, content)
-                )
+                preloaded[key].append(_PreloadedFile(upload_file.filename, content))
 
         if str(connexion.request.content_type).startswith("application/json"):
             try:
@@ -851,9 +834,8 @@ class MetaAnalysisResultsView(ObjectView, ListView):
         from celery import group
 
         from neurosynth_compose.resources.tasks import (
-            create_or_update_neurostore_analysis,
-            file_upload_neurovault,
-        )
+            create_or_update_neurostore_analysis, file_upload_neurovault)
+
         upload_meta_id = token_info.get("meta_analysis_id")
 
         result = db.session.execute(
@@ -864,9 +846,7 @@ class MetaAnalysisResultsView(ObjectView, ListView):
             and result.meta_analysis
             and result.meta_analysis.id != upload_meta_id
         ):
-            raise_http_error(
-                401, "Upload key does not match the target meta-analysis."
-            )
+            raise_http_error(401, "Upload key does not match the target meta-analysis.")
 
         if uploaded_files:
             stat_maps = uploaded_files.get("statistical_maps", [])
@@ -970,7 +950,9 @@ class MetaAnalysisResultsView(ObjectView, ListView):
         if ss_id_input is None:
             ss_id_input = form_data.get("studyset_snapshot_id") if form_data else None
         if ann_id_input is None:
-            ann_id_input = form_data.get("annotation_snapshot_id") if form_data else None
+            ann_id_input = (
+                form_data.get("annotation_snapshot_id") if form_data else None
+            )
 
         meta = getattr(result, "meta_analysis", None)
         if meta:

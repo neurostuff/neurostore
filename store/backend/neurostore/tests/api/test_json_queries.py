@@ -4,10 +4,11 @@ from urllib.parse import urlencode
 
 import pytest
 
-pytestmark = pytest.mark.anyio
 from sqlalchemy import or_
 
 from neurostore.models import Pipeline, PipelineConfig, PipelineStudyResult
+
+pytestmark = pytest.mark.anyio
 
 
 @pytest.fixture

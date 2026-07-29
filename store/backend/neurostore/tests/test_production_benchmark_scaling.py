@@ -1,6 +1,5 @@
 import pytest
 
-pytestmark = pytest.mark.anyio
 
 import json
 import threading
@@ -17,6 +16,8 @@ from neurostore.production_benchmark import (
     _run_async,
     _ThreadAwareProfiler,
 )
+
+pytestmark = pytest.mark.anyio
 
 
 def test_fit_line_returns_expected_slope_and_projection():

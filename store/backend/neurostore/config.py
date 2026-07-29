@@ -66,9 +66,7 @@ class Config(object):
     WTF_CSRF_ENABLED = False
 
     FILE_DIR = Path("/file-data")
-    NEUROSTORE_STUDYSET_RELEASE_DIR = os.environ.get(
-        "NEUROSTORE_STUDYSET_RELEASE_DIR"
-    )
+    NEUROSTORE_STUDYSET_RELEASE_DIR = os.environ.get("NEUROSTORE_STUDYSET_RELEASE_DIR")
     CACHE_TYPE = "RedisCache"
     CACHE_REDIS_URL = require_env_var("CACHE_REDIS_URL")
     CACHE_KEY_PREFIX = None

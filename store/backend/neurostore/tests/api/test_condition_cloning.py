@@ -1,11 +1,13 @@
 import pytest
 
-pytestmark = pytest.mark.anyio
-
 from neurostore.models import Analysis, AnalysisConditions, Condition, Study, User
 
+pytestmark = pytest.mark.anyio
 
-async def test_condition_cloning_neurovault(async_auth_client, ingest_neurovault, session):
+
+async def test_condition_cloning_neurovault(
+    async_auth_client, ingest_neurovault, session
+):
     """
     Integration test to verify condition cloning preserves original references via API.
     This test validates the complete end-to-end behavior.
@@ -125,7 +127,9 @@ async def test_condition_cloning_cross_user_permissions(async_auth_client, sessi
     conditions_before = Condition.query.count()
 
     # Clone the study using the API (async_auth_client is a different user)
-    resp = await async_auth_client.post(f"/api/studies/?source_id={test_study.id}", data={})
+    resp = await async_auth_client.post(
+        f"/api/studies/?source_id={test_study.id}", data={}
+    )
 
     # This should now work with our fix
     assert (
@@ -216,7 +220,9 @@ async def test_condition_cloning_new_data(async_auth_client, session):
     conditions_before = Condition.query.count()
 
     # Clone the study using the API
-    resp = await async_auth_client.post(f"/api/studies/?source_id={test_study.id}", data={})
+    resp = await async_auth_client.post(
+        f"/api/studies/?source_id={test_study.id}", data={}
+    )
     assert resp.status_code == 200
 
     cloned_study_data = resp.json()

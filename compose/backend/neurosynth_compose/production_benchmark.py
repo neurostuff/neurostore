@@ -22,17 +22,15 @@ from jose.jwt import encode
 from sqlalchemy import event, func, inspect, select, text
 
 from neurosynth_compose.database import db
-from neurosynth_compose.models.analysis import (
-    SnapshotAnnotation,
-    NeurostoreAnnotation,
-    MetaAnalysis,
-    MetaAnalysisResult,
-    NeurovaultCollection,
-    Project,
-    Specification,
-    SnapshotStudyset,
-    NeurostoreStudyset as NeurostoreStudyset,
-)
+from neurosynth_compose.models.analysis import (MetaAnalysis,
+                                                MetaAnalysisResult,
+                                                NeurostoreAnnotation)
+from neurosynth_compose.models.analysis import \
+    NeurostoreStudyset as NeurostoreStudyset
+from neurosynth_compose.models.analysis import (NeurovaultCollection, Project,
+                                                SnapshotAnnotation,
+                                                SnapshotStudyset,
+                                                Specification)
 from neurosynth_compose.models.auth import User
 from neurosynth_compose.resources.data_views import meta_analysis_jobs_view
 from neurosynth_compose.tests.request_utils import Client
@@ -341,9 +339,10 @@ def _percentile(values: list[float], percentile: float) -> float:
     lower_index = int(rank)
     upper_index = min(lower_index + 1, len(sorted_values) - 1)
     fraction = rank - lower_index
-    return sorted_values[lower_index] + (
-        sorted_values[upper_index] - sorted_values[lower_index]
-    ) * fraction
+    return (
+        sorted_values[lower_index]
+        + (sorted_values[upper_index] - sorted_values[lower_index]) * fraction
+    )
 
 
 def _project_line(fit: dict[str, float], x_value: int) -> float:

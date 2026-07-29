@@ -8,19 +8,14 @@ import requests
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.exc import OperationalError
-from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
+from tenacity import (retry, retry_if_exception, stop_after_attempt,
+                      wait_exponential)
 
 from neurostore.cache_versioning import bump_cache_versions
 from neurostore.database import db
-from neurostore.models import (
-    BaseStudy,
-    BaseStudyFlagOutbox,
-    BaseStudyMetadataOutbox,
-    PipelineEmbedding,
-    PipelineStudyResult,
-    Study,
-    StudysetStudy,
-)
+from neurostore.models import (BaseStudy, BaseStudyFlagOutbox,
+                               BaseStudyMetadataOutbox, PipelineEmbedding,
+                               PipelineStudyResult, Study, StudysetStudy)
 from neurostore.resources.common import merge_unique_ids, normalize_ids
 from neurostore.services.has_media_flags import enqueue_base_study_flag_updates
 
@@ -200,9 +195,7 @@ def _retry_delay_seconds(settings):
 
 
 def _provider_error(logger, provider_name, exc):
-    logger.warning(
-        "base-study metadata provider failed (%s): %s", provider_name, exc
-    )
+    logger.warning("base-study metadata provider failed (%s): %s", provider_name, exc)
 
 
 def _coerce_positive_float(value, default):
@@ -220,9 +213,7 @@ def _provider_rps_for_request(settings, url, kwargs):
     if "api.semanticscholar.org" in url:
         if headers.get("x-api-key"):
             rps = _coerce_positive_float(
-                settings.get(
-                    "SEMANTIC_SCHOLAR_API_RPS", SEMANTIC_SCHOLAR_DEFAULT_RPS
-                ),
+                settings.get("SEMANTIC_SCHOLAR_API_RPS", SEMANTIC_SCHOLAR_DEFAULT_RPS),
                 SEMANTIC_SCHOLAR_DEFAULT_RPS,
             )
             return "semantic_scholar", rps
@@ -240,9 +231,7 @@ def _provider_rps_for_request(settings, url, kwargs):
             if has_api_key
             else PUBMED_DEFAULT_RPS_WITHOUT_KEY
         )
-        rps = _coerce_positive_float(
-            settings.get(config_key, default_rps), default_rps
-        )
+        rps = _coerce_positive_float(settings.get(config_key, default_rps), default_rps)
         provider_name = "pubmed_with_key" if has_api_key else "pubmed_without_key"
         return provider_name, rps
 

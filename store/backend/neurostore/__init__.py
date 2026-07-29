@@ -1,5 +1,5 @@
-import os
 import logging
+import os
 from contextlib import asynccontextmanager
 from copy import deepcopy
 from pathlib import Path
@@ -7,30 +7,25 @@ from typing import AsyncIterator, Mapping
 
 import anyio
 import connexion
-from connexion.exceptions import OAuthProblem
-from connexion.exceptions import ProblemException
+from connexion.exceptions import OAuthProblem, ProblemException
 from connexion.jsonifier import Jsonifier
 from connexion.resolver import MethodResolver
 from connexion.validators import VALIDATOR_MAP
 from connexion.validators.json import JSONRequestBodyValidator
-from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.applications import Starlette
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.cors import CORSMiddleware
 
-from neurostore.exceptions.base import NeuroStoreException
-from neurostore.exceptions.handlers import (
-    general_exception_handler,
-    http_exception_handler,
-    neurostore_exception_handler,
-    problem_exception_handler,
-)
-from neurostore.extensions import cache
 from neurostore.admin import init_admin
-from neurostore.settings import load_settings
+from neurostore.exceptions.base import NeuroStoreException
+from neurostore.exceptions.handlers import (general_exception_handler,
+                                            http_exception_handler,
+                                            neurostore_exception_handler,
+                                            problem_exception_handler)
+from neurostore.extensions import cache
 from neurostore.resources import iter_request_body_validation_skip_rules
-from neurostore.resources.auth import (
-    asgi_oauth_problem_handler,
-)
+from neurostore.resources.auth import asgi_oauth_problem_handler
+from neurostore.settings import load_settings
 
 
 def _env_flag(name, default=False):
@@ -247,6 +242,8 @@ def create_asgi_app(settings: Mapping[str, object] | None = None):
     init_admin(app, db, settings)
     app.mount("/", connexion_app)
     app = _SettingsMiddleware(
-        _DatabaseSessionMiddleware(CORSMiddleware(app, **cors_kwargs)), settings, _logger
+        _DatabaseSessionMiddleware(CORSMiddleware(app, **cors_kwargs)),
+        settings,
+        _logger,
     )
     return app

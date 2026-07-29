@@ -1,13 +1,13 @@
 import pytest
 
-pytestmark = pytest.mark.anyio
-
 from time import time
 
 from neurostore.models import Annotation, Study, Studyset
 from neurostore.resources import AnnotationsView
 from neurostore.schemas import AnnotationSchema
 from neurostore.tests.conftest import performance_test
+
+pytestmark = pytest.mark.anyio
 
 # import yappi
 # import contextlib
@@ -94,21 +94,27 @@ async def test_mass_cloning(async_auth_client, session):
 
 
 @performance_test
-async def test_get_large_annotation(assign_neurosynth_to_user, async_auth_client, session):
+async def test_get_large_annotation(
+    assign_neurosynth_to_user, async_auth_client, session
+):
     annotation = Annotation.query.one()
     # with profiled_yappi("annotation2.prof"):
     await async_auth_client.get(f"/api/annotations/{annotation.id}")
 
 
 @performance_test
-async def test_get_large_nested_studyset(ingest_neurosynth_enormous, async_auth_client, session):
+async def test_get_large_nested_studyset(
+    ingest_neurosynth_enormous, async_auth_client, session
+):
     studyset = Studyset.query.one()
     # with profiled_yappi("nested_studyset_large.prof"):
     await async_auth_client.get(f"/api/studysets/{studyset.id}?nested=true")
 
 
 @performance_test
-async def test_updating_annotation(assign_neurosynth_to_user, async_auth_client, session):
+async def test_updating_annotation(
+    assign_neurosynth_to_user, async_auth_client, session
+):
     q = Annotation.query
     q = AnnotationsView().eager_load(q)
     annotation = q.one()
@@ -116,11 +122,15 @@ async def test_updating_annotation(assign_neurosynth_to_user, async_auth_client,
     # with profiled_yappi("update_annotation_large.prof"):
     for i in range(len(annotation_dict["notes"])):
         annotation_dict["notes"][i]["note"]["_5"] = 1.0
-        await async_auth_client.put(f"/api/annotations/{annotation.id}", data=annotation_dict)
+        await async_auth_client.put(
+            f"/api/annotations/{annotation.id}", data=annotation_dict
+        )
 
 
 @performance_test
-async def test_updating_annotation_analysis(assign_neurosynth_to_user, async_auth_client, session):
+async def test_updating_annotation_analysis(
+    assign_neurosynth_to_user, async_auth_client, session
+):
     q = Annotation.query
     q = AnnotationsView().eager_load(q)
     annotation = q.one()
@@ -130,16 +140,22 @@ async def test_updating_annotation_analysis(assign_neurosynth_to_user, async_aut
         annotation_analysis = annotation_dict["notes"][i]
         annotation_analysis["note"]["_5"] = 1.0
         aa_id = annotation_analysis["id"]
-        await async_auth_client.put(f"/api/annotation-analyses/{aa_id}", data=annotation_analysis)
+        await async_auth_client.put(
+            f"/api/annotation-analyses/{aa_id}", data=annotation_analysis
+        )
 
 
 @performance_test
-async def test_updating_annotation_one(assign_neurosynth_to_user, async_auth_client, session):
+async def test_updating_annotation_one(
+    assign_neurosynth_to_user, async_auth_client, session
+):
     q = Annotation.query
     q = AnnotationsView().eager_load(q)
     annotation = q.one()
     annotation_dict = AnnotationSchema().dump(annotation)
     annotation_dict["notes"][0]["note"]["_5"] = 1.0
 
-    resp = await async_auth_client.put(f"/api/annotations/{annotation.id}", data=annotation_dict)
+    resp = await async_auth_client.put(
+        f"/api/annotations/{annotation.id}", data=annotation_dict
+    )
     assert resp.status_code == 200

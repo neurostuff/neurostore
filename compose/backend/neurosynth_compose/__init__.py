@@ -7,8 +7,7 @@ from typing import AsyncIterator, Mapping
 import anyio
 import connexion
 import orjson
-from connexion.exceptions import OAuthProblem
-from connexion.exceptions import ProblemException
+from connexion.exceptions import OAuthProblem, ProblemException
 from connexion.jsonifier import Jsonifier
 from connexion.resolver import MethodResolver
 from starlette.applications import Starlette
@@ -17,14 +16,10 @@ from starlette.middleware.cors import CORSMiddleware
 
 from neurosynth_compose.admin import init_admin
 from neurosynth_compose.database import init_db
-from neurosynth_compose.resources.auth import (
-    asgi_oauth_problem_handler,
-)
-from neurosynth_compose.resources.errors import (
-    general_exception_handler,
-    http_exception_handler,
-    problem_exception_handler,
-)
+from neurosynth_compose.resources.auth import asgi_oauth_problem_handler
+from neurosynth_compose.resources.errors import (general_exception_handler,
+                                                 http_exception_handler,
+                                                 problem_exception_handler)
 from neurosynth_compose.settings import load_settings
 from neurosynth_compose.validation import ReplayableMultiPartFormDataValidator
 
@@ -143,7 +138,9 @@ def create_asgi_app(settings: Mapping[str, object] | None = None):
         jsonifier=Jsonifier(_OrjsonModule),
         strict_validation=validate_mode,
         validate_responses=(
-            False if disable_response_validation else _should_validate_responses(settings)
+            False
+            if disable_response_validation
+            else _should_validate_responses(settings)
         ),
         validator_map={
             "body": {"multipart/form-data": ReplayableMultiPartFormDataValidator}
@@ -154,7 +151,9 @@ def create_asgi_app(settings: Mapping[str, object] | None = None):
     init_admin(app, db, settings)
     app.mount("/", connexion_app)
     app = _SettingsMiddleware(
-        _DatabaseSessionMiddleware(CORSMiddleware(app, **cors_kwargs)), settings, _logger
+        _DatabaseSessionMiddleware(CORSMiddleware(app, **cors_kwargs)),
+        settings,
+        _logger,
     )
     return app
 

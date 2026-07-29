@@ -1,8 +1,8 @@
 import pytest
 
-pytestmark = pytest.mark.anyio
-
 from neurostore.models import User
+
+pytestmark = pytest.mark.anyio
 
 
 async def test_create_user(async_auth_client, session):

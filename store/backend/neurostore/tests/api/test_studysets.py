@@ -1,7 +1,5 @@
 import pytest
 
-pytestmark = pytest.mark.anyio
-
 import random
 import re
 import string
@@ -9,6 +7,8 @@ import string
 from sqlalchemy import event
 
 from neurostore.models import Analysis, Point, Study, Studyset, StudysetStudy, User
+
+pytestmark = pytest.mark.anyio
 
 
 async def test_post_and_get_studysets(async_auth_client, ingest_neurosynth, session):
@@ -33,7 +33,9 @@ async def test_post_and_get_studysets(async_auth_client, ingest_neurosynth, sess
 
 
 # @add_event_listeners
-async def test_add_many_studies_to_studyset(async_auth_client, ingest_neurosynth, session):
+async def test_add_many_studies_to_studyset(
+    async_auth_client, ingest_neurosynth, session
+):
     existing_studies = Study.query.all()
     existing_study_ids = [s.id for s in existing_studies]
 
@@ -54,7 +56,9 @@ async def test_add_many_studies_to_studyset(async_auth_client, ingest_neurosynth
         for _ in range(100)
     ]
     # create empty studyset
-    ss = await async_auth_client.post("/api/studysets/", data={"name": "mixed_studyset"})
+    ss = await async_auth_client.post(
+        "/api/studysets/", data={"name": "mixed_studyset"}
+    )
 
     assert ss.status_code == 200
 
@@ -83,24 +87,34 @@ async def test_add_study_to_studyset(async_auth_client, ingest_neurosynth, sessi
 
     dset_id = post_resp.json()["id"]
     pre_nested = await async_auth_client.get(f"/api/studysets/{dset_id}?nested=true")
-    pre_non_nested = await async_auth_client.get(f"/api/studysets/{dset_id}?nested=false")
+    pre_non_nested = await async_auth_client.get(
+        f"/api/studysets/{dset_id}?nested=false"
+    )
 
     assert pre_nested.status_code == pre_non_nested.status_code == 200
-    put_resp = await async_auth_client.put(f"/api/studysets/{dset_id}", data={"studies": study_ids})
+    put_resp = await async_auth_client.put(
+        f"/api/studysets/{dset_id}", data={"studies": study_ids}
+    )
 
     assert put_resp.status_code == 200
     # test that the study shows up for both nested and not nested
     nested_resp = await async_auth_client.get(f"/api/studysets/{dset_id}?nested=true")
-    non_nested_resp = await async_auth_client.get(f"/api/studysets/{dset_id}?nested=false")
+    non_nested_resp = await async_auth_client.get(
+        f"/api/studysets/{dset_id}?nested=false"
+    )
 
     assert nested_resp.status_code == non_nested_resp.status_code == 200
 
     assert len(nested_resp.json()["studies"]) == len(non_nested_resp.json()["studies"])
 
 
-async def test_get_nested_nonnested_studysets(async_auth_client, ingest_neurosynth, session):
+async def test_get_nested_nonnested_studysets(
+    async_auth_client, ingest_neurosynth, session
+):
     studyset_id = Studyset.query.first().id
-    non_nested = await async_auth_client.get(f"/api/studysets/{studyset_id}?nested=false")
+    non_nested = await async_auth_client.get(
+        f"/api/studysets/{studyset_id}?nested=false"
+    )
     nested = await async_auth_client.get(f"/api/studysets/{studyset_id}?nested=true")
 
     assert isinstance(non_nested.json()["studies"][0], str)
@@ -181,14 +195,20 @@ async def test_get_summary_studyset(async_auth_client, ingest_neurosynth, sessio
             assert "images" not in analysis
 
 
-async def test_summary_and_nested_are_incompatible(async_auth_client, ingest_neurosynth, session):
+async def test_summary_and_nested_are_incompatible(
+    async_auth_client, ingest_neurosynth, session
+):
     studyset_id = Studyset.query.first().id
-    resp = await async_auth_client.get(f"/api/studysets/{studyset_id}?nested=true&summary=true")
+    resp = await async_auth_client.get(
+        f"/api/studysets/{studyset_id}?nested=true&summary=true"
+    )
     assert resp.status_code == 400
     assert "incompatible" in (resp.json().get("detail") or "").lower()
 
 
-async def test_hot_swap_study_in_studyset(async_auth_client, ingest_neurosynth, session):
+async def test_hot_swap_study_in_studyset(
+    async_auth_client, ingest_neurosynth, session
+):
     # create studyset
     create_ss = await async_auth_client.post("/api/studysets/", data={"name": "test"})
 
@@ -201,13 +221,19 @@ async def test_hot_swap_study_in_studyset(async_auth_client, ingest_neurosynth, 
     # get study
     studies = Study.query.all()[0:2]
     study_ids = [s.id for s in studies]
-    put_resp = await async_auth_client.put(f"/api/studysets/{ss_test}", data={"studies": study_ids})
+    put_resp = await async_auth_client.put(
+        f"/api/studysets/{ss_test}", data={"studies": study_ids}
+    )
     assert put_resp.status_code == 200
 
     # test if cache is updated
     add_study = await async_auth_client.get(f"/api/studysets/{ss_test}")
-    add_study_non_nested = await async_auth_client.get(f"/api/studysets/{ss_test}?nested=false")
-    add_study_nested = await async_auth_client.get(f"/api/studysets/{ss_test}?nested=true")
+    add_study_non_nested = await async_auth_client.get(
+        f"/api/studysets/{ss_test}?nested=false"
+    )
+    add_study_nested = await async_auth_client.get(
+        f"/api/studysets/{ss_test}?nested=true"
+    )
 
     assert (
         set(study_ids)
@@ -217,7 +243,9 @@ async def test_hot_swap_study_in_studyset(async_auth_client, ingest_neurosynth, 
     )
 
     # clone study
-    clone_study = await async_auth_client.post(f"/api/studies/?source_id={study_ids[0]}", data={})
+    clone_study = await async_auth_client.post(
+        f"/api/studies/?source_id={study_ids[0]}", data={}
+    )
     assert clone_study.status_code == 200
 
     clone_study_id = clone_study.json()["id"]
@@ -228,8 +256,12 @@ async def test_hot_swap_study_in_studyset(async_auth_client, ingest_neurosynth, 
     )
 
     clone_ss = await async_auth_client.get(f"/api/studysets/{ss_test}")
-    clone_ss_nested = await async_auth_client.get(f"/api/studysets/{ss_test}?nested=true")
-    clone_ss_non_nested = await async_auth_client.get(f"/api/studysets/{ss_test}?nested=false")
+    clone_ss_nested = await async_auth_client.get(
+        f"/api/studysets/{ss_test}?nested=true"
+    )
+    clone_ss_non_nested = await async_auth_client.get(
+        f"/api/studysets/{ss_test}?nested=false"
+    )
 
     assert (
         set(new_study_ids)
@@ -239,7 +271,9 @@ async def test_hot_swap_study_in_studyset(async_auth_client, ingest_neurosynth, 
     )
 
 
-async def _create_studyset_with_annotation(async_auth_client, study_ids, name="clone-source"):
+async def _create_studyset_with_annotation(
+    async_auth_client, study_ids, name="clone-source"
+):
     studyset_resp = await async_auth_client.post(
         "/api/studysets/",
         data={
@@ -256,10 +290,14 @@ async def _create_studyset_with_annotation(async_auth_client, study_ids, name="c
         "note_keys": {"include": {"type": "boolean", "order": 0}},
         "name": "annotation for clone",
     }
-    annotation_resp = await async_auth_client.post("/api/annotations/", data=annotation_payload)
+    annotation_resp = await async_auth_client.post(
+        "/api/annotations/", data=annotation_payload
+    )
     assert annotation_resp.status_code == 200
 
-    annotations = await async_auth_client.get(f"/api/annotations/?studyset_id={studyset_id}")
+    annotations = await async_auth_client.get(
+        f"/api/annotations/?studyset_id={studyset_id}"
+    )
     assert annotations.status_code == 200
     assert len(annotations.json()["results"]) >= 1
 
@@ -381,7 +419,9 @@ async def test_studyset_studies_capture_curation_stub_uuid(
     assert assoc_after.curation_stub_uuid == stub_uuid
 
 
-async def test_non_nested_studyset_includes_studyset_studies(async_auth_client, ingest_neurosynth):
+async def test_non_nested_studyset_includes_studyset_studies(
+    async_auth_client, ingest_neurosynth
+):
     payload = (await async_auth_client.get("/api/studies/?page_size=2")).json()
     study_ids = [study["id"] for study in payload["results"]]
     stub_uuid = "123e4567-e89b-12d3-a456-426614174999"
@@ -409,7 +449,9 @@ async def test_non_nested_studyset_includes_studyset_studies(async_auth_client, 
     )
 
     # Nested=True should also include studyset_studies
-    nested_resp = await async_auth_client.get(f"/api/studysets/{studyset_id}?nested=true")
+    nested_resp = await async_auth_client.get(
+        f"/api/studysets/{studyset_id}?nested=true"
+    )
     assert nested_resp.status_code == 200
     nested_data = nested_resp.json()
     assert "studyset_studies" in nested_data
@@ -437,7 +479,9 @@ async def test_non_nested_studyset_includes_studyset_studies(async_auth_client, 
     )
 
     # Final GET should reflect both mappings in a non-nested response.
-    final_resp = await async_auth_client.get(f"/api/studysets/{studyset_id}?nested=false")
+    final_resp = await async_auth_client.get(
+        f"/api/studysets/{studyset_id}?nested=false"
+    )
     assert final_resp.status_code == 200
     final_data = final_resp.json()
     assert any(
@@ -451,7 +495,9 @@ async def test_non_nested_studyset_includes_studyset_studies(async_auth_client, 
     )
 
 
-async def test_studyset_studies_survive_multiple_updates(async_auth_client, ingest_neurosynth):
+async def test_studyset_studies_survive_multiple_updates(
+    async_auth_client, ingest_neurosynth
+):
     """
     Emulate the curation -> extraction sync sequence where the studyset is updated
     multiple times. Ensure associations are returned after successive PUTs.
@@ -509,7 +555,9 @@ async def test_studyset_studies_survive_multiple_updates(async_auth_client, inge
     )
 
     # Final non-nested GET should reflect both associations, not an empty array.
-    final_resp = await async_auth_client.get(f"/api/studysets/{studyset_id}?nested=false")
+    final_resp = await async_auth_client.get(
+        f"/api/studysets/{studyset_id}?nested=false"
+    )
     assert final_resp.status_code == 200
     final = final_resp.json()
     assert final.get("studyset_studies")

@@ -1,8 +1,8 @@
 import pytest
 
-pytestmark = pytest.mark.anyio
-
 from neurostore.models import Study, Table, User
+
+pytestmark = pytest.mark.anyio
 
 
 def _assign_user_to_study_tree(study, user):
@@ -30,7 +30,9 @@ async def test_study_tables_are_ids_only(async_auth_client, ingest_neurosynth, s
     assert set(nested_resp.json()["tables"]) == set(tables)
 
 
-async def test_tables_endpoint_lists_analyses(async_auth_client, ingest_neurosynth, session):
+async def test_tables_endpoint_lists_analyses(
+    async_auth_client, ingest_neurosynth, session
+):
     table = Table.query.first()
     user = User.query.filter_by(external_id=async_auth_client.username).first()
     _assign_user_to_study_tree(table.study, user)
@@ -47,7 +49,9 @@ async def test_tables_endpoint_lists_analyses(async_auth_client, ingest_neurosyn
     assert nested_ids == {a.id for a in table.analyses}
 
 
-async def test_table_t_id_uniqueness_per_study(async_auth_client, ingest_neurosynth, session):
+async def test_table_t_id_uniqueness_per_study(
+    async_auth_client, ingest_neurosynth, session
+):
     study = Study.query.first()
     user = User.query.filter_by(external_id=async_auth_client.username).first()
     _assign_user_to_study_tree(study, user)

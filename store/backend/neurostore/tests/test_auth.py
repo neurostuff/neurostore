@@ -1,9 +1,9 @@
 import pytest
 
-pytestmark = pytest.mark.anyio
-
 from neurostore.tests.conftest import auth_test
 from neurostore.tests.request_utils import AsyncClient
+
+pytestmark = pytest.mark.anyio
 
 
 @auth_test

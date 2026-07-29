@@ -284,9 +284,7 @@ def test_put_meta_analysis_result_with_celery(
         )
     ).scalar_one_or_none()
     assert neurostore_analysis is not None, "NeurostoreAnalysis object not found"
-    assert (
-        neurostore_analysis.status == "OK"
-    ), (
+    assert neurostore_analysis.status == "OK", (
         f"NeurostoreAnalysis.status is '{neurostore_analysis.status}', expected 'OK'; "
         f"exception: {neurostore_analysis.exception}"
     )

@@ -24,7 +24,8 @@ from jose.jwt import encode
 from sqlalchemy import delete, event, func, select
 
 from neurostore.database import db
-from neurostore.models import Analysis, Annotation, BaseStudy, Study, Studyset, User
+from neurostore.models import (Analysis, Annotation, BaseStudy, Study,
+                               Studyset, User)
 
 TOKEN = encode({"sub": "user1-id"}, "abc", algorithm="HS256")
 DEFAULT_SCALES = [10, 50, 100, 200]
@@ -146,7 +147,9 @@ class _BenchmarkWriteTracker:
     async def _cleanup_ids(self, client, annotation_ids, studyset_ids, study_ids):
         del client
         if annotation_ids:
-            db.session.execute(delete(Annotation).where(Annotation.id.in_(annotation_ids)))
+            db.session.execute(
+                delete(Annotation).where(Annotation.id.in_(annotation_ids))
+            )
         if studyset_ids:
             db.session.execute(delete(Studyset).where(Studyset.id.in_(studyset_ids)))
         if study_ids:
@@ -220,9 +223,10 @@ def _percentile(values: list[float], percentile: float) -> float:
     lower_index = int(rank)
     upper_index = min(lower_index + 1, len(sorted_values) - 1)
     fraction = rank - lower_index
-    return sorted_values[lower_index] + (
-        sorted_values[upper_index] - sorted_values[lower_index]
-    ) * fraction
+    return (
+        sorted_values[lower_index]
+        + (sorted_values[upper_index] - sorted_values[lower_index]) * fraction
+    )
 
 
 def _project_line(fit: dict[str, float], x_value: int) -> float:
@@ -792,9 +796,7 @@ async def _create_large_annotation(
     return body["id"]
 
 
-async def _load_annotation_payload(
-    client: BenchmarkClient, annotation_id: str
-) -> dict:
+async def _load_annotation_payload(client: BenchmarkClient, annotation_id: str) -> dict:
     response = await _request(client, "get", f"/api/annotations/{annotation_id}")
     return _response_json(response)
 
@@ -984,9 +986,7 @@ def _pick_seed_analysis_id(study_id: str) -> str:
     return analysis_id
 
 
-async def _load_base_study_detail(
-    client: BenchmarkClient, base_study_id: str
-) -> dict:
+async def _load_base_study_detail(client: BenchmarkClient, base_study_id: str) -> dict:
     response = await _request(
         client,
         "get",

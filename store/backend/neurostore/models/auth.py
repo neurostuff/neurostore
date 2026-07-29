@@ -1,5 +1,3 @@
-
-
 from neurostore.database import db
 from neurostore.models.data import BaseMixin
 

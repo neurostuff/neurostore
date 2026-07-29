@@ -31,8 +31,7 @@ async def test_list_cache_key_embeds_existing_version(
 
     assert response.status_code == 200
     expected_key = (
-        "/api/studies/_(('nested', 'false'),)_"
-        f"{mock_add_users['user1']['id']}_v=1"
+        "/api/studies/_(('nested', 'false'),)_" f"{mock_add_users['user1']['id']}_v=1"
     )
     assert cache.cache.get(expected_key) is not None
 
@@ -109,12 +108,9 @@ def test_cache_key_creator_preserves_extra_args(monkeypatch):
     monkeypatch.setattr(base_resource, "request", DummyRequest())
     monkeypatch.setattr(base_resource, "get_current_user", lambda: DummyUser())
 
-    key = base_resource.cache_key_creator(
-        extra_args={"b": ["1", "3"], "z": "last"}
-    )
+    key = base_resource.cache_key_creator(extra_args={"b": ["1", "3"], "z": "last"})
 
     assert (
-        key
-        == "/api/studies/_(('a', '1'), ('b', '1'), ('b', '2'), "
+        key == "/api/studies/_(('a', '1'), ('b', '1'), ('b', '2'), "
         "('b', '3'), ('z', 'last'))_user-1_v=0"
     )

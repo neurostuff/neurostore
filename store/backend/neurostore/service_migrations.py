@@ -52,9 +52,7 @@ def make_alembic_config() -> AlembicConfig:
     import neurostore.models  # noqa: F401
 
     alembic_config.set_main_option("script_location", str(migrations_dir))
-    alembic_config.set_main_option(
-        "sqlalchemy.url", config_obj.SQLALCHEMY_DATABASE_URI
-    )
+    alembic_config.set_main_option("sqlalchemy.url", config_obj.SQLALCHEMY_DATABASE_URI)
     alembic_config.attributes["target_metadata"] = db.metadata
     alembic_config.attributes["include_object"] = include_object
     alembic_config.attributes["configure_args"] = {"include_object": include_object}

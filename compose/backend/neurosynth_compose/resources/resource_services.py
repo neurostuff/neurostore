@@ -7,17 +7,14 @@ from operator import itemgetter
 from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
-from neurosynth_compose.database import db
 from neurosynth_compose.asgi_requests import raise_http_error
-from neurosynth_compose.models.analysis import (
-    NeurostoreAnnotation,
-    NeurostoreStudyset,
-    SnapshotAnnotation,
-    NeurovaultCollection,
-    NeurovaultFile,
-    SnapshotStudyset,
-    generate_id,
-)
+from neurosynth_compose.database import db
+from neurosynth_compose.models.analysis import (NeurostoreAnnotation,
+                                                NeurostoreStudyset,
+                                                NeurovaultCollection,
+                                                NeurovaultFile,
+                                                SnapshotAnnotation,
+                                                SnapshotStudyset, generate_id)
 from neurosynth_compose.utils.snapshots import md5_of_snapshot
 
 # NiMARE 0.9.0 emits table files from MetaResult.save_tables using:
@@ -209,9 +206,7 @@ def select_cluster_table_for_specification(cluster_table_fnames, specification):
     return None
 
 
-def create_neurovault_collection(
-    nv_collection, *, settings, logger, public_base_url
-):
+def create_neurovault_collection(nv_collection, *, settings, logger, public_base_url):
     from pynv import Client
 
     meta_analysis = nv_collection.result.meta_analysis

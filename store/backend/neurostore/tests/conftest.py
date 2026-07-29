@@ -352,7 +352,9 @@ async def async_auth_client(async_auth_clients):
 
 @pytest.fixture(scope="function")
 async def async_new_user_client(async_auth_clients):
-    return next(client for client in async_auth_clients if client.username == "newuser-id")
+    return next(
+        client for client in async_auth_clients if client.username == "newuser-id"
+    )
 
 
 @pytest.fixture(scope="function")
