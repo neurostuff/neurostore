@@ -4,14 +4,8 @@ import sys
 import textwrap
 from pathlib import Path
 
-from neurostore.models import (
-    Analysis,
-    BaseStudy,
-    BaseStudyFlagOutbox,
-    BaseStudyMetadataOutbox,
-    Image,
-    Study,
-)
+from neurostore.models import (Analysis, BaseStudy, BaseStudyFlagOutbox,
+                               BaseStudyMetadataOutbox, Image, Study)
 
 BACKEND_ROOT = Path(__file__).resolve().parents[2]
 
@@ -23,7 +17,7 @@ def _run_neurostore_command(args, *, extra_env=None):
         env.update(extra_env)
 
     return subprocess.run(
-        [sys.executable, "-m", "neurostore_cli", *args],
+        ["manage", *args],
         cwd=BACKEND_ROOT,
         env=env,
         check=False,
@@ -44,7 +38,7 @@ def _run_cli_runner_command(args, *, patch_script="", extra_env=None):
             "import traceback",
             "",
             "from click.testing import CliRunner",
-            "from neurostore_cli import main",
+            "from neurostore.cli import main",
             textwrap.dedent(patch_script).strip(),
             f"result = CliRunner().invoke(main, args={args!r})",
             "sys.stdout.write(result.output)",
