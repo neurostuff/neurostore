@@ -1,6 +1,8 @@
 import json
+from collections.abc import Mapping
 from urllib.request import urlopen
 
+import anyio
 from connexion import request as connexion_request
 from connexion.exceptions import OAuthProblem
 from connexion.lifecycle import ConnexionResponse
@@ -27,14 +29,13 @@ async def asgi_oauth_problem_handler(request, exc):
     )
 
 
-def decode_token(token):
-    config = connexion_request.state.settings
+def _decode_token(token, settings: Mapping[str, object]):
     try:
         unverified_header = jwt.get_unverified_header(token)
     except jwt.JWTError:
         raise _oauth_problem("Unable to parse authentication token.")
 
-    jsonurl = urlopen(str(config["AUTH0_BASE_URL"]) + "/.well-known/jwks.json")
+    jsonurl = urlopen(str(settings["AUTH0_BASE_URL"]) + "/.well-known/jwks.json")
     jwks = json.loads(jsonurl.read())
 
     rsa_key = {}
@@ -53,8 +54,8 @@ def decode_token(token):
                 token,
                 rsa_key,
                 algorithms=["RS256"],
-                audience=config["AUTH0_API_AUDIENCE"],
-                issuer=str(config["AUTH0_BASE_URL"]) + "/",
+                audience=settings["AUTH0_API_AUDIENCE"],
+                issuer=str(settings["AUTH0_BASE_URL"]) + "/",
             )
         except jwt.ExpiredSignatureError:
             raise _oauth_problem("token is expired")
@@ -68,3 +69,10 @@ def decode_token(token):
         return payload
 
     raise _oauth_problem("Unable to find appropriate key")
+
+
+async def decode_token(token, *, settings: Mapping[str, object] | None = None):
+    """Decode a bearer token without blocking Connexion's ASGI event loop."""
+    if settings is None:
+        settings = connexion_request.state.settings
+    return await anyio.to_thread.run_sync(_decode_token, token, settings)

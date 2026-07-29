@@ -7,17 +7,18 @@ pytestmark = pytest.mark.anyio
 
 
 @auth_test
-def test_decode_token(add_users):
+async def test_decode_token(add_users, real_app):
     from connexion.exceptions import OAuthProblem
+
     from neurostore.resources.auth import decode_token
 
     with pytest.raises(OAuthProblem) as exc_info:
-        decode_token("improper_token")
+        await decode_token("improper_token", settings=real_app.config)
 
     assert exc_info.value.status_code == 401
 
     for user in add_users.values():
-        decode_token(user["token"])
+        await decode_token(user["token"], settings=real_app.config)
 
 
 @auth_test

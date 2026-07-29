@@ -6,6 +6,7 @@ from os import environ
 from os.path import isfile
 from unittest.mock import patch
 
+import anyio
 import pytest
 import sqlalchemy as sa
 from auth0.authentication import GetToken
@@ -496,7 +497,9 @@ def add_users(real_app, real_db):
             audience=real_app.config["AUTH0_API_AUDIENCE"],
             scope="openid profile email",
         )
-        token_info = decode_token(payload["access_token"])
+        token_info = anyio.run(
+            lambda: decode_token(payload["access_token"], settings=real_app.config)
+        )
         # do not add user1 into database
         if name != "user1":
             user = User(

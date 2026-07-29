@@ -1,5 +1,4 @@
 import pytest
-from types import SimpleNamespace
 
 
 @pytest.fixture
@@ -20,9 +19,9 @@ def mock_add_users_pure():
     yield tokens
 
 
-def test_decode_token(monkeypatch, mock_add_users_pure):
+@pytest.mark.anyio
+async def test_decode_token(monkeypatch, mock_add_users_pure):
     import json
-    import logging
 
     from connexion.exceptions import OAuthProblem
 
@@ -65,20 +64,15 @@ def test_decode_token(monkeypatch, mock_add_users_pure):
         "AUTH0_BASE_URL": "https://fake-auth0.com",
         "AUTH0_API_AUDIENCE": "fake-audience",
     }
-    request = SimpleNamespace(
-        state=SimpleNamespace(settings=fake_config, logger=logging.getLogger("test"))
-    )
-    monkeypatch.setattr(auth, "connexion_request", request)
-
     # Test invalid token raises a Connexion-native 401
     with pytest.raises(OAuthProblem) as exc_info:
-        auth.decode_token("improper_token")
+        await auth.decode_token("improper_token", settings=fake_config)
 
     assert exc_info.value.status_code == 401
 
     # Test valid tokens
     for user in mock_add_users_pure.values():
-        result = auth.decode_token(user["token"])
+        result = await auth.decode_token(user["token"], settings=fake_config)
         assert result["sub"] == "mocked-user-id"
 
 
